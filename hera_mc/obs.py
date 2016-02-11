@@ -1,4 +1,3 @@
-from sqlalchemy import create_engine
 from astropy.time import Time
 import math
 import ephem
