@@ -4,12 +4,12 @@ from sqlalchemy import inspect
 from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
 from sqlalchemy.orm import RelationshipProperty
 
-from hera_mc.db_setup import Base
+from hera_mc.mc import DEC_BASE
 
 logger = logging.getLogger(__name__)
 
 
-def is_sane_database(Base, session):
+def is_sane_database(DEC_BASE, session):
     """
     Check whether the current database matches the models declared in model
     base.
@@ -24,7 +24,7 @@ def is_sane_database(Base, session):
 
     Parameters
     ----------
-    Base: Declarative Base for SQLAlchemy models to check
+    DEC_BASE: Declarative Base for SQLAlchemy models to check
 
     session: SQLAlchemy session bound to an engine
 
@@ -41,7 +41,7 @@ def is_sane_database(Base, session):
     tables = iengine.get_table_names()
 
     # Go through all SQLAlchemy models
-    for name, klass in Base._decl_class_registry.items():
+    for name, klass in DEC_BASE._decl_class_registry.items():
 
         if isinstance(klass, _ModuleMarker):
             # Not a model

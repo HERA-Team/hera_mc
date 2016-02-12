@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import ForeignKey
 
 from hera_mc.db_check import is_sane_database
-from hera_mc.db_setup import test_db
+from hera_mc.mc import test_db
 
 
 def setup_module(self):

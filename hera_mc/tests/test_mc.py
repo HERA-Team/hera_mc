@@ -33,7 +33,7 @@ class test_hera_mc(unittest.TestCase):
 
     def test_db_sane(self):
         from hera_mc.db_check import is_sane_database
-        assert is_sane_database(self.test_db.Base, self.real_session) is True
+        assert is_sane_database(self.test_db.Base, self.real_session)
 
     def test_add_obs(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
