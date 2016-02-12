@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 import unittest
-import hera_mc as mc
+import hera_mc.mc as mc
 import math
 from astropy.time import Time, TimeDelta
 import ephem
@@ -8,13 +8,13 @@ import ephem
 
 class test_hera_mc(unittest.TestCase):
     def setUp(self):
-        self.test_db = mc.db_setup.DB()
+        self.test_db = mc.DB_declarative()
         self.test_db.create_tables()
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
         self.test_session = Session(bind=self.test_conn)
 
-        self.real_db = mc.db_connect.DB()
+        self.real_db = mc.DB_automap()
         self.real_conn = self.real_db.engine.connect()
         self.real_trans = self.real_conn.begin()
         self.real_session = Session(bind=self.real_conn)

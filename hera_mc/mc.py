@@ -1,5 +1,7 @@
 import os
 import sys
+from abc import ABCMeta
+from six import add_metaclass
 from sqlalchemy import Column, ForeignKey, BigInteger, String
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
@@ -12,41 +14,46 @@ from astropy.time import Time
 import math
 import ephem
 
-Base = None
-
 test_db = 'postgresql://bryna:bryna@localhost:5432/test'
 default_db = 'postgresql://bryna:bryna@localhost:5432/hera_mc'
 
 HERA_LAT = '-30.721'
 HERA_LON = '21.411'
 
-class HeraObs(Base):
-    __tablename__ = 'hera_obs'
-    obsid = Column(BigInteger, primary_key=True)
-    starttime = Column(DOUBLE_PRECISION, nullable=False)
-    stoptime = Column(DOUBLE_PRECISION, nullable=False)
-    lststart = Column(DOUBLE_PRECISION, nullable=False)
 
-    def __repr__(self):
-        return ("<HeraObs('{self.obsid}', '{self.starttime}', "
-                "'{self.stoptime}', '{self.lststart}')>".format(self=self))
-
-    def __eq__(self, other):
-        return isinstance(other, HeraObs) and (
-            other.obsid == self.obsid and
-            np.allclose(other.starttime, self.starttime) and
-            np.allclose(other.stoptime, self.stoptime) and
-            np.allclose(other.lststart, self.lststart))
-
-
-class DB():
+@add_metaclass(ABCMeta)
+class DB(object):
     engine = None
     DBSession = sessionmaker()
+    Base = None
 
-    def __init__(self, base, db_name=None):
-        Base = base
+    def __init__(self, db_name=None):
         self.engine = create_engine(db_name)
         self.DBSession.configure(bind=self.engine)
+        self.HeraObs = self.generate_hera_class()
+
+    def generate_hera_class(self):
+
+        class HeraObs(self.Base):
+            __tablename__ = 'hera_obs'
+            obsid = Column(BigInteger, primary_key=True)
+            starttime = Column(DOUBLE_PRECISION, nullable=False)
+            stoptime = Column(DOUBLE_PRECISION, nullable=False)
+            lststart = Column(DOUBLE_PRECISION, nullable=False)
+
+            def __repr__(self):
+                return ("<HeraObs('{self.obsid}', '{self.starttime}', "
+                        "'{self.stoptime}', '{self.lststart}')>".format(
+                            self=self))
+
+            def __eq__(self, other):
+                return isinstance(other, HeraObs) and (
+                    other.obsid == self.obsid and
+                    np.allclose(other.starttime, self.starttime) and
+                    np.allclose(other.stoptime, self.stoptime) and
+                    np.allclose(other.lststart, self.lststart))
+
+        return HeraObs
 
     def add_obs(self, starttime=None, stoptime=None):
         t_start = starttime.utc
@@ -59,20 +66,20 @@ class DB():
         hera.date = t_start.datetime
         lst_start = float(repr(hera.sidereal_time()))/(15*ephem.degree)
 
-        new_obs = HeraObs(obsid=obsid, starttime=t_start.jd,
-                          stoptime=t_stop.jd, lststart=lst_start)
+        new_obs = self.HeraObs(obsid=obsid, starttime=t_start.jd,
+                               stoptime=t_stop.jd, lststart=lst_start)
 
         self.DBsession.add(new_obs)
         self.DBsession.commit()
         self.DBsession.close()
 
-
     def get_obs(self, obsid=None, all=False):
 
         if all is True:
-            obs_list = self.DBsession.query(HeraObs).all()
+            obs_list = self.DBsession.query(self.HeraObs).all()
         else:
-            obs_list = self.DBsession.query(HeraObs).filter_by(obsid=obsid).all()
+            obs_list = self.DBsession.query(self.HeraObs).filter_by(
+                obsid=obsid).all()
         self.DBsession.close()
 
         nrows = len(obs_list)
@@ -84,28 +91,23 @@ class DB():
 
 
 class DB_declarative(DB):
-    engine = None
-    DBSession = sessionmaker()
 
-    def __init__(self, db_name=test_db):
-        Base = declarative_base()
-        super(DB, self, Base, db_name=db_name)
+    def __init__(self, db_name=default_db):
+        self.Base = declarative_base()
+        super(DB_declarative, self).__init__(db_name=db_name)
 
     def create_tables(self):
-        Base.metadata.create_all(self.engine)
+        self.Base.metadata.create_all(self.engine)
 
     def drop_tables(self):
-        Base.metadata.bind = self.engine
-        Base.metadata.drop_all(self.engine)
-
+        self.Base.metadata.bind = self.engine
+        self.Base.metadata.drop_all(self.engine)
 
 
 class DB_automap(DB):
-    engine = None
-    DBSession = sessionmaker()
 
     def __init__(self, db_name=default_db):
-        Base = automap_base()
-        super(DB, self, Base, db_name=db_name)
+        self.Base = automap_base()
+        super(DB_automap, self).__init__(db_name=db_name)
         self.Base.prepare(self.engine, reflect=True)
         self.DBSession.configure(bind=self.engine)
