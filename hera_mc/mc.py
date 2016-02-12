@@ -5,7 +5,6 @@ from six import add_metaclass
 from sqlalchemy import Column, ForeignKey, BigInteger, String
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
@@ -13,14 +12,13 @@ import numpy as np
 from astropy.time import Time
 import math
 import ephem
+from hera_mc.db_check import DEC_BASE, is_sane_database
 
 test_db = 'postgresql://bryna:bryna@localhost:5432/test'
 default_db = 'postgresql://bryna:bryna@localhost:5432/hera_mc'
 
 HERA_LAT = '-30.721'
 HERA_LON = '21.411'
-
-DEC_BASE = declarative_base()
 
 
 class HeraObs(DEC_BASE):
@@ -118,6 +116,5 @@ class DB_automap(DB):
 
         # initialization should fail if the automapped database does not
         # match the delarative base
-        from hera_mc.db_check import is_sane_database
         session = self.DBSession()
         assert is_sane_database(DEC_BASE, session)
