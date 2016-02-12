@@ -20,6 +20,28 @@ default_db = 'postgresql://bryna:bryna@localhost:5432/hera_mc'
 HERA_LAT = '-30.721'
 HERA_LON = '21.411'
 
+DEC_BASE = declarative_base()
+
+
+class HeraObs(DEC_BASE):
+    __tablename__ = 'hera_obs'
+    obsid = Column(BigInteger, primary_key=True)
+    starttime = Column(DOUBLE_PRECISION, nullable=False)
+    stoptime = Column(DOUBLE_PRECISION, nullable=False)
+    lststart = Column(DOUBLE_PRECISION, nullable=False)
+
+    def __repr__(self):
+        return ("<HeraObs('{self.obsid}', '{self.starttime}', "
+                "'{self.stoptime}', '{self.lststart}')>".format(
+                    self=self))
+
+    def __eq__(self, other):
+        return isinstance(other, HeraObs) and (
+            other.obsid == self.obsid and
+            np.allclose(other.starttime, self.starttime) and
+            np.allclose(other.stoptime, self.stoptime) and
+            np.allclose(other.lststart, self.lststart))
+
 
 @add_metaclass(ABCMeta)
 class DB(object):
@@ -30,32 +52,8 @@ class DB(object):
     def __init__(self, db_name=None):
         self.engine = create_engine(db_name)
         self.DBSession.configure(bind=self.engine)
-        self.HeraObs = self.generate_hera_class()
 
-    def generate_hera_class(self):
-
-        class HeraObs(self.Base):
-            __tablename__ = 'hera_obs'
-            obsid = Column(BigInteger, primary_key=True)
-            starttime = Column(DOUBLE_PRECISION, nullable=False)
-            stoptime = Column(DOUBLE_PRECISION, nullable=False)
-            lststart = Column(DOUBLE_PRECISION, nullable=False)
-
-            def __repr__(self):
-                return ("<HeraObs('{self.obsid}', '{self.starttime}', "
-                        "'{self.stoptime}', '{self.lststart}')>".format(
-                            self=self))
-
-            def __eq__(self, other):
-                return isinstance(other, HeraObs) and (
-                    other.obsid == self.obsid and
-                    np.allclose(other.starttime, self.starttime) and
-                    np.allclose(other.stoptime, self.stoptime) and
-                    np.allclose(other.lststart, self.lststart))
-
-        return HeraObs
-
-    def add_obs(self, starttime=None, stoptime=None):
+    def add_obs(self, starttime=None, stoptime=None, session=None):
         t_start = starttime.utc
         t_stop = stoptime.utc
         obsid = math.floor(t_start.gps)
@@ -66,34 +64,40 @@ class DB(object):
         hera.date = t_start.datetime
         lst_start = float(repr(hera.sidereal_time()))/(15*ephem.degree)
 
-        new_obs = self.HeraObs(obsid=obsid, starttime=t_start.jd,
-                               stoptime=t_stop.jd, lststart=lst_start)
+        new_obs = HeraObs(obsid=obsid, starttime=t_start.jd,
+                          stoptime=t_stop.jd, lststart=lst_start)
 
-        self.DBsession.add(new_obs)
-        self.DBsession.commit()
-        self.DBsession.close()
+        if session is None:
+            session = self.DBsession()
 
-    def get_obs(self, obsid=None, all=False):
+        session.add(new_obs)
+        session.commit()
+        session.close()
+
+    def get_obs(self, obsid=None, all=False, session=None):
+
+        if session is None:
+            session = self.DBsession()
 
         if all is True:
-            obs_list = self.DBsession.query(self.HeraObs).all()
+            obs_list = session.query(HeraObs).all()
         else:
-            obs_list = self.DBsession.query(self.HeraObs).filter_by(
+            obs_list = session.query(HeraObs).filter_by(
                 obsid=obsid).all()
-        self.DBsession.close()
+        session.close()
 
         nrows = len(obs_list)
         if nrows > 0:
             for row in obs_list:
-                print(row.obsid, row.lststart)
+                print('obsid: ', row.obsid, ', LST start: ', row.lststart)
 
         return obs_list
 
 
 class DB_declarative(DB):
 
-    def __init__(self, db_name=default_db):
-        self.Base = declarative_base()
+    def __init__(self, db_name=test_db):
+        self.Base = DEC_BASE
         super(DB_declarative, self).__init__(db_name=db_name)
 
     def create_tables(self):
