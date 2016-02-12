@@ -51,7 +51,6 @@ class DB(object):
 
     def __init__(self, db_name=None):
         self.engine = create_engine(db_name)
-        self.DBSession.configure(bind=self.engine)
 
     def add_obs(self, starttime=None, stoptime=None, session=None):
         t_start = starttime.utc
@@ -68,7 +67,7 @@ class DB(object):
                           stoptime=t_stop.jd, lststart=lst_start)
 
         if session is None:
-            session = self.DBsession()
+            session = self.DBSession()
 
         session.add(new_obs)
         session.commit()
@@ -77,7 +76,7 @@ class DB(object):
     def get_obs(self, obsid=None, all=False, session=None):
 
         if session is None:
-            session = self.DBsession()
+            session = self.DBSession()
 
         if all is True:
             obs_list = session.query(HeraObs).all()
@@ -99,6 +98,7 @@ class DB_declarative(DB):
     def __init__(self, db_name=test_db):
         self.Base = DEC_BASE
         super(DB_declarative, self).__init__(db_name=db_name)
+        self.DBSession.configure(bind=self.engine)
 
     def create_tables(self):
         self.Base.metadata.create_all(self.engine)
@@ -115,3 +115,9 @@ class DB_automap(DB):
         super(DB_automap, self).__init__(db_name=db_name)
         self.Base.prepare(self.engine, reflect=True)
         self.DBSession.configure(bind=self.engine)
+
+        # initialization should fail if the automapped database does not
+        # match the delarative base
+        from hera_mc.db_check import is_sane_database
+        session = self.DBSession()
+        assert is_sane_database(DEC_BASE, session)
