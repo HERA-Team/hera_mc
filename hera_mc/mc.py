@@ -44,6 +44,15 @@ def get_configs(config_file=default_config_file):
 
 
 class HeraObs(DEC_BASE):
+    """
+    Definition of hera_obs table.
+
+    obsid: observation identification number, generally equal to the
+        start time in gps seconds (long integer)
+    starttime: observation start time in jd (float)
+    stoptime: observation stop time in jd (float)
+    lststart: observation start time in lst (float)
+    """
     __tablename__ = 'hera_obs'
     obsid = Column(BigInteger, primary_key=True)
     starttime = Column(DOUBLE_PRECISION, nullable=False)
@@ -65,6 +74,13 @@ class HeraObs(DEC_BASE):
 
 @add_metaclass(ABCMeta)
 class DB(object):
+    """
+    Abstract Base Class for M&C database object
+
+    Should be instantiated using either:
+        DB_automap: if attaching to an existing database
+        DB_declarative: if setting up a database from scratch
+    """
     test_db = None
     mc_db = None
 
@@ -80,7 +96,22 @@ class DB(object):
             db_name = mc_db
         self.engine = create_engine(db_name)
 
-    def add_obs(self, obsid=None, starttime=None, stoptime=None, session=None):
+    def add_obs(self, starttime, stoptime, obsid=None, session=None):
+        """
+        Add an observation to the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            observation starttime
+        starttime: astropy time object
+            observation stoptime
+        obsid: long integer
+            observation identification number. If not provided, will be set
+            to the gps second corresponding to the starttime using floor.
+        session: sqlalchemy session object
+            if not set, a session will be generated based on self.DBSession
+        """
         t_start = starttime.utc
         t_stop = stoptime.utc
 
@@ -103,28 +134,40 @@ class DB(object):
         session.commit()
         session.close()
 
-    def get_obs(self, obsid=None, all=False, session=None):
+    def get_obs(self, obsid=None, session=None):
+        """
+        Get observation(s) from the M&C database.
 
+        Parameters:
+        ------------
+        obsid: long integer
+            observation identification number, generally the gps second
+            corresponding to the observation start time.
+            if not set, all obsids will be returned.
+        session: sqlalchemy session object
+            if not set, a session will be generated based on self.DBSession
+
+        Returns:
+        --------
+        list of HeraObs objects
+        """
         if session is None:
             session = self.DBSession()
 
-        if all is True:
+        if obsid is None:
             obs_list = session.query(HeraObs).all()
         else:
             obs_list = session.query(HeraObs).filter_by(
                 obsid=obsid).all()
         session.close()
 
-        nrows = len(obs_list)
-        if nrows > 0:
-            for row in obs_list:
-                print('obsid: ', row.obsid, ', LST start: ', row.lststart)
-
         return obs_list
 
 
 class DB_declarative(DB):
-
+    """
+    Declarative M&C database object -- to create M&C database tables
+    """
     def __init__(self, config_file=default_config_file, use_test=True):
         self.Base = DEC_BASE
         super(DB_declarative, self).__init__(config_file=config_file,
@@ -132,15 +175,22 @@ class DB_declarative(DB):
         self.DBSession.configure(bind=self.engine)
 
     def create_tables(self):
+        """Create all M&C tables"""
         self.Base.metadata.create_all(self.engine)
 
     def drop_tables(self):
+        """Drop all M&C tables"""
         self.Base.metadata.bind = self.engine
         self.Base.metadata.drop_all(self.engine)
 
 
 class DB_automap(DB):
+    """
+    Automap M&C database object -- to attach to an existing M&C database.
 
+    Will fail to initialize if the database table structure does not match
+        the table structure defined above.
+    """
     def __init__(self, config_file=default_config_file, use_test=False):
         self.Base = automap_base()
         super(DB_automap, self).__init__(config_file=config_file,

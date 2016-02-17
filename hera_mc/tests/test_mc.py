@@ -50,15 +50,13 @@ class test_hera_mc(unittest.TestCase):
                                stoptime=t2.jd, lststart=lst_start)]
 
         # first test against test_db
-        self.test_db.add_obs(starttime=t1, stoptime=t2,
-                             session=self.test_session)
-        result = self.test_db.get_obs(all=True, session=self.test_session)
+        self.test_db.add_obs(t1, t2, session=self.test_session)
+        result = self.test_db.get_obs(session=self.test_session)
         self.assertEqual(result, expected)
 
         # now test against real_db
-        self.real_db.add_obs(starttime=t1, stoptime=t2,
-                             session=self.real_session)
-        result = self.real_db.get_obs(all=True, session=self.real_session)
+        self.real_db.add_obs(t1, t2, session=self.real_session)
+        result = self.real_db.get_obs(session=self.real_session)
         self.assertEqual(result, expected)
 
 
