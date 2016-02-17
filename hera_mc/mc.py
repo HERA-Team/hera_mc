@@ -21,7 +21,22 @@ default_config_file = os.path.expanduser('~/.hera_mc/mc_config.json')
 
 
 def get_configs(config_file=default_config_file):
-    """Little function to read a JSON config file."""
+    """
+    Little function to read a JSON config file.
+
+    Config files should be located at: ~/.hera_mc/mc_config.json
+    They should contain three elements:
+        location: string giving location (e.g "karoo")
+        test_db: url for an empty testing database
+        mc_db: url for the M&C database containing the M&C tables
+
+    Example:
+    {
+    "location":"myloc",
+    "mc_db":"postgresql://username:password@localhost:5432/hera_mc",
+    "test_db":"postgresql://username:password@localhost:5432/test"
+    }
+    """
     handle = open(config_file)
     config_dict = json.loads(handle.read())
 
