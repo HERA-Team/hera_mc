@@ -12,13 +12,20 @@ import numpy as np
 from astropy.time import Time
 import math
 import ephem
+import json
 from hera_mc.db_check import DEC_BASE, is_sane_database
-
-test_db = 'postgresql://bryna:bryna@localhost:5432/test'
-default_db = 'postgresql://bryna:bryna@localhost:5432/hera_mc'
 
 HERA_LAT = '-30.721'
 HERA_LON = '21.411'
+default_config_file = os.path.expanduser('~/.hera_mc/mc_config.json')
+
+
+def get_configs(config_file=default_config_file):
+    """Little function to read a JSON config file."""
+    handle = open(config_file)
+    config_dict = json.loads(handle.read())
+
+    return config_dict['test_db'], config_dict['mc_db']
 
 
 class HeraObs(DEC_BASE):
@@ -43,11 +50,19 @@ class HeraObs(DEC_BASE):
 
 @add_metaclass(ABCMeta)
 class DB(object):
+    test_db = None
+    mc_db = None
+
     engine = None
     DBSession = sessionmaker()
     Base = None
 
-    def __init__(self, db_name=None):
+    def __init__(self, config_file=default_config_file, use_test=True):
+        test_db, mc_db = get_configs(config_file=config_file)
+        if use_test is True:
+            db_name = test_db
+        else:
+            db_name = mc_db
         self.engine = create_engine(db_name)
 
     def add_obs(self, obsid=None, starttime=None, stoptime=None, session=None):
@@ -95,9 +110,10 @@ class DB(object):
 
 class DB_declarative(DB):
 
-    def __init__(self, db_name=test_db):
+    def __init__(self, config_file=default_config_file, use_test=True):
         self.Base = DEC_BASE
-        super(DB_declarative, self).__init__(db_name=db_name)
+        super(DB_declarative, self).__init__(config_file=config_file,
+                                             use_test=use_test)
         self.DBSession.configure(bind=self.engine)
 
     def create_tables(self):
@@ -110,9 +126,10 @@ class DB_declarative(DB):
 
 class DB_automap(DB):
 
-    def __init__(self, db_name=default_db):
+    def __init__(self, config_file=default_config_file, use_test=False):
         self.Base = automap_base()
-        super(DB_automap, self).__init__(db_name=db_name)
+        super(DB_automap, self).__init__(config_file=config_file,
+                                         use_test=use_test)
         self.Base.prepare(self.engine, reflect=True)
         self.DBSession.configure(bind=self.engine)
 

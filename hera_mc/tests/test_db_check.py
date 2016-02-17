@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import ForeignKey
 
 from hera_mc.db_check import is_sane_database
-from hera_mc.mc import test_db
+from hera_mc.mc import get_configs, default_config_file
 
 
 def setup_module(self):
@@ -70,10 +70,13 @@ def gen_declarative():
     return Base, DeclarativeTestModel
 
 
-def test_sanity_pass(db_name=test_db):
+def test_sanity_pass(db_name=None, config_file=default_config_file):
     """
     See database sanity check completes when tables and columns are created.
     """
+    if db_name is None:
+        test_db, mc_db = get_configs(config_file=config_file)
+        db_name = test_db
 
     engine = create_engine(db_name)
     conn = engine.connect()
@@ -95,8 +98,11 @@ def test_sanity_pass(db_name=test_db):
         Base.metadata.drop_all(engine)
 
 
-def test_sanity_table_missing(db_name=test_db):
+def test_sanity_table_missing(db_name=None, config_file=default_config_file):
     """See check fails when there is a missing table"""
+    if db_name is None:
+        test_db, mc_db = get_configs(config_file=config_file)
+        db_name = test_db
 
     engine = create_engine(db_name)
     conn = engine.connect()
@@ -114,8 +120,11 @@ def test_sanity_table_missing(db_name=test_db):
     assert is_sane_database(Base, session) is False
 
 
-def test_sanity_column_missing(db_name=test_db):
+def test_sanity_column_missing(db_name=None, config_file=default_config_file):
     """See check fails when there is a missing table"""
+    if db_name is None:
+        test_db, mc_db = get_configs(config_file=config_file)
+        db_name = test_db
 
     engine = create_engine(db_name)
     conn = engine.connect()
@@ -136,11 +145,14 @@ def test_sanity_column_missing(db_name=test_db):
     assert is_sane_database(Base, session) is False
 
 
-def test_sanity_pass_relationship(db_name=test_db):
+def test_sanity_pass_relationship(db_name=None, config_file=default_config_file):
     """
     See database sanity check understands about relationships and don't
     deem them as missing column.
     """
+    if db_name is None:
+        test_db, mc_db = get_configs(config_file=config_file)
+        db_name = test_db
 
     engine = create_engine(db_name)
     conn = engine.connect()
@@ -165,11 +177,14 @@ def test_sanity_pass_relationship(db_name=test_db):
         Base.metadata.drop_all(engine)
 
 
-def test_sanity_pass_declarative(db_name=test_db):
+def test_sanity_pass_declarative(db_name=None, config_file=default_config_file):
     """
     See database sanity check understands about relationships and don't deem
     them as missing column.
     """
+    if db_name is None:
+        test_db, mc_db = get_configs(config_file=config_file)
+        db_name = test_db
 
     engine = create_engine(db_name)
     conn = engine.connect()
