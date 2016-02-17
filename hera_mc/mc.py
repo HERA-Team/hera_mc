@@ -50,10 +50,12 @@ class DB(object):
     def __init__(self, db_name=None):
         self.engine = create_engine(db_name)
 
-    def add_obs(self, starttime=None, stoptime=None, session=None):
+    def add_obs(self, obsid=None, starttime=None, stoptime=None, session=None):
         t_start = starttime.utc
         t_stop = stoptime.utc
-        obsid = math.floor(t_start.gps)
+
+        if obsid is None:
+            obsid = math.floor(t_start.gps)
 
         hera = ephem.Observer()
         hera.lon = HERA_LON
