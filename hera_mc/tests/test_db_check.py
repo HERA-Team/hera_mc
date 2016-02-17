@@ -145,7 +145,8 @@ def test_sanity_column_missing(db_name=None, config_file=default_config_file):
     assert is_sane_database(Base, session) is False
 
 
-def test_sanity_pass_relationship(db_name=None, config_file=default_config_file):
+def test_sanity_pass_relationship(db_name=None,
+                                  config_file=default_config_file):
     """
     See database sanity check understands about relationships and don't
     deem them as missing column.
@@ -177,7 +178,8 @@ def test_sanity_pass_relationship(db_name=None, config_file=default_config_file)
         Base.metadata.drop_all(engine)
 
 
-def test_sanity_pass_declarative(db_name=None, config_file=default_config_file):
+def test_sanity_pass_declarative(db_name=None,
+                                 config_file=default_config_file):
     """
     See database sanity check understands about relationships and don't deem
     them as missing column.
