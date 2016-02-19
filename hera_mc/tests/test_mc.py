@@ -46,8 +46,8 @@ class test_hera_mc(unittest.TestCase):
         hera.date = t1.datetime
         lst_start = float(repr(hera.sidereal_time()))/(15*ephem.degree)
 
-        expected = [mc.HeraObs(obsid=obsid, starttime=t1.jd,
-                               stoptime=t2.jd, lststart=lst_start)]
+        expected = [mc.HeraObs(obsid=obsid, start_time_jd=t1.jd,
+                               stop_time_jd=t2.jd, lst_start_hr=lst_start)]
 
         # first test against test_db
         self.test_db.add_obs(t1, t2, session=self.test_session)

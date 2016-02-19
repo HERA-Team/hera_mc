@@ -20,6 +20,35 @@ HERA_LON = '21.411'
 default_config_file = os.path.expanduser('~/.hera_mc/mc_config.json')
 
 
+class HeraObs(DEC_BASE):
+    """
+    Definition of hera_obs table.
+
+    obsid: observation identification number, generally equal to the
+        start time in gps seconds (long integer)
+    starttime: observation start time in jd (float)
+    stoptime: observation stop time in jd (float)
+    lststart: observation start time in lst (float)
+    """
+    __tablename__ = 'hera_obs'
+    obsid = Column(BigInteger, primary_key=True)
+    start_time_jd = Column(DOUBLE_PRECISION, nullable=False)
+    stop_time_jd = Column(DOUBLE_PRECISION, nullable=False)
+    lst_start_hr = Column(DOUBLE_PRECISION, nullable=False)
+
+    def __repr__(self):
+        return ("<HeraObs('{self.obsid}', '{self.start_time_jd}', "
+                "'{self.stop_time_jd}', '{self.lst_start_hr}')>".format(
+                    self=self))
+
+    def __eq__(self, other):
+        return isinstance(other, HeraObs) and (
+            other.obsid == self.obsid and
+            np.allclose(other.start_time_jd, self.start_time_jd) and
+            np.allclose(other.stop_time_jd, self.stop_time_jd) and
+            np.allclose(other.lst_start_hr, self.lst_start_hr))
+
+
 def get_configs(config_file=default_config_file):
     """
     Little function to read a JSON config file.
@@ -41,35 +70,6 @@ def get_configs(config_file=default_config_file):
     config_dict = json.loads(handle.read())
 
     return config_dict['test_db'], config_dict['mc_db']
-
-
-class HeraObs(DEC_BASE):
-    """
-    Definition of hera_obs table.
-
-    obsid: observation identification number, generally equal to the
-        start time in gps seconds (long integer)
-    starttime: observation start time in jd (float)
-    stoptime: observation stop time in jd (float)
-    lststart: observation start time in lst (float)
-    """
-    __tablename__ = 'hera_obs'
-    obsid = Column(BigInteger, primary_key=True)
-    starttime = Column(DOUBLE_PRECISION, nullable=False)
-    stoptime = Column(DOUBLE_PRECISION, nullable=False)
-    lststart = Column(DOUBLE_PRECISION, nullable=False)
-
-    def __repr__(self):
-        return ("<HeraObs('{self.obsid}', '{self.starttime}', "
-                "'{self.stoptime}', '{self.lststart}')>".format(
-                    self=self))
-
-    def __eq__(self, other):
-        return isinstance(other, HeraObs) and (
-            other.obsid == self.obsid and
-            np.allclose(other.starttime, self.starttime) and
-            np.allclose(other.stoptime, self.stoptime) and
-            np.allclose(other.lststart, self.lststart))
 
 
 @add_metaclass(ABCMeta)
@@ -124,8 +124,8 @@ class DB(object):
         hera.date = t_start.datetime
         lst_start = float(repr(hera.sidereal_time()))/(15*ephem.degree)
 
-        new_obs = HeraObs(obsid=obsid, starttime=t_start.jd,
-                          stoptime=t_stop.jd, lststart=lst_start)
+        new_obs = HeraObs(obsid=obsid, start_time_jd=t_start.jd,
+                          stop_time_jd=t_stop.jd, lst_start_hr=lst_start)
 
         if session is None:
             session = self.DBSession()
