@@ -1,2 +1,2 @@
-# Monitor_and_Control
+# hera_mc
 Monitor and Control code for HERA
