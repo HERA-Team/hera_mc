@@ -4,7 +4,10 @@ import hera_mc.mc as mc
 import math
 import numpy as np
 from astropy.time import Time, TimeDelta
-import ephem
+from astropy.coordinates import EarthLocation
+from astropy.utils import iers
+
+iers_a = iers.IERS_A.open('../data/finals.all')
 
 
 class test_hera_mc(unittest.TestCase):
@@ -40,15 +43,15 @@ class test_hera_mc(unittest.TestCase):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
 
+        t1.delta_ut1_utc = iers_a.ut1_utc(t1)
+        t2.delta_ut1_utc = iers_a.ut1_utc(t2)
+
         obsid = math.floor(t1.gps)
-        hera = ephem.Observer()
-        hera.lon = mc.HERA_LON
-        hera.lat = mc.HERA_LAT
-        hera.date = t1.datetime
-        lst_start = float(repr(hera.sidereal_time()))/(15*ephem.degree)
+        t1.location = EarthLocation.from_geodetic(mc.HERA_LON, mc.HERA_LAT)
 
         expected = [mc.HeraObs(obsid=obsid, start_time_jd=t1.jd,
-                               stop_time_jd=t2.jd, lst_start_hr=lst_start)]
+                               stop_time_jd=t2.jd,
+                               lst_start_hr=t1.sidereal_time('apparent').hour)]
 
         # first test against test_db
         self.test_db.add_obs(t1, t2, session=self.test_session)

@@ -10,14 +10,16 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
 import numpy as np
 from astropy.time import Time
+from astropy.coordinates import EarthLocation
 import math
-import ephem
 import json
 from hera_mc.db_check import DEC_BASE, is_sane_database
+from astropy.utils import iers
 
 HERA_LAT = '-30.721'
 HERA_LON = '21.411'
 default_config_file = os.path.expanduser('~/.hera_mc/mc_config.json')
+iers_a = iers.IERS_A.open('../data/finals.all')
 
 
 class HeraObs(DEC_BASE):
@@ -179,7 +181,7 @@ class DB(object):
         ------------
         starttime: astropy time object
             observation starttime
-        starttime: astropy time object
+        stoptime: astropy time object
             observation stoptime
         obsid: long integer
             observation identification number. If not provided, will be set
@@ -190,17 +192,17 @@ class DB(object):
         t_start = starttime.utc
         t_stop = stoptime.utc
 
+        t_start.delta_ut1_utc = iers_a.ut1_utc(t_start)
+        t_stop.delta_ut1_utc = iers_a.ut1_utc(t_stop)
+
         if obsid is None:
             obsid = math.floor(t_start.gps)
 
-        hera = ephem.Observer()
-        hera.lon = HERA_LON
-        hera.lat = HERA_LAT
-        hera.date = t_start.datetime
-        lst_start = float(repr(hera.sidereal_time()))/(15*ephem.degree)
+        t_start.location = EarthLocation.from_geodetic(HERA_LON, HERA_LAT)
 
         new_obs = HeraObs(obsid=obsid, start_time_jd=t_start.jd,
-                          stop_time_jd=t_stop.jd, lst_start_hr=lst_start)
+                          stop_time_jd=t_stop.jd,
+                          lst_start_hr=t_start.sidereal_time('apparent').hour)
 
         if session is None:
             session = self.DBSession()
