@@ -1,16 +1,23 @@
 from distutils.core import setup
-import glob
 
-__version__ = '0.0.1'
+setup_args = dict(name=NAME,
+                  maintainer=MAINTAINER,
+                  maintainer_email=MAINTAINER_EMAIL,
+                  description=DESCRIPTION,
+                  long_description=LONG_DESCRIPTION,
+                  url=URL,
+                  download_url=DOWNLOAD_URL,
+                  license=LICENSE,
+                  classifiers=CLASSIFIERS,
+                  author=AUTHOR,
+                  author_email=AUTHOR_EMAIL,
+                  platforms=PLATFORMS,
+                  version=VERSION,
+                  packages=PACKAGES,
+                  package_data=PACKAGE_DATA,
+                  scripts=SCRIPTS
+                  requires=REQUIRES)
 
-setup_args = {
-    'name': 'hera_mc',
-    'author': 'HERA Team',
-    'license': 'BSD',
-    'packages': ['hera_mc'],
-    'scripts': glob.glob('scripts/*'),
-    'version': __version__
-}
 
-if __name__== '__main__':
+if __name__ == '__main__':
     apply(setup, (), setup_args)

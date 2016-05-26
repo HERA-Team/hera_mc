@@ -15,11 +15,14 @@ import math
 import json
 from hera_mc.db_check import DEC_BASE, is_sane_database
 from astropy.utils import iers
+import hera_mc
+
+data_path = op.join(hera_mc.__path__[0], 'data')
 
 HERA_LAT = '-30.721'
 HERA_LON = '21.411'
 default_config_file = os.path.expanduser('~/.hera_mc/mc_config.json')
-iers_a = iers.IERS_A.open('../data/finals.all')
+iers_a = iers.IERS_A.open(op.join(data_path, 'finals.all'))
 
 
 class HeraObs(DEC_BASE):

@@ -1,5 +1,6 @@
 """Version definition for hera_mc."""
 from os.path import join as pjoin
+import glob
 
 # Format expected by setup.py and doc/source/conf.py: string of form "X.Y.Z"
 _version_major = 0
@@ -60,5 +61,6 @@ MICRO = _version_micro
 VERSION = __version__
 PACKAGES = ['hera_mc',
             'hera_mc.tests']
+SCRIPTS = glob.glob('scripts/*')
 PACKAGE_DATA = {'hera_mc': [pjoin('data', '*')]}
 REQUIRES = ["astropy", "sqlalchemy"]

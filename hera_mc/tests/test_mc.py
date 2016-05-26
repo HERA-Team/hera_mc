@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 import unittest
+import hera_mc
 import hera_mc.mc as mc
 import math
 import numpy as np
@@ -7,7 +8,8 @@ from astropy.time import Time, TimeDelta
 from astropy.coordinates import EarthLocation
 from astropy.utils import iers
 
-iers_a = iers.IERS_A.open('../data/finals.all')
+data_path = op.join(hera_mc.__path__[0], 'data')
+iers_a = iers.IERS_A.open(op.join(data_path, 'finals.all'))
 
 
 class test_hera_mc(unittest.TestCase):
