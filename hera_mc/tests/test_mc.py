@@ -1,3 +1,4 @@
+import os.path as op
 from sqlalchemy.orm import Session
 import unittest
 import hera_mc
@@ -6,10 +7,8 @@ import math
 import numpy as np
 from astropy.time import Time, TimeDelta
 from astropy.coordinates import EarthLocation
-from astropy.utils import iers
 
 data_path = op.join(hera_mc.__path__[0], 'data')
-iers_a = iers.IERS_A.open(op.join(data_path, 'finals.all'))
 
 
 class test_hera_mc(unittest.TestCase):
@@ -45,8 +44,8 @@ class test_hera_mc(unittest.TestCase):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
 
-        t1.delta_ut1_utc = iers_a.ut1_utc(t1)
-        t2.delta_ut1_utc = iers_a.ut1_utc(t2)
+        t1.delta_ut1_utc = mc.iers_a.ut1_utc(t1)
+        t2.delta_ut1_utc = mc.iers_a.ut1_utc(t2)
 
         obsid = math.floor(t1.gps)
         t1.location = EarthLocation.from_geodetic(mc.HERA_LON, mc.HERA_LAT)
