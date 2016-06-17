@@ -1,4 +1,12 @@
-from distutils.core import setup
+import os
+from setuptools import setup, find_packages
+PACKAGES = find_packages()
+
+# Get version and release info, which is all stored in shablona/version.py
+ver_file = os.path.join('hera_mc', 'version.py')
+with open(ver_file) as f:
+    exec(f.read())
+
 
 setup_args = dict(name=NAME,
                   maintainer=MAINTAINER,
