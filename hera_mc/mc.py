@@ -14,7 +14,7 @@ from astropy.coordinates import EarthLocation
 import math
 import json
 from hera_mc.db_check import DEC_BASE, is_sane_database
-from astropy.utils import iers
+# from astropy.utils import iers
 import hera_mc
 
 data_path = op.join(hera_mc.__path__[0], 'data')
@@ -22,7 +22,7 @@ data_path = op.join(hera_mc.__path__[0], 'data')
 HERA_LAT = '-30.721'
 HERA_LON = '21.411'
 default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
-iers_a = iers.IERS_A.open(op.join(data_path, 'finals.all'))
+# iers_a = iers.IERS_A.open(op.join(data_path, 'finals.all'))
 
 
 class HeraObs(DEC_BASE):
@@ -195,8 +195,8 @@ class DB(object):
         t_start = starttime.utc
         t_stop = stoptime.utc
 
-        t_start.delta_ut1_utc = iers_a.ut1_utc(t_start)
-        t_stop.delta_ut1_utc = iers_a.ut1_utc(t_stop)
+        # t_start.delta_ut1_utc = iers_a.ut1_utc(t_start)
+        # t_stop.delta_ut1_utc = iers_a.ut1_utc(t_stop)
 
         if obsid is None:
             obsid = math.floor(t_start.gps)

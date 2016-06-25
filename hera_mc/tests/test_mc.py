@@ -44,8 +44,8 @@ class test_hera_mc(unittest.TestCase):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
 
-        t1.delta_ut1_utc = mc.iers_a.ut1_utc(t1)
-        t2.delta_ut1_utc = mc.iers_a.ut1_utc(t2)
+        # t1.delta_ut1_utc = mc.iers_a.ut1_utc(t1)
+        # t2.delta_ut1_utc = mc.iers_a.ut1_utc(t2)
 
         obsid = math.floor(t1.gps)
         t1.location = EarthLocation.from_geodetic(mc.HERA_LON, mc.HERA_LAT)
