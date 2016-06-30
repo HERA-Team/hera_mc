@@ -24,7 +24,10 @@ if args.use_test is True:
     db_name = test_db
 else:
     db_name = mc_db
+
+print('creating engine')
 this_engine = create_engine(db_name)
+print('reflecting engine into inspector')
 insp = reflection.Inspector.from_engine(this_engine)
 
 print(db_name)
