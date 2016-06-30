@@ -8,8 +8,6 @@ import numpy as np
 from astropy.time import Time, TimeDelta
 from astropy.coordinates import EarthLocation
 
-data_path = op.join(hera_mc.__path__[0], 'data')
-
 
 class test_hera_mc(unittest.TestCase):
     def setUp(self):
