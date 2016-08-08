@@ -10,17 +10,18 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
 import numpy as np
 from astropy.time import Time
-from astropy.coordinates import EarthLocation
+from astropy.coordinates import EarthLocation, Angle
 import math
 import json
 from hera_mc.db_check import DEC_BASE, is_sane_database
 # from astropy.utils import iers
 import hera_mc
 
-data_path = op.join(hera_mc.__path__[0], 'data')
+# data_path = op.join(hera_mc.__path__[0], 'data')
 
-HERA_LAT = '-30.721'
-HERA_LON = '21.411'
+"value taken from capo/cals/hsa7458_v000.py, comment reads KAT/SA  (GPS)"
+HERA_LAT = Angle('-30d43m17.5s').degree
+HERA_LON = Angle('21d25m41.9s').degree
 default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
 # iers_a = iers.IERS_A.open(op.join(data_path, 'finals.all'))
 
