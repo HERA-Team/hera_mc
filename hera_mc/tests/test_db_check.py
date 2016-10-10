@@ -12,7 +12,7 @@ from hera_mc.mc import get_configs, default_config_file
 def setup_module(self):
     # Quiet log output for the tests
     import logging
-    from hera_mc.db_check import logger
+    from hera_mc import logger
     # logger.setLevel(logging.FATAL)
 
 

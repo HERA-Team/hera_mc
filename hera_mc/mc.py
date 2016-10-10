@@ -13,11 +13,12 @@ from astropy.time import Time
 from astropy.coordinates import EarthLocation
 import math
 import json
-from hera_mc.db_check import DEC_BASE, is_sane_database
 # from astropy.utils import iers
 import hera_mc
 
-data_path = op.join(hera_mc.__path__[0], 'data')
+from . import MCDeclarativeBase
+
+data_path = op.join(op.dirname (hera_mc.__file__), 'data')
 
 HERA_LAT = '-30.721'
 HERA_LON = '21.411'
@@ -25,7 +26,7 @@ default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
 # iers_a = iers.IERS_A.open(op.join(data_path, 'finals.all'))
 
 
-class HeraObs(DEC_BASE):
+class HeraObs(MCDeclarativeBase):
     """
     Definition of hera_obs table.
 
@@ -54,7 +55,7 @@ class HeraObs(DEC_BASE):
             np.allclose(other.lst_start_hr, self.lst_start_hr))
 
 
-class PaperTemperatures(DEC_BASE):
+class PaperTemperatures(MCDeclarativeBase):
     """
     Definition of paper_temperatures table.
 
@@ -365,7 +366,7 @@ class DB_declarative(DB):
     Declarative M&C database object -- to create M&C database tables
     """
     def __init__(self, config_file=default_config_file, use_test=True):
-        self.Base = DEC_BASE
+        self.Base = MCDeclarativeBase
         super(DB_declarative, self).__init__(config_file=config_file,
                                              use_test=use_test)
         self.DBSession.configure(bind=self.engine)
@@ -397,4 +398,5 @@ class DB_automap(DB):
         # initialization should fail if the automapped database does not
         # match the delarative base
         session = self.DBSession()
-        assert is_sane_database(DEC_BASE, session)
+        from .db_check import is_sane_database
+        assert is_sane_database(MCDeclarativeBase, session)
