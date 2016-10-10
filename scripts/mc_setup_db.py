@@ -1,24 +1,18 @@
 #! /usr/bin/env python
+# -*- mode: python; coding: utf-8 -*-
+# Copyright 2016 the HERA Collaboration
+# Licensed under the 2-clause BSD license.
 
-import argparse
+from __future__ import absolute_import, division, print_function
+
 import hera_mc.mc as mc
-import os
 
-default_config_file = os.path.expanduser('~/.hera_mc/mc_config.json')
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--config_file', type=str, default=None,
-                    help='full path to hera mc_config.json file specifiying '
-                         'test_db and mc_db.')
-parser.add_argument('--use_test', dest='use_test', action='store_false',
-                    help='use test_db rather than mc_db')
-parser.set_defaults(use_test=False)
+parser = mc.get_mc_argument_parser()
 args = parser.parse_args()
+db = mc.connect_to_mc_db(args)
 
-if args.config_file is None:
-    test_db, mc_db = mc.get_configs(config_file=default_config_file)
-else:
-    test_db, mc_db = mc.get_configs(config_file=args.config_file)
+if not hasattr(db, 'create_tables'):
+    raise SystemExit ('error: you can only set up a database that\'s '
+                      'configured to be in "testing" mode')
 
-db_use = mc.DB_declarative(use_test=args.use_test)
-db_use.create_tables()
+db.create_tables()
