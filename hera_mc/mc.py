@@ -160,29 +160,6 @@ class PaperTemperatures(MCDeclarativeBase):
             return False
 
 
-def get_configs(config_file=default_config_file):
-    """
-    Little function to read a JSON config file.
-
-    Config files should be located at: ~/.hera_mc/mc_config.json
-    They should contain three elements:
-        location: string giving location (e.g "karoo")
-        test_db: url for an empty testing database
-        mc_db: url for the M&C database containing the M&C tables
-
-    Example:
-    {
-    "location":"myloc",
-    "mc_db":"postgresql://username:password@localhost:5432/hera_mc",
-    "test_db":"postgresql://username:password@localhost:5432/test"
-    }
-    """
-    handle = open(config_file)
-    config_dict = json.loads(handle.read())
-
-    return config_dict['test_db'], config_dict['mc_db']
-
-
 @add_metaclass(ABCMeta)
 class DB(object):
     """Abstract base class for M&C database object.
