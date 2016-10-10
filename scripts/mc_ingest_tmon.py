@@ -94,7 +94,8 @@ while True:
             except(KeyboardInterrupt):
                 d.close()
         f.write("\t".join(["%7.5f" % t for t in Ts]) + "\n")
-        db.add_paper_temps(Ts[0], Ts[1:])
+        with db.sessionmaker() as session:
+            session.add_paper_temps(Ts[0], Ts[1:])
         f.flush()
     f.close()
 d.close()

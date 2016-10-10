@@ -1,5 +1,4 @@
 import os.path as op
-from sqlalchemy.orm import Session
 import unittest
 import hera_mc
 import hera_mc.mc as mc
@@ -15,7 +14,7 @@ class test_hera_mc(unittest.TestCase):
         self.test_db.create_tables()
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
-        self.test_session = Session(bind=self.test_conn)
+        self.test_session = mc.MCSession(bind=self.test_conn)
 
     def tearDown(self):
         # rollback - everything that happened with the Session above
@@ -41,9 +40,8 @@ class test_hera_mc(unittest.TestCase):
                                stop_time_jd=t2.jd,
                                lst_start_hr=t1.sidereal_time('apparent').hour)]
 
-        # first test against test_db
-        self.test_db.add_obs(t1, t2, session=self.test_session)
-        result = self.test_db.get_obs(session=self.test_session)
+        self.test_session.add_obs(t1, t2)
+        result = self.test_session.get_obs()
         self.assertEqual(result, expected)
 
     def test_add_paper_temps(self):
@@ -67,27 +65,22 @@ class test_hera_mc(unittest.TestCase):
         temp_dict = dict(zip(temp_colnames, temp_values))
         temp2_dict = dict(zip(temp_colnames, temp2_values))
 
-        # first test against test_db
-        self.test_db.add_paper_temps(t1, temp_list, session=self.test_session)
-        self.test_db.add_paper_temps(t2, temp2_list, session=self.test_session)
+        self.test_session.add_paper_temps(t1, temp_list)
+        self.test_session.add_paper_temps(t2, temp2_list)
 
         expected = [mc.PaperTemperatures(gps_time=t1.gps, jd_time=t1.jd, **temp_dict)]
-        result = self.test_db.get_paper_temps(t1 - TimeDelta(3.0, format='sec'),
-                                              session=self.test_session)
+        result = self.test_session.get_paper_temps(t1 - TimeDelta(3.0, format='sec'))
         self.assertEqual(result, expected)
 
-        result = self.test_db.get_paper_temps(t1 + TimeDelta(200.0, format='sec'),
-                                              session=self.test_session)
+        result = self.test_session.get_paper_temps(t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
         expected2 = [mc.PaperTemperatures(gps_time=t1.gps, jd_time=t1.jd,
                                           **temp_dict),
                      mc.PaperTemperatures(gps_time=t2.gps, jd_time=t2.jd,
                                           **temp2_dict)]
-        result = self.test_db.get_paper_temps(t1 - TimeDelta(3.0, format='sec'),
-                                              stoptime=t2 + TimeDelta(1.0, format='sec'),
-                                              session=self.test_session)
-
+        result = self.test_session.get_paper_temps(t1 - TimeDelta(3.0, format='sec'),
+                                                   stoptime=t2 + TimeDelta(1.0, format='sec'))
         self.assertEqual(result, expected2)
 
 

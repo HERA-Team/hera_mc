@@ -160,24 +160,20 @@ class PaperTemperatures(MCDeclarativeBase):
             return False
 
 
-@add_metaclass(ABCMeta)
-class DB(object):
-    """Abstract base class for M&C database object.
+class MCSession(Session):
+    def __enter__(self):
+        return self
 
-    This ABC is only instantiated through the AutomappedDB or DeclarativeDB
-    subclasses.
+    def __exit__(self, etype, evalue, etb):
+        if etype is not None:
+            self.rollback() # exception raised
+        else:
+            self.commit() # success
+        self.close()
+        return False # propagate exception if any occurred
 
-    """
-    engine = None
-    sqlalchemy_session = sessionmaker()
-    sqlalchemy_base = None
 
-    def __init__(self, sqlalchemy_base, db_url):
-        self.sqlalchemy_base = MCDeclarativeBase
-        self.engine = create_engine(db_url)
-        self.sqlalchemy_session.configure(bind=self.engine)
-
-    def add_obs(self, starttime, stoptime, obsid=None, session=None):
+    def add_obs(self, starttime, stoptime, obsid=None):
         """
         Add an observation to the M&C database.
 
@@ -190,8 +186,6 @@ class DB(object):
         obsid: long integer
             observation identification number. If not provided, will be set
             to the gps second corresponding to the starttime using floor.
-        session: sqlalchemy session object
-            if not set, a session will be generated based on self.sqlalchemy_session
         """
         t_start = starttime.utc
         t_stop = stoptime.utc
@@ -208,14 +202,9 @@ class DB(object):
                           stop_time_jd=t_stop.jd,
                           lst_start_hr=t_start.sidereal_time('apparent').hour)
 
-        if session is None:
-            session = self.sqlalchemy_session()
+        self.add(new_obs)
 
-        session.add(new_obs)
-        session.commit()
-        session.close()
-
-    def get_obs(self, obsid=None, session=None):
+    def get_obs(self, obsid=None):
         """
         Get observation(s) from the M&C database.
 
@@ -225,26 +214,19 @@ class DB(object):
             observation identification number, generally the gps second
             corresponding to the observation start time.
             if not set, all obsids will be returned.
-        session: sqlalchemy session object
-            if not set, a session will be generated based on self.sqlalchemy_session
 
         Returns:
         --------
         list of HeraObs objects
         """
-        if session is None:
-            session = self.sqlalchemy_session()
-
         if obsid is None:
-            obs_list = session.query(HeraObs).all()
+            obs_list = self.query(HeraObs).all()
         else:
-            obs_list = session.query(HeraObs).filter_by(
-                obsid=obsid).all()
-        session.close()
+            obs_list = self.query(HeraObs).filter_by(obsid=obsid).all()
 
         return obs_list
 
-    def add_paper_temps(self, read_time, temp_list, session=None):
+    def add_paper_temps(self, read_time, temp_list):
         """
         Add a set of temperature records to the paper_temperatures table.
 
@@ -311,14 +293,9 @@ class DB(object):
         new_ptemp = PaperTemperatures(gps_time=t_read.gps, jd_time=t_read.jd,
                                       **temp_dict)
 
-        if session is None:
-            session = self.sqlalchemy_session()
+        self.add(new_ptemp)
 
-        session.add(new_ptemp)
-        session.commit()
-        session.close()
-
-    def get_paper_temps(self, starttime, stoptime=None, session=None):
+    def get_paper_temps(self, starttime, stoptime=None):
         """
         get sets of temperature records.
 
@@ -346,19 +323,33 @@ class DB(object):
             elif isinstance(starttime, float):
                 t_stop = Time(stoptime, format='jd', scale='utc')
 
-        if session is None:
-            session = self.sqlalchemy_session()
-
         if stoptime is not None:
-            ptemp_list = session.query(PaperTemperatures).filter(
+            ptemp_list = self.query(PaperTemperatures).filter(
                 PaperTemperatures.gps_time.between(t_start.gps, t_stop.gps)).all()
         else:
-            ptemp_list = session.query(PaperTemperatures).filter(
+            ptemp_list = self.query(PaperTemperatures).filter(
                 PaperTemperatures.gps_time >= t_start.gps).order_by(
                     PaperTemperatures.gps_time).limit(1).all()
-        session.close()
 
         return ptemp_list
+
+
+@add_metaclass(ABCMeta)
+class DB(object):
+    """Abstract base class for M&C database object.
+
+    This ABC is only instantiated through the AutomappedDB or DeclarativeDB
+    subclasses.
+
+    """
+    engine = None
+    sessionmaker = sessionmaker(class_=MCSession)
+    sqlalchemy_base = None
+
+    def __init__(self, sqlalchemy_base, db_url):
+        self.sqlalchemy_base = MCDeclarativeBase
+        self.engine = create_engine(db_url)
+        self.sessionmaker.configure(bind=self.engine)
 
 
 class DeclarativeDB(DB):
@@ -391,9 +382,9 @@ class AutomappedDB(DB):
 
         from .db_check import is_sane_database
 
-        session = self.sqlalchemy_session()
-        if not is_sane_database(MCDeclarativeBase, session):
-            raise RuntimeError('database {0} does not match expected schema'.format (db_url))
+        with self.sessionmaker() as session:
+            if not is_sane_database(MCDeclarativeBase, session):
+                raise RuntimeError('database {0} does not match expected schema'.format (db_url))
 
 
 def get_mc_argument_parser():
