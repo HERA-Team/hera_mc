@@ -1,15 +1,10 @@
-import logging
-
 from sqlalchemy import inspect
 from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
 from sqlalchemy.orm import RelationshipProperty
-from sqlalchemy.ext.declarative import declarative_base
 
-DEC_BASE = declarative_base()
-logger = logging.getLogger(__name__)
+from . import logger
 
-
-def is_sane_database(Base, session):
+def is_sane_database(base, session):
     """
     Check whether the current database matches the models declared in model
     base.
@@ -19,21 +14,21 @@ def is_sane_database(Base, session):
     What is not checked:
 
     * Column types are not verified
-
-    * Relationships are not verified at all (TODO)
+    * Relationships are not verified (TODO)
 
     Parameters
     ----------
-    DEC_BASE: Declarative Base for SQLAlchemy models to check
-
+    base: instance of SQLAlchemy Declarative Base to check
     session: SQLAlchemy session bound to an engine
 
     Returns
     ----------
     True if all declared models have corresponding tables and columns.
+
     """
-    if Base is None:
-        Base = DEC_BASE
+    if base is None:
+        from . import MCDeclarativeBase
+        base = MCDeclarativeBase
 
     engine = session.get_bind()
     iengine = inspect(engine)
@@ -43,7 +38,7 @@ def is_sane_database(Base, session):
     tables = iengine.get_table_names()
 
     # Go through all SQLAlchemy models
-    for name, klass in Base._decl_class_registry.items():
+    for name, klass in base._decl_class_registry.items():
 
         if isinstance(klass, _ModuleMarker):
             # Not a model

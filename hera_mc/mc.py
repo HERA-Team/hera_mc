@@ -1,3 +1,34 @@
+# -*- mode: python; coding: utf-8 -*-
+# Copyright 2016 the HERA Collaboration
+# Licensed under the 2-clause BSD license.
+
+"""Connecting to and managing the M&C database.
+
+The database connection is specified in a configuration file. The default
+location for this file is `~/.hera_mc/mc_config.json`. The structure of that
+file should be of this form:
+
+{
+  "default_db_name": "sampledb",
+  "databases": {
+    "sampledb": {
+      "url": "postgresql://user:pass@host:/db_name",
+      "mode": "production"
+    },
+    "testing": {
+      "url": "postgresql://user:pass@host:/test_db_name",
+      "mode": "testing"
+    }
+  }
+}
+
+The test rig will always connect to a database named "testing", which must
+have a "mode" of "testing" as well.
+
+"""
+
+from __future__ import absolute_import, division, print_function
+
 import os.path as op
 import sys
 from abc import ABCMeta
@@ -12,21 +43,21 @@ import numpy as np
 from astropy.time import Time
 from astropy.coordinates import EarthLocation, Angle
 import math
-import json
-from hera_mc.db_check import DEC_BASE, is_sane_database
 # from astropy.utils import iers
 import hera_mc
 
-# data_path = op.join(hera_mc.__path__[0], 'data')
+from . import MCDeclarativeBase
 
-"value taken from capo/cals/hsa7458_v000.py, comment reads KAT/SA  (GPS)"
+data_path = op.join(op.dirname (hera_mc.__file__), 'data')
+
 HERA_LAT = Angle('-30d43m17.5s').degree
 HERA_LON = Angle('21d25m41.9s').degree
+"value taken from capo/cals/hsa7458_v000.py, comment reads KAT/SA  (GPS)"
 default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
 # iers_a = iers.IERS_A.open(op.join(data_path, 'finals.all'))
 
 
-class HeraObs(DEC_BASE):
+class HeraObs(MCDeclarativeBase):
     """
     Definition of hera_obs table.
 
@@ -55,7 +86,7 @@ class HeraObs(DEC_BASE):
             np.allclose(other.lst_start_hr, self.lst_start_hr))
 
 
-class PaperTemperatures(DEC_BASE):
+class PaperTemperatures(MCDeclarativeBase):
     """
     Definition of paper_temperatures table.
 
@@ -130,54 +161,20 @@ class PaperTemperatures(DEC_BASE):
             return False
 
 
-def get_configs(config_file=default_config_file):
-    """
-    Little function to read a JSON config file.
+class MCSession(Session):
+    def __enter__(self):
+        return self
 
-    Config files should be located at: ~/.hera_mc/mc_config.json
-    They should contain three elements:
-        location: string giving location (e.g "karoo")
-        test_db: url for an empty testing database
-        mc_db: url for the M&C database containing the M&C tables
-
-    Example:
-    {
-    "location":"myloc",
-    "mc_db":"postgresql://username:password@localhost:5432/hera_mc",
-    "test_db":"postgresql://username:password@localhost:5432/test"
-    }
-    """
-    handle = open(config_file)
-    config_dict = json.loads(handle.read())
-
-    return config_dict['test_db'], config_dict['mc_db']
-
-
-@add_metaclass(ABCMeta)
-class DB(object):
-    """
-    Abstract Base Class for M&C database object
-
-    Should be instantiated using either:
-        DB_automap: if attaching to an existing database
-        DB_declarative: if setting up a database from scratch
-    """
-    test_db = None
-    mc_db = None
-
-    engine = None
-    DBSession = sessionmaker()
-    Base = None
-
-    def __init__(self, config_file=default_config_file, use_test=True):
-        test_db, mc_db = get_configs(config_file=config_file)
-        if use_test is True:
-            db_name = test_db
+    def __exit__(self, etype, evalue, etb):
+        if etype is not None:
+            self.rollback() # exception raised
         else:
-            db_name = mc_db
-        self.engine = create_engine(db_name)
+            self.commit() # success
+        self.close()
+        return False # propagate exception if any occurred
 
-    def add_obs(self, starttime, stoptime, obsid=None, session=None):
+
+    def add_obs(self, starttime, stoptime, obsid=None):
         """
         Add an observation to the M&C database.
 
@@ -190,8 +187,6 @@ class DB(object):
         obsid: long integer
             observation identification number. If not provided, will be set
             to the gps second corresponding to the starttime using floor.
-        session: sqlalchemy session object
-            if not set, a session will be generated based on self.DBSession
         """
         t_start = starttime.utc
         t_stop = stoptime.utc
@@ -208,14 +203,9 @@ class DB(object):
                           stop_time_jd=t_stop.jd,
                           lst_start_hr=t_start.sidereal_time('apparent').hour)
 
-        if session is None:
-            session = self.DBSession()
+        self.add(new_obs)
 
-        session.add(new_obs)
-        session.commit()
-        session.close()
-
-    def get_obs(self, obsid=None, session=None):
+    def get_obs(self, obsid=None):
         """
         Get observation(s) from the M&C database.
 
@@ -225,26 +215,19 @@ class DB(object):
             observation identification number, generally the gps second
             corresponding to the observation start time.
             if not set, all obsids will be returned.
-        session: sqlalchemy session object
-            if not set, a session will be generated based on self.DBSession
 
         Returns:
         --------
         list of HeraObs objects
         """
-        if session is None:
-            session = self.DBSession()
-
         if obsid is None:
-            obs_list = session.query(HeraObs).all()
+            obs_list = self.query(HeraObs).all()
         else:
-            obs_list = session.query(HeraObs).filter_by(
-                obsid=obsid).all()
-        session.close()
+            obs_list = self.query(HeraObs).filter_by(obsid=obsid).all()
 
         return obs_list
 
-    def add_paper_temps(self, read_time, temp_list, session=None):
+    def add_paper_temps(self, read_time, temp_list):
         """
         Add a set of temperature records to the paper_temperatures table.
 
@@ -311,14 +294,9 @@ class DB(object):
         new_ptemp = PaperTemperatures(gps_time=t_read.gps, jd_time=t_read.jd,
                                       **temp_dict)
 
-        if session is None:
-            session = self.DBSession()
+        self.add(new_ptemp)
 
-        session.add(new_ptemp)
-        session.commit()
-        session.close()
-
-    def get_paper_temps(self, starttime, stoptime=None, session=None):
+    def get_paper_temps(self, starttime, stoptime=None):
         """
         get sets of temperature records.
 
@@ -346,56 +324,153 @@ class DB(object):
             elif isinstance(starttime, float):
                 t_stop = Time(stoptime, format='jd', scale='utc')
 
-        if session is None:
-            session = self.DBSession()
-
         if stoptime is not None:
-            ptemp_list = session.query(PaperTemperatures).filter(
+            ptemp_list = self.query(PaperTemperatures).filter(
                 PaperTemperatures.gps_time.between(t_start.gps, t_stop.gps)).all()
         else:
-            ptemp_list = session.query(PaperTemperatures).filter(
+            ptemp_list = self.query(PaperTemperatures).filter(
                 PaperTemperatures.gps_time >= t_start.gps).order_by(
                     PaperTemperatures.gps_time).limit(1).all()
-        session.close()
 
         return ptemp_list
 
 
-class DB_declarative(DB):
+@add_metaclass(ABCMeta)
+class DB(object):
+    """Abstract base class for M&C database object.
+
+    This ABC is only instantiated through the AutomappedDB or DeclarativeDB
+    subclasses.
+
+    """
+    engine = None
+    sessionmaker = sessionmaker(class_=MCSession)
+    sqlalchemy_base = None
+
+    def __init__(self, sqlalchemy_base, db_url):
+        self.sqlalchemy_base = MCDeclarativeBase
+        self.engine = create_engine(db_url)
+        self.sessionmaker.configure(bind=self.engine)
+
+
+class DeclarativeDB(DB):
     """
     Declarative M&C database object -- to create M&C database tables
     """
-    def __init__(self, config_file=default_config_file, use_test=True):
-        self.Base = DEC_BASE
-        super(DB_declarative, self).__init__(config_file=config_file,
-                                             use_test=use_test)
-        self.DBSession.configure(bind=self.engine)
+    def __init__(self, db_url):
+        super(DeclarativeDB, self).__init__(MCDeclarativeBase, db_url)
 
     def create_tables(self):
         """Create all M&C tables"""
-        self.Base.metadata.create_all(self.engine)
+        self.sqlalchemy_base.metadata.create_all(self.engine)
 
     def drop_tables(self):
         """Drop all M&C tables"""
-        self.Base.metadata.bind = self.engine
-        self.Base.metadata.drop_all(self.engine)
+        self.sqlalchemy_base.metadata.bind = self.engine
+        self.sqlalchemy_base.metadata.drop_all(self.engine)
 
 
-class DB_automap(DB):
+class AutomappedDB(DB):
+    """Automapped M&C database object -- attaches to an existing M&C database.
+
+    This is intended for use with the production M&C database. __init__()
+    raises an exception if the existing database does not match the schema
+    defined in the SQLAlchemy initialization magic.
+
     """
-    Automap M&C database object -- to attach to an existing M&C database.
+    def __init__(self, db_url):
+        super(AutomappedDB, self).__init__(automap_base(), db_url)
 
-    Will fail to initialize if the database table structure does not match
-        the table structure defined above.
+        from .db_check import is_sane_database
+
+        with self.sessionmaker() as session:
+            if not is_sane_database(MCDeclarativeBase, session):
+                raise RuntimeError('database {0} does not match expected schema'.format (db_url))
+
+
+def get_mc_argument_parser():
+    """Get an `argparse.ArgumentParser` object that includes some predefined
+    arguments global to all scripts that interact with the M&C system.
+
+    Currently, these are the path to the M&C config file, and the name of the
+    M&C database connection to use.
+
+    Once you have parsed arguments, you can pass the resulting object to a
+    function like `connect_to_mc_db()` to automatically use the settings it
+    encodes.
+
     """
-    def __init__(self, config_file=default_config_file, use_test=False):
-        self.Base = automap_base()
-        super(DB_automap, self).__init__(config_file=config_file,
-                                         use_test=use_test)
-        self.Base.prepare(self.engine, reflect=True)
-        self.DBSession.configure(bind=self.engine)
+    import argparse
 
-        # initialization should fail if the automapped database does not
-        # match the delarative base
-        session = self.DBSession()
-        assert is_sane_database(DEC_BASE, session)
+    p = argparse.ArgumentParser()
+    p.add_argument ('--config', dest='mc_config_path', type=str,
+                    default=default_config_file,
+                    help='Path to the mc_config.json configuration file.')
+    p.add_argument ('--db', dest='mc_db_name', type=str,
+                    help='Name of the database to connect to. The default is used if unspecified.')
+    return p
+
+
+def connect_to_mc_db (args, forced_db_name=None):
+    """Return an instance of the `DB` class providing access to the M&C database.
+
+    *args* should be the result of calling `parse_args` on an
+     `argparse.ArgumentParser` instance created by calling
+     `get_mc_argument_parser()`. Alternatively, it can be None to use the full
+     defaults.
+
+    """
+    if args is None:
+        config_path = default_config_file
+        db_name = None
+    else:
+        config_path = args.mc_config_path
+        db_name = args.mc_db_name
+
+    if forced_db_name is not None:
+        db_name = forced_db_name
+
+    import json
+
+    with open (config_path) as f:
+        config_data = json.load (f)
+
+    if db_name is None:
+        db_name = config_data.get ('default_db_name')
+        if db_name is None:
+            raise RuntimeError ('cannot connect to M&C database: no DB name provided, and no '
+                                'default listed in {0!r}'.format (config_path))
+
+    db_data = config_data.get ('databases')
+    if db_data is None:
+        raise RuntimeError ('cannot connect to M&C database: no "databases" '
+                            'section in {0!r}'.format (config_path))
+
+    db_data = db_data.get (db_name)
+    if db_data is None:
+        raise RuntimeError ('cannot connect to M&C database: no DB named {0!r} in the '
+                            '"databases" section of {1!r}'.format (db_name, config_path))
+
+    db_url = db_data.get ('url')
+    if db_url is None:
+        raise RuntimeError ('cannot connect to M&C database: no "url" item for the DB '
+                            'named {0!r} in {1!r}'.format (db_name, config_path))
+
+    db_mode = db_data.get ('mode')
+    if db_mode is None:
+        raise RuntimeError ('cannot connect to M&C database: no "mode" item for the DB '
+                            'named {0!r} in {1!r}'.format (db_name, config_path))
+
+    if db_mode == 'testing':
+        db = DeclarativeDB (db_url)
+    elif db_mode == 'production':
+        db = AutomappedDB (db_url)
+    else:
+        raise RuntimeError ('cannot connect to M&C database: unrecognized mode {0!r} for'
+                            'the DB named {1!r} in {2!r}'.format (db_mode, db_name, config_path))
+
+    return db
+
+
+def connect_to_mc_testing_db(forced_db_name='testing'):
+    return connect_to_mc_db(None, forced_db_name=forced_db_name)

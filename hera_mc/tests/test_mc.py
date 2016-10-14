@@ -1,5 +1,4 @@
 import os.path as op
-from sqlalchemy.orm import Session
 import unittest
 import hera_mc
 import hera_mc.mc as mc
@@ -11,32 +10,21 @@ from astropy.coordinates import EarthLocation
 
 class test_hera_mc(unittest.TestCase):
     def setUp(self):
-        self.test_db = mc.DB_declarative()
+        self.test_db = mc.connect_to_mc_testing_db()
         self.test_db.create_tables()
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
-        self.test_session = Session(bind=self.test_conn)
-
-        self.real_db = mc.DB_automap()
-        self.real_conn = self.real_db.engine.connect()
-        self.real_trans = self.real_conn.begin()
-        self.real_session = Session(bind=self.real_conn)
+        self.test_session = mc.MCSession(bind=self.test_conn)
 
     def tearDown(self):
         # rollback - everything that happened with the Session above
         # (including calls to commit()) is rolled back.
         self.test_trans.rollback()
-        self.real_trans.rollback()
 
         # return connection to the Engine
         self.test_conn.close()
-        self.real_conn.close()
 
         self.test_db.drop_tables()
-
-    def test_db_sane(self):
-        from hera_mc.db_check import is_sane_database
-        assert is_sane_database(self.test_db.Base, self.real_session)
 
     def test_add_obs(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -52,14 +40,8 @@ class test_hera_mc(unittest.TestCase):
                                stop_time_jd=t2.jd,
                                lst_start_hr=t1.sidereal_time('apparent').hour)]
 
-        # first test against test_db
-        self.test_db.add_obs(t1, t2, session=self.test_session)
-        result = self.test_db.get_obs(session=self.test_session)
-        self.assertEqual(result, expected)
-
-        # now test against real_db
-        self.real_db.add_obs(t1, t2, session=self.real_session)
-        result = self.real_db.get_obs(session=self.real_session)
+        self.test_session.add_obs(t1, t2)
+        result = self.test_session.get_obs()
         self.assertEqual(result, expected)
 
     def test_add_paper_temps(self):
@@ -83,43 +65,22 @@ class test_hera_mc(unittest.TestCase):
         temp_dict = dict(zip(temp_colnames, temp_values))
         temp2_dict = dict(zip(temp_colnames, temp2_values))
 
-        # first test against test_db
-        self.test_db.add_paper_temps(t1, temp_list, session=self.test_session)
-        self.test_db.add_paper_temps(t2, temp2_list, session=self.test_session)
+        self.test_session.add_paper_temps(t1, temp_list)
+        self.test_session.add_paper_temps(t2, temp2_list)
 
         expected = [mc.PaperTemperatures(gps_time=t1.gps, jd_time=t1.jd, **temp_dict)]
-        result = self.test_db.get_paper_temps(t1 - TimeDelta(3.0, format='sec'),
-                                              session=self.test_session)
+        result = self.test_session.get_paper_temps(t1 - TimeDelta(3.0, format='sec'))
         self.assertEqual(result, expected)
 
-        result = self.test_db.get_paper_temps(t1 + TimeDelta(200.0, format='sec'),
-                                              session=self.test_session)
+        result = self.test_session.get_paper_temps(t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
         expected2 = [mc.PaperTemperatures(gps_time=t1.gps, jd_time=t1.jd,
                                           **temp_dict),
                      mc.PaperTemperatures(gps_time=t2.gps, jd_time=t2.jd,
                                           **temp2_dict)]
-        result = self.test_db.get_paper_temps(t1 - TimeDelta(3.0, format='sec'),
-                                              stoptime=t2 + TimeDelta(1.0, format='sec'),
-                                              session=self.test_session)
-
-        self.assertEqual(result, expected2)
-
-        # now test against real_db
-        self.real_db.add_paper_temps(t1, temp_list, session=self.real_session)
-        self.real_db.add_paper_temps(t2, temp2_list, session=self.real_session)
-        result = self.real_db.get_paper_temps(t1 - TimeDelta(3.0, format='sec'),
-                                              session=self.test_session)
-        self.assertEqual(result, expected)
-
-        result = self.real_db.get_paper_temps(t1 + TimeDelta(200.0, format='sec'),
-                                              session=self.test_session)
-        self.assertEqual(result, [])
-
-        result = self.real_db.get_paper_temps(t1 - TimeDelta(3.0, format='sec'),
-                                              stoptime=t2 + TimeDelta(1.0, format='sec'),
-                                              session=self.test_session)
+        result = self.test_session.get_paper_temps(t1 - TimeDelta(3.0, format='sec'),
+                                                   stoptime=t2 + TimeDelta(1.0, format='sec'))
         self.assertEqual(result, expected2)
 
 
