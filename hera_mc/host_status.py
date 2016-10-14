@@ -14,7 +14,7 @@ import socket
 
 import numpy as np
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, String
+from sqlalchemy import BigInteger, Column, DateTime, Float, String, func
 
 from . import MCDeclarativeBase, NotNull
 
@@ -57,3 +57,56 @@ class HostStatus(MCDeclarativeBase):
     def __repr__(self):
         return ('<HostStatus id={self.id} time={self.time} hostname={self.hostname} '
                 'load_average={self.load_average} uptime={self.uptime}>').format (self=self)
+
+
+def plot_host_status_for_plotly (session):
+    from plotly import graph_objs as go, plotly as py
+    internal_hosts = ['per210-1', 'paper1']
+    internal_to_ui = {
+        'per210-1': 'qmaster',
+    }
+
+    # Fill in arrays from the DB.
+
+    data = []
+
+    for host in internal_hosts:
+        times = []
+        loads = []
+
+        q = (session.query(HostStatus).
+             filter(func.age(HostStatus.time) < '30 day').
+             filter(HostStatus.hostname == host).
+             order_by(HostStatus.time).
+             all())
+
+        for item in q:
+            times.append (item.time)
+            loads.append (item.load_average)
+
+        data.append (go.Scatter (
+                x = times,
+                y = loads,
+                name = internal_to_ui.get (host, host),
+        ))
+
+    # Finish plot
+
+    layout = go.Layout(
+        showlegend = True,
+        title = 'Karoo host load averages',
+        xaxis = {
+            'title': 'Date',
+        },
+        yaxis = {
+            'title': '5-minute load average',
+        },
+    )
+    fig = go.Figure(
+        data = data,
+        layout = layout,
+    )
+    py.plot(fig,
+            auto_open = False,
+            filename = 'karoo_host_load_averages',
+    )
