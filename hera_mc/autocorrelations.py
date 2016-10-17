@@ -80,29 +80,27 @@ def plot_HERA_autocorrelations_for_plotly (session):
 
     data = []
 
-    for host in internal_hosts:
-        times = []
-        loads = []
-
-        q = (session.query(Autocorrelations).
-             filter(Autocorrelations.measurement_type == 0).
-             filter(Autocorrelations.antnum.in_(hera_ants)).
-             order_by(Autocorrelations.time).
-             all())
-        antennas = set(['{ant}{pol}'.format(
-                    ant=item.antnum,pol=item.polarization)
-                     for item in q])
-        data = dict(zip(antennas,[]*len(antennas)))
-
-        for item in q:
-            data[item.antnum].append([item.time,item.value])
-        for ant in data:
-            d = np.array(data[ant])
-            data.append (go.Scatter (
-                    x = d[:,0],
-                    y = d[:,1],
-                    name = ant,
-                ))
+    q = (session.query(Autocorrelations).
+         filter(Autocorrelations.measurement_type == 0).
+         filter(Autocorrelations.antnum.in_(hera_ants)).
+         order_by(Autocorrelations.time).
+         all())
+    antennas = set(['{ant}{pol}'.format(
+                ant=item.antnum,pol=item.polarization)
+                 for item in q])
+    data = {}
+    for ant in antennas: data[ant] = []
+    for item in q:
+        key = '{ant}{pol}'.format(ant=item.antnum,pol=item.polarization)
+        data[key].append([item.time,item.value])
+    scatters = []
+    for ant in data:
+        d = np.array(data[ant])
+        scatters.append (go.Scatter (
+                x = d[:,0],
+                y = d[:,1],
+                name = ant,
+            ))
 
     # Finish plot
 
@@ -117,7 +115,7 @@ def plot_HERA_autocorrelations_for_plotly (session):
         },
     )
     fig = go.Figure(
-        data = data,
+        data = scatters,
         layout = layout,
     )
     py.plot(fig,
