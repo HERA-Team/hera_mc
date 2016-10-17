@@ -5,7 +5,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import host_status, mc
+from hera_mc import host_status, mc,autocorrelations
 
 parser = mc.get_mc_argument_parser()
 args = parser.parse_args()
@@ -17,3 +17,4 @@ except RuntimeError as e:
 
 with db.sessionmaker() as session:
     host_status.plot_host_status_for_plotly(session)
+    autocorrelations.plot_HERA_autocorrelations_for_plotly(session)
