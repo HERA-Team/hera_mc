@@ -16,5 +16,5 @@ parser = mc.get_mc_argument_parser()
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 
-with db.sessionmaker () as session:
-    session.add (host_status.HostStatus ())
+with db.sessionmaker() as session:
+    session.add(host_status.HostStatus())

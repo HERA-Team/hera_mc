@@ -20,6 +20,6 @@ except RuntimeError as e:
 # checked anything yet. It doesn't hurt to double-check if the DB is
 # in production mode, so let's just check again.
 
-with db.sessionmaker () as session:
+with db.sessionmaker() as session:
     if not is_sane_database(MCDeclarativeBase, session):
-        raise SystemExit('database {0} does not match expected schema'.format (db.engine.url))
+        raise SystemExit('database {0} does not match expected schema'.format(db.engine.url))

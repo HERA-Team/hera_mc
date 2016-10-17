@@ -20,7 +20,7 @@ from sqlalchemy import BigInteger, Column, DateTime, Float, Integer, SmallIntege
 from . import MCDeclarativeBase, NotNull
 
 
-class _MeasurementTypes (object):
+class _MeasurementTypes(object):
     """A read-only enumeration of different ways we can measure the
     autocorrelation power, since each autocorrelation measurement is a
     spectrum. For now we only have one type, but in the future we might add
@@ -36,7 +36,7 @@ class _MeasurementTypes (object):
     names = ['median']
     "A list of textual names corresponding to each value."
 
-MeasurementTypes = _MeasurementTypes ()
+MeasurementTypes = _MeasurementTypes()
 
 
 class Autocorrelations(MCDeclarativeBase):
@@ -60,19 +60,19 @@ class Autocorrelations(MCDeclarativeBase):
     measurement_type = NotNull(SmallInteger)
     "The type of measurement; see MeasurementTypes enumeration."
 
-    value = NotNull(Float(precision='53')) # recommended portable way of getting double-precision float.
+    value = NotNull(Float(precision='53'))  # recommended portable way of getting double-precision float.
     "The autocorrelation value."
 
     @property
-    def measurement_type_name (self):
+    def measurement_type_name(self):
         return MeasurementTypes.names[self.measurement_type]
 
     def __repr__(self):
-        return ('<Autocorrelations id={self.id} time={self.time} antnum={self.antnum} '
-                'polarization={self.polarization} measurement_type={self.measurement_type_name} '
-                'value={self.value}>').format (self=self)
+        return('<Autocorrelations id={self.id} time={self.time} antnum={self.antnum} '
+               'polarization={self.polarization} measurement_type={self.measurement_type_name} '
+               'value={self.value}>').format(self=self)
 
 
-def plot_autocorrelations_for_plotly (session):
+def plot_autocorrelations_for_plotly(session):
     # TBD.
     return

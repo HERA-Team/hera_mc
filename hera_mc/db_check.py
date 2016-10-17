@@ -4,6 +4,7 @@ from sqlalchemy.orm import RelationshipProperty
 
 from . import logger
 
+
 def is_sane_database(base, session):
     """
     Check whether the current database matches the models declared in model

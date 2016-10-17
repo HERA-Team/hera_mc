@@ -24,12 +24,10 @@ class test_host_status(unittest.TestCase):
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
 
-
     def tearDown(self):
         self.test_trans.rollback()
         self.test_conn.close()
         self.test_db.drop_tables()
-
 
     def test_add_one(self):
         self.test_session.add(host_status.HostStatus())

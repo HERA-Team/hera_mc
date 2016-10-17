@@ -21,11 +21,11 @@ list_of_registers += range(192, 205, 2)
 
 default_outDir = '/home/obs/TMON/Temperatures/'
 
-parser = mc.get_mc_argument_parser ()
+parser = mc.get_mc_argument_parser()
 parser.add_argument('--outDir', type=str, default=default_outDir,
                     help='Directory to save temperature files into')
 args = parser.parse_args()
-db = mc.connect_to_mc_db (args)
+db = mc.connect_to_mc_db(args)
 
 
 def V2K(vi, number):
@@ -33,7 +33,7 @@ def V2K(vi, number):
 
 
 def getJD():
-    return (time() / 86400.) + 2440587.5
+    return(time() / 86400.) + 2440587.5
 
 
 def ReadDat(dev, regNum):

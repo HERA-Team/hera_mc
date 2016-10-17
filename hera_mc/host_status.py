@@ -40,7 +40,6 @@ class HostStatus(MCDeclarativeBase):
     uptime = NotNull(Float)
     "How long this host has been running since it booted; measured in days."
 
-
     def __init__(self):
         """Create a new record, gathering information relevant to the machine on which
         this code is running.
@@ -50,16 +49,15 @@ class HostStatus(MCDeclarativeBase):
         self.hostname = socket.gethostname()
         self.load_average = os.getloadavg()[1]
 
-        with open ('/proc/uptime', 'r') as f:
-            self.uptime = float (f.readline ().split ()[0]) / 86400.
-
+        with open('/proc/uptime', 'r') as f:
+            self.uptime = float(f.readline().split()[0]) / 86400.
 
     def __repr__(self):
-        return ('<HostStatus id={self.id} time={self.time} hostname={self.hostname} '
-                'load_average={self.load_average} uptime={self.uptime}>').format (self=self)
+        return('<HostStatus id={self.id} time={self.time} hostname={self.hostname} '
+               'load_average={self.load_average} uptime={self.uptime}>').format(self=self)
 
 
-def plot_host_status_for_plotly (session):
+def plot_host_status_for_plotly(session):
     from plotly import graph_objs as go, plotly as py
     internal_hosts = ['per210-1', 'paper1']
     internal_to_ui = {
@@ -81,32 +79,26 @@ def plot_host_status_for_plotly (session):
              all())
 
         for item in q:
-            times.append (item.time)
-            loads.append (item.load_average)
+            times.append(item.time)
+            loads.append(item.load_average)
 
-        data.append (go.Scatter (
-                x = times,
-                y = loads,
-                name = internal_to_ui.get (host, host),
-        ))
+        data.append(go.Scatter(x=times,
+                               y=loads,
+                               name=internal_to_ui.get(host, host)))
 
     # Finish plot
 
-    layout = go.Layout(
-        showlegend = True,
-        title = 'Karoo host load averages',
-        xaxis = {
-            'title': 'Date',
-        },
-        yaxis = {
-            'title': '5-minute load average',
-        },
-    )
-    fig = go.Figure(
-        data = data,
-        layout = layout,
-    )
+    layout = go.Layout(showlegend=True,
+                       title='Karoo host load averages',
+                       xaxis={'title': 'Date',
+                              },
+                       yaxis={'title': '5-minute load average',
+                              },
+                       )
+    fig = go.Figure(data=data,
+                    layout=layout,
+                    )
     py.plot(fig,
-            auto_open = False,
-            filename = 'karoo_host_load_averages',
-    )
+            auto_open=False,
+            filename='karoo_host_load_averages',
+            )

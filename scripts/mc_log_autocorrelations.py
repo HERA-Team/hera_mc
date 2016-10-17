@@ -70,7 +70,7 @@ with db.sessionmaker() as dbsession:
             ac.antnum = ant
             ac.polarization = pol
             ac.measurement_type = autocorrelations.MeasurementTypes.median
-            ac.value = np.asscalar(np.median(data)) # must turn np.float32 into plain Python float
+            ac.value = np.asscalar(np.median(data))  # must turn np.float32 into plain Python float
 
             if args.debug:
                 print(data.shape, repr(ac))

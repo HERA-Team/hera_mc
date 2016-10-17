@@ -12,7 +12,7 @@ args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 
 if not hasattr(db, 'create_tables'):
-    raise SystemExit ('error: you can only set up a database that\'s '
-                      'configured to be in "testing" mode')
+    raise SystemExit('error: you can only set up a database that\'s '
+                     'configured to be in "testing" mode')
 
 db.create_tables()

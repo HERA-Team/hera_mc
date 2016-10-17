@@ -48,7 +48,7 @@ import hera_mc
 
 from . import MCDeclarativeBase
 
-data_path = op.join(op.dirname (hera_mc.__file__), 'data')
+data_path = op.join(op.dirname(hera_mc.__file__), 'data')
 
 HERA_LAT = Angle('-30d43m17.5s').degree
 HERA_LON = Angle('21d25m41.9s').degree
@@ -167,12 +167,11 @@ class MCSession(Session):
 
     def __exit__(self, etype, evalue, etb):
         if etype is not None:
-            self.rollback() # exception raised
+            self.rollback()  # exception raised
         else:
-            self.commit() # success
+            self.commit()  # success
         self.close()
-        return False # propagate exception if any occurred
-
+        return False  # propagate exception if any occurred
 
     def add_obs(self, starttime, stoptime, obsid=None):
         """
@@ -385,7 +384,7 @@ class AutomappedDB(DB):
 
         with self.sessionmaker() as session:
             if not is_sane_database(MCDeclarativeBase, session):
-                raise RuntimeError('database {0} does not match expected schema'.format (db_url))
+                raise RuntimeError('database {0} does not match expected schema'.format(db_url))
 
 
 def get_mc_argument_parser():
@@ -403,15 +402,15 @@ def get_mc_argument_parser():
     import argparse
 
     p = argparse.ArgumentParser()
-    p.add_argument ('--config', dest='mc_config_path', type=str,
+    p.add_argument('--config', dest='mc_config_path', type=str,
                     default=default_config_file,
                     help='Path to the mc_config.json configuration file.')
-    p.add_argument ('--db', dest='mc_db_name', type=str,
+    p.add_argument('--db', dest='mc_db_name', type=str,
                     help='Name of the database to connect to. The default is used if unspecified.')
     return p
 
 
-def connect_to_mc_db (args, forced_db_name=None):
+def connect_to_mc_db(args, forced_db_name=None):
     """Return an instance of the `DB` class providing access to the M&C database.
 
     *args* should be the result of calling `parse_args` on an
@@ -432,42 +431,42 @@ def connect_to_mc_db (args, forced_db_name=None):
 
     import json
 
-    with open (config_path) as f:
-        config_data = json.load (f)
+    with open(config_path) as f:
+        config_data = json.load(f)
 
     if db_name is None:
-        db_name = config_data.get ('default_db_name')
+        db_name = config_data.get('default_db_name')
         if db_name is None:
-            raise RuntimeError ('cannot connect to M&C database: no DB name provided, and no '
-                                'default listed in {0!r}'.format (config_path))
+            raise RuntimeError('cannot connect to M&C database: no DB name provided, and no '
+                               'default listed in {0!r}'.format(config_path))
 
-    db_data = config_data.get ('databases')
+    db_data = config_data.get('databases')
     if db_data is None:
-        raise RuntimeError ('cannot connect to M&C database: no "databases" '
-                            'section in {0!r}'.format (config_path))
+        raise RuntimeError('cannot connect to M&C database: no "databases" '
+                           'section in {0!r}'.format(config_path))
 
-    db_data = db_data.get (db_name)
+    db_data = db_data.get(db_name)
     if db_data is None:
-        raise RuntimeError ('cannot connect to M&C database: no DB named {0!r} in the '
-                            '"databases" section of {1!r}'.format (db_name, config_path))
+        raise RuntimeError('cannot connect to M&C database: no DB named {0!r} in the '
+                           '"databases" section of {1!r}'.format(db_name, config_path))
 
-    db_url = db_data.get ('url')
+    db_url = db_data.get('url')
     if db_url is None:
-        raise RuntimeError ('cannot connect to M&C database: no "url" item for the DB '
-                            'named {0!r} in {1!r}'.format (db_name, config_path))
+        raise RuntimeError('cannot connect to M&C database: no "url" item for the DB '
+                           'named {0!r} in {1!r}'.format(db_name, config_path))
 
-    db_mode = db_data.get ('mode')
+    db_mode = db_data.get('mode')
     if db_mode is None:
-        raise RuntimeError ('cannot connect to M&C database: no "mode" item for the DB '
-                            'named {0!r} in {1!r}'.format (db_name, config_path))
+        raise RuntimeError('cannot connect to M&C database: no "mode" item for the DB '
+                           'named {0!r} in {1!r}'.format(db_name, config_path))
 
     if db_mode == 'testing':
-        db = DeclarativeDB (db_url)
+        db = DeclarativeDB(db_url)
     elif db_mode == 'production':
-        db = AutomappedDB (db_url)
+        db = AutomappedDB(db_url)
     else:
-        raise RuntimeError ('cannot connect to M&C database: unrecognized mode {0!r} for'
-                            'the DB named {1!r} in {2!r}'.format (db_mode, db_name, config_path))
+        raise RuntimeError('cannot connect to M&C database: unrecognized mode {0!r} for'
+                           'the DB named {1!r} in {2!r}'.format(db_mode, db_name, config_path))
 
     return db
 

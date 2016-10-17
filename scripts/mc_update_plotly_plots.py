@@ -15,5 +15,5 @@ try:
 except RuntimeError as e:
     raise SystemExit(str(e))
 
-with db.sessionmaker () as session:
-    host_status.plot_host_status_for_plotly (session)
+with db.sessionmaker() as session:
+    host_status.plot_host_status_for_plotly(session)
