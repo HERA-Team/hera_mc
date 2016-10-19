@@ -72,7 +72,8 @@ class Autocorrelations(MCDeclarativeBase):
                'polarization={self.polarization} measurement_type={self.measurement_type_name} '
                'value={self.value}>').format(self=self)
 
-def plot_HERA_autocorrelations_for_plotly (session):
+
+def plot_HERA_autocorrelations_for_plotly(session):
     from plotly import graph_objs as go, plotly as py
 
     hera_ants = [9, 10, 20, 22, 31, 43, 53, 64, 65, 72, 80, 81, 88, 89, 96, 97, 104, 105, 112]
@@ -85,40 +86,34 @@ def plot_HERA_autocorrelations_for_plotly (session):
          filter(Autocorrelations.antnum.in_(hera_ants)).
          order_by(Autocorrelations.time).
          all())
-    antennas = set(['{ant}{pol}'.format(
-                ant=item.antnum,pol=item.polarization)
-                 for item in q])
+    antennas = set(['{ant}{pol}'.format(ant=item.antnum, pol=item.polarization)
+                   for item in q])
     data = {}
-    for ant in antennas: data[ant] = []
+    for ant in antennas:
+        data[ant] = []
     for item in q:
-        key = '{ant}{pol}'.format(ant=item.antnum,pol=item.polarization)
-        data[key].append([item.time,item.value])
+        key = '{ant}{pol}'.format(ant=item.antnum, pol=item.polarization)
+        data[key].append([item.time, item.value])
     scatters = []
     for ant in data:
         d = np.array(data[ant])
-        scatters.append (go.Scatter (
-                x = d[:,0],
-                y = d[:,1],
-                name = ant,
-            ))
+        scatters.append(go.Scatter(x=d[:, 0],
+                                   y=d[:, 1],
+                                   name=ant,
+                                   ))
 
     # Finish plot
 
-    layout = go.Layout(
-        showlegend = True,
-        title = 'HERA Autocorrelations',
-        xaxis = {
-            'title': 'Date',
-        },
-        yaxis = {
-            'title': 'auto power',
-        },
-    )
-    fig = go.Figure(
-        data = scatters,
-        layout = layout,
-    )
-    py.plot(fig,
-            auto_open = False,
-            filename = 'HERA_daily_autos',
-    )
+    layout = go.Layout(showlegend=True,
+                       title='HERA Autocorrelations',
+                       xaxis={'title': 'Date',
+                              },
+                       yaxis={'title': 'auto power',
+                              },
+                       )
+    fig = go.Figure(data=scatters,
+                    layout=layout,
+                    )
+    py.plot(fig, auto_open=False,
+            filename='HERA_daily_autos',
+            )

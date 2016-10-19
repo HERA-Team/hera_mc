@@ -5,7 +5,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import host_status, mc,autocorrelations
+from hera_mc import host_status, mc, autocorrelations
 
 parser = mc.get_mc_argument_parser()
 args = parser.parse_args()
