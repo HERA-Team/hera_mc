@@ -9,14 +9,14 @@ location for this file is `~/.hera_mc/mc_config.json`. The structure of that
 file should be of this form:
 
 {
-  "default_db_name": "sampledb",
+  "default_db_name": "hera_mc",
   "databases": {
-    "sampledb": {
-      "url": "postgresql://user:pass@host:/db_name",
+    "hera_mc_test": {
+      "url": "postgresql://hera_mc@localhost/hera_mc",
       "mode": "production"
     },
     "testing": {
-      "url": "postgresql://user:pass@host:/test_db_name",
+      "url": "postgresql://hera_test@localhost/hera_mc_test",
       "mode": "testing"
     }
   }
