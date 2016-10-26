@@ -14,19 +14,20 @@ import socket
 
 import numpy as np
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, Integer, String, func
+from sqlalchemy import BigInteger, Column, DateTime, Float, ForeignKey, Integer, String, func
 
 from . import MCDeclarativeBase, NotNull
 
 
 class Parts(MCDeclarativeBase):
     """A table logging parts within the HERA system
-
+       MAKE Part and Port be unique when combined
+       Stations will be considered parts of kind='station'
     """
     __tablename__ = 'parts'
 
     hpn = Column(String(64), primary_key=True)
-    "A unique HERA part number for each record; intend to QRcode with this string."
+    "A unique HERA part number for each part; intend to QRcode with this string."
 
     kind = NotNull(String(64))
     "A part-dependent string, i.e. feed, frontend, ..."
@@ -39,18 +40,17 @@ class Parts(MCDeclarativeBase):
 
 class Connections(MCDeclarativeBase):
     """A table for logging connections between part
-
+       MAKE Part and Port be unique when combined
     """
-
     __tablename__ = 'connections'
 
     id = Column(BigInteger, primary_key=True)
     "A unique identifier to key on connections"
 
-    A = NotNull(String(64))
+    A = Column(String(64), ForeignKey(Parts.hpn), nullable=False)
     "A refers to the skyward part, e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.  Signal flows from A->B"
 
-    B = NotNull(String(64))
+    B = Column(String(64), ForeignKey(Parts.hpn), nullable=False)
     "B refers to the part that is further from the sky, e.g. "
 
     port_A = NotNull(Integer)
@@ -64,3 +64,5 @@ class Connections(MCDeclarativeBase):
 
     stop_time = Column(DateTime)
     "stop_time is the time that the connection is removed"
+
+###

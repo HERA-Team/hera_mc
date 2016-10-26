@@ -32,5 +32,14 @@ class test_connections(unittest.TestCase):
     def test_add_part(self):
         self.test_session.add(connections.Parts())
 
+    def test_commit_part(self):
+        part = connections.Parts()
+        part.hpn ='happy_thing'
+        part.manufacture_date = 'Oct 26, 2011'
+        part.kind = 'vapor'
+        print(part)
+        self.test_session.add(part)
+        self.test_session.commit()
+
 if __name__ == '__main__':
     unittest.main()
