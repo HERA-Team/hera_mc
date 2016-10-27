@@ -63,6 +63,10 @@ class GeoLocations(MCDeclarativeBase):
         self.conn.close()
         self.db.drop_tables()
 
-    def add_location(self,**args):
+    def add_location(self,**kwargs):
+        for key in kwargs.keys():
+            if key in self.__dict__.keys():
+                self.__dict__[key] = kwargs[key]
+
         self.session.add()
         self.session.commit()
