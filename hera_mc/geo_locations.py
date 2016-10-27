@@ -52,3 +52,17 @@ class GeoLocations(MCDeclarativeBase):
     def __repr__(self):
         return '<station_name={self.station_name} station_number={self.station_number} northing={self.northing} easting={self.easting} elevation={self.elevation}'.format(self=self)
 
+   def setUp(self):
+        self.db = mc.connect_to_mc_db()
+        self.db.create_tables()
+        self.conn = self.db.engine.connect()
+        self.trans = self.conn.begin()
+        self.session = mc.MCSession(bind=self.conn)
+
+    def tearDown(self):
+        self.conn.close()
+        self.db.drop_tables()
+
+    def add_location(self,**args):
+        self.session.add()
+        self.session.commit()
