@@ -67,6 +67,8 @@ class GeoLocations(MCDeclarativeBase):
         for key in kwargs.keys():
             if key in self.__dict__.keys():
                 self.__dict__[key] = kwargs[key]
+            else:
+                print('Keyword {arg} not found'.format(arg))
 
         self.session.add()
         self.session.commit()
