@@ -141,7 +141,9 @@ data['SG8'] = [108,-1,'WGS84','34J',540994.12,6601132.84,1051.89]
 data['SG9'] = [36,-1,'WGS84','34J',541009.12,6601132.84,1051.90]
 sorted_keys = sorted(data.keys())
 
-db = mc.connect_to_mc_db()
+parser = mc.get_mc_argument_parser()
+args = parser.parse_args()
+db = mc.connect_to_mc_db(args)
 
 for k in sorted_keys:
     d = geo_location.GeoLocation()

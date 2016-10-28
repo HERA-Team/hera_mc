@@ -23,7 +23,7 @@ class GeoLocation(MCDeclarativeBase):
     """A table logging parts within the HERA system
        MAKE Part and Port be unique when combined
     """
-    __tablename__ = 'geo_locations'
+    __tablename__ = 'geo_location'
 
     station_name = Column(String(64), primary_key=True)
     "Colloquial name of station (which is a unique location on the ground.  This is the primary key, so precision matters."
