@@ -154,7 +154,7 @@ for k in sorted_keys:
     d.easting = data[k][5]
     d.elevation = data[k][6]
     print(d)
-     with db.sessionmaker() as session:
-         session.add(d)
+    with db.sessionmaker() as session:
+        session.add(d)
 
- session.commit()
+    session.commit()

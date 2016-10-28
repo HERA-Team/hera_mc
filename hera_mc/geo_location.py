@@ -50,5 +50,6 @@ class GeoLocation(MCDeclarativeBase):
     "Elevation in m"
 
     def __repr__(self):
-        return '<station_name={self.station_name} station_number={self.station_number} northing={self.northing} easting={self.easting} elevation={self.elevation}'.format(self=self)
+        return '<station_name={self.station_name} station_number={self.station_number}'
+        ' northing={self.northing} easting={self.easting} elevation={self.elevation}>'.format(self=self)
 
