@@ -146,17 +146,12 @@ args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 
 for k in sorted_keys:
-    d = geo_location.GeoLocation()
-    d.station_name = k
-    d.station_number = data[k][0]
-    d.future_station_number = data[k][1]
-    d.datum = data[k][2]
-    d.tile = data[k][3]
-    d.northing = data[k][4]
-    d.easting = data[k][5]
-    d.elevation = data[k][6]
-    print(d)
+    northing = data[k][5]
+    easting = data[k][4]
     with db.sessionmaker() as session:
-        session.add(d)
+        for fixit in session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name==k):
+            fixit.northing = northing
+            fixit.easting = easting
+            session.add(fixit)
 
-    session.commit()
+session.commit()
