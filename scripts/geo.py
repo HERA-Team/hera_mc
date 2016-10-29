@@ -84,10 +84,10 @@ def locate_station(args, sub_arrays):
 
 if __name__=='__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-g','--graph',help="Graph data of all elements",action='store_true')
+    parser.add_argument('-g','--graph',help="Graph data of all elements (per x, y args)",action='store_true')
     parser.add_argument('-s','--show',help='Graph and locate a station (same as geo.py -gl XX)',default=False)
-    parser.add_argument('-l','--locate',help="Print out location of given station_name. Prepend with 'h' for HH station_name. Integer if station_number",default=False)
-    parser.add_argument('-v','--verbosity',help="Set verbosity {l,m,h}.",default="m")
+    parser.add_argument('-l','--locate',help="Location of given station_name/_number. Prepend with 'h' for HH name, integer if number",default=False)
+    parser.add_argument('-v','--verbosity',help="Set verbosity {l,m,h} [m].",default="m")
     parser.add_argument('-x','--xgraph',help='X-axis of graph {N,E,Z} [E]',default='E')
     parser.add_argument('-y','--ygraph',help='Y-axis of graph {N,E,Z} [N]',default='N')
     args = parser.parse_args()
