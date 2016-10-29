@@ -13,10 +13,12 @@ import os
 import socket
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 from sqlalchemy import Column, Float, Integer, String, func
 
 from . import MCDeclarativeBase, NotNull
+import hera_mc.mc as mc
 
 
 class GeoLocation(MCDeclarativeBase):
@@ -50,6 +52,7 @@ class GeoLocation(MCDeclarativeBase):
     "Elevation in m"
 
     def __repr__(self):
-        return '<station_name={self.station_name} station_number={self.station_number}'
-        ' northing={self.northing} easting={self.easting} elevation={self.elevation}>'.format(self=self)
+        return '<station_name={self.station_name} station_number={self.station_number} northing={self.northing} easting={self.easting} elevation={self.elevation}>'.format(self=self)
+
+
 
