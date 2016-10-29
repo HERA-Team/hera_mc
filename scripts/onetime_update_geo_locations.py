@@ -9,6 +9,7 @@
 from __future__ import absolute_import, division, print_function
 
 from hera_mc import geo_location, mc
+from sqlalchemy import update
 
 data = {}
 data['0'] = [80,0,'WGS84','34J',540901.60,6601070.74,1052.63]
@@ -145,18 +146,21 @@ parser = mc.get_mc_argument_parser()
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 
-for k in sorted_keys:
-    d = geo_location.GeoLocation()
-    d.station_name = k
-    d.station_number = data[k][0]
-    d.future_station_number = data[k][1]
-    d.datum = data[k][2]
-    d.tile = data[k][3]
-    d.northing = data[k][4]
-    d.easting = data[k][5]
-    d.elevation = data[k][6]
-    print(d)
-    with db.sessionmaker() as session:
-        session.add(d)
+# for k in sorted_keys:
+#     d = geo_location.GeoLocation()
+#     d.station_name = k
+#     d.station_number = data[k][0]
+#     d.future_station_number = data[k][1]
+#     d.datum = data[k][2]
+#     d.tile = data[k][3]
+#     d.northing = data[k][5]
+#     d.easting = data[k][4]
+#     d.elevation = data[k][6]
+#     print(d)
+d = geo_location.GeoLocation()
+with db.sessionmaker() as session:
+    for testing in session.query(GeoLocation.station_name).filter(station_name=='SG13'):
+        print(testing)
+#    session.update().where(station_name=='SG13').values(northing=660)
 
-    session.commit()
+#    session.commit()

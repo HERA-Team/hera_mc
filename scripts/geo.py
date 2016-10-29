@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, print_function
 
 from hera_mc import geo_location, mc
 
+import copy
 import matplotlib.pyplot as plt
 
 def split_arrays(args):
@@ -22,8 +23,9 @@ def split_arrays(args):
     with db.sessionmaker() as session:
         locations  = session.query(geo_location.GeoLocation).all()
         for a in locations:
+            print(type(a))
             try:
-                geo[a.station_name] = [a.northing,a.easting,a.elevation]
+                geo[a.station_name] = copy.deepcopy(a)
             except AttributeError:
                 continue
             for sad in sub_array_designators:
@@ -38,11 +40,15 @@ def split_arrays(args):
 
 def plot_arrays(geo, sub_arrays, graph='XY'):
     markers = {'HH':'ro','PH':'rs','PI':'gs','PP':'bd','S':'bs'}
-    axis2use = {'XY':1, 'Z':2}
     plt.figure(graph)
     for key in sub_arrays.keys():
         for a in sub_arrays[key]:
-            plt.plot(geo[a][0],geo[a][axis2use[graph]],markers[key])
+            x = geo[a].easting
+            if graph=='XY':
+                y = geo[a].northing
+            else:
+                y = geo[a].elevation
+            plt.plot(x,y,markers[key])
     if graph=='XY':
         plt.axis('equal')
     plt.show()
