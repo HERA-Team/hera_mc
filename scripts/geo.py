@@ -13,17 +13,19 @@ from hera_mc import geo_location, mc
 import copy
 import matplotlib.pyplot as plt
 
+sub_array_designators = {'HH':'ro','PH':'rs','PI':'gs','PP':'bd','S':'bs'}
+
 def split_arrays(args):
     """Get split out of the various sub-arrays.  Return dictionary keyed on type, with list of station_names"""
-    sub_array_designators = ['HH','PI','PH','PP','S','N']
+    global sub_array_designators
     sub_arrays = {}
-    for sad in sub_array_designators:
+    for sad in sub_array_designators.keys():
         sub_arrays[sad] = []
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         locations  = session.query(geo_location.GeoLocation).all()
         for a in locations:
-            for sad in sub_array_designators:
+            for sad in sub_array_designators.keys():
                 try:
                     hh = int(a.station_name)
                     test_for_sub = 'HH'[:len(sad)]
@@ -35,7 +37,7 @@ def split_arrays(args):
 
 def plot_arrays(args, sub_arrays, overplot=None):
     """Plot the various sub-array types"""
-    markers = {'HH':'ro','PH':'rs','PI':'gs','PP':'bd','S':'bs'}
+    global sub_array_designators
     vpos = {'E':0,'N':1,'Z':2}
     plt.figure(args.xgraph+args.ygraph)
     db = mc.connect_to_mc_db(args)
@@ -44,7 +46,7 @@ def plot_arrays(args, sub_arrays, overplot=None):
             for loc in sub_arrays[key]:
                 for a in session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name==loc):
                     v = [a.easting,a.northing,a.elevation]
-                plt.plot(v[vpos[args.xgraph]],v[vpos[args.ygraph]],markers[key])
+                plt.plot(v[vpos[args.xgraph]],v[vpos[args.ygraph]],sub_array_designators[key])
     if overplot:
         plt.plot(overplot[vpos[args.xgraph]],overplot[vpos[args.ygraph]],'ys', markersize=10,label=overplot[3])
         plt.legend(loc='upper right')
@@ -64,6 +66,7 @@ def locate_station(args, sub_arrays):
         else:
             station_search = args.locate
         station_desig = geo_location.GeoLocation.station_name
+    v = None
     with db.sessionmaker() as session:
         for a in session.query(geo_location.GeoLocation).filter(station_desig==station_search):
             for key in sub_arrays.keys():
@@ -80,6 +83,8 @@ def locate_station(args, sub_arrays):
                 print('\tsub-array: ',this_sub_array)
             else:
                 print(a,this_sub_array)
+    if not v and args.verbosity=='m' or args.verbosity=='h':
+        print(args.locate,' not found.')
     return v
 
 if __name__=='__main__':
