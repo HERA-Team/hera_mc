@@ -4,29 +4,10 @@
 
 """Connecting to and managing the M&C database.
 
-The database connection is specified in a configuration file. The default
-location for this file is `~/.hera_mc/mc_config.json`. The structure of that
-file should be of this form:
-
-{
-  "default_db_name": "hera_mc",
-  "databases": {
-    "hera_mc_test": {
-      "url": "postgresql://hera_mc@localhost/hera_mc",
-      "mode": "production"
-    },
-    "testing": {
-      "url": "postgresql://hera_test@localhost/hera_mc_test",
-      "mode": "testing"
-    }
-  }
-}
-
-The test rig will always connect to a database named "testing", which must
-have a "mode" of "testing" as well.
+See INSTALL.md in the Git repository for instructions on how to initialize
+your database and configure M&C to find it.
 
 """
-
 from __future__ import absolute_import, division, print_function
 
 import os.path as op

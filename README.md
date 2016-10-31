@@ -1,5 +1,7 @@
 # hera_mc
-Monitor and Control code for HERA
+
+This is the main repository for HERA's monitor and control subsystems.
+Installation instructions may be found in [INSTALL.md](./INSTALL.md).
 
 # Adding a new table
 
