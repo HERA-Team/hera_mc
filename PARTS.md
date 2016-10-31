@@ -29,7 +29,7 @@ Port B is at the feed
 
 #Feed
 The feed part sits at the feed vertex and the format is
-FD[A-Z][<int>]
+FD[0,A-Z][<int>]
 Currently we are version A.
 Port A is at the antenna.
 Port B is at the front-end

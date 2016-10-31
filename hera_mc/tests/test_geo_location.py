@@ -2,7 +2,7 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Testing for `hera_mc.geo_locations`.
+"""Testing for `hera_mc.geo_location`.
 
 I don't think there's really much to do here besides just test insertion of a
 record.
@@ -13,7 +13,7 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 
-from hera_mc import geo_locations, mc
+from hera_mc import geo_location, mc
 
 
 class test_connections(unittest.TestCase):
@@ -30,7 +30,7 @@ class test_connections(unittest.TestCase):
         self.test_db.drop_tables()
 
     def test_add_part(self):
-        self.test_session.add(geo_locations.GeoLocations())
+        self.test_session.add(geo_location.GeoLocation())
 
     # def test_commit_part(self):
     #     part = connections.Parts()

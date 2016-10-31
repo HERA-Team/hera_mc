@@ -43,6 +43,9 @@ class PartInfo(MCDeclarativeBase):
 
     __tablename__ = 'part_info'
 
+    id = Column(String(64), primary_key=True)
+    "A unique identifier to key on part info"
+
     hpn = Column(String(64), ForeignKey(Parts.hpn), nullable=False)
     "A unique HERA part number for each part; intend to QRcode with this string."
 
