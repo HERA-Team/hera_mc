@@ -22,6 +22,7 @@ def NotNull(kind, **kwargs):
 from .version import __version__
 from . import autocorrelations
 from . import host_status
-from . import mc
 from . import connections
 from . import geo_location
+from . import temperatures
+from . import mc # keep this last.
