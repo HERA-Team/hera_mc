@@ -30,7 +30,10 @@ class Parts(MCDeclarativeBase):
     "A unique HERA part number for each part; intend to QRcode with this string."
 
     kind = NotNull(String(64))
-    "A part-dependent string, i.e. feed, frontend, ..."
+    "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in the hera part number (see PARTS.md)"
+
+    manufacturer_number = Column(String(64))
+    "A part number/serial number as specified by manufacturer"
 
     manufacture_date = NotNull(DateTime)
     "The date when the part was manufactured (or assigned by project)."

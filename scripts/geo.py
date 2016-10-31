@@ -55,7 +55,9 @@ def plot_arrays(args, sub_arrays, overplot=None):
     plt.plot(xaxis=args.xgraph,yaxis=args.ygraph)
     plt.show()
 
-def locate_station(args, sub_arrays):
+def locate_station(args, sub_arrays=None):
+    """Return the location of station_name or station_number as contained in args.locate.  
+       If sub_array data exists, print subarray name."""
     db = mc.connect_to_mc_db(args)
     try:
         station_search = int(args.locate)
@@ -69,10 +71,13 @@ def locate_station(args, sub_arrays):
     v = None
     with db.sessionmaker() as session:
         for a in session.query(geo_location.GeoLocation).filter(station_desig==station_search):
-            for key in sub_arrays.keys():
-                if a.station_name in sub_arrays[key]:
-                    this_sub_array = key
-                    break
+            if sub_arrays:
+                for key in sub_arrays.keys():
+                    if a.station_name in sub_arrays[key]:
+                        this_sub_array = key
+                        break
+            else:
+                this_sub_array = 'No sub-array information.'
             v = [a.easting,a.northing,a.elevation,a.station_name]
             if args.verbosity=='m' or args.verbose=='h':
                 print('station_name: ',a.station_name)
@@ -89,9 +94,9 @@ def locate_station(args, sub_arrays):
 
 if __name__=='__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-g','--graph',help="Graph data of all elements (per x, y args)",action='store_true')
+    parser.add_argument('-g','--graph',help="Graph data of all elements (per xgraph, ygraph args)",action='store_true')
     parser.add_argument('-s','--show',help='Graph and locate a station (same as geo.py -gl XX)',default=False)
-    parser.add_argument('-l','--locate',help="Location of given station_name/_number. Prepend with 'h' for HH name, integer if number",default=False)
+    parser.add_argument('-l','--locate',help="Location of given s_name or s_number (assumed if <int>). Prepend with 'h' for HH s_name.",default=False)
     parser.add_argument('-v','--verbosity',help="Set verbosity {l,m,h} [m].",default="m")
     parser.add_argument('-x','--xgraph',help='X-axis of graph {N,E,Z} [E]',default='E')
     parser.add_argument('-y','--ygraph',help='Y-axis of graph {N,E,Z} [N]',default='N')
