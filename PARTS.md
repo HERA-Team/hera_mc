@@ -29,18 +29,18 @@ Port B is at the feed
 
 #Feed
 The feed part sits at the feed vertex and the format is
-FD[0,A-Z][<int>]
+FD[A-Z][<int>]
 Currently we are version A.
 Port A is at the antenna.
 Port B is at the front-end
 
 #Front-end
-FE[<int>]
+FE[A-Z][<int>]
 Port A is at the feed.
 Port B is at the feed cable.
 
 #Feed cable
-CBLF[<int>]
+CBL[5,7]F[<int>]
 Port A is at the front-end
 Port B is at the receiverator input connector
 
@@ -55,7 +55,7 @@ Port A is at the receiver input cable
 Port B is at the receiver output cable
 
 #Receiver output cable
-RI[1-8][A-B][1-8][N,E]
+RO[1-8][A-B][1-8][N,E]
 Port A is at the receiver
 Port B is at the receiverator cable
 
@@ -70,6 +70,6 @@ Port A is at the receiverator cable
 Port B is at the F-engine (ROACH-2)
 
 #F-engine ROACH-2
-R2[1-8][A-H[1-4]
+R2[1-8][A-H][1-4]
 Port A is at the container cable
 Port B is at the switch cable
