@@ -67,17 +67,17 @@ class Connections(MCDeclarativeBase):
     id = Column(String(64), primary_key=True)
     "A unique identifier to key on connections - A+port_A:B+port_B"
 
-    A = Column(String(64), ForeignKey(Parts.hpn), nullable=False)
-    "A refers to the skyward part, e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.  Signal flows from A->B"
+    a = Column(String(64), ForeignKey(Parts.hpn), nullable=False)
+    "a refers to the skyward part, e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.  Signal flows from A->B"
 
-    B = Column(String(64), ForeignKey(Parts.hpn), nullable=False)
-    "B refers to the part that is further from the sky, e.g. "
+    b = Column(String(64), ForeignKey(Parts.hpn), nullable=False)
+    "b refers to the part that is further from the sky, e.g. "
 
-    port_A = NotNull(String(64))
-    "port_A refers to the port on the part that is skyward"
+    port_a = NotNull(String(64))
+    "port_a refers to the port on the part that is skyward"
 
-    port_B = NotNull(String(64))
-    "port_B refers to the port on the part that is further from the sky"
+    port_b = NotNull(String(64))
+    "port_b refers to the port on the part that is further from the sky"
     
     start_time = NotNull(DateTime)
     "start_time is the time that the connection is set"
