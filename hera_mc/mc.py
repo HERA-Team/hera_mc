@@ -38,35 +38,6 @@ default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
 # iers_a = iers.IERS_A.open(op.join(data_path, 'finals.all'))
 
 
-class HeraObs(MCDeclarativeBase):
-    """
-    Definition of hera_obs table.
-
-    obsid: observation identification number, generally equal to the
-        start time in gps seconds (long integer)
-    starttime: observation start time in jd (float)
-    stoptime: observation stop time in jd (float)
-    lststart: observation start time in lst (float)
-    """
-    __tablename__ = 'hera_obs'
-    obsid = Column(BigInteger, primary_key=True)
-    start_time_jd = Column(DOUBLE_PRECISION, nullable=False)
-    stop_time_jd = Column(DOUBLE_PRECISION, nullable=False)
-    lst_start_hr = Column(DOUBLE_PRECISION, nullable=False)
-
-    def __repr__(self):
-        return ("<HeraObs('{self.obsid}', '{self.start_time_jd}', "
-                "'{self.stop_time_jd}', '{self.lst_start_hr}')>".format(
-                    self=self))
-
-    def __eq__(self, other):
-        return isinstance(other, HeraObs) and (
-            other.obsid == self.obsid and
-            np.allclose(other.start_time_jd, self.start_time_jd) and
-            np.allclose(other.stop_time_jd, self.stop_time_jd) and
-            np.allclose(other.lst_start_hr, self.lst_start_hr))
-
-
 class MCSession(Session):
     def __enter__(self):
         return self
@@ -79,36 +50,6 @@ class MCSession(Session):
         self.close()
         return False  # propagate exception if any occurred
 
-    def add_obs(self, starttime, stoptime, obsid=None):
-        """
-        Add an observation to the M&C database.
-
-        Parameters:
-        ------------
-        starttime: astropy time object
-            observation starttime
-        stoptime: astropy time object
-            observation stoptime
-        obsid: long integer
-            observation identification number. If not provided, will be set
-            to the gps second corresponding to the starttime using floor.
-        """
-        t_start = starttime.utc
-        t_stop = stoptime.utc
-
-        # t_start.delta_ut1_utc = iers_a.ut1_utc(t_start)
-        # t_stop.delta_ut1_utc = iers_a.ut1_utc(t_stop)
-
-        if obsid is None:
-            obsid = math.floor(t_start.gps)
-
-        t_start.location = EarthLocation.from_geodetic(HERA_LON, HERA_LAT)
-
-        new_obs = HeraObs(obsid=obsid, start_time_jd=t_start.jd,
-                          stop_time_jd=t_stop.jd,
-                          lst_start_hr=t_start.sidereal_time('apparent').hour)
-
-        self.add(new_obs)
 
     def get_obs(self, obsid=None):
         """
@@ -123,12 +64,14 @@ class MCSession(Session):
 
         Returns:
         --------
-        list of HeraObs objects
+        list of Observation objects
         """
+        from .observations import Observation
+
         if obsid is None:
-            obs_list = self.query(HeraObs).all()
+            obs_list = self.query(Observation).all()
         else:
-            obs_list = self.query(HeraObs).filter_by(obsid=obsid).all()
+            obs_list = self.query(Observation).filter_by(obsid=obsid).all()
 
         return obs_list
 
