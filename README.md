@@ -6,7 +6,7 @@ Installation instructions may be found in [INSTALL.md](./INSTALL.md).
 # Adding a new table
 
 To add a new table into the M&C database:
-
+0. Invoke 'createdb hera_mc' to make the database if needed.
 1. Create a new module under `hera_mc`, basing on e.g. `host_status.py`.
 2. Add `from . import my_new_module` line in `__init__.py`.
 3. Rerun `python setup.py install` to install the new module(s).

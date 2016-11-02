@@ -73,11 +73,11 @@ class Connections(MCDeclarativeBase):
     b = Column(String(64), ForeignKey(Parts.hpn), nullable=False)
     "b refers to the part that is further from the sky, e.g. "
 
-    port_a = NotNull(String(64))
-    "port_a refers to the port on the part that is skyward"
+    port_on_a = NotNull(String(64))
+    "port_on_a refers to the port on the part that is skyward"
 
-    port_b = NotNull(String(64))
-    "port_b refers to the port on the part that is further from the sky"
+    port_on_b = NotNull(String(64))
+    "port_on_b refers to the port on the part that is further from the sky"
     
     start_time = NotNull(DateTime)
     "start_time is the time that the connection is set"

@@ -7,6 +7,8 @@ from __future__ import absolute_import, division, print_function
 
 import hera_mc.mc as mc
 
+raise Exception('this is not yet modified from mc_initialize_db.py')
+
 parser = mc.get_mc_argument_parser()
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)

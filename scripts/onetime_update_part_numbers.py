@@ -2052,19 +2052,18 @@ parts['R28A4'] = ['R28A4','F-engine, Roach-2','R25R3C4','October 1, 2016']
 
 sorted_keys = sorted(parts.keys())
 
-if True:
-    parser = mc.get_mc_argument_parser()
-    args = parser.parse_args()
-    db = mc.connect_to_mc_db(args)
+parser = mc.get_mc_argument_parser()
+args = parser.parse_args()
+db = mc.connect_to_mc_db(args)
 
-    with db.sessionmaker() as session:
-        for k in sorted_keys:
-            d = part_connect.Parts()
-            d.hpn = parts[k][0]
-            d.short_description = parts[k][1]
-            d.manufacturer_number = parts[k][2]
-            d.manufacture_date = parts[k][3]
-            print(d)
-            session.add(d)
+with db.sessionmaker() as session:
+    for k in sorted_keys:
+        d = part_connect.Parts()
+        d.hpn = parts[k][0]
+        d.short_description = parts[k][1]
+        d.manufacturer_number = parts[k][2]
+        d.manufacture_date = parts[k][3]
+        print(d)
+        session.add(d)
 
-    session.commit()
+session.commit()
