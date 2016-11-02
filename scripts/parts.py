@@ -8,7 +8,8 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, geo_location, mc
+from hera_mc import part_connect, mc
+import geo
 
 import copy
 
@@ -22,6 +23,11 @@ def show_part(args):
                 print(part)
                 for part_info in session.query(part_connect.PartInfo).filter(part_connect.PartInfo.hpn==args.hpn):
                     print(part_info)
+                if part.hptype=='station':
+                    sub_arrays = geo.split_arrays(args)
+                    args.locate = args.hpn
+                    geo.locate_station(args,sub_arrays)
+
             else:
                 print(a)
 def show_connections(args):
@@ -34,11 +40,15 @@ def show_connections(args):
         for connection in session.query(part_connect.Connections).filter(part_connect.Connections.a==part):
             if args.verbosity=='m' or args.verbosity=='h':
                 print(connection)
+                args.hpn = connection.b
+                show_part(args)
             else:
                 print(connection)
         for connection in session.query(part_connect.Connections).filter(part_connect.Connections.b==part):
             if args.verbosity=='m' or args.verbosity=='h':
                 print(connection)
+                args.hpn = connection.a
+                show_part(args)
             else:
                 print(connection)
 
