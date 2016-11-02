@@ -26,7 +26,7 @@ class Parts(MCDeclarativeBase):
     hpn = Column(String(64), primary_key=True)
     "A unique HERA part number for each part; intend to QRcode with this string."
 
-    short_description = NotNull(String(64))
+    hptype = NotNull(String(64))
     "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in the hera part number (see PARTS.md)"
 
     manufacturer_number = Column(String(64))
@@ -36,7 +36,7 @@ class Parts(MCDeclarativeBase):
     "The date when the part was manufactured (or assigned by project)."
 
     def __repr__(self):
-        return '<heraPartNumber id={self.hpn} description={self.short_description} manufacture_date={self.manufacture_date}>'.format(self=self)
+        return '<heraPartNumber id={self.hpn} type={self.hptype} manufacture_date={self.manufacture_date}>'.format(self=self)
 
 class PartInfo(MCDeclarativeBase):
     """A table for logging test information etc for parts"""
