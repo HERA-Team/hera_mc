@@ -79,7 +79,7 @@ def locate_station(args, sub_arrays=None):
             else:
                 this_sub_array = 'No sub-array information.'
             v = [a.easting,a.northing,a.elevation,a.station_name]
-            if args.verbosity=='m' or args.verbose=='h':
+            if args.verbosity=='m' or args.verbosity=='h':
                 print('station_name: ',a.station_name)
                 print('\tstation_number: ',a.station_number)
                 print('\teasting: ',a.easting)
