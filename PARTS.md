@@ -1,5 +1,4 @@
 #Parts description
-
 The HERA Part Number (hpn) is the alphanumeric primary key to track parts and connections.  Parts have ports that enable connections.  Port A is a skyward connection point and port B is further from the sky.
 
 HERA Part Numbers are unique identifiers.
@@ -10,7 +9,7 @@ Parts have an associated manufactures number (e.g. for antenna, it is the serial
 Parts have a location.
 'Z' is a reserved prefix for arbitrary hera part numbers we wish to track.
 
-#Station Part: station
+#Station Part:  station
 The station “part” comprises the following sub-arrays:
 [<int>] - refers to the HERA-19 hex number (HH)
 PH[<int>] - refers to the PAPER elements in a mirrored hex.  <int> corresponds to HH <int>
@@ -18,58 +17,79 @@ PI[<int>] - refers to the PAPER elements in the “imaging” configuration.
 PP[A-G][<int>] - refers to the PAPER elements in the PAPER grid that are rotated 45deg
 S[A-G][<int>] refers to the PAPER elements in the PAPER grid
 There is a one-to-one correspondence to station_name and station_number, which is the location integer used in e.g. MIRIAD.
-Port A is at the sky
-Port B is at the ground
+Port A:  sky
+Port B:  ground
 
-#Antenna: dish
-The antenna part number format is
+#Antenna:  dish
+The antenna part number, ultimately for HERA dishes it should agree with the station_number
 A[<int>]
-Port A is at the ground
-Port B is at the feed
+Port A:  ground
+Port B:  focus
 
-#Feed: feed
-The feed part sits at the feed vertex and the format is
+#Feed:  feed
+The feed part sits at the feed vertex:
 FD[A-Z][<int>]
-Currently we are version A.
-Port A is at the antenna.
-Port B is at the front-end
+        where [A-Z] represents a version letter and <int> a serial number
+Port A:  feed input
+Port B:  feed terminals
 
-#Front-end: frontend
+#Front-end:  frontend
+The front-end plugs into the feed:
 FE[A-Z][<int>]
-Port A is at the feed.
-Port B is at the feed cable.
+    where [A-Z] represents a version letter and <int> a serial number
+Port A:  input
+Port B:  N, E
 
-#Feed cable: cable_feed75
+#Feed cable:  cable_feed75
+Cable between the feed and receiverator, consisting of a pair of coax
 CBL[5,7]F[<int>]
-Port A is at the front-end
-Port B is at the receiverator input connector
+     where [5,7] refers to 50 or 75 ohms and <int> corresponds at least initially to the antenna number
+Port A:  NA, EA
+Port B:  NB, EB
 
-#Receiver input cable: cable_receiverin
+#Receiver input cable:  cable_receiverin
+Cable inside the receiverator from the bulkhead to the receiver
 RI[1-8][A-B][1-8][N,E]
-Port A is at the feed cable
-Port B is at the receiver
+    where [1-8] corresponds to the receiverator
+          [A-B] corresponds to the top or bottom set
+          [1-8] corresponds to the place within the set
+          [N,E] corresponds to top (E) or bottom (N)
+Port A:  A
+Port B:  B
 
-#Receiver: receiver
+#Receiver:  receiver
+The receiver
 RCVR[<int>]
-Port A is at the receiver input cable
-Port B is at the receiver output cable
+    where <int> is a serial number
+Port A:  NE, EA
+Port B:  NB, EB
 
-#Receiver output cable: cable_receiverout
+#Receiver output cable:  cable_receiverout
+Cable inside the receiverator from the receiver to the bulkhead
 RO[1-8][A-B][1-8][N,E]
-Port A is at the receiver
-Port B is at the receiverator cable
+    where values are per above
+Port A:  A
+Port B:  B
 
 #Receiverator cable:  cable_receiverator
+Cable from the receiverator to the container
 CBLR[1-8][A-B][1-8][N,E]
-Port A is at the receiver output cable
-Port B is at the container cable
+    where values are per above
+Port A:  A
+Port B:  B
 
-#Container cable: cable_container
+#Container cable:  cable_container
+Cable in the container from the bulkhead plate to the f-engine
 CBLC[1-6]R[1-8]C[1-6]
-Port A is at the receiverator cable
-Port B is at the F-engine (ROACH-2)
+    where [1-6] is the plate
+          [1-8] is the row on the plate
+          [1-6] is the column on the plate
+Port A:  A
+Port B:  B
 
-#F-engine ROACH-2: f_engine
+#F-engine ROACH-2 connector:  f_engine
 R2[1-8][A-H][1-4]
-Port A is at the container cable
-Port B is at the switch cable
+    where [1-8] is the roach box
+          [A-H][1-4] is the input connector
+Port A:  Input
+Port B:  Output
