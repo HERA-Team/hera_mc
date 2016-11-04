@@ -27,7 +27,7 @@ class Parts(MCDeclarativeBase):
     "A unique HERA part number for each part; intend to QRcode with this string."
 
     hptype = NotNull(String(64))
-    "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in the hera part number (see PARTS.md)"
+    "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in the hera part number (see PARTS.md) -- this could be derived from it."
 
     manufacturer_number = Column(String(64))
     "A part number/serial number as specified by manufacturer"
@@ -50,7 +50,7 @@ class PartInfo(MCDeclarativeBase):
     "time that the data are posted"
 
     comment = NotNull(String(64))
-    "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in the hera part number (see PARTS.md)"
+    "Comment associated with this data - or the data itself..."
 
     info = Column(String(64))
     "This should be an attachment"
