@@ -13,35 +13,16 @@ from hera_mc import geo_location, mc
 import copy
 import matplotlib.pyplot as plt
 
-sub_array_designators = {'HH':'ro','PH':'rs','PI':'gs','PP':'bd','S':'bs'}
+sub_array_designators = {'_H':'ro','PH':'rs','PI':'gs','PP':'bd','S':'bs'} #sub-arrays and plotting symbol
 
-def split_arrays(args):
-    """Get split out of the various sub-arrays.  Return dictionary keyed on type, with list of station_names"""
-    global sub_array_designators
-    sub_arrays = {}
-    for sad in sub_array_designators.keys():
-        sub_arrays[sad] = []
-    db = mc.connect_to_mc_db(args)
-    with db.sessionmaker() as session:
-        locations  = session.query(geo_location.GeoLocation).all()
-        for a in locations:
-            for sad in sub_array_designators.keys():
-                try:
-                    hh = int(a.station_name)
-                    test_for_sub = 'HH'[:len(sad)]
-                except ValueError:
-                    test_for_sub = a.station_name[:len(sad)]
-                if test_for_sub == sad:
-                    sub_arrays[sad].append(a.station_name)
-    return sub_arrays
-
-def plot_arrays(args, sub_arrays, overplot=None):
+def plot_arrays(args, overplot=None):
     """Plot the various sub-array types"""
     global sub_array_designators
     vpos = {'E':0,'N':1,'Z':2}
     plt.figure(args.xgraph+args.ygraph)
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
+        sub_arrays = session.split_arrays(sub_array_designators.keys())
         for key in sub_arrays.keys():
             for loc in sub_arrays[key]:
                 for a in session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name==loc):
@@ -55,10 +36,10 @@ def plot_arrays(args, sub_arrays, overplot=None):
     plt.plot(xaxis=args.xgraph,yaxis=args.ygraph)
     plt.show()
 
-def locate_station(args, sub_arrays=None, show_geo=False):
+def locate_station(args, show_geo=False):
     """Return the location of station_name or station_number as contained in args.locate.  
        If sub_array data exists, print subarray name."""
-    db = mc.connect_to_mc_db(args)
+    global sub_array_designators
     try:
         station_search = int(args.locate)
         station_desig = geo_location.GeoLocation.station_number
@@ -69,7 +50,9 @@ def locate_station(args, sub_arrays=None, show_geo=False):
             station_search = args.locate
         station_desig = geo_location.GeoLocation.station_name
     v = None
+    db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
+        sub_arrays = session.split_arrays(sub_array_designators.keys())
         for a in session.query(geo_location.GeoLocation).filter(station_desig==station_search):
             if sub_arrays:
                 for key in sub_arrays.keys():
@@ -105,13 +88,12 @@ if __name__=='__main__':
     args = parser.parse_args()
     args.xgraph = args.xgraph.upper()
     args.ygraph = args.ygraph.upper()
-    sub_arrays = split_arrays(args)
     located = None
     if args.show:
         args.locate = args.show 
         args.graph = True
     if args.locate:
         args.locate = args.locate.upper()
-        located = locate_station(args, sub_arrays, show_geo=True)
+        located = locate_station(args, show_geo=True)
     if args.graph:
-        plot_arrays(args,sub_arrays,located)
+        plot_arrays(args,located)

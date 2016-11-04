@@ -120,6 +120,33 @@ class MCSession(Session):
 
         return ptemp_list
 
+    def split_arrays(self, sub_array_designators):
+        """
+        returns the list of sub-arrays as specified in sub_array_designators
+
+        Parameters:
+        ------------
+        sub_array_designators prefix list, an initial underscore indicates an int
+        """
+        from .geo_location import GeoLocation
+
+        sub_arrays = {}
+        for sub_arr_des in sub_array_designators:
+            sub_arrays[sub_arr_des] = []
+        locations = self.query(GeoLocation).all()
+        for loc in locations:
+            for sub_arr_des in sub_array_designators:
+                if sub_arr_des[0] == '_':
+                    try:
+                        a = int(loc.station_name)
+                        sub_arrays[sub_arr_des].append(loc.station_name)
+                    except ValueError:
+                        pass
+                else:
+                    if loc.station_name[:len(sub_arr_des)] == sub_arr_des:
+                        sub_arrays[sub_arr_des].append(loc.station_name)
+        return sub_arrays
+
 
 @add_metaclass(ABCMeta)
 class DB(object):
