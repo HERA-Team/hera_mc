@@ -2,7 +2,6 @@
 # -*- mode: python; coding: utf-8 -*-
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
-#  --Nov 1, 2016
 
 """Onetime transfer of geo-locations of antennas into the M&C database.
 
@@ -79,6 +78,7 @@ data['PI32'] = [106,-1,'WGS84','34J',6601250.36,540982.98,1050.83]
 data['PI33'] = [122,-1,'WGS84','34J',6601277.50,540926.63,1050.53]
 data['PI34'] = [123,-1,'WGS84','34J',6601256.70,540880.69,1050.68]
 data['PI35'] = [124,-1,'WGS84','34J',6601235.90,540877.88,1050.87]
+data['PI36'] = [113,-1,'WGS84','34J',6601215.10,540875.07,1051.05]
 data['PI37'] = [126,-1,'WGS84','34J',6601194.30,540872.25,1051.25]
 data['PI38'] = [127,-1,'WGS84','34J',6601173.50,540869.44,1051.45]
 data['PI39'] = [41,-1,'WGS84','34J',6601167.86,540930.80,1051.53]

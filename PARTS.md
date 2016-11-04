@@ -8,6 +8,8 @@ In concept, a part is something that can break — the one exception is that the
 Parts have an associated manufactures number (e.g. for antenna, it is the serial number).
 Parts have a location.
 'Z' is a reserved prefix for arbitrary hera part numbers we wish to track.
+For now, all of the <int*> values correspond to the PAPER antenna number -- 
+    ultimately, station/antenna hpn should be the same and rest will be serial numbers
 
 #Station Part:  station
 The station “part” comprises the following sub-arrays:
@@ -16,33 +18,33 @@ PH[<int>] - refers to the PAPER elements in a mirrored hex.  <int> corresponds t
 PI[<int>] - refers to the PAPER elements in the “imaging” configuration.
 PP[A-G][<int>] - refers to the PAPER elements in the PAPER grid that are rotated 45deg
 S[A-G][<int>] refers to the PAPER elements in the PAPER grid
-There is a one-to-one correspondence to station_name and station_number, which is the location integer used in e.g. MIRIAD.
+There is a one-to-one correspondence to station_name and station_number (<int*>), which is the location integer used in e.g. MIRIAD.
 Port A:  sky
 Port B:  ground
 
 #Antenna:  dish
 The antenna part number, ultimately for HERA dishes it should agree with the station_number
-A[<int>]
+A[<int*>]
 Port A:  ground
 Port B:  focus
 
 #Feed:  feed
 The feed part sits at the feed vertex:
-FD[A-Z][<int>]
+FD[A-Z][<int*>]
         where [A-Z] represents a version letter and <int> a serial number
 Port A:  feed input
 Port B:  feed terminals
 
 #Front-end:  frontend
 The front-end plugs into the feed:
-FE[A-Z][<int>]
+FE[A-Z][<int*>]
     where [A-Z] represents a version letter and <int> a serial number
 Port A:  input
 Port B:  N, E
 
 #Feed cable:  cable_feed75
 Cable between the feed and receiverator, consisting of a pair of coax
-CBL[5,7]F[<int>]
+CBL[5,7]F[<int*>]
      where [5,7] refers to 50 or 75 ohms and <int> corresponds at least initially to the antenna number
 Port A:  NA, EA
 Port B:  NB, EB
