@@ -27,7 +27,6 @@ def show_part(args):
                     sub_arrays = geo.split_arrays(args)
                     args.locate = args.hpn
                     geo.locate_station(args,sub_arrays)
-
             else:
                 print(a)
 def show_connections(args):
@@ -37,14 +36,14 @@ def show_connections(args):
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         #Seems like or'ing implies doing the queries sequentially...
-        for connection in session.query(part_connect.Connections).filter(part_connect.Connections.a==part):
+        for connection in session.query(part_connect.Connections).filter(part_connect.Connections.a.like(part+'%')):
             if args.verbosity=='m' or args.verbosity=='h':
                 print(connection)
                 args.hpn = connection.b
                 show_part(args)
             else:
                 print(connection)
-        for connection in session.query(part_connect.Connections).filter(part_connect.Connections.b==part):
+        for connection in session.query(part_connect.Connections).filter(part_connect.Connections.b.like(part+'%')):
             if args.verbosity=='m' or args.verbosity=='h':
                 print(connection)
                 args.hpn = connection.a
@@ -56,7 +55,11 @@ if __name__=='__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-p','--hpn',help="Graph data of all elements (per xgraph, ygraph args)",default=None)
     parser.add_argument('-v','--verbosity',help="Set verbosity {l,m,h} [m].",default="m")
-    parser.add_argument('-c','--connection',help="Show all connections to a part",default=None)
+    parser.add_argument('-c','--connection',help="Show all connections directly to a part",default=None)
+    parser.add_argument('-m','--mapr',help="Show full hookup chains (see --define_hookup and --show_levels)",default=None)
+    parser.add_argument('--define_hookup',help="Define the displayed hookup parts/connections (see default for format)",
+                         default='station:dish:cable_receiverin_:cable_container:f_engine')
+    parser.add_argument('--show_levels',help='show power levels if on (and able)',action='store_true')
     args = parser.parse_args()
     if args.hpn:
         args.hpn = args.hpn.upper()
