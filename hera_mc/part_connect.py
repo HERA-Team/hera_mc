@@ -16,6 +16,7 @@ from sqlalchemy import BigInteger, Column, DateTime, Float, ForeignKey, Integer,
 
 from . import MCDeclarativeBase, NotNull
 
+
 class Parts(MCDeclarativeBase):
     """A table logging parts within the HERA system
        MAKE Part and Port be unique when combined
@@ -38,6 +39,7 @@ class Parts(MCDeclarativeBase):
     def __repr__(self):
         return '<heraPartNumber id={self.hpn} type={self.hptype} manufacture_date={self.manufacture_date}>'.format(self=self)
 
+
 class PartInfo(MCDeclarativeBase):
     """A table for logging test information etc for parts."""
 
@@ -58,6 +60,7 @@ class PartInfo(MCDeclarativeBase):
     def __repr__(self):
         return '<heraPartNumber id = {self.hpn} comment = {self.comment}>'.format(self=self)
 
+
 class Connections(MCDeclarativeBase):
     """A table for logging connections between parts.  Part and Port must be unique when combined
     """
@@ -74,7 +77,7 @@ class Connections(MCDeclarativeBase):
 
     port_on_b = NotNull(String(64), primary_key=True)
     "port_on_b refers to the port on the part that is further from the sky"
-    
+
     start_time = NotNull(DateTime, primary_key=True)
     "start_time is the time that the connection is set"
 

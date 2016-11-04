@@ -2050,7 +2050,6 @@ parts['CBLR7B4E'] = ['CBLR7B4E','cable_receivererator_e','CBLR7B4E','October 1, 
 parts['CBLC5R3C4'] = ['CBLC5R3C4','cable_container','CBLC5R3C4','October 1, 2016']
 parts['RF8A4'] = ['RF8A4','f_engine','RF8A4','October 1, 2016']
 
-
 sorted_keys = sorted(parts.keys())
 
 parser = mc.get_mc_argument_parser()

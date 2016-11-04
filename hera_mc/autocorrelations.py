@@ -60,7 +60,8 @@ class Autocorrelations(MCDeclarativeBase):
     measurement_type = NotNull(SmallInteger)
     "The type of measurement; see MeasurementTypes enumeration."
 
-    value = NotNull(Float(precision='53'))  # recommended portable way of getting double-precision float.
+    # recommended portable way of getting double-precision float.
+    value = NotNull(Float(precision='53'))
     "The autocorrelation value."
 
     @property
@@ -87,7 +88,7 @@ def plot_HERA_autocorrelations_for_plotly(session):
          order_by(Autocorrelations.time).
          all())
     antennas = set(['{ant}{pol}'.format(ant=item.antnum, pol=item.polarization)
-                   for item in q])
+                    for item in q])
     data = {}
     for ant in antennas:
         data[ant] = []

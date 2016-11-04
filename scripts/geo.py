@@ -13,12 +13,13 @@ from hera_mc import geo_location, mc
 import copy
 import matplotlib.pyplot as plt
 
-sub_array_designators = {'HH':'ro','PH':'rs','PI':'gs','PP':'bd','S':'bs'} #sub-arrays and plotting symbol
+sub_array_designators = {'HH': 'ro', 'PH': 'rs', 'PI': 'gs', 'PP': 'bd', 'S': 'bs'}
+
 
 def station_name_or_number(station):
     """
     determines if a station query if for a station_name or station_number
-    
+
     return station, station_col
 
     Parameters:
@@ -81,26 +82,27 @@ def update(args,data):
 def plot_arrays(args, overplot=None):
     """Plot the various sub-array types"""
     global sub_array_designators
-    vpos = {'E':0,'N':1,'Z':2}
-    plt.figure(args.xgraph+args.ygraph)
+    vpos = {'E': 0, 'N': 1, 'Z': 2}
+    plt.figure(args.xgraph + args.ygraph)
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         sub_arrays = session.split_arrays(sub_array_designators.keys())
         for key in sub_arrays.keys():
             for loc in sub_arrays[key]:
-                for a in session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name==loc):
-                    v = [a.easting,a.northing,a.elevation]
-                plt.plot(v[vpos[args.xgraph]],v[vpos[args.ygraph]],sub_array_designators[key])
+                for a in session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == loc):
+                    v = [a.easting, a.northing, a.elevation]
+                plt.plot(v[vpos[args.xgraph]], v[vpos[args.ygraph]], sub_array_designators[key])
     if overplot:
-        plt.plot(overplot[vpos[args.xgraph]],overplot[vpos[args.ygraph]],'ys', markersize=10,label=overplot[3])
+        plt.plot(overplot[vpos[args.xgraph]], overplot[vpos[args.ygraph]],
+                 'ys', markersize=10, label=overplot[3])
         plt.legend(loc='upper right')
-    if args.xgraph!='Z' and args.ygraph!='Z':
+    if args.xgraph != 'Z' and args.ygraph != 'Z':
         plt.axis('equal')
-    plt.plot(xaxis=args.xgraph,yaxis=args.ygraph)
+    plt.plot(xaxis=args.xgraph, yaxis=args.ygraph)
     plt.show()
 
 def locate_station(args, show_geo=False):
-    """Return the location of station_name or station_number as contained in args.locate.  
+    """Return the location of station_name or station_number as contained in args.locate.
        If sub_array data exists, print subarray name."""
     global sub_array_designators
     station, station_col = station_name_or_number(args.locate)
@@ -132,7 +134,7 @@ def locate_station(args, show_geo=False):
             print(args.locate,' not found.')
     return v
 
-if __name__=='__main__':
+if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-g','--graph',help="Graph data of all elements (per xgraph, ygraph args)",action='store_true')
     parser.add_argument('-s','--show',help='Graph and locate a station (same as geo.py -gl XX)',default=False)
@@ -149,10 +151,10 @@ if __name__=='__main__':
         data = split_update_request(args.update)
         update(args,data)
     if args.show:
-        args.locate = args.show 
+        args.locate = args.show
         args.graph = True
     if args.locate:
         args.locate = args.locate.upper()
         located = locate_station(args, show_geo=True)
     if args.graph:
-        plot_arrays(args,located)
+        plot_arrays(args, sub_arrays, located)

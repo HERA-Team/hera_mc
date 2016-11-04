@@ -32,4 +32,3 @@ if __name__=='__main__':
     if args.mapr:
         args.mapr = args.mapr.upper()
         hookup_dict = handling.get_hookup(args,show_hookup=True)
-

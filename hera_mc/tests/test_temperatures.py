@@ -15,6 +15,7 @@ from hera_mc import mc, temperatures
 
 
 class test_temperatures(unittest.TestCase):
+
     def setUp(self):
         self.test_db = mc.connect_to_mc_testing_db()
         self.test_db.create_tables()
@@ -26,7 +27,6 @@ class test_temperatures(unittest.TestCase):
         self.test_trans.rollback()
         self.test_conn.close()
         self.test_db.drop_tables()
-
 
     def test_add_paper_temps(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -41,7 +41,7 @@ class test_temperatures(unittest.TestCase):
                          'rcvr_5a', 'rcvr_5b', 'rcvr_6a', 'rcvr_6b',
                          'rcvr_7a', 'rcvr_7b', 'rcvr_8a', 'rcvr_8b']
         temp_indices = (np.array([1, 2, 3, 4, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18,
-                                 19, 20, 22, 23, 24, 25]) - 1).tolist()
+                                  19, 20, 22, 23, 24, 25]) - 1).tolist()
 
         temp_values = [temp_list[i] for i in temp_indices]
         temp2_values = [temp2_list[i] for i in temp_indices]
@@ -60,9 +60,9 @@ class test_temperatures(unittest.TestCase):
         self.assertEqual(result, [])
 
         expected2 = [temperatures.PaperTemperatures(gps_time=t1.gps, jd_time=t1.jd,
-                                          **temp_dict),
+                                                    **temp_dict),
                      temperatures.PaperTemperatures(gps_time=t2.gps, jd_time=t2.jd,
-                                          **temp2_dict)]
+                                                    **temp2_dict)]
         result = self.test_session.get_paper_temps(t1 - TimeDelta(3.0, format='sec'),
                                                    stoptime=t2 + TimeDelta(1.0, format='sec'))
         self.assertEqual(result, expected2)

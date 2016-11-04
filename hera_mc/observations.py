@@ -50,7 +50,6 @@ class Observation(MCDeclarativeBase):
             np.allclose(other.stop_time_jd, self.stop_time_jd) and
             np.allclose(other.lst_start_hr, self.lst_start_hr))
 
-
     @classmethod
     def new_with_astropy(cls, starttime, stoptime, obsid=None):
         """

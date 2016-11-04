@@ -15,6 +15,7 @@ from hera_mc import mc, observations
 
 
 class test_hera_mc(unittest.TestCase):
+
     def setUp(self):
         self.test_db = mc.connect_to_mc_testing_db()
         self.test_db.create_tables()
@@ -42,7 +43,7 @@ class test_hera_mc(unittest.TestCase):
                                              stop_time_jd=t2.jd,
                                              lst_start_hr=t1.sidereal_time('apparent').hour)]
 
-        self.test_session.add (observations.Observation.new_with_astropy(t1, t2))
+        self.test_session.add(observations.Observation.new_with_astropy(t1, t2))
         result = self.test_session.get_obs()
         self.assertEqual(result, expected)
 

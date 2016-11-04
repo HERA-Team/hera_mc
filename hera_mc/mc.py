@@ -40,6 +40,7 @@ default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
 
 
 class MCSession(Session):
+
     def __enter__(self):
         return self
 
@@ -50,7 +51,6 @@ class MCSession(Session):
             self.commit()  # success
         self.close()
         return False  # propagate exception if any occurred
-
 
     def get_obs(self, obsid=None):
         """
@@ -76,7 +76,6 @@ class MCSession(Session):
 
         return obs_list
 
-
     def get_paper_temps(self, starttime, stoptime=None):
         """
         get sets of temperature records.
@@ -101,7 +100,7 @@ class MCSession(Session):
         elif isinstance(starttime, float):
             t_start = Time(starttime, format='jd', scale='utc')
         else:
-            raise ValueError ('unrecognized "starttime" value: %r' % (starttime,))
+            raise ValueError('unrecognized "starttime" value: %r' % (starttime,))
 
         if stoptime is not None:
             if isinstance(stoptime, Time):
@@ -109,7 +108,7 @@ class MCSession(Session):
             elif isinstance(starttime, float):
                 t_stop = Time(stoptime, format='jd', scale='utc')
             else:
-                raise ValueError ('unrecognized "stoptime" value: %r' % (stoptime,))
+                raise ValueError('unrecognized "stoptime" value: %r' % (stoptime,))
 
         if stoptime is not None:
             ptemp_list = self.query(PaperTemperatures).filter(
@@ -173,6 +172,7 @@ class DeclarativeDB(DB):
     """
     Declarative M&C database object -- to create M&C database tables
     """
+
     def __init__(self, db_url):
         super(DeclarativeDB, self).__init__(MCDeclarativeBase, db_url)
 
@@ -194,6 +194,7 @@ class AutomappedDB(DB):
     defined in the SQLAlchemy initialization magic.
 
     """
+
     def __init__(self, db_url):
         super(AutomappedDB, self).__init__(automap_base(), db_url)
 
@@ -220,10 +221,10 @@ def get_mc_argument_parser():
 
     p = argparse.ArgumentParser()
     p.add_argument('--config', dest='mc_config_path', type=str,
-                    default=default_config_file,
-                    help='Path to the mc_config.json configuration file.')
+                   default=default_config_file,
+                   help='Path to the mc_config.json configuration file.')
     p.add_argument('--db', dest='mc_db_name', type=str,
-                    help='Name of the database to connect to. The default is used if unspecified.')
+                   help='Name of the database to connect to. The default is used if unspecified.')
     return p
 
 

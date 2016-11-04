@@ -90,9 +90,8 @@ class PaperTemperatures(MCDeclarativeBase):
         else:
             return False
 
-
     @classmethod
-    def new_from_text_row (cls, read_time, temp_list):
+    def new_from_text_row(cls, read_time, temp_list):
         """
         Create a new PaperTemperatures item from items parsed from the text file
         that's written out on tmon.
@@ -141,7 +140,7 @@ class PaperTemperatures(MCDeclarativeBase):
         elif isinstance(read_time, float):
             t_read = Time(read_time, format='jd', scale='utc')
         else:
-            raise ValueError ('unrecognized "read_time" argument: %r' % (read_time,))
+            raise ValueError('unrecognized "read_time" argument: %r' % (read_time,))
 
         temp_colnames = ['balun_east', 'cable_east',
                          'balun_west', 'cable_west',
@@ -150,7 +149,7 @@ class PaperTemperatures(MCDeclarativeBase):
                          'rcvr_5a', 'rcvr_5b', 'rcvr_6a', 'rcvr_6b',
                          'rcvr_7a', 'rcvr_7b', 'rcvr_8a', 'rcvr_8b']
         temp_indices = (np.array([1, 2, 3, 4, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18,
-                                 19, 20, 22, 23, 24, 25]) - 1).tolist()
+                                  19, 20, 22, 23, 24, 25]) - 1).tolist()
         temp_values = [temp_list[i] for i in temp_indices]
         temp_dict = dict(zip(temp_colnames, temp_values))
         return cls(gps_time=t_read.gps, jd_time=t_read.jd, **temp_dict)

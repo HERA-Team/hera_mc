@@ -61,6 +61,6 @@ MICRO = _version_micro
 VERSION = __version__
 PACKAGES = ['hera_mc',
             'hera_mc.tests']
-SCRIPTS = [p for p in glob.glob('scripts/*') if not p.endswith ('~')]
+SCRIPTS = [p for p in glob.glob('scripts/*') if not p.endswith('~')]
 PACKAGE_DATA = {'hera_mc': [pjoin('data', '*')]}
 REQUIRES = ["astropy", "sqlalchemy"]

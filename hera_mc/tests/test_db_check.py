@@ -148,12 +148,12 @@ def test_sanity_pass_relationship():
     Base, RelationTestModel, RelationTestModel2 = gen_relation_models()
     try:
         Base.metadata.drop_all(engine, tables=[RelationTestModel.__table__,
-                               RelationTestModel2.__table__])
+                                               RelationTestModel2.__table__])
     except sqlalchemy.exc.NoSuchTableError:
         pass
 
     Base.metadata.create_all(engine, tables=[RelationTestModel.__table__,
-                             RelationTestModel2.__table__])
+                                             RelationTestModel2.__table__])
 
     try:
         assert is_sane_database(Base, session) is True
