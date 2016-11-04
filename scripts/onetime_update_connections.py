@@ -2184,7 +2184,6 @@ db = mc.connect_to_mc_db(args)
 with db.sessionmaker() as session:
     for k in sorted_keys:
         d = part_connect.Connections()
-        d.id = connections[k][0]
         d.a = connections[k][1]
         d.port_on_a = connections[k][2]
         d.b = connections[k][3]

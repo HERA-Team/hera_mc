@@ -55,7 +55,7 @@ def plot_arrays(args, sub_arrays, overplot=None):
     plt.plot(xaxis=args.xgraph,yaxis=args.ygraph)
     plt.show()
 
-def locate_station(args, sub_arrays=None):
+def locate_station(args, sub_arrays=None, show_geo=False):
     """Return the location of station_name or station_number as contained in args.locate.  
        If sub_array data exists, print subarray name."""
     db = mc.connect_to_mc_db(args)
@@ -78,18 +78,20 @@ def locate_station(args, sub_arrays=None):
                         break
             else:
                 this_sub_array = 'No sub-array information.'
-            v = [a.easting,a.northing,a.elevation,a.station_name]
-            if args.verbosity=='m' or args.verbosity=='h':
-                print('station_name: ',a.station_name)
-                print('\tstation_number: ',a.station_number)
-                print('\teasting: ',a.easting)
-                print('\tnorthing: ',a.northing)
-                print('\televation: ',a.elevation)
-                print('\tsub-array: ',this_sub_array)
-            else:
-                print(a,this_sub_array)
-    if not v and args.verbosity=='m' or args.verbosity=='h':
-        print(args.locate,' not found.')
+            v = [a.easting,a.northing,a.elevation,a.station_name,this_sub_array]
+            if show_geo:
+                if args.verbosity=='m' or args.verbosity=='h':
+                    print('station_name: ',a.station_name)
+                    print('\tstation_number: ',a.station_number)
+                    print('\teasting: ',a.easting)
+                    print('\tnorthing: ',a.northing)
+                    print('\televation: ',a.elevation)
+                    print('\tsub-array: ',this_sub_array)
+                elif args.verbosity=='l':
+                    print(a,this_sub_array)
+    if show_geo:
+        if not v and args.verbosity=='m' or args.verbosity=='h':
+            print(args.locate,' not found.')
     return v
 
 if __name__=='__main__':
@@ -110,6 +112,6 @@ if __name__=='__main__':
         args.graph = True
     if args.locate:
         args.locate = args.locate.upper()
-        located = locate_station(args, sub_arrays)
+        located = locate_station(args, sub_arrays, show_geo=True)
     if args.graph:
         plot_arrays(args,sub_arrays,located)
