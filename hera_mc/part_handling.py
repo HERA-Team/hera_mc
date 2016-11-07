@@ -51,10 +51,10 @@ class PartsAndConnections:
                     part_dict[part.hpn]['short_description'] = part_info.short_description
                 if part.hptype=='station':
                     sub_arrays = session.split_arrays(geo.sub_array_designators.keys())
-                    args.locate = args.hpn
-                    part_dict[part.hpn]['geo'] = geo.locate_station(args,sub_arrays,show_geo=False)
+                    args.locate = part.hpn
+                    part_dict[part.hpn]['geo'] = geo.locate_station(args,show_geo=False)
 
-        if show_part:  ###IPLEMENTATIONS BELOW ARE PLACEHOLDERS
+        if show_part:
             self.show_part(args,part_dict)
         return part_dict
 
@@ -96,19 +96,49 @@ class PartsAndConnections:
             self.show_connection(args,connection_dict)
         return connection_dict
 
+    def __go_upstream(self,args,hpn):
+        connection_dict = self.get_connection(args,hpn_query=hpn,show_connection=False)
+        for hpn_a in connection_dict['a']:
+            if hpn_a not in self.upstream:
+                self.upstream.append(hpn_a)
+            self.__go_upstream(args,hpn_a)
+    def __go_downstream(self,args,hpn):
+        connection_dict = self.get_connection(args,hpn_query=hpn,show_connection=False)
+        for hpn_b in connection_dict['b']:
+            if hpn_b not in self.downstream:
+                self.downstream.append(hpn_b)
+            self.__go_downstream(args,hpn_b)
+
     def get_hookup(self,args,hpn_query=None,show_hookup=False):
         """
-        Return the full hookup from the found section a connection request.
+        Return the full hookup.
         """
+        print("NEED TO ADD CONNECTIONS INTO UPSTREAM/DOWNSTREAM")
         if hpn_query is None:
             hpn_query = args.mapr
-        db = mc.connect_to_mc_db(args)
-        with db.sessionmaker() as session:
-            parts = self.get_part(args,hpn_query=hpn_query,show_part=False)
+        parts = self.get_part(args,hpn_query=hpn_query,show_part=False)
         for hpn in parts.keys():
-            connection_dict = self.get_connection(args,hpn_query=hpn,show_connection=False)
-            for hpn_a in connection_dict['a']:
-                self.get_hookup(args,hpn_query=hpn_a,show_hookup=False)
-            print(hpn)
-            print(connection_dict)
+            self.hookup_hpn=hpn
+            self.upstream=[]
+            self.downstream=[]
+            self.__go_upstream(args,hpn)
+            self.__go_downstream(args,hpn)
+            self.show_hookup(args)
+            print("GET_HOOKUP:  BREAK AT 1 FOR NOW")
             break
+    def show_hookup(self,args):
+        list_hookups = args.define_hookup.split(':')
+        #print('Hookup for hpn ',self.hookup_hpn)
+        print('\t',end='')
+        for hookup_part in list_hookups:
+            for hpn in self.upstream:
+                part_info = self.get_part(args,hpn_query=hpn,show_part=False)
+                if hookup_part in part_info[hpn]['hptype']:
+                    print(hpn,end='\t')
+        print('[',self.hookup_hpn,']',sep='',end='\t')
+        for hookup_part in list_hookups:
+            for hpn in self.downstream:
+                part_info = self.get_part(args,hpn_query=hpn,show_part=False)
+                if hookup_part in part_info[hpn]['hptype']:
+                    print(hpn,end='\t')
+        print('')
