@@ -50,7 +50,7 @@ class PartsAndConnections:
                 for part_info in session.query(part_connect.PartInfo).filter(part_connect.PartInfo.hpn==part.hpn):
                     part_dict[part.hpn]['short_description'] = part_info.short_description
                 if part.hptype=='station':
-                    sub_arrays = geo.split_arrays(args)
+                    sub_arrays = session.split_arrays(geo.sub_array_designators.keys())
                     args.locate = args.hpn
                     part_dict[part.hpn]['geo'] = geo.locate_station(args,sub_arrays,show_geo=False)
 
@@ -72,8 +72,6 @@ class PartsAndConnections:
         Return information on parts connected to args.connection -- NEED TO INCLUDE USING START/STOP_TIME!!!
         It should get connections immediately adjacent to one part (upstream and downstream).
         """
-        #   [hpn]{A[name(s)], port_on_A[name(s)], start_on_A[time(s)], stop_on_A[time(s)],
-#         B[name(s)], port_on_B[name(s)], start_on_B[time(s)], stop_on_B[time(s)]}
         if hpn_query is None:
             hpn_query = args.connection
         connection_dict = {'a':[],'port_on_a':[],'start_on_a':[],'stop_on_a':[], 'repr_a':[],
@@ -98,7 +96,19 @@ class PartsAndConnections:
             self.show_connection(args,connection_dict)
         return connection_dict
 
-    def get_hookup(self,args):
+    def get_hookup(self,args,hpn_query=None,show_hookup=False):
         """
         Return the full hookup from the found section a connection request.
         """
+        if hpn_query is None:
+            hpn_query = args.mapr
+        db = mc.connect_to_mc_db(args)
+        with db.sessionmaker() as session:
+            parts = self.get_part(args,hpn_query=hpn_query,show_part=False)
+        for hpn in parts.keys():
+            connection_dict = self.get_connection(args,hpn_query=hpn,show_connection=False)
+            for hpn_a in connection_dict['a']:
+                self.get_hookup(args,hpn_query=hpn_a,show_hookup=False)
+            print(hpn)
+            print(connection_dict)
+            break

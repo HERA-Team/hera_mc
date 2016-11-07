@@ -24,10 +24,11 @@ if __name__=='__main__':
     args = parser.parse_args()
     if args.hpn:
         args.hpn = args.hpn.upper()
-        handling.get_part(args,show_part=True)
+        part_dict = handling.get_part(args,show_part=True)
     if args.connection:
         args.connection = args.connection.upper()
-        handling.get_connection(args,show_connection=True)
+        connection_dict = handling.get_connection(args,show_connection=True)
     if args.mapr:
-        print('Working on it.')
+        args.mapr = args.mapr.upper()
+        hookup_dict = handling.get_hookup(args,show_hookup=True)
 
