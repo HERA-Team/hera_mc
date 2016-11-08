@@ -127,6 +127,7 @@ class MCSession(Session):
         Parameters:
         ------------
         sub_array_designators prefix list, an initial underscore indicates an int
+        (the _ convention is largely deprecated)
         """
         from .geo_location import GeoLocation
 

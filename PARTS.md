@@ -20,8 +20,8 @@ changes, we will define an internal port-to-port wiring.
 
 #Station Part:  station
 The station “part” comprises the following sub-arrays:
-HH[<int>] - refers to the HERA-19 hex number (HH)
-PH[<int>] - refers to the PAPER elements in a mirrored hex.  <int> corresponds to HH <int>
+HH[<int>] - refers to the HERA-19 hex number
+PH[<int>] - refers to the PAPER elements in a mirrored hex.  PH<int_N> corresponds to the HH<int_N>
 PI[<int>] - refers to the PAPER elements in the “imaging” configuration.
 PP[A-G][<int>] - refers to the PAPER elements in the PAPER grid that are rotated 45deg
 S[A-G][<int>] refers to the PAPER elements in the PAPER grid

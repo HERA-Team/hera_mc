@@ -44,10 +44,7 @@ def locate_station(args, show_geo=False):
         station_search = int(args.locate)
         station_desig = geo_location.GeoLocation.station_number
     except ValueError:
-        if args.locate[0] == 'H':
-            station_search = args.locate[1:]
-        else:
-            station_search = args.locate
+        station_search = args.locate
         station_desig = geo_location.GeoLocation.station_name
     v = None
     db = mc.connect_to_mc_db(args)
