@@ -13,7 +13,7 @@ from hera_mc import geo_location, mc
 import copy
 import matplotlib.pyplot as plt
 
-sub_array_designators = {'_H':'ro','PH':'rs','PI':'gs','PP':'bd','S':'bs'} #sub-arrays and plotting symbol
+sub_array_designators = {'HH':'ro','PH':'rs','PI':'gs','PP':'bd','S':'bs'} #sub-arrays and plotting symbol
 
 def plot_arrays(args, overplot=None):
     """Plot the various sub-array types"""
