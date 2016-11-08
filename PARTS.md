@@ -1,15 +1,22 @@
 #Parts description
-The HERA Part Number (hpn) is the alphanumeric primary key to track parts and connections.  Parts have ports that enable connections.  Port A is a skyward connection point and port B is further from the sky.
+The HERA Part Number (hpn) is the alphanumeric primary key to track parts and connections.  Parts 
+have ports that enable connections.  Port A is a skyward connection point and port B is further 
+from the sky.
 
 HERA Part Numbers are unique identifiers.
 
-In concept, a part is something that can break — the one exception is that the station is viewed as a part in order to connect to a location.
+In concept, a part is something that can break — the one exception is that the station is viewed as 
+a part in order to connect to a location.
 
 Parts have an associated manufactures number (e.g. for antenna, it is the serial number).
 Parts have a location.
 'Z' is a reserved prefix for arbitrary hera part numbers we wish to track.
 For now, all of the <int*> values correspond to the PAPER antenna number -- 
     ultimately, station/antenna hpn should be the same and rest will be serial numbers
+
+Connections:  if there are equal connection points between ports A and B of a part, they connect 
+through by changing A->B (as opposed to the other case where there is one to multiple).  If this
+changes, we will define an internal port-to-port wiring.
 
 #Station Part:  station
 The station “part” comprises the following sub-arrays:
@@ -18,7 +25,8 @@ PH[<int>] - refers to the PAPER elements in a mirrored hex.  <int> corresponds t
 PI[<int>] - refers to the PAPER elements in the “imaging” configuration.
 PP[A-G][<int>] - refers to the PAPER elements in the PAPER grid that are rotated 45deg
 S[A-G][<int>] refers to the PAPER elements in the PAPER grid
-There is a one-to-one correspondence to station_name and station_number (<int*>), which is the location integer used in e.g. MIRIAD.
+There is a one-to-one correspondence to station_name and station_number (<int*>), which is the location 
+integer used in e.g. MIRIAD.
 Port A:  sky
 Port B:  ground
 

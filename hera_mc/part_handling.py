@@ -35,7 +35,7 @@ class PartsAndConnections:
                 print(pd,part_dict[pd]['repr'])
     def get_part(self,args,hpn_query=None,show_part=False):
         """
-        Return information on a part as contained in args.hpn.  It will return all matching first characters.
+        Return information on a part.  It will return all matching first characters.
         """
         if hpn_query is None:
             hpn_query = args.hpn
@@ -45,10 +45,17 @@ class PartsAndConnections:
             for part in session.query(part_connect.Parts).filter(part_connect.Parts.hpn.like(hpn_query+'%')):
                 part_dict[part.hpn] = {'hptype':part.hptype, 
                                       'manufacturer_number':part.manufacturer_number, 
-                                      'manufacture_date':part.manufacture_date}
+                                      'manufacture_date':part.manufacture_date,
+                                      'a_ports':[], 'b_ports':[]}
                 part_dict[part.hpn]['repr'] = part.__repr__()  #Keep for now
                 for part_info in session.query(part_connect.PartInfo).filter(part_connect.PartInfo.hpn==part.hpn):
                     part_dict[part.hpn]['short_description'] = part_info.short_description
+                for connection in session.query(part_connect.Connections).filter(part_connect.Connections.a.like(hpn_query+'%')):
+                    if connection.port_on_a not in part_dict[part.hpn]['a_ports']:
+                        part_dict[part.hpn]['a_ports'].append(connection.port_on_a)
+                for connection in session.query(part_connect.Connections).filter(part_connect.Connections.b.like(hpn_query+'%')):
+                    if connection.port_on_b not in part_dict[part.hpn]['b_ports']:
+                        part_dict[part.hpn]['b_ports'].append(connection.port_on_b)
                 if part.hptype=='station':
                     sub_arrays = session.split_arrays(geo.sub_array_designators.keys())
                     args.locate = part.hpn
@@ -96,33 +103,39 @@ class PartsAndConnections:
             self.show_connection(args,connection_dict)
         return connection_dict
 
-    def __go_upstream(self,args,hpn):
+    def __go_upstream(self,args,hpn,port):
         connection_dict = self.get_connection(args,hpn_query=hpn,show_connection=False)
         for hpn_a in connection_dict['a']:
             if hpn_a not in self.upstream:
                 self.upstream.append(hpn_a)
-            self.__go_upstream(args,hpn_a)
-    def __go_downstream(self,args,hpn):
+            self.__go_upstream(args,hpn_a,port)
+    def __go_downstream(self,args,hpn,port):
         connection_dict = self.get_connection(args,hpn_query=hpn,show_connection=False)
         for hpn_b in connection_dict['b']:
             if hpn_b not in self.downstream:
                 self.downstream.append(hpn_b)
-            self.__go_downstream(args,hpn_b)
+            self.__go_downstream(args,hpn_b,port)
 
-    def get_hookup(self,args,hpn_query=None,show_hookup=False):
+    def get_hookup(self,args,hpn_query=None,port_query=None,show_hookup=False):
         """
         Return the full hookup.
         """
         print("NEED TO ADD CONNECTIONS INTO UPSTREAM/DOWNSTREAM")
         if hpn_query is None:
             hpn_query = args.mapr
+        if port_query is None:
+            port_query = args.define_port
         parts = self.get_part(args,hpn_query=hpn_query,show_part=False)
         for hpn in parts.keys():
             self.hookup_hpn=hpn
             self.upstream=[]
             self.downstream=[]
-            self.__go_upstream(args,hpn)
-            self.__go_downstream(args,hpn)
+            ports = [port_query]
+            if port_query == 'all':
+                ports = ['place','holder']
+            for p in ports:
+                self.__go_upstream(args,hpn,p)
+                self.__go_downstream(args,hpn,p)
             self.show_hookup(args)
             print("GET_HOOKUP:  BREAK AT 1 FOR NOW")
             break
