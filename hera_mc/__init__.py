@@ -25,6 +25,5 @@ from . import host_status
 from . import part_connect
 from . import part_handling
 from . import geo_location
-from . import sub_array
 from . import temperatures
 from . import mc # keep this last.

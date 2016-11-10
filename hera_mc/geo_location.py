@@ -2,7 +2,7 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""M&C logging of the parts and the connections between them.
+"""Keeping track of geo-located stations.
 
 """
 
@@ -52,7 +52,62 @@ class GeoLocation(MCDeclarativeBase):
     "Elevation in m"
 
     def __repr__(self):
-        return '<station_name={self.station_name} station_number={self.station_number} northing={self.northing} easting={self.easting} elevation={self.elevation}>'.format(self=self)
+        return '<station_name={self.station_name} station_number={self.station_number} northing={self.northing} \
+        easting={self.easting} elevation={self.elevation}>'.format(self=self)
 
+    def update(self,args,data):
+        """
+        update the database given a station_name/_number with columns/values
 
+        Parameters:
+        ------------
+        data:  [[station0,column0,value0],[...]]
+        stationN:  may be station_name (starts with char) or station_number (is an int)
+        values:  corresponding list of values
+        """
+        db = mc.connect_to_mc_db(args)
+        with db.sessionmaker() as session:
+            for d in data:
+                station, station_col = self.station_name_or_number(d[0])
+                for geo_rec in session.query(self).filter(station_col==station):
+                    try:
+                        xxx = getattr(geo_rec,d[1])
+                        setattr(geo_rec,d[1],d[2])
+                    except AttributeError:
+                        print(d[1],'does not exist')
 
+def station_name_or_number(station):
+    """
+    determines if a station query is for a station_name or station_number
+    
+    return station, station_col
+
+    Parameters:
+    ------------
+    station:  station to check
+    """
+    try:
+        station = int(station)
+        station_col = GeoLocation.station_number
+    except ValueError:
+        station = station.upper()
+        station_col = GeoLocation.station_name
+    return station, station_col
+
+class SubArray(MCDeclarativeBase):
+    """
+    A table to track sub_array things in various ways
+    """
+    __tablename__ = 'sub_array'
+
+    prefix = Column(String(64), primary_key=True)
+    "String prefix to sub-array type, elements of which are typically characterized by <prefix><int>."
+
+    description = Column(String(64))
+    "Short description of sub-array type."
+
+    plot_marker = Column(String(64))
+    "matplotlib marker type to use"
+
+    def __repr__(self):
+        return '<subarray prefix={self.prefix} description={self.description} marker={self.plot_marker}>'.format(self=self)

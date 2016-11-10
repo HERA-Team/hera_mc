@@ -13,25 +13,6 @@ from hera_mc import geo_location, mc
 import copy
 import matplotlib.pyplot as plt
 
-sub_array_designators = {'HH':'ro','PH':'rs','PI':'gs','PP':'bd','S':'bs'} #sub-arrays and plotting symbol
-
-def station_name_or_number(station):
-    """
-    determines if a station query if for a station_name or station_number
-    
-    return station, station_col
-
-    Parameters:
-    ------------
-    station:  station to check
-    """
-    try:
-        station = int(station)
-        station_col = geo_location.GeoLocation.station_number
-    except ValueError:
-        station = station.upper()
-        station_col = geo_location.GeoLocation.station_name
-    return station, station_col
 def split_update_request(request):
     """
     splits out the update request
@@ -57,40 +38,18 @@ def split_update_request(request):
         data.append(scv)
     return data
 
-def update(args,data):
-    """
-    update the database given a station_name/_number with columns/values
-
-    Parameters:
-    ------------
-    data:  [[station0,column0,value0],[...]]
-    stationN:  may be station_name (starts with char) or station_number (is an int)
-    values:  corresponding list of values
-    """
-    db = mc.connect_to_mc_db(args)
-    with db.sessionmaker() as session:
-        for d in data:
-            station, station_col = station_name_or_number(d[0])
-            for geo_rec in session.query(geo_location.GeoLocation).filter(station_col==station):
-                try:
-                    xxx = getattr(geo_rec,d[1])
-                    setattr(geo_rec,d[1],d[2])
-                except AttributeError:
-                    print(d[1],'does not exist')
-
 def plot_arrays(args, overplot=None):
     """Plot the various sub-array types"""
-    global sub_array_designators
     vpos = {'E':0,'N':1,'Z':2}
     plt.figure(args.xgraph+args.ygraph)
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        sub_arrays = session.split_arrays(sub_array_designators.keys())
+        sub_arrays = session.split_arrays()
         for key in sub_arrays.keys():
-            for loc in sub_arrays[key]:
+            for loc in sub_arrays[key]['Stations']:
                 for a in session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name==loc):
                     v = [a.easting,a.northing,a.elevation]
-                plt.plot(v[vpos[args.xgraph]],v[vpos[args.ygraph]],sub_array_designators[key])
+                plt.plot(v[vpos[args.xgraph]],v[vpos[args.ygraph]],sub_arrays[key]['Marker'])
     if overplot:
         plt.plot(overplot[vpos[args.xgraph]],overplot[vpos[args.ygraph]],'ys', markersize=10,label=overplot[3])
         plt.legend(loc='upper right')
@@ -103,17 +62,16 @@ def locate_station(args, show_geo=False):
     """Return the location of station_name or station_number as contained in args.locate.  
        If sub_array data exists, print subarray name."""
     global sub_array_designators
-    station, station_col = station_name_or_number(args.locate)
+    station, station_col = geo_location.station_name_or_number(args.locate)
     v = None
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        sub_arrays = session.split_arrays(sub_array_designators.keys())
+        sub_arrays = session.split_arrays()
         for a in session.query(geo_location.GeoLocation).filter(station_col==station):
-            if sub_arrays:
-                for key in sub_arrays.keys():
-                    if a.station_name in sub_arrays[key]:
-                        this_sub_array = key
-                        break
+            for key in sub_arrays.keys():
+                if a.station_name in sub_arrays[key]['Stations']:
+                    this_sub_array = key
+                    break
             else:
                 this_sub_array = 'No sub-array information.'
             v = [a.easting,a.northing,a.elevation,a.station_name,this_sub_array]
@@ -124,7 +82,7 @@ def locate_station(args, show_geo=False):
                     print('\teasting: ',a.easting)
                     print('\tnorthing: ',a.northing)
                     print('\televation: ',a.elevation)
-                    print('\tsub-array: ',this_sub_array)
+                    print('\tsub-array: ',this_sub_array,sub_arrays[this_sub_array]['Description'])
                 elif args.verbosity=='l':
                     print(a,this_sub_array)
     if show_geo:
@@ -147,7 +105,7 @@ if __name__=='__main__':
     located = None
     if args.update:
         data = split_update_request(args.update)
-        update(args,data)
+        geo_location.update(args,data)
     if args.show:
         args.locate = args.show 
         args.graph = True

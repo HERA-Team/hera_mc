@@ -122,34 +122,24 @@ class MCSession(Session):
         return ptemp_list
 
 
-    def split_arrays(self, sub_array_designators):
+    def split_arrays(self):
         """
-        returns the list of sub-arrays as specified in sub_array_designators
-
-        Parameters:
-        ------------
-        sub_array_designators prefix list, an initial underscore indicates an int
-        (the _ convention is largely deprecated)
+        returns a dictionary of sub-arrays
+             [prefix]{'Description':'...', 'plot_marker':'...', 'stations':[]}
         """
         from .geo_location import GeoLocation
+        from .geo_location import SubArray
 
+        sub_array_data = self.query(SubArray).all()
         sub_arrays = {}
-        for sub_arr_des in sub_array_designators:
-            sub_arrays[sub_arr_des] = []
+        for sub_arr in sub_array_data:
+            sub_arrays[sub_arr.prefix] = {'Description':sub_arr.description,'Marker':sub_arr.plot_marker,'Stations':[]}
         locations = self.query(GeoLocation).all()
         for loc in locations:
-            for sub_arr_des in sub_array_designators:
-                if sub_arr_des[0] == '_':
-                    try:
-                        a = int(loc.station_name)
-                        sub_arrays[sub_arr_des].append(loc.station_name)
-                    except ValueError:
-                        pass
-                else:
-                    if loc.station_name[:len(sub_arr_des)] == sub_arr_des:
-                        sub_arrays[sub_arr_des].append(loc.station_name)
+            for k in sub_arrays.keys():
+                if loc.station_name[:len(k)] == k:
+                    sub_arrays[k]['Stations'].append(loc.station_name)
         return sub_arrays
-
 
 @add_metaclass(ABCMeta)
 class DB(object):
