@@ -17,6 +17,7 @@ from six import add_metaclass
 from sqlalchemy import Column, ForeignKey, BigInteger, String, Float
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
+from sqlalchemy import update
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
@@ -119,6 +120,7 @@ class MCSession(Session):
                     PaperTemperatures.gps_time).limit(1).all()
 
         return ptemp_list
+
 
     def split_arrays(self, sub_array_designators):
         """
