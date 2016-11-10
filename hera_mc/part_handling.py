@@ -3,7 +3,8 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""This is meant to hold utility scripts for parts and connections
+"""
+This is meant to hold utility scripts for parts and connections
 
 """
 from __future__ import absolute_import, division, print_function
