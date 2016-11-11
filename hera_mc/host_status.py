@@ -48,7 +48,7 @@ class HostStatus(MCDeclarativeBase):
         self.time = datetime.datetime.utcnow()
         self.hostname = socket.gethostname()
         self.load_average = os.getloadavg()[1]
-        self.uptime = uptime.uptime / 86400.
+        self.uptime = uptime.uptime() / 86400.
 
     def __repr__(self):
         return('<HostStatus id={self.id} time={self.time} hostname={self.hostname} '
