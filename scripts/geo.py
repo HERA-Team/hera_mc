@@ -162,4 +162,4 @@ if __name__ == '__main__':
         args.locate = args.locate.upper()
         located = locate_station(args, show_geo=True)
     if args.graph:
-        plot_arrays(args, sub_arrays, located)
+        plot_arrays(args, located)
