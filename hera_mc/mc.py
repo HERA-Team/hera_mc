@@ -120,7 +120,6 @@ class MCSession(Session):
 
         return ptemp_list
 
-
     def split_arrays(self, sub_array_designators):
         """
         returns the list of sub-arrays as specified in sub_array_designators
