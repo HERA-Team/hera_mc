@@ -11,7 +11,7 @@ from __future__ import absolute_import, division, print_function
 import datetime
 import os
 import socket
-
+import uptime
 import numpy as np
 
 from sqlalchemy import BigInteger, Column, DateTime, Float, String, func
@@ -48,9 +48,7 @@ class HostStatus(MCDeclarativeBase):
         self.time = datetime.datetime.utcnow()
         self.hostname = socket.gethostname()
         self.load_average = os.getloadavg()[1]
-
-        with open('/proc/uptime', 'r') as f:
-            self.uptime = float(f.readline().split()[0]) / 86400.
+        self.uptime = uptime.uptime / 86400.
 
     def __repr__(self):
         return('<HostStatus id={self.id} time={self.time} hostname={self.hostname} '
