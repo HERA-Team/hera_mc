@@ -8,8 +8,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, mc
-import geo
+from hera_mc import part_connect, mc, geo_location
 
 import copy
 
