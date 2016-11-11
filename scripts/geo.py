@@ -10,7 +10,6 @@ from __future__ import absolute_import, division, print_function
 
 from hera_mc import geo_location, mc
 
-import copy
 import matplotlib.pyplot as plt
 
 def split_update_request(request):
@@ -22,9 +21,9 @@ def split_update_request(request):
     Parameters:
     ------------
     request:  station0:column0:value0,[station1:]column1:value1,[...]
-    stationN:  station_name or station_number, first entry must have one, if absent propagate first
-    columnN:  name of geo_location column
-    valueN:  corresponding new value
+        stationN:  station_name or station_number, first entry must have one, if absent propagate first
+        columnN:  name of geo_location column
+        valueN:  corresponding new value
     """
     data = []
     data_to_proc = request.split(',')
@@ -49,7 +48,7 @@ def plot_arrays(args, overplot=None):
             for loc in sub_arrays[key]['Stations']:
                 for a in session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name==loc):
                     v = [a.easting,a.northing,a.elevation]
-                plt.plot(v[vpos[args.xgraph]],v[vpos[args.ygraph]],sub_arrays[key]['Marker'])
+                plt.plot(v[vpos[args.xgraph]],v[vpos[args.ygraph]],sub_arrays[key]['Marker'],label=a.station_name)
     if overplot:
         plt.plot(overplot[vpos[args.xgraph]],overplot[vpos[args.ygraph]],'ys', markersize=10,label=overplot[3])
         plt.legend(loc='upper right')
@@ -61,7 +60,6 @@ def plot_arrays(args, overplot=None):
 def locate_station(args, show_geo=False):
     """Return the location of station_name or station_number as contained in args.locate.  
        If sub_array data exists, print subarray name."""
-    global sub_array_designators
     station, station_col = geo_location.station_name_or_number(args.locate)
     v = None
     db = mc.connect_to_mc_db(args)
