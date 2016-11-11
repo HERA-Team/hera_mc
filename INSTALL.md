@@ -21,9 +21,9 @@ database. An example file is:
 
 ```
 {
-  "default_db_name": "production",
+  "default_db_name": "hera_mc",
   "databases": {
-    "production": {
+    "hera_mc": {
       "url": "postgresql://hera@localhost/hera_mc",
       "mode": "production"
     },

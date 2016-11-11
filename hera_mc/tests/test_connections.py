@@ -13,10 +13,11 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 
-from hera_mc import connections, mc
+from hera_mc import part_connect, mc
 
 
 class test_connections(unittest.TestCase):
+
     def setUp(self):
         self.test_db = mc.connect_to_mc_testing_db()
         self.test_db.create_tables()
@@ -30,13 +31,13 @@ class test_connections(unittest.TestCase):
         self.test_db.drop_tables()
 
     def test_add_part(self):
-        self.test_session.add(connections.Parts())
+        self.test_session.add(part_connect.Parts())
 
     def test_commit_part(self):
-        part = connections.Parts()
-        part.hpn ='happy_thing'
+        part = part_connect.Parts()
+        part.hpn = 'happy_thing'
         part.manufacture_date = 'Oct 26, 2011'
-        part.kind = 'vapor'
+        part.hptype = 'vapor'
         print(part)
         self.test_session.add(part)
         self.test_session.commit()

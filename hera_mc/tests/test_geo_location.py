@@ -17,6 +17,7 @@ from hera_mc import geo_location, mc
 
 
 class test_connections(unittest.TestCase):
+
     def setUp(self):
         self.test_db = mc.connect_to_mc_testing_db()
         self.test_db.create_tables()

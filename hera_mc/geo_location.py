@@ -111,3 +111,4 @@ class SubArray(MCDeclarativeBase):
 
     def __repr__(self):
         return '<subarray prefix={self.prefix} description={self.description} marker={self.plot_marker}>'.format(self=self)
+
