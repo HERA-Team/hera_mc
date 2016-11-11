@@ -17,6 +17,7 @@ from hera_mc import connections, mc
 
 
 class test_connections(unittest.TestCase):
+
     def setUp(self):
         self.test_db = mc.connect_to_mc_testing_db()
         self.test_db.create_tables()
@@ -34,7 +35,7 @@ class test_connections(unittest.TestCase):
 
     def test_commit_part(self):
         part = connections.Parts()
-        part.hpn ='happy_thing'
+        part.hpn = 'happy_thing'
         part.manufacture_date = 'Oct 26, 2011'
         part.kind = 'vapor'
         print(part)

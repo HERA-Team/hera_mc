@@ -17,6 +17,7 @@ from hera_mc import host_status, mc
 
 
 class test_host_status(unittest.TestCase):
+
     def setUp(self):
         self.test_db = mc.connect_to_mc_testing_db()
         self.test_db.create_tables()
