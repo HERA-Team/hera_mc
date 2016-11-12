@@ -53,7 +53,7 @@ def plot_arrays(args, overplot=None):
         overplot_station = plt.plot(overplot[vpos[args.xgraph]], overplot[vpos[args.ygraph]],
                  'ys', markersize=10)
         legendEntries = [overplot_station]
-        legendText = [overplot[3]]
+        legendText = [overplot[3]+':'+str(overplot[4])]
         plt.legend((overplot_station),(legendText),numpoints=1,loc='upper right')
     if args.xgraph != 'Z' and args.ygraph != 'Z':
         plt.axis('equal')
@@ -76,7 +76,7 @@ def locate_station(args, show_geo=False):
                     break
             else:
                 this_sub_array = 'No sub-array information.'
-            v = [a.easting, a.northing, a.elevation, a.station_name, this_sub_array]
+            v = [a.easting, a.northing, a.elevation, a.station_name, a.station_number, this_sub_array]
             if show_geo:
                 if args.verbosity=='m' or args.verbosity=='h':
                     print('station_name: ',a.station_name)
