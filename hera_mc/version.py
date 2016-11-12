@@ -45,12 +45,15 @@ Copyright (c) 2015--, HERA-Team.
 """
 
 NAME = "hera_mc"
+MAINTAINER = "HERA Team"
+MAINTAINER_EMAIL = "hera-sw@lists.berkeley.edu"
 DESCRIPTION = description
 LONG_DESCRIPTION = long_description
 URL = "https://github.com/HERA-Team/hera_mc"
 DOWNLOAD_URL = ""
 LICENSE = "BSD"
 AUTHOR = "HERA Team"
+AUTHOR_EMAIL = "hera-sw@lists.berkeley.edu"
 PLATFORMS = "OS Independent"
 MAJOR = _version_major
 MINOR = _version_minor
