@@ -47,7 +47,7 @@ Copyright (c) 2015--, HERA-Team.
 NAME = "hera_mc"
 DESCRIPTION = description
 LONG_DESCRIPTION = long_description
-URL = "http://github.com/HERA-Team/Monitor_and_Control"
+URL = "https://github.com/HERA-Team/hera_mc"
 DOWNLOAD_URL = ""
 LICENSE = "BSD"
 AUTHOR = "HERA Team"
