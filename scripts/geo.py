@@ -50,9 +50,11 @@ def plot_arrays(args, overplot=None):
                     v = [a.easting,a.northing,a.elevation]
                 plt.plot(v[vpos[args.xgraph]],v[vpos[args.ygraph]],sub_arrays[key]['Marker'],label=a.station_name)
     if overplot:
-        plt.plot(overplot[vpos[args.xgraph]], overplot[vpos[args.ygraph]],
-                 'ys', markersize=10, label=overplot[3])
-        plt.legend(loc='upper right')
+        overplot_station = plt.plot(overplot[vpos[args.xgraph]], overplot[vpos[args.ygraph]],
+                 'ys', markersize=10)
+        legendEntries = [overplot_station]
+        legendText = [overplot[3]]
+        plt.legend((overplot_station),(legendText),numpoints=1,loc='upper right')
     if args.xgraph != 'Z' and args.ygraph != 'Z':
         plt.axis('equal')
     plt.plot(xaxis=args.xgraph, yaxis=args.ygraph)
