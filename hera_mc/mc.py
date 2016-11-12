@@ -126,18 +126,18 @@ class MCSession(Session):
              [prefix]{'Description':'...', 'plot_marker':'...', 'stations':[]}
         """
         from .geo_location import GeoLocation
-        from .geo_location import SubArray
+        from .geo_location import StationMeta
 
-        sub_array_data = self.query(SubArray).all()
-        sub_arrays = {}
-        for sub_arr in sub_array_data:
-            sub_arrays[sub_arr.prefix] = {'Description':sub_arr.description,'Marker':sub_arr.plot_marker,'Stations':[]}
+        station_data = self.query(StationMeta).all()
+        stations = {}
+        for sta in station_data:
+            stations[sta.prefix] = {'Description':sta.description,'Marker':sta.plot_marker,'Stations':[]}
         locations = self.query(GeoLocation).all()
         for loc in locations:
-            for k in sub_arrays.keys():
+            for k in stations.keys():
                 if loc.station_name[:len(k)] == k:
-                    sub_arrays[k]['Stations'].append(loc.station_name)
-        return sub_arrays
+                    stations[k]['Stations'].append(loc.station_name)
+        return stations
 
 @add_metaclass(ABCMeta)
 class DB(object):

@@ -11,8 +11,6 @@ from __future__ import absolute_import, division, print_function
 
 from hera_mc import part_connect, mc, geo_location
 
-import copy
-
 # Pass part using a dictionary with a superset of part data:
 #   [hpn]{hptype, manufacturer_number, manufacture_date, short_description, repr,
 #         portA[name(s)],  portB[name(s)],  geo[E, N, z, station, subarray]}

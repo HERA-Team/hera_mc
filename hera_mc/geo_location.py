@@ -94,17 +94,17 @@ def station_name_or_number(station):
         station_col = GeoLocation.station_name
     return station, station_col
 
-class SubArray(MCDeclarativeBase):
+class StationMeta(MCDeclarativeBase):
     """
     A table to track sub_array things in various ways
     """
-    __tablename__ = 'sub_array'
+    __tablename__ = 'station_meta'
 
     prefix = Column(String(64), primary_key=True)
-    "String prefix to sub-array type, elements of which are typically characterized by <prefix><int>."
+    "String prefix to station type, elements of which are typically characterized by <prefix><int>."
 
     description = Column(String(64))
-    "Short description of sub-array type."
+    "Short description of station type."
 
     plot_marker = Column(String(64))
     "matplotlib marker type to use"
