@@ -45,15 +45,12 @@ Copyright (c) 2015--, HERA-Team.
 """
 
 NAME = "hera_mc"
-MAINTAINER = "Bryna Hazelton"
-MAINTAINER_EMAIL = "bryna.hazelton@gmail.com"
 DESCRIPTION = description
 LONG_DESCRIPTION = long_description
-URL = "http://github.com/HERA-Team/Monitor_and_Control"
+URL = "https://github.com/HERA-Team/hera_mc"
 DOWNLOAD_URL = ""
 LICENSE = "BSD"
-AUTHOR = "Bryna Hazelton"
-AUTHOR_EMAIL = "bryna.hazelton@gmail.com"
+AUTHOR = "HERA Team"
 PLATFORMS = "OS Independent"
 MAJOR = _version_major
 MINOR = _version_minor
@@ -63,4 +60,4 @@ PACKAGES = ['hera_mc',
             'hera_mc.tests']
 SCRIPTS = [p for p in glob.glob('scripts/*') if not p.endswith('~')]
 PACKAGE_DATA = {'hera_mc': [pjoin('data', '*')]}
-REQUIRES = ["astropy", "sqlalchemy"]
+REQUIRES = ["astropy", "sqlalchemy", "uptime", "numpy"]
