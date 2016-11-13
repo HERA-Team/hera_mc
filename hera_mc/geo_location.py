@@ -94,6 +94,87 @@ def station_name_or_number(station):
         station_col = GeoLocation.station_name
     return station, station_col
 
+def split_update_request(request):
+    """
+    splits out the update request
+
+    return nested list
+
+    Parameters:
+    ------------
+    request:  station0:column0:value0, [station1:]column1:value1, [...]
+    stationN:  station_name or station_number, first entry must have one, if absent propagate first
+    columnN:  name of geo_location column
+    valueN:  corresponding new value
+    """
+    data = []
+    data_to_proc = request.split(', ')
+    station0 = data_to_proc[0].split(':')[0]
+    for d in data_to_proc:
+        scv = d.split(':')
+        if len(scv) == 3:
+            pass
+        elif len(scv) == 2:
+            scv.insert(0, station0)
+        data.append(scv)
+    return data
+
+def locate_station(args, show_geo=False):
+    """Return the location of station_name or station_number as contained in args.locate.
+       If sub_array data exists, print subarray name."""
+    station, station_col = station_name_or_number(args.locate)
+    v = None
+    db = mc.connect_to_mc_db(args)
+    with db.sessionmaker() as session:
+        sub_arrays = session.split_arrays()
+        for a in session.query(GeoLocation).filter(station_col==station):
+            for key in sub_arrays.keys():
+                if a.station_name in sub_arrays[key]['Stations']:
+                    this_sub_array = key
+                    break
+            else:
+                this_sub_array = 'No sub-array information.'
+            v = [a.easting, a.northing, a.elevation, a.station_name, a.station_number, this_sub_array]
+            if show_geo:
+                if args.verbosity=='m' or args.verbosity=='h':
+                    print('station_name: ',a.station_name)
+                    print('\tstation_number: ',a.station_number)
+                    print('\teasting: ',a.easting)
+                    print('\tnorthing: ',a.northing)
+                    print('\televation: ',a.elevation)
+                    print('\tsub-array: ',this_sub_array,sub_arrays[this_sub_array]['Description'])
+                elif args.verbosity=='l':
+                    print(a,this_sub_array)
+    if show_geo:
+        if not v and args.verbosity == 'm' or args.verbosity == 'h':
+            print(args.locate, ' not found.')
+    return v
+
+
+def plot_arrays(args, overplot=None):
+    """Plot the various sub-array types"""
+    vpos = {'E':0,'N':1,'Z':2}
+    plt.figure(args.xgraph+args.ygraph)
+    db = mc.connect_to_mc_db(args)
+    with db.sessionmaker() as session:
+        sub_arrays = session.split_arrays()
+        for key in sub_arrays.keys():
+            for loc in sub_arrays[key]['Stations']:
+                for a in session.query(GeoLocation).filter(GeoLocation.station_name==loc):
+                    v = [a.easting,a.northing,a.elevation]
+                plt.plot(v[vpos[args.xgraph]],v[vpos[args.ygraph]],sub_arrays[key]['Marker'],label=a.station_name)
+    if overplot:
+        overplot_station = plt.plot(overplot[vpos[args.xgraph]], overplot[vpos[args.ygraph]],
+                 'ys', markersize=10)
+        legendEntries = [overplot_station]
+        legendText = [overplot[3]+':'+str(overplot[4])]
+        plt.legend((overplot_station),(legendText),numpoints=1,loc='upper right')
+    if args.xgraph != 'Z' and args.ygraph != 'Z':
+        plt.axis('equal')
+    plt.plot(xaxis=args.xgraph, yaxis=args.ygraph)
+    plt.show()
+
+
 class StationMeta(MCDeclarativeBase):
     """
     A table to track sub_array things in various ways

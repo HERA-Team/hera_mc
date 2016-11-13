@@ -50,17 +50,16 @@ class PartsAndConnections:
                 part_dict[part.hpn]['repr'] = part.__repr__()  # Keep for now
                 for part_info in session.query(part_connect.PartInfo).filter(part_connect.PartInfo.hpn == part.hpn):
                     part_dict[part.hpn]['short_description'] = part_info.short_description
-                for connection in session.query(part_connect.Connections).filter(part_connect.Connections.a.like(hpn_query + '%')):
-                    if connection.port_on_a not in part_dict[part.hpn]['a_ports']:
-                        part_dict[part.hpn]['a_ports'].append(connection.port_on_a)
-                for connection in session.query(part_connect.Connections).filter(part_connect.Connections.b.like(hpn_query + '%')):
-                    if connection.port_on_b not in part_dict[part.hpn]['b_ports']:
-                        part_dict[part.hpn]['b_ports'].append(connection.port_on_b)
+                for connection in session.query(part_connect.Connections).filter(part_connect.Connections.down.like(hpn_query + '%')):
+                    if connection.a_on_down not in part_dict[part.hpn]['a_ports']:
+                        part_dict[part.hpn]['a_ports'].append(connection.a_on_down)
+                for connection in session.query(part_connect.Connections).filter(part_connect.Connections.up.like(hpn_query + '%')):
+                    if connection.b_on_up not in part_dict[part.hpn]['b_ports']:
+                        part_dict[part.hpn]['b_ports'].append(connection.b_on_up)
                 if part.hptype == 'station':
-                    sub_arrays = session.split_arrays(geo.sub_array_designators.keys())
+                    #sub_arrays = session.split_arrays()
                     args.locate = part.hpn
-                    part_dict[part.hpn]['geo'] = geo.locate_station(args, show_geo=False)
-
+                    part_dict[part.hpn]['geo'] = geo_location.locate_station(args, show_geo=False)
         if show_part:
             self.show_part(args, part_dict)
         return part_dict
@@ -72,51 +71,53 @@ class PartsAndConnections:
         for cd in connection_dict:
             if args.verbosity == 'm' or args.verbosity == 'h':
                 print(cd, connection_dict[cd])
-            elif cd in ['repr_a', 'repr_b']:
+            elif cd in ['repr_up', 'repr_down']:
                 print(cd, connection_dict[cd])
 
-    def get_connection(self, args, hpn_query=None, show_connection=False):
+    def get_connection(self, args, hpn_query=None, port_query=None, show_connection=False):
         """
         Return information on parts connected to args.connection -- NEED TO INCLUDE USING START/STOP_TIME!!!
         It should get connections immediately adjacent to one part (upstream and downstream).
         """
         if hpn_query is None:
             hpn_query = args.connection
-        connection_dict = {'a': [], 'port_on_a': [], 'start_on_a': [], 'stop_on_a': [], 'repr_a': [],
-                           'b': [], 'port_on_b': [], 'start_on_b': [], 'stop_on_b': [], 'repr_b': []}
+        if port_query is None:
+            port_query = args.define_port
+        connection_dict = {'up':   [], 'b_on_up':   [], 'start_on_up':   [], 'stop_on_up':   [], 'repr_up':   [],
+                           'down': [], 'a_on_down': [], 'start_on_down': [], 'stop_on_down': [], 'repr_down': []}
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
-            for connection in session.query(part_connect.Connections).filter(part_connect.Connections.a.like(hpn_query + '%')):
+            for connection in session.query(part_connect.Connections).filter(part_connect.Connections.up.like(hpn_query + '%')):
                 # connected.append(self.get_part(args, connection.b, show_part=False))
-                connection_dict['b'].append(connection.b)
-                connection_dict['port_on_b'].append(connection.port_on_b)
-                connection_dict['start_on_b'].append(connection.start_time)
-                connection_dict['stop_on_b'].append(connection.stop_time)
-                connection_dict['repr_b'].append(connection.__repr__())
-            for connection in session.query(part_connect.Connections).filter(part_connect.Connections.b.like(hpn_query + '%')):
+                connection_dict['down'].append(connection.b)
+                connection_dict['a_on_down'].append(connection.port_on_b)
+                connection_dict['start_on_down'].append(connection.start_time)
+                connection_dict['stop_on_down'].append(connection.stop_time)
+                connection_dict['repr_down'].append(connection.__repr__())
+            for connection in session.query(part_connect.Connections).filter(part_connect.Connections.down.like(hpn_query + '%')):
                 # connected.append(self.get_part(args, connection.a, show_part=False))
-                connection_dict['a'].append(connection.a)
-                connection_dict['port_on_a'].append(connection.port_on_a)
-                connection_dict['start_on_a'].append(connection.start_time)
-                connection_dict['stop_on_a'].append(connection.stop_time)
-                connection_dict['repr_a'].append(connection.__repr__())
+                connection_dict['up'].append(connection.a)
+                connection_dict['b_on_up'].append(connection.port_on_a)
+                connection_dict['start_on_up'].append(connection.start_time)
+                connection_dict['stop_on_up'].append(connection.stop_time)
+                connection_dict['repr_up'].append(connection.__repr__())
         if show_connection:
             self.show_connection(args, connection_dict)
         return connection_dict
 
     def __go_upstream(self, args, hpn, port):
-        connection_dict = self.get_connection(args, hpn_query=hpn, show_connection=False)
-        for hpn_a in connection_dict['a']:
-            if hpn_a not in self.upstream:
-                self.upstream.append(hpn_a)
-            self.__go_upstream(args, hpn_a, port)
+        connection_dict = self.get_connection(args, hpn_query=hpn, port_query=port, show_connection=False)
+        for hpn_up in connection_dict['up']:
+            if hpn_up not in self.upstream:
+                self.upstream.append(hpn_up)
+            self.__go_upstream(args, hpn_up, port)
 
     def __go_downstream(self, args, hpn, port):
-        connection_dict = self.get_connection(args, hpn_query=hpn, show_connection=False)
-        for hpn_b in connection_dict['b']:
-            if hpn_b not in self.downstream:
-                self.downstream.append(hpn_b)
-            self.__go_downstream(args, hpn_b, port)
+        connection_dict = self.get_connection(args, hpn_query=hpn, port_query=port, show_connection=False)
+        for hpn_down in connection_dict['down']:
+            if hpn_down not in self.downstream:
+                self.downstream.append(hpn_down)
+            self.__go_downstream(args, hpn_down, port)
 
     def get_hookup(self, args, hpn_query=None, port_query=None, show_hookup=False):
         """

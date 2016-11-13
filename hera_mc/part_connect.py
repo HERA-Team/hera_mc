@@ -66,17 +66,17 @@ class Connections(MCDeclarativeBase):
     """
     __tablename__ = 'connections'
 
-    a = Column(String(64), ForeignKey(Parts.hpn), nullable=False, primary_key=True)
-    "a refers to the skyward part, e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.  Signal flows from A->B"
+    up = Column(String(64), ForeignKey(Parts.hpn), nullable=False, primary_key=True)
+    "up refers to the skyward part, e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.  Signal flows from A->B"
 
-    b = Column(String(64), ForeignKey(Parts.hpn), nullable=False, primary_key=True)
-    "b refers to the part that is further from the sky, e.g. "
+    down = Column(String(64), ForeignKey(Parts.hpn), nullable=False, primary_key=True)
+    "down refers to the part that is further from the sky, e.g. "
 
-    port_on_a = NotNull(String(64), primary_key=True)
-    "port_on_a refers to the port on the part that is skyward"
+    b_on_up = NotNull(String(64), primary_key=True)
+    "connected port on up (skyward) part, which is its port b"
 
-    port_on_b = NotNull(String(64), primary_key=True)
-    "port_on_b refers to the port on the part that is further from the sky"
+    a_on_down = NotNull(String(64), primary_key=True)
+    "connection port on down (further from the sky) part, which is its port a"
 
     start_time = NotNull(DateTime, primary_key=True)
     "start_time is the time that the connection is set"
@@ -85,6 +85,6 @@ class Connections(MCDeclarativeBase):
     "stop_time is the time that the connection is removed"
 
     def __repr__(self):
-        return '<{self.a}<{self.port_on_a}:{self.port_on_b}>{self.b}>'.format(self=self)
+        return '<{self.up}<{self.b_on_up}:{self.a_on_down}>{self.down}>'.format(self=self)
 
 ###

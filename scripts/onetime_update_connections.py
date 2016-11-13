@@ -4346,10 +4346,10 @@ db = mc.connect_to_mc_db(args)
 with db.sessionmaker() as session:
     for k in sorted_keys:
         d = part_connect.Connections()
-        d.a = connections[k][1]
-        d.port_on_a = connections[k][2]
-        d.b = connections[k][3]
-        d.port_on_b = connections[k][4]
+        d.up = connections[k][1]
+        d.b_on_up = connections[k][2]
+        d.down = connections[k][3]
+        d.a_on_down = connections[k][4]
         d.start_time = connections[k][5]
         print(d)
         session.add(d)

@@ -8,8 +8,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, mc, part_handling
-import geo
+from hera_mc import part_connect, mc, part_handling, geo_location
 
 if __name__ == '__main__':
     handling = part_handling.PartsAndConnections()
