@@ -14,6 +14,7 @@ if __name__ == '__main__':
     handling = part_handling.PartsAndConnections()
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-p', '--hpn', help="Graph data of all elements (per xgraph, ygraph args)", default=None)
+    parser.add_argument('-t', '--hptype', help="List the hera part types", action='store_true')
     parser.add_argument('-v', '--verbosity', help="Set verbosity {l, m, h} [m].", default="m")
     parser.add_argument('-c', '--connection', help="Show all connections directly to a part", default=None)
     parser.add_argument('-m', '--mapr', help="Show full hookup chains (see --define_hookup and --show_levels)", default=None)
@@ -31,3 +32,5 @@ if __name__ == '__main__':
     if args.mapr:
         args.mapr = args.mapr.upper()
         hookup_dict = handling.get_hookup(args, show_hookup=True)
+    if args.hptype:
+        part_type_dict = handling.get_part_types(args, show_hptype=True)

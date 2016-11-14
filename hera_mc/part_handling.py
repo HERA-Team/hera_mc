@@ -15,8 +15,8 @@ from hera_mc import part_connect, mc, geo_location
 #   [hpn]{hptype, manufacturer_number, manufacture_date, short_description, repr,
 #         portA[name(s)],  portB[name(s)],  geo[E, N, z, station, subarray]}
 # Pass connections by using a dictionary of lists:
-#   {a[name(s)], port_on_a[name(s)], start_on_a[time(s)], stop_on_a[time(s)],
-#    b[name(s)], port_on_b[name(s)], start_on_b[time(s)], stop_on_b[time(s)]}
+#   {up[name(s)],   b_on_up[name(s)],   start_on_up[time(s)],   stop_on_up[time(s)],
+#    down[name(s)], a_on_down[name(s)], start_on_down[time(s)], stop_on_down[time(s)]}
 
 
 class PartsAndConnections:
@@ -88,19 +88,19 @@ class PartsAndConnections:
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
             for connection in session.query(part_connect.Connections).filter(part_connect.Connections.up.like(hpn_query + '%')):
-                # connected.append(self.get_part(args, connection.b, show_part=False))
-                connection_dict['down'].append(connection.b)
-                connection_dict['a_on_down'].append(connection.port_on_b)
-                connection_dict['start_on_down'].append(connection.start_time)
-                connection_dict['stop_on_down'].append(connection.stop_time)
-                connection_dict['repr_down'].append(connection.__repr__())
+                if port_query=='all' or connection.b_on_up == port.query:
+                    connection_dict['down'].append(connection.down)
+                    connection_dict['a_on_down'].append(connection.a_on_down)
+                    connection_dict['start_on_down'].append(connection.start_time)
+                    connection_dict['stop_on_down'].append(connection.stop_time)
+                    connection_dict['repr_down'].append(connection.__repr__())
             for connection in session.query(part_connect.Connections).filter(part_connect.Connections.down.like(hpn_query + '%')):
-                # connected.append(self.get_part(args, connection.a, show_part=False))
-                connection_dict['up'].append(connection.a)
-                connection_dict['b_on_up'].append(connection.port_on_a)
-                connection_dict['start_on_up'].append(connection.start_time)
-                connection_dict['stop_on_up'].append(connection.stop_time)
-                connection_dict['repr_up'].append(connection.__repr__())
+                if port_query=='all' or connection.a_on_down == port.query:
+                    connection_dict['up'].append(connection.up)
+                    connection_dict['b_on_up'].append(connection.b_on_up)
+                    connection_dict['start_on_up'].append(connection.start_time)
+                    connection_dict['stop_on_up'].append(connection.stop_time)
+                    connection_dict['repr_up'].append(connection.__repr__())
         if show_connection:
             self.show_connection(args, connection_dict)
         return connection_dict
@@ -135,8 +135,9 @@ class PartsAndConnections:
             self.downstream = []
             ports = [port_query]
             if port_query == 'all':
-                ports = ['place', 'holder']
-            for p in ports:
+                self.port_query_state = 'all'# = ['place', 'holder']
+            for p in port_query:
+
                 self.__go_upstream(args, hpn, p)
                 self.__go_downstream(args, hpn, p)
             self.show_hookup(args)
@@ -159,3 +160,29 @@ class PartsAndConnections:
                 if hookup_part in part_info[hpn]['hptype']:
                     print(hpn, end='\t')
         print('')
+
+    def get_part_types(self, args, show_hptype=False):
+        self.part_type_dict = {}
+        db = mc.connect_to_mc_db(args)
+        with db.sessionmaker() as session:
+            for part in session.query(part_connect.Parts).all():
+                if part.hptype not in self.part_type_dict.keys():
+                    self.part_type_dict[part.hptype] = {'part_list':[part.hpn], 'a_ports':[], 'b_ports':[]}
+                else:
+                    self.part_type_dict[part.hptype]['part_list'].append(part.hpn)
+        for k in self.part_type_dict.keys():  ###ASSUME FIRST PART IS FULLY CONNECTED
+            pa = self.part_type_dict[k]['part_list'][0]  
+            pd = self.get_part(args,pa,show_part=False)
+            self.part_type_dict[k]['a_ports'] = pd[pa]['a_ports']
+            self.part_type_dict[k]['b_ports'] = pd[pa]['b_ports']
+            if show_hptype:
+                print('%s: %d parts in database' % (k,len(self.part_type_dict[k]['part_list'])))
+                print('\tA:',end=' ')
+                for a in self.part_type_dict[k]['a_ports']:
+                    print(a,end=' ')
+                print('\n\tB:',end=' ')
+                for b in self.part_type_dict[k]['b_ports']:
+                    print(b,end=' ')
+                print()
+        return self.part_type_dict
+
