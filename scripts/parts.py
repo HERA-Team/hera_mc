@@ -13,13 +13,13 @@ from hera_mc import part_connect, mc, part_handling, geo_location
 if __name__ == '__main__':
     handling = part_handling.PartsAndConnections()
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-p', '--hpn', help="Graph data of all elements (per xgraph, ygraph args)", default=None)
+    parser.add_argument('-p', '--hpn', help="Get part information", default=None)
     parser.add_argument('-t', '--hptype', help="List the hera part types", action='store_true')
-    parser.add_argument('-v', '--verbosity', help="Set verbosity {l, m, h} [m].", default="m")
+    parser.add_argument('-v', '--verbosity', help="Set verbosity {l, m, h} [h].", default="m")
     parser.add_argument('-c', '--connection', help="Show all connections directly to a part", default=None)
-    parser.add_argument('-m', '--mapr', help="Show full hookup chains (see --define_hookup and --show_levels)", default=None)
-    parser.add_argument('--define_port', help="Define desired port(s) for hookup.", default='all')
-    parser.add_argument('--show_levels', help='show power levels if enabled (and able)', action='store_true')
+    parser.add_argument('-m', '--mapr', help="Show full hookup chains (see --show_levels)", default=None)
+    parser.add_argument('--specify_port', help="Define desired port(s) for hookup [all].", default='all')
+    parser.add_argument('--show_levels', help='show power levels if enabled (and able) NOT YET IMPLEMENTED', action='store_true')
     parser.add_argument('--exact_match', help='force exact matches on part numbers, not beginning N char', action='store_true')
     args = parser.parse_args()
     if args.hpn:
