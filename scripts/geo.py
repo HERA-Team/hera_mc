@@ -24,7 +24,7 @@ if __name__ == '__main__':
     args.ygraph = args.ygraph.upper()
     located = None
     if args.update:
-        data = geo_location.split_update_request(args.update)
+        data = geo_location.parse_update_request(args.update)
         geo_location.update(args,data)
     if args.show:
         args.locate = args.show

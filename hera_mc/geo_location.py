@@ -94,9 +94,9 @@ def station_name_or_number(station):
         station_col = GeoLocation.station_name
     return station, station_col
 
-def split_update_request(request):
+def parse_update_request(request):
     """
-    splits out the update request
+    parses the update request
 
     return nested list
 
@@ -126,15 +126,16 @@ def locate_station(args, show_geo=False):
     v = None
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        sub_arrays = session.split_arrays()
+        station_meta = session.get_station_meta()
         for a in session.query(GeoLocation).filter(station_col==station):
-            for key in sub_arrays.keys():
-                if a.station_name in sub_arrays[key]['Stations']:
-                    this_sub_array = key
+            for key in station_meta.keys():
+                if a.station_name in station_meta[key]['Stations']:
+                    this_station = key
                     break
             else:
-                this_sub_array = 'No sub-array information.'
-            v = [a.easting, a.northing, a.elevation, a.station_name, a.station_number, this_sub_array]
+                this_station = 'No station metadata.'
+            v = {'easting':a.easting, 'northing':a.northing, 'elevation':a.elevation, 
+                 'station_name':a.station_name, 'station_number':a.station_number, 'station_type':this_station}
             if show_geo:
                 if args.verbosity=='m' or args.verbosity=='h':
                     print('station_name: ',a.station_name)
@@ -142,9 +143,9 @@ def locate_station(args, show_geo=False):
                     print('\teasting: ',a.easting)
                     print('\tnorthing: ',a.northing)
                     print('\televation: ',a.elevation)
-                    print('\tsub-array: ',this_sub_array,sub_arrays[this_sub_array]['Description'])
+                    print('\tstation description (%s):  %s' % (this_station,station_meta[this_station]['Description']))
                 elif args.verbosity=='l':
-                    print(a,this_sub_array)
+                    print(a,this_station)
     if show_geo:
         if not v and args.verbosity == 'm' or args.verbosity == 'h':
             print(args.locate, ' not found.')
@@ -153,21 +154,21 @@ def locate_station(args, show_geo=False):
 
 def plot_arrays(args, overplot=None):
     """Plot the various sub-array types"""
-    vpos = {'E':0,'N':1,'Z':2}
+    coord = {'E':'easting','N':'northing','Z':'elevation'}
     plt.figure(args.xgraph+args.ygraph)
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        sub_arrays = session.split_arrays()
-        for key in sub_arrays.keys():
-            for loc in sub_arrays[key]['Stations']:
+        station_meta = session.get_station_meta()
+        for key in station_meta.keys():
+            for loc in station_meta[key]['Stations']:
                 for a in session.query(GeoLocation).filter(GeoLocation.station_name==loc):
-                    v = [a.easting,a.northing,a.elevation]
-                plt.plot(v[vpos[args.xgraph]],v[vpos[args.ygraph]],sub_arrays[key]['Marker'],label=a.station_name)
+                    pt = {'easting':a.easting,'northing':a.northing,'elevation':a.elevation}
+                plt.plot(pt[coord[args.xgraph]],pt[coord[args.ygraph]],station_meta[key]['Marker'],label=a.station_name)
     if overplot:
-        overplot_station = plt.plot(overplot[vpos[args.xgraph]], overplot[vpos[args.ygraph]],
+        overplot_station = plt.plot(overplot[coord[args.xgraph]], overplot[coord[args.ygraph]],
                  'ys', markersize=10)
         legendEntries = [overplot_station]
-        legendText = [overplot[3]+':'+str(overplot[4])]
+        legendText = [overplot['station_name']+':'+str(overplot['station_number'])]
         plt.legend((overplot_station),(legendText),numpoints=1,loc='upper right')
     if args.xgraph != 'Z' and args.ygraph != 'Z':
         plt.axis('equal')
@@ -177,7 +178,7 @@ def plot_arrays(args, overplot=None):
 
 class StationMeta(MCDeclarativeBase):
     """
-    A table to track sub_array things in various ways
+    A table to track/denote station metadata categories in various ways
     """
     __tablename__ = 'station_meta'
 

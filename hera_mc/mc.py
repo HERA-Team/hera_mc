@@ -120,7 +120,7 @@ class MCSession(Session):
 
         return ptemp_list
 
-    def split_arrays(self):
+    def get_station_meta(self):
         """
         returns a dictionary of sub-arrays
              [prefix]{'Description':'...', 'plot_marker':'...', 'stations':[]}

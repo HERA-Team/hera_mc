@@ -60,7 +60,6 @@ class PartsAndConnections:
                     if connection.b_on_up not in part_dict[part.hpn]['b_ports']:
                         part_dict[part.hpn]['b_ports'].append(connection.b_on_up)
                 if part.hptype == 'station':
-                    #sub_arrays = session.split_arrays()
                     args.locate = part.hpn
                     part_dict[part.hpn]['geo'] = geo_location.locate_station(args, show_geo=False)
         if show_part:
@@ -206,7 +205,7 @@ class PartsAndConnections:
                 self.__go_downstream(args, hpn, p)
                 station = self.get_part(args,hpn_query=self.upstream[-1][0],exact_match=True,show_part=False)
                 if station[self.upstream[-1][0]]['hptype'] == 'station':
-                    hookup_dict[hpn] = [[station[self.upstream[-1][0]]['geo'][4],'S']]
+                    hookup_dict[hpn] = [[station[self.upstream[-1][0]]['geo']['station_number'],'S']]
                 else:
                     hookup_dict[hpn] = []
                 for pn in reversed(self.upstream):
