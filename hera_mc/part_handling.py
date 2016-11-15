@@ -111,43 +111,27 @@ class PartsAndConnections:
             self.show_connection(args, connection_dict)
         return connection_dict
 
-    def __get_upstream_port(self,args,hpn,port):
+    def __get_next_port(self,args,hpn,port,direction):
         part_dict = self.get_part(args,hpn_query=hpn,exact_match=True,show_part=False)
-        number_a_ports = len(part_dict[hpn]['a_ports'])
-        number_b_ports = len(part_dict[hpn]['b_ports'])
-        if port in part_dict[hpn]['a_ports']:
+        if direction=='up':
+            ports = [part_dict[hpn]['a_ports'],part_dict[hpn]['b_ports']]
+            replacing = ['b','a']
+        elif direction=='down':
+            ports = [part_dict[hpn]['b_ports'],part_dict[hpn]['a_ports']]
+            replacing = ['a','b']
+        number_of_ports = [len(ports[0]),len(ports[1])]
+        if port in ports[0]:
             return_port = port
-        elif number_a_ports == 1:
-            return_port = part_dict[hpn]['a_ports'][0]
-        elif number_a_ports == 0:
+        elif number_of_ports[0] == 1:
+            return_port = ports[0][0]
+        elif number_of_ports[0] == 0:
             return None
-        elif port in part_dict[hpn]['b_ports']:
-            if number_b_ports == number_a_ports:
-                return_port = port.replace('b','a')
-            elif number_b_ports > number_a_ports:
-                return_port = part_dict[hpn]['a_ports'][0]
-                print("I don't think that this one can happen.")
-        else:
-            print('Error:  port not found',port)
-            return_port = None 
-        return return_port
-
-    def __get_downstream_port(self,args,hpn,port):
-        part_dict = self.get_part(args,hpn_query=hpn,exact_match=True,show_part=False)
-        number_a_ports = len(part_dict[hpn]['a_ports'])
-        number_b_ports = len(part_dict[hpn]['b_ports'])
-        if port in part_dict[hpn]['b_ports']:
-            return_port = port
-        elif number_b_ports == 1:
-            return_port = part_dict[hpn]['b_ports'][0]
-        elif number_b_ports == 0:
-            return None
-        elif port in part_dict[hpn]['a_ports']:
-            if number_a_ports == number_b_ports:
-                return_port = port.replace('a','b')
-            elif number_a_ports > number_b_ports:
-                return_port = part_dict[hpn]['b_ports'][0]
-                print("I don't think that this one can happen.")
+        elif port in ports[1]:
+            if number_of_ports[1] == number_of_ports[0]:
+                return_port = port.replace(replacing[0],replacing[1])
+            elif number_of_ports[1] > number_of_ports[0]:
+                return_port = ports[0][0]
+                print("THIS IS UNDETERMINED.")
         else:
             print('Error:  port not found',port)
             return_port = None 
@@ -157,7 +141,7 @@ class PartsAndConnections:
         """
         Find the next connection up the signal chain -- needs port to be on 'a' side of hpn
         """
-        up_port = self.__get_upstream_port(args,hpn,port)
+        up_port = self.__get_next_port(args,hpn,port,'up')
         connection_dict = self.get_connection(args, hpn_query=hpn, port_query=up_port, exact_match=True, show_connection=False)
         for hpn_up in connection_dict['up']:
             if hpn_up not in self.upstream:
@@ -169,7 +153,7 @@ class PartsAndConnections:
         """
         Find the next connection down the signal chain -- needs port to be on 'b' side of hpn
         """
-        down_port = self.__get_downstream_port(args,hpn,port)
+        down_port = self.__get_next_port(args,hpn,port,'down')
         connection_dict = self.get_connection(args, hpn_query=hpn, port_query=down_port, exact_match=True, show_connection=False)
         for hpn_down in connection_dict['down']:
             if hpn_down not in self.downstream:
@@ -224,21 +208,27 @@ class PartsAndConnections:
                 hookup_dict['columns'].append([get_part_type[hu[0]]['hptype'],'column'])
         if show_hookup:
             self.show_hookup(hookup_dict)
+        return hookup_dict
 
     def show_hookup(self, hookup_dict):
         """
         Print out the hookup table -- uses tabulate package
         """
-        headers = []
+        headers = []  ###CONTAINS SOME AD HOC FORMATTING
         for i,col in enumerate(hookup_dict['columns']):
             if not i:  #This is because 'station' is used twice
                 continue
-            headers.append(col[0])
+            if col[0][-2:]=='_e' or col[0][-2:]=='_n':
+                colhead = col[0][:-2]
+            else:
+                colhead = col[0]
+            headers.append(colhead)
         table_data = []
         for hpn in hookup_dict.keys():
             if hpn=='columns':
                 continue
-            td = [str(hookup_dict[hpn][0][0])+'/'+str(hookup_dict[hpn][1][0])]
+            s = "{:0>3}  {}".format(str(hookup_dict[hpn][0][0]), str(hookup_dict[hpn][1][0]))
+            td = [s]
             for i,pn in enumerate(hookup_dict[hpn]):
                 if i<2:
                     continue
@@ -250,24 +240,6 @@ class PartsAndConnections:
             table_data.append(td)
         print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))
 
-        # list_hookups = args.define_hookup.split(':')
-        # print('Hookup for hpn ', self.hookup_hpn)
-        # print('\t', end='')
-        # for hookup_part in list_hookups:
-        #     for hpn0 in self.upstream:
-        #         hpn = hpn0[0]
-        #         part_info = self.get_part(args, hpn_query=hpn, show_part=False)
-        #         if hookup_part in part_info[hpn]['hptype']:
-        #             print(hpn,':', end='\t')
-        # print('[', self.hookup_hpn, ']', sep='', end='\t')
-        # for hookup_part in list_hookups:
-        #     for hpn0 in self.downstream:
-        #         hpn = hpn0[0]
-        #         part_info = self.get_part(args, hpn_query=hpn, show_part=False)
-        #         if hookup_part in part_info[hpn]['hptype']:
-        #             print(hpn, end='\t')
-        # print('')
-
     def get_part_types(self, args, show_hptype=False):
         self.part_type_dict = {}
         db = mc.connect_to_mc_db(args)
@@ -277,19 +249,26 @@ class PartsAndConnections:
                     self.part_type_dict[part.hptype] = {'part_list':[part.hpn], 'a_ports':[], 'b_ports':[]}
                 else:
                     self.part_type_dict[part.hptype]['part_list'].append(part.hpn)
+        if show_hptype:
+            headers = ['Part type','# in dbase','A ports','B ports']
+            table_data = []
         for k in self.part_type_dict.keys():  ###ASSUME FIRST PART IS FULLY CONNECTED
             pa = self.part_type_dict[k]['part_list'][0]  
             pd = self.get_part(args,pa,show_part=False)
             self.part_type_dict[k]['a_ports'] = pd[pa]['a_ports']
             self.part_type_dict[k]['b_ports'] = pd[pa]['b_ports']
             if show_hptype:
-                print('%s: %d parts in database' % (k,len(self.part_type_dict[k]['part_list'])))
-                print('\tA:',end=' ')
+                td = [k,len(self.part_type_dict[k]['part_list'])]
+                pts = ''
                 for a in self.part_type_dict[k]['a_ports']:
-                    print(a,end=' ')
-                print('\n\tB:',end=' ')
+                    pts+=(a+', ')
+                td.append(pts.strip().strip(','))
+                pts = ''
                 for b in self.part_type_dict[k]['b_ports']:
-                    print(b,end=' ')
-                print()
+                    pts+=(b+', ')
+                td.append(pts.strip().strip(','))
+                table_data.append(td)
+        if show_hptype:
+            print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))          
         return self.part_type_dict
 
