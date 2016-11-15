@@ -8,6 +8,7 @@ This is meant to hold utility scripts for parts and connections
 
 """
 from __future__ import absolute_import, division, print_function
+from tabulate import tabulate
 
 from hera_mc import part_connect, mc, geo_location
 
@@ -203,29 +204,51 @@ class PartsAndConnections:
                 self.downstream = []
                 self.__go_upstream(args, hpn, p)
                 self.__go_downstream(args, hpn, p)
-                station = self.get_part(args,hpn_query=self.upstream[-1][0],exact_match=True,show_part=False)
-                if station[self.upstream[-1][0]]['hptype'] == 'station':
-                    hookup_dict[hpn] = [[station[self.upstream[-1][0]]['geo']['station_number'],'S']]
+                furthest_up = self.upstream[-1][0]
+                try_station = self.get_part(args,hpn_query=furthest_up,exact_match=True,show_part=False)
+                if try_station[furthest_up]['hptype'] == 'station':
+                    hookup_dict[hpn] = [[try_station[furthest_up]['geo']['station_number'],'S']]
                 else:
                     hookup_dict[hpn] = []
                 for pn in reversed(self.upstream):
                     hookup_dict[hpn].append(pn)
                 for pn in self.downstream:
                     hookup_dict[hpn].append(pn)
+        tkey = hookup_dict.keys()[0]
+        hookup_dict['columns'] = []
+        for hu in hookup_dict[tkey]:
+            if hu[1]=='S':
+                hookup_dict['columns'].append(['station','column'])
+            else:
+                get_part_type = self.get_part(args,hpn_query=hu[0],exact_match=True,show_part=False)
+                hookup_dict['columns'].append([get_part_type[hu[0]]['hptype'],'column'])
         if show_hookup:
             self.show_hookup(hookup_dict)
 
     def show_hookup(self, hookup_dict):
+        """
+        Print out the hookup table -- uses tabulate package
+        """
+        headers = []
+        for i,col in enumerate(hookup_dict['columns']):
+            if not i:  #This is because 'station' is used twice
+                continue
+            headers.append(col[0])
+        table_data = []
         for hpn in hookup_dict.keys():
-            for pn in hookup_dict[hpn]:
-                if pn[1]=='S':
-                    print('(',pn[0],')',sep='',end=' ')
-                elif pn[0] == hpn:
-                    print('[',pn[0],']',sep='',end=' ')
+            if hpn=='columns':
+                continue
+            td = [str(hookup_dict[hpn][0][0])+'/'+str(hookup_dict[hpn][1][0])]
+            for i,pn in enumerate(hookup_dict[hpn]):
+                if i<2:
+                    continue
+                if pn[0] == hpn:
+                    s = '['+str(pn[0])+']'
                 else:
-                    print(pn[0],end=' ')
-            print()
-        return 
+                    s = str(pn[0])
+                td.append(s)
+            table_data.append(td)
+        print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))
 
         # list_hookups = args.define_hookup.split(':')
         # print('Hookup for hpn ', self.hookup_hpn)
