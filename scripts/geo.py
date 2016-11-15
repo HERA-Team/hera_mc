@@ -25,7 +25,7 @@ if __name__ == '__main__':
     located = None
     if args.update:
         data = geo_location.parse_update_request(args.update)
-        geo_location.update(args,data)
+        geo_location.update(args, data)
     if args.show:
         args.locate = args.show
         args.graph = True

@@ -131,13 +131,14 @@ class MCSession(Session):
         station_data = self.query(StationMeta).all()
         stations = {}
         for sta in station_data:
-            stations[sta.prefix] = {'Description':sta.description,'Marker':sta.plot_marker,'Stations':[]}
+            stations[sta.prefix] = {'Description': sta.description, 'Marker': sta.plot_marker, 'Stations': []}
         locations = self.query(GeoLocation).all()
         for loc in locations:
             for k in stations.keys():
                 if loc.station_name[:len(k)] == k:
                     stations[k]['Stations'].append(loc.station_name)
         return stations
+
 
 @add_metaclass(ABCMeta)
 class DB(object):

@@ -11,13 +11,13 @@ from __future__ import absolute_import, division, print_function
 from hera_mc import geo_location, mc
 
 data = {}
-data['HH'] = ['HERA Hex locations','ro']
-data['PH'] = ['PAPER Hex locations','rs']
-data['PI'] = ['PAPER Imaging locations','gs']
-data['PP'] = ['PAPER Polarize locations','bd']
-data['S']  = ['Station grid locations','ks']
-data['CR'] = ['Container location','k*']
-data['ND'] = ['Node location','r*']
+data['HH'] = ['HERA Hex locations', 'ro']
+data['PH'] = ['PAPER Hex locations', 'rs']
+data['PI'] = ['PAPER Imaging locations', 'gs']
+data['PP'] = ['PAPER Polarize locations', 'bd']
+data['S'] = ['Station grid locations', 'ks']
+data['CR'] = ['Container location', 'k*']
+data['ND'] = ['Node location', 'r*']
 
 sorted_keys = sorted(data.keys())
 
@@ -33,4 +33,3 @@ with db.sessionmaker() as session:
         d.plot_marker = data[k][1]
         session.add(d)
         print(d)
-
