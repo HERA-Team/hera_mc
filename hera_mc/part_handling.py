@@ -88,7 +88,7 @@ class PartsAndConnections:
         if not exact_match:
             hpn_query = hpn_query+'%'
         if port_query is None:
-            port_query = args.define_port
+            port_query = args.specify_port
         connection_dict = {'up':   [], 'b_on_up':   [], 'start_on_up':   [], 'stop_on_up':   [], 'repr_up':   [],
                            'down': [], 'a_on_down': [], 'start_on_down': [], 'stop_on_down': [], 'repr_down': []}
         db = mc.connect_to_mc_db(args)
@@ -170,7 +170,7 @@ class PartsAndConnections:
             hpn_query = args.mapr
             exact_match = args.exact_match
         if port_query is None:
-            port_query = args.define_port
+            port_query = args.specify_port
         parts = self.get_part(args, hpn_query=hpn_query, exact_match=exact_match, show_part=False)
         hookup_dict = {}
         for hpn in parts.keys():
