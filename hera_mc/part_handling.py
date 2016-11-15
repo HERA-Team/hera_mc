@@ -26,17 +26,37 @@ class PartsAndConnections:
 
     def show_part(self, args, part_dict):
         """
-        Print out part information.  PLACEHOLDER FOR NOW.
+        Print out part information. 
         """
-        for pd in part_dict.keys():
-            if args.verbosity == 'm' or args.verbosity == 'h':
-                print(pd, part_dict[pd])
+        table_data = []
+        if args.verbosity == 'm':
+            headers = ['HERA P/N','Part Type','Mfg #','Date']
+        elif args.verbosity == 'h':
+            headers = ['HERA P/N','Part Type','Mfg #','Date','A ports','B ports']
+        for hpn in part_dict.keys():
+            if args.verbosity == 'h':
+                td = [hpn,part_dict[hpn]['hptype'],
+                      part_dict[hpn]['manufacturer_number'],part_dict[hpn]['manufacture_date']]
+                pts = ''
+                for a in part_dict[hpn]['a_ports']:
+                    pts+=(a+', ')
+                td.append(pts.strip().strip(','))
+                pts = ''
+                for b in part_dict[hpn]['b_ports']:
+                    pts+=(b+', ')
+                td.append(pts.strip().strip(','))
+                table_data.append(td)
+            if args.verbosity == 'm':
+                table_data.append([hpn,part_dict[hpn]['hptype'],
+                    part_dict[hpn]['manufacturer_number'],part_dict[hpn]['manufacture_date']])
             else:
-                print(pd, part_dict[pd]['repr'])
+                print(hpn, part_dict[hpn]['repr'])
+        if args.verbosity=='m' or args.verbosity=='h':
+            print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))
 
     def get_part(self, args, hpn_query=None, exact_match=False, show_part=False):
         """
-        Return information on a part.  It will return all matching first characters.
+        Return information on a part.  It will return all matching first characters unless exact_match==True.
         """
         if hpn_query is None:
             hpn_query = args.hpn
@@ -71,11 +91,25 @@ class PartsAndConnections:
         """
         Print out connection information.  PLACEHOLDER FOR NOW.
         """
-        for cd in connection_dict:
-            if args.verbosity == 'm' or args.verbosity == 'h':
-                print(cd, connection_dict[cd])
-            elif cd in ['repr_up', 'repr_down']:
-                print(cd, connection_dict[cd])
+        table_data = []
+        if args.verbosity == 'm':
+            headers = ['Upstream', 'Port b', 'Downstream', 'Port a']
+        elif args.verbosity == 'h':
+            headers = ['Upstream', 'Port b', 'Downstream', 'Port a']
+        for i,up in enumerate(connection_dict['up']):
+            bup = connection_dict['b_on_up'][i]
+            adn = connection_dict['a_on_down'][i]
+            dn  = connection_dict['down'][i]
+            rup = connection_dict['repr_up'][i]
+            rdown = connection_dict['repr_down'][i]
+            if args.verbosity == 'h':
+                table_data.append([up,bup,dn,adn])
+            if args.verbosity == 'm':
+                table_data.append([up,bup,dn,adn])
+            else:
+                print(rup,rdown)
+        if args.verbosity=='m' or args.verbosity=='h':
+            print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))
 
     def get_connection(self, args, hpn_query=None, port_query=None, exact_match=False, show_connection=False):
         """
@@ -190,14 +224,15 @@ class PartsAndConnections:
                 self.__go_downstream(args, hpn, p)
                 furthest_up = self.upstream[-1][0]
                 try_station = self.get_part(args,hpn_query=furthest_up,exact_match=True,show_part=False)
+                hukey = hpn+':'+p
                 if try_station[furthest_up]['hptype'] == 'station':
-                    hookup_dict[hpn] = [[try_station[furthest_up]['geo']['station_number'],'S']]
+                    hookup_dict[hukey] = [[try_station[furthest_up]['geo']['station_number'],'S']]
                 else:
-                    hookup_dict[hpn] = []
+                    hookup_dict[hukey] = []
                 for pn in reversed(self.upstream):
-                    hookup_dict[hpn].append(pn)
+                    hookup_dict[hukey].append(pn)
                 for pn in self.downstream:
-                    hookup_dict[hpn].append(pn)
+                    hookup_dict[hukey].append(pn)
         tkey = hookup_dict.keys()[0]
         hookup_dict['columns'] = []
         for hu in hookup_dict[tkey]:
@@ -224,15 +259,15 @@ class PartsAndConnections:
                 colhead = col[0]
             headers.append(colhead)
         table_data = []
-        for hpn in hookup_dict.keys():
-            if hpn=='columns':
+        for hukey in hookup_dict.keys():
+            if hukey=='columns':
                 continue
-            s = "{:0>3}  {}".format(str(hookup_dict[hpn][0][0]), str(hookup_dict[hpn][1][0]))
+            s = "{:0>3}  {}".format(str(hookup_dict[hukey][0][0]), str(hookup_dict[hukey][1][0]))
             td = [s]
-            for i,pn in enumerate(hookup_dict[hpn]):
+            for i,pn in enumerate(hookup_dict[hukey]):
                 if i<2:
                     continue
-                if pn[0] == hpn:
+                if pn[0] == hukey.split(':')[0]:
                     s = '['+str(pn[0])+']'
                 else:
                     s = str(pn[0])
