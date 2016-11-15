@@ -52,10 +52,11 @@ class GeoLocation(MCDeclarativeBase):
     "Elevation in m"
 
     def __repr__(self):
-        return '<station_name={self.station_name} station_number={self.station_number} northing={self.northing} \
-        easting={self.easting} elevation={self.elevation}>'.format(self=self)
+        return '<station_name={self.station_name} station_number={self.station_number} \
+        northing={self.northing} easting={self.easting} \
+        elevation={self.elevation}>'.format(self=self)
 
-    def update(self,args,data):
+    def update(self, args, data):
         """
         update the database given a station_name/_number with columns/values
 
@@ -69,17 +70,18 @@ class GeoLocation(MCDeclarativeBase):
         with db.sessionmaker() as session:
             for d in data:
                 station, station_col = self.station_name_or_number(d[0])
-                for geo_rec in session.query(self).filter(station_col==station):
+                for geo_rec in session.query(self).filter(station_col == station):
                     try:
-                        xxx = getattr(geo_rec,d[1])
-                        setattr(geo_rec,d[1],d[2])
+                        xxx = getattr(geo_rec, d[1])
+                        setattr(geo_rec, d[1], d[2])
                     except AttributeError:
-                        print(d[1],'does not exist')
+                        print(d[1], 'does not exist')
+
 
 def station_name_or_number(station):
     """
     determines if a station query is for a station_name or station_number
-    
+
     return station, station_col
 
     Parameters:
@@ -93,6 +95,7 @@ def station_name_or_number(station):
         station = station.upper()
         station_col = GeoLocation.station_name
     return station, station_col
+
 
 def parse_update_request(request):
     """
@@ -119,6 +122,7 @@ def parse_update_request(request):
         data.append(scv)
     return data
 
+
 def locate_station(args, show_geo=False):
     """Return the location of station_name or station_number as contained in args.locate.
        If sub_array data exists, print subarray name."""
@@ -127,25 +131,27 @@ def locate_station(args, show_geo=False):
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         station_meta = session.get_station_meta()
-        for a in session.query(GeoLocation).filter(station_col==station):
+        for a in session.query(GeoLocation).filter(station_col == station):
             for key in station_meta.keys():
                 if a.station_name in station_meta[key]['Stations']:
                     this_station = key
                     break
             else:
                 this_station = 'No station metadata.'
-            v = {'easting':a.easting, 'northing':a.northing, 'elevation':a.elevation, 
-                 'station_name':a.station_name, 'station_number':a.station_number, 'station_type':this_station}
+            v = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation,
+                 'station_name': a.station_name, 'station_number': a.station_number,
+                 'station_type': this_station}
             if show_geo:
-                if args.verbosity=='m' or args.verbosity=='h':
-                    print('station_name: ',a.station_name)
-                    print('\tstation_number: ',a.station_number)
-                    print('\teasting: ',a.easting)
-                    print('\tnorthing: ',a.northing)
-                    print('\televation: ',a.elevation)
-                    print('\tstation description (%s):  %s' % (this_station,station_meta[this_station]['Description']))
-                elif args.verbosity=='l':
-                    print(a,this_station)
+                if args.verbosity == 'm' or args.verbosity == 'h':
+                    print('station_name: ', a.station_name)
+                    print('\tstation_number: ', a.station_number)
+                    print('\teasting: ', a.easting)
+                    print('\tnorthing: ', a.northing)
+                    print('\televation: ', a.elevation)
+                    print('\tstation description (%s):  %s' % (this_station,
+                                                               station_meta[this_station]['Description']))
+                elif args.verbosity == 'l':
+                    print(a, this_station)
     if show_geo:
         if not v and args.verbosity == 'm' or args.verbosity == 'h':
             print(args.locate, ' not found.')
@@ -154,22 +160,24 @@ def locate_station(args, show_geo=False):
 
 def plot_arrays(args, overplot=None):
     """Plot the various sub-array types"""
-    coord = {'E':'easting','N':'northing','Z':'elevation'}
-    plt.figure(args.xgraph+args.ygraph)
+    coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
+    plt.figure(args.xgraph + args.ygraph)
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         station_meta = session.get_station_meta()
         for key in station_meta.keys():
             for loc in station_meta[key]['Stations']:
-                for a in session.query(GeoLocation).filter(GeoLocation.station_name==loc):
-                    pt = {'easting':a.easting,'northing':a.northing,'elevation':a.elevation}
-                plt.plot(pt[coord[args.xgraph]],pt[coord[args.ygraph]],station_meta[key]['Marker'],label=a.station_name)
+                for a in session.query(GeoLocation).filter(GeoLocation.station_name == loc):
+                    pt = {'easting': a.easting, 'northing': a.northing,
+                          'elevation': a.elevation}
+                plt.plot(pt[coord[args.xgraph]], pt[coord[args.ygraph]],
+                         station_meta[key]['Marker'], label=a.station_name)
     if overplot:
         overplot_station = plt.plot(overplot[coord[args.xgraph]], overplot[coord[args.ygraph]],
-                 'ys', markersize=10)
+                                    'ys', markersize=10)
         legendEntries = [overplot_station]
-        legendText = [overplot['station_name']+':'+str(overplot['station_number'])]
-        plt.legend((overplot_station),(legendText),numpoints=1,loc='upper right')
+        legendText = [overplot['station_name'] + ':' + str(overplot['station_number'])]
+        plt.legend((overplot_station), (legendText), numpoints=1, loc='upper right')
     if args.xgraph != 'Z' and args.ygraph != 'Z':
         plt.axis('equal')
     plt.plot(xaxis=args.xgraph, yaxis=args.ygraph)
@@ -193,4 +201,3 @@ class StationMeta(MCDeclarativeBase):
 
     def __repr__(self):
         return '<subarray prefix={self.prefix} description={self.description} marker={self.plot_marker}>'.format(self=self)
-
