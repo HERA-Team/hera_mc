@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, mc, part_handling, geo_location
+from hera_mc import part_connect, mc, part_handling
 
 if __name__ == '__main__':
     handling = part_handling.PartsAndConnections()
@@ -17,6 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--hptype', help="List the hera part types", action='store_true')
     parser.add_argument('-v', '--verbosity', help="Set verbosity {l, m, h} [h].", default="m")
     parser.add_argument('-c', '--connection', help="Show all connections directly to a part", default=None)
+    parser.add_argument('-u', '--update', help="Update part number records.  Format hpn0:col0:val0, [hpn1:]col1:val1...", default=None)
     parser.add_argument('-m', '--mapr', help="Show full hookup chains (see --show_levels)", default=None)
     parser.add_argument('--specify_port', help="Define desired port(s) for hookup [all].", default='all')
     parser.add_argument('--show_levels', help='show power levels if enabled (and able) NOT YET IMPLEMENTED', action='store_true')
@@ -33,3 +34,6 @@ if __name__ == '__main__':
         hookup_dict = handling.get_hookup(args, show_hookup=True)
     if args.hptype:
         part_type_dict = handling.get_part_types(args, show_hptype=True)
+    if args.update:
+        data = part_connect.parse_update_request(args.update)
+        part_connect.update(args, data)

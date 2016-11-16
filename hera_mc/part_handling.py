@@ -13,7 +13,7 @@ from tabulate import tabulate
 from hera_mc import part_connect, mc, geo_location
 
 # Pass part using a dictionary with a superset of part data:
-#   [hpn]{hptype, manufacturer_number, manufacture_date, short_description, repr,
+#   [hpn]{hptype, manufacturer_number, install_date, short_description, repr,
 #         portA[name(s)],  portB[name(s)],  geo[E, N, z, station, subarray]}
 # Pass connections by using a dictionary of lists:
 #   {up[name(s)],   b_on_up[name(s)],   start_on_up[time(s)],   stop_on_up[time(s)],
@@ -42,7 +42,7 @@ class PartsAndConnections:
         for hpn in part_dict.keys():
             if args.verbosity == 'h':
                 td = [hpn,part_dict[hpn]['hptype'],
-                      part_dict[hpn]['manufacturer_number'],part_dict[hpn]['manufacture_date']]
+                      part_dict[hpn]['manufacturer_number'],part_dict[hpn]['install_date']]
                 pts = ''
                 for a in part_dict[hpn]['a_ports']:
                     pts+=(a+', ')
@@ -59,7 +59,7 @@ class PartsAndConnections:
                 table_data.append(td)
             elif args.verbosity == 'm':
                 table_data.append([hpn,part_dict[hpn]['hptype'],
-                    part_dict[hpn]['manufacturer_number'],part_dict[hpn]['manufacture_date']])
+                    part_dict[hpn]['manufacturer_number'],part_dict[hpn]['install_date']])
             else:
                 print(hpn, part_dict[hpn]['repr'])
         if args.verbosity=='m' or args.verbosity=='h':
@@ -89,7 +89,7 @@ class PartsAndConnections:
             for part in session.query(part_connect.Parts).filter(part_connect.Parts.hpn.like(hpn_query)):
                 part_dict[part.hpn] = {'hptype': part.hptype,
                                        'manufacturer_number': part.manufacturer_number,
-                                       'manufacture_date': part.manufacture_date,
+                                       'install_date': part.install_date,
                                        'a_ports': [], 'b_ports': [], 'short_description':'', 'geo':None}
                 part_dict[part.hpn]['repr'] = part.__repr__()  # Keep for now
                 for part_info in session.query(part_connect.PartInfo).filter(part_connect.PartInfo.hpn == part.hpn):

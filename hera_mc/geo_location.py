@@ -15,7 +15,7 @@ import socket
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sqlalchemy import Column, Float, Integer, String, func
+from sqlalchemy import Column, Float, Integer, String, DateTime, func
 
 from . import MCDeclarativeBase, NotNull
 import hera_mc.mc as mc
@@ -35,6 +35,9 @@ class GeoLocation(MCDeclarativeBase):
 
     future_station_number = Column(Integer)
     "Unique station nymber in the HERA era."
+
+    assigned_date = NotNull(DateTime, primary_key=True)
+    "Date the station was assigned"
 
     datum = Column(String(64))
     "Datum of the geoid."
@@ -56,26 +59,27 @@ class GeoLocation(MCDeclarativeBase):
         northing={self.northing} easting={self.easting} \
         elevation={self.elevation}>'.format(self=self)
 
-    def update(self, args, data):
-        """
-        update the database given a station_name/_number with columns/values
+def update(args, data):
+    """
+    update the database given a station_name/_number with columns/values
+    use with caution -- should usually use in a script which will do datetime primary key etc
 
-        Parameters:
-        ------------
-        data:  [[station0,column0,value0],[...]]
-        stationN:  may be station_name (starts with char) or station_number (is an int)
-        values:  corresponding list of values
-        """
-        db = mc.connect_to_mc_db(args)
-        with db.sessionmaker() as session:
-            for d in data:
-                station, station_col = self.station_name_or_number(d[0])
-                for geo_rec in session.query(self).filter(station_col == station):
-                    try:
-                        xxx = getattr(geo_rec, d[1])
-                        setattr(geo_rec, d[1], d[2])
-                    except AttributeError:
-                        print(d[1], 'does not exist')
+    Parameters:
+    ------------
+    data:  [[station0,column0,value0],[...]]
+    stationN:  may be station_name (starts with char) or station_number (is an int)
+    values:  corresponding list of values
+    """
+    db = mc.connect_to_mc_db(args)
+    with db.sessionmaker() as session:
+        for d in data:
+            station, station_col = station_name_or_number(d[0])
+            for geo_rec in session.query(GeoLocation).filter(station_col == station):
+                try:
+                    xxx = getattr(geo_rec, d[1])
+                    setattr(geo_rec, d[1], d[2])
+                except AttributeError:
+                    print(d[1], 'does not exist')
 
 
 def station_name_or_number(station):

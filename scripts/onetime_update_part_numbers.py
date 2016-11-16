@@ -2062,8 +2062,6 @@ with db.sessionmaker() as session:
         d.hpn = parts[k][0]
         d.hptype = parts[k][1]
         d.manufacturer_number = parts[k][2]
-        d.manufacture_date = parts[k][3]
-        print(d)
+        d.install_date = parts[k][3]
         session.add(d)
 
-session.commit()
