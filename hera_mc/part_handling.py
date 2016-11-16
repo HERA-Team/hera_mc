@@ -94,10 +94,10 @@ class PartsAndConnections:
                 part_dict[part.hpn]['repr'] = part.__repr__()  # Keep for now
                 for part_info in session.query(part_connect.PartInfo).filter(part_connect.PartInfo.hpn == part.hpn):
                     part_dict[part.hpn]['short_description'] = part_info.short_description
-                for connection in session.query(part_connect.Connections).filter(part_connect.Connections.down.like(hpn_query)):
+                for connection in session.query(part_connect.Connections).filter(part_connect.Connections.down.like(part.hpn)):
                     if connection.a_on_down not in part_dict[part.hpn]['a_ports']:
                         part_dict[part.hpn]['a_ports'].append(connection.a_on_down)
-                for connection in session.query(part_connect.Connections).filter(part_connect.Connections.up.like(hpn_query)):
+                for connection in session.query(part_connect.Connections).filter(part_connect.Connections.up.like(part.hpn)):
                     if connection.b_on_up not in part_dict[part.hpn]['b_ports']:
                         part_dict[part.hpn]['b_ports'].append(connection.b_on_up)
                 if part.hptype == 'station':
@@ -118,19 +118,25 @@ class PartsAndConnections:
         """
         table_data = []
         if args.verbosity == 'm':
-            headers = ['Upstream', 'Port b', 'Downstream', 'Port a']
+            headers = ['Upstream', '<Port b:', ':Port a>', 'Part', '<Port b:', ':Port a>', 'Downstream']
         elif args.verbosity == 'h':
-            headers = ['Upstream', 'Port b', 'Downstream', 'Port a']
+            headers = ['Upstream', '<Port b:', ':Port a>', 'Part', '<Port b:', ':Port a>', 'Downstream']
         for i,up in enumerate(connection_dict['up']):
+            ptd = connection_dict['part_on_down'][i]
+            ptu = connection_dict['part_on_up'][i]
+            if ptd != ptu:
+                print("Warning:  up/down part don't match: ",ptu,ptd)
+            pta = connection_dict['port_on_down'][i]
+            ptb = connection_dict['port_on_up'][i]
             bup = connection_dict['b_on_up'][i]
             adn = connection_dict['a_on_down'][i]
             dn  = connection_dict['down'][i]
             rup = connection_dict['repr_up'][i]
             rdown = connection_dict['repr_down'][i]
             if args.verbosity == 'h':
-                table_data.append([up,bup,dn,adn])
+                table_data.append([up,bup,pta,ptu,ptb,adn,dn])
             if args.verbosity == 'm':
-                table_data.append([up,bup,dn,adn])
+                table_data.append([up,bup,pta,ptu,ptb,adn,dn])
             else:
                 print(rup,rdown)
         if args.verbosity=='m' or args.verbosity=='h':
@@ -159,12 +165,15 @@ class PartsAndConnections:
             hpn_query = hpn_query+'%'
         if port_query is None:
             port_query = args.specify_port
-        connection_dict = {'up':   [], 'b_on_up':   [], 'start_on_up':   [], 'stop_on_up':   [], 'repr_up':   [],
-                           'down': [], 'a_on_down': [], 'start_on_down': [], 'stop_on_down': [], 'repr_down': []}
+        connection_dict = {'part_on_up':[], 'port_on_up':[], 'part_on_down':  [], 'port_on_down': [],
+                           'up':        [], 'b_on_up':   [], 'start_on_up':   [], 'stop_on_up':   [], 'repr_up':   [],
+                           'down':      [], 'a_on_down': [], 'start_on_down': [], 'stop_on_down': [], 'repr_down': []}
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
             for connection in session.query(part_connect.Connections).filter(part_connect.Connections.up.like(hpn_query)):
                 if port_query=='all' or connection.b_on_up == port_query:
+                    connection_dict['part_on_up'].append(connection.up)
+                    connection_dict['port_on_up'].append(connection.b_on_up)
                     connection_dict['down'].append(connection.down)
                     connection_dict['a_on_down'].append(connection.a_on_down)
                     connection_dict['start_on_down'].append(connection.start_time)
@@ -172,6 +181,8 @@ class PartsAndConnections:
                     connection_dict['repr_down'].append(connection.__repr__())
             for connection in session.query(part_connect.Connections).filter(part_connect.Connections.down.like(hpn_query)):
                 if port_query=='all' or connection.a_on_down == port_query:
+                    connection_dict['part_on_down'].append(connection.down)
+                    connection_dict['port_on_down'].append(connection.a_on_down)
                     connection_dict['up'].append(connection.up)
                     connection_dict['b_on_up'].append(connection.b_on_up)
                     connection_dict['start_on_up'].append(connection.start_time)
