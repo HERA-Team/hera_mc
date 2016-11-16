@@ -70,6 +70,7 @@ class OldParts(MCDeclarativeBase):
 def update(args, data):
     """
     update the database given a hera part number with columns/values.
+    adds part if add_new_part flag is true
     use with caution -- should usually use in a script which will do datetime primary key
 
     Parameters:
@@ -88,7 +89,8 @@ def update(args, data):
             print(hpn_to_change)
             for parts_rec in session.query(Parts).filter(Parts.hpn == hpn_to_change):
                 try:
-                    xxx = getattr(parts_rec, d[1])
+                    if not args.add_new_part:  ### done this way to stop accidently adding one
+                        xxx = getattr(parts_rec, d[1])
                     setattr(parts_rec, d[1], d[2])
                 except AttributeError:
                     print(d[1], 'does not exist')

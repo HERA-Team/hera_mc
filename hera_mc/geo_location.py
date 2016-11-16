@@ -76,7 +76,8 @@ def update(args, data):
             station, station_col = station_name_or_number(d[0])
             for geo_rec in session.query(GeoLocation).filter(station_col == station):
                 try:
-                    xxx = getattr(geo_rec, d[1])
+                    if not args.add_new_geo:  # Flag to allow adding a new record
+                        xxx = getattr(geo_rec, d[1])
                     setattr(geo_rec, d[1], d[2])
                 except AttributeError:
                     print(d[1], 'does not exist')
