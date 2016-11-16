@@ -39,7 +39,7 @@ class PartsAndConnections:
             headers = ['HERA P/N','Part Type','Mfg #','Date']
         elif args.verbosity == 'h':
             headers = ['HERA P/N','Part Type','Mfg #','Date','A ports','B ports','Info','Geo']
-        for hpn in part_dict.keys():
+        for hpn in sorted(part_dict.keys()):
             if args.verbosity == 'h':
                 td = [hpn,part_dict[hpn]['hptype'],
                       part_dict[hpn]['manufacturer_number'],part_dict[hpn]['install_date']]
@@ -314,8 +314,11 @@ class PartsAndConnections:
                 colhead = col[0]
             headers.append(colhead)
         table_data = []
-        for hukey in hookup_dict.keys():
+        for hukey in sorted(hookup_dict.keys()):
             if hukey=='columns':
+                continue
+            if len(hookup_dict[hukey]) != len(hookup_dict['columns']):
+                print('Issues with ',hukey)
                 continue
             s = "{:0>3}  {}".format(str(hookup_dict[hukey][0][0]), str(hookup_dict[hukey][1][0]))
             td = [s]
