@@ -15,9 +15,6 @@ args = parser.parse_args()
 filename = args.file
 db = mc.connect_to_mc_db(args)
 
-# ant_locs = pd.DataFrame(columns=('station_name', 'station_number',
-#                                  'future_station_number', 'datum', 'tile',
-#                                  'northing', 'easting', 'elevation'))
 ant_locs = pd.read_sql_table('geo_location', db.engine)
 
 ant_locs.to_csv(filename, index=False)

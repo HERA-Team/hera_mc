@@ -59,6 +59,7 @@ class GeoLocation(MCDeclarativeBase):
         northing={self.northing} easting={self.easting} \
         elevation={self.elevation}>'.format(self=self)
 
+
 def update(args, data):
     """
     update the database given a station_name/_number with columns/values
