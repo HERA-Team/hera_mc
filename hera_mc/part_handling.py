@@ -226,7 +226,7 @@ class PartsAndConnections:
 
     def __get_next_port(self,args,hpn,port,direction,check_part):
         """
-        Get port on correct side of a given part.
+        Get port on correct side of a given part to move up/down stream.
         """
         if check_part:
             part_dict = check_part
