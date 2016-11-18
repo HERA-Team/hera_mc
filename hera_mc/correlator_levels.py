@@ -30,11 +30,18 @@ def get_levels(pf_input, testing):
         except KeyError:
             print("Not standard f_engine naming format (pf input)", pf)
             continue
-        pf_levels.append(levels[pf_chassis][level_col])
+        if levels is not None:
+            pf_levels.append(levels[pf_chassis][level_col])
+        else:
+            pf_levels.append('-')
     return pf_levels
 
 def __read_levels_file(name):
-    lfp = open(name,'r')
+    try:
+        lfp = open(name,'r')
+    except IOError:
+        print('Warning:',name,'not found.')
+        return None
     levels = {}
     for line in lfp:
         d = line.split()
@@ -44,8 +51,11 @@ def __read_levels_file(name):
     return levels
 
 def __get_current_levels_from_url(name):
-    url = urllib2.urlopen('http://paper1.paper.pvt:3000/instruments/psa256/levels.txt')
-    levels_url = url.read()
-    fp = open(name,'w')
-    fp.write(levels_url)
-    fp.close()
+    try:
+        url = urllib2.urlopen('http://paper1.paper.pvt:3000/instruments/psa256/levels.txt')
+        levels_url = url.read()
+        fp = open(name,'w')
+        fp.write(levels_url)
+        fp.close()
+    except urllib2.URLError:
+        pass

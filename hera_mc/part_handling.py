@@ -335,8 +335,8 @@ class PartsAndConnections:
                     continue
                 self.upstream = [[hpn,p]]
                 self.downstream = []
-                self.__go_upstream(args, hpn, p, connections)
-                self.__go_downstream(args, hpn, p, connections)
+                self.__go_upstream(args, hpn, p)
+                self.__go_downstream(args, hpn, p)
                 furthest_up = self.upstream[-1][0]
                 try_station = self.get_part(args,hpn_query=furthest_up,exact_match=True,show_part=False)
                 hukey = hpn+':'+p
@@ -348,6 +348,9 @@ class PartsAndConnections:
                     hookup_dict[hukey].append(pn)
                 for pn in self.downstream:
                     hookup_dict[hukey].append(pn)
+        if len(hookup_dict.keys())==0:
+            print(hpn_query,'not found')
+            return None
         tkey = hookup_dict.keys()[0]
         hookup_dict['columns'] = []
         for hu in hookup_dict[tkey]:
