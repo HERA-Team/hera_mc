@@ -23,8 +23,11 @@ if __name__ == '__main__':
     parser.add_argument('--show_levels', help="Show power levels if enabled (and able) NOT YET IMPLEMENTED", action='store_true')
     parser.add_argument('--exact_match', help="Force exact matches on part numbers, not beginning N char. [False]", action='store_true')
     parser.add_argument('--add_new_part', help="Flag to allow update to add a new record.  [False]", action='store_true')
+    parser.add_argument('--mapr_cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",default='all')
+    parser.add_argument('--levels_testing', help="Set to testing filename if correlator levels not accessible [False]", default=False)
     args = parser.parse_args()
     args.verbosity = args.verbosity.lower()
+    args.mapr_cols = args.mapr_cols.lower()
     if args.hpn:
         args.hpn = args.hpn.upper()
         part_dict = handling.get_part(args, show_part=True)

@@ -10,7 +10,7 @@ This is meant to hold utility scripts for parts and connections
 from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
 
-from hera_mc import part_connect, mc, geo_location
+from hera_mc import part_connect, mc, geo_location, correlator_levels
 
 # Pass part using a dictionary with a superset of part data:
 #   [hpn]{hptype, manufacturer_number, install_date, short_description, repr,
@@ -98,9 +98,6 @@ class PartsAndConnections:
                     part_dict[part.hpn]['short_description'] = part_info.short_description
                 part_dict[part.hpn]['a_ports'] = connection_dict[part.hpn]['a_ports']
                 part_dict[part.hpn]['b_ports'] = connection_dict[part.hpn]['b_ports']
-                # for connection in session.query(part_connect.Connections).filter(part_connect.Connections.up.like(part.hpn)):
-                #     if connection.b_on_up not in part_dict[part.hpn]['b_ports']:
-                #         part_dict[part.hpn]['b_ports'].append(connection.b_on_up)
                 if part.hptype == 'station':
                     args.locate = part.hpn
                     part_dict[part.hpn]['geo'] = geo_location.locate_station(args, show_geo=False)
@@ -223,23 +220,6 @@ class PartsAndConnections:
                         print('Ports differ ',p,check_port,part_to_check[pkey]['b_ports'][i])
                         print('This is undoubtedly just an ordering issue within the database')
                         print('   so this check needs to fix it here for this purpose. NOT YET IMPLEMENTED')
-            # #Check and balance other dictionary terms
-            # number_of_ports = {'this_a':len(connection_dict[pkey]['a_ports']),
-            #                    'this_b':len(connection_dict[pkey]['b_ports']),
-            #                    'up':len(connection_dict[pkey]['b_on_up']),
-            #                    'down':len(connection_dict[pkey]['a_on_down'])}
-            # if number_of_ports['this_a'] > number_of_ports['up']:
-            #     for i in range(number_of_ports['this_a']-1):
-            #         connection_dict[pkey]['b_on_up'].append(connection_dict[pkey]['b_on_up'][i])
-            #         connection_dict[pkey]['repr_up'].append(connection_dict[pkey]['repr_up'][i])
-            #         connection_dict[pkey]['start_on_up'].append(connection_dict[pkey]['start_on_up'][i])
-            #         connection_dict[pkey]['stop_on_up'].append(connection_dict[pkey]['stop_on_up'][i])
-            # if number_of_ports['this_b'] > number_of_ports['down']:
-            #     for i in range(number_of_ports['this_b']-1):
-            #         connection_dict[pkey]['a_on_down'].append(connection_dict[pkey]['a_on_down'][i])
-            #         connection_dict[pkey]['repr_down'].append(connection_dict[pkey]['repr_down'][i])
-            #         connection_dict[pkey]['start_on_down'].append(connection_dict[pkey]['start_on_down'][i])
-            #         connection_dict[pkey]['stop_on_down'].append(connection_dict[pkey]['stop_on_down'][i])
         if show_connection:
             self.show_connection(args, connection_dict)
         return connection_dict
@@ -282,13 +262,11 @@ class PartsAndConnections:
 
     def __go_upstream(self, args, hpn, port, connection_dict=None):
         """
-        Find the next connection up the signal chain -- needs port to be on 'a' side of hpn
+        Find the next connection up the signal chain.
         """
-        #print('\nUPSTREAM: ',hpn,port,end=' ')
         up_port = self.__get_next_port(args,hpn,port,direction='up',check_part=False)
         if up_port == self.no_connection_designator or up_port is None:
             return
-        #print('==> ',up_port)
         stays_none = False
         if connection_dict is None:
             stays_none = True
@@ -297,10 +275,8 @@ class PartsAndConnections:
         if hpn not in connection_dict.keys():
             print('Get it and build up a self.connection_dict within the run.')
         for i,hpn_up in enumerate(connection_dict[hpn]['up_parts']):
-            #print("CHECKING:  ",hpn_up,end=' ')
             port = connection_dict[hpn]['b_on_up'][i]
-            if hpn_up not in self.upstream: 
-                #print("ADDING TO UP:  ",hpn_up,port)
+            if hpn_up not in self.upstream:
                 self.upstream.append([hpn_up,port])
             if stays_none:
                 connection_dict = None
@@ -308,13 +284,11 @@ class PartsAndConnections:
 
     def __go_downstream(self, args, hpn, port, connection_dict=None):
         """
-        Find the next connection down the signal chain -- needs port to be on 'b' side of hpn
+        Find the next connection down the signal chain
         """
-        #print("\nDOWNSTREAM: ",hpn,port,end=' ')
         down_port = self.__get_next_port(args,hpn,port,direction='down',check_part=False)
         if down_port == self.no_connection_designator or down_port is None:
             return
-        #print('===> ',down_port)
         stays_none = False
         if connection_dict is None:
             stays_none = True
@@ -323,14 +297,13 @@ class PartsAndConnections:
         if hpn not in connection_dict.keys():
             print('Get it and build up a self.connection_dict within the run.')
         for i,hpn_down in enumerate(connection_dict[hpn]['down_parts']):
-            #print("CHECKING:  ",hpn_down,end=' ')
             port = connection_dict[hpn]['a_on_down'][i]
             if hpn_down not in self.downstream:
-                #print("ADDING TO DOWN:  ",hpn_down,port)
                 self.downstream.append([hpn_down,port])
             if stays_none:
                 connection_dict=None
             self.__go_downstream(args, hpn_down, port,connection_dict)
+
 
     def get_hookup(self, args, hpn_query=None, port_query=None, show_hookup=False):
         """
@@ -358,6 +331,7 @@ class PartsAndConnections:
         #-#print('RESET TO NONE UNTIL IMPLEMENT BUILD SELF.CONNECTION_DICT')
         connections = None
         hookup_dict = {}
+        #-#print(parts)
         for hpn in parts.keys():
             number_a_ports = len(parts[hpn]['a_ports'])
             number_b_ports = len(parts[hpn]['b_ports'])
@@ -394,28 +368,59 @@ class PartsAndConnections:
             else:
                 get_part_type = self.get_part(args,hpn_query=hu[0],exact_match=True,show_part=False)
                 hookup_dict['columns'].append([get_part_type[hu[0]]['hptype'],'column'])
+        if args.show_levels:
+            hookup_dict = self.__get_correlator_levels(hookup_dict,args.levels_testing)
         if show_hookup:
-            self.show_hookup(hookup_dict)
+            self.show_hookup(hookup_dict,args.mapr_cols,args.show_levels)
         return hookup_dict
 
-    def show_hookup(self, hookup_dict):
+
+    def __get_correlator_levels(self,hookup_dict,testing):
+        hookup_dict['columns'].append(['levels','column'])
+        pf_input = []
+        for k in sorted(hookup_dict.keys()):
+            if k=='columns':
+                continue
+            f_engine = hookup_dict[k][-1][0]
+            pf_input.append(f_engine)
+        levels = correlator_levels.get_levels(pf_input,testing)
+        for i,k in enumerate(sorted(hookup_dict.keys())):
+            if k=='columns':
+                continue
+            lstr = '%s' % (levels[i])
+            hookup_dict[k].append([lstr,pf_input[i]])
+        return hookup_dict
+
+
+    def show_hookup(self, hookup_dict, cols_to_show, show_levels):
         """
-        Print out the hookup table -- uses tabulate package
+        Print out the hookup table -- uses tabulate package.  
+        Station is used twice, so grouped together and applies some ad hoc formatting.
 
         Parameters
         -----------
         hookup_dict:  generated in self.get_hookup
         """
-
-        headers = []  ###CONTAINS SOME AD HOC FORMATTING
-        for i,col in enumerate(hookup_dict['columns']):
-            if not i:  #This is because 'station' is used twice, and is first
-                continue
-            if col[0][-2:]=='_e' or col[0][-2:]=='_n':
+        headers = []
+        show_flag = []
+        if cols_to_show != 'all':
+            cols_to_show=cols_to_show.split(',')
+            if show_levels:
+                cols_to_show.append('levels')
+        for col in hookup_dict['columns']:
+            if col[0][-2:]=='_e' or col[0][-2:]=='_n': #Makes these specific pol parts generic
                 colhead = col[0][:-2]
             else:
                 colhead = col[0]
-            headers.append(colhead)
+            if cols_to_show == 'all' or colhead in cols_to_show:
+                show_flag.append(True)
+            else:
+                show_flag.append(False)
+                continue
+            if colhead not in headers: #Accounts for station used twice
+                headers.append(colhead)
+        if show_levels:
+            show_flag.append(True)
         table_data = []
         for hukey in sorted(hookup_dict.keys()):
             if hukey=='columns':
@@ -423,15 +428,17 @@ class PartsAndConnections:
             if len(hookup_dict[hukey]) != len(hookup_dict['columns']):
                 print('Issues with ',hukey)
                 continue
-            s = "{:0>3}  {}".format(str(hookup_dict[hukey][0][0]), str(hookup_dict[hukey][1][0]))
-            td = [s]
+            td = []
             for i,pn in enumerate(hookup_dict[hukey]):
-                if i<2:
+                if not i or not show_flag[i]:  #If station first time or not shown
                     continue
-                if pn[0] == hukey.split(':')[0]:
-                    s = '['+str(pn[0])+']'
+                if i==1:
+                    s = "{:0>3}  {}".format(str(hookup_dict[hukey][0][0]), str(hookup_dict[hukey][1][0]))
                 else:
-                    s = str(pn[0])
+                    if pn[0] == hukey.split(':')[0]:
+                        s = '['+str(pn[0])+']'
+                    else:
+                        s = str(pn[0])
                 td.append(s)
             table_data.append(td)
         print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))
