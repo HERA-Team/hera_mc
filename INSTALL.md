@@ -7,6 +7,10 @@ Installation of the Python code is just done with a standard
 python setup.py install
 ```
 
+In order to run the tests, the `psutil` and `tabulate` packages are required.
+Both can be installed via pip.
+
+
 Database setup
 --------------
 
@@ -41,8 +45,12 @@ separate databases named `hera_mc` and `hera_mc_test` for "production"
 deployment and testing. You must have a database named "testing", in "testing"
 mode, for the M&C test suite to work.
 
+As noted in the README, to initialize the database (e.g., with the
+`scripts/mc_initialize_db.py` script), in the `mc_config.json` file, the `hera_mc`
+database must be in "testing" mode.
 
-### Basic OS X PostgreSQL installation notes
+
+### Basic OS X PostgreSQL installation with homebrew
 
 Based on our experience getting Dave up and running.
 
@@ -74,3 +82,24 @@ $ sudo chown -R <yourusername>:admin /usr/local/var/postgres/ # fix if necessary
 $ rm *  # get rid of broken files
 $ initdb -D .  # remake the database files
 ```
+
+### Basic OS X PostgreSQL installation with macports
+
+The following commands will install `postgresql` and initialize the databases. Note that some of
+these commands may initially fail. If this is the case, then try executing the commands from the
+`/opt/local/lib/postgresql96/bin/` directory.
+
+```
+$ sudo port install postgresql96-server
+$ sudo mkdir -p /opt/local/var/db/postgresql96/defaultdb
+$ sudo chown postgres:postgres /opt/local/var/db/postgresql96/defaultdb
+$ sudo su postgres -c "/opt/local/lib/postgresql96/bin/initdb -D /opt/local/var/db/postgresql96/defaultdb"
+```
+
+At this point, you can run the same commands as before, but because the `postgres` user owns the database
+directory, you must `su` to ensure the commands are successfully executed:
+
+```
+$ sudo su postgres -c "createdb -Ohera -Eutf8 hera_mc"
+```
+etc. 
