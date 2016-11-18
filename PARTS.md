@@ -19,7 +19,7 @@ through by changing A->B (as opposed to the other case where there is one to mul
 changes, we will define an internal port-to-port wiring.
 
 #Signal path summary:
-STATION<ground:ground>A<focus:input>FDA<terminals:input>FEA<e,n:ea,na>CBL7F<eb,nb:a>RI<b:ea,na>RCVR<eb,nb:a>RO<b:a>CBLR<b:a>CBLC<b:input>DF
+STATION<ground:ground>A<focus:input>FDA<terminals:input>FEA<e,n:ea,na>C7F<eb,nb:a>RI<b:ea,na>RCVR<eb,nb:a>RO<b:a>CR<b:a>CC<b:input>DF
 
 #Station Part:  station
 The station “part” comprises the following sub-arrays:
