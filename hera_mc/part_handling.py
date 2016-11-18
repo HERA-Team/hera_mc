@@ -146,12 +146,14 @@ class PartsAndConnections:
                     print(rup,rdown)
         if args.verbosity=='m' or args.verbosity=='h':
             print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))
+
+
     def get_connection(self, args, hpn_query=None, port_query=None, exact_match=False, show_connection=False):
         """
         Return information on parts connected to args.connection -- NEED TO INCLUDE USING START/STOP_TIME!!!
         It should get connections immediately adjacent to one part (upstream and downstream).
 
-        Returns connection_dict, a dictionary keyed on part number
+        Returns connection_dict, a dictionary keyed on part number of adjacent connections
 
         Parameters
         -----------
@@ -207,10 +209,10 @@ class PartsAndConnections:
                 connection_dict[pkey]['b_ports'] = [self.no_connection_designator]
             if number_of_ports['A'] > number_of_ports['B']:
                 for i in range(number_of_ports['A']-1):
-                    connection_dict[pkey]['b_ports'].append(self.no_connection_designator)#connection_dict[pkey]['b_ports'][i])
+                    connection_dict[pkey]['b_ports'].append(self.no_connection_designator)
             elif number_of_ports['B'] > number_of_ports['A']:
                 for i in range(number_of_ports['B']-1):
-                    connection_dict[pkey]['a_ports'].append(self.no_connection_designator)#connection_dict[pkey]['a_ports'][i])
+                    connection_dict[pkey]['a_ports'].append(self.no_connection_designator)
             elif number_of_ports['A']>1:
                 part_to_check = {}
                 part_to_check[pkey] = {'a_ports':connection_dict[pkey]['a_ports'], 'b_ports':connection_dict[pkey]['a_ports']}
@@ -240,7 +242,7 @@ class PartsAndConnections:
             replacing = ['a','b']
         number_of_ports = [len(ports[0]),len(ports[1])]
         for i,p in enumerate(ports):
-            if self.no_connection_designator in p:
+            if self.no_connection_designator in p: #This will only take out one.
                 number_of_ports[i]-=1
         if port in ports[0]:
             return_port = port
