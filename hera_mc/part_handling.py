@@ -21,6 +21,7 @@ from hera_mc import part_connect, mc, geo_location
 
 
 class PartsAndConnections:
+    no_connection_designator = '--'
     def __init__(self):
         pass
 
@@ -81,9 +82,9 @@ class PartsAndConnections:
         if hpn_query is None:
             hpn_query = args.hpn
             exact_match = args.exact_match
-        if not exact_match:
+        if not exact_match and hpn_query[-1]!='%':
             hpn_query = hpn_query+'%'
-        connection_dict = self.get_connection(args, hpn_query=hpn_query, port_query='all', exact_match=False, show_connection=False)
+        connection_dict = self.get_connection(args, hpn_query=hpn_query, port_query='all', exact_match=exact_match, show_connection=False)
         part_dict = {}
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
@@ -107,6 +108,15 @@ class PartsAndConnections:
             self.show_part(args, part_dict)
         return part_dict
 
+    def __pull_out_component(self,cmpt_list,i):
+        try:
+            c = cmpt_list[i]
+        except IndexError:
+            try:
+                c = cmpt_list[-1]
+            except IndexError:
+                c = self.no_connection_designator
+        return c
     def show_connection(self, args, connection_dict):
         """
         Print out connection information.  Uses tabulate package.
@@ -123,20 +133,14 @@ class PartsAndConnections:
             headers = ['Upstream', '<Port b:', ':Port a>', 'Part', '<Port b:', ':Port a>', 'Downstream']
         for pkey in sorted(connection_dict.keys()): #Note that get_connection makes sure len(a_ports)=len(b_ports)
             for i in range(len(connection_dict[pkey]['a_ports'])):
-                try:
-                    up  = connection_dict[pkey]['up_parts'][i]
-                except IndexError:
-                    pass
-                try:
-                    dn  = connection_dict[pkey]['down_parts'][i]
-                except IndexError:
-                    pass
-                pta = connection_dict[pkey]['a_ports'][i]
-                ptb = connection_dict[pkey]['b_ports'][i]
-                bup = connection_dict[pkey]['b_on_up'][i]
-                adn = connection_dict[pkey]['a_on_down'][i]
-                rup = connection_dict[pkey]['repr_up'][i]
-                rdown = connection_dict[pkey]['repr_down'][i]
+                up  = self.__pull_out_component(connection_dict[pkey]['up_parts'],i)
+                dn  = self.__pull_out_component(connection_dict[pkey]['down_parts'],i)
+                pta = self.__pull_out_component(connection_dict[pkey]['a_ports'],i)
+                ptb = self.__pull_out_component(connection_dict[pkey]['b_ports'],i)
+                bup = self.__pull_out_component(connection_dict[pkey]['b_on_up'],i)
+                adn = self.__pull_out_component(connection_dict[pkey]['a_on_down'],i)
+                rup = self.__pull_out_component(connection_dict[pkey]['repr_up'],i)
+                rdown = self.__pull_out_component(connection_dict[pkey]['repr_down'],i)
                 if args.verbosity == 'h':
                     table_data.append([up,bup,pta,pkey,ptb,adn,dn])
                 elif args.verbosity == 'm':
@@ -164,7 +168,7 @@ class PartsAndConnections:
         if hpn_query is None:
             hpn_query = args.connection
             exact_match = args.exact_match
-        if not exact_match:
+        if not exact_match and hpn_query[-1]!='%':
             hpn_query = hpn_query+'%'
         if port_query is None:
             port_query = args.specify_port
@@ -200,14 +204,16 @@ class PartsAndConnections:
         for pkey in connection_dict.keys(): #Check port consistency on every part, fix if needed NOT FULLY IMPLEMENTED!
             ##Check and balance ports
             number_of_ports = {'A':len(connection_dict[pkey]['a_ports']),'B':len(connection_dict[pkey]['b_ports'])}
-            if number_of_ports['A']==0 or number_of_ports['B']==0:
-                continue
-            elif number_of_ports['A'] > number_of_ports['B']:
+            if number_of_ports['A']==0:
+                connection_dict[pkey]['a_ports'] = [self.no_connection_designator]
+            if number_of_ports['B']==0:
+                connection_dict[pkey]['b_ports'] = [self.no_connection_designator]
+            if number_of_ports['A'] > number_of_ports['B']:
                 for i in range(number_of_ports['A']-1):
-                    connection_dict[pkey]['b_ports'].append(connection_dict[pkey]['b_ports'][i])
+                    connection_dict[pkey]['b_ports'].append(self.no_connection_designator)#connection_dict[pkey]['b_ports'][i])
             elif number_of_ports['B'] > number_of_ports['A']:
                 for i in range(number_of_ports['B']-1):
-                    connection_dict[pkey]['a_ports'].append(connection_dict[pkey]['a_ports'][i])
+                    connection_dict[pkey]['a_ports'].append(self.no_connection_designator)#connection_dict[pkey]['a_ports'][i])
             elif number_of_ports['A']>1:
                 part_to_check = {}
                 part_to_check[pkey] = {'a_ports':connection_dict[pkey]['a_ports'], 'b_ports':connection_dict[pkey]['a_ports']}
@@ -217,22 +223,23 @@ class PartsAndConnections:
                         print('Ports differ ',p,check_port,part_to_check[pkey]['b_ports'][i])
                         print('This is undoubtedly just an ordering issue within the database')
                         print('   so this check needs to fix it here for this purpose. NOT YET IMPLEMENTED')
-            #Check and balance other dictionary terms
-            number_of_ports = {'this':len(connection_dict[pkey]['a_ports']),
-                               'up':len(connection_dict[pkey]['b_on_up']),
-                               'down':len(connection_dict[pkey]['a_on_down'])}
-            if number_of_ports['this'] > number_of_ports['up']:
-                for i in range(number_of_ports['this']-1):
-                    connection_dict[pkey]['b_on_up'].append(connection_dict[pkey]['b_on_up'][i])
-                    connection_dict[pkey]['repr_up'].append(connection_dict[pkey]['repr_up'][i])
-                    connection_dict[pkey]['start_on_up'].append(connection_dict[pkey]['start_on_up'][i])
-                    connection_dict[pkey]['stop_on_up'].append(connection_dict[pkey]['stop_on_up'][i])
-            if number_of_ports['this'] > number_of_ports['down']:
-                for i in range(number_of_ports['this']-1):
-                    connection_dict[pkey]['a_on_down'].append(connection_dict[pkey]['a_on_down'][i])
-                    connection_dict[pkey]['repr_down'].append(connection_dict[pkey]['repr_down'][i])
-                    connection_dict[pkey]['start_on_down'].append(connection_dict[pkey]['start_on_down'][i])
-                    connection_dict[pkey]['stop_on_down'].append(connection_dict[pkey]['stop_on_down'][i])
+            # #Check and balance other dictionary terms
+            # number_of_ports = {'this_a':len(connection_dict[pkey]['a_ports']),
+            #                    'this_b':len(connection_dict[pkey]['b_ports']),
+            #                    'up':len(connection_dict[pkey]['b_on_up']),
+            #                    'down':len(connection_dict[pkey]['a_on_down'])}
+            # if number_of_ports['this_a'] > number_of_ports['up']:
+            #     for i in range(number_of_ports['this_a']-1):
+            #         connection_dict[pkey]['b_on_up'].append(connection_dict[pkey]['b_on_up'][i])
+            #         connection_dict[pkey]['repr_up'].append(connection_dict[pkey]['repr_up'][i])
+            #         connection_dict[pkey]['start_on_up'].append(connection_dict[pkey]['start_on_up'][i])
+            #         connection_dict[pkey]['stop_on_up'].append(connection_dict[pkey]['stop_on_up'][i])
+            # if number_of_ports['this_b'] > number_of_ports['down']:
+            #     for i in range(number_of_ports['this_b']-1):
+            #         connection_dict[pkey]['a_on_down'].append(connection_dict[pkey]['a_on_down'][i])
+            #         connection_dict[pkey]['repr_down'].append(connection_dict[pkey]['repr_down'][i])
+            #         connection_dict[pkey]['start_on_down'].append(connection_dict[pkey]['start_on_down'][i])
+            #         connection_dict[pkey]['stop_on_down'].append(connection_dict[pkey]['stop_on_down'][i])
         if show_connection:
             self.show_connection(args, connection_dict)
         return connection_dict
@@ -252,25 +259,21 @@ class PartsAndConnections:
             ports = [part_dict[hpn]['b_ports'],part_dict[hpn]['a_ports']]
             replacing = ['a','b']
         number_of_ports = [len(ports[0]),len(ports[1])]
+        for i,p in enumerate(ports):
+            if self.no_connection_designator in p:
+                number_of_ports[i]-=1
         if port in ports[0]:
-            print('111')
             return_port = port
         elif number_of_ports[0] == 1:
-            print('222')
             return_port = ports[0][0]
         elif number_of_ports[0] == 0:
-            print('333')
             return_port = None
         elif port in ports[1]:
-            print('444')
             if number_of_ports[1] == number_of_ports[0]:
-                print('555')
                 return_port = port.replace(replacing[0],replacing[1])
             elif number_of_ports[1] > number_of_ports[0]: # SHOULDN'T GET HERE
-                print('666')
                 return_port = ports[0][0]                 #   BUT JUST IN CASE PICK ONE
             else:                                         # HERE IS THE ILL-DEFINED BRANCHING CASE
-                print('777')
                 return_port = ports[0][0]                 #   PICK ONE FOR NOW
         else:
             print('Error:  port not found',port)
@@ -281,8 +284,11 @@ class PartsAndConnections:
         """
         Find the next connection up the signal chain -- needs port to be on 'a' side of hpn
         """
+        #print('\nUPSTREAM: ',hpn,port,end=' ')
         up_port = self.__get_next_port(args,hpn,port,direction='up',check_part=False)
-        print('UP: ',port,up_port)
+        if up_port == self.no_connection_designator or up_port is None:
+            return
+        #print('==> ',up_port)
         stays_none = False
         if connection_dict is None:
             stays_none = True
@@ -291,9 +297,11 @@ class PartsAndConnections:
         if hpn not in connection_dict.keys():
             print('Get it and build up a self.connection_dict within the run.')
         for i,hpn_up in enumerate(connection_dict[hpn]['up_parts']):
-            if hpn_up not in self.upstream:
-                self.upstream.append([hpn_up,up_port])
+            #print("CHECKING:  ",hpn_up,end=' ')
             port = connection_dict[hpn]['b_on_up'][i]
+            if hpn_up not in self.upstream: 
+                #print("ADDING TO UP:  ",hpn_up,port)
+                self.upstream.append([hpn_up,port])
             if stays_none:
                 connection_dict = None
             self.__go_upstream(args, hpn_up, port, connection_dict)
@@ -302,8 +310,11 @@ class PartsAndConnections:
         """
         Find the next connection down the signal chain -- needs port to be on 'b' side of hpn
         """
+        #print("\nDOWNSTREAM: ",hpn,port,end=' ')
         down_port = self.__get_next_port(args,hpn,port,direction='down',check_part=False)
-        print('DOWN: ',port,down_port)
+        if down_port == self.no_connection_designator or down_port is None:
+            return
+        #print('===> ',down_port)
         stays_none = False
         if connection_dict is None:
             stays_none = True
@@ -312,9 +323,11 @@ class PartsAndConnections:
         if hpn not in connection_dict.keys():
             print('Get it and build up a self.connection_dict within the run.')
         for i,hpn_down in enumerate(connection_dict[hpn]['down_parts']):
-            if hpn_down not in self.downstream:
-                self.downstream.append([hpn_down,down_port])
+            #print("CHECKING:  ",hpn_down,end=' ')
             port = connection_dict[hpn]['a_on_down'][i]
+            if hpn_down not in self.downstream:
+                #print("ADDING TO DOWN:  ",hpn_down,port)
+                self.downstream.append([hpn_down,port])
             if stays_none:
                 connection_dict=None
             self.__go_downstream(args, hpn_down, port,connection_dict)
@@ -342,7 +355,7 @@ class PartsAndConnections:
         parts = self.get_part(args, hpn_query=hpn_query, exact_match=exact_match, show_part=False)
         #-#connections = get_connection(args, hpn_query=hpn_query, port_query=port_query, 
         #-#                             exact_match=exact_match, show_connection=False)
-        print('RESET TO NONE UNTIL IMPLEMENT BUILD SELF.CONNECTION_DICT')
+        #-#print('RESET TO NONE UNTIL IMPLEMENT BUILD SELF.CONNECTION_DICT')
         connections = None
         hookup_dict = {}
         for hpn in parts.keys():
@@ -356,6 +369,8 @@ class PartsAndConnections:
             elif type(port_query) is not list:
                 port_query = [port_query]
             for p in port_query:
+                if p == self.no_connection_designator:
+                    continue
                 self.upstream = [[hpn,p]]
                 self.downstream = []
                 self.__go_upstream(args, hpn, p, connections)
@@ -394,7 +409,7 @@ class PartsAndConnections:
 
         headers = []  ###CONTAINS SOME AD HOC FORMATTING
         for i,col in enumerate(hookup_dict['columns']):
-            if not i:  #This is because 'station' is used twice
+            if not i:  #This is because 'station' is used twice, and is first
                 continue
             if col[0][-2:]=='_e' or col[0][-2:]=='_n':
                 colhead = col[0][:-2]

@@ -18,6 +18,9 @@ Connections:  if there are equal connection points between ports A and B of a pa
 through by changing A->B (as opposed to the other case where there is one to multiple).  If this
 changes, we will define an internal port-to-port wiring.
 
+#Signal path summary:
+STATION<ground:ground>A<focus:input>FDA<terminals:input>FEA<e,n:ea,na>CBL7F<eb,nb:a>RI<b:ea,na>RCVR<eb,nb:a>RO<b:a>CBLR<b:a>CBLC<b:input>DF
+
 #Station Part:  station
 The station “part” comprises the following sub-arrays:
 HH[<int>] - refers to the HERA-19 hex number
@@ -98,7 +101,7 @@ Port A:  A
 Port B:  B
 
 #F-engine ROACH-2 connector:  f_engine
-R2[1-8][A-H][1-4]
+DG[1-8][A-H][1-4]
     where [1-8] is the roach box
           [A-H][1-4] is the input connector
 Port A:  Input
