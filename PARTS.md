@@ -55,7 +55,7 @@ Port B:  N, E
 
 #Feed cable:  cable_feed75
 Cable between the feed and receiverator, consisting of a pair of coax
-CBL[5,7]F[<int*>]
+C[5,7]F[<int*>]
      where [5,7] refers to 50 or 75 ohms and <int> corresponds at least initially to the antenna number
 Port A:  NA, EA
 Port B:  NB, EB
@@ -86,14 +86,14 @@ Port B:  B
 
 #Receiverator cable:  cable_receiverator
 Cable from the receiverator to the container
-CBLR[1-8][A-B][1-8][N,E]
+CR[1-8][A-B][1-8][N,E]
     where values are per above
 Port A:  A
 Port B:  B
 
 #Container cable:  cable_container
 Cable in the container from the bulkhead plate to the f-engine
-CBLC[1-6]R[1-8]C[1-6]
+CC[1-6]R[1-8]C[1-6]
     where [1-6] is the plate
           [1-8] is the row on the plate
           [1-6] is the column on the plate
@@ -101,7 +101,7 @@ Port A:  A
 Port B:  B
 
 #F-engine ROACH-2 connector:  f_engine
-DG[1-8][A-H][1-4]
+DF[1-8][A-H][1-4]
     where [1-8] is the roach box
           [A-H][1-4] is the input connector
 Port A:  Input
