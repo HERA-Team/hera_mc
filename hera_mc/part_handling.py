@@ -325,9 +325,14 @@ class PartsAndConnections:
             number_b_ports = len(parts[hpn]['b_ports'])
             if port_query == 'all':
                 if number_b_ports>number_a_ports:
-                    port_query = parts[hpn]['b_ports']
+                    pq = 'b_ports'
+                    alt_pq = 'a_ports'
                 else:
-                    port_query = parts[hpn]['a_ports']
+                    pq = 'a_ports'
+                    alt_pq = 'b_ports'
+                port_query = parts[hpn][pq]
+                if self.no_connection_designator in port_query:
+                    port_query = parts[hpn][alt_pq]
             elif type(port_query) is not list:
                 port_query = [port_query]
             for p in port_query:

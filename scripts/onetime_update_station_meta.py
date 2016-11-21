@@ -32,4 +32,3 @@ with db.sessionmaker() as session:
         d.description = data[k][0]
         d.plot_marker = data[k][1]
         session.add(d)
-        print(d)

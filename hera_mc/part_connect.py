@@ -125,7 +125,7 @@ class PartInfo(MCDeclarativeBase):
 
     __tablename__ = 'part_info'
 
-    hpn = Column(String(64), ForeignKey(Parts.hpn), nullable=False, primary_key=True)
+    hpn = Column(String(64), nullable=False, primary_key=True)
     "A unique HERA part number for each part; intend to QRcode with this string."
 
     post_time = NotNull(DateTime, primary_key=True)
