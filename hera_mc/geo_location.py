@@ -164,7 +164,7 @@ def locate_station(args, show_geo=False):
     return v
 
 
-def plot_arrays(args, overplot=None):
+def plot_arrays(args, overplot=None, label_station=False):
     """Plot the various sub-array types"""
     coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
     plt.figure(args.xgraph + args.ygraph)
@@ -176,8 +176,11 @@ def plot_arrays(args, overplot=None):
                 for a in session.query(GeoLocation).filter(GeoLocation.station_name == loc):
                     pt = {'easting': a.easting, 'northing': a.northing,
                           'elevation': a.elevation}
-                plt.plot(pt[coord[args.xgraph]], pt[coord[args.ygraph]],
-                         station_meta[key]['Marker'], label=a.station_name)
+                    plt.plot(pt[coord[args.xgraph]], pt[coord[args.ygraph]],
+                             station_meta[key]['Marker'], label=a.station_name)
+                    if label_station:
+                        plt.annotate(a.station_number, xy=(pt[coord[args.xgraph]], pt[coord[args.ygraph]]),
+                                     xytext=(pt[coord[args.xgraph]] + 5, pt[coord[args.ygraph]]))
     if overplot:
         overplot_station = plt.plot(overplot[coord[args.xgraph]], overplot[coord[args.ygraph]],
                                     'ys', markersize=10)
