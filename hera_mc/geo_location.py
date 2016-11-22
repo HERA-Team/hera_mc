@@ -55,11 +55,11 @@ class GeoLocation(MCDeclarativeBase):
     meta_class_name = Column(String(64), ForeignKey(StationMeta.meta_class_name), nullable=False)
     "Name of meta-class of which it is a member.  Should match prefix per station_meta table."
 
-    station_number = Column(Integer)
+    station_number = NotNull(Integer)
     "Unique station number that the correlator and MIRIAD want.  Currently set to numbers as of \
      16/10/26.  This will be superseded by future version."
 
-    station_number_start_date = NotNull(DateTime)
+    station_number_start_date = Column(DateTime,primary_key=True)
     "Date the station_number was associated to the station_name."
 
     station_number_stop_date = Column(DateTime)
