@@ -2188,6 +2188,6 @@ with db.sessionmaker() as session:
         d.b_on_up = connections[k][2]
         d.down = connections[k][3]
         d.a_on_down = connections[k][4]
-        d.start_time = connections[k][5]
+        d.start_date = connections[k][5]
         session.add(d)
 

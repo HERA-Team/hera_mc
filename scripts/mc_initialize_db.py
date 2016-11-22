@@ -16,3 +16,8 @@ if not hasattr(db, 'create_tables'):
                      'configured to be in "testing" mode')
 
 db.create_tables()
+
+import initialize_station_meta
+import initialize_geo_locations
+import initialize_part_numbers
+import initialize_connections

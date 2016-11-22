@@ -15,11 +15,32 @@ import socket
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sqlalchemy import Column, Float, Integer, String, DateTime, func
+from sqlalchemy import Column, Float, Integer, String, DateTime, ForeignKey, func
 
 from . import MCDeclarativeBase, NotNull
 import hera_mc.mc as mc
 
+class StationMeta(MCDeclarativeBase):
+    """
+    A table to track/denote station metadata categories in various ways
+    """
+    __tablename__ = 'station_meta'
+
+    meta_class_name = Column(String(64), primary_key=True)
+    "Name of meta class.  Note that prefix is the primary_key, so there can be multiple prefixes/meta_name"
+
+    prefix = NotNull(String(64))
+    "String prefix to station type, elements of which are typically characterized by <prefix><int>. \
+     Comma-delimit list if more than one."
+
+    description = Column(String(64))
+    "Short description of station type."
+
+    plot_marker = Column(String(64))
+    "matplotlib marker type to use"
+
+    def __repr__(self):
+        return '<subarray prefix={self.prefix} description={self.description} marker={self.plot_marker}>'.format(self=self)
 
 class GeoLocation(MCDeclarativeBase):
     """A table logging parts within the HERA system
@@ -28,16 +49,21 @@ class GeoLocation(MCDeclarativeBase):
     __tablename__ = 'geo_location'
 
     station_name = Column(String(64), primary_key=True)
-    "Colloquial name of station (which is a unique location on the ground.  This is the primary key, so precision matters."
+    "Colloquial name of station (which is a unique location on the ground).  This one shouldn't \
+     change. This is the primary key, so precision matters."
+
+    meta_class_name = Column(String(64), ForeignKey(StationMeta.meta_class_name), nullable=False)
+    "Name of meta-class of which it is a member.  Should match prefix per station_meta table."
 
     station_number = Column(Integer)
-    "Unique station number that the correlator and MIRIAD want.  Currently set to numbers as of 16/10/26.  This will be superseded by future version."
+    "Unique station number that the correlator and MIRIAD want.  Currently set to numbers as of \
+     16/10/26.  This will be superseded by future version."
 
-    future_station_number = Column(Integer)
-    "Unique station nymber in the HERA era."
+    station_number_start_date = NotNull(DateTime)
+    "Date the station_number was associated to the station_name."
 
-    assigned_date = NotNull(DateTime, primary_key=True)
-    "Date the station was assigned"
+    station_number_stop_date = Column(DateTime)
+    "Date the station_number was disassociated with the station_name"
 
     datum = Column(String(64))
     "Datum of the geoid."
@@ -190,20 +216,4 @@ def plot_arrays(args, overplot=None):
     plt.show()
 
 
-class StationMeta(MCDeclarativeBase):
-    """
-    A table to track/denote station metadata categories in various ways
-    """
-    __tablename__ = 'station_meta'
 
-    prefix = Column(String(64), primary_key=True)
-    "String prefix to station type, elements of which are typically characterized by <prefix><int>."
-
-    description = Column(String(64))
-    "Short description of station type."
-
-    plot_marker = Column(String(64))
-    "matplotlib marker type to use"
-
-    def __repr__(self):
-        return '<subarray prefix={self.prefix} description={self.description} marker={self.plot_marker}>'.format(self=self)

@@ -26,19 +26,23 @@ class Parts(MCDeclarativeBase):
        Note that ideally install_date would also be a primary key, but that screws up ForeignKey in connections
        if a hpn gets replaced, save the data by copying an 'old_parts' database to store the record...
     """
-    __tablename__ = 'parts'
+    __tablename__ = 'parts_paper'
 
     hpn = Column(String(64), primary_key=True)
     "A unique HERA part number for each part; intend to QRcode with this string."
 
     hptype = NotNull(String(64))
-    "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in the hera part number (see PARTS.md) -- this could be derived from it."
+    "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in the hera part number \
+     (see PARTS.md) -- this could be derived from it."
 
     manufacturer_number = Column(String(64))
     "A part number/serial number as specified by manufacturer"
 
-    install_date = NotNull(DateTime)
+    start_date = NotNull(DateTime)
     "The date when the part was installed (or otherwise assigned by project)."
+
+    stop_date = Column(DateTime)
+    "The date when the part was removed (or otherwise de-assigned by project)."
 
     def __repr__(self):
         return '<heraPartNumber id={self.hpn} type={self.hptype} install_date={self.install_date}>'.format(self=self)
@@ -49,20 +53,25 @@ class OldParts(MCDeclarativeBase):
        Stations will be considered parts of kind='station'
        Note that ideally install_date would also be a primary key, but that screws up ForeignKey in connections
        if a hpn gets replaced, save the data by copying an 'old_parts' database to store the record...
+       THIS SCHEME MAY/SHOULD BE RECONSIDERED
     """
-    __tablename__ = 'old_parts'
+    __tablename__ = 'old_part_log'
 
     hpn = Column(String(64), primary_key=True)
     "A unique HERA part number for each part; intend to QRcode with this string."
 
     hptype = NotNull(String(64))
-    "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in the hera part number (see PARTS.md) -- this could be derived from it."
+    "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in \
+     the hera part number (see PARTS.md) -- this could be derived from it."
 
     manufacturer_number = Column(String(64))
     "A part number/serial number as specified by manufacturer"
 
-    install_date = NotNull(DateTime,primary_key=True)
+    start_date = NotNull(DateTime,primary_key=True)
     "The date when the part was installed (or otherwise assigned by project)."
+
+    stop_date = NotNull(DateTime)
+    "The date when the part was remoed (or otherwise assigned by project)."
 
     def __repr__(self):
         return '<heraPartNumber id={self.hpn} type={self.hptype} manufacture_date={self.manufacture_date}>'.format(self=self)
@@ -128,14 +137,14 @@ class PartInfo(MCDeclarativeBase):
     hpn = Column(String(64), nullable=False, primary_key=True)
     "A unique HERA part number for each part; intend to QRcode with this string."
 
-    post_time = NotNull(DateTime, primary_key=True)
+    posting_date = NotNull(DateTime, primary_key=True)
     "time that the data are posted"
 
     comment = NotNull(String(1024))
     "Comment associated with this data - or the data itself..."
 
     info = Column(String(256))
-    "This should be an attachment"
+    "This could/should be an attachment"
 
     def __repr__(self):
         return '<heraPartNumber id = {self.hpn} comment = {self.comment}>'.format(self=self)
@@ -158,10 +167,10 @@ class Connections(MCDeclarativeBase):
     a_on_down = NotNull(String(64), primary_key=True)
     "connection port on down (further from the sky) part, which is its port a"
 
-    start_time = NotNull(DateTime, primary_key=True)
+    start_date = NotNull(DateTime, primary_key=True)
     "start_time is the time that the connection is set"
 
-    stop_time = Column(DateTime)
+    stop_date = Column(DateTime)
     "stop_time is the time that the connection is removed"
 
     def __repr__(self):

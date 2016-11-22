@@ -100,7 +100,10 @@ class PartsAndConnections:
                     args.locate = part.hpn
                     part_dict[part.hpn]['geo'] = geo_location.locate_station(args, show_geo=False)
         if show_part:
-            self.show_part(args, part_dict)
+            if len(part_dict.keys()) == 0:
+                print(hpn_query,' not found.')
+            else:
+                self.show_part(args, part_dict)
         return part_dict
 
     def __pull_out_component(self,cmpt_list,i):

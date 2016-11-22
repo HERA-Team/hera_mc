@@ -11,13 +11,13 @@ from __future__ import absolute_import, division, print_function
 from hera_mc import geo_location, mc
 
 data = {}
-data['HH'] = ['HERA Hex locations', 'ro']
-data['PH'] = ['PAPER Hex locations', 'rs']
-data['PI'] = ['PAPER Imaging locations', 'gs']
-data['PP'] = ['PAPER Polarize locations', 'bd']
-data['S'] = ['Station grid locations', 'ks']
-data['CR'] = ['Container location', 'k*']
-data['ND'] = ['Node location', 'r*']
+data['HH'] = ['herahex','HERA Hex locations', 'ro']
+data['PH'] = ['paperhex','PAPER Hex locations', 'rs']
+data['PI'] = ['paperimaging','PAPER Imaging locations', 'gs']
+data['PP'] = ['paperpolarized','PAPER Polarized locations', 'bd']
+data['S'] = ['stationgrid','Station grid locations', 'ks']
+data['CR'] = ['container','Container location', 'k*']
+data['ND'] = ['node','Node location', 'r*']
 
 sorted_keys = sorted(data.keys())
 
@@ -29,6 +29,7 @@ with db.sessionmaker() as session:
     for k in sorted_keys:
         d = geo_location.StationMeta()
         d.prefix = k
-        d.description = data[k][0]
-        d.plot_marker = data[k][1]
+        d.meta_class_name = data[k][0]
+        d.description = data[k][1]
+        d.plot_marker = data[k][2]
         session.add(d)

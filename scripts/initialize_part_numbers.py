@@ -2063,6 +2063,6 @@ with db.sessionmaker() as session:
         d.hpn = parts[k][0]
         d.hptype = parts[k][1]
         d.manufacturer_number = parts[k][2]
-        d.install_date = parts[k][3]
+        d.start_date = parts[k][3]
         session.add(d)
 

@@ -131,7 +131,8 @@ class MCSession(Session):
         station_data = self.query(StationMeta).all()
         stations = {}
         for sta in station_data:
-            stations[sta.prefix] = {'Description': sta.description, 'Marker': sta.plot_marker, 'Stations': []}
+            stations[sta.prefix] = {'Name': sta.meta_class_name, 'Description': sta.description, 
+                                    'Marker': sta.plot_marker, 'Stations': []}
         locations = self.query(GeoLocation).all()
         for loc in locations:
             for k in stations.keys():
