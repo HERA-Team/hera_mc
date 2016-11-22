@@ -29,7 +29,10 @@ class Parts(MCDeclarativeBase):
     __tablename__ = 'parts_paper'
 
     hpn = Column(String(64), primary_key=True)
-    "A unique HERA part number for each part; intend to QRcode with this string."
+    "HERA part number for each part; intend to QRcode with this string.  hpn+hpn_rev is unique"
+
+    hpn_rev = Column(String(32), primary_key=True)
+    "A revision letter if sequences of hpn - starts with A.  hpn+hpn_rev is unique"
 
     hptype = NotNull(String(64))
     "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in the hera part number \
@@ -47,34 +50,23 @@ class Parts(MCDeclarativeBase):
     def __repr__(self):
         return '<heraPartNumber id={self.hpn} type={self.hptype} install_date={self.install_date}>'.format(self=self)
 
-class OldParts(MCDeclarativeBase):
-    """A table logging parts within the HERA system
-       MAKE Part and Port be unique when combined
-       Stations will be considered parts of kind='station'
-       Note that ideally install_date would also be a primary key, but that screws up ForeignKey in connections
-       if a hpn gets replaced, save the data by copying an 'old_parts' database to store the record...
-       THIS SCHEME MAY/SHOULD BE RECONSIDERED
+def get_last_revision_number(args,hpn=None):
     """
-    __tablename__ = 'old_part_log'
+    Return the last revision number for a given part (exact match)
+    """
+    if hpn is None:
+        hpn = args.hpn
+    revisions = []
+    db = mc.connect_to_mc_db(args)
+    with db.sessionmaker() as session:
+        for parts_rec in session.query(Parts).filter(Parts.hpn==hpn):
+            revisions.append(parts_rec.hpn_rev)
+    if args.verbosity=='h':
+        print('Revisions: ',revisions)
+    elif args.verbosity=='m':
+        print('Last revision: ',revisions[-1])
+    return revisions[-1]
 
-    hpn = Column(String(64), primary_key=True)
-    "A unique HERA part number for each part; intend to QRcode with this string."
-
-    hptype = NotNull(String(64))
-    "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in \
-     the hera part number (see PARTS.md) -- this could be derived from it."
-
-    manufacturer_number = Column(String(64))
-    "A part number/serial number as specified by manufacturer"
-
-    start_date = NotNull(DateTime,primary_key=True)
-    "The date when the part was installed (or otherwise assigned by project)."
-
-    stop_date = NotNull(DateTime)
-    "The date when the part was remoed (or otherwise assigned by project)."
-
-    def __repr__(self):
-        return '<heraPartNumber id={self.hpn} type={self.hptype} manufacture_date={self.manufacture_date}>'.format(self=self)
 
 def update(args, data):
     """
@@ -84,8 +76,9 @@ def update(args, data):
 
     Parameters:
     ------------
-    data:  [[hpn0,column0,value0],[...]]
+    data:  [[hpn0,rev0,column0,value0],[...]]
     hpnN:  hera part number as primary key
+    revN:  hera part number revision as primary key
     columnN:  column name(s)
     values:  corresponding list of values
     """
@@ -93,16 +86,17 @@ def update(args, data):
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         for d in data:
-            print (d)
             hpn_to_change = d[0].upper()
-            print(hpn_to_change)
-            for parts_rec in session.query(Parts).filter(Parts.hpn == hpn_to_change):
-                try:
-                    if not args.add_new_part:  ### done this way to stop accidently adding one
-                        xxx = getattr(parts_rec, d[1])
-                    setattr(parts_rec, d[1], d[2])
-                except AttributeError:
-                    print(d[1], 'does not exist')
+            rev_to_change = d[1].upper()
+            if rev_to_change[:4]=='LAST':
+                rev_to_change = get_last_revision_number(args,hpn_to_change)
+            part_rec = session.query(Parts).filter( (Parts.hpn == hpn_to_change) & (Parts.hpn_rev == rev_to_change) )
+            try:
+                if not args.add_new_part:  ### done this way to stop accidentally adding one
+                    xxx = getattr(part_rec, d[2])
+                setattr(part_rec, d[2], d[3])
+            except AttributeError:
+                print(d[2], 'does not exist')
 
 def parse_update_request(request):
     """
@@ -112,20 +106,36 @@ def parse_update_request(request):
 
     Parameters:
     ------------
-    request:  hpn0:column0:value0, [hpn1:]column1:value1, [...]
+    request:  hpn0:[rev0:]column0:value0,hpn1:[rev0]:]column1:value1,[...]
     hpnN:  hera part number, first entry must have one, if absent propagate first
+    revN:  hera part revision number, if absent, propagate first, which, if absent, defaults to 'last'
     columnN:  name of parts column
     valueN:  corresponding new value
     """
+
+    # Split out and get first
     data = []
-    data_to_proc = request.split(', ')
-    hpn0 = data_to_proc[0].split(':')[0]
+    data_to_proc = request.split(',')
+    pcv0 = data_to_proc[0].split(':')
+    hpn0 = pcv0[0]
+    if len(pcv0)==3:
+        rev0 = 'LAST'
+    elif len(pcv0)==4:
+        rev0 = pcv[1]
+    else:
+        print('Error:  wrong format for first update entry: ',data_to_proc[0])
+        return None
+
+    # Work through all; first must have 3 or 4 entries per above
     for d in data_to_proc:
         pcv = d.split(':')
-        if len(pcv) == 3:
+        if len(pcv) == 4:
             pass
+        if len(pcv) == 3:
+            pcv.insert(1,'LAST')
         elif len(pcv) == 2:
             pcv.insert(0, hpn0)
+            pcv.insert(1, rev0)
         data.append(pcv)
     return data
 
@@ -135,7 +145,10 @@ class PartInfo(MCDeclarativeBase):
     __tablename__ = 'part_info'
 
     hpn = Column(String(64), nullable=False, primary_key=True)
-    "A unique HERA part number for each part; intend to QRcode with this string."
+    "A HERA part number for each part; intend to QRcode with this string."
+
+    hpn_rev = Column(String(32), nullable=False, primary_key=True)
+    "HERA part revision number for each part; if sequencing same part number."
 
     posting_date = NotNull(DateTime, primary_key=True)
     "time that the data are posted"
@@ -155,11 +168,22 @@ class Connections(MCDeclarativeBase):
     """
     __tablename__ = 'connections'
 
-    up = Column(String(64), ForeignKey(Parts.hpn), nullable=False, primary_key=True)
+    up = Column(String(64), nullable=False, primary_key=True)
     "up refers to the skyward part, e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.  Signal flows from A->B"
 
-    down = Column(String(64), ForeignKey(Parts.hpn), nullable=False, primary_key=True)
+    up_rev = Column(String(32), nullable=False, primary_key=True)
+    "up refers to the skyward part revision number"
+
+    down = Column(String(64), nullable=False, primary_key=True)
     "down refers to the part that is further from the sky, e.g. "
+
+    down_rev = Column(String(64), nullable=False, primary_key=True)
+    "down refers to the part that is further from the sky, e.g. "
+
+    __table_args__ = (ForeignKeyConstraint([up,        up_rev],
+                                           [Parts.hpn, Parts.hpn_rev]),
+                      ForeignKeyConstraint([down,      down_rev],
+                                           [Parts.hpn, Parts.hpn_rev]))
 
     b_on_up = NotNull(String(64), primary_key=True)
     "connected port on up (skyward) part, which is its port b"

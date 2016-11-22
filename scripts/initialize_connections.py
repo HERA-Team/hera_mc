@@ -2185,8 +2185,10 @@ with db.sessionmaker() as session:
     for k in sorted_keys:
         d = part_connect.Connections()
         d.up = connections[k][1]
+        d.up_rev = 'A'
         d.b_on_up = connections[k][2]
         d.down = connections[k][3]
+        d.down_rev = 'A'
         d.a_on_down = connections[k][4]
         d.start_date = connections[k][5]
         session.add(d)

@@ -35,13 +35,13 @@ class PartsAndConnections:
 
         table_data = []
         if args.verbosity == 'm':
-            headers = ['HERA P/N','Part Type','Mfg #','Date']
+            headers = ['HERA P/N','Rev','Part Type','Mfg #','Date']
         elif args.verbosity == 'h':
-            headers = ['HERA P/N','Part Type','Mfg #','Date','A ports','B ports','Info','Geo']
+            headers = ['HERA P/N','Rev','Part Type','Mfg #','Date','A ports','B ports','Info','Geo']
         for hpn in sorted(part_dict.keys()):
             if args.verbosity == 'h':
-                td = [hpn,part_dict[hpn]['hptype'],
-                      part_dict[hpn]['manufacturer_number'],part_dict[hpn]['install_date']]
+                td = [hpn, part_dict[hpn]['rev'], part_dict[hpn]['hptype'],
+                      part_dict[hpn]['manufacturer_number'], part_dict[hpn]['start_date']]
                 pts = ''
                 for a in part_dict[hpn]['a_ports']:
                     pts+=(a+', ')
@@ -57,14 +57,14 @@ class PartsAndConnections:
                     td.append(s)
                 table_data.append(td)
             elif args.verbosity == 'm':
-                table_data.append([hpn,part_dict[hpn]['hptype'],
-                    part_dict[hpn]['manufacturer_number'],part_dict[hpn]['install_date']])
+                table_data.append([hpn, part_dict[hpn]['rev'], part_dict[hpn]['hptype'],
+                    part_dict[hpn]['manufacturer_number'], part_dict[hpn]['install_date']])
             else:
                 print(hpn, part_dict[hpn]['repr'])
         if args.verbosity=='m' or args.verbosity=='h':
             print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))
 
-    def get_part(self, args, hpn_query=None, exact_match=False, show_part=False):
+    def get_part(self, args, hpn_query=None, rev_query=None, exact_match=False, show_part=False):
         """
         Return information on a part.  It will return all matching first characters unless exact_match==True.
 
@@ -80,25 +80,37 @@ class PartsAndConnections:
         if hpn_query is None:
             hpn_query = args.hpn
             exact_match = args.exact_match
+        if rev_query is None:
+            rev_query = args.revision_number
+
         if not exact_match and hpn_query[-1]!='%':
             hpn_query = hpn_query+'%'
-        connection_dict = self.get_connection(args, hpn_query=hpn_query, port_query='all', exact_match=exact_match, show_connection=False)
+        connection_dict = self.get_connection(args, hpn_query=hpn_query, rev_query = rev_query,
+                                      port_query='all', exact_match=exact_match, show_connection=False)
         part_dict = {}
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
             for part in session.query(part_connect.Parts).filter(part_connect.Parts.hpn.like(hpn_query)):
-                part_dict[part.hpn] = {'hptype': part.hptype,
-                                       'manufacturer_number': part.manufacturer_number,
-                                       'install_date': part.install_date,
-                                       'a_ports': [], 'b_ports': [], 'short_description':'', 'geo':None}
-                part_dict[part.hpn]['repr'] = part.__repr__()  # Keep for now
-                for part_info in session.query(part_connect.PartInfo).filter(part_connect.PartInfo.hpn == part.hpn):
-                    part_dict[part.hpn]['short_description'] = part_info.short_description
-                part_dict[part.hpn]['a_ports'] = connection_dict[part.hpn]['a_ports']
-                part_dict[part.hpn]['b_ports'] = connection_dict[part.hpn]['b_ports']
-                if part.hptype == 'station':
-                    args.locate = part.hpn
-                    part_dict[part.hpn]['geo'] = geo_location.locate_station(args, show_geo=False)
+                revq = rev_query.upper() ###THERE IS DEFINITELY A BETTER WAY TO DO THIS!!!!!
+                if revq == 'LAST':
+                    revq = part_connect.get_last_revision_number(args,hpn=part.hpn)
+                full_part = session.query(part_connect.Parts).filter( (part_connect.Parts.hpn==part.hpn) &
+                                                                      (part_connect.Parts.hpn_rev==revq) )
+                if len(full_part) == 1:
+                    part_dict[full_part.hpn] = {'hptype': full_part.hptype,
+                                           'manufacturer_number': full_part.manufacturer_number,
+                                           'start_date': full_part.start_date,
+                                           'a_ports': [], 'b_ports': [], 'short_description':'', 'geo':None}
+                    part_dict[full_part.hpn]['repr'] = full_part.__repr__()  # Keep for now
+                    for part_info in session.query(part_connect.PartInfo).filter(part_connect.PartInfo.hpn == full_part.hpn):
+                        part_dict[full_part.hpn]['short_description'] = part_info.short_description
+                    part_dict[full_part.hpn]['a_ports'] = connection_dict[full_part.hpn]['a_ports']
+                    part_dict[full_part.hpn]['b_ports'] = connection_dict[full_part.hpn]['b_ports']
+                    if part.hptype == 'station':
+                        args.locate = full_part.hpn
+                        part_dict[full_part.hpn]['geo'] = geo_location.locate_station(args, show_geo=False)
+                else:
+                    print("Well, being here is a surprise (part_handling.py:113) -- should only be one part.")
         if show_part:
             if len(part_dict.keys()) == 0:
                 print(hpn_query,' not found.')
@@ -150,7 +162,7 @@ class PartsAndConnections:
             print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))
 
 
-    def get_connection(self, args, hpn_query=None, port_query=None, exact_match=False, show_connection=False):
+    def get_connection(self, args, hpn_query=None, rev_query=None, port_query=None, exact_match=False, show_connection=False):
         """
         Return information on parts connected to args.connection -- NEED TO INCLUDE USING START/STOP_TIME!!!
         It should get connections immediately adjacent to one part (upstream and downstream).
@@ -169,6 +181,8 @@ class PartsAndConnections:
         if hpn_query is None:
             hpn_query = args.connection
             exact_match = args.exact_match
+        if rev_query is None:
+            rev_query = args.revision_number
         if not exact_match and hpn_query[-1]!='%':
             hpn_query = hpn_query+'%'
         hpn_query = hpn_query.strip()
@@ -178,27 +192,31 @@ class PartsAndConnections:
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
             for connection in session.query(part_connect.Connections).filter(part_connect.Connections.up.like(hpn_query)):
+                print('PART_HANDLING:195 - DO REV_QUERY STUFF HERE') #-#
                 if port_query=='all' or connection.b_on_up == port_query:
                     if connection.up not in connection_dict.keys():
-                        connection_dict[connection.up] = {'a_ports':[], 'up_parts':[],   'b_on_up':[], 
-                                                          'b_ports':[], 'down_parts':[], 'a_on_down':[],
+                        connection_dict[connection.up] = {'a_ports':[], 'up_parts':[],   'up_rev':[],  'b_on_up':[], 
+                                                          'b_ports':[], 'down_parts':[], 'down_rev':[],'a_on_down':[],
                                                           'start_on_down':[], 'stop_on_down':[], 'repr_down':[],
                                                           'start_on_up':[],   'stop_on_up':[],   'repr_up':[]}
                     connection_dict[connection.up]['b_ports'].append(connection.b_on_up)
                     connection_dict[connection.up]['down_parts'].append(connection.down)
+                    connection_dict[connection.up]['down_rev'].append(connection.down_rev)
                     connection_dict[connection.up]['a_on_down'].append(connection.a_on_down)
                     connection_dict[connection.up]['start_on_down'].append(connection.start_time)
                     connection_dict[connection.up]['stop_on_down'].append(connection.stop_time)
                     connection_dict[connection.up]['repr_down'].append(connection.__repr__())
             for connection in session.query(part_connect.Connections).filter(part_connect.Connections.down.like(hpn_query)):
+                print('PART_HANDLING:209 - DO REV_QUERY STUFF HERE') #-#
                 if port_query=='all' or connection.a_on_down == port_query:
                     if connection.down not in connection_dict.keys():  #Should only find at most 1 for last component
-                        connection_dict[connection.down] = {'a_ports':[], 'up_parts':[],  'b_on_up':[], 
-                                                            'b_ports':[], 'down_parts':[],'a_on_down':[],
+                        connection_dict[connection.down] = {'a_ports':[], 'up_parts':[],  'up_rev':[],  'b_on_up':[], 
+                                                            'b_ports':[], 'down_parts':[],'down_rev':[],'a_on_down':[],
                                                             'start_on_down':[], 'stop_on_down':[], 'repr_down':[],
                                                             'start_on_up':[],   'stop_on_up':[],   'repr_up':[]}
                     connection_dict[connection.down]['a_ports'].append(connection.a_on_down)
                     connection_dict[connection.down]['up_parts'].append(connection.up)
+                    connection_dict[connection.down]['up_rev'].append(connection.up_rev)
                     connection_dict[connection.down]['b_on_up'].append(connection.b_on_up)
                     connection_dict[connection.down]['start_on_up'].append(connection.start_time)
                     connection_dict[connection.down]['stop_on_up'].append(connection.stop_time)

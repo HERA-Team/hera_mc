@@ -2061,6 +2061,7 @@ with db.sessionmaker() as session:
     for k in sorted_keys:
         d = part_connect.Parts()
         d.hpn = parts[k][0]
+        d.hpn_rev = 'A'
         d.hptype = parts[k][1]
         d.manufacturer_number = parts[k][2]
         d.start_date = parts[k][3]
