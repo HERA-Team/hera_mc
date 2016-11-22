@@ -14,14 +14,17 @@ if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-g', '--graph', help="Graph data of all elements (per xgraph, ygraph args). [False]", action='store_true')
     parser.add_argument('-s', '--show', help="Graph and locate a station (same as geo.py -gl XX). [None]", default=None)
-    parser.add_argument('-l', '--locate', 
+    parser.add_argument('-l', '--locate',
                         help="Location of given s_name or s_number (assumed if <int>). Prepend with 'h' for HH s_name.  [None]", default=None)
-    parser.add_argument('-u', '--update', 
+    parser.add_argument('-u', '--update',
                         help="Update station records.  Format station0:col0:val0, [station1:]col1:val1...  [None]", default=None)
     parser.add_argument('-v', '--verbosity', help="Set verbosity {l, m, h}. [m].", default='m')
     parser.add_argument('-x', '--xgraph', help="X-axis of graph {N, E, Z}. [E]", default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph {N, E, Z}. [N]", default='N')
     parser.add_argument('--add_new_geo', help="Flag to enable adding of a new geo_location under update.  [False]", action='store_true')
+    parser.add_argument('--label', help="Flag to label stations in graph (default).", dest='label', action='store_true')
+    parser.add_argument('--no-label', help="Flag to not label stations in graph.", dest='label', action='store_false')
+    parser.set_defaults(label=True)
     args = parser.parse_args()
     args.xgraph = args.xgraph.upper()
     args.ygraph = args.ygraph.upper()
@@ -36,4 +39,4 @@ if __name__ == '__main__':
     if args.locate:
         located = geo_location.locate_station(args, show_geo=True)
     if args.graph:
-        geo_location.plot_arrays(args, located)
+        geo_location.plot_arrays(args, located, label_station=args.label)
