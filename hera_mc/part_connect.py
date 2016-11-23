@@ -12,7 +12,7 @@ import datetime
 import os
 import socket
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, ForeignKey, Integer, String, func
+from sqlalchemy import BigInteger, Column, DateTime, Float, ForeignKey, ForeignKeyConstraint, Integer, String, func
 
 from . import MCDeclarativeBase, NotNull
 
@@ -48,9 +48,9 @@ class Parts(MCDeclarativeBase):
     "The date when the part was removed (or otherwise de-assigned by project)."
 
     def __repr__(self):
-        return '<heraPartNumber id={self.hpn} type={self.hptype} install_date={self.install_date}>'.format(self=self)
+        return '<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype}>'.format(self=self)
 
-def get_last_revision_number(args,hpn=None):
+def get_last_revision_number(args,hpn=None,show_revisions=False):
     """
     Return the last revision number for a given part (exact match)
     """
@@ -61,9 +61,10 @@ def get_last_revision_number(args,hpn=None):
     with db.sessionmaker() as session:
         for parts_rec in session.query(Parts).filter(Parts.hpn==hpn):
             revisions.append(parts_rec.hpn_rev)
-    if args.verbosity=='h':
+    revisions = sorted(revisions)
+    if show_revisions and args.verbosity=='h':
         print('Revisions: ',revisions)
-    elif args.verbosity=='m':
+    elif show_revisions and args.verbosity=='m':
         print('Last revision: ',revisions[-1])
     return revisions[-1]
 
@@ -180,10 +181,10 @@ class Connections(MCDeclarativeBase):
     down_rev = Column(String(64), nullable=False, primary_key=True)
     "down refers to the part that is further from the sky, e.g. "
 
-    __table_args__ = (ForeignKeyConstraint([up,        up_rev],
-                                           [Parts.hpn, Parts.hpn_rev]),
-                      ForeignKeyConstraint([down,      down_rev],
-                                           [Parts.hpn, Parts.hpn_rev]))
+    __table_args__ = (ForeignKeyConstraint(['up',        'up_rev'],
+                                           ['parts_paper.hpn', 'parts_paper.hpn_rev']),
+                      ForeignKeyConstraint(['down',      'down_rev'],
+                                           ['parts_paper.hpn', 'parts_paper.hpn_rev']))
 
     b_on_up = NotNull(String(64), primary_key=True)
     "connected port on up (skyward) part, which is its port b"
