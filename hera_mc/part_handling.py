@@ -88,7 +88,6 @@ class PartsAndConnections:
         if not exact_match and hpn_query[-1]!='%':
             hpn_query = hpn_query+'%'
 
-        
         local_parts_keys = []
         part_dict = {}
         db = mc.connect_to_mc_db(args)
@@ -216,7 +215,11 @@ class PartsAndConnections:
             ### Find where the part is in the upward connection
             for match_connection in session.query(part_connect.Connections).filter(part_connect.Connections.up.like(hpn_query)):
                 if port_query=='all' or match_connection.b_on_up == port_query:
-                    if match_connection.up not in connection_dict.keys():    
+                    #-#THIS SHOULD HAVE WORKED BUT DOESN'T#-#
+                    #-#if match_connection.up not in connection_dict.keys() and match_connection.up in self.connections_dictionary.keys():
+                    #-#    connection_dict[match_connection.up] = self.connections_dictionary[match_connection.up]
+                    #-#    continue
+                    if match_connection.up not in connection_dict.keys():
                         revq = rev_query.upper()
                         if revq == 'LAST':
                             if match_connection.up not in self.last_revisions.keys():
@@ -237,6 +240,10 @@ class PartsAndConnections:
             ### Find where the part is in the downward connection
             for match_connection in session.query(part_connect.Connections).filter(part_connect.Connections.down.like(hpn_query)):
                 if port_query=='all' or match_connection.a_on_down == port_query:
+                    #-#THIS SHOULD HAVE WORKED BUT DOESN'T#-#
+                    #-#if match_connection.down not in connection_dict.keys() and match_connection.down in self.connections_dictionary.keys():
+                    #-#    connection_dict[match_connection.down] = self.connections_dictionary[match_connection.down]
+                    #-#    continue
                     if match_connection.down not in connection_dict.keys():
                         revq = rev_query.upper()
                         if revq == 'LAST':
