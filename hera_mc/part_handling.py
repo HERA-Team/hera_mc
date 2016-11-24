@@ -11,6 +11,7 @@ from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
 
 from hera_mc import part_connect, mc, geo_location, correlator_levels
+import copy
 
 
 class PartsAndConnections:
@@ -217,7 +218,7 @@ class PartsAndConnections:
                 if port_query=='all' or match_connection.b_on_up == port_query:
                     #-#THIS SHOULD HAVE WORKED BUT DOESN'T#-#
                     #-#if match_connection.up not in connection_dict.keys() and match_connection.up in self.connections_dictionary.keys():
-                    #-#    connection_dict[match_connection.up] = self.connections_dictionary[match_connection.up]
+                    #-#    connection_dict[match_connection.up] = copy.deepcopy(self.connections_dictionary[match_connection.up])
                     #-#    continue
                     if match_connection.up not in connection_dict.keys():
                         revq = rev_query.upper()
@@ -242,7 +243,7 @@ class PartsAndConnections:
                 if port_query=='all' or match_connection.a_on_down == port_query:
                     #-#THIS SHOULD HAVE WORKED BUT DOESN'T#-#
                     #-#if match_connection.down not in connection_dict.keys() and match_connection.down in self.connections_dictionary.keys():
-                    #-#    connection_dict[match_connection.down] = self.connections_dictionary[match_connection.down]
+                    #-#    connection_dict[match_connection.down] = copy.deepcopy(self.connections_dictionary[match_connection.down])
                     #-#    continue
                     if match_connection.down not in connection_dict.keys():
                         revq = rev_query.upper()
@@ -286,7 +287,7 @@ class PartsAndConnections:
                             print('   so this check needs to fix it here for this purpose. NOT YET IMPLEMENTED')
         for pkey in connection_dict.keys():
             if pkey not in self.connections_dictionary.keys():
-                self.connections_dictionary[pkey] = connection_dict[pkey]
+                self.connections_dictionary[pkey] = copy.copy(connection_dict[pkey])
         if show_connection:
             self.show_connection(args, connection_dict)
         if return_dictionary:
@@ -299,7 +300,8 @@ class PartsAndConnections:
         if check_part:
             part_dict = check_part
         else:
-            part_dict = self.get_part(args,hpn_query=hpn,rev_query=rev,exact_match=True,show_part=False)
+            part_dict = self.get_part(args,hpn_query=hpn,rev_query=rev,
+                exact_match=True, return_dictionary=True, show_part=False)
         if direction=='up':
             ports = [part_dict[hpn]['a_ports'],part_dict[hpn]['b_ports']]
             replacing = ['b','a']
@@ -381,7 +383,8 @@ class PartsAndConnections:
             rev_query = args.revision_number
         if port_query is None:
             port_query = args.specify_port
-        parts = self.get_part(args, hpn_query=hpn_query, rev_query=rev_query, exact_match=exact_match, show_part=False)
+        parts = self.get_part(args, hpn_query=hpn_query, rev_query=rev_query, 
+                exact_match=exact_match, return_dictionary=True, show_part=False)
         connections = None
         hookup_dict = {}
         for hpn in parts.keys():
@@ -407,7 +410,8 @@ class PartsAndConnections:
                 self.__go_upstream(args, hpn, rev_query, p)
                 self.__go_downstream(args, hpn, rev_query, p)
                 furthest_up = self.upstream[-1][0]
-                try_station = self.get_part(args,hpn_query=furthest_up,rev_query=rev_query,exact_match=True,show_part=False)
+                try_station = self.get_part(args,hpn_query=furthest_up,rev_query=rev_query,
+                              exact_match=True, return_dictionary=True, show_part=False)
                 hukey = hpn+':'+p
                 if try_station[furthest_up]['hptype'] == 'station':
                     hookup_dict[hukey] = [[try_station[furthest_up]['geo']['station_number'],'S']]
@@ -417,6 +421,8 @@ class PartsAndConnections:
                     hookup_dict[hukey].append(pn)
                 for pn in self.downstream:
                     hookup_dict[hukey].append(pn)
+                #-#for pkey in hookup_dict.keys():
+                #-#    print('#-#==>', hookup_dict[pkey])
         if len(hookup_dict.keys())==0:
             print(hpn_query,'not found')
             return None
@@ -426,7 +432,8 @@ class PartsAndConnections:
             if hu[1]=='S':
                 hookup_dict['columns'].append(['station','column'])
             else:
-                get_part_type = self.get_part(args,hpn_query=hu[0],rev_query=rev_query,exact_match=True,show_part=False)
+                get_part_type = self.get_part(args,hpn_query=hu[0],rev_query=rev_query,
+                                exact_match=True, return_dictionary=True, show_part=False)
                 hookup_dict['columns'].append([get_part_type[hu[0]]['hptype'],'column'])
         if args.show_levels:
             hookup_dict = self.__get_correlator_levels(hookup_dict,args.levels_testing)
