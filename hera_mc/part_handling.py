@@ -263,28 +263,7 @@ class PartsAndConnections:
                     connection_dict[match_connection.down]['start_on_up'].append(match_connection.start_date)
                     connection_dict[match_connection.down]['stop_on_up'].append(match_connection.stop_date)
                     connection_dict[match_connection.down]['repr_up'].append(match_connection.__repr__())
-            ### Check and balance ports
-            for pkey in connection_dict.keys():
-                number_of_ports = {'A':len(connection_dict[pkey]['a_ports']),'B':len(connection_dict[pkey]['b_ports'])}
-                if number_of_ports['A']==0:
-                    connection_dict[pkey]['a_ports'] = [self.no_connection_designator]
-                if number_of_ports['B']==0:
-                    connection_dict[pkey]['b_ports'] = [self.no_connection_designator]
-                if number_of_ports['A'] > number_of_ports['B']:
-                    for i in range(number_of_ports['A']-1):
-                        connection_dict[pkey]['b_ports'].append(self.no_connection_designator)
-                elif number_of_ports['B'] > number_of_ports['A']:
-                    for i in range(number_of_ports['B']-1):
-                        connection_dict[pkey]['a_ports'].append(self.no_connection_designator)
-                elif number_of_ports['A']>1:
-                    part_to_check = {}
-                    part_to_check[pkey] = {'a_ports':connection_dict[pkey]['a_ports'], 'b_ports':connection_dict[pkey]['a_ports']}
-                    for i,p in enumerate(part_to_check[pkey]['a_ports']):
-                        check_port = self.__get_next_port(args,pkey,rev_query,p,direction='down',check_part=part_to_check)
-                        if check_port != part_to_check[pkey]['b_ports'][i]:
-                            print('Ports differ ',p,check_port,part_to_check[pkey]['b_ports'][i])
-                            print('This is undoubtedly just an ordering issue within the database')
-                            print('   so this check needs to fix it here for this purpose. NOT YET IMPLEMENTED')
+        connection_dict = self.__check_ports(args,connection_dict,rev_query)
         for pkey in connection_dict.keys():
             if pkey not in self.connections_dictionary.keys():
                 self.connections_dictionary[pkey] = copy.copy(connection_dict[pkey])
@@ -292,6 +271,34 @@ class PartsAndConnections:
             self.show_connection(args, connection_dict)
         if return_dictionary:
             return connection_dict
+
+    def __check_ports(self,args,connection_dict, rev_query):
+        """
+        Check and balance the ports on all of the parts in the connection dictionary
+        """
+        ### Check and balance ports
+        for pkey in connection_dict.keys():
+            number_of_ports = {'A':len(connection_dict[pkey]['a_ports']),'B':len(connection_dict[pkey]['b_ports'])}
+            if number_of_ports['A']==0:
+                connection_dict[pkey]['a_ports'] = [self.no_connection_designator]
+            if number_of_ports['B']==0:
+                connection_dict[pkey]['b_ports'] = [self.no_connection_designator]
+            if number_of_ports['A'] > number_of_ports['B']:
+                for i in range(number_of_ports['A']-1):
+                    connection_dict[pkey]['b_ports'].append(self.no_connection_designator)
+            elif number_of_ports['B'] > number_of_ports['A']:
+                for i in range(number_of_ports['B']-1):
+                    connection_dict[pkey]['a_ports'].append(self.no_connection_designator)
+            elif number_of_ports['A']>1:  # #A==#B > 1, (2)
+                part_to_check = {}
+                part_to_check[pkey] = {'a_ports':connection_dict[pkey]['a_ports'], 'b_ports':connection_dict[pkey]['a_ports']}
+                for i,p in enumerate(part_to_check[pkey]['a_ports']):
+                    check_port = self.__get_next_port(args,pkey,rev_query,p,direction='down',check_part=part_to_check)
+                    if check_port != part_to_check[pkey]['b_ports'][i]:
+                        print('Ports differ from expected:  ',p,check_port,part_to_check[pkey]['b_ports'][i])
+                        print('Reset to ',connection_dict[pkey]['b_ports'][i],'to',check_port)
+                        connection_dict[pkey]['b_ports'][i] = check_port
+        return connection_dict
 
     def __get_next_port(self,args,hpn,rev,port,direction,check_part):
         """
