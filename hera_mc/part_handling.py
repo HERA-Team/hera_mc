@@ -27,6 +27,24 @@ class PartsAndConnections:
     def __init__(self):
         pass
 
+    def is_part_connected(self,args,hpn_query,rev_query='last'):
+        revq = rev_query.upper()
+        if revq == 'LAST':
+            revq = self.last_revisions[hpn_query]
+        if hpn_query in self.parts_dictionary.keys() and self.parts_dictionary[hpn_query]['rev']==revq:
+            return self.parts_dictionary[hpn_query]['is_connected']
+        db = mc.connect_to_mc_db(args)
+        with db.sessionmaker() as session:
+            connected_query = session.query(part_connect.Parts).filter( ((part_connect.Connections.up      == hpn_query) &
+                                                                         (part_connect.Connections.up_rev  == revq) )    | 
+                                                                        ((part_connect.Connections.down    == hpn_query) &
+                                                                         (part_connect.Connections.down_rev== revq) ))
+            if connected_query.count() > 0:
+                found_connected = True
+            else:
+                found_connected = False
+        return found_connected
+
     def show_part(self, args, part_dict):
         """
         Print out part information.  Uses tabulate package.
@@ -39,13 +57,16 @@ class PartsAndConnections:
 
         table_data = []
         if args.verbosity == 'm':
-            headers = ['HERA P/N','Rev','Part Type','Mfg #','Date']
+            headers = ['HERA P/N','Rev','Part Type','Mfg #','Date','Connected']
         elif args.verbosity == 'h':
-            headers = ['HERA P/N','Rev','Part Type','Mfg #','Date','A ports','B ports','Info','Geo']
+            headers = ['HERA P/N','Rev','Part Type','Mfg #','Date','Connected','A ports','B ports','Info','Geo']
         for hpn in sorted(part_dict.keys()):
+            connected = 'No'
+            if part_dict[hpn]['is_connected']:
+                connected = 'Yes'
             if args.verbosity == 'h':
                 td = [hpn, part_dict[hpn]['rev'], part_dict[hpn]['hptype'],
-                      part_dict[hpn]['manufacturer_number'], part_dict[hpn]['start_date']]
+                      part_dict[hpn]['manufacturer_number'], part_dict[hpn]['start_date'], connected]
                 pts = ''
                 for a in part_dict[hpn]['a_ports']:
                     pts+=(a+', ')
@@ -62,7 +83,7 @@ class PartsAndConnections:
                 table_data.append(td)
             elif args.verbosity == 'm':
                 table_data.append([hpn, part_dict[hpn]['rev'], part_dict[hpn]['hptype'],
-                    part_dict[hpn]['manufacturer_number'], part_dict[hpn]['install_date']])
+                    part_dict[hpn]['manufacturer_number'], part_dict[hpn]['install_date'], connected])
             else:
                 print(hpn, part_dict[hpn]['repr'])
         if args.verbosity=='m' or args.verbosity=='h':
@@ -115,7 +136,8 @@ class PartsAndConnections:
                     continue
                 elif part_cnt == 1:
                     part = part_and_rev[0]   ### Found only one.
-                    part_dict[part.hpn] = {'rev':part.hpn_rev,
+                    is_connected = self.is_part_connected(args,part.hpn,part.hpn_rev)
+                    part_dict[part.hpn] = {'rev':part.hpn_rev, 'is_connected':is_connected,
                                            'hptype': part.hptype,
                                            'manufacturer_number': part.manufacturer_number,
                                            'start_date': part.start_date,
@@ -395,6 +417,8 @@ class PartsAndConnections:
         connections = None
         hookup_dict = {}
         for hpn in parts.keys():
+            if parts[hpn]['is_connected'] == False:
+                continue
             number_a_ports = len(parts[hpn]['a_ports'])
             number_b_ports = len(parts[hpn]['b_ports'])
             if port_query == 'all':
@@ -419,6 +443,7 @@ class PartsAndConnections:
                 furthest_up = self.upstream[-1][0]
                 try_station = self.get_part(args,hpn_query=furthest_up,rev_query=rev_query,
                               exact_match=True, return_dictionary=True, show_part=False)
+                keep_entry = True
                 hukey = hpn+':'+p
                 if try_station[furthest_up]['hptype'] == 'station':
                     hookup_dict[hukey] = [[try_station[furthest_up]['geo']['station_number'],'S']]
@@ -426,8 +451,16 @@ class PartsAndConnections:
                     hookup_dict[hukey] = []
                 for pn in reversed(self.upstream):
                     hookup_dict[hukey].append(pn)
-                for pn in self.downstream:
+                    if self.parts_dictionary[pn[0]]['is_connected'] == False:
+                        keep_entry = False
+                        break
+                for pn in self.downstream and keep_entry:
                     hookup_dict[hukey].append(pn)
+                    if self.parts_dictionary[pn[0]]['is_connected'] == False:
+                        keep_entry = False
+                        break
+                if keep_entry == False:
+                    del hookup_dict[hukey]
                 #-#for pkey in hookup_dict.keys():
                 #-#    print('#-#==>', hookup_dict[pkey])
         if len(hookup_dict.keys())==0:

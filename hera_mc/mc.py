@@ -30,7 +30,7 @@ import hera_mc
 
 from . import MCDeclarativeBase
 
-data_path = op.join(op.dirname(hera_mc.__file__), 'data')
+data_path = op.join(op.split(op.abspath(hera_mc.__file__))[0], 'data')
 
 HERA_LAT = Angle('-30d43m17.5s').degree
 HERA_LON = Angle('21d25m41.9s').degree
@@ -194,7 +194,6 @@ class AutomappedDB(DB):
         with self.sessionmaker() as session:
             if not is_sane_database(MCDeclarativeBase, session):
                 raise RuntimeError('database {0} does not match expected schema'.format(db_url))
-
 
 def get_mc_argument_parser():
     """Get an `argparse.ArgumentParser` object that includes some predefined

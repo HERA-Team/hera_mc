@@ -22,6 +22,11 @@ if __name__ == '__main__':
     parser.add_argument('-x', '--xgraph', help="X-axis of graph {N, E, Z}. [E]", choices=['N','n','E','e','Z','z'],default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph {N, E, Z}. [N]", choices=['N','n','E','e','Z','z'],default='N')
     parser.add_argument('--add_new_geo', help="Flag to enable adding of a new geo_location under update.  [False]", action='store_true')
+    connected_group = parser.add_mutually_exclusive_group()
+    connected_group.add_argument('--show_connected', help="Flag to show only the connected stations (default)", 
+                                  dest='show_connected', action='store_true')
+    connected_group.add_argument('--show_all', help="Flag to show all stations", 
+                                  dest='show_connected', action='store_false')
     label_group = parser.add_mutually_exclusive_group()
     label_group.add_argument('--label', help="Flag to label stations in graph (default).", dest='label', action='store_true')
     label_group.add_argument('--no-label', help="Flag to not label stations in graph.", dest='label', action='store_false')

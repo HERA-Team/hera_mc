@@ -17,6 +17,7 @@ if not hasattr(db, 'create_tables'):
 
 db.create_tables()
 
+tables_to_initialize = ['station_meta','parts_paper','part_info','connections']
 import initialize_station_meta
 import initialize_geo_locations
 import initialize_part_numbers

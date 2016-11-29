@@ -83,6 +83,13 @@ $ rm *  # get rid of broken files
 $ initdb -D .  # remake the database files
 ```
 
+If you get the following error:
+psql: could not connect to server: No such file or directory
+  Is the server running locally and accepting
+  connections on Unix domain socket "/tmp/.s.PGSQL.5432"?
+
+you can try the following:  rm /usr/local/var/postgres/postmaster.pid
+
 ### Basic OS X PostgreSQL installation with macports
 
 The following commands will install `postgresql` and initialize the databases. Note that some of
