@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, mc, part_handling
+from hera_mc import part_connect, part_handling, mc
 
 if __name__ == '__main__':
     handling = part_handling.PartsAndConnections()
@@ -26,6 +26,8 @@ if __name__ == '__main__':
     parser.add_argument('--add_new_part', help="Flag to allow update to add a new record.  [False]", action='store_true')
     parser.add_argument('--mapr_cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",default='all')
     parser.add_argument('--levels_testing', help="Set to test filename if correlator levels not accessible [levels.tst]", default='levels.tst')
+    parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
+    parser.add_argument('--time', help="hh:mm or now [now]", default='now')
     args = parser.parse_args()
     args.verbosity = args.verbosity.lower()
     args.mapr_cols = args.mapr_cols.lower()

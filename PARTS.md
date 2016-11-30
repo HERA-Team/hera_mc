@@ -29,7 +29,7 @@ PI[<int>] - refers to the PAPER elements in the “imaging” configuration.
 PP[A-G][<int>] - refers to the PAPER elements in the PAPER grid that are rotated 45deg
 S[A-G][<int>] refers to the PAPER elements in the PAPER grid
 There is a one-to-one correspondence to station_name and station_number (<int*>), which is the location
-integer used in e.g. MIRIAD.
+integer used in e.g. MIRIAD, but which may change in time.
 Port A:  sky
 Port B:  ground
 

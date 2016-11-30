@@ -10,7 +10,7 @@ This is meant to hold utility scripts for parts and connections
 from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
 
-from hera_mc import part_connect, mc, geo_location, correlator_levels
+from hera_mc import mc, part_connect, geo_location, correlator_levels
 import copy
 
 
@@ -35,10 +35,10 @@ class PartsAndConnections:
             return self.parts_dictionary[hpn_query]['is_connected']
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
-            connected_query = session.query(part_connect.Parts).filter( ((part_connect.Connections.up      == hpn_query) &
-                                                                         (part_connect.Connections.up_rev  == revq) )    | 
-                                                                        ((part_connect.Connections.down    == hpn_query) &
-                                                                         (part_connect.Connections.down_rev== revq) ))
+            connected_query = session.query(part_connect.Connections).filter( ((part_connect.Connections.up      == hpn_query) &
+                                                                               (part_connect.Connections.up_rev  == revq) )    | 
+                                                                              ((part_connect.Connections.down    == hpn_query) &
+                                                                               (part_connect.Connections.down_rev== revq) ))
             if connected_query.count() > 0:
                 found_connected = True
             else:

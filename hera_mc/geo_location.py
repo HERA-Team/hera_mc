@@ -18,7 +18,8 @@ import matplotlib.pyplot as plt
 from sqlalchemy import Column, Float, Integer, String, DateTime, ForeignKey, func
 
 from . import MCDeclarativeBase, NotNull
-import hera_mc.mc as mc
+from hera_mc import mc, part_connect
+
 
 class StationMeta(MCDeclarativeBase):
     """
@@ -154,6 +155,21 @@ def parse_update_request(request):
         data.append(scv)
     return data
 
+def is_station_connected(args,station_name = None):
+    if station_name is None:
+        station, station_col = station_name_or_number(args.locate)
+        db = mc.connect_to_mc_db(args)
+        with db.sessionmaker() as session:
+            for a in session.query(GeoLocation).filter(station_col == station):
+                station_name = a.station_name
+    db = mc.connect_to_mc_db(args)
+    with db.sessionmaker() as session:
+        connected_station = session.query(part_connect.Connections).filter(part_connect.Connections.up == station_name)
+        if connected_station.count() > 0:
+            station_connected = True
+        else:
+            station_connected = False
+    return station_connected
 
 def locate_station(args, show_geo=False):
     """Return the location of station_name or station_number as contained in args.locate.
@@ -168,11 +184,12 @@ def locate_station(args, show_geo=False):
                 if a.station_name in station_meta[key]['Stations']:
                     this_station = key
                     break
-            else:
-                this_station = 'No station metadata.'
+                else:
+                    this_station = 'No station metadata.'
+            connected = is_station_connected(args,a.station_name)
             v = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation,
                  'station_name': a.station_name, 'station_number': a.station_number,
-                 'station_type': this_station}
+                 'station_type': this_station, 'connected':connected}
             if show_geo:
                 if args.verbosity == 'm' or args.verbosity == 'h':
                     print('station_name: ', a.station_name)
@@ -182,6 +199,7 @@ def locate_station(args, show_geo=False):
                     print('\televation: ', a.elevation)
                     print('\tstation description (%s):  %s' % (this_station,
                                                                station_meta[this_station]['Description']))
+                    print('\tconnected:  ',connected)
                 elif args.verbosity == 'l':
                     print(a, this_station)
     if show_geo:
@@ -200,16 +218,30 @@ def plot_arrays(args, overplot=None, label_station=False):
         for key in station_meta.keys():
             for loc in station_meta[key]['Stations']:
                 for a in session.query(GeoLocation).filter(GeoLocation.station_name == loc):
-                    pt = {'easting': a.easting, 'northing': a.northing,
-                          'elevation': a.elevation}
-                    plt.plot(pt[coord[args.xgraph]], pt[coord[args.ygraph]],
-                             station_meta[key]['Marker'], label=a.station_name)
-                    if label_station:
-                        plt.annotate(a.station_number, xy=(pt[coord[args.xgraph]], pt[coord[args.ygraph]]),
-                                     xytext=(pt[coord[args.xgraph]] + 5, pt[coord[args.ygraph]]))
+                    show_it = True
+                    if args.show_connected:
+                        show_it = is_station_connected(args,loc)
+                    if show_it:
+                        pt = {'easting': a.easting, 'northing': a.northing,
+                              'elevation': a.elevation}
+                        plt.plot(pt[coord[args.xgraph]], pt[coord[args.ygraph]],
+                                 station_meta[key]['Marker'], label=a.station_name)
+                        if label_station:
+                            if args.label_type=='station_name':
+                                labeling = a.station_name
+                            elif args.label_type=='station_number':
+                                labeling = a.station_number
+                            else:
+                                labeling = 'S'
+                            plt.annotate(labeling, xy=(pt[coord[args.xgraph]], pt[coord[args.ygraph]]),
+                                         xytext=(pt[coord[args.xgraph]] + 5, pt[coord[args.ygraph]]))
     if overplot:
+        if overplot['connected']:
+            over_marker = 'ys'
+        else:
+            over_marker = 'rx'
         overplot_station = plt.plot(overplot[coord[args.xgraph]], overplot[coord[args.ygraph]],
-                                    'ys', markersize=10)
+                                    over_marker, markersize=10)
         legendEntries = [overplot_station]
         legendText = [overplot['station_name'] + ':' + str(overplot['station_number'])]
         plt.legend((overplot_station), (legendText), numpoints=1, loc='upper right')
