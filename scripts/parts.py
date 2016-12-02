@@ -28,6 +28,17 @@ if __name__ == '__main__':
     parser.add_argument('--levels_testing', help="Set to test filename if correlator levels not accessible [levels.tst]", default='levels.tst')
     parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
     parser.add_argument('--time', help="hh:mm or now [now]", default='now')
+    active_group = parser.add_mutually_exclusive_group()
+    active_group.add_argument('--show_active', help="Flag to show only the active parts (default)", 
+                                  dest='show_active', action='store_true')
+    active_group.add_argument('--show_all_parts', help="Flag to show all parts", 
+                                  dest='show_active', action='store_false')
+    connected_group = parser.add_mutually_exclusive_group()
+    connected_group.add_argument('--show_connected', help="Flag to show only the connected parts (default)", 
+                                  dest='show_connected', action='store_true')
+    connected_group.add_argument('--show_all', help="Flag to show all parts", 
+                                  dest='show_connected', action='store_false')
+    parser.set_defaults(show_active=True,show_connected=True)
     args = parser.parse_args()
     args.verbosity = args.verbosity.lower()
     args.mapr_cols = args.mapr_cols.lower()
