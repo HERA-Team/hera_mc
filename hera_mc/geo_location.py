@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from sqlalchemy import Column, Float, Integer, String, DateTime, ForeignKey, func
 
 from . import MCDeclarativeBase, NotNull
-from hera_mc import mc, part_connect
+from hera_mc import mc, part_connect, cm_utils
 
 
 class StationMeta(MCDeclarativeBase):
@@ -154,27 +154,8 @@ def parse_update_request(request):
         data.append(scv)
     return data
 
-def _get_datetime(_date,_time):
-    if _date.lower() == 'now':
-        dt_d = datetime.datetime.now()
-    else:
-        data = _date.split('/')
-        dt_d = datetime.datetime(int(data[2])+2000,int(data[0]),int(data[1]))
-    if _time.lower() == 'now':
-        dt_t = datetime.datetime.now()
-    else:
-        data = _time.split(':')
-        dt_t = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,int(data[0]),int(data[1]),0)
-    dt = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,dt_t.hour,dt_t.minute)
-    return dt
-def _get_stopdate(stop_date):
-    if stop_date:
-        return stop_date
-    else:
-        return datetime.datetime(2020,12,31)
-
-def is_station_current(args,station_name = None):
-    current = _get_datetime(args.date,args.time)
+def is_station_active(args,station_name = None):
+    current = cm_utils._get_datetime(args.date,args.time)
     if station_name is None:
         station, station_col = station_name_or_number(args.locate)
         db = mc.connect_to_mc_db(args)
@@ -184,14 +165,14 @@ def is_station_current(args,station_name = None):
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         for station_query in session.query(GeoLocation).filter(GeoLocation.station_name==station_name):
-            stop_date = _get_stopdate(station_query.station_number_stop_date)
+            stop_date = cm_utils._get_stopdate(station_query.station_number_stop_date)
             if current>station_query.station_number_start_date and current<stop_date:
-                is_current = True
+                is_active = True
             else:
-                is_current = False
-    return is_current
+                is_active = False
+    return is_active
 
-def was_station_connected(args,station_name = None):
+def is_in_connections_db(args,station_name = None):
     if station_name is None:
         station, station_col = station_name_or_number(args.locate)
         db = mc.connect_to_mc_db(args)
@@ -222,10 +203,11 @@ def locate_station(args, show_geo=False):
                     break
                 else:
                     this_station = 'No station metadata.'
-            connected = was_station_connected(args,a.station_name) and is_station_current(args,a.station_name)
+            connected = is_in_connections_db(args,a.station_name) 
+            active    = is_station_active(args,a.station_name)
             v = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation,
                  'station_name': a.station_name, 'station_number': a.station_number,
-                 'station_type': this_station, 'connected':connected}
+                 'station_type': this_station, 'connected':connected, 'active':active}
             if show_geo:
                 if args.verbosity == 'm' or args.verbosity == 'h':
                     print('station_name: ', a.station_name)
@@ -235,7 +217,8 @@ def locate_station(args, show_geo=False):
                     print('\televation: ', a.elevation)
                     print('\tstation description (%s):  %s' % (this_station,
                                                                station_meta[this_station]['Description']))
-                    print('\tconnected:  ',connected)
+                    print('\tever connected:  ',connected)
+                    print('\tactive:  ',active)
                 elif args.verbosity == 'l':
                     print(a, this_station)
     if show_geo:
@@ -255,8 +238,8 @@ def plot_arrays(args, overplot=None, label_station=False):
             for loc in station_meta[key]['Stations']:
                 for a in session.query(GeoLocation).filter(GeoLocation.station_name == loc):
                     show_it = True
-                    if args.show_connected:
-                        show_it = was_station_connected(args,loc) and is_station_current(args,loc)
+                    if args.active:
+                        show_it = is_station_active(args,loc)
                     if show_it:
                         pt = {'easting': a.easting, 'northing': a.northing,
                               'elevation': a.elevation}
@@ -272,14 +255,22 @@ def plot_arrays(args, overplot=None, label_station=False):
                             plt.annotate(labeling, xy=(pt[coord[args.xgraph]], pt[coord[args.ygraph]]),
                                          xytext=(pt[coord[args.xgraph]] + 5, pt[coord[args.ygraph]]))
     if overplot:
-        if overplot['connected']:
-            over_marker = 'ys'
+        if overplot['connected'] and overplot['active']:
+            over_marker = 'g*'
+            mkr_lbl = 'ca'
+        elif overplot['connected'] and not overplot['active']:
+            over_marker = 'gx'
+            mkr_lbl = 'cx'
+        elif overplot['acive'] and not overplot['connected']:
+            over_marker = 'yx'
+            mkr_lbl = 'xa'
         else:
             over_marker = 'rx'
+            mkr_lbl = 'xx'
         overplot_station = plt.plot(overplot[coord[args.xgraph]], overplot[coord[args.ygraph]],
-                                    over_marker, markersize=10)
+                                    over_marker, markersize=14)
         legendEntries = [overplot_station]
-        legendText = [overplot['station_name'] + ':' + str(overplot['station_number'])]
+        legendText = [overplot['station_name'] + ':' + str(overplot['station_number']) + ':' + mkr_lbl]
         plt.legend((overplot_station), (legendText), numpoints=1, loc='upper right')
     if args.xgraph != 'Z' and args.ygraph != 'Z':
         plt.axis('equal')

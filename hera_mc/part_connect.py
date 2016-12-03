@@ -11,12 +11,13 @@ from __future__ import absolute_import, division, print_function
 import datetime
 import os
 import socket
+from tabulate import tabulate
 
 from sqlalchemy import BigInteger, Column, DateTime, Float, ForeignKey, ForeignKeyConstraint, Integer, String, func
 
 from . import MCDeclarativeBase, NotNull
 
-import hera_mc.mc as mc
+from hera_mc import mc, cm_utils
 
 
 class Parts(MCDeclarativeBase):
@@ -54,18 +55,36 @@ def get_last_revision_number(args,hpn=None,show_revisions=False):
     """
     Return the last revision number for a given part (exact match)
     """
+    current = cm_utils._get_datetime(args.date,args.time)
     if hpn is None:
         hpn = args.hpn
     revisions = []
+    started = []
+    ended = []
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         for parts_rec in session.query(Parts).filter(Parts.hpn==hpn):
             revisions.append(parts_rec.hpn_rev)
+            started.append(parts_rec.start_date)
+            ended.append(parts_rec.stop_date)
     revisions = sorted(revisions)
-    if show_revisions and args.verbosity=='h':
-        print('Revisions: ',revisions)
+
+    over_ride_print = False
+    end_date = cm_utils._get_stopdate(ended[-1])
+    if current < started[-1] or current > end_date:
+        print('Warning:  last revision out of date')
+        over_ride_print = True
+    if (show_revisions and args.verbosity=='h') or over_ride_print:
+        headers = ['HPN','Revision','Start','Stop']
+        table_data = []
+        for i,rev in enumerate(revisions):
+            table_data.append([hpn,rev,started[i],ended[i]])
+        print(tabulate(table_data,headers=headers,tablefmt='simple'))
+        print('\n')
     elif show_revisions and args.verbosity=='m':
         print('Last revision: ',revisions[-1])
+    end_date = cm_utils._get_stopdate(ended[-1])
+
     return revisions[-1]
 
 

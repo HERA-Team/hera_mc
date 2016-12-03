@@ -25,15 +25,15 @@ if __name__ == '__main__':
     parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
     parser.add_argument('--time', help="hh:mm or now [now]", default='now')
     connected_group = parser.add_mutually_exclusive_group()
-    connected_group.add_argument('--show_connected', help="Flag to show only the connected stations (default)", 
-                                  dest='show_connected', action='store_true')
-    connected_group.add_argument('--show_all', help="Flag to show all stations", 
-                                  dest='show_connected', action='store_false')
+    connected_group.add_argument('--show-active', help="Flag to show only the active stations (default)", 
+                                  dest='active', action='store_true')
+    connected_group.add_argument('--show-all', help="Flag to show all stations", 
+                                  dest='active', action='store_false')
     label_group = parser.add_mutually_exclusive_group()
     label_group.add_argument('--label', help="Flag to label stations in graph (default).", dest='label', action='store_true')
     label_group.add_argument('--no-label', help="Flag to not label stations in graph.", dest='label', action='store_false')
     parser.add_argument('--label_type', help="Use 'station_name' or 'station_number' [station_number]", default='station_number')
-    parser.set_defaults(label=True,show_connected=True)
+    parser.set_defaults(label=True,active=True)
     args = parser.parse_args()
     args.xgraph = args.xgraph.upper()
     args.ygraph = args.ygraph.upper()
