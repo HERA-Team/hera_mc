@@ -1,0 +1,8 @@
+meta_class_name,prefix,description,plot_marker
+container,CR,Container location,k*
+herahex,HH,HERA Hex locations,ro
+node,ND,Node location,r*
+paperhex,PH,PAPER Hex locations,rs
+paperimaging,PI,PAPER Imaging locations,gs
+paperpolarized,PP,PAPER Polarized locations,bd
+stationgrid,S,Station grid locations,ks
