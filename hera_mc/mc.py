@@ -11,7 +11,7 @@ your database and configure M&C to find it.
 from __future__ import absolute_import, division, print_function
 
 import os.path as op
-import sys
+import os, sys
 from abc import ABCMeta
 from six import add_metaclass
 from sqlalchemy import Column, ForeignKey, BigInteger, String, Float
@@ -30,7 +30,9 @@ import hera_mc
 
 from . import MCDeclarativeBase
 
-data_path = op.join(op.split(op.abspath(hera_mc.__file__))[0], 'data')
+#data_path = op.join(op.split(op.abspath(hera_mc.__file__))[0], 'data')
+cwd = os.getcwd()
+data_path = op.join(cwd[:cwd.find('hera_mc')],'hera_mc/hera_mc/data')
 
 HERA_LAT = Angle('-30d43m17.5s').degree
 HERA_LON = Angle('21d25m41.9s').degree
