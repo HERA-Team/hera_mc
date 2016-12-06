@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--mapr', help="Show full hookup chains from given part. [None]", default=None)
     parser.add_argument('--revision_number', help="Specify revision number for hpn.  [LAST]", default='LAST')
     parser.add_argument('--specify_port', help="Define desired port(s) for hookup. [all]", default='all')
-    parser.add_argument('--show_levels', help="Show power levels if enabled (and able) [[false]", action='store_true')
+    parser.add_argument('--show_levels', help="Show power levels if enabled (and able) [False]", action='store_true')
     parser.add_argument('--exact_match', help="Force exact matches on part numbers, not beginning N char. [False]", action='store_true')
     parser.add_argument('--add_new_part', help="Flag to allow update to add a new record.  [False]", action='store_true')
     parser.add_argument('--mapr_cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",default='all')

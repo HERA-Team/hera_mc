@@ -109,11 +109,12 @@ for table in tables_to_init:
                         for i,r in enumerate(row):
                             if r=='':
                                 r = None
-                            print('####################################')
-                            print('Here is where the logic etc would go')
-                            print('...maybe use part_handling functions')
+                            print('########################################')
+                            print('# Here is where the logic etc would go #')
+                            print('# ...maybe use part_handling functions #')
                             #setattr(table_inst,field_name[i],r)
-                            print('####################################')
+                            print('#      cm_initialization: line 115     #')
+                            print('########################################')
                         #session.add(table_inst)
     ##################################HANDLE REMOTE CASE###############################
     else:
