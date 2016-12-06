@@ -7,7 +7,7 @@
 Script to generate table initialization files.
 """
 import pandas as pd
-from hera_mc import mc, geo_location, part_connect
+from hera_mc import mc, geo_location, part_connect, cm_table_info
 import os.path, csv
 import sys
 
@@ -16,12 +16,6 @@ parser.add_argument('--maindb', help="flag for change from main db, with user-ge
 parser.add_argument('--tables', help="name of table for which to initialize", default='all')
 parser.add_argument('--base', help="can define a base set of initialization data files", action='store_true')
 args = parser.parse_args()
-
-cm_tables = {'part_info':[part_connect.PartInfo,0],
-             'connections':[part_connect.Connections,1],
-             'parts_paper':[part_connect.Parts,2],
-             'geo_location':[geo_location.GeoLocation,3],
-             'station_meta':[geo_location.StationMeta,4]}
 
 def check_data_file(data_filename):
     try:
@@ -37,6 +31,7 @@ def check_data_file(data_filename):
     return dbkey
 
 ###Get tables to deal with in proper order
+cm_tables = cm_table_info.cm_tables
 if args.tables == 'all':
     tables_to_read_unordered = cm_tables.keys()
 else:
@@ -51,63 +46,77 @@ for table in tables_to_read_unordered:
         print(table,'not found')
 while 'NULL' in tables_to_read:
     tables_to_read.remove('NULL')
-tables_to_init = list(reversed(tables_to_read))
 
+###Check that db flag and actual db agree for remote v main
 db = mc.connect_to_mc_db(args)
-check_localdb = 'need to do this'
+is_maindb = False
 if args.maindb:
-    print('localdb should be the main db, if not terminate')
-    sys.exit()
+    if is_maindb == False: 
+        print('Error:  attempting main db access to remote db')
+        sys.exit()
 else:
-    print('localdb should not be the main db, if so terminate')
+    if is_maindb == True:
+        print('Error:  attempting unkeyed access to main db')
+        sys.exit()
 
 if args.base:
-    data_prefix = 'initialization_base_data_'
+    data_prefix = cm_table_info.base_data_prefix
 else:
-    data_prefix = 'initialization_data_'
+    data_prefix = cm_table_info.data_prefix
 
-#Prep tables
+#Check tables and reduce list to valid use_table
+use_table = list(tables_to_read)
 for table in tables_to_read:
     data_filename = os.path.join(mc.data_path,data_prefix+table+'.csv')
     dbkey = check_data_file(data_filename)
     if not dbkey:
         print('Initialization for %s not found' % (table))
-        continue
-    ##################################HANDLE MAINDB CASE###############################
-    if args.maindb:
-        if dbkey != args.maindb:
-            print('Invalid key for maindb')
-            continue
-        print('How do we want to handle this?')
-    ##################################HANDLE REMOTE CASE###############################
+        use_table.remove(table)
     else:
-        if dbkey != '$_remote_$':
-            print('Skipping since maindb keyed file; mainly out of obstinance')
-            print('\t',data_filename)
-            continue
-        with db.sessionmaker() as session:
-            num_rows_deleted = session.query(cm_tables[table][0]).delete()
+        if args.maindb:
+            if dbkey != args.maindb:
+                print('Invalid maindb key:  ', table)
+                use_table.remove(table)
+        else:
+            if dbkey != '$_remote_$':
+                print('Invalid remotedb key:  ', table)
+                use_table.remove(table)
+            else:
+                with db.sessionmaker() as session:
+                    num_rows_deleted = session.query(cm_tables[table][0]).delete()
 
-#Initialize tables
+tables_to_init = list(reversed(use_table))
+###Initialize tables
 for table in tables_to_init:
     data_filename = os.path.join(mc.data_path,data_prefix+table+'.csv')
-    dbkey = check_data_file(data_filename)
-    if not dbkey:
-        print('Initialization for %s not found' % (table))
-        continue
     ##################################HANDLE MAINDB CASE###############################
     if args.maindb:
-        if dbkey != args.maindb:
-            print('Invalid key for maindb')
-            continue
-        print('How do we want to handle this?')
+        with db.sessionmaker() as session:
+            key_row = True
+            field_row = False
+            field_name = []
+            with open(data_filename,'rb') as csvfile:
+                reader = csv.reader(csvfile)
+                for row in reader:
+                    table_inst = cm_tables[table][0]()
+                    if key_row:
+                        key_row = False
+                        field_row = True
+                    elif field_row:
+                        field_name = row
+                        field_row=False
+                    else:
+                        for i,r in enumerate(row):
+                            if r=='':
+                                r = None
+                            print('####################################')
+                            print('Here is where the logic etc would go')
+                            print('...maybe use part_handling functions')
+                            #setattr(table_inst,field_name[i],r)
+                            print('####################################')
+                        #session.add(table_inst)
     ##################################HANDLE REMOTE CASE###############################
     else:
-        if dbkey != '$_remote_$':
-            print("Skipping since maindb keyed file; mainly out of obstinance")
-            print("since it shouldn't really hurt anything.")
-            print('\t',data_filename)
-            continue
         with db.sessionmaker() as session:
             field_row = True
             field_name = []
@@ -118,12 +127,12 @@ for table in tables_to_init:
                     if field_row:
                         field_name = row
                         field_row=False
-                        continue
-                    for i,r in enumerate(row):
-                        if r=='':
-                            r = None
-                        setattr(table_inst,field_name[i],r)
-                    session.add(table_inst)
+                    else:
+                        for i,r in enumerate(row):
+                            if r=='':
+                                r = None
+                            setattr(table_inst,field_name[i],r)
+                        session.add(table_inst)
 
             
 
