@@ -11,6 +11,7 @@ it asks questions to get full info into args.
 from __future__ import absolute_import, division, print_function
 
 from hera_mc import part_connect, mc, part_handling
+import sys
 
 def get_part_information(args,install):
     """
@@ -22,19 +23,23 @@ def get_part_information(args,install):
     print("Here is an example hookup")
     install.get_hookup(args,show_hookup=True)
     args.hptype = raw_input("What is the part type?  ")
-    new_or_replace = raw_input("Is this a 'n'ew or 'r'eplacement part (n/r)?  ").lower()
-    args.hpn = raw_input("What is the hera part number?  ")
-    args.hpn = args.hpn.upper()
-    print("Here are the a and b ports:  ")
     try:
         aports = part_types[args.hptype]['a_ports']
         bports = part_types[args.hptype]['b_ports']
     except KeyError:
-        print('Error:  ',args.hptype)
-    print("A ports:  ",end='')
+        print('\nError:  ',args.hptype,'not valid part type -- look again at the list\n')
+        install.get_part_types(args,True)
+        print()
+        sys.exit()
+
+    new_or_replace = raw_input("Is this a 'n'ew or 'r'eplacement part (n/r)?  ").lower()
+    args.hpn = raw_input("What is the hera part number?  ")
+    args.hpn = args.hpn.upper()
+    print(args.hptype," part type has the following ports:  ")
+    print("\tA ports:  ",end='')
     for a in aports:
         print(a,end='    ',sep='not working for some reason')
-    print("\nB ports:  ",end='')
+    print("\n\tB ports:  ",end='')
     for b in bports:
         print(b,end='    ',sep='not working for some reason')
     print()
