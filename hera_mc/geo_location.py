@@ -88,26 +88,47 @@ class GeoLocation(MCDeclarativeBase):
 
 def update(args, data):
     """
-    update the database given a station_name/_number with columns/values
+    update the database given a station_name and station_number with columns/values and provides some checking
     use with caution -- should usually use in a script which will do datetime primary key etc
 
     Parameters:
     ------------
-    data:  [[station0,column0,value0],[...]]
-    stationN:  may be station_name (starts with char) or station_number (is an int)
+    data:  [[station_name0,station_number0,column0,value0],[...]]
+    station_nameN:  station_name (starts with char)
     values:  corresponding list of values
     """
+    data = check_update_request(data)
+    if data is None:
+        print('Error: invalid update')
+        return False
+    station_name = data[0][0]
+    station_number = data[0][1]
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        for d in data:
-            station, station_col = station_name_or_number(d[0])
-            for geo_rec in session.query(GeoLocation).filter(station_col == station):
+        geo_rec = session.query(GeoLocation).filter( (GeoLocation.station_name == station_name) &
+                                                     (GeoLocation.station_number == station_number) )
+        ngr = geo_rec.count()
+        if ngr == 0: 
+            if args.add_new_geo:
+                gr = GeoLocation()
+            else:
+                print(d[0],"/",d[1],"exists and add_new_geo not enabled.")
+                gr = None
+        elif ngr == 1:
+            gr = geo_rec.first()
+        else:
+            print("Shouldn't ever get here.")
+            gr = None
+
+        if gr:
+            for d in data:
                 try:
-                    if not args.add_new_geo:  # Flag to allow adding a new record
-                        xxx = getattr(geo_rec, d[1])
-                    setattr(geo_rec, d[1], d[2])
+                    setattr(gr, d[2], d[3])
                 except AttributeError:
-                    print(d[1], 'does not exist')
+                    print(d[2], 'does not exist as a field')
+                    continue
+            session.add(gr)
+    return True
 
 
 def station_name_or_number(station):
@@ -129,32 +150,61 @@ def station_name_or_number(station):
     return station, station_col
 
 
-def parse_update_request(request):
+def check_update_request(request):
     """
-    parses the update request
+    parses the update request, limited to one station_name/station_number pair, which is checked
 
     return nested list
 
     Parameters:
     ------------
-    request:  station0:column0:value0, [station1:]column1:value1, [...]
-    stationN:  station_name or station_number, first entry must have one, if absent propagate first
+    request:  station_name0:station_number0:column0:value0, [station_name1:station_number1]column1:value1, [...]
+    stationN:  station_name:station_number, first entry must have the pair, 
+               if it does not propagate first but can't restart 4 values
     columnN:  name of geo_location column
     valueN:  corresponding new value
     """
     data = []
-    data_to_proc = request.split(', ')
-    station0 = data_to_proc[0].split(':')[0]
+    if type(request) == str:
+        tmp = request.split(',')
+        data_to_proc = []
+        for d in tmp:
+            data_to_proc.append(d.split(':'))
+    else:
+        data_to_proc = request
+    if len(data_to_proc[0])==4:
+        station_name0 = data_to_proc[0][0]
+        station_number0 = data_to_proc[0][1]
+        key = '%s:%d' % (station_name0,station_number0)
+    else:
+        print('Invalid parse request - need 4 parameters for at least first one.')
+        data = None
     for d in data_to_proc:
-        scv = d.split(':')
-        if len(scv) == 3:
-            pass
+        if len(d) == 4:
+            chk = '%s:%d' % (d[0],d[1])
+            if chk!=key:
+                print("Error:  Request is for one name/number pair only.")
+                data = None
+                break
         elif len(scv) == 2:
-            scv.insert(0, station0)
-        data.append(scv)
+            d.insert(0, station_name0)
+            d.insert(1, station_number0)
+        data.append(d)
     return data
 
-def is_station_active(args,station_name = None):
+def is_station_present(args,station_name,station_number=None):
+    num_present = False
+    db = mc.connect_to_mc_db(args)
+    with db.sessionmaker() as session:
+        if station_number:
+            geo_rec = session.query(GeoLocation).filter( (GeoLocation.station_name == station_name) &
+                                                         (GeoLocation.station_number == station_number))
+        else:
+            geo_rec = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
+        num_present = geo_rec.count()
+    return num_present
+
+def is_station_active(args,station_name = None, return_active_station_number = False):
     current = cm_utils._get_datetime(args.date,args.time)
     if station_name is None:
         station, station_col = station_name_or_number(args.locate)
@@ -162,12 +212,15 @@ def is_station_active(args,station_name = None):
         with db.sessionmaker() as session:
             for a in session.query(GeoLocation).filter(station_col == station):
                 station_name = a.station_name
+    is_active = False
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         for station_query in session.query(GeoLocation).filter(GeoLocation.station_name==station_name):
             stop_date = cm_utils._get_stopdate(station_query.station_number_stop_date)
             if current>station_query.station_number_start_date and current<stop_date:
                 is_active = True
+                if return_active_station_number:
+                    is_active = station_query.station_number
             else:
                 is_active = False
     return is_active

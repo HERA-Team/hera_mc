@@ -22,6 +22,7 @@ def get_part_information(args,install):
     args.hpn = 'HH23'
     print("Here is an example hookup")
     install.get_hookup(args,show_hookup=True)
+    args.hpn = tmp.hpn
     args.hptype = raw_input("What is the part type?  ")
     try:
         aports = part_types[args.hptype]['a_ports']

@@ -17,6 +17,8 @@ parser.add_argument('--tables', help="name of table for which to initialize", de
 parser.add_argument('--base', help="can define a base set of initialization data files", action='store_true')
 args = parser.parse_args()
 
+def check_if_maindb(): #Obviously this needs to do something real.
+    return False
 def check_data_file(data_filename):
     try:
         fp = open(data_filename,'r')
@@ -49,7 +51,7 @@ while 'NULL' in tables_to_read:
 
 ###Check that db flag and actual db agree for remote v main
 db = mc.connect_to_mc_db(args)
-is_maindb = False
+is_maindb = check_if_maindb()
 if args.maindb:
     if is_maindb == False: 
         print('Error:  attempting main db access to remote db')
@@ -90,6 +92,7 @@ tables_to_init = list(reversed(use_table))
 for table in tables_to_init:
     data_filename = os.path.join(mc.data_path,data_prefix+table+'.csv')
     ##################################HANDLE MAINDB CASE###############################
+    ### ULTIMATELY CONSOLIDATE THESE TWO CASES
     if args.maindb:
         with db.sessionmaker() as session:
             key_row = True
@@ -113,10 +116,12 @@ for table in tables_to_init:
                             print('# Here is where the logic etc would go #')
                             print('# ...maybe use part_handling functions #')
                             #setattr(table_inst,field_name[i],r)
+                            print('# Ultimately consolidate with below    #')
                             print('#      cm_initialization: line 115     #')
                             print('########################################')
                         #session.add(table_inst)
     ##################################HANDLE REMOTE CASE###############################
+    ### ULTIMATELY CONSOLIDATE THESE TWO CASES
     else:
         with db.sessionmaker() as session:
             field_row = True

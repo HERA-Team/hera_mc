@@ -38,3 +38,19 @@ def _is_active(current, _start_date, _stop_date):
     else:
         is_active=False
     return is_active
+
+def _query_yn(s,default='y'):
+    if default:
+        s+=' ['+default+']'
+    s+=':  '
+    ans = raw_input(s)
+    if len(ans)==0 and default:
+        ans = default
+    else:
+        print('No answer provided.')
+        ans = _query_yn(s,default)
+    ans = ans.lower()
+    if ans[0]=='y':
+        return True
+    else:
+        return False
