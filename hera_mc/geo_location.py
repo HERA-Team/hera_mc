@@ -75,7 +75,6 @@ class GeoLocation(MCDeclarativeBase):
         northing={self.northing} easting={self.easting} \
         elevation={self.elevation}>'.format(self=self)
 
-
 def update(args, data):
     """
     update the database given a station_name and station_number with columns/values and provides some checking
@@ -164,14 +163,34 @@ def is_in_connections_db(args,station_name,check_if_active=False):
             station_connected = True
         else:
             station_connected = False
-        if check_if_active:
-            dt = cm_utils.get_datetime(args.date,args.time)
-            for station in connected_station.all():
-
+        if station_connected and check_if_active:
+            current = cm_utils._get_datetime(args.date,args.time)
+            for connection in connected_station.all():
+                stop_date = cm_utils._get_stopdate(connection.stop_date)
+                if current>connection.start_date and current<stop_date:
+                    station_connected = int(connection.down.strip('A'))
+                else:
+                    station_connected = False
     return station_connected
 
-def find_station_name(station):
-    print()
+def find_station_name(args,station_number):
+    station = 'A'+str(station_number)
+    db = mc.connect_to_mc_db(args)
+    with db.sessionmaker() as session:
+        connected_station = session.query(part_connect.Connections).filter(part_connect.Connections.down == station)
+        if connected_station.count() > 0:
+            station_connected = True
+        else:
+            station_connected = False
+        if station_connected:
+            current = cm_utils._get_datetime(args.date,args.time)
+            for connection in connected_station.all():
+                stop_date = cm_utils._get_stopdate(connection.stop_date)
+                if current>connection.start_date and current<stop_date:
+                    station_connected = connection.up
+                else:
+                    station_connected = False
+    return station_connected
 
 def locate_station(args, show_geo=False):
     """Return the location of station_name or station_number as contained in args.locate.
@@ -180,11 +199,11 @@ def locate_station(args, show_geo=False):
     station_name = False
     try:
         station = int(args.locate)
-        station_name = active_station(station)
+        station_name = find_station_name(args,station)
     except ValueError:
-        station_name = args.locate
+        station_name = args.locate.upper()
+    v = None
     if station_name:
-        v = None
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
             station_meta = session.get_station_meta()
@@ -195,21 +214,22 @@ def locate_station(args, show_geo=False):
                         break
                     else:
                         this_station = 'No station metadata.'
-                connected = is_in_connections_db(args,a.station_name) 
-                active    = active_antenna_station_name(args,a.station_name)
+                ever_connected = is_in_connections_db(args,a.station_name) 
+                active = is_in_connections_db(args,a.station_name,True)
                 v = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation,
-                     'station_name': a.station_name, 'station_number': a.station_number,
-                     'station_type': this_station, 'connected':connected, 'active':active}
+                     'station_name': a.station_name, 
+                     'station_type': this_station, 
+                     'connected':ever_connected, 
+                     'active':active}
                 if show_geo:
                     if args.verbosity == 'm' or args.verbosity == 'h':
                         print('station_name: ', a.station_name)
-                        print('\tstation_number: ', a.station_number)
                         print('\teasting: ', a.easting)
                         print('\tnorthing: ', a.northing)
                         print('\televation: ', a.elevation)
-                        print('\tstation description (%s):  %s' % (this_station,
-                                                               station_meta[this_station]['Description']))
-                        print('\tever connected:  ',connected)
+                        print('\tstation description (%s):  %s' % 
+                            (this_station,station_meta[this_station]['Description']))
+                        print('\tever connected:  ',ever_connected)
                         print('\tactive:  ',active)
                     elif args.verbosity == 'l':
                         print(a, this_station)
@@ -217,7 +237,6 @@ def locate_station(args, show_geo=False):
         if not v and args.verbosity == 'm' or args.verbosity == 'h':
             print(args.locate, ' not found.')
     return v
-
 
 def plot_arrays(args, overplot=None, label_station=False):
     """Plot the various sub-array types"""
@@ -231,7 +250,7 @@ def plot_arrays(args, overplot=None, label_station=False):
                 for a in session.query(GeoLocation).filter(GeoLocation.station_name == loc):
                     show_it = True
                     if args.active:
-                        show_it = is_station_active(args,loc)
+                        show_it = is_in_connections_db(args,loc,True)
                     if show_it:
                         pt = {'easting': a.easting, 'northing': a.northing,
                               'elevation': a.elevation}
@@ -241,7 +260,9 @@ def plot_arrays(args, overplot=None, label_station=False):
                             if args.label_type=='station_name':
                                 labeling = a.station_name
                             elif args.label_type=='station_number':
-                                labeling = a.station_number
+                                labeling = is_in_connections_db(args,loc,True)
+                                if not labeling:
+                                    labeling = 'NA'
                             else:
                                 labeling = 'S'
                             plt.annotate(labeling, xy=(pt[coord[args.xgraph]], pt[coord[args.ygraph]]),
@@ -262,7 +283,7 @@ def plot_arrays(args, overplot=None, label_station=False):
         overplot_station = plt.plot(overplot[coord[args.xgraph]], overplot[coord[args.ygraph]],
                                     over_marker, markersize=14)
         legendEntries = [overplot_station]
-        legendText = [overplot['station_name'] + ':' + str(overplot['station_number']) + ':' + mkr_lbl]
+        legendText = [overplot['station_name'] + ':' + str(overplot['active'])]
         plt.legend((overplot_station), (legendText), numpoints=1, loc='upper right')
     if args.xgraph != 'Z' and args.ygraph != 'Z':
         plt.axis('equal')
