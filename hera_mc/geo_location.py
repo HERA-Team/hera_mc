@@ -97,7 +97,7 @@ def update(args, data):
     station_nameN:  station_name (starts with char)
     values:  corresponding list of values
     """
-    data = check_update_request(data)
+    data = format_check_update_request(data)
     if data is None:
         print('Error: invalid update')
         return False
@@ -150,7 +150,7 @@ def station_name_or_number(station):
     return station, station_col
 
 
-def check_update_request(request):
+def format_check_update_request(request):
     """
     parses the update request, limited to one station_name/station_number pair, which is checked
 
