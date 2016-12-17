@@ -18,9 +18,9 @@ if __name__ == '__main__':
                         help="Location of given s_name or s_number (assumed if <int>).  [None]", default=None)
     parser.add_argument('-u', '--update',
                         help="Update station records.  Format station0:col0:val0, [station1:]col1:val1...  [None]", default=None)
-    parser.add_argument('-v', '--verbosity', help="Set verbosity {l, m, h}. [m].", choices=['L','l','m','M','h','H'],default='m')
-    parser.add_argument('-x', '--xgraph', help="X-axis of graph {N, E, Z}. [E]", choices=['N','n','E','e','Z','z'],default='E')
-    parser.add_argument('-y', '--ygraph', help="Y-axis of graph {N, E, Z}. [N]", choices=['N','n','E','e','Z','z'],default='N')
+    parser.add_argument('-v', '--verbosity', help="Set verbosity. [m].", choices=['L','l','m','M','h','H'],default='m')
+    parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]", choices=['N','n','E','e','Z','z'],default='E')
+    parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]", choices=['N','n','E','e','Z','z'],default='N')
     parser.add_argument('--add_new_geo', help="Flag to enable adding of a new geo_location under update.  [False]", action='store_true')
     parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
     parser.add_argument('--time', help="hh:mm or now [now]", default='now')
@@ -32,8 +32,13 @@ if __name__ == '__main__':
     label_group = parser.add_mutually_exclusive_group()
     label_group.add_argument('--label', help="Flag to label stations in graph (default).", dest='label', action='store_true')
     label_group.add_argument('--no-label', help="Flag to not label stations in graph.", dest='label', action='store_false')
-    parser.add_argument('--label_type', help="Use 'station_name' or 'station_number' [station_number]", default='station_number')
-    parser.set_defaults(label=True,active=True)
+    label_type_group = parser.add_mutually_exclusive_group()
+    label_type_group.add_argument('--show-name',help="Set label_type to station_name", dest='label_type',
+                                   action='store_const',const='station_name')
+    label_type_group.add_argument('--show-number',help="Set label_type to station_number", dest='label_type',
+                                   action='store_const',const='station_number')
+    label_type_group.add_argument('--label_type', help="Use 'station_name' or 'station_number' [station_number]")
+    parser.set_defaults(label=True,active=True,label_type='station_number')
     args = parser.parse_args()
     args.xgraph = args.xgraph.upper()
     args.ygraph = args.ygraph.upper()

@@ -70,6 +70,9 @@ class GeoLocation(MCDeclarativeBase):
     elevation = Column(Float)
     "Elevation in m"
 
+    created_date = NotNull(DateTime)
+    "The date when the station assigned by project."
+
     def __repr__(self):
         return '<station_name={self.station_name} station_number={self.station_number} \
         northing={self.northing} easting={self.easting} \
@@ -86,6 +89,7 @@ def update(args, data):
     station_nameN:  station_name (starts with char)
     values:  corresponding list of values
     """
+
     data = format_check_update_request(data)
     if data is None:
         print('Error: invalid update')
@@ -141,19 +145,30 @@ def format_check_update_request(request):
         data_to_proc = request
     if len(data_to_proc[0])==3:
         station_name0 = data_to_proc[0][0]
+        for d in data_to_proc:
+            if len(d) == 3:
+                if d[0]!=station_name0:
+                    print("Error:  Request is for one name only.")
+                    data = None
+                    break
+            elif len(d) == 2:
+                d.insert(0, station_name0)
+            data.append(d)
     else:
         print('Invalid parse request - need 3 parameters for at least first one.')
         data = None
-    for d in data_to_proc:
-        if len(d) == 3:
-            if d[0]!=station_name0:
-                print("Error:  Request is for one name only.")
-                data = None
-                break
-        elif len(scv) == 2:
-            d.insert(0, station_name0)
-        data.append(d)
+
     return data
+
+def is_station_present(args,station_name):
+    db = mc.connect_to_mc_db(args)
+    with db.sessionmaker() as session:
+        station = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
+        if station.count() > 0:
+            station_present = True
+        else:
+            station_present = False
+    return station_present
 
 def is_in_connections_db(args,station_name,check_if_active=False):
     db = mc.connect_to_mc_db(args)
@@ -217,10 +232,8 @@ def locate_station(args, show_geo=False):
                 ever_connected = is_in_connections_db(args,a.station_name) 
                 active = is_in_connections_db(args,a.station_name,True)
                 v = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation,
-                     'station_name': a.station_name, 
-                     'station_type': this_station, 
-                     'connected':ever_connected, 
-                     'active':active}
+                     'station_name': a.station_name, 'station_type': this_station, 
+                     'connected':ever_connected, 'active':active, 'created_date':a.created_date}
                 if show_geo:
                     if args.verbosity == 'm' or args.verbosity == 'h':
                         print('station_name: ', a.station_name)
@@ -231,6 +244,7 @@ def locate_station(args, show_geo=False):
                             (this_station,station_meta[this_station]['Description']))
                         print('\tever connected:  ',ever_connected)
                         print('\tactive:  ',active)
+                        print('\tcreated:  ',a.created_date)
                     elif args.verbosity == 'l':
                         print(a, this_station)
     if show_geo:
@@ -274,7 +288,7 @@ def plot_arrays(args, overplot=None, label_station=False):
         elif overplot['connected'] and not overplot['active']:
             over_marker = 'gx'
             mkr_lbl = 'cx'
-        elif overplot['acive'] and not overplot['connected']:
+        elif overplot['active'] and not overplot['connected']:
             over_marker = 'yx'
             mkr_lbl = 'xa'
         else:
