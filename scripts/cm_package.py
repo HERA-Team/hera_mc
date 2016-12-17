@@ -11,7 +11,7 @@ from hera_mc import mc, cm_table_info
 import os, os.path
 
 parser = mc.get_mc_argument_parser()
-parser.add_argument('--maindb',help="flag for change to main db, with user-generated key",default=None)
+parser.add_argument('--maindb',help="user-generated key to allow change to main db",default=None)
 parser.add_argument('--tables', help="name of table for which to generate initialization data file",default='all')
 parser.add_argument('--base', help="can define a base set of initialization data files",action='store_true')
 args = parser.parse_args()

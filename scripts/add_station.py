@@ -88,12 +88,8 @@ def add_entry(args):
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-f', '--from_file',help="If present, will find station_name for coordinates in file \
-                                                  (see --coord_filename) [False].", action='store_true')
-    parser.add_argument('--coord_filename', help="Name of file containing coordinates of stations [data/HERA_350.txt]",
-                         default='HERA_350.txt')
+    parser.add_argument('station_name', nargs='?', help="Name of station (HH# for hera)", default=None)
     parser.add_argument('-q', '--query', help="Flag to query user for parameters [False]",action='store_true')
-    parser.add_argument('-s', '--station_name', help="Name of station (HH# for hera)", default=None)
     parser.add_argument('-e', '--easting',help="Easting of new station", default=None)
     parser.add_argument('-n', '--northing', help="Northing of new station", default=None)
     parser.add_argument('-z', '--elevation', help="Elevation of new station", default=None)
@@ -102,7 +98,11 @@ if __name__ == '__main__':
     parser.add_argument('--meta_class_name', help="Station category name [herahex]", default='herahex')
     parser.add_argument('--datum', help="Datum of UTM [WGS84]",default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]",default='34J')
-    parser.add_argument('-v', '--verbosity', help="Set verbosity {l, m, h}. [h].", choices=['l','m','h'], default="h")
+    parser.add_argument('-f', '--from_file',help="If present, will find station_name for coordinates in file \
+                                                  (see --coord_filename) [False].", action='store_true')
+    parser.add_argument('--coord_filename', help="Name of file containing coordinates of stations [data/HERA_350.txt]",
+                         default='HERA_350.txt')
+    parser.add_argument('-v', '--verbosity', help="Set verbosity. [h].", choices=['l','m','h'], default="h")
     parser.add_argument('--add_new_geo', help="Flag to allow update to add a new record.  [True]", action='store_false')
 
     args = parser.parse_args()

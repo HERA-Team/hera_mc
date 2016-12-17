@@ -9,6 +9,7 @@
 from __future__ import print_function
 from hera_mc import part_connect, geo_location
 
+#Locates the table and specifies the required order of deletion (inverse for creation.)
 cm_tables = {'part_info':[part_connect.PartInfo,0],
              'connections':[part_connect.Connections,1],
              'parts_paper':[part_connect.Parts,2],

@@ -7,15 +7,27 @@
 Script to generate table initialization files.
 """
 import pandas as pd
-from hera_mc import mc, geo_location, part_connect, cm_table_info
+from hera_mc import mc, geo_location, part_connect, cm_table_info, cm_utils
 import os.path, csv
 import sys
 
 parser = mc.get_mc_argument_parser()
-parser.add_argument('--maindb', help="flag for change from main db, with user-generated key", default=None)
-parser.add_argument('--tables', help="name of table for which to initialize", default='all')
-parser.add_argument('--base', help="can define a base set of initialization data files", action='store_true')
+parser.add_argument('--maindb', help="user-generated key to change from main db [None]", default=None)
+parser.add_argument('--tables', help="name of table for which to initialize or 'all' ['all']", default='all')
+parser.add_argument('--base', help="use base set of initialization data files [False]", action='store_true')
+parser.add_argument('--init_override', help="flag to override the 'are you sure' query [False]", action='store_true')
+if __name__ == 'cm_initialization':
+    parser.set_defaults(init_override=True)
 args = parser.parse_args()
+
+if not args.init_override:
+    print("This will erase and rewrite the configuration management tables.")
+    you_are_sure = cm_utils._query_yn("Are you sure you want to do this? ",'n')
+    if you_are_sure:
+        pass
+    else:
+        print("Exit with no rewrite.")
+        sys.exit()
 
 def check_if_maindb(): #Obviously this needs to do something real.
     return False
