@@ -46,10 +46,11 @@ def _query_yn(s,default='y'):
     ans = raw_input(s)
     if len(ans)==0 and default:
         ans = default
+    elif len(ans)>0:
+        ans = ans.lower()
     else:
         print('No answer provided.')
         ans = _query_yn(s,default)
-    ans = ans.lower()
     if ans[0]=='y':
         return True
     else:

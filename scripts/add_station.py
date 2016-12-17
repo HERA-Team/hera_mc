@@ -10,9 +10,10 @@ The flag -q will force a query.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, geo_location, cm_utils
+from hera_mc import mc, geo_location, cm_utils, part_connect
 import sys, os.path
 
+default_coord_file_name = os.path.join(mc.data_path,'HERA_350.txt')
 def get_coord_from_file(station_name,coord_filename):
     coords = None
     if station_name is not None:
@@ -43,7 +44,7 @@ def query_geo_information(args):
     if not args.from_file:
         args.from_file = cm_utils._query_yn('Do you want to get coords from default file?','y')
     if args.from_file:
-        coords = get_coord_from_file(args.station_name,args.coord_filename)
+        coords = get_coord_from_file(args.station_name,args.from_file)
         if coords:
             args.easting = coords[1]
             args.northing = coords[2]
@@ -58,6 +59,7 @@ def query_geo_information(args):
         args.datum = query_default('datum',args)
         args.tile = query_default('tile',args)
     args.meta_class_name = query_default('meta_class_name',args)
+    args.date = query_default('date',args)
     return args
 
 def entry_OK_to_add(args):
@@ -66,7 +68,7 @@ def entry_OK_to_add(args):
         print(args.station_name,' already present.')
         OK = False
     return OK
-def add_entry(args):
+def add_entry_to_geo_location(args):
     ###NotNull
     sname = args.station_name
     dt = cm_utils._get_datetime(args.date,args.time)
@@ -85,6 +87,16 @@ def add_entry(args):
     if args.elevation:
         data.append([sname,'elevation',args.elevation])
     geo_location.update(args,data)
+def add_entry_to_parts(args):
+    ###NotNull
+    hpn = args.station_name
+    rev = 'A'
+    dt = cm_utils._get_datetime(args.date,args.time)
+    data = [[hpn,rev,'hpn',hpn],
+            [hpn,rev,'hpn_rev',rev],
+            [hpn,rev,'hptype','station'],
+            [hpn,rev,'start_date',dt]]
+    part_connect.update(args,data)
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
@@ -98,12 +110,16 @@ if __name__ == '__main__':
     parser.add_argument('--meta_class_name', help="Station category name [herahex]", default='herahex')
     parser.add_argument('--datum', help="Datum of UTM [WGS84]",default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]",default='34J')
-    parser.add_argument('-f', '--from_file',help="If present, will find station_name for coordinates in file \
-                                                  (see --coord_filename) [False].", action='store_true')
-    parser.add_argument('--coord_filename', help="Name of file containing coordinates of stations [data/HERA_350.txt]",
-                         default='HERA_350.txt')
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [h].", choices=['l','m','h'], default="h")
     parser.add_argument('--add_new_geo', help="Flag to allow update to add a new record.  [True]", action='store_false')
+    parser.add_argument('--add_new_part', help="Flag to allow update to add a new record.  [True]", action='store_false')
+    file_group = parser.add_mutually_exclusive_group()
+    file_group.add_argument('-f','--use-file',help="Use default coordinate file", 
+                            dest='from_file', action='store_const',const=default_coord_file_name)    
+    file_group.add_argument('-X','--dont-use-file',help="Don't use file for coordinates.", 
+                            dest='from_file', action='store_const',const=False)
+    file_group.add_argument('--from_file', help="Use file to retrieve coordinate information.")
+    parser.set_defaults(from_file=default_coord_file_name)
 
     args = parser.parse_args()
     args.verbosity = args.verbosity.lower()
@@ -113,19 +129,18 @@ if __name__ == '__main__':
     if len(sys.argv)==1:
         args.query = True
 
-    if args.coord_filename[0] != '.' and args.coord_filename[0] != '/':
-        args.coord_filename = os.path.join(mc.data_path,args.coord_filename)
     if args.from_file:
-        coords = get_coord_from_file(args.station_name,args.coord_filename)
+        coords = get_coord_from_file(args.station_name,args.from_file)
         if coords:
-            args.easting = coords[args.station_name][1]
-            args.northing = coords[args.station_name][2]
-            args.elevation = coords[args.station_name][3]
+            args.easting = coords[1]
+            args.northing = coords[2]
+            args.elevation = coords[3]
 
     if args.query:
         args = query_geo_information(args)
 
     if entry_OK_to_add(args):
-        add_entry(args)
+        add_entry_to_geo_location(args)
+        add_entry_to_parts(args)
 
 

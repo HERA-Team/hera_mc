@@ -87,7 +87,6 @@ def get_last_revision_number(args,hpn=None,show_revisions=False):
 
     return revisions[-1]
 
-
 def update(args, data):
     """
     update the database given a hera part number with columns/values.
@@ -102,31 +101,49 @@ def update(args, data):
     columnN:  column name(s)
     values:  corresponding list of values
     """
-
+    data_dict = format_check_update_request(data)
+    if data_dict is None:
+        print('Error: invalid update')
+        return False
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        for d in data:
-            hpn_to_change = d[0].upper()
-            rev_to_change = d[1].upper()
+        for dkey in data_dict.keys():
+            hpn_to_change = data_dict[dkey][0][0].upper()
+            rev_to_change = data_dict[dkey][1][0].upper()
             if rev_to_change[:4]=='LAST':
                 rev_to_change = get_last_revision_number(args,hpn_to_change)
-            part_rec = session.query(Parts).filter( (Parts.hpn == hpn_to_change) & (Parts.hpn_rev == rev_to_change) )
-            try:
-                if not args.add_new_part:  ### done this way to stop accidentally adding one
-                    xxx = getattr(part_rec, d[2])
-                setattr(part_rec, d[2], d[3])
-            except AttributeError:
-                print(d[2], 'does not exist')
+            part_rec = session.query(Parts).filter( (Parts.hpn == hpn_to_change) & 
+                                                    (Parts.hpn_rev == rev_to_change) )
+            npc = part_rec.count()
+            if npc == 0: 
+                if args.add_new_part:
+                    part = Parts()
+                else:
+                    print(dkey,"exists and add_new_part not enabled.")
+                    part = None
+            elif npc == 1:
+                part = part_rec.first()
+            else:
+                print("Shouldn't ever get here.")
+                part = None
+            if part:
+                for d in data_dict[dkey]:
+                    try:
+                        setattr(part, d[2], d[3])
+                    except AttributeError:
+                        print(d[2], 'does not exist as a field')
+                        continue
+                session.add(part)
 
-def parse_update_request(request):
+def format_check_update_request(request):
     """
     parses the update request
 
-    return nested list
+    return dictionary
 
     Parameters:
     ------------
-    request:  hpn0:[rev0:]column0:value0,hpn1:[rev0]:]column1:value1,[...]
+    request:  hpn0:[rev0:]column0:value0,hpn1:[rev0]:]column1:value1,[...] or list
     hpnN:  hera part number, first entry must have one, if absent propagate first
     revN:  hera part revision number, if absent, propagate first, which, if absent, defaults to 'last'
     columnN:  name of parts column
@@ -134,29 +151,39 @@ def parse_update_request(request):
     """
 
     # Split out and get first
-    data = []
-    data_to_proc = request.split(',')
-    pcv0 = data_to_proc[0].split(':')
-    hpn0 = pcv0[0]
-    if len(pcv0)==3:
+    data = {}
+    if type(request) == str:
+        tmp = request.split(',')
+        data_to_proc = []
+        for d in tmp:
+            data_to_proc.append(d.split(':'))
+    else:
+        data_to_proc = request
+    if len(data_to_proc[0])==4:
+        hpn0 = data_to_proc[0][0]
+        rev0 = data_to_proc[0][1]
+    elif len(data_to_proc[0])==3:
+        hpn0 = data_to_proc[0][0]
         rev0 = 'LAST'
-    elif len(pcv0)==4:
-        rev0 = pcv[1]
     else:
         print('Error:  wrong format for first update entry: ',data_to_proc[0])
         return None
-
-    # Work through all; first must have 3 or 4 entries per above
     for d in data_to_proc:
-        pcv = d.split(':')
-        if len(pcv) == 4:
+        if len(d) == 4:
             pass
-        if len(pcv) == 3:
-            pcv.insert(1,'LAST')
-        elif len(pcv) == 2:
-            pcv.insert(0, hpn0)
-            pcv.insert(1, rev0)
-        data.append(pcv)
+        elif len(d) == 3:
+            d.insert(1,'LAST')
+        elif len(d) == 2:
+            d.insert(0, hpn0)
+            d.insert(1, rev0)
+        else:
+            print('Invalid format for update request.')
+            continue
+        dkey = d[0]+':'+d[1]
+        if dkey in data.keys():
+            data[dkey].append(d)
+        else:
+            data[dkey] = [d]
     return data
 
 class PartInfo(MCDeclarativeBase):

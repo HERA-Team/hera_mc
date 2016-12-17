@@ -90,52 +90,51 @@ def update(args, data):
     values:  corresponding list of values
     """
 
-    data = format_check_update_request(data)
-    if data is None:
+    data_dict = format_check_update_request(data)
+    if data_dict is None:
         print('Error: invalid update')
         return False
-    station_name = data[0][0]
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        geo_rec = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
-        ngr = geo_rec.count()
-        if ngr == 0: 
-            if args.add_new_geo:
-                gr = GeoLocation()
+        for station_name in data_dict.keys():
+            geo_rec = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
+            ngr = geo_rec.count()
+            if ngr == 0: 
+                if args.add_new_geo:
+                    gr = GeoLocation()
+                else:
+                    print(station_name,"exists and add_new_geo not enabled.")
+                    gr = None
+            elif ngr == 1:
+                gr = geo_rec.first()
             else:
-                print(d[0],"exists and add_new_geo not enabled.")
+                print("Shouldn't ever get here.")
                 gr = None
-        elif ngr == 1:
-            gr = geo_rec.first()
-        else:
-            print("Shouldn't ever get here.")
-            gr = None
-
-        if gr:
-            for d in data:
-                try:
-                    setattr(gr, d[1], d[2])
-                except AttributeError:
-                    print(d[1], 'does not exist as a field')
-                    continue
-            session.add(gr)
+            if gr:
+                for d in data_dict[station_name]:
+                    try:
+                        setattr(gr, d[1], d[2])
+                    except AttributeError:
+                        print(d[1], 'does not exist as a field')
+                        continue
+                session.add(gr)
     return True
 
 def format_check_update_request(request):
     """
-    parses the update request, limited to one station_name/station_number pair, which is checked
+    parses the update request
 
-    return nested list
+    return dictionary
 
     Parameters:
     ------------
-    request:  station_name0:column0:value0, [station_name1:]column1:value1, [...]
+    request:  station_name0:column0:value0, [station_name1:]column1:value1, [...] or list
     station_nameN: first entry must have the station_name, 
                    if it does not then propagate first station_name but can't restart 3 values
     columnN:  name of geo_location column
     valueN:  corresponding new value
     """
-    data = []
+    data = {}
     if type(request) == str:
         tmp = request.split(',')
         data_to_proc = []
@@ -147,17 +146,19 @@ def format_check_update_request(request):
         station_name0 = data_to_proc[0][0]
         for d in data_to_proc:
             if len(d) == 3:
-                if d[0]!=station_name0:
-                    print("Error:  Request is for one name only.")
-                    data = None
-                    break
+                pass
             elif len(d) == 2:
                 d.insert(0, station_name0)
-            data.append(d)
+            else:
+                print('Invalid format for update request.')
+                continue
+            if d[0] in data.keys():
+                data[d[0]].append(d)
+            else:
+                data[d[0]] = [d]
     else:
         print('Invalid parse request - need 3 parameters for at least first one.')
         data = None
-
     return data
 
 def is_station_present(args,station_name):
