@@ -35,11 +35,14 @@ if __name__ == '__main__':
                                   dest='active', action='store_false')
     parser.set_defaults(active=True)
     args = parser.parse_args()
+    
     args.verbosity = args.verbosity.lower()
     args.mapr_cols = args.mapr_cols.lower()
     args.revision_number = args.revision_number.upper()
     if args.levels_testing.lower()=='none' or args.levels_testing.lower()=='false':
         args.levels_testing = False
+    elif args.levels_testing == 'levels.tst':
+        args.levels_testing = os.path.join(mc.data_path,'levels.tst')
     if args.hpn:
         args.hpn = args.hpn.upper()
         part_dict = handling.get_part(args, show_part=True)

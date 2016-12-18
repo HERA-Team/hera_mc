@@ -87,7 +87,7 @@ def get_last_revision_number(args,hpn=None,show_revisions=False):
 
     return revisions[-1]
 
-def update(args, data):
+def update_part(args, data):
     """
     update the database given a hera part number with columns/values.
     adds part if add_new_part flag is true
@@ -101,7 +101,7 @@ def update(args, data):
     columnN:  column name(s)
     values:  corresponding list of values
     """
-    data_dict = format_check_update_request(data)
+    data_dict = format_check_update_part_request(data)
     if data_dict is None:
         print('Error: invalid update')
         return False
@@ -109,7 +109,7 @@ def update(args, data):
     with db.sessionmaker() as session:
         for dkey in data_dict.keys():
             hpn_to_change = data_dict[dkey][0][0].upper()
-            rev_to_change = data_dict[dkey][1][0].upper()
+            rev_to_change = data_dict[dkey][0][1].upper()
             if rev_to_change[:4]=='LAST':
                 rev_to_change = get_last_revision_number(args,hpn_to_change)
             part_rec = session.query(Parts).filter( (Parts.hpn == hpn_to_change) & 
@@ -119,10 +119,14 @@ def update(args, data):
                 if args.add_new_part:
                     part = Parts()
                 else:
-                    print(dkey,"exists and add_new_part not enabled.")
+                    print("Error: ",dkey,"does not exist and add_new_part not enabled.")
                     part = None
             elif npc == 1:
-                part = part_rec.first()
+                if args.add_new_part:
+                    print("Error: ",dkey,"exists and add_new_part is enabled.")
+                    part = None
+                else:
+                    part = part_rec.first()
             else:
                 print("Shouldn't ever get here.")
                 part = None
@@ -135,7 +139,7 @@ def update(args, data):
                         continue
                 session.add(part)
 
-def format_check_update_request(request):
+def format_check_update_part_request(request):
     """
     parses the update request
 
@@ -246,5 +250,104 @@ class Connections(MCDeclarativeBase):
 
     def __repr__(self):
         return '<{self.up}<{self.b_on_up}:{self.a_on_down}>{self.down}>'.format(self=self)
+
+def update_connection(args, data):
+    """
+    update the database given a connection with columns/values.
+    adds if add_new_connection flag is true
+
+    Parameters:
+    ------------
+
+    columnN:  column name(s)
+    values:  corresponding list of values
+    """
+    data_dict = format_check_update_connection_request(data)
+    if data_dict is None:
+        print('Error: invalid update')
+        return False
+    db = mc.connect_to_mc_db(args)
+    with db.sessionmaker() as session:
+        for dkey in data_dict.keys():
+            upcn_to_change = data_dict[dkey][0][0].upper()
+            urev_to_change = data_dict[dkey][0][1].upper()
+            dncn_to_change = data_dict[dkey][0][2].upper()
+            drev_to_change = data_dict[dkey][0][3].upper()
+            boup_to_change = data_dict[dkey][0][4].upper()
+            aodn_to_change = data_dict[dkey][0][5].upper()
+            strt_to_change = data_dict[dkey][0][6]
+            if urev_to_change[:4]=='LAST':
+                urev_to_change = get_last_revision_number(args,upcn_to_change)
+            if drev_to_change[:4]=='LAST':
+                drev_to_change = get_last_revision_number(args,dncn_to_change)
+            conn_rec = session.query(Connections).filter( (Connections.up == upcn_to_change) & 
+                                                          (Connections.up_rev == urev_to_change) &
+                                                          (Connections.down == dncn_to_change) &
+                                                          (Connections.down_rev == drev_to_change) &
+                                                          (Connections.b_on_up == boup_to_change) &
+                                                          (Connections.a_on_down == aodn_to_change) &
+                                                          (Connections.start_date == strt_to_change))
+            ncc = conn_rec.count()
+            if ncc == 0: 
+                if args.add_new_connection:
+                    connection = Connections()
+                else:
+                    print("Error:",dkey,"does not exist and add_new_connection is not enabled.")
+                    connection = None
+            elif ncc == 1:
+                if args.add_new_connection:
+                    print("Error:",dkey,"exists and and_new_connection is enabled")
+                    connection = None
+                else:
+                    connection = conn_rec.first()
+            else:
+                print("Shouldn't ever get here.")
+                connection = None
+            if connection:
+                for d in data_dict[dkey]:
+                    try:
+                        setattr(connection, d[7], d[8])
+                    except AttributeError:
+                        print(dkey, 'does not exist as a field')
+                        continue
+                session.add(connection)
+
+def format_check_update_connection_request(request):
+    """
+    parses the update request
+
+    return dictionary
+
+    Parameters:
+    ------------
+    request:   or list
+    columnN:  name of parts column
+    valueN:  corresponding new value
+    """
+
+    # Split out and get first
+    data = {}
+    if type(request) == str:
+        tmp = request.split(',')
+        data_to_proc = []
+        for d in tmp:
+            data_to_proc.append(d.split(':'))
+    else:
+        data_to_proc = request
+    for d in data_to_proc:
+        if len(d) == 9:
+            pass
+        elif len(d) == 7:
+            d.insert(1,'LAST')
+            d.insert(3.'LAST')
+        else:
+            print('Invalid format for update request.')
+            continue
+        dkey = d[0]+':'+d[2]+':'+d[4]+':'+d[5]
+        if dkey in data.keys():
+            data[dkey].append(d)
+        else:
+            data[dkey] = [d]
+    return data
 
 ###

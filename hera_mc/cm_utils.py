@@ -39,6 +39,15 @@ def _is_active(current, _start_date, _stop_date):
         is_active=False
     return is_active
 
+def _query_default(a,args):
+    vargs = vars(args)
+    default = vargs[a]
+    s = '%s [%s]:  ' % (a,str(default))
+    v = raw_input(s).strip()
+    if len(v) == 0:
+        v = default
+    return v
+
 def _query_yn(s,default='y'):
     if default:
         s+=' ['+default+']'

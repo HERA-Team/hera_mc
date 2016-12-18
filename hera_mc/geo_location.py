@@ -103,10 +103,14 @@ def update(args, data):
                 if args.add_new_geo:
                     gr = GeoLocation()
                 else:
-                    print(station_name,"exists and add_new_geo not enabled.")
+                    print("Error: ",station_name,"does not exist and add_new_geo not enabled.")
                     gr = None
             elif ngr == 1:
-                gr = geo_rec.first()
+                if args.add_new_geo:
+                    print("Error: ",station_name,"exists and and_new_geo is not enabled.")
+                    gr = None
+                else:
+                    gr = geo_rec.first()
             else:
                 print("Shouldn't ever get here.")
                 gr = None

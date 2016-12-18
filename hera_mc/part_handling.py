@@ -649,3 +649,9 @@ class PartsAndConnections:
             print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))          
         return self.part_type_dict
 
+    def deactivate_part(self,args,part_to_deactivate,deactivate_date=None):
+        print("DEACIVATE_PART IN PART_HANDLING")
+
+    def deactivate_connection(self.args,connection_to_deactivate,deactivate_date=None):
+        print("DEACTIVATE_CONNECTION IN PART_HANDLING")
+

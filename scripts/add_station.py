@@ -26,15 +26,6 @@ def get_coord_from_file(station_name,coord_filename):
         fp.close()
     return coords
 
-def query_default(a,args):
-    vargs = vars(args)
-    default = vargs[a]
-    s = '%s [%s]:  ' % (a,str(default))
-    v = raw_input(s).strip()
-    if len(v) == 0:
-        v = default
-    return v
-
 def query_geo_information(args):
     """
     Gets geo_location information from user
@@ -56,10 +47,10 @@ def query_geo_information(args):
         args.easting = float(raw_input('Easting:  '))
         args.northing = float(raw_input('Northing:  '))
         args.elevation = float(raw_input('Elevation:  '))
-        args.datum = query_default('datum',args)
-        args.tile = query_default('tile',args)
-    args.meta_class_name = query_default('meta_class_name',args)
-    args.date = query_default('date',args)
+        args.datum = cm_utils._query_default('datum',args)
+        args.tile = cm_utils._query_default('tile',args)
+    args.meta_class_name = cm_utils._query_default('meta_class_name',args)
+    args.date = cm_utils._query_default('date',args)
     return args
 
 def entry_OK_to_add(args):
@@ -68,6 +59,7 @@ def entry_OK_to_add(args):
         print(args.station_name,' already present.')
         OK = False
     return OK
+
 def add_entry_to_geo_location(args):
     ###NotNull
     sname = args.station_name
@@ -87,6 +79,7 @@ def add_entry_to_geo_location(args):
     if args.elevation:
         data.append([sname,'elevation',args.elevation])
     geo_location.update(args,data)
+    
 def add_entry_to_parts(args):
     ###NotNull
     hpn = args.station_name
@@ -96,7 +89,7 @@ def add_entry_to_parts(args):
             [hpn,rev,'hpn_rev',rev],
             [hpn,rev,'hptype','station'],
             [hpn,rev,'start_date',dt]]
-    part_connect.update(args,data)
+    part_connect.update_part(args,data)
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
