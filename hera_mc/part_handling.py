@@ -25,14 +25,48 @@ class PartsAndConnections:
     parts_dictionary = {}
     current = ''
 
-    def __init__(self):
-        pass
+    def __init__(self, hpn=None,hpn_rev=None,up=None,up_rev=None,down=None,down_rev=None,
+                       b_on_up=None,a_on_down=None,start_date=None,stop_date=None):
+        self._hpn = hpn
+        self._hpn_rev = hpn_rev
+        self._up = up
+        self._up_rev = up_rev
+        self._down = down
+        self._down_rev = down_rev
+        self._b_on_up = b_on_up
+        self._a_on_down = a_on_down
+        self._start_date = start_date
+        self._stop_date = stop_date
 
-    def is_in_connections_db(self,args,hpn_query,rev_query='last'):
+    def is_connection_active(self,args,datetime,deactivate=False):
+        if self._up_rev.upper() == 'LAST':
+            self._up_rev = part_connect.get_last_revision_number(args,self._up,False)
+        if self._down_rev.upper() == 'LAST':
+            self._down_rev = part_connect.get_last_revision_number(args,self._down,False)
+        db = mc.connect_to_mc_db(args)
+        with db.sessionmaker() as session:
+            connected = session.query(part_connect.Connections).filter( (part_connect.Connections.up       == self._up) &
+                                                                        (part_connect.Connections.up_rev   == self._up_rev) &
+                                                                        (part_connect.Connections.down     == self._down) &
+                                                                        (part_connect.Connections.down_rev == self._down_rev) &
+                                                                        (part_connect.Connections.b_on_up  == self._b_on_up) &
+                                                                        (part_connect.Conenctions.a_on_down== self._a_on_down) )
+            is_active = False
+            for connection in connected.all():
+                if cm_utils._is_active(datetime,connection.start_date,connection.stop_date):
+                    is_active = True
+                    if deactivate:
+                        connection.stop_date = datetime
+                        break
+                    session.add(connection)
+        return is_active
+
+
+    def is_in_connections_db(self,args,hpn_query,rev_query='last',check_if_active=False):
         revq = rev_query.upper()
         if revq == 'LAST':
-            revq = self.last_revisions[hpn_query]
-        if hpn_query in self.parts_dictionary.keys() and self.parts_dictionary[hpn_query]['rev']==revq:
+            revq = part_connect.get_last_revision_number(args,hpn_query,False)
+        if hpn_query in self.parts_dictionary.keys() and self.parts_dictionary[hpn_query]['rev']==revq and not check_if_active:
             return self.parts_dictionary[hpn_query]['is_connected']
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
@@ -44,6 +78,14 @@ class PartsAndConnections:
                 found_connected = True
             else:
                 found_connected = False
+
+            if found_connected and check_if_active:
+                current = cm_utils._get_datetime(args.date,args.time)
+                found_connected = False
+                for connection in connected_query.all():
+                    if cm_utils._is_active(current,connection.start_date,connection.stop_date):
+                        found_connected = True
+                        break
         return found_connected
 
 
@@ -649,9 +691,4 @@ class PartsAndConnections:
             print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))          
         return self.part_type_dict
 
-    def deactivate_part(self,args,part_to_deactivate,deactivate_date=None):
-        print("DEACIVATE_PART IN PART_HANDLING")
-
-    def deactivate_connection(self.args,connection_to_deactivate,deactivate_date=None):
-        print("DEACTIVATE_CONNECTION IN PART_HANDLING")
 
