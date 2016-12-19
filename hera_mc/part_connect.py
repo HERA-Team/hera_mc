@@ -339,7 +339,7 @@ def format_check_update_connection_request(request):
             pass
         elif len(d) == 7:
             d.insert(1,'LAST')
-            d.insert(3.'LAST')
+            d.insert(3,'LAST')
         else:
             print('Invalid format for update request.')
             continue

@@ -9,6 +9,7 @@
 from __future__ import absolute_import, division, print_function
 
 from hera_mc import part_connect, part_handling, mc
+import os.path
 
 if __name__ == '__main__':
     handling = part_handling.PartsAndConnections()

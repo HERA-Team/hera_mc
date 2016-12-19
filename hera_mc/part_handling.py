@@ -106,6 +106,10 @@ class PartsAndConnections:
             headers = ['HERA P/N','Rev','Part Type','Mfg #','Start','Stop','Active','A ports','B ports','Info','Geo']
         for hpn in sorted(part_dict.keys()):
             is_active = cm_utils._is_active(current,part_dict[hpn]['start_date'],part_dict[hpn]['stop_date'])
+            if is_active:
+                show_active = 'True'
+            else:
+                show_active = 'False'
             show_it = True
             if args.active:
                 if not is_active:
@@ -121,7 +125,7 @@ class PartsAndConnections:
                     td = [hpn, part_dict[hpn]['rev'], part_dict[hpn]['hptype'],
                           part_dict[hpn]['manufacturer_number'],
                           part_dict[hpn]['start_date'], part_dict[hpn]['stop_date'],
-                          connected]
+                          show_active]
                     pts = ''
                     for a in part_dict[hpn]['a_ports']:
                         pts+=(a+', ')
@@ -140,7 +144,7 @@ class PartsAndConnections:
                     table_data.append([hpn, part_dict[hpn]['rev'], part_dict[hpn]['hptype'],
                         part_dict[hpn]['manufacturer_number'],
                         part_dict[hpn]['start_date'], part_dict[hpn]['stop_date'],
-                        connected])
+                        show_active])
                 else:
                     print(hpn, part_dict[hpn]['repr'])
         if args.verbosity=='m' or args.verbosity=='h':

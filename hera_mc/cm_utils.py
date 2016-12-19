@@ -26,7 +26,7 @@ def _get_datetime(_date,_time):
 
     
 def _get_stopdate(_stop_date):
-    if _stop_date:
+    if type(_stop_date)==datetime:
         return _stop_date
     else:
         return datetime.datetime(2020,12,31)
