@@ -24,6 +24,15 @@ def _get_datetime(_date,_time):
     dt = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,dt_t.hour,dt_t.minute)
     return dt
 
+def _pull_out_component(cmpt_list,i,nc='-'):
+    try:
+        c = cmpt_list[i]
+    except IndexError:
+        try:
+            c = cmpt_list[-1]
+        except IndexError:
+            c = nc
+    return c
     
 def _get_stopdate(_stop_date):
     if type(_stop_date)==datetime:
