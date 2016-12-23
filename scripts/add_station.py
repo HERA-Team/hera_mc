@@ -133,6 +133,7 @@ if __name__ == '__main__':
         args = query_geo_information(args)
 
     if entry_OK_to_add(args):
+        cm_utils._log('add_station',args=args)
         add_entry_to_geo_location(args)
         add_entry_to_parts(args)
 

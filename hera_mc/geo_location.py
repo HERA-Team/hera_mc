@@ -122,6 +122,7 @@ def update(args, data):
                         print(d[1], 'does not exist as a field')
                         continue
                 session.add(gr)
+    cm_utils._log('geo_location update',data_dict=data_dict)
     return True
 
 def format_check_update_request(request):

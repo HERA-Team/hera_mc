@@ -33,6 +33,13 @@ from . import MCDeclarativeBase
 #data_path = op.join(op.split(op.abspath(hera_mc.__file__))[0], 'data')
 cwd = os.getcwd()
 data_path = op.join(cwd[:cwd.find('hera_mc')],'hera_mc/hera_mc/data')
+log_path = op.join(cwd[:cwd.find('hera_mc')],'hera_mc/Log')
+try:
+    os.makedirs(log_path)
+except OSError:
+    if not os.path.isdir(log_path):
+        raise
+
 
 HERA_LAT = Angle('-30d43m17.5s').degree
 HERA_LON = Angle('21d25m41.9s').degree

@@ -2,13 +2,37 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Some dumb low-level configuration management utility functions.
+"""Some low-level configuration management utility functions.
 
 """
 
 from __future__ import print_function
 
-import datetime
+from hera_mc import mc
+import datetime, os.path
+
+def _log(msg,**kwargs):
+    fp = open(os.path.join(mc.log_path,'cm.log'),'a')
+    dt = datetime.datetime.now()
+    fp.write(str(dt) + '  ' + msg + '\n')
+    for key,value in kwargs.items():
+        if key=='args':
+            fp.write('  --args  ')
+            vargs = vars(value)
+            for k,v in vargs.items():
+                fp.write(str(k)+':  '+str(v)+';  ')
+            fp.write('\n')
+        elif key=='data_dict':
+            fp.write('  --data  \n')
+            for k,v in value.items():
+                fp.write('    '+k+'  ')
+                for d in v:
+                    fp.write(str(d)+';  ')
+                fp.write('\n')
+        else:
+            fp.write('  --other  ')
+            fp.write(str(key)+':  '+str(value)+'\n')
+    fp.close()
 
 def _get_datetime(_date,_time):
     if _date.lower() == 'now':

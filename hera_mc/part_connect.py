@@ -143,6 +143,8 @@ def update_part(args, data):
                         print(d[2], 'does not exist as a field')
                         continue
                 session.add(part)
+    cm_utils._log('part_connect part update',data_dict=data_dict)
+    return True
 
 def format_check_update_part_request(request):
     """
@@ -324,6 +326,8 @@ def update_connection(args, data):
                         print(dkey, 'does not exist as a field')
                         continue
                 session.add(connection)
+    cm_utils._log('part_connect connection update',data_dict=data_dict)
+    return True
 
 def format_check_update_connection_request(request):
     """
