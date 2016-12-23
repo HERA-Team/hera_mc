@@ -51,7 +51,12 @@ class Parts(MCDeclarativeBase):
     def __repr__(self):
         return '<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype}>'.format(self=self)
 
-def get_last_revision_number(args,hpn=None,show_revisions=False):
+    def part(self,**kwargs):
+        for key,value in kwargs.items():
+            setattr(self,key,value)
+
+
+def get_last_revision(args,hpn=None,show_revisions=False):
     """
     Return the last revision number for a given part (exact match)
     """
@@ -213,6 +218,10 @@ class PartInfo(MCDeclarativeBase):
     def __repr__(self):
         return '<heraPartNumber id = {self.hpn} comment = {self.comment}>'.format(self=self)
 
+    def info(self,**kwargs):
+        for key,value in kwargs.items():
+            setattr(self,key,value)
+
 
 class Connections(MCDeclarativeBase):
     """A table for logging connections between parts.  Part and Port must be unique when combined
@@ -250,6 +259,10 @@ class Connections(MCDeclarativeBase):
 
     def __repr__(self):
         return '<{self.up}<{self.b_on_up}:{self.a_on_down}>{self.down}>'.format(self=self)
+
+    def connection(self,**kwargs):
+        for key,value in kwargs.items():
+            setattr(self,key,value)
 
 def update_connection(args, data):
     """

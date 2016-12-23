@@ -15,7 +15,7 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--graph', help="Graph data of all elements (per xgraph, ygraph args). [False]", action='store_true')
     parser.add_argument('-s', '--show', help="Graph and locate a station (same as geo.py -gl XX). [None]", default=None)
     parser.add_argument('-l', '--locate',
-                        help="Location of given s_name or s_number (assumed if <int>).  [None]", default=None)
+                        help="Location of given station_name or antenna_number (assumed if <int>).  [None]", default=None)
     parser.add_argument('-u', '--update',
                         help="Update station records.  Format station0:col0:val0, [station1:]col1:val1...  [None]", default=None)
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [m].", choices=['L','l','m','M','h','H'],default='m')
@@ -37,8 +37,8 @@ if __name__ == '__main__':
                                    action='store_const',const='station_name')
     label_type_group.add_argument('--show-number',help="Set label_type to station_number", dest='label_type',
                                    action='store_const',const='station_number')
-    label_type_group.add_argument('--label_type', help="Use 'station_name' or 'station_number' [station_number]")
-    parser.set_defaults(label=True,active=True,label_type='station_number')
+    label_type_group.add_argument('--label_type', help="Use 'station_name' or 'antenna_number' [antenna_number]")
+    parser.set_defaults(label=True,active=True,label_type='antenna_number')
     args = parser.parse_args()
     args.xgraph = args.xgraph.upper()
     args.ygraph = args.ygraph.upper()

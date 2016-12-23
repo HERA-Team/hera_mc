@@ -12,7 +12,6 @@ from hera_mc import part_connect, part_handling, mc
 import os.path
 
 if __name__ == '__main__':
-    handling = part_handling.PartsAndConnections()
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-p', '--hpn', help="Get part information. [None]", default=None)
     parser.add_argument('-t', '--hptype', help="List the hera part types. [False]", action='store_true')
@@ -20,7 +19,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--connection', help="Show all connections directly to a part. [None]", default=None)
     parser.add_argument('-u', '--update', help="Update part number records.  Format hpn0:[rev0]:col0:val0, [hpn1:[rev1]]col1:val1...  [None]", default=None)
     parser.add_argument('-m', '--mapr', help="Show full hookup chains from given part. [None]", default=None)
-    parser.add_argument('--revision_number', help="Specify revision number for hpn.  [LAST]", default='LAST')
+    parser.add_argument('--revision', help="Specify revision for hpn (it's a letter).  [LAST]", default='LAST')
     parser.add_argument('--specify_port', help="Define desired port(s) for hookup. [all]", default='all')
     parser.add_argument('--show_levels', help="Show power levels if enabled (and able) [False]", action='store_true')
     parser.add_argument('--exact_match', help="Force exact matches on part numbers, not beginning N char. [False]", action='store_true')
@@ -37,24 +36,26 @@ if __name__ == '__main__':
     parser.set_defaults(active=True)
     args = parser.parse_args()
     
+    handling = part_handling.PartsAndConnections(args)
     args.verbosity = args.verbosity.lower()
     args.mapr_cols = args.mapr_cols.lower()
-    args.revision_number = args.revision_number.upper()
+    args.revision = args.revision.upper()
     if args.levels_testing.lower()=='none' or args.levels_testing.lower()=='false':
         args.levels_testing = False
     elif args.levels_testing == 'levels.tst':
         args.levels_testing = os.path.join(mc.data_path,'levels.tst')
     if args.hpn:
         args.hpn = args.hpn.upper()
-        part_dict = handling.get_part(args, show_part=True)
+        part_dict = handling.get_part(show_part=True)
     if args.connection:
         args.connection = args.connection.upper()
-        connection_dict = handling.get_connection(args, show_connection=True)
+        connection_dict = handling.get_connection(show_connection=True)
     if args.mapr:
         args.mapr = args.mapr.upper()
-        hookup_dict = handling.get_hookup(args, show_hookup=True)
+        hookup_dict = handling.get_hookup(show_hookup=True)
     if args.hptype:
-        part_type_dict = handling.get_part_types(args, show_hptype=True)
+        part_type_dict = handling.get_part_types(show_hptype=True)
     if args.update:
-        data = part_connect.parse_update_request(args.update)
         part_connect.update(args, data)
+
+

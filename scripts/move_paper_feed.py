@@ -24,26 +24,27 @@ def query_connection(args):
     args.date = cm_utils._query_default('date',args)
     return args
 
-def connection_OK_to_add(args,checking):
+def connection_OK_to_add(args,connection):
     #Check to see if feed_number part is present/active (should be)
     #Check to see if connection is active (should be) and deactivate 
     OK = True
     current = cm_utils._get_datetime(args.date,args.time)
-    if checking.get_connection(args,connect._up,connect._up_rev,exact_match=True,show_connection=False):
-        print('Error: ',connect._up,"already connected.")
+    checking = part_handling.PartsAndConnections(args)
+    if checking.is_in_connections_db(connect.up,connect.up_rev,active=True):
+        print('Error: ',connect.up,"already connected.")
         OK = False
     print("PAPER feed was previously at: ")
-    c=checking.is_in_connections_db(args,connect._hpn,connect._hpn_rev,active=True)
+    c=checking.is_in_connections_db(connect.down,connect.down_rev,active=True)
     for k in c.keys():
         for l in c[k].keys():
             print(k,l,'\t\t',c[k][l])
     if len(c.keys()) == 0:
-        print('Error:  ',connect._hpn,'not present')
+        print('Error:  ',connect.down,'not present')
         OK = False
     elif len(c.keys()) > 1:
         print('Error:  too many connections returned.')
         OK = False
-    else:  #Found the one, so need to add stop_date to it (deactive)
+    else:  #Found the one, so need to add stop_date to it (deactivate)
         k = c.keys()[0]
         if len(c[k]['up_parts']>1):
             print("Shouldn't get here.")
@@ -59,7 +60,7 @@ def connection_OK_to_add(args,checking):
                      cm_utils._pull_out_component(c[k]['b_on_up'],i),
                      cm_utils._pull_out_component(c[k]['a_on_down'],i),
                      cm_utils._pull_out_component(c[k]['start_on_up'],i),
-                     'stop_date', datetime] ]
+                     'stop_date', current] ]
             part_connect.update_connection(args,data)
                  
     return OK
@@ -99,11 +100,11 @@ if __name__ == '__main__':
         args = query_connection(args)
     args.feed_number = 'A'+args.feed_number
 
-    connect = part_handling.PartsAndConnections(hpn=args.feed_number, hpn_rev='A',
-                                                up=args.station_name, up_rev='A',
-                                                down=args.feed_number,down_rev='A',
-                                                b_on_up='ground',a_on_down='ground',
-                                                start_date=cm_utils._get_datetime(args.date,args.time))
+    connect = part_connect.Connections(up=args.station_name, up_rev='A',
+                                       down=args.feed_number,down_rev='A',
+                                       b_on_up='ground',a_on_down='ground',
+                                       start_date=cm_utils._get_datetime(args.date,args.time))
+    print(connect)
     connection_OK_to_add(args,connect)
     if connection_OK_to_add(args,connect):
         print("Adding new connection")

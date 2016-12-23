@@ -3,6 +3,9 @@ The HERA Part Number (hpn) is the alphanumeric primary key to track parts and co
 have ports that enable connections.  Port A is a skyward connection point and port B is further
 from the sky.
 
+The following google-doc has information on the databases etc:
+https://docs.google.com/document/d/14cGe6xs71M03fyEnp_fa0Sy03jOz9K0Lni33Gf9WS8Y/edit#heading=h.d12c2vqot3rc
+
 HERA Part Numbers are unique identifiers.
 
 In concept, a part is something that can break — the one exception is that the station is viewed as
@@ -33,7 +36,7 @@ integer used in e.g. MIRIAD, but which may change in time.
 Port A:  sky
 Port B:  ground
 
-#Antenna:  dish
+#Antenna:  antenna
 The antenna part number, ultimately for HERA dishes it should agree with the station_number
 A[<int*>]
 Port A:  ground

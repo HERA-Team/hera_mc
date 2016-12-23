@@ -166,6 +166,17 @@ def format_check_update_request(request):
     return data
 
 def is_station_present(args,station_name):
+    """
+    checks to see if a station_name is in the geo_location database
+
+    return True/False
+
+    Parameters:
+    ------------
+    args:  needed arguments to open the database
+    station_name:  string name of station
+    """
+
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         station = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
@@ -176,6 +187,18 @@ def is_station_present(args,station_name):
     return station_present
 
 def is_in_connections_db(args,station_name,check_if_active=False):
+    """
+    checks to see if the station_name is in the connections database (which means it is also in parts)
+
+    return True/False unless check_if_active flag is set, when it returns the antenna number at that location
+
+    Parameters:
+    ------------
+    args:  needed arguments to open database and set date/time
+    station_name:  string name of station
+    check_if_active:  boolean flag to check if active
+    """
+
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         connected_station = session.query(part_connect.Connections).filter(part_connect.Connections.up == station_name)
@@ -184,33 +207,58 @@ def is_in_connections_db(args,station_name,check_if_active=False):
         else:
             station_connected = False
         if station_connected and check_if_active:
+            counter = 0
             current = cm_utils._get_datetime(args.date,args.time)
             for connection in connected_station.all():
                 stop_date = cm_utils._get_stopdate(connection.stop_date)
                 if current>connection.start_date and current<stop_date:
                     station_connected = int(connection.down.strip('A'))
+                    counter+=1
                 else:
                     station_connected = False
+            if counter>1:
+                print("Error:  more than one active connection for",station_name)
+                station_connected = False
     return station_connected
 
-def find_station_name(args,station_number):
-    station = 'A'+str(station_number)
+def find_station_name(args,antenna):
+    """
+    checks to see what station an antenna is at
+
+    Returns False or the active station_name (must be an active station)
+
+    Parameters:
+    ------------
+    args:  needed arguments to open database and set date/time
+    antenna_number:  antenna number as float or string, if needed, it adds the 'A'
+    """
+
+    if type(antenna) == float or antenna[0]!='A':
+        antenna = 'A'+str(antenna).strip('0')
+    if antenna[1]=='0':
+        print("Error:  the antenna part number should not have leading 0's",antenna)
+        return False
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        connected_station = session.query(part_connect.Connections).filter(part_connect.Connections.down == station)
-        if connected_station.count() > 0:
-            station_connected = True
+        connected_antenna = session.query(part_connect.Connections).filter(part_connect.Connections.down == antenna)
+        if connected_antenna.count() > 0:
+            antenna_connected = True
         else:
-            station_connected = False
-        if station_connected:
+            antenna_connected = False
+        if antenna_connected:
+            counter = 0
             current = cm_utils._get_datetime(args.date,args.time)
-            for connection in connected_station.all():
+            for connection in connected_antenna.all():
                 stop_date = cm_utils._get_stopdate(connection.stop_date)
                 if current>connection.start_date and current<stop_date:
-                    station_connected = connection.up
+                    antenna_connected = connection.up
+                    counter+=1
                 else:
-                    station_connected = False
-    return station_connected
+                    antenna_connected = False
+            if counter>1:
+                print("Error:  more than one active connection for",antenna)
+                antenna_connected = False
+    return antenna_connected
 
 def locate_station(args, show_geo=False):
     """Return the location of station_name or station_number as contained in args.locate.
@@ -237,7 +285,7 @@ def locate_station(args, show_geo=False):
                 ever_connected = is_in_connections_db(args,a.station_name) 
                 active = is_in_connections_db(args,a.station_name,True)
                 v = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation,
-                     'station_name': a.station_name, 'station_number':active, 'station_type': this_station, 
+                     'station_name': a.station_name, 'antenna_number':active, 'station_type': this_station, 
                      'connected':ever_connected, 'active':active, 'created_date':a.created_date}
                 if show_geo:
                     if args.verbosity == 'm' or args.verbosity == 'h':
@@ -278,7 +326,7 @@ def plot_arrays(args, overplot=None, label_station=False):
                         if label_station:
                             if args.label_type=='station_name':
                                 labeling = a.station_name
-                            elif args.label_type=='station_number':
+                            elif args.label_type=='antenna_number':
                                 labeling = is_in_connections_db(args,loc,True)
                                 if not labeling:
                                     labeling = 'NA'
