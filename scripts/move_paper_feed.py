@@ -105,7 +105,6 @@ if __name__ == '__main__':
                                        b_on_up='ground',a_on_down='ground',
                                        start_date=cm_utils._get_datetime(args.date,args.time))
     print(connect)
-    connection_OK_to_add(args,connect)
     if connection_OK_to_add(args,connect):
         print("Adding new connection")
         add_connection(args,connect)
