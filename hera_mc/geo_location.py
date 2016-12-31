@@ -20,7 +20,6 @@ from sqlalchemy import Column, Float, Integer, String, DateTime, ForeignKey, fun
 from . import MCDeclarativeBase, NotNull
 from hera_mc import mc, part_connect, cm_utils
 
-
 class StationMeta(MCDeclarativeBase):
     """
     A table to track/denote station metadata categories in various ways
@@ -72,6 +71,12 @@ class GeoLocation(MCDeclarativeBase):
 
     created_date = NotNull(DateTime)
     "The date when the station assigned by project."
+
+    def geo(self, **kwargs):
+        for key, value in kwargs.items():
+            if key=='station_name':
+                value = value.upper()
+            setattr(self, key, value)
 
     def __repr__(self):
         return '<station_name={self.station_name} station_number={self.station_number} \
@@ -135,7 +140,7 @@ def format_check_update_request(request):
     ------------
     request:  station_name0:column0:value0, [station_name1:]column1:value1, [...] or list
     station_nameN: first entry must have the station_name, 
-                   if it does not then propagate first station_name but can't restart 3 values
+                   if it does not then propagate first station_name but can't restart 3 then 2
     columnN:  name of geo_location column
     valueN:  corresponding new value
     """
@@ -148,7 +153,7 @@ def format_check_update_request(request):
     else:
         data_to_proc = request
     if len(data_to_proc[0])==3:
-        station_name0 = data_to_proc[0][0]
+        station_name0 = data_to_proc[0][0].upper()
         for d in data_to_proc:
             if len(d) == 3:
                 pass
@@ -157,6 +162,8 @@ def format_check_update_request(request):
             else:
                 print('Invalid format for update request.')
                 continue
+            if d[1]=='station_name':
+                d[2] = d[2].upper()
             if d[0] in data.keys():
                 data[d[0]].append(d)
             else:
@@ -211,8 +218,7 @@ def is_in_connections_db(args,station_name,check_if_active=False):
             counter = 0
             current = cm_utils._get_datetime(args.date,args.time)
             for connection in connected_station.all():
-                stop_date = cm_utils._get_stopdate(connection.stop_date)
-                if current>connection.start_date and current<stop_date:
+                if cm_utils._is_active(current,connection.start_date,connection.stop_date):
                     station_connected = int(connection.down.strip('A'))
                     counter+=1
                 else:

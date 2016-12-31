@@ -57,26 +57,59 @@ class PartsAndConnections:
         revq = rev_query.upper()
         if revq == 'LAST':
             revq = part_connect.get_last_revision(self.args,hpn_query,False)
-        if hpn_query in self.parts_dictionary.keys() and self.parts_dictionary[hpn_query]['rev']==revq and not check_if_active:
-            return self.parts_dictionary[hpn_query]['is_connected']
-        db = mc.connect_to_mc_db(self.args)
-        with db.sessionmaker() as session:
-            connected_query = session.query(part_connect.Connections).filter( ((part_connect.Connections.up      == hpn_query) &
-                                                                               (part_connect.Connections.up_rev  == revq) )    | 
-                                                                              ((part_connect.Connections.down    == hpn_query) &
-                                                                               (part_connect.Connections.down_rev== revq) ))
-            if connected_query.count() > 0:
-                found_connected = True
-            else:
-                found_connected = False
 
-            if found_connected and check_if_active:
+        connection_dict = self.get_connection(hpn_query,revq,exact_match=True,return_dictionary=True,show_connection=False)
+        num_connections = len(connection_dict.keys())
+        if num_connections == 0:
+            found_connected = False
+        elif num_connections == 1:
+            found_connected = True
+            if check_if_active:
+                pkey = hpn_query
+                found_connected = {}
+                found_connected[pkey] = {'rev':revq,
+                                         'a_ports':[], 'up_parts':[],   'up_rev':[],  'b_on_up':[], 
+                                         'b_ports':[], 'down_parts':[], 'down_rev':[],'a_on_down':[],
+                                         'start_on_down':[], 'stop_on_down':[], 'repr_down':[],
+                                         'start_on_up':[],   'stop_on_up':[],   'repr_up':[]}
                 current = cm_utils._get_datetime(self.args.date,self.args.time)
-                found_connected = False
-                for connection in connected_query.all():
-                    if cm_utils._is_active(current,connection.start_date,connection.stop_date):
-                        found_connected = True
-                        break
+                counter_active=0
+                for i in range(len(connection_dict[hpn_query]['up_parts'])):
+                    up        = cm_utils._pull_out_component(connection_dict[pkey]['up_parts'],i)
+                    up_rev    = cm_utils._pull_out_component(connection_dict[pkey]['up_rev'],i)
+                    dn        = cm_utils._pull_out_component(connection_dict[pkey]['down_parts'],i)
+                    dn_rev    = cm_utils._pull_out_component(connection_dict[pkey]['down_rev'],i)
+                    pta       = cm_utils._pull_out_component(connection_dict[pkey]['a_ports'],i)
+                    ptb       = cm_utils._pull_out_component(connection_dict[pkey]['b_ports'],i)
+                    bup       = cm_utils._pull_out_component(connection_dict[pkey]['b_on_up'],i)
+                    adn       = cm_utils._pull_out_component(connection_dict[pkey]['a_on_down'],i)
+                    rup       = cm_utils._pull_out_component(connection_dict[pkey]['repr_up'],i)
+                    rdown     = cm_utils._pull_out_component(connection_dict[pkey]['repr_down'],i)
+                    startup   = cm_utils._pull_out_component(connection_dict[pkey]['start_on_up'],i)
+                    stopup    = cm_utils._pull_out_component(connection_dict[pkey]['stop_on_up'],i)
+                    startdown = cm_utils._pull_out_component(connection_dict[pkey]['start_on_down'],i)
+                    stopdown  = cm_utils._pull_out_component(connection_dict[pkey]['stop_on_down'],i)
+                    if cm_utils._is_active(current,startup,stopup) and cm_utils._is_active(current,startdown,stopdown):
+                        counter_active+=1
+                        found_connected[hpn_query]['up_parts'].append(up)
+                        found_connected[hpn_query]['up_rev'].append(up_rev)
+                        found_connected[hpn_query]['down_parts'].append(dn)
+                        found_connected[hpn_query]['down_rev'].append(dn_rev)
+                        found_connected[hpn_query]['a_ports'].append(pta)
+                        found_connected[hpn_query]['b_ports'].append(ptb)
+                        found_connected[hpn_query]['b_on_up'].append(bup)
+                        found_connected[hpn_query]['a_on_down'].append(adn)
+                        found_connected[hpn_query]['repr_up'].append(rup)
+                        found_connected[hpn_query]['repr_down'].append(rdown)
+                        found_connected[hpn_query]['start_on_up'].append(startup)
+                        found_connected[hpn_query]['stop_on_up'].append(stopup)
+                        found_connected[hpn_query]['start_on_down'].append(startdown)
+                        found_connected[hpn_query]['stop_on_down'].append(stopdown)
+                    if counter_active==0:
+                        found_connected=False
+        else:
+            found_connected = False
+            print("Shouldn't get here, since is_in_conenctions_db is exact_match.")
         return found_connected
 
 
@@ -229,6 +262,10 @@ class PartsAndConnections:
         It should get connections immediately adjacent to one part (upstream and downstream).
 
         Returns connection_dict, a dictionary keyed on part number of adjacent connections
+
+        NB:  I don't think that it handles general cases very well (ie. potentially likely incorrectly)
+             That is, I'm not sure that the list structure within the dict entries necessarily correspond
+             to the general case.  It might possibly work for the current actual case...
 
         Parameters
         -----------

@@ -30,23 +30,15 @@ def connection_OK_to_add(args,connection):
     OK = True
     current = cm_utils._get_datetime(args.date,args.time)
     checking = part_handling.PartsAndConnections(args)
-    if checking.is_in_connections_db(connect.up,connect.up_rev,active=True):
+    if checking.is_in_connections_db(connect.up,connect.up_rev,check_if_active=True):
         print('Error: ',connect.up,"already connected.")
         OK = False
-    print("PAPER feed was previously at: ")
-    c=checking.is_in_connections_db(connect.down,connect.down_rev,active=True)
-    for k in c.keys():
-        for l in c[k].keys():
-            print(k,l,'\t\t',c[k][l])
-    if len(c.keys()) == 0:
-        print('Error:  ',connect.down,'not present')
-        OK = False
-    elif len(c.keys()) > 1:
-        print('Error:  too many connections returned.')
-        OK = False
-    else:  #Found the one, so need to add stop_date to it (deactivate)
+    c=checking.is_in_connections_db(connect.down,connect.down_rev,check_if_active=True)
+    if OK and type(c)==dict:  #Found the one, so need to add stop_date to it (deactivate)
+        print("PAPER feed was previously at: ")
+        checking.show_connection(c)
         k = c.keys()[0]
-        if len(c[k]['up_parts']>1):
+        if len(c[k]['a_ports'])>1:
             print("Shouldn't get here.")
             OK = False
         else:
@@ -55,13 +47,18 @@ def connection_OK_to_add(args,connection):
             data = [
                     [cm_utils._pull_out_component(c[k]['up_parts'],i),
                      cm_utils._pull_out_component(c[k]['up_rev'],i),
-                     cm_utils._pull_out_component(c[k]['down_parts'],i),
-                     cm_utils._pull_out_component(c[k]['down_rev'],i),
+                     args.feed_number,
+                     'A',
                      cm_utils._pull_out_component(c[k]['b_on_up'],i),
-                     cm_utils._pull_out_component(c[k]['a_on_down'],i),
+                     'ground',
                      cm_utils._pull_out_component(c[k]['start_on_up'],i),
                      'stop_date', current] ]
+            print(data)
+            #sys.exit()
             part_connect.update_connection(args,data)
+    else:
+        print('Error:  ',connect.down,'not present')
+        OK = False
                  
     return OK
 
@@ -83,9 +80,9 @@ if __name__ == '__main__':
     parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
     parser.add_argument('--time', help="hh:mm or now [now]", default='now')
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [h].", choices=['l','m','h'], default="h")
-    parser.add_argument('--add_new_connection', help="Flag to allow update to add a new record.  [True]", action='store_false')
-    parser.add_argument('--active',help="Need [True]",action='store_false')
-    parser.add_argument('--specify_port',help="Need [True]",default='all')
+    parser.add_argument('--add_new_connection', help="Don't change  [True]", action='store_false')
+    parser.add_argument('--active',help="Don't change [True]",action='store_false')
+    parser.add_argument('--specify_port',help="Don't change [True]",default='all')
 
     args = parser.parse_args()
     args.verbosity = args.verbosity.lower()
@@ -104,10 +101,11 @@ if __name__ == '__main__':
                                        down=args.feed_number,down_rev='A',
                                        b_on_up='ground',a_on_down='ground',
                                        start_date=cm_utils._get_datetime(args.date,args.time))
-    print(connect)
+    print("Trying",connect)
     if connection_OK_to_add(args,connect):
+        #cm_utils._log('move_paper_feed',args=args)
         print("Adding new connection")
-        add_connection(args,connect)
+        #add_connection(args,connect)
 
 
 

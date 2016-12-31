@@ -19,6 +19,8 @@ from . import MCDeclarativeBase, NotNull
 
 from hera_mc import mc, cm_utils
 
+upper_case = ['hpn','hpn_rev','up','up_rev','down','down_rev']
+lower_case = ['b_on_up','a_on_down']
 
 class Parts(MCDeclarativeBase):
     """A table logging parts within the HERA system
@@ -51,16 +53,18 @@ class Parts(MCDeclarativeBase):
     def __repr__(self):
         return '<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype}>'.format(self=self)
 
-    def part(self,**kwargs):
-        for key,value in kwargs.items():
-            setattr(self,key,value)
+    def part(self, **kwargs):
+        for key, value in kwargs.items():
+            if key in upper_case:
+                value = value.upper()
+            setattr(self, key, value)
 
 
-def get_last_revision(args,hpn=None,show_revisions=False):
+def get_last_revision(args, hpn=None, show_revisions=False):
     """
     Return the last revision number for a given part (exact match)
     """
-    current = cm_utils._get_datetime(args.date,args.time)
+    current = cm_utils._get_datetime(args.date, args.time)
     if hpn is None:
         hpn = args.hpn
     revisions = []
@@ -68,7 +72,7 @@ def get_last_revision(args,hpn=None,show_revisions=False):
     ended = []
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        for parts_rec in session.query(Parts).filter(Parts.hpn==hpn):
+        for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
             revisions.append(parts_rec.hpn_rev)
             started.append(parts_rec.start_date)
             ended.append(parts_rec.stop_date)
@@ -79,18 +83,19 @@ def get_last_revision(args,hpn=None,show_revisions=False):
     if current < started[-1] or current > end_date:
         print('Warning:  last revision out of date')
         over_ride_print = True
-    if (show_revisions and args.verbosity=='h') or over_ride_print:
-        headers = ['HPN','Revision','Start','Stop']
+    if (show_revisions and args.verbosity == 'h') or over_ride_print:
+        headers = ['HPN', 'Revision', 'Start', 'Stop']
         table_data = []
-        for i,rev in enumerate(revisions):
-            table_data.append([hpn,rev,started[i],ended[i]])
-        print(tabulate(table_data,headers=headers,tablefmt='simple'))
+        for i, rev in enumerate(revisions):
+            table_data.append([hpn, rev, started[i], ended[i]])
+        print(tabulate(table_data, headers=headers, tablefmt='simple'))
         print('\n')
-    elif show_revisions and args.verbosity=='m':
-        print('Last revision: ',revisions[-1])
+    elif show_revisions and args.verbosity == 'm':
+        print('Last revision: ', revisions[-1])
     end_date = cm_utils._get_stopdate(ended[-1])
 
     return revisions[-1]
+
 
 def update_part(args, data):
     """
@@ -106,29 +111,30 @@ def update_part(args, data):
     columnN:  column name(s)
     values:  corresponding list of values
     """
-    data_dict = format_check_update_part_request(data)
+    data_dict = format_and_check_update_part_request(data)
     if data_dict is None:
         print('Error: invalid update')
         return False
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         for dkey in data_dict.keys():
-            hpn_to_change = data_dict[dkey][0][0].upper()
-            rev_to_change = data_dict[dkey][0][1].upper()
-            if rev_to_change[:4]=='LAST':
-                rev_to_change = get_last_revision_number(args,hpn_to_change)
-            part_rec = session.query(Parts).filter( (Parts.hpn == hpn_to_change) & 
-                                                    (Parts.hpn_rev == rev_to_change) )
+            hpn_to_change = data_dict[dkey][0][0]
+            rev_to_change = data_dict[dkey][0][1]
+            if rev_to_change[:4] == 'LAST':
+                rev_to_change = get_last_revision_number(args, hpn_to_change)
+            part_rec = session.query(Parts).filter((Parts.hpn == hpn_to_change) &
+                                                   (Parts.hpn_rev == rev_to_change))
             npc = part_rec.count()
-            if npc == 0: 
+            if npc == 0:
                 if args.add_new_part:
                     part = Parts()
                 else:
-                    print("Error: ",dkey,"does not exist and add_new_part not enabled.")
+                    print("Error: ", dkey,
+                          "does not exist and add_new_part not enabled.")
                     part = None
             elif npc == 1:
                 if args.add_new_part:
-                    print("Error: ",dkey,"exists and add_new_part is enabled.")
+                    print("Error: ", dkey, "exists and add_new_part is enabled.")
                     part = None
                 else:
                     part = part_rec.first()
@@ -143,10 +149,11 @@ def update_part(args, data):
                         print(d[2], 'does not exist as a field')
                         continue
                 session.add(part)
-    cm_utils._log('part_connect part update',data_dict=data_dict)
+    cm_utils._log('part_connect part update', data_dict=data_dict)
     return True
 
-def format_check_update_part_request(request):
+
+def format_and_check_update_part_request(request):
     """
     parses the update request
 
@@ -170,32 +177,37 @@ def format_check_update_part_request(request):
             data_to_proc.append(d.split(':'))
     else:
         data_to_proc = request
-    if len(data_to_proc[0])==4:
-        hpn0 = data_to_proc[0][0]
-        rev0 = data_to_proc[0][1]
-    elif len(data_to_proc[0])==3:
-        hpn0 = data_to_proc[0][0]
+    if len(data_to_proc[0]) == 4:
+        hpn0 = data_to_proc[0][0].upper()
+        rev0 = data_to_proc[0][1].upper()
+    elif len(data_to_proc[0]) == 3:
+        hpn0 = data_to_proc[0][0].upper()
         rev0 = 'LAST'
     else:
-        print('Error:  wrong format for first update entry: ',data_to_proc[0])
+        print('Error:  wrong format for first part update entry: ', data_to_proc[0])
         return None
     for d in data_to_proc:
         if len(d) == 4:
             pass
         elif len(d) == 3:
-            d.insert(1,'LAST')
+            d.insert(1, 'LAST')
         elif len(d) == 2:
             d.insert(0, hpn0)
             d.insert(1, rev0)
         else:
             print('Invalid format for update request.')
             continue
-        dkey = d[0]+':'+d[1]
+        d[0]=d[0].upper()
+        d[1]=d[1].upper()
+        if d[2] in upper_case:
+            d[3]=d[3].upper()
+        dkey = d[0] + ':' + d[1]
         if dkey in data.keys():
             data[dkey].append(d)
         else:
             data[dkey] = [d]
     return data
+
 
 class PartInfo(MCDeclarativeBase):
     """A table for logging test information etc for parts."""
@@ -220,9 +232,11 @@ class PartInfo(MCDeclarativeBase):
     def __repr__(self):
         return '<heraPartNumber id = {self.hpn} comment = {self.comment}>'.format(self=self)
 
-    def info(self,**kwargs):
-        for key,value in kwargs.items():
-            setattr(self,key,value)
+    def info(self, **kwargs):
+        for key, value in kwargs.items():
+            if key in upper_case:
+                value = value.upper()
+            setattr(self, key, value)
 
 
 class Connections(MCDeclarativeBase):
@@ -262,9 +276,14 @@ class Connections(MCDeclarativeBase):
     def __repr__(self):
         return '<{self.up}<{self.b_on_up}:{self.a_on_down}>{self.down}>'.format(self=self)
 
-    def connection(self,**kwargs):
-        for key,value in kwargs.items():
-            setattr(self,key,value)
+    def connection(self, **kwargs):
+        for key, value in kwargs.items():
+            if key in upper_case():
+                value = value.upper()
+            elif key in lower_case():
+                value = value.lower()
+            setattr(self, key, value)
+
 
 def update_connection(args, data):
     """
@@ -284,34 +303,40 @@ def update_connection(args, data):
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         for dkey in data_dict.keys():
-            upcn_to_change = data_dict[dkey][0][0].upper()
-            urev_to_change = data_dict[dkey][0][1].upper()
-            dncn_to_change = data_dict[dkey][0][2].upper()
-            drev_to_change = data_dict[dkey][0][3].upper()
-            boup_to_change = data_dict[dkey][0][4].upper()
-            aodn_to_change = data_dict[dkey][0][5].upper()
+            print('#-#  ',data_dict[dkey])
+            upcn_to_change = data_dict[dkey][0][0]
+            urev_to_change = data_dict[dkey][0][1]
+            dncn_to_change = data_dict[dkey][0][2]
+            drev_to_change = data_dict[dkey][0][3]
+            boup_to_change = data_dict[dkey][0][4]
+            aodn_to_change = data_dict[dkey][0][5]
             strt_to_change = data_dict[dkey][0][6]
-            if urev_to_change[:4]=='LAST':
-                urev_to_change = get_last_revision_number(args,upcn_to_change)
-            if drev_to_change[:4]=='LAST':
-                drev_to_change = get_last_revision_number(args,dncn_to_change)
-            conn_rec = session.query(Connections).filter( (Connections.up == upcn_to_change) & 
-                                                          (Connections.up_rev == urev_to_change) &
-                                                          (Connections.down == dncn_to_change) &
-                                                          (Connections.down_rev == drev_to_change) &
-                                                          (Connections.b_on_up == boup_to_change) &
-                                                          (Connections.a_on_down == aodn_to_change) &
-                                                          (Connections.start_date == strt_to_change))
+            if urev_to_change[:4] == 'LAST':
+                urev_to_change = get_last_revision_number(args, upcn_to_change)
+            if drev_to_change[:4] == 'LAST':
+                drev_to_change = get_last_revision_number(args, dncn_to_change)
+            conn_rec = session.query(Connections).filter((Connections.up == upcn_to_change) &
+                                                         (Connections.up_rev == urev_to_change) &
+                                                         (Connections.down == dncn_to_change) &
+                                                         (Connections.down_rev == drev_to_change) &
+                                                         (Connections.b_on_up == boup_to_change) &
+                                                         (Connections.a_on_down == aodn_to_change) &
+                                                         (Connections.start_date == strt_to_change))
             ncc = conn_rec.count()
-            if ncc == 0: 
+            if ncc == 0:
                 if args.add_new_connection:
                     connection = Connections()
+                    connection.connection(up=upcn_to_change,up_rev=urev_to_change,
+                                          down=dncn_to_change,down_rev=drev_to_change,
+                                          b_on_up=boup_to_change,a_on_down=aodn_to_change,
+                                          start_date=strt_to_change)
                 else:
-                    print("Error:",dkey,"does not exist and add_new_connection is not enabled.")
+                    print(
+                        "Error:", dkey, "does not exist and add_new_connection is not enabled.")
                     connection = None
             elif ncc == 1:
                 if args.add_new_connection:
-                    print("Error:",dkey,"exists and and_new_connection is enabled")
+                    print("Error:", dkey, "exists and and_new_connection is enabled")
                     connection = None
                 else:
                     connection = conn_rec.first()
@@ -326,8 +351,9 @@ def update_connection(args, data):
                         print(dkey, 'does not exist as a field')
                         continue
                 session.add(connection)
-    cm_utils._log('part_connect connection update',data_dict=data_dict)
+    cm_utils._log('part_connect connection update', data_dict=data_dict)
     return True
+
 
 def format_check_update_connection_request(request):
     """
@@ -355,12 +381,21 @@ def format_check_update_connection_request(request):
         if len(d) == 9:
             pass
         elif len(d) == 7:
-            d.insert(1,'LAST')
-            d.insert(3,'LAST')
+            d.insert(1, 'LAST')
+            d.insert(3, 'LAST')
         else:
-            print('Invalid format for update request.')
+            print('Invalid format for connection update request.')
             continue
-        dkey = d[0]+':'+d[2]+':'+d[4]+':'+d[5]
+        dkey = d[0] + ':' + d[2] + ':' + d[4] + ':' + d[5]
+        ###Make the case of everything correct
+        for i in range(4):
+            d[i]=d[i].upper()
+        for i in range(4:6):
+            d[i]=d[i].lower()
+        if d[7] in upper_case:
+            d[8] = d[8].upper()
+        elif d[7] in lower_case:
+            d[8] = d[8].lower()
         if dkey in data.keys():
             data[dkey].append(d)
         else:
