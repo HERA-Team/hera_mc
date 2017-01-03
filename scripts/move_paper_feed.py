@@ -53,8 +53,10 @@ def check_if_OK_to_add_and_deactivate_previous(args, connect):
             else:
                 print("Stopping previous connection.")
                 i = 0
-                old_station_name = cm_utils._pull_out_component(c[k]['up_parts'], i)
-                old_station_rev  = cm_utils._pull_out_component(c[k]['up_rev'], i)
+                old_station_name = cm_utils._pull_out_component(
+                    c[k]['up_parts'], i)
+                old_station_rev = cm_utils._pull_out_component(
+                    c[k]['up_rev'], i)
                 data = [[old_station_name, old_station_rev,
                          args.feed_number, 'A',
                          cm_utils._pull_out_component(c[k]['b_on_up'], i),
@@ -64,10 +66,10 @@ def check_if_OK_to_add_and_deactivate_previous(args, connect):
                 args.add_new_connection = False  # Need to temporarily disable add_new
                 part_connect.update_connection(args, data)
                 args.add_new_connection = True
-                print("Closing previous station as a part:  ",old_station_name)
-                data = [[old_station_name,old_station_rev,'stop_date',current]]
+                print("Closing previous station as a part:  ", old_station_name)
+                data = [[old_station_name, old_station_rev, 'stop_date', current]]
                 args.add_new_part = False
-                part_connect.update_part(args,data)
+                part_connect.update_part(args, data)
 
         else:
             print('Error:  ', connect.down, 'not present')
@@ -78,11 +80,16 @@ def check_if_OK_to_add_and_deactivate_previous(args, connect):
 def add_connection(args, c):
     dt = c.start_date
     data = [[c.up, c.up_rev, c.down, c.down_rev, c.b_on_up, c.a_on_down, dt, 'up', c.up],
-            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up, c.a_on_down, dt, 'up_rev', c.up_rev],
-            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up, c.a_on_down, dt, 'down', c.down],
-            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up, c.a_on_down, dt, 'down_rev', c.down_rev],
-            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up, c.a_on_down, dt, 'b_on_up', c.b_on_up],
-            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up, c.a_on_down, dt, 'a_on_down', c.a_on_down],
+            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up,
+                c.a_on_down, dt, 'up_rev', c.up_rev],
+            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up,
+                c.a_on_down, dt, 'down', c.down],
+            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up,
+                c.a_on_down, dt, 'down_rev', c.down_rev],
+            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up,
+                c.a_on_down, dt, 'b_on_up', c.b_on_up],
+            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up,
+                c.a_on_down, dt, 'a_on_down', c.a_on_down],
             [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up, c.a_on_down, dt, 'start_date', c.start_date]]
     part_connect.update_connection(args, data)
 
@@ -114,7 +121,7 @@ if __name__ == '__main__':
 
     if query:
         args = query_connection(args)
-    if args.feed_number[0] !='A':
+    if args.feed_number[0] != 'A':
         args.feed_number = 'A' + args.feed_number
     connect = part_connect.Connections()
     connect.connection(up=args.station_name, up_rev='A',

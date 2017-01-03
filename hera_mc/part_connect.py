@@ -19,8 +19,9 @@ from . import MCDeclarativeBase, NotNull
 
 from hera_mc import mc, cm_utils
 
-upper_case = ['hpn','hpn_rev','up','up_rev','down','down_rev']
-lower_case = ['b_on_up','a_on_down']
+upper_case = ['hpn', 'hpn_rev', 'up', 'up_rev', 'down', 'down_rev']
+lower_case = ['b_on_up', 'a_on_down']
+
 
 class Parts(MCDeclarativeBase):
     """A table logging parts within the HERA system
@@ -184,7 +185,8 @@ def format_and_check_update_part_request(request):
         hpn0 = data_to_proc[0][0].upper()
         rev0 = 'LAST'
     else:
-        print('Error:  wrong format for first part update entry: ', data_to_proc[0])
+        print('Error:  wrong format for first part update entry: ',
+              data_to_proc[0])
         return None
     for d in data_to_proc:
         if len(d) == 4:
@@ -197,10 +199,10 @@ def format_and_check_update_part_request(request):
         else:
             print('Invalid format for update request.')
             continue
-        d[0]=d[0].upper()
-        d[1]=d[1].upper()
+        d[0] = d[0].upper()
+        d[1] = d[1].upper()
         if d[2] in upper_case:
-            d[3]=d[3].upper()
+            d[3] = d[3].upper()
         dkey = d[0] + ':' + d[1]
         if dkey in data.keys():
             data[dkey].append(d)
@@ -325,9 +327,9 @@ def update_connection(args, data):
             if ncc == 0:
                 if args.add_new_connection:
                     connection = Connections()
-                    connection.connection(up=upcn_to_change,up_rev=urev_to_change,
-                                          down=dncn_to_change,down_rev=drev_to_change,
-                                          b_on_up=boup_to_change,a_on_down=aodn_to_change,
+                    connection.connection(up=upcn_to_change, up_rev=urev_to_change,
+                                          down=dncn_to_change, down_rev=drev_to_change,
+                                          b_on_up=boup_to_change, a_on_down=aodn_to_change,
                                           start_date=strt_to_change)
                 else:
                     print(
@@ -386,11 +388,11 @@ def format_check_update_connection_request(request):
             print('Invalid format for connection update request.')
             continue
         dkey = d[0] + ':' + d[2] + ':' + d[4] + ':' + d[5]
-        ###Make the case of everything correct
+        # Make the case of everything correct
         for i in range(4):
-            d[i]=d[i].upper()
-        for i in range(4,6):
-            d[i]=d[i].lower()
+            d[i] = d[i].upper()
+        for i in range(4, 6):
+            d[i] = d[i].lower()
         if d[7] in upper_case:
             d[8] = d[8].upper()
         elif d[7] in lower_case:
