@@ -278,9 +278,9 @@ class Connections(MCDeclarativeBase):
 
     def connection(self, **kwargs):
         for key, value in kwargs.items():
-            if key in upper_case():
+            if key in upper_case:
                 value = value.upper()
-            elif key in lower_case():
+            elif key in lower_case:
                 value = value.lower()
             setattr(self, key, value)
 
@@ -303,7 +303,6 @@ def update_connection(args, data):
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         for dkey in data_dict.keys():
-            print('#-#  ',data_dict[dkey])
             upcn_to_change = data_dict[dkey][0][0]
             urev_to_change = data_dict[dkey][0][1]
             dncn_to_change = data_dict[dkey][0][2]
@@ -390,7 +389,7 @@ def format_check_update_connection_request(request):
         ###Make the case of everything correct
         for i in range(4):
             d[i]=d[i].upper()
-        for i in range(4:6):
+        for i in range(4,6):
             d[i]=d[i].lower()
         if d[7] in upper_case:
             d[8] = d[8].upper()

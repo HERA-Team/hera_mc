@@ -103,6 +103,7 @@ tables_to_init = list(reversed(use_table))
 ###Initialize tables
 for table in tables_to_init:
     data_filename = os.path.join(mc.data_path,data_prefix+table+'.csv')
+    cm_utils._log('cm_initialization: '+data_filename)
     ##################################HANDLE MAINDB CASE###############################
     ### ULTIMATELY CONSOLIDATE THESE TWO CASES
     if args.maindb:
