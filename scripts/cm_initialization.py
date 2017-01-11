@@ -36,8 +36,11 @@ if not args.init_override:
         sys.exit()
 
 
-def check_if_maindb():  # Obviously this needs to do something real.
-    return False
+def check_if_maindb():
+    if os.path.expanduser('~') == '/home/obs':
+        return True
+    else:
+        return False
 
 
 def check_data_file(data_filename):
@@ -114,51 +117,27 @@ tables_to_init = list(reversed(use_table))
 for table in tables_to_init:
     data_filename = os.path.join(mc.data_path, data_prefix + table + '.csv')
     cm_utils._log('cm_initialization: ' + data_filename)
-    ##################################HANDLE MAINDB CASE######################
-    # ULTIMATELY CONSOLIDATE THESE TWO CASES
-    if args.maindb:
-        with db.sessionmaker() as session:
-            key_row = True
-            field_row = False
-            field_name = []
-            with open(data_filename, 'rb') as csvfile:
-                reader = csv.reader(csvfile)
-                for row in reader:
-                    table_inst = cm_tables[table][0]()
-                    if key_row:
-                        key_row = False
-                        field_row = True
-                    elif field_row:
-                        field_name = row
-                        field_row = False
-                    else:
-                        for i, r in enumerate(row):
-                            if r == '':
-                                r = None
-                            print('########################################')
-                            print('# Here is where the logic etc would go #')
-                            print('# ...maybe use part_handling functions #')
-                            # setattr(table_inst,field_name[i],r)
-                            print('# Ultimately consolidate with below    #')
-                            print('#      cm_initialization: line 115     #')
-                            print('########################################')
-                        # session.add(table_inst)
-    ##################################HANDLE REMOTE CASE######################
-    # ULTIMATELY CONSOLIDATE THESE TWO CASES
+    if args.maindb: # key_row/field_row toggle as db is read
+        key_row = True
+        field_row = False
     else:
-        with db.sessionmaker() as session:
-            field_row = True
-            field_name = []
-            with open(data_filename, 'rb') as csvfile:
-                reader = csv.reader(csvfile)
-                for row in reader:
-                    table_inst = cm_tables[table][0]()
-                    if field_row:
-                        field_name = row
-                        field_row = False
-                    else:
-                        for i, r in enumerate(row):
-                            if r == '':
-                                r = None
-                            setattr(table_inst, field_name[i], r)
-                        session.add(table_inst)
+        key_row = False
+        field_row = True
+    with db.sessionmaker() as session:
+        field_name = []
+        with open(data_filename, 'rb') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                table_inst = cm_tables[table][0]()
+                if key_row:
+                    key_row = False
+                    field_row = True
+                elif field_row:
+                    field_name = row
+                    field_row = False
+                else:
+                    for i, r in enumerate(row):
+                        if r == '':
+                            r = None
+                        setattr(table_inst, field_name[i], r)
+                    session.add(table_inst)
