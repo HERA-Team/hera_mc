@@ -1,0 +1,36 @@
+\documentclass{article}
+\usepackage{float,amsmath}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{hyperref}
+
+%\setlength{\textwidth}{6.5in}
+
+\begin{document}
+
+\author{David DeBoer}
+\title{Array Configuration Management Database}
+\maketitle
+
+\section{Introduction}
+The HERA array/part configuration management database is a set of tables within the larger hera\_mc database, which is maintained on-site in the Karoo.  The tables are detailed in the Appendix, but they are:  
+\begin{tabular}{l l l}
+         {\bf psql table} & {\bf python instance}  &  {\bf class name} \\
+	geo\_location 	& hera\_mc/geo\_location.py & GeoLocation \\
+	station\_meta 	& hera\_mc/geo\_location.py & StationMeta \\
+	parts\_paper 	& hera\_mc/part\_connect.py & Parts \\
+	part\_info 	         & hera\_mc/part\_connect.py & PartInfo \\
+	connections 	& hera\_mc/part\_connect.py & Connections \\
+\end{tabular}
+
+Software is contained on the repository https://github.com/HERA-Team/hera\_mc and information may be found in the file PARTS.md.
+
+%\begin{figure}[H]
+%\includegraphics[width=0.8\textwidth]{FILE.pdf}
+%\centering
+%\caption{CAPTION}
+%\label{fig:FIGURE}
+%\end{figure}
+
+\end{document}
