@@ -10,7 +10,7 @@ it asks questions to get full info into args.
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, mc, part_handling
+from hera_mc import part_connect, mc, cm_handling
 import sys
 
 
@@ -59,7 +59,7 @@ def install_feed(args):
         print("What do we need here")
 
 if __name__ == '__main__':
-    install = part_handling.PartsAndConnections()
+    install = cm_handling.Handling()
     parser = mc.get_mc_argument_parser()
     parser.add_argument('--hpn', help="Part to be installed.", default=None)
     parser.add_argument('--revision_number',

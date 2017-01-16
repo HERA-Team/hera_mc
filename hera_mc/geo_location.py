@@ -20,14 +20,14 @@ from sqlalchemy import Column, Float, Integer, String, DateTime, ForeignKey, fun
 from . import MCDeclarativeBase, NotNull
 from hera_mc import mc, part_connect, cm_utils
 
-class StationMeta(MCDeclarativeBase):
+class StationType(MCDeclarativeBase):
     """
-    A table to track/denote station metadata categories in various ways
+    A table to track/denote station type data categories in various ways
     """
-    __tablename__ = 'station_meta'
+    __tablename__ = 'station_type'
 
-    meta_class_name = Column(String(64), primary_key=True)
-    "Name of meta class.  Note that prefix is the primary_key, so there can be multiple prefixes/meta_name"
+    station_type_name = Column(String(64), primary_key=True)
+    "Name of type class.  Note that prefix is the primary_key, so there can be multiple prefixes/type_name"
 
     prefix = NotNull(String(64))
     "String prefix to station type, elements of which are typically characterized by <prefix><int>. \
@@ -51,8 +51,8 @@ class GeoLocation(MCDeclarativeBase):
     "Colloquial name of station (which is a unique location on the ground).  This one shouldn't \
      change. This is the primary key, so precision matters."
 
-    meta_class_name = Column(String(64), ForeignKey(StationMeta.meta_class_name), nullable=False)
-    "Name of meta-class of which it is a member.  Should match prefix per station_meta table."
+    station_type_name = Column(String(64), ForeignKey(StationType.station_type_name), nullable=False)
+    "Name of station type of which it is a member.  Should match prefix per station_type table."
 
     datum = Column(String(64))
     "Datum of the geoid."
@@ -69,7 +69,7 @@ class GeoLocation(MCDeclarativeBase):
     elevation = Column(Float)
     "Elevation in m"
 
-    created_date = NotNull(DateTime)
+    created_date = NotNull(DateTime(timezone=True))
     "The date when the station assigned by project."
 
     def geo(self, **kwargs):
@@ -79,7 +79,7 @@ class GeoLocation(MCDeclarativeBase):
             setattr(self, key, value)
 
     def __repr__(self):
-        return '<station_name={self.station_name} station_number={self.station_number} \
+        return '<station_name={self.station_name} station_number={self.station_type_name} \
         northing={self.northing} easting={self.easting} \
         elevation={self.elevation}>'.format(self=self)
 
@@ -209,7 +209,7 @@ def is_in_connections_db(args,station_name,check_if_active=False):
 
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        connected_station = session.query(part_connect.Connections).filter(part_connect.Connections.up == station_name)
+        connected_station = session.query(part_connect.Connections).filter(part_connect.Connections.upstream_part == station_name)
         if connected_station.count() > 0:
             station_connected = True
         else:
@@ -219,7 +219,7 @@ def is_in_connections_db(args,station_name,check_if_active=False):
             current = cm_utils._get_datetime(args.date,args.time)
             for connection in connected_station.all():
                 if cm_utils._is_active(current,connection.start_date,connection.stop_date):
-                    station_connected = int(connection.down.strip('A'))
+                    station_connected = int(connection.downstream_part.strip('A'))
                     counter+=1
                 else:
                     station_connected = False
@@ -247,7 +247,7 @@ def find_station_name(args,antenna):
         return False
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        connected_antenna = session.query(part_connect.Connections).filter(part_connect.Connections.down == antenna)
+        connected_antenna = session.query(part_connect.Connections).filter(part_connect.Connections.downstream_part == antenna)
         if connected_antenna.count() > 0:
             antenna_connected = True
         else:
@@ -258,7 +258,7 @@ def find_station_name(args,antenna):
             for connection in connected_antenna.all():
                 stop_date = cm_utils._get_stopdate(connection.stop_date)
                 if current>connection.start_date and current<stop_date:
-                    antenna_connected = connection.up
+                    antenna_connected = connection.upstream_part
                     counter+=1
                 else:
                     antenna_connected = False
@@ -281,14 +281,14 @@ def locate_station(args, show_geo=False):
     if station_name:
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
-            station_meta = session.get_station_meta()
+            station_type = session.get_station_type()
             for a in session.query(GeoLocation).filter(GeoLocation.station_name == station_name):
-                for key in station_meta.keys():
-                    if a.station_name in station_meta[key]['Stations']:
+                for key in station_type.keys():
+                    if a.station_name in station_type[key]['Stations']:
                         this_station = key
                         break
                     else:
-                        this_station = 'No station metadata.'
+                        this_station = 'No station type data.'
                 ever_connected = is_in_connections_db(args,a.station_name) 
                 active = is_in_connections_db(args,a.station_name,True)
                 v = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation,
@@ -301,7 +301,7 @@ def locate_station(args, show_geo=False):
                         print('\tnorthing: ', a.northing)
                         print('\televation: ', a.elevation)
                         print('\tstation description (%s):  %s' % 
-                            (this_station,station_meta[this_station]['Description']))
+                            (this_station,station_type[this_station]['Description']))
                         print('\tever connected:  ',ever_connected)
                         print('\tactive:  ',active)
                         print('\tcreated:  ',a.created_date)
@@ -318,9 +318,9 @@ def plot_arrays(args, overplot=None, label_station=False):
     plt.figure(args.xgraph + args.ygraph)
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        station_meta = session.get_station_meta()
-        for key in station_meta.keys():
-            for loc in station_meta[key]['Stations']:
+        station_type = session.get_station_type()
+        for key in station_type.keys():
+            for loc in station_type[key]['Stations']:
                 for a in session.query(GeoLocation).filter(GeoLocation.station_name == loc):
                     show_it = True
                     if args.active:
@@ -329,7 +329,7 @@ def plot_arrays(args, overplot=None, label_station=False):
                         pt = {'easting': a.easting, 'northing': a.northing,
                               'elevation': a.elevation}
                         plt.plot(pt[coord[args.xgraph]], pt[coord[args.ygraph]],
-                                 station_meta[key]['Marker'], label=a.station_name)
+                                 station_type[key]['Marker'], label=a.station_name)
                         if label_station:
                             if args.label_type=='station_name':
                                 labeling = a.station_name

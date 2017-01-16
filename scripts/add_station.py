@@ -55,7 +55,7 @@ def query_geo_information(args):
         args.elevation = float(raw_input('Elevation:  '))
         args.datum = cm_utils._query_default('datum', args)
         args.tile = cm_utils._query_default('tile', args)
-    args.meta_class_name = cm_utils._query_default('meta_class_name', args)
+    args.station_type_name = cm_utils._query_default('station_type_name', args)
     args.date = cm_utils._query_default('date', args)
     return args
 
@@ -73,7 +73,7 @@ def add_entry_to_geo_location(args):
     sname = args.station_name
     dt = cm_utils._get_datetime(args.date, args.time)
     data = [[sname, 'station_name', sname],
-            [sname, 'meta_class_name', args.meta_class_name],
+            [sname, 'station_type_name', args.station_type_name],
             [sname, 'created_date', dt]]
     # Other
     if args.datum:
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
     parser.add_argument('--time', help="hh:mm or now [now]", default='now')
     parser.add_argument(
-        '--meta_class_name', help="Station category name [herahex]", default='herahex')
+        '--station_type_name', help="Station category name [herahex]", default='herahex')
     parser.add_argument(
         '--datum', help="Datum of UTM [WGS84]", default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]", default='34J')

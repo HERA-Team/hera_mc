@@ -1,4 +1,4 @@
-meta_class_name,prefix,description,plot_marker
+station_type_name,prefix,description,plot_marker
 container,CR,Container location,k*
 herahex,HH,HERA Hex locations,ro
 heraringa,HA,HERA inner ring,go

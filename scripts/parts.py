@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, part_handling, mc
+from hera_mc import part_connect, cm_handling, mc
 import os.path
 
 if __name__ == '__main__':
@@ -48,8 +48,7 @@ if __name__ == '__main__':
                               dest='active', action='store_false')
     parser.set_defaults(active=True)
     args = parser.parse_args()
-
-    handling = part_handling.PartsAndConnections(args)
+    handling = cm_handling.Handling(args)
     args.verbosity = args.verbosity.lower()
     args.mapr_cols = args.mapr_cols.lower()
     args.revision = args.revision.upper()

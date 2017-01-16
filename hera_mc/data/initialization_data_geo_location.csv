@@ -1,4 +1,4 @@
-station_name,meta_class_name,datum,tile,northing,easting,elevation,created_date
+station_name,station_type_name,datum,tile,northing,easting,elevation,created_date
 HH0,herahex,WGS84,34J,6601070.74,540901.6,1052.63,10/1/14
 HH1,herahex,WGS84,34J,6601070.74,540916.2,1052.62,10/1/14
 HH11,herahex,WGS84,34J,6601083.38,540894.3,1052.48,10/1/14

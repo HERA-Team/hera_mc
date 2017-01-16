@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import, division, print_function
 import datetime
-from hera_mc import geo_location, mc
+from hera_mc import mc, geo_location
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()

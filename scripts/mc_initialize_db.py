@@ -15,6 +15,6 @@ if not hasattr(db, 'create_tables'):
     raise SystemExit('error: you can only set up a database that\'s '
                      'configured to be in "testing" mode')
 
-#db.create_tables()
+db.create_tables()
 
 import cm_initialization

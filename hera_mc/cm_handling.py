@@ -14,7 +14,7 @@ from hera_mc import mc, part_connect, geo_location, correlator_levels, cm_utils
 import copy, datetime
 
 
-class PartsAndConnections:
+class Handling:
     """
     Class to allow various manipulations of parts and their properties etc.  Things are 
     manipulated/passed as dictionaries currently.
@@ -32,18 +32,19 @@ class PartsAndConnections:
         """
         returns number of connections (doesn't check dates)
         """
-        if self._up_rev.upper() == 'LAST':
-            self._up_rev = part_connect.get_last_revision(args,self._up,False)
-        if self._down_rev.upper() == 'LAST':
-            self._down_rev = part_connect.get_last_revision(args,self._down,False)
+        if self.up_part_rev.upper() == 'LAST':
+            self.up_part_rev = part_connect.get_last_revision(args,self.upstream_part,False)
+        if self.down_part_rev.upper() == 'LAST':
+            self.down_part_rev = part_connect.get_last_revision(args,self.downstream_part,False)
         db = mc.connect_to_mc_db(self.args)
         with db.sessionmaker() as session:
-            connected = session.query(part_connect.Connections).filter( (part_connect.Connections.up       == connection.up) &
-                                                                        (part_connect.Connections.up_rev   == connection.up_rev) &
-                                                                        (part_connect.Connections.down     == connection.down) &
-                                                                        (part_connect.Connections.down_rev == connection.down_rev) &
-                                                                        (part_connect.Connections.b_on_up  == connection.b_on_up) &
-                                                                        (part_connect.Conenctions.a_on_down== connection.a_on_down) )
+            connected = session.query(part_connect.Connections).filter( 
+                (part_connect.Connections.upstream_part == connection.upstream_part) &
+                (part_connect.Connections.up_part_rev   == connection.up_part_rev) &
+                                                                        (part_connect.Connections.downstream_part     == connection.downstream_part) &
+                                                                        (part_connect.Connections.down_part_rev == connection.down_part_rev) &
+                                                                        (part_connect.Connections.upstream_output_port  == connection.upstream_output_port) &
+                                                                        (part_connect.Conenctions.downstream_input_port== connection.downstream_input_port) )
             connect_count = connected.count()
         return connect_count
 
@@ -289,55 +290,55 @@ class PartsAndConnections:
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
             ### Find where the part is in the upward connection
-            for match_connection in session.query(part_connect.Connections).filter(part_connect.Connections.up.like(hpn_query)):
-                if port_query=='all' or match_connection.b_on_up == port_query:
+            for match_connection in session.query(part_connect.Connections).filter(part_connect.Connections.upstream_part.like(hpn_query)):
+                if port_query=='all' or match_connection.upstream_output_port == port_query:
                     #-#THIS SHOULD HAVE WORKED BUT DOESN'T#-#
-                    #-#if match_connection.up not in connection_dict.keys() and match_connection.up in self.connections_dictionary.keys():
-                    #-#    connection_dict[match_connection.up] = copy.deepcopy(self.connections_dictionary[match_connection.up])
+                    #-#if match_connection.upstream_part not in connection_dict.keys() and match_connection.upstream_part in self.connections_dictionary.keys():
+                    #-#    connection_dict[match_connection.upstream_part] = copy.deepcopy(self.connections_dictionary[match_connection.upstream_part])
                     #-#    continue
-                    if match_connection.up not in connection_dict.keys():
+                    if match_connection.upstream_part not in connection_dict.keys():
                         revq = rev_query.upper()
                         if revq == 'LAST':
-                            if match_connection.up not in self.last_revisions.keys():
-                                self.last_revisions[match_connection.up] = part_connect.get_last_revision(args,match_connection.up,False)
-                            revq = self.last_revisions[match_connection.up]
-                        connection_dict[match_connection.up] = {'rev':revq,
+                            if match_connection.upstream_part not in self.last_revisions.keys():
+                                self.last_revisions[match_connection.upstream_part] = part_connect.get_last_revision(args,match_connection.upstream_part,False)
+                            revq = self.last_revisions[match_connection.upstream_part]
+                        connection_dict[match_connection.upstream_part] = {'rev':revq,
                                                                 'a_ports':[], 'up_parts':[],   'up_rev':[],  'b_on_up':[], 
                                                                 'b_ports':[], 'down_parts':[], 'down_rev':[],'a_on_down':[],
                                                                 'start_on_down':[], 'stop_on_down':[], 'repr_down':[],
                                                                 'start_on_up':[],   'stop_on_up':[],   'repr_up':[]}
-                    connection_dict[match_connection.up]['b_ports'].append(match_connection.b_on_up)
-                    connection_dict[match_connection.up]['down_parts'].append(match_connection.down)
-                    connection_dict[match_connection.up]['down_rev'].append(match_connection.down_rev)
-                    connection_dict[match_connection.up]['a_on_down'].append(match_connection.a_on_down)
-                    connection_dict[match_connection.up]['start_on_down'].append(match_connection.start_date)
-                    connection_dict[match_connection.up]['stop_on_down'].append(match_connection.stop_date)
-                    connection_dict[match_connection.up]['repr_down'].append(match_connection.__repr__())
+                    connection_dict[match_connection.upstream_part]['b_ports'].append(match_connection.upstream_output_port)
+                    connection_dict[match_connection.upstream_part]['down_parts'].append(match_connection.downstream_part)
+                    connection_dict[match_connection.upstream_part]['down_rev'].append(match_connection.down_part_rev)
+                    connection_dict[match_connection.upstream_part]['a_on_down'].append(match_connection.downstream_input_port)
+                    connection_dict[match_connection.upstream_part]['start_on_down'].append(match_connection.start_date)
+                    connection_dict[match_connection.upstream_part]['stop_on_down'].append(match_connection.stop_date)
+                    connection_dict[match_connection.upstream_part]['repr_down'].append(match_connection.__repr__())
             ### Find where the part is in the downward connection
-            for match_connection in session.query(part_connect.Connections).filter(part_connect.Connections.down.like(hpn_query)):
-                if port_query=='all' or match_connection.a_on_down == port_query:
+            for match_connection in session.query(part_connect.Connections).filter(part_connect.Connections.downstream_part.like(hpn_query)):
+                if port_query=='all' or match_connection.downstream_input_port == port_query:
                     #-#THIS SHOULD HAVE WORKED BUT DOESN'T#-#
-                    #-#if match_connection.down not in connection_dict.keys() and match_connection.down in self.connections_dictionary.keys():
-                    #-#    connection_dict[match_connection.down] = copy.deepcopy(self.connections_dictionary[match_connection.down])
+                    #-#if match_connection.downstream_part not in connection_dict.keys() and match_connection.downstream_part in self.connections_dictionary.keys():
+                    #-#    connection_dict[match_connection.downstream_part] = copy.deepcopy(self.connections_dictionary[match_connection.downstream_part])
                     #-#    continue
-                    if match_connection.down not in connection_dict.keys():
+                    if match_connection.downstream_part not in connection_dict.keys():
                         revq = rev_query.upper()
                         if revq == 'LAST':
-                            if match_connection.down not in self.last_revisions.keys():
-                                self.last_revisions[match_connection.down] = part_connect.get_last_revision(args,match_connection.down,False)
-                            revq = self.last_revisions[match_connection.down]
-                        connection_dict[match_connection.down] = {'rev':revq,
+                            if match_connection.downstream_part not in self.last_revisions.keys():
+                                self.last_revisions[match_connection.downstream_part] = part_connect.get_last_revision(args,match_connection.downstream_part,False)
+                            revq = self.last_revisions[match_connection.downstream_part]
+                        connection_dict[match_connection.downstream_part] = {'rev':revq,
                                                                   'a_ports':[], 'up_parts':[],   'up_rev':[],  'b_on_up':[], 
                                                                   'b_ports':[], 'down_parts':[], 'down_rev':[],'a_on_down':[],
                                                                   'start_on_down':[], 'stop_on_down':[], 'repr_down':[],
                                                                   'start_on_up':[],   'stop_on_up':[],   'repr_up':[]}
-                    connection_dict[match_connection.down]['a_ports'].append(match_connection.a_on_down)
-                    connection_dict[match_connection.down]['up_parts'].append(match_connection.up)
-                    connection_dict[match_connection.down]['up_rev'].append(match_connection.up_rev)
-                    connection_dict[match_connection.down]['b_on_up'].append(match_connection.b_on_up)
-                    connection_dict[match_connection.down]['start_on_up'].append(match_connection.start_date)
-                    connection_dict[match_connection.down]['stop_on_up'].append(match_connection.stop_date)
-                    connection_dict[match_connection.down]['repr_up'].append(match_connection.__repr__())
+                    connection_dict[match_connection.downstream_part]['a_ports'].append(match_connection.downstream_input_port)
+                    connection_dict[match_connection.downstream_part]['up_parts'].append(match_connection.upstream_part)
+                    connection_dict[match_connection.downstream_part]['up_rev'].append(match_connection.up_part_rev)
+                    connection_dict[match_connection.downstream_part]['b_on_up'].append(match_connection.upstream_output_port)
+                    connection_dict[match_connection.downstream_part]['start_on_up'].append(match_connection.start_date)
+                    connection_dict[match_connection.downstream_part]['stop_on_up'].append(match_connection.stop_date)
+                    connection_dict[match_connection.downstream_part]['repr_up'].append(match_connection.__repr__())
         connection_dict = self.__check_ports(connection_dict,rev_query)
         for pkey in connection_dict.keys():
             if pkey not in self.connections_dictionary.keys():

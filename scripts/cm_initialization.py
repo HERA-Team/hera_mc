@@ -37,7 +37,7 @@ if not args.init_override:
 
 
 def check_if_maindb():
-    if os.path.expanduser('~') == '/home/obs':
+    if os.path.expanduser('~') == '/home/qmaster':
         return True
     else:
         return False

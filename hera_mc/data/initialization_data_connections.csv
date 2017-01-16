@@ -1,4 +1,4 @@
-up,up_rev,down,down_rev,b_on_up,a_on_down,start_date,stop_date
+upstream_part,up_part_rev,downstream_part,down_part_rev,upstream_output_port,downstream_input_port,start_date,stop_date
 A0,A,FDP0,A,focus,input,2014-10-01,
 A100,A,FDP100,A,focus,input,2014-10-01,
 A101,A,FDP101,A,focus,input,2014-10-01,

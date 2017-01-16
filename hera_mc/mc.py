@@ -129,18 +129,18 @@ class MCSession(Session):
 
         return ptemp_list
 
-    def get_station_meta(self):
+    def get_station_type(self):
         """
         returns a dictionary of sub-arrays
              [prefix]{'Description':'...', 'plot_marker':'...', 'stations':[]}
         """
         from .geo_location import GeoLocation
-        from .geo_location import StationMeta
+        from .geo_location import StationType
 
-        station_data = self.query(StationMeta).all()
+        station_data = self.query(StationType).all()
         stations = {}
         for sta in station_data:
-            stations[sta.prefix] = {'Name': sta.meta_class_name, 'Description': sta.description, 
+            stations[sta.prefix] = {'Name': sta.station_type_name, 'Description': sta.description, 
                                     'Marker': sta.plot_marker, 'Stations': []}
         locations = self.query(GeoLocation).all()
         for loc in locations:

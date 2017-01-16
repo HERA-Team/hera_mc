@@ -9,7 +9,7 @@ Script to handle moving a PAPER feed into HERA hex.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, part_handling, geo_location
+from hera_mc import mc, cm_utils, part_connect, cm_handling, geo_location
 import sys
 
 
@@ -35,7 +35,7 @@ def check_if_OK_to_add_and_deactivate_previous(args, connect):
         OK = False
     # 2 - check to see if the station is already connected (shouldn't be)
     current = cm_utils._get_datetime(args.date, args.time)
-    checking = part_handling.PartsAndConnections(args)
+    checking = cm_handling.Handling(args)
     if checking.is_in_connections_db(connect.up, connect.up_rev, check_if_active=True):
         print('Error: ', connect.up, "already connected.")
         OK = False

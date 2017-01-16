@@ -19,16 +19,14 @@ from . import MCDeclarativeBase, NotNull
 
 from hera_mc import mc, cm_utils
 
-upper_case = ['hpn', 'hpn_rev', 'up', 'up_rev', 'down', 'down_rev']
-lower_case = ['b_on_up', 'a_on_down']
-
+# Probably bad practice, but these currently mirror the class objects to get the case right for values.
+upper_case = ['hpn', 'hpn_rev', 'upstream_part', 'up_part_rev', 'downstream_part', 'down_part_rev']
+lower_case = ['upstream_output_port', 'downstream_input_port']
 
 class Parts(MCDeclarativeBase):
     """A table logging parts within the HERA system
-       MAKE Part and Port be unique when combined
-       Stations will be considered parts of kind='station'
+       Stations will be considered parts of type='station'
        Note that ideally install_date would also be a primary key, but that screws up ForeignKey in connections
-       if a hpn gets replaced, save the data by copying an 'old_parts' database to store the record...
     """
     __tablename__ = 'parts_paper'
 
@@ -36,19 +34,19 @@ class Parts(MCDeclarativeBase):
     "HERA part number for each part; intend to QRcode with this string.  hpn+hpn_rev is unique"
 
     hpn_rev = Column(String(32), primary_key=True)
-    "A revision letter if sequences of hpn - starts with A.  hpn+hpn_rev is unique"
+    "A revision letter of sequences of hpn - starts with A.  hpn+hpn_rev is unique"
 
     hptype = NotNull(String(64))
     "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in the hera part number \
-     (see PARTS.md) -- this could be derived from it."
+     (see PARTS.md) -- this could be derived from it but this removes that constraint."
 
     manufacturer_number = Column(String(64))
     "A part number/serial number as specified by manufacturer"
 
-    start_date = NotNull(DateTime)
+    start_date = Column(DateTime(timezone=True), nullable=False)
     "The date when the part was installed (or otherwise assigned by project)."
 
-    stop_date = Column(DateTime)
+    stop_date = Column(DateTime(timezone=True))
     "The date when the part was removed (or otherwise de-assigned by project)."
 
     def __repr__(self):
@@ -222,14 +220,14 @@ class PartInfo(MCDeclarativeBase):
     hpn_rev = Column(String(32), nullable=False, primary_key=True)
     "HERA part revision number for each part; if sequencing same part number."
 
-    posting_date = NotNull(DateTime, primary_key=True)
+    posting_date = NotNull(DateTime(timezone=True), primary_key=True)
     "time that the data are posted"
 
-    comment = NotNull(String(1024))
+    comment = NotNull(String(2048))
     "Comment associated with this data - or the data itself..."
 
-    info = Column(String(256))
-    "This could/should be an attachment"
+    library_file = Column(String(256))
+    "Name of datafile held in library"
 
     def __repr__(self):
         return '<heraPartNumber id = {self.hpn} comment = {self.comment}>'.format(self=self)
@@ -246,37 +244,37 @@ class Connections(MCDeclarativeBase):
     """
     __tablename__ = 'connections'
 
-    up = Column(String(64), nullable=False, primary_key=True)
+    upstream_part = Column(String(64), nullable=False, primary_key=True)
     "up refers to the skyward part, e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.  Signal flows from A->B"
 
-    up_rev = Column(String(32), nullable=False, primary_key=True)
+    up_part_rev = Column(String(32), nullable=False, primary_key=True)
     "up refers to the skyward part revision number"
 
-    down = Column(String(64), nullable=False, primary_key=True)
+    downstream_part = Column(String(64), nullable=False, primary_key=True)
     "down refers to the part that is further from the sky, e.g. "
 
-    down_rev = Column(String(64), nullable=False, primary_key=True)
+    down_part_rev = Column(String(64), nullable=False, primary_key=True)
     "down refers to the part that is further from the sky, e.g. "
 
-    __table_args__ = (ForeignKeyConstraint(['up',        'up_rev'],
+    __table_args__ = (ForeignKeyConstraint(['upstream_part',   'up_part_rev'],
                                            ['parts_paper.hpn', 'parts_paper.hpn_rev']),
-                      ForeignKeyConstraint(['down',      'down_rev'],
+                      ForeignKeyConstraint(['downstream_part', 'down_part_rev'],
                                            ['parts_paper.hpn', 'parts_paper.hpn_rev']))
 
-    b_on_up = NotNull(String(64), primary_key=True)
-    "connected port on up (skyward) part, which is its port b"
+    upstream_output_port = NotNull(String(64), primary_key=True)
+    "connected output port on upstream (skyward) part"
 
-    a_on_down = NotNull(String(64), primary_key=True)
-    "connection port on down (further from the sky) part, which is its port a"
+    downstream_input_port = NotNull(String(64), primary_key=True)
+    "connected input port on downstream (further from the sky) part"
 
-    start_date = NotNull(DateTime, primary_key=True)
+    start_date = NotNull(DateTime(timezone=True), primary_key=True)
     "start_time is the time that the connection is set"
 
-    stop_date = Column(DateTime)
+    stop_date = Column(DateTime(timezone=True))
     "stop_time is the time that the connection is removed"
 
     def __repr__(self):
-        return '<{self.up}<{self.b_on_up}:{self.a_on_down}>{self.down}>'.format(self=self)
+        return '<{self.upstream_part}<{self.upstream_output_port}:{self.downstream_input_port}>{self.downstream_part}>'.format(self=self)
 
     def connection(self, **kwargs):
         for key, value in kwargs.items():
@@ -316,12 +314,12 @@ def update_connection(args, data):
                 urev_to_change = get_last_revision_number(args, upcn_to_change)
             if drev_to_change[:4] == 'LAST':
                 drev_to_change = get_last_revision_number(args, dncn_to_change)
-            conn_rec = session.query(Connections).filter((Connections.up == upcn_to_change) &
-                                                         (Connections.up_rev == urev_to_change) &
-                                                         (Connections.down == dncn_to_change) &
-                                                         (Connections.down_rev == drev_to_change) &
-                                                         (Connections.b_on_up == boup_to_change) &
-                                                         (Connections.a_on_down == aodn_to_change) &
+            conn_rec = session.query(Connections).filter((Connections.upstream_part == upcn_to_change) &
+                                                         (Connections.up_part_rev == urev_to_change) &
+                                                         (Connections.downstream_part == dncn_to_change) &
+                                                         (Connections.down_part_rev == drev_to_change) &
+                                                         (Connections.upstream_output_port == boup_to_change) &
+                                                         (Connections.downstream_input_port == aodn_to_change) &
                                                          (Connections.start_date == strt_to_change))
             ncc = conn_rec.count()
             if ncc == 0:
@@ -329,7 +327,7 @@ def update_connection(args, data):
                     connection = Connections()
                     connection.connection(up=upcn_to_change, up_rev=urev_to_change,
                                           down=dncn_to_change, down_rev=drev_to_change,
-                                          b_on_up=boup_to_change, a_on_down=aodn_to_change,
+                                          upstream_output_port=boup_to_change, downstream_input_port=aodn_to_change,
                                           start_date=strt_to_change)
                 else:
                     print(
