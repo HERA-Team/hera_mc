@@ -9,7 +9,7 @@
 from __future__ import print_function
 
 from hera_mc import mc
-import datetime, os.path
+import datetime, os.path, pytz
 
 def _log(msg,**kwargs):
     fp = open(os.path.join(mc.log_path,'cm.log'),'a')
@@ -36,16 +36,16 @@ def _log(msg,**kwargs):
 
 def _get_datetime(_date,_time):
     if _date.lower() == 'now':
-        dt_d = datetime.datetime.now()
+        dt_d = datetime.datetime.now(tz=pytz.utc)
     else:
         data = _date.split('/')
-        dt_d = datetime.datetime(int(data[2])+2000,int(data[0]),int(data[1]))
+        dt_d = datetime.datetime(int(data[2])+2000,int(data[0]),int(data[1]),tzinfo=pytz.utc)
     if _time.lower() == 'now':
-        dt_t = datetime.datetime.now()
+        dt_t = datetime.datetime.now(tz=pytz.utc)
     else:
         data = _time.split(':')
-        dt_t = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,int(data[0]),int(data[1]),0)
-    dt = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,dt_t.hour,dt_t.minute)
+        dt_t = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,int(data[0]),int(data[1]),0,tzinfo=pytz.utc)
+    dt = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,dt_t.hour,dt_t.minute,tzinfo=pytz.utc)
     return dt
 
 def _pull_out_component(cmpt_list,i,nc='-'):
@@ -62,7 +62,7 @@ def _get_stopdate(_stop_date):
     if type(_stop_date)==datetime:
         return _stop_date
     else:
-        return datetime.datetime(2020,12,31)
+        return datetime.datetime(2020,12,31,tzinfo=pytz.utc)
 
 def _is_active(current, _start_date, _stop_date):
     _stop_date = _get_stopdate(_stop_date)

@@ -11,7 +11,7 @@ from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
 
 from hera_mc import mc, part_connect, geo_location, correlator_levels, cm_utils
-import copy, datetime
+import copy
 
 
 class Handling:
@@ -39,12 +39,12 @@ class Handling:
         db = mc.connect_to_mc_db(self.args)
         with db.sessionmaker() as session:
             connected = session.query(part_connect.Connections).filter( 
-                (part_connect.Connections.upstream_part == connection.upstream_part) &
-                (part_connect.Connections.up_part_rev   == connection.up_part_rev) &
-                                                                        (part_connect.Connections.downstream_part     == connection.downstream_part) &
-                                                                        (part_connect.Connections.down_part_rev == connection.down_part_rev) &
-                                                                        (part_connect.Connections.upstream_output_port  == connection.upstream_output_port) &
-                                                                        (part_connect.Conenctions.downstream_input_port== connection.downstream_input_port) )
+                (part_connect.Connections.upstream_part         == connection.upstream_part) &
+                (part_connect.Connections.up_part_rev           == connection.up_part_rev) &
+                (part_connect.Connections.downstream_part       == connection.downstream_part) &
+                (part_connect.Connections.down_part_rev         == connection.down_part_rev) &
+                (part_connect.Connections.upstream_output_port  == connection.upstream_output_port) &
+                (part_connect.Conenctions.downstream_input_port == connection.downstream_input_port) )
             connect_count = connected.count()
         return connect_count
 
