@@ -13,14 +13,10 @@ import csv
 import sys
 
 parser = mc.get_mc_argument_parser()
-parser.add_argument(
-    '--maindb', help="user-generated key to change from main db [None]", default=None)
-parser.add_argument(
-    '--tables', help="name of table for which to initialize or 'all' ['all']", default='all')
-parser.add_argument(
-    '--base', help="use base set of initialization data files [False]", action='store_true')
-parser.add_argument(
-    '--init_override', help="flag to override the 'are you sure' query [False]", action='store_true')
+parser.add_argument('--maindb', help="user-generated key to change from main db [None]", default=None)
+parser.add_argument('--tables', help="name of table for which to initialize or 'all' ['all']", default='all')
+parser.add_argument('--base', help="use base set of initialization data files [False]", action='store_true')
+parser.add_argument('--init_override', help="flag to override the 'are you sure' query [False]", action='store_true')
 if __name__ == 'cm_initialization':
     parser.set_defaults(init_override=True)
 args = parser.parse_args()
@@ -37,7 +33,7 @@ if not args.init_override:
 
 
 def check_if_maindb():
-    if os.path.expanduser('~') == '/home/qmaster':
+    if "obs" in os.path.expanduser('~'):
         return True
     else:
         return False
@@ -117,7 +113,7 @@ tables_to_init = list(reversed(use_table))
 for table in tables_to_init:
     data_filename = os.path.join(mc.data_path, data_prefix + table + '.csv')
     cm_utils._log('cm_initialization: ' + data_filename)
-    if args.maindb: # key_row/field_row toggle as db is read
+    if args.maindb:  # key_row/field_row toggle as db is read
         key_row = True
         field_row = False
     else:
