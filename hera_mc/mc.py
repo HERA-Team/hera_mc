@@ -33,6 +33,7 @@ from . import MCDeclarativeBase
 #data_path = op.join(op.split(op.abspath(hera_mc.__file__))[0], 'data')
 cwd = os.getcwd()
 data_path = op.join(cwd[:cwd.find('hera_mc')],'hera_mc/hera_mc/data')
+test_data_path = op.join(data_path,'test')
 log_path = op.join(cwd[:cwd.find('hera_mc')],'hera_mc/Log')
 try:
     os.makedirs(log_path)

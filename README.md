@@ -21,3 +21,12 @@ To add a new table into the M&C database:
 
 # Deleting a table
 dropdb hera_mc
+
+# Running psql on qmaster
+
+This runs under the HERA conda environment on qmaster.  
+
+To check environments: conda info --envs
+To change environments:  source activate HERA
+To run psql:  psql -U hera -h qmaster hera_mc
+
