@@ -22,7 +22,6 @@ def query_connection(args):
     if args.station_name == None:
         args.station_name = raw_input(
             'Station name where it is going:  ').upper()
-
     args.date = cm_utils._query_default('date', args)
     return args
 
@@ -30,18 +29,17 @@ def query_connection(args):
 def check_if_OK_to_add_and_deactivate_previous(args, connect):
     # 1 - check to see if station is in geo_location database (should be)
     OK = True
-    if not geo_location.is_station_present(args, connect.up):
-        print("You need to add station", connect.up, "to geo_location database")
+    if not geo_location.is_station_present(args, connect.upstream_part):
+        print("You need to add station", connect.upstream_part, "to geo_location database")
         OK = False
     # 2 - check to see if the station is already connected (shouldn't be)
     current = cm_utils._get_datetime(args.date, args.time)
     checking = cm_handling.Handling(args)
-    if checking.is_in_connections_db(connect.up, connect.up_rev, check_if_active=True):
-        print('Error: ', connect.up, "already connected.")
+    if checking.is_in_connections_db(connect.upstream_part, connect.up_part_rev, check_if_active=True):
+        print('Error: ', connect.upstream_part, "already connected.")
         OK = False
     # 3 - check to see if feed is already connected (should be)
-    c = checking.is_in_connections_db(
-        connect.down, connect.down_rev, check_if_active=True)
+    c = checking.is_in_connections_db(connect.downstream_part, connect.down_part_rev, check_if_active=True)
     if OK:
         if type(c) == dict:  # Found the one, so need to add stop_date to it (deactivate)
             print("PAPER feed was previously at: ")
@@ -79,36 +77,39 @@ def check_if_OK_to_add_and_deactivate_previous(args, connect):
 
 def add_connection(args, c):
     dt = c.start_date
-    data = [[c.up, c.up_rev, c.down, c.down_rev, c.b_on_up, c.a_on_down, dt, 'up', c.up],
-            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up,
-                c.a_on_down, dt, 'up_rev', c.up_rev],
-            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up,
-                c.a_on_down, dt, 'down', c.down],
-            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up,
-                c.a_on_down, dt, 'down_rev', c.down_rev],
-            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up,
-                c.a_on_down, dt, 'b_on_up', c.b_on_up],
-            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up,
-                c.a_on_down, dt, 'a_on_down', c.a_on_down],
-            [c.up, c.up_rev, c.down, c.down_rev, c.b_on_up, c.a_on_down, dt, 'start_date', c.start_date]]
+    data = [[c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev, 
+             c.upstream_output_port, c.downstream_input_port, dt, 
+             'upstream_part', c.upstream_part],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, dt, 
+             'up_part_rev', c.up_part_rev],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, dt,
+             'downstream_part', c.downstream_part],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, dt, 
+             'down_part_rev', c.down_part_rev],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, dt,
+             'upstream_output_port', c.upstream_output_port],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, dt,
+             'downstream_input_port', c.downstream_input_port],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, dt,
+             'start_date', c.start_date]]
     part_connect.update_connection(args, data)
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-f', '--feed_number',
-                        help="PAPER feed number", default=None)
-    parser.add_argument('-s', '--station_name',
-                        help="Name of station (HH# for hera)", default=None)
+    parser.add_argument('-f', '--feed_number',help="PAPER feed number", default=None)
+    parser.add_argument('-s', '--station_name',help="Name of station (HH# for hera)", default=None)
     parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
     parser.add_argument('--time', help="hh:mm or now [now]", default='now')
-    parser.add_argument(
-        '-v', '--verbosity', help="Set verbosity. [h].", choices=['l', 'm', 'h'], default="h")
-    parser.add_argument('--add_new_connection',
-                        help="Don't change  [True]", action='store_false')
-    parser.add_argument(
-        '--active', help="Don't change [True]", action='store_false')
-    parser.add_argument(
-        '--specify_port', help="Don't change [True]", default='all')
+    parser.add_argument('-v', '--verbosity', help="Set verbosity. [h].", choices=['l', 'm', 'h'], default="h")
+    parser.add_argument('--add_new_connection',help="Don't change  [True]", action='store_false')
+    parser.add_argument('--active', help="Don't change [True]", action='store_false')
+    parser.add_argument('--specify_port', help="Don't change [True]", default='all')
 
     args = parser.parse_args()
     args.verbosity = args.verbosity.lower()
@@ -124,9 +125,9 @@ if __name__ == '__main__':
     if args.feed_number[0] != 'A':
         args.feed_number = 'A' + args.feed_number
     connect = part_connect.Connections()
-    connect.connection(up=args.station_name, up_rev='A',
-                       down=args.feed_number, down_rev='A',
-                       b_on_up='ground', a_on_down='ground',
+    connect.connection(upstream_part=args.station_name, up_part_rev='A',
+                       downstream_part=args.feed_number, down_part_rev='A',
+                       upstream_output_port='ground', downstream_input_port='ground',
                        start_date=cm_utils._get_datetime(args.date, args.time))
     print("Trying", connect)
     if check_if_OK_to_add_and_deactivate_previous(args, connect):
