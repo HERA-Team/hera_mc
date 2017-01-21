@@ -12,7 +12,7 @@ from hera_mc import mc
 import datetime, os.path, pytz
 
 def _log(msg,**kwargs):
-    fp = open(os.path.join(mc.log_path,'cm.log'),'a')
+    fp = open(mc.cm_log_file,'a')
     dt = datetime.datetime.now()
     fp.write(str(dt) + '  ' + msg + '\n')
     for key,value in kwargs.items():
