@@ -26,27 +26,19 @@ from astropy.time import Time
 from astropy.coordinates import EarthLocation, Angle
 import math
 # from astropy.utils import iers
-import hera_mc
 
 from . import MCDeclarativeBase
 
-#data_path = op.join(op.split(op.abspath(hera_mc.__file__))[0], 'data')
+# DDB version (which only works in specific defined cases)
 cwd = os.getcwd()
 data_path = op.join(cwd[:cwd.find('hera_mc')],'hera_mc/hera_mc/data')
+# OTHER version (which only works in specific ill-defined cases)
+#data_path = op.join (op.dirname (__file__), 'data')
+
 test_data_path = op.join(data_path,'test')
-log_path = op.join(cwd[:cwd.find('hera_mc')],'hera_mc/Log')
-try:
-    os.makedirs(log_path)
-except OSError:
-    if not os.path.isdir(log_path):
-        raise
-
-
-HERA_LAT = Angle('-30d43m17.5s').degree
-HERA_LON = Angle('21d25m41.9s').degree
-"value taken from capo/cals/hsa7458_v000.py, comment reads KAT/SA  (GPS)"
 default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
-# iers_a = iers.IERS_A.open(op.join(data_path, 'finals.all'))
+mc_log_file = op.expanduser('~/.hera_mc/log.txt')
+cm_log_file = op.expanduser('~/.hera_mc/cm_log.txt')
 
 
 class MCSession(Session):
