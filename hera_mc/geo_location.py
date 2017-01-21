@@ -324,7 +324,7 @@ def plot_arrays(args, overplot=None, label_station=False):
                     show_it = True
                     if args.active:
                         show_it = is_in_connections_db(args,loc,True)
-                    if show_it:
+                    if show_it is not False:  #Need this since 0 is a valid antenna
                         pt = {'easting': a.easting, 'northing': a.northing,
                               'elevation': a.elevation}
                         plt.plot(pt[coord[args.xgraph]], pt[coord[args.ygraph]],
@@ -334,7 +334,7 @@ def plot_arrays(args, overplot=None, label_station=False):
                                 labeling = a.station_name
                             elif args.label_type=='antenna_number':
                                 labeling = is_in_connections_db(args,loc,True)
-                                if not labeling:
+                                if labeling is False:
                                     labeling = 'NA'
                             else:
                                 labeling = 'S'
