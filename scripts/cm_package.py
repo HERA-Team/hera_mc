@@ -12,7 +12,7 @@ import os
 import os.path
 
 parser = mc.get_mc_argument_parser()
-parser.add_argument('--maindb', help="user-generated key to allow change to main db", default=None)
+parser.add_argument('--maindb', help="user-generated key to allow change to main db (written on remote)", default=None)
 parser.add_argument('--tables', help="name of table for which to generate initialization data file", default='all')
 parser.add_argument('--base', help="can define a base set of initialization data files", action='store_true')
 args = parser.parse_args()
@@ -31,12 +31,15 @@ if args.tables == 'all':
 else:
     tables_to_write = args.tables.split(',')
 
+print("Writing packaged files to current directory.  Copy to data_path to distribute.")
 for table in tables_to_write:
-    data_filename = os.path.join(mc.data_path, data_prefix + table + '.csv')
+    data_filename = data_prefix + table + '.csv'
     table_data = pd.read_sql_table(table, db.engine)
     if args.maindb:
+        print('\tPackaging for maindb:  ',data_filename)
         table_data.to_csv(tmp_filename, index=False)
     else:
+        print('\tPackaging:  ',data_filename)
         table_data.to_csv(data_filename, index=False)
     if args.maindb:  # Put key in first line
         fpout = open(data_filename, 'w')

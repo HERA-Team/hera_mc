@@ -29,17 +29,11 @@ import math
 
 from . import MCDeclarativeBase
 
-# DDB version (which only works in specific defined cases)
-cwd = os.getcwd()
-data_path = op.join(cwd[:cwd.find('hera_mc')],'hera_mc/hera_mc/data')
-# OTHER version (which only works in specific ill-defined cases)
-#data_path = op.join (op.dirname (__file__), 'data')
-
+data_path = op.join (op.dirname (__file__), 'data')
 test_data_path = op.join(data_path,'test')
 default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
-mc_log_file = op.expanduser('~/.hera_mc/log.txt')
+mc_log_file = op.expanduser('~/.hera_mc/mc_log.txt')
 cm_log_file = op.expanduser('~/.hera_mc/cm_log.txt')
-
 
 class MCSession(Session):
 
