@@ -172,7 +172,7 @@ def format_check_update_request(request):
         data = None
     return data
 
-def is_station_present(args,station_name):
+def is_in_geo_location(args,station_name):
     """
     checks to see if a station_name is in the geo_location database
 
@@ -193,7 +193,7 @@ def is_station_present(args,station_name):
             station_present = False
     return station_present
 
-def is_in_connections_db(args,station_name,check_if_active=False):
+def is_in_connections(args,station_name,check_if_active=False):
     """
     checks to see if the station_name is in the connections database (which means it is also in parts)
 
@@ -288,8 +288,8 @@ def locate_station(args, show_geo=False):
                         break
                     else:
                         this_station = 'No station type data.'
-                ever_connected = is_in_connections_db(args,a.station_name) 
-                active = is_in_connections_db(args,a.station_name,True)
+                ever_connected = is_in_connections(args,a.station_name) 
+                active = is_in_connections(args,a.station_name,True)
                 v = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation,
                      'station_name': a.station_name, 'antenna_number':active, 'station_type': this_station, 
                      'connected':ever_connected, 'active':active, 'created_date':a.created_date}
@@ -323,7 +323,7 @@ def plot_arrays(args, overplot=None, label_station=False):
                 for a in session.query(GeoLocation).filter(GeoLocation.station_name == loc):
                     show_it = True
                     if args.active:
-                        show_it = is_in_connections_db(args,loc,True)
+                        show_it = is_in_connections(args,loc,True)
                     if show_it is not False:  #Need this since 0 is a valid antenna
                         pt = {'easting': a.easting, 'northing': a.northing,
                               'elevation': a.elevation}
@@ -333,13 +333,13 @@ def plot_arrays(args, overplot=None, label_station=False):
                             if args.label_type=='station_name':
                                 labeling = a.station_name
                             elif args.label_type=='antenna_number':
-                                labeling = is_in_connections_db(args,loc,True)
+                                labeling = is_in_connections(args,loc,True)
                                 if labeling is False:
                                     labeling = 'NA'
                             else:
                                 labeling = 'S'
                             plt.annotate(labeling, xy=(pt[coord[args.xgraph]], pt[coord[args.ygraph]]),
-                                         xytext=(pt[coord[args.xgraph]] + 5, pt[coord[args.ygraph]]))
+                                         xytext=(pt[coord[args.xgraph]] + 2, pt[coord[args.ygraph]]))
     if overplot:
         if overplot['connected'] and overplot['active']:
             over_marker = 'g*'

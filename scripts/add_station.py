@@ -62,7 +62,7 @@ def query_geo_information(args):
 
 def entry_OK_to_add(args):
     OK = True
-    if geo_location.is_station_present(args, args.station_name):
+    if geo_location.is_in_geo_location(args, args.station_name):
         print(args.station_name, ' already present.')
         OK = False
     return OK
@@ -102,36 +102,23 @@ def add_entry_to_parts(args):
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('station_name', nargs='?',
-                        help="Name of station (HH# for hera)", default=None)
-    parser.add_argument(
-        '-q', '--query', help="Flag to query user for parameters [False]", action='store_true')
-    parser.add_argument('-e', '--easting',
-                        help="Easting of new station", default=None)
-    parser.add_argument('-n', '--northing',
-                        help="Northing of new station", default=None)
-    parser.add_argument('-z', '--elevation',
-                        help="Elevation of new station", default=None)
+    parser.add_argument('station_name', nargs='?', help="Name of station (HH# for hera)", default=None)
+    parser.add_argument('-q', '--query', help="Flag to query user for parameters [False]", action='store_true')
+    parser.add_argument('-e', '--easting',help="Easting of new station", default=None)
+    parser.add_argument('-n', '--northing',help="Northing of new station", default=None)
+    parser.add_argument('-z', '--elevation',help="Elevation of new station", default=None)
     parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
     parser.add_argument('--time', help="hh:mm or now [now]", default='now')
-    parser.add_argument(
-        '--station_type_name', help="Station category name [herahex]", default='herahex')
-    parser.add_argument(
-        '--datum', help="Datum of UTM [WGS84]", default='WGS84')
+    parser.add_argument('--station_type_name', help="Station category name [herahex]", default='herahex')
+    parser.add_argument('--datum', help="Datum of UTM [WGS84]", default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]", default='34J')
-    parser.add_argument(
-        '-v', '--verbosity', help="Set verbosity. [h].", choices=['l', 'm', 'h'], default="h")
-    parser.add_argument(
-        '--add_new_geo', help="Flag to allow update to add a new record.  [True]", action='store_false')
-    parser.add_argument(
-        '--add_new_part', help="Flag to allow update to add a new record.  [True]", action='store_false')
+    parser.add_argument('-v', '--verbosity', help="Set verbosity. [h].", choices=['l', 'm', 'h'], default="h")
+    parser.add_argument('--add_new_geo', help="Flag to allow update to add a new record.  [True]", action='store_false')
+    parser.add_argument('--add_new_part', help="Flag to allow update to add a new record.  [True]", action='store_false')
     file_group = parser.add_mutually_exclusive_group()
-    file_group.add_argument('-f', '--use-file', help="Use default coordinate file",
-                            dest='from_file', action='store_const', const=default_coord_file_name)
-    file_group.add_argument('-X', '--dont-use-file', help="Don't use file for coordinates.",
-                            dest='from_file', action='store_const', const=False)
-    file_group.add_argument(
-        '--from_file', help="Use file to retrieve coordinate information.")
+    file_group.add_argument('-f', '--use-file', help="Use default coordinate file",dest='from_file', action='store_const', const=default_coord_file_name)
+    file_group.add_argument('-X', '--dont-use-file', help="Don't use file for coordinates.",dest='from_file', action='store_const', const=False)
+    file_group.add_argument('--from_file', help="Use file to retrieve coordinate information.")
     parser.set_defaults(from_file=default_coord_file_name)
 
     args = parser.parse_args()

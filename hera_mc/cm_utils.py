@@ -35,17 +35,21 @@ def _log(msg,**kwargs):
     fp.close()
 
 def _get_datetime(_date,_time):
+    if _date.lower() == 'n/a' or _time.lower() == 'n/a':
+        return None
     if _date.lower() == 'now':
-        dt_d = datetime.datetime.now(tz=pytz.utc)
+        dt_d = datetime.datetime.utcnow()
     else:
         data = _date.split('/')
         dt_d = datetime.datetime(int(data[2])+2000,int(data[0]),int(data[1]),tzinfo=pytz.utc)
     if _time.lower() == 'now':
-        dt_t = datetime.datetime.now(tz=pytz.utc)
+        dt_t = datetime.datetime.utcnow()
+    elif _time == '0':
+        dt_t = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,0,0,0,tzinfo=pytz.utc)
     else:
         data = _time.split(':')
         dt_t = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,int(data[0]),int(data[1]),0,tzinfo=pytz.utc)
-    dt = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,dt_t.hour,dt_t.minute,tzinfo=pytz.utc)
+    dt = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,dt_t.hour,dt_t.minute,dt_t.second,tzinfo=pytz.utc)
     return dt
 
 def _pull_out_component(cmpt_list,i,nc='-'):

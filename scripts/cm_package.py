@@ -36,10 +36,10 @@ for table in tables_to_write:
     data_filename = data_prefix + table + '.csv'
     table_data = pd.read_sql_table(table, db.engine)
     if args.maindb:
-        print('\tPackaging for maindb:  ',data_filename)
+        print("\tPackaging for maindb:  "+data_filename)
         table_data.to_csv(tmp_filename, index=False)
     else:
-        print('\tPackaging:  ',data_filename)
+        print("\tPackaging:  "+data_filename)
         table_data.to_csv(data_filename, index=False)
     if args.maindb:  # Put key in first line
         fpout = open(data_filename, 'w')
