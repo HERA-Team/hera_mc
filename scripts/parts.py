@@ -33,7 +33,14 @@ if __name__ == '__main__':
     active_group.add_argument('--show-all', help="Flag to show all parts/connections",dest='active', action='store_false')
     parser.set_defaults(active=True)
     args = parser.parse_args()
-    handling = cm_handling.Handling(args)
+
+    # Prep args
+    if args.hpn:
+        args.hpn = args.hpn.upper()
+    if args.connection:
+        args.connection = args.connection.upper()
+    if args.mapr:
+        args.mapr = args.mapr.upper()
     args.verbosity = args.verbosity.lower()
     args.mapr_cols = args.mapr_cols.lower()
     args.revision = args.revision.upper()
@@ -41,14 +48,14 @@ if __name__ == '__main__':
         args.levels_testing = False
     elif args.levels_testing == 'levels.tst':
         args.levels_testing = os.path.join(mc.data_path, 'levels.tst')
+
+    # Execute script
+    handling = cm_handling.Handling(args)
     if args.hpn:
-        args.hpn = args.hpn.upper()
         part_dict = handling.get_part(show_part=True)
     if args.connection:
-        args.connection = args.connection.upper()
         connection_dict = handling.get_connection(show_connection=True)
     if args.mapr:
-        args.mapr = args.mapr.upper()
         hookup_dict = handling.get_hookup(show_hookup=True)
     if args.hptype:
         part_type_dict = handling.get_part_types(show_hptype=True)
