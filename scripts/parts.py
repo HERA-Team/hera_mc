@@ -54,7 +54,7 @@ if __name__ == '__main__':
     if args.hpn:
         part_dict = handling.get_part(show_part=True)
     if args.connection:
-        connection_dict = handling.get_connection(show_connection=True)
+        connection_dict = handling.get_connections(show_connection=True)
     if args.mapr:
         hookup_dict = handling.get_hookup(show_hookup=True)
     if args.hptype:
