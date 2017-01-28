@@ -35,6 +35,10 @@ def _log(msg,**kwargs):
     fp.close()
 
 def _get_datetime(_date,_time):
+    if _date.lower() == '<' or _time.lower() == '<':
+        return datetime.datetime(2000,1,1,tzinfo=pytz.utc)
+    if _date.lower() == '>' or _time.lower() == '>':
+        return datetime.datetime(2025,12,31,tzinfo=pytz.utc)
     if _date.lower() == 'n/a' or _time.lower() == 'n/a':
         return None
     if _date.lower() == 'now':

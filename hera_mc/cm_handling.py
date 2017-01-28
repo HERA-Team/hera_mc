@@ -100,7 +100,9 @@ class Handling:
                 elif part_cnt == 1:
                     part = copy.copy(part_query.all()[0])
                     pr_key = part.hpn+':'+part.hpn_rev
-                    part_dict[pr_key] = {'part':part, 'part_info':None, 'connections':None, 'geo':None}
+                    part_dict[pr_key] = {'part':part, 'part_info':None, 
+                                         'input_ports':[], 'output_ports':[], 
+                                         'connections':None, 'geo':None}
                     for part_info in session.query(part_connect.PartInfo).filter( (part_connect.PartInfo.hpn == part.hpn) &
                                                                                   (part_connect.PartInfo.hpn_rev == part.hpn_rev) ):
                         part_dict[pr_key]['part_info'] = part_info
@@ -110,8 +112,21 @@ class Handling:
                     if part.hptype == 'station':
                         args.locate = part.hpn
                         part_dict[pr_key]['geo'] = geo_location.locate_station(args, show_geo=False)
+                    ptsin = ''; ptsout = ''
+                    for k,v in part_dict[pr_key]['connections'].iteritems():
+                        if k=='ordered_pairs' or k==self.no_connection_designator:  continue
+                        if ':up:' in k:     part_dict[pr_key]['output_ports'].append(v.upstream_output_port)
+                        elif ':down:' in k: part_dict[pr_key]['input_ports'].append(v.downstream_input_port)
+                        else: print("cm_handling[158]: ERROR SHOULD BE UP or DOWN ",k)
                 else:
                     print("Warning cm_handling[115]:  Well, being here is a surprise -- should only be one part.", part.hpn)
+        print("cm_handling[115]")
+        for pd in part_dict:
+            print("------",pd)
+            for t in part_dict[pd]:
+                print("-",t)
+                print(part_dict[pd][t])
+        print("\ncm_handling[121]")
         if show_part:
             self.show_part(part_dict)
         if return_dictionary:
@@ -151,10 +166,10 @@ class Handling:
                              pdpart.start_date, pdpart.stop_date, active]
                     if self.args.verbosity == 'h':
                         ptsin = ''; ptsout = ''
-                        for k,v in part_dict[hpnr]['connections'].iteritems():
-                            if 'up:' in k:     ptsout+=(v.upstream_output_port+', ')
-                            elif 'down:' in k: ptsin+=(v.downstream_input_port+', ')
-                            else: print("cm_handling[171]: ERROR SHOULD BE ONE OF THE TWO")
+                        for k in part_dict[hpnr]['input_ports']:
+                            ptsin+=k+', '
+                        for k in part_dict[hpnr]['output_ports']:
+                            ptsout+=k+', '
                         tdata.append(ptsin.strip().strip(',')); tdata.append(ptsout.strip().strip(','))
                         comment = part_dict[hpnr]['part_info'].comment if (part_dict[hpnr]['part_info'] is not None) else None
                         tdata.append(comment)
@@ -164,7 +179,7 @@ class Handling:
                         else:
                             tdata.append(None)
                         table_data.append(tdata)
-        print(tabulate(table_data,headers=headers,tablefmt='orgtbl')+'\n')
+        print('\n'+tabulate(table_data,headers=headers,tablefmt='orgtbl')+'\n')
 
 
     def get_connections(self, hpn_query=None, rev_query=None, port_query=None, exact_match=False, 
@@ -223,15 +238,23 @@ class Handling:
                         pr_key = ':'.join([hpn,rev_part[hpn],'up',conn.upstream_part])
                         connection_dict[pr_key] = copy.copy(conn)
                         up_parts.append(pr_key)
-        if len(up_parts>0):
-            connection_dict['ordered_pairs'] = [sorted(up_parts),sorted(down_parts)]
+        if len(up_parts) > len(down_parts):
+            down_parts = (down_parts + len(up_parts)*[self.no_connection_designator])[:len(up_parts)]
+        elif len(down_parts) > len(up_parts):
+            up_parts = (up_parts + len(down_parts)*[self.no_connection_designator])[:len(down_parts)]
+        connection_dict['ordered_pairs'] = [sorted(up_parts),sorted(down_parts)]
+        nc = self.no_connection_designator
+        connection_dict[nc] = part_connect.Connections(upstream_part=nc,upstream_output_port=nc,up_part_rev=nc,
+                                                       downstream_part=nc,downstream_input_port=nc,down_part_rev=nc,
+                                                       start_date=cm_utils._get_datetime('<','<'),
+                                                       stop_date=cm_utils._get_datetime('>','>'))
         if show_connection:
             self.show_connection(connection_dict)
         if return_dictionary:
             return connection_dict
             
 
-    def show_connection(self, ordered_pairs, connection_dict):
+    def show_connection(self, connection_dict):
         """
         Print out connection information.  Uses tabulate package.
 
@@ -268,7 +291,11 @@ class Handling:
                 tdata.insert(pos['Part'][vb],'['+connup.downstream_part+']')
             # Do downstream
             conndn = connection_dict[dn]
-            pos = {'Output':{'h':4,'m':4}, 'Input':{'h':5,'m':5}, 'Downstream':{'h':6,'m':6}}
+            pos = {'Part':{'h':3,'m':3}, 'Output':{'h':4,'m':4}, 'Input':{'h':5,'m':5}, 'Downstream':{'h':6,'m':6}}
+            if connup.downstream_part==self.no_connection_designator:
+                if pos['Part'][vb] > -1:
+                    del tdata[pos['Part'][vb]]
+                    tdata.insert(pos['Part'][vb],'['+conndn.upstream_part+']')
             if pos['Output'][vb] > -1:
                 del tdata[pos['Output'][vb]]
                 tdata.insert(pos['Output'][vb],conndn.upstream_output_port)
@@ -289,7 +316,7 @@ class Handling:
                 else:
                     print("Connections")
         if vb=='m' or vb=='h':
-            print(tabulate(table_data,headers=headers,tablefmt='orgtbl')+'\n')
+            print('\n'+tabulate(table_data,headers=headers,tablefmt='orgtbl')+'\n')
 
 
     def __get_next_port(self,hpn,rev,port,direction,check_part):
@@ -370,7 +397,7 @@ class Handling:
             self.__go_downstream(hpn_down, rev, port)
 
 
-    def get_hookup(self, hpn_query=None, rev_query=None, port_query=None, show_hookup=False):
+    def get_hookup(self, hpn_query=None, rev_query=None, port_query='all', show_hookup=False):
         """
         Return the full hookup.  Note that if a part is selected up or down stream of a branching part, 
         it picks one and doesn't give all options -- something to work on.
@@ -391,36 +418,35 @@ class Handling:
             exact_match = self.args.exact_match
         if rev_query is None:
             rev_query = args.revision
-        if port_query is None:
-            port_query = self.args.specify_port
+        port_query = self.args.specify_port if self.args.specify_port!='all' else port_query
         parts = self.get_part(hpn_query=hpn_query, rev_query=rev_query, 
                 exact_match=exact_match, return_dictionary=True, show_part=False)
         connections = None
         hookup_dict = {}
         for hpn in parts.keys():
-            if parts[hpn]['connections']['ordered_pairs'] is None:
+            if len(parts[hpn]['connections']['ordered_pairs'][0]) == 0:
                 continue
-            number_input_ports = len(parts[hpn]['connections']['ordered_pairs'][0])
-            number_output_ports = len(parts[hpn]['connections']['ordered_pairs'][1])
-            if port_query == 'all':
-                if number_b_ports>number_a_ports:
-                    pq = 'output_ports'
-                    alt_pq = 'input_ports'
-                else:
-                    pq = 'input_ports'
-                    alt_pq = 'output_ports'
-                port_query = parts[hpn][pq]
-                if self.no_connection_designator in port_query:
-                    port_query = parts[hpn][alt_pq]
-            elif type(port_query) is not list:
-                port_query = [port_query]
+            upstream_first = True
+            if port_query.lower() == 'all':
+                port_query = parts[hpn]['input_ports']
+            else:  # This to handle range of port_query possibilities outside of 'all'
+                if type(port_query) != list:
+                    port_query = [port_query]
+                for p in port_query:
+                    if p in parts[hpn]['output_ports']:
+                       upstream_first = False
+                       break
             for p in port_query:
-                if p == self.no_connection_designator:
-                    continue
-                self.upstream = [[hpn,p]]
-                self.downstream = []
-                self.__go_upstream(hpn, rev_query, p)
-                self.__go_downstream(hpn, rev_query, p)
+                if upstream_first:
+                    self.upstream = [[hpn,p]]
+                    self.downstream = []
+                    self.__go_upstream(hpn, rev_query, p)
+                    self.__go_downstream(hpn, rev_query, p)
+                else:
+                    self.downstream = [[hpn, p]]
+                    self.upstream = []
+                    self.__go_downstream(hpn, rev_query, p)
+                    self.__go_upstream(hpn, rev_query, p)
                 furthest_up = self.upstream[-1][0].strip('*')
                 try_station = self.get_part(hpn_query=furthest_up,rev_query=rev_query,
                               exact_match=True, return_dictionary=True, show_part=False)
@@ -434,8 +460,6 @@ class Handling:
                     hookup_dict[hukey].append(pn)
                 for pn in self.downstream:
                     hookup_dict[hukey].append(pn)
-                #-#for pkey in hookup_dict.keys():
-                #-#    print('#-#==>', hookup_dict[pkey])
         if len(hookup_dict.keys())==0:
             print(hpn_query,'not found')
             return None
