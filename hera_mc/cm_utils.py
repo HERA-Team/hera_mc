@@ -56,21 +56,14 @@ def _get_datetime(_date,_time):
     dt = datetime.datetime(dt_d.year,dt_d.month,dt_d.day,dt_t.hour,dt_t.minute,dt_t.second,tzinfo=pytz.utc)
     return dt
 
-# def _pull_out_component(cmpt_list,i,nc='-'):
-#     try:
-#         c = cmpt_list[i]
-#     except IndexError:
-#         try:
-#             c = cmpt_list[-1]
-#         except IndexError:
-#             c = nc
-#     return c
+def _get_datekeystring(_datetime):
+    return "{:%Y%m%d-%H%M}".format(_datetime)
     
 def _get_stopdate(_stop_date):
     if type(_stop_date)==datetime:
         return _stop_date
     else:
-        return datetime.datetime(2020,12,31,tzinfo=pytz.utc)
+        return datetime.datetime(2025,12,31,tzinfo=pytz.utc)
 
 def _is_active(current, _start_date, _stop_date):
     _stop_date = _get_stopdate(_stop_date)

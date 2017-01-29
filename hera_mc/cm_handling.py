@@ -13,6 +13,10 @@ from tabulate import tabulate
 from hera_mc import mc, part_connect, geo_location, correlator_levels, cm_utils
 import copy
 
+def _get_part_key(hpn,rev):
+    return ":".join([hpn,rev])
+def _get_connection_key(hpn,rev,direction,next_part,start_date):
+    return ":".join([hpn,rev,direction,next_part,cm_utils._get_datekeystring(start_date)])
 
 class Handling:
     """
@@ -59,9 +63,9 @@ class Handling:
     def get_part(self, hpn_query=None, rev_query=None, exact_match=False, return_dictionary=True, show_part=False):
         """
         Return information on a part.  It will return all matching first characters unless exact_match==True.
-        It gets all parts, you check if active later if desired.
+        It gets all parts, the receiving module should filter on date if desired.
 
-        Returns part_dict: {'part':CLASS , 'part_info':CLASS, 'connections':CLASS ,'geo':DICT}
+        Returns part_dict: {'part':CLASS , 'part_info':CLASS, 'connections':CLASS ,'geo':DICT, 'input_ports':[], 'output_ports':[]}
 
         Parameters
         -----------
@@ -99,7 +103,7 @@ class Handling:
                     continue
                 elif part_cnt == 1:
                     part = copy.copy(part_query.all()[0])
-                    pr_key = part.hpn+':'+part.hpn_rev
+                    pr_key = _get_part_key(part.hpn,part.hpn_rev)
                     part_dict[pr_key] = {'part':part, 'part_info':None, 
                                          'input_ports':[], 'output_ports':[], 
                                          'connections':None, 'geo':None}
@@ -120,13 +124,13 @@ class Handling:
                         else: print("cm_handling[158]: ERROR SHOULD BE UP or DOWN ",k)
                 else:
                     print("Warning cm_handling[115]:  Well, being here is a surprise -- should only be one part.", part.hpn)
-        print("cm_handling[115]")
+        print("cm_handling[115]TEST")
         for pd in part_dict:
             print("------",pd)
             for t in part_dict[pd]:
                 print("-",t)
                 print(part_dict[pd][t])
-        print("\ncm_handling[121]")
+        print("\ncm_handling[121]TEST")
         if show_part:
             self.show_part(part_dict)
         if return_dictionary:
@@ -185,14 +189,12 @@ class Handling:
     def get_connections(self, hpn_query=None, rev_query=None, port_query=None, exact_match=False, 
                              return_dictionary=True, show_connection=False):
         """
-        Return information on parts connected to args.connection -- NEED TO INCLUDE USING START/STOP_TIME!!!
+        Return information on parts connected to hpn_query (args.connection)
         It should get connections immediately adjacent to one part (upstream and downstream).
+        It does not filter on date but gets all.  The receiving (or showing module) should filter
+           on date if desired.
 
         Returns connection_dict, a dictionary keyed on part number of adjacent connections
-
-        NB:  I don't think that it handles general cases very well (ie. potentially likely incorrectly)
-             That is, I'm not sure that the list structure within the dict entries necessarily correspond
-             to the general case.  It might possibly work for the current actual case...
 
         Parameters
         -----------
@@ -228,16 +230,16 @@ class Handling:
                 for conn in session.query(part_connect.Connections).filter( (part_connect.Connections.upstream_part == hpn) &
                                                                             (part_connect.Connections.up_part_rev == rev_part[hpn]) ):
                     if port_query.lower()=='all' or match_connection.upstream_output_port.lower() == port_query.lower():
-                        pr_key = ':'.join([hpn,rev_part[hpn],'down',conn.downstream_part])
-                        connection_dict[pr_key] = copy.copy(conn)
-                        down_parts.append(pr_key)
+                        prc_key = _get_connection_key(hpn,rev_part[hpn],'down',conn.downstream_part,conn.start_date)
+                        connection_dict[prc_key] = copy.copy(conn)
+                        down_parts.append(prc_key)
                 ### Find where the part is in the downward connection, so identify its upward connection
                 for conn in session.query(part_connect.Connections).filter( (part_connect.Connections.downstream_part == hpn) &
                                                                             (part_connect.Connections.down_part_rev == rev_part[hpn]) ):
                     if port_query.lower()=='all' or match_connection.downstream_input_port.lower() == port_query.lower():
-                        pr_key = ':'.join([hpn,rev_part[hpn],'up',conn.upstream_part])
-                        connection_dict[pr_key] = copy.copy(conn)
-                        up_parts.append(pr_key)
+                        prc_key = _get_connection_key(hpn,rev_part[hpn],'up',conn.upstream_part,conn.start_date)
+                        connection_dict[prc_key] = copy.copy(conn)
+                        up_parts.append(prc_key)
         if len(up_parts) > len(down_parts):
             down_parts = (down_parts + len(up_parts)*[self.no_connection_designator])[:len(up_parts)]
         elif len(down_parts) > len(up_parts):
@@ -319,89 +321,55 @@ class Handling:
             print('\n'+tabulate(table_data,headers=headers,tablefmt='orgtbl')+'\n')
 
 
-    def __get_next_port(self,hpn,rev,port,direction,check_part):
+    def __get_next_part(self,hpn,rev,port,direction,check_part=False):
         """
-        Get port on correct side of a given part to move up/down stream.
+        Get next part going the direction
+        Return list of [[part,rev,port,start1,stop1],...]
         """
         if check_part:
             part_dict = check_part
         else:
             part_dict = self.get_part(hpn_query=hpn,rev_query=rev,
                 exact_match=True, return_dictionary=True, show_part=False)
-        if direction=='up':
-            ports = [part_dict[hpn]['input_ports'],part_dict[hpn]['output_ports']]
-            replacing = ['b','a']
-        elif direction=='down':
-            ports = [part_dict[hpn]['output_ports'],part_dict[hpn]['input_ports']]
-            replacing = ['a','b']
-        number_of_ports = [len(ports[0]),len(ports[1])]
-        for i,p in enumerate(ports):
-            if self.no_connection_designator in p: #This will only take out one.
-                number_of_ports[i]-=1
-        if port in ports[0]:
-            return_port = port
-        elif number_of_ports[0] == 1:
-            return_port = ports[0][0]
-        elif number_of_ports[0] == 0:
-            return_port = None
-        elif port in ports[1]:
-            if number_of_ports[1] == number_of_ports[0]:
-                return_port = port.replace(replacing[0],replacing[1])
-            elif number_of_ports[1] > number_of_ports[0]: # SHOULDN'T GET HERE
-                return_port = ports[0][0]                 #   BUT JUST IN CASE PICK ONE
-            else:                                         # HERE IS THE ILL-DEFINED BRANCHING CASE
-                return_port = ports[0][0]                 #   PICK ONE FOR NOW
-        else:
-            print('Error:  port not found',port)
-            return_port = None 
-        return return_port
+        if len(part_dict.keys()) == 0:
+            return None
+        return_parts = []
+        pk = part_dict.keys()[0] # is only one, but get the key
+        ckey_frag = ':'.join([hpn,rev,direction])
+        for k,c in iteritems(part_dict[pk]['connections']):
+            if ckey_frag in k:
+                if direction == 'up':
+                    if c.downstream_input_port == port:
+                        next_part = [c.upstream_part,c.up_part_rev,c.upstream_output_port,c.start_date,c.stop_date]
+                elif direction == 'down':
+                    if c.upstream_output_port == port:
+                        next_part = [c.downstream_part,c.down_part_rev,c.downstream_input_port,c.start_date,c.stop_date]
+                return_parts.append(next_part)
+        return return_parts
 
-    def __go_upstream(self, hpn, rev, port):
+
+    def __recursive_go(self, direction, hpn, rev, port):
         """
         Find the next connection up the signal chain.
         """
-        up_port = self.__get_next_port(hpn,rev,port,direction='up',check_part=False)
-        if up_port == self.no_connection_designator or up_port is None:
-            return
-        connection_dict = self.get_connection(hpn_query=hpn, rev_query=rev, port_query=up_port, 
-                                              exact_match=True, show_connection=False)
-        for i,hpn_up in enumerate(connection_dict[hpn]['up_parts']):
-            port = connection_dict[hpn]['upstream_output_port'][i]
-            if hpn_up not in self.upstream:
-                stopup = cm_utils._get_stopdate(connection_dict[hpn]['stop_on_up'][i])
-                if (self.current>connection_dict[hpn]['start_on_up'][i]) and (self.current<stopup):
-                    hpn_up_pr = hpn_up
+        next_part_list = self.__get_next_part(hpn,rev,port,direction,check_part=False)
+        for part in next_part_list:
+            if self.no_connection_designator in part:
+                pass
+            else:
+                if direction=='up':
+                    self.upstream.append(part)
                 else:
-                    hpn_up_pr = '**'+hpn_up
-                self.upstream.append([hpn_up_pr,port])
-            self.__go_upstream(hpn_up, rev, port)
-
-    def __go_downstream(self, hpn, rev, port):
-        """
-        Find the next connection down the signal chain
-        """
-        down_port = self.__get_next_port(hpn,rev,port,direction='down',check_part=False)
-        if down_port == self.no_connection_designator or down_port is None:
-            return
-        connection_dict = self.get_connection(hpn_query=hpn, rev_query=rev, port_query=down_port, 
-                                              exact_match=True, show_connection=False)
-        for i,hpn_down in enumerate(connection_dict[hpn]['down_parts']):
-            port = connection_dict[hpn]['downstream_input_port'][i]
-            if hpn_down not in self.downstream:
-                stopdown = cm_utils._get_stopdate(connection_dict[hpn]['stop_on_down'][i])
-                if (self.current>connection_dict[hpn]['start_on_down'][i]) and (self.current<stopdown):
-                    hpn_down_pr = hpn_down
-                else:
-                    hpn_down_pr = '**'+hpn_down
-                self.downstream.append([hpn_down_pr,port])
-            self.__go_downstream(hpn_down, rev, port)
+                    self.downstream.append(part)
+            self.__recursive_go(direction, part[0], part[1], part[2])
 
 
     def get_hookup(self, hpn_query=None, rev_query=None, port_query='all', show_hookup=False):
         """
         Return the full hookup.  Note that if a part is selected up or down stream of a branching part, 
         it picks one and doesn't give all options -- something to work on.
-        Returns hookup_dict, a dictionary keyed on derived key of hpn:port
+        Returns hookup_dict, a dictionary keyed on derived key of hpn:port.  Returns all entries,
+           if you want to filter on date the receiving (or showing) module should do that.
 
         Parameters
         -----------
@@ -424,6 +392,9 @@ class Handling:
         connections = None
         hookup_dict = {}
         for hpn in parts.keys():
+            rq = rev_query.upper()
+            if rq == 'LAST':
+                rq = part_connect.get_last_revision(args, hpn, False)
             if len(parts[hpn]['connections']['ordered_pairs'][0]) == 0:
                 continue
             upstream_first = True
@@ -439,21 +410,23 @@ class Handling:
             for p in port_query:
                 if upstream_first:
                     self.upstream = [[hpn,p]]
+                    __recursive_go('up', hpn, rq, p)
                     self.downstream = []
-                    self.__go_upstream(hpn, rev_query, p)
-                    self.__go_downstream(hpn, rev_query, p)
+                    __recursive_go('down', hpn, rq, p)
                 else:
                     self.downstream = [[hpn, p]]
+                    __recursive_go('down', hpn, rq, p)
                     self.upstream = []
-                    self.__go_downstream(hpn, rev_query, p)
-                    self.__go_upstream(hpn, rev_query, p)
-                furthest_up = self.upstream[-1][0].strip('*')
-                try_station = self.get_part(hpn_query=furthest_up,rev_query=rev_query,
+                    __recursive_go('up', hpn, rq, p)
+
+                furthest_up = self.upstream[-1]
+                try_station = self.get_part(hpn_query=furthest_up[0],rev_query=furthest_up[1]
                               exact_match=True, return_dictionary=True, show_part=False)
                 keep_entry = True
                 hukey = hpn+':'+p
-                if try_station[furthest_up]['hptype'] == 'station':
-                    hookup_dict[hukey] = [[str(try_station[furthest_up]['geo']['antenna_number']),'S']]
+
+                if try_station[furthest_up[0]]['part'].hptype == 'station':
+                    hookup_dict[hukey] = [[str(try_station[furthest_up[0]]['geo']['antenna_number']),'S']]
                 else:
                     hookup_dict[hukey] = []
                 for pn in reversed(self.upstream):
