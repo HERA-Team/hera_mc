@@ -90,7 +90,7 @@ def get_last_revision(args, hpn=None, show_revisions=False):
         print('\n')
     elif show_revisions and args.verbosity == 'm':
         print('Last revision: ', revisions[-1])
-    end_date = cm_utils._get_stopdate(ended[-1])
+    #end_date = cm_utils._get_stopdate(ended[-1])
 
     return revisions[-1]
 
