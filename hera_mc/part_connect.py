@@ -249,22 +249,22 @@ class Connections(MCDeclarativeBase):
     up_part_rev = Column(String(32), nullable=False, primary_key=True)
     "up refers to the skyward part revision number"
 
+    upstream_output_port = NotNull(String(64), primary_key=True)
+    "connected output port on upstream (skyward) part"
+
     downstream_part = Column(String(64), nullable=False, primary_key=True)
     "down refers to the part that is further from the sky, e.g. "
 
     down_part_rev = Column(String(64), nullable=False, primary_key=True)
     "down refers to the part that is further from the sky, e.g. "
 
+    downstream_input_port = NotNull(String(64), primary_key=True)
+    "connected input port on downstream (further from the sky) part"
+
     __table_args__ = (ForeignKeyConstraint(['upstream_part',   'up_part_rev'],
                                            ['parts_paper.hpn', 'parts_paper.hpn_rev']),
                       ForeignKeyConstraint(['downstream_part', 'down_part_rev'],
                                            ['parts_paper.hpn', 'parts_paper.hpn_rev']))
-
-    upstream_output_port = NotNull(String(64), primary_key=True)
-    "connected output port on upstream (skyward) part"
-
-    downstream_input_port = NotNull(String(64), primary_key=True)
-    "connected input port on downstream (further from the sky) part"
 
     start_date = NotNull(DateTime(timezone=True), primary_key=True)
     "start_time is the time that the connection is set"

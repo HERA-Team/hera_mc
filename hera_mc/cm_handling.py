@@ -9,6 +9,7 @@ This is meant to hold helpful modules for parts and connections scripts
 """
 from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
+import sys
 
 from hera_mc import mc, part_connect, geo_location, correlator_levels, cm_utils
 import copy
@@ -16,7 +17,7 @@ import copy
 def _make_part_key(hpn,rev):
     return ":".join([hpn,rev])
 def _make_connection_key(hpn,rev,direction,next_part,start_date,fragment=False):
-    if fragment:
+    if type(fragment) == list:
         return ":".join(fragment)
     else:
         return ":".join([hpn,rev,direction,next_part,cm_utils._get_datekeystring(start_date)])
@@ -124,18 +125,13 @@ class Handling:
                     ptsin = ''; ptsout = ''
                     for k,v in part_dict[pr_key]['connections'].iteritems():
                         if k=='ordered_pairs' or k==self.no_connection_designator:  continue
-                        if ':up:' in k:     part_dict[pr_key]['output_ports'].append(v.upstream_output_port)
-                        elif ':down:' in k: part_dict[pr_key]['input_ports'].append(v.downstream_input_port)
+                        if ':up:' in k:     part_dict[pr_key]['input_ports'].append(v.downstream_input_port)
+                        elif ':down:' in k: part_dict[pr_key]['output_ports'].append(v.upstream_output_port)
                         else: print("cm_handling[158]: ERROR SHOULD BE UP or DOWN ",k)
+                        part_dict[pr_key]['output_ports'].sort()
+                        part_dict[pr_key]['input_ports'].sort()
                 else:
                     print("Warning cm_handling[115]:  Well, being here is a surprise -- should only be one part.", part.hpn)
-        # print("cm_handling[115]TEST")
-        # for pd in part_dict:
-        #     print("------",pd)
-        #     for t in part_dict[pd]:
-        #         print("-",t)
-        #         print(part_dict[pd][t])
-        # print("\ncm_handling[121]TEST")
         if show_part:
             self.show_part(part_dict)
         if return_dictionary:
@@ -332,52 +328,47 @@ class Handling:
         Return list of [[part,rev,port,start1,stop1],...]
         """
 
+        end_of_the_line = False
         part_dict = self.get_part(hpn_query=hpn,rev_query=rev, exact_match=True, return_dictionary=True, show_part=False)
         if len(part_dict.keys()) == 0:
             return None
         pk = part_dict.keys()[0] # is only one, but get the key
-        ckey_frag = self._make_connection_key(None,None,None,None,None,fragment=[hpn,rev,direction])
-
-        if port in pk['input_ports']:
+        if port in part_dict[pk]['input_ports']:
             if direction == 'down':
-                port = part_dict[pk]['connections']
-        elif port in pk['output_ports']:
+                try:
+                    port = part_dict[pk]['output_ports'][part_dict[pk]['input_ports'].index(port)]
+                except IndexError:
+                    end_of_the_line = True
+        elif port in part_dict[pk]['output_ports']:
             if direction == 'up':
-                port = 
+                try:
+                    port = part_dict[pk]['input_ports'][part_dict[pk]['output_ports'].index(port)]
+                except IndexError:
+                    end_of_the_line = True
         else:
+            print('cm_handling[349]: not there',hpn,rev,port)
+            end_of_the_line = True
+
+        if end_of_the_line:
             return None
 
+        return_parts = []
         if first_one:
-            first_part = []
-            print("cm_handling[340]:  first_one",ckey_frag,port,direction)
-            if direction == 'up':
-                if port in pk['output_ports']:
-                    port = 
-                first_part = [hpn,rev,]
+            if direction == 'up': 
+                return_parts = [hpn,rev,port,None,None]
+        else:       
             for k,c in part_dict[pk]['connections'].iteritems():
-                if ckey_frag in k:
-                    if direction == 'up':
-                        if c.downstream_input_port == port:
-                            first_part = [c.downstream_part,c.down_part_rev,c.downstream_input_port,c.start_date,c.stop_date]
-                    elif direction == 'down':
-                        if c.upstream_output_port == port:
-                            first_part = [c.upstream_part,c.up_part_rev,c.upstream_output_port,c.start_date,c.stop_date]
-            return first_part
-
-        return_parts = []        
-        print("cm_handling[352]",ckey_frag,port,direction)
-        for k,c in part_dict[pk]['connections'].iteritems():
-            if ckey_frag in k:
+                if k == 'ordered_pairs' or k == self.no_connection_designator:
+                    continue
                 next_part = []
                 if direction == 'up':
-                    if c.downstream_input_port == port:
-                        next_part = [c.upstream_part,c.up_part_rev,c.downstream_input_port,c.start_date,c.stop_date]
+                    if c.downstream_part == hpn and c.down_part_rev == rev and c.downstream_input_port == port:
+                        next_part = [c.upstream_part,c.up_part_rev,c.upstream_output_port,c.start_date,c.stop_date]
                 elif direction == 'down':
-                    if c.upstream_output_port == port:
+                    if c.upstream_part == hpn and c.up_part_rev == rev and c.upstream_output_port == port:
                         next_part = [c.downstream_part,c.down_part_rev,c.downstream_input_port,c.start_date,c.stop_date]
                 if len(next_part)>0:
                     return_parts.append(next_part)
-        print("cm_handling[364]",return_parts)
         return return_parts
 
 
@@ -385,16 +376,17 @@ class Handling:
         """
         Find the next connection up the signal chain.
         """
-        next_part_list = self.__get_next_part(hpn,rev,port,direction,check_part=False)
-        for part in next_part_list:
-            if self.no_connection_designator in part:
-                pass
-            else:
-                if direction=='up':
-                    self.upstream.append(part)
+        next_parts = self.__get_next_part(hpn,rev,port,direction)
+        if next_parts is not None:
+            for part in next_parts:
+                if self.no_connection_designator in part:
+                    pass
                 else:
-                    self.downstream.append(part)
-            self.__recursive_go(direction, part[0], part[1], part[2])
+                    if direction=='up':
+                        self.upstream.append(part)
+                    else:
+                        self.downstream.append(part)
+                self.__recursive_go(direction, part[0], part[1], part[2])
 
 
     def get_hookup(self, hpn_query=None, rev_query=None, port_query='all', show_hookup=False):
@@ -446,11 +438,11 @@ class Handling:
                 self.upstream = []
                 self.downstream = []
                 if upstream_first:
-                    self.upstream.append(self.__get_next_part('up', part_no, rq, p, first_one=True))
+                    self.upstream.append(self.__get_next_part(part_no, rq, p, 'up', first_one=True))
                     self.__recursive_go('up', part_no, rq, p)
                     self.__recursive_go('down', part_no, rq, p)
                 else:
-                    self.downstream.append(self.__get_next_part('down',part_no,rq,p, first_one=True))
+                    self.downstream.append(self.__get_next_part(part_no,rq,p, 'down', first_one=True))
                     self.__recursive_go('down', part_no, rq, p)
                     self.__recursive_go('up', part_no, rq, p)
 
@@ -460,9 +452,6 @@ class Handling:
                 keep_entry = True
                 hukey = _make_hookup_key(part_no, part_rev, p)
 
-                print("cm_handling[434]")
-                print(self.upstream)
-                print(furthest_up)
                 station_try_key = _make_part_key(furthest_up[0],furthest_up[1])
                 if try_station[station_try_key]['part'].hptype == 'station':
                     hookup_dict[hukey] = [[str(try_station[station_try_key]['geo']['antenna_number']),'S']]
@@ -478,18 +467,15 @@ class Handling:
         tkey = hookup_dict.keys()[0]
         hookup_dict['columns'] = []
         for hu in hookup_dict[tkey]:
-            pn = hu[0].strip('*')
             if hu[1]=='S':
                 hookup_dict['columns'].append(['station','column'])
             else:
-                get_part_type = self.get_part(hpn_query=pn,rev_query=rev_query,
+                get_part_type = self.get_part(hpn_query=hu[0],rev_query=hu[1],
                                 exact_match=True, return_dictionary=True, show_part=False)
-                hookup_dict['columns'].append([get_part_type[pn]['hptype'],'column'])
+                pr_key = _make_part_key(hu[0],hu[1])
+                hookup_dict['columns'].append([get_part_type[pr_key]['part'].hptype,'column'])
         if args.show_levels:
             hookup_dict = self.__hookup_add_correlator_levels(hookup_dict,args.levels_testing)
-        print("cm_handling[451]")
-        for k in hookup_dict.keys():
-            print(hookup_dict[k])
         if show_hookup:
             self.show_hookup(hookup_dict,args.mapr_cols,args.show_levels,args.active)
         return hookup_dict
