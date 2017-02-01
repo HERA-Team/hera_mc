@@ -425,27 +425,17 @@ class Handling:
                 rq = part_connect.get_last_revision(args, part_no, False)
             if len(parts[hpnr]['connections']['ordered_pairs'][0]) == 0:
                 continue
-            upstream_first = True
             if type(port_query) == str and port_query.lower() == 'all':
                 port_query = parts[hpnr]['input_ports']
             else:  # This to handle range of port_query possibilities outside of 'all'
                 if type(port_query) != list:
                     port_query = [port_query]
-                for p in port_query:
-                    if p in parts[hpnr]['output_ports']:
-                       upstream_first = False
-                       break
             for p in port_query:
                 self.upstream = []
                 self.downstream = []
-                if upstream_first:
-                    self.upstream.append(self.__get_next_part(part_no, rq, p, 'up', first_one=True))
-                    self.__recursive_go('up', part_no, rq, p)
-                    self.__recursive_go('down', part_no, rq, p)
-                else:
-                    self.downstream.append(self.__get_next_part(part_no,rq,p, 'down', first_one=True))
-                    self.__recursive_go('down', part_no, rq, p)
-                    self.__recursive_go('up', part_no, rq, p)
+                self.upstream.append(self.__get_next_part(part_no, rq, p, 'up', first_one=True))
+                self.__recursive_go('up', part_no, rq, p)
+                self.__recursive_go('down', part_no, rq, p)
 
                 furthest_up = self.upstream[-1]
                 try_station = self.get_part(hpn_query=furthest_up[0],rev_query=furthest_up[1],
