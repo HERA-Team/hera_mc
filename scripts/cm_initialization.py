@@ -105,8 +105,7 @@ for table in tables_to_read:
                 use_table.remove(table)
             else:
                 with db.sessionmaker() as session:
-                    num_rows_deleted = session.query(
-                        cm_tables[table][0]).delete()
+                    num_rows_deleted = session.query(cm_tables[table][0]).delete()
 
 tables_to_init = list(reversed(use_table))
 # Initialize tables

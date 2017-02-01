@@ -32,6 +32,7 @@ class Handling:
     no_connection_designator = '--'
     last_revisions = {}
     connections_dictionary = {}
+    non_class_connections_dict_entries = ['ordered_pairs',no_connection_designator]
     parts_dictionary = {}
     current = ''
 
@@ -48,21 +49,22 @@ class Handling:
         if revq == 'LAST':
             revq = part_connect.get_last_revision(self.args,hpn_query,False)
 
-        connection_dict = self.get_connection(hpn_query,revq,exact_match=True,return_dictionary=True,show_connection=False)
+        connection_dict = self.get_connections(hpn_query,revq,exact_match=True,return_dictionary=True,show_connection=False)
         num_connections = len(connection_dict.keys())
-        if num_connections == 0:
+        if num_connections == len(self.non_class_connections_dict_entries):
             found_connected = False
-        elif num_connections == 1:
+        else:
             found_connected = True
             if return_active:
                 connections_found = []
                 current = cm_utils._get_datetime(self.args.date,self.args.time)
-                for c in connection_dict:
-                    if cm_utils._is_active(current,c.start_date,c.stop_date):
+                for c in connection_dict.keys():
+                    if c in self.non_class_connections_dict_entries:
+                        continue
+                    if cm_utils._is_active(current,connection_dict[c].start_date,connection_dict[c].stop_date):
                         connections_found.append(c)
-        else:
-            found_connected = False
-            print("Shouldn't get here, since is_in_connctions is exact_match.")
+                if len(connections_found)>0:
+                    found_connected = connections_found
         return found_connected
 
 
@@ -124,7 +126,7 @@ class Handling:
                         part_dict[pr_key]['geo'] = geo_location.locate_station(args, show_geo=False)
                     ptsin = ''; ptsout = ''
                     for k,v in part_dict[pr_key]['connections'].iteritems():
-                        if k=='ordered_pairs' or k==self.no_connection_designator:  continue
+                        if k in self.non_class_connections_dict_entries:  continue
                         if ':up:' in k:     part_dict[pr_key]['input_ports'].append(v.downstream_input_port)
                         elif ':down:' in k: part_dict[pr_key]['output_ports'].append(v.upstream_output_port)
                         else: print("cm_handling[158]: ERROR SHOULD BE UP or DOWN ",k)
@@ -358,8 +360,7 @@ class Handling:
                 return_parts = [hpn,rev,port,None,None]
         else:       
             for k,c in part_dict[pk]['connections'].iteritems():
-                if k == 'ordered_pairs' or k == self.no_connection_designator:
-                    continue
+                if k in self.non_class_connections_dict_entries:  continue
                 next_part = []
                 if direction == 'up':
                     if c.downstream_part == hpn and c.down_part_rev == rev and c.downstream_input_port == port:
@@ -405,7 +406,7 @@ class Handling:
         """
         args = self.args
         self.current = cm_utils._get_datetime(args.date,args.time)
-        exact_match = False
+        exact_match = args.exact_match
         if hpn_query is None:
             hpn_query = self.args.mapr
             exact_match = self.args.exact_match
@@ -425,7 +426,7 @@ class Handling:
             if len(parts[hpnr]['connections']['ordered_pairs'][0]) == 0:
                 continue
             upstream_first = True
-            if port_query.lower() == 'all':
+            if type(port_query) == str and port_query.lower() == 'all':
                 port_query = parts[hpnr]['input_ports']
             else:  # This to handle range of port_query possibilities outside of 'all'
                 if type(port_query) != list:
