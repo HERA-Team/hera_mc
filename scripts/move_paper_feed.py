@@ -10,7 +10,8 @@ Script to handle moving a PAPER feed into HERA hex.
 from __future__ import absolute_import, division, print_function
 
 from hera_mc import mc, cm_utils, part_connect, cm_handling, geo_location
-import sys, copy
+import sys
+import copy
 
 
 def query_connection(args):
@@ -46,18 +47,20 @@ def OK_to_add(args, connect, handling):
         return False
     return True
 
+
 def stop_previous_antenna_part(args):
     """This adds stop times to the previously connected rev A antenna"""
     current = cm_utils._get_datetime(args.date, args.time)
-    print("Stopping part %s %s at %s" % (args.antenna_number,'A',str(current)))
+    print("Stopping part %s %s at %s" % (args.antenna_number, 'A', str(current)))
     data = [[args.antenna_number, 'A', 'stop_date', current]]
     args.add_new_part = False
     part_connect.update_part(args, data)
 
+
 def add_new_antenna_part(args):
     """This adds the new rev B antenna"""
     current = cm_utils._get_datetime(args.date, args.time)
-    print("Adding part %s %s at %s" % (args.antenna_number,'B',str(current)))
+    print("Adding part %s %s at %s" % (args.antenna_number, 'B', str(current)))
     args.add_new_part = True
     data = [[args.antenna_number, 'B', 'hpn', args.antenna_number]]
     data.append([args.antenna_number, 'B', 'hpn_rev', 'B'])
@@ -66,16 +69,18 @@ def add_new_antenna_part(args):
     data.append([args.antenna_number, 'B', 'start_date', current])
     part_connect.update_part(args, data)
 
+
 def stop_previous_connections(args, handling):
     """This adds stop times to the previous PAPER connections between:
            station and antenna rev A
            antenna revA and feed rev A"""
     current = cm_utils._get_datetime(args.date, args.time)
-    existing = handling.get_connections(args.antenna_number,'A',exact_match=True)
+    existing = handling.get_connections(args.antenna_number, 'A', exact_match=True)
     data = []
     args.add_new_connection = False  # Need to temporarily disable add_new
-    for k,c in existing.iteritems():
-        if k in handling.non_class_connections_dict_entries: continue
+    for k, c in existing.iteritems():
+        if k in handling.non_class_connections_dict_entries:
+            continue
         if c.downstream_part == args.antenna_number and c.down_part_rev == 'A':
             print("Stopping connection ", c)
             data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
@@ -90,8 +95,9 @@ def stop_previous_connections(args, handling):
     part_connect.update_connection(args, data)
     return feed_connection
 
+
 def add_new_connection(args, c):
-    print("Adding ",c)
+    print("Adding ", c)
     args.add_new_connection = True
     data = [[c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
              c.upstream_output_port, c.downstream_input_port, c.start_date,
@@ -136,7 +142,7 @@ if __name__ == '__main__':
     args.show_levels = False
     args.mapr_cols = 'all'
     args.exact_match = True
-    
+
     if len(sys.argv) == 1:
         query = True
     elif args.antenna_number == None or args.station_name == None:
@@ -158,7 +164,7 @@ if __name__ == '__main__':
                        upstream_output_port='ground', downstream_input_port='ground',
                        start_date=cm_utils._get_datetime(args.date, args.time))
     print("Trying to stop previous antenna hookup.")
-    previous_hookup = handling.get_hookup(args.antenna_number,show_hookup=True)
+    previous_hookup = handling.get_hookup(args.antenna_number, show_hookup=True)
     if OK_to_add(args, connect, handling):
         cm_utils._log('move_paper_feed', args=args)
         stop_previous_antenna_part(args)
@@ -171,4 +177,3 @@ if __name__ == '__main__':
                            start_date=cm_utils._get_datetime(args.date, args.time),
                            stop_date=None)
         add_new_connection(args, connect)
-
