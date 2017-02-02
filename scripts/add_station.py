@@ -97,6 +97,7 @@ def add_entry_to_parts(args):
     data = [[hpn, rev, 'hpn', hpn],
             [hpn, rev, 'hpn_rev', rev],
             [hpn, rev, 'hptype', 'station'],
+            [hpn, rev, 'manufacturer_number', 'S2'],
             [hpn, rev, 'start_date', dt]]
     part_connect.update_part(args, data)
 

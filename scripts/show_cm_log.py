@@ -22,4 +22,4 @@ if __name__ == '__main__':
 
     with open(mc.cm_log_file,'r') as log_file:
         for line in log_file:
-            print(line)
+            print(line.strip())

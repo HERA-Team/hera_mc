@@ -14,30 +14,30 @@ import datetime, os.path, pytz
 def _log(msg,**kwargs):
     fp = open(mc.cm_log_file,'a')
     dt = datetime.datetime.now()
-    fp.write(str(dt) + '  ' + msg + '\n')
+    fp.write('-------------------'+str(dt) + '  ' + msg + '-------------------\n\n')
     for key,value in kwargs.items():
         if key=='args':
             fp.write('  --args  ')
             vargs = vars(value)
             for k,v in vargs.items():
                 fp.write(str(k)+':  '+str(v)+';  ')
-            fp.write('\n')
+            fp.write('\n\n')
         elif key=='data_dict':
             fp.write('  --data  \n')
             for k,v in value.items():
                 fp.write('    '+k+'  ')
                 for d in v:
                     fp.write(str(d)+';  ')
-                fp.write('\n')
+                fp.write('\n\n')
         else:
             fp.write('  --other  ')
-            fp.write(str(key)+':  '+str(value)+'\n')
+            fp.write(str(key)+':  '+str(value)+'\n\n')
     fp.close()
 
 def _get_datetime(_date,_time):
-    if _date.lower() == '<' or _time.lower() == '<':
+    if _date == '<' or _time == '<':
         return datetime.datetime(2000,1,1,tzinfo=pytz.utc)
-    if _date.lower() == '>' or _time.lower() == '>':
+    if _date == '>' or _time == '>':
         return datetime.datetime(2025,12,31,tzinfo=pytz.utc)
     if _date.lower() == 'n/a' or _time.lower() == 'n/a':
         return None

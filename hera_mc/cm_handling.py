@@ -90,6 +90,7 @@ class Handling:
             rev_query = args.revision
         if not exact_match and hpn_query[-1]!='%':
             hpn_query = hpn_query+'%'
+        current = cm_utils._get_datetime(args.date,args.time)
 
         part_dict = {}
         db = mc.connect_to_mc_db(args)
@@ -127,11 +128,12 @@ class Handling:
                     ptsin = ''; ptsout = ''
                     for k,v in part_dict[pr_key]['connections'].iteritems():
                         if k in self.non_class_connections_dict_entries:  continue
-                        if ':up:' in k:     part_dict[pr_key]['input_ports'].append(v.downstream_input_port)
-                        elif ':down:' in k: part_dict[pr_key]['output_ports'].append(v.upstream_output_port)
-                        else: print("cm_handling[158]: ERROR SHOULD BE UP or DOWN ",k)
-                        part_dict[pr_key]['output_ports'].sort()
-                        part_dict[pr_key]['input_ports'].sort()
+                        if cm_utils._is_active(current,v.start_date,v.stop_date):
+                            if ':up:' in k:     part_dict[pr_key]['input_ports'].append(v.downstream_input_port)
+                            elif ':down:' in k: part_dict[pr_key]['output_ports'].append(v.upstream_output_port)
+                            else: print("cm_handling[158]: ERROR SHOULD BE UP or DOWN ",k)
+                    part_dict[pr_key]['output_ports'].sort()
+                    part_dict[pr_key]['input_ports'].sort()
                 else:
                     print("Warning cm_handling[115]:  Well, being here is a surprise -- should only be one part.", part.hpn)
         if show_part:
@@ -330,12 +332,19 @@ class Handling:
         Return list of [[part,rev,port,start1,stop1],...]
         """
 
+        if first_one:
+            return [hpn,rev,port,cm_utils._get_datetime('<','<'),None]
+
         end_of_the_line = False
         part_dict = self.get_part(hpn_query=hpn,rev_query=rev, exact_match=True, return_dictionary=True, show_part=False)
         if len(part_dict.keys()) == 0:
             return None
+        elif len(part_dict.keys()) > 1:
+            print('cm_handling[343] more than one, ok?')
         pk = part_dict.keys()[0] # is only one, but get the key
-        if port in part_dict[pk]['input_ports']:
+        if len(part_dict[pk]['input_ports']) == 0 and len(part_dict[pk]['output_ports']) == 0:
+            end_of_the_line = True
+        elif port in part_dict[pk]['input_ports']:
             if direction == 'down':
                 try:
                     port = part_dict[pk]['output_ports'][part_dict[pk]['input_ports'].index(port)]
@@ -354,22 +363,18 @@ class Handling:
         if end_of_the_line:
             return None
 
-        return_parts = []
-        if first_one:
-            if direction == 'up': 
-                return_parts = [hpn,rev,port,None,None]
-        else:       
-            for k,c in part_dict[pk]['connections'].iteritems():
-                if k in self.non_class_connections_dict_entries:  continue
-                next_part = []
-                if direction == 'up':
-                    if c.downstream_part == hpn and c.down_part_rev == rev and c.downstream_input_port == port:
-                        next_part = [c.upstream_part,c.up_part_rev,c.upstream_output_port,c.start_date,c.stop_date]
-                elif direction == 'down':
-                    if c.upstream_part == hpn and c.up_part_rev == rev and c.upstream_output_port == port:
-                        next_part = [c.downstream_part,c.down_part_rev,c.downstream_input_port,c.start_date,c.stop_date]
-                if len(next_part)>0:
-                    return_parts.append(next_part)
+        return_parts = []       
+        for k,c in part_dict[pk]['connections'].iteritems():
+            if k in self.non_class_connections_dict_entries:  continue
+            next_part = []
+            if direction == 'up':
+                if c.downstream_part == hpn and c.down_part_rev == rev and c.downstream_input_port == port:
+                    next_part = [c.upstream_part,c.up_part_rev,c.upstream_output_port,c.start_date,c.stop_date]
+            elif direction == 'down':
+                if c.upstream_part == hpn and c.up_part_rev == rev and c.upstream_output_port == port:
+                    next_part = [c.downstream_part,c.down_part_rev,c.downstream_input_port,c.start_date,c.stop_date]
+            if len(next_part)>0:
+                return_parts.append(next_part)
         return return_parts
 
 
@@ -380,14 +385,15 @@ class Handling:
         next_parts = self.__get_next_part(hpn,rev,port,direction)
         if next_parts is not None:
             for part in next_parts:
-                if self.no_connection_designator in part:
-                    pass
-                else:
-                    if direction=='up':
-                        self.upstream.append(part)
+                if cm_utils._is_active(self.current,part[3],part[4]):
+                    if self.no_connection_designator in part:
+                        pass
                     else:
-                        self.downstream.append(part)
-                self.__recursive_go(direction, part[0], part[1], part[2])
+                        if direction=='up':
+                            self.upstream.append(part)
+                        else:
+                            self.downstream.append(part)
+                    self.__recursive_go(direction, part[0], part[1], part[2])
 
 
     def get_hookup(self, hpn_query=None, rev_query=None, port_query='all', show_hookup=False):
@@ -406,6 +412,7 @@ class Handling:
         """
         args = self.args
         self.current = cm_utils._get_datetime(args.date,args.time)
+        current = self.current
         exact_match = args.exact_match
         if hpn_query is None:
             hpn_query = self.args.mapr
@@ -418,6 +425,8 @@ class Handling:
         connections = None
         hookup_dict = {}
         for hpnr in parts.keys():
+            if not cm_utils._is_active(current,parts[hpnr]['part'].start_date,parts[hpnr]['part'].stop_date):
+                continue
             rq = rev_query.upper()
             part_no = parts[hpnr]['part'].hpn
             part_rev= parts[hpnr]['part'].hpn_rev
@@ -427,6 +436,8 @@ class Handling:
                 continue
             if type(port_query) == str and port_query.lower() == 'all':
                 port_query = parts[hpnr]['input_ports']
+                if len(port_query) == 0:
+                    port_query = parts[hpnr]['output_ports']
             else:  # This to handle range of port_query possibilities outside of 'all'
                 if type(port_query) != list:
                     port_query = [port_query]
@@ -498,7 +509,9 @@ class Handling:
         -----------
         hookup_dict:  generated in self.get_hookup
         """
-
+        # print('cm_handling[507]')
+        # for hk in hookup_dict.keys():
+        #     print(hk, hookup_dict[hk])
         headers = []
         show_flag = []
         if cols_to_show != 'all':
