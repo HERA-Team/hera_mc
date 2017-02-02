@@ -60,7 +60,7 @@ def _get_datekeystring(_datetime):
     return "{:%Y%m%d-%H%M}".format(_datetime)
     
 def _get_stopdate(_stop_date):
-    if type(_stop_date)==datetime:
+    if type(_stop_date)==datetime.datetime:
         return _stop_date
     else:
         return datetime.datetime(2025,12,31,tzinfo=pytz.utc)
