@@ -16,11 +16,8 @@ import copy
 
 def _make_part_key(hpn,rev):
     return ":".join([hpn,rev])
-def _make_connection_key(hpn,rev,direction,next_part,start_date,fragment=False):
-    if type(fragment) == list:
-        return ":".join(fragment)
-    else:
-        return ":".join([hpn,rev,direction,next_part,cm_utils._get_datekeystring(start_date)])
+def _make_connection_key(hpn,rev,port,direction,next_part,next_rev,next_port,start_date):
+    return ":".join([hpn,rev,port,direction,next_part,cm_utils._get_datekeystring(start_date)])
 def _make_hookup_key(hpn,rev,port):
     return ":".join([hpn,rev,port])
 
@@ -235,14 +232,18 @@ class Handling:
                 for conn in session.query(part_connect.Connections).filter( (part_connect.Connections.upstream_part == hpn) &
                                                                             (part_connect.Connections.up_part_rev == rev_part[hpn]) ):
                     if port_query.lower()=='all' or match_connection.upstream_output_port.lower() == port_query.lower():
-                        prc_key = _make_connection_key(hpn,rev_part[hpn],'down',conn.downstream_part,conn.start_date)
+                        prc_key = _make_connection_key(hpn, rev_part[hpn], conn.upstream_output_port, 'down',
+                                                       conn.downstream_part, conn.down_part_rev, conn.downstream_input_port,
+                                                       conn.start_date)
                         connection_dict[prc_key] = copy.copy(conn)
                         down_parts.append(prc_key)
                 ### Find where the part is in the downward connection, so identify its upward connection
                 for conn in session.query(part_connect.Connections).filter( (part_connect.Connections.downstream_part == hpn) &
                                                                             (part_connect.Connections.down_part_rev == rev_part[hpn]) ):
                     if port_query.lower()=='all' or match_connection.downstream_input_port.lower() == port_query.lower():
-                        prc_key = _make_connection_key(hpn,rev_part[hpn],'up',conn.upstream_part,conn.start_date)
+                        prc_key = _make_connection_key(hpn, rev_part[hpn], conn.downstream_input_port, 'up',
+                                                       conn.upstream_part, conn.up_part_rev, conn.upstream_output_port,
+                                                       conn.start_date)
                         connection_dict[prc_key] = copy.copy(conn)
                         up_parts.append(prc_key)
         if len(up_parts) > len(down_parts):
@@ -332,16 +333,18 @@ class Handling:
         Return list of [[part,rev,port,start1,stop1],...]
         """
 
-        if first_one:
-            return [hpn,rev,port,cm_utils._get_datetime('<','<'),None]
-
-        end_of_the_line = False
         part_dict = self.get_part(hpn_query=hpn,rev_query=rev, exact_match=True, return_dictionary=True, show_part=False)
+        pk = part_dict.keys()[0] # is only one, but get the key
         if len(part_dict.keys()) == 0:
             return None
         elif len(part_dict.keys()) > 1:
             print('cm_handling[343] more than one, ok?')
-        pk = part_dict.keys()[0] # is only one, but get the key
+
+        if first_one:
+            return [hpn,rev,port,cm_utils._get_datetime('<','<'),None,
+                    part_dict[pk]['input_ports'],part_dict[pk]['output_ports']]
+         
+        end_of_the_line = False
         if len(part_dict[pk]['input_ports']) == 0 and len(part_dict[pk]['output_ports']) == 0:
             end_of_the_line = True
         elif port in part_dict[pk]['input_ports']:
@@ -369,10 +372,18 @@ class Handling:
             next_part = []
             if direction == 'up':
                 if c.downstream_part == hpn and c.down_part_rev == rev and c.downstream_input_port == port:
-                    next_part = [c.upstream_part,c.up_part_rev,c.upstream_output_port,c.start_date,c.stop_date]
+                    ports4part = self.get_part(hpn_query=c.upstream_part,rev_query=c.up_part_rev, 
+                                               exact_match=True, return_dictionary=True, show_part=False)
+                    p4p = ports4part.keys()[0]
+                    next_part = [c.upstream_part,c.up_part_rev,c.upstream_output_port,c.start_date,c.stop_date,
+                                 ports4part[p4p]['input_ports'], ports4part[p4p]['output_ports']]
             elif direction == 'down':
                 if c.upstream_part == hpn and c.up_part_rev == rev and c.upstream_output_port == port:
-                    next_part = [c.downstream_part,c.down_part_rev,c.downstream_input_port,c.start_date,c.stop_date]
+                    ports4part = self.get_part(hpn_query=c.downstream_part,rev_query=c.down_part_rev, 
+                                               exact_match=True, return_dictionary=True, show_part=False)
+                    p4p = ports4part.keys()[0]
+                    next_part = [c.downstream_part,c.down_part_rev,c.downstream_input_port,c.start_date,c.stop_date,
+                                 ports4part[p4p]['input_ports'], ports4part[p4p]['output_ports']]
             if len(next_part)>0:
                 return_parts.append(next_part)
         return return_parts
@@ -400,8 +411,8 @@ class Handling:
         """
         Return the full hookup.  Note that if a part is selected up or down stream of a branching part, 
         it picks one and doesn't give all options -- something to work on.
-        Returns hookup_dict, a dictionary keyed on derived key of hpn:port.  Returns all entries,
-           if you want to filter on date the receiving (or showing) module should do that.
+        Returns hookup_dict, a dictionary keyed on derived key of hpn:port.
+        This only gets the active hookups (unlike parts and connections, which get all.)
 
         Parameters
         -----------
@@ -451,9 +462,7 @@ class Handling:
                 furthest_up = self.upstream[-1]
                 try_station = self.get_part(hpn_query=furthest_up[0],rev_query=furthest_up[1],
                               exact_match=True, return_dictionary=True, show_part=False)
-                keep_entry = True
                 hukey = _make_hookup_key(part_no, part_rev, p)
-
                 station_try_key = _make_part_key(furthest_up[0],furthest_up[1])
                 if try_station[station_try_key]['part'].hptype == 'station':
                     hookup_dict[hukey] = [[str(try_station[station_try_key]['geo']['antenna_number']),'S']]
@@ -479,7 +488,7 @@ class Handling:
         if args.show_levels:
             hookup_dict = self.__hookup_add_correlator_levels(hookup_dict,args.levels_testing)
         if show_hookup:
-            self.show_hookup(hookup_dict,args.mapr_cols,args.show_levels,args.active)
+            self.show_hookup(hookup_dict,args.mapr_cols,args.show_levels)
         return hookup_dict
 
 
@@ -500,7 +509,7 @@ class Handling:
         return hookup_dict
 
 
-    def show_hookup(self, hookup_dict, cols_to_show, show_levels, show_active_only=True):
+    def show_hookup(self, hookup_dict, cols_to_show, show_levels):
         """
         Print out the hookup table -- uses tabulate package.  
         Station is used twice, so grouped together and applies some ad hoc formatting.
@@ -542,19 +551,25 @@ class Handling:
             td = []
             show_it = True
             for i,pn in enumerate(hookup_dict[hukey]):
-                if show_active_only and '*' in pn[0]:
-                    show_it = False
-                    break
+                #print('cm_handling[554]',i,pn)
                 if not i or not show_flag[i]:  #If station first time or not shown
-                    continue
+                    continue   #This is a clunky way to do it, but keep for now (so i==0 is 'special')
                 if i==1:
-                    s = "{:0>3}  {}".format(str(hookup_dict[hukey][0][0]), str(hookup_dict[hukey][1][0]))
+                    prpn = "{:0>3}  {}:{}({})".format(str(hookup_dict[hukey][0][0]), pn[0],pn[1],pn[6][0])
                 else:
+                    inputp = ''
+                    for p in pn[5]:
+                        inputp+=(p+',')
+                    prpn = '('+inputp.strip(',')+')'
                     if pn[0] == hukey.split(':')[0]:
-                        s = '['+pn[0]+']'
+                        prpn+= '['+pn[0]+':'+pn[1]+']'
                     else:
-                        s = pn[0]
-                td.append(s)
+                        prpn+= pn[0]+':'+pn[1]
+                    outputp = ''
+                    for p in pn[6]:
+                        outputp+=(p+',')
+                    prpn+=('('+outputp.strip(',')+')')
+                td.append(prpn)
             if show_it:
                 table_data.append(td)
         print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))
