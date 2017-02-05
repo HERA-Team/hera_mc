@@ -11,7 +11,8 @@ your database and configure M&C to find it.
 from __future__ import absolute_import, division, print_function
 
 import os.path as op
-import os, sys
+import os
+import sys
 from abc import ABCMeta
 from six import add_metaclass
 from sqlalchemy import Column, ForeignKey, BigInteger, String, Float
@@ -29,11 +30,12 @@ import math
 
 from . import MCDeclarativeBase
 
-data_path = op.join (op.dirname (__file__), 'data')
-test_data_path = op.join(data_path,'test')
+data_path = op.join(op.dirname(__file__), 'data')
+test_data_path = op.join(data_path, 'test')
 default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
 mc_log_file = op.expanduser('~/.hera_mc/mc_log.txt')
 cm_log_file = op.expanduser('~/.hera_mc/cm_log.txt')
+
 
 class MCSession(Session):
 
@@ -127,7 +129,7 @@ class MCSession(Session):
         station_data = self.query(StationType).all()
         stations = {}
         for sta in station_data:
-            stations[sta.prefix] = {'Name': sta.station_type_name, 'Description': sta.description, 
+            stations[sta.prefix] = {'Name': sta.station_type_name, 'Description': sta.description,
                                     'Marker': sta.plot_marker, 'Stations': []}
         locations = self.query(GeoLocation).all()
         for loc in locations:
@@ -190,6 +192,7 @@ class AutomappedDB(DB):
         with self.sessionmaker() as session:
             if not is_sane_database(MCDeclarativeBase, session):
                 raise RuntimeError('database {0} does not match expected schema'.format(db_url))
+
 
 def get_mc_argument_parser():
     """Get an `argparse.ArgumentParser` object that includes some predefined
