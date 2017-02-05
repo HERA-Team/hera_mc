@@ -330,20 +330,22 @@ class Handling:
     def __get_next_part(self, hpn, rev, port, direction, first_one=False):
         """
         Get next part going the direction.  Called via hookup
-        Return list of [[part,rev,port,start1,stop1],...]
+        Return list of [[part,rev,port,start1,stop1,input_ports,output_ports],...]
         """
 
+        # Get the current part information
         part_dict = self.get_part(hpn_query=hpn,rev_query=rev, exact_match=True, return_dictionary=True, show_part=False)
-        pk = part_dict.keys()[0] # is only one, but get the key
         if len(part_dict.keys()) == 0:
             return None
         elif len(part_dict.keys()) > 1:
             print('cm_handling[343] more than one, ok?')
+        pk = part_dict.keys()[0] # is only one, but get the key
 
         if first_one:
             return [hpn,rev,port,cm_utils._get_datetime('<','<'),None,
                     part_dict[pk]['input_ports'],part_dict[pk]['output_ports']]
          
+        # Get port facing the correct direction and check whether you are at the end
         end_of_the_line = False
         if len(part_dict[pk]['input_ports']) == 0 and len(part_dict[pk]['output_ports']) == 0:
             end_of_the_line = True
@@ -362,7 +364,6 @@ class Handling:
         else:
             print('cm_handling[349]: not there',hpn,rev,port)
             end_of_the_line = True
-
         if end_of_the_line:
             return None
 
