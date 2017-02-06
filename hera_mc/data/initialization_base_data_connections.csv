@@ -1,3 +1,4 @@
+$_maindb_$:ddb_init
 upstream_part,up_part_rev,upstream_output_port,downstream_part,down_part_rev,downstream_input_port,start_date,stop_date
 PI38,A,ground,A127,A,ground,2014-10-03 01:00:00,2017-02-01 16:00:00
 A11,B,focus,FDP11,A,input,2017-02-01 16:00:00,
