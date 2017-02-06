@@ -32,6 +32,11 @@ if not args.init_override:
         sys.exit()
 
 
+if args.tables != 'all':
+    print("You may encounter foreign_key issues by not using 'all' tables.")
+    print("If it doesn't complain you should be ok.")
+
+
 def check_if_maindb():
     if "obs" in os.path.expanduser('~'):
         return True
@@ -46,7 +51,7 @@ def check_data_file(data_filename):
         return None
     firstline = fp.readline()
     if firstline.split(':')[0] == '$_maindb_$':
-        dbkey = firstline.split(':')[1]
+        dbkey = firstline.split(':')[1].strip()
     else:
         dbkey = '$_remote_$'
     fp.close()
@@ -97,15 +102,21 @@ for table in tables_to_read:
     else:
         if args.maindb:
             if dbkey != args.maindb:
-                print('Invalid maindb key:  ', table)
+                print('Invalid maindb key for %s  (%s)' % (table,dbkey))
                 use_table.remove(table)
         else:
             if dbkey != '$_remote_$':
-                print('Invalid remotedb key:  ', table)
+                print('Invalid remotedb key for  ', table)
                 use_table.remove(table)
-            else:
-                with db.sessionmaker() as session:
-                    num_rows_deleted = session.query(cm_tables[table][0]).delete()
+if len(use_table) != len(tables_to_read)
+    print("All of the tables weren't valid to change, so for now none will be.")
+    print("This can likely be changed in the future, but for now caution abounds.")
+    print("(This possibility is why 'use_table' and 'tables_to_read' are both there.)")
+    sys.exit()
+for table in use_table:
+    with db.sessionmaker() as session:
+        num_rows_deleted = session.query(cm_tables[table][0]).delete()
+        print("%d rows deleted in %s" % (num_rows_deleted,table))
 
 tables_to_init = list(reversed(use_table))
 # Initialize tables
