@@ -329,7 +329,7 @@ class Handling:
 
     def __get_next_part(self, hpn, rev, port, direction, first_one=False):
         """
-        Get next part going the direction.  Called via hookup
+        Get next part going the given direction.  Called via hookup
         Return list of [[part,rev,port,start1,stop1,input_ports,output_ports],...]
         """
 
