@@ -273,15 +273,21 @@ class Handling:
             # Do upstream
             connup = connection_dict[up]
             uup = connup.upstream_part+':'+connup.up_part_rev
+            if self.no_connection_designator in uup:
+                start_date = self.no_connection_designator
+                stop_date = self.no_connection_designator
+            else:
+                start_date = connup.start_date
+                stop_date = connup.stop_date
             udn = connup.downstream_part+':'+connup.down_part_rev
             pos = {'uStart':{'h':0,'m':-1}, 'uStop':{'h':1,'m':-1}, 'Upstream':{'h':2,'m':0}, 
                    'Output':{'h':3,'m':1},  'Input':{'h':4,'m':2},      'Part':{'h':5,'m':3}}
             if pos['uStart'][vb] > -1:
                 del tdata[pos['uStart'][vb]]
-                tdata.insert(pos['uStart'][vb],connup.start_date)
+                tdata.insert(pos['uStart'][vb],start_date)
             if pos['uStop'][vb] > -1:
                 del tdata[pos['uStop'][vb]]
-                tdata.insert(pos['uStop'][vb],connup.stop_date)
+                tdata.insert(pos['uStop'][vb],stop_date)
             if pos['Upstream'][vb] > -1:
                 del tdata[pos['Upstream'][vb]]
                 tdata.insert(pos['Upstream'][vb],uup)
@@ -297,11 +303,16 @@ class Handling:
             # Do downstream
             conndn = connection_dict[dn]
             dup = conndn.upstream_part+':'+conndn.up_part_rev
-            if dup!=udn:
-                print('cm_handling[317]: parts should be the same',udn,dup)
             ddn = conndn.downstream_part+':'+conndn.down_part_rev
-            pos = {'Output':{'h':6,'m':4}, 'Input':{'h':7,'m':5}, 'Downstream':{'h':8,'m':6}, 'dStart':{'h':9,'m':-1}, 'dStop':{'h':10,'m':-1}}
-            if connup.downstream_part==self.no_connection_designator:
+            if self.no_connection_designator in ddn:
+                start_date = self.no_connection_designator
+                stop_date = self.no_connection_designator
+            else:
+                start_date = conndn.start_date
+                stop_date = conndn.stop_date
+            pos = {'Part':{'h':5,'m':3}, 'Output':{'h':6,'m':4}, 'Input':{'h':7,'m':5}, 'Downstream':{'h':8,'m':6}, 
+                   'dStart':{'h':9,'m':-1}, 'dStop':{'h':10,'m':-1}}
+            if self.no_connection_designator in udn:
                 if pos['Part'][vb] > -1:
                     del tdata[pos['Part'][vb]]
                     tdata.insert(pos['Part'][vb],'['+dup+']')
@@ -316,10 +327,10 @@ class Handling:
                 tdata.insert(pos['Downstream'][vb],ddn)
             if pos['dStart'][vb] > -1:
                 del tdata[pos['dStart'][vb]]
-                tdata.insert(pos['dStart'][vb],conndn.start_date)
+                tdata.insert(pos['dStart'][vb],start_date)
             if pos['dStop'][vb] > -1:
                 del tdata[pos['dStop'][vb]]
-                tdata.insert(pos['dStop'][vb],conndn.stop_date)
+                tdata.insert(pos['dStop'][vb],stop_date)
             # Write to row list if desired
             show_it = True
             if self.args.active:
