@@ -58,41 +58,58 @@ class Parts(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def get_last_revision(args, hpn=None, show_revisions=False):
+def get_revisions(args, hpn=None):
     """
-    Return the last revision number for a given part (exact match)
+    Retrieves revision numbers for a given part (exact match)
     """
-    current = cm_utils._get_datetime(args.date, args.time)
     if hpn is None:
         hpn = args.hpn
-    revisions = []
-    started = []
-    ended = []
+    revisions = {}
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
-            revisions.append(parts_rec.hpn_rev)
-            started.append(parts_rec.start_date)
-            ended.append(parts_rec.stop_date)
-    revisions = sorted(revisions)
+            revisions[parts_rec.hpn_rev] = {}
+            revisions[parts_rec.hpn_rev]['started'] = parts_rec.start_date
+            revisions[parts_rec.hpn_rev]['ended']   = parts_rec.stop_date
+    return revisions
 
-    over_ride_print = False
-    end_date = cm_utils._get_stopdate(ended[-1])
-    if current < started[-1] or current > end_date:
-        print('Warning:  last revision out of date')
-        over_ride_print = True
-    if (show_revisions and args.verbosity == 'h') or over_ride_print:
+
+def show_revisions(args, hpn=None):
+    revisions = get_revisions(args, hpn)
+    sort_rev = sorted(revisions.keys())
+    if args.verbosity == 'h' or args.verbosity == 'm':
         headers = ['HPN', 'Revision', 'Start', 'Stop']
         table_data = []
-        for i, rev in enumerate(revisions):
-            table_data.append([hpn, rev, started[i], ended[i]])
+        for rev in sort_rev:
+            started = revisions[parts_rec.hpn_rev]['started']
+            ended = revisions[parts_rec.hpn_rev]['ended']
+            table_data.append([hpn, rev, started, ended])
         print(tabulate(table_data, headers=headers, tablefmt='simple'))
         print('\n')
-    elif show_revisions and args.verbosity == 'm':
-        print('Last revision: ', revisions[-1])
-    #end_date = cm_utils._get_stopdate(ended[-1])
+    elif args.verbosity == 'l':
+        print('Last revision: ', sort_rev[-1])
 
-    return revisions[-1]
+
+def get_last_revision(args, hpn=None):
+    revisions = get_revisions(args, hpn)
+    sort_rev = sorted(revisions.keys())
+    start_date = revisions[sort_rev[-1]]['started']
+    end_date   = revisions[sort_rev[-1]]['ended']
+    return [sort_rev[-1], start_date, end_date]
+
+
+def get_contemporary_revision(args,hpn):
+    current = cm_utils._get_datetime(args.date.args.time)
+    revisions = get_revisions(args, hpn)
+    sort_rev = sorted(revisions.keys())
+    return_date = None
+    for rev in sort_rev:
+        started = revisions[parts_rec.hpn_rev]['started']
+        ended = revisions[parts_rec.hpn_rev]['ended']
+        if cm_utils._is_active(current,started,ended):
+            return_date = [rev,started,ended]
+            break
+    return return_date
 
 
 def update_part(args, data):

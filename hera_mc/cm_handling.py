@@ -18,8 +18,6 @@ def _make_part_key(hpn,rev):
     return ":".join([hpn,rev])
 def _make_connection_key(hpn,rev,port,direction,next_part,next_rev,next_port,start_date):
     return ":".join([hpn,rev,port,direction,next_part,cm_utils._get_datekeystring(start_date)])
-def _make_hookup_key(hpn,rev,port):
-    return ":".join([hpn,rev,port])
 
 class Handling:
     """
@@ -36,7 +34,7 @@ class Handling:
     def __init__(self,args):
         self.args = args
 
-    def is_in_connections(self,hpn_query,rev_query='LAST',return_active=False):
+    def is_in_connections(self,hpn_query,rev_query='ACTIVE',return_active=False):
         """
         checks to see if a part is in the connections database (which means it is also in parts)
 
@@ -44,7 +42,9 @@ class Handling:
         """
         revq = rev_query.upper()
         if revq == 'LAST':
-            revq = part_connect.get_last_revision(self.args,hpn_query,False)
+            revq = part_connect.get_last_revision(self.args,hpn_query)[0]
+        elif revq == 'ACTIVE':
+            revq = part_connect.get_contemporary_revision(self.args,hpn_query)[0]
 
         connection_dict = self.get_connections(hpn_query,revq,exact_match=True,return_dictionary=True,show_connection=False)
         num_connections = len(connection_dict.keys())
@@ -97,7 +97,9 @@ class Handling:
             for fp in session.query(part_connect.Parts).filter(part_connect.Parts.hpn.like(hpn_query)):
                 rq = rev_query.upper()
                 if rq == 'LAST':
-                    rq = part_connect.get_last_revision(args,fp.hpn,False)
+                    rq = part_connect.get_last_revision(args,fp.hpn)[0]
+                elif rq == 'ACTIVE':
+                    rq = part_connect.get_contemporary_revision(args,fp,hpn)[0]
                 rev_part[fp.hpn] = rq
 
             ### Now get unique part/rev and put into dictionary
@@ -225,7 +227,9 @@ class Handling:
             for fp in session.query(part_connect.Parts).filter(part_connect.Parts.hpn.like(hpn_query)):
                 rq = rev_query.upper()
                 if rq == 'LAST':
-                    rq = part_connect.get_last_revision(args,fp.hpn,False)
+                    rq = part_connect.get_last_revision(args,fp.hpn)[0]
+                elif rq == 'ACTIVE':
+                    rq = part_connect.get_contemporary_revision(args,fp.hpn)[0]
                 rev_part[fp.hpn] = rq
             for hpn in rev_part.keys():
                 ### Find where the part is in the upward connection, so identify its downward connection
@@ -326,255 +330,6 @@ class Handling:
         if vb=='m' or vb=='h':
             print('\n'+tabulate(table_data,headers=headers,tablefmt='orgtbl')+'\n')
 
-
-    def __get_next_part(self, hpn, rev, port, direction, first_one=False):
-        """
-        Get next part going the given direction.  Called via hookup
-        Return list of [[part,rev,port,start1,stop1,input_ports,output_ports],...]
-        """
-
-        # Get the current part information
-        part_dict = self.get_part(hpn_query=hpn,rev_query=rev, exact_match=True, return_dictionary=True, show_part=False)
-        if len(part_dict.keys()) == 0:
-            return None
-        elif len(part_dict.keys()) > 1:
-            print('cm_handling[343] more than one, ok?')
-        pk = part_dict.keys()[0] # is only one, but get the key
-
-        if first_one:
-            return [hpn,rev,port,cm_utils._get_datetime('<','<'),None,
-                    part_dict[pk]['input_ports'],part_dict[pk]['output_ports']]
-         
-        # Get port facing the correct direction and check whether you are at the end
-        end_of_the_line = False
-        if len(part_dict[pk]['input_ports']) == 0 and len(part_dict[pk]['output_ports']) == 0:
-            end_of_the_line = True
-        elif port in part_dict[pk]['input_ports']:
-            if direction == 'down':
-                try:
-                    port = part_dict[pk]['output_ports'][part_dict[pk]['input_ports'].index(port)]
-                except IndexError:
-                    end_of_the_line = True
-        elif port in part_dict[pk]['output_ports']:
-            if direction == 'up':
-                try:
-                    port = part_dict[pk]['input_ports'][part_dict[pk]['output_ports'].index(port)]
-                except IndexError:
-                    end_of_the_line = True
-        else:
-            print('cm_handling[349]: not there',hpn,rev,port)
-            end_of_the_line = True
-        if end_of_the_line:
-            return None
-
-        return_parts = []       
-        for k,c in part_dict[pk]['connections'].iteritems():
-            if k in self.non_class_connections_dict_entries:  continue
-            next_part = []
-            if direction == 'up':
-                if c.downstream_part == hpn and c.down_part_rev == rev and c.downstream_input_port == port:
-                    ports4part = self.get_part(hpn_query=c.upstream_part,rev_query=c.up_part_rev, 
-                                               exact_match=True, return_dictionary=True, show_part=False)
-                    p4p = ports4part.keys()[0]
-                    next_part = [c.upstream_part,c.up_part_rev,c.upstream_output_port,c.start_date,c.stop_date,
-                                 ports4part[p4p]['input_ports'], ports4part[p4p]['output_ports']]
-            elif direction == 'down':
-                if c.upstream_part == hpn and c.up_part_rev == rev and c.upstream_output_port == port:
-                    ports4part = self.get_part(hpn_query=c.downstream_part,rev_query=c.down_part_rev, 
-                                               exact_match=True, return_dictionary=True, show_part=False)
-                    p4p = ports4part.keys()[0]
-                    next_part = [c.downstream_part,c.down_part_rev,c.downstream_input_port,c.start_date,c.stop_date,
-                                 ports4part[p4p]['input_ports'], ports4part[p4p]['output_ports']]
-            if len(next_part)>0:
-                return_parts.append(next_part)
-        return return_parts
-
-
-    def __recursive_go(self, direction, hpn, rev, port):
-        """
-        Find the next connection up the signal chain.
-        """
-        next_parts = self.__get_next_part(hpn,rev,port,direction)
-        if next_parts is not None:
-            for part in next_parts:
-                if cm_utils._is_active(self.current,part[3],part[4]):
-                    if self.no_connection_designator in part:
-                        pass
-                    else:
-                        if direction=='up':
-                            self.upstream.append(part)
-                        else:
-                            self.downstream.append(part)
-                    self.__recursive_go(direction, part[0], part[1], part[2])
-
-
-    def get_hookup(self, hpn_query=None, rev_query=None, port_query='all', show_hookup=False):
-        """
-        Return the full hookup.  Note that if a part is selected up or down stream of a branching part, 
-        it picks one and doesn't give all options -- something to work on.
-        Returns hookup_dict, a dictionary keyed on derived key of hpn:port.
-        This only gets the active hookups (unlike parts and connections, which get all.)
-
-        Parameters
-        -----------
-        hpn_query:  the input hera part number (whole or first part thereof)
-        port_query:  a specifiable port name,  default is 'all'
-        show_hookup:  boolean to call show_hookup or not
-
-        """
-        args = self.args
-        self.current = cm_utils._get_datetime(args.date,args.time)
-        current = self.current
-        exact_match = args.exact_match
-        if hpn_query is None:
-            hpn_query = self.args.mapr
-            exact_match = self.args.exact_match
-        if rev_query is None:
-            rev_query = args.revision
-        port_query = self.args.specify_port if self.args.specify_port!='all' else port_query
-        parts = self.get_part(hpn_query=hpn_query, rev_query=rev_query, 
-                exact_match=exact_match, return_dictionary=True, show_part=False)
-        connections = None
-        hookup_dict = {}
-        for hpnr in parts.keys():
-            if not cm_utils._is_active(current,parts[hpnr]['part'].start_date,parts[hpnr]['part'].stop_date):
-                continue
-            rq = rev_query.upper()
-            part_no = parts[hpnr]['part'].hpn
-            part_rev= parts[hpnr]['part'].hpn_rev
-            if rq == 'LAST':
-                rq = part_connect.get_last_revision(args, part_no, False)
-            if len(parts[hpnr]['connections']['ordered_pairs'][0]) == 0:
-                continue
-            if type(port_query) == str and port_query.lower() == 'all':
-                port_query = parts[hpnr]['input_ports']
-                if len(port_query) == 0:
-                    port_query = parts[hpnr]['output_ports']
-            else:  # This to handle range of port_query possibilities outside of 'all'
-                if type(port_query) != list:
-                    port_query = [port_query]
-            for p in port_query:
-                self.upstream = []
-                self.downstream = []
-                self.upstream.append(self.__get_next_part(part_no, rq, p, 'up', first_one=True))
-                self.__recursive_go('up', part_no, rq, p)
-                self.__recursive_go('down', part_no, rq, p)
-
-                furthest_up = self.upstream[-1]
-                try_station = self.get_part(hpn_query=furthest_up[0],rev_query=furthest_up[1],
-                              exact_match=True, return_dictionary=True, show_part=False)
-                hukey = _make_hookup_key(part_no, part_rev, p)
-                station_try_key = _make_part_key(furthest_up[0],furthest_up[1])
-                if try_station[station_try_key]['part'].hptype == 'station':
-                    hookup_dict[hukey] = [[str(try_station[station_try_key]['geo']['antenna_number']),'S']]
-                else:
-                    hookup_dict[hukey] = []
-                for pn in reversed(self.upstream):
-                    hookup_dict[hukey].append(pn)
-                for pn in self.downstream:
-                    hookup_dict[hukey].append(pn)
-        if len(hookup_dict.keys())==0:
-            print(hpn_query,'not found')
-            return None
-        tkey = hookup_dict.keys()[0]
-        hookup_dict['columns'] = []
-        for hu in hookup_dict[tkey]:
-            if hu[1]=='S':
-                hookup_dict['columns'].append(['station','column'])
-            else:
-                get_part_type = self.get_part(hpn_query=hu[0],rev_query=hu[1],
-                                exact_match=True, return_dictionary=True, show_part=False)
-                pr_key = _make_part_key(hu[0],hu[1])
-                hookup_dict['columns'].append([get_part_type[pr_key]['part'].hptype,'column'])
-        if args.show_levels:
-            hookup_dict = self.__hookup_add_correlator_levels(hookup_dict,args.levels_testing)
-        if show_hookup:
-            self.show_hookup(hookup_dict,args.mapr_cols,args.show_levels)
-        return hookup_dict
-
-
-    def __hookup_add_correlator_levels(self,hookup_dict,testing):
-        hookup_dict['columns'].append(['levels','column'])
-        pf_input = []
-        for k in sorted(hookup_dict.keys()):
-            if k=='columns':
-                continue
-            f_engine = hookup_dict[k][-1][0].strip('*')
-            pf_input.append(f_engine)
-        levels = correlator_levels.get_levels(pf_input,testing)
-        for i,k in enumerate(sorted(hookup_dict.keys())):
-            if k=='columns':
-                continue
-            lstr = '%s' % (levels[i])
-            hookup_dict[k].append([lstr,pf_input[i]])
-        return hookup_dict
-
-
-    def show_hookup(self, hookup_dict, cols_to_show, show_levels):
-        """
-        Print out the hookup table -- uses tabulate package.  
-        Station is used twice, so grouped together and applies some ad hoc formatting.
-
-        Parameters
-        -----------
-        hookup_dict:  generated in self.get_hookup
-        """
-        # print('cm_handling[507]')
-        # for hk in hookup_dict.keys():
-        #     print(hk, hookup_dict[hk])
-        headers = []
-        show_flag = []
-        if cols_to_show != 'all':
-            cols_to_show=cols_to_show.split(',')
-            if show_levels:
-                cols_to_show.append('levels')
-        for col in hookup_dict['columns']:
-            if col[0][-2:]=='_e' or col[0][-2:]=='_n': #Makes these specific pol parts generic
-                colhead = col[0][:-2]
-            else:
-                colhead = col[0]
-            if cols_to_show == 'all' or colhead in cols_to_show:
-                show_flag.append(True)
-            else:
-                show_flag.append(False)
-                continue
-            if colhead not in headers: #Accounts for station used twice
-                headers.append(colhead)
-        if show_levels:
-            show_flag.append(True)
-        table_data = []
-        for hukey in sorted(hookup_dict.keys()):
-            if hukey=='columns':
-                continue
-            if len(hookup_dict[hukey]) != len(hookup_dict['columns']):
-                print('Issues with ',hukey)
-                continue
-            td = []
-            show_it = True
-            for i,pn in enumerate(hookup_dict[hukey]):
-                #print('cm_handling[554]',i,pn)
-                if not i or not show_flag[i]:  #If station first time or not shown
-                    continue   #This is a clunky way to do it, but keep for now (so i==0 is 'special')
-                if i==1:
-                    prpn = "{:0>3}  {}:{}({})".format(str(hookup_dict[hukey][0][0]), pn[0],pn[1],pn[6][0])
-                else:
-                    inputp = ''
-                    for p in pn[5]:
-                        inputp+=(p+',')
-                    prpn = '('+inputp.strip(',')+')'
-                    if pn[0] == hukey.split(':')[0]:
-                        prpn+= '['+pn[0]+':'+pn[1]+']'
-                    else:
-                        prpn+= pn[0]+':'+pn[1]
-                    outputp = ''
-                    for p in pn[6]:
-                        outputp+=(p+',')
-                    prpn+=('('+outputp.strip(',')+')')
-                td.append(prpn)
-            if show_it:
-                table_data.append(td)
-        print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))
-        print('\n')
 
     def get_part_types(self, show_hptype=False):
         """

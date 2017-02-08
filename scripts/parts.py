@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, cm_handling, mc
+from hera_mc import part_connect, cm_handling, cm_hookup, mc
 import os.path
 
 if __name__ == '__main__':
@@ -56,7 +56,8 @@ if __name__ == '__main__':
     if args.connection:
         connection_dict = handling.get_connections(show_connection=True)
     if args.mapr:
-        hookup_dict = handling.get_hookup(show_hookup=True)
+        hookup = cm_hookup.Hookup(args)
+        hookup_dict = hookup.get_hookup(show_hookup=True)
     if args.hptype:
         part_type_dict = handling.get_part_types(show_hptype=True)
     if args.update:
