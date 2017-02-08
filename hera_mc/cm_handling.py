@@ -219,7 +219,8 @@ class Handling:
                     ### Find where the part is in the upward connection, so identify its downward connection
                     for conn in session.query(part_connect.Connections).filter( (part_connect.Connections.upstream_part == hpn) &
                                                                                 (part_connect.Connections.up_part_rev == this_rev) ):
-                        if port_query.lower()=='all' or match_connection.upstream_output_port.lower() == port_query.lower():
+                        print('cm_handling[222]:',conn)
+                        if port_query.lower()=='all' or conn.upstream_output_port.lower() == port_query.lower():
                             prc_key = _make_connection_key(hpn, this_rev, conn.upstream_output_port, 'down',
                                                            conn.downstream_part, conn.down_part_rev, conn.downstream_input_port,
                                                            conn.start_date)
@@ -228,7 +229,8 @@ class Handling:
                     ### Find where the part is in the downward connection, so identify its upward connection
                     for conn in session.query(part_connect.Connections).filter( (part_connect.Connections.downstream_part == hpn) &
                                                                                 (part_connect.Connections.down_part_rev == this_rev) ):
-                        if port_query.lower()=='all' or match_connection.downstream_input_port.lower() == port_query.lower():
+                        print('cm_handling[232]:',conn)
+                        if port_query.lower()=='all' or conn.downstream_input_port.lower() == port_query.lower():
                             prc_key = _make_connection_key(hpn, this_rev, conn.downstream_input_port, 'up',
                                                            conn.upstream_part, conn.up_part_rev, conn.upstream_output_port,
                                                            conn.start_date)
