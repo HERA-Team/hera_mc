@@ -44,6 +44,8 @@ if __name__ == '__main__':
     args.verbosity = args.verbosity.lower()
     args.mapr_cols = args.mapr_cols.lower()
     args.revision = args.revision.upper()
+    if args.revision == 'ALL':
+        args.active = False
     if args.levels_testing.lower() == 'none' or args.levels_testing.lower() == 'false':
         args.levels_testing = False
     elif args.levels_testing == 'levels.tst':

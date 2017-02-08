@@ -112,6 +112,8 @@ if len(use_table) != len(tables_to_read):
     print("All of the tables weren't valid to change, so for now none will be.")
     print("This can likely be changed in the future, but for now caution abounds.")
     print("(This possibility is why 'use_table' and 'tables_to_read' are both there.)")
+    print(use_table)
+    print(tables_to_read)
     sys.exit()
 for table in use_table:
     with db.sessionmaker() as session:

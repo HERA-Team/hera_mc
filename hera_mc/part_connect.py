@@ -58,9 +58,9 @@ class Parts(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def get_revisions(args, hpn=None):
+def __get_part_revisions(args, hpn=None):
     """
-    Retrieves revision numbers for a given part (exact match)
+    Retrieves revision numbers for a given part (exact match).  Called from cm_part_revisions.py
     """
     if hpn is None:
         hpn = args.hpn
@@ -69,47 +69,10 @@ def get_revisions(args, hpn=None):
     with db.sessionmaker() as session:
         for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
             revisions[parts_rec.hpn_rev] = {}
+            revisions[parts_rec.hpn_rev]['hpn'] = hpn #Just carry this along
             revisions[parts_rec.hpn_rev]['started'] = parts_rec.start_date
             revisions[parts_rec.hpn_rev]['ended']   = parts_rec.stop_date
     return revisions
-
-
-def show_revisions(args, hpn=None):
-    revisions = get_revisions(args, hpn)
-    sort_rev = sorted(revisions.keys())
-    if args.verbosity == 'h' or args.verbosity == 'm':
-        headers = ['HPN', 'Revision', 'Start', 'Stop']
-        table_data = []
-        for rev in sort_rev:
-            started = revisions[parts_rec.hpn_rev]['started']
-            ended = revisions[parts_rec.hpn_rev]['ended']
-            table_data.append([hpn, rev, started, ended])
-        print(tabulate(table_data, headers=headers, tablefmt='simple'))
-        print('\n')
-    elif args.verbosity == 'l':
-        print('Last revision: ', sort_rev[-1])
-
-
-def get_last_revision(args, hpn=None):
-    revisions = get_revisions(args, hpn)
-    sort_rev = sorted(revisions.keys())
-    start_date = revisions[sort_rev[-1]]['started']
-    end_date   = revisions[sort_rev[-1]]['ended']
-    return [sort_rev[-1], start_date, end_date]
-
-
-def get_contemporary_revision(args,hpn):
-    current = cm_utils._get_datetime(args.date.args.time)
-    revisions = get_revisions(args, hpn)
-    sort_rev = sorted(revisions.keys())
-    return_date = None
-    for rev in sort_rev:
-        started = revisions[parts_rec.hpn_rev]['started']
-        ended = revisions[parts_rec.hpn_rev]['ended']
-        if cm_utils._is_active(current,started,ended):
-            return_date = [rev,started,ended]
-            break
-    return return_date
 
 
 def update_part(args, data):

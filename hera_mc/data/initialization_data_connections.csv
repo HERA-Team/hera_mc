@@ -1,4 +1,3 @@
-$_maindb_$:ddb_init
 upstream_part,up_part_rev,upstream_output_port,downstream_part,down_part_rev,downstream_input_port,start_date,stop_date
 PI38,A,ground,A127,A,ground,2014-10-03 01:00:00,2017-02-01 16:00:00
 A11,B,focus,FDP11,A,input,2017-02-01 16:00:00,
@@ -962,9 +961,11 @@ FDP12,A,terminals,FEA12,A,input,2014-10-03 01:00:00,
 FDP13,A,terminals,FEA13,A,input,2014-10-03 01:00:00,
 FDP14,A,terminals,FEA14,A,input,2014-10-03 01:00:00,
 FDP15,A,terminals,FEA15,A,input,2014-10-03 01:00:00,
-FDP16,A,terminals,FEA16,A,input,2014-10-03 01:00:00,
+FDP16,A,terminals,FEA16,A,input,2014-10-03 01:00:00,2017-02-01 16:00:00
+FDA16,B,terminals,FEA16,A,input,2017-02-01 16:00:00,
 FDP17,A,terminals,FEA17,A,input,2014-10-03 01:00:00,
-FDP18,A,terminals,FEA18,A,input,2014-10-03 01:00:00,
+FDP18,A,terminals,FEA18,A,input,2014-10-03 01:00:00,2017-02-01 16:00:00
+FDA18,B,terminals,FEA18,A,input,2017-02-01 16:00:00,
 FDP19,A,terminals,FEA19,A,input,2014-10-03 01:00:00,
 FDP1,A,terminals,FEA1,A,input,2014-10-03 01:00:00,
 FDP21,A,terminals,FEA21,A,input,2014-10-03 01:00:00,
@@ -978,7 +979,8 @@ FDP29,A,terminals,FEA29,A,input,2014-10-03 01:00:00,
 FDP2,A,terminals,FEA2,A,input,2014-10-03 01:00:00,
 FDP30,A,terminals,FEA30,A,input,2014-10-03 01:00:00,
 FDP32,A,terminals,FEA32,A,input,2014-10-03 01:00:00,
-FDP33,A,terminals,FEA33,A,input,2014-10-03 01:00:00,
+FDP33,A,terminals,FEA33,A,input,2014-10-03 01:00:00,2017-02-01 16:00:00
+FDA33,B,terminals,FEA33,A,input,2017-02-01 08:00:00
 FDP34,A,terminals,FEA34,A,input,2014-10-03 01:00:00,
 FDP35,A,terminals,FEA35,A,input,2014-10-03 01:00:00,
 FDP36,A,terminals,FEA36,A,input,2014-10-03 01:00:00,
@@ -1916,11 +1918,11 @@ A35,B,focus,FDP35,A,input,2017-02-01 16:00:00,
 HH84,A,ground,A107,B,ground,2017-02-01 16:00:00,
 A107,B,focus,FDP107,A,input,2017-02-01 16:00:00,
 HH28,A,ground,A18,B,ground,2017-02-01 16:00:00,
-A18,B,focus,FDP18,A,input,2017-02-01 16:00:00,
+A18,B,focus,FDA18,B,input,2017-02-01 16:00:00,
 HH36,A,ground,A33,B,ground,2017-02-01 16:00:00,
-A33,B,focus,FDP33,A,input,2017-02-01 16:00:00,
+A33,B,focus,FDA33,B,input,2017-02-01 16:00:00,
 HH42,A,ground,A16,B,ground,2017-02-01 16:00:00,
-A16,B,focus,FDP16,A,input,2017-02-01 16:00:00,
+A16,B,focus,FDA16,B,input,2017-02-01 16:00:00,
 RI8B5E,A,b,RCVR20,A,ea,2014-10-03 01:00:00,
 RI8B5N,A,b,RCVR20,A,na,2014-10-03 01:00:00,
 RI8B6E,A,b,RCVR65,A,ea,2014-10-03 01:00:00,
