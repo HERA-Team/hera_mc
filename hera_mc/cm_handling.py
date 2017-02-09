@@ -112,21 +112,27 @@ class Handling:
                         if part.hptype == 'station':
                             args.locate = part.hpn
                             part_dict[pr_key]['geo'] = geo_location.locate_station(args, show_geo=False)
-                        for k,v in part_dict[pr_key]['connections'].iteritems():
-                            if k in self.non_class_connections_dict_entries:  continue
-                            if cm_utils._is_active(current,v.start_date,v.stop_date):
-                                if ':up:' in k:     part_dict[pr_key]['input_ports'].append(v.downstream_input_port)
-                                elif ':down:' in k: part_dict[pr_key]['output_ports'].append(v.upstream_output_port)
-                                else: print("cm_handling[120]: ERROR SHOULD BE UP or DOWN ",k)
-                        part_dict[pr_key]['output_ports'].sort()
-                        part_dict[pr_key]['input_ports'].sort()
+                        part_dict[pr_key]['input_ports'],part_dict[pr_key]['output_ports'] = \
+                                          self.__find_ports(part_dict[pr_key]['connections'], current)
                     else:
-                        print("Warning cm_handling[123]:  Well, being here is a surprise -- should only be one part/rev.", part.hpn,part.hpn_rev)
+                        print("cm_handling[120]:  Warning: should only be one part/rev.", part.hpn,part.hpn_rev)
         if show_part:
             self.show_part(part_dict)
         if return_dictionary:
             return part_dict
 
+    def __find_ports(self, connections_dict, current):
+        input_ports = []
+        output_ports = []
+        for k,v in connections_dict.iteritems():
+            if k in self.non_class_connections_dict_entries:  continue
+            if cm_utils._is_active(current,v.start_date,v.stop_date):
+                if ':up:' in k:     input_ports.append(v.downstream_input_port)
+                elif ':down:' in k: output_ports.append(v.upstream_output_port)
+                else: print("cm_handling[134]: ERROR SHOULD BE UP or DOWN ",k)
+        input_ports.sort()
+        output_ports.sort()
+        return input_ports, output_ports
 
     def show_part(self, part_dict):
         """
@@ -205,6 +211,7 @@ class Handling:
             hpn_query = hpn_query+'%'
         if port_query is None:
             port_query = args.specify_port
+        current = cm_utils._get_datetime(args.date,args.time)
         connection_dict = {'ordered_pairs':None}
         down_parts = []
         up_parts = []
@@ -219,27 +226,29 @@ class Handling:
                     ### Find where the part is in the upward connection, so identify its downward connection
                     for conn in session.query(part_connect.Connections).filter( (part_connect.Connections.upstream_part == hpn) &
                                                                                 (part_connect.Connections.up_part_rev == this_rev) ):
-                        print('cm_handling[222]:',conn)
                         if port_query.lower()=='all' or conn.upstream_output_port.lower() == port_query.lower():
                             prc_key = _make_connection_key(hpn, this_rev, conn.upstream_output_port, 'down',
                                                            conn.downstream_part, conn.down_part_rev, conn.downstream_input_port,
                                                            conn.start_date)
                             connection_dict[prc_key] = copy.copy(conn)
-                            down_parts.append(prc_key)
+                            if cm_utils._is_active(current,conn.start_date,conn.stop_date):
+                                down_parts.append(prc_key)
                     ### Find where the part is in the downward connection, so identify its upward connection
                     for conn in session.query(part_connect.Connections).filter( (part_connect.Connections.downstream_part == hpn) &
                                                                                 (part_connect.Connections.down_part_rev == this_rev) ):
-                        print('cm_handling[232]:',conn)
                         if port_query.lower()=='all' or conn.downstream_input_port.lower() == port_query.lower():
                             prc_key = _make_connection_key(hpn, this_rev, conn.downstream_input_port, 'up',
                                                            conn.upstream_part, conn.up_part_rev, conn.upstream_output_port,
                                                            conn.start_date)
                             connection_dict[prc_key] = copy.copy(conn)
-                            up_parts.append(prc_key)
+                            if cm_utils._is_active(current,conn.start_date,conn.stop_date):
+                                up_parts.append(prc_key)
+        up_parts.sort()
+        down_parts.sort()
         if len(up_parts) > len(down_parts):
-            down_parts = (down_parts + len(up_parts)*[self.no_connection_designator])[:len(up_parts)]
+            down_parts = (down_parts + len(up_parts)*[down_parts[-1]])[:len(up_parts)]
         elif len(down_parts) > len(up_parts):
-            up_parts = (up_parts + len(down_parts)*[self.no_connection_designator])[:len(down_parts)]
+            up_parts = (up_parts + len(down_parts)*[up_parts[-1]])[:len(down_parts)]
         connection_dict['ordered_pairs'] = [sorted(up_parts),sorted(down_parts)]
         nc = self.no_connection_designator
         connection_dict[nc] = part_connect.Connections(upstream_part=nc,upstream_output_port=nc,up_part_rev=nc,
