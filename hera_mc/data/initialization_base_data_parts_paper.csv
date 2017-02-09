@@ -1,3 +1,4 @@
+$_maindb_$:ddb_init
 hpn,hpn_rev,hptype,manufacturer_number,start_date,stop_date
 A127,B,antenna,S/N24,2017-02-01 16:00:00,
 RI3B5N,A,cable_receiverin_n,RI3B5N,2014-10-03 15:00:00,

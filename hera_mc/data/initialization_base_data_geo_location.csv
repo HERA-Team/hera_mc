@@ -1,3 +1,4 @@
+$_maindb_$:ddb_init
 station_name,station_type_name,datum,tile,northing,easting,elevation,created_date
 HH84,herahex,WGS84,34J,6601146.6,540901.6,1051.78,2017-01-23 08:25:00
 HH87,herahex,WGS84,34J,6601146.6,540945.4,1051.79,2017-01-23 08:25:00
