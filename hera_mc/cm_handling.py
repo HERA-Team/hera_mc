@@ -219,6 +219,8 @@ class Handling:
             for part in session.query(part_connect.Parts).filter(part_connect.Parts.hpn.like(hpn_query)):
                 rev_part[part.hpn] = cmpr.get_revisions_of_type(args,rev_query,part.hpn)
             for hpn in rev_part.keys():
+                if rev_part[hpn] is None:
+                    continue
                 for rev in rev_part[hpn]:
                     up_parts = []
                     down_parts = []
