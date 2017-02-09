@@ -203,7 +203,7 @@ class Hookup:
                 hukey = _make_hookup_key(part_no, part_rev, p)
                 hookup_dict[hukey] = self.__follow_port_stream(portstream)
         if len(hookup_dict.keys())==0:
-            print(hpn_query,'not found')
+            print(hpn_query,rev_query,'not active')
             return None
         tkey = hookup_dict.keys()[0]
         hookup_dict['columns'] = []

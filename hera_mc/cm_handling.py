@@ -212,9 +212,7 @@ class Handling:
         if port_query is None:
             port_query = args.specify_port
         current = cm_utils._get_datetime(args.date,args.time)
-        connection_dict = {'ordered_pairs':None}
-        down_parts = []
-        up_parts = []
+        connection_dict = {'ordered_pairs':[]}
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
             rev_part = {}
@@ -222,6 +220,8 @@ class Handling:
                 rev_part[part.hpn] = cmpr.get_revisions_of_type(args,rev_query,part.hpn)
             for hpn in rev_part.keys():
                 for rev in rev_part[hpn]:
+                    up_parts = []
+                    down_parts = []
                     this_rev = rev[0]
                     ### Find where the part is in the upward connection, so identify its downward connection
                     for conn in session.query(part_connect.Connections).filter( (part_connect.Connections.upstream_part == hpn) &
@@ -243,26 +243,26 @@ class Handling:
                             connection_dict[prc_key] = copy.copy(conn)
                             if cm_utils._is_active(current,conn.start_date,conn.stop_date):
                                 up_parts.append(prc_key)
-        if len(up_parts)==0:
-            up_parts = [self.no_connection_designator]
-        if len(down_parts)==0:
-            down_parts = [self.no_connection_designator]
-        up_parts.sort()
-        down_parts.sort()
-        if len(up_parts) > len(down_parts):
-            down_parts = (down_parts + len(up_parts)*[down_parts[-1]])[:len(up_parts)]
-        elif len(down_parts) > len(up_parts):
-            up_parts = (up_parts + len(down_parts)*[up_parts[-1]])[:len(down_parts)]
-        connection_dict['ordered_pairs'] = [sorted(up_parts),sorted(down_parts)]
+                    if len(up_parts)==0:
+                        up_parts = [self.no_connection_designator]
+                    if len(down_parts)==0:
+                        down_parts = [self.no_connection_designator]
+                    up_parts.sort()
+                    down_parts.sort()
+                    if len(up_parts) > len(down_parts):
+                        down_parts = (down_parts + len(up_parts)*[down_parts[-1]])[:len(up_parts)]
+                    elif len(down_parts) > len(up_parts):
+                        up_parts = (up_parts + len(down_parts)*[up_parts[-1]])[:len(down_parts)]
+                    connection_dict['ordered_pairs'].append([sorted(up_parts),sorted(down_parts)])
         nc = self.no_connection_designator
         connection_dict[nc] = part_connect.Connections(upstream_part=nc,upstream_output_port=nc,up_part_rev=nc,
                                                        downstream_part=nc,downstream_input_port=nc,down_part_rev=nc,
                                                        start_date=cm_utils._get_datetime('<','<'),
                                                        stop_date=cm_utils._get_datetime('>','>'))
         if show_connection:
-            self.show_active_connections(connection_dict)
+            already_shown = self.show_active_connections(connection_dict)
             if not args.active:
-                self.show_other_connections(connection_dict)
+                self.show_other_connections(connection_dict,already_shown)
         if return_dictionary:
             return connection_dict
             
@@ -278,89 +278,94 @@ class Handling:
         print("ACTIVE")
         current = cm_utils._get_datetime(self.args.date,self.args.time)
         table_data = []
+        already_shown = []
         vb = self.args.verbosity
         if vb == 'm':
             headers = ['Upstream', '<Output:', ':Input>', 'Part', '<Output:', ':Input>', 'Downstream']
         elif vb == 'h':
             headers = ['uStart', 'uStop', 'Upstream', '<Output:', ':Input>', 'Part', '<Output:', ':Input>', 'Downstream', 'dStart', 'dStop']
-        for i,up in enumerate(connection_dict['ordered_pairs'][0]):
-            dn = connection_dict['ordered_pairs'][1][i]
-            tdata = range(0,len(headers))
-            # Do upstream
-            connup = connection_dict[up]
-            uup = connup.upstream_part+':'+connup.up_part_rev
-            if self.no_connection_designator in uup:
-                start_date = self.no_connection_designator
-                stop_date = self.no_connection_designator
-            else:
-                start_date = connup.start_date
-                stop_date = connup.stop_date
-            udn = connup.downstream_part+':'+connup.down_part_rev
-            pos = {'uStart':{'h':0,'m':-1}, 'uStop':{'h':1,'m':-1}, 'Upstream':{'h':2,'m':0}, 
-                   'Output':{'h':3,'m':1},  'Input':{'h':4,'m':2},      'Part':{'h':5,'m':3}}
-            if pos['uStart'][vb] > -1:
-                del tdata[pos['uStart'][vb]]
-                tdata.insert(pos['uStart'][vb],start_date)
-            if pos['uStop'][vb] > -1:
-                del tdata[pos['uStop'][vb]]
-                tdata.insert(pos['uStop'][vb],stop_date)
-            if pos['Upstream'][vb] > -1:
-                del tdata[pos['Upstream'][vb]]
-                tdata.insert(pos['Upstream'][vb],uup)
-            if pos['Output'][vb] > -1:
-                del tdata[pos['Output'][vb]]
-                tdata.insert(pos['Output'][vb],connup.upstream_output_port)
-            if pos['Input'][vb] > -1:
-                del tdata[pos['Input'][vb]]
-                tdata.insert(pos['Input'][vb],connup.downstream_input_port)
-            if pos['Part'][vb] > -1:
-                del tdata[pos['Part'][vb]]
-                tdata.insert(pos['Part'][vb],'['+udn+']')
-            # Do downstream
-            conndn = connection_dict[dn]
-            dup = conndn.upstream_part+':'+conndn.up_part_rev
-            ddn = conndn.downstream_part+':'+conndn.down_part_rev
-            if self.no_connection_designator in ddn:
-                start_date = self.no_connection_designator
-                stop_date = self.no_connection_designator
-            else:
-                start_date = conndn.start_date
-                stop_date = conndn.stop_date
-            pos = {'Part':{'h':5,'m':3}, 'Output':{'h':6,'m':4}, 'Input':{'h':7,'m':5}, 'Downstream':{'h':8,'m':6}, 
-                   'dStart':{'h':9,'m':-1}, 'dStop':{'h':10,'m':-1}}
-            if self.no_connection_designator in udn:
+        for ordered_pairs in connection_dict['ordered_pairs']:
+            for i,up in enumerate(ordered_pairs[0]):
+                dn = ordered_pairs[1][i]
+                already_shown.append(up)
+                already_shown.append(dn)
+                tdata = range(0,len(headers))
+                # Do upstream
+                connup = connection_dict[up]
+                uup = connup.upstream_part+':'+connup.up_part_rev
+                if self.no_connection_designator in uup:
+                    start_date = self.no_connection_designator
+                    stop_date = self.no_connection_designator
+                else:
+                    start_date = connup.start_date
+                    stop_date = connup.stop_date
+                udn = connup.downstream_part+':'+connup.down_part_rev
+                pos = {'uStart':{'h':0,'m':-1}, 'uStop':{'h':1,'m':-1}, 'Upstream':{'h':2,'m':0}, 
+                       'Output':{'h':3,'m':1},  'Input':{'h':4,'m':2},      'Part':{'h':5,'m':3}}
+                if pos['uStart'][vb] > -1:
+                    del tdata[pos['uStart'][vb]]
+                    tdata.insert(pos['uStart'][vb],start_date)
+                if pos['uStop'][vb] > -1:
+                    del tdata[pos['uStop'][vb]]
+                    tdata.insert(pos['uStop'][vb],stop_date)
+                if pos['Upstream'][vb] > -1:
+                    del tdata[pos['Upstream'][vb]]
+                    tdata.insert(pos['Upstream'][vb],uup)
+                if pos['Output'][vb] > -1:
+                    del tdata[pos['Output'][vb]]
+                    tdata.insert(pos['Output'][vb],connup.upstream_output_port)
+                if pos['Input'][vb] > -1:
+                    del tdata[pos['Input'][vb]]
+                    tdata.insert(pos['Input'][vb],connup.downstream_input_port)
                 if pos['Part'][vb] > -1:
                     del tdata[pos['Part'][vb]]
-                    tdata.insert(pos['Part'][vb],'['+dup+']')
-            if pos['Output'][vb] > -1:
-                del tdata[pos['Output'][vb]]
-                tdata.insert(pos['Output'][vb],conndn.upstream_output_port)
-            if pos['Input'][vb] > -1:
-                del tdata[pos['Input'][vb]]
-                tdata.insert(pos['Input'][vb],conndn.downstream_input_port)
-            if pos['Downstream'][vb] > -1:
-                del tdata[pos['Downstream'][vb]]
-                tdata.insert(pos['Downstream'][vb],ddn)
-            if pos['dStart'][vb] > -1:
-                del tdata[pos['dStart'][vb]]
-                tdata.insert(pos['dStart'][vb],start_date)
-            if pos['dStop'][vb] > -1:
-                del tdata[pos['dStop'][vb]]
-                tdata.insert(pos['dStop'][vb],stop_date)
-            if vb == 'h' or vb == 'm':
-                table_data.append(tdata)
-            else:
-                print("Connections")
+                    tdata.insert(pos['Part'][vb],'['+udn+']')
+                # Do downstream
+                conndn = connection_dict[dn]
+                dup = conndn.upstream_part+':'+conndn.up_part_rev
+                ddn = conndn.downstream_part+':'+conndn.down_part_rev
+                if self.no_connection_designator in ddn:
+                    start_date = self.no_connection_designator
+                    stop_date = self.no_connection_designator
+                else:
+                    start_date = conndn.start_date
+                    stop_date = conndn.stop_date
+                pos = {'Part':{'h':5,'m':3}, 'Output':{'h':6,'m':4}, 'Input':{'h':7,'m':5}, 'Downstream':{'h':8,'m':6}, 
+                       'dStart':{'h':9,'m':-1}, 'dStop':{'h':10,'m':-1}}
+                if self.no_connection_designator in udn:
+                    if pos['Part'][vb] > -1:
+                        del tdata[pos['Part'][vb]]
+                        tdata.insert(pos['Part'][vb],'['+dup+']')
+                if pos['Output'][vb] > -1:
+                    del tdata[pos['Output'][vb]]
+                    tdata.insert(pos['Output'][vb],conndn.upstream_output_port)
+                if pos['Input'][vb] > -1:
+                    del tdata[pos['Input'][vb]]
+                    tdata.insert(pos['Input'][vb],conndn.downstream_input_port)
+                if pos['Downstream'][vb] > -1:
+                    del tdata[pos['Downstream'][vb]]
+                    tdata.insert(pos['Downstream'][vb],ddn)
+                if pos['dStart'][vb] > -1:
+                    del tdata[pos['dStart'][vb]]
+                    tdata.insert(pos['dStart'][vb],start_date)
+                if pos['dStop'][vb] > -1:
+                    del tdata[pos['dStop'][vb]]
+                    tdata.insert(pos['dStop'][vb],stop_date)
+                if vb == 'h' or vb == 'm':
+                    table_data.append(tdata)
+                else:
+                    print("Connections")
         if vb=='m' or vb=='h':
             print(tabulate(table_data,headers=headers,tablefmt='orgtbl')+'\n')
+        return already_shown
 
-    def show_other_connections(self,connection_dict):
+    def show_other_connections(self,connection_dict,already_shown):
         print("OTHER")
         for k,v in connection_dict.iteritems():
             if k in self.non_class_connections_dict_entries:
                 continue
-            elif k in connection_dict['ordered_pairs'][0] or k in connection_dict['ordered_pairs'][1]:
-                pass
+            elif k in already_shown:
+                continue
             else:
                 print(v,v.start_date,v.stop_date)
 
