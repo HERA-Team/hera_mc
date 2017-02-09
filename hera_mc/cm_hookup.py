@@ -290,7 +290,7 @@ class Hookup:
                     inputp = ''
                     for p in pn[5]:
                         inputp+=(p+',')
-                    prpn = '('+inputp.strip(',')+')'
+                    prpn = inputp.strip(',')+'>'
                     if pn[0] == hukey.split(':')[0]:
                         prpn+= '['+pn[0]+':'+pn[1]+']'
                     else:
@@ -298,7 +298,7 @@ class Hookup:
                     outputp = ''
                     for p in pn[6]:
                         outputp+=(p+',')
-                    prpn+=('('+outputp.strip(',')+')')
+                    prpn+=('<'+outputp.strip(','))
                 td.append(prpn)
             if show_it:
                 table_data.append(td)

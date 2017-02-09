@@ -253,7 +253,9 @@ class Connections(MCDeclarativeBase):
     "stop_time is the time that the connection is removed"
 
     def __repr__(self):
-        return '<{self.upstream_part}<{self.upstream_output_port}:{self.downstream_input_port}>{self.downstream_part}>'.format(self=self)
+        up = '{self.upstream_part}:{self.up_part_rev}'.format(self=self)
+        down = '{self.downstream_part}:{self.down_part_rev}'.format(self=self)
+        return '<{}<{self.upstream_output_port}::{self.downstream_input_port}>{}>'.format(up,down,self=self)
 
     def connection(self, **kwargs):
         for key, value in kwargs.items():
