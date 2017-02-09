@@ -289,6 +289,8 @@ class Handling:
         for ordered_pairs in connection_dict['ordered_pairs']:
             for i,up in enumerate(ordered_pairs[0]):
                 dn = ordered_pairs[1][i]
+                if self.no_connection_designator in up and self.no_connection_designator in dn:
+                    continue
                 already_shown.append(up)
                 already_shown.append(dn)
                 tdata = range(0,len(headers))
