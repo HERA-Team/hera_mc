@@ -62,5 +62,12 @@ VERSION = __version__
 PACKAGES = ['hera_mc',
             'hera_mc.tests']
 SCRIPTS = [p for p in glob.glob('scripts/*') if not p.endswith('~')]
-PACKAGE_DATA = {'hera_mc': [pjoin('data', '*')]}
+PACKAGE_DATA = {
+    'hera_mc': [
+        pjoin('data', '*.csv'),
+        pjoin('data', 'HERA_350.txt'),
+        pjoin('data', 'finals.all'),
+        pjoin('data', 'test_data', '*.tst'),
+    ]
+}
 REQUIRES = ["astropy", "sqlalchemy", "uptime", "numpy", "tabulate", "matplotlib", "pandas", "pytz"]
