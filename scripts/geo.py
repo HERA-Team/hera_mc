@@ -42,16 +42,14 @@ if __name__ == '__main__':
     args.verbosity = args.verbosity.lower()
     located = None
     if args.cofa:
-        altmp = None
-        if args.locate:
-            altmp = args.locate
+        altmp = args.locate
         args.locate = 'COFA_HSA7458_V000'
         located = geo_location.locate_station(args,show_geo=False)
         print('Center of array: %s' % (located['station_name']))
         try:
-            print('UTM:  %.0f %.0f at %.1f' % (located['easting'],located['northing'],located['elevation']))
+            print('UTM:  %.0fE %.0fN at %.1fm' % (located['easting'],located['northing'],located['elevation']))
         except TypeError:
-            print('UTM:  %.0f %.0f' % (located['easting'],located['northing']))
+            print('UTM:  %.0fE %.0fN' % (located['easting'],located['northing']))
         args.locate = altmp
     if args.update:
         data = geo_location.parse_update_request(args.update)
