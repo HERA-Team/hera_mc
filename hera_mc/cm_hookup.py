@@ -90,7 +90,7 @@ class Hookup:
                 except IndexError:
                     end_of_the_line = True
         else:
-            print('cm_hookup[90]: not there',hpn,rev,port)
+            print('cm_hookup[93]: not there',hpn,rev,port)
             end_of_the_line = True
         if end_of_the_line:
             port = None
