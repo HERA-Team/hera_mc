@@ -17,6 +17,8 @@ from hera_mc import cm_part_revisions as cmpr
 
 def _make_part_key(hpn,rev):
     return ":".join([hpn,rev])
+def _split_part_key(key):
+    return key.split(':')[0],key.split(':')[1]
 def _make_connection_key(hpn,rev,port,direction,next_part,next_rev,next_port,start_date):
     return ":".join([hpn,rev,port,direction,next_part,cm_utils._get_datekeystring(start_date)])
 
@@ -90,6 +92,8 @@ class Handling:
 
             ### Now get unique part/revs and put into dictionary
             for hpn in rev_part.keys():
+                if rev_part[hpn] is None:
+                    continue
                 for rev in rev_part[hpn]:
                     this_rev = rev[0]
                     part_query = session.query(part_connect.Parts).filter( (part_connect.Parts.hpn==hpn) &
@@ -127,8 +131,10 @@ class Handling:
         for k,v in connections_dict.iteritems():
             if k in self.non_class_connections_dict_entries:  continue
             if cm_utils._is_active(current,v.start_date,v.stop_date):
-                if ':up:' in k:     input_ports.append(v.downstream_input_port)
-                elif ':down:' in k: output_ports.append(v.upstream_output_port)
+                if ':up:' in k and v.downstream_input_port not in input_ports:
+                    input_ports.append(v.downstream_input_port)
+                elif ':down:' in k and v.upstream_output_port not in output_ports:
+                    output_ports.append(v.upstream_output_port)
                 else: print("cm_handling[134]: ERROR SHOULD BE UP or DOWN ",k)
         input_ports.sort()
         output_ports.sort()
@@ -225,7 +231,7 @@ class Handling:
                     up_parts = []
                     down_parts = []
                     this_rev = rev[0]
-                    ### Find where the part is in the upward connection, so identify its downward connection
+                    ### Find where the part is in the upward position, so identify its downward connection
                     for conn in session.query(part_connect.Connections).filter( (part_connect.Connections.upstream_part == hpn) &
                                                                                 (part_connect.Connections.up_part_rev == this_rev) ):
                         if port_query.lower()=='all' or conn.upstream_output_port.lower() == port_query.lower():
@@ -235,7 +241,7 @@ class Handling:
                             connection_dict[prc_key] = copy.copy(conn)
                             if cm_utils._is_active(current,conn.start_date,conn.stop_date):
                                 down_parts.append(prc_key)
-                    ### Find where the part is in the downward connection, so identify its upward connection
+                    ### Find where the part is in the downward position, so identify its upward connection
                     for conn in session.query(part_connect.Connections).filter( (part_connect.Connections.downstream_part == hpn) &
                                                                                 (part_connect.Connections.down_part_rev == this_rev) ):
                         if port_query.lower()=='all' or conn.downstream_input_port.lower() == port_query.lower():
@@ -271,7 +277,7 @@ class Handling:
 
     def show_active_connections(self, connection_dict):
         """
-        Print out connection information.  Uses tabulate package.
+        Print out active connection information.  Uses tabulate package.
 
         Parameters
         -----------
@@ -287,8 +293,7 @@ class Handling:
         elif vb == 'h':
             headers = ['uStart', 'uStop', 'Upstream', '<Output:', ':Input>', 'Part', '<Output:', ':Input>', 'Downstream', 'dStart', 'dStop']
         for ordered_pairs in connection_dict['ordered_pairs']:
-            for i,up in enumerate(ordered_pairs[0]):
-                dn = ordered_pairs[1][i]
+            for up,dn in zip(ordered_pairs[0],ordered_pairs[1]):
                 if self.no_connection_designator in up and self.no_connection_designator in dn:
                     continue
                 already_shown.append(up)
@@ -389,18 +394,36 @@ class Handling:
         db = mc.connect_to_mc_db(self.args)
         with db.sessionmaker() as session:
             for part in session.query(part_connect.Parts).all():
+                key = _make_part_key(part.hpn,part.hpn_rev)
                 if part.hptype not in self.part_type_dict.keys():
-                    self.part_type_dict[part.hptype] = {'part_list':[part.hpn], 'input_ports':[], 'output_ports':[]}
+                    self.part_type_dict[part.hptype] = {'part_list':[key], 'input_ports':[], 'output_ports':[], 'revisions':[]}
                 else:
-                    self.part_type_dict[part.hptype]['part_list'].append(part.hpn)
+                    self.part_type_dict[part.hptype]['part_list'].append(key)
         if show_hptype:
-            headers = ['Part type','# in dbase','A ports','B ports']
+            headers = ['Part type','# in dbase','Input ports','Output ports','Revisions']
             table_data = []
-        for k in self.part_type_dict.keys():  ###ASSUME FIRST PART IS FULLY CONNECTED
-            pa = self.part_type_dict[k]['part_list'][0]  
-            pd = self.get_part(pa,show_part=False)
-            self.part_type_dict[k]['input_ports'] = pd[pa]['input_ports']
-            self.part_type_dict[k]['output_ports'] = pd[pa]['output_ports']
+        for k in self.part_type_dict.keys():
+            found_connection = False
+            found_revisions = []
+            input_ports = []
+            output_ports = []
+            for pa in self.part_type_dict[k]['part_list']:
+                hpn,rev = _split_part_key(pa)
+                if rev not in found_revisions:
+                    found_revisions.append(rev)
+                if not found_connection:
+                    pd = self.get_part(hpn,rev,show_part=False)
+                    if len(pd[pa]['input_ports'])>0 or len(pd[pa]['output_ports'])>0:
+                        input_ports = pd[pa]['input_ports']
+                        output_ports = pd[pa]['output_ports']
+                        found_connection = True
+            if len(input_ports)==0:
+                input_ports = [self.no_connection_designator]
+            if len(output_ports)==0:
+                output_ports = [self.no_connection_designator]
+            self.part_type_dict[k]['input_ports'] = input_ports
+            self.part_type_dict[k]['output_ports'] = output_ports
+            self.part_type_dict[k]['revisions'] = sorted(found_revisions)
             if show_hptype:
                 td = [k,len(self.part_type_dict[k]['part_list'])]
                 pts = ''
@@ -411,9 +434,14 @@ class Handling:
                 for b in self.part_type_dict[k]['output_ports']:
                     pts+=(b+', ')
                 td.append(pts.strip().strip(','))
+                revs = ''
+                for r in self.part_type_dict[k]['revisions']:
+                    revs+=(r+', ')
+                td.append(revs.strip().strip(','))
                 table_data.append(td)
         if show_hptype:
-            print(tabulate(table_data,headers=headers,tablefmt='orgtbl'))          
+            print('\n',tabulate(table_data,headers=headers,tablefmt='orgtbl'))
+        print()     
         return self.part_type_dict
 
 
