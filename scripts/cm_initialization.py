@@ -93,6 +93,7 @@ else:
 
 # Check tables and reduce list to valid use_table
 use_table = list(tables_to_read)
+keyed_file = {}
 for table in tables_to_read:
     data_filename = os.path.join(mc.data_path, data_prefix + table + '.csv')
     dbkey = check_data_file(data_filename)
@@ -104,10 +105,13 @@ for table in tables_to_read:
             if dbkey != args.maindb:
                 print('Invalid maindb key for %s  (%s)' % (table,dbkey))
                 use_table.remove(table)
+            else:
+                keyed_file[table] = True
         else:
+            keyed_file[table] = False
             if dbkey != '$_remote_$':
-                print('Invalid remotedb key for  ', table)
-                use_table.remove(table)
+                print('Note:  Allowing maindb access for remotedb  ', table)
+                keyed_file[table] = True
 if len(use_table) != len(tables_to_read):
     print("All of the tables weren't valid to change, so for now none will be.")
     print("This can likely be changed in the future, but for now caution abounds.")
@@ -125,12 +129,8 @@ tables_to_init = list(reversed(use_table))
 for table in tables_to_init:
     data_filename = os.path.join(mc.data_path, data_prefix + table + '.csv')
     cm_utils._log('cm_initialization: ' + data_filename)
-    if args.maindb:  # key_row/field_row toggle as db is read
-        key_row = True
-        field_row = False
-    else:
-        key_row = False
-        field_row = True
+    key_row = keyed_file[table]
+    field_row = not key_row
     with db.sessionmaker() as session:
         field_name = []
         with open(data_filename, 'rb') as csvfile:
