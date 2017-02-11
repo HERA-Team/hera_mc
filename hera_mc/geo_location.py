@@ -19,6 +19,7 @@ from sqlalchemy import Column, Float, Integer, String, DateTime, ForeignKey, fun
 from . import MCDeclarativeBase, NotNull
 from hera_mc import mc, part_connect, cm_utils
 
+
 class StationType(MCDeclarativeBase):
     """
     A table to track/denote station type data categories in various ways

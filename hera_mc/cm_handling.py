@@ -22,6 +22,15 @@ def _split_part_key(key):
 def _make_connection_key(hpn,rev,port,direction,next_part,next_rev,next_port,start_date):
     return ":".join([hpn,rev,port,direction,next_part,cm_utils._get_datekeystring(start_date)])
 
+def cofa():
+    sys.argv = ['geo.py','--locate','COFA_HSA7458_V000']
+    parser = mc.get_mc_argument_parser()
+    parser.add_argument('-l', '--locate',help="Location of given station_name or antenna_number (assumed if <int>).  [None]", default=None)
+    parser.add_argument('-v', '--verbosity', help="Set verbosity. [m].", choices=['L', 'l', 'm', 'M', 'h', 'H'], default='m')
+    args = parser.parse_args()
+    located = geo_location.locate_station(args,show_geo=False)
+    return located
+
 class Handling:
     """
     Class to allow various manipulations of parts and their properties etc.  Things are 
