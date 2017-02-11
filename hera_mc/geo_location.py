@@ -19,6 +19,7 @@ from sqlalchemy import Column, Float, Integer, String, DateTime, ForeignKey, fun
 from . import MCDeclarativeBase, NotNull
 from hera_mc import mc, part_connect, cm_utils
 
+current_cofa = 'COFA_HSA7458_V000'
 
 class StationType(MCDeclarativeBase):
     """

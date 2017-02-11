@@ -44,7 +44,7 @@ if __name__ == '__main__':
     located = None
     if args.cofa:
         altmp = args.locate
-        args.locate = 'COFA_HSA7458_V000'
+        args.locate = geo_location.current_cofa
         located = geo_location.locate_station(args,show_geo=False)
         print('Center of array: %s' % (located['station_name']))
         try:
