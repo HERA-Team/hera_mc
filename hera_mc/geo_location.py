@@ -11,6 +11,7 @@ from __future__ import absolute_import, division, print_function
 import os
 import socket
 import sys
+import copy
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -287,7 +288,7 @@ def locate_station(args, show_geo=False):
         station_name = find_station_name(args,station)
     except ValueError:
         station_name = args.locate.upper()
-    v = None
+    found_it = False
     if station_name:
         db = mc.connect_to_mc_db(args)
         with db.sessionmaker() as session:
@@ -301,26 +302,24 @@ def locate_station(args, show_geo=False):
                         this_station = 'No station type data.'
                 ever_connected = is_in_connections(args,a.station_name) 
                 active = is_in_connections(args,a.station_name,True)
-                v = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation,
-                     'station_name': a.station_name, 'antenna_number':active, 'station_type': this_station, 
-                     'connected':ever_connected, 'active':active, 'created_date':a.created_date}
+                found_it = True
+                found_location = copy.copy(a)
                 if show_geo:
                     if args.verbosity == 'm' or args.verbosity == 'h':
                         print('station_name: ', a.station_name)
                         print('\teasting: ', a.easting)
                         print('\tnorthing: ', a.northing)
                         print('\televation: ', a.elevation)
-                        print('\tstation description (%s):  %s' % 
-                            (this_station,station_type[this_station]['Description']))
+                        print('\tstation description (%s):  %s' % (this_station,station_type[this_station]['Description']))
                         print('\tever connected:  ',ever_connected)
                         print('\tactive:  ',active)
                         print('\tcreated:  ',a.created_date)
                     elif args.verbosity == 'l':
                         print(a, this_station)
     if show_geo:
-        if not v and args.verbosity == 'm' or args.verbosity == 'h':
+        if not found_it and args.verbosity == 'm' or args.verbosity == 'h':
             print(args.locate, ' not found.')
-    return v
+    return found_location
 
 def plot_arrays(args, overplot=None, label_station=False):
     """Plot the various sub-array types"""
@@ -336,8 +335,7 @@ def plot_arrays(args, overplot=None, label_station=False):
                     if args.active:
                         show_it = is_in_connections(args,loc,True)
                     if show_it is not False:  #Need this since 0 is a valid antenna
-                        pt = {'easting': a.easting, 'northing': a.northing,
-                              'elevation': a.elevation}
+                        pt = {'easting': a.easting, 'northing': a.northing,'elevation': a.elevation}
                         plt.plot(pt[coord[args.xgraph]], pt[coord[args.ygraph]],
                                  station_type[key]['Marker'], label=a.station_name)
                         if label_station:
@@ -352,22 +350,25 @@ def plot_arrays(args, overplot=None, label_station=False):
                             plt.annotate(labeling, xy=(pt[coord[args.xgraph]], pt[coord[args.ygraph]]),
                                          xytext=(pt[coord[args.xgraph]] + 2, pt[coord[args.ygraph]]))
     if overplot:
-        if overplot['connected'] and overplot['active']:
+        ever_connected = is_in_connections(args,overplot.station_name) 
+        active = is_in_connections(args,overplot.station_name,True)
+        if ever_connected and active:
             over_marker = 'g*'
             mkr_lbl = 'ca'
-        elif overplot['connected'] and not overplot['active']:
+        elif ever_connected and not active:
             over_marker = 'gx'
             mkr_lbl = 'cx'
-        elif overplot['active'] and not overplot['connected']:
+        elif active and not ever_connected:
             over_marker = 'yx'
             mkr_lbl = 'xa'
         else:
             over_marker = 'rx'
             mkr_lbl = 'xx'
+        opt = {'easting': overplot.easting, 'northing': a.northing,'elevation': a.elevation}
         overplot_station = plt.plot(overplot[coord[args.xgraph]], overplot[coord[args.ygraph]],
                                     over_marker, markersize=14)
         legendEntries = [overplot_station]
-        legendText = [overplot['station_name'] + ':' + str(overplot['active'])]
+        legendText = [overplot.station_name + ':' + str(active)]
         plt.legend((overplot_station), (legendText), numpoints=1, loc='upper right')
     if args.xgraph != 'Z' and args.ygraph != 'Z':
         plt.axis('equal')
