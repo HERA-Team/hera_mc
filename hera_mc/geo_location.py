@@ -364,9 +364,8 @@ def plot_arrays(args, overplot=None, label_station=False):
         else:
             over_marker = 'rx'
             mkr_lbl = 'xx'
-        opt = {'easting': overplot.easting, 'northing': a.northing,'elevation': a.elevation}
-        overplot_station = plt.plot(overplot[coord[args.xgraph]], overplot[coord[args.ygraph]],
-                                    over_marker, markersize=14)
+        opt = {'easting': overplot.easting, 'northing': overplot.northing,'elevation': overplot.elevation}
+        overplot_station = plt.plot(opt[coord[args.xgraph]], opt[coord[args.ygraph]], over_marker, markersize=14)
         legendEntries = [overplot_station]
         legendText = [overplot.station_name + ':' + str(active)]
         plt.legend((overplot_station), (legendText), numpoints=1, loc='upper right')
