@@ -22,11 +22,11 @@ from hera_mc import mc, part_connect, cm_utils
 
 current_cofa = 'COFA_HSA7458_V000'
 def cofa():
-    sys.argv = ['geo_location.py','--locate',current_cofa,'--verbosity','h']
+    local_argv = ['--locate',current_cofa,'--verbosity','h']
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-l', '--locate',help="Location of given station_name or antenna_number (assumed if <int>).  [None]", default=None)
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [m].", choices=['L', 'l', 'm', 'M', 'h', 'H'], default='m')
-    args = parser.parse_args()
+    args = parser.parse_args(local_argv)
     located = locate_station(args,show_geo=False)
     return located
 
