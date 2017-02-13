@@ -69,9 +69,6 @@ class Observation(MCDeclarativeBase):
         t_start = starttime.utc
         t_stop = stoptime.utc
 
-        # t_start.delta_ut1_utc = iers_a.ut1_utc(t_start)
-        # t_stop.delta_ut1_utc = iers_a.ut1_utc(t_stop)
-
         if obsid is None:
             from math import floor
             obsid = floor(t_start.gps)
