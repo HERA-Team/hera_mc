@@ -65,7 +65,7 @@ class Handling:
         Return information on a part.  It will return all matching first characters unless exact_match==True.
         It gets all parts, the receiving module should filter on date if desired.
 
-        Returns part_dict: {'part':CLASS , 'part_info':CLASS, 'connections':CLASS ,'geo':DICT, 'input_ports':[], 'output_ports':[]}
+        Returns part_dict: {'part':CLASS , 'part_info':CLASS, 'connections':CLASS ,'geo':class, 'input_ports':[], 'output_ports':[]}
 
         Parameters
         -----------
@@ -182,8 +182,8 @@ class Handling:
                         comment = part_dict[hpnr]['part_info'].comment if (part_dict[hpnr]['part_info'] is not None) else None
                         tdata.append(comment)
                         if part_dict[hpnr]['geo'] is not None:
-                            tdata.append("{:.1f}E, {:.1f}N, {:.1f}m".format(part_dict[hpnr]['geo']['easting'],
-                                          part_dict[hpnr]['geo']['northing'],part_dict[hpnr]['geo']['elevation']))
+                            tdata.append("{:.1f}E, {:.1f}N, {:.1f}m".format(part_dict[hpnr]['geo'].easting,
+                                          part_dict[hpnr]['geo'].northing,part_dict[hpnr]['geo'].elevation))
                         else:
                             tdata.append(None)
                         table_data.append(tdata)

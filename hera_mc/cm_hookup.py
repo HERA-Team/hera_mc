@@ -62,7 +62,8 @@ class Hookup:
                       exact_match=True, return_dictionary=True, show_part=False)
         station_try_key = cm_handling._make_part_key(furthest_up[0],furthest_up[1])
         if try_station[station_try_key]['part'].hptype == 'station':
-            hu = [[str(try_station[station_try_key]['geo']['antenna_number']),'S']]
+            antenna_number = geo_location.is_in_connections(self.args,try_station[station_try_key]['geo'].station_name,True)
+            hu = [[str(antenna_number),'S']]
         else:
             hu = [[self.handling.no_connection_designator]]
         for pn in reversed(self.upstream):
@@ -90,7 +91,7 @@ class Hookup:
                 except IndexError:
                     end_of_the_line = True
         else:
-            print('cm_hookup[93]: not there',hpn,rev,port)
+            print('cm_hookup[94]: not there',hpn,rev,port)
             end_of_the_line = True
         if end_of_the_line:
             port = None

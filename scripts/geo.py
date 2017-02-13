@@ -46,11 +46,11 @@ if __name__ == '__main__':
         altmp = args.locate
         args.locate = geo_location.current_cofa
         located = geo_location.locate_station(args,show_geo=False)
-        print('Center of array: %s' % (located['station_name']))
+        print('Center of array: %s' % (located.station_name))
         try:
-            print('UTM:  %s %.0fE %.0fN at %.1fm (%s)' % (located['tile'],located['easting'],located['northing'],located['elevation'],located['datum']))
+            print('UTM:  %s %.0fE %.0fN at %.1fm (%s)' % (located.tile,located.easting,located.northing,located.elevation,located.datum))
         except TypeError:
-            print('UTM:  %s %.0fE %.0fN (%s)' % (located['tile'],located['easting'],located['northing'],located['datum']))
+            print('UTM:  %s %.0fE %.0fN (%s)' % (located.tile,located.easting,located.northing,located.datum))
         args.locate = altmp
     if args.update:
         data = geo_location.parse_update_request(args.update)
