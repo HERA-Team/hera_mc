@@ -10,16 +10,11 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from astropy.time import Time
 from astropy.coordinates import EarthLocation, Angle
+from pyproj import Proj
 from sqlalchemy import Column, BigInteger, String, Float
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
-
+from hera_mc import geo_location
 from . import MCDeclarativeBase
-
-
-# TODO: these should not be hardcoded in some random M&C file!!!!
-HERA_LAT = Angle('-30d43m17.5s').degree
-HERA_LON = Angle('21d25m41.9s').degree
-"value taken from capo/cals/hsa7458_v000.py, comment reads KAT/SA  (GPS)"
 
 
 class Observation(MCDeclarativeBase):
@@ -73,7 +68,12 @@ class Observation(MCDeclarativeBase):
             from math import floor
             obsid = floor(t_start.gps)
 
-        t_start.location = EarthLocation.from_geodetic(HERA_LON, HERA_LAT)
+        hera_geo = geo_location.cofa()
+
+        hera_proj = Proj(proj='utm', zone=hera_geo.tile, ellps=hera_geo.datum, south=True)
+        hera_lon, hera_lat = hera_proj(hera_geo.easting, hera_geo.northing, inverse=True)
+
+        t_start.location = EarthLocation.from_geodetic(hera_lon, hera_lat)
         return cls(obsid=obsid, start_time_jd=t_start.jd,
                    stop_time_jd=t_stop.jd,
                    lst_start_hr=t_start.sidereal_time('apparent').hour)
