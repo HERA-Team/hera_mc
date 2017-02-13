@@ -28,27 +28,27 @@ but they are:
 Software is contained in the repository https://github.com/HERA-Team/hera\_mc.
 
 The databases are structured primarily around {\em parts} and {\em connections}.  {\em Parts} are meant to be single items that, in theory at least, are a thing than can be replaced as a unit.  
-{\em Connections} define {\em ports} on a given {\em part} and connect two {\em ports} together.  All {\em parts} and {\em connections} are timed in that they have a start and stop time of operation.  If stop is {\tt None}, then it is active (it is given a date in the relatively far future).  There are currently two special parts:  
+{\em Connections} define {\em ports} on a given {\em part} and connect two {\em ports} together.  All {\em parts} and {\em connections} are timed in that they have a start and stop time of operation.  If stop is {\tt None}, then it is active (it is given a date in the relatively far future).  There are currently two special parts (one at each end of the signal chain):
 \begin{itemize}
-	\item {\bf geo\_location}: xxx  
+	\item {\bf geo\_location}: a geo\_located part (``station'') is a named location with UTM coordinates which also has an entry in the geo\_location table;
 	\item {\bf f\_engine}:  each input to the f\_engine ROACH-2 is currently listed as a separate part.  Probably it should be a 32-input part, but given timing will wait for the new architecture.
 \end{itemize}
 
-3. Hook-up
-The parts are hooked together via connections.  In this context, to locate an antenna it?s geographical position is called a ?station?, which is a special type of part.  Once defined, a station never moves -- it is a fixed-forever geographical position.  Antennas and other things can be placed on at a station.  Fortunately for HERA, antennas don?t move, so this ambiguity will go away.  PARTS.md has information.
-3.1 PAPER-era hook-up (parts\_paper table)
-For parts in the PAPER era, the hook-up is a follows:
-Station
-Antenna
-Feed
-Frontend
-Cable\_feed75
-Cable\_receiverin
-Receiver
-Cable\_receiverout
-Cable\_receiverator
-Cable\_container
-F\_engine
+Parts are hooked together via connections of their ports.   For parts in the PAPER era, the signal chain hook-up is a follows:
+\begin{itemize}
+\setlength\itemsep{-.3em}
+	\item Station: geo\_located position.  See prefixes in table station\_meta
+	\item Antenna:  collecting element (used as the correlator number).  {\tt A\#}
+	\item Feed:  element feed.  {\tt FDP} are PAPER feeds, {\tt FDA\#} are design A HERA feeds.
+	\item Frontend:  lna, etc at feed.  {\tt FEA\#} is design A (75 $\Omega$)
+	\item Cable\_feed75:  cable from front-end to receiverator {\tt C7F\#}
+	\item Cable\_receiverin:  cable inside receiverator to receiver {\tt RI\#}
+	\item Receiver
+	\item Cable\_receiverout
+	\item Cable\_receiverator
+	\item Cable\_container
+	\item F\_engine
+\end{itemize}
 
 In the hook-up listing (using the -m flag), the Antenna number (without the ?A?) is also displayed under the station just to help the user find the antenna number that the correlator cares about.  It maps antenna to position to correlator input.
 
