@@ -301,7 +301,8 @@ def locate_station(args, show_geo=False):
                         this_station = 'No station type data.'
                 ever_connected = is_in_connections(args,a.station_name) 
                 active = is_in_connections(args,a.station_name,True)
-                v = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation,
+                v = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation, 'tile':a.tile,
+                     'datum':a.datum,
                      'station_name': a.station_name, 'antenna_number':active, 'station_type': this_station, 
                      'connected':ever_connected, 'active':active, 'created_date':a.created_date}
                 if show_geo:
