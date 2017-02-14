@@ -36,6 +36,7 @@ class test_connections(unittest.TestCase):
     def test_commit_part(self):
         part = part_connect.Parts()
         part.hpn = 'happy_thing'
+        part.hpn_rev = 'A'
         part.manufacture_date = 'Oct 26, 2011'
         part.hptype = 'vapor'
         print(part)

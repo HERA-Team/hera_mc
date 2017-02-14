@@ -34,30 +34,30 @@ The databases are structured primarily around {\em parts} and {\em connections}.
 	\item {\bf f\_engine}:  each input to the f\_engine ROACH-2 is currently listed as a separate part.  Probably it should be a 32-input part, but given timing will wait for the new architecture.
 \end{itemize}
 
-Parts are hooked together via connections of their ports.   For parts in the PAPER era, the signal chain hook-up is a follows:
+Parts are hooked together via connections of their ports.   For parts in the PAPER era, the signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}.
 \begin{itemize}
 \setlength\itemsep{-.3em}
-	\item Station: geo\_located position.  See prefixes in table station\_meta
-	\item Antenna:  collecting element (used as the correlator number).  {\tt A\#}
-	\item Feed:  element feed.  {\tt FDP} are PAPER feeds, {\tt FDA\#} are design A HERA feeds.
-	\item Frontend:  lna, etc at feed.  {\tt FEA\#} is design A (75 $\Omega$)
-	\item Cable\_feed75:  cable from front-end to receiverator {\tt C7F\#}
-	\item Cable\_receiverin:  cable inside receiverator to receiver {\tt RI\#}
-	\item Receiver
-	\item Cable\_receiverout
-	\item Cable\_receiverator
-	\item Cable\_container
-	\item F\_engine
+	\item {\bf Station}: geo\_located position.  See prefixes in table station\_meta
+	\item {\bf Antenna}:  collecting element (used as the correlator number).  {\tt A\{SN\}}
+	\item {\bf Feed}:  element feed.  {\tt FDP\{SN\}} are PAPER feeds, {\tt FDA\{SN\}} are design A HERA feeds.
+	\item {\bf Frontend}:  lna, etc at feed.  {\tt FEA\{SN\}} is design A (75 $\Omega$)
+	\item {\bf Cable\_feed75}:  cable from front-end to receiverator {\tt C7F\{SN\}}
+	\item {\bf Cable\_receiverin}:  cable inside receiverator to receiver {\tt RI\{\#\}\{A/B\}\{\#\}\{E/N\}}
+	\item {\bf Receiver}:  receiver module in receiverator {\tt RCVR\{SN\}}
+	\item {\bf Cable\_receiverout}:  cable inside receiverator from receiver {\tt RO\{\#\}\{A/B\}\{\#\}\{E/N\}}
+	\item {\bf Cable\_receiverator}:  cable from receiverator to container {\tt CR\{\#\}\{A/B\}\{\#\}\{E/N\}}
+	\item {\bf Cable\_container}:  cable inside container {\tt CC\{\#\}R\{\#\}C\{\#\}}
+	\item {\bf F\_engine}:  Roach-2 input {\tt DF\{\#\}\{A-H\}\{\#\}}
 \end{itemize}
 
-In the hook-up listing (using the -m flag), the Antenna number (without the ?A?) is also displayed under the station just to help the user find the antenna number that the correlator cares about.  It maps antenna to position to correlator input.
+In the hook-up listing (using the -m flag), the Antenna number (without the {\tt A}) is also displayed under the station just to help the user find the antenna number that the correlator cares about.  It maps antenna to position to correlator input.
 
-%\begin{figure}[H]
-%\includegraphics[width=0.8\textwidth]{FILE.pdf}
-%\centering
-%\caption{CAPTION}
-%\label{fig:FIGURE}
-%\end{figure}
+\begin{figure}[H]
+\includegraphics[width=0.8\textwidth]{hookup.pdf}
+\centering
+\caption{Block diagram of hookup}
+\label{fig:hookup}
+\end{figure}
 
 2. Use Cases
 Three use cases are identified:
