@@ -26,7 +26,6 @@ import numpy as np
 from astropy.time import Time
 from astropy.coordinates import EarthLocation, Angle
 import math
-# from astropy.utils import iers
 
 from . import MCDeclarativeBase
 

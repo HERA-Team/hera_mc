@@ -32,12 +32,12 @@ class test_hera_mc(unittest.TestCase):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
 
-        # t1.delta_ut1_utc = mc.iers_a.ut1_utc(t1)
-        # t2.delta_ut1_utc = mc.iers_a.ut1_utc(t2)
+        # generated test hera_lat, hera_lon using the output of geo.py -c
+        # with this website: http://www.uwgb.edu/dutchs/usefuldata/ConvertUTMNoOZ.HTM
 
         from math import floor
         obsid = floor(t1.gps)
-        t1.location = EarthLocation.from_geodetic(observations.HERA_LON, observations.HERA_LAT)
+        t1.location = EarthLocation.from_geodetic(21.428249, -30.709259)
 
         expected = [observations.Observation(obsid=obsid, start_time_jd=t1.jd,
                                              stop_time_jd=t2.jd,
