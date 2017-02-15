@@ -35,9 +35,8 @@ The databases are structured primarily around {\em parts} and {\em connections}.
 \end{itemize}
 
 Parts are hooked together via connections of their ports.   For parts in the PAPER era, the signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}.
-\begin{itemize}
-\setlength\itemsep{-.3em}
-	\item {\bf Station}: geo\_located position.  See prefixes in table station\_meta
+\begin{itemize}\setlength\itemsep{-.3em}
+	\item {\bf Station}: geo\_located position.  See prefixes in table station\_meta ({\em e.g.} {\tt HH} for herahex)
 	\item {\bf Antenna}:  collecting element ({\em this used as the correlator number,} {\tt \{C\}}):  {\tt{\bf A}\{C\}}
 	\item {\bf Feed}:  element feed.  {\tt {\bf FDP}\{\#\}} are PAPER feeds, {\tt {\bf FDA}\{\#\}} are design A HERA feeds.
 	\item {\bf Frontend}:  lna, etc at feed.  {\tt {\bf FEA}\{\#\}} is design A (75 $\Omega$)
@@ -49,8 +48,9 @@ Parts are hooked together via connections of their ports.   For parts in the PAP
 	\item {\bf Cable\_container}:  cable inside container from {\tt\{P\}}late/{\tt\{Row\}}/{\tt\{Col\}}umn {\tt {\bf CC}\{P\}{\bf R}\{Row\}{\bf C}\{Col\}}
 	\item {\bf F\_engine}:  {\tt\{R2\}} Roach-2 input {\tt {\bf DF}\{R2\}\{"A"-"H"\}\{\#\}}
 \end{itemize}
+Summarizing with prefixes, we have {\tt HH-A-FD-FE-C7F-RI-RCVR-RO-CR-CC-DF}.
 
-In the hook-up listing (using the -m flag), the Antenna number (without the {\tt A}) is also displayed under the station just to help the user find the antenna number that the correlator cares about.  It maps antenna to position to correlator input.
+In the hook-up mapping listing (using the -m flag), the Antenna number (without the {\tt A}) is also displayed under the station just to help the user find the antenna number that the correlator cares about.  It maps antenna to position to correlator input.
 
 \begin{figure}[H]
 \includegraphics[width=0.8\textwidth]{hookup.pdf}
@@ -60,159 +60,131 @@ The line labels indicate the port names/connections.}
 \label{fig:hookup}
 \end{figure}
 
-2. Use Cases
+\section{Use Cases}
 Three use cases are identified:
-In-the-field
-Remote user
-Bulk database
-2.1. In-the-field updates
-This is the ?operational? mode, where inputs to the on-site database are done via scripts (command-line and/or web), which update the database directly.  These scripts will be documented under the repository software.
-2.2. Remote user
+\begin{enumerate}\setlength\itemsep{-.3em}
+	\item In-the-field
+	\item Remote user
+	\item Bulk database
+\end{enumerate}
+
+\subsection{In-the-field updates}
+This is the ``operational'' mode, where inputs to the on-site database are done via scripts (command-line and/or web), which update the database directly.  These scripts will be documented under the repository software.
+
+\subsection{Remote user}
 Remote use is the case when a remote user initializes and uses the tables outside of the main database.  This assumes that postgresql etc is configured on the remote computer.  Note that this mode supports both offline use (essentially steps 3-5 below, which are in bold) and development (probably all steps).  The process is as follows: 
-Generate ascii files of the tables in the main database (in the Karoo)
-      	(cm\_package.py [--tables table1,table2,...)
-Push to GitHub
-Pull down to remote computer
-Install (python setup.py install, although not necessarily needed)
-Initialize the updated ones (cm\_initialize.py)
-If you are developing, make a base version before you start
-(cm\_package.py --base)
+\begin{enumerate}\setlength\itemsep{-.3em}
+	\item Generate ascii files of the tables in the main database (in the Karoo) {\tt (cm\_package.py [--tables table1,table2,...)}
+	\item Push to GitHub
+	\item {\bf Pull down to remote computer}
+	\item {\bf Install ({\tt python setup.py install})}
+	\item {\bf Initialize the updated ones ({\tt cm\_initialize.py})}
+	\item If you are developing, make a base version before you start ({\tt cm\_package.py --base})
+\end{enumerate}
 
-Note that generally you should leave off the --tables option, since you should use all the tables so as to not break foreign keys (it is left there for ?expert? users).  Steps 3-5 are bolded, since if you just want to pull down the latest and use it assuming things are up-to-date they are all that are needed (i.e., leave the ?packaging to the experts?).
-	This has another option of --base, so that you can set up a base copy to which you can revert if need be by including --base on both commands (step 6).
-2.3. Main database updates
+Note that generally you should leave off the {\tt --tables} option, since you should use all the tables so as to not break foreign keys (it is left there for ``expert'' users).  Steps 3-5 are bolded, since if you just want to pull down the latest and use it assuming things are up-to-date they are all that are needed (i.e., leave the ``packaging to the experts'').
+
+This has another option of {\tt --base}, so that you can set up a base copy to which you can revert if need be by including {\tt --base} on both commands (step 6).
+	
+\subsection{Main database updates}
 This is effectively the opposite of the remote user case, bringing an updated set of table(s) back into the main database.  The process is as follows:
-Generate ascii files of the desired tables from the remote database: 
-(cm\_package.py --maindb $key [--tables table1,table2,...])
-Push to GitHub
-Pull down to site computer
-Install
-Update existing tables 
-(cm\_initialize.py --maindb $key [--tables table1,table2,])
-As per above, you should generally leave off the --tables option so as to do them all.  You should be sure it all works on the remote computer by running the pair of commands
-cm\_package.py
-cm\_initialize.py 
-and leave off the --maindb $key, which is only needed for updating the site main database.  The --base would also work for the main database, but would also require --maindb $key, which you?d have to remember or look up to reapply the base.
+\begin{enumerate}\setlength\itemsep{-.3em}
+	\item  Generate ascii files of the desired tables from the remote database: 
+		({\tt cm\_package.py --maindb \$key [--tables table1,table2,...]})
+	\item Push to GitHub
+	\item Pull down to site computer
+	\item Install
+	\item Update existing tables  ({\tt cm\_initialize.py --maindb \$key [--tables table1,table2,]})
+\end{enumerate}
 
-%4. Tables
-%
-%The configuration management database comprises the following tables:
-%
-%Column
-%Type 
-%Description
-%geo_location :: geo_location.GeoLocation
-%station_name*
-%character varying(64)
-%Name of position - never changes
-%station_type_name*(1)
-%character varying(64)
-%Type of station
-%datum
-%character varying(64)
-%UTM datum
-%tile
-%character varying(64)
-%UTM tile
-%northing
-%double precision
-%UTM coordinate
-%easting
-%double precision
-%UTM coordinate
-%elevation
-%double precision
-%Elevation
-%created_date*
-%datetime
-%Date and time of creation.
-%geo_location :: station_type.StationType (was station_meta:StationMeta)
-%station_type_name*(1)
-%character varying(64)
-%Station type name
-%(was meta_class_name)
-%prefix*
-%character varying(64)
-%1-2 letter prefix for part station_name
-%description
-%character varying(64)
-%Short description
-%plot_marker
-%character varying(64)
-%Type of matplotlib marker
-%part_connect :: parts_paper.Parts
-%hpn*(2)
-%character varying(64)
-%HERA part number
-%hpn_rev*(3)
-%character varying(32)
-%HPN revision letter (A-Z)
-%hptype*
-%character varying(64)
-%HPN part type category
-%manufacturer_number
-%character varying(64)
-%Unique serial number for each part
-%start_date*
-%timestamp no time zone
-%Datetime when part/rev is activated.
-%stop_date
-%timestamp no time zone
-%Datetime when part/rev is de-activated
-%part_connect :: part_info.PartInfo
-%hpn*(2)
-%character varying(64)
-%HERA part number
-%hpn_rev*(3)
-%character varying(32)
-%HPN revision letter (A-Z)
-%posting_date*
-%timestamp no time zone
-%Date information was posted
-%comment*
-%character varying(1024)
-%Comment
-%library_file
-%character varying(256)
-%Librarian filename (how to get it there?)
-%(was info)
-%part_connect :: connections.Connections
-%upstream_part*(2)
-%character varying(64)
-%Hera part number of upstream connection
-%(was up)
-%up_part_rev*(3)
-%character varying(32)
-%Hera part revision of upstream connection
-%(was up_rev)
-%downstream_part*(2)
-%character varying(64)
-%Hera part number of downstream connection
-%(was down)
-%down_part_rev*(3)
-%character varying(32)
-%Hera part revision of downstream connection
-%(was down_rev)
-%upstream_output_port*
-%character varying(64)
-%Output port on upstream part
-%(was b_on_up)
-%downstream_input_port*
-%character varying(64)
-%Input port on downstream part
-%(was a_on_down)
-%start_date*
-%timestamp with time zone
-%Date when connection started
-%stop_date
-%timestamp no time zone
-%Date when connection ended
-%Bold 	= primary_key
-%Italics(#)	= foreign_key, defining if underlined, # identifies locations, can be bold
-%           *  	=  NotNull
-%
-%
-%
+Note that {\tt \$key} is a user supplied string to just make sure you meant to do the main database update.  It can be anything, you
+just need to remember it when you reload it on the main database computer qmaster.
+As per above, you should generally leave off the {\tt --tables} option so as to do them all.  
 
+\section{Tables}
+As mentioned above, there are five tables in the configuration management section of the database:  (1) geo\_location, (2) station\_meta,
+(3) parts\_paper, (4) part\_info, (5) connections.  The following tables summarize them with the following key:  
+\begin{itemize}\setlength\itemsep{-.3em}
+	\item {\bf Bold font} = primary key
+	\item {\em Italics(\#)} = foreign\_key.    The \# identifies the other locations.
+	\vspace{-.1in}
+	\begin{itemize}\setlength\itemsep{-.3em}
+		\item If {\em \underline{underlined}}, then that defines the key.
+		\item If {\em {\bf bold}}, it is also a primary key.
+	\end{itemize}
+	\vspace{-.08in}
+	\item * = NotNull entries (includes primary and foreign keys)
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\caption{geo\_location :: geo\_location.GeoLocation}
+\begin{tabular}{| l | l | l |} \hline
+{\bf Column} & {\bf Type} & {\bf Description} \\ \hline
+{\bf station\_name}*  & character varying(64) & Name of position - never changes \\ \hline
+{\em \underline{station\_type\_name}}*(1) & character varying(64) & Type of station \\ \hline
+datum & character varying(64) & UTM datum \\ \hline
+tile & character varying(64) & UTM tile \\ \hline
+northing & double precision & UTM coordinate \\ \hline
+easting & double precision & UTM coordinate \\ \hline
+elevation & double precision & Elevation \\ \hline
+created\_date* & datetime & Date and time of creation. \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{geo\_location :: station\_type.StationType}
+\begin{tabular}{| l | l | l |} \hline
+{\bf Column} & {\bf Type} & {\bf Description} \\ \hline
+station\_type\_name*(1) &  character varying(64) &  Station type name \\ \hline
+prefix* & character varying(64) & 1-2 letter prefix for part station\_name \\ \hline
+description & character varying(64) &  Short description \\ \hline
+plot\_marker & character varying(64) & Type of matplotlib marker \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{part\_connect :: parts\_paper.Parts}
+\begin{tabular}{| l | l | l |} \hline
+{\bf Column} & {\bf Type} & {\bf Description} \\ \hline
+ hpn*(2) & character varying(64) & HERA part number \\ \hline
+hpn\_rev*(3) & character varying(32) & HPN revision letter (A-Z) \\ \hline
+hptype*  &  character varying(64) & HPN part type category \\ \hline
+manufacturer\_number & character varying(64) & Unique serial number for each part \\ \hline
+start\_date* & timestamp no time zone & Datetime when part/rev is activated. \\ \hline
+stop\_date & timestamp no time zone & Datetime when part/rev is de-activated \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{part\_connect :: part\_info.PartInfo}
+\begin{tabular}{| l | l | l |} \hline
+{\bf Column} & {\bf Type} & {\bf Description} \\ \hline
+hpn*(2) & character varying(64) & HERA part number \\ \hline
+hpn\_rev*(3) & character varying(32) & HPN revision letter (A-Z) \\ \hline
+posting\_date* & timestamp no time zone & Date information was posted \\ \hline
+comment* &  character varying(1024) & Comment \\ \hline
+library\_file & character varying(256) &  Librarian filename (how to get it there?) \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{part\_connect :: connections.Connections}
+\begin{tabular}{| l | l | l |} \hline
+{\bf Column} & {\bf Type} & {\bf Description} \\ \hline
+upstream\_part*(2) &  character varying(64) & Hera part number of upstream connection \\ \hline
+up\_part\_rev*(3) & character varying(32) & Hera part revision of upstream connection \\ \hline
+downstream\_part*(2) & character varying(64) & Hera part number of downstream connection \\ \hline
+down\_part\_rev*(3) & character varying(32) & Hera part revision of downstream connection \\ \hline
+upstream\_output\_port* & character varying(64) & Output port on upstream part \\ \hline
+downstream\_input\_port* & character varying(64) & Input port on downstream part \\ \hline
+start\_date* & timestamp with time zone & Date when connection started \\ \hline
+stop\_date & timestamp no time zone & Date when connection ended \\ \hline
+\end{tabular}
+\end{table}
 
 \end{document}
