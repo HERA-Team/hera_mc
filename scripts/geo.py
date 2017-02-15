@@ -13,7 +13,7 @@ from hera_mc import mc, geo_location
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-c', '--cofa', help="Provide the center of array as a dictionary.", action='store_true')
+    parser.add_argument('-c', '--cofa', help="Print out center of array information.", action='store_true')
     parser.add_argument('-g', '--graph', help="Graph data of all elements (per xgraph, ygraph args). [False]", action='store_true')
     parser.add_argument('-s', '--show', help="Graph and locate a station (same as geo.py -gl XX). [None]", default=None)
     parser.add_argument('-l', '--locate',help="Location of given station_name or antenna_number (assumed if <int>).  [None]", default=None)

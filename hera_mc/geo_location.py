@@ -90,7 +90,7 @@ class GeoLocation(MCDeclarativeBase):
             setattr(self, key, value)
 
     def __repr__(self):
-        return '<station_name={self.station_name} station_number={self.station_type_name} \
+        return '<station_name={self.station_name} station_type={self.station_type_name} \
         northing={self.northing} easting={self.easting} \
         elevation={self.elevation}>'.format(self=self)
 
