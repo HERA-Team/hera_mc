@@ -15,6 +15,7 @@ import copy
 
 import numpy as np
 import matplotlib.pyplot as plt
+from pyproj import Proj
 
 from sqlalchemy import Column, Float, Integer, String, DateTime, ForeignKey, func
 
@@ -23,10 +24,18 @@ from hera_mc import mc, part_connect, cm_utils
 
 current_cofa = 'COFA_HSA7458_V000'
 def cofa():
-    local_argv = ['--locate',current_cofa,'--verbosity','h']
+    """shortcut to just get cofa"""
+    pos = get_location(current_cofa)
+    return pos
+
+def get_location(location_name):
+    """This provides a function to query a location and get a geo_location class back, with lon/lat added to the class"""
+    local_argv = ['--locate',location_name]
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-l', '--locate',help="Location of given station_name or antenna_number (assumed if <int>).  [None]", default=None)
-    parser.add_argument('-v', '--verbosity', help="Set verbosity. [m].", choices=['L', 'l', 'm', 'M', 'h', 'H'], default='m')
+    parser.add_argument('-l', '--locate', default=None)
+    parser.add_argument('-v', '--verbosity', default='l')
+    parser.add_argument('--date', default='now')
+    parser.add_argument('--time', default='now')
     args = parser.parse_args(local_argv)
     located = locate_station(args,show_geo=False)
     return located
@@ -303,14 +312,17 @@ def locate_station(args, show_geo=False):
                 ever_connected = is_in_connections(args,a.station_name) 
                 active = is_in_connections(args,a.station_name,True)
                 found_it = True
+                hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
+                a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
                 found_location = copy.copy(a)
                 if show_geo:
                     if args.verbosity == 'm' or args.verbosity == 'h':
                         print('station_name: ', a.station_name)
                         print('\teasting: ', a.easting)
                         print('\tnorthing: ', a.northing)
+                        print('\tlon/lat:  ',a.lon,a.lat)
                         print('\televation: ', a.elevation)
-                        print('\tstation description (%s):  %s' % (this_station,station_type[this_station]['Description']))
+                        print('\tstation description ({}):  {}'.format(this_station,station_type[this_station]['Description']))
                         print('\tever connected:  ',ever_connected)
                         print('\tactive:  ',active)
                         print('\tcreated:  ',a.created_date)

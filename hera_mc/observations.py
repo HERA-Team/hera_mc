@@ -10,7 +10,6 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from astropy.time import Time
 from astropy.coordinates import EarthLocation, Angle
-from pyproj import Proj
 from sqlalchemy import Column, BigInteger, String, Float
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from hera_mc import geo_location
@@ -68,12 +67,8 @@ class Observation(MCDeclarativeBase):
             from math import floor
             obsid = floor(t_start.gps)
 
-        hera_geo = geo_location.cofa()
-
-        hera_proj = Proj(proj='utm', zone=hera_geo.tile, ellps=hera_geo.datum, south=True)
-        hera_lon, hera_lat = hera_proj(hera_geo.easting, hera_geo.northing, inverse=True)
-
-        t_start.location = EarthLocation.from_geodetic(hera_lon, hera_lat)
+        hera_cofa = geo_location.cofa()
+        t_start.location = EarthLocation.from_geodetic(hera_cofa.lon, hera_cofa.lat)
         return cls(obsid=obsid, start_time_jd=t_start.jd,
                    stop_time_jd=t_stop.jd,
                    lst_start_hr=t_start.sidereal_time('apparent').hour)
