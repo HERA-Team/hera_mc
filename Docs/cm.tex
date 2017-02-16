@@ -15,20 +15,25 @@
 
 \section{Introduction}
 The HERA array/part configuration management database is a set of five tables within the larger hera\_mc database, which is maintained on-site in the Karoo.  The tables are detailed in the Appendix, 
-but they are:  
+but they are: 
+
+\begin{center}
 \begin{tabular}{l l l}
-         {\bf psql table} & {\bf python file}  &  {\bf class name} \\
+         {\bf psql table} & {\bf in python file}  &  {\bf with class name} \\
 	geo\_location 	& hera\_mc/geo\_location.py & GeoLocation \\
 	station\_meta 	& hera\_mc/geo\_location.py & StationMeta \\
 	parts\_paper 	& hera\_mc/part\_connect.py & Parts \\
 	part\_info 	         & hera\_mc/part\_connect.py & PartInfo \\
 	connections 	& hera\_mc/part\_connect.py & Connections \\
 \end{tabular}
+\end{center}
 
 Software is contained in the repository https://github.com/HERA-Team/hera\_mc.
 
 The databases are structured primarily around {\em parts} and {\em connections}.  {\em Parts} are meant to be single items that, in theory at least, are a thing than can be replaced as a unit.  
-{\em Connections} define {\em ports} on a given {\em part} and connect two {\em ports} together.  All {\em parts} and {\em connections} are timed in that they have a start and stop time of operation.  If stop is {\tt None}, then it is active (it is given a date in the relatively far future).  There are currently two special parts (one at each end of the signal chain):
+{\em Connections} define {\em ports} on a given parts and connect two ports together.  Parts are all upper case and ports are all lower case.
+
+All parts and connections are timed in that they have a start and stop time of operation.  If stop is {\tt None}, then it is active (it is given a date in the relatively far future).  There are currently two special parts (one at each end of the signal chain):
 \begin{itemize}
 	\item {\bf geo\_location}: a geo\_located part (``station'') is a named location with UTM coordinates which also has an entry in the geo\_location table;
 	\item {\bf f\_engine}:  each input to the f\_engine ROACH-2 is currently listed as a separate part.  Probably it should be a 32-input part, but given timing will wait for the new architecture.
@@ -48,9 +53,14 @@ Parts are hooked together via connections of their ports.   For parts in the PAP
 	\item {\bf Cable\_container}:  cable inside container from {\tt\{P\}}late/{\tt\{Row\}}/{\tt\{Col\}}umn {\tt {\bf CC}\{P\}{\bf R}\{Row\}{\bf C}\{Col\}}
 	\item {\bf F\_engine}:  {\tt\{R2\}} Roach-2 input {\tt {\bf DF}\{R2\}\{"A"-"H"\}\{\#\}}
 \end{itemize}
-Summarizing with prefixes, we have {\tt HH-A-FD-FE-C7F-RI-RCVR-RO-CR-CC-DF}.
+The {\tt E} and {\tt N} refer to the polarizations (for East and North) -- this replaces any X/Y or H/V designation.
+Summarizing with prefixes, we have 
 
-In the hook-up mapping listing (using the -m flag), the Antenna number (without the {\tt A}) is also displayed under the station just to help the user find the antenna number that the correlator cares about.  It maps antenna to position to correlator input.
+\vspace{.15in}
+\begin{center}
+{\tt HH-A-FD-FE-C7F-RI-RCVR-RO-CR-CC-DF}
+\end{center}
+\vspace{.15in}
 
 \begin{figure}[H]
 \includegraphics[width=0.8\textwidth]{hookup.pdf}
@@ -106,14 +116,8 @@ As mentioned above, there are five tables in the configuration management sectio
 (3) parts\_paper, (4) part\_info, (5) connections.  The following tables summarize them with the following key:  
 \begin{itemize}\setlength\itemsep{-.3em}
 	\item {\bf Bold font} = primary key
-	\item {\em Italics(\#)} = foreign\_key.    The \# identifies the other locations.
-	\vspace{-.1in}
-	\begin{itemize}\setlength\itemsep{-.3em}
-		\item If {\em \underline{underlined}}, then that defines the key.
-		\item If {\em {\bf bold}}, it is also a primary key.
-	\end{itemize}
-	\vspace{-.08in}
-	\item * = NotNull entries (includes primary and foreign keys)
+	\item {\em Italics} = foreign\_key.
+	\item * = NotNull entries
 \end{itemize}
 
 \begin{table}[h]
@@ -122,7 +126,7 @@ As mentioned above, there are five tables in the configuration management sectio
 \begin{tabular}{| l | l | l |} \hline
 {\bf Column} & {\bf Type} & {\bf Description} \\ \hline
 {\bf station\_name}*  & character varying(64) & Name of position - never changes \\ \hline
-{\em \underline{station\_type\_name}}*(1) & character varying(64) & Type of station \\ \hline
+{\em station\_type\_name}* & character varying(64) & Type of station \\ \hline
 datum & character varying(64) & UTM datum \\ \hline
 tile & character varying(64) & UTM tile \\ \hline
 northing & double precision & UTM coordinate \\ \hline
@@ -137,7 +141,7 @@ created\_date* & datetime & Date and time of creation. \\ \hline
 \caption{geo\_location :: station\_type.StationType}
 \begin{tabular}{| l | l | l |} \hline
 {\bf Column} & {\bf Type} & {\bf Description} \\ \hline
-station\_type\_name*(1) &  character varying(64) &  Station type name \\ \hline
+{\bf \em station\_type\_name}* &  character varying(64) &  Station type name \\ \hline
 prefix* & character varying(64) & 1-2 letter prefix for part station\_name \\ \hline
 description & character varying(64) &  Short description \\ \hline
 plot\_marker & character varying(64) & Type of matplotlib marker \\ \hline
@@ -149,8 +153,8 @@ plot\_marker & character varying(64) & Type of matplotlib marker \\ \hline
 \caption{part\_connect :: parts\_paper.Parts}
 \begin{tabular}{| l | l | l |} \hline
 {\bf Column} & {\bf Type} & {\bf Description} \\ \hline
- hpn*(2) & character varying(64) & HERA part number \\ \hline
-hpn\_rev*(3) & character varying(32) & HPN revision letter (A-Z) \\ \hline
+{\bf \em hpn}* & character varying(64) & HERA part number \\ \hline
+{\bf \em hpn\_rev}* & character varying(32) & HPN revision letter (A-Z) \\ \hline
 hptype*  &  character varying(64) & HPN part type category \\ \hline
 manufacturer\_number & character varying(64) & Unique serial number for each part \\ \hline
 start\_date* & timestamp no time zone & Datetime when part/rev is activated. \\ \hline
@@ -163,8 +167,8 @@ stop\_date & timestamp no time zone & Datetime when part/rev is de-activated \\ 
 \caption{part\_connect :: part\_info.PartInfo}
 \begin{tabular}{| l | l | l |} \hline
 {\bf Column} & {\bf Type} & {\bf Description} \\ \hline
-hpn*(2) & character varying(64) & HERA part number \\ \hline
-hpn\_rev*(3) & character varying(32) & HPN revision letter (A-Z) \\ \hline
+{\bf \em hpn}* & character varying(64) & HERA part number \\ \hline
+{\bf \em hpn\_rev}* & character varying(32) & HPN revision letter (A-Z) \\ \hline
 posting\_date* & timestamp no time zone & Date information was posted \\ \hline
 comment* &  character varying(1024) & Comment \\ \hline
 library\_file & character varying(256) &  Librarian filename (how to get it there?) \\ \hline
@@ -176,13 +180,13 @@ library\_file & character varying(256) &  Librarian filename (how to get it ther
 \caption{part\_connect :: connections.Connections}
 \begin{tabular}{| l | l | l |} \hline
 {\bf Column} & {\bf Type} & {\bf Description} \\ \hline
-upstream\_part*(2) &  character varying(64) & Hera part number of upstream connection \\ \hline
-up\_part\_rev*(3) & character varying(32) & Hera part revision of upstream connection \\ \hline
-downstream\_part*(2) & character varying(64) & Hera part number of downstream connection \\ \hline
-down\_part\_rev*(3) & character varying(32) & Hera part revision of downstream connection \\ \hline
-upstream\_output\_port* & character varying(64) & Output port on upstream part \\ \hline
-downstream\_input\_port* & character varying(64) & Input port on downstream part \\ \hline
-start\_date* & timestamp with time zone & Date when connection started \\ \hline
+{\bf \em upstream\_part}* &  character varying(64) & Hera part number of upstream connection \\ \hline
+{\bf \em up\_part\_rev}* & character varying(32) & Hera part revision of upstream connection \\ \hline
+{\bf upstream\_output\_port}* & character varying(64) & Output port on upstream part \\ \hline
+{\bf \em downstream\_part}* & character varying(64) & Hera part number of downstream connection \\ \hline
+{\bf \em down\_part\_rev}* & character varying(32) & Hera part revision of downstream connection \\ \hline
+{\bf downstream\_input\_port}* & character varying(64) & Input port on downstream part \\ \hline
+{\bf \em start\_date}* & timestamp with time zone & Date when connection started \\ \hline
 stop\_date & timestamp no time zone & Date when connection ended \\ \hline
 \end{tabular}
 \end{table}
