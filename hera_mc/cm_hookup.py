@@ -91,7 +91,7 @@ class Hookup:
                 except IndexError:
                     end_of_the_line = True
         else:
-            print('cm_hookup[94]: not there',hpn,rev,port)
+            print('cm_hookup[94]: not there',pk,port)
             end_of_the_line = True
         if end_of_the_line:
             port = None
@@ -209,6 +209,8 @@ class Hookup:
         tkey = hookup_dict.keys()[0]
         hookup_dict['columns'] = []
         for hu in hookup_dict[tkey]:
+            if len(hu)<2:
+                continue
             if hu[1]=='S':
                 hookup_dict['columns'].append(['station','column'])
             else:

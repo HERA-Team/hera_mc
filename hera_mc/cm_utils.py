@@ -17,20 +17,20 @@ def _log(msg,**kwargs):
     fp.write('-------------------'+str(dt) + '  ' + msg + '-------------------\n\n')
     for key,value in kwargs.items():
         if key=='args':
-            fp.write('  --args  ')
+            fp.write('--args\n\t')
             vargs = vars(value)
             for k,v in vargs.items():
                 fp.write(str(k)+':  '+str(v)+';  ')
             fp.write('\n\n')
         elif key=='data_dict':
-            fp.write('  --data  \n')
+            fp.write('--data\n\t')
             for k,v in value.items():
                 fp.write('    '+k+'  ')
                 for d in v:
                     fp.write(str(d)+';  ')
                 fp.write('\n\n')
         else:
-            fp.write('  --other  ')
+            fp.write('--other\n\t')
             fp.write(str(key)+':  '+str(value)+'\n\n')
     fp.close()
 

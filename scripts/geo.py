@@ -21,7 +21,8 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [m].", choices=['L', 'l', 'm', 'M', 'h', 'H'], default='m')
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]", choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]", choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
-    parser.add_argument('--add_new_geo', help="Flag to enable adding of a new geo_location under update.  [False]", action='store_true')
+    parser.add_argument('--add-new-geo', help="Flag to enable adding of a new geo_location under update.  [False]", 
+                        dest='add_new_geo', action='store_true')
     parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
     parser.add_argument('--time', help="hh:mm or now [now]", default='now')
     connected_group = parser.add_mutually_exclusive_group()
@@ -35,7 +36,6 @@ if __name__ == '__main__':
                                   action='store_const', const='station_name')
     label_type_group.add_argument('--show-number', help="Set label_type to station_number", dest='label_type',
                                   action='store_const', const='station_number')
-    label_type_group.add_argument('--label_type', help="Use 'station_name' or 'antenna_number' [antenna_number]")
     parser.set_defaults(label=True, active=True, label_type='antenna_number')
     args = parser.parse_args()
     args.xgraph = args.xgraph.upper()
@@ -54,8 +54,9 @@ if __name__ == '__main__':
         print('Lat/Lon:  {}  {}'.format(located.lat,located.lon))
         args.locate = altmp
     if args.update:
-        data = geo_location.parse_update_request(args.update)
-        geo_location.update(args, data)
+        you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script -- are you sure you want to do this? ", 'n')
+        if you_are_sure:
+            geo_location.update(args, data)
     if args.show:
         args.locate = args.show
         args.graph = True
