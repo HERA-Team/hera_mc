@@ -35,7 +35,7 @@ if __name__ == '__main__':
     label_type_group.add_argument('--show-name', help="Set label_type to station_name", dest='label_type',
                                   action='store_const', const='station_name')
     label_type_group.add_argument('--show-number', help="Set label_type to station_number", dest='label_type',
-                                  action='store_const', const='station_number')
+                                  action='store_const', const='antenna_number')
     parser.set_defaults(label=True, active=True, label_type='antenna_number')
     args = parser.parse_args()
     args.xgraph = args.xgraph.upper()

@@ -111,6 +111,7 @@ def stop_previous_connections(args, handling):
     """
     current = cm_utils._get_datetime(args.date, args.time)
     data = []
+    args.add_new_connection = False
 
     existing = handling.get_connections(args.antenna_number, 'A', exact_match=True)
     for k, c in existing.iteritems():
@@ -147,6 +148,7 @@ def stop_previous_connections(args, handling):
 
 
 def add_new_connection(args, c):
+    # Add the provided new connection c
     print("Adding ", c)
     args.add_new_connection = True
     data = [[c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
@@ -223,6 +225,11 @@ if __name__ == '__main__':
         print("\nThis will only print out the actions.\n\t'--make_update' to actually make changes.\n")
 
     previous_hookup = hookup.get_hookup(args.antenna_number, show_hookup=True)
+    # Adding new station/antenna connection to be checked
+    connect.connection(upstream_part=args.station_name, up_part_rev='A',
+               downstream_part=args.antenna_number, down_part_rev='B',
+               upstream_output_port='ground', downstream_input_port='ground',
+               start_date=cm_utils._get_datetime(args.date, args.time))
     if OK_to_add(args, connect, handling):
         if args.make_update:
             print("OK to update -- actually doing it.")
@@ -230,11 +237,7 @@ if __name__ == '__main__':
         stop_previous_parts(args)
         add_new_parts(args)
         stop_previous_connections(args, handling)
-        # Adding new station/antenna connection
-        connect.connection(upstream_part=args.station_name, up_part_rev='A',
-                   downstream_part=args.antenna_number, down_part_rev='B',
-                   upstream_output_port='ground', downstream_input_port='ground',
-                   start_date=cm_utils._get_datetime(args.date, args.time))
+        # Connection is set above to be checked by OK_to_add
         add_new_connection(args, connect)
         # Adding new antenna/feed connection
         feed = 'FD' + args.antenna_number
