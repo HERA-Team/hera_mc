@@ -38,10 +38,9 @@ if args.tables != 'all':
 
 
 def check_if_maindb():
-    if "obs" in os.path.expanduser('~'):
-        return True
-    else:
-        return False
+    # the 'hostname' call on qmaster returns the following value:
+    import socket
+    return (socket.gethostname() == 'per210-1')
 
 
 def check_data_file(data_filename):
