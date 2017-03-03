@@ -4,50 +4,15 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Script to generate table initialization files.
+Script to generate table initialization files (package from db to csv).
 """
-import pandas as pd
-from hera_mc import mc, cm_table_info
-import os
-import os.path
+
+from hera_mc import mc, cm_transfer
 
 parser = mc.get_mc_argument_parser()
-parser.add_argument('--maindb', help="user-generated key to allow change to main db (written on remote)", default=None)
+parser.add_argument('--maindb', help="user-generated key to allow change to main db (written on remote) [False]", default=False)
 parser.add_argument('--tables', help="name of table for which to generate initialization data file", default='all')
 parser.add_argument('--base', help="can define a base set of initialization data files", action='store_true')
 args = parser.parse_args()
 
-tmp_filename = '__tmp_initfile.tmp'
-
-if args.base:
-    data_prefix = cm_table_info.base_data_prefix
-else:
-    data_prefix = cm_table_info.data_prefix
-cm_tables = cm_table_info.cm_tables
-
-db = mc.connect_to_mc_db(args)
-if args.tables == 'all':
-    tables_to_write = cm_tables.keys()
-else:
-    tables_to_write = args.tables.split(',')
-
-print("Writing packaged files to current directory.  Copy to data_path to distribute.")
-for table in tables_to_write:
-    data_filename = data_prefix + table + '.csv'
-    table_data = pd.read_sql_table(table, db.engine)
-    if args.maindb:
-        print("\tPackaging for maindb:  "+data_filename)
-        table_data.to_csv(tmp_filename, index=False)
-    else:
-        print("\tPackaging:  "+data_filename)
-        table_data.to_csv(data_filename, index=False)
-    if args.maindb:  # Put key in first line
-        fpout = open(data_filename, 'w')
-        fpin = open(tmp_filename, 'r')
-        keyline = '$_maindb_$:' + args.maindb + '\n'
-        fpout.write(keyline)
-        for line in fpin:
-            fpout.write(line)
-        fpin.close()
-        fpout.close()
-        os.remove(tmp_filename)
+cm_transfer.package_db_to_csv(args)
