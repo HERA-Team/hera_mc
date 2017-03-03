@@ -9,7 +9,7 @@
 from __future__ import absolute_import, division, print_function
 import datetime
 import sys
-from hera_mc import mc, geo_location
+from hera_mc import mc, geo_handling
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
@@ -44,8 +44,8 @@ if __name__ == '__main__':
     located = None
     if args.cofa:
         altmp = args.locate
-        args.locate = geo_location.current_cofa
-        located = geo_location.locate_station(args,show_geo=False)
+        args.locate = geo_handling.current_cofa
+        located = geo_handling.locate_station(args,show_geo=False)
         print('Center of array: %s' % (located.station_name))
         try:
             print('UTM:  {} {:.0f}E {:.0f}N at {:.1f}m   ({})'.format(located.tile,located.easting,located.northing,located.elevation,located.datum))
@@ -56,11 +56,11 @@ if __name__ == '__main__':
     if args.update:
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script -- are you sure you want to do this? ", 'n')
         if you_are_sure:
-            geo_location.update(args, data)
+            geo_handling.update(args, data)
     if args.show:
         args.locate = args.show
         args.graph = True
     if args.locate:
-        located = geo_location.locate_station(args, show_geo=True)
+        located = geo_handling.locate_station(args, show_geo=True)
     if args.graph:
-        geo_location.plot_arrays(args, located, label_station=args.label)
+        geo_handling.plot_arrays(args, located, label_station=args.label)

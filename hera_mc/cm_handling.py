@@ -12,7 +12,7 @@ from tabulate import tabulate
 import sys
 import copy
 
-from hera_mc import mc, part_connect, geo_location, correlator_levels, cm_utils
+from hera_mc import mc, part_connect, geo_handling, correlator_levels, cm_utils
 from hera_mc import cm_part_revisions as cmpr
 
 def _make_part_key(hpn,rev):
@@ -116,7 +116,7 @@ class Handling:
                         part_dict[pr_key]['connections'] = connections
                         if part.hptype == 'station':
                             args.locate = part.hpn
-                            part_dict[pr_key]['geo'] = geo_location.locate_station(args, show_geo=False)
+                            part_dict[pr_key]['geo'] = geo_handling.locate_station(args, show_geo=False)
                         part_dict[pr_key]['input_ports'],part_dict[pr_key]['output_ports'] = \
                                           self.__find_ports(part_dict[pr_key]['connections'], current)
                     else:
