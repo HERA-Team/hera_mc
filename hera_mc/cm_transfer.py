@@ -64,10 +64,10 @@ def initialize_db_from_csv(args):
 
 
 def check_if_db_location_agrees(maindb_flagged):
-    if "obs" in os.path.expanduser('~'):
-        is_maindb = True
-    else:
-        is_maindb = False
+    # the 'hostname' call on qmaster returns the following value:
+    import socket
+    is_maindb = (socket.gethostname() == 'per210-1')
+    
     if maindb_flagged and not is_maindb:
         print('Error:  attempting main db access to remote db')
         success = False
