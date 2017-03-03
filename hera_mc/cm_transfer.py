@@ -6,6 +6,8 @@
 """
 Script to generate table initialization files.
 """
+from __future__ import absolute_import, division, print_function
+
 import pandas as pd
 from hera_mc import mc, geo_location, part_connect, cm_table_info, cm_utils
 import os.path
@@ -62,11 +64,13 @@ def initialize_db_from_csv(args):
         success = False
     return success
 
+def check_if_main():
+    import socket
+    return (socket.gethostname() == 'per210-1') 
 
 def check_if_db_location_agrees(maindb_flagged):
     # the 'hostname' call on qmaster returns the following value:
-    import socket
-    is_maindb = (socket.gethostname() == 'per210-1')
+    is_maindb = check_if_main()
     
     if maindb_flagged and not is_maindb:
         print('Error:  attempting main db access to remote db')
@@ -145,7 +149,7 @@ def __initialization(args):
             else:
                 keyed_file[table] = False
                 if dbkey != '$_remote_$':
-                    print('Allowing maindb access for remotedb  ', table)
+                    print('Allowing maindb access for remotedb table: ', table)
                     keyed_file[table] = True
     if len(use_table) != len(tables_to_read):
         print("All of the tables weren't valid to change, so for now none will be.")
