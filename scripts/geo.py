@@ -21,6 +21,8 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [m].", choices=['L', 'l', 'm', 'M', 'h', 'H'], default='m')
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]", choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]", choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
+    parser.add_argument('-p', '--station-prefix', help="Provide station type prefix(es) to plot, or 'all' [False]", default=False,
+                               dest='station_prefix')
     parser.add_argument('--add-new-geo', help="Flag to enable adding of a new geo_location under update.  [False]", 
                         dest='add_new_geo', action='store_true')
     parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
@@ -41,6 +43,7 @@ if __name__ == '__main__':
     args.xgraph = args.xgraph.upper()
     args.ygraph = args.ygraph.upper()
     args.verbosity = args.verbosity.lower()
+
     located = None
     if args.cofa:
         altmp = args.locate
@@ -53,10 +56,8 @@ if __name__ == '__main__':
             print('UTM:  {} {:.0f}E {:.0f}N   ({})'.format(located.tile,located.easting,located.northing,located.datum))
         print('Lat/Lon:  {}  {}'.format(located.lat,located.lon))
         args.locate = altmp
-    if args.update:
-        you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script -- are you sure you want to do this? ", 'n')
-        if you_are_sure:
-            geo_handling.update(args, data)
+    if args.station_prefix:
+        geo_handling.plot_station_types(args,label_station=args.label)
     if args.show:
         args.locate = args.show
         args.graph = True
@@ -64,3 +65,7 @@ if __name__ == '__main__':
         located = geo_handling.locate_station(args, show_geo=True)
     if args.graph:
         geo_handling.plot_arrays(args, located, label_station=args.label)
+    if args.update:
+        you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script -- are you sure you want to do this? ", 'n')
+        if you_are_sure:
+            geo_handling.update(args, data)
