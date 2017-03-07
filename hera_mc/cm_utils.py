@@ -45,6 +45,9 @@ def _get_datetime(_date,_time):
         dt_d = datetime.datetime.utcnow()
     else:
         data = _date.split('/')
+        yr = int(data[2])
+        if yr<1900:
+            yr+= 2000
         dt_d = datetime.datetime(int(data[2])+2000,int(data[0]),int(data[1]),tzinfo=pytz.utc)
     if _time.lower() == 'now':
         dt_t = datetime.datetime.utcnow()
