@@ -22,6 +22,7 @@ from hera_mc import mc, cm_utils
 upper_case = ['hpn', 'hpn_rev', 'upstream_part', 'up_part_rev', 'downstream_part', 'down_part_rev']
 lower_case = ['upstream_output_port', 'downstream_input_port']
 
+
 class Parts(MCDeclarativeBase):
     """A table logging parts within the HERA system
        Stations will be considered parts of type='station'
@@ -69,9 +70,9 @@ def __get_part_revisions(args, hpn=None):
     with db.sessionmaker() as session:
         for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
             revisions[parts_rec.hpn_rev] = {}
-            revisions[parts_rec.hpn_rev]['hpn'] = hpn #Just carry this along
+            revisions[parts_rec.hpn_rev]['hpn'] = hpn  # Just carry this along
             revisions[parts_rec.hpn_rev]['started'] = parts_rec.start_date
-            revisions[parts_rec.hpn_rev]['ended']   = parts_rec.stop_date
+            revisions[parts_rec.hpn_rev]['ended'] = parts_rec.stop_date
     return revisions
 
 
@@ -255,7 +256,7 @@ class Connections(MCDeclarativeBase):
     def __repr__(self):
         up = '{self.upstream_part}:{self.up_part_rev}'.format(self=self)
         down = '{self.downstream_part}:{self.down_part_rev}'.format(self=self)
-        return '<{}<{self.upstream_output_port}::{self.downstream_input_port}>{}>'.format(up,down,self=self)
+        return '<{}<{self.upstream_output_port}::{self.downstream_input_port}>{}>'.format(up, down, self=self)
 
     def connection(self, **kwargs):
         for key, value in kwargs.items():

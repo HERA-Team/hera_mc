@@ -41,6 +41,7 @@ class StationType(MCDeclarativeBase):
     def __repr__(self):
         return '<subarray prefix={self.prefix} description={self.description} marker={self.plot_marker}>'.format(self=self)
 
+
 class GeoLocation(MCDeclarativeBase):
     """A table logging stations within HERA.
     """
@@ -73,7 +74,7 @@ class GeoLocation(MCDeclarativeBase):
 
     def geo(self, **kwargs):
         for key, value in kwargs.items():
-            if key=='station_name':
+            if key == 'station_name':
                 value = value.upper()
             setattr(self, key, value)
 
@@ -81,6 +82,7 @@ class GeoLocation(MCDeclarativeBase):
         return '<station_name={self.station_name} station_type={self.station_type_name} \
         northing={self.northing} easting={self.easting} \
         elevation={self.elevation}>'.format(self=self)
+
 
 def update(args, data):
     """
@@ -103,15 +105,15 @@ def update(args, data):
         for station_name in data_dict.keys():
             geo_rec = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
             ngr = geo_rec.count()
-            if ngr == 0: 
+            if ngr == 0:
                 if args.add_new_geo:
                     gr = GeoLocation()
                 else:
-                    print("Error: ",station_name,"does not exist and add_new_geo not enabled.")
+                    print("Error: ", station_name, "does not exist and add_new_geo not enabled.")
                     gr = None
             elif ngr == 1:
                 if args.add_new_geo:
-                    print("Error: ",station_name,"exists and and_new_geo is not enabled.")
+                    print("Error: ", station_name, "exists and and_new_geo is not enabled.")
                     gr = None
                 else:
                     gr = geo_rec.first()
@@ -126,8 +128,9 @@ def update(args, data):
                         print(d[1], 'does not exist as a field')
                         continue
                 session.add(gr)
-    cm_utils._log('geo_location update',data_dict=data_dict)
+    cm_utils._log('geo_location update', data_dict=data_dict)
     return True
+
 
 def format_check_update_request(request):
     """
@@ -151,7 +154,7 @@ def format_check_update_request(request):
             data_to_proc.append(d.split(':'))
     else:
         data_to_proc = request
-    if len(data_to_proc[0])==3:
+    if len(data_to_proc[0]) == 3:
         station_name0 = data_to_proc[0][0].upper()
         for d in data_to_proc:
             if len(d) == 3:
@@ -161,7 +164,7 @@ def format_check_update_request(request):
             else:
                 print('Invalid format for update request.')
                 continue
-            if d[1]=='station_name':
+            if d[1] == 'station_name':
                 d[2] = d[2].upper()
             if d[0] in data.keys():
                 data[d[0]].append(d)
@@ -172,7 +175,8 @@ def format_check_update_request(request):
         data = None
     return data
 
-def is_in_geo_location(args,station_name):
+
+def is_in_geo_location(args, station_name):
     """
     checks to see if a station_name is in the geo_location database
 
@@ -193,7 +197,8 @@ def is_in_geo_location(args,station_name):
             station_present = False
     return station_present
 
-def is_in_connections(args,station_name,check_if_active=False):
+
+def is_in_connections(args, station_name, check_if_active=False):
     """
     checks to see if the station_name is in the connections database (which means it is also in parts)
 
@@ -215,14 +220,14 @@ def is_in_connections(args,station_name,check_if_active=False):
             station_connected = False
         if station_connected and check_if_active:
             counter = 0
-            current = cm_utils._get_datetime(args.date,args.time)
+            current = cm_utils._get_datetime(args.date, args.time)
             for connection in connected_station.all():
-                if cm_utils._is_active(current,connection.start_date,connection.stop_date):
+                if cm_utils._is_active(current, connection.start_date, connection.stop_date):
                     station_connected = int(connection.downstream_part.strip('A'))
-                    counter+=1
+                    counter += 1
                 else:
                     station_connected = False
-            if counter>1:
-                print("Error:  more than one active connection for",station_name)
+            if counter > 1:
+                print("Error:  more than one active connection for", station_name)
                 station_connected = False
     return station_connected

@@ -13,6 +13,7 @@ from hera_mc import mc, geo_location, part_connect, cm_table_info, cm_utils
 import os.path
 import csv
 
+
 def package_db_to_csv(args):
     """This will get the configuration management tables from the database
        and package them to csv files to be read by initialize_db_from_csv"""
@@ -35,10 +36,10 @@ def package_db_to_csv(args):
         data_filename = data_prefix + table + '.csv'
         table_data = pd.read_sql_table(table, db.engine)
         if args.maindb:
-            print("\tPackaging for maindb:  "+data_filename)
+            print("\tPackaging for maindb:  " + data_filename)
             table_data.to_csv(tmp_filename, index=False)
         else:
-            print("\tPackaging:  "+data_filename)
+            print("\tPackaging:  " + data_filename)
             table_data.to_csv(data_filename, index=False)
         if args.maindb:  # Put key in first line
             fpout = open(data_filename, 'w')
@@ -50,6 +51,7 @@ def package_db_to_csv(args):
             fpin.close()
             fpout.close()
             os.remove(tmp_filename)
+
 
 def initialize_db_from_csv(args):
     """This entry module provides a double-check entry point to read the csv files and 
@@ -64,14 +66,16 @@ def initialize_db_from_csv(args):
         success = False
     return success
 
+
 def check_if_main():
     import socket
-    return (socket.gethostname() == 'per210-1') 
+    return (socket.gethostname() == 'per210-1')
+
 
 def check_if_db_location_agrees(maindb_flagged):
     # the 'hostname' call on qmaster returns the following value:
     is_maindb = check_if_main()
-    
+
     if maindb_flagged and not is_maindb:
         print('Error:  attempting main db access to remote db')
         success = False
@@ -142,7 +146,7 @@ def __initialization(args):
         else:
             if args.maindb:
                 if dbkey != args.maindb:
-                    print('Invalid maindb key for %s  (%s)' % (table,dbkey))
+                    print('Invalid maindb key for %s  (%s)' % (table, dbkey))
                     use_table.remove(table)
                 else:
                     keyed_file[table] = True
@@ -162,7 +166,7 @@ def __initialization(args):
     for table in use_table:
         with db.sessionmaker() as session:
             num_rows_deleted = session.query(cm_tables[table][0]).delete()
-            print("%d rows deleted in %s" % (num_rows_deleted,table))
+            print("%d rows deleted in %s" % (num_rows_deleted, table))
 
     tables_to_init = list(reversed(use_table))
     # Initialize tables
