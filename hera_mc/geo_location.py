@@ -223,7 +223,7 @@ def is_in_connections(args, station_name, check_if_active=False):
             current = cm_utils._get_datetime(args.date, args.time)
             for connection in connected_station.all():
                 if cm_utils._is_active(current, connection.start_date, connection.stop_date):
-                    station_connected = int(connection.downstream_part.strip('A'))
+                    station_connected = connection.downstream_part+':'+connection.down_part_rev
                     counter += 1
                 else:
                     station_connected = False

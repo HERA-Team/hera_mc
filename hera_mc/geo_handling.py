@@ -179,12 +179,24 @@ def plot_stations(args, stations_to_plot, fignm, marker_color='g', marker_shape=
                     if label_station:
                         if args.label_type == 'station_name':
                             labeling = a.station_name
-                        elif args.label_type == 'antenna_number':
-                            labeling = geo_location.is_in_connections(args, station, True)
-                            if labeling is False:
-                                labeling = 'NA'
                         else:
-                            labeling = 'S'
+                            antrev = geo_location.is_in_connections(args, station, True)
+                            if antrev is False:
+                                labeling = 'NA'
+                            else:
+                                ant = antrev.split(':')[0]
+                                rev = antrev.split(':')[1]
+                                if args.label_type == 'antenna_number':
+                                    labeling = ant.strip('A')
+                                elif args.label_type == 'serial_number':
+                                    p = session.query(part_connect.Parts).filter( (part_connect.Parts.hpn == ant) &
+                                                                                  (part_connect.Parts.hpn_rev==rev) )
+                                    if p.count() == 1:
+                                        labeling = p.first().manufacturer_number.replace('S/N','')
+                                    else:
+                                        labeling = '-'
+                                else:
+                                    labeling = 'S'
                         plt.annotate(labeling, xy=(pt[coord[args.xgraph]], pt[coord[args.ygraph]]),
                                      xytext=(pt[coord[args.xgraph]] + 2, pt[coord[args.ygraph]]))
 

@@ -36,8 +36,10 @@ if __name__ == '__main__':
     group_type_label = parser.add_mutually_exclusive_group()
     group_type_label.add_argument('--show-name', help="Set label_type to station_name", dest='label_type',
                                   action='store_const', const='station_name')
-    group_type_label.add_argument('--show-number', help="Set label_type to station_number", dest='label_type',
+    group_type_label.add_argument('--show-number', help="Set label_type to antenna_number", dest='label_type',
                                   action='store_const', const='antenna_number')
+    group_type_label.add_argument('--show-serial', help="Set label_type to serial number", dest='label_type',
+                                  action='store_const', const='serial_number')
 
     # database arguments
     parser.add_argument('-u', '--update', help="Update station records.  Format station0:col0:val0, [station1:]col1:val1...  [None]", default=None)
@@ -53,14 +55,14 @@ if __name__ == '__main__':
     args.ygraph = args.ygraph.upper()
     args.verbosity = args.verbosity.lower()
 
-    # take action
+    # process args
     # ... setup some stuff
     if args.cofa:
         cofa = geo_handling.cofa(show_cofa=True)
     if args.show:
         args.graph = args.background
         args.locate = args.show
-    if args.since_date:  # First one before args.graph
+    if args.since_date:
         args.graph = args.background
         new_antennas = geo_handling.get_since_date(args)
 
@@ -69,12 +71,13 @@ if __name__ == '__main__':
         fignm = geo_handling.plot_station_types(args, label_station=args.label)
 
     # ... plot over that if desired
-    if args.since_date:  # Second one after args.graph
+    if args.since_date:
         geo_handling.plot_stations(args, new_antennas, fignm, 'b', '*', '14', label_station=True)
     if args.locate:
         located = geo_handling.locate_station(args, show_location=True)
     if args.graph and args.locate:
         geo_handling.overplot(args, located, fignm)
+
     if args.graph:
         geo_handling.show_it_now(fignm)
 
