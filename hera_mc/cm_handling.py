@@ -120,7 +120,7 @@ class Handling:
                         part_dict[pr_key]['connections'] = connections
                         if part.hptype == 'station':
                             args.locate = part.hpn
-                            part_dict[pr_key]['geo'] = geo_handling.locate_station(args, show_geo=False)
+                            part_dict[pr_key]['geo'] = geo_handling.locate_station(args, show_location=False)
                         part_dict[pr_key]['input_ports'], part_dict[pr_key]['output_ports'] = \
                             self.__find_ports(part_dict[pr_key]['connections'], current)
                     else:

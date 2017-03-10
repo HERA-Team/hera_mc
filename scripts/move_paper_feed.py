@@ -38,24 +38,28 @@ def query_connection(args):
 
 
 def OK_to_add(args, connect, handling):
+    is_OK_to_add = True
     # 1 - check to see if station is in geo_location database (should be)
-    if not args.make_update:
-        print("Test mode - overriding checks.\n")
-        return True
     if not geo_location.is_in_geo_location(args, connect.upstream_part):
         print("You need to add station", connect.upstream_part, "to geo_location database")
-        return False
+        is_OK_to_add = False
     # 2 - check to see if the station is already connected (shouldn't be)
     current = cm_utils._get_datetime(args.date, args.time)
     if handling.is_in_connections(connect.upstream_part, 'A', return_active=True):
         print('Error: ', connect.upstream_part, "already connected.")
-        return False
-    # 3 - check to see if antenna is already connected (should be)
-    c = handling.is_in_connections(connect.downstream_part, 'A', return_active=True)
-    if type(c) != list:
+        is_OK_to_add = False
+    # 3 - check to see if antenna is already connected (should be, but isn't necesarily active)
+    is_connected = handling.is_in_connections(connect.downstream_part, 'A', return_active=True)
+    if not is_connected:
         print('Error:  ', connect.downstream_part, 'not present')
-        return False
-    return True
+        is_OK_to_add = False
+    if type(is_connected) != list:
+        print('Note:',connect.downstream_part,'is connected, but not active.')
+    if not args.make_update:
+        print("Test mode - overriding checks.\n")
+        is_OK_to_add = True
+
+    return is_OK_to_add
 
 
 def stop_previous_parts(args):
@@ -185,7 +189,8 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--serial_number', help="Serial number of HERA station/antenna", default=-1)
     parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
     parser.add_argument('--time', help="hh:mm or now [now]", default='now')
-    parser.add_argument('--make_update', help="Set to actually change database (otherwise it just shows).",action='store_true')
+    parser.add_argument('--make-update', help="Set to actually change database (otherwise it just shows).",
+                        dest='make_update', action='store_true')
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [h].", choices=['l', 'm', 'h'], default="m")
 
     args = parser.parse_args()
@@ -222,9 +227,11 @@ if __name__ == '__main__':
     if args.make_update:
         print("\nUpdating antenna/feed installation.\n")
     else:
-        print("\nThis will only print out the actions.\n\t'--make_update' to actually make changes.\n")
+        print("\nThis will only print out the actions.\n\t'--make-update' to actually make changes.\n")
 
+    print("Showing previous hookup:")
     previous_hookup = hookup.get_hookup(args.antenna_number, show_hookup=True)
+
     # Adding new station/antenna connection to be checked
     connect.connection(upstream_part=args.station_name, up_part_rev='A',
                downstream_part=args.antenna_number, down_part_rev='B',
