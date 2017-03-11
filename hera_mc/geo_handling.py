@@ -56,7 +56,7 @@ def find_station_name(args, antenna):
     Parameters:
     ------------
     args:  needed arguments to open database and set date/time
-    antenna_number:  antenna number as float or string. If needed, it prepends the 'A'               
+    antenna_number:  antenna number as float or string. If needed, it prepends the 'A'
     """
 
     if type(antenna) == float or antenna[0] != 'A':
@@ -140,6 +140,34 @@ def locate_station(args, show_location=False):
     return found_location
 
 
+def get_all_locations(args):
+    db = mc.connect_to_mc_db(args)
+    with db.sessionmaker() as session:
+        stations = session.query(geo_location.GeoLocation).all()
+        connections = session.query(part_connect.Connections).all()
+        stations_new = []
+        for stn in stations:
+            hera_proj = Proj(proj='utm', zone=stn.tile, ellps=stn.datum, south=True)
+            stn.lon, stn.lat = hera_proj(stn.easting, stn.northing, inverse=True)
+            ever_connected = geo_location.is_in_connections(args, stn.station_name)
+            if ever_connected is True:
+                connections = session.query(part_connect.Connections).filter(
+                    part_connect.Connections.upstream_part == stn.station_name)
+                for conn in connections:
+                    ant_num = int(conn.downstream_part[1:])
+                    start_date = conn.start_date
+                    stop_date = conn.stop_date
+                    stations_new.append({'station_name': stn.station_name,
+                                         'station_type': stn.station_type_name,
+                                         'longitude': stn.lon,
+                                         'latitude': stn.lat,
+                                         'elevation': stn.elevation,
+                                         'antenna_number': ant_num,
+                                         'start_date': start_date,
+                                         'stop_date': stop_date})
+    return stations_new
+
+
 def get_since_date(args):
     dt = cm_utils._get_datetime(args.since_date, '0')
     db = mc.connect_to_mc_db(args)
@@ -189,10 +217,10 @@ def plot_stations(args, stations_to_plot, fignm, marker_color='g', marker_shape=
                                 if args.label_type == 'antenna_number':
                                     labeling = ant.strip('A')
                                 elif args.label_type == 'serial_number':
-                                    p = session.query(part_connect.Parts).filter( (part_connect.Parts.hpn == ant) &
-                                                                                  (part_connect.Parts.hpn_rev==rev) )
+                                    p = session.query(part_connect.Parts).filter((part_connect.Parts.hpn == ant) &
+                                                                                 (part_connect.Parts.hpn_rev == rev))
                                     if p.count() == 1:
-                                        labeling = p.first().manufacturer_number.replace('S/N','')
+                                        labeling = p.first().manufacturer_number.replace('S/N', '')
                                     else:
                                         labeling = '-'
                                 else:
