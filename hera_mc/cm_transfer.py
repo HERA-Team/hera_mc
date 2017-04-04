@@ -4,7 +4,8 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Script to generate table initialization files.
+Definitions to generate table initialization files.
+Used in scripts cm_init.py, cm_package.py
 """
 from __future__ import absolute_import, division, print_function
 

@@ -21,7 +21,7 @@ but they are:
 \begin{tabular}{l l l}
          {\bf psql table} & {\bf in python file}  &  {\bf with class name} \\
 	geo\_location 	& hera\_mc/geo\_location.py & GeoLocation \\
-	station\_meta 	& hera\_mc/geo\_location.py & StationMeta \\
+	station\_type 	& hera\_mc/geo\_location.py & StationType \\
 	parts\_paper 	& hera\_mc/part\_connect.py & Parts \\
 	part\_info 	         & hera\_mc/part\_connect.py & PartInfo \\
 	connections 	& hera\_mc/part\_connect.py & Connections \\
@@ -44,7 +44,7 @@ Parts are hooked together via connections of their ports.   For parts in the PAP
 	\item {\bf Station}: geo\_located position.  See prefixes in table station\_meta ({\em e.g.} {\tt HH} for herahex)
 	\item {\bf Antenna}:  collecting element ({\em this used as the correlator number,} {\tt \{C\}}):  {\tt{\bf A}\{C\}}
 	\item {\bf Feed}:  element feed.  {\tt {\bf FDP}\{\#\}} are PAPER feeds, {\tt {\bf FDA}\{\#\}} are design A HERA feeds.
-	\item {\bf Frontend}:  lna, etc at feed.  {\tt {\bf FEA}\{\#\}} is design A (75 $\Omega$)
+	\item {\bf Frontend}:  lna, etc at feed.  {\tt {\bf FEA}\{\#\}} is design A (75 $\Omega$, NRAO).  {\tt {\bf FEB}\{\#\}} will be 75 $\Omega$, CAM).
 	\item {\bf Cable\_feed75}:  cable from front-end to receiverator: {\tt {\bf C7F}\{\#\}}
 	\item {\bf Cable\_receiverin}:  cable inside {\tt R}$^{th}$ receiverator to receiver: {\tt {\bf RI}\{R\}\{"A"/"B"\}\{\#\}\{"E"/"N"\}}
 	\item {\bf Receiver}:  receiver module in receiverator: {\tt {\bf RCVR}\{SN\}}
@@ -70,6 +70,36 @@ The line labels indicate the port names/connections.}
 \label{fig:hookup}
 \end{figure}
 
+\section{Package Modules}
+This section provides a high-level overview of the python configuration management package modules within hera\_mc that are called from scripts or used in interactive sessions.
+\vspace{0.5cm}
+
+\begin{tabular}{l p{12cm}}
+{\bf geo\_location.py} & Defines {\tt station\_type} and {\tt geo\_location}.  Provides update utility for {\tt geo\_location}.  Contains {\tt is\_in\_geo\_location} and {\tt is\_in\_connections}. \\ \hline
+{\bf geo\_handling.py} & Contains myriad defs that handle various geo functionalities.\\ \hline
+{\bf part\_connect.py} & Defines {\tt parts\_paper}, {\tt part\_info}, and {\tt connections}.  Provides update utilities for {\tt parts\_paper} and {\tt connections}. Contains {\tt \_\_get\_part\_revisions}. \\ \hline
+{\bf cm\_table\_info.py} & Has mapping and order of tables and classes for initialization. \\ \hline
+{\bf cm\_handling.py} & Defines the {\tt Handling} class to handle various configuration management functionalities.\\ \hline
+{\bf cm\_transfer.py} & Contains myriad defs that help package and initialize the cm tables.\\ \hline
+{\bf cm\_part\_revisions.py} & Contains myriad defs that deal with finding revision numbers etc.\\ \hline
+{\bf cm\_hookup.py} & Defines the {\tt Hookup} class to help determine and show the full part hookup.\\ \hline
+{\bf cm\_utils.py} & Contains various defs called by other modules.\\
+\end{tabular}
+
+\section{Scripts}
+This section provides a high-level overview of the scripts.  
+\vspace{0.5cm}
+
+\begin{tabular}{l p{12cm}}
+{\bf add\_station.py} & Adds a new station to {\tt geo\_location} and {\tt parts}.\\ \hline
+{\bf geo.py} & Has various plotting/printing options for station information. \\ \hline
+{\bf cm\_init.py} & Initializes a postgresql database from csv files. \\ \hline
+{\bf cm\_pack.py} & Packages postgresql database into csv files. \\ \hline
+{\bf move\_paper\_feed.py} & Script for when a feed is moved from a PAPER dipole to a HERA element. \\ \hline
+{\bf parts.py} & Has various printing options for part information. \\ \hline
+{\bf show\_cm\_log.py} & Prints out the cm logfile. \\
+\end{tabular}
+
 \section{Use Cases}
 Three use cases are identified:
 \begin{enumerate}\setlength\itemsep{-.3em}
@@ -84,12 +114,12 @@ This is the ``operational'' mode, where inputs to the on-site database are done 
 \subsection{Remote user}
 Remote use is the case when a remote user initializes and uses the tables outside of the main database.  This assumes that postgresql etc is configured on the remote computer.  Note that this mode supports both offline use (essentially steps 3-5 below, which are in bold) and development (probably all steps).  The process is as follows: 
 \begin{enumerate}\setlength\itemsep{-.3em}
-	\item Generate ascii files of the tables in the main database (in the Karoo) {\tt (cm\_package.py [--tables table1,table2,...)}
+	\item Generate ascii files of the tables in the main database (in the Karoo) {\tt (cm\_pack.py [--tables table1,table2,...)}
 	\item Push to GitHub
 	\item {\bf Pull down to remote computer}
 	\item {\bf Install ({\tt python setup.py install})}
-	\item {\bf Initialize the updated ones ({\tt cm\_initialize.py})}
-	\item If you are developing, make a base version before you start ({\tt cm\_package.py --base})
+	\item {\bf Initialize the updated ones ({\tt cm\_init.py})}
+	\item If you are developing, make a base version before you start ({\tt cm\_pack.py --base})
 \end{enumerate}
 
 Note that generally you should leave off the {\tt --tables} option, since you should use all the tables so as to not break foreign keys (it is left there for ``expert'' users).  Steps 3-5 are bolded, since if you just want to pull down the latest and use it assuming things are up-to-date they are all that are needed (i.e., leave the ``packaging to the experts'').
@@ -100,11 +130,11 @@ This has another option of {\tt --base}, so that you can set up a base copy to w
 This is effectively the opposite of the remote user case, bringing an updated set of table(s) back into the main database.  The process is as follows:
 \begin{enumerate}\setlength\itemsep{-.3em}
 	\item  Generate ascii files of the desired tables from the remote database: 
-		({\tt cm\_package.py --maindb \$key [--tables table1,table2,...]})
+		({\tt cm\_pack.py --maindb \$key [--tables table1,table2,...]})
 	\item Push to GitHub
 	\item Pull down to site computer
 	\item Install
-	\item Update existing tables  ({\tt cm\_initialize.py --maindb \$key [--tables table1,table2,]})
+	\item Update existing tables  ({\tt cm\_init.py --maindb \$key [--tables table1,table2,]})
 \end{enumerate}
 
 Note that {\tt \$key} is a user supplied string to just make sure you meant to do the main database update.  It can be anything, you

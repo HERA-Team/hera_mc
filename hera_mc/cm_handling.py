@@ -4,7 +4,7 @@
 # Licensed under the 2-clause BSD license.
 
 """
-This is meant to hold helpful modules for parts and connections scripts
+This is meant to hold helpful modules for parts and connections scripts contained within the Handling class.
 
 """
 from __future__ import absolute_import, division, print_function

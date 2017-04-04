@@ -18,7 +18,7 @@ from . import MCDeclarativeBase, NotNull
 
 from hera_mc import mc, cm_utils
 
-# Probably bad practice, but these currently mirror the class objects to get the case right for values.
+# Probably bad practice, but these currently mirror the class objects to get the case right for values in database.
 upper_case = ['hpn', 'hpn_rev', 'upstream_part', 'up_part_rev', 'downstream_part', 'down_part_rev']
 lower_case = ['upstream_output_port', 'downstream_input_port']
 
