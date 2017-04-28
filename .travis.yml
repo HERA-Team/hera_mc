@@ -33,6 +33,7 @@ before_script:
   - psql -c 'create user hera;' -U postgres
   - mkdir ~/.hera_mc
   - cp ci/example_config.json ~/.hera_mc/mc_config.json
+  - python scripts/mc_initialize_db.py
 script: nosetests --with-coverage --cover-package=hera_mc
 
 after_success:
