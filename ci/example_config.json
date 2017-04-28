@@ -1,0 +1,13 @@
+{
+  "default_db_name": "hera_mc",
+  "databases": {
+    "hera_mc": {
+      "url": "postgresql://hera@localhost/hera_mc",
+      "mode": "production"
+    },
+    "testing": {
+      "url": "postgresql://hera@localhost/hera_mc_test",
+      "mode": "testing"
+    }
+  }
+}
