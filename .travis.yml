@@ -29,6 +29,7 @@ services:
   - postgresql
 before_script:
   - psql -c 'create database hera_mc_test;' -U postgres
+  - psql -c 'create database hera_mc;' -U postgres
   - psql -c 'create user hera;' -U postgres
   - mkdir ~/.hera_mc
   - cp ci/example_config.json ~/.hera_mc/mc_config.json
