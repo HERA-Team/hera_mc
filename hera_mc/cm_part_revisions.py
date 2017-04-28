@@ -70,7 +70,7 @@ def get_particular_revision(args, rq, hpn=None):
 
 
 def get_contemporary_revision(args, hpn):
-    current = cm_utils._get_datetime(args.date.args.time)
+    current = cm_utils._get_datetime(args.date,args.time)
     revisions = part_connect.__get_part_revisions(args, hpn)
     sort_rev = sorted(revisions.keys())
     return_contemporary = None

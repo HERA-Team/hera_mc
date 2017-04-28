@@ -46,7 +46,8 @@ class Handling:
         returns True/False, unless return_active True (return list of active connections)
         """
 
-        connection_dict = self.get_connections(hpn_query, rev_query, exact_match=True, return_dictionary=True, show_connection=False)
+        connection_dict = self.get_connections(hpn_query, rev_query, port_query='all', exact_match=True, 
+                                               return_dictionary=True, show_connection=False)
         num_connections = len(connection_dict.keys())
         if num_connections == len(self.non_class_connections_dict_entries):
             found_connected = False

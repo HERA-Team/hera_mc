@@ -19,7 +19,7 @@ To add a new table into the M&C database:
   4. If you then run `psql` and connect to the production database (usually
      `hera_mc`), you should see the new table.
 
-# Deleting a table
+# Deleting a database
 dropdb hera_mc
 
 # Running psql on qmaster
