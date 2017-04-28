@@ -3,7 +3,7 @@
   "databases": {
     "hera_mc": {
       "url": "postgresql://hera@localhost/hera_mc",
-      "mode": "production"
+      "mode": "testing" 
     },
     "testing": {
       "url": "postgresql://hera@localhost/hera_mc_test",
