@@ -1,3 +1,5 @@
 [run]
-omit =
-    */test/*
+omit = ../test/*
+
+[report]
+omit = ../test/*
