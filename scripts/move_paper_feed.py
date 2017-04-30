@@ -60,16 +60,20 @@ def OK_to_add(args, connect, handling):
 
 
 def stop_previous_parts(args):
-    """This adds stop times to the previously connected rev A antenna and FDP rev A"""
+    """This adds stop times to the previously connected rev A antenna and FDP rev A, if needed"""
     current = cm_utils._get_datetime(args.date, args.time)
     args.add_new_part = False
 
-    print("Stopping part %s %s at %s" % (args.antenna_number, 'A', str(current)))
-    data = [[args.antenna_number, 'A', 'stop_date', current]]
+    is_connected = handling.is_in_connections(args.antenna_number, 'A', return_active=True)
+    if type(is_connected) == list:  # It is active
+        print("Stopping part %s %s at %s" % (args.antenna_number, 'A', str(current)))
+        data = [[args.antenna_number, 'A', 'stop_date', current]]
     
     feed = 'FDP' + args.antenna_number.strip('A')
-    print("Stopping part %s %s at %s" % (feed, 'A', str(current)))
-    data.append([feed, 'A', 'stop_date', current])
+    is_connected = handling.is_in_connections(feed, 'A', return_active=True)
+    if type(is_connected) == list:  # It is active
+        print("Stopping part %s %s at %s" % (feed, 'A', str(current)))
+        data.append([feed, 'A', 'stop_date', current])
 
     if args.make_update:
         part_connect.update_part(args, data)
