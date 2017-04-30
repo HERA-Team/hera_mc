@@ -1,4 +1,3 @@
-$_maindb_$:DAVE
 upstream_part,up_part_rev,upstream_output_port,downstream_part,down_part_rev,downstream_input_port,start_date,stop_date
 PPA6,A,ground,A19,A,ground,2014-10-04 19:00:00,2017-05-01 02:31:31
 A19,A,focus,FDP19,A,input,2014-10-04 19:00:00,2017-05-01 02:31:31
