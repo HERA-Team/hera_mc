@@ -1,5 +1,13 @@
+# This requires that the rails server is running:
+# $ cd /home/davidm/local/src/rails-paper
+# $ rails server --daemon
+# (http://herawiki.berkeley.edu/doku.php/correlator.operations)
+
 from __future__ import print_function
 import urllib2
+
+in_container = True
+
 def get_levels(pf_input, testing):
     """
     This assumes the f_engine name structure of 'DF<int=pf_chassis><letter=input_row><int=input_col>'
@@ -52,7 +60,10 @@ def __read_levels_file(name):
 
 def __get_current_levels_from_url(name):
     try:
-        url = urllib2.urlopen('http://paper1.paper.pvt:3000/instruments/psa256/levels.txt')
+        if in_container:
+            url = urllib2.urlopen('http://paper1.paper.pvt:3000/instruments/psa256/levels.txt')
+        else:
+            url = urllib2.urlopen('http://paper1.karoo.kat.ac.za:3000/')
         levels_url = url.read()
         fp = open(name,'w')
         fp.write(levels_url)

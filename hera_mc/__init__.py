@@ -24,9 +24,6 @@ from .version import __version__
 from . import autocorrelations
 from . import host_status
 from . import part_connect
-#from . import cm_handling
-#from . import cm_utils
-#from . import cm_table_info
 from . import geo_location
 from . import temperatures
 from . import mc  # keep this last.
