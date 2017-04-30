@@ -31,3 +31,4 @@ def order_the_tables(unordered_tables=None):
             print(table, 'not found')
     while 'NULL' in ordered_tables:
         ordered_tables.remove('NULL')
+    return ordered_tables
