@@ -117,16 +117,7 @@ def __initialization(args):
         tables_to_read_unordered = cm_tables.keys()
     else:
         tables_to_read_unordered = args.tables.split(',')
-    tables_to_read = []
-    for i in range(len(cm_tables.keys())):
-        tables_to_read.append('NULL')
-    for table in tables_to_read_unordered:
-        try:
-            tables_to_read[cm_tables[table][1]] = table
-        except KeyError:
-            print(table, 'not found')
-    while 'NULL' in tables_to_read:
-        tables_to_read.remove('NULL')
+    tables_to_read = cm_table_info.order_the_tables(tables_to_read_unordered)
 
     db = mc.connect_to_mc_db(args)
 
