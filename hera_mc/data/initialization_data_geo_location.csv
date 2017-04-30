@@ -1,4 +1,3 @@
-$_maindb_$:DAVE
 station_name,station_type_name,datum,tile,northing,easting,elevation,created_date
 HH69,herahex,WGS84,34J,6601133.96,540923.5,1051.89,2017-05-01 02:30:55
 HH70,herahex,WGS84,34J,6601133.96,540938.1,1051.92,2017-03-11 18:04:29
