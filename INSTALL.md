@@ -7,18 +7,27 @@ Installation of the Python code is just done with a standard
 python setup.py install
 ```
 
-In order to run the tests, the `psutil` and `tabulate` packages are required.
-Both can be installed via pip.
+
+Python Prerequisites
+--------------
+sqlalchemy
+psycopg2
+tabulate
+uptime
+psutil
 
 
 Database setup
 --------------
 
+Install PostgreSQL:
 We run PostgreSQL in production and, while SQLAlchemy abstracts between
 different database backends as best it can, it is very desirable that you run
 PostgreSQL in your test environment as well. Use Google to learn how to do
 this, or follow the OS-X-specific notes below.
 
+
+Configure hera_mc to talk to the db:
 After setting up the database, you need to fill in the configuration file
 `~/.hera_mc/mc_config.json`, which tells the M&C system how to talk to the
 database. An example file is:
