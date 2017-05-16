@@ -10,12 +10,12 @@ python setup.py install
 
 Python Prerequisites
 --------------
-sqlalchemy
-psycopg2
-tabulate
-uptime
-psutil
-
+- sqlalchemy
+- psycopg2
+- tabulate
+- uptime
+- psutil
+- pyproj
 
 Database setup
 --------------
