@@ -13,7 +13,7 @@ from hera_mc import mc, cm_utils, part_connect, cm_handling, geo_location, cm_ho
 import sys
 import copy
 
-def test_print(data,verbosity,comment):
+def print4test(data,verbosity,comment):
     if verbosity=='h':
         print(comment+'\n')
         for d in data:
@@ -38,24 +38,25 @@ def query_connection(args):
 
 
 def OK_to_add(args, connect, handling):
+    is_OK_to_add = True
     # 1 - check to see if station is in geo_location database (should be)
-    if not args.make_update:
-        print("Test mode - overriding checks.\n")
-        return True
     if not geo_location.is_in_geo_location(args, connect.upstream_part):
-        print("You need to add station", connect.upstream_part, "to geo_location database")
-        return False
+        print("You need to add_station.py", connect.upstream_part, "to geo_location database")
+        is_OK_to_add = False
     # 2 - check to see if the station is already connected (shouldn't be)
     current = cm_utils._get_datetime(args.date, args.time)
     if handling.is_in_connections(connect.upstream_part, 'A', return_active=True):
         print('Error: ', connect.upstream_part, "already connected.")
-        return False
-    # 3 - check to see if antenna is already connected (should be)
-    c = handling.is_in_connections(connect.downstream_part, 'A', return_active=True)
-    if type(c) != list:
+        is_OK_to_add = False
+    # 3 - check to see if antenna is already connected (should be, but isn't necesarily active)
+    is_connected = handling.is_in_connections(connect.downstream_part, 'A', return_active=True)
+    if not is_connected:
         print('Error:  ', connect.downstream_part, 'not present')
-        return False
-    return True
+        is_OK_to_add = False
+    if type(is_connected) != list:
+        print('Note:',connect.downstream_part,'is connected, but not active.')
+
+    return is_OK_to_add
 
 
 def stop_previous_parts(args):
@@ -73,7 +74,7 @@ def stop_previous_parts(args):
     if args.make_update:
         part_connect.update_part(args, data)
     else:
-        test_print(data,args.verbosity,'Test: stop_previous_parts')
+        print4test(data,args.verbosity,'Test: stop_previous_parts')
 
 
 def add_new_parts(args):
@@ -100,7 +101,7 @@ def add_new_parts(args):
     if args.make_update:
         part_connect.update_part(args, data)
     else:
-        test_print(data,args.verbosity,'Test: add_new_parts')
+        print4test(data,args.verbosity,'Test: add_new_parts')
 
 
 def stop_previous_connections(args, handling):
@@ -144,7 +145,7 @@ def stop_previous_connections(args, handling):
     if args.make_update:
         part_connect.update_connection(args, data)
     else:
-        test_print(data,args.verbosity,'Test: stop_previous_connections')
+        print4test(data,args.verbosity,'Test: stop_previous_connections')
 
 
 def add_new_connection(args, c):
@@ -175,7 +176,7 @@ def add_new_connection(args, c):
     if args.make_update:
         part_connect.update_connection(args, data)
     else:
-        test_print(data,args.verbosity,'Test: add_new_connection')
+        print4test(data,args.verbosity,'Test: add_new_connection')
 
 
 if __name__ == '__main__':
@@ -185,12 +186,13 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--serial_number', help="Serial number of HERA station/antenna", default=-1)
     parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
     parser.add_argument('--time', help="hh:mm or now [now]", default='now')
-    parser.add_argument('--make_update', help="Set to actually change database (otherwise it just shows).",action='store_true')
+    parser.add_argument('--make-update', help="Set to actually change database (otherwise it just shows).",
+                        dest='make_update', action='store_true')
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [h].", choices=['l', 'm', 'h'], default="m")
 
     args = parser.parse_args()
     args.verbosity = args.verbosity.lower()
-    # Add extra args needed for various.
+    # Add extra args needed for various things
     args.add_new_connection = True
     args.active = True
     args.specify_port = 'all'
@@ -222,10 +224,12 @@ if __name__ == '__main__':
     if args.make_update:
         print("\nUpdating antenna/feed installation.\n")
     else:
-        print("\nThis will only print out the actions.\n\t'--make_update' to actually make changes.\n")
+        print("\nThis will only print out the actions.\n\t'--make-update' to actually make changes.\n")
 
+    print("Showing previous hookup:")
     previous_hookup = hookup.get_hookup(args.antenna_number, show_hookup=True)
-    # Adding new station/antenna connection to be checked
+
+    # This is the new station/antenna connection to be checked
     connect.connection(upstream_part=args.station_name, up_part_rev='A',
                downstream_part=args.antenna_number, down_part_rev='B',
                upstream_output_port='ground', downstream_input_port='ground',
@@ -234,6 +238,8 @@ if __name__ == '__main__':
         if args.make_update:
             print("OK to update -- actually doing it.")
             cm_utils._log('move_paper_feed', args=args)
+        else:
+            print("This is what would be happening if --make-update was enabled:")
         stop_previous_parts(args)
         add_new_parts(args)
         stop_previous_connections(args, handling)

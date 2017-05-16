@@ -13,32 +13,11 @@ import socket
 import sys
 import copy
 
-import numpy as np
-import matplotlib.pyplot as plt
-from pyproj import Proj
-
 from sqlalchemy import Column, Float, Integer, String, DateTime, ForeignKey, func
 
 from . import MCDeclarativeBase, NotNull
 from hera_mc import mc, part_connect, cm_utils
 
-current_cofa = 'COFA_HSA7458_V000'
-def cofa():
-    """shortcut to just get cofa"""
-    pos = get_location(current_cofa)
-    return pos
-
-def get_location(location_name):
-    """This provides a function to query a location and get a geo_location class back, with lon/lat added to the class"""
-    local_argv = ['--locate',location_name]
-    parser = mc.get_mc_argument_parser()
-    parser.add_argument('-l', '--locate', default=None)
-    parser.add_argument('-v', '--verbosity', default='l')
-    parser.add_argument('--date', default='now')
-    parser.add_argument('--time', default='now')
-    args = parser.parse_args(local_argv)
-    located = locate_station(args,show_geo=False)
-    return located
 
 class StationType(MCDeclarativeBase):
     """
@@ -61,6 +40,7 @@ class StationType(MCDeclarativeBase):
 
     def __repr__(self):
         return '<subarray prefix={self.prefix} description={self.description} marker={self.plot_marker}>'.format(self=self)
+
 
 class GeoLocation(MCDeclarativeBase):
     """A table logging stations within HERA.
@@ -94,7 +74,7 @@ class GeoLocation(MCDeclarativeBase):
 
     def geo(self, **kwargs):
         for key, value in kwargs.items():
-            if key=='station_name':
+            if key == 'station_name':
                 value = value.upper()
             setattr(self, key, value)
 
@@ -102,6 +82,7 @@ class GeoLocation(MCDeclarativeBase):
         return '<station_name={self.station_name} station_type={self.station_type_name} \
         northing={self.northing} easting={self.easting} \
         elevation={self.elevation}>'.format(self=self)
+
 
 def update(args, data):
     """
@@ -124,15 +105,15 @@ def update(args, data):
         for station_name in data_dict.keys():
             geo_rec = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
             ngr = geo_rec.count()
-            if ngr == 0: 
+            if ngr == 0:
                 if args.add_new_geo:
                     gr = GeoLocation()
                 else:
-                    print("Error: ",station_name,"does not exist and add_new_geo not enabled.")
+                    print("Error: ", station_name, "does not exist and add_new_geo not enabled.")
                     gr = None
             elif ngr == 1:
                 if args.add_new_geo:
-                    print("Error: ",station_name,"exists and and_new_geo is not enabled.")
+                    print("Error: ", station_name, "exists and and_new_geo is not enabled.")
                     gr = None
                 else:
                     gr = geo_rec.first()
@@ -147,8 +128,9 @@ def update(args, data):
                         print(d[1], 'does not exist as a field')
                         continue
                 session.add(gr)
-    cm_utils._log('geo_location update',data_dict=data_dict)
+    cm_utils._log('geo_location update', data_dict=data_dict)
     return True
+
 
 def format_check_update_request(request):
     """
@@ -172,7 +154,7 @@ def format_check_update_request(request):
             data_to_proc.append(d.split(':'))
     else:
         data_to_proc = request
-    if len(data_to_proc[0])==3:
+    if len(data_to_proc[0]) == 3:
         station_name0 = data_to_proc[0][0].upper()
         for d in data_to_proc:
             if len(d) == 3:
@@ -182,7 +164,7 @@ def format_check_update_request(request):
             else:
                 print('Invalid format for update request.')
                 continue
-            if d[1]=='station_name':
+            if d[1] == 'station_name':
                 d[2] = d[2].upper()
             if d[0] in data.keys():
                 data[d[0]].append(d)
@@ -193,7 +175,8 @@ def format_check_update_request(request):
         data = None
     return data
 
-def is_in_geo_location(args,station_name):
+
+def is_in_geo_location(args, station_name):
     """
     checks to see if a station_name is in the geo_location database
 
@@ -214,7 +197,8 @@ def is_in_geo_location(args,station_name):
             station_present = False
     return station_present
 
-def is_in_connections(args,station_name,check_if_active=False):
+
+def is_in_connections(args, station_name, check_if_active=False):
     """
     checks to see if the station_name is in the connections database (which means it is also in parts)
 
@@ -236,155 +220,14 @@ def is_in_connections(args,station_name,check_if_active=False):
             station_connected = False
         if station_connected and check_if_active:
             counter = 0
-            current = cm_utils._get_datetime(args.date,args.time)
+            current = cm_utils._get_datetime(args.date, args.time)
             for connection in connected_station.all():
-                if cm_utils._is_active(current,connection.start_date,connection.stop_date):
-                    station_connected = int(connection.downstream_part.strip('A'))
-                    counter+=1
+                if cm_utils._is_active(current, connection.start_date, connection.stop_date):
+                    station_connected = connection.downstream_part+':'+connection.down_part_rev
+                    counter += 1
                 else:
                     station_connected = False
-            if counter>1:
-                print("Error:  more than one active connection for",station_name)
+            if counter > 1:
+                print("Error:  more than one active connection for", station_name)
                 station_connected = False
     return station_connected
-
-def find_station_name(args,antenna):
-    """
-    checks to see what station an antenna is at
-
-    Returns False or the active station_name (must be an active station)
-
-    Parameters:
-    ------------
-    args:  needed arguments to open database and set date/time
-    antenna_number:  antenna number as float or string, if needed, it adds the 'A'
-    """
-
-    if type(antenna) == float or antenna[0]!='A':
-        antenna = 'A'+str(antenna).strip('0')
-    if antenna[1]=='0':
-        print("Error:  the antenna part number should not have leading 0's",antenna)
-        return False
-    db = mc.connect_to_mc_db(args)
-    with db.sessionmaker() as session:
-        connected_antenna = session.query(part_connect.Connections).filter(part_connect.Connections.downstream_part == antenna)
-        if connected_antenna.count() > 0:
-            antenna_connected = True
-        else:
-            antenna_connected = False
-        if antenna_connected:
-            counter = 0
-            current = cm_utils._get_datetime(args.date,args.time)
-            for connection in connected_antenna.all():
-                stop_date = cm_utils._get_stopdate(connection.stop_date)
-                if current>connection.start_date and current<stop_date:
-                    antenna_connected = connection.upstream_part
-                    counter+=1
-                else:
-                    antenna_connected = False
-            if counter>1:
-                print("Error:  more than one active connection for",antenna)
-                antenna_connected = False
-    return antenna_connected
-
-def locate_station(args, show_geo=False):
-    """Return the location of station_name or station_number as contained in args.locate.
-       If sub_array data exists, print subarray name."""
-
-    station_name = False
-    try:
-        station = int(args.locate)
-        station_name = find_station_name(args,station)
-    except ValueError:
-        station_name = args.locate.upper()
-    found_it = False
-    if station_name:
-        db = mc.connect_to_mc_db(args)
-        with db.sessionmaker() as session:
-            station_type = session.get_station_type()
-            for a in session.query(GeoLocation).filter(GeoLocation.station_name == station_name):
-                for key in station_type.keys():
-                    if a.station_name in station_type[key]['Stations']:
-                        this_station = key
-                        break
-                    else:
-                        this_station = 'No station type data.'
-                ever_connected = is_in_connections(args,a.station_name) 
-                active = is_in_connections(args,a.station_name,True)
-                found_it = True
-                hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
-                a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
-                found_location = copy.copy(a)
-                if show_geo:
-                    if args.verbosity == 'm' or args.verbosity == 'h':
-                        print('station_name: ', a.station_name)
-                        print('\teasting: ', a.easting)
-                        print('\tnorthing: ', a.northing)
-                        print('\tlon/lat:  ',a.lon,a.lat)
-                        print('\televation: ', a.elevation)
-                        print('\tstation description ({}):  {}'.format(this_station,station_type[this_station]['Description']))
-                        print('\tever connected:  ',ever_connected)
-                        print('\tactive:  ',active)
-                        print('\tcreated:  ',a.created_date)
-                    elif args.verbosity == 'l':
-                        print(a, this_station)
-    if show_geo:
-        if not found_it and args.verbosity == 'm' or args.verbosity == 'h':
-            print(args.locate, ' not found.')
-    return found_location
-
-def plot_arrays(args, overplot=None, label_station=False):
-    """Plot the various sub-array types"""
-    coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
-    plt.figure(args.xgraph + args.ygraph)
-    db = mc.connect_to_mc_db(args)
-    with db.sessionmaker() as session:
-        station_type = session.get_station_type()
-        for key in station_type.keys():
-            for loc in station_type[key]['Stations']:
-                for a in session.query(GeoLocation).filter(GeoLocation.station_name == loc):
-                    show_it = True
-                    if args.active:
-                        show_it = is_in_connections(args,loc,True)
-                    if show_it is not False:  #Need this since 0 is a valid antenna
-                        pt = {'easting': a.easting, 'northing': a.northing,'elevation': a.elevation}
-                        plt.plot(pt[coord[args.xgraph]], pt[coord[args.ygraph]],
-                                 station_type[key]['Marker'], label=a.station_name)
-                        if label_station:
-                            if args.label_type=='station_name':
-                                labeling = a.station_name
-                            elif args.label_type=='antenna_number':
-                                labeling = is_in_connections(args,loc,True)
-                                if labeling is False:
-                                    labeling = 'NA'
-                            else:
-                                labeling = 'S'
-                            plt.annotate(labeling, xy=(pt[coord[args.xgraph]], pt[coord[args.ygraph]]),
-                                         xytext=(pt[coord[args.xgraph]] + 2, pt[coord[args.ygraph]]))
-    if overplot:
-        ever_connected = is_in_connections(args,overplot.station_name) 
-        active = is_in_connections(args,overplot.station_name,True)
-        if ever_connected and active:
-            over_marker = 'g*'
-            mkr_lbl = 'ca'
-        elif ever_connected and not active:
-            over_marker = 'gx'
-            mkr_lbl = 'cx'
-        elif active and not ever_connected:
-            over_marker = 'yx'
-            mkr_lbl = 'xa'
-        else:
-            over_marker = 'rx'
-            mkr_lbl = 'xx'
-        opt = {'easting': overplot.easting, 'northing': overplot.northing,'elevation': overplot.elevation}
-        overplot_station = plt.plot(opt[coord[args.xgraph]], opt[coord[args.ygraph]], over_marker, markersize=14)
-        legendEntries = [overplot_station]
-        legendText = [overplot.station_name + ':' + str(active)]
-        plt.legend((overplot_station), (legendText), numpoints=1, loc='upper right')
-    if args.xgraph != 'Z' and args.ygraph != 'Z':
-        plt.axis('equal')
-    plt.plot(xaxis=args.xgraph, yaxis=args.ygraph)
-    plt.show()
-
-
-

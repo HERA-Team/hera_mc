@@ -1,5 +1,8 @@
 # hera_mc
 
+[![Build Status](https://travis-ci.org/HERA-Team/hera_mc.svg?branch=master)](https://travis-ci.org/HERA-Team/hera_mc)
+[![Coverage Status](https://coveralls.io/repos/github/HERA-Team/hera_mc/badge.svg?branch=master)](https://coveralls.io/github/HERA-Team/hera_mc?branch=master)
+
 This is the main repository for HERA's monitor and control subsystems.
 Installation instructions may be found in [INSTALL.md](./INSTALL.md).
 
@@ -19,7 +22,7 @@ To add a new table into the M&C database:
   4. If you then run `psql` and connect to the production database (usually
      `hera_mc`), you should see the new table.
 
-# Deleting a table
+# Deleting a database
 dropdb hera_mc
 
 # Running psql on qmaster
