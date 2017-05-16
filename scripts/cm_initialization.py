@@ -38,10 +38,11 @@ if args.tables != 'all':
 
 
 def check_if_maindb():
-    if "obs" in os.path.expanduser('~'):
-        return True
-    else:
-        return False
+    # if "obs" in os.path.expanduser('~'):
+    #     return True
+    # else:
+    #     return False
+    False
 
 
 def check_data_file(data_filename):
