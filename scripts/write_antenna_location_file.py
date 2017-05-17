@@ -18,6 +18,15 @@ filename = args.file
 db = mc.connect_to_mc_db(args)
 
 locations = geo_handling.get_all_locations(args)
+cofa_loc = geo_handling.cofa()
+locations.append({'station_name': cofa_loc.station_name,
+                  'station_type': cofa_loc.station_type_name,
+                  'longitude': cofa_loc.lon,
+                  'latitude': cofa_loc.lat,
+                  'elevation': cofa_loc.elevation,
+                  'antenna_number': None,
+                  'start_date': cofa_loc.created_date,
+                  'stop_date': None})
 df = pd.DataFrame(locations)
 df = df[['station_name', 'station_type', 'longitude', 'latitude', 'elevation',
         'antenna_number', 'start_date', 'stop_date']]
