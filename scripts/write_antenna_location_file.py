@@ -24,7 +24,7 @@ locations.append({'station_name': cofa_loc.station_name,
                   'longitude': cofa_loc.lon,
                   'latitude': cofa_loc.lat,
                   'elevation': cofa_loc.elevation,
-                  'antenna_number': None,
+                  'antenna_number': -1,
                   'start_date': cofa_loc.created_date,
                   'stop_date': None})
 df = pd.DataFrame(locations)
