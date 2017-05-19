@@ -96,7 +96,7 @@ network\_bandwidth & float & fractional? can be null \\\hline
 \subsection{RTP Tables}
 \textbf{\large{rtp\_server\_status}}: RTP version of the server\_status table\\
 
-\textbf{\large{rtp\_status}}: High level status
+\textbf{\large{rtp\_status}}: High level RTP status
 \begin{center}
  \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
 \hline
@@ -132,5 +132,143 @@ git\_version & string & version of RTP code  \\\hline
 git\_hash & string & git hash of RTP code  \\\hline
 \end{tabular}
 \end{center}
+
+
+\subsection{Librarian Tables}
+\textbf{\large{lib\_server\_status}}: Librarian version of the server\_status table\\
+
+\textbf{\large{lib\_status}}: High level Librarian status
+\begin{center}
+ \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & datetime & \\ \hline
+num\_files & long & total number of files  \\\hline
+data\_volume & float & total data volume (in gigabytes?)  \\\hline
+free\_space & float & available space (in gigabytes?)  \\\hline
+t\_since\_upload & float & time elapsed since last file upload (in seconds? or minutes?) \\\hline
+num\_processes & integer & Number of running background tasks  \\\hline
+git\_version & string & version of Librarian code  \\\hline
+git\_hash & string & git hash of Librarian code  \\\hline
+\end{tabular}
+\end{center}
+
+\textbf{\large{lib\_raid\_status}}: RAID controller status
+\begin{center}
+ \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & datetime & \\ \hline
+\textbf{hostname} & string & \\ \hline
+num\_disks & int & number of disks  \\\hline
+Info & string & TBD -- various info from megaraid controller, may be several columns \\\hline
+\end{tabular}
+\end{center}
+
+\textbf{\large{lib\_raid\_errors}}: RAID controller errors/issues
+\begin{center}
+ \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & datetime & \\ \hline
+\textbf{hostname} & string & \\ \hline
+\textbf{disk} & string or int? &  \\ \hline
+log or file & string & TBD on format, either a message or a file with the log \\\hline
+\end{tabular}
+\end{center}
+
+\textbf{\large{lib\_remote\_bandwidth}}: Network bandwidth/health to all remote librarians
+\begin{center}
+ \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & datetime & \\ \hline
+\textbf{remote\_name} & string & \\ \hline
+ping\_time & float & ping time in seconds (?) \\\hline
+num\_recent\_files & int & number of files uploaded in last 15 minutes  \\\hline
+bandwidth & float & Mb/s average over 15 minutes \\\hline
+\end{tabular}
+\end{center}
+
+\textbf{\large{lib\_file\_log}}: File creation log
+\begin{center}
+ \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{filename} & string & \\ \hline
+\textit{obside} & long integer & \\ \hline
+time & datetime & \\ \hline
+size & float & in gigabytes? \\ \hline
+\end{tabular}
+\end{center}
+
+\subsection{Correlator Tables}
+\textbf{\large{hera\_obs}}: The correlator is the code that will write to the observation table.\\
+
+\textbf{\large{corr\_server\_status}}: Correlator version of the server\_status table\\
+
+The correlator tables are not yet defined, the following are notes about suggestions and plans for correlator tables. Most of the correlator data will be recorded in a Redis database (a rolling log, ephemeral), that info needs to be grabbed and put in \mc tables.
+\begin{outline}[enumerate]
+	\1 correlator on/off?	**this is a control**
+	\1 Bit statistics (overflows, ADC clipping, bit statistics after bit selects)
+	\1 Switch status
+	\1 Firmware git hash
+	\1 Xengine power status (might be covered in corr\_server\_status)
+	\1 Sbc power status (might be covered in corr\_server\_status)
+	\1 Test mode outputs!
+		\2 Fengine sync test
+		\2 Xengine test
+		\2 Do at beginning and end of night.
+		\2 Analog tests
+			\3 Noise diode status
+			\3 Temperature (i2c device)
+			\3 Walsh switching (on/off control. Make sure bit pattern is known and put into data set.)
+
+	\1 Node information (Dave, Jack, Zara, Matt Dexter (mdexter@berkeley.edu), Nima) All node info will be reported through the correlator.
+		\2 SNAP power states
+		\2 SNAP board status
+		\2 Clock status info -- syncing
+		\2 Temperatures (outside + inside, feed?)
+		\2 Power status
+		\2 Node \mc software git hash
+		\2 Walsh on/off	**this is a control**
+		\2 Noise diode	**this is a control**
+		\2 Walsh info -- need to know what was actually done
+		\2 Outputs when using noise source
+
+	\1 \mc information the correlator needs to get and write into files
+		\2 Antenna positions
+	\1 New info added to correlator files (recorded in hera\_obs table)
+		\2 obsid
+		\2 duration
+\end{outline}
+
+\subsection{QA Info}
+This will come from many sources. These are some suggestions for the future, things we might like to see.
+
+\begin{outline}[enumerate]
+	\1 RTP/online systems
+		\2 RFI statistics/info
+		\2 Calibration statistics
+		\2 LST repeatability
+		\2 TBD other things that come up
+	\1 Offline codes (Major work on how to implement this!! Not on the critical path):
+		\2 TBD from offline analysis codes
+\end{outline}
+
+\subsection{Site Info}
+These are suggestions for the future, things we might like to see.
+\begin{outline}[enumerate]
+	\1 Weather info
+	\1 site power
+	\1 network status
+\end{outline}
+
+\subsection{Other Future Ideas}
+\begin{outline}[enumerate]
+	\1 Basic ionospheric monitoring
+	\1 RFI monitoring
+\end{outline}
+
 
 \end{document}
