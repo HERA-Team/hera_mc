@@ -1,0 +1,96 @@
+\documentclass{article}
+\usepackage{float,amsmath}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{hyperref}
+
+\usepackage{outlines}
+\usepackage{enumitem}
+\setenumerate[1]{label=\arabic*.}
+\setenumerate[2]{label=\alph*.}
+\setenumerate[3]{label=\arabic*.}
+\setenumerate[4]{label=\roman*.}
+
+\newcommand{\mc}{M\&C}
+
+
+\begin{document}
+
+\author{HERA Team}
+\title{HERA Monitor and Control Subsystem Definition}
+\maketitle
+
+\section{Introduction}
+HERA is an international experiment to detect and characterize the Epoch of
+Reionization (EOR).  The telescope is located at the South African SKA site in
+the Karoo Astronomy Reserve.  This note summarizes Monitor and Control (\mc) subsystem for HERA.
+
+Monitor and Control provides a common place for logging of metadata and messages. The \mc\ system is built around a database with a well documented table schema and a software layer to provide a simple developer framework. It will also include various online daemons for monitoring things, and both a front end web-based user interface and a command-line interface to support analysis code.
+
+\section{Requirements}
+\begin{outline}[enumerate]
+	\1 Ability to fully reconstruct the historical state of the system.
+	\1 All interactions between subsystems must go through or be logged by \mc.
+		\2 Both subsystems in an interaction are responsible for logging communications to \mc.
+		\2 Subsystems in an interaction are responsible for logging communications to \mc.
+	\1 Operational metadata (e.g. temperatures, correlator bit occupancies) must be logged to \mc.
+	\1 High availability (\mc\ must not limit uptime of telescope).
+	\1 \mc is a provider of information about observations to end-users and must be available to them
+\end{outline}
+
+\section{Design Specification}
+\begin{outline}[enumerate]
+	\1 SQL database
+		\2 DB Design principle: every logical sub group has a group of tables.  One adds tables to do more things. E.g. different versions of subsystems add new tables. Operations reference which tables they use.
+		\2 This document (and appendices) will contain all table definitions.
+		\2 Use careful dB design to avoid duplicated data, make table links/data relationships clear, use many-to-one and many-to-many links.
+		\2 Transactions must be used to ensure DB integrity.
+		\2 Must be mirrored in some fashion to observer locations.
+	\1 At least one SW interface layer will be provided.
+		\2 It’s not required to interact with \mc.
+		\2 Must support relational db (i.e. multiple column primary and foreign keys) and transactions.
+	\1 Hardware
+		\2 LOM capabilities
+		\2 Multi-teraByte mirrored disk RAID
+		\2 Backup machine available on site
+\end{outline}
+
+\section{Table Definitions}
+Primary keys are bold, foreign keys are italicized.
+
+\subsection{Observations}
+\textbf{\large{hera\_obs}}: This is the primary observation definition table.
+\begin{center}
+ \begin{tabular}{| p{2cm} | p{2cm} | p{4cm} | p{7cm} |} 
+ \hline
+ column & type & description & notes \\ [0.5ex]  \hline\hline
+ \textbf{obsid} & long integer & start time in floor(GPS) seconds & GPS start adjusted to be within 1 second of LST to lock observations to LST for the night \\ \hline
+ start\_time\_jd & double & start time in decimal JD & the actual start time to full accuracy of the start of the observation: beginning of integration of first visibility \\\hline
+ stop\_time\_jd & double & stop time in decimal JD & the actual stop time to full accuracy of the end of the observation: end of integration of last visibility \\\hline
+ lst\_start\_hr & double & decimal hours from start of sidereal day & provides a quick search for overlapping LSTs \\\hline
+ \end{tabular}
+\end{center}
+
+\subsection{Common tables}
+\textbf{\large{hera\_obs}}: Common table structure for server status info. Same columns to be used in subsystem-specific instances of this table.
+\begin{center}
+ \begin{tabular}{| p{3cm} | p{2cm} | p{4cm} | p{7cm} |} 
+\hline
+ column & type & description & notes \\ [0.5ex]  \hline\hline
+ \textbf{timestamp} & time stamp & defined by \mc &  \\ \hline
+ \textbf{hostname} & string & &  \\ \hline
+ ip\_address & string & host IP & how should we handle multiples? \\\hline
+system\_time & time stamp & on server & \\\hline
+num\_cores & integer & Number of cores &  \\\hline
+cpu\_load & float & percentage & defined by total load/\# cores, 5min average  \\\hline
+uptime & float &  &  \\\hline
+memory\_used & float & percent used &  \\\hline
+memory\_size & float & &  \\\hline
+disk\_space & float & percent used &  \\\hline
+disk\_size & float &  &  \\\hline
+network\_bandwidth & float & fractional? & can be null \\\hline
+\end{tabular}
+\end{center}
+
+\end{document}
