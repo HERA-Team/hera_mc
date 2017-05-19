@@ -93,4 +93,44 @@ network\_bandwidth & float & fractional? can be null \\\hline
 \end{tabular}
 \end{center}
 
+\subsection{RTP Tables}
+\textbf{\large{rtp\_server\_status}}: RTP version of the server\_status table\\
+
+\textbf{\large{rtp\_status}}: High level status
+\begin{center}
+ \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & datetime & \\ \hline
+status & string & TBD  \\\hline
+t\_since\_event & float & time elapsed since last event (in seconds? or minutes?) \\\hline
+num\_processes & integer & Number of processes running  \\\hline
+t\_since\_restart & float & time since last restart (in minutes? hours?) \\\hline
+\end{tabular}
+\end{center}
+
+\textbf{\large{rtp\_process\_events}}: RTP Processing events (per obsid)
+\begin{center}
+ \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & datetime & \\ \hline
+\textit{\textbf{obsid}} & long integer & \\ \hline
+event & string & one of: queued, started, finished, error  \\\hline
+\end{tabular}
+\end{center}
+
+\textbf{\large{rtp\_process\_record}}: RTP record of processed obsids (entry added when processing finished)
+\begin{center}
+ \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & datetime & \\ \hline
+\textit{\textbf{obsid}} & long integer & \\ \hline
+pipeline\_list & string & concatenated list of tasks  \\\hline
+git\_version & string & version of RTP code  \\\hline
+git\_hash & string & git hash of RTP code  \\\hline
+\end{tabular}
+\end{center}
+
 \end{document}
