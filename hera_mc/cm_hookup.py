@@ -201,18 +201,19 @@ class Hookup:
 
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
         hookup_dict['columns'].append('levels')
+        hookup_dict['levels'] = {}
         pf_input = []
         for k in sorted(hookup_dict.keys()):
-            if k == 'columns':
+            if k == 'columns' or k == 'levels':
                 continue
-            f_engine = hookup_dict[k][-1][0].strip('*')
+            f_engine = hookup_dict[k][-1].downstream_part
             pf_input.append(f_engine)
         levels = correlator_levels.get_levels(pf_input, testing)
         for i, k in enumerate(sorted(hookup_dict.keys())):
-            if k == 'columns':
+            if k == 'columns' or k == 'levels':
                 continue
             lstr = '%s' % (levels[i])
-            hookup_dict[k].append([lstr, pf_input[i]])
+            hookup_dict['levels'][k] = lstr
         return hookup_dict
 
     def show_hookup(self, hookup_dict, cols_to_show, show_levels):
@@ -239,11 +240,13 @@ class Hookup:
                 headers.append(colhead)
             else:
                 show_flag.append(False)
+        ioffset = 0
         if show_levels:
             show_flag.append(True)
+            ioffset = 1
         table_data = []
         for hukey in sorted(hookup_dict.keys()):
-            if hukey == 'columns':
+            if hukey == 'columns' or hukey == 'levels':
                 continue
             td = []
             if show_flag[0]:
@@ -261,6 +264,8 @@ class Hookup:
                 pn = hookup_dict[hukey][-1]
                 prpn = pn.downstream_input_port + '> ' + pn.downstream_part + ':' + pn.down_part_rev
                 td.append(prpn)
+            if show_levels:
+                td.append(hookup_dict['levels'][hukey])
             table_data.append(td)
             if len(td) != len(headers):
                 print(headers)
