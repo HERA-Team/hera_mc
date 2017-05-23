@@ -33,7 +33,7 @@ class Handling:
     Class to allow various manipulations of parts and their properties etc.  Things are 
     manipulated/passed as dictionaries currently.
     """
-    no_connection_designator = '--'
+    no_connection_designator = '-X-'
     non_class_connections_dict_entries = ['ordered_pairs', no_connection_designator]
 
     def __init__(self, args):
@@ -46,7 +46,7 @@ class Handling:
         returns True/False, unless return_active True (return list of active connections)
         """
 
-        connection_dict = self.get_connections(hpn_query, rev_query, port_query='all', exact_match=True, 
+        connection_dict = self.get_connections(hpn_query, rev_query, port_query='all', exact_match=True,
                                                return_dictionary=True, show_connection=False)
         num_connections = len(connection_dict.keys())
         if num_connections == len(self.non_class_connections_dict_entries):
@@ -125,7 +125,7 @@ class Handling:
                         part_dict[pr_key]['input_ports'], part_dict[pr_key]['output_ports'] = \
                             self.__find_ports(part_dict[pr_key]['connections'], current)
                     else:
-                        print("cm_handling[120]:  Warning: should only be one part/rev.", part.hpn, part.hpn_rev)
+                        print("cm_handling[128]:  Warning: should only be one part/rev.", part.hpn, part.hpn_rev)
         if show_part:
             self.show_part(part_dict)
         if return_dictionary:
