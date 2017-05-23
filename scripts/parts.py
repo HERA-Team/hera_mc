@@ -32,6 +32,7 @@ if __name__ == '__main__':
                         dest='levels_testing', default='levels.tst')
     parser.add_argument('--date', help="UTC YYYY/M/D or now [now]", default='now')
     parser.add_argument('--time', help="UTC hh:mm or now [now]", default='now')
+
     active_group = parser.add_mutually_exclusive_group()
     active_group.add_argument('--show-active', help="Flag to show only the active parts/connections (default)",dest='active', action='store_true')
     active_group.add_argument('--show-all', help="Flag to show all parts/connections",dest='active', action='store_false')
