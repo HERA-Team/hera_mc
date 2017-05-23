@@ -51,7 +51,11 @@ if __name__ == '__main__':
     args.revision = args.revision.upper()
     if args.revision == 'ALL':
         args.active = False
+<<<<<<< HEAD
     if args.levels_testing:
+=======
+    if type(args.levels_testing) == str:
+>>>>>>> fixed the unhooked connection issue and levels issue
         if args.levels_testing.lower() == 'none' or args.levels_testing.lower() == 'false':
             args.levels_testing = False
         elif args.levels_testing == 'levels.tst':
