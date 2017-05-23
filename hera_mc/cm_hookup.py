@@ -148,6 +148,7 @@ class Hookup:
                                        exact_match=exact_match, return_dictionary=True, show_part=False)
         hookup_dict = {}
         db = mc.connect_to_mc_db(args)
+        col_len_max = [0,'-']
         with db.sessionmaker() as session:
             for hpnr in parts.keys():
                 if not cm_utils._is_active(self.current, parts[hpnr]['part'].start_date, parts[hpnr]['part'].stop_date):
@@ -171,11 +172,14 @@ class Hookup:
                     for sn in range(how_many_to_do):
                         hukey = _make_hookup_key(parts[hpnr]['part'].hpn, parts[hpnr]['part'].hpn_rev, p, str(sn))
                         hookup_dict[hukey] = self.__follow_hookup_stream(parts[hpnr]['part'].hpn, parts[hpnr]['part'].hpn_rev, p, session, sn)
+                        if len(hookup_dict[hukey]) > col_len_max[0]:
+                            col_len_max[0] = len(hookup_dict[hukey])
+                            col_len_max[1] = hukey
         if len(hookup_dict.keys()) == 0:
             print(hpn_query, rev_query, 'not active')
             return None
 
-        hookup_dict['columns'] = self.__get_column_header(hookup_dict[hookup_dict.keys()[0]])
+        hookup_dict['columns'] = self.__get_column_header(hookup_dict[col_len_max[1]])
         if args.show_levels:
             hookup_dict = self.__hookup_add_correlator_levels(hookup_dict, args.levels_testing)
         if show_hookup:
@@ -194,9 +198,6 @@ class Hookup:
                                                exact_match=True, return_dictionary=True, show_part=False)
         pr_key = cm_handling._make_part_key(hu.downstream_part, hu.down_part_rev)
         parts_col.append(get_part_type[pr_key]['part'].hptype)
-        # for i in range(len(parts_col)-1):
-        #     parts_col[i] = parts_col[i]+' : '+parts_col[i+1]
-        # del(parts_col[-1])
         return parts_col
 
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
@@ -216,6 +217,15 @@ class Hookup:
             hookup_dict['levels'][k] = lstr
         return hookup_dict
 
+    def __header_entry_name_adjust(self,col):
+        if col[-2:] == '_e' or col[-2:] == '_n':  # Makes these specific pol parts generic
+            colhead = col[:-2]
+        else:
+            colhead = col
+        return colhead 
+
+
+
     def show_hookup(self, hookup_dict, cols_to_show, show_levels):
         """
         Print out the hookup table -- uses tabulate package.  
@@ -224,52 +234,79 @@ class Hookup:
         -----------
         hookup_dict:  generated in self.get_hookup
         """
+        headers, show_flag = self.__make_header_row(hookup_dict['columns'],cols_to_show, show_levels)
+
+        table_data = []
+        for hukey in sorted(hookup_dict.keys()):
+            if hukey == 'columns' or hukey == 'levels':
+                continue
+            if show_levels:
+                level = hookup_dict['levels'][hukey]
+            else:
+                level = False
+            td = self.__make_table_row(hookup_dict[hukey], headers, show_flag, level)
+            table_data.append(td)
+        print('\n')
+        print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
+        print('\n')
+
+    def __make_header_row(self, header_col, cols_to_show, show_levels):
         headers = []
         show_flag = []
         if cols_to_show != 'all':
             cols_to_show = cols_to_show.split(',')
-            if show_levels:
-                cols_to_show.append('levels')
-        for col in hookup_dict['columns']:
-            if col[-2:] == '_e' or col[-2:] == '_n':  # Makes these specific pol parts generic
-                colhead = col[:-2]
-            else:
-                colhead = col
+        for col in header_col:
+            colhead = self.__header_entry_name_adjust(col)
             if cols_to_show == 'all' or colhead in cols_to_show:
                 show_flag.append(True)
                 headers.append(colhead)
             else:
                 show_flag.append(False)
-        ioffset = 0
-        if show_levels:
-            show_flag.append(True)
-            ioffset = 1
-        table_data = []
-        for hukey in sorted(hookup_dict.keys()):
-            if hukey == 'columns' or hukey == 'levels':
-                continue
-            td = []
-            if show_flag[0]:
-                pn = hookup_dict[hukey][0]
-                prpn = pn.upstream_part + ':' + pn.up_part_rev + ' <' + pn.upstream_output_port
-                td.append(prpn)
-            for i in range(1, len(hookup_dict[hukey])):
-                if show_flag[i]:
-                    pn = hookup_dict[hukey][i - 1]
-                    prpn = pn.downstream_input_port + '> ' + pn.downstream_part + ':' + pn.down_part_rev
-                    pn = hookup_dict[hukey][i]
-                    prpn += ' <' + pn.upstream_output_port
-                    td.append(prpn)
-            if show_flag[-1]:
-                pn = hookup_dict[hukey][-1]
+        return headers, show_flag
+
+    def __make_table_row(self,hup, headers, show_flag, show_level):
+        nc = '-'
+        td = []
+        if show_flag[0]:
+            pn = hup[0]
+            prpn = pn.upstream_part + ':' + pn.up_part_rev + ' <' + pn.upstream_output_port
+            td.append(prpn)
+        for i in range(1, len(hup)):
+            if show_flag[i]:
+                pn = hup[i - 1]
                 prpn = pn.downstream_input_port + '> ' + pn.downstream_part + ':' + pn.down_part_rev
+                pn = hup[i]
+                prpn += ' <' + pn.upstream_output_port
                 td.append(prpn)
-            if show_levels:
-                td.append(hookup_dict['levels'][hukey])
-            table_data.append(td)
-            if len(td) != len(headers):
-                print(headers)
-                print(td)
-                print('Issues with ', hukey, '(incorrect number of entries, but trying anyway)')
-        print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
-        print('\n')
+        if show_flag[-1]:
+            pn = hup[-1]
+            prpn = pn.downstream_input_port + '> ' + pn.downstream_part + ':' + pn.down_part_rev
+            td.append(prpn)
+        if show_level:
+            td.append(show_level)
+        if len(td) != len(headers):
+            new_hup = []
+            nc = '-'
+            for hdr in headers:
+                if hdr == 'levels':
+                    continue
+                for hu in hup:
+                    get_part_type = self.handling.get_part(hpn_query=hu.upstream_part, rev_query=hu.up_part_rev,
+                        exact_match=True, return_dictionary=True, show_part=False)
+                    pr_key = cm_handling._make_part_key(hu.upstream_part, hu.up_part_rev)
+                    part_col = get_part_type[pr_key]['part'].hptype
+                    if self.__header_entry_name_adjust(part_col) == hdr:
+                        new_hup.append(hu)
+                        break
+                else:
+                    get_part_type = self.handling.get_part(hpn_query=hu.downstream_part, rev_query=hu.down_part_rev,
+                        exact_match=True, return_dictionary=True, show_part=False)
+                    pr_key = cm_handling._make_part_key(hu.downstream_part, hu.down_part_rev)
+                    part_col = get_part_type[pr_key]['part'].hptype
+                    if self.__header_entry_name_adjust(part_col) == hdr:
+                        continue
+                    else:
+                        new_hup.append(part_connect.Connections(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc, 
+                                                               downstream_part=nc, down_part_rev=nc, downstream_input_port=nc))
+            td = self.__make_table_row(new_hup, headers, show_flag, show_level)
+        return td

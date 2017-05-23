@@ -51,10 +51,11 @@ if __name__ == '__main__':
     args.revision = args.revision.upper()
     if args.revision == 'ALL':
         args.active = False
-    if args.levels_testing.lower() == 'none' or args.levels_testing.lower() == 'false':
-        args.levels_testing = False
-    elif args.levels_testing == 'levels.tst':
-        args.levels_testing = os.path.join(mc.test_data_path, 'levels.tst')
+    if type(args.levels_testing) == str:
+        if args.levels_testing.lower() == 'none' or args.levels_testing.lower() == 'false':
+            args.levels_testing = False
+        elif args.levels_testing == 'levels.tst':
+            args.levels_testing = os.path.join(mc.test_data_path, 'levels.tst')
 
     # Execute script
     handling = cm_handling.Handling(args)
