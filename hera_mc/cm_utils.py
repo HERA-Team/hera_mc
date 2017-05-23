@@ -49,16 +49,18 @@ def _get_datetime(_date, _time):
         dt_d = datetime.datetime.utcnow()
     else:
         data = _date.split('/')
-        yr = int(data[2])
-        if yr < 1900:
-            yr += 2000
-        dt_d = datetime.datetime(int(data[2]) + 2000, int(data[0]), int(data[1]), tzinfo=pytz.utc)
+        if len(data)!=3:
+            print('Invalid date (should be YYYY/M/D):  ',_date)
+            return None
+        dt_d = datetime.datetime(int(data[0]), int(data[1]), int(data[2]), tzinfo=pytz.utc)
     if _time.lower() == 'now':
         dt_t = datetime.datetime.utcnow()
     elif _time == '0':
         dt_t = datetime.datetime(dt_d.year, dt_d.month, dt_d.day, 0, 0, 0, tzinfo=pytz.utc)
     else:
         data = _time.split(':')
+        if len(data)<2:
+            print('Invalid time (should be H:M):  ',_time)
         dt_t = datetime.datetime(dt_d.year, dt_d.month, dt_d.day, int(data[0]), int(data[1]), 0, tzinfo=pytz.utc)
     dt = datetime.datetime(dt_d.year, dt_d.month, dt_d.day, dt_t.hour, dt_t.minute, dt_t.second, tzinfo=pytz.utc)
     return dt

@@ -13,8 +13,8 @@ import os.path
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
-    parser.add_argument('--time', help="hh:mm or now [now]", default='now')
+    parser.add_argument('--date', help="UTC YYYY/MM/DD or now [now]", default='now')
+    parser.add_argument('--time', help="UTC hh:mm or now [now]", default='now')
     parser.add_argument('-r','--revision', help="Specify revision for hpn (it's a letter).  [LAST]", default='LAST')
     active_group = parser.add_mutually_exclusive_group()
     active_group.add_argument('--show-active', help="Flag to show only the active parts/connections (default)",dest='active', action='store_true')
