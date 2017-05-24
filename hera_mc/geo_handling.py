@@ -279,27 +279,27 @@ def overplot(args, located, fignm):
        located:  geo class of station to plot
        fignm:  figure name/number to plot on
     """
-
-    ever_connected = geo_location.is_in_connections(args, located.station_name)
-    active = geo_location.is_in_connections(args, located.station_name, True)
-    if ever_connected and active:
-        over_marker = 'g*'
-        mkr_lbl = 'ca'
-    elif ever_connected and not active:
-        over_marker = 'gx'
-        mkr_lbl = 'cx'
-    elif active and not ever_connected:
-        over_marker = 'yx'
-        mkr_lbl = 'xa'
-    else:
-        over_marker = 'rx'
-        mkr_lbl = 'xx'
-    opt = {'easting': located.easting, 'northing': located.northing, 'elevation': located.elevation}
-    plt.figure(fignm)
-    overplot_station = plt.plot(opt[coord[args.xgraph]], opt[coord[args.ygraph]], over_marker, markersize=14)
-    legendEntries = [overplot_station]
-    legendText = [located.station_name + ':' + str(active)]
-    plt.legend((overplot_station), (legendText), numpoints=1, loc='upper right')
+    if located:
+        ever_connected = geo_location.is_in_connections(args, located.station_name)
+        active = geo_location.is_in_connections(args, located.station_name, True)
+        if ever_connected and active:
+            over_marker = 'g*'
+            mkr_lbl = 'ca'
+        elif ever_connected and not active:
+            over_marker = 'gx'
+            mkr_lbl = 'cx'
+        elif active and not ever_connected:
+            over_marker = 'yx'
+            mkr_lbl = 'xa'
+        else:
+            over_marker = 'rx'
+            mkr_lbl = 'xx'
+        opt = {'easting': located.easting, 'northing': located.northing, 'elevation': located.elevation}
+        plt.figure(fignm)
+        overplot_station = plt.plot(opt[coord[args.xgraph]], opt[coord[args.ygraph]], over_marker, markersize=14)
+        legendEntries = [overplot_station]
+        legendText = [located.station_name + ':' + str(active)]
+        plt.legend((overplot_station), (legendText), numpoints=1, loc='upper right')
 
 
 def show_it_now(fignm):

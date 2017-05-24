@@ -75,7 +75,7 @@ if __name__ == '__main__':
         geo_handling.plot_stations(args, new_antennas, fignm, 'b', '*', '14', label_station=True)
     if args.locate:
         located = geo_handling.locate_station(args, show_location=True)
-    if args.graph and args.locate:
+    if args.graph and args.locate and located:
         geo_handling.overplot(args, located, fignm)
 
     if args.graph:
