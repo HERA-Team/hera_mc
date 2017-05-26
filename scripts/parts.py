@@ -28,8 +28,8 @@ if __name__ == '__main__':
     parser.add_argument('--add-new-part', help="Flag to allow update to add a new record.  [False]", dest='add_new_part', action='store_true')
     parser.add_argument('--mapr-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]", 
                         dest='mapr_cols', default='all')
-    parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible [levels.tst]", 
-                        dest='levels_testing', default='levels.tst')
+    parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible - keep False to use actual correlator [False]", 
+                        dest='levels_testing', default=False)
     parser.add_argument('--date', help="UTC YYYY/M/D or now [now]", default='now')
     parser.add_argument('--time', help="UTC hh:mm or now [now]", default='now')
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     args.revision = args.revision.upper()
     if args.revision == 'ALL':
         args.active = False
-    if type(args.levels_testing) == str:
+    if args.levels_testing:
         if args.levels_testing.lower() == 'none' or args.levels_testing.lower() == 'false':
             args.levels_testing = False
         elif args.levels_testing == 'levels.tst':

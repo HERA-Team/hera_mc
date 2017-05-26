@@ -3,7 +3,8 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""This is meant to hold utility scripts for handling parts and connections
+"""This is an import module used to test code within the python environment, rather than as a script.
+It is for debugging purposes.
 
 """
 from __future__ import absolute_import, division, print_function
