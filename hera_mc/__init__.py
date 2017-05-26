@@ -26,4 +26,6 @@ from . import host_status
 from . import part_connect
 from . import geo_location
 from . import temperatures
+from . import observations
+from . import server_status
 from . import mc  # keep this last.

@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from . import MCDeclarativeBase
+import datetime
 
 
 class ServerStatus(MCDeclarativeBase):
@@ -35,9 +36,9 @@ class ServerStatus(MCDeclarativeBase):
 
     def __repr__(self):
         return ("<ServerStatus('{self.hostname}', '{self.mc_time}', "
-                "'{self.ip_address}', '{self.system_time}, '{self.num_cores}'"
-                "'{self.cpu_load_pct}', '{self.uptime_days}, '{self.memory_used_pct}'"
-                "'{self.memory_size_gb}', '{self.disk_space_pct}'"
+                "'{self.ip_address}', '{self.system_time}, '{self.num_cores}', "
+                "'{self.cpu_load_pct}', '{self.uptime_days}, '{self.memory_used_pct}', "
+                "'{self.memory_size_gb}', '{self.disk_space_pct}', "
                 "'{self.disk_size_gb}', '{self.network_bandwidth_mbs}')>".format(
                     self=self))
 
@@ -63,3 +64,44 @@ class ServerStatus(MCDeclarativeBase):
         else:
             print('Classes do not match')
             return False
+
+    @classmethod
+    def new_status(cls, hostname, ip_address, system_time, num_cores,
+                   cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
+                   disk_space_pct, disk_size_gb, network_bandwidth_mbs=None):
+        """
+        Create a new server_status object.
+
+        Parameters:
+        ------------
+        hostname: string
+            name of server
+        ip_address: string
+            IP address of server
+        system_time: datetime
+            time report sent by server
+        num_cores: integer
+            number of cores on server
+        cpu_load_pct: float
+            CPU load percent = total load / num_cores, 5 min average
+        uptime_days: float
+            server uptime in decimal days
+        memory_used_pct: float
+            Percent of memory used, 5 min average
+        memory_size_gb: float
+            Amount of memory on server in GB
+        disk_space_pct: float
+            Percent of disk used
+        disk_size_gb: float
+            Amount of disk space on server in GB
+        network_bandwidth_mbs: float
+            Network bandwidth in MB/s. Can be null if not applicable
+        """
+        mc_time = datetime.datetime.now()
+
+        return cls(hostname=hostname, mc_time=mc_time, ip_address=ip_address,
+                   system_time=system_time, num_cores=num_cores,
+                   cpu_load_pct=cpu_load_pct, uptime_days=uptime_days,
+                   memory_used_pct=memory_used_pct, memory_size_gb=memory_size_gb,
+                   disk_space_pct=disk_space_pct, disk_size_gb=disk_size_gb,
+                   network_bandwidth_mbs=network_bandwidth_mbs)

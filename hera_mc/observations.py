@@ -45,10 +45,9 @@ class Observation(MCDeclarativeBase):
             np.allclose(other.lst_start_hr, self.lst_start_hr))
 
     @classmethod
-    def new_with_astropy(cls, starttime, stoptime, obsid=None):
+    def new_observation(cls, starttime, stoptime, obsid=None):
         """
-        Add an observation to the M&C database, using Astropy to compute
-        the LST.
+        Create a new observation object using Astropy to compute the LST.
 
         Parameters:
         ------------
