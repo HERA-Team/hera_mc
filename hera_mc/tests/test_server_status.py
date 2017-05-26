@@ -8,10 +8,10 @@
 import unittest
 
 import numpy as np
-from astropy.time import Time, TimeDelta
-from astropy.coordinates import EarthLocation
+import datetime
 
-from hera_mc import mc, server_status
+from hera_mc import mc
+from hera_mc.server_status import ServerStatus
 
 
 class test_hera_mc(unittest.TestCase):
@@ -28,25 +28,36 @@ class test_hera_mc(unittest.TestCase):
         self.test_conn.close()
         self.test_db.drop_tables()
 
-    # def test_add_obs(self):
-    #     t1 = Time('2016-01-10 01:15:23', scale='utc')
-    #     t2 = t1 + TimeDelta(120.0, format='sec')
-    #
-    #     # generated test hera_lat, hera_lon using the output of geo.py -c
-    #     # with this website: http://www.uwgb.edu/dutchs/usefuldata/ConvertUTMNoOZ.HTM
-    #
-    #     from math import floor
-    #     obsid = floor(t1.gps)
-    #     t1.location = EarthLocation.from_geodetic(21.428249, -30.709259)
-    #
-    #     expected = [observations.Observation(obsid=obsid, start_time_jd=t1.jd,
-    #                                          stop_time_jd=t2.jd,
-    #                                          lst_start_hr=t1.sidereal_time('apparent').hour)]
-    #
-    #     self.test_session.add(observations.Observation.new_with_astropy(t1, t2))
-    #     result = self.test_session.get_obs()
-    #     self.assertEqual(result, expected)
+    def test_add_server_status(self):
+        hostname = 'test_host'
+        ip_address = '0.0.0.0'
+        server_time = datetime.datetime.now()
+        num_cores = 16
+        cpu_load_pct = 20.5
+        uptime_days = 31.4
+        memory_used_pct = 43.2
+        memory_size_gb = 32.
+        disk_space_pct = 46.8
+        disk_size_gb = 510.4
+        network_bandwidth_mbs = 10.4
 
+        expected = [ServerStatus(hostname=hostname, mc_time=datetime.datetime.now(),
+                                 ip_address=ip_address, system_time=server_time,
+                                 num_cores=num_cores, cpu_load_pct=cpu_load_pct,
+                                 uptime_days=uptime_days, memory_used_pct=memory_used_pct,
+                                 memory_size_gb=memory_size_gb, disk_space_pct=disk_space_pct,
+                                 disk_size_gb=disk_size_gb, network_bandwidth_mbs=network_bandwidth_mbs)]
+
+        self.test_session.add_server_status(hostname, ip_address, server_time, num_cores,
+                                            cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
+                                            disk_space_pct, disk_size_gb,
+                                            network_bandwidth_mbs=network_bandwidth_mbs)
+        result = self.test_session.get_server_status(server_time - datetime.timedelta(minutes=15))
+        result_host = self.test_session.get_server_status(server_time - datetime.timedelta(minutes=15),
+                                                          hostname=hostname)
+
+        self.assertEqual(result, expected)
+        self.assertEqual(result_host, expected)
 
 if __name__ == '__main__':
     unittest.main()

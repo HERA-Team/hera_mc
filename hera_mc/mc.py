@@ -2,7 +2,7 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Connecting to and managing the M&C database.
+"""Setup and manage the M&C database.
 
 See INSTALL.md in the Git repository for instructions on how to initialize
 your database and configure M&C to find it.
@@ -22,120 +22,15 @@ from sqlalchemy import update
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
-import numpy as np
-from astropy.time import Time
-from astropy.coordinates import EarthLocation, Angle
-import math
 
 from . import MCDeclarativeBase
+from .mc_session import MCSession
 
 data_path = op.join(op.dirname(__file__), 'data')
 test_data_path = op.join(data_path, 'test_data')
 default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
 mc_log_file = op.expanduser('~/.hera_mc/mc_log.txt')
 cm_log_file = op.expanduser('~/.hera_mc/cm_log.txt')
-
-
-class MCSession(Session):
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, etype, evalue, etb):
-        if etype is not None:
-            self.rollback()  # exception raised
-        else:
-            self.commit()  # success
-        self.close()
-        return False  # propagate exception if any occurred
-
-    def get_obs(self, obsid=None):
-        """
-        Get observation(s) from the M&C database.
-
-        Parameters:
-        ------------
-        obsid: long integer
-            observation identification number, generally the gps second
-            corresponding to the observation start time.
-            if not set, all obsids will be returned.
-
-        Returns:
-        --------
-        list of Observation objects
-        """
-        from .observations import Observation
-
-        if obsid is None:
-            obs_list = self.query(Observation).all()
-        else:
-            obs_list = self.query(Observation).filter_by(obsid=obsid).all()
-
-        return obs_list
-
-    def get_paper_temps(self, starttime, stoptime=None):
-        """
-        get sets of temperature records.
-
-        If only starttime is specified, get first record after starttime,
-           if both starttime and stoptime are specified, get records between
-           starttime and stoptime.
-
-        Parameters:
-        ------------
-        starttime: float or astropy time object
-            if float: jd time of starttime
-
-        stoptime: float or astropy time object
-            if float: jd time of temperature read
-
-        """
-        from .temperatures import PaperTemperatures
-
-        if isinstance(starttime, Time):
-            t_start = starttime.utc
-        elif isinstance(starttime, float):
-            t_start = Time(starttime, format='jd', scale='utc')
-        else:
-            raise ValueError('unrecognized "starttime" value: %r' % (starttime,))
-
-        if stoptime is not None:
-            if isinstance(stoptime, Time):
-                t_stop = stoptime.utc
-            elif isinstance(starttime, float):
-                t_stop = Time(stoptime, format='jd', scale='utc')
-            else:
-                raise ValueError('unrecognized "stoptime" value: %r' % (stoptime,))
-
-        if stoptime is not None:
-            ptemp_list = self.query(PaperTemperatures).filter(
-                PaperTemperatures.gps_time.between(t_start.gps, t_stop.gps)).all()
-        else:
-            ptemp_list = self.query(PaperTemperatures).filter(
-                PaperTemperatures.gps_time >= t_start.gps).order_by(
-                    PaperTemperatures.gps_time).limit(1).all()
-
-        return ptemp_list
-
-    def get_station_type(self):
-        """
-        returns a dictionary of sub-arrays
-             [prefix]{'Description':'...', 'plot_marker':'...', 'stations':[]}
-        """
-        from .geo_location import GeoLocation
-        from .geo_location import StationType
-
-        station_data = self.query(StationType).all()
-        stations = {}
-        for sta in station_data:
-            stations[sta.prefix] = {'Name': sta.station_type_name, 'Description': sta.description,
-                                    'Marker': sta.plot_marker, 'Stations': []}
-        locations = self.query(GeoLocation).all()
-        for loc in locations:
-            for k in stations.keys():
-                if loc.station_name[:len(k)] == k:
-                    stations[k]['Stations'].append(loc.station_name)
-        return stations
 
 
 @add_metaclass(ABCMeta)

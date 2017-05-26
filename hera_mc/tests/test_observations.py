@@ -11,7 +11,8 @@ import numpy as np
 from astropy.time import Time, TimeDelta
 from astropy.coordinates import EarthLocation
 
-from hera_mc import mc, observations
+from hera_mc import mc
+from hera_mc.observations import Observation
 
 
 class test_hera_mc(unittest.TestCase):
@@ -39,11 +40,11 @@ class test_hera_mc(unittest.TestCase):
         obsid = floor(t1.gps)
         t1.location = EarthLocation.from_geodetic(21.428249, -30.709259)
 
-        expected = [observations.Observation(obsid=obsid, start_time_jd=t1.jd,
-                                             stop_time_jd=t2.jd,
-                                             lst_start_hr=t1.sidereal_time('apparent').hour)]
+        expected = [Observation(obsid=obsid, start_time_jd=t1.jd,
+                                stop_time_jd=t2.jd,
+                                lst_start_hr=t1.sidereal_time('apparent').hour)]
 
-        self.test_session.add(observations.Observation.new_with_astropy(t1, t2))
+        self.test_session.add_obs(t1, t2)
         result = self.test_session.get_obs()
         self.assertEqual(result, expected)
 
