@@ -128,11 +128,11 @@ class MCSession(Session):
         from .server_status import ServerStatus
 
         if not isinstance(starttime, datetime.datetime):
-            raise ValueError('unrecognized "starttime" value: %r' % (starttime,))
+            raise ValueError('starttime must be a datetime. value was: %r' % (starttime,))
 
         if stoptime is not None:
             if not isinstance(stoptime, datetime.datetime):
-                raise ValueError('unrecognized "stoptime" value: %r' % (stoptime,))
+                raise ValueError('stoptime must be a datetime. value was: %r' % (stoptime,))
 
         if stoptime is not None:
             if hostname is not None:
@@ -197,11 +197,11 @@ class MCSession(Session):
         from .rtp import RTPStatus
 
         if not isinstance(starttime, datetime.datetime):
-            raise ValueError('unrecognized "starttime" value: %r' % (starttime,))
+            raise ValueError('starttime must be a datetime. value was: %r' % (starttime,))
 
         if stoptime is not None:
             if not isinstance(stoptime, datetime.datetime):
-                raise ValueError('unrecognized "stoptime" value: %r' % (stoptime,))
+                raise ValueError('stoptime must be a datetime. value was: %r' % (stoptime,))
 
         if stoptime is not None:
             status_list = self.query(RTPStatus).filter(

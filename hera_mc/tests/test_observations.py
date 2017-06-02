@@ -50,6 +50,17 @@ class test_hera_mc(unittest.TestCase):
         result = result[0]
         self.assertEqual(result, expected)
 
+        t3 = t1 + TimeDelta(10 * 60., format='sec')
+        t4 = t2 + TimeDelta(10 * 60., format='sec')
+        self.test_session.add_obs(t3, t4)
+
+        result_mult = self.test_session.get_obs()
+        self.assertEqual(len(result_mult), 2)
+
+        result_orig = self.test_session.get_obs(obsid=obsid)
+        self.assertEqual(len(result_orig), 1)
+        result_orig = result_orig[0]
+        self.assertEqual(result_orig, expected)
 
 if __name__ == '__main__':
     unittest.main()
