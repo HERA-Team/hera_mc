@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from . import MCDeclarativeBase
 import datetime
+import pytz
 
 
 class ServerStatus(MCDeclarativeBase):
@@ -44,10 +45,9 @@ class ServerStatus(MCDeclarativeBase):
 
     def __eq__(self, other):
         if isinstance(other, ServerStatus):
-            self_columns = [a for a in dir(self) if not a.startswith('__') and
-                            isinstance(a, Column)]
-            other_columns = [a for a in dir(other) if not a.startswith('__') and
-                             isinstance(a, Column)]
+
+            self_columns = [a for a in dir(self) if not a.startswith('_')]
+            other_columns = [a for a in dir(other) if not a.startswith('_')]
             if set(self_columns) != set(other_columns):
                 print('Sets of columns do not match. Left is {lset},'
                       ' right is {rset}'.format(lset=self_columns,
@@ -58,7 +58,11 @@ class ServerStatus(MCDeclarativeBase):
             for c in self_columns:
                 self_c = getattr(self, c)
                 other_c = getattr(other, c)
+                if isinstance(self_c, datetime.datetime):
+                    self_c = self_c.astimezone(pytz.utc)
+                    other_c = other_c.astimezone(pytz.utc)
                 if self_c != other_c:
+                    print('column ', c, ' does not match. Left is ', self_c, ' Right is ', other_c)
                     c_equal = False
             return c_equal
         else:
@@ -97,7 +101,7 @@ class ServerStatus(MCDeclarativeBase):
         network_bandwidth_mbs: float
             Network bandwidth in MB/s. Can be null if not applicable
         """
-        mc_time = datetime.datetime.now()
+        mc_time = pytz.utc.localize(datetime.datetime.utcnow())
 
         return cls(hostname=hostname, mc_time=mc_time, ip_address=ip_address,
                    system_time=system_time, num_cores=num_cores,
