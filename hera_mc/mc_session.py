@@ -155,6 +155,64 @@ class MCSession(Session):
 
         return status_list
 
+    def add_rtp_status(self, time, status, event_min_elapsed, num_processes,
+                       restart_hours_elapsed):
+        """
+        Add a new rtp_status object.
+
+        Parameters:
+        ------------
+        time: datetime
+            time of this status
+        status: string
+            status (options TBD)
+        event_min_elapsed: float
+            minutes since last event
+        num_processes: integer
+            number of processes running
+        restart_hours_elapsed: float
+            hours since last restart
+        """
+        from .rtp import RTPStatus
+
+        self.add(RTPStatus.new_status(time, status, event_min_elapsed, num_processes,
+                                      restart_hours_elapsed))
+
+    def get_rtp_status(self, starttime, stoptime=None):
+        """
+        Get server_status record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: datetime
+            time to look for records after
+
+        stoptime: datetime
+            last time to get records for. If none, only the first record after starttime will be returned.
+
+        Returns:
+        --------
+        list of RTPStatus objects
+        """
+        from .rtp import RTPStatus
+
+        if not isinstance(starttime, datetime.datetime):
+            raise ValueError('unrecognized "starttime" value: %r' % (starttime,))
+
+        if stoptime is not None:
+            if not isinstance(stoptime, datetime.datetime):
+                raise ValueError('unrecognized "stoptime" value: %r' % (stoptime,))
+
+        if stoptime is not None:
+            status_list = self.query(RTPStatus).filter(
+                RTPStatus.time.between(starttime, stoptime)).all()
+        else:
+            status_list = self.query(RTPStatus).filter(
+                RTPStatus.time >= starttime).order_by(
+                    RTPStatus.time).limit(1).all()
+
+        return status_list
+
     def add_paper_temps(self, read_time, temp_list):
         """
         Add a new PaperTemperatures record to the M&C database.

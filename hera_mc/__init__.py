@@ -82,4 +82,5 @@ from . import geo_location
 from . import temperatures
 from . import observations
 from . import server_status
+from . import rtp
 from . import mc  # keep this last.
