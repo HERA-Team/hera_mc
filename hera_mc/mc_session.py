@@ -120,14 +120,16 @@ class MCSession(Session):
 
         return obs_list
 
-    def add_server_status(self, hostname, ip_address, system_time, num_cores,
+    def add_server_status(self, subsystem, hostname, ip_address, system_time, num_cores,
                           cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
                           disk_space_pct, disk_size_gb, network_bandwidth_mbs=None):
         """
-        Add a new server_status to the M&C database.
+        Add a new subsystem server_status to the M&C database.
 
         Parameters:
         ------------
+        subsytem: string
+            name of subsytem. Must be one of ['rtp']
         hostname:
             name of server
         ip_address:
@@ -151,19 +153,27 @@ class MCSession(Session):
         network_bandwidth_mbs:
             Network bandwidth in MB/s, 5 min average. Can be null if not applicable
         """
-        from .server_status import ServerStatus
+        if subsystem == 'rtp':
+            from .rtp import RTPServerStatus as ServerStatus
+        elif subsystem is None:
+            from .server_status import ServerStatus
+        else:
+            raise ValueError('subsystem must be one of: [None, "rtp"]')
 
         self.add(ServerStatus.new_status(hostname, ip_address, system_time, num_cores,
                                          cpu_load_pct, uptime_days, memory_used_pct,
                                          memory_size_gb, disk_space_pct, disk_size_gb,
                                          network_bandwidth_mbs=network_bandwidth_mbs))
 
-    def get_server_status(self, starttime, stoptime=None, hostname=None):
+    def get_server_status(self, subsystem, starttime, stoptime=None, hostname=None):
         """
-        Get server_status record(s) from the M&C database.
+        Get subsystem server_status record(s) from the M&C database.
 
         Parameters:
         ------------
+        subsytem: string
+            name of subsytem. Must be one of ['rtp']
+
         starttime: astropy time object
             time to look for records after
 
@@ -178,7 +188,12 @@ class MCSession(Session):
         --------
         list of ServerStatus objects
         """
-        from .server_status import ServerStatus
+        if subsystem == 'rtp':
+            from .rtp import RTPServerStatus as ServerStatus
+        elif subsystem is None:
+            from .server_status import ServerStatus
+        else:
+            raise ValueError('subsystem must be one of: [None, "rtp"]')
 
         status_list = self._time_filter(ServerStatus, 'mc_time', starttime,
                                         stoptime=stoptime, filter_column='hostname',
