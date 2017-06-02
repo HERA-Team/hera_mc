@@ -29,6 +29,26 @@ class test_hera_mc(unittest.TestCase):
         self.test_conn.close()
         self.test_db.drop_tables()
 
+    def test_repr(self):
+        columns = {'hostname': 'test_host',
+                   'mc_time': pytz.utc.localize(datetime.datetime.utcnow()),
+                   'ip_address': '0.0.0.0',
+                   'system_time': pytz.utc.localize(datetime.datetime.utcnow()),
+                   'num_cores': 16,
+                   'cpu_load_pct': 20.5,
+                   'uptime_days': 31.4,
+                   'memory_used_pct': 43.2,
+                   'memory_size_gb': 32.,
+                   'disk_space_pct': 46.8,
+                   'disk_size_gb': 510.4,
+                   'network_bandwidth_mbs': 10.4}
+
+        servstat = ServerStatus(**columns)
+
+        rep_string = ('<ServerStatus(test_host, ' + str(columns['mc_time']) + ', 0.0.0.0, ' +
+                      str(columns['system_time']) + ', 16, 20.5, 31.4, 43.2, 32.0, 46.8, 510.4, 10.4)>')
+        self.assertEqual(str(servstat), rep_string)
+
     def test_add_server_status(self):
         hostname = 'test_host'
         ip_address = '0.0.0.0'
@@ -59,7 +79,7 @@ class test_hera_mc(unittest.TestCase):
         mc_time_diff = abs(expected.mc_time.astimezone(pytz.utc) - result.mc_time.astimezone(pytz.utc))
         self.assertTrue(mc_time_diff < datetime.timedelta(seconds=0.01))
         if mc_time_diff > datetime.timedelta(seconds=0):
-            self.assertNotEqual(result, expected)
+            self.assertFalse(result == expected)
 
         # they are close enough. set them equal to test the rest of the objects
         expected.mc_time = result.mc_time.astimezone(pytz.utc)
@@ -85,7 +105,7 @@ class test_hera_mc(unittest.TestCase):
         result2 = self.test_session.get_server_status(server_time, hostname='test_host2')[0]
         # mc_times will be different, so won't match. set them equal so that we can test the rest
         expected.mc_time = result2.mc_time.astimezone(pytz.utc)
-        self.assertNotEqual(result2, expected)
+        self.assertFalse(result2 == expected)
 
 
 if __name__ == '__main__':
