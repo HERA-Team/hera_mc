@@ -23,6 +23,12 @@ class test_hera_mc(unittest.TestCase):
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
+        self.column_names = ['time', 'status', 'event_min_elapsed',
+                             'num_processes', 'restart_hours_elapsed']
+        self.column_values = [pytz.utc.localize(datetime.datetime.utcnow()),
+                              'happy', 3.6, 8, 10.2]
+        self.columns = dict(zip(self.column_names, self.column_values))
+        self.test_session.add_rtp_status(*self.column_values)
 
     def tearDown(self):
         self.test_trans.rollback()
@@ -30,35 +36,30 @@ class test_hera_mc(unittest.TestCase):
         self.test_db.drop_tables()
 
     def test_add_rtp_status(self):
-        status_time = pytz.utc.localize(datetime.datetime.utcnow())
-        status = 'happy'
-        event_min_elapsed = 3.6
-        num_processes = 8
-        restart_hours_elapsed = 10.2
+        expected = RTPStatus(**self.columns)
 
-        expected = RTPStatus(time=status_time, status=status,
-                             event_min_elapsed=event_min_elapsed,
-                             num_processes=num_processes,
-                             restart_hours_elapsed=restart_hours_elapsed)
-
-        self.test_session.add_rtp_status(status_time, status, event_min_elapsed,
-                                         num_processes, restart_hours_elapsed)
-        result = self.test_session.get_rtp_status(status_time)[0]
+        result = self.test_session.get_rtp_status(self.columns['time'])[0]
 
         self.assertEqual(result, expected)
 
-        new_status_time = status_time + datetime.timedelta(minutes=5)
+        new_status_time = self.columns['time'] + datetime.timedelta(minutes=5)
         new_status = 'unhappy'
         self.test_session.add_rtp_status(new_status_time, new_status,
-                                         event_min_elapsed + 5, num_processes,
-                                         restart_hours_elapsed + 5. / 60.)
+                                         self.columns['event_min_elapsed'] + 5,
+                                         self.columns['num_processes'],
+                                         self.columns['restart_hours_elapsed'] + 5. / 60.)
 
-        result_mult = self.test_session.get_rtp_status(status_time,
+        result_mult = self.test_session.get_rtp_status(self.columns['time'],
                                                        stoptime=new_status_time)
         self.assertEqual(len(result_mult), 2)
 
         result2 = self.test_session.get_rtp_status(new_status_time)[0]
         self.assertFalse(result2 == expected)
+
+    def test_errors_server_status(self):
+        self.assertRaises(ValueError, self.test_session.get_rtp_status, 'unhappy')
+        self.assertRaises(ValueError, self.test_session.get_rtp_status,
+                          self.columns['time'], stoptime='unhappy')
 
 
 if __name__ == '__main__':

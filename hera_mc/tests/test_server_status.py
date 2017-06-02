@@ -23,6 +23,15 @@ class test_hera_mc(unittest.TestCase):
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
+        self.column_names = ['hostname', 'mc_time', 'ip_address', 'system_time',
+                             'num_cores', 'cpu_load_pct', 'uptime_days',
+                             'memory_used_pct', 'memory_size_gb',
+                             'disk_space_pct', 'disk_size_gb',
+                             'network_bandwidth_mbs']
+        self.column_values = ['test_host', pytz.utc.localize(datetime.datetime.utcnow()),
+                              '0.0.0.0', pytz.utc.localize(datetime.datetime.utcnow()),
+                              16, 20.5, 31.4, 43.2, 32., 46.8, 510.4, 10.4]
+        self.columns = dict(zip(self.column_names, self.column_values))
 
     def tearDown(self):
         self.test_trans.rollback()
@@ -30,53 +39,23 @@ class test_hera_mc(unittest.TestCase):
         self.test_db.drop_tables()
 
     def test_repr(self):
-        columns = {'hostname': 'test_host',
-                   'mc_time': pytz.utc.localize(datetime.datetime.utcnow()),
-                   'ip_address': '0.0.0.0',
-                   'system_time': pytz.utc.localize(datetime.datetime.utcnow()),
-                   'num_cores': 16,
-                   'cpu_load_pct': 20.5,
-                   'uptime_days': 31.4,
-                   'memory_used_pct': 43.2,
-                   'memory_size_gb': 32.,
-                   'disk_space_pct': 46.8,
-                   'disk_size_gb': 510.4,
-                   'network_bandwidth_mbs': 10.4}
+        servstat = ServerStatus(**self.columns)
 
-        servstat = ServerStatus(**columns)
-
-        rep_string = ('<ServerStatus(test_host, ' + str(columns['mc_time']) + ', 0.0.0.0, ' +
-                      str(columns['system_time']) + ', 16, 20.5, 31.4, 43.2, 32.0, 46.8, 510.4, 10.4)>')
+        rep_string = ('<ServerStatus(test_host, ' + str(self.columns['mc_time']) +
+                      ', 0.0.0.0, ' + str(self.columns['system_time']) +
+                      ', 16, 20.5, 31.4, 43.2, 32.0, 46.8, 510.4, 10.4)>')
         self.assertEqual(str(servstat), rep_string)
 
     def test_add_server_status(self):
-        hostname = 'test_host'
-        ip_address = '0.0.0.0'
-        server_time = pytz.utc.localize(datetime.datetime.utcnow())
-        num_cores = 16
-        cpu_load_pct = 20.5
-        uptime_days = 31.4
-        memory_used_pct = 43.2
-        memory_size_gb = 32.
-        disk_space_pct = 46.8
-        disk_size_gb = 510.4
-        network_bandwidth_mbs = 10.4
+        expected = ServerStatus(**self.columns)
 
-        expected = ServerStatus(hostname=hostname, mc_time=pytz.utc.localize(datetime.datetime.utcnow()),
-                                ip_address=ip_address, system_time=server_time,
-                                num_cores=num_cores, cpu_load_pct=cpu_load_pct,
-                                uptime_days=uptime_days, memory_used_pct=memory_used_pct,
-                                memory_size_gb=memory_size_gb, disk_space_pct=disk_space_pct,
-                                disk_size_gb=disk_size_gb,
-                                network_bandwidth_mbs=network_bandwidth_mbs)
-        self.test_session.add_server_status(hostname, ip_address, server_time, num_cores,
-                                            cpu_load_pct, uptime_days, memory_used_pct,
-                                            memory_size_gb, disk_space_pct, disk_size_gb,
-                                            network_bandwidth_mbs=network_bandwidth_mbs)
-        result = self.test_session.get_server_status(server_time)[0]
+        self.test_session.add_server_status(self.column_values[0], *self.column_values[2:11],
+                                            network_bandwidth_mbs=self.column_values[11])
+        result = self.test_session.get_server_status(self.columns['system_time'])[0]
 
         # check that the mc_times are very close
-        mc_time_diff = abs(expected.mc_time.astimezone(pytz.utc) - result.mc_time.astimezone(pytz.utc))
+        mc_time_diff = abs(expected.mc_time.astimezone(pytz.utc) -
+                           result.mc_time.astimezone(pytz.utc))
         self.assertTrue(mc_time_diff < datetime.timedelta(seconds=0.01))
         if mc_time_diff > datetime.timedelta(seconds=0):
             self.assertFalse(result == expected)
@@ -86,27 +65,34 @@ class test_hera_mc(unittest.TestCase):
 
         self.assertEqual(result, expected)
 
-        self.test_session.add_server_status('test_host2', ip_address, server_time, num_cores - 2,
-                                            cpu_load_pct, uptime_days, memory_used_pct,
-                                            memory_size_gb, disk_space_pct, disk_size_gb,
-                                            network_bandwidth_mbs=network_bandwidth_mbs)
-
-        result_host = self.test_session.get_server_status(server_time, hostname=hostname,
-                                                          stoptime=server_time + datetime.timedelta(minutes=2))
+        self.test_session.add_server_status('test_host2', *self.column_values[2:11],
+                                            network_bandwidth_mbs=self.column_values[11])
+        result_host = self.test_session.get_server_status(self.columns['system_time'],
+                                                          hostname=self.columns['hostname'],
+                                                          stoptime=self.columns['system_time'] +
+                                                          datetime.timedelta(minutes=2))
         self.assertEqual(len(result_host), 1)
         result_host = result_host[0]
         self.assertEqual(result_host, expected)
 
-        result_mult = self.test_session.get_server_status(server_time,
-                                                          stoptime=server_time + datetime.timedelta(minutes=2))
+        result_mult = self.test_session.get_server_status(self.columns['system_time'],
+                                                          stoptime=self.columns['system_time'] +
+                                                          datetime.timedelta(minutes=2))
 
         self.assertEqual(len(result_mult), 2)
 
-        result2 = self.test_session.get_server_status(server_time, hostname='test_host2')[0]
+        result2 = self.test_session.get_server_status(self.columns['system_time'],
+                                                      hostname='test_host2')[0]
         # mc_times will be different, so won't match. set them equal so that we can test the rest
         expected.mc_time = result2.mc_time.astimezone(pytz.utc)
         self.assertFalse(result2 == expected)
 
+    def test_errors_server_status(self):
+        self.test_session.add_server_status(self.column_values[0], *self.column_values[2:11],
+                                            network_bandwidth_mbs=self.column_values[11])
+        self.assertRaises(ValueError, self.test_session.get_server_status, 'test_host')
+        self.assertRaises(ValueError, self.test_session.get_server_status,
+                          self.columns['system_time'], stoptime='test_host')
 
 if __name__ == '__main__':
     unittest.main()
