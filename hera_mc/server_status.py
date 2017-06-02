@@ -35,15 +35,6 @@ class ServerStatus(MCDeclarativeBase):
     disk_size_gb = Column(Float, nullable=False)
     network_bandwidth_mbs = Column(Float)
 
-    def __repr__(self):
-        columns = self.__table__.columns.keys()
-        rep_str = '<' + self.__class__.__name__ + '('
-        for c in columns:
-            rep_str += str(getattr(self, c)) + ', '
-        rep_str = rep_str[0:-2]
-        rep_str += ')>'
-        return rep_str
-
     @classmethod
     def new_status(cls, hostname, ip_address, system_time, num_cores,
                    cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
