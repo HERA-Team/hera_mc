@@ -11,6 +11,7 @@ from astropy.time import Time, TimeDelta
 
 from hera_mc import mc
 from hera_mc.server_status import ServerStatus
+from hera_mc.rtp import RTPServerStatus
 
 
 class test_hera_mc(unittest.TestCase):
@@ -34,7 +35,11 @@ class test_hera_mc(unittest.TestCase):
         self.test_conn.close()
 
     def test_repr(self):
-        servstat = ServerStatus(**self.columns)
+        for sub in [None]:
+            if sub == 'rtp':
+                servstat = RTPServerStatus(**self.columns)
+            elif sub is None:
+                servstat = ServerStatus(**self.columns)
 
         rep_string = ('<ServerStatus(test_host, ' + str(self.columns['mc_time']) +
                       ', 0.0.0.0, ' + str(self.columns['system_time']) +
@@ -42,59 +47,67 @@ class test_hera_mc(unittest.TestCase):
         self.assertEqual(str(servstat), rep_string)
 
     def test_add_server_status(self):
-        exp_columns = self.columns.copy()
-        exp_columns['mc_time'] = exp_columns['mc_time'].gps
-        exp_columns['system_time'] = exp_columns['system_time'].gps
-        expected = ServerStatus(**exp_columns)
+        for sub in [None]:
+            if sub == 'rtp':
+                expected = RTPServerStatus(**self.columns)
+            elif sub is None:
+                expected = ServerStatus(**self.columns)
+            exp_columns = self.columns.copy()
+            exp_columns['mc_time'] = exp_columns['mc_time'].gps
+            exp_columns['system_time'] = exp_columns['system_time'].gps
+            expected = ServerStatus(**exp_columns)
 
-        self.test_session.add_server_status(self.column_values[0], *self.column_values[2:11],
-                                            network_bandwidth_mbs=self.column_values[11])
-        result = self.test_session.get_server_status(self.columns['system_time'])[0]
+            self.test_session.add_server_status(sub, self.column_values[0],
+                                                *self.column_values[2:11],
+                                                network_bandwidth_mbs=self.column_values[11])
+            result = self.test_session.get_server_status(sub, self.columns['system_time'])[0]
 
-        # mc_times should be different
-        self.assertFalse(result == expected)
+            # mc_times should be different
+            self.assertFalse(result == expected)
 
-        # check that the mc_times are very close
-        mc_time_diff = abs(expected.mc_time - result.mc_time)
-        self.assertTrue(mc_time_diff < 0.1)
-        # they are close enough. set them equal to test the rest of the objects
-        expected.mc_time = result.mc_time
+            # check that the mc_times are very close
+            mc_time_diff = abs(expected.mc_time - result.mc_time)
+            self.assertTrue(mc_time_diff < 0.1)
+            # they are close enough. set them equal to test the rest of the objects
+            expected.mc_time = result.mc_time
 
-        self.assertEqual(result, expected)
+            self.assertEqual(result, expected)
 
-        self.test_session.add_server_status('test_host2', *self.column_values[2:11],
-                                            network_bandwidth_mbs=self.column_values[11])
-        result_host = self.test_session.get_server_status(self.columns['system_time'],
-                                                          hostname=self.columns['hostname'],
-                                                          stoptime=self.columns['system_time'] +
-                                                          TimeDelta(2 * 60, format='sec'))
-        self.assertEqual(len(result_host), 1)
-        result_host = result_host[0]
-        self.assertEqual(result_host, expected)
+            self.test_session.add_server_status(sub, 'test_host2', *self.column_values[2:11],
+                                                network_bandwidth_mbs=self.column_values[11])
+            result_host = self.test_session.get_server_status(sub, self.columns['system_time'],
+                                                              hostname=self.columns['hostname'],
+                                                              stoptime=self.columns['system_time'] +
+                                                              TimeDelta(2 * 60, format='sec'))
+            self.assertEqual(len(result_host), 1)
+            result_host = result_host[0]
+            self.assertEqual(result_host, expected)
 
-        result_mult = self.test_session.get_server_status(self.columns['system_time'],
-                                                          stoptime=self.columns['system_time'] +
-                                                          TimeDelta(2 * 60, format='sec'))
+            result_mult = self.test_session.get_server_status(sub, self.columns['system_time'],
+                                                              stoptime=self.columns['system_time'] +
+                                                              TimeDelta(2 * 60, format='sec'))
 
-        self.assertEqual(len(result_mult), 2)
+            self.assertEqual(len(result_mult), 2)
 
-        result2 = self.test_session.get_server_status(self.columns['system_time'],
-                                                      hostname='test_host2')[0]
-        # mc_times will be different, so won't match. set them equal so that we can test the rest
-        expected.mc_time = result2.mc_time
-        self.assertFalse(result2 == expected)
+            result2 = self.test_session.get_server_status(sub, self.columns['system_time'],
+                                                          hostname='test_host2')[0]
+            # mc_times will be different, so won't match. set them equal so that we can test the rest
+            expected.mc_time = result2.mc_time
+            self.assertFalse(result2 == expected)
 
     def test_errors_server_status(self):
-        self.assertRaises(ValueError, self.test_session.add_server_status,
-                          self.column_values[0], self.column_values[2],
-                          'foo', *self.column_values[4:11],
-                          network_bandwidth_mbs=self.column_values[11])
+        for sub in [None]:
+            self.assertRaises(ValueError, self.test_session.add_server_status, sub
+                              self.column_values[0], self.column_values[2],
+                              'foo', *self.column_values[4:11],
+                              network_bandwidth_mbs=self.column_values[11])
 
-        self.test_session.add_server_status(self.column_values[0], *self.column_values[2:11],
-                                            network_bandwidth_mbs=self.column_values[11])
-        self.assertRaises(ValueError, self.test_session.get_server_status, 'test_host')
-        self.assertRaises(ValueError, self.test_session.get_server_status,
-                          self.columns['system_time'], stoptime='test_host')
+            self.test_session.add_server_status(sub, self.column_values[0],
+                                                *self.column_values[2:11],
+                                                network_bandwidth_mbs=self.column_values[11])
+            self.assertRaises(ValueError, self.test_session.get_server_status, sub, 'test_host')
+            self.assertRaises(ValueError, self.test_session.get_server_status,
+                              sub, self.columns['system_time'], stoptime='test_host')
 
 if __name__ == '__main__':
     unittest.main()

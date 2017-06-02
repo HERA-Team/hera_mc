@@ -9,6 +9,11 @@
 from astropy.time import Time
 from sqlalchemy import Column, ForeignKey, Integer, BigInteger, String, Text, Float, Enum
 from . import MCDeclarativeBase
+from .server_status import ServerStatus
+
+
+class RTPServerStatus(ServerStatus):
+    __tablename__ = 'rtp_server_status'
 
 rtp_process_enum = ['queued', 'started', 'finished', 'error']
 
