@@ -9,6 +9,7 @@ import unittest
 
 import numpy as np
 import datetime
+import pytz
 
 from hera_mc import mc
 from hera_mc.server_status import ServerStatus
@@ -31,7 +32,7 @@ class test_hera_mc(unittest.TestCase):
     def test_add_server_status(self):
         hostname = 'test_host'
         ip_address = '0.0.0.0'
-        server_time = datetime.datetime.now()
+        server_time = pytz.utc.localize(datetime.datetime.utcnow())
         num_cores = 16
         cpu_load_pct = 20.5
         uptime_days = 31.4
@@ -41,23 +42,49 @@ class test_hera_mc(unittest.TestCase):
         disk_size_gb = 510.4
         network_bandwidth_mbs = 10.4
 
-        expected = [ServerStatus(hostname=hostname, mc_time=datetime.datetime.now(),
+        expected = [ServerStatus(hostname=hostname, mc_time=pytz.utc.localize(datetime.datetime.utcnow()),
                                  ip_address=ip_address, system_time=server_time,
                                  num_cores=num_cores, cpu_load_pct=cpu_load_pct,
                                  uptime_days=uptime_days, memory_used_pct=memory_used_pct,
                                  memory_size_gb=memory_size_gb, disk_space_pct=disk_space_pct,
-                                 disk_size_gb=disk_size_gb, network_bandwidth_mbs=network_bandwidth_mbs)]
-
+                                 disk_size_gb=disk_size_gb,
+                                 network_bandwidth_mbs=network_bandwidth_mbs)]
         self.test_session.add_server_status(hostname, ip_address, server_time, num_cores,
-                                            cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
-                                            disk_space_pct, disk_size_gb,
+                                            cpu_load_pct, uptime_days, memory_used_pct,
+                                            memory_size_gb, disk_space_pct, disk_size_gb,
                                             network_bandwidth_mbs=network_bandwidth_mbs)
-        result = self.test_session.get_server_status(server_time - datetime.timedelta(minutes=15))
-        result_host = self.test_session.get_server_status(server_time - datetime.timedelta(minutes=15),
-                                                          hostname=hostname)
+        result = self.test_session.get_server_status(server_time)
+
+        # check that the mc_times are very close
+        mc_time_diff = abs(expected[0].mc_time.astimezone(pytz.utc) - result[0].mc_time.astimezone(pytz.utc))
+        self.assertTrue(mc_time_diff < datetime.timedelta(seconds=0.01))
+
+        # they are close enough. set them equal to test the rest of the objects
+        expected[0].mc_time = result[0].mc_time.astimezone(pytz.utc)
+
+        self.assertEqual(result[0], expected[0])
+
+        self.test_session.add_server_status('test_host2', ip_address, server_time, num_cores,
+                                            cpu_load_pct, uptime_days, memory_used_pct,
+                                            memory_size_gb, disk_space_pct, disk_size_gb,
+                                            network_bandwidth_mbs=network_bandwidth_mbs)
+
+        result_host = self.test_session.get_server_status(server_time, hostname=hostname,
+                                                          stoptime=server_time + datetime.timedelta(minutes=2))
 
         self.assertEqual(result, expected)
         self.assertEqual(result_host, expected)
+
+        result_mult = self.test_session.get_server_status(server_time,
+                                                          stoptime=server_time + datetime.timedelta(minutes=2))
+
+        self.assertEqual(len(result_mult), 2)
+
+        result2 = self.test_session.get_server_status(server_time, hostname='test_host2')
+        # mc_times will be different. set them equal so that doesn't control the test
+        expected[0].mc_time = result2[0].mc_time.astimezone(pytz.utc)
+        self.assertNotEqual(result2, expected)
+
 
 if __name__ == '__main__':
     unittest.main()
