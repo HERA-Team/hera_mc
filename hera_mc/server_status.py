@@ -36,38 +36,13 @@ class ServerStatus(MCDeclarativeBase):
     network_bandwidth_mbs = Column(Float)
 
     def __repr__(self):
-        return ("<ServerStatus('{self.hostname}', '{self.mc_time}', "
-                "'{self.ip_address}', '{self.system_time}, '{self.num_cores}', "
-                "'{self.cpu_load_pct}', '{self.uptime_days}, '{self.memory_used_pct}', "
-                "'{self.memory_size_gb}', '{self.disk_space_pct}', "
-                "'{self.disk_size_gb}', '{self.network_bandwidth_mbs}')>".format(
-                    self=self))
-
-    def __eq__(self, other):
-        if isinstance(other, ServerStatus):
-
-            self_columns = [a for a in dir(self) if not a.startswith('_')]
-            other_columns = [a for a in dir(other) if not a.startswith('_')]
-            if set(self_columns) != set(other_columns):
-                print('Sets of columns do not match. Left is {lset},'
-                      ' right is {rset}'.format(lset=self_columns,
-                                                rset=other_columns))
-                return False
-
-            c_equal = True
-            for c in self_columns:
-                self_c = getattr(self, c)
-                other_c = getattr(other, c)
-                if isinstance(self_c, datetime.datetime):
-                    self_c = self_c.astimezone(pytz.utc)
-                    other_c = other_c.astimezone(pytz.utc)
-                if self_c != other_c:
-                    print('column ', c, ' does not match. Left is ', self_c, ' Right is ', other_c)
-                    c_equal = False
-            return c_equal
-        else:
-            print('Classes do not match')
-            return False
+        columns = self.__table__.columns.keys()
+        rep_str = '<' + self.__class__.__name__ + '('
+        for c in columns:
+            rep_str += str(getattr(self, c)) + ', '
+        rep_str = rep_str[0:-2]
+        rep_str += ')>'
+        return rep_str
 
     @classmethod
     def new_status(cls, hostname, ip_address, system_time, num_cores,
