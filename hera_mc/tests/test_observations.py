@@ -40,12 +40,14 @@ class test_hera_mc(unittest.TestCase):
         obsid = floor(t1.gps)
         t1.location = EarthLocation.from_geodetic(21.428249, -30.709259)
 
-        expected = [Observation(obsid=obsid, start_time_jd=t1.jd,
-                                stop_time_jd=t2.jd,
-                                lst_start_hr=t1.sidereal_time('apparent').hour)]
+        expected = Observation(obsid=obsid, start_time_jd=t1.jd,
+                               stop_time_jd=t2.jd,
+                               lst_start_hr=t1.sidereal_time('apparent').hour)
 
         self.test_session.add_obs(t1, t2)
         result = self.test_session.get_obs()
+        self.assertEqual(len(result), 1)
+        result = result[0]
         self.assertEqual(result, expected)
 
 

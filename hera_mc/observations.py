@@ -32,18 +32,6 @@ class Observation(MCDeclarativeBase):
     stop_time_jd = Column(DOUBLE_PRECISION, nullable=False)
     lst_start_hr = Column(DOUBLE_PRECISION, nullable=False)
 
-    def __repr__(self):
-        return ("<Observation('{self.obsid}', '{self.start_time_jd}', "
-                "'{self.stop_time_jd}', '{self.lst_start_hr}')>".format(
-                    self=self))
-
-    def __eq__(self, other):
-        return isinstance(other, Observation) and (
-            other.obsid == self.obsid and
-            np.allclose(other.start_time_jd, self.start_time_jd) and
-            np.allclose(other.stop_time_jd, self.stop_time_jd) and
-            np.allclose(other.lst_start_hr, self.lst_start_hr))
-
     @classmethod
     def new_observation(cls, starttime, stoptime, obsid=None):
         """
