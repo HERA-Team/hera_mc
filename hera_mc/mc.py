@@ -166,7 +166,6 @@ class DeclarativeDB(DB):
 
     def create_tables(self):
         """Create all M&C tables"""
-        print(self.engine)
         self.sqlalchemy_base.metadata.create_all(self.engine)
 
     def drop_tables(self):
