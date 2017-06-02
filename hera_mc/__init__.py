@@ -40,7 +40,6 @@ def __eq__(self, other):
         for c in self_columns:
             self_c = getattr(self, c)
             other_c = getattr(other, c)
-            print('column ', c, ', type is ', type(self_c))
             if isinstance(self_c, (str, unicode)):
                 if self_c != other_c:
                     print('column ', c, ' does not match. Left is ', self_c, ' Right is ', other_c)

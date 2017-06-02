@@ -49,7 +49,6 @@ class test_hera_mc(unittest.TestCase):
                                 memory_size_gb=memory_size_gb, disk_space_pct=disk_space_pct,
                                 disk_size_gb=disk_size_gb,
                                 network_bandwidth_mbs=network_bandwidth_mbs)
-        print(expected)
         self.test_session.add_server_status(hostname, ip_address, server_time, num_cores,
                                             cpu_load_pct, uptime_days, memory_used_pct,
                                             memory_size_gb, disk_space_pct, disk_size_gb,
@@ -59,13 +58,15 @@ class test_hera_mc(unittest.TestCase):
         # check that the mc_times are very close
         mc_time_diff = abs(expected.mc_time.astimezone(pytz.utc) - result.mc_time.astimezone(pytz.utc))
         self.assertTrue(mc_time_diff < datetime.timedelta(seconds=0.01))
+        if mc_time_diff > datetime.timedelta(seconds=0):
+            self.assertNotEqual(result, expected)
 
         # they are close enough. set them equal to test the rest of the objects
         expected.mc_time = result.mc_time.astimezone(pytz.utc)
 
         self.assertEqual(result, expected)
 
-        self.test_session.add_server_status('test_host2', ip_address, server_time, num_cores,
+        self.test_session.add_server_status('test_host2', ip_address, server_time, num_cores - 2,
                                             cpu_load_pct, uptime_days, memory_used_pct,
                                             memory_size_gb, disk_space_pct, disk_size_gb,
                                             network_bandwidth_mbs=network_bandwidth_mbs)
@@ -82,7 +83,7 @@ class test_hera_mc(unittest.TestCase):
         self.assertEqual(len(result_mult), 2)
 
         result2 = self.test_session.get_server_status(server_time, hostname='test_host2')[0]
-        # mc_times will be different. set them equal so that doesn't control the test
+        # mc_times will be different, so won't match. set them equal so that we can test the rest
         expected.mc_time = result2.mc_time.astimezone(pytz.utc)
         self.assertNotEqual(result2, expected)
 
