@@ -144,7 +144,7 @@ class test_hera_mc(unittest.TestCase):
 
     def test_errors_rtp_process_event(self):
         self.assertRaises(ValueError, self.test_session.add_rtp_process_event, 'foo',
-                          *self.status_values[1:])
+                          *self.event_values[1:])
 
         self.test_session.add_rtp_process_event(*self.event_values)
         self.assertRaises(ValueError, self.test_session.get_rtp_process_event, 'foo')
