@@ -65,7 +65,7 @@ class test_hera_mc(unittest.TestCase):
         t4 = t2 + TimeDelta(10 * 60., format='sec')
         self.test_session.add_obs(t3, t4)
 
-        result_mult = self.test_session.get_obs()
+        result_mult = self.test_session.get_obs(starttime=t1, stoptime=t4)
         self.assertEqual(len(result_mult), 2)
 
         result_orig = self.test_session.get_obs(obsid=obsid)

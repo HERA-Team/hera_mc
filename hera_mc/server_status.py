@@ -74,7 +74,6 @@ class ServerStatus(MCDeclarativeBase):
         if not isinstance(system_time, Time):
             raise ValueError('system_time must be an astropy Time object')
         system_time = system_time.utc.gps
-        print('new_status: ', '{0:.10f}'.format(system_time))
 
         return cls(hostname=hostname, mc_time=mc_time, ip_address=ip_address,
                    system_time=system_time, num_cores=num_cores,

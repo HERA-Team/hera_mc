@@ -12,7 +12,7 @@ class RTPStatus(MCDeclarativeBase):
     time: time of this status in gps seconds (double). Primary_key
     status: status (options TBD) (String)
     event_min_elapsed: minutes elapsed since last event (Float)
-    num_processes: number of processes on running (Integer)
+    num_processes: number of processes running (Integer)
     restart_hours_elapsed: hours elapsed since last restart (Float)
     """
     __tablename__ = 'rtp_status'
@@ -34,7 +34,7 @@ class RTPStatus(MCDeclarativeBase):
 
         Parameters:
         ------------
-        time: datetime
+        time: astropy time object
             time of this status
         status: string
             status (options TBD)
@@ -76,7 +76,7 @@ class RTPProcessEvent(MCDeclarativeBase):
 
         Parameters:
         ------------
-        time: datetime
+        time: astropy time object
             time of this event
         obsid: long
             observation obsid (Foreign key into Observation)
@@ -117,7 +117,7 @@ class RTPProcessRecord(MCDeclarativeBase):
 
         Parameters:
         ------------
-        time: datetime
+        time: astropy time object
             time of this event
         obsid: long
             observation obsid (Foreign key into Observation)

@@ -151,6 +151,7 @@ class test_hera_mc(unittest.TestCase):
         self.assertRaises(ValueError, self.test_session.get_rtp_process_event,
                           self.event_columns['time'], stoptime='bar')
 
+        # raise error if pass value not in enum
         # self.assertRaises(ValueError, self.test_session.add_rtp_process_event,
         #                   self.event_columns['time'], self.event_columns['obsid'],
         #                   'foo')
