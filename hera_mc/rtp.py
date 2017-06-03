@@ -1,3 +1,11 @@
+# -*- mode: python; coding: utf-8 -*-
+# Copyright 2016 the HERA Collaboration
+# Licensed under the 2-clause BSD license.
+
+"""RTP tables
+
+"""
+
 from astropy.time import Time
 from sqlalchemy import Column, ForeignKey, Integer, BigInteger, String, Text, Float, Enum
 from . import MCDeclarativeBase
