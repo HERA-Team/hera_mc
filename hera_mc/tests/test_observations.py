@@ -73,5 +73,12 @@ class test_hera_mc(unittest.TestCase):
         result_orig = result_orig[0]
         self.assertEqual(result_orig, expected)
 
+    def test_error_obs(self):
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        t2 = t1 + TimeDelta(120.0, format='sec')
+        self.assertRaises(ValueError, self.test_session.add_obs, 'foo', t2)
+        self.assertRaises(ValueError, self.test_session.add_obs, t1, 'foo')
+
+
 if __name__ == '__main__':
     unittest.main()

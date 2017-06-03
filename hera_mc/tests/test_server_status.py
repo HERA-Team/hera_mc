@@ -87,6 +87,11 @@ class test_hera_mc(unittest.TestCase):
         self.assertFalse(result2 == expected)
 
     def test_errors_server_status(self):
+        self.assertRaises(ValueError, self.test_session.add_server_status,
+                          self.column_values[0], self.column_values[2],
+                          'foo', *self.column_values[4:11],
+                          network_bandwidth_mbs=self.column_values[11])
+
         self.test_session.add_server_status(self.column_values[0], *self.column_values[2:11],
                                             network_bandwidth_mbs=self.column_values[11])
         self.assertRaises(ValueError, self.test_session.get_server_status, 'test_host')
