@@ -176,6 +176,59 @@ class MCSession(Session):
 
         return status_list
 
+    def add_lib_status(self, time, num_files, data_volume_gb, free_space_gb,
+                       upload_min_elapsed, num_processes, git_version, git_hash):
+        """
+        Add a new lib_status object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of this status
+        num_files: integer
+            number of files in librarian
+        data_volume_gb: float
+            data volume in GB
+        free_space_gb: float
+            free space in GB
+        upload_min_elapsed: float
+            minutes since last file upload
+        num_processes: integer
+            number of background tasks running
+        git_version: string
+            Librarian git version
+        git_hash: string
+            Librarian git hash
+        """
+        from .librarian import LibStatus
+
+        self.add(LibStatus.new_status(time, num_files, data_volume_gb,
+                                      free_space_gb, upload_min_elapsed,
+                                      num_processes, git_version, git_hash))
+
+    def get_lib_status(self, starttime, stoptime=None):
+        """
+        Get lib_status record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after starttime will be returned.
+
+        Returns:
+        --------
+        list of RTPStatus objects
+        """
+        from .librarian import LibStatus
+
+        status_list = self._time_filter(LibStatus, 'time', starttime,
+                                        stoptime=stoptime)
+
+        return status_list
+
     def add_rtp_status(self, time, status, event_min_elapsed, num_processes,
                        restart_hours_elapsed):
         """
@@ -201,7 +254,7 @@ class MCSession(Session):
 
     def get_rtp_status(self, starttime, stoptime=None):
         """
-        Get server_status record(s) from the M&C database.
+        Get rtp_status record(s) from the M&C database.
 
         Parameters:
         ------------
