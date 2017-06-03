@@ -144,9 +144,9 @@ git\_hash & string & git hash of RTP code  \\\hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{time} & datetime & \\ \hline
 num\_files & long & total number of files  \\\hline
-data\_volume & float & total data volume (in gigabytes?)  \\\hline
-free\_space & float & available space (in gigabytes?)  \\\hline
-t\_since\_upload & float & time elapsed since last file upload (in seconds? or minutes?) \\\hline
+data\_volume\_gb & float & total data volume in gigabytes  \\\hline
+free\_space\_gb & float & available space in gigabytes  \\\hline
+upload\_min\_elapsed & float & minutes elapsed since last file upload \\\hline
 num\_processes & integer & Number of running background tasks  \\\hline
 git\_version & string & version of Librarian code  \\\hline
 git\_hash & string & git hash of Librarian code  \\\hline
@@ -196,7 +196,7 @@ bandwidth & float & Mb/s average over 15 minutes \\\hline
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{filename} & string & \\ \hline
-\textit{obside} & long integer & \\ \hline
+\textit{obsid} & long integer & \\ \hline
 time & datetime & \\ \hline
 size & float & in gigabytes? \\ \hline
 \end{tabular}
