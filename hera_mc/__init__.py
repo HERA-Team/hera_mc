@@ -4,8 +4,6 @@
 
 from __future__ import absolute_import, division, print_function
 from types import MethodType
-import datetime
-import pytz
 import numpy as np
 
 # Before we can do anything else, we need to initialize some core, shared
@@ -28,9 +26,9 @@ def __repr__(self):
 def __eq__(self, other):
     if isinstance(other, self.__class__):
 
-        self_columns = self.__table__.columns.keys()
-        other_columns = other.__table__.columns.keys()
-        if set(self_columns) != set(other_columns):
+        self_columns = self.__table__.columns
+        other_columns = other.__table__.columns
+        if set(c.name for c in self_columns) != set(c.name for c in other_columns):
             print('Sets of columns do not match. Left is {lset},'
                   ' right is {rset}'.format(lset=self_columns,
                                             rset=other_columns))
@@ -38,20 +36,21 @@ def __eq__(self, other):
 
         c_equal = True
         for c in self_columns:
-            self_c = getattr(self, c)
-            other_c = getattr(other, c)
+            self_c = getattr(self, c.name)
+            other_c = getattr(other, c.name)
             if isinstance(self_c, (str, unicode)):
                 if self_c != other_c:
                     print('column ', c, ' does not match. Left is ', self_c, ' Right is ', other_c)
                     c_equal = False
-            elif isinstance(self_c, datetime.datetime):
-                self_c = self_c.astimezone(pytz.utc)
-                other_c = other_c.astimezone(pytz.utc)
-                if self_c != other_c:
-                    print('column ', c, ' does not match. Left is ', self_c, ' Right is ', other_c)
-                    c_equal = False
             else:
-                if not np.isclose(self_c, other_c):
+                if hasattr(self, 'tols') and c.name in self.tols.keys():
+                    atol = self.tols[c.name]['atol']
+                    rtol = self.tols[c.name]['rtol']
+                else:
+                    # use numpy defaults
+                    atol = 1e-08
+                    rtol = 1e-05
+                if not np.isclose(self_c, other_c, atol=atol, rtol=rtol):
                     print('column ', c, ' does not match. Left is ', self_c, ' Right is ', other_c)
                     c_equal = False
         return c_equal

@@ -6,10 +6,8 @@
 
 """
 import unittest
-
 import numpy as np
-import datetime
-import pytz
+from astropy.time import Time, TimeDelta
 
 from hera_mc import mc
 from hera_mc.server_status import ServerStatus
@@ -28,8 +26,7 @@ class test_hera_mc(unittest.TestCase):
                              'memory_used_pct', 'memory_size_gb',
                              'disk_space_pct', 'disk_size_gb',
                              'network_bandwidth_mbs']
-        self.column_values = ['test_host', pytz.utc.localize(datetime.datetime.utcnow()),
-                              '0.0.0.0', pytz.utc.localize(datetime.datetime.utcnow()),
+        self.column_values = ['test_host', Time.now(), '0.0.0.0', Time.now(),
                               16, 20.5, 31.4, 43.2, 32., 46.8, 510.4, 10.4]
         self.columns = dict(zip(self.column_names, self.column_values))
 
@@ -47,21 +44,23 @@ class test_hera_mc(unittest.TestCase):
         self.assertEqual(str(servstat), rep_string)
 
     def test_add_server_status(self):
-        expected = ServerStatus(**self.columns)
+        exp_columns = self.columns.copy()
+        exp_columns['mc_time'] = exp_columns['mc_time'].gps
+        exp_columns['system_time'] = exp_columns['system_time'].gps
+        expected = ServerStatus(**exp_columns)
 
         self.test_session.add_server_status(self.column_values[0], *self.column_values[2:11],
                                             network_bandwidth_mbs=self.column_values[11])
         result = self.test_session.get_server_status(self.columns['system_time'])[0]
 
-        # check that the mc_times are very close
-        mc_time_diff = abs(expected.mc_time.astimezone(pytz.utc) -
-                           result.mc_time.astimezone(pytz.utc))
-        self.assertTrue(mc_time_diff < datetime.timedelta(seconds=0.01))
-        if mc_time_diff > datetime.timedelta(seconds=0):
-            self.assertFalse(result == expected)
+        # mc_times should be different
+        self.assertFalse(result == expected)
 
+        # check that the mc_times are very close
+        mc_time_diff = abs(expected.mc_time - result.mc_time)
+        self.assertTrue(mc_time_diff < 0.1)
         # they are close enough. set them equal to test the rest of the objects
-        expected.mc_time = result.mc_time.astimezone(pytz.utc)
+        expected.mc_time = result.mc_time
 
         self.assertEqual(result, expected)
 
@@ -70,21 +69,21 @@ class test_hera_mc(unittest.TestCase):
         result_host = self.test_session.get_server_status(self.columns['system_time'],
                                                           hostname=self.columns['hostname'],
                                                           stoptime=self.columns['system_time'] +
-                                                          datetime.timedelta(minutes=2))
+                                                          TimeDelta(2 * 60, format='sec'))
         self.assertEqual(len(result_host), 1)
         result_host = result_host[0]
         self.assertEqual(result_host, expected)
 
         result_mult = self.test_session.get_server_status(self.columns['system_time'],
                                                           stoptime=self.columns['system_time'] +
-                                                          datetime.timedelta(minutes=2))
+                                                          TimeDelta(2 * 60, format='sec'))
 
         self.assertEqual(len(result_mult), 2)
 
         result2 = self.test_session.get_server_status(self.columns['system_time'],
                                                       hostname='test_host2')[0]
         # mc_times will be different, so won't match. set them equal so that we can test the rest
-        expected.mc_time = result2.mc_time.astimezone(pytz.utc)
+        expected.mc_time = result2.mc_time
         self.assertFalse(result2 == expected)
 
     def test_errors_server_status(self):

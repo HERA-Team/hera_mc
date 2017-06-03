@@ -4,7 +4,6 @@
 
 from sqlalchemy.orm import Session
 from astropy.time import Time
-import datetime
 """
 Primary session object which handles most DB queries.
 
@@ -112,10 +111,10 @@ class MCSession(Session):
 
         Parameters:
         ------------
-        starttime: datetime
+        starttime: astropy time object
             time to look for records after
 
-        stoptime: datetime
+        stoptime: astropy time object
             last time to get records for. If none, only the first record after starttime will be returned.
 
         hostname: string
@@ -127,30 +126,32 @@ class MCSession(Session):
         """
         from .server_status import ServerStatus
 
-        if not isinstance(starttime, datetime.datetime):
-            raise ValueError('starttime must be a datetime. value was: %r' % (starttime,))
+        if not isinstance(starttime, Time):
+            raise ValueError('starttime must be an astropy time object. value was: %r' % (starttime,))
+        starttime = starttime.utc
 
         if stoptime is not None:
-            if not isinstance(stoptime, datetime.datetime):
-                raise ValueError('stoptime must be a datetime. value was: %r' % (stoptime,))
+            if not isinstance(stoptime, Time):
+                raise ValueError('stoptime must be an astropy time object. value was: %r' % (stoptime,))
+            stoptime = stoptime.utc
 
         if stoptime is not None:
             if hostname is not None:
                 status_list = self.query(ServerStatus).filter(
                     ServerStatus.hostname == hostname,
-                    ServerStatus.mc_time.between(starttime, stoptime)).all()
+                    ServerStatus.mc_time.between(starttime.gps, stoptime.gps)).all()
             else:
                 status_list = self.query(ServerStatus).filter(
-                    ServerStatus.mc_time.between(starttime, stoptime)).all()
+                    ServerStatus.mc_time.between(starttime.gps, stoptime.gps)).all()
         else:
             if hostname is not None:
                 status_list = self.query(ServerStatus).filter(
                     ServerStatus.hostname == hostname,
-                    ServerStatus.mc_time >= starttime).order_by(
+                    ServerStatus.mc_time >= starttime.gps).order_by(
                         ServerStatus.mc_time).limit(1).all()
             else:
                 status_list = self.query(ServerStatus).filter(
-                    ServerStatus.mc_time >= starttime).order_by(
+                    ServerStatus.mc_time >= starttime.gps).order_by(
                         ServerStatus.mc_time).limit(1).all()
 
         return status_list
@@ -162,7 +163,7 @@ class MCSession(Session):
 
         Parameters:
         ------------
-        time: datetime
+        time: astropy time object
             time of this status
         status: string
             status (options TBD)
@@ -184,10 +185,10 @@ class MCSession(Session):
 
         Parameters:
         ------------
-        starttime: datetime
+        starttime: astropy time object
             time to look for records after
 
-        stoptime: datetime
+        stoptime: astropy time object
             last time to get records for. If none, only the first record after starttime will be returned.
 
         Returns:
@@ -196,22 +197,167 @@ class MCSession(Session):
         """
         from .rtp import RTPStatus
 
-        if not isinstance(starttime, datetime.datetime):
-            raise ValueError('starttime must be a datetime. value was: %r' % (starttime,))
+        if not isinstance(starttime, Time):
+            raise ValueError('starttime must be an astropy time object. value was: %r' % (starttime,))
+        starttime = starttime.utc
 
         if stoptime is not None:
-            if not isinstance(stoptime, datetime.datetime):
-                raise ValueError('stoptime must be a datetime. value was: %r' % (stoptime,))
+            if not isinstance(stoptime, Time):
+                raise ValueError('stoptime must be an astropy time object. value was: %r' % (stoptime,))
+            stoptime = stoptime.utc
 
         if stoptime is not None:
             status_list = self.query(RTPStatus).filter(
-                RTPStatus.time.between(starttime, stoptime)).all()
+                RTPStatus.time.between(starttime.gps, stoptime.gps)).all()
         else:
             status_list = self.query(RTPStatus).filter(
-                RTPStatus.time >= starttime).order_by(
+                RTPStatus.time >= starttime.gps).order_by(
                     RTPStatus.time).limit(1).all()
 
         return status_list
+
+    def add_rtp_process_event(self, time, obsid, event):
+        """
+        Add a new rtp_process_event row.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of event
+        obsid: long
+            observation obsid (Foreign key into observation)
+        event: string
+            must be one of ["queued", "started", "finished", "error"]
+        """
+        from .rtp import RTPProcessEvent
+
+        self.add(RTPProcessEvent.new_process_event(time, obsid, event))
+
+    def get_rtp_process_event(self, starttime, stoptime=None, obsid=None):
+        """
+        Get rtp_process_event record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        obsid: long
+            obsid to get records for. If none, all obsid will be included.
+
+        Returns:
+        --------
+        list of RTPProcessEvent objects
+        """
+        from .rtp import RTPProcessEvent
+
+        if not isinstance(starttime, Time):
+            raise ValueError('starttime must be an astropy time object. value was: %r' % (starttime,))
+        starttime = starttime.utc
+
+        if stoptime is not None:
+            if not isinstance(stoptime, Time):
+                raise ValueError('stoptime must be an astropy time object. value was: %r' % (stoptime,))
+            stoptime = stoptime.utc
+
+        if stoptime is not None:
+            if obsid is not None:
+                event_list = self.query(RTPProcessEvent).filter(
+                    RTPProcessEvent.obsid == obsid,
+                    RTPProcessEvent.time.between(starttime.gps, stoptime.gps)).all()
+            else:
+                event_list = self.query(RTPProcessEvent).filter(
+                    RTPProcessEvent.time.between(starttime.gps, stoptime.gps)).all()
+        else:
+            if obsid is not None:
+                event_list = self.query(RTPProcessEvent).filter(
+                    RTPProcessEvent.obsid == obsid,
+                    RTPProcessEvent.time >= starttime.gps).order_by(
+                        RTPProcessEvent.time).limit(1).all()
+            else:
+                event_list = self.query(RTPProcessEvent).filter(
+                    RTPProcessEvent.time >= starttime.gps).order_by(
+                        RTPProcessEvent.time).limit(1).all()
+
+        return event_list
+
+    def add_rtp_process_record(self, time, obsid, pipeline_list, git_version, git_hash):
+        """
+        Add a new rtp_process_record row.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of event
+        obsid: long
+            observation obsid (Foreign key into observation)
+        pipeline_list: string
+            concatentated list of RTP tasks
+        git_version: string
+            RTP git version
+        git_hash: string
+            RTP git hash
+        """
+        from .rtp import RTPProcessRecord
+
+        self.add(RTPProcessRecord.new_process_record(time, obsid, pipeline_list,
+                                                     git_version, git_hash))
+
+    def get_rtp_process_record(self, starttime, stoptime=None, obsid=None):
+        """
+        Get rtp_process_record record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        obsid: long
+            obsid to get records for. If none, all obsid will be included.
+
+        Returns:
+        --------
+        list of RTPProcessEvent objects
+        """
+        from .rtp import RTPProcessRecord
+
+        if not isinstance(starttime, Time):
+            raise ValueError('starttime must be an astropy time object. value was: %r' % (starttime,))
+        starttime = starttime.utc
+
+        if stoptime is not None:
+            if not isinstance(stoptime, Time):
+                raise ValueError('stoptime must be an astropy time object. value was: %r' % (stoptime,))
+            stoptime = stoptime.utc
+
+        if stoptime is not None:
+            if obsid is not None:
+                record_list = self.query(RTPProcessRecord).filter(
+                    RTPProcessRecord.obsid == obsid,
+                    RTPProcessRecord.time.between(starttime.gps, stoptime.gps)).all()
+            else:
+                record_list = self.query(RTPProcessRecord).filter(
+                    RTPProcessRecord.time.between(starttime.gps, stoptime.gps)).all()
+        else:
+            if obsid is not None:
+                record_list = self.query(RTPProcessRecord).filter(
+                    RTPProcessRecord.obsid == obsid,
+                    RTPProcessRecord.time >= starttime.gps).order_by(
+                        RTPProcessRecord.time).limit(1).all()
+            else:
+                record_list = self.query(RTPProcessRecord).filter(
+                    RTPProcessRecord.time >= starttime.gps).order_by(
+                        RTPProcessRecord.time).limit(1).all()
+
+        return record_list
 
     def add_paper_temps(self, read_time, temp_list):
         """

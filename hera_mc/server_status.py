@@ -1,7 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from astropy.time import Time
+from sqlalchemy import Column, Integer, String, Float
 from . import MCDeclarativeBase
-import datetime
-import pytz
 
 
 class ServerStatus(MCDeclarativeBase):
@@ -9,9 +8,9 @@ class ServerStatus(MCDeclarativeBase):
     Definition of server_status table.
 
     hostname: name of server (String). Part of primary_key
-    mc_time: time report received by M&C (DateTime). Part of primary_key
+    mc_time: time report received by M&C in gps seconds (Float). Part of primary_key
     ip_address: IP address of server (String)
-    system_time: time report sent by server (DateTime)
+    system_time: time report sent by server in gps seconds (Float)
     num_cores: number of cores on server (Integer)
     cpu_load_pct: CPU load percent = total load / num_cores, 5 min average (Float)
     uptime_days: server uptime in decimal days (Float)
@@ -23,9 +22,9 @@ class ServerStatus(MCDeclarativeBase):
     """
     __tablename__ = 'server_status'
     hostname = Column(String(32), primary_key=True)
-    mc_time = Column(DateTime(timezone=True), primary_key=True)
+    mc_time = Column(Float(decimal_return_scale=3), primary_key=True)
     ip_address = Column(String(32), nullable=False)
-    system_time = Column(DateTime(timezone=True), nullable=False)
+    system_time = Column(Float(decimal_return_scale=3), nullable=False)
     num_cores = Column(Integer, nullable=False)
     cpu_load_pct = Column(Float, nullable=False)
     uptime_days = Column(Float, nullable=False)
@@ -34,6 +33,9 @@ class ServerStatus(MCDeclarativeBase):
     disk_space_pct = Column(Float, nullable=False)
     disk_size_gb = Column(Float, nullable=False)
     network_bandwidth_mbs = Column(Float)
+
+    tols = {'mc_time': {'atol': 1e-3, 'rtol': 0},
+            'system_time': {'atol': 1e-3, 'rtol': 0}}
 
     @classmethod
     def new_status(cls, hostname, ip_address, system_time, num_cores,
@@ -67,7 +69,12 @@ class ServerStatus(MCDeclarativeBase):
         network_bandwidth_mbs: float
             Network bandwidth in MB/s. Can be null if not applicable
         """
-        mc_time = pytz.utc.localize(datetime.datetime.utcnow())
+        mc_time = Time.now().gps
+
+        if not isinstance(system_time, Time):
+            raise ValueError('system_time must be an astropy Time object')
+        system_time = system_time.utc.gps
+        print('new_status: ', '{0:.10f}'.format(system_time))
 
         return cls(hostname=hostname, mc_time=mc_time, ip_address=ip_address,
                    system_time=system_time, num_cores=num_cores,

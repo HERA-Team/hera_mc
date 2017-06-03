@@ -8,6 +8,7 @@
 import unittest
 
 import numpy as np
+from math import floor
 from astropy.time import Time, TimeDelta
 from astropy.coordinates import EarthLocation
 
@@ -29,6 +30,17 @@ class test_hera_mc(unittest.TestCase):
         self.test_conn.close()
         self.test_db.drop_tables()
 
+    def test_new_obs(self):
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        t2 = t1 + TimeDelta(120.0, format='sec')
+
+        t3 = t1 + TimeDelta(1e-3, format='sec')
+        t4 = t2 + TimeDelta(1e-3, format='sec')
+
+        obs1 = Observation.new_observation(t1, t2)
+        obs2 = Observation.new_observation(t3, t4)
+        self.assertFalse(obs1 == obs2)
+
     def test_add_obs(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
@@ -36,9 +48,8 @@ class test_hera_mc(unittest.TestCase):
         # generated test hera_lat, hera_lon using the output of geo.py -c
         # with this website: http://www.uwgb.edu/dutchs/usefuldata/ConvertUTMNoOZ.HTM
 
-        from math import floor
         obsid = floor(t1.gps)
-        t1.location = EarthLocation.from_geodetic(21.428249, -30.709259)
+        t1.location = EarthLocation.from_geodetic(21.4283038269, -30.7215261207)
 
         expected = Observation(obsid=obsid, start_time_jd=t1.jd,
                                stop_time_jd=t2.jd,
