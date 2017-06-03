@@ -1,3 +1,11 @@
+# -*- mode: python; coding: utf-8 -*-
+# Copyright 2016 the HERA Collaboration
+# Licensed under the 2-clause BSD license.
+
+"""Common server_status table
+
+"""
+
 from astropy.time import Time
 from sqlalchemy import Column, Integer, String, Float
 from . import MCDeclarativeBase
