@@ -19,7 +19,6 @@ class test_hera_mc(unittest.TestCase):
 
     def setUp(self):
         self.test_db = mc.connect_to_mc_testing_db()
-        self.test_db.create_tables()
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
@@ -52,7 +51,6 @@ class test_hera_mc(unittest.TestCase):
     def tearDown(self):
         self.test_trans.rollback()
         self.test_conn.close()
-        self.test_db.drop_tables()
 
     def test_add_rtp_status(self):
         self.test_session.add_rtp_status(*self.status_values)
@@ -166,7 +164,7 @@ class test_hera_mc(unittest.TestCase):
 
     def test_add_rtp_process_record(self):
         # raise error if try to add process event with unmatched obsid
-        # self.assertRaises(NoForeignKeysError, self.test_session.add_rtp_process_event,
+        # self.assertRaises(NoForeignKeysError, self.test_session.add_rtp_process_record,
         #                   self.record_values[0], self.record_values[1] + 2,
         #                   self.record_values[2:5])
 
@@ -179,9 +177,11 @@ class test_hera_mc(unittest.TestCase):
         result = self.test_session.get_rtp_process_record(self.record_columns['time'])
         self.assertEqual(len(result), 1)
         result = result[0]
+        self.assertEqual(result, expected)
+
         result_obsid = self.test_session.get_rtp_process_record(self.record_columns['time'],
                                                                 obsid=self.record_columns['obsid'])[0]
-        self.assertEqual(result, expected)
+        self.assertEqual(result_obsid, expected)
 
         new_obsid_time = self.record_columns['time'] + TimeDelta(3 * 60, format='sec')
         new_obsid = self.record_columns['obsid'] + 10

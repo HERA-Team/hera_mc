@@ -26,7 +26,7 @@ class ServerStatus(MCDeclarativeBase):
     memory_size_gb: Amount of memory on server in GB (Float)
     disk_space_pct: Percent of disk used (Float)
     disk_size_gb: Amount of disk space on server in GB (Float)
-    network_bandwidth_mbs: Network bandwidth in MB/s. Can be null if not applicable
+    network_bandwidth_mbs: Network bandwidth in MB/s, 5 min average. Can be null if not applicable
     """
     __tablename__ = 'server_status'
     hostname = Column(String(32), primary_key=True)
@@ -75,7 +75,7 @@ class ServerStatus(MCDeclarativeBase):
         disk_size_gb: float
             Amount of disk space on server in GB
         network_bandwidth_mbs: float
-            Network bandwidth in MB/s. Can be null if not applicable
+            Network bandwidth in MB/s, 5 min average. Can be null if not applicable
         """
         mc_time = Time.now().gps
 

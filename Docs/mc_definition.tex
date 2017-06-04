@@ -62,7 +62,7 @@ Primary keys are bold, foreign keys are italicized.
 \subsection{Observations}
 \textbf{\large{hera\_obs}}: This is the primary observation definition table.
 \begin{center}
- \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
  \hline
  column & type & description \\ [0.5ex]  \hline\hline
  \textbf{obsid} & long integer & start time in floor(GPS) seconds. GPS start adjusted to be within 1 second of LST to lock observations to LST for the night \\ \hline
@@ -75,21 +75,21 @@ Primary keys are bold, foreign keys are italicized.
 \subsection{Common tables}
 \textbf{\large{server\_status}}: Common table structure for server status info. Same columns to be used in subsystem-specific instances of this table.
 \begin{center}
- \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
- \textbf{hostname} & string &  \\ \hline
- \textbf{timestamp} & datetime & defined by \mc \\ \hline
- ip\_address & string & host IP (how should we handle multiples?) \\\hline
-system\_time & datetime & on server \\\hline
-num\_cores & integer & Number of cores  \\\hline
-cpu\_load & float & percentage: defined by total load/\# cores, 5min average  \\\hline
-uptime & float &  \\\hline
-memory\_used & float & percent used, 5min average  \\\hline
-memory\_size & float & \\\hline
-disk\_space & float & percent used  \\\hline
-disk\_size & float &  \\\hline
-network\_bandwidth & float & fractional? can be null \\\hline
+ \textbf{hostname} & string &  name of server \\ \hline
+ \textbf{mc\_time} & float & time report received by \mc in gps seconds \\ \hline
+ ip\_address & string & IP address of server (how should we handle multiples?) \\\hline
+system\_time & float & time report sent by server in gps seconds \\\hline
+num\_cores & integer & number of cores on server \\\hline
+cpu\_load\_pct & float & CPU load percent = total load / num\_cores, 5 min average  \\\hline
+uptime\_days & float & server uptime in days  \\\hline
+memory\_used\_pct & float & percent of memory used, 5 min average  \\\hline
+memory\_size\_gb & float & amount of memory on server in GB \\\hline
+disk\_space\_pct & float & percent of disk used  \\\hline
+disk\_size\_gb & float & amount of disk space on server in GB \\\hline
+network\_bandwidth\_mps & float & Network bandwidth in MB/s, 5 min average. Can be null \\\hline
 \end{tabular}
 \end{center}
 
@@ -98,11 +98,11 @@ network\_bandwidth & float & fractional? can be null \\\hline
 
 \textbf{\large{rtp\_status}}: High level RTP status
 \begin{center}
- \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
-\textbf{time} & datetime & \\ \hline
-status & string & TBD  \\\hline
+\textbf{time} & float & status time in gps seconds\\ \hline
+status & string & status string, options TBD (might become an enum) \\\hline
 event\_min\_elapsed & float & minutes elapsed since last event \\\hline
 num\_processes & integer & Number of processes running  \\\hline
 restart\_hours\_elapsed & float & hours elapsed since last restart \\\hline
@@ -111,24 +111,24 @@ restart\_hours\_elapsed & float & hours elapsed since last restart \\\hline
 
 \textbf{\large{rtp\_process\_events}}: RTP Processing events (per obsid)
 \begin{center}
- \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
-\textbf{time} & datetime & \\ \hline
-\textit{\textbf{obsid}} & long integer & \\ \hline
+\textbf{time} & float & event time in gps seconds \\ \hline
+\textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
 event & string & one of: queued, started, finished, error  \\\hline
 \end{tabular}
 \end{center}
 
 \textbf{\large{rtp\_process\_record}}: RTP record of processed obsids (entry added when processing finished)
 \begin{center}
- \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
-\textbf{time} & datetime & \\ \hline
-\textit{\textbf{obsid}} & long integer & \\ \hline
-pipeline\_list & string & concatenated list of tasks  \\\hline
-git\_version & string & version of RTP code  \\\hline
+\textbf{time} & float & record time in gps seconds\\ \hline
+\textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
+pipeline\_list & text & concatenated list of tasks  \\\hline
+git\_version & string & git version of RTP code  \\\hline
 git\_hash & string & git hash of RTP code  \\\hline
 \end{tabular}
 \end{center}
@@ -139,66 +139,66 @@ git\_hash & string & git hash of RTP code  \\\hline
 
 \textbf{\large{lib\_status}}: High level Librarian status
 \begin{center}
- \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
-\textbf{time} & datetime & \\ \hline
-num\_files & long & total number of files  \\\hline
+\textbf{time} & float & status time in gps seconds \\ \hline
+num\_files & long & total number of files in librarian  \\\hline
 data\_volume\_gb & float & total data volume in gigabytes  \\\hline
 free\_space\_gb & float & available space in gigabytes  \\\hline
 upload\_min\_elapsed & float & minutes elapsed since last file upload \\\hline
-num\_processes & integer & Number of running background tasks  \\\hline
-git\_version & string & version of Librarian code  \\\hline
+num\_processes & integer & number of running background tasks  \\\hline
+git\_version & string & git version of Librarian code  \\\hline
 git\_hash & string & git hash of Librarian code  \\\hline
 \end{tabular}
 \end{center}
 
 \textbf{\large{lib\_raid\_status}}: RAID controller status
 \begin{center}
- \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
-\textbf{time} & datetime & \\ \hline
-\textbf{hostname} & string & \\ \hline
-num\_disks & int & number of disks  \\\hline
-Info & string & TBD -- various info from megaraid controller, may be several columns \\\hline
+\textbf{time} & float & status time in gps seconds \\ \hline
+\textbf{hostname} & string & name of RAID server \\ \hline
+num\_disks & int & number of disks in RAID server  \\\hline
+info & text & TBD -- various info from megaraid controller, may be several columns \\\hline
 \end{tabular}
 \end{center}
 
 \textbf{\large{lib\_raid\_errors}}: RAID controller errors/issues
 \begin{center}
- \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
-\textbf{time} & datetime & \\ \hline
-\textbf{hostname} & string & \\ \hline
-\textbf{disk} & string or int? &  \\ \hline
-log or file & string & TBD on format, either a message or a file with the log \\\hline
+\textbf{time} & float & error report time in gps seconds\\ \hline
+\textbf{hostname} & string & name of RAID server with error \\ \hline
+\textbf{disk} & string & name of disk with error \\ \hline
+log & text & TBD on format, either a message or a file with the log \\\hline
 \end{tabular}
 \end{center}
 
-\textbf{\large{lib\_remote\_bandwidth}}: Network bandwidth/health to all remote librarians
+\textbf{\large{lib\_remote\_status}}: Network bandwidth/health to all remote librarians
 \begin{center}
- \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
-\textbf{time} & datetime & \\ \hline
-\textbf{remote\_name} & string & \\ \hline
-ping\_time & float & ping time in seconds (?) \\\hline
-num\_recent\_files & int & number of files uploaded in last 15 minutes  \\\hline
-bandwidth & float & Mb/s average over 15 minutes \\\hline
+\textbf{time} & float & status time in gps seconds\\ \hline
+\textbf{remote\_name} & string & name of remote librarian \\ \hline
+ping\_time & float & ping time in seconds \\\hline
+num\_file\_uploads & int & number of files uploaded in last 15 minutes  \\\hline
+bandwidth\_mps & float & bandwidth to remote in Mb/s, 15 minute average \\\hline
 \end{tabular}
 \end{center}
 
-\textbf{\large{lib\_file\_log}}: File creation log
+\textbf{\large{lib\_files}}: File creation log
 \begin{center}
- \begin{tabular}{| p{3cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
-\textbf{filename} & string & \\ \hline
-\textit{obsid} & long integer & \\ \hline
-time & datetime & \\ \hline
-size & float & in gigabytes? \\ \hline
+\textbf{filename} & string & name of file created \\ \hline
+\textit{obsid} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
+time & float & file creation time in gps seconds\\ \hline
+size\_gb & float & file size in gigabytes \\ \hline
 \end{tabular}
 \end{center}
 

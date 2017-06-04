@@ -18,7 +18,6 @@ class test_temperatures(unittest.TestCase):
 
     def setUp(self):
         self.test_db = mc.connect_to_mc_testing_db()
-        self.test_db.create_tables()
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
@@ -26,7 +25,6 @@ class test_temperatures(unittest.TestCase):
     def tearDown(self):
         self.test_trans.rollback()
         self.test_conn.close()
-        self.test_db.drop_tables()
 
     def test_add_paper_temps(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -49,8 +47,8 @@ class test_temperatures(unittest.TestCase):
         temp_dict = dict(zip(temp_colnames, temp_values))
         temp2_dict = dict(zip(temp_colnames, temp2_values))
 
-        self.test_session.add(temperatures.PaperTemperatures.new_from_text_row(t1, temp_list))
-        self.test_session.add(temperatures.PaperTemperatures.new_from_text_row(t2, temp2_list))
+        self.test_session.add_paper_temps(t1, temp_list)
+        self.test_session.add_paper_temps(t2, temp2_list)
 
         expected = [temperatures.PaperTemperatures(gps_time=t1.gps, jd_time=t1.jd, **temp_dict)]
         result = self.test_session.get_paper_temps(t1 - TimeDelta(3.0, format='sec'))
