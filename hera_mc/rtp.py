@@ -11,11 +11,11 @@ from sqlalchemy import Column, ForeignKey, Integer, BigInteger, String, Text, Fl
 from . import MCDeclarativeBase
 from .server_status import ServerStatus
 
+rtp_process_enum = ['queued', 'started', 'finished', 'error']
+
 
 class RTPServerStatus(ServerStatus):
     __tablename__ = 'rtp_server_status'
-
-rtp_process_enum = ['queued', 'started', 'finished', 'error']
 
 
 class RTPStatus(MCDeclarativeBase):

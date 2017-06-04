@@ -29,9 +29,6 @@ def __eq__(self, other):
         self_columns = self.__table__.columns
         other_columns = other.__table__.columns
         if set(c.name for c in self_columns) != set(c.name for c in other_columns):
-            print('Sets of columns do not match. Left is {lset},'
-                  ' right is {rset}'.format(lset=self_columns,
-                                            rset=other_columns))
             return False
 
         c_equal = True
@@ -40,7 +37,6 @@ def __eq__(self, other):
             other_c = getattr(other, c.name)
             if isinstance(self_c, (str, unicode)):
                 if self_c != other_c:
-                    print('column ', c, ' does not match. Left is ', self_c, ' Right is ', other_c)
                     c_equal = False
             else:
                 if hasattr(self, 'tols') and c.name in self.tols.keys():
@@ -51,11 +47,9 @@ def __eq__(self, other):
                     atol = 1e-08
                     rtol = 1e-05
                 if not np.isclose(self_c, other_c, atol=atol, rtol=rtol):
-                    print('column ', c, ' does not match. Left is ', self_c, ' Right is ', other_c)
                     c_equal = False
         return c_equal
     else:
-        print('Classes do not match')
         return False
 
 

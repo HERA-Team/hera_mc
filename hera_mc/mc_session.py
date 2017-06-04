@@ -40,25 +40,19 @@ class MCSession(Session):
 
         if stoptime is not None:
             if filter_value is not None:
-                print('case 1')
                 result_list = self.query(table).filter(
                     getattr(table, filter_column) == filter_value,
                     getattr(table, time_column).between(starttime.gps, stoptime.gps)).all()
             else:
-                print('case 2')
                 result_list = self.query(table).filter(
                     getattr(table, time_column).between(starttime.gps, stoptime.gps)).all()
         else:
             if filter_value is not None:
-                print('case 3')
                 result_list = self.query(table).filter(
                     getattr(table, filter_column) == filter_value,
                     getattr(table, time_column) >= starttime.gps).order_by(
                         getattr(table, time_column)).limit(1).all()
             else:
-                print('case 4')
-                # print(table, starttime.gps)
-                # print(self.query(table).all())
                 result_list = self.query(table).filter(
                     getattr(table, time_column) >= starttime.gps).order_by(
                         getattr(table, time_column)).limit(1).all()
@@ -129,7 +123,7 @@ class MCSession(Session):
         Parameters:
         ------------
         subsytem: string
-            name of subsytem. Must be one of ['rtp']
+            name of subsytem. Must be one of ['rtp', 'lib']
         hostname:
             name of server
         ip_address:
@@ -155,10 +149,10 @@ class MCSession(Session):
         """
         if subsystem == 'rtp':
             from .rtp import RTPServerStatus as ServerStatus
-        elif subsystem is None:
-            from .server_status import ServerStatus
+        elif subsystem is 'lib':
+            from .librarian import LibServerStatus as ServerStatus
         else:
-            raise ValueError('subsystem must be one of: [None, "rtp"]')
+            raise ValueError('subsystem must be one of: ["rtp", "lib"]')
 
         self.add(ServerStatus.new_status(hostname, ip_address, system_time, num_cores,
                                          cpu_load_pct, uptime_days, memory_used_pct,
@@ -172,7 +166,7 @@ class MCSession(Session):
         Parameters:
         ------------
         subsytem: string
-            name of subsytem. Must be one of ['rtp']
+            name of subsytem. Must be one of ['rtp', 'lib']
 
         starttime: astropy time object
             time to look for records after
@@ -190,10 +184,10 @@ class MCSession(Session):
         """
         if subsystem == 'rtp':
             from .rtp import RTPServerStatus as ServerStatus
-        elif subsystem is None:
-            from .server_status import ServerStatus
+        elif subsystem is 'lib':
+            from .librarian import LibServerStatus as ServerStatus
         else:
-            raise ValueError('subsystem must be one of: [None, "rtp"]')
+            raise ValueError('subsystem must be one of: ["rtp", "lib"]')
 
         status_list = self._time_filter(ServerStatus, 'mc_time', starttime,
                                         stoptime=stoptime, filter_column='hostname',

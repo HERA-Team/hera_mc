@@ -10,8 +10,8 @@ import numpy as np
 from astropy.time import Time, TimeDelta
 
 from hera_mc import mc
-from hera_mc.server_status import ServerStatus
 from hera_mc.rtp import RTPServerStatus
+from hera_mc.librarian import LibServerStatus
 
 
 class test_hera_mc(unittest.TestCase):
@@ -35,27 +35,33 @@ class test_hera_mc(unittest.TestCase):
         self.test_conn.close()
 
     def test_repr(self):
-        for sub in [None]:
-            if sub == 'rtp':
-                servstat = RTPServerStatus(**self.columns)
-            elif sub is None:
-                servstat = ServerStatus(**self.columns)
+        for sub in ['rtp', 'lib']:
+            exp_columns = self.columns.copy()
+            exp_columns['mc_time'] = exp_columns['mc_time'].gps
+            exp_columns['system_time'] = exp_columns['system_time'].gps
 
-        rep_string = ('<ServerStatus(test_host, ' + str(self.columns['mc_time']) +
-                      ', 0.0.0.0, ' + str(self.columns['system_time']) +
+            if sub == 'rtp':
+                servstat = RTPServerStatus(**exp_columns)
+                class_name = 'RTPServerStatus'
+            elif sub == 'lib':
+                servstat = LibServerStatus(**exp_columns)
+                class_name = 'LibServerStatus'
+
+        rep_string = ('<' + class_name + '(test_host, ' + str(exp_columns['mc_time']) +
+                      ', 0.0.0.0, ' + str(exp_columns['system_time']) +
                       ', 16, 20.5, 31.4, 43.2, 32.0, 46.8, 510.4, 10.4)>')
         self.assertEqual(str(servstat), rep_string)
 
     def test_add_server_status(self):
-        for sub in [None]:
-            if sub == 'rtp':
-                expected = RTPServerStatus(**self.columns)
-            elif sub is None:
-                expected = ServerStatus(**self.columns)
+        for sub in ['rtp', 'lib']:
             exp_columns = self.columns.copy()
             exp_columns['mc_time'] = exp_columns['mc_time'].gps
             exp_columns['system_time'] = exp_columns['system_time'].gps
-            expected = ServerStatus(**exp_columns)
+
+            if sub == 'rtp':
+                expected = RTPServerStatus(**exp_columns)
+            elif sub == 'lib':
+                expected = LibServerStatus(**exp_columns)
 
             self.test_session.add_server_status(sub, self.column_values[0],
                                                 *self.column_values[2:11],
@@ -96,8 +102,8 @@ class test_hera_mc(unittest.TestCase):
             self.assertFalse(result2 == expected)
 
     def test_errors_server_status(self):
-        for sub in [None]:
-            self.assertRaises(ValueError, self.test_session.add_server_status, sub
+        for sub in ['rtp', 'lib']:
+            self.assertRaises(ValueError, self.test_session.add_server_status, sub,
                               self.column_values[0], self.column_values[2],
                               'foo', *self.column_values[4:11],
                               network_bandwidth_mbs=self.column_values[11])
