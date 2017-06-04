@@ -17,7 +17,6 @@ class test_hera_mc(unittest.TestCase):
 
     def setUp(self):
         self.test_db = mc.connect_to_mc_testing_db()
-        self.test_db.create_tables()
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
@@ -33,7 +32,6 @@ class test_hera_mc(unittest.TestCase):
     def tearDown(self):
         self.test_trans.rollback()
         self.test_conn.close()
-        self.test_db.drop_tables()
 
     def test_repr(self):
         servstat = ServerStatus(**self.columns)

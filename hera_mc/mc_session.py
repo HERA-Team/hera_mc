@@ -28,29 +28,37 @@ class MCSession(Session):
     def _time_filter(self, table, time_column, starttime, stoptime=None,
                      filter_column=None, filter_value=None):
         if not isinstance(starttime, Time):
-            raise ValueError('starttime must be an astropy time object. value was: %r' % (starttime,))
+            raise ValueError('starttime must be an astropy time object. '
+                             'value was: %r' % (starttime,))
         starttime = starttime.utc
 
         if stoptime is not None:
             if not isinstance(stoptime, Time):
-                raise ValueError('stoptime must be an astropy time object. value was: %r' % (stoptime,))
+                raise ValueError('stoptime must be an astropy time object. '
+                                 'value was: %r' % (stoptime,))
             stoptime = stoptime.utc
 
         if stoptime is not None:
             if filter_value is not None:
+                print('case 1')
                 result_list = self.query(table).filter(
                     getattr(table, filter_column) == filter_value,
                     getattr(table, time_column).between(starttime.gps, stoptime.gps)).all()
             else:
+                print('case 2')
                 result_list = self.query(table).filter(
                     getattr(table, time_column).between(starttime.gps, stoptime.gps)).all()
         else:
             if filter_value is not None:
+                print('case 3')
                 result_list = self.query(table).filter(
                     getattr(table, filter_column) == filter_value,
                     getattr(table, time_column) >= starttime.gps).order_by(
                         getattr(table, time_column)).limit(1).all()
             else:
+                print('case 4')
+                # print(table, starttime.gps)
+                # print(self.query(table).all())
                 result_list = self.query(table).filter(
                     getattr(table, time_column) >= starttime.gps).order_by(
                         getattr(table, time_column)).limit(1).all()
@@ -90,7 +98,8 @@ class MCSession(Session):
             time to look for records after
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after starttime will be returned.
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
 
 
         Returns:
@@ -140,7 +149,7 @@ class MCSession(Session):
         disk_size_gb:
             Amount of disk space on server in GB
         network_bandwidth_mbs:
-            Network bandwidth in MB/s. Can be null if not applicable
+            Network bandwidth in MB/s, 5 min average. Can be null if not applicable
         """
         from .server_status import ServerStatus
 
@@ -159,7 +168,8 @@ class MCSession(Session):
             time to look for records after
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after starttime will be returned.
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
 
         hostname: string
             hostname to get records for. If none, all hostnames will be included.
@@ -216,11 +226,12 @@ class MCSession(Session):
             time to look for records after
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after starttime will be returned.
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
 
         Returns:
         --------
-        list of RTPStatus objects
+        list of LibStatus objects
         """
         from .librarian import LibStatus
 
@@ -228,6 +239,216 @@ class MCSession(Session):
                                         stoptime=stoptime)
 
         return status_list
+
+    def add_lib_raid_status(self, time, hostname, num_disks, info):
+        """
+        Add a new lib_raid_status object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of this status
+        hostname: string
+            name of RAID server
+        num_disks: integer
+            number of disks in RAID server
+        info: string
+            TBD info from megaraid controller
+        """
+        from .librarian import LibRAIDStatus
+
+        self.add(LibRAIDStatus.new_raid_status(time, hostname, num_disks, info))
+
+    def get_lib_raid_status(self, starttime, stoptime=None, hostname=None):
+        """
+        Get lib_raid_status record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        hostname: string
+            RAID hostname to get records for. If none, all hostnames will be included.
+
+        Returns:
+        --------
+        list of LibRAIDStatus objects
+        """
+        from .librarian import LibRAIDStatus
+
+        status_list = self._time_filter(LibRAIDStatus, 'time', starttime,
+                                        stoptime=stoptime, filter_column='hostname',
+                                        filter_value=hostname)
+
+        return status_list
+
+    def add_lib_raid_error(self, time, hostname, disk, log):
+        """
+        Add a new lib_raid_error object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of this error
+        hostname: string
+            name of RAID server with error
+        disk: string
+            name of disk with error
+        log: string
+            error message or log file name (TBD)
+        """
+        from .librarian import LibRAIDErrors
+
+        self.add(LibRAIDErrors.new_raid_error(time, hostname, disk, log))
+
+    def get_lib_raid_error(self, starttime, stoptime=None, hostname=None):
+        """
+        Get lib_raid_error record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        hostname: string
+            RAID hostname to get records for. If none, all hostnames will be included.
+
+        Returns:
+        --------
+        list of LibRAIDErrors objects
+        """
+        from .librarian import LibRAIDErrors
+
+        error_list = self._time_filter(LibRAIDErrors, 'time', starttime,
+                                       stoptime=stoptime, filter_column='hostname',
+                                       filter_value=hostname)
+
+        return error_list
+
+    def add_lib_remote_status(self, time, remote_name, ping_time,
+                              num_file_uploads, bandwidth_mbs):
+        """
+        Add a new lib_remote_status object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of this status
+        remote_name: string
+            name of remote server
+        ping_time: float
+            ping time to remote in seconds
+        num_file_uploads: integer
+            number of file uploads to remote in last 15 minutes
+        bandwidth_mbs: float
+            bandwidth to remote in Mb/s, 15 minute average
+        """
+        from .librarian import LibRemoteStatus
+
+        self.add(LibRemoteStatus.new_remote_status(time, remote_name, ping_time,
+                                                   num_file_uploads, bandwidth_mbs))
+
+    def get_lib_remote_status(self, starttime, stoptime=None, remote_name=None):
+        """
+        Get lib_remote_status record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        remote_name: string
+            Name of remote librarian to get records for. If none, all
+            remote_names will be included.
+
+        Returns:
+        --------
+        list of LibRemoteStatus objects
+        """
+        from .librarian import LibRemoteStatus
+
+        status_list = self._time_filter(LibRemoteStatus, 'time', starttime,
+                                        stoptime=stoptime, filter_column='remote_name',
+                                        filter_value=remote_name)
+
+        return status_list
+
+    def add_lib_file(self, filename, obsid, time, size_gb):
+        """
+        Add a new lib_file row.
+
+        Parameters:
+        ------------
+        filename: string
+            name of file created
+        obsid: long
+            observation obsid (Foreign key into Observation)
+        time: astropy time object
+            time file was created
+        size_gb: float
+            file size in GB
+        """
+        from .librarian import LibFiles
+
+        self.add(LibFiles.new_lib_file(filename, obsid, time, size_gb))
+
+    def get_lib_files(self, filename=None, obsid=None, starttime=None, stoptime=None):
+        """
+        Get lib_files record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        filename: string
+            filename to get records for. If none, obsid, starttime and stoptime
+            will be used.
+
+        obsid: long
+            obsid to get records for. If starttime and filename are none,
+            all files for this obsid will be returned. If none, all obsid will be included.
+
+        starttime: astropy time object
+            time to look for records after. If starttime, filename and obsid
+            are all none, all records will be returned
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        Returns:
+        --------
+        list of LibFiles objects
+        """
+        from .librarian import LibFiles
+
+        if filename is not None:
+            file_list = self.query(LibFiles).filter(
+                LibFiles.filename == filename).all()
+        else:
+            if starttime is not None:
+                file_list = self._time_filter(LibFiles, 'time', starttime,
+                                              stoptime=stoptime, filter_column='obsid',
+                                              filter_value=obsid)
+            else:
+                if obsid is not None:
+                    file_list = self.query(LibFiles).filter(
+                        LibFiles.obsid == obsid).all()
+                else:
+                    file_list = self.query(LibFiles).all()
+
+        return file_list
 
     def add_rtp_status(self, time, status, event_min_elapsed, num_processes,
                        restart_hours_elapsed):
@@ -419,7 +640,8 @@ class MCSession(Session):
         station_data = self.query(StationType).all()
         stations = {}
         for sta in station_data:
-            stations[sta.prefix] = {'Name': sta.station_type_name, 'Description': sta.description,
+            stations[sta.prefix] = {'Name': sta.station_type_name,
+                                    'Description': sta.description,
                                     'Marker': sta.plot_marker, 'Stations': []}
         locations = self.query(GeoLocation).all()
         for loc in locations:

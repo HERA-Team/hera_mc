@@ -25,7 +25,7 @@ class LibStatus(MCDeclarativeBase):
     """
     __tablename__ = 'lib_status'
     time = Column(Float, primary_key=True)
-    num_files = Column(Integer, nullable=False)
+    num_files = Column(BigInteger, nullable=False)
     data_volume_gb = Column(Float, nullable=False)
     free_space_gb = Column(Float, nullable=False)
     upload_min_elapsed = Column(Float, nullable=False)
@@ -71,3 +71,169 @@ class LibStatus(MCDeclarativeBase):
                    free_space_gb=free_space_gb, upload_min_elapsed=upload_min_elapsed,
                    num_processes=num_processes, git_version=git_version,
                    git_hash=git_hash)
+
+
+class LibRAIDStatus(MCDeclarativeBase):
+    """
+    Definition of lib_raid_status table.
+
+    time: time of this status in gps seconds (double). Part of primary_key
+    hostname: name of RAID server (String). Part of primary_key
+    num_disks: number of disks in RAID server (Integer)
+    info: TBD info from megaraid controller (may become several columns) (Text)
+    """
+    __tablename__ = 'lib_raid_status'
+    time = Column(Float, primary_key=True)
+    hostname = Column(String(32), primary_key=True)
+    num_disks = Column(Integer, nullable=False)
+    info = Column(Text, nullable=False)
+
+    tols = {'time': {'atol': 1e-3, 'rtol': 0}}
+
+    @classmethod
+    def new_raid_status(cls, time, hostname, num_disks, info):
+        """
+        Create a new lib_raid_status object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of this status
+        hostname: string
+            name of RAID server
+        num_disks: integer
+            number of disks in RAID server
+        info: string
+            TBD info from megaraid controller
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        time = time.utc.gps
+
+        return cls(time=time, hostname=hostname, num_disks=num_disks, info=info)
+
+
+class LibRAIDErrors(MCDeclarativeBase):
+    """
+    Definition of lib_raid_errors table.
+
+    time: time of this error report in gps seconds (double). Part of primary_key
+    hostname: name of RAID server with error (String). Part of primary_key
+    disk: name of disk with error (String). Part of primary_key
+    log: error message or log file name (TBD) (Text)
+    """
+    __tablename__ = 'lib_raid_errors'
+    time = Column(Float, primary_key=True)
+    hostname = Column(String(32), primary_key=True)
+    disk = Column(String, primary_key=True)
+    log = Column(Text, nullable=False)
+
+    tols = {'time': {'atol': 1e-3, 'rtol': 0}}
+
+    @classmethod
+    def new_raid_error(cls, time, hostname, disk, log):
+        """
+        Create a new lib_raid_error object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of this error report
+        hostname: string
+            name of RAID server with error
+        disk: string
+            name of disk with error
+        log: string
+            error message or log file name (TBD)
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        time = time.utc.gps
+
+        return cls(time=time, hostname=hostname, disk=disk, log=log)
+
+
+class LibRemoteStatus(MCDeclarativeBase):
+    """
+    Definition of lib_remote_status table.
+
+    time: time of this status in gps seconds (double). Part of primary_key
+    remote_name: name of remote librarian (String). Part of primary_key
+    ping_time: ping time in seconds (Float)
+    num_file_uploads: number of file uploads to remote in last 15 minutes (Integer)
+    bandwidth_mbs: bandwidth to remote in Mb/s, 15 minute average
+    """
+    __tablename__ = 'lib_remote_status'
+    time = Column(Float, primary_key=True)
+    remote_name = Column(String(32), primary_key=True)
+    ping_time = Column(Float, primary_key=True)
+    num_file_uploads = Column(Integer, nullable=False)
+    bandwidth_mbs = Column(Float, nullable=False)
+
+    tols = {'time': {'atol': 1e-3, 'rtol': 0}}
+
+    @classmethod
+    def new_remote_status(cls, time, remote_name, ping_time, num_file_uploads, bandwidth_mbs):
+        """
+        Create a new lib_remote_status object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of this status
+        remote_name: string
+            name of remote server
+        ping_time: float
+            ping time to remote in seconds
+        num_file_uploads: integer
+            number of file uploads to remote in last 15 minutes
+        bandwidth_mbs: float
+            bandwidth to remote in Mb/s, 15 minute average
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        time = time.utc.gps
+
+        return cls(time=time, remote_name=remote_name, ping_time=ping_time,
+                   num_file_uploads=num_file_uploads, bandwidth_mbs=bandwidth_mbs)
+
+
+class LibFiles(MCDeclarativeBase):
+    """
+    Definition of lib_files table.
+
+    filename: name of file created (String). Primary_key
+    obsid: observation obsid (Long). Foreign key into Observation table
+    time: time this file was created in gps seconds (double)
+    size_gb: file size in gb (Float)
+    """
+    __tablename__ = 'lib_files'
+    filename = Column(String(32), primary_key=True)
+    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), nullable=False)
+    time = Column(Float, nullable=False)
+    size_gb = Column(Float, nullable=False)
+
+    tols = {'time': {'atol': 1e-3, 'rtol': 0},
+            'obsid': {'atol': 0.1, 'rtol': 0}}
+
+    @classmethod
+    def new_lib_file(cls, filename, obsid, time, size_gb):
+        """
+        Create a new lib_file object.
+
+        Parameters:
+        ------------
+        filename: string
+            name of file created
+        obsid: long
+            observation obsid (Foreign key into Observation)
+        time: astropy time object
+            time file was created
+        size_gb: float
+            file size in GB
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        time = time.utc.gps
+
+        return cls(filename=filename, obsid=obsid, time=time, size_gb=size_gb)
