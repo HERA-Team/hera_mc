@@ -8,6 +8,11 @@
 from astropy.time import Time
 from sqlalchemy import Column, ForeignKey, Integer, BigInteger, String, Text, Float
 from . import MCDeclarativeBase
+from .server_status import ServerStatus
+
+
+class LibServerStatus(ServerStatus):
+    __tablename__ = 'lib_server_status'
 
 
 class LibStatus(MCDeclarativeBase):

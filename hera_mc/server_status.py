@@ -28,7 +28,7 @@ class ServerStatus(MCDeclarativeBase):
     disk_size_gb: Amount of disk space on server in GB (Float)
     network_bandwidth_mbs: Network bandwidth in MB/s, 5 min average. Can be null if not applicable
     """
-    __tablename__ = 'server_status'
+    __abstract__ = True
     hostname = Column(String(32), primary_key=True)
     mc_time = Column(Float(decimal_return_scale=3), primary_key=True)
     ip_address = Column(String(32), nullable=False)
