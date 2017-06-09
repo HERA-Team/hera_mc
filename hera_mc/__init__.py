@@ -35,8 +35,11 @@ def __eq__(self, other):
         for c in self_columns:
             self_c = getattr(self, c.name)
             other_c = getattr(other, c.name)
-            if isinstance(self_c, (str, unicode)):
+            if isinstance(self_c, (str, unicode, int, long)):
                 if self_c != other_c:
+                    c_equal = False
+            elif isinstance(self_c, (np.ndarray)) and isinstance(self_c.dtype, (int, long)):
+                if not np.all(self_c == other_c):
                     c_equal = False
             else:
                 if hasattr(self, 'tols') and c.name in self.tols.keys():
