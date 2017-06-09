@@ -9,10 +9,12 @@
 from __future__ import print_function
 
 from hera_mc import mc
-import datetime
+from astropy.time import Time
+from astropy.time import TimeDelta
 import os.path
-import pytz
 
+PAST_DATE = '2000-01-01'
+FUTURE_DATE = '2025-12-31'
 
 def _log(msg, **kwargs):
     fp = open(mc.cm_log_file, 'a')
@@ -38,32 +40,38 @@ def _log(msg, **kwargs):
     fp.close()
 
 
-def _get_datetime(_date, _time):
+def _get_datetime(_date, _time=0):
     if _date == '<' or _time == '<':
-        return datetime.datetime(2000, 1, 1, tzinfo=pytz.utc)
-    if _date == '>' or _time == '>':
-        return datetime.datetime(2025, 12, 31, tzinfo=pytz.utc)
-    if _date.lower() == 'n/a' or _time.lower() == 'n/a':
-        return None
-    if _date.lower() == 'now':
-        dt_d = datetime.datetime.utcnow()
+        return_date = Time(PAST_DATE,scale='utc')
+    elif _date == '>' or _time == '>':
+        return_date = Time(FUTURE_DATE,scale='ut1')
+    elif _date.lower().replace('/','') == 'na' or str(_time).replace('/','').lower() == 'na':
+        return_date = None
+    elif _date.lower() == 'now' or str(_time).lower() == 'now':
+        return_date = Time.now()
     else:
-        data = _date.split('/')
-        if len(data)!=3:
-            print('Invalid date (should be YYYY/M/D):  ',_date)
-            return None
-        dt_d = datetime.datetime(int(data[0]), int(data[1]), int(data[2]), tzinfo=pytz.utc)
-    if _time.lower() == 'now':
-        dt_t = datetime.datetime.utcnow()
-    elif _time == '0':
-        dt_t = datetime.datetime(dt_d.year, dt_d.month, dt_d.day, 0, 0, 0, tzinfo=pytz.utc)
-    else:
-        data = _time.split(':')
-        if len(data)<2:
-            print('Invalid time (should be H:M):  ',_time)
-        dt_t = datetime.datetime(dt_d.year, dt_d.month, dt_d.day, int(data[0]), int(data[1]), 0, tzinfo=pytz.utc)
-    dt = datetime.datetime(dt_d.year, dt_d.month, dt_d.day, dt_t.hour, dt_t.minute, dt_t.second, tzinfo=pytz.utc)
-    return dt
+        _date = _date.replace('/','-')
+        try:
+            return_date = Time(_date,scale='utc')
+        except ValueError:
+            return_date = ValueError
+        else:
+            if ':' in str(_time):
+                data = _time.split(':')
+                _time = float(data[0])*3600.0 + float(data[1])*60.0
+                if len(data) == 3:
+                    _time+=float(data[2])
+            else:
+                try:
+                    _time = float(_time)*3600.0
+                except ValueError:
+                    return_date = ValueError
+    if return_date == ValueError:
+        print('Invalid format:  date should be YYYY/M/D or YYYY-M-D and time H[:M[:S]] (HMS can be float or int):   ',_date,_time)
+        raise ValueError
+    elif return_date is not None:
+        return_date += TimeDelta(_time,format='sec')
+    return return_date
 
 
 def _get_datekeystring(_datetime):
@@ -71,20 +79,15 @@ def _get_datekeystring(_datetime):
 
 
 def _get_stopdate(_stop_date):
-    if type(_stop_date) == datetime.datetime:
+    if isinstance(_stop_date,Time):
         return _stop_date
     else:
-        return datetime.datetime(2025, 12, 31, tzinfo=pytz.utc)
+        return Time('2025-12-31', scale=UT1)
 
 
 def _is_active(current, _start_date, _stop_date):
     _stop_date = _get_stopdate(_stop_date)
-    if current > _start_date and current < _stop_date:
-        is_active = True
-    else:
-        is_active = False
-    return is_active
-
+    return current >= _start_date and current <= _stop_date
 
 def _query_default(a, args):
     vargs = vars(args)
@@ -102,13 +105,10 @@ def _query_yn(s, default='y'):
     s += ':  '
     ans = raw_input(s)
     if len(ans) == 0 and default:
-        ans = default
+        ans = default.lower()
     elif len(ans) > 0:
         ans = ans.lower()
     else:
         print('No answer provided.')
-        ans = _query_yn(s, default)
-    if ans[0] == 'y':
-        return True
-    else:
-        return False
+        ans = _query_yn(s)
+    return ans[0] == 'y'
