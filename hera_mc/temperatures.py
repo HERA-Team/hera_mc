@@ -10,7 +10,6 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from astropy.time import Time
 from sqlalchemy import Column, Float
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 
 from . import MCDeclarativeBase
 
@@ -35,8 +34,8 @@ class PaperTemperatures(MCDeclarativeBase):
     """
     __tablename__ = 'paper_temperatures'
 
-    gps_time = Column(DOUBLE_PRECISION, nullable=False, primary_key=True)
-    jd_time = Column(DOUBLE_PRECISION, nullable=False)
+    gps_time = Column(Float, nullable=False, primary_key=True)
+    jd_time = Column(Float, nullable=False)
     balun_east = Column(Float)
     cable_east = Column(Float)
     balun_west = Column(Float)
@@ -57,38 +56,6 @@ class PaperTemperatures(MCDeclarativeBase):
     rcvr_7b = Column(Float)
     rcvr_8a = Column(Float)
     rcvr_8b = Column(Float)
-
-    def __repr__(self):
-        return ("<PaperTemperatures('{self.gps_time}', '{self.jd_time}', "
-                "'{self.balun_east}', '{self.cable_east}', "
-                "'{self.balun_west}', '{self.cable_west}', "
-                "'{self.rcvr_1a}', '{self.rcvr_1b}', "
-                "'{self.rcvr_2a}', '{self.rcvr_2b}', "
-                "'{self.rcvr_3a}', '{self.rcvr_3b}', "
-                "'{self.rcvr_4a}', '{self.rcvr_4b}', "
-                "'{self.rcvr_5a}', '{self.rcvr_5b}', "
-                "'{self.rcvr_6a}', '{self.rcvr_6b}', "
-                "'{self.rcvr_7a}', '{self.rcvr_7b}', "
-                "'{self.rcvr_8a}', '{self.rcvr_8b}')>".format(self=self))
-
-    def __eq__(self, other):
-        if isinstance(other, PaperTemperatures):
-            attribute_list = [a for a in dir(self) if not a.startswith('__') and
-                              not callable(getattr(self, a))]
-            isequal = True
-            for a in attribute_list:
-                if isinstance(a, Column):
-                    self_col = getattr(self, a)
-                    other_col = getattr(other, a)
-                    if self_col != other_col:
-                        print('column {col} does not match. Left is {lval} '
-                              'and right is {rval}'.
-                              format(col=a, lval=str(self_col),
-                                     rval=str(other_col)))
-                        isequal = False
-            return isequal
-        else:
-            return False
 
     @classmethod
     def new_from_text_row(cls, read_time, temp_list):
