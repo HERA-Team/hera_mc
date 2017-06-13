@@ -115,6 +115,12 @@ class test_hera_mc(unittest.TestCase):
             self.assertRaises(ValueError, self.test_session.get_server_status,
                               sub, self.columns['system_time'], stoptime='test_host')
 
+        self.assertRaises(ValueError, self.test_session.add_server_status, 'foo',
+                          self.column_values[0], *self.column_values[2:11],
+                          network_bandwidth_mbs=self.column_values[11])
+        self.assertRaises(ValueError, self.test_session.get_server_status, 'foo',
+                          self.column_values[1])
+
 
 if __name__ == '__main__':
     unittest.main()
