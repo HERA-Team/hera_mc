@@ -1,14 +1,17 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""RTP tables
+"""
+RTP tables
 
+The columns in this module are documented in docs/mc_definition.tex,
+the documentation needs to be kept up to date with any changes.
 """
 
 from astropy.time import Time
 from sqlalchemy import Column, ForeignKey, Integer, BigInteger, String, Text, Float, Enum
-from . import MCDeclarativeBase
+from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_MIN_TOL, DEFAULT_HOUR_TOL
 from .server_status import ServerStatus
 
 rtp_process_enum = ['queued', 'started', 'finished', 'error']
@@ -35,13 +38,13 @@ class RTPStatus(MCDeclarativeBase):
     num_processes = Column(Integer, nullable=False)
     restart_hours_elapsed = Column(Float, nullable=False)
 
-    tols = {'time': {'atol': 1e-3, 'rtol': 0},
-            'event_min_elapsed': {'atol': 1e-3 * 60, 'rtol': 0},
-            'restart_hours_elapsed': {'atol': 1e-3 * 3600, 'rtol': 0}}
+    tols = {'time': DEFAULT_GPS_TOL,
+            'event_min_elapsed': DEFAULT_MIN_TOL,
+            'restart_hours_elapsed': DEFAULT_HOUR_TOL}
 
     @classmethod
-    def new_status(cls, time, status, event_min_elapsed, num_processes,
-                   restart_hours_elapsed):
+    def create(cls, time, status, event_min_elapsed, num_processes,
+               restart_hours_elapsed):
         """
         Create a new rtp_status object.
 
@@ -60,7 +63,7 @@ class RTPStatus(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = time.utc.gps
+        time = time.gps
 
         return cls(time=time, status=status, event_min_elapsed=event_min_elapsed,
                    num_processes=num_processes, restart_hours_elapsed=restart_hours_elapsed)
@@ -79,11 +82,10 @@ class RTPProcessEvent(MCDeclarativeBase):
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
     event = Column(Enum(*rtp_process_enum, name='rtp_process_enum'), nullable=False)
 
-    tols = {'time': {'atol': 1e-3, 'rtol': 0},
-            'obsid': {'atol': 0.1, 'rtol': 0}}
+    tols = {'time': DEFAULT_GPS_TOL}
 
     @classmethod
-    def new_process_event(cls, time, obsid, event):
+    def create(cls, time, obsid, event):
         """
         Create a new rtp_process_event object.
 
@@ -98,7 +100,7 @@ class RTPProcessEvent(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = time.utc.gps
+        time = time.gps
 
         return cls(time=time, obsid=obsid, event=event)
 
@@ -120,11 +122,10 @@ class RTPProcessRecord(MCDeclarativeBase):
     git_version = Column(String(32), nullable=False)
     git_hash = Column(String(64), nullable=False)
 
-    tols = {'time': {'atol': 1e-3, 'rtol': 0},
-            'obsid': {'atol': 0.1, 'rtol': 0}}
+    tols = {'time': DEFAULT_GPS_TOL}
 
     @classmethod
-    def new_process_record(cls, time, obsid, pipeline_list, git_version, git_hash):
+    def create(cls, time, obsid, pipeline_list, git_version, git_hash):
         """
         Create a new rtp_process_record object.
 
@@ -143,7 +144,7 @@ class RTPProcessRecord(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = time.utc.gps
+        time = time.gps
 
         return cls(time=time, obsid=obsid, pipeline_list=pipeline_list,
                    git_version=git_version, git_hash=git_hash)

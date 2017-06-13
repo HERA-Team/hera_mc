@@ -1,5 +1,5 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 from sqlalchemy.orm import Session
@@ -25,41 +25,67 @@ class MCSession(Session):
         self.close()
         return False  # propagate exception if any occurred
 
-    def _time_filter(self, table, time_column, starttime, stoptime=None,
+    def _time_filter(self, table_object, time_column, starttime, stoptime=None,
                      filter_column=None, filter_value=None):
+        '''
+        A helper function to fiter entries by time. Used by most get methods
+        on this object.
+
+        Parameters:
+        table_object: object
+            Table object to query.
+
+        time_column: string
+            column name holding the time to filter on.
+
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        filter_column: string
+            column name to use as an additional filter (often a part of the primary key)
+
+        filter_value: type coresponding to filter_column, usually a string
+            value to require that the filter_column is equal to
+
+        Returns:
+        --------
+        list of objects that match the filtering
+        '''
         if not isinstance(starttime, Time):
             raise ValueError('starttime must be an astropy time object. '
-                             'value was: %r' % (starttime,))
-        starttime = starttime.utc
+                             'value was: {t}'.format(t=starttime))
 
         if stoptime is not None:
             if not isinstance(stoptime, Time):
                 raise ValueError('stoptime must be an astropy time object. '
-                                 'value was: %r' % (stoptime,))
-            stoptime = stoptime.utc
+                                 'value was: {t}'.format(t=stoptime))
 
         if stoptime is not None:
             if filter_value is not None:
-                result_list = self.query(table).filter(
-                    getattr(table, filter_column) == filter_value,
-                    getattr(table, time_column).between(starttime.gps, stoptime.gps)).all()
+                result_list = self.query(table_object).filter(
+                    getattr(table_object, filter_column) == filter_value,
+                    getattr(table_object, time_column).between(starttime.gps, stoptime.gps)).all()
             else:
-                result_list = self.query(table).filter(
-                    getattr(table, time_column).between(starttime.gps, stoptime.gps)).all()
+                result_list = self.query(table_object).filter(
+                    getattr(table_object, time_column).between(starttime.gps, stoptime.gps)).all()
         else:
             if filter_value is not None:
-                result_list = self.query(table).filter(
-                    getattr(table, filter_column) == filter_value,
-                    getattr(table, time_column) >= starttime.gps).order_by(
-                        getattr(table, time_column)).limit(1).all()
+                result_list = self.query(table_object).filter(
+                    getattr(table_object, filter_column) == filter_value,
+                    getattr(table_object, time_column) >= starttime.gps).order_by(
+                        getattr(table_object, time_column)).limit(1).all()
             else:
-                result_list = self.query(table).filter(
-                    getattr(table, time_column) >= starttime.gps).order_by(
-                        getattr(table, time_column)).limit(1).all()
+                result_list = self.query(table_object).filter(
+                    getattr(table_object, time_column) >= starttime.gps).order_by(
+                        getattr(table_object, time_column)).limit(1).all()
 
         return result_list
 
-    def add_obs(self, starttime, stoptime, obsid=None):
+    def add_obs(self, starttime, stoptime, obsid):
         """
         Add a new observation to the M&C database.
 
@@ -70,12 +96,11 @@ class MCSession(Session):
         stoptime: astropy time object
             observation stoptime
         obsid: long integer
-            observation identification number. If not provided, will be set
-            to the gps second corresponding to the starttime using floor.
+            observation identification number
         """
         from .observations import Observation
 
-        self.add(Observation.new_observation(starttime, stoptime, obsid=obsid))
+        self.add(Observation.create(starttime, stoptime, obsid))
 
     def get_obs(self, obsid=None, starttime=None, stoptime=None):
         """
@@ -154,10 +179,10 @@ class MCSession(Session):
         else:
             raise ValueError('subsystem must be one of: ["rtp", "lib"]')
 
-        self.add(ServerStatus.new_status(hostname, ip_address, system_time, num_cores,
-                                         cpu_load_pct, uptime_days, memory_used_pct,
-                                         memory_size_gb, disk_space_pct, disk_size_gb,
-                                         network_bandwidth_mbs=network_bandwidth_mbs))
+        self.add(ServerStatus.create(hostname, ip_address, system_time, num_cores,
+                                     cpu_load_pct, uptime_days, memory_used_pct,
+                                     memory_size_gb, disk_space_pct, disk_size_gb,
+                                     network_bandwidth_mbs=network_bandwidth_mbs))
 
     def get_server_status(self, subsystem, starttime, stoptime=None, hostname=None):
         """
@@ -221,9 +246,9 @@ class MCSession(Session):
         """
         from .librarian import LibStatus
 
-        self.add(LibStatus.new_status(time, num_files, data_volume_gb,
-                                      free_space_gb, upload_min_elapsed,
-                                      num_processes, git_version, git_hash))
+        self.add(LibStatus.create(time, num_files, data_volume_gb,
+                                  free_space_gb, upload_min_elapsed,
+                                  num_processes, git_version, git_hash))
 
     def get_lib_status(self, starttime, stoptime=None):
         """
@@ -266,7 +291,7 @@ class MCSession(Session):
         """
         from .librarian import LibRAIDStatus
 
-        self.add(LibRAIDStatus.new_raid_status(time, hostname, num_disks, info))
+        self.add(LibRAIDStatus.create(time, hostname, num_disks, info))
 
     def get_lib_raid_status(self, starttime, stoptime=None, hostname=None):
         """
@@ -313,7 +338,7 @@ class MCSession(Session):
         """
         from .librarian import LibRAIDErrors
 
-        self.add(LibRAIDErrors.new_raid_error(time, hostname, disk, log))
+        self.add(LibRAIDErrors.create(time, hostname, disk, log))
 
     def get_lib_raid_error(self, starttime, stoptime=None, hostname=None):
         """
@@ -363,8 +388,8 @@ class MCSession(Session):
         """
         from .librarian import LibRemoteStatus
 
-        self.add(LibRemoteStatus.new_remote_status(time, remote_name, ping_time,
-                                                   num_file_uploads, bandwidth_mbs))
+        self.add(LibRemoteStatus.create(time, remote_name, ping_time,
+                                        num_file_uploads, bandwidth_mbs))
 
     def get_lib_remote_status(self, starttime, stoptime=None, remote_name=None):
         """
@@ -412,7 +437,7 @@ class MCSession(Session):
         """
         from .librarian import LibFiles
 
-        self.add(LibFiles.new_lib_file(filename, obsid, time, size_gb))
+        self.add(LibFiles.create(filename, obsid, time, size_gb))
 
     def get_lib_files(self, filename=None, obsid=None, starttime=None, stoptime=None):
         """
@@ -479,8 +504,8 @@ class MCSession(Session):
         """
         from .rtp import RTPStatus
 
-        self.add(RTPStatus.new_status(time, status, event_min_elapsed, num_processes,
-                                      restart_hours_elapsed))
+        self.add(RTPStatus.create(time, status, event_min_elapsed, num_processes,
+                                  restart_hours_elapsed))
 
     def get_rtp_status(self, starttime, stoptime=None):
         """
@@ -520,7 +545,7 @@ class MCSession(Session):
         """
         from .rtp import RTPProcessEvent
 
-        self.add(RTPProcessEvent.new_process_event(time, obsid, event))
+        self.add(RTPProcessEvent.create(time, obsid, event))
 
     def get_rtp_process_event(self, starttime, stoptime=None, obsid=None):
         """
@@ -569,8 +594,8 @@ class MCSession(Session):
         """
         from .rtp import RTPProcessRecord
 
-        self.add(RTPProcessRecord.new_process_record(time, obsid, pipeline_list,
-                                                     git_version, git_hash))
+        self.add(RTPProcessRecord.create(time, obsid, pipeline_list,
+                                         git_version, git_hash))
 
     def get_rtp_process_record(self, starttime, stoptime=None, obsid=None):
         """

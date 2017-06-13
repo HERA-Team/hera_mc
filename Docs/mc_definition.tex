@@ -66,9 +66,10 @@ Primary keys are bold, foreign keys are italicized.
  \hline
  column & type & description \\ [0.5ex]  \hline\hline
  \textbf{obsid} & long integer & start time in floor(GPS) seconds. GPS start adjusted to be within 1 second of LST to lock observations to LST for the night \\ \hline
- start\_time\_jd & double & start time in decimal JD. The start time to full accuracy of the beginning of integration of first visibility \\\hline
- stop\_time\_jd & double & stop time in decimal JD. The stop time to full accuracy of the end of integration of last visibility \\\hline
- lst\_start\_hr & double & decimal hours from start of sidereal day. Provides a quick search for overlapping LSTs \\\hline
+ starttime & double & start time in gps seconds. The start time to full accuracy of the beginning of integration of first visibility \\\hline
+ stoptime & double & stop time in gps seconds. The stop time to full accuracy of the end of integration of last visibility \\\hline
+ jd\_start & double & start time in JD. Calculated from starttime, provides a quick way to filter on JD times. \\\hline
+ lst\_start\_hr & double & decimal hours from start of sidereal day. Calculated from starttime, provides a quick search for matching LSTs \\\hline
  \end{tabular}
 \end{center}
 

@@ -1,13 +1,16 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Librarian tables
+"""
+Librarian tables
 
+The columns in this module are documented in docs/mc_definition.tex,
+the documentation needs to be kept up to date with any changes.
 """
 from astropy.time import Time
 from sqlalchemy import Column, ForeignKey, Integer, BigInteger, String, Text, Float
-from . import MCDeclarativeBase
+from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_MIN_TOL
 from .server_status import ServerStatus
 
 
@@ -38,14 +41,14 @@ class LibStatus(MCDeclarativeBase):
     git_version = Column(String(32), nullable=False)
     git_hash = Column(String(64), nullable=False)
 
-    tols = {'time': {'atol': 1e-3, 'rtol': 0},
+    tols = {'time': DEFAULT_GPS_TOL,
             'data_volume_gb': {'atol': 1e-3, 'rtol': 0},
             'free_space_gb': {'atol': 1e-3, 'rtol': 0},
-            'upload_min_elapsed': {'atol': 1e-3 * 60, 'rtol': 0}}
+            'upload_min_elapsed': DEFAULT_MIN_TOL}
 
     @classmethod
-    def new_status(cls, time, num_files, data_volume_gb, free_space_gb,
-                   upload_min_elapsed, num_processes, git_version, git_hash):
+    def create(cls, time, num_files, data_volume_gb, free_space_gb,
+               upload_min_elapsed, num_processes, git_version, git_hash):
         """
         Create a new lib_status object.
 
@@ -70,7 +73,7 @@ class LibStatus(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = time.utc.gps
+        time = time.gps
 
         return cls(time=time, num_files=num_files, data_volume_gb=data_volume_gb,
                    free_space_gb=free_space_gb, upload_min_elapsed=upload_min_elapsed,
@@ -93,10 +96,10 @@ class LibRAIDStatus(MCDeclarativeBase):
     num_disks = Column(Integer, nullable=False)
     info = Column(Text, nullable=False)
 
-    tols = {'time': {'atol': 1e-3, 'rtol': 0}}
+    tols = {'time': DEFAULT_GPS_TOL}
 
     @classmethod
-    def new_raid_status(cls, time, hostname, num_disks, info):
+    def create(cls, time, hostname, num_disks, info):
         """
         Create a new lib_raid_status object.
 
@@ -113,7 +116,7 @@ class LibRAIDStatus(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = time.utc.gps
+        time = time.gps
 
         return cls(time=time, hostname=hostname, num_disks=num_disks, info=info)
 
@@ -133,10 +136,10 @@ class LibRAIDErrors(MCDeclarativeBase):
     disk = Column(String, primary_key=True)
     log = Column(Text, nullable=False)
 
-    tols = {'time': {'atol': 1e-3, 'rtol': 0}}
+    tols = {'time': DEFAULT_GPS_TOL}
 
     @classmethod
-    def new_raid_error(cls, time, hostname, disk, log):
+    def create(cls, time, hostname, disk, log):
         """
         Create a new lib_raid_error object.
 
@@ -153,7 +156,7 @@ class LibRAIDErrors(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = time.utc.gps
+        time = time.gps
 
         return cls(time=time, hostname=hostname, disk=disk, log=log)
 
@@ -175,10 +178,10 @@ class LibRemoteStatus(MCDeclarativeBase):
     num_file_uploads = Column(Integer, nullable=False)
     bandwidth_mbs = Column(Float, nullable=False)
 
-    tols = {'time': {'atol': 1e-3, 'rtol': 0}}
+    tols = {'time': DEFAULT_GPS_TOL}
 
     @classmethod
-    def new_remote_status(cls, time, remote_name, ping_time, num_file_uploads, bandwidth_mbs):
+    def create(cls, time, remote_name, ping_time, num_file_uploads, bandwidth_mbs):
         """
         Create a new lib_remote_status object.
 
@@ -197,7 +200,7 @@ class LibRemoteStatus(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = time.utc.gps
+        time = time.gps
 
         return cls(time=time, remote_name=remote_name, ping_time=ping_time,
                    num_file_uploads=num_file_uploads, bandwidth_mbs=bandwidth_mbs)
@@ -218,11 +221,10 @@ class LibFiles(MCDeclarativeBase):
     time = Column(Float, nullable=False)
     size_gb = Column(Float, nullable=False)
 
-    tols = {'time': {'atol': 1e-3, 'rtol': 0},
-            'obsid': {'atol': 0.1, 'rtol': 0}}
+    tols = {'time': DEFAULT_GPS_TOL}
 
     @classmethod
-    def new_lib_file(cls, filename, obsid, time, size_gb):
+    def create(cls, filename, obsid, time, size_gb):
         """
         Create a new lib_file object.
 
@@ -239,6 +241,6 @@ class LibFiles(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = time.utc.gps
+        time = time.gps
 
         return cls(filename=filename, obsid=obsid, time=time, size_gb=size_gb)
