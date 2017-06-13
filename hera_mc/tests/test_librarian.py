@@ -7,11 +7,11 @@
 """
 import unittest
 import numpy as np
-from math import floor
 from astropy.time import Time, TimeDelta
 
 from hera_mc import mc
 from hera_mc.librarian import LibStatus, LibRAIDStatus, LibRAIDErrors, LibRemoteStatus, LibFiles
+from hera_mc import utils
 
 
 class test_hera_mc(unittest.TestCase):
@@ -43,14 +43,13 @@ class test_hera_mc(unittest.TestCase):
         self.remote_status_columns = dict(zip(self.remote_status_names,
                                               self.remote_status_values))
 
-        obsid = floor(time.gps)
+        obsid = utils.calculate_obsid(time)
         self.observation_names = ['starttime', 'stoptime', 'obsid']
         self.observation_values = [time, time + TimeDelta(10 * 60, format='sec'),
                                    obsid]
         self.observation_columns = dict(zip(self.observation_names,
                                             self.observation_values))
-        self.test_session.add_obs(*self.observation_values[0:2],
-                                  obsid=self.observation_columns['obsid'])
+        self.test_session.add_obs(*self.observation_values)
         obs_result = self.test_session.get_obs()
         self.assertTrue(len(obs_result), 1)
 

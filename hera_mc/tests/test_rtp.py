@@ -7,12 +7,12 @@
 """
 import unittest
 import numpy as np
-from math import floor
 from astropy.time import Time, TimeDelta
 from sqlalchemy.exc import NoForeignKeysError
 
 from hera_mc import mc
 from hera_mc.rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord
+from hera_mc import utils
 
 
 class test_hera_mc(unittest.TestCase):
@@ -24,14 +24,13 @@ class test_hera_mc(unittest.TestCase):
         self.test_session = mc.MCSession(bind=self.test_conn)
 
         time = Time.now()
-        obsid = floor(time.gps)
+        obsid = utils.calculate_obsid(time)
         self.observation_names = ['starttime', 'stoptime', 'obsid']
         self.observation_values = [time, time + TimeDelta(10 * 60, format='sec'),
                                    obsid]
         self.observation_columns = dict(zip(self.observation_names,
                                             self.observation_values))
-        self.test_session.add_obs(*self.observation_values[0:2],
-                                  obsid=self.observation_columns['obsid'])
+        self.test_session.add_obs(*self.observation_values)
         obs_result = self.test_session.get_obs()
         self.assertTrue(len(obs_result), 1)
 
@@ -106,10 +105,10 @@ class test_hera_mc(unittest.TestCase):
         self.assertEqual(result, expected)
 
         new_obsid_time = self.event_columns['time'] + TimeDelta(3 * 60, format='sec')
-        new_obsid = self.event_columns['obsid'] + 10
+        new_obsid = utils.calculate_obsid(new_obsid_time)
         self.test_session.add_obs(Time(new_obsid_time),
                                   Time(new_obsid_time + TimeDelta(10 * 60, format='sec')),
-                                  obsid=new_obsid)
+                                  new_obsid)
         obs_result = self.test_session.get_obs(obsid=new_obsid)
         self.assertEqual(obs_result[0].obsid, new_obsid)
 
@@ -184,10 +183,10 @@ class test_hera_mc(unittest.TestCase):
         self.assertEqual(result_obsid, expected)
 
         new_obsid_time = self.record_columns['time'] + TimeDelta(3 * 60, format='sec')
-        new_obsid = self.record_columns['obsid'] + 10
+        new_obsid = utils.calculate_obsid(new_obsid_time)
         self.test_session.add_obs(Time(new_obsid_time),
                                   Time(new_obsid_time + TimeDelta(10 * 60, format='sec')),
-                                  obsid=new_obsid)
+                                  new_obsid)
         obs_result = self.test_session.get_obs(obsid=new_obsid)
         self.assertEqual(obs_result[0].obsid, new_obsid)
 

@@ -1,14 +1,17 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Common server_status table
+"""
+Common server_status table
 
+The columns in this module are documented in docs/mc_definition.tex,
+the documentation needs to be kept up to date with any changes.
 """
 
 from astropy.time import Time
 from sqlalchemy import Column, Integer, String, Float
-from . import MCDeclarativeBase
+from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL
 
 
 class ServerStatus(MCDeclarativeBase):
@@ -42,13 +45,13 @@ class ServerStatus(MCDeclarativeBase):
     disk_size_gb = Column(Float, nullable=False)
     network_bandwidth_mbs = Column(Float)
 
-    tols = {'mc_time': {'atol': 1e-3, 'rtol': 0},
-            'system_time': {'atol': 1e-3, 'rtol': 0}}
+    tols = {'mc_time': DEFAULT_GPS_TOL, 'system_time': DEFAULT_GPS_TOL,
+            'uptime_days': DEFAULT_DAY_TOL}
 
     @classmethod
-    def new_status(cls, hostname, ip_address, system_time, num_cores,
-                   cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
-                   disk_space_pct, disk_size_gb, network_bandwidth_mbs=None):
+    def create(cls, hostname, ip_address, system_time, num_cores,
+               cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
+               disk_space_pct, disk_size_gb, network_bandwidth_mbs=None):
         """
         Create a new server_status object.
 

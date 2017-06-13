@@ -14,6 +14,7 @@ from astropy.coordinates import EarthLocation
 
 from hera_mc import mc
 from hera_mc.observations import Observation
+from hera_mc import utils
 
 
 class test_hera_mc(unittest.TestCase):
@@ -35,8 +36,8 @@ class test_hera_mc(unittest.TestCase):
         t3 = t1 + TimeDelta(1e-3, format='sec')
         t4 = t2 + TimeDelta(1e-3, format='sec')
 
-        obs1 = Observation.new_observation(t1, t2)
-        obs2 = Observation.new_observation(t3, t4)
+        obs1 = Observation.create(t1, t2, utils.calculate_obsid(t1))
+        obs2 = Observation.create(t3, t4, utils.calculate_obsid(t3))
         self.assertFalse(obs1 == obs2)
 
     def test_add_obs(self):
@@ -46,22 +47,25 @@ class test_hera_mc(unittest.TestCase):
         # generated test hera_lat, hera_lon using the output of geo.py -c
         # with this website: http://www.uwgb.edu/dutchs/usefuldata/ConvertUTMNoOZ.HTM
 
-        obsid = floor(t1.gps)
+        obsid_calc = int(floor(t1.gps))
+        obsid = utils.calculate_obsid(t1)
+        self.assertEqual(obsid_calc, obsid)
         t1.location = EarthLocation.from_geodetic(21.4283038269, -30.7215261207)
 
-        expected = Observation(obsid=obsid, start_time_jd=t1.jd,
-                               stop_time_jd=t2.jd,
+        expected = Observation(obsid=obsid, starttime=t1.gps, stoptime=t2.gps,
+                               jd_start=t1.jd,
                                lst_start_hr=t1.sidereal_time('apparent').hour)
 
-        self.test_session.add_obs(t1, t2)
+        self.test_session.add_obs(t1, t2, obsid)
         result = self.test_session.get_obs()
         self.assertEqual(len(result), 1)
         result = result[0]
+        self.assertEqual(result.length, 120.0)
         self.assertEqual(result, expected)
 
         t3 = t1 + TimeDelta(10 * 60., format='sec')
         t4 = t2 + TimeDelta(10 * 60., format='sec')
-        self.test_session.add_obs(t3, t4)
+        self.test_session.add_obs(t3, t4, utils.calculate_obsid(t3))
 
         result_mult = self.test_session.get_obs(starttime=t1, stoptime=t4)
         self.assertEqual(len(result_mult), 2)
@@ -74,8 +78,10 @@ class test_hera_mc(unittest.TestCase):
     def test_error_obs(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
-        self.assertRaises(ValueError, self.test_session.add_obs, 'foo', t2)
-        self.assertRaises(ValueError, self.test_session.add_obs, t1, 'foo')
+        self.assertRaises(ValueError, self.test_session.add_obs, 'foo', t2, utils.calculate_obsid(t1))
+        self.assertRaises(ValueError, self.test_session.add_obs, t1, 'foo', utils.calculate_obsid(t1))
+        self.assertRaises(ValueError, self.test_session.add_obs, t1, t2, 'foo')
+        self.assertRaises(ValueError, self.test_session.add_obs, t1, t2, utils.calculate_obsid(t1) + 2)
 
 
 if __name__ == '__main__':

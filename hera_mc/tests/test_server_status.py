@@ -115,5 +115,6 @@ class test_hera_mc(unittest.TestCase):
             self.assertRaises(ValueError, self.test_session.get_server_status,
                               sub, self.columns['system_time'], stoptime='test_host')
 
+
 if __name__ == '__main__':
     unittest.main()
