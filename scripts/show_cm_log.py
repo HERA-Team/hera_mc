@@ -9,14 +9,14 @@ Script to show cm_log_file.  Extremely simplified here - can fancify later.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc
+from hera_mc import cm_utils, mc
 import sys
 import os.path
 
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-v', '--verbosity', help="Set verbosity. [h].", choices=['l', 'm', 'h'], default="h")
+    cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
     args.verbosity = args.verbosity.lower()
 

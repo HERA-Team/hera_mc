@@ -40,6 +40,19 @@ def _log(msg, **kwargs):
     fp.close()
 
 
+def add_verbosity_args(parser):
+    """Add a standardized "--verbosity" argument to an ArgParser object. Supported
+    values are "l", "m", and "h", which presumably stand for "low", "medium",
+    and "high".
+
+    The function name is plural because it's conceivable that in the future we might
+    want to provide multiple arguments related to this general topic.
+
+    """
+    parser.add_argument('-v', '--verbosity', help="Verbosity level: 'l', 'm', or 'h'. [h].",
+                        choices=['l', 'm', 'h'], default="h")
+
+
 def add_date_time_args(parser):
     """Add standardized "--date" and "--time" arguments to an ArgParser object.
     Their values should then be converted into a Python DateTime object using

@@ -191,7 +191,7 @@ if __name__ == '__main__':
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--make-update', help="Set to actually change database (otherwise it just shows).",
                         dest='make_update', action='store_true')
-    parser.add_argument('-v', '--verbosity', help="Set verbosity. [h].", choices=['l', 'm', 'h'], default="m")
+    cm_utils.add_verbosity_args(parser)
 
     args = parser.parse_args()
     args.verbosity = args.verbosity.lower()
