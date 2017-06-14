@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, cm_handling, cm_hookup, mc
+from hera_mc import part_connect, cm_handling, cm_hookup, cm_utils, mc
 import os.path
 
 if __name__ == '__main__':
@@ -30,8 +30,7 @@ if __name__ == '__main__':
                         dest='mapr_cols', default='all')
     parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible - keep False to use actual correlator [False]", 
                         dest='levels_testing', default=False)
-    parser.add_argument('--date', help="UTC YYYY/M/D or now [now]", default='now')
-    parser.add_argument('--time', help="UTC hh[:mm[:ss]] or now [now]", default='now')
+    cm_utils.add_date_time_args(parser)
 
     active_group = parser.add_mutually_exclusive_group()
     active_group.add_argument('--show-active', help="Flag to show only the active parts/connections (default)",dest='active', action='store_true')

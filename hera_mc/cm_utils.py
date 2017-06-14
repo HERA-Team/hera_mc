@@ -1,5 +1,5 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2016-2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """Some low-level configuration management utility functions.
@@ -38,6 +38,19 @@ def _log(msg, **kwargs):
             fp.write('--other\n\t')
             fp.write(str(key) + ':  ' + str(value) + '\n\n')
     fp.close()
+
+
+def add_date_time_args(parser):
+    """Add standardized "--date" and "--time" arguments to an ArgParser object.
+    Their values should then be converted into a Python DateTime object using
+    the function `_get_datetime`.
+
+    """
+    parser.add_argument(
+        '--date', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]", default='now')
+    parser.add_argument(
+        '--time', help="UTC hh:mm or '<' or '>' or 'n/a' or 'now' [now]", default='now')
+
 
 def _get_datetime(_date, _time=0):
     add_time = 0.
