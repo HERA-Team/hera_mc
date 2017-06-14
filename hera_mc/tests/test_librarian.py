@@ -70,7 +70,7 @@ class test_hera_mc(unittest.TestCase):
 
         result = self.test_session.get_lib_status(self.status_columns['time'])[0]
 
-        self.assertEqual(result, expected)
+        self.assertTrue(result.isclose(expected))
 
         new_status_time = self.status_columns['time'] + TimeDelta(5 * 60, format='sec')
         self.test_session.add_lib_status(new_status_time,
@@ -109,7 +109,7 @@ class test_hera_mc(unittest.TestCase):
         self.assertEqual(len(result), 1)
         result = result[0]
 
-        self.assertEqual(result, expected)
+        self.assertTrue(result.isclose(expected))
 
         self.test_session.add_lib_raid_status(self.raid_status_values[0], 'raid_2',
                                               *self.raid_status_values[2:])
@@ -119,7 +119,7 @@ class test_hera_mc(unittest.TestCase):
                                                             TimeDelta(2 * 60, format='sec'))
         self.assertEqual(len(result_host), 1)
         result_host = result_host[0]
-        self.assertEqual(result_host, expected)
+        self.assertTrue(result_host.isclose(expected))
 
         result_mult = self.test_session.get_lib_raid_status(self.raid_status_columns['time'],
                                                             stoptime=self.raid_status_columns['time'] +
@@ -153,7 +153,7 @@ class test_hera_mc(unittest.TestCase):
         self.assertEqual(len(result), 1)
         result = result[0]
 
-        self.assertEqual(result, expected)
+        self.assertTrue(result.isclose(expected))
 
         self.test_session.add_lib_raid_error(self.raid_error_values[0], 'raid_2',
                                              *self.raid_error_values[2:])
@@ -163,7 +163,7 @@ class test_hera_mc(unittest.TestCase):
                                                            TimeDelta(2 * 60, format='sec'))
         self.assertEqual(len(result_host), 1)
         result_host = result_host[0]
-        self.assertEqual(result_host, expected)
+        self.assertTrue(result_host.isclose(expected))
 
         result_mult = self.test_session.get_lib_raid_error(self.raid_error_columns['time'],
                                                            stoptime=self.raid_error_columns['time'] +
@@ -197,7 +197,7 @@ class test_hera_mc(unittest.TestCase):
         self.assertEqual(len(result), 1)
         result = result[0]
 
-        self.assertEqual(result, expected)
+        self.assertTrue(result.isclose(expected))
 
         self.test_session.add_lib_remote_status(self.remote_status_values[0], 'penn',
                                                 *self.remote_status_values[2:])
@@ -208,7 +208,7 @@ class test_hera_mc(unittest.TestCase):
 
         self.assertEqual(len(result_remote), 1)
         result_remote = result_remote[0]
-        self.assertEqual(result_remote, expected)
+        self.assertTrue(result_remote.isclose(expected))
 
         result_mult = self.test_session.get_lib_remote_status(
             self.remote_status_columns['time'],
@@ -243,15 +243,16 @@ class test_hera_mc(unittest.TestCase):
         expected = LibFiles(**exp_columns)
 
         result_file = self.test_session.get_lib_files(filename=self.file_columns['filename'])[0]
-        self.assertEqual(result_file, expected)
+        self.assertTrue(result_file.isclose(expected))
 
         result = self.test_session.get_lib_files(starttime=self.file_columns['time'])
         self.assertEqual(len(result), 1)
         result = result[0]
-        self.assertEqual(result, expected)
+        self.assertTrue(result.isclose(expected))
+
         result_obsid = self.test_session.get_lib_files(starttime=self.file_columns['time'],
                                                        obsid=self.file_columns['obsid'])[0]
-        self.assertEqual(result_obsid, expected)
+        self.assertTrue(result_obsid.isclose(expected))
 
         new_file_time = self.file_columns['time'] + TimeDelta(3 * 60, format='sec')
         new_file = 'file2'
@@ -260,7 +261,9 @@ class test_hera_mc(unittest.TestCase):
         self.assertEqual(len(result_obsid), 2)
 
         result_all = self.test_session.get_lib_files()
-        self.assertEqual(result_obsid, result_all)
+        self.assertEqual(len(result_obsid), len(result_all))
+        for i in range(0, len(result_obsid)):
+            self.assertTrue(result_obsid[i].isclose(result_all[i]))
 
     def test_errors_add_lib_file(self):
         self.assertRaises(ValueError, self.test_session.add_lib_file,

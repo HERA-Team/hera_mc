@@ -60,7 +60,7 @@ class test_hera_mc(unittest.TestCase):
 
         result = self.test_session.get_rtp_status(self.status_columns['time'])[0]
 
-        self.assertEqual(result, expected)
+        self.assertTrue(result.isclose(expected))
 
         new_status_time = self.status_columns['time'] + TimeDelta(5 * 60, format='sec')
         new_status = 'unhappy'
@@ -102,7 +102,7 @@ class test_hera_mc(unittest.TestCase):
         result = result[0]
         result_obsid = self.test_session.get_rtp_process_event(self.event_columns['time'],
                                                                obsid=self.event_columns['obsid'])[0]
-        self.assertEqual(result, expected)
+        self.assertTrue(result.isclose(expected))
 
         new_obsid_time = self.event_columns['time'] + TimeDelta(3 * 60, format='sec')
         new_obsid = utils.calculate_obsid(new_obsid_time)
@@ -117,7 +117,7 @@ class test_hera_mc(unittest.TestCase):
                                                 self.event_columns['event'])
         result_obsid = self.test_session.get_rtp_process_event(self.event_columns['time'],
                                                                obsid=self.event_columns['obsid'])[0]
-        self.assertEqual(result_obsid, expected)
+        self.assertTrue(result_obsid.isclose(expected))
 
         new_event_time = self.event_columns['time'] + TimeDelta(5 * 60, format='sec')
         new_event = 'started'
@@ -176,11 +176,11 @@ class test_hera_mc(unittest.TestCase):
         result = self.test_session.get_rtp_process_record(self.record_columns['time'])
         self.assertEqual(len(result), 1)
         result = result[0]
-        self.assertEqual(result, expected)
+        self.assertTrue(result.isclose(expected))
 
         result_obsid = self.test_session.get_rtp_process_record(self.record_columns['time'],
                                                                 obsid=self.record_columns['obsid'])[0]
-        self.assertEqual(result_obsid, expected)
+        self.assertTrue(result_obsid.isclose(expected))
 
         new_obsid_time = self.record_columns['time'] + TimeDelta(3 * 60, format='sec')
         new_obsid = utils.calculate_obsid(new_obsid_time)
@@ -195,7 +195,7 @@ class test_hera_mc(unittest.TestCase):
                                                  *self.record_values[2:5])
         result_obsid = self.test_session.get_rtp_process_record(self.record_columns['time'],
                                                                 obsid=self.record_columns['obsid'])[0]
-        self.assertEqual(result_obsid, expected)
+        self.assertTrue(result_obsid.isclose(expected))
 
         new_record_time = self.record_columns['time'] + TimeDelta(5 * 60, format='sec')
         new_pipeline = 'new_pipe'

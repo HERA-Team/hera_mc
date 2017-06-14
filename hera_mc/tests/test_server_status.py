@@ -77,7 +77,7 @@ class test_hera_mc(unittest.TestCase):
             # they are close enough. set them equal to test the rest of the objects
             expected.mc_time = result.mc_time
 
-            self.assertEqual(result, expected)
+            self.assertTrue(result.isclose(expected))
 
             self.test_session.add_server_status(sub, 'test_host2', *self.column_values[2:11],
                                                 network_bandwidth_mbs=self.column_values[11])
@@ -87,7 +87,7 @@ class test_hera_mc(unittest.TestCase):
                                                               TimeDelta(2 * 60, format='sec'))
             self.assertEqual(len(result_host), 1)
             result_host = result_host[0]
-            self.assertEqual(result_host, expected)
+            self.assertTrue(result_host.isclose(expected))
 
             result_mult = self.test_session.get_server_status(sub, self.columns['system_time'],
                                                               stoptime=self.columns['system_time'] +

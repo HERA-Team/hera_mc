@@ -102,7 +102,7 @@ class MCSession(Session):
 
         self.add(Observation.create(starttime, stoptime, obsid))
 
-    def get_obs(self, obsid=None, starttime=None, stoptime=None):
+    def get_obs(self, obsid=None):
         """
         Get observation(s) from the M&C database.
 
@@ -110,16 +110,8 @@ class MCSession(Session):
         ------------
         obsid: long integer
             observation identification number, generally the gps second
-            corresponding to the observation start time. If not set, starttime
-            and stoptime will be used. If starttime is also none, all obsids will be returned.
-
-        starttime: astropy time object
-            time to look for records after
-
-        stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
-
+            corresponding to the observation start time. If not obsid is None,
+            all obsids will be returned.
 
         Returns:
         --------
@@ -127,15 +119,34 @@ class MCSession(Session):
         """
         from .observations import Observation
 
-        if obsid is not None:
-            obs_list = self.query(Observation).filter(
-                Observation.obsid == obsid).all()
+        if obsid is None:
+            obs_list = self.query(Observation).all()
         else:
-            if starttime is not None:
-                obs_list = self._time_filter(Observation, 'obsid', starttime,
-                                             stoptime=stoptime)
-            else:
-                obs_list = self.query(Observation).all()
+            obs_list = self.query(Observation).filter(Observation.obsid == obsid).all()
+
+        return obs_list
+
+    def get_obs_by_time(self, starttime, stoptime=None):
+        """
+        Get observation(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        Returns:
+        --------
+        list of Observation objects
+        """
+        from .observations import Observation
+
+        obs_list = self._time_filter(Observation, 'obsid', starttime,
+                                     stoptime=stoptime)
 
         return obs_list
 
