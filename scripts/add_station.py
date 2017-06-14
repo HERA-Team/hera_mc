@@ -112,7 +112,7 @@ if __name__ == '__main__':
     parser.add_argument('--station_type_name', help="Station category name [herahex]", default='herahex')
     parser.add_argument('--datum', help="Datum of UTM [WGS84]", default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]", default='34J')
-    parser.add_argument('-v', '--verbosity', help="Set verbosity. [h].", choices=['l', 'm', 'h'], default="h")
+    cm_utils.add_verbosity_args(parser)
     parser.add_argument('--add_new_geo', help="Flag to allow update to add a new record.  [True]", action='store_false')
     parser.add_argument('--add_new_part', help="Flag to allow update to add a new record.  [True]", action='store_false')
     file_group = parser.add_mutually_exclusive_group()

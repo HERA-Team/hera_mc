@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--since_date', help="Only show antennas (set by background) installed since date/time [False]", action='store_true')
 
     # parameter state/value arguments
-    parser.add_argument('-v', '--verbosity', help="Set verbosity. [m].", choices=['L', 'l', 'm', 'M', 'h', 'H'], default='m')
+    cm_utils.add_verbosity_args(parser)
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]", choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]", choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
     cm_utils.add_date_time_args(parser)

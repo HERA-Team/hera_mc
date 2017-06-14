@@ -9,14 +9,14 @@ It is for debugging purposes.
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, cm_handling, cm_hookup, mc
+from hera_mc import part_connect, cm_handling, cm_hookup, cm_utils, mc
 import os.path
 import sys
 
 parser = mc.get_mc_argument_parser()
 parser.add_argument('-p','--hpn', help="Get part information. [None]", default=None)
 parser.add_argument('-t','--hptype', help="List the hera part types. [False]", action='store_true')
-parser.add_argument('-v','--verbosity',help="Set verbosity {l, m, h}. [h].", default="h")
+cm_utils.add_verbosity_args(parser)
 parser.add_argument('-c','--connection', help="Show all connections directly to a part. [None]", default=None)
 parser.add_argument('-u','--update', 
                     help="Update part number records.  Format hpn0:[rev0]:col0:val0, [hpn1:[rev1]]col1:val1...  [None]", default=None)
