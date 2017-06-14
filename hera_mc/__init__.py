@@ -22,13 +22,15 @@ def MCDeclarativeBase_repr(self):
     rep_str += ')>'
     return rep_str
 
-# define some default tolerances for various units
-DEFAULT_DAY_TOL = {'atol': 1e-3 / (3600. * 24.), 'rtol': 0} # ms
-DEFAULT_HOUR_TOL = {'atol': 1e-3 / (3600), 'rtol': 0} # ms
-DEFAULT_MIN_TOL = {'atol': 1e-3 / (3600), 'rtol': 0} # ms
-DEFAULT_GPS_TOL = {'atol': 1e-3, 'rtol': 0} # ms
 
-def MCDeclarativeBase_eq(self, other):
+# define some default tolerances for various units
+DEFAULT_DAY_TOL = {'atol': 1e-3 / (3600. * 24.), 'rtol': 0}  # ms
+DEFAULT_HOUR_TOL = {'atol': 1e-3 / (3600), 'rtol': 0}  # ms
+DEFAULT_MIN_TOL = {'atol': 1e-3 / (3600), 'rtol': 0}  # ms
+DEFAULT_GPS_TOL = {'atol': 1e-3, 'rtol': 0}  # ms
+
+
+def MCDeclarativeBase_close(self, other):
     if not isinstance(other, self.__class__):
         return False
 
@@ -60,8 +62,7 @@ def MCDeclarativeBase_eq(self, other):
 
 
 MCDeclarativeBase.__repr__ = MethodType(MCDeclarativeBase_repr, None, MCDeclarativeBase)
-MCDeclarativeBase.__eq__ = MethodType(MCDeclarativeBase_eq, None, MCDeclarativeBase)
-
+MCDeclarativeBase.isclose = MethodType(MCDeclarativeBase_close, None, MCDeclarativeBase)
 
 import logging
 logger = logging.getLogger(__name__)

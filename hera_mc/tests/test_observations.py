@@ -61,19 +61,19 @@ class test_hera_mc(unittest.TestCase):
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertEqual(result.length, 120.0)
-        self.assertEqual(result, expected)
+        self.assertTrue(result.isclose(expected))
 
         t3 = t1 + TimeDelta(10 * 60., format='sec')
         t4 = t2 + TimeDelta(10 * 60., format='sec')
         self.test_session.add_obs(t3, t4, utils.calculate_obsid(t3))
 
-        result_mult = self.test_session.get_obs(starttime=t1, stoptime=t4)
+        result_mult = self.test_session.get_obs_by_time(t1, stoptime=t4)
         self.assertEqual(len(result_mult), 2)
 
         result_orig = self.test_session.get_obs(obsid=obsid)
         self.assertEqual(len(result_orig), 1)
         result_orig = result_orig[0]
-        self.assertEqual(result_orig, expected)
+        self.assertTrue(result_orig.isclose(expected))
 
     def test_error_obs(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')

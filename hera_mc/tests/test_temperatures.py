@@ -52,7 +52,9 @@ class test_temperatures(unittest.TestCase):
 
         expected = [temperatures.PaperTemperatures(gps_time=t1.gps, jd_time=t1.jd, **temp_dict)]
         result = self.test_session.get_paper_temps(t1 - TimeDelta(3.0, format='sec'))
-        self.assertEqual(result, expected)
+        self.assertEqual(len(result), len(expected))
+        for i in range(0, len(result)):
+            self.assertTrue(result[i].isclose(expected[i]))
 
         result = self.test_session.get_paper_temps(t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
@@ -63,7 +65,9 @@ class test_temperatures(unittest.TestCase):
                                                     **temp2_dict)]
         result = self.test_session.get_paper_temps(t1 - TimeDelta(3.0, format='sec'),
                                                    stoptime=t2 + TimeDelta(1.0, format='sec'))
-        self.assertEqual(result, expected2)
+        self.assertEqual(len(result), len(expected2))
+        for i in range(0, len(result)):
+            self.assertTrue(result[i].isclose(expected2[i]))
 
 
 if __name__ == '__main__':
