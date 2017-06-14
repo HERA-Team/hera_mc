@@ -7,9 +7,10 @@
 """
 from __future__ import absolute_import, division, print_function
 
+from math import floor
 import numpy as np
 from astropy.time import Time
-from sqlalchemy import Column, Float
+from sqlalchemy import Column, Float, BigInteger
 
 from . import MCDeclarativeBase
 
@@ -18,8 +19,7 @@ class PaperTemperatures(MCDeclarativeBase):
     """
     Definition of paper_temperatures table.
 
-    gps_time: GPS second of observation (double)
-    jd_time: JD time of observation (to 5 decimals, <0.05 sec accuracy) (double)
+    time: time of this measurement in floor(gps seconds) (BigInteger)
     balun_east: temperature at a balun east of the hut (float)
     cable_east: temperature of the underside of a feed cable east of the hut (float)
     balun_west: temperature at a balun west of the hut (float)
@@ -34,8 +34,7 @@ class PaperTemperatures(MCDeclarativeBase):
     """
     __tablename__ = 'paper_temperatures'
 
-    gps_time = Column(Float, nullable=False, primary_key=True)
-    jd_time = Column(Float, nullable=False)
+    time = Column(BigInteger, nullable=False, primary_key=True)
     balun_east = Column(Float)
     cable_east = Column(Float)
     balun_west = Column(Float)
@@ -58,15 +57,15 @@ class PaperTemperatures(MCDeclarativeBase):
     rcvr_8b = Column(Float)
 
     @classmethod
-    def new_from_text_row(cls, read_time, temp_list):
+    def new_from_text_row(cls, time, temp_list):
         """
         Create a new PaperTemperatures item from items parsed from the text file
         that's written out on tmon.
 
         Parameters:
         ------------
-        read_time: float or astropy time object
-            if float: jd time of temperature read
+        time: astropy time object
+            time of measurement
 
         temp_list: List of temperatures as written to text file (see below,
             contains extra columns we don't save
@@ -102,12 +101,9 @@ class PaperTemperatures(MCDeclarativeBase):
         Col 27:  junk
         Col 28:  junk
         """
-        if isinstance(read_time, Time):
-            t_read = read_time.utc
-        elif isinstance(read_time, float):
-            t_read = Time(read_time, format='jd', scale='utc')
-        else:
-            raise ValueError('unrecognized "read_time" argument: %r' % (read_time,))
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        time = floor(time.gps)
 
         temp_colnames = ['balun_east', 'cable_east',
                          'balun_west', 'cable_west',
@@ -119,4 +115,4 @@ class PaperTemperatures(MCDeclarativeBase):
                                   19, 20, 22, 23, 24, 25]) - 1).tolist()
         temp_values = [temp_list[i] for i in temp_indices]
         temp_dict = dict(zip(temp_colnames, temp_values))
-        return cls(gps_time=t_read.gps, jd_time=t_read.jd, **temp_dict)
+        return cls(time=time, **temp_dict)

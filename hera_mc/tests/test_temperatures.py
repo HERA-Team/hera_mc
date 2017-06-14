@@ -9,6 +9,7 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 
+from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
 from hera_mc import mc, temperatures
@@ -50,7 +51,7 @@ class test_temperatures(unittest.TestCase):
         self.test_session.add_paper_temps(t1, temp_list)
         self.test_session.add_paper_temps(t2, temp2_list)
 
-        expected = [temperatures.PaperTemperatures(gps_time=t1.gps, jd_time=t1.jd, **temp_dict)]
+        expected = [temperatures.PaperTemperatures(time=int(floor(t1.gps)), **temp_dict)]
         result = self.test_session.get_paper_temps(t1 - TimeDelta(3.0, format='sec'))
         self.assertEqual(len(result), len(expected))
         for i in range(0, len(result)):
@@ -59,9 +60,9 @@ class test_temperatures(unittest.TestCase):
         result = self.test_session.get_paper_temps(t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
-        expected2 = [temperatures.PaperTemperatures(gps_time=t1.gps, jd_time=t1.jd,
+        expected2 = [temperatures.PaperTemperatures(time=int(floor(t1.gps)),
                                                     **temp_dict),
-                     temperatures.PaperTemperatures(gps_time=t2.gps, jd_time=t2.jd,
+                     temperatures.PaperTemperatures(time=int(floor(t2.gps)),
                                                     **temp2_dict)]
         result = self.test_session.get_paper_temps(t1 - TimeDelta(3.0, format='sec'),
                                                    stoptime=t2 + TimeDelta(1.0, format='sec'))
