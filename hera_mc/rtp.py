@@ -9,9 +9,10 @@ The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
 """
 
+from math import floor
 from astropy.time import Time
 from sqlalchemy import Column, ForeignKey, Integer, BigInteger, String, Text, Float, Enum
-from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_MIN_TOL, DEFAULT_HOUR_TOL
+from . import MCDeclarativeBase, DEFAULT_MIN_TOL, DEFAULT_HOUR_TOL
 from .server_status import ServerStatus
 
 rtp_process_enum = ['queued', 'started', 'finished', 'error']
@@ -25,21 +26,20 @@ class RTPStatus(MCDeclarativeBase):
     """
     Definition of rtp_status table.
 
-    time: time of this status in gps seconds (double). Primary_key
+    time: time of this status in floor(gps seconds) (BigInteger). Primary_key
     status: status (options TBD) (String)
     event_min_elapsed: minutes elapsed since last event (Float)
     num_processes: number of processes running (Integer)
     restart_hours_elapsed: hours elapsed since last restart (Float)
     """
     __tablename__ = 'rtp_status'
-    time = Column(Float, primary_key=True)
+    time = Column(BigInteger, primary_key=True)
     status = Column(String(64), nullable=False)  # should this be an enum? or text?
     event_min_elapsed = Column(Float, nullable=False)
     num_processes = Column(Integer, nullable=False)
     restart_hours_elapsed = Column(Float, nullable=False)
 
-    tols = {'time': DEFAULT_GPS_TOL,
-            'event_min_elapsed': DEFAULT_MIN_TOL,
+    tols = {'event_min_elapsed': DEFAULT_MIN_TOL,
             'restart_hours_elapsed': DEFAULT_HOUR_TOL}
 
     @classmethod
@@ -63,7 +63,7 @@ class RTPStatus(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = time.gps
+        time = floor(time.gps)
 
         return cls(time=time, status=status, event_min_elapsed=event_min_elapsed,
                    num_processes=num_processes, restart_hours_elapsed=restart_hours_elapsed)
@@ -73,16 +73,14 @@ class RTPProcessEvent(MCDeclarativeBase):
     """
     Definition of rtp_process_event table.
 
-    time: time of this status in gps seconds (double). Part of primary_key.
-    obsid: observation obsid (Long).  Part of primary_key. Foreign key into Observation table
+    time: time of this status in floor(gps seconds) (BigInteger). Part of primary_key.
+    obsid: observation obsid (BigInteger).  Part of primary_key. Foreign key into Observation table
     event: one of ["queued", "started", "finished", "error"] (rtp_process_enum)
     """
     __tablename__ = 'rtp_process_event'
-    time = Column(Float, primary_key=True)
+    time = Column(BigInteger, primary_key=True)
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
     event = Column(Enum(*rtp_process_enum, name='rtp_process_enum'), nullable=False)
-
-    tols = {'time': DEFAULT_GPS_TOL}
 
     @classmethod
     def create(cls, time, obsid, event):
@@ -100,7 +98,7 @@ class RTPProcessEvent(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = time.gps
+        time = floor(time.gps)
 
         return cls(time=time, obsid=obsid, event=event)
 
@@ -109,20 +107,18 @@ class RTPProcessRecord(MCDeclarativeBase):
     """
     Definition of rtp_process_record table.
 
-    time: time of this status in gps seconds (double). Part of primary_key
-    obsid: observation obsid (Long). Part of primary_key. Foreign key into Observation table
+    time: time of this status in floor(gps seconds) (BigInteger). Part of primary_key
+    obsid: observation obsid (BigInteger). Part of primary_key. Foreign key into Observation table
     pipeline_list: concatentated list of RTP tasks (String)
     git_version: RTP git version (String)
     git_hash: RTP git hash (String)
     """
     __tablename__ = 'rtp_process_record'
-    time = Column(Float, primary_key=True)
+    time = Column(BigInteger, primary_key=True)
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
     pipeline_list = Column(Text, nullable=False)
     git_version = Column(String(32), nullable=False)
     git_hash = Column(String(64), nullable=False)
-
-    tols = {'time': DEFAULT_GPS_TOL}
 
     @classmethod
     def create(cls, time, obsid, pipeline_list, git_version, git_hash):
@@ -144,7 +140,7 @@ class RTPProcessRecord(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = time.gps
+        time = floor(time.gps)
 
         return cls(time=time, obsid=obsid, pipeline_list=pipeline_list,
                    git_version=git_version, git_hash=git_hash)

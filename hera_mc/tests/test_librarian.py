@@ -6,6 +6,7 @@
 
 """
 import unittest
+from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
 
@@ -65,10 +66,13 @@ class test_hera_mc(unittest.TestCase):
         self.test_session.add_lib_status(*self.status_values)
 
         exp_columns = self.status_columns.copy()
-        exp_columns['time'] = exp_columns['time'].gps
+        exp_columns['time'] = int(floor(exp_columns['time'].gps))
         expected = LibStatus(**exp_columns)
 
-        result = self.test_session.get_lib_status(self.status_columns['time'])[0]
+        result = self.test_session.get_lib_status(self.status_columns['time'] -
+                                                  TimeDelta(2, format='sec'))
+        self.assertEqual(len(result), 1)
+        result = result[0]
 
         self.assertTrue(result.isclose(expected))
 
@@ -81,12 +85,16 @@ class test_hera_mc(unittest.TestCase):
                                          self.status_columns['git_version'],
                                          self.status_columns['git_hash'])
 
-        result_mult = self.test_session.get_lib_status(self.status_columns['time'],
+        result_mult = self.test_session.get_lib_status(self.status_columns['time'] -
+                                                       TimeDelta(2, format='sec'),
                                                        stoptime=new_status_time)
         self.assertEqual(len(result_mult), 2)
 
-        result2 = self.test_session.get_lib_status(new_status_time)[0]
-        self.assertFalse(result2 == expected)
+        result2 = self.test_session.get_lib_status(new_status_time -
+                                                   TimeDelta(2, format='sec'))
+        self.assertEqual(len(result2), 1)
+        result2 = result2[0]
+        self.assertFalse(result2.isclose(expected))
 
     def test_errors_lib_status(self):
         self.assertRaises(ValueError, self.test_session.add_lib_status, 'foo',
@@ -99,7 +107,7 @@ class test_hera_mc(unittest.TestCase):
 
     def test_add_raid_status(self):
         exp_columns = self.raid_status_columns.copy()
-        exp_columns['time'] = exp_columns['time'].gps
+        exp_columns['time'] = int(floor(exp_columns['time'].gps))
         expected = LibRAIDStatus(**exp_columns)
 
         self.test_session.add_lib_raid_status(*self.raid_status_values)
@@ -113,7 +121,8 @@ class test_hera_mc(unittest.TestCase):
 
         self.test_session.add_lib_raid_status(self.raid_status_values[0], 'raid_2',
                                               *self.raid_status_values[2:])
-        result_host = self.test_session.get_lib_raid_status(self.raid_status_columns['time'],
+        result_host = self.test_session.get_lib_raid_status(self.raid_status_columns['time'] -
+                                                            TimeDelta(2, format='sec'),
                                                             hostname=self.raid_status_columns['hostname'],
                                                             stoptime=self.raid_status_columns['time'] +
                                                             TimeDelta(2 * 60, format='sec'))
@@ -121,16 +130,20 @@ class test_hera_mc(unittest.TestCase):
         result_host = result_host[0]
         self.assertTrue(result_host.isclose(expected))
 
-        result_mult = self.test_session.get_lib_raid_status(self.raid_status_columns['time'],
+        result_mult = self.test_session.get_lib_raid_status(self.raid_status_columns['time'] -
+                                                            TimeDelta(2, format='sec'),
                                                             stoptime=self.raid_status_columns['time'] +
                                                             TimeDelta(2 * 60, format='sec'))
 
         self.assertEqual(len(result_mult), 2)
 
-        result2 = self.test_session.get_lib_raid_status(self.raid_status_columns['time'],
-                                                        hostname='raid_2')[0]
+        result2 = self.test_session.get_lib_raid_status(self.raid_status_columns['time'] -
+                                                        TimeDelta(2, format='sec'),
+                                                        hostname='raid_2')
+        self.assertEqual(len(result2), 1)
+        result2 = result2[0]
 
-        self.assertFalse(result2 == expected)
+        self.assertFalse(result2.isclose(expected))
 
     def test_errors_lib_raid_status(self):
         self.assertRaises(ValueError, self.test_session.add_lib_raid_status,
@@ -143,7 +156,7 @@ class test_hera_mc(unittest.TestCase):
 
     def test_add_raid_error(self):
         exp_columns = self.raid_error_columns.copy()
-        exp_columns['time'] = exp_columns['time'].gps
+        exp_columns['time'] = int(floor(exp_columns['time'].gps))
         expected = LibRAIDErrors(**exp_columns)
 
         self.test_session.add_lib_raid_error(*self.raid_error_values)
@@ -157,7 +170,8 @@ class test_hera_mc(unittest.TestCase):
 
         self.test_session.add_lib_raid_error(self.raid_error_values[0], 'raid_2',
                                              *self.raid_error_values[2:])
-        result_host = self.test_session.get_lib_raid_error(self.raid_error_columns['time'],
+        result_host = self.test_session.get_lib_raid_error(self.raid_error_columns['time'] -
+                                                           TimeDelta(2, format='sec'),
                                                            hostname=self.raid_error_columns['hostname'],
                                                            stoptime=self.raid_error_columns['time'] +
                                                            TimeDelta(2 * 60, format='sec'))
@@ -165,16 +179,18 @@ class test_hera_mc(unittest.TestCase):
         result_host = result_host[0]
         self.assertTrue(result_host.isclose(expected))
 
-        result_mult = self.test_session.get_lib_raid_error(self.raid_error_columns['time'],
+        result_mult = self.test_session.get_lib_raid_error(self.raid_error_columns['time'] -
+                                                           TimeDelta(2, format='sec'),
                                                            stoptime=self.raid_error_columns['time'] +
                                                            TimeDelta(2 * 60, format='sec'))
 
         self.assertEqual(len(result_mult), 2)
 
-        result2 = self.test_session.get_lib_raid_error(self.raid_error_columns['time'],
+        result2 = self.test_session.get_lib_raid_error(self.raid_error_columns['time'] -
+                                                       TimeDelta(2, format='sec'),
                                                        hostname='raid_2')[0]
 
-        self.assertFalse(result2 == expected)
+        self.assertFalse(result2.isclose(expected))
 
     def test_errors_lib_raid_error(self):
         self.assertRaises(ValueError, self.test_session.add_lib_raid_error,
@@ -187,7 +203,7 @@ class test_hera_mc(unittest.TestCase):
 
     def test_add_remote_status(self):
         exp_columns = self.remote_status_columns.copy()
-        exp_columns['time'] = exp_columns['time'].gps
+        exp_columns['time'] = int(floor(exp_columns['time'].gps))
         expected = LibRemoteStatus(**exp_columns)
 
         self.test_session.add_lib_remote_status(*self.remote_status_values)
@@ -202,7 +218,7 @@ class test_hera_mc(unittest.TestCase):
         self.test_session.add_lib_remote_status(self.remote_status_values[0], 'penn',
                                                 *self.remote_status_values[2:])
         result_remote = self.test_session.get_lib_remote_status(
-            self.remote_status_columns['time'],
+            self.remote_status_columns['time'] - TimeDelta(2, format='sec'),
             remote_name=self.remote_status_columns['remote_name'],
             stoptime=self.remote_status_columns['time'] + TimeDelta(2 * 60, format='sec'))
 
@@ -211,15 +227,18 @@ class test_hera_mc(unittest.TestCase):
         self.assertTrue(result_remote.isclose(expected))
 
         result_mult = self.test_session.get_lib_remote_status(
-            self.remote_status_columns['time'],
+            self.remote_status_columns['time'] - TimeDelta(2, format='sec'),
             stoptime=self.remote_status_columns['time'] + TimeDelta(2 * 60, format='sec'))
 
         self.assertEqual(len(result_mult), 2)
 
-        result2 = self.test_session.get_lib_remote_status(self.remote_status_columns['time'],
-                                                          remote_name='penn')[0]
+        result2 = self.test_session.get_lib_remote_status(self.remote_status_columns['time'] -
+                                                          TimeDelta(2, format='sec'),
+                                                          remote_name='penn')
+        self.assertEqual(len(result2), 1)
+        result2 = result2[0]
 
-        self.assertFalse(result2 == expected)
+        self.assertFalse(result2.isclose(expected))
 
     def test_errors_lib_remote_status(self):
         self.assertRaises(ValueError, self.test_session.add_lib_remote_status,
@@ -239,19 +258,23 @@ class test_hera_mc(unittest.TestCase):
         self.test_session.add_lib_file(*self.file_values)
 
         exp_columns = self.file_columns.copy()
-        exp_columns['time'] = exp_columns['time'].gps
+        exp_columns['time'] = int(floor(exp_columns['time'].gps))
         expected = LibFiles(**exp_columns)
 
         result_file = self.test_session.get_lib_files(filename=self.file_columns['filename'])[0]
         self.assertTrue(result_file.isclose(expected))
 
-        result = self.test_session.get_lib_files(starttime=self.file_columns['time'])
+        result = self.test_session.get_lib_files(starttime=self.file_columns['time'] -
+                                                 TimeDelta(2, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result_obsid = self.test_session.get_lib_files(starttime=self.file_columns['time'],
-                                                       obsid=self.file_columns['obsid'])[0]
+        result_obsid = self.test_session.get_lib_files(starttime=self.file_columns['time'] -
+                                                       TimeDelta(2, format='sec'),
+                                                       obsid=self.file_columns['obsid'])
+        self.assertEqual(len(result_obsid), 1)
+        result_obsid = result_obsid[0]
         self.assertTrue(result_obsid.isclose(expected))
 
         new_file_time = self.file_columns['time'] + TimeDelta(3 * 60, format='sec')

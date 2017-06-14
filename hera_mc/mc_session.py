@@ -669,7 +669,7 @@ class MCSession(Session):
         """
         from .temperatures import PaperTemperatures
 
-        ptemp_list = self._time_filter(PaperTemperatures, 'gps_time', starttime,
+        ptemp_list = self._time_filter(PaperTemperatures, 'time', starttime,
                                        stoptime=stoptime)
 
         return ptemp_list
