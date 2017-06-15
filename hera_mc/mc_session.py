@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import func
 from astropy.time import Time
 """
 Primary session object which handles most DB queries.
@@ -25,10 +26,24 @@ class MCSession(Session):
         self.close()
         return False  # propagate exception if any occurred
 
+    def get_current_db_time(self):
+        '''
+        A method to get the current time according to the database
+
+        Returns:
+        --------
+        current database time as an astropy time object
+        '''
+        db_timestamp = self.execute(func.current_timestamp()).scalar()
+
+        # convert to astropy time object
+        db_time = Time(db_timestamp)
+        return db_time
+
     def _time_filter(self, table_object, time_column, starttime, stoptime=None,
                      filter_column=None, filter_value=None):
         '''
-        A helper function to fiter entries by time. Used by most get methods
+        A helper method to fiter entries by time. Used by most get methods
         on this object.
 
         Parameters:
@@ -190,7 +205,9 @@ class MCSession(Session):
         else:
             raise ValueError('subsystem must be one of: ["rtp", "lib"]')
 
-        self.add(ServerStatus.create(hostname, ip_address, system_time, num_cores,
+        db_time = self.get_current_db_time()
+
+        self.add(ServerStatus.create(db_time, hostname, ip_address, system_time, num_cores,
                                      cpu_load_pct, uptime_days, memory_used_pct,
                                      memory_size_gb, disk_space_pct, disk_size_gb,
                                      network_bandwidth_mbs=network_bandwidth_mbs))

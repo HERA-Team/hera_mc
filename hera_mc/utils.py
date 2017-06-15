@@ -7,6 +7,7 @@ Common utility fuctions
 """
 from astropy.time import Time
 from math import floor
+from .mc_session import MCSession
 
 
 def calculate_obsid(starttime):
