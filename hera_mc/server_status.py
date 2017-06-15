@@ -8,9 +8,9 @@ Common server_status table
 The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
 """
-
+from math import floor
 from astropy.time import Time
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, BigInteger
 from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL
 
 
@@ -19,9 +19,9 @@ class ServerStatus(MCDeclarativeBase):
     Definition of server_status table.
 
     hostname: name of server (String). Part of primary_key
-    mc_time: time report received by M&C in gps seconds (Float). Part of primary_key
+    mc_time: time report received by M&C in floor(gps seconds) (BigInteger). Part of primary_key
     ip_address: IP address of server (String)
-    system_time: time report sent by server in gps seconds (Float)
+    mc_system_timediff: difference between M&C time and time report sent by server in seconds (Float)
     num_cores: number of cores on server (Integer)
     cpu_load_pct: CPU load percent = total load / num_cores, 5 min average (Float)
     uptime_days: server uptime in decimal days (Float)
@@ -33,9 +33,9 @@ class ServerStatus(MCDeclarativeBase):
     """
     __abstract__ = True
     hostname = Column(String(32), primary_key=True)
-    mc_time = Column(Float(decimal_return_scale=3), primary_key=True)
+    mc_time = Column(BigInteger, primary_key=True)
     ip_address = Column(String(32), nullable=False)
-    system_time = Column(Float(decimal_return_scale=3), nullable=False)
+    mc_system_timediff = Column(Float, nullable=False)
     num_cores = Column(Integer, nullable=False)
     cpu_load_pct = Column(Float, nullable=False)
     uptime_days = Column(Float, nullable=False)
@@ -45,11 +45,11 @@ class ServerStatus(MCDeclarativeBase):
     disk_size_gb = Column(Float, nullable=False)
     network_bandwidth_mbs = Column(Float)
 
-    tols = {'mc_time': DEFAULT_GPS_TOL, 'system_time': DEFAULT_GPS_TOL,
+    tols = {'mc_system_timediff': DEFAULT_GPS_TOL,
             'uptime_days': DEFAULT_DAY_TOL}
 
     @classmethod
-    def create(cls, hostname, ip_address, system_time, num_cores,
+    def create(cls, db_time, hostname, ip_address, system_time, num_cores,
                cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
                disk_space_pct, disk_size_gb, network_bandwidth_mbs=None):
         """
@@ -57,11 +57,14 @@ class ServerStatus(MCDeclarativeBase):
 
         Parameters:
         ------------
+        db_time: astropy time object
+            astropy time object based on a timestamp from the database.
+            Usually generated from MCSession.get_current_db_time()
         hostname: string
             name of server
         ip_address: string
             IP address of server
-        system_time: datetime
+        system_time: astropy time object
             time report sent by server
         num_cores: integer
             number of cores on server
@@ -80,14 +83,16 @@ class ServerStatus(MCDeclarativeBase):
         network_bandwidth_mbs: float
             Network bandwidth in MB/s, 5 min average. Can be null if not applicable
         """
-        mc_time = Time.now().gps
+        if not isinstance(db_time, Time):
+            raise ValueError('db_time must be an astropy Time object')
+        mc_time = floor(db_time.gps)
 
         if not isinstance(system_time, Time):
             raise ValueError('system_time must be an astropy Time object')
-        system_time = system_time.utc.gps
+        mc_system_timediff = db_time.gps - system_time.gps
 
         return cls(hostname=hostname, mc_time=mc_time, ip_address=ip_address,
-                   system_time=system_time, num_cores=num_cores,
+                   mc_system_timediff=mc_system_timediff, num_cores=num_cores,
                    cpu_load_pct=cpu_load_pct, uptime_days=uptime_days,
                    memory_used_pct=memory_used_pct, memory_size_gb=memory_size_gb,
                    disk_space_pct=disk_space_pct, disk_size_gb=disk_size_gb,
