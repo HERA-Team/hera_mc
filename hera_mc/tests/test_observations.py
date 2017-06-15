@@ -81,6 +81,7 @@ class test_hera_mc(unittest.TestCase):
         self.assertRaises(ValueError, self.test_session.add_obs, 'foo', t2, utils.calculate_obsid(t1))
         self.assertRaises(ValueError, self.test_session.add_obs, t1, 'foo', utils.calculate_obsid(t1))
         self.assertRaises(ValueError, self.test_session.add_obs, t1, t2, 'foo')
+        self.assertRaises(ValueError, utils.calculate_obsid, 'foo')
         self.assertRaises(ValueError, self.test_session.add_obs, t1, t2, utils.calculate_obsid(t1) + 2)
 
 
