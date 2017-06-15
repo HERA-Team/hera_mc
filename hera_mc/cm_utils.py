@@ -39,8 +39,8 @@ def _log(msg, **kwargs):
             fp.write(str(key) + ':  ' + str(value) + '\n\n')
     fp.close()
 
-
 def _get_datetime(_date, _time=0):
+    add_time = 0.
     if _date == '<' or _time == '<':
         return_date = Time(PAST_DATE,scale='utc')
     elif _date == '>' or _time == '>':
@@ -54,23 +54,19 @@ def _get_datetime(_date, _time=0):
         try:
             return_date = Time(_date,scale='utc')
         except ValueError:
-            return_date = ValueError
+            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
+        if ':' in str(_time):
+            data = _time.split(':')
+            add_time = float(data[0])*3600.0 + float(data[1])*60.0
+            if len(data) == 3:
+                add_time+=float(data[2])
         else:
-            if ':' in str(_time):
-                data = _time.split(':')
-                _time = float(data[0])*3600.0 + float(data[1])*60.0
-                if len(data) == 3:
-                    _time+=float(data[2])
-            else:
-                try:
-                    _time = float(_time)*3600.0
-                except ValueError:
-                    return_date = ValueError
-    if return_date == ValueError:
-        print('Invalid format:  date should be YYYY/M/D or YYYY-M-D and time H[:M[:S]] (HMS can be float or int):   ',_date,_time)
-        raise ValueError
-    elif return_date is not None:
-        return_date += TimeDelta(_time,format='sec')
+            try:
+                add_time = float(_time)*3600.0
+            except ValueError:
+                raise ValueError('Invalid format:  time should be H[:M[:S]] (HMS can be float or int)')
+    if return_date is not None:
+        return_date += TimeDelta(add_time,format='sec')
     return return_date
 
 

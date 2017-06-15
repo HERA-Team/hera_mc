@@ -7,9 +7,8 @@
 
 """
 from __future__ import absolute_import, division, print_function
-import datetime
 import sys
-from hera_mc import mc, geo_handling
+from hera_mc import mc, geo_handling, cm_utils
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
@@ -24,8 +23,8 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [m].", choices=['L', 'l', 'm', 'M', 'h', 'H'], default='m')
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]", choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]", choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
-    parser.add_argument('--date', help="MM/DD/YY or now [now]", default='now')
-    parser.add_argument('--time', help="hh:mm or now [now]", default='now')
+    parser.add_argument('--date', help="YYYY/MM/DD or now [now]", default='now')
+    parser.add_argument('--time', help="hh[:mm[:ss]] or now [now]", default='now')
     parser.add_argument('--background', help="Station types used for graph with show/since_date ['HH,PH,S']", default='HH,PH,S')
     group_connected = parser.add_mutually_exclusive_group()
     group_connected.add_argument('--show-active', help="Flag to show only the active stations (default)", dest='active', action='store_true')
@@ -54,6 +53,7 @@ if __name__ == '__main__':
     args.xgraph = args.xgraph.upper()
     args.ygraph = args.ygraph.upper()
     args.verbosity = args.verbosity.lower()
+    query_date = cm_utils._get_datetime(args.date,args.time)
 
     # process args
     # ... setup some stuff
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         args.locate = args.show
     if args.since_date:
         args.graph = args.background
-        new_antennas = geo_handling.get_since_date(args)
+        new_antennas = geo_handling.get_since_date(args, query_date)
 
     # ... graph it if arg'd
     if args.graph:
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     if args.since_date:
         geo_handling.plot_stations(args, new_antennas, fignm, 'b', '*', '14', label_station=True)
     if args.locate:
-        located = geo_handling.locate_station(args, show_location=True)
+        located = geo_handling.locate_station(args, args.locate, show_location=True)
     if args.graph and args.locate and located:
         geo_handling.overplot(args, located, fignm)
 
