@@ -43,51 +43,40 @@ def get_location(location_name):
     parser.add_argument('--date', default='now')
     parser.add_argument('--time', default='now')
     args = parser.parse_args(local_argv)
-    located = locate_station(args, show_location=False)
+    located = locate_station(args, args.locate, show_location=False)
     return located
 
 
-def find_station_name(args, antenna):
+def find_station_name(args, antenna, query_date):
     """
     checks to see what station an antenna is at
 
-    Returns False or the active station_name (must be an active station)
+    Returns False or the active station_name (must be an active station for the query_date)
 
     Parameters:
     ------------
     args:  needed arguments to open database and set date/time
-    antenna_number:  antenna number as float or string. If needed, it prepends the 'A'
+    antenna_number:  antenna number as float (why?), int, or string. If needed, it prepends the 'A'
+    query_date:  is the astropy Time for active antenna
     """
 
-    if type(antenna) == float or antenna[0] != 'A':
+    if type(antenna) == float or type(antenna) == int or antenna[0] != 'A':
         antenna = 'A' + str(antenna).strip('0')
-    if antenna[1] == '0':
-        print("Error:  the antenna part number should not have leading 0's", antenna)
-        return False
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        connected_antenna = session.query(part_connect.Connections).filter(part_connect.Connections.downstream_part == antenna)
-        if connected_antenna.count() > 0:
-            antenna_connected = True
-        else:
+        connected_antenna = session.query(part_connect.Connections).filter( (part_connect.Connections.downstream_part == antenna) &
+                                                                            (query_date.gps >= part_connect.Connections.start_gpstime) &
+                                                                            (query_date.gps <= part_connect.Connections.stop_gpstime) )
+        if connected_antenna.count() == 0:
             antenna_connected = False
-        if antenna_connected:
-            counter = 0
-            current = cm_utils._get_datetime(args.date, args.time)
-            for connection in connected_antenna.all():
-                stop_date = cm_utils._get_stopdate(connection.stop_date)
-                if current > connection.start_date and current < stop_date:
-                    antenna_connected = connection.upstream_part
-                    counter += 1
-                else:
-                    antenna_connected = False
-            if counter > 1:
-                print("Error:  more than one active connection for", antenna)
-                antenna_connected = False
+        elif connected_antenna.count() == 1:
+            antenna_connected = connected_antenna.first().upstream_part
+        else:
+            raise ValueError('More than one active connection')
     return antenna_connected
 
 
-def locate_station(args, show_location=False):
+def locate_station(args, station_to_find, show_location=False):
     """Return the location of station_name or antenna_number as contained in args.locate.
        This accepts the fact that antennas are sort of stations, even though they are parts
 
@@ -99,10 +88,10 @@ def locate_station(args, show_location=False):
     found_location = None
     station_name = False
     try:
-        station = int(args.locate)
+        station = int(station_to_find)
         station_name = find_station_name(args, station)
     except ValueError:
-        station_name = args.locate.upper()
+        station_name = station_to_find.upper()
     found_it = False
     if station_name:
         db = mc.connect_to_mc_db(args)
@@ -139,7 +128,6 @@ def locate_station(args, show_location=False):
             print(args.locate, ' not found.')
     return found_location
 
-
 def get_all_locations(args):
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
@@ -168,8 +156,8 @@ def get_all_locations(args):
     return stations_new
 
 
-def get_since_date(args):
-    dt = cm_utils._get_datetime(args.since_date, '0')
+def get_since_date(args,query_date):
+    dt = query_date.gps
     db = mc.connect_to_mc_db(args)
     found_stations = []
     with db.sessionmaker() as session:

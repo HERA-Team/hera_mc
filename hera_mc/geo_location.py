@@ -12,8 +12,9 @@ import os
 import socket
 import sys
 import copy
+from astropy.time import Time
 
-from sqlalchemy import Column, Float, Integer, String, DateTime, ForeignKey, func
+from sqlalchemy import Column, Float, Integer, String, BigInteger, ForeignKey, func
 
 from . import MCDeclarativeBase, NotNull
 from hera_mc import mc, part_connect, cm_utils
@@ -69,8 +70,11 @@ class GeoLocation(MCDeclarativeBase):
     elevation = Column(Float)
     "Elevation in m"
 
-    created_date = NotNull(DateTime(timezone=True))
+    created_gpstime = NotNull(BigInteger)
     "The date when the station assigned by project."
+
+    def gps2Time(self):
+        return self.created_date = Time(self.created_gpstime,format='gps')
 
     def geo(self, **kwargs):
         for key, value in kwargs.items():
@@ -208,7 +212,7 @@ def is_in_connections(args, station_name, check_if_active=False):
     ------------
     args:  needed arguments to open database and set date/time
     station_name:  string name of station
-    check_if_active:  boolean flag to check if active
+    check_if_active:  either False to not check/care if active, or astropy Time to check
     """
 
     db = mc.connect_to_mc_db(args)
@@ -220,9 +224,9 @@ def is_in_connections(args, station_name, check_if_active=False):
             station_connected = False
         if station_connected and check_if_active:
             counter = 0
-            current = cm_utils._get_datetime(args.date, args.time)
             for connection in connected_station.all():
-                if cm_utils._is_active(current, connection.start_date, connection.stop_date):
+                connection.gps2Time()
+                if cm_utils._is_active(check_if_active, connection.start_date, connection.stop_date):
                     station_connected = connection.downstream_part+':'+connection.down_part_rev
                     counter += 1
                 else:

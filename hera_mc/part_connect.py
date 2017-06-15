@@ -11,8 +11,9 @@ from __future__ import absolute_import, division, print_function
 import os
 import socket
 from tabulate import tabulate
+import math
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, ForeignKey, ForeignKeyConstraint, Integer, String, func
+from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, func
 
 from . import MCDeclarativeBase, NotNull
 
@@ -43,14 +44,21 @@ class Parts(MCDeclarativeBase):
     manufacturer_number = Column(String(64))
     "A part number/serial number as specified by manufacturer"
 
-    start_date = Column(DateTime(timezone=True), nullable=False)
+    start_gpstime = Column(BigInteger, nullable=False)
     "The date when the part was installed (or otherwise assigned by project)."
 
-    stop_date = Column(DateTime(timezone=True))
+    stop_gpstime = Column(BigInteger)
     "The date when the part was removed (or otherwise de-assigned by project)."
 
     def __repr__(self):
         return '<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype}>'.format(self=self)
+
+    def gps2Time(self):
+        self.start_date = Time(self.start_gpstime,format='gps')
+        if self.stop_gpstime is None:
+            self.stop_date = None
+        else:
+            self.stop_date = Time(self.stop_gpstime,format='gps')
 
     def part(self, **kwargs):
         for key, value in kwargs.items():
@@ -69,6 +77,7 @@ def __get_part_revisions(args, hpn=None):
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
+            parts_rec.gps2Time()
             revisions[parts_rec.hpn_rev] = {}
             revisions[parts_rec.hpn_rev]['hpn'] = hpn  # Just carry this along
             revisions[parts_rec.hpn_rev]['started'] = parts_rec.start_date
@@ -200,7 +209,7 @@ class PartInfo(MCDeclarativeBase):
     hpn_rev = Column(String(32), nullable=False, primary_key=True)
     "HERA part revision number for each part; if sequencing same part number."
 
-    posting_date = NotNull(DateTime(timezone=True), primary_key=True)
+    posting_gpstime = NotNull(BigInteger, primary_key=True)
     "time that the data are posted"
 
     comment = NotNull(String(2048))
@@ -211,6 +220,9 @@ class PartInfo(MCDeclarativeBase):
 
     def __repr__(self):
         return '<heraPartNumber id = {self.hpn} comment = {self.comment}>'.format(self=self)
+
+    def gps2Time():
+        self.posting_date = Time(self.posting_gpstime,format='gps')
 
     def info(self, **kwargs):
         for key, value in kwargs.items():
@@ -247,16 +259,23 @@ class Connections(MCDeclarativeBase):
                       ForeignKeyConstraint(['downstream_part', 'down_part_rev'],
                                            ['parts_paper.hpn', 'parts_paper.hpn_rev']))
 
-    start_date = NotNull(DateTime(timezone=True), primary_key=True)
+    start_gpstime = NotNull(BigInteger, primary_key=True)
     "start_time is the time that the connection is set"
 
-    stop_date = Column(DateTime(timezone=True))
+    stop_gpstime = Column(BigInteger)
     "stop_time is the time that the connection is removed"
 
     def __repr__(self):
         up = '{self.upstream_part}:{self.up_part_rev}'.format(self=self)
         down = '{self.downstream_part}:{self.down_part_rev}'.format(self=self)
         return '<{}<{self.upstream_output_port}$|${self.downstream_input_port}>{}>'.format(up, down, self=self)
+
+    def gps2Time(self):
+        self.start_date = Time(self.start_gpstime,format='gps')
+        if self.stop_gpstime is None:
+            self.stop_date = None
+        else:
+            self.stop_date = Time(self.stop_gpstime,format='gps')
 
     def connection(self, **kwargs):
         for key, value in kwargs.items():
@@ -291,7 +310,7 @@ def update_connection(args, data):
             drev_to_change = data_dict[dkey][0][3]
             boup_to_change = data_dict[dkey][0][4]
             aodn_to_change = data_dict[dkey][0][5]
-            strt_to_change = data_dict[dkey][0][6]
+            strt_to_change = math.floor(data_dict[dkey][0][6].gps)
             if urev_to_change[:4] == 'LAST':
                 urev_to_change = get_last_revision_number(args, upcn_to_change)
             if drev_to_change[:4] == 'LAST':
@@ -302,7 +321,7 @@ def update_connection(args, data):
                                                          (Connections.down_part_rev == drev_to_change) &
                                                          (Connections.upstream_output_port == boup_to_change) &
                                                          (Connections.downstream_input_port == aodn_to_change) &
-                                                         (Connections.start_date == strt_to_change))
+                                                         (Connections.start_gpstime == strt_to_change))
             ncc = conn_rec.count()
             if ncc == 0:
                 if args.add_new_connection:
@@ -310,7 +329,7 @@ def update_connection(args, data):
                     connection.connection(up=upcn_to_change, up_rev=urev_to_change,
                                           down=dncn_to_change, down_rev=drev_to_change,
                                           upstream_output_port=boup_to_change, downstream_input_port=aodn_to_change,
-                                          start_date=strt_to_change)
+                                          start_gpstime=strt_to_change)
                 else:
                     print(
                         "Error:", dkey, "does not exist and add_new_connection is not enabled.")
