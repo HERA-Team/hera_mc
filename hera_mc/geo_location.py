@@ -74,7 +74,8 @@ class GeoLocation(MCDeclarativeBase):
     "The date when the station assigned by project."
 
     def gps2Time(self):
-        return self.created_date = Time(self.created_gpstime,format='gps')
+        self.created_date = Time(self.created_gpstime,format='gps')
+        return self.created_date
 
     def geo(self, **kwargs):
         for key, value in kwargs.items():

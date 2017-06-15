@@ -71,14 +71,14 @@ def _get_datetime(_date, _time=0):
 
 
 def _get_datekeystring(_datetime):
-    return "{:%Y%m%d-%H%M}".format(_datetime)
+    return "{:%Y%m%d-%H%M}".format(_datetime.datetime)
 
 
 def _get_stopdate(_stop_date):
     if isinstance(_stop_date,Time):
         return _stop_date
     else:
-        return Time('2025-12-31', scale=UT1)
+        return Time(FUTURE_DATE, scale=UT1)
 
 
 def _is_active(current, _start_date, _stop_date):

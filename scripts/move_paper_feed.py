@@ -189,7 +189,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--station_name', help="Name of station (HH# for hera)", default=None)
     parser.add_argument('-n', '--serial_number', help="Serial number of HERA station/antenna", default=-1)
     parser.add_argument('--date', help="UTC YYYY/M/D or now [now]", default='now')
-    parser.add_argument('--time', help="UTC hh:mm or now [now]", default='now')
+    parser.add_argument('--time', help="UTC hh[:mm[:ss]] or now [now]", default='now')
     parser.add_argument('--make-update', help="Set to actually change database (otherwise it just shows).",
                         dest='make_update', action='store_true')
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [h].", choices=['l', 'm', 'h'], default="m")

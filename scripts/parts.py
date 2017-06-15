@@ -31,7 +31,7 @@ if __name__ == '__main__':
     parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible - keep False to use actual correlator [False]", 
                         dest='levels_testing', default=False)
     parser.add_argument('--date', help="UTC YYYY/M/D or now [now]", default='now')
-    parser.add_argument('--time', help="UTC hh:mm or now [now]", default='now')
+    parser.add_argument('--time', help="UTC hh[:mm[:ss]] or now [now]", default='now')
 
     active_group = parser.add_mutually_exclusive_group()
     active_group.add_argument('--show-active', help="Flag to show only the active parts/connections (default)",dest='active', action='store_true')
