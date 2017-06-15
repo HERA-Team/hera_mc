@@ -74,6 +74,14 @@ class test_hera_mc(unittest.TestCase):
             self.assertEqual(len(result), 1)
             result = result[0]
 
+            # mc_system_timediff may not be identical. Check that they are close
+            # and set them equal so the rest of the object can be tested
+            mc_system_timediff_diff = (abs(result.mc_system_timediff -
+                                       expected.mc_system_timediff))
+            self.assertTrue(mc_system_timediff_diff < 0.01)
+            if mc_system_timediff_diff > 0.001:
+                expected.mc_system_timediff = result.mc_system_timediff
+
             self.assertTrue(result.isclose(expected))
 
             self.test_session.add_server_status(sub, 'test_host2', *self.column_values[2:11],
@@ -114,6 +122,15 @@ class test_hera_mc(unittest.TestCase):
             self.assertRaises(ValueError, self.test_session.get_server_status, sub, 'test_host')
             self.assertRaises(ValueError, self.test_session.get_server_status,
                               sub, self.columns['system_time'], stoptime='test_host')
+
+            if sub == 'rtp':
+                self.assertRaises(ValueError, RTPServerStatus.create, 'foo',
+                                  self.column_values[0], *self.column_values[2:11],
+                                  network_bandwidth_mbs=self.column_values[11])
+            elif sub == 'lib':
+                self.assertRaises(ValueError, LibServerStatus.create, 'foo',
+                                  self.column_values[0], *self.column_values[2:11],
+                                  network_bandwidth_mbs=self.column_values[11])
 
         self.assertRaises(ValueError, self.test_session.add_server_status, 'foo',
                           self.column_values[0], *self.column_values[2:11],
