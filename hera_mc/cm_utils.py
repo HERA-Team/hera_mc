@@ -18,8 +18,8 @@ FUTURE_DATE = '2025-12-31'
 
 def _log(msg, **kwargs):
     fp = open(mc.cm_log_file, 'a')
-    dt = datetime.datetime.now()
-    fp.write('-------------------' + str(dt) + '  ' + msg + '-------------------\n\n')
+    dt = Time.now()
+    fp.write('-------------------' + str(dt.datetime) + '  ' + msg + '-------------------\n\n')
     for key, value in kwargs.items():
         if key == 'args':
             fp.write('--args\n\t')
