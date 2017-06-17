@@ -68,13 +68,13 @@ if __name__ == '__main__':
 
     # ... graph it if arg'd
     if args.graph:
-        fignm = geo_handling.plot_station_types(args, label_station=args.label)
+        fignm = geo_handling.plot_station_types(args, args.label, query_date)
 
     # ... plot over that if desired
     if args.since_date:
-        geo_handling.plot_stations(args, new_antennas, fignm, 'b', '*', '14', label_station=True)
+        geo_handling.plot_stations(args, new_antennas, fignm, query_date, 'b', '*', '14', label_station=True)
     if args.locate:
-        located = geo_handling.locate_station(args, args.locate, show_location=True)
+        located = geo_handling.locate_station(args, args.locate, query_date,show_location=True)
     if args.graph and args.locate and located:
         geo_handling.overplot(args, located, fignm)
 
