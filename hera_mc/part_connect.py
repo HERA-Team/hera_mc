@@ -12,6 +12,7 @@ import os
 import socket
 from tabulate import tabulate
 import math
+from astropy.time import Time
 
 from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, func
 

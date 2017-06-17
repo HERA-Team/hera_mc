@@ -11,6 +11,7 @@ from __future__ import absolute_import, division, print_function
 import os
 import sys
 import copy
+from astropy.time import Time
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,9 +21,17 @@ from hera_mc import mc, part_connect, cm_utils, geo_location
 
 current_cofa = 'COFA_HSA7458_V000'
 
-
 def cofa(show_cofa=False):
-    """shortcut to just get cofa"""
+    """
+    Shortcut to just get the current cofa (currently hard-coded in geo_handling.py)
+
+    Returns location class of current COFA
+
+    Parameters:
+    -------------
+    show_cofa:  boolean to print out cofa info or just return class
+    """
+
     located = get_location(current_cofa)
     if show_cofa:
         print('Center of array: %s' % (located.station_name))
@@ -35,7 +44,15 @@ def cofa(show_cofa=False):
 
 
 def get_location(location_name):
-    """This provides a function to query a location and get a geo_location class back, with lon/lat added to the class"""
+    """This provides a function to query a location and get a geo_location class back, with lon/lat added to the class
+
+    Returns location class of called name
+
+    Parameters:
+    -------------
+    location_name:  string of location name
+    """
+
     local_argv = ['--locate', location_name]
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-l', '--locate', default=None)
@@ -55,9 +72,9 @@ def find_station_name(args, antenna, query_date):
 
     Parameters:
     ------------
-    args:  needed arguments to open database and set date/time
-    antenna_number:  antenna number as float (why?), int, or string. If needed, it prepends the 'A'
-    query_date:  is the astropy Time for active antenna
+    args:  needed arguments to open database
+    antenna:  antenna number as float (why?), int, or string. If needed, it prepends the 'A'
+    query_date:  is the astropy Time for contemporary antenna
     """
 
     if type(antenna) == float or type(antenna) == int or antenna[0] != 'A':
@@ -76,20 +93,23 @@ def find_station_name(args, antenna, query_date):
     return antenna_connected
 
 
-def locate_station(args, station_to_find, show_location=False):
-    """Return the location of station_name or antenna_number as contained in args.locate.
-       This accepts the fact that antennas are sort of stations, even though they are parts
+def locate_station(args, station_to_find, query_date, show_location=False):
+    """
+    Return the location of station_name or antenna_number as contained in args.locate.
+    This accepts the fact that antennas are sort of stations, even though they are parts
 
-       Parameters:
-       ------------
-       args:  needed arguments to open database and set date/time
-       show_location:   if True, it will print the information.
-       """
+    Parameters:
+    ------------
+    args:  needed arguments to open database
+    query_date:  astropy Time for contemporary antenna
+    show_location:   if True, it will print the information.
+    """
+
     found_location = None
     station_name = False
     try:
         station = int(station_to_find)
-        station_name = find_station_name(args, station)
+        station_name = find_station_name(args, station,query_date)
     except ValueError:
         station_name = station_to_find.upper()
     found_it = False
@@ -104,8 +124,8 @@ def locate_station(args, station_to_find, show_location=False):
                         break
                     else:
                         this_station = 'No station type data.'
-                ever_connected = geo_location.is_in_connections(args, a.station_name)
-                active = geo_location.is_in_connections(args, a.station_name, True)
+                ever_connected = geo_location.is_in_connections(args, a.station_name, '<')
+                active = geo_location.is_in_connections(args, a.station_name, query_date)
                 found_it = True
                 hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                 a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
@@ -137,14 +157,14 @@ def get_all_locations(args):
         for stn in stations:
             hera_proj = Proj(proj='utm', zone=stn.tile, ellps=stn.datum, south=True)
             stn.lon, stn.lat = hera_proj(stn.easting, stn.northing, inverse=True)
-            ever_connected = geo_location.is_in_connections(args, stn.station_name)
+            ever_connected = geo_location.is_in_connections(args, stn.station_name,'>')
             if ever_connected is True:
                 connections = session.query(part_connect.Connections).filter(
                     part_connect.Connections.upstream_part == stn.station_name)
                 for conn in connections:
                     ant_num = int(conn.downstream_part[1:])
-                    start_date = conn.start_date
-                    stop_date = conn.stop_date
+                    start_date = Time(conn.start_gpstime,format='gps')
+                    stop_date = Time(conn.stop_gpstime,format='gps')
                     stations_new.append({'station_name': stn.station_name,
                                          'station_type': stn.station_type_name,
                                          'longitude': stn.lon,
@@ -161,14 +181,14 @@ def get_since_date(args,query_date):
     db = mc.connect_to_mc_db(args)
     found_stations = []
     with db.sessionmaker() as session:
-        for a in session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.created_date >= dt):
+        for a in session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.created_gpstime >= dt):
             found_stations.append(a.station_name)
     return found_stations
 
 coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
 
 
-def plot_stations(args, stations_to_plot, fignm, marker_color='g', marker_shape='o', marker_size='8', label_station=False):
+def plot_stations(args, stations_to_plot, fignm, query_date=False, marker_color='g', marker_shape='o', marker_size='8', label_station=False):
     """Plot a list of stations.
 
        Parameters:
@@ -187,7 +207,7 @@ def plot_stations(args, stations_to_plot, fignm, marker_color='g', marker_shape=
             for a in session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == station):
                 show_it = True
                 if args.active:
-                    show_it = geo_location.is_in_connections(args, station, True)
+                    show_it = geo_location.is_in_connections(args, station, query_date)
                 if show_it is not False:  # Need this since 0 is a valid antenna
                     pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
                     plt.plot(pt[coord[args.xgraph]], pt[coord[args.ygraph]],
@@ -196,7 +216,7 @@ def plot_stations(args, stations_to_plot, fignm, marker_color='g', marker_shape=
                         if args.label_type == 'station_name':
                             labeling = a.station_name
                         else:
-                            antrev = geo_location.is_in_connections(args, station, True)
+                            antrev = geo_location.is_in_connections(args, station, query_date)
                             if antrev is False:
                                 labeling = 'NA'
                             else:
@@ -217,7 +237,7 @@ def plot_stations(args, stations_to_plot, fignm, marker_color='g', marker_shape=
                                      xytext=(pt[coord[args.xgraph]] + 2, pt[coord[args.ygraph]]))
 
 
-def plot_station_types(args, label_station=False):
+def plot_station_types(args, label_station=False, query_date=False):
     """Plot the various sub-array types
 
        Return fignm of plot
@@ -246,10 +266,10 @@ def plot_station_types(args, label_station=False):
                     for a in session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == loc):
                         show_it = True
                         if args.active:
-                            show_it = geo_location.is_in_connections(args, loc, True)
+                            show_it = geo_location.is_in_connections(args, loc, query_date)
                         if show_it is not False:  # Need this since 0 is a valid antenna
                             stations_to_plot.append(loc)
-                plot_stations(args, stations_to_plot, fignm, marker_color=station_type[key]['Marker'][0],
+                plot_stations(args, stations_to_plot, fignm, query_date, marker_color=station_type[key]['Marker'][0],
                               marker_shape=station_type[key]['Marker'][1], marker_size='6',
                               label_station=label_station)
     if args.xgraph != 'Z' and args.ygraph != 'Z':

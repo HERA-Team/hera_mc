@@ -11,6 +11,7 @@ from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
 import sys
 import copy
+from astropy.time import Time
 
 from hera_mc import mc, part_connect, geo_handling, correlator_levels, cm_utils
 from hera_mc import cm_part_revisions as cmpr
@@ -109,12 +110,14 @@ class Handling:
                         continue
                     elif part_cnt == 1:
                         part = copy.copy(part_query.all()[0])
+                        part.gps2Time()
                         pr_key = _make_part_key(part.hpn, part.hpn_rev)
                         part_dict[pr_key] = {'part': part,        'part_info': None,
                                              'input_ports': [],   'output_ports': [],
                                              'connections': None, 'geo': None}
                         for part_info in session.query(part_connect.PartInfo).filter((part_connect.PartInfo.hpn == part.hpn) &
                                                                                      (part_connect.PartInfo.hpn_rev == part.hpn_rev)):
+                            part_info.gps2Time()
                             part_dict[pr_key]['part_info'] = part_info
                         connections = self.get_connections(hpn_query=part.hpn, rev_query=part.hpn_rev, port_query='all',
                                                            exact_match=True, return_dictionary=True, show_connection=False)
@@ -244,6 +247,7 @@ class Handling:
                     for conn in session.query(part_connect.Connections).filter((part_connect.Connections.upstream_part == hpn) &
                                                                                (part_connect.Connections.up_part_rev == this_rev)):
                         if port_query.lower() == 'all' or conn.upstream_output_port.lower() == port_query.lower():
+                            conn.gps2Time()
                             prc_key = _make_connection_key(hpn, this_rev, conn.upstream_output_port, 'down',
                                                            conn.downstream_part, conn.down_part_rev, conn.downstream_input_port,
                                                            conn.start_date)
@@ -254,6 +258,7 @@ class Handling:
                     for conn in session.query(part_connect.Connections).filter((part_connect.Connections.downstream_part == hpn) &
                                                                                (part_connect.Connections.down_part_rev == this_rev)):
                         if port_query.lower() == 'all' or conn.downstream_input_port.lower() == port_query.lower():
+                            conn.gps2Time()
                             prc_key = _make_connection_key(hpn, this_rev, conn.downstream_input_port, 'up',
                                                            conn.upstream_part, conn.up_part_rev, conn.upstream_output_port,
                                                            conn.start_date)
@@ -275,8 +280,8 @@ class Handling:
         nc = self.no_connection_designator
         connection_dict[nc] = part_connect.Connections(upstream_part=nc, upstream_output_port=nc, up_part_rev=nc,
                                                        downstream_part=nc, downstream_input_port=nc, down_part_rev=nc,
-                                                       start_date=cm_utils._get_datetime('<', '<'),
-                                                       stop_date=cm_utils._get_datetime('>', '>'))
+                                                       start_gpstime=cm_utils._get_datetime('<', '<').gps,
+                                                       stop_gpstime=cm_utils._get_datetime('>', '>').gps)
         if show_connection:
             already_shown = self.show_active_connections(connection_dict)
             if not args.active:

@@ -78,7 +78,7 @@ def _get_stopdate(_stop_date):
     if isinstance(_stop_date,Time):
         return _stop_date
     else:
-        return Time(FUTURE_DATE, scale=UT1)
+        return Time(FUTURE_DATE, scale='ut1')
 
 
 def _is_active(current, _start_date, _stop_date):

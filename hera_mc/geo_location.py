@@ -75,7 +75,6 @@ class GeoLocation(MCDeclarativeBase):
 
     def gps2Time(self):
         self.created_date = Time(self.created_gpstime,format='gps')
-        return self.created_date
 
     def geo(self, **kwargs):
         for key, value in kwargs.items():
