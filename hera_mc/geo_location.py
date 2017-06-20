@@ -222,7 +222,7 @@ def is_in_connections(args, station_name, check_if_active=False):
             station_connected = True
         else:
             station_connected = False
-        if station_connected and check_if_active:
+        if station_connected and type(check_if_active)==Time:
             counter = 0
             for connection in connected_station.all():
                 connection.gps2Time()

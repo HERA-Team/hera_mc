@@ -73,6 +73,18 @@ def _get_datetime(_date, _time=0):
 def _get_datekeystring(_datetime):
     return "{:%Y%m%d-%H%M}".format(_datetime.datetime)
 
+def _get_displayTime(display):
+    if type(display)==str:
+        d = display
+    elif display is None:
+        d = 'None'
+    elif type(display) != Time:
+        print('Non astropy time not supported')
+        d = 'N/A'
+    else:
+        d = "{:%Y-%m-%d %H:%M:%S}".format(display.datetime)
+    return d
+
 
 def _get_stopdate(_stop_date):
     if isinstance(_stop_date,Time):

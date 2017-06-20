@@ -124,6 +124,7 @@ def locate_station(args, station_to_find, query_date, show_location=False):
                         break
                     else:
                         this_station = 'No station type data.'
+                a.gps2Time()
                 ever_connected = geo_location.is_in_connections(args, a.station_name, '<')
                 active = geo_location.is_in_connections(args, a.station_name, query_date)
                 found_it = True
@@ -140,7 +141,7 @@ def locate_station(args, station_to_find, query_date, show_location=False):
                         print('\tstation description ({}):  {}'.format(this_station, station_type[this_station]['Description']))
                         print('\tever connected:  ', ever_connected)
                         print('\tactive:  ', active)
-                        print('\tcreated:  ', a.created_date)
+                        print('\tcreated:  ', cm_utils._get_displayTime(a.created_date))
                     elif args.verbosity == 'l':
                         print(a, this_station)
     if show_location:
@@ -163,8 +164,7 @@ def get_all_locations(args):
                     part_connect.Connections.upstream_part == stn.station_name)
                 for conn in connections:
                     ant_num = int(conn.downstream_part[1:])
-                    start_date = Time(conn.start_gpstime,format='gps')
-                    stop_date = Time(conn.stop_gpstime,format='gps')
+                    conn.gps2Time()
                     stations_new.append({'station_name': stn.station_name,
                                          'station_type': stn.station_type_name,
                                          'longitude': stn.lon,
