@@ -181,7 +181,7 @@ class Handling:
                     print(pdpart)
                 else:
                     tdata = [pdpart.hpn, pdpart.hpn_rev, pdpart.hptype, pdpart.manufacturer_number,
-                             pdpart.start_date, pdpart.stop_date, active]
+                             cm_utils._get_displayTime(pdpart.start_date), cm_utils._get_displayTime(pdpart.stop_date), active]
                     if self.args.verbosity == 'h':
                         ptsin = ''
                         ptsout = ''
@@ -327,10 +327,10 @@ class Handling:
                        'Output': {'h': 3, 'm': 1},  'Input': {'h': 4, 'm': 2},      'Part': {'h': 5, 'm': 3}}
                 if pos['uStart'][vb] > -1:
                     del tdata[pos['uStart'][vb]]
-                    tdata.insert(pos['uStart'][vb], start_date)
+                    tdata.insert(pos['uStart'][vb], cm_utils._get_displayTime(start_date))
                 if pos['uStop'][vb] > -1:
                     del tdata[pos['uStop'][vb]]
-                    tdata.insert(pos['uStop'][vb], stop_date)
+                    tdata.insert(pos['uStop'][vb], cm_utils._get_displayTime(stop_date))
                 if pos['Upstream'][vb] > -1:
                     del tdata[pos['Upstream'][vb]]
                     tdata.insert(pos['Upstream'][vb], uup)
@@ -370,10 +370,10 @@ class Handling:
                     tdata.insert(pos['Downstream'][vb], ddn)
                 if pos['dStart'][vb] > -1:
                     del tdata[pos['dStart'][vb]]
-                    tdata.insert(pos['dStart'][vb], start_date)
+                    tdata.insert(pos['dStart'][vb], cm_utils._get_displayTime(start_date))
                 if pos['dStop'][vb] > -1:
                     del tdata[pos['dStop'][vb]]
-                    tdata.insert(pos['dStop'][vb], stop_date)
+                    tdata.insert(pos['dStop'][vb], cm_utils._get_displayTime(stop_date))
                 if vb == 'h' or vb == 'm':
                     table_data.append(tdata)
                 else:
