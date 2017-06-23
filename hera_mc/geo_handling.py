@@ -60,7 +60,7 @@ def get_location(location_name):
     parser.add_argument('--date', default='now')
     parser.add_argument('--time', default='now')
     args = parser.parse_args(local_argv)
-    located = locate_station(args.locate, '>', show_location=False)
+    located = locate_station(args, args.locate, '>', show_location=False)
     return located
 
 
