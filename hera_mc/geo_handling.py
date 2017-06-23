@@ -23,7 +23,7 @@ current_cofa = 'COFA_HSA7458_V000'
 
 def cofa(show_cofa=False):
     """
-    Shortcut to just get the current cofa (currently hard-coded in geo_handling.py)
+    Shortcut to just get the current cofa (current_cofa is hard-coded in geo_handling.py)
 
     Returns location class of current COFA
 
@@ -50,7 +50,7 @@ def get_location(location_name):
 
     Parameters:
     -------------
-    location_name:  string of location name
+    location_name:  location name, may be either a station or an antenna
     """
 
     local_argv = ['--locate', location_name]
@@ -60,11 +60,11 @@ def get_location(location_name):
     parser.add_argument('--date', default='now')
     parser.add_argument('--time', default='now')
     args = parser.parse_args(local_argv)
-    located = locate_station(args, args.locate, show_location=False)
+    located = locate_station(args, args.locate, '>', show_location=False)
     return located
 
 
-def find_station_name(args, antenna, query_date):
+def find_station_of_antenna(args, antenna, query_date):
     """
     checks to see what station an antenna is at
 
@@ -93,7 +93,7 @@ def find_station_name(args, antenna, query_date):
     return antenna_connected
 
 
-def locate_station(args, station_to_find, query_date, show_location=False):
+def locate_station(args, to_find, query_date, show_location=False):
     """
     Return the location of station_name or antenna_number as contained in args.locate.
     This accepts the fact that antennas are sort of stations, even though they are parts
@@ -101,6 +101,7 @@ def locate_station(args, station_to_find, query_date, show_location=False):
     Parameters:
     ------------
     args:  needed arguments to open database
+    station_to_fine:  station name to find
     query_date:  astropy Time for contemporary antenna
     show_location:   if True, it will print the information.
     """
@@ -108,10 +109,10 @@ def locate_station(args, station_to_find, query_date, show_location=False):
     found_location = None
     station_name = False
     try:
-        station = int(station_to_find)
-        station_name = find_station_name(args, station,query_date)
+        antenna_number = int(to_find)
+        station_name = find_station_of_antenna(args, antenna_number, query_date)
     except ValueError:
-        station_name = station_to_find.upper()
+        station_name = to_find.upper()
     found_it = False
     if station_name:
         db = mc.connect_to_mc_db(args)

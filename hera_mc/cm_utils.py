@@ -69,7 +69,6 @@ def _get_datetime(_date, _time=0):
         return_date += TimeDelta(add_time,format='sec')
     return return_date
 
-
 def _get_datekeystring(_datetime):
     return "{:%Y%m%d-%H%M}".format(_datetime.datetime)
 
@@ -78,20 +77,18 @@ def _get_displayTime(display):
         d = display
     elif display is None:
         d = 'None'
-    elif type(display) != Time:
+    elif isinstance(display, Time):
         print('Non astropy time not supported')
         d = 'N/A'
     else:
         d = "{:%Y-%m-%d %H:%M:%S}".format(display.datetime)
     return d
 
-
 def _get_stopdate(_stop_date):
     if isinstance(_stop_date,Time):
         return _stop_date
     else:
         return Time(FUTURE_DATE, scale='ut1')
-
 
 def _is_active(current, _start_date, _stop_date):
     _stop_date = _get_stopdate(_stop_date)
@@ -105,7 +102,6 @@ def _query_default(a, args):
     if len(v) == 0:
         v = default
     return v
-
 
 def _query_yn(s, default='y'):
     if default:
