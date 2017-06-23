@@ -10,7 +10,7 @@ Installation instructions may be found in [INSTALL.md](./INSTALL.md).
 
 To add a new table into the M&C database:
 0. Invoke 'createdb hera_mc' to make the database if needed.
-1. Create a new module under `hera_mc`, basing on e.g. `host_status.py`.
+1. Create a new module under `hera_mc`, basing on e.g. `observation.py`.
 2. Add `from . import my_new_module` line in `__init__.py`.
 3. Rerun `python setup.py install` to install the new module(s).
 4. Optionally, update the schema of the production database:
@@ -32,4 +32,3 @@ This runs under the HERA conda environment on qmaster.
 To check environments: conda info --envs
 To change environments:  source activate HERA
 To run psql:  psql -U hera -h qmaster hera_mc
-
