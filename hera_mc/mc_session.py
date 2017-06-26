@@ -691,23 +691,4 @@ class MCSession(Session):
 
         return ptemp_list
 
-    def get_station_type(self):
-        """
-        returns a dictionary of sub-arrays
-             [prefix]{'Description':'...', 'plot_marker':'...', 'stations':[]}
-        """
-        from .geo_location import GeoLocation
-        from .geo_location import StationType
 
-        station_data = self.query(StationType).all()
-        stations = {}
-        for sta in station_data:
-            stations[sta.prefix] = {'Name': sta.station_type_name,
-                                    'Description': sta.description,
-                                    'Marker': sta.plot_marker, 'Stations': []}
-        locations = self.query(GeoLocation).all()
-        for loc in locations:
-            for k in stations.keys():
-                if loc.station_name[:len(k)] == k:
-                    stations[k]['Stations'].append(loc.station_name)
-        return stations
