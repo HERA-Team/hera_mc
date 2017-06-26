@@ -40,5 +40,5 @@ class test_connections(unittest.TestCase):
         print(part)
         self.test_session.add(part)
         self.test_session.commit()
-        #self.assertTrue
+        self.assertTrue
 

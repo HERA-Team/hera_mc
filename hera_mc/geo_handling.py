@@ -321,9 +321,14 @@ class Handling:
                                      xytext=(pt[self.coord[args.xgraph]] + 2, pt[self.coord[args.ygraph]]))
 
 
+<<<<<<< HEAD
     def plot_station_types(self, label_station=False, query_date=False):
         """
         Plot the various sub-array types
+=======
+def plot_station_types(args, label_station=False, query_date=None):
+    """Plot the various sub-array types
+>>>>>>> cm_convert2gps
 
         Return fignm of plot
 
