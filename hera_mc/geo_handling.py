@@ -189,7 +189,7 @@ def get_since_date(args,query_date):
 coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
 
 
-def plot_stations(args, stations_to_plot, fignm, query_date=False, marker_color='g', marker_shape='o', marker_size='8', label_station=False):
+def plot_stations(args, stations_to_plot, fignm, query_date=None, marker_color='g', marker_shape='o', marker_size='8', label_station=False):
     """Plot a list of stations.
 
        Parameters:
@@ -238,7 +238,7 @@ def plot_stations(args, stations_to_plot, fignm, query_date=False, marker_color=
                                      xytext=(pt[coord[args.xgraph]] + 2, pt[coord[args.ygraph]]))
 
 
-def plot_station_types(args, label_station=False, query_date=False):
+def plot_station_types(args, label_station=False, query_date=None):
     """Plot the various sub-array types
 
        Return fignm of plot
