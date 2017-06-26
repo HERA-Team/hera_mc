@@ -178,5 +178,3 @@ def format_check_update_request(request):
         print('Invalid parse request - need 3 parameters for at least first one.')
         data = None
     return data
-
-
