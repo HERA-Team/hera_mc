@@ -40,6 +40,8 @@ def _log(msg, **kwargs):
     fp.close()
 
 def _get_datetime(_date, _time=0):
+    if isinstance(_date,Time):
+        return _date
     if _date == '<':
         return_date = Time(PAST_DATE,scale='utc')
     elif _date == '>':
