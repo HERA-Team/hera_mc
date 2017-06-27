@@ -14,9 +14,9 @@ if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     # action arguments
     parser.add_argument('-c', '--cofa', help="Print out center of array information [False]", action='store_true')
-    parser.add_argument('-f', '--find', help="Find location of given station_name(s) or antenna_number(s) (if # or 'A#'); csv_list [None]", default=None)
+    parser.add_argument('-f', '--find', help="Find location of given station_name(s) or antenna_number(s) (if # or A#); csv_list [None]", default=None)
     parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
-    parser.add_argument('-d', '--since_date', help="Only show stations set up since date/time [False]", action='store_true')
+    parser.add_argument('-d', '--since_date', help="Only show antennas (set by background) installed since date/time [False]", action='store_true')
 
     # parameter state/value arguments
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [m].", choices=['L', 'l', 'm', 'M', 'h', 'H'], default='m')
@@ -24,9 +24,9 @@ if __name__ == '__main__':
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]", choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
     parser.add_argument('--date', help="YYYY/MM/DD or now [now]", default='now')
     parser.add_argument('--time', help="hh[:mm[:ss]]", default='0')
-    parser.add_argument('--background', help="Station types used for graph [csv_list or all]", default='HH,PH,S')
-    parser.add_argument('--show_state', help="Show only the 'active' stations or 'all' [all]", default='all')
-    parser.add_argument('--show_label', help="Label by station_name ('name'), ant_num ('num') or serial_num ('ser') or 'false' [num]", default='num')
+    parser.add_argument('--background', help="Station types used for graph (csv_list or all) [HH,PH,S]", default='HH,PH,S')
+    parser.add_argument('--show_state', help="Show only the 'active' stations or all [all]", default='all')
+    parser.add_argument('--show_label', help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]", default='num')
     parser.add_argument('--fig_num', help="Provide a specific figure number to the plot [default]", default='default')
 
     # database arguments
@@ -52,6 +52,7 @@ if __name__ == '__main__':
         args.show_label = False
     if args.fig_num.lower() == 'default':
         args.fig_num = args.xgraph+args.ygraph
+    show_fig = False
 
     # package up state to dictionary
     state_args = {'verbosity':args.verbosity.lower(),
@@ -62,31 +63,34 @@ if __name__ == '__main__':
                   'show_label':args.show_label,
                   'fig_num':args.fig_num}
 
-    # process args
+    # process
     h = geo_handling.Handling(args)
+    if args.graph:
+        show_fig = h.plot_station_types(query_date, state_args)
     if args.cofa:
         cofa = h.cofa(show_cofa=True)
     if args.since_date:
-        new_antennas = h.get_since_date(query_date)
-
-    # ... get "background" plot
-    if args.graph:
-        fignm = h.plot_station_types(query_date, state_args)
-
-    # ... plot over that if desired
-    if args.since_date:
-        state_args['marker_color']='b'
-        state_args['marker_shape']='*'
-        state_args['marker_size']=14
-        h.plot_stations(new_antennas, query_date, state_args)
+        new_antennas = h.get_since_date(query_date, state_args['background'])
+        print("{} new antennas since {}".format(len(new_antennas),query_date))
+        if len(new_antennas)>0:
+            s=''
+            for na in new_antennas:
+                s+=na+', '
+            s=s.strip().strip(',')+'\n'
+            print(s)
+            state_args['marker_color']='b'
+            state_args['marker_shape']='*'
+            state_args['marker_size']=14
+            show_fig = h.plot_stations(new_antennas, query_date, state_args)
     if args.find is not None:
         located = h.locate_station(args.find, query_date, show_location=True, verbosity=state_args['verbosity'])
-        if args.graph and located:
+        if args.graph and len(located)>0:
             state_args['marker_size'] = 14
             h.overplot(located, state_args)
 
-    if args.graph:
-        geo_handling.show_it_now(args.fig_num)
+    if show_fig:
+        geo_handling.show_it_now(show_fig)
+    h.close()
 
     if args.update:
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script -- are you sure you want to do this? ", 'n')
