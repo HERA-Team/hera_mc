@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--background', help="Station types used for graph [csv_list or all]", default='HH,PH,S')
     parser.add_argument('--show_state', help="Show only the 'active' stations or 'all' [all]", default='all')
     parser.add_argument('--show_label', help="Label by station_name ('name'), ant_num ('num') or serial_num ('ser') or 'false' [num]", default='num')
-    parser.add_argument('--fig_num', help="Provide a specific figure number to the plot [0]", default=0)
+    parser.add_argument('--fig_num', help="Provide a specific figure number to the plot [default]", default='default')
 
     # database arguments
     parser.add_argument('--update', help="Update station records.  Format station0:col0:val0, [station1:]col1:val1...  [None]", default=None)
@@ -50,15 +50,13 @@ if __name__ == '__main__':
     args.show_label = args.show_label.lower()
     if args.show_label == 'false':
         args.show_label = False
-    try:
-        args.fig_num = int(args.fig_num)
-    except ValueError:
-        continue
+    if args.fig_num.lower() == 'default':
+        args.fig_num = args.xgraph+args.ygraph
 
     # package up state to dictionary
     state_args = {'verbosity':args.verbosity.lower(),
                   'xgraph':args.xgraph.upper(),
-                  'ygraph':args.ygraph,.upper(),
+                  'ygraph':args.ygraph.upper(),
                   'background':args.background,
                   'show_state':args.show_state.lower(),
                   'show_label':args.show_label,

@@ -22,11 +22,10 @@ from pyproj import Proj
 from hera_mc import mc, part_connect, cm_utils, geo_location
 
 
-current_cofa = 'COFA_HSA7458_V000'
 
 def cofa(show_cofa=False):
     """
-    Shortcut to just get the current cofa (current_cofa is hard-coded in geo_handling.py)
+    Shortcut to just get the current cofa
 
     Returns location class of current COFA
 
@@ -34,15 +33,13 @@ def cofa(show_cofa=False):
     -------------
     show_cofa:  boolean to print out cofa info or just return class
     """
-
-    located = get_location(current_cofa)
-    if show_cofa:
-        print('Center of array: %s' % (located.station_name))
-        try:
-            print('UTM:  {} {:.0f}E {:.0f}N at {:.1f}m   ({})'.format(located.tile, located.easting, located.northing, located.elevation, located.datum))
-        except TypeError:
-            print('UTM:  {} {:.0f}E {:.0f}N   ({})'.format(located.tile, located.easting, located.northing, located.datum))
-        print('Lat/Lon:  {}  {}'.format(located.lat, located.lon))
+    parser = mc.get_mc_argument_parser()
+    args = parser.parse_args([])
+    h = Handling(args)
+    st = h.get_station_types()
+    h.close()
+    current_cofa = st['COFA']['Stations']
+    located = get_location(current_cofa,'now',show_cofa,'m')[0]
     return located
 
 def get_location(location_names, query_date='now', show_location=False, verbosity='m'):
@@ -57,12 +54,12 @@ def get_location(location_names, query_date='now', show_location=False, verbosit
     location_name:  location name, may be either a station (geo_location key) or an antenna
     """
 
-    local_argv = []
     parser = mc.get_mc_argument_parser()
-    args = parser.parse_args(local_argv)
+    args = parser.parse_args([])
+    query_date = cm_utils._get_datetime(query_date)
     h = Handling(args)
     located = h.locate_station(location_names, query_date, show_location=show_location, verbosity=verbosity)
-    ###Do I need to stop the h session???
+    h.close()
     return located
 
 def show_it_now(fignm=0):
@@ -83,6 +80,9 @@ class Handling:
         self.args = args
         db = mc.connect_to_mc_db(self.args)
         self.session = db.sessionmaker()
+
+    def close(self):
+        self.session.close()
 
     def get_station_types(self):
         """
@@ -202,7 +202,7 @@ class Handling:
             station_name = False
             try:
                 antenna_number = int(L)
-                station_name = find_station_of_antenna(antenna_number, query_date)
+                station_name = self.find_station_of_antenna(antenna_number, query_date)
             except ValueError:
                 station_name = L.upper()
             found_it = False
@@ -283,7 +283,9 @@ class Handling:
         query_date:  date for active-only plot
         state_args:  dictionary with state arguments (fig_num, marker_color, marker_shape, marker_size, show_label)
         """
-
+        displaying_label = bool(state_args['show_label'])
+        if displaying_label:
+            label_to_show = state_args['show_label'].lower()
         plt.figure(state_args['fig_num'])
         for station in stations_to_plot:
             for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == station):
@@ -296,8 +298,8 @@ class Handling:
                     __Y = pt[self.coord[state_args['ygraph']]]
                     plt.plot(__X, __Y, color=state_args['marker_color'], marker=state_args['marker_shape'],
                              markersize=state_args['marker_size'], label=a.station_name)
-                    if state_args['show_label']:
-                        if state_args['show_label'].lower() == 'name':
+                    if displaying_label:
+                        if label_to_show == 'name':
                             labeling = a.station_name
                         else:
                             antrev = self.is_in_connections(station, query_date)
@@ -306,9 +308,9 @@ class Handling:
                             else:
                                 ant = antrev.split(':')[0]
                                 rev = antrev.split(':')[1]
-                                if state_args['show_label'].lower() == 'num':
+                                if label_to_show == 'num':
                                     labeling = ant.strip('A')
-                                elif state_args['show_label'].lower() == 'ser':
+                                elif label_to_show == 'ser':
                                     p = self.session.query(part_connect.Parts).filter((part_connect.Parts.hpn == ant) &
                                                                                  (part_connect.Parts.hpn_rev == rev))
                                     if p.count() == 1:
@@ -317,7 +319,7 @@ class Handling:
                                         labeling = '-'
                                 else:
                                     labeling = 'S'
-                        plt.annotate(labeling, xy=(__X, __Y), xytext=(pt[self.coord[args.xgraph]] + 2, pt[self.coord[args.ygraph]]))
+                        plt.annotate(labeling, xy=(__X, __Y), xytext=(__X + 2, __Y))
 
 
     def plot_station_types(self, query_date, state_args):
@@ -335,8 +337,7 @@ class Handling:
         if state_args['background'][0] == 'all':
             prefixes_to_plot = 'all'
         else:
-            prefixes_to_plot = [x.upper for x in state_args['background']]
-        fignm = state_args['xgraph'] + state_args['ygraph']
+            prefixes_to_plot = [x.upper() for x in state_args['background']]
         station_type = self.get_station_types()
         for key in station_type.keys():
             if prefixes_to_plot == 'all' or key.upper() in prefixes_to_plot:
