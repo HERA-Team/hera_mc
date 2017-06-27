@@ -40,6 +40,7 @@ def _log(msg, **kwargs):
     fp.close()
 
 def _get_datetime(_date, _time=0):
+    add_time = 0.
     if isinstance(_date,Time):
         return _date
     if _date == '<':
@@ -51,7 +52,6 @@ def _get_datetime(_date, _time=0):
     elif _date.lower() == 'now':
         return_date = Time.now()
     else:
-        add_time = 0.
         _date = _date.replace('/','-')
         try:
             return_date = Time(_date,scale='utc')
@@ -79,7 +79,7 @@ def _get_displayTime(display):
         d = display
     elif display is None:
         d = 'None'
-    elif isinstance(display, Time):
+    elif not isinstance(display, Time):
         print('Non astropy time not supported')
         d = 'N/A'
     else:
