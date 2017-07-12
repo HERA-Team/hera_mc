@@ -34,7 +34,8 @@ def cofa(show_cofa=False):
     parser = mc.get_mc_argument_parser()
     args = parser.parse_args([])
     h = Handling(args)
-    st = h.get_station_types(add_stations=True)
+    h.get_station_types(add_stations=True)
+    st = h.station_types
     h.close()
     current_cofa = st['COFA']['Stations']
     located = get_location(current_cofa,'now',show_cofa,'m')[0]
