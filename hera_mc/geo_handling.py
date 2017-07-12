@@ -275,7 +275,7 @@ class Handling:
         return found_stations
 
 
-    def plot_stations(self, stations_to_plot, fignm, query_date=False, marker_color='g', marker_shape='o', marker_size='8', label_station=False):
+    def plot_stations(self, stations_to_plot, fignm, query_date=None, marker_color='g', marker_shape='o', marker_size='8', label_station=False):
         """Plot a list of stations.
 
            Parameters:
@@ -321,7 +321,7 @@ class Handling:
                                      xytext=(pt[self.coord[args.xgraph]] + 2, pt[self.coord[args.ygraph]]))
 
 
-    def plot_station_types(self, label_station=False, query_date=False):
+    def plot_station_types(self, label_station=False, query_date=None):
         """
         Plot the various sub-array types
 
