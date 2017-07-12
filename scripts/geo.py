@@ -48,7 +48,7 @@ if __name__ == '__main__':
     else:
         args.background = [args.background]
     args.show_label = args.show_label.lower()
-    if args.show_label == 'false':
+    if args.show_label.lower() == 'false':
         args.show_label = False
     if args.fig_num.lower() == 'default':
         args.fig_num = args.xgraph+args.ygraph
@@ -83,7 +83,7 @@ if __name__ == '__main__':
             state_args['marker_size']=14
             show_fig = h.plot_stations(new_antennas, query_date, state_args)
     if args.find is not None:
-        located = h.locate_station(args.find, query_date, show_location=True, verbosity=state_args['verbosity'])
+        located = h.get_location(args.find, query_date, show_location=True, verbosity=state_args['verbosity'])
         if args.graph and len(located)>0:
             state_args['marker_size'] = 14
             h.overplot(located, state_args)

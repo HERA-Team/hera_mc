@@ -56,7 +56,7 @@ def get_location(location_names, query_date='now', show_location=False, verbosit
     args = parser.parse_args([])
     query_date = cm_utils._get_datetime(query_date)
     h = Handling(args)
-    located = h.locate_station(location_names, query_date, show_location=show_location, verbosity=verbosity)
+    located = h.get_location(location_names, query_date, show_location=show_location, verbosity=verbosity)
     h.close()
     return located
 
@@ -84,22 +84,18 @@ class Handling:
     def close(self):
         self.session.close()
 
-    def __flip_station_types_dictionary(self):
-        """
-        The database has station_name and sometimes you want prefix.  This adds the flipped
-        dictionary to the class as flipped_station_type
-        """
-        self.flipped_station_types = {}
-        if self.station_types is None:
-            print("Warning:  station_types not read -- reading without stations")
-            self.get_station_types(add_stations=False)
-        for key in self.station_types.keys():
-            self.flipped_station_types[self.station_types[key]['Name']] = key
-
     def get_station_types(self,add_stations=True):
         """
         adds a dictionary of sub-arrays (station_types) to the class
              [prefix]{'Description':'...', 'plot_marker':'...', 'stations':[]}
+        also adds the "flipped" dictionary
+
+        return dictionary with station information
+
+        Parameters:
+        -------------
+        add_stations:  if True, add all of the stations to their types
+                       if False, just return station types
         """
 
         station_data = self.session.query(geo_location.StationType).all()
@@ -115,7 +111,9 @@ class Handling:
                     if loc.station_name[:len(k)] == k:
                         stations[k]['Stations'].append(loc.station_name)
         self.station_types = stations
-
+        self.flipped_station_types = {}
+        for key in self.station_types.keys():
+            self.flipped_station_types[self.station_types[key]['Name']] = key
 
     def is_in_geo_location(self, station_name):
         """
@@ -125,7 +123,6 @@ class Handling:
 
         Parameters:
         ------------
-        args:  needed arguments to open the database
         station_name:  string name of station
         """
 
@@ -199,7 +196,7 @@ class Handling:
         return antenna_connected.upstream_part
 
 
-    def locate_station(self, to_find, query_date, show_location=False, verbosity='m'):
+    def get_location(self, to_find, query_date, show_location=False, verbosity='m'):
         """
         Return the location of station_name or antenna_number as contained in args.locate.
         This accepts the fact that antennas are sort of stations, even though they are parts
@@ -282,7 +279,6 @@ class Handling:
 
     def get_since_date(self,query_date,station_types_to_check):
         self.get_station_types(add_stations=False)
-        self.__flip_station_types_dictionary()
         dt = query_date.gps
         found_stations = []
         for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.created_gpstime >= dt):
