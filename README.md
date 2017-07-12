@@ -29,6 +29,8 @@ dropdb hera_mc
 
 This runs under the HERA conda environment on qmaster.  
 
-To check environments: conda info --envs
-To change environments:  source activate HERA
-To run psql:  psql -U hera -h qmaster hera_mc
+To check environments: `conda info --envs`
+
+To change environments:  `source activate HERA`
+
+To run psql:  `psql -U hera -h qmaster hera_mc`
