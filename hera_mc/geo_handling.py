@@ -36,6 +36,7 @@ def cofa(show_cofa=False):
     h = Handling(args)
     st = h.get_station_types(add_stations=True)
     h.close()
+    print('A:', repr(st))
     current_cofa = st['COFA']['Stations']
     located = get_location(current_cofa,'now',show_cofa,'m')[0]
     return located
