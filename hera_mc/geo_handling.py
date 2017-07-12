@@ -34,7 +34,8 @@ def cofa(show_cofa=False):
     parser = mc.get_mc_argument_parser()
     args = parser.parse_args([])
     h = Handling(args)
-    st = h.get_station_types(add_stations=True)
+    h.get_station_types(add_stations=True)
+    st = h.station_types
     h.close()
     print('A:', repr(st))
     current_cofa = st['COFA']['Stations']
@@ -115,6 +116,7 @@ class Handling:
         self.flipped_station_types = {}
         for key in self.station_types.keys():
             self.flipped_station_types[self.station_types[key]['Name']] = key
+
 
     def is_in_geo_location(self, station_name):
         """
