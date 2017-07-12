@@ -3,7 +3,7 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""This is meant to hold utility scripts for geo_location
+"""This is meant to hold utility scripts for geo_location (via geo_handling)
 
 """
 from __future__ import absolute_import, division, print_function
@@ -13,75 +13,86 @@ from hera_mc import mc, geo_handling, cm_utils
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     # action arguments
-    parser.add_argument('-c', '--cofa', help="Print out center of array information.", action='store_true')
-    parser.add_argument('-l', '--locate', help="Location of given station_name or antenna_number (assumed if <int>).  [None]", default=None)
-    parser.add_argument('-g', '--graph', help="Graph station types, list or 'all' [False]", action='store', nargs='?', const='all', default=False)
-    parser.add_argument('-s', '--show', help="Show:  shortcut for -g [background] -l NN [False]", default=False)
-    parser.add_argument('-d', '--since_date', help="Show stations set up since date mm/dd/yy [False]", default=False)
+    parser.add_argument('-c', '--cofa', help="Print out center of array information [False]", action='store_true')
+    parser.add_argument('-f', '--find', help="Find location of given station_name(s) or antenna_number(s) (if # or A#); csv_list [None]", default=None)
+    parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
+    parser.add_argument('-d', '--since_date', help="Only show antennas (set by background) installed since date/time [False]", action='store_true')
 
-    # parameter state arguments
+    # parameter state/value arguments
     parser.add_argument('-v', '--verbosity', help="Set verbosity. [m].", choices=['L', 'l', 'm', 'M', 'h', 'H'], default='m')
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]", choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]", choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
     parser.add_argument('--date', help="YYYY/MM/DD or now [now]", default='now')
-    parser.add_argument('--time', help="hh[:mm[:ss]] or now [now]", default='now')
-    parser.add_argument('--background', help="Station types used for graph with show/since_date ['HH,PH,S']", default='HH,PH,S')
-    group_connected = parser.add_mutually_exclusive_group()
-    group_connected.add_argument('--show-active', help="Flag to show only the active stations (default)", dest='active', action='store_true')
-    group_connected.add_argument('--show-all', help="Flag to show all stations", dest='active', action='store_false')
-    group_label = parser.add_mutually_exclusive_group()
-    group_label.add_argument('--label', help="Flag to label stations in graph (default).", dest='label', action='store_true')
-    group_label.add_argument('--no-label', help="Flag to not label stations in graph.", dest='label', action='store_false')
-    group_type_label = parser.add_mutually_exclusive_group()
-    group_type_label.add_argument('--show-name', help="Set label_type to station_name", dest='label_type',
-                                  action='store_const', const='station_name')
-    group_type_label.add_argument('--show-number', help="Set label_type to antenna_number", dest='label_type',
-                                  action='store_const', const='antenna_number')
-    group_type_label.add_argument('--show-serial', help="Set label_type to serial number", dest='label_type',
-                                  action='store_const', const='serial_number')
+    parser.add_argument('--time', help="hh[:mm[:ss]]", default='0')
+    parser.add_argument('--background', help="Station types used for graph (csv_list or all) [HH,PH,S]", default='HH,PH,S')
+    parser.add_argument('--show_state', help="Show only the 'active' stations or all [all]", default='all')
+    parser.add_argument('--show_label', help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]", default='num')
+    parser.add_argument('--fig_num', help="Provide a specific figure number to the plot [default]", default='default')
 
     # database arguments
-    parser.add_argument('-u', '--update', help="Update station records.  Format station0:col0:val0, [station1:]col1:val1...  [None]", default=None)
-    parser.add_argument('--add-new-geo', help="Flag to enable adding of a new geo_location under update.  [False]",
-                        dest='add_new_geo', action='store_true')
-
-    # set some defaults and parse it
-    parser.set_defaults(label=True, active=True, label_type='antenna_number')
+    parser.add_argument('--update', help="Update station records.  Format station0:col0:val0, [station1:]col1:val1...  [None]", default=None)
+    parser.add_argument('--add-new-geo', help="Flag to enable adding of a new geo_location under update.  [False]", action='store_true')
     args = parser.parse_args()
 
-    # fix up some things
-    args.xgraph = args.xgraph.upper()
-    args.ygraph = args.ygraph.upper()
-    args.verbosity = args.verbosity.lower()
+    # interpret args
+    if args.find is not None:
+        args.find = args.find.upper()
+        if ',' in args.find:
+            args.find = args.find.split(',')
+        else:
+            args.find = [args.find]
     query_date = cm_utils._get_datetime(args.date,args.time)
+    args.background = args.background.upper()
+    if ',' in args.background:
+        args.background = args.background.split(',')
+    else:
+        args.background = [args.background]
+    args.show_label = args.show_label.lower()
+    if args.show_label.lower() == 'false':
+        args.show_label = False
+    if args.fig_num.lower() == 'default':
+        args.fig_num = args.xgraph+args.ygraph
+    show_fig = False
 
-    # process args
-    # ... setup some stuff
+    # package up state to dictionary
+    state_args = {'verbosity':args.verbosity.lower(),
+                  'xgraph':args.xgraph.upper(),
+                  'ygraph':args.ygraph.upper(),
+                  'background':args.background,
+                  'show_state':args.show_state.lower(),
+                  'show_label':args.show_label,
+                  'fig_num':args.fig_num}
+
+    # process
+    h = geo_handling.Handling(args)
+    if args.graph:
+        show_fig = h.plot_station_types(query_date, state_args)
     if args.cofa:
-        cofa = geo_handling.cofa(show_cofa=True)
-    if args.show:
-        args.graph = args.background
-        args.locate = args.show
+        cofa = h.cofa(show_cofa=True)
     if args.since_date:
-        args.graph = args.background
-        new_antennas = geo_handling.get_since_date(args, query_date)
+        new_antennas = h.get_since_date(query_date, state_args['background'])
+        print("{} new antennas since {}".format(len(new_antennas),query_date))
+        if len(new_antennas)>0:
+            s=''
+            for na in new_antennas:
+                s+=na+', '
+            s=s.strip().strip(',')+'\n'
+            print(s)
+            state_args['marker_color']='b'
+            state_args['marker_shape']='*'
+            state_args['marker_size']=14
+            show_fig = h.plot_stations(new_antennas, query_date, state_args)
+    if args.find is not None:
+        located = h.get_location(args.find, query_date, show_location=True, verbosity=state_args['verbosity'])
+        if args.graph and len(located)>0:
+            state_args['marker_size'] = 14
+            h.overplot(located, state_args)
 
-    # ... graph it if arg'd
-    if args.graph:
-        fignm = geo_handling.plot_station_types(args, args.label, query_date)
-
-    # ... plot over that if desired
-    if args.since_date:
-        geo_handling.plot_stations(args, new_antennas, fignm, query_date, 'b', '*', '14', label_station=True)
-    if args.locate:
-        located = geo_handling.locate_station(args, args.locate, query_date,show_location=True)
-    if args.graph and args.locate and located:
-        geo_handling.overplot(args, located, fignm)
-
-    if args.graph:
-        geo_handling.show_it_now(fignm)
+    if show_fig:
+        geo_handling.show_it_now(show_fig)
+    h.close()
 
     if args.update:
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script -- are you sure you want to do this? ", 'n')
         if you_are_sure:
-            geo_handling.update(args, data)
+            geo_location.update(args, data)

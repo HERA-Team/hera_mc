@@ -41,13 +41,15 @@ def _log(msg, **kwargs):
 
 def _get_datetime(_date, _time=0):
     add_time = 0.
-    if _date == '<' or _time == '<':
+    if isinstance(_date,Time):
+        return _date
+    if _date == '<':
         return_date = Time(PAST_DATE,scale='utc')
-    elif _date == '>' or _time == '>':
+    elif _date == '>':
         return_date = Time(FUTURE_DATE,scale='ut1')
-    elif _date.lower().replace('/','') == 'na' or str(_time).replace('/','').lower() == 'na':
+    elif _date.lower().replace('/','') == 'na' or _date.lower()=='none':
         return_date = None
-    elif _date.lower() == 'now' or str(_time).lower() == 'now':
+    elif _date.lower() == 'now':
         return_date = Time.now()
     else:
         _date = _date.replace('/','-')
@@ -77,7 +79,7 @@ def _get_displayTime(display):
         d = display
     elif display is None:
         d = 'None'
-    elif isinstance(display, Time):
+    elif not isinstance(display, Time):
         print('Non astropy time not supported')
         d = 'N/A'
     else:
