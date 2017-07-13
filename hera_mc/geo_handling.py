@@ -21,6 +21,7 @@ from pyproj import Proj
 
 from hera_mc import mc, part_connect, cm_utils, geo_location
 
+
 def cofa(show_cofa=False):
     """
     Returns location class of current COFA
@@ -36,6 +37,7 @@ def cofa(show_cofa=False):
     located = h.cofa(show_cofa)
     h.close()
     return located
+
 
 def get_location(location_names, query_date='now', show_location=False, verbosity='m'):
     """
@@ -57,6 +59,7 @@ def get_location(location_names, query_date='now', show_location=False, verbosit
     h.close()
     return located
 
+
 def show_it_now(fignm):
     """
     Used in scripts to actually make plot (as opposed to within python).  Seems to be needed...
@@ -73,7 +76,7 @@ class Handling:
 
     coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
 
-    def __init__(self,args):
+    def __init__(self, args):
         """
         args:  needed arguments to open database
         """
@@ -88,18 +91,11 @@ class Handling:
     def cofa(self, show_cofa=False):
         self.get_station_types(add_stations=True)
         current_cofa = self.station_types['COFA']['Stations']
-        located = self.get_location(current_cofa,'now',show_cofa,'m')[0]
+        located = self.get_location(current_cofa, 'now', show_cofa, 'm')[0]
 
-        if show_cofa:
-            print('Center of array: %s' % (located.station_name))
-            try:
-                print('UTM:  {} {:.0f}E {:.0f}N at {:.1f}m   ({})'.format(located.tile, located.easting, located.northing, located.elevation, located.datum))
-            except TypeError:
-                print('UTM:  {} {:.0f}E {:.0f}N   ({})'.format(located.tile, located.easting, located.northing, located.datum))
-            print('Lat/Lon:  {}  {}'.format(located.lat, located.lon))
         return located
 
-    def get_station_types(self,add_stations=True):
+    def get_station_types(self, add_stations=True):
         """
         adds a dictionary of sub-arrays (station_types) to the class
              [prefix]{'Description':'...', 'plot_marker':'...', 'stations':[]}
@@ -148,12 +144,11 @@ class Handling:
             station_present = False
         return station_present
 
-
     def is_in_connections(self, station_name, active_date=None):
         """
         checks to see if the station_name is in the connections database (which means it is also in parts)
 
-        return True/False unless check_if_active flag is set, when it returns the antenna number at that location
+        return True/False unless active_date is a Time, when it returns the antenna number at that location
 
         Parameters:
         ------------
@@ -162,54 +157,54 @@ class Handling:
         active_date:  astropy Time to check if active, ignores if not an instance of Time
         """
 
+        active_date = cm_utils._get_datetime(active_date)
         connected_station = self.session.query(part_connect.Connections).filter(part_connect.Connections.upstream_part == station_name)
         if connected_station.count() > 0:
             station_connected = True
         else:
             station_connected = False
-        if station_connected and isinstance(active_date,Time):
+        if station_connected and active_date is not None:
             counter = 0
             for connection in connected_station.all():
                 connection.gps2Time()
                 if cm_utils._is_active(active_date, connection.start_date, connection.stop_date):
-                    station_connected = connection.downstream_part+':'+connection.down_part_rev
+                    station_connected = connection.downstream_part + ':' + connection.down_part_rev
                     counter += 1
                 else:
                     station_connected = False
             if counter > 1:
-                print("Error:  more than one active connection for", station_name)
+                print("Warning:  more than one active connection for", station_name)
                 station_connected = False
         return station_connected
-
 
     def find_station_of_antenna(self, antenna, query_date):
         """
         checks to see at which station an antenna is located
 
-        Returns False or the active station_name (must be an active station for the query_date)
+        Returns None or the active station_name (must be an active station for the query_date)
 
         Parameters:
         ------------
 
-        antenna:  antenna number as float (why?), int, or string. If needed, it prepends the 'A'
+        antenna:  antenna number as float, int, or string. If needed, it prepends the 'A'
         query_date:  is the astropy Time for contemporary antenna
         """
 
+        query_date = cm_utils._get_datetime(query_date)
         if type(antenna) == float or type(antenna) == int or antenna[0] != 'A':
             antenna = 'A' + str(antenna).strip('0')
-        connected_antenna = self.session.query(part_connect.Connections).filter( (part_connect.Connections.downstream_part == antenna)  &
-                                                                                 (query_date.gps >= part_connect.Connections.start_gpstime) )
+        connected_antenna = self.session.query(part_connect.Connections).filter((part_connect.Connections.downstream_part == antenna) &
+                                                                                (query_date.gps >= part_connect.Connections.start_gpstime))
         ctr = 0
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
                 antenna_connected = copy.copy(conn)
-                ctr+=1
+                ctr += 1
         if ctr == 0:
-            antenna_connected = False
+            antenna_connected = None
         elif ctr > 1:
             raise ValueError('More than one active connection between station and antenna')
         return antenna_connected.upstream_part
-
 
     def get_location(self, to_find, query_date, show_location=False, verbosity='m'):
         """
@@ -262,19 +257,25 @@ class Handling:
                             print('\tcreated:  ', cm_utils._get_displayTime(a.created_date))
                         elif verbosity == 'l':
                             print(a, this_station)
+            else:
+                found_location.append(None)
             if show_location:
                 if not found_it and verbosity == 'm' or verbosity == 'h':
                     print(L, ' not found.')
         return found_location
 
     def get_all_everconnected_locations(self):
+        """
+        Returns a list of all of the locations ever connected.
+        """
+
         stations = self.session.query(geo_location.GeoLocation).all()
         connections = self.session.query(part_connect.Connections).all()
-        stations_conn= []
+        stations_conn = []
         for stn in stations:
             hera_proj = Proj(proj='utm', zone=stn.tile, ellps=stn.datum, south=True)
             stn.lon, stn.lat = hera_proj(stn.easting, stn.northing, inverse=True)
-            ever_connected = self.is_in_connections(stn.station_name,'>')
+            ever_connected = self.is_in_connections(stn.station_name, '>')
             if ever_connected is True:
                 connections = session.query(part_connect.Connections).filter(
                     part_connect.Connections.upstream_part == stn.station_name)
@@ -291,16 +292,23 @@ class Handling:
                                           'stop_date': stop_date})
         return stations_conn
 
+    def get_ants_installed_since(self, query_date, station_types_to_check='all'):
+        """
+        Returns list of antennas installed since query_date.
 
-    def get_since_date(self,query_date,station_types_to_check):
+        Parameters
+        -----------
+        query_date:  date to limit check for installation
+        station_types_to_check:  list of stations types to limit check
+        """
+
         self.get_station_types(add_stations=False)
         dt = query_date.gps
         found_stations = []
         for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.created_gpstime >= dt):
-            if self.flipped_station_types[a.station_type_name] in station_types_to_check:
+            if station_types_to_check=='all' or self.flipped_station_types[a.station_type_name] in station_types_to_check:
                 found_stations.append(a.station_name)
         return found_stations
-
 
     def plot_stations(self, stations_to_plot, query_date, state_args):
         """
@@ -309,9 +317,10 @@ class Handling:
         Parameters:
         ------------
         stations_to_plot:  list containing station_names (note:  NOT antenna_numbers)
-        query_date:  date for active-only plot
+        query_date:  date to use to check if active
         state_args:  dictionary with state arguments (fig_num, marker_color, marker_shape, marker_size, show_label)
         """
+        query_date = cm_utils._get_datetime(query_date)
         displaying_label = bool(state_args['show_label'])
         if displaying_label:
             label_to_show = state_args['show_label'].lower()
@@ -341,7 +350,7 @@ class Handling:
                                     labeling = ant.strip('A')
                                 elif label_to_show == 'ser':
                                     p = self.session.query(part_connect.Parts).filter((part_connect.Parts.hpn == ant) &
-                                                                                 (part_connect.Parts.hpn_rev == rev))
+                                                                                      (part_connect.Parts.hpn_rev == rev))
                                     if p.count() == 1:
                                         labeling = p.first().manufacturer_number.replace('S/N', '')
                                     else:
@@ -351,19 +360,19 @@ class Handling:
                         plt.annotate(labeling, xy=(__X, __Y), xytext=(__X + 2, __Y))
         return state_args['fig_num']
 
-
     def plot_station_types(self, query_date, state_args):
         """
         Plot the various sub-array types
 
-        Return fignm of plot
+        Return figure number of plot
 
         Parameters:
         ------------
-        label_station:  flag to either label the station or not.  If not false, give label type.
-        query_date:
+        query_date:  date to use to check if active.
+        state_args:  dictionary with state arguments (fig_num, marker_color, marker_shape, marker_size, show_label)
         """
 
+        query_date = cm_utils._get_datetime(query_date)
         if state_args['background'][0] == 'all':
             prefixes_to_plot = 'all'
         else:
@@ -375,27 +384,26 @@ class Handling:
                 for loc in self.station_types[key]['Stations']:
                     for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == loc):
                         show_it = True
-                        if state_args['show_state'].lower() =='active':
+                        if state_args['show_state'].lower() == 'active':
                             show_it = self.is_in_connections(loc, query_date)
                         if show_it:
                             stations_to_plot.append(loc)
-                state_args['marker_color']=self.station_types[key]['Marker'][0]
-                state_args['marker_shape']=self.station_types[key]['Marker'][1]
-                state_args['marker_size']=6
+                state_args['marker_color'] = self.station_types[key]['Marker'][0]
+                state_args['marker_shape'] = self.station_types[key]['Marker'][1]
+                state_args['marker_size'] = 6
                 self.plot_stations(stations_to_plot, query_date, state_args)
         if state_args['xgraph'].upper() != 'Z' and state_args['ygraph'].upper() != 'Z':
             plt.axis('equal')
         plt.plot(xaxis=state_args['xgraph'], yaxis=state_args['ygraph'])
         return state_args['fig_num']
 
-
     def overplot(self, located_stations, state_args):
         """Overplot station on an existing plot.  It sets specific symbols/colors for active, connected, etc
 
            Parameters:
            ------------
-           located:  geo class of station to plot
-           state_args:
+           located_stations:  geo class of station to plot
+           state_args:  dictionary with state arguments (fig_num, marker_color, marker_shape, marker_size, show_label)
         """
         for located in located_stations:
             ever_connected = self.is_in_connections(located.station_name)

@@ -41,34 +41,38 @@ def _log(msg, **kwargs):
 
 def _get_datetime(_date, _time=0):
     add_time = 0.
+    return_date = None
     if isinstance(_date,Time):
-        return _date
-    if _date == '<':
-        return_date = Time(PAST_DATE,scale='utc')
-    elif _date == '>':
-        return_date = Time(FUTURE_DATE,scale='ut1')
-    elif _date.lower().replace('/','') == 'na' or _date.lower()=='none':
+        return_date = _date
+    elif _date is None:
         return_date = None
-    elif _date.lower() == 'now':
-        return_date = Time.now()
     else:
-        _date = _date.replace('/','-')
-        try:
-            return_date = Time(_date,scale='utc')
-        except ValueError:
-            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
-        if ':' in str(_time):
-            data = _time.split(':')
-            add_time = float(data[0])*3600.0 + float(data[1])*60.0
-            if len(data) == 3:
-                add_time+=float(data[2])
-        else:
+        if _date == '<':
+            return_date = Time(PAST_DATE,scale='utc')
+        elif _date == '>':
+            return_date = Time(FUTURE_DATE,scale='ut1')
+        elif _date.lower().replace('/','') == 'na' or _date.lower()=='none':
+            return_date = None
+        elif _date.lower() == 'now':
+            return_date = Time.now()
+        elif _date is not None:
+            _date = _date.replace('/','-')
             try:
-                add_time = float(_time)*3600.0
+                return_date = Time(_date,scale='utc')
             except ValueError:
-                raise ValueError('Invalid format:  time should be H[:M[:S]] (HMS can be float or int)')
-    if return_date is not None:
-        return_date += TimeDelta(add_time,format='sec')
+                raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
+            if ':' in str(_time):
+                data = _time.split(':')
+                add_time = float(data[0])*3600.0 + float(data[1])*60.0
+                if len(data) == 3:
+                    add_time+=float(data[2])
+            else:
+                try:
+                    add_time = float(_time)*3600.0
+                except ValueError:
+                    raise ValueError('Invalid format:  time should be H[:M[:S]] (HMS can be float or int)')
+        if return_date is not None:
+            return_date += TimeDelta(add_time,format='sec')
     return return_date
 
 def _get_datekeystring(_datetime):
