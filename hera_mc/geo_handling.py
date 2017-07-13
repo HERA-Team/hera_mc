@@ -23,31 +23,18 @@ from hera_mc import mc, part_connect, cm_utils, geo_location
 
 def cofa(show_cofa=False):
     """
-    Shortcut to just get the current cofa
-
     Returns location class of current COFA
 
     Parameters:
     -------------
     show_cofa:  boolean to print out cofa info or just return class
     """
+
     parser = mc.get_mc_argument_parser()
     args = parser.parse_args([])
     h = Handling(args)
-    h.get_station_types(add_stations=True)
-    st = h.station_types
+    located = h.cofa(show_cofa)
     h.close()
-    current_cofa = st['COFA']['Stations']
-    located = get_location(current_cofa,'now',show_cofa,'m')[0]
-
-    if show_cofa:
-        print('Center of array: %s' % (located.station_name))
-        try:
-            print('UTM:  {} {:.0f}E {:.0f}N at {:.1f}m   ({})'.format(located.tile, located.easting, located.northing, located.elevation, located.datum))
-        except TypeError:
-            print('UTM:  {} {:.0f}E {:.0f}N   ({})'.format(located.tile, located.easting, located.northing, located.datum))
-        print('Lat/Lon:  {}  {}'.format(located.lat, located.lon))
-
     return located
 
 def get_location(location_names, query_date='now', show_location=False, verbosity='m'):
@@ -71,6 +58,9 @@ def get_location(location_names, query_date='now', show_location=False, verbosit
     return located
 
 def show_it_now(fignm):
+    """
+    Used in scripts to actually make plot (as opposed to within python).  Seems to be needed...
+    """
     if fignm is not False and fignm is not None:
         plt.figure(fignm)
         plt.show()
@@ -80,6 +70,7 @@ class Handling:
     """
     Class to allow various manipulations of geo_locations and their properties etc.
     """
+
     coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
 
     def __init__(self,args):
@@ -93,6 +84,20 @@ class Handling:
 
     def close(self):
         self.session.close()
+
+    def cofa(self, show_cofa=False):
+        self.get_station_types(add_stations=True)
+        current_cofa = self.station_types['COFA']['Stations']
+        located = self.get_location(current_cofa,'now',show_cofa,'m')[0]
+
+        if show_cofa:
+            print('Center of array: %s' % (located.station_name))
+            try:
+                print('UTM:  {} {:.0f}E {:.0f}N at {:.1f}m   ({})'.format(located.tile, located.easting, located.northing, located.elevation, located.datum))
+            except TypeError:
+                print('UTM:  {} {:.0f}E {:.0f}N   ({})'.format(located.tile, located.easting, located.northing, located.datum))
+            print('Lat/Lon:  {}  {}'.format(located.lat, located.lon))
+        return located
 
     def get_station_types(self,add_stations=True):
         """
