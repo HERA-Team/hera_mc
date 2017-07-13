@@ -70,7 +70,7 @@ if __name__ == '__main__':
     if args.cofa:
         cofa = h.cofa(show_cofa=True)
     if args.since_date:
-        new_antennas = h.get_since_date(query_date, state_args['background'])
+        new_antennas = h.get_ants_installed_since(query_date, state_args['background'])
         print("{} new antennas since {}".format(len(new_antennas),query_date))
         if len(new_antennas)>0:
             s=''
