@@ -37,11 +37,13 @@ class Hookup:
         if direction == 'up':      # Going upstream
             for conn in session.query(part_connect.Connections).filter((part_connect.Connections.downstream_part == part) &
                                                                        (part_connect.Connections.down_part_rev == rev)):
+                conn.gps2Time()
                 if cm_utils._is_active(self.current, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
         elif direction == 'down':  # Going downstream
             for conn in session.query(part_connect.Connections).filter((part_connect.Connections.upstream_part == part) &
                                                                        (part_connect.Connections.up_part_rev == rev)):
+                conn.gps2Time()
                 if cm_utils._is_active(self.current, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
         use_this = self.__wade_through_the_messy_stuff(options, direction=direction)
