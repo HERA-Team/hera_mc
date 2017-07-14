@@ -39,6 +39,14 @@ class Handling:
 
     def __init__(self, args):
         self.args = args
+    #------START-TO-DO------#
+        #-#db = mc.connect_to_mc_db(self.args)
+        #-#self.session = db.sessionmaker()
+        #-#self.station_types = None
+
+    #-#def close(self):
+        #-#self.session.close()
+    #------END-TO-DO------#
 
     def is_in_connections(self, hpn_query, rev_query='ACTIVE', return_active=False):
         """
@@ -123,8 +131,7 @@ class Handling:
                                                            exact_match=True, return_dictionary=True, show_connection=False)
                         part_dict[pr_key]['connections'] = connections
                         if part.hptype == 'station':
-                            args.locate = part.hpn
-                            part_dict[pr_key]['geo'] = geo_handling.locate_station(args, show_location=False)
+                            part_dict[pr_key]['geo'] = geo_handling.get_location([part.hpn], current, show_location=False)
                         part_dict[pr_key]['input_ports'], part_dict[pr_key]['output_ports'] = \
                             self.__find_ports(part_dict[pr_key]['connections'], current)
                     else:
