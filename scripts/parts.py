@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument('-r','--revision', help="Specify revision for hpn (it's a letter).  [LAST]", default='LAST')
     parser.add_argument('--specify-port', help="Define desired port(s) for hookup. [all]", dest='specify_port', default='all')
     parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')
-    parser.add_argument('--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]", dest='exact_match', 
+    parser.add_argument('-e','--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]", dest='exact_match', 
                         action='store_true')
     parser.add_argument('--add-new-part', help="Flag to allow update to add a new record.  [False]", dest='add_new_part', action='store_true')
     parser.add_argument('--mapr-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]", 
