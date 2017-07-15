@@ -10,7 +10,7 @@ The flag -q will force a query.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, geo_location, cm_utils, part_connect
+from hera_mc import mc, geo_location, cm_utils, part_connect, geo_handling
 import sys
 import os.path
 
@@ -62,9 +62,11 @@ def query_geo_information(args):
 
 def entry_OK_to_add(args):
     OK = True
-    if geo_location.is_in_geo_location(args, args.station_name):
+    h = geo_handling.Handling(args)
+    if h.is_in_geo_location(args.station_name):
         print(args.station_name, ' already present.')
         OK = False
+    h.close()
     return OK
 
 
@@ -74,7 +76,7 @@ def add_entry_to_geo_location(args):
     dt = cm_utils._get_datetime(args.date, args.time)
     data = [[sname, 'station_name', sname],
             [sname, 'station_type_name', args.station_type_name],
-            [sname, 'created_date', dt]]
+            [sname, 'created_gpstime', dt.gps]]
     # Other
     if args.datum:
         data.append([sname, 'datum', args.datum])
@@ -98,7 +100,7 @@ def add_entry_to_parts(args):
             [hpn, rev, 'hpn_rev', rev],
             [hpn, rev, 'hptype', 'station'],
             [hpn, rev, 'manufacturer_number', 'S2'],
-            [hpn, rev, 'start_date', dt]]
+            [hpn, rev, 'start_gpstime', dt.gps]]
     part_connect.update_part(args, data)
 
 if __name__ == '__main__':
