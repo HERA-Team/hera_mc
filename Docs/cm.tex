@@ -44,10 +44,10 @@ Parts are hooked together via connections of their ports.   For parts in the PAP
 	\item {\bf Station}: geo\_located position.  See prefixes in table station\_meta ({\em e.g.} {\tt HH} for herahex)
 	\item {\bf Antenna}:  collecting element ({\em this used as the correlator number,} {\tt \{C\}}):  {\tt{\bf A}\{C\}}
 	\item {\bf Feed}:  element feed.  {\tt {\bf FDP}\{\#\}} are PAPER feeds, {\tt {\bf FDA}\{\#\}} are design A HERA feeds.
-	\item {\bf Frontend}:  lna, etc at feed.  {\tt {\bf FEA}\{\#\}} is design A (75 $\Omega$, NRAO).  {\tt {\bf FEB}\{\#\}} will be 75 $\Omega$, CAM).
+	\item {\bf Frontend}:  lna, etc at feed.  {\tt {\bf FEA}\{\#\}} is design A (75 $\Omega$, NRAO).  {\tt {\bf FE7M}\{\#\}} will be 75 $\Omega$, CAM).
 	\item {\bf Cable\_feed75}:  cable from front-end to receiverator: {\tt {\bf C7F}\{\#\}}
 	\item {\bf Cable\_receiverin}:  cable inside {\tt R}$^{th}$ receiverator to receiver: {\tt {\bf RI}\{R\}\{"A"/"B"\}\{\#\}\{"E"/"N"\}}
-	\item {\bf Receiver}:  receiver module in receiverator: {\tt {\bf RCVR}\{SN\}}
+	\item {\bf Receiver}:  receiver module in receiverator: {\tt {\bf RCVR}\{\#\}} (75 $\Omega$, NRAO).  {\tt {\bf PA7M}\{\#\}} will be 75 $\Omega$, CAM).
 	\item {\bf Cable\_receiverout}:  cable inside receiverator from receiver {\tt {\bf RO}\{R\}\{"A"/"B"\}\{\#\}\{"E"/"N"\}}
 	\item {\bf Cable\_receiverator}:  cable from receiverator to container {\tt {\bf CR}\{R\}\{"A"/"B"\}\{\#\}\{"E"/"N"\}}
 	\item {\bf Cable\_container}:  cable inside container from {\tt\{P\}}late/{\tt\{Row\}}/{\tt\{Col\}}umn {\tt {\bf CC}\{P\}{\bf R}\{Row\}{\bf C}\{Col\}}
@@ -164,7 +164,7 @@ tile & character varying(64) & UTM tile \\ \hline
 northing & double precision & UTM coordinate \\ \hline
 easting & double precision & UTM coordinate \\ \hline
 elevation & double precision & Elevation \\ \hline
-created\_date* & datetime & Date and time of creation. \\ \hline
+created\_gpstime* & BigInt & GPS second of creation. \\ \hline
 \end{tabular}
 \end{table}
 
@@ -189,8 +189,8 @@ plot\_marker & character varying(64) & Type of matplotlib marker \\ \hline
 {\bf \em hpn\_rev}* & character varying(32) & HPN revision letter (A-Z) \\ \hline
 hptype*  &  character varying(64) & HPN part type category \\ \hline
 manufacturer\_number & character varying(64) & Unique serial number for each part \\ \hline
-start\_date* & timestamp no time zone & Datetime when part/rev is activated. \\ \hline
-stop\_date & timestamp no time zone & Datetime when part/rev is de-activated \\ \hline
+start\_gpstime* & BigInt & GPS second when part/rev is activated. \\ \hline
+stop\_gpstime & BigInt & GPS second when part/rev is de-activated \\ \hline
 \end{tabular}
 \end{table}
 
@@ -201,7 +201,7 @@ stop\_date & timestamp no time zone & Datetime when part/rev is de-activated \\ 
 {\bf Column} & {\bf Type} & {\bf Description} \\ \hline
 {\bf \em hpn}* & character varying(64) & HERA part number \\ \hline
 {\bf \em hpn\_rev}* & character varying(32) & HPN revision letter (A-Z) \\ \hline
-posting\_date* & timestamp no time zone & Date information was posted \\ \hline
+posting\_gpstime* & BigInt & GPS second information was posted \\ \hline
 comment* &  character varying(1024) & Comment \\ \hline
 library\_file & character varying(256) &  Librarian filename (how to get it there?) \\ \hline
 \end{tabular}
@@ -218,8 +218,8 @@ library\_file & character varying(256) &  Librarian filename (how to get it ther
 {\bf \em downstream\_part}* & character varying(64) & Hera part number of downstream connection \\ \hline
 {\bf \em down\_part\_rev}* & character varying(32) & Hera part revision of downstream connection \\ \hline
 {\bf downstream\_input\_port}* & character varying(64) & Input port on downstream part \\ \hline
-{\bf \em start\_date}* & timestamp with time zone & Date when connection started \\ \hline
-stop\_date & timestamp no time zone & Date when connection ended \\ \hline
+{\bf \em start\_gpstime}* & BigInt & GPS second when connection started \\ \hline
+stop\_gpstime & BigInt & GPS second when connection ended \\ \hline
 \end{tabular}
 \end{table}
 
