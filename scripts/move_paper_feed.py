@@ -67,13 +67,13 @@ def stop_previous_parts(args):
     is_connected = handling.is_in_connections(args.antenna_number, 'A', return_active=True)
     if type(is_connected) == list:  # It is active
         print("Stopping part %s %s at %s" % (args.antenna_number, 'A', str(current)))
-        data = [[args.antenna_number, 'A', 'stop_date', current]]
+        data = [[args.antenna_number, 'A', 'stop_gpstime', current.gps]]
     
     feed = 'FDP' + args.antenna_number.strip('A')
     is_connected = handling.is_in_connections(feed, 'A', return_active=True)
     if type(is_connected) == list:  # It is active
         print("Stopping part %s %s at %s" % (feed, 'A', str(current)))
-        data.append([feed, 'A', 'stop_date', current])
+        data.append([feed, 'A', 'stop_gpstime', current.gps])
 
     if args.make_update:
         part_connect.update_part(args, data)
@@ -91,7 +91,7 @@ def add_new_parts(args):
     data.append([args.antenna_number, 'B', 'hpn_rev', 'B'])
     data.append([args.antenna_number, 'B', 'hptype', 'antenna'])
     data.append([args.antenna_number, 'B', 'manufacturer_number', args.serial_number])
-    data.append([args.antenna_number, 'B', 'start_date', current])
+    data.append([args.antenna_number, 'B', 'start_gpstime', current.gps])
 
     feed = 'FD'+args.antenna_number
     print("Adding part %s %s at %s" % (feed, 'B', str(current)))
@@ -100,7 +100,7 @@ def add_new_parts(args):
     data.append([feed, 'B', 'hpn_rev', 'B'])
     data.append([feed, 'B', 'hptype', 'feed'])
     data.append([feed, 'B', 'manufacturer_number', mfg_number])
-    data.append([feed, 'B', 'start_date', current])
+    data.append([feed, 'B', 'start_gpstime', current.gps])
 
     if args.make_update:
         part_connect.update_part(args, data)
@@ -125,14 +125,14 @@ def stop_previous_connections(args, handling):
         if c.downstream_part == args.antenna_number and c.down_part_rev == 'A':
             print("Stopping connection ", c)
             station_connection = [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                                  c.upstream_output_port, c.downstream_input_port, c.start_date,
-                                 'stop_date', current]
+                                  c.upstream_output_port, c.downstream_input_port, c.start_gptime,
+                                 'stop_gpstime', current.gps]
             data.append(station_connection)
         if c.upstream_part == args.antenna_number and c.up_part_rev == 'A':
             print("Stopping connection ", c)
             feed_connection = [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                               c.upstream_output_port, c.downstream_input_port, c.start_date,
-                               'stop_date', current]
+                               c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+                               'stop_gpstime', current.gps]
             data.append(feed_connection)
     feed = feed_connection[2]
     feed_rev = feed_connection[3]
@@ -143,8 +143,8 @@ def stop_previous_connections(args, handling):
         if c.upstream_part == feed and c.up_part_rev == feed_rev:
             print("Stopping connection ", c)
             frontend_connection = [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                                   c.upstream_output_port, c.downstream_input_port, c.start_date,
-                                   'stop_date', current]
+                                   c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+                                   'stop_gpstime', current.gps]
             data.append(frontend_connection)
     if args.make_update:
         part_connect.update_connection(args, data)
@@ -157,26 +157,26 @@ def add_new_connection(args, c):
     print("Adding ", c)
     args.add_new_connection = True
     data = [[c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'upstream_part', c.upstream_part],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'up_part_rev', c.up_part_rev],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'downstream_part', c.downstream_part],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'down_part_rev', c.down_part_rev],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'upstream_output_port', c.upstream_output_port],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'downstream_input_port', c.downstream_input_port],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
-             'start_date', c.start_date]]
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+             'start_gpstime', c.start_gpstime]]
     if args.make_update:
         part_connect.update_connection(args, data)
     else:
@@ -236,7 +236,7 @@ if __name__ == '__main__':
     connect.connection(upstream_part=args.station_name, up_part_rev='A',
                downstream_part=args.antenna_number, down_part_rev='B',
                upstream_output_port='ground', downstream_input_port='ground',
-               start_date=cm_utils._get_datetime(args.date, args.time))
+               start_gpstime=cm_utils._get_datetime(args.date, args.time))
     if OK_to_add(args, connect, handling):
         if args.make_update:
             print("OK to update -- actually doing it.")
@@ -253,14 +253,14 @@ if __name__ == '__main__':
         connect.connection(upstream_part=args.antenna_number, up_part_rev='B',
                            downstream_part=feed,              down_part_rev='B',
                            upstream_output_port='focus',      downstream_input_port='input',
-                           start_date=cm_utils._get_datetime(args.date, args.time),
-                           stop_date=None)
+                           start_gpstime=cm_utils._get_datetime(args.date, args.time).gps,
+                           stop_gpstime=None)
         add_new_connection(args, connect)
         # Adding new feed/frontend connection
         frontend = 'FE' + args.antenna_number
         connect.connection(upstream_part=feed,               up_part_rev='B',
                            downstream_part=frontend,         down_part_rev='A',
                            upstream_output_port='terminals', downstream_input_port='input',
-                           start_date=cm_utils._get_datetime(args.date, args.time),
-                           stop_date=None)
+                           start_gpstime=cm_utils._get_datetime(args.date, args.time).gps,
+                           stop_gpstime=None)
         add_new_connection(args, connect)
