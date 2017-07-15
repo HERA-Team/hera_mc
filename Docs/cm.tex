@@ -42,13 +42,13 @@ All parts and connections are timed in that they have a start and stop time of o
 Parts are hooked together via connections of their ports.   For parts in the PAPER era, the signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}.
 \begin{itemize}\setlength\itemsep{-.3em}
 	\item {\bf Station}: geo\_located position.  See prefixes in table station\_meta ({\em e.g.} {\tt HH} for herahex)
-	\item {\bf Antenna}:  collecting element ({\em this used as the correlator number,} {\tt \{C\}}):  {\tt{\bf A}\{C\}}
+	\item {\bf Antenna\footnote{Note that rev {\bf P} is the PAPER element, {\bf T} is the transitional numbering, {\bf H} is HERA}}:  collecting element ({\em this is the correlator antenna number}):  {\tt{\bf A}}
 	\item {\bf Feed}:  element feed.  {\tt {\bf FDP}\{\#\}} are PAPER feeds, {\tt {\bf FDA}\{\#\}} are design A HERA feeds.
 	\item {\bf Frontend}:  lna, etc at feed.  {\tt {\bf FEA}\{\#\}} is design A (75 $\Omega$, NRAO).  {\tt {\bf FE7M}\{\#\}} will be 75 $\Omega$, CAM).
 	\item {\bf Cable\_feed75}:  cable from front-end to receiverator: {\tt {\bf C7F}\{\#\}}
-	\item {\bf Cable\_receiverin}:  cable inside {\tt R}$^{th}$ receiverator to receiver: {\tt {\bf RI}\{R\}\{"A"/"B"\}\{\#\}\{"E"/"N"\}}
-	\item {\bf Receiver}:  receiver module in receiverator: {\tt {\bf RCVR}\{\#\}} (75 $\Omega$, NRAO).  {\tt {\bf PA7M}\{\#\}} will be 75 $\Omega$, CAM).
-	\item {\bf Cable\_receiverout}:  cable inside receiverator from receiver {\tt {\bf RO}\{R\}\{"A"/"B"\}\{\#\}\{"E"/"N"\}}
+	\item {\bf Cable\_receiverin}:  cable inside {\tt R}$^{th}$ receiverator to post-amp: {\tt {\bf RI}\{R\}\{"A"/"B"\}\{\#\}\{"E"/"N"\}}
+	\item {\bf Post-amp}:  post-amp in receiverator: {\tt {\bf RCVR}\{\#\}} (75 $\Omega$, NRAO).  {\tt {\bf PA7M}\{\#\}} will be 75 $\Omega$, CAM).
+	\item {\bf Cable\_receiverout}:  cable inside receiverator from post-amp {\tt {\bf RO}\{R\}\{"A"/"B"\}\{\#\}\{"E"/"N"\}}
 	\item {\bf Cable\_receiverator}:  cable from receiverator to container {\tt {\bf CR}\{R\}\{"A"/"B"\}\{\#\}\{"E"/"N"\}}
 	\item {\bf Cable\_container}:  cable inside container from {\tt\{P\}}late/{\tt\{Row\}}/{\tt\{Col\}}umn {\tt {\bf CC}\{P\}{\bf R}\{Row\}{\bf C}\{Col\}}
 	\item {\bf F\_engine}:  {\tt\{R2\}} Roach-2 input {\tt {\bf DF}\{R2\}\{"A"-"H"\}\{\#\}}
