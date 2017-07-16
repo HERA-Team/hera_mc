@@ -25,8 +25,8 @@ def _split_part_key(key):
     return key.split(':')[0], key.split(':')[1]
 
 
-def _make_connection_key(hpn, rev, port, direction, next_part, next_rev, next_port, start_date):
-    return ":".join([hpn, rev, port, direction, next_part, cm_utils._get_datekeystring(start_date)])
+def _make_connection_key(hpn, rev, port, direction, next_part, next_rev, next_port, start_gpstime):
+    return ":".join([hpn, rev, port, direction, next_part, str(start_gpstime)])
 
 
 class Handling:
@@ -257,7 +257,7 @@ class Handling:
                             conn.gps2Time()
                             prc_key = _make_connection_key(hpn, this_rev, conn.upstream_output_port, 'down',
                                                            conn.downstream_part, conn.down_part_rev, conn.downstream_input_port,
-                                                           conn.start_date)
+                                                           conn.start_gpstime)
                             connection_dict[prc_key] = copy.copy(conn)
                             if cm_utils._is_active(current, conn.start_date, conn.stop_date):
                                 down_parts.append(prc_key)
@@ -268,7 +268,7 @@ class Handling:
                             conn.gps2Time()
                             prc_key = _make_connection_key(hpn, this_rev, conn.downstream_input_port, 'up',
                                                            conn.upstream_part, conn.up_part_rev, conn.upstream_output_port,
-                                                           conn.start_date)
+                                                           conn.start_gpstime)
                             connection_dict[prc_key] = copy.copy(conn)
                             if cm_utils._is_active(current, conn.start_date, conn.stop_date):
                                 up_parts.append(prc_key)
