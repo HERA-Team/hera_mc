@@ -36,8 +36,10 @@ def stop_previous_parts(args,antrev,feedrev):
         print("Stopping part %s %s at %s" % (feedrev[0], feedrev[1], str(args.date)))
         data.append([feedrev[0], feedrev[1], 'stop_gpstime', current])
 
-    print(data)
-    #part_connect.update_part(args, data)
+    if args.actually_do_it:
+        part_connect.update_part(args, data)
+    else:
+        print(data)
 
 
 def add_new_parts(args,antrev,mfgna,feedrev):
@@ -61,8 +63,11 @@ def add_new_parts(args,antrev,mfgna,feedrev):
         data.append([feedrev[0], 'B', 'manufacturer_number', mfgnf])
         data.append([feedrev[0], 'B', 'start_gpstime', current])
 
-    print(data)
-    #part_connect.update_part(args, data)
+    if args.actually_do_it:
+        part_connect.update_part(args, data)
+    else:
+        print(data)
+
 
 def verbose_previous_hookup(previous_hookup):
     for pk in previous_hookup.keys():
@@ -100,8 +105,10 @@ def stop_previous_connections(args, h, srev, arev, frev):
     stopping = [arev[0], arev[1], frev[0], frev[1], 'focus', 'input', gps, 'stop_gpstime', current]
     data.append(stopping)
 
-    print(data)
-    #part_connect.update_connection(args, data)
+    if args.actually_do_it:
+        part_connect.update_connection(args, data)
+    else:
+        print(data)
 
 def add_new_connections(args, c, srev, arev, frev):
     """
@@ -163,10 +170,13 @@ def __connection_updater(args, c):
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
              c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'start_gpstime', c.start_gpstime]]
-    print("===========")
-    print(data)
-    print("+++++++++++")
-    #part_connect.update_connection(args, data)
+
+    if args.actually_do_it:
+        part_connect.update_connection(args, data)
+    else:
+        print("===========")
+        print(data)
+        print("+++++++++++")
 
 def get_mfg_number(hrev):
     full_part = handling.get_part(hrev[0],hrev[1])
@@ -217,6 +227,7 @@ if __name__ == '__main__':
     args.show_levels = False
     args.mapr_cols = 'all'
     args.exact_match = True
+    args.actually_do_it = True
 
     if len(sys.argv) == 1 or args.station_name is None:
         query = True
@@ -239,10 +250,10 @@ if __name__ == '__main__':
     old_antrev = geo.is_in_connections(args.station_name,args.date,True)
     new_mfg_number = get_mfg_number(old_antrev)
     new_antrev = ('A' + args.station_name[2:], 'H')
-    print("==============================PREVIOUS=============================")
-    previous_hookup = hookup.get_hookup(old_antrev[0], old_antrev[1], show_hookup=True)
-    verbose_previous_hookup(previous_hookup)
-    print("===================================================================")
+    #print("==============================PREVIOUS=============================")
+    #previous_hookup = hookup.get_hookup(old_antrev[0], old_antrev[1], show_hookup=True)
+    #verbose_previous_hookup(previous_hookup)
+    #print("===================================================================")
     
     if isinstance(old_antrev,tuple):
         print('Converting {}:{} to {}:{}'.format(old_antrev[0],old_antrev[1],new_antrev[0],new_antrev[1]))
