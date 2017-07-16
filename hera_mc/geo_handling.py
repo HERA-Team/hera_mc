@@ -144,38 +144,44 @@ class Handling:
             station_present = False
         return station_present
 
-    def is_in_connections(self, station_name, active_date=None):
+    def is_in_connections(self, station_name, active_date=None, return_antrev=True):
         """
         checks to see if the station_name is in the connections database (which means it is also in parts)
+        if active_date is None, it will return True/False if ever connected
+        if active_date is given, it will check whether it was connected at that time
 
-        return True/False unless active_date is a Time, when it returns the antenna number at that location
+        return True/False unless (1) active_date is provided and (2) return_antrev is True
 
         Parameters:
         ------------
-        args:  needed arguments to open database and set date/time
         station_name:  string name of station
-        active_date:  astropy Time to check if active, ignores if not an instance of Time
+        active_date:  astropy Time to check if active, default is None
+        return_antrev:  boolean lag to return True/False or antrev tuple, default is True
         """
 
         active_date = cm_utils._get_datetime(active_date)
-        connected_station = self.session.query(part_connect.Connections).filter(part_connect.Connections.upstream_part == station_name)
-        if connected_station.count() > 0:
-            station_connected = True
+        connected_antenna = self.session.query(part_connect.Connections).filter(part_connect.Connections.upstream_part == station_name)
+        if connected_antenna.count() > 0:
+            antenna_connected = True
         else:
-            station_connected = False
-        if station_connected and active_date is not None:
+            antenna_connected = False
+        if antenna_connected and active_date is not None:
             counter = 0
-            for connection in connected_station.all():
+            for connection in connected_antenna.all():
                 connection.gps2Time()
                 if cm_utils._is_active(active_date, connection.start_date, connection.stop_date):
-                    station_connected = connection.downstream_part + ':' + connection.down_part_rev
+                    if return_antrev:
+                        antenna_connected = (connection.downstream_part,connection.down_part_rev)
+                    else:
+                        antenna_connected = True
                     counter += 1
                 else:
-                    station_connected = False
+                    antenna_connected = False
             if counter > 1:
                 print("Warning:  more than one active connection for", station_name)
-                station_connected = False
-        return station_connected
+                print("\tYou should check this out and correct it.")
+                antenna_connected = False
+        return antenna_connected
 
     def find_station_of_antenna(self, antenna, query_date):
         """
@@ -238,8 +244,8 @@ class Handling:
                             this_station = 'No station type data.'
                     a.gps2Time()
                     desc = self.station_types[this_station]['Description']
-                    ever_connected = self.is_in_connections(a.station_name, '<')
-                    active = self.is_in_connections(a.station_name, query_date)
+                    ever_connected = self.is_in_connections(a.station_name)
+                    active = self.is_in_connections(a.station_name, query_date, True)
                     found_it = True
                     hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                     a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
@@ -275,8 +281,8 @@ class Handling:
         for stn in stations:
             hera_proj = Proj(proj='utm', zone=stn.tile, ellps=stn.datum, south=True)
             stn.lon, stn.lat = hera_proj(stn.easting, stn.northing, inverse=True)
-            ever_connected = self.is_in_connections(stn.station_name, '>')
-            if ever_connected is True:
+            ever_connected = self.is_in_connections(stn.station_name)
+            if ever_connected:
                 connections = session.query(part_connect.Connections).filter(
                     part_connect.Connections.upstream_part == stn.station_name)
                 for conn in connections:
@@ -329,7 +335,7 @@ class Handling:
             for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == station):
                 show_it = True
                 if state_args['show_state'].lower() == 'active':
-                    show_it = self.is_in_connections(station, query_date)
+                    show_it = self.is_in_connections(station, query_date, False)
                 if show_it:
                     pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
                     __X = pt[self.coord[state_args['xgraph']]]
@@ -340,12 +346,12 @@ class Handling:
                         if label_to_show == 'name':
                             labeling = a.station_name
                         else:
-                            antrev = self.is_in_connections(station, query_date)
+                            antrev = self.is_in_connections(station, query_date, True)
                             if antrev is False:
                                 labeling = 'NA'
                             else:
-                                ant = antrev.split(':')[0]
-                                rev = antrev.split(':')[1]
+                                ant = antrev[0]
+                                rev = antrev[1]
                                 if label_to_show == 'num':
                                     labeling = ant.strip('A')
                                 elif label_to_show == 'ser':
@@ -385,7 +391,7 @@ class Handling:
                     for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == loc):
                         show_it = True
                         if state_args['show_state'].lower() == 'active':
-                            show_it = self.is_in_connections(loc, query_date)
+                            show_it = self.is_in_connections(loc, query_date, False)
                         if show_it:
                             stations_to_plot.append(loc)
                 state_args['marker_color'] = self.station_types[key]['Marker'][0]
@@ -407,7 +413,7 @@ class Handling:
         """
         for located in located_stations:
             ever_connected = self.is_in_connections(located.station_name)
-            active = self.is_in_connections(located.station_name, True)
+            active = self.is_in_connections(located.station_name, query_date)
             if ever_connected and active:
                 over_marker = 'g*'
                 mkr_lbl = 'ca'
