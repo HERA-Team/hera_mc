@@ -14,7 +14,8 @@ from astropy.time import TimeDelta
 import os.path
 
 PAST_DATE = '2000-01-01'
-FUTURE_DATE = '2025-12-31'
+def _future_date():
+    return Time.now() + TimeDelta(100, format='jd')
 
 def _log(msg, **kwargs):
     fp = open(mc.cm_log_file, 'a')
@@ -66,6 +67,10 @@ def add_date_time_args(parser):
 
 
 def _get_datetime(_date, _time=0):
+    """
+    Take in various incarnations of _date/_time and return an astropy.Time object
+    """
+
     add_time = 0.
     return_date = None
     if isinstance(_date,Time):
@@ -76,7 +81,7 @@ def _get_datetime(_date, _time=0):
         if _date == '<':
             return_date = Time(PAST_DATE,scale='utc')
         elif _date == '>':
-            return_date = Time(FUTURE_DATE,scale='ut1')
+            return_date = _future_date()
         elif _date.lower().replace('/','') == 'na' or _date.lower()=='none':
             return_date = None
         elif _date.lower() == 'now':
@@ -120,7 +125,7 @@ def _get_stopdate(_stop_date):
     if isinstance(_stop_date,Time):
         return _stop_date
     else:
-        return Time(FUTURE_DATE, scale='ut1')
+        return _future_date()
 
 def _is_active(current, _start_date, _stop_date):
     _stop_date = _get_stopdate(_stop_date)
