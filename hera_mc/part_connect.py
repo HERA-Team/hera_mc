@@ -269,7 +269,7 @@ class Connections(MCDeclarativeBase):
     def __repr__(self):
         up = '{self.upstream_part}:{self.up_part_rev}'.format(self=self)
         down = '{self.downstream_part}:{self.down_part_rev}'.format(self=self)
-        return '<{}<{self.upstream_output_port}$|${self.downstream_input_port}>{}>'.format(up, down, self=self)
+        return '<{}<{self.upstream_output_port}|{self.downstream_input_port}>{}>'.format(up, down, self=self)
 
     def gps2Time(self):
         self.start_date = Time(self.start_gpstime,format='gps')
@@ -311,7 +311,7 @@ def update_connection(args, data):
             drev_to_change = data_dict[dkey][0][3]
             boup_to_change = data_dict[dkey][0][4]
             aodn_to_change = data_dict[dkey][0][5]
-            strt_to_change = math.floor(data_dict[dkey][0][6].gps)
+            strt_to_change = data_dict[dkey][0][6]
             if urev_to_change[:4] == 'LAST':
                 urev_to_change = get_last_revision_number(args, upcn_to_change)
             if drev_to_change[:4] == 'LAST':

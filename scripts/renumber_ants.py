@@ -70,63 +70,102 @@ def verbose_previous_hookup(previous_hookup):
             for i,a in enumerate(previous_hookup[pk]):
                 print('\t',previous_hookup['columns'][i],':  ',a.upstream_part,a.up_part_rev)
 
-def stop_previous_connections(args, handling, connect, previous_hookup, srev, arev, frev):
+def stop_previous_connections(args, h, srev, arev, frev):
     """This adds stop times to the previous connections between:
            station and antenna rev A
            antenna revA and feed rev A
-           feed rev A and frontend
     """
 
     current = int(args.date.gps)
     data = []
     args.add_new_connection = False
-    HHXAY = handling.get_connections(srev[0],srev[1],'ground',True)
+
+    # First connection
+    print("Stopping connection <{}:{}<ground|ground>{}:{}>".format(srev[0],srev[1],arev[0],arev[1]))
+    HHXAY = h.get_connections(srev[0],srev[1],'ground',True)
     for ck in HHXAY.keys():
         if srev[0] in ck:
             break
     gps = HHXAY[ck].start_gpstime
-    connect.connection(upstream_part=srev[0],           up_part_rev=srev[1],
-                       downstream_part=arev[0],         down_part_rev=arev[1],
-                       upstream_output_port='terminals', downstream_input_port='input',
-                       start_gpstime=gps,
-                       stop_gpstime=None)
-    print("Stopping connection ", c)
-    station_connection = [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                          c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-                         'stop_date', current]
-    data.append(station_connection)
+    stopping = [srev[0], srev[1], arev[0], arev[1], 'ground', 'ground', gps, 'stop_gpstime', current]
+    data.append(stopping)
 
+    #Second connection
+    print("Stopping connection <{}:{}<focus|input>{}:{}>".format(arev[0],arev[1],frev[0],frev[1]))
+    AYFDAY = h.get_connections(arev[0],arev[1],'focus',True)
+    for ck in AYFDAY.keys():
+        if arev[0] in ck:
+            break
+    gps = AYFDAY[ck].start_gpstime
+    stopping = [arev[0], arev[1], frev[0], frev[1], 'focus', 'input', gps, 'stop_gpstime', current]
+    data.append(stopping)
 
     print(data)
     #part_connect.update_connection(args, data)
 
+def add_new_connections(args, c, srev, arev, frev):
+    """
+    This generates a connection object to send to the updater
+       station and new antenna number/H
+       antenna and feed
+       if old feedrev is 'A', adds connection between B and FEAY/A
+    """
+    current = int(args.date.gps)
 
-def add_new_connection(args, c):
-    # Add the provided new connection c
+    # First new connection
+    c.connection(upstream_part=srev[0],         up_part_rev=srev[1],
+                 downstream_part=arev[0],       down_part_rev=arev[1],
+                 upstream_output_port='ground', downstream_input_port='ground', start_gpstime=current,
+                 stop_gpstime=None)
+    __connection_updater(args,c)
+
+    # Second new connection
+    c.connection(upstream_part=arev[0],         up_part_rev=arev[1],
+                 downstream_part=frev[0],       down_part_rev='B',
+                 upstream_output_port='focus', downstream_input_port='input', start_gpstime=current,
+                 stop_gpstime=None)
+    __connection_updater(args,c)
+
+    # Third new connection if needed
+    if frev[1] == 'A':
+        fea = frev[0].replace('D','E')
+        c.connection(upstream_part=frev[0],     up_part_rev='B',
+                     downstream_part=fea,       down_part_rev='A',
+                     upstream_output_port='terminals', downstream_input_port='input', start_gpstime=current,
+                     stop_gpstime=None)
+        __connection_updater(args,c)
+
+
+def __connection_updater(args, c):
+    """
+    This actually updates the connections
+    """
     print("Adding ", c)
     args.add_new_connection = True
     data = [[c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'upstream_part', c.upstream_part],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'up_part_rev', c.up_part_rev],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'downstream_part', c.downstream_part],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'down_part_rev', c.down_part_rev],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'upstream_output_port', c.upstream_output_port],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
              'downstream_input_port', c.downstream_input_port],
             [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_date,
-             'start_date', c.start_date]]
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+             'start_gpstime', c.start_gpstime]]
+    print("===========")
     print(data)
+    print("+++++++++++")
     #part_connect.update_connection(args, data)
 
 def get_mfg_number(hrev):
@@ -200,25 +239,17 @@ if __name__ == '__main__':
     old_antrev = geo.is_in_connections(args.station_name,args.date,True)
     new_mfg_number = get_mfg_number(old_antrev)
     new_antrev = ('A' + args.station_name[2:], 'H')
+    print("==============================PREVIOUS=============================")
     previous_hookup = hookup.get_hookup(old_antrev[0], old_antrev[1], show_hookup=True)
     verbose_previous_hookup(previous_hookup)
+    print("===================================================================")
     
     if isinstance(old_antrev,tuple):
         print('Converting {}:{} to {}:{}'.format(old_antrev[0],old_antrev[1],new_antrev[0],new_antrev[1]))
         feedrev = get_feed(previous_hookup)
         if feedrev[1] == 'A':
             print('H19 - wonky feed cage, but assuming it will get replaced.')
-
         stop_previous_parts(args,old_antrev,feedrev)
         add_new_parts(args,new_antrev,new_mfg_number,feedrev)
-        stop_previous_connections(args, handling, connect, previous_hookup, statrev, old_antrev, feedrev)
-    #     # Connection is set above to be checked by OK_to_add
-    #     add_new_connection(args, connect)
-    #     # Adding new antenna/feed connection
-    #     feed = 'FD' + args.antenna_number
-
-    #     add_new_connection(args, connect)
-    #     # Adding new feed/frontend connection
-    #     frontend = 'FE' + args.antenna_number
-
-    #     add_new_connection(args, connect)
+        stop_previous_connections(args, handling, statrev, old_antrev, feedrev)
+        add_new_connections(args, connect, statrev, new_antrev, feedrev)
