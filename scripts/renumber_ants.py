@@ -115,34 +115,36 @@ def stop_previous_connections(args, h, srev, arev, frev):
         stopping = [arev[0], arev[1], frev[0], frev[1], 'focus', 'input', gps, 'stop_gpstime', current]
         data.append(stopping)
 
-    # Third connection (pair) FEAY/A:C7FY/A;  ports e:ea, n:na
-    Num = arev[0].strip('A')
-    for uport in ['e','n']:
-        frev = ('FEA'+Num,'A')
-        crev = ('C7F'+Num,'A')
-        dport = uport+'a'
-        print("Stopping connection <{}:{}<{}|{}>{}:{}>".format(frev[0],frev[1],uport,dport,crev[0],crev[1]))
-        FYCY = h.get_connections(frev[0],frev[1],uport,True)
-        ck = get_connection_key(FYCY,frev)
-        if ck is not None:
-            gps = FYCY[ck].start_gpstime
-            stopping = [frev[0], frev[1], crev[0], crev[1], uport, dport, gps, 'stop_gpstime', current]
-            data.append(stopping)
-
-    # Fourth connection (pair) FEAX/A:C7FX/A;  ports e:ea, n:na (if active)
-    Num = arev[0].strip('HH')
-    for uport in ['e','n']:
-        frev = ('FEA'+Num,'A')
-        crev = ('C7F'+Num,'A')
-        dport = uport+'a'
-        print("Stopping connection <{}:{}<{}|{}>{}:{}>".format(frev[0],frev[1],uport,dport,crev[0],crev[1]))
-        FYCY = h.get_connections(frev[0],frev[1],uport,True)
-        if connection_active(FYCY,frev):
+    do_C7 = False
+    if do_C7:
+        # Third connection (pair) FEAY/A:C7FY/A;  ports e:ea, n:na
+        Num = arev[0].strip('A')
+        for uport in ['e','n']:
+            frev = ('FEA'+Num,'A')
+            crev = ('C7F'+Num,'A')
+            dport = uport+'a'
+            print("Stopping connection <{}:{}<{}|{}>{}:{}>".format(frev[0],frev[1],uport,dport,crev[0],crev[1]))
+            FYCY = h.get_connections(frev[0],frev[1],uport,True)
             ck = get_connection_key(FYCY,frev)
             if ck is not None:
                 gps = FYCY[ck].start_gpstime
                 stopping = [frev[0], frev[1], crev[0], crev[1], uport, dport, gps, 'stop_gpstime', current]
                 data.append(stopping)
+
+        # Fourth connection (pair) FEAX/A:C7FX/A;  ports e:ea, n:na (if active)
+        Num = arev[0].strip('HH')
+        for uport in ['e','n']:
+            frev = ('FEA'+Num,'A')
+            crev = ('C7F'+Num,'A')
+            dport = uport+'a'
+            print("Stopping connection <{}:{}<{}|{}>{}:{}>".format(frev[0],frev[1],uport,dport,crev[0],crev[1]))
+            FYCY = h.get_connections(frev[0],frev[1],uport,True)
+            if connection_active(FYCY,frev):
+                ck = get_connection_key(FYCY,frev)
+                if ck is not None:
+                    gps = FYCY[ck].start_gpstime
+                    stopping = [frev[0], frev[1], crev[0], crev[1], uport, dport, gps, 'stop_gpstime', current]
+                    data.append(stopping)
 
     if args.actually_do_it:
         part_connect.update_connection(args, data)
@@ -181,15 +183,17 @@ def add_new_connections(args, c, srev, arev, frev):
                      stop_gpstime=None)
         __connection_updater(args,c)
 
-    # Hook FEA to C7F
-    for uport in ['e','n']:
-        c7f = 'C7F' + arev[0][1:]
-        dport = uport+'a'
-        c.connection(upstream_part=fea,          up_part_rev='A',
-                     downstream_part=c7f,        down_part_rev='A',
-                     upstream_output_port=uport, downstream_input_port=dport, start_gpstime=current,
-                     stop_gpstime=None)
-        __connection_updater(args,c)
+    do_C7 = False
+    if do_C7:
+        # Hook FEA to C7F
+        for uport in ['e','n']:
+            c7f = 'C7F' + arev[0][1:]
+            dport = uport+'a'
+            c.connection(upstream_part=fea,          up_part_rev='A',
+                         downstream_part=c7f,        down_part_rev='A',
+                         upstream_output_port=uport, downstream_input_port=dport, start_gpstime=current,
+                         stop_gpstime=None)
+            __connection_updater(args,c)
 
 def __connection_updater(args, c):
     """
