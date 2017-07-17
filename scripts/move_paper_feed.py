@@ -9,7 +9,7 @@ Script to handle moving a PAPER feed into HERA hex.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling, geo_location, cm_hookup
+from hera_mc import mc, cm_utils, part_connect, cm_handling, geo_location, cm_hookup, geo_handling
 import sys
 import copy
 
@@ -37,10 +37,10 @@ def query_connection(args):
     return args
 
 
-def OK_to_add(args, connect, handling):
+def OK_to_add(args, connect, handling, geo):
     is_OK_to_add = True
     # 1 - check to see if station is in geo_location database (should be)
-    if not geo_location.is_in_geo_location(args, connect.upstream_part):
+    if not geo.is_in_geo_location(connect.upstream_part):
         print("You need to add_station.py", connect.upstream_part, "to geo_location database")
         is_OK_to_add = False
     # 2 - check to see if the station is already connected (shouldn't be)
@@ -49,7 +49,7 @@ def OK_to_add(args, connect, handling):
         print('Error: ', connect.upstream_part, "already connected.")
         is_OK_to_add = False
     # 3 - check to see if antenna is already connected (should be, but isn't necesarily active)
-    is_connected = handling.is_in_connections(connect.downstream_part, 'A', return_active=True)
+    is_connected = handling.is_in_connections(connect.downstream_part, 'P', return_active=True)
     if not is_connected:
         print('Error:  ', connect.downstream_part, 'not present')
         is_OK_to_add = False
@@ -61,19 +61,19 @@ def OK_to_add(args, connect, handling):
 
 def stop_previous_parts(args):
     """This adds stop times to the previously connected rev A antenna and FDP rev A, if needed"""
-    current = cm_utils._get_datetime(args.date, args.time)
+    current = int(cm_utils._get_datetime(args.date, args.time).gps)
     args.add_new_part = False
 
-    is_connected = handling.is_in_connections(args.antenna_number, 'A', return_active=True)
+    is_connected = handling.is_in_connections(args.antenna_number, 'P', return_active=True)
     if type(is_connected) == list:  # It is active
-        print("Stopping part %s %s at %s" % (args.antenna_number, 'A', str(current)))
-        data = [[args.antenna_number, 'A', 'stop_gpstime', current.gps]]
+        print("Stopping part %s %s at %s" % (args.antenna_number, 'P', str(args.date)))
+        data = [[args.antenna_number, 'P', 'stop_gpstime', current]]
     
     feed = 'FDP' + args.antenna_number.strip('A')
     is_connected = handling.is_in_connections(feed, 'A', return_active=True)
     if type(is_connected) == list:  # It is active
-        print("Stopping part %s %s at %s" % (feed, 'A', str(current)))
-        data.append([feed, 'A', 'stop_gpstime', current.gps])
+        print("Stopping part %s %s at %s" % (feed, 'A', str(args.date)))
+        data.append([feed, 'A', 'stop_gpstime', current])
 
     if args.make_update:
         part_connect.update_part(args, data)
@@ -83,24 +83,24 @@ def stop_previous_parts(args):
 
 def add_new_parts(args):
     """This adds the new rev B antenna and FDA rev B"""
-    current = cm_utils._get_datetime(args.date, args.time)
+    current = int(cm_utils._get_datetime(args.date, args.time).gps)
     args.add_new_part = True
 
-    print("Adding part %s %s at %s" % (args.antenna_number, 'B', str(current)))
-    data = [[args.antenna_number, 'B', 'hpn', args.antenna_number]]
-    data.append([args.antenna_number, 'B', 'hpn_rev', 'B'])
-    data.append([args.antenna_number, 'B', 'hptype', 'antenna'])
-    data.append([args.antenna_number, 'B', 'manufacturer_number', args.serial_number])
-    data.append([args.antenna_number, 'B', 'start_gpstime', current.gps])
+    print("Adding part %s %s at %s" % (args.antenna_number, 'T', str(args.date)))
+    data = [[args.antenna_number, 'T', 'hpn', args.antenna_number]]
+    data.append([args.antenna_number, 'T', 'hpn_rev', 'T'])
+    data.append([args.antenna_number, 'T', 'hptype', 'antenna'])
+    data.append([args.antenna_number, 'T', 'manufacturer_number', args.serial_number])
+    data.append([args.antenna_number, 'T', 'start_gpstime', current])
 
     feed = 'FD'+args.antenna_number
-    print("Adding part %s %s at %s" % (feed, 'B', str(current)))
+    print("Adding part %s %s at %s" % (feed, 'B', str(args.date)))
     mfg_number = 'P' + args.antenna_number.strip('A')
     data.append([feed, 'B', 'hpn', feed])
     data.append([feed, 'B', 'hpn_rev', 'B'])
     data.append([feed, 'B', 'hptype', 'feed'])
     data.append([feed, 'B', 'manufacturer_number', mfg_number])
-    data.append([feed, 'B', 'start_gpstime', current.gps])
+    data.append([feed, 'B', 'start_gpstime', current])
 
     if args.make_update:
         part_connect.update_part(args, data)
@@ -114,25 +114,25 @@ def stop_previous_connections(args, handling):
            antenna revA and feed rev A
            feed rev A and frontend
     """
-    current = cm_utils._get_datetime(args.date, args.time)
+    current = int(cm_utils._get_datetime(args.date, args.time).gps)
     data = []
     args.add_new_connection = False
 
-    existing = handling.get_connections(args.antenna_number, 'A', exact_match=True)
+    existing = handling.get_connections(args.antenna_number, 'P', exact_match=True)
     for k, c in existing.iteritems():
         if k in handling.non_class_connections_dict_entries:
             continue
-        if c.downstream_part == args.antenna_number and c.down_part_rev == 'A':
+        if c.downstream_part == args.antenna_number and c.down_part_rev == 'P':
             print("Stopping connection ", c)
             station_connection = [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                                  c.upstream_output_port, c.downstream_input_port, c.start_gptime,
-                                 'stop_gpstime', current.gps]
+                                  c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+                                 'stop_gpstime', current]
             data.append(station_connection)
-        if c.upstream_part == args.antenna_number and c.up_part_rev == 'A':
+        if c.upstream_part == args.antenna_number and c.up_part_rev == 'P':
             print("Stopping connection ", c)
             feed_connection = [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
                                c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-                               'stop_gpstime', current.gps]
+                               'stop_gpstime', current]
             data.append(feed_connection)
     feed = feed_connection[2]
     feed_rev = feed_connection[3]
@@ -144,7 +144,7 @@ def stop_previous_connections(args, handling):
             print("Stopping connection ", c)
             frontend_connection = [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
                                    c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-                                   'stop_gpstime', current.gps]
+                                   'stop_gpstime', current]
             data.append(frontend_connection)
     if args.make_update:
         part_connect.update_connection(args, data)
@@ -215,7 +215,7 @@ if __name__ == '__main__':
         args = query_connection(args)
     args.station_name = args.station_name.upper()
     args.antenna_number = args.antenna_number.upper()
-    if args.station_name[0] != 'H':
+    if args.station_name[0] != 'T':
         args.station_name = 'HH' + args.station_name
     if args.antenna_number[0] != 'A':
         args.antenna_number = 'A' + args.antenna_number
@@ -223,6 +223,7 @@ if __name__ == '__main__':
     part = part_connect.Parts()
     handling = cm_handling.Handling(args)
     hookup = cm_hookup.Hookup(args)
+    geo = geo_handling.Handling(args)
 
     if args.make_update:
         print("\nUpdating antenna/feed installation.\n")
@@ -234,10 +235,10 @@ if __name__ == '__main__':
 
     # This is the new station/antenna connection to be checked
     connect.connection(upstream_part=args.station_name, up_part_rev='A',
-               downstream_part=args.antenna_number, down_part_rev='B',
+               downstream_part=args.antenna_number, down_part_rev='T',
                upstream_output_port='ground', downstream_input_port='ground',
-               start_gpstime=cm_utils._get_datetime(args.date, args.time))
-    if OK_to_add(args, connect, handling):
+               start_gpstime=int(cm_utils._get_datetime(args.date, args.time).gps))
+    if OK_to_add(args, connect, handling, geo):
         if args.make_update:
             print("OK to update -- actually doing it.")
             cm_utils._log('move_paper_feed', args=args)
@@ -250,10 +251,10 @@ if __name__ == '__main__':
         add_new_connection(args, connect)
         # Adding new antenna/feed connection
         feed = 'FD' + args.antenna_number
-        connect.connection(upstream_part=args.antenna_number, up_part_rev='B',
+        connect.connection(upstream_part=args.antenna_number, up_part_rev='T',
                            downstream_part=feed,              down_part_rev='B',
                            upstream_output_port='focus',      downstream_input_port='input',
-                           start_gpstime=cm_utils._get_datetime(args.date, args.time).gps,
+                           start_gpstime=int(cm_utils._get_datetime(args.date, args.time).gps),
                            stop_gpstime=None)
         add_new_connection(args, connect)
         # Adding new feed/frontend connection
@@ -261,6 +262,6 @@ if __name__ == '__main__':
         connect.connection(upstream_part=feed,               up_part_rev='B',
                            downstream_part=frontend,         down_part_rev='A',
                            upstream_output_port='terminals', downstream_input_port='input',
-                           start_gpstime=cm_utils._get_datetime(args.date, args.time).gps,
+                           start_gpstime=int(cm_utils._get_datetime(args.date, args.time).gps),
                            stop_gpstime=None)
         add_new_connection(args, connect)
