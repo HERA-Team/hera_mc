@@ -26,7 +26,6 @@ def stop_connection(args, h, crev):
     EN = ['eb','nb']
     for p in EN:
         C7RI = h.get_connections(crev[0],crev[1],p,True)
-        print(C7RI)
         for ck in C7RI.keys():
             if crev[0] in ck:
                 break
@@ -45,7 +44,6 @@ def stop_connection(args, h, crev):
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-s', '--station_name', help="Name of station (HH# for hera)", default=None)
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()

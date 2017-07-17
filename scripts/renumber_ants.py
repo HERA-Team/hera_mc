@@ -87,7 +87,7 @@ def verbose_previous_hookup(previous_hookup):
             for i,a in enumerate(previous_hookup[pk]):
                 print('\t',previous_hookup['columns'][i],':  ',a.upstream_part,a.up_part_rev)
 
-def stop_previous_connections(args, h, srev, arev, frev):
+def stop_previous_connections(args, h, srev, arev, frev, do_C7=False):
     """This adds stop times to the previous connections between:
            station and antenna rev A
            antenna revA and feed rev A
@@ -115,9 +115,21 @@ def stop_previous_connections(args, h, srev, arev, frev):
         stopping = [arev[0], arev[1], frev[0], frev[1], 'focus', 'input', gps, 'stop_gpstime', current]
         data.append(stopping)
 
-    do_C7 = False
+    #Forth connection FDAY:FEAY
+    if frev[1] == 'A':
+        Num = arev[0].strip('A')
+        fdrev = ('FDA'+Num,'A')
+        ferev = ('FEA'+Num,'A')
+        print("Stopping connection <{}:{}<terminals|input>{}:{}>".format(fdrev[0],fdrev[1],ferev[0],ferev[1]))
+        FDAYFEAY = h.get_connections(fdrev[0],fdrev[1],'terminals',True)
+        ck = get_connection_key(FDAYFEAY,fdrev)
+        if ck is not None:
+            gps = FDAYFEAY[ck].start_gpstime
+            stopping = [fdrev[0], fdrev[1], ferev[0], ferev[1], 'terminals', 'input', gps, 'stop_gpstime', current]
+            data.append(stopping)
+
     if do_C7:
-        # Third connection (pair) FEAY/A:C7FY/A;  ports e:ea, n:na
+        # Fifth connection (pair) FEAY/A:C7FY/A;  ports e:ea, n:na
         Num = arev[0].strip('A')
         for uport in ['e','n']:
             frev = ('FEA'+Num,'A')
@@ -131,8 +143,8 @@ def stop_previous_connections(args, h, srev, arev, frev):
                 stopping = [frev[0], frev[1], crev[0], crev[1], uport, dport, gps, 'stop_gpstime', current]
                 data.append(stopping)
 
-        # Fourth connection (pair) FEAX/A:C7FX/A;  ports e:ea, n:na (if active)
-        Num = arev[0].strip('HH')
+        # Sixth connection (pair) FEAX/A:C7FX/A;  ports e:ea, n:na (if active)
+        Num = srev[0].strip('HH')
         for uport in ['e','n']:
             frev = ('FEA'+Num,'A')
             crev = ('C7F'+Num,'A')
@@ -151,7 +163,7 @@ def stop_previous_connections(args, h, srev, arev, frev):
     else:
         print(data)
 
-def add_new_connections(args, c, srev, arev, frev):
+def add_new_connections(args, c, srev, arev, frev, do_C7=False):
     """
     This generates a connection object to send to the updater
        station and new antenna number/H
@@ -183,7 +195,6 @@ def add_new_connections(args, c, srev, arev, frev):
                      stop_gpstime=None)
         __connection_updater(args,c)
 
-    do_C7 = False
     if do_C7:
         # Hook FEA to C7F
         for uport in ['e','n']:
@@ -231,9 +242,9 @@ def __connection_updater(args, c):
         print("+++++++++++")
 
 def get_mfg_number(hrev):
-    full_part = handling.get_part(hrev[0],hrev[1])
+    full_part = handling.get_part(hrev[0],hrev[1],exact_match=True)
     if len(full_part.keys())>1:
-        print("Too many parts for old rev:  ",hrev)
+        print("Too many parts for old rev:  ",hrev, full_part.keys())
         raise ValueError
     else:
         mfg = full_part[full_part.keys()[0]]['part'].manufacturer_number
@@ -307,6 +318,7 @@ if __name__ == '__main__':
     #verbose_previous_hookup(previous_hookup)
     #print("===================================================================")
     
+    do_C7 = True
     if isinstance(old_antrev,tuple):
         print('Converting {}:{} to {}:{}'.format(old_antrev[0],old_antrev[1],new_antrev[0],new_antrev[1]))
         feedrev = get_feed(previous_hookup)
@@ -314,5 +326,5 @@ if __name__ == '__main__':
             print('H19 - wonky feed cage, but assuming it will get replaced.')
         stop_previous_parts(args,old_antrev,feedrev)
         add_new_parts(args,new_antrev,new_mfg_number,feedrev)
-        stop_previous_connections(args, handling, statrev, old_antrev, feedrev)
-        add_new_connections(args, connect, statrev, new_antrev, feedrev)
+        stop_previous_connections(args, handling, statrev, old_antrev, feedrev, do_C7)
+        add_new_connections(args, connect, statrev, new_antrev, feedrev, do_C7)
