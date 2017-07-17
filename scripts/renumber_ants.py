@@ -68,6 +68,18 @@ def add_new_parts(args,antrev,mfgna,feedrev):
     else:
         print(data)
 
+def get_connection_key(c,p):
+    for ck in c.keys():
+        if p[0] in ck:
+            break
+    else:
+        ck = None
+    return ck
+
+def connection_active(c,p):
+    for ck in c.keys():
+        if p[0] in ck and c[ck].stop_gpstime is None:
+            return True
 
 def verbose_previous_hookup(previous_hookup):
     for pk in previous_hookup.keys():
@@ -85,25 +97,52 @@ def stop_previous_connections(args, h, srev, arev, frev):
     data = []
     args.add_new_connection = False
 
-    # First connection
+    # First connection HHX:AY
     print("Stopping connection <{}:{}<ground|ground>{}:{}>".format(srev[0],srev[1],arev[0],arev[1]))
     HHXAY = h.get_connections(srev[0],srev[1],'ground',True)
-    for ck in HHXAY.keys():
-        if srev[0] in ck:
-            break
-    gps = HHXAY[ck].start_gpstime
-    stopping = [srev[0], srev[1], arev[0], arev[1], 'ground', 'ground', gps, 'stop_gpstime', current]
-    data.append(stopping)
+    ck = get_connection_key(HHXAY,srev)
+    if ck is not None:
+        gps = HHXAY[ck].start_gpstime
+        stopping = [srev[0], srev[1], arev[0], arev[1], 'ground', 'ground', gps, 'stop_gpstime', current]
+        data.append(stopping)
 
-    #Second connection
+    #Second connection AY:FDAY
     print("Stopping connection <{}:{}<focus|input>{}:{}>".format(arev[0],arev[1],frev[0],frev[1]))
     AYFDAY = h.get_connections(arev[0],arev[1],'focus',True)
-    for ck in AYFDAY.keys():
-        if arev[0] in ck:
-            break
-    gps = AYFDAY[ck].start_gpstime
-    stopping = [arev[0], arev[1], frev[0], frev[1], 'focus', 'input', gps, 'stop_gpstime', current]
-    data.append(stopping)
+    ck = get_connection_key(AYFDAY,arev)
+    if ck is not None:
+        gps = AYFDAY[ck].start_gpstime
+        stopping = [arev[0], arev[1], frev[0], frev[1], 'focus', 'input', gps, 'stop_gpstime', current]
+        data.append(stopping)
+
+    # Third connection (pair) FEAY/A:C7FY/A;  ports e:ea, n:na
+    Num = arev[0].strip('A')
+    for uport in ['e','n']:
+        frev = ('FEA'+Num,'A')
+        crev = ('C7F'+Num,'A')
+        dport = uport+'a'
+        print("Stopping connection <{}:{}<{}|{}>{}:{}>".format(frev[0],frev[1],uport,dport,crev[0],crev[1]))
+        FYCY = h.get_connections(frev[0],frev[1],uport,True)
+        ck = get_connection_key(FYCY,frev)
+        if ck is not None:
+            gps = FYCY[ck].start_gpstime
+            stopping = [frev[0], frev[1], crev[0], crev[1], uport, dport, gps, 'stop_gpstime', current]
+            data.append(stopping)
+
+    # Fourth connection (pair) FEAX/A:C7FX/A;  ports e:ea, n:na (if active)
+    Num = arev[0].strip('HH')
+    for uport in ['e','n']:
+        frev = ('FEA'+Num,'A')
+        crev = ('C7F'+Num,'A')
+        dport = uport+'a'
+        print("Stopping connection <{}:{}<{}|{}>{}:{}>".format(frev[0],frev[1],uport,dport,crev[0],crev[1]))
+        FYCY = h.get_connections(frev[0],frev[1],uport,True)
+        if connection_active(FYCY,frev):
+            ck = get_connection_key(FYCY,frev)
+            if ck is not None:
+                gps = FYCY[ck].start_gpstime
+                stopping = [frev[0], frev[1], crev[0], crev[1], uport, dport, gps, 'stop_gpstime', current]
+                data.append(stopping)
 
     if args.actually_do_it:
         part_connect.update_connection(args, data)
@@ -133,15 +172,24 @@ def add_new_connections(args, c, srev, arev, frev):
                  stop_gpstime=None)
     __connection_updater(args,c)
 
+    fea = frev[0].replace('D','E')
     # Third new connection if needed
     if frev[1] == 'A':
-        fea = frev[0].replace('D','E')
         c.connection(upstream_part=frev[0],     up_part_rev='B',
                      downstream_part=fea,       down_part_rev='A',
                      upstream_output_port='terminals', downstream_input_port='input', start_gpstime=current,
                      stop_gpstime=None)
         __connection_updater(args,c)
 
+    # Hook FEA to C7F
+    for uport in ['e','n']:
+        c7f = 'C7F' + arev[0][1:]
+        dport = uport+'a'
+        c.connection(upstream_part=fea,          up_part_rev='A',
+                     downstream_part=c7f,        down_part_rev='A',
+                     upstream_output_port=uport, downstream_input_port=dport, start_gpstime=current,
+                     stop_gpstime=None)
+        __connection_updater(args,c)
 
 def __connection_updater(args, c):
     """
@@ -251,7 +299,7 @@ if __name__ == '__main__':
     new_mfg_number = get_mfg_number(old_antrev)
     new_antrev = ('A' + args.station_name[2:], 'H')
     #print("==============================PREVIOUS=============================")
-    #previous_hookup = hookup.get_hookup(old_antrev[0], old_antrev[1], show_hookup=True)
+    previous_hookup = hookup.get_hookup(old_antrev[0], old_antrev[1], show_hookup=False)
     #verbose_previous_hookup(previous_hookup)
     #print("===================================================================")
     

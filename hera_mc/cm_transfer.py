@@ -183,5 +183,7 @@ def __initialization(args):
                         for i, r in enumerate(row):
                             if r == '':
                                 r = None
+                            elif 'gpstime' in field_name[i]:
+                                r = int(float(r))
                             setattr(table_inst, field_name[i], r)
                         session.add(table_inst)
