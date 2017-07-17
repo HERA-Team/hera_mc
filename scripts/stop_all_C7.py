@@ -30,17 +30,18 @@ def stop_connection(args, h, crev):
         for ck in C7RI.keys():
             if crev[0] in ck:
                 break
-        print("Stopping connection <{}:{}<{}|a>{}:{}>".format(crev[0],crev[1],p,C7RI[ck].downstream_part,C7RI[ck].down_part_rev))
-        gps = C7RI[ck].start_gpstime
-        stopping = [crev[0], crev[1], C7RI[ck].downstream_part, C7RI[ck].down_part_rev, p, 'a', gps, 'stop_gpstime', current]
-        data.append(stopping)
+        else:
+            ck = None
+        if ck is not None:
+            print("Stopping connection <{}:{}<{}|a>{}:{}>".format(crev[0],crev[1],p,C7RI[ck].downstream_part,C7RI[ck].down_part_rev))
+            gps = C7RI[ck].start_gpstime
+            stopping = [crev[0], crev[1], C7RI[ck].downstream_part, C7RI[ck].down_part_rev, p, 'a', gps, 'stop_gpstime', current]
+            data.append(stopping)
 
     if args.actually_do_it:
         part_connect.update_connection(args, data)
     else:
         print(data)
-
-
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
