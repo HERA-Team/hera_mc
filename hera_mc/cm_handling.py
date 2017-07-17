@@ -153,7 +153,13 @@ class Handling:
                 elif ':down:' in k and v.upstream_output_port not in output_ports:
                     output_ports.append(v.upstream_output_port)
                 else:
-                    print("cm_handling[156]: ERROR SHOULD BE UP or DOWN ", k)
+                    print("cm_handling[156]: WARNING SHOULD BE UP or DOWN ", k)
+                if 'FEA' in k:
+                    print(k)
+                    print('\t:up:input_ports:  ',input_ports)
+                    print('\t\tdown_port: ',v.downstream_input_port)
+                    print('\t:down:output_ports:  ',output_ports)
+                    print('\t\tup_port:  ',v.upstream_output_port)
         input_ports.sort()
         output_ports.sort()
         return input_ports, output_ports
