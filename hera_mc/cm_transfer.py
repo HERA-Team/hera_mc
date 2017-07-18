@@ -184,6 +184,8 @@ def __initialization(args):
                             if r == '':
                                 r = None
                             elif 'gpstime' in field_name[i]:
-                                r = int(float(r))
+                                #Needed since pandas does not have an integer representation
+                                #  of NaN, so it outputs a float, which the database won't allow
+                                r = int(float(r)) 
                             setattr(table_inst, field_name[i], r)
                         session.add(table_inst)

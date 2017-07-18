@@ -153,7 +153,7 @@ class Handling:
                 elif ':down:' in k and v.upstream_output_port not in output_ports:
                     output_ports.append(v.upstream_output_port)
                 else:
-                    print("cm_handling[156]: WARNING SHOULD BE UP or DOWN ", k)
+                    print("cm_handling[156]: Warning: Connection key not compliant, so ignoring ", k)
         input_ports.sort()
         output_ports.sort()
         return input_ports, output_ports
