@@ -156,7 +156,7 @@ class Handling:
         ------------
         station_name:  string name of station
         active_date:  astropy Time to check if active, default is None
-        return_antrev:  boolean lag to return True/False or antrev tuple, default is True
+        return_antrev:  boolean flag to return True/False or antrev tuple, default is True
         """
 
         active_date = cm_utils._get_datetime(active_date)
@@ -245,7 +245,7 @@ class Handling:
                     a.gps2Time()
                     desc = self.station_types[this_station]['Description']
                     ever_connected = self.is_in_connections(a.station_name)
-                    active = self.is_in_connections(a.station_name, query_date, True)
+                    active = self.is_in_connections(a.station_name, query_date, return_antrev = True)
                     found_it = True
                     hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                     a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
@@ -335,7 +335,7 @@ class Handling:
             for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == station):
                 show_it = True
                 if state_args['show_state'].lower() == 'active':
-                    show_it = self.is_in_connections(station, query_date, False)
+                    show_it = self.is_in_connections(station, query_date, return_antrev = False)
                 if show_it:
                     pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
                     __X = pt[self.coord[state_args['xgraph']]]
@@ -350,8 +350,7 @@ class Handling:
                             if antrev is False:
                                 labeling = 'NA'
                             else:
-                                ant = antrev[0]
-                                rev = antrev[1]
+                                ant, rev = antrev
                                 if label_to_show == 'num':
                                     labeling = ant.strip('A')
                                 elif label_to_show == 'ser':
