@@ -135,6 +135,17 @@ def _is_active(current, _start_date, _stop_date):
     _stop_date = _get_stopdate(_stop_date)
     return current >= _start_date and current <= _stop_date
 
+def _return_TF(x):
+    """
+    This returns a boolean based on strings from input args
+    For y/n queries, use _query_yn below.
+    """
+    if x or x[0].upper=='T' or x[0].upper=='Y':
+        TF = True
+    else:
+        TF = False
+    return TF
+
 def _query_default(a, args):
     vargs = vars(args)
     default = vargs[a]
