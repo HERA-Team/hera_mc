@@ -28,11 +28,11 @@ def query_args(args):
     args.date = cm_utils._query_default('date', args)
     return args
 
-def check_for_part(args, part, hpnr):
+def check_for_part(args, handling, hpn, rev):
     """
     Check to see if new part is in parts table
     """
-    part_check = part.get_part(args, hpnr[0], hpnr[1])
+    part_check = handling.get_part(args, hpn, rev)
 
 
 def stop_previous_parts(args,hpnr_list):
@@ -274,6 +274,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--receiverator', help="Receiverator number (1-8)", default = None)
     parser.add_argument('-i', '--r-input', dest='r_input', help="Input to receiverator (A1-B8)", default = None)
     parser.add_argument('-p', '--pam-number', dest='pam_number', help="Serial number of PAM", default = None)
+    parser.add_argument('-r', '--rev', help="Revision number of PAM (currently B)", default='B')
     parser.add_argument('--actually_do_it', help="Flag to actually do it, as opposed to printing out what it would do.", action='store_true')
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
@@ -286,10 +287,9 @@ if __name__ == '__main__':
     args.actually_do_it = True
 
     if args.receiverator is None or args.r_input is None or args.pam_number is None:
-        args = query_renumber(args)
+        args = query_args(args)
 
     # Pre-process some args
-    args.new_pam = cm_utils._return_TF(args.new_pam)
     args.r_input = args.r_input.upper()
     args.verbosity = args.verbosity.lower()
     args.date = cm_utils._get_datetime(args.date,args.time)
@@ -299,17 +299,17 @@ if __name__ == '__main__':
     handling = cm_handling.Handling(args)
     hookup = cm_hookup.Hookup(args)
 
-    # Check if new PAM is in parts database, and new part if not
-    hpnr = ('PAM'+args.pam_number, 'B')
-    check_for_part(args, part, hpnr)
-
-    # Stop previous PAM (aka "Receiver")
+    # Stop previous PAM (aka "Receiver") if needed
+    hpn = "PAM"+args.pam_number
+    pn = check_for_part(args,handling,hpn,args.rev)
+    print(pn)
 
     # Disconnect previous PAM on both sides (RI/RO)
 
     # Connect new PAM on both sides (RI/RO)
 
-    if isinstance(old_antrev,tuple):
+    go_ahead = False
+    if go_ahead:
         print('Converting {}:{} to {}:{}'.format(old_antrev[0],old_antrev[1],new_antrev[0],new_antrev[1]))
         feedrev = get_feed(previous_hookup)
         if feedrev[1] == 'A':

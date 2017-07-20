@@ -135,7 +135,7 @@ class Handling:
                         part_dict[pr_key]['input_ports'], part_dict[pr_key]['output_ports'] = \
                             self.__find_ports(part_dict[pr_key]['connections'], current)
                     else:
-                        print("cm_handling[128]:  Warning: should only be one part/rev.", part.hpn, part.hpn_rev)
+                        print("cm_handling[138]:  Warning: should only be one part/rev.", part.hpn, part.hpn_rev)
         if show_part:
             self.show_part(part_dict)
         if return_dictionary:
