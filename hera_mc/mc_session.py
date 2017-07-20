@@ -200,7 +200,7 @@ class MCSession(Session):
         """
         if subsystem == 'rtp':
             from .rtp import RTPServerStatus as ServerStatus
-        elif subsystem is 'lib':
+        elif subsystem == 'lib':
             from .librarian import LibServerStatus as ServerStatus
         else:
             raise ValueError('subsystem must be one of: ["rtp", "lib"]')
