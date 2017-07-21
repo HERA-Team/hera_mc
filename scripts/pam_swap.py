@@ -31,7 +31,7 @@ def query_args(args):
 
 def stop_previous_parts(args,hpnr_list):
     """
-    This adds stop times to the previous parts. NB:  Modify/move into cm_handling (but not in the class)?
+    This adds stop times to the previous parts. NB:  Modify/move into cm_handling (but not in the class?)?
     """
     current = int(args.date.gps)
     args.add_new_part = False
@@ -87,14 +87,13 @@ def stop_previous_connections(args, h, conn_list):
 
     for c in conn_list:
         #print("Stopping connection <{}:{}<ground|ground>{}:{}>".format(srev[0],srev[1],arev[0],arev[1]))
-        print(c)
         CD = h.get_connections(c[0],c[1],c[2],True)
         ck = get_connection_key(CD,c)
         if ck is not None:
-            print(CD[ck])
-            #gps = CD[ck].start_gpstime
-            #stopping = [srev[0], srev[1], arev[0], arev[1], 'ground', 'ground', gps, 'stop_gpstime', current]
-            #data.append(stopping)
+            x = CD[ck]
+            stopping = [x.upstream_part, x.up_part_rev, x.downstream_part, x.down_part_rev, 
+                        x.upstream_output_port, x.downstream_input_port, x.start_gpstime, 'stop_gpstime', current]
+            data.append(stopping)
 
     if args.actually_do_it:
         part_connect.update_connection(args, data)
@@ -117,17 +116,6 @@ def add_new_connections(args, c, srev, arev, frev, do_C7=False):
                  stop_gpstime=None)
     __connection_updater(args,c)
 
-
-    if do_C7:
-        # Hook FEA to C7F
-        for uport in ['e','n']:
-            c7f = 'C7F' + arev[0][1:]
-            dport = uport+'a'
-            c.connection(upstream_part=fea,          up_part_rev='A',
-                         downstream_part=c7f,        down_part_rev='A',
-                         upstream_output_port=uport, downstream_input_port=dport, start_gpstime=current,
-                         stop_gpstime=None)
-            __connection_updater(args,c)
 
 def __connection_updater(args, c):
     """
@@ -208,7 +196,6 @@ if __name__ == '__main__':
     args.show_levels = False
     args.mapr_cols = 'all'
     args.exact_match = True
-    args.actually_do_it = True
 
     if args.receiverator is None or args.r_input is None or args.pam_number is None:
         args = query_args(args)
@@ -242,7 +229,7 @@ if __name__ == '__main__':
             if k not in handling.non_class_connections_dict_entries:
                 ctr+=1
                 old_rcvr = rc[k].downstream_part
-                old_rrev = rc[k].down_part_rev,hpn
+                old_rrev = rc[k].down_part_rev
                 print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, hpn, rev))
             if ctr>1:
                 go_ahead = False
