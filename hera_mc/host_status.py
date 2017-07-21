@@ -4,6 +4,8 @@
 
 """M&C logging of the uptime, load, etc., on our computers out in the Karoo.
 
+NOTE: this is superseded by the server_status set of tables!
+
 """
 
 from __future__ import absolute_import, division, print_function
