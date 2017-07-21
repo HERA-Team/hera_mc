@@ -45,6 +45,13 @@ def stop_previous_parts(args,hpnr_list):
     else:
         print(data)
 
+def get_connection_key(c,p):
+    for ck in c.keys():
+        if p[0] in ck:
+            break
+    else:
+        ck = None
+    return ck
 
 def add_new_parts(args,new_part_list):
     """
@@ -79,13 +86,15 @@ def stop_previous_connections(args, h, conn_list):
     args.add_new_connection = False
 
     for c in conn_list:
-        print("Stopping connection <{}:{}<ground|ground>{}:{}>".format(srev[0],srev[1],arev[0],arev[1]))
-        ccc = h.get_connections(c[0],c[1],c[2],True)
-        ck = get_connection_key(ccc,c)
+        #print("Stopping connection <{}:{}<ground|ground>{}:{}>".format(srev[0],srev[1],arev[0],arev[1]))
+        print(c)
+        CD = h.get_connections(c[0],c[1],c[2],True)
+        ck = get_connection_key(CD,c)
         if ck is not None:
-            gps = HHXAY[ck].start_gpstime
-            stopping = [srev[0], srev[1], arev[0], arev[1], 'ground', 'ground', gps, 'stop_gpstime', current]
-            data.append(stopping)
+            print(CD[ck])
+            #gps = CD[ck].start_gpstime
+            #stopping = [srev[0], srev[1], arev[0], arev[1], 'ground', 'ground', gps, 'stop_gpstime', current]
+            #data.append(stopping)
 
     if args.actually_do_it:
         part_connect.update_connection(args, data)
@@ -234,7 +243,7 @@ if __name__ == '__main__':
                 ctr+=1
                 old_rcvr = rc[k].downstream_part
                 old_rrev = rc[k].down_part_rev,hpn
-                print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, rev))
+                print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, hpn, rev))
             if ctr>1:
                 go_ahead = False
                 print("Error:  multiple connections to {}".format(hpn))
@@ -246,7 +255,8 @@ if __name__ == '__main__':
         add_new_parts(args,prev)
 
         # Disconnect previousRCVR on both sides (RI/RO)
-        #stop_previous_connections(args, handling, statrev, old_antrev, feedrev, do_C7)
+        pcs = [(rie,'A','b'),(rin,'A','b'),(old_rcvr,old_rrev,'eb'),(old_rcvr,old_rrev,'nb')]
+        stop_previous_connections(args, handling, pcs)
 
         # Connect new PAM on both sides (RI/RO)
         
