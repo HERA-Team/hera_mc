@@ -28,12 +28,6 @@ def query_args(args):
     args.date = cm_utils._query_default('date', args)
     return args
 
-def check_for_part(args, handling, hpn, rev):
-    """
-    Check to see if new part is in parts table
-    """
-    part_check = handling.get_part(args, hpn, rev)
-
 
 def stop_previous_parts(args,hpnr_list):
     """
@@ -58,35 +52,23 @@ def add_new_parts(args,new_part_list):
     """
     current = int(args.date.gps)
     args.add_new_part = True
+    data = []
 
     for np in new_part_list:
         print("Adding part %s %s at %s" % (np[0], np[1],  str(args.date)))
-        data.append([hpnr[0], hpnr[1], 'hpn', np[0]])
-        data.append([hpnr[0], hpnr[1], 'hpn_rev', np[1]])
-        data.append([hpnr[0], hpnr[1], 'hptype', np[2]])
-        data.append([hpnr[0], hpnr[1], 'manufacturer_number', np[3]])
-        data.append([hpnr[0], hpnr[1], 'start_gpstime', current])
+        data.append([np[0], np[1], 'hpn', np[0]])
+        data.append([np[0], np[1], 'hpn_rev', np[1]])
+        data.append([np[0], np[1], 'hptype', np[2]])
+        data.append([np[0], np[1], 'manufacturer_number', np[3]])
+        data.append([np[0], np[1], 'start_gpstime', current])
 
     if args.actually_do_it:
         part_connect.update_part(args, data)
     else:
         print(data)
 
-def get_connection_key(c,p):
-    for ck in c.keys():
-        if p[0] in ck:
-            break
-    else:
-        ck = None
-    return ck
 
-def connection_active(c,p):
-    for ck in c.keys():
-        if p[0] in ck and c[ck].stop_gpstime is None:
-            return True
-
-
-def stop_previous_connections(args, h, srev, arev, frev, do_C7=False):
+def stop_previous_connections(args, h, conn_list):
     """This adds stop times to the previous connections between:
            station and antenna rev A
            antenna revA and feed rev A
@@ -96,66 +78,14 @@ def stop_previous_connections(args, h, srev, arev, frev, do_C7=False):
     data = []
     args.add_new_connection = False
 
-    # First connection HHX:AY
-    print("Stopping connection <{}:{}<ground|ground>{}:{}>".format(srev[0],srev[1],arev[0],arev[1]))
-    HHXAY = h.get_connections(srev[0],srev[1],'ground',True)
-    ck = get_connection_key(HHXAY,srev)
-    if ck is not None:
-        gps = HHXAY[ck].start_gpstime
-        stopping = [srev[0], srev[1], arev[0], arev[1], 'ground', 'ground', gps, 'stop_gpstime', current]
-        data.append(stopping)
-
-    #Second connection AY:FDAY
-    print("Stopping connection <{}:{}<focus|input>{}:{}>".format(arev[0],arev[1],frev[0],frev[1]))
-    AYFDAY = h.get_connections(arev[0],arev[1],'focus',True)
-    ck = get_connection_key(AYFDAY,arev)
-    if ck is not None:
-        gps = AYFDAY[ck].start_gpstime
-        stopping = [arev[0], arev[1], frev[0], frev[1], 'focus', 'input', gps, 'stop_gpstime', current]
-        data.append(stopping)
-
-    #Forth connection FDAY:FEAY
-    if frev[1] == 'A':
-        Num = arev[0].strip('A')
-        fdrev = ('FDA'+Num,'A')
-        ferev = ('FEA'+Num,'A')
-        print("Stopping connection <{}:{}<terminals|input>{}:{}>".format(fdrev[0],fdrev[1],ferev[0],ferev[1]))
-        FDAYFEAY = h.get_connections(fdrev[0],fdrev[1],'terminals',True)
-        ck = get_connection_key(FDAYFEAY,fdrev)
+    for c in conn_list:
+        print("Stopping connection <{}:{}<ground|ground>{}:{}>".format(srev[0],srev[1],arev[0],arev[1]))
+        ccc = h.get_connections(c[0],c[1],c[2],True)
+        ck = get_connection_key(ccc,c)
         if ck is not None:
-            gps = FDAYFEAY[ck].start_gpstime
-            stopping = [fdrev[0], fdrev[1], ferev[0], ferev[1], 'terminals', 'input', gps, 'stop_gpstime', current]
+            gps = HHXAY[ck].start_gpstime
+            stopping = [srev[0], srev[1], arev[0], arev[1], 'ground', 'ground', gps, 'stop_gpstime', current]
             data.append(stopping)
-
-    if do_C7:
-        # Fifth connection (pair) FEAY/A:C7FY/A;  ports e:ea, n:na
-        Num = arev[0].strip('A')
-        for uport in ['e','n']:
-            frev = ('FEA'+Num,'A')
-            crev = ('C7F'+Num,'A')
-            dport = uport+'a'
-            print("Stopping connection <{}:{}<{}|{}>{}:{}>".format(frev[0],frev[1],uport,dport,crev[0],crev[1]))
-            FYCY = h.get_connections(frev[0],frev[1],uport,True)
-            ck = get_connection_key(FYCY,frev)
-            if ck is not None:
-                gps = FYCY[ck].start_gpstime
-                stopping = [frev[0], frev[1], crev[0], crev[1], uport, dport, gps, 'stop_gpstime', current]
-                data.append(stopping)
-
-        # Sixth connection (pair) FEAX/A:C7FX/A;  ports e:ea, n:na (if active)
-        Num = srev[0].strip('HH')
-        for uport in ['e','n']:
-            frev = ('FEA'+Num,'A')
-            crev = ('C7F'+Num,'A')
-            dport = uport+'a'
-            print("Stopping connection <{}:{}<{}|{}>{}:{}>".format(frev[0],frev[1],uport,dport,crev[0],crev[1]))
-            FYCY = h.get_connections(frev[0],frev[1],uport,True)
-            if connection_active(FYCY,frev):
-                ck = get_connection_key(FYCY,frev)
-                if ck is not None:
-                    gps = FYCY[ck].start_gpstime
-                    stopping = [frev[0], frev[1], crev[0], crev[1], uport, dport, gps, 'stop_gpstime', current]
-                    data.append(stopping)
 
     if args.actually_do_it:
         part_connect.update_connection(args, data)
@@ -178,21 +108,6 @@ def add_new_connections(args, c, srev, arev, frev, do_C7=False):
                  stop_gpstime=None)
     __connection_updater(args,c)
 
-    # Second new connection
-    c.connection(upstream_part=arev[0],         up_part_rev=arev[1],
-                 downstream_part=frev[0],       down_part_rev='B',
-                 upstream_output_port='focus', downstream_input_port='input', start_gpstime=current,
-                 stop_gpstime=None)
-    __connection_updater(args,c)
-
-    fea = frev[0].replace('D','E')
-    # Third new connection if needed
-    if frev[1] == 'A':
-        c.connection(upstream_part=frev[0],     up_part_rev='B',
-                     downstream_part=fea,       down_part_rev='A',
-                     upstream_output_port='terminals', downstream_input_port='input', start_gpstime=current,
-                     stop_gpstime=None)
-        __connection_updater(args,c)
 
     if do_C7:
         # Hook FEA to C7F
@@ -300,21 +215,39 @@ if __name__ == '__main__':
     hookup = cm_hookup.Hookup(args)
 
     # Stop previous PAM (aka "Receiver") if needed
-    hpn = "PAM"+args.pam_number
-    pn = check_for_part(args,handling,hpn,args.rev)
-    print(pn)
+    hpn = 'PAM'+args.pam_number
+    rev = 'B'  #This is the current revision number of the supplied PAMs
+    rie = 'RI'+args.receiverator+args.r_input+'E'
+    rin = 'RI'+args.receiverator+args.r_input+'N'
+    roe = 'RO'+args.receiverator+args.r_input+'E'
+    ron = 'RO'+args.receiverator+args.r_input+'N'
+    if handling.is_in_connections(hpn, rev):
+        go_ahead = False
+        print("Error:  {} is already connected".format(hpn))
+        print("Stopping this swap.")
+    else:
+        go_ahead = True
+        rc = handling.get_connections(rie,rev_query='A',port_query='b')
+        ctr = 0
+        for k in rc.keys():
+            if k not in handling.non_class_connections_dict_entries:
+                ctr+=1
+                old_rcvr = rc[k].downstream_part
+                old_rrev = rc[k].down_part_rev,hpn
+                print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, rev))
+            if ctr>1:
+                go_ahead = False
+                print("Error:  multiple connections to {}".format(hpn))
+                print("Stopping this swap.")
 
-    # Disconnect previous PAM on both sides (RI/RO)
-
-    # Connect new PAM on both sides (RI/RO)
-
-    go_ahead = False
     if go_ahead:
-        print('Converting {}:{} to {}:{}'.format(old_antrev[0],old_antrev[1],new_antrev[0],new_antrev[1]))
-        feedrev = get_feed(previous_hookup)
-        if feedrev[1] == 'A':
-            print('H19 - wonky feed cage, but assuming it will get replaced.')
-        stop_previous_parts(args,old_antrev,feedrev)
-        add_new_parts(args,new_antrev,new_mfg_number,feedrev)
-        stop_previous_connections(args, handling, statrev, old_antrev, feedrev, do_C7)
-        add_new_connections(args, connect, statrev, new_antrev, feedrev, do_C7)
+        # Add new PAM
+        prev = [(hpn,rev,'receiver',args.pam_number)]
+        add_new_parts(args,prev)
+
+        # Disconnect previousRCVR on both sides (RI/RO)
+        #stop_previous_connections(args, handling, statrev, old_antrev, feedrev, do_C7)
+
+        # Connect new PAM on both sides (RI/RO)
+        
+        #add_new_connections(args, connect, statrev, new_antrev, feedrev, do_C7)
