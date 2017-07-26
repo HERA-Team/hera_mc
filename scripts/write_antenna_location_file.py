@@ -16,9 +16,11 @@ parser.add_argument('--file', help="file name to save antenna locations to",
 args = parser.parse_args()
 filename = args.file
 db = mc.connect_to_mc_db(args)
+session = db.sessionmaker()
 
-locations = geo_handling.get_all_locations(args)
-cofa_loc = geo_handling.cofa()
+h = geo_handling.Handling(session)
+locations = h.get_all_everconnected_locations()
+cofa_loc = h.cofa()
 locations.append({'station_name': cofa_loc.station_name,
                   'station_type': cofa_loc.station_type_name,
                   'longitude': cofa_loc.lon,

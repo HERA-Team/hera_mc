@@ -287,7 +287,7 @@ class Handling:
             stn.lon, stn.lat = hera_proj(stn.easting, stn.northing, inverse=True)
             ever_connected = self.is_in_connections(stn.station_name)
             if ever_connected:
-                connections = session.query(part_connect.Connections).filter(
+                connections = self.session.query(part_connect.Connections).filter(
                     part_connect.Connections.upstream_part == stn.station_name)
                 for conn in connections:
                     ant_num = int(conn.downstream_part[1:])
@@ -298,8 +298,8 @@ class Handling:
                                           'latitude': stn.lat,
                                           'elevation': stn.elevation,
                                           'antenna_number': ant_num,
-                                          'start_date': start_date,
-                                          'stop_date': stop_date})
+                                          'start_date': conn.start_date,
+                                          'stop_date': conn.stop_date})
         return stations_conn
 
     def get_ants_installed_since(self, query_date, station_types_to_check='all'):
