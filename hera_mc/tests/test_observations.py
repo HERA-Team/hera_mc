@@ -12,7 +12,7 @@ from math import floor
 from astropy.time import Time, TimeDelta
 from astropy.coordinates import EarthLocation
 
-from hera_mc import mc
+from hera_mc import mc, cm_transfer, geo_handling
 from hera_mc.observations import Observation
 from hera_mc import utils
 
@@ -24,6 +24,7 @@ class test_hera_mc(unittest.TestCase):
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
+        cm_transfer._initialization(self.test_session)
 
     def tearDown(self):
         self.test_trans.rollback()
@@ -36,8 +37,11 @@ class test_hera_mc(unittest.TestCase):
         t3 = t1 + TimeDelta(1e-3, format='sec')
         t4 = t2 + TimeDelta(1e-3, format='sec')
 
-        obs1 = Observation.create(t1, t2, utils.calculate_obsid(t1))
-        obs2 = Observation.create(t3, t4, utils.calculate_obsid(t3))
+        h = geo_handling.Handling(session=self.test_session)
+        hera_cofa = h.cofa()
+
+        obs1 = Observation.create(t1, t2, utils.calculate_obsid(t1), hera_cofa)
+        obs2 = Observation.create(t3, t4, utils.calculate_obsid(t3), hera_cofa)
         self.assertFalse(obs1 == obs2)
 
     def test_add_obs(self):

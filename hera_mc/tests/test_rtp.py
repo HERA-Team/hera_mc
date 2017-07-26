@@ -11,7 +11,7 @@ import numpy as np
 from astropy.time import Time, TimeDelta
 from sqlalchemy.exc import NoForeignKeysError
 
-from hera_mc import mc
+from hera_mc import mc, cm_transfer
 from hera_mc.rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord
 from hera_mc import utils
 
@@ -23,6 +23,7 @@ class test_hera_mc(unittest.TestCase):
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
+        cm_transfer._initialization(self.test_session)
 
         time = Time.now()
         obsid = utils.calculate_obsid(time)

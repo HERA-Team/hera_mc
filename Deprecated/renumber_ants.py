@@ -31,7 +31,7 @@ def stop_previous_parts(args,antrev,feedrev):
 
     print("Stopping part %s %s at %s" % (antrev[0], antrev[1], str(args.date)))
     data = [[antrev[0], antrev[1], 'stop_gpstime', current]]
-    
+
     if feedrev[1] == 'A':
         print("Stopping part %s %s at %s" % (feedrev[0], feedrev[1], str(args.date)))
         data.append([feedrev[0], feedrev[1], 'stop_gpstime', current])
@@ -305,7 +305,11 @@ if __name__ == '__main__':
     statrev = (args.station_name,cm_part_revisions.get_last_revision(args,args.station_name)[0][0])
 
     connect = part_connect.Connections()
-    geo = geo_handling.Handling(args)
+
+    db = mc.connect_to_mc_db(args)
+    session = db.sessionmaker()
+
+    geo = geo_handling.Handling(session)
     part = part_connect.Parts()
     handling = cm_handling.Handling(args)
     hookup = cm_hookup.Hookup(args)
@@ -317,7 +321,7 @@ if __name__ == '__main__':
     previous_hookup = hookup.get_hookup(old_antrev[0], old_antrev[1], show_hookup=False)
     #verbose_previous_hookup(previous_hookup)
     #print("===================================================================")
-    
+
     do_C7 = True
     if isinstance(old_antrev,tuple):
         print('Converting {}:{} to {}:{}'.format(old_antrev[0],old_antrev[1],new_antrev[0],new_antrev[1]))

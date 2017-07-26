@@ -9,7 +9,7 @@ Script to handle the ONE TIME disconnection of all 150m cables
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling, geo_handling, cm_hookup, cm_part_revisions
+from hera_mc import mc, cm_utils, part_connect, cm_handling, cm_hookup, cm_part_revisions
 import sys
 
 

@@ -15,37 +15,40 @@ import os.path
 import csv
 
 
-def package_db_to_csv(args):
+def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
     """This will get the configuration management tables from the database
        and package them to csv files to be read by initialize_db_from_csv"""
+    if session is None:
+        db = mc.connect_to_mc_db()
+        session = db.sessionmaker()
+
     tmp_filename = '__tmp_initfile.tmp'
 
-    if args.base:
+    if base:
         data_prefix = cm_table_info.base_data_prefix
     else:
         data_prefix = cm_table_info.data_prefix
     cm_tables = cm_table_info.cm_tables
 
-    db = mc.connect_to_mc_db(args)
-    if args.tables == 'all':
+    if tables == 'all':
         tables_to_write = cm_tables.keys()
     else:
-        tables_to_write = args.tables.split(',')
+        tables_to_write = tables.split(',')
 
     print("Writing packaged files to current directory.  Copy to hera_mc/data to distribute.")
     for table in tables_to_write:
         data_filename = data_prefix + table + '.csv'
-        table_data = pd.read_sql_table(table, db.engine)
-        if args.maindb:
+        table_data = pd.read_sql_table(table, session.get_bind())
+        if maindb:
             print("\tPackaging for maindb:  " + data_filename)
             table_data.to_csv(tmp_filename, index=False)
         else:
             print("\tPackaging:  " + data_filename)
             table_data.to_csv(data_filename, index=False)
-        if args.maindb:  # Put key in first line
+        if maindb:  # Put key in first line
             fpout = open(data_filename, 'w')
             fpin = open(tmp_filename, 'r')
-            keyline = '$_maindb_$:' + args.maindb + '\n'
+            keyline = '$_maindb_$:' + maindb + '\n'
             fpout.write(keyline)
             for line in fpin:
                 fpout.write(line)
@@ -54,14 +57,14 @@ def package_db_to_csv(args):
             os.remove(tmp_filename)
 
 
-def initialize_db_from_csv(args):
-    """This entry module provides a double-check entry point to read the csv files and 
+def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False):
+    """This entry module provides a double-check entry point to read the csv files and
        repopulate the configuration management database.  It destroys all current entries,
        hence the double-check"""
     print("This will erase and rewrite the configuration management tables.")
     you_are_sure = cm_utils._query_yn("Are you sure you want to do this? ", 'n')
     if you_are_sure:
-        success = __initialization(args)
+        success = _initialization(session=session, tables=tables, base=base, maindb=maindb)
     else:
         print("Exit with no rewrite.")
         success = False
@@ -102,26 +105,27 @@ def check_csv_file_and_get_key(data_filename):
     return dbkey
 
 
-def __initialization(args):
+def _initialization(session=None, tables='all', base=False, maindb=False):
+    if session is None:
+        db = mc.connect_to_mc_db()
+        session = db.sessionmaker()
+
     # Check that db flag and actual db agree for remote v main
-    success = check_if_db_location_agrees(args.maindb)
+    success = check_if_db_location_agrees(maindb)
     if not success:
         return success
 
-    if args.tables != 'all':
+    if tables != 'all':
         print("You may encounter foreign_key issues by not using 'all' tables.")
         print("If it doesn't complain though you should be ok.")
     # Get tables to deal with in proper order
     cm_tables = cm_table_info.cm_tables
-    if args.tables == 'all':
+    if tables == 'all':
         tables_to_read_unordered = cm_tables.keys()
     else:
-        tables_to_read_unordered = args.tables.split(',')
+        tables_to_read_unordered = tables.split(',')
     tables_to_read = cm_table_info.order_the_tables(tables_to_read_unordered)
-
-    db = mc.connect_to_mc_db(args)
-
-    if args.base:
+    if base:
         data_prefix = cm_table_info.base_data_prefix
     else:
         data_prefix = cm_table_info.data_prefix
@@ -136,8 +140,8 @@ def __initialization(args):
             print('Initialization for %s not found' % (table))
             use_table.remove(table)
         else:
-            if args.maindb:
-                if dbkey != args.maindb:
+            if maindb:
+                if dbkey != maindb:
                     print('Invalid maindb key for %s  (%s)' % (table, dbkey))
                     use_table.remove(table)
                 else:
@@ -156,9 +160,8 @@ def __initialization(args):
         return False
 
     for table in use_table:
-        with db.sessionmaker() as session:
-            num_rows_deleted = session.query(cm_tables[table][0]).delete()
-            print("%d rows deleted in %s" % (num_rows_deleted, table))
+        num_rows_deleted = session.query(cm_tables[table][0]).delete()
+        print("%d rows deleted in %s" % (num_rows_deleted, table))
 
     tables_to_init = list(reversed(use_table))
     # Initialize tables
@@ -167,25 +170,25 @@ def __initialization(args):
         cm_utils._log('cm_initialization: ' + data_filename)
         key_row = keyed_file[table]
         field_row = not key_row
-        with db.sessionmaker() as session:
-            field_name = []
-            with open(data_filename, 'rb') as csvfile:
-                reader = csv.reader(csvfile)
-                for row in reader:
-                    table_inst = cm_tables[table][0]()
-                    if key_row:
-                        key_row = False
-                        field_row = True
-                    elif field_row:
-                        field_name = row
-                        field_row = False
-                    else:
-                        for i, r in enumerate(row):
-                            if r == '':
-                                r = None
-                            elif 'gpstime' in field_name[i]:
-                                #Needed since pandas does not have an integer representation
-                                #  of NaN, so it outputs a float, which the database won't allow
-                                r = int(float(r)) 
-                            setattr(table_inst, field_name[i], r)
-                        session.add(table_inst)
+        field_name = []
+        with open(data_filename, 'rb') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                table_inst = cm_tables[table][0]()
+                if key_row:
+                    key_row = False
+                    field_row = True
+                elif field_row:
+                    field_name = row
+                    field_row = False
+                else:
+                    for i, r in enumerate(row):
+                        if r == '':
+                            r = None
+                        elif 'gpstime' in field_name[i]:
+                            # Needed since pandas does not have an integer representation
+                            #  of NaN, so it outputs a float, which the database won't allow
+                            r = int(float(r))
+                        setattr(table_inst, field_name[i], r)
+                    session.add(table_inst)
+                    session.commit()

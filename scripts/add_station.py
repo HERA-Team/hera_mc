@@ -62,7 +62,11 @@ def query_geo_information(args):
 
 def entry_OK_to_add(args):
     OK = True
-    h = geo_handling.Handling(args)
+
+    db = mc.connect_to_mc_db(args)
+    session = db.sessionmaker()
+
+    h = geo_handling.Handling(session)
     if h.is_in_geo_location(args.station_name):
         print(args.station_name, ' already present.')
         OK = False

@@ -76,13 +76,17 @@ class Handling:
 
     coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
 
-    def __init__(self, args):
+    def __init__(self, session=None):
         """
-        args:  needed arguments to open database
+        session: session on current database. If session is None, a new session
+                 on the default database is created and used.
         """
-        self.args = args
-        db = mc.connect_to_mc_db(self.args)
-        self.session = db.sessionmaker()
+        if session is None:
+            db = mc.connect_to_mc_db()
+            self.session = db.sessionmaker()
+        else:
+            self.session = session
+
         self.station_types = None
 
     def close(self):

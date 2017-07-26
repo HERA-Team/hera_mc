@@ -63,7 +63,10 @@ if __name__ == '__main__':
                   'fig_num':args.fig_num}
 
     # process
-    h = geo_handling.Handling(args)
+    db = mc.connect_to_mc_db(args)
+    session = db.sessionmaker()
+
+    h = geo_handling.Handling(session)
     if args.graph:
         show_fig = h.plot_station_types(query_date, state_args)
     if args.cofa:

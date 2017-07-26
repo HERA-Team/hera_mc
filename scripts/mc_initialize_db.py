@@ -17,6 +17,7 @@ if not hasattr(db, 'create_tables'):
                      'configured to be in "testing" mode')
 
 db.create_tables()
+session = db.sessionmaker()
 
 # Initialize configuration management tables
 args.base = False
@@ -25,4 +26,4 @@ if cm_transfer.check_if_main():
     args.maindb = raw_input('You are initializing the main db. Please enter key:')
 else:
     args.maindb = False
-cm_transfer.__initialization(args)
+cm_transfer.__initialization(session)

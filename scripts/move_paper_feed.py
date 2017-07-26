@@ -68,7 +68,7 @@ def stop_previous_parts(args):
     if type(is_connected) == list:  # It is active
         print("Stopping part %s %s at %s" % (args.antenna_number, 'P', str(args.date)))
         data = [[args.antenna_number, 'P', 'stop_gpstime', current]]
-    
+
     feed = 'FDP' + args.antenna_number.strip('A')
     is_connected = handling.is_in_connections(feed, 'A', return_active=True)
     if type(is_connected) == list:  # It is active
@@ -221,9 +221,13 @@ if __name__ == '__main__':
         args.antenna_number = 'A' + args.antenna_number
     connect = part_connect.Connections()
     part = part_connect.Parts()
+
+    db = mc.connect_to_mc_db(args)
+    session = db.sessionmaker()
+
     handling = cm_handling.Handling(args)
     hookup = cm_hookup.Hookup(args)
-    geo = geo_handling.Handling(args)
+    geo = geo_handling.Handling(session)
 
     if args.make_update:
         print("\nUpdating antenna/feed installation.\n")
