@@ -26,4 +26,4 @@ if cm_transfer.check_if_main():
     args.maindb = raw_input('You are initializing the main db. Please enter key:')
 else:
     args.maindb = False
-cm_transfer.__initialization(session)
+cm_transfer._initialization(session)
