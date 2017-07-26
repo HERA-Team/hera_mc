@@ -175,7 +175,7 @@ class Handling:
                 connection.gps2Time()
                 if cm_utils._is_active(active_date, connection.start_date, connection.stop_date):
                     if return_antrev:
-                        antenna_connected = (connection.downstream_part,connection.down_part_rev)
+                        antenna_connected = (connection.downstream_part, connection.down_part_rev)
                     else:
                         antenna_connected = True
                     counter += 1
@@ -249,7 +249,7 @@ class Handling:
                     a.gps2Time()
                     desc = self.station_types[this_station]['Description']
                     ever_connected = self.is_in_connections(a.station_name)
-                    active = self.is_in_connections(a.station_name, query_date, return_antrev = True)
+                    active = self.is_in_connections(a.station_name, query_date, return_antrev=True)
                     found_it = True
                     hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                     a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
@@ -316,7 +316,7 @@ class Handling:
         dt = query_date.gps
         found_stations = []
         for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.created_gpstime >= dt):
-            if station_types_to_check=='all' or self.flipped_station_types[a.station_type_name] in station_types_to_check:
+            if station_types_to_check == 'all' or self.flipped_station_types[a.station_type_name] in station_types_to_check:
                 found_stations.append(a.station_name)
         return found_stations
 
@@ -339,7 +339,7 @@ class Handling:
             for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == station):
                 show_it = True
                 if state_args['show_state'].lower() == 'active':
-                    show_it = self.is_in_connections(station, query_date, return_antrev = False)
+                    show_it = self.is_in_connections(station, query_date, return_antrev=False)
                 if show_it:
                     pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
                     __X = pt[self.coord[state_args['xgraph']]]
