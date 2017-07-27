@@ -86,6 +86,7 @@ from . import part_connect
 from . import geo_location
 from . import temperatures
 from . import observations
+from . import subsystem_error
 from . import server_status
 from . import librarian
 from . import rtp
