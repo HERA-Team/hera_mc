@@ -70,4 +70,4 @@ PACKAGE_DATA = {
         pjoin('data', 'test_data', '*.tst'),
     ]
 }
-REQUIRES = ["astropy", "sqlalchemy", "psycopg2", "uptime", "numpy", "tabulate", "matplotlib", "pandas", "pytz", "pyproj"]
+REQUIRES = ["astropy", "sqlalchemy", "psycopg2", "uptime", "numpy", "tabulate", "matplotlib", "pandas", "pyproj"]

@@ -12,9 +12,12 @@ Python Prerequisites
 --------------
 - sqlalchemy
 - psycopg2
+- alembic
+- numpy
+- astropy
 - tabulate
 - uptime
-- psutil
+- pandas
 - pyproj
 
 Database setup
@@ -54,12 +57,16 @@ separate databases named `hera_mc` and `hera_mc_test` for "production"
 deployment and testing. You must have a database named "testing", in "testing"
 mode, for the M&C test suite to work.
 
-As noted in the README, to initialize the database (e.g., with the
-`scripts/mc_initialize_db.py` script), in the `mc_config.json` file, the `hera_mc`
-database must be in "testing" mode.
+Create the database schema by running `alembic upgrade head`
+If desired, populate the configuration management tables by running the `cm_init.py` script.
 
+### Basic OS X PostgreSQL installation
 
-### Basic OS X PostgreSQL installation with homebrew
+Follow the directions under `Interactive installer by EnterpriseDB` here: https://www.postgresql.org/download/macosx/
+
+This will install the PostgreSQL app on your machine. Starting the app will start the postgres database and give an option to open a psql command line. Then you can create the hera_mc and hera_mc_test databases.
+
+### Installing on Mac OS X with homebrew (not particularly recommended)
 
 Based on our experience getting Dave up and running.
 
@@ -99,7 +106,7 @@ psql: could not connect to server: No such file or directory
 
 you can try the following:  rm /usr/local/var/postgres/postmaster.pid
 
-### Basic OS X PostgreSQL installation with macports
+### Installing on Mac OS X with macports (not particularly recommended)
 
 The following commands will install `postgresql` and initialize the databases. Note that some of
 these commands may initially fail. If this is the case, then try executing the commands from the
@@ -118,4 +125,4 @@ directory, you must `su` to ensure the commands are successfully executed:
 ```
 $ sudo su postgres -c "createdb -Ohera -Eutf8 hera_mc"
 ```
-etc. 
+etc.
