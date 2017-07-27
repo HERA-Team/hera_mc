@@ -11,6 +11,7 @@ from hera_mc.db_check import is_sane_database
 
 
 def test_default_db_schema():
+    # this test will fail if the default database schema does not match the code schema
 
     default_db = mc.connect_to_mc_db(None)
     engine = default_db.engine
