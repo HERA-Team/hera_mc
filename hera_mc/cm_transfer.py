@@ -16,8 +16,22 @@ import csv
 
 
 def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
-    """This will get the configuration management tables from the database
-       and package them to csv files to be read by initialize_db_from_csv"""
+    """
+    This will get the configuration management tables from the database
+       and package them to csv files to be read by initialize_db_from_csv
+
+    Parameters:
+    ------------
+    session: Session object
+        session on current database. If session is None, a new session
+             on the default database is created and used.
+    tables: string
+        comma-separated list of names of tables to initialize or 'all'. Default is 'all'
+    base: boolean
+        use base set of initialization data files. Default is False
+    maindb: boolean or string
+        Either False or a user-generated key to change from main db. Default is False
+    """
     if session is None:
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
@@ -58,9 +72,24 @@ def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
 
 
 def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False):
-    """This entry module provides a double-check entry point to read the csv files and
+    """
+    This entry module provides a double-check entry point to read the csv files and
        repopulate the configuration management database.  It destroys all current entries,
-       hence the double-check"""
+       hence the double-check
+
+    Parameters:
+    ------------
+    session: Session object
+        session on current database. If session is None, a new session
+             on the default database is created and used.
+    tables: string
+        comma-separated list of names of tables to initialize or 'all'. Default is 'all'
+    base: boolean
+        use base set of initialization data files. Default is False
+    maindb: boolean or string
+        Either False or a user-generated key to change from main db. Default is False
+    """
+
     print("This will erase and rewrite the configuration management tables.")
     you_are_sure = cm_utils._query_yn("Are you sure you want to do this? ", 'n')
     if you_are_sure:
@@ -106,6 +135,21 @@ def check_csv_file_and_get_key(data_filename):
 
 
 def _initialization(session=None, tables='all', base=False, maindb=False):
+    """
+    Internal initialization method, should be called via initialize_db_from_csv
+
+    Parameters:
+    ------------
+    session: Session object
+        session on current database. If session is None, a new session
+             on the default database is created and used.
+    tables: string
+        comma-separated list of names of tables to initialize or 'all'. Default is 'all'
+    base: boolean
+        use base set of initialization data files. Default is False
+    maindb: boolean or string
+        Either False or a user-generated key to change from main db. Default is False
+    """
     if session is None:
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
