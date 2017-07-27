@@ -12,20 +12,10 @@ from __future__ import absolute_import, division, print_function
 import unittest
 
 from hera_mc import geo_location, geo_handling, mc, cm_transfer
+from hera_mc.tests import TestHERAMC
 
 
-class test_geo(unittest.TestCase):
-
-    def setUp(self):
-        self.test_db = mc.connect_to_mc_testing_db()
-        self.test_conn = self.test_db.engine.connect()
-        self.test_trans = self.test_conn.begin()
-        self.test_session = mc.MCSession(bind=self.test_conn)
-        cm_transfer._initialization(self.test_session)
-
-    def tearDown(self):
-        self.test_trans.rollback()
-        self.test_conn.close()
+class TestGeo(TestHERAMC):
 
     def test_add_part(self):
         self.test_session.add(geo_location.GeoLocation())
