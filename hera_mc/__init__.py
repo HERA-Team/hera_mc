@@ -37,6 +37,7 @@ def MCDeclarativeBase_close(self, other):
     self_columns = self.__table__.columns
     other_columns = other.__table__.columns
     if set(c.name for c in self_columns) != set(c.name for c in other_columns):
+        print('set of columns are not the same')
         return False
 
     for c in self_columns:
@@ -44,9 +45,12 @@ def MCDeclarativeBase_close(self, other):
         other_c = getattr(other, c.name)
         if isinstance(self_c, (str, unicode, int, long)):
             if self_c != other_c:
+                print('column {col} is string-like or int-like, values are not '
+                      'equal'.format(col=c))
                 return False
         elif isinstance(self_c, (np.ndarray)) and isinstance(self_c.dtype, (int, long)):
             if not np.all(self_c == other_c):
+                print('column {col} is an int-like array, values are not equal'.format(col=c))
                 return False
         else:
             if hasattr(self, 'tols') and c.name in self.tols.keys():
@@ -57,6 +61,7 @@ def MCDeclarativeBase_close(self, other):
                 atol = 1e-08
                 rtol = 1e-05
             if not np.isclose(self_c, other_c, atol=atol, rtol=rtol):
+                print('column {col} is an float-like array, values are not equal'.format(col=c))
                 return False
     return True
 
