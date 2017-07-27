@@ -123,15 +123,17 @@ class LibRAIDErrors(MCDeclarativeBase):
     """
     Definition of lib_raid_errors table.
 
-    time: time of this status in floor(gps seconds) (BigInteger). Part of primary_key
-    hostname: name of RAID server with error (String). Part of primary_key
-    disk: name of disk with error (String). Part of primary_key
+    id: autoincrementing error id (BigInteger). Primary_key
+    time: time of this status in floor(gps seconds) (BigInteger)
+    hostname: name of RAID server with error (String)
+    disk: name of disk with error (String)
     log: error message or log file name (TBD) (Text)
     """
     __tablename__ = 'lib_raid_errors'
-    time = Column(BigInteger, primary_key=True)
-    hostname = Column(String(32), primary_key=True)
-    disk = Column(String, primary_key=True)
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    time = Column(BigInteger, nullable=False)
+    hostname = Column(String(32), nullable=False)
+    disk = Column(String, nullable=False)
     log = Column(Text, nullable=False)
 
     @classmethod
