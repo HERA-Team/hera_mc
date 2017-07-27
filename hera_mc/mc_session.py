@@ -252,7 +252,7 @@ class MCSession(Session):
 
         return status_list
 
-    def add_subsystem_error(self, subsystem, time, log):
+    def add_subsystem_error(self, time, subsystem, severity, log):
         """
         Add a new subsystem subsystem_error to the M&C database.
 
@@ -267,7 +267,9 @@ class MCSession(Session):
         """
         from .subsystem_error import SubsystemError
 
-        self.add(SubsystemError.create(subsystem, time, log))
+        db_time = self.get_current_db_time()
+
+        self.add(SubsystemError.create(db_time, time, subsystem, severity, log))
 
     def get_subsystem_error(self, starttime, stoptime=None, subsystem=None):
         """

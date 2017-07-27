@@ -99,9 +99,12 @@ network\_bandwidth\_mps & float & Network bandwidth in MB/s, 5 min average. Can 
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
-\textbf{subsystem} & string & name subsystem with error (e.g. `librarian', `rtp')\\ \hline
-\textbf{time} & long & error report time in floor(gps seconds)\\ \hline
-log & text & TBD on format, either a message or a file with the log \\\hline
+\textbf{id} & long & auto-incrementing error id\\ \hline
+time & long & error report time in floor(gps seconds)\\ \hline
+subsystem & string & name subsystem with error (e.g. `librarian', `rtp')\\ \hline
+mc\_time & long & time report received by \mc\ in floor(gps seconds) \\ \hline
+severity & int & integer indicating severity level, 1 is most severe \\ \hline
+log & text & TBD on format, either a message or a file with the log \\ \hline
 \end{tabular}
 \end{center}
 

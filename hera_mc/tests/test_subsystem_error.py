@@ -21,8 +21,9 @@ class TestSubsystemError(TestHERAMC):
         super(TestSubsystemError, self).setUp()
 
         time = Time.now()
-        self.subsystem_error_names = ['subsystem', 'time', 'log']
-        self.subsystem_error_values = ['librarian', time, 'bad problem']
+        self.subsystem_error_names = ['id', 'time', 'subsystem', 'mc_time',
+                                      'severity', 'log']
+        self.subsystem_error_values = [1, time, 'librarian', time, 1, 'bad problem']
         self.subsystem_error_columns = dict(zip(self.subsystem_error_names,
                                                 self.subsystem_error_values))
 
@@ -33,9 +34,12 @@ class TestSubsystemError(TestHERAMC):
     def test_add_subsystem_error(self):
         exp_columns = self.subsystem_error_columns.copy()
         exp_columns['time'] = int(floor(exp_columns['time'].gps))
+        exp_columns['mc_time'] = int(floor(exp_columns['mc_time'].gps))
         expected = SubsystemError(**exp_columns)
 
-        self.test_session.add_subsystem_error(*self.subsystem_error_values)
+        self.test_session.add_subsystem_error(self.subsystem_error_values[1],
+                                              self.subsystem_error_values[2],
+                                              *self.subsystem_error_values[4:])
 
         result = self.test_session.get_subsystem_error(self.subsystem_error_columns['time'] -
                                                        TimeDelta(2 * 60, format='sec'))
@@ -44,7 +48,8 @@ class TestSubsystemError(TestHERAMC):
 
         self.assertTrue(result.isclose(expected))
 
-        self.test_session.add_subsystem_error('rtp', *self.subsystem_error_values[1:])
+        self.test_session.add_subsystem_error(self.subsystem_error_values[1], 'rtp',
+                                              *self.subsystem_error_values[4:])
         result_subsystem = \
             self.test_session.get_subsystem_error(self.subsystem_error_columns['time'] -
                                                   TimeDelta(2, format='sec'),
@@ -61,6 +66,8 @@ class TestSubsystemError(TestHERAMC):
                                                             TimeDelta(2 * 60, format='sec'))
 
         self.assertEqual(len(result_mult), 2)
+        ids = [res.id for res in result_mult]
+        self.assertEqual(ids, [1, 2])
         subsystems = [res.subsystem for res in result_mult]
         self.assertEqual(subsystems, ['librarian', 'rtp'])
 
@@ -72,10 +79,12 @@ class TestSubsystemError(TestHERAMC):
 
     def test_errors_subsystem_error(self):
         self.assertRaises(ValueError, self.test_session.add_subsystem_error,
-                          self.subsystem_error_values[0], 'foo',
-                          *self.subsystem_error_values[2:])
+                          'foo', self.subsystem_error_values[2],
+                          *self.subsystem_error_values[4:])
 
-        self.test_session.add_subsystem_error(*self.subsystem_error_values)
+        self.test_session.add_subsystem_error(self.subsystem_error_values[1],
+                                              self.subsystem_error_values[2],
+                                              *self.subsystem_error_values[4:])
         self.assertRaises(ValueError, self.test_session.get_subsystem_error, 'foo')
         self.assertRaises(ValueError, self.test_session.get_subsystem_error,
                           self.subsystem_error_columns['time'], stoptime='foo')
