@@ -13,21 +13,21 @@ from tabulate import tabulate
 from hera_mc import cm_utils, part_connect
 
 
-def get_revisions_of_type(args, rev_query, hpn=None):
+def get_revisions_of_type(rev_query, hpn, session=None):
     rq = rev_query.upper()
     if rq == 'LAST':
-        rq = get_last_revision(args, hpn)
+        rq = get_last_revision(hpn, session)
     elif rq == 'ACTIVE':
-        rq = get_contemporary_revision(args, hpn)
+        rq = get_contemporary_revision(hpn, session)
     elif rq == 'ALL':
-        rq = get_all_revisions(args, hpn)
+        rq = get_all_revisions(hpn, session)
     else:
-        rq = get_particular_revision(args, rq, hpn)
+        rq = get_particular_revision(rq, hpn, session)
     return rq
 
 
-def show_revisions(args, hpn=None):
-    revisions = part_connect.__get_part_revisions(args, hpn)
+def show_revisions(hpn, session=None):
+    revisions = part_connect.__get_part_revisions(session, hpn)
     sort_rev = sorted(revisions.keys())
     headers = ['HPN', 'Revision', 'Start', 'Stop']
     table_data = []
@@ -39,16 +39,16 @@ def show_revisions(args, hpn=None):
     print('\n')
 
 
-def get_last_revision(args, hpn=None):
-    revisions = part_connect.__get_part_revisions(args, hpn)
+def get_last_revision(hpn, session=None):
+    revisions = part_connect.__get_part_revisions(session, hpn)
     sort_rev = sorted(revisions.keys())
     start_date = revisions[sort_rev[-1]]['started']
     end_date = revisions[sort_rev[-1]]['ended']
     return [[sort_rev[-1], start_date, end_date]]
 
 
-def get_all_revisions(args, hpn=None):
-    revisions = part_connect.__get_part_revisions(args, hpn)
+def get_all_revisions(hpn, session=None):
+    revisions = part_connect.__get_part_revisions(session, hpn)
     sort_rev = sorted(revisions.keys())
     all_rev = []
     for rev in sort_rev:
@@ -58,8 +58,8 @@ def get_all_revisions(args, hpn=None):
     return all_rev
 
 
-def get_particular_revision(args, rq, hpn=None):
-    revisions = part_connect.__get_part_revisions(args, hpn)
+def get_particular_revision(rq, hpn, session=None):
+    revisions = part_connect.__get_part_revisions(session, hpn)
     sort_rev = sorted(revisions.keys())
     this_rev = None
     if rq in sort_rev:
@@ -69,9 +69,9 @@ def get_particular_revision(args, rq, hpn=None):
     return this_rev
 
 
-def get_contemporary_revision(args, hpn):
+def get_contemporary_revision(hpn, session=None):
     current = cm_utils._get_datetime(args.date,args.time)
-    revisions = part_connect.__get_part_revisions(args, hpn)
+    revisions = part_connect.__get_part_revisions(session, hpn)
     sort_rev = sorted(revisions.keys())
     return_contemporary = None
     for rev in sort_rev:
