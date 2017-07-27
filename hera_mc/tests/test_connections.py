@@ -12,6 +12,7 @@ record.
 from __future__ import absolute_import, division, print_function
 
 import unittest
+from astropy.time import Time, TimeDelta
 
 from hera_mc import part_connect, mc
 
@@ -37,8 +38,8 @@ class test_connections(unittest.TestCase):
         part.hpn_rev = 'A'
         part.manufacture_date = 'Oct 26, 2011'
         part.hptype = 'vapor'
+        part.start_gpstime = Time('2016-01-10 01:15:23', scale='utc').gps
         print(part)
         self.test_session.add(part)
         self.test_session.commit()
         self.assertTrue
-

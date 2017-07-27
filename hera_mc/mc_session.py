@@ -114,8 +114,12 @@ class MCSession(Session):
             observation identification number
         """
         from .observations import Observation
+        import geo_handling
 
-        self.add(Observation.create(starttime, stoptime, obsid))
+        h = geo_handling.Handling(session=self)
+        hera_cofa = h.cofa()
+
+        self.add(Observation.create(starttime, stoptime, obsid, hera_cofa))
 
     def get_obs(self, obsid=None):
         """
@@ -690,5 +694,3 @@ class MCSession(Session):
                                        stoptime=stoptime)
 
         return ptemp_list
-
-

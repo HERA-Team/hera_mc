@@ -15,4 +15,5 @@ parser.add_argument('--tables', help="name of table for which to generate initia
 parser.add_argument('--base', help="can define a base set of initialization data files", action='store_true')
 args = parser.parse_args()
 
-cm_transfer.package_db_to_csv(args)
+cm_transfer.package_db_to_csv(tables=args.tables, base=args.base,
+                              maindb=args.maindb)

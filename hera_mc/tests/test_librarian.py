@@ -10,7 +10,7 @@ from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
 
-from hera_mc import mc
+from hera_mc import mc, cm_transfer
 from hera_mc.librarian import LibStatus, LibRAIDStatus, LibRAIDErrors, LibRemoteStatus, LibFiles
 from hera_mc import utils
 
@@ -22,6 +22,7 @@ class test_hera_mc(unittest.TestCase):
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
+        cm_transfer._initialization(self.test_session)
 
         time = Time.now()
         self.status_names = ['time', 'num_files', 'data_volume_gb',
