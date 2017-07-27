@@ -13,15 +13,14 @@ from astropy.time import Time, TimeDelta
 from hera_mc import mc
 from hera_mc.rtp import RTPServerStatus
 from hera_mc.librarian import LibServerStatus
+from hera_mc.tests import TestHERAMC
 
 
-class test_hera_mc(unittest.TestCase):
+class TestServerStatus(TestHERAMC):
 
     def setUp(self):
-        self.test_db = mc.connect_to_mc_testing_db()
-        self.test_conn = self.test_db.engine.connect()
-        self.test_trans = self.test_conn.begin()
-        self.test_session = mc.MCSession(bind=self.test_conn)
+        super(TestServerStatus, self).setUp()
+
         self.column_names = ['hostname', 'mc_time', 'ip_address', 'system_time',
                              'num_cores', 'cpu_load_pct', 'uptime_days',
                              'memory_used_pct', 'memory_size_gb',
@@ -30,10 +29,6 @@ class test_hera_mc(unittest.TestCase):
         self.column_values = ['test_host', Time.now(), '0.0.0.0', Time.now(),
                               16, 20.5, 31.4, 43.2, 32., 46.8, 510.4, 10.4]
         self.columns = dict(zip(self.column_names, self.column_values))
-
-    def tearDown(self):
-        self.test_trans.rollback()
-        self.test_conn.close()
 
     def test_repr(self):
         for sub in ['rtp', 'lib']:

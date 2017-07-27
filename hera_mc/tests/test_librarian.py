@@ -13,16 +13,13 @@ from astropy.time import Time, TimeDelta
 from hera_mc import mc, cm_transfer
 from hera_mc.librarian import LibStatus, LibRAIDStatus, LibRAIDErrors, LibRemoteStatus, LibFiles
 from hera_mc import utils
+from hera_mc.tests import TestHERAMC
 
 
-class test_hera_mc(unittest.TestCase):
+class TestLibrarian(TestHERAMC):
 
     def setUp(self):
-        self.test_db = mc.connect_to_mc_testing_db()
-        self.test_conn = self.test_db.engine.connect()
-        self.test_trans = self.test_conn.begin()
-        self.test_session = mc.MCSession(bind=self.test_conn)
-        cm_transfer._initialization(self.test_session)
+        super(TestLibrarian, self).setUp()
 
         time = Time.now()
         self.status_names = ['time', 'num_files', 'data_volume_gb',
@@ -58,10 +55,6 @@ class test_hera_mc(unittest.TestCase):
         self.file_names = ['filename', 'obsid', 'time', 'size_gb']
         self.file_values = ['file1', obsid, time, 2.4]
         self.file_columns = dict(zip(self.file_names, self.file_values))
-
-    def tearDown(self):
-        self.test_trans.rollback()
-        self.test_conn.close()
 
     def test_add_lib_status(self):
         self.test_session.add_lib_status(*self.status_values)

@@ -6,7 +6,8 @@
 
 """
 
-from hera_mc import mc
+import unittest
+from hera_mc import mc, cm_transfer
 
 test_db = None
 
@@ -16,7 +17,23 @@ def setup_package():
 
     test_db = mc.connect_to_mc_testing_db()
     test_db.create_tables()
+    session = test_db.sessionmaker()
+    cm_transfer._initialization(session)
 
 
 def teardown_package():
     test_db.drop_tables()
+
+
+# create a class for most tests to inheret from with db setup stuff
+class TestHERAMC(unittest.TestCase):
+
+    def setUp(self):
+        self.test_db = mc.connect_to_mc_testing_db()
+        self.test_conn = self.test_db.engine.connect()
+        self.test_trans = self.test_conn.begin()
+        self.test_session = mc.MCSession(bind=self.test_conn)
+
+    def tearDown(self):
+        self.test_trans.rollback()
+        self.test_conn.close()
