@@ -88,50 +88,57 @@ class GeoLocation(MCDeclarativeBase):
         elevation={self.elevation}>'.format(self=self)
 
 
-def update(args, data):
+def update(session=None, data=None):
     """
     update the database given a station_name and station_number with columns/values and provides some checking
     use with caution -- should usually use in a script which will do datetime primary key etc
 
     Parameters:
     ------------
+    session: session on current database. If session is None, a new session
+             on the default database is created and used.
     data:  [[station_name0,column0,value0],[...]]
-    station_nameN:  station_name (starts with char)
-    values:  corresponding list of values
+           where
+                station_nameN:  station_name (starts with char)
+                values:  corresponding list of values
     """
 
     data_dict = format_check_update_request(data)
     if data_dict is None:
-        print('Error: invalid update')
+        print('Error: invalid update -- doing nothing.')
         return False
-    db = mc.connect_to_mc_db(args)
-    with db.sessionmaker() as session:
-        for station_name in data_dict.keys():
-            geo_rec = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
-            ngr = geo_rec.count()
-            if ngr == 0:
-                if args.add_new_geo:
-                    gr = GeoLocation()
-                else:
-                    print("Error: ", station_name, "does not exist and add_new_geo not enabled.")
-                    gr = None
-            elif ngr == 1:
-                if args.add_new_geo:
-                    print("Error: ", station_name, "exists and and_new_geo is not enabled.")
-                    gr = None
-                else:
-                    gr = geo_rec.first()
+
+    if session is None:
+        db = mc.connect_mc_db()
+        session = db.sessionmaker()
+
+    for station_name in data_dict.keys():
+        geo_rec = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
+        num_rec = geo_rec.count()
+        if num_rec == 0:
+            if args.add_new_geo:
+                gr = GeoLocation()
             else:
-                print("Shouldn't ever get here.")
+                print("Error: ", station_name, "does not exist and add_new_geo not enabled.")
                 gr = None
-            if gr:
-                for d in data_dict[station_name]:
-                    try:
-                        setattr(gr, d[1], d[2])
-                    except AttributeError:
-                        print(d[1], 'does not exist as a field')
-                        continue
-                session.add(gr)
+        elif num_rec == 1:
+            if args.add_new_geo:
+                print("Error: ", station_name, "exists and and_new_geo is enabled.")
+                gr = None
+            else:
+                gr = geo_rec.first()
+        else:
+            print("Error:  more than one of ",station_name," exists (which should not happen).")
+            gr = None
+        if gr:
+            for d in data_dict[station_name]:
+                try:
+                    setattr(gr, d[1], d[2])
+                except AttributeError:
+                    print(d[1], 'does not exist as a field')
+                    continue
+            session.add(gr)
+            session.commit()
     cm_utils._log('geo_location update', data_dict=data_dict)
     return True
 
@@ -150,6 +157,8 @@ def format_check_update_request(request):
     columnN:  name of geo_location column
     valueN:  corresponding new value
     """
+    if request is None:
+        return None
     data = {}
     if type(request) == str:
         tmp = request.split(',')
