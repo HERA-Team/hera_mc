@@ -113,22 +113,37 @@ def upgrade():
     sa.ForeignKeyConstraint(['obsid'], ['hera_obs.obsid'], ),
     sa.PrimaryKeyConstraint('time', 'obsid')
     )
+    op.drop_constraint('connections_pkey', 'connections', type_='primary')
     op.add_column(u'connections', sa.Column('start_gpstime', sa.BigInteger(), nullable=False))
     op.add_column(u'connections', sa.Column('stop_gpstime', sa.BigInteger(), nullable=True))
     op.drop_column(u'connections', 'stop_date')
     op.drop_column(u'connections', 'start_date')
+    op.create_primary_key("connections_pkey", "connections",
+                          ["upstream_part", "up_part_rev", "upstream_output_port",
+                           "downstream_part", "down_part_rev", "downstream_input_port",
+                           "start_gpstime"])
+
     op.add_column(u'geo_location', sa.Column('created_gpstime', sa.BigInteger(), nullable=False))
     op.drop_column(u'geo_location', 'created_date')
+
     op.add_column(u'hera_obs', sa.Column('jd_start', sa.Float(), nullable=False))
     op.add_column(u'hera_obs', sa.Column('starttime', sa.Float(), nullable=False))
     op.add_column(u'hera_obs', sa.Column('stoptime', sa.Float(), nullable=False))
     op.drop_column(u'hera_obs', 'stop_time_jd')
     op.drop_column(u'hera_obs', 'start_time_jd')
+
+    op.drop_constraint('paper_temperatures_pkey', 'paper_temperatures', type_='primary')
     op.add_column(u'paper_temperatures', sa.Column('time', sa.BigInteger(), nullable=False))
     op.drop_column(u'paper_temperatures', 'gps_time')
     op.drop_column(u'paper_temperatures', 'jd_time')
+    op.create_primary_key("paper_temperatures_pkey", "paper_temperatures", ["time", ])
+
+    op.drop_constraint('part_info_pkey', 'part_info', type_='primary')
     op.add_column(u'part_info', sa.Column('posting_gpstime', sa.BigInteger(), nullable=False))
     op.drop_column(u'part_info', 'posting_date')
+    op.create_primary_key("part_info_pkey", "part_info",
+                          ["hpn", "hpn_rev", "posting_gpstime"])
+
     op.add_column(u'parts_paper', sa.Column('start_gpstime', sa.BigInteger(), nullable=False))
     op.add_column(u'parts_paper', sa.Column('stop_gpstime', sa.BigInteger(), nullable=True))
     op.drop_column(u'parts_paper', 'stop_date')
