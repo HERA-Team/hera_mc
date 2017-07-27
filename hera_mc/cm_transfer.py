@@ -19,7 +19,7 @@ def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
     """This will get the configuration management tables from the database
        and package them to csv files to be read by initialize_db_from_csv"""
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
 
     tmp_filename = '__tmp_initfile.tmp'
@@ -107,7 +107,7 @@ def check_csv_file_and_get_key(data_filename):
 
 def _initialization(session=None, tables='all', base=False, maindb=False):
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
 
     # Check that db flag and actual db agree for remote v main
