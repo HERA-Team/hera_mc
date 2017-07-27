@@ -22,7 +22,7 @@ from pyproj import Proj
 from hera_mc import mc, part_connect, cm_utils, geo_location
 
 
-def cofa(show_cofa=False):
+def cofa(show_cofa=False, session=None):
     """
     Returns location class of current COFA
 
@@ -31,15 +31,13 @@ def cofa(show_cofa=False):
     show_cofa:  boolean to print out cofa info or just return class
     """
 
-    parser = mc.get_mc_argument_parser()
-    args = parser.parse_args([])
-    h = Handling(args)
+    h = Handling(session)
     located = h.cofa(show_cofa)
     h.close()
     return located
 
 
-def get_location(location_names, query_date='now', show_location=False, verbosity='m'):
+def get_location(location_names, query_date='now', show_location=False, verbosity='m', session=None):
     """
     This provides a function to query a location and get a geo_location class back, with lon/lat added to the class.
     This is the wrapper for other modules outside cm to call.
@@ -51,10 +49,8 @@ def get_location(location_names, query_date='now', show_location=False, verbosit
     location_name:  location name, may be either a station (geo_location key) or an antenna
     """
 
-    parser = mc.get_mc_argument_parser()
-    args = parser.parse_args([])
     query_date = cm_utils._get_datetime(query_date)
-    h = Handling(args)
+    h = Handling(session)
     located = h.get_location(location_names, query_date, show_location=show_location, verbosity=verbosity)
     h.close()
     return located
@@ -218,7 +214,7 @@ class Handling:
 
     def get_location(self, to_find, query_date, show_location=False, verbosity='m'):
         """
-        Return the location of station_name or antenna_number as contained in args.locate.
+        Return the location of station_name or antenna_number as contained in to_find.
         This accepts the fact that antennas are sort of stations, even though they are parts
 
         Parameters:
