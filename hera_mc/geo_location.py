@@ -108,9 +108,11 @@ def update(session=None, data=None):
         print('Error: invalid update -- doing nothing.')
         return False
 
+    close_session_when_done = False
     if session is None:
         db = mc.connect_mc_db()
         session = db.sessionmaker()
+        close_session_when_done = True
 
     for station_name in data_dict.keys():
         geo_rec = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
@@ -140,6 +142,9 @@ def update(session=None, data=None):
             session.add(gr)
             session.commit()
     cm_utils._log('geo_location update', data_dict=data_dict)
+    if close_session_when_done:
+        session.close()
+
     return True
 
 

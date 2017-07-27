@@ -68,25 +68,32 @@ class Parts(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def __get_part_revisions(args, hpn=None):
+def __get_part_revisions(session=None, hpn=None):
     """
     Retrieves revision numbers for a given part (exact match).  Called from cm_part_revisions.py
     """
     if hpn is None:
-        hpn = args.hpn
+        return None
+    close_session_when_done = False
+    if session is None:
+        db = mc.connect_mc_db()
+        session = db.sessionmaker()
+        close_session_when_done = True
+
     revisions = {}
-    db = mc.connect_to_mc_db(args)
-    with db.sessionmaker() as session:
-        for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
-            parts_rec.gps2Time()
-            revisions[parts_rec.hpn_rev] = {}
-            revisions[parts_rec.hpn_rev]['hpn'] = hpn  # Just carry this along
-            revisions[parts_rec.hpn_rev]['started'] = parts_rec.start_date
-            revisions[parts_rec.hpn_rev]['ended'] = parts_rec.stop_date
+    for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
+        parts_rec.gps2Time()
+        revisions[parts_rec.hpn_rev] = {}
+        revisions[parts_rec.hpn_rev]['hpn'] = hpn  # Just carry this along
+        revisions[parts_rec.hpn_rev]['started'] = parts_rec.start_date
+        revisions[parts_rec.hpn_rev]['ended'] = parts_rec.stop_date
+    if close_session_when_done:
+        session.close()
+
     return revisions
 
 
-def update_part(args, data):
+def update_part(session=None, data=None):
     """
     update the database given a hera part number with columns/values.
     adds part if add_new_part flag is true
@@ -100,45 +107,54 @@ def update_part(args, data):
     columnN:  column name(s)
     values:  corresponding list of values
     """
+
     data_dict = format_and_check_update_part_request(data)
     if data_dict is None:
-        print('Error: invalid update')
+        print('Error: invalid update_part -- doing nothing.')
         return False
-    db = mc.connect_to_mc_db(args)
-    with db.sessionmaker() as session:
-        for dkey in data_dict.keys():
-            hpn_to_change = data_dict[dkey][0][0]
-            rev_to_change = data_dict[dkey][0][1]
-            if rev_to_change[:4] == 'LAST':
-                rev_to_change = get_last_revision_number(args, hpn_to_change)
-            part_rec = session.query(Parts).filter((Parts.hpn == hpn_to_change) &
-                                                   (Parts.hpn_rev == rev_to_change))
-            npc = part_rec.count()
-            if npc == 0:
-                if args.add_new_part:
-                    part = Parts()
-                else:
-                    print("Error: ", dkey,
-                          "does not exist and add_new_part not enabled.")
-                    part = None
-            elif npc == 1:
-                if args.add_new_part:
-                    print("Error: ", dkey, "exists and add_new_part is enabled.")
-                    part = None
-                else:
-                    part = part_rec.first()
+
+    close_session_when_done = False
+    if session is None:
+        db = mc.connect_mc_db()
+        session = db.sessionmaker()
+        close_session_when_done = True
+
+    for dkey in data_dict.keys():
+        hpn_to_change = data_dict[dkey][0][0]
+        rev_to_change = data_dict[dkey][0][1]
+        if rev_to_change[:4] == 'LAST':
+            rev_to_change = get_last_revision_number(args, hpn_to_change)
+        part_rec = session.query(Parts).filter((Parts.hpn == hpn_to_change) &
+                                               (Parts.hpn_rev == rev_to_change))
+        num_part = part_rec.count()
+        if num_part == 0:
+            if args.add_new_part:
+                part = Parts()
             else:
-                print("Shouldn't ever get here.")
+                print("Error: ", dkey, " does not exist and add_new_part not enabled.")
                 part = None
-            if part:
-                for d in data_dict[dkey]:
-                    try:
-                        setattr(part, d[2], d[3])
-                    except AttributeError:
-                        print(d[2], 'does not exist as a field')
-                        continue
-                session.add(part)
+        elif num_part == 1:
+            if args.add_new_part:
+                print("Error: ", dkey, "exists and add_new_part is enabled.")
+                part = None
+            else:
+                part = part_rec.first()
+        else:
+            print("Error:  more than one of ",dkey," exists (which should not happen).")
+            part = None
+        if part:
+            for d in data_dict[dkey]:
+                try:
+                    setattr(part, d[2], d[3])
+                except AttributeError:
+                    print(d[2], 'does not exist as a field')
+                    continue
+            session.add(part)
+            session.commit()
     cm_utils._log('part_connect part update', data_dict=data_dict)
+    if close_session_when_done:
+        session.close()
+
     return True
 
 
@@ -156,6 +172,8 @@ def format_and_check_update_part_request(request):
     columnN:  name of parts column
     valueN:  corresponding new value
     """
+    if request is None:
+        return None
 
     # Split out and get first
     data = {}
@@ -287,7 +305,7 @@ class Connections(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def update_connection(args, data):
+def update_connection(session=None, data=None):
     """
     update the database given a connection with columns/values.
     adds if add_new_connection flag is true
@@ -302,57 +320,65 @@ def update_connection(args, data):
     if data_dict is None:
         print('Error: invalid update')
         return False
-    db = mc.connect_to_mc_db(args)
-    with db.sessionmaker() as session:
-        for dkey in data_dict.keys():
-            upcn_to_change = data_dict[dkey][0][0]
-            urev_to_change = data_dict[dkey][0][1]
-            dncn_to_change = data_dict[dkey][0][2]
-            drev_to_change = data_dict[dkey][0][3]
-            boup_to_change = data_dict[dkey][0][4]
-            aodn_to_change = data_dict[dkey][0][5]
-            strt_to_change = data_dict[dkey][0][6]
-            if urev_to_change[:4] == 'LAST':
-                urev_to_change = get_last_revision_number(args, upcn_to_change)
-            if drev_to_change[:4] == 'LAST':
-                drev_to_change = get_last_revision_number(args, dncn_to_change)
-            conn_rec = session.query(Connections).filter((Connections.upstream_part == upcn_to_change) &
-                                                         (Connections.up_part_rev == urev_to_change) &
-                                                         (Connections.downstream_part == dncn_to_change) &
-                                                         (Connections.down_part_rev == drev_to_change) &
-                                                         (Connections.upstream_output_port == boup_to_change) &
-                                                         (Connections.downstream_input_port == aodn_to_change) &
-                                                         (Connections.start_gpstime == strt_to_change))
-            ncc = conn_rec.count()
-            if ncc == 0:
-                if args.add_new_connection:
-                    connection = Connections()
-                    connection.connection(up=upcn_to_change, up_rev=urev_to_change,
-                                          down=dncn_to_change, down_rev=drev_to_change,
-                                          upstream_output_port=boup_to_change, downstream_input_port=aodn_to_change,
-                                          start_gpstime=strt_to_change)
-                else:
-                    print(
-                        "Error:", dkey, "does not exist and add_new_connection is not enabled.")
-                    connection = None
-            elif ncc == 1:
-                if args.add_new_connection:
-                    print("Error:", dkey, "exists and and_new_connection is enabled")
-                    connection = None
-                else:
-                    connection = conn_rec.first()
+
+    close_session_when_done = False
+    if session is None:
+        db = mc.connect_mc_db()
+        session = db.sessionmaker()
+        close_session_when_done = True
+
+    for dkey in data_dict.keys():
+        upcn_to_change = data_dict[dkey][0][0]
+        urev_to_change = data_dict[dkey][0][1]
+        dncn_to_change = data_dict[dkey][0][2]
+        drev_to_change = data_dict[dkey][0][3]
+        boup_to_change = data_dict[dkey][0][4]
+        aodn_to_change = data_dict[dkey][0][5]
+        strt_to_change = data_dict[dkey][0][6]
+        if urev_to_change[:4] == 'LAST':
+            urev_to_change = get_last_revision_number(args, upcn_to_change)
+        if drev_to_change[:4] == 'LAST':
+            drev_to_change = get_last_revision_number(args, dncn_to_change)
+        conn_rec = session.query(Connections).filter((Connections.upstream_part == upcn_to_change) &
+                                                     (Connections.up_part_rev == urev_to_change) &
+                                                     (Connections.downstream_part == dncn_to_change) &
+                                                     (Connections.down_part_rev == drev_to_change) &
+                                                     (Connections.upstream_output_port == boup_to_change) &
+                                                     (Connections.downstream_input_port == aodn_to_change) &
+                                                     (Connections.start_gpstime == strt_to_change))
+        num_conn = conn_rec.count()
+        if num_conn == 0:
+            if args.add_new_connection:
+                connection = Connections()
+                connection.connection(up=upcn_to_change, up_rev=urev_to_change,
+                                      down=dncn_to_change, down_rev=drev_to_change,
+                                      upstream_output_port=boup_to_change, downstream_input_port=aodn_to_change,
+                                      start_gpstime=strt_to_change)
             else:
-                print("Shouldn't ever get here.")
+                print("Error:", dkey, "does not exist and add_new_connection is not enabled.")
                 connection = None
-            if connection:
-                for d in data_dict[dkey]:
-                    try:
-                        setattr(connection, d[7], d[8])
-                    except AttributeError:
-                        print(dkey, 'does not exist as a field')
-                        continue
-                session.add(connection)
+        elif num_conn == 1:
+            if args.add_new_connection:
+                print("Error:", dkey, "exists and and_new_connection is enabled")
+                connection = None
+            else:
+                connection = conn_rec.first()
+        else:
+            print("Error:  more than one of ",dkey," exists (which should not happen).")
+            connection = None
+        if connection:
+            for d in data_dict[dkey]:
+                try:
+                    setattr(connection, d[7], d[8])
+                except AttributeError:
+                    print(dkey, 'does not exist as a field')
+                    continue
+            session.add(connection)
+            session.commit()
     cm_utils._log('part_connect connection update', data_dict=data_dict)
+    if close_session_when_done:
+        session.close()
+
     return True
 
 
@@ -369,6 +395,8 @@ def format_check_update_connection_request(request):
     valueN:  corresponding new value
     """
 
+    if request is None:
+        return None
     # Split out and get first
     data = {}
     if type(request) == str:
