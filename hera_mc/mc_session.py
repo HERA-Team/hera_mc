@@ -258,10 +258,12 @@ class MCSession(Session):
 
         Parameters:
         ------------
-        subsystem: string
-            name of subsystem.
         time: astropy time object
             time of this error report
+        subsystem: string
+            name of subsystem with error
+        severity: integer
+            integer indicating severity level, 1 is most severe
         log: string
             error message or log file name (TBD)
         """
