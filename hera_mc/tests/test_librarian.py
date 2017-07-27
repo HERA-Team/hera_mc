@@ -35,8 +35,8 @@ class test_hera_mc(unittest.TestCase):
         self.raid_status_values = [time, 'raid_1', 16, 'megaraid controller is happy']
         self.raid_status_columns = dict(zip(self.raid_status_names, self.raid_status_values))
 
-        self.raid_error_names = ['time', 'hostname', 'disk', 'log']
-        self.raid_error_values = [time, 'raid_1', 'd4', 'unhappy disk']
+        self.raid_error_names = ['id', 'time', 'hostname', 'disk', 'log']
+        self.raid_error_values = [1, time, 'raid_1', 'd4', 'unhappy disk']
         self.raid_error_columns = dict(zip(self.raid_error_names, self.raid_error_values))
 
         self.remote_status_names = ['time', 'remote_name', 'ping_time',
@@ -160,7 +160,7 @@ class test_hera_mc(unittest.TestCase):
         exp_columns['time'] = int(floor(exp_columns['time'].gps))
         expected = LibRAIDErrors(**exp_columns)
 
-        self.test_session.add_lib_raid_error(*self.raid_error_values)
+        self.test_session.add_lib_raid_error(*self.raid_error_values[1:])
 
         result = self.test_session.get_lib_raid_error(self.raid_error_columns['time'] -
                                                       TimeDelta(2 * 60, format='sec'))
@@ -169,8 +169,8 @@ class test_hera_mc(unittest.TestCase):
 
         self.assertTrue(result.isclose(expected))
 
-        self.test_session.add_lib_raid_error(self.raid_error_values[0], 'raid_2',
-                                             *self.raid_error_values[2:])
+        self.test_session.add_lib_raid_error(self.raid_error_values[1], 'raid_2',
+                                             *self.raid_error_values[3:])
         result_host = self.test_session.get_lib_raid_error(self.raid_error_columns['time'] -
                                                            TimeDelta(2, format='sec'),
                                                            hostname=self.raid_error_columns['hostname'],
@@ -186,6 +186,8 @@ class test_hera_mc(unittest.TestCase):
                                                            TimeDelta(2 * 60, format='sec'))
 
         self.assertEqual(len(result_mult), 2)
+        ids = [res.id for res in result_mult]
+        self.assertEqual(ids, [1, 2])
 
         result2 = self.test_session.get_lib_raid_error(self.raid_error_columns['time'] -
                                                        TimeDelta(2, format='sec'),
@@ -195,9 +197,9 @@ class test_hera_mc(unittest.TestCase):
 
     def test_errors_lib_raid_error(self):
         self.assertRaises(ValueError, self.test_session.add_lib_raid_error,
-                          'foo', *self.raid_error_values[1:])
+                          'foo', *self.raid_error_values[2:])
 
-        self.test_session.add_lib_raid_error(*self.raid_error_values)
+        self.test_session.add_lib_raid_error(*self.raid_error_values[1:])
         self.assertRaises(ValueError, self.test_session.get_lib_raid_error, 'foo')
         self.assertRaises(ValueError, self.test_session.get_lib_raid_error,
                           self.raid_error_columns['time'], stoptime='foo')
