@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 from astropy.time import Time
-from astropy.coordinates import EarthLocation, Angle
+from astropy.coordinates import EarthLocation
 from sqlalchemy import Column, BigInteger, Float
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -45,7 +45,7 @@ class Observation(MCDeclarativeBase):
         return self.stoptime - self.starttime
 
     @classmethod
-    def create(cls, starttime, stoptime, obsid):
+    def create(cls, starttime, stoptime, obsid, hera_cofa):
         """
         Create a new observation object using Astropy to compute the LST.
 
@@ -70,7 +70,6 @@ class Observation(MCDeclarativeBase):
         # for jd need to ensure that we're in utc
         starttime = starttime.utc
 
-        hera_cofa = geo_handling.cofa()
         starttime.location = EarthLocation.from_geodetic(hera_cofa.lon, hera_cofa.lat)
 
         return cls(obsid=obsid, starttime=starttime.gps, stoptime=stoptime.gps,

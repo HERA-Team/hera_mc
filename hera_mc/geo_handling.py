@@ -76,13 +76,17 @@ class Handling:
 
     coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
 
-    def __init__(self, args):
+    def __init__(self, session=None):
         """
-        args:  needed arguments to open database
+        session: session on current database. If session is None, a new session
+                 on the default database is created and used.
         """
-        self.args = args
-        db = mc.connect_to_mc_db(self.args)
-        self.session = db.sessionmaker()
+        if session is None:
+            db = mc.connect_to_mc_db()
+            self.session = db.sessionmaker()
+        else:
+            self.session = session
+
         self.station_types = None
 
     def close(self):
@@ -171,7 +175,7 @@ class Handling:
                 connection.gps2Time()
                 if cm_utils._is_active(active_date, connection.start_date, connection.stop_date):
                     if return_antrev:
-                        antenna_connected = (connection.downstream_part,connection.down_part_rev)
+                        antenna_connected = (connection.downstream_part, connection.down_part_rev)
                     else:
                         antenna_connected = True
                     counter += 1
@@ -245,7 +249,7 @@ class Handling:
                     a.gps2Time()
                     desc = self.station_types[this_station]['Description']
                     ever_connected = self.is_in_connections(a.station_name)
-                    active = self.is_in_connections(a.station_name, query_date, return_antrev = True)
+                    active = self.is_in_connections(a.station_name, query_date, return_antrev=True)
                     found_it = True
                     hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                     a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
@@ -283,7 +287,7 @@ class Handling:
             stn.lon, stn.lat = hera_proj(stn.easting, stn.northing, inverse=True)
             ever_connected = self.is_in_connections(stn.station_name)
             if ever_connected:
-                connections = session.query(part_connect.Connections).filter(
+                connections = self.session.query(part_connect.Connections).filter(
                     part_connect.Connections.upstream_part == stn.station_name)
                 for conn in connections:
                     ant_num = int(conn.downstream_part[1:])
@@ -294,8 +298,8 @@ class Handling:
                                           'latitude': stn.lat,
                                           'elevation': stn.elevation,
                                           'antenna_number': ant_num,
-                                          'start_date': start_date,
-                                          'stop_date': stop_date})
+                                          'start_date': conn.start_date,
+                                          'stop_date': conn.stop_date})
         return stations_conn
 
     def get_ants_installed_since(self, query_date, station_types_to_check='all'):
@@ -312,7 +316,7 @@ class Handling:
         dt = query_date.gps
         found_stations = []
         for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.created_gpstime >= dt):
-            if station_types_to_check=='all' or self.flipped_station_types[a.station_type_name] in station_types_to_check:
+            if station_types_to_check == 'all' or self.flipped_station_types[a.station_type_name] in station_types_to_check:
                 found_stations.append(a.station_name)
         return found_stations
 
@@ -335,7 +339,7 @@ class Handling:
             for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == station):
                 show_it = True
                 if state_args['show_state'].lower() == 'active':
-                    show_it = self.is_in_connections(station, query_date, return_antrev = False)
+                    show_it = self.is_in_connections(station, query_date, return_antrev=False)
                 if show_it:
                     pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
                     __X = pt[self.coord[state_args['xgraph']]]
