@@ -94,6 +94,17 @@ network\_bandwidth\_mps & float & Network bandwidth in MB/s, 5 min average. Can 
 \end{tabular}
 \end{center}
 
+\textbf{\large{subsystem\_errors}}: Subsystem errors/issues
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{subsystem} & string & name subsystem with error (e.g. `librarian', `rtp')\\ \hline
+\textbf{time} & long & error report time in floor(gps seconds)\\ \hline
+log & text & TBD on format, either a message or a file with the log \\\hline
+\end{tabular}
+\end{center}
+
 \subsection{RTP Tables}
 \textbf{\large{rtp\_server\_status}}: RTP version of the server\_status table\\
 
@@ -171,9 +182,10 @@ info & text & TBD -- various info from megaraid controller, may be several colum
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
-\textbf{time} & long & error report time in floor(gps seconds)\\ \hline
-\textbf{hostname} & string & name of RAID server with error \\ \hline
-\textbf{disk} & string & name of disk with error \\ \hline
+\textbf{id} & long & auto-incrementing error id\\ \hline
+time & long & error report time in floor(gps seconds)\\ \hline
+hostname & string & name of RAID server with error \\ \hline
+disk & string & name of disk with error \\ \hline
 log & text & TBD on format, either a message or a file with the log \\\hline
 \end{tabular}
 \end{center}

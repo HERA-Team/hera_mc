@@ -177,8 +177,8 @@ class MCSession(Session):
 
         Parameters:
         ------------
-        subsytem: string
-            name of subsytem. Must be one of ['rtp', 'lib']
+        subsystem: string
+            name of subsystem. Must be one of ['rtp', 'lib']
         hostname:
             name of server
         ip_address:
@@ -222,8 +222,8 @@ class MCSession(Session):
 
         Parameters:
         ------------
-        subsytem: string
-            name of subsytem. Must be one of ['rtp', 'lib']
+        subsystem: string
+            name of subsystem. Must be one of ['rtp', 'lib']
 
         starttime: astropy time object
             time to look for records after
@@ -251,6 +251,54 @@ class MCSession(Session):
                                         filter_value=hostname)
 
         return status_list
+
+    def add_subsystem_error(self, subsystem, time, log):
+        """
+        Add a new subsystem subsystem_error to the M&C database.
+
+        Parameters:
+        ------------
+        subsystem: string
+            name of subsystem.
+        time: astropy time object
+            time of this error report
+        log: string
+            error message or log file name (TBD)
+        """
+        from .subsystem_error import SubsystemError
+
+        self.add(SubsystemError.create(subsystem, time, log))
+
+    def get_subsystem_error(self, starttime, stoptime=None, subsystem=None):
+        """
+        Get subsystem server_status record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        subsystem: string
+            name of subsystem. Must be one of ['rtp', 'lib']
+
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        subsystem: string
+            subsystem to get records for. If none, all subsystems will be included.
+
+        Returns:
+        --------
+        list of SubsystemError objects
+        """
+        from .subsystem_error import SubsystemError
+
+        error_list = self._time_filter(SubsystemError, 'time', starttime,
+                                       stoptime=stoptime, filter_column='subsystem',
+                                       filter_value=subsystem)
+
+        return error_list
 
     def add_lib_status(self, time, num_files, data_volume_gb, free_space_gb,
                        upload_min_elapsed, num_processes, git_version, git_hash):
