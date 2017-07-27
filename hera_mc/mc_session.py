@@ -164,10 +164,7 @@ class MCSession(Session):
         """
         from .observations import Observation
 
-        obs_list = self._time_filter(Observation, 'obsid', starttime,
-                                     stoptime=stoptime)
-
-        return obs_list
+        return self._time_filter(Observation, 'obsid', starttime, stoptime=stoptime)
 
     def add_server_status(self, subsystem, hostname, ip_address, system_time, num_cores,
                           cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
@@ -177,8 +174,8 @@ class MCSession(Session):
 
         Parameters:
         ------------
-        subsytem: string
-            name of subsytem. Must be one of ['rtp', 'lib']
+        subsystem: string
+            name of subsystem. Must be one of ['rtp', 'lib']
         hostname:
             name of server
         ip_address:
@@ -222,8 +219,8 @@ class MCSession(Session):
 
         Parameters:
         ------------
-        subsytem: string
-            name of subsytem. Must be one of ['rtp', 'lib']
+        subsystem: string
+            name of subsystem. Must be one of ['rtp', 'lib']
 
         starttime: astropy time object
             time to look for records after
@@ -246,11 +243,59 @@ class MCSession(Session):
         else:
             raise ValueError('subsystem must be one of: ["rtp", "lib"]')
 
-        status_list = self._time_filter(ServerStatus, 'mc_time', starttime,
-                                        stoptime=stoptime, filter_column='hostname',
-                                        filter_value=hostname)
+        return self._time_filter(ServerStatus, 'mc_time', starttime,
+                                 stoptime=stoptime, filter_column='hostname',
+                                 filter_value=hostname)
 
-        return status_list
+    def add_subsystem_error(self, time, subsystem, severity, log):
+        """
+        Add a new subsystem subsystem_error to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of this error report
+        subsystem: string
+            name of subsystem with error
+        severity: integer
+            integer indicating severity level, 1 is most severe
+        log: string
+            error message or log file name (TBD)
+        """
+        from .subsystem_error import SubsystemError
+
+        db_time = self.get_current_db_time()
+
+        self.add(SubsystemError.create(db_time, time, subsystem, severity, log))
+
+    def get_subsystem_error(self, starttime, stoptime=None, subsystem=None):
+        """
+        Get subsystem server_status record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        subsystem: string
+            name of subsystem. Must be one of ['rtp', 'lib']
+
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        subsystem: string
+            subsystem to get records for. If none, all subsystems will be included.
+
+        Returns:
+        --------
+        list of SubsystemError objects
+        """
+        from .subsystem_error import SubsystemError
+
+        return self._time_filter(SubsystemError, 'time', starttime,
+                                 stoptime=stoptime, filter_column='subsystem',
+                                 filter_value=subsystem)
 
     def add_lib_status(self, time, num_files, data_volume_gb, free_space_gb,
                        upload_min_elapsed, num_processes, git_version, git_hash):
@@ -301,10 +346,8 @@ class MCSession(Session):
         """
         from .librarian import LibStatus
 
-        status_list = self._time_filter(LibStatus, 'time', starttime,
-                                        stoptime=stoptime)
-
-        return status_list
+        return self._time_filter(LibStatus, 'time', starttime,
+                                 stoptime=stoptime)
 
     def add_lib_raid_status(self, time, hostname, num_disks, info):
         """
@@ -347,11 +390,9 @@ class MCSession(Session):
         """
         from .librarian import LibRAIDStatus
 
-        status_list = self._time_filter(LibRAIDStatus, 'time', starttime,
-                                        stoptime=stoptime, filter_column='hostname',
-                                        filter_value=hostname)
-
-        return status_list
+        return self._time_filter(LibRAIDStatus, 'time', starttime,
+                                 stoptime=stoptime, filter_column='hostname',
+                                 filter_value=hostname)
 
     def add_lib_raid_error(self, time, hostname, disk, log):
         """
@@ -394,11 +435,9 @@ class MCSession(Session):
         """
         from .librarian import LibRAIDErrors
 
-        error_list = self._time_filter(LibRAIDErrors, 'time', starttime,
-                                       stoptime=stoptime, filter_column='hostname',
-                                       filter_value=hostname)
-
-        return error_list
+        return self._time_filter(LibRAIDErrors, 'time', starttime,
+                                 stoptime=stoptime, filter_column='hostname',
+                                 filter_value=hostname)
 
     def add_lib_remote_status(self, time, remote_name, ping_time,
                               num_file_uploads, bandwidth_mbs):
@@ -446,11 +485,9 @@ class MCSession(Session):
         """
         from .librarian import LibRemoteStatus
 
-        status_list = self._time_filter(LibRemoteStatus, 'time', starttime,
-                                        stoptime=stoptime, filter_column='remote_name',
-                                        filter_value=remote_name)
-
-        return status_list
+        return self._time_filter(LibRemoteStatus, 'time', starttime,
+                                 stoptime=stoptime, filter_column='remote_name',
+                                 filter_value=remote_name)
 
     def add_lib_file(self, filename, obsid, time, size_gb):
         """
@@ -557,10 +594,8 @@ class MCSession(Session):
         """
         from .rtp import RTPStatus
 
-        status_list = self._time_filter(RTPStatus, 'time', starttime,
-                                        stoptime=stoptime)
-
-        return status_list
+        return self._time_filter(RTPStatus, 'time', starttime,
+                                 stoptime=stoptime)
 
     def add_rtp_process_event(self, time, obsid, event):
         """
@@ -601,11 +636,9 @@ class MCSession(Session):
         """
         from .rtp import RTPProcessEvent
 
-        event_list = self._time_filter(RTPProcessEvent, 'time', starttime,
-                                       stoptime=stoptime, filter_column='obsid',
-                                       filter_value=obsid)
-
-        return event_list
+        return self._time_filter(RTPProcessEvent, 'time', starttime,
+                                 stoptime=stoptime, filter_column='obsid',
+                                 filter_value=obsid)
 
     def add_rtp_process_record(self, time, obsid, pipeline_list, git_version, git_hash):
         """
@@ -651,11 +684,9 @@ class MCSession(Session):
         """
         from .rtp import RTPProcessRecord
 
-        record_list = self._time_filter(RTPProcessRecord, 'time', starttime,
-                                        stoptime=stoptime, filter_column='obsid',
-                                        filter_value=obsid)
-
-        return record_list
+        return self._time_filter(RTPProcessRecord, 'time', starttime,
+                                 stoptime=stoptime, filter_column='obsid',
+                                 filter_value=obsid)
 
     def add_paper_temps(self, read_time, temp_list):
         """
@@ -690,7 +721,5 @@ class MCSession(Session):
         """
         from .temperatures import PaperTemperatures
 
-        ptemp_list = self._time_filter(PaperTemperatures, 'time', starttime,
-                                       stoptime=stoptime)
-
-        return ptemp_list
+        return self._time_filter(PaperTemperatures, 'time', starttime,
+                                 stoptime=stoptime)
