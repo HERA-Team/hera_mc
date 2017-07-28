@@ -67,13 +67,16 @@ if __name__ == '__main__':
                                                  at_date=date_query, exact_match=args.exact_match)
         handling.show_parts(part_dossier, state_args)
     if args.connection:
-        connection_dossier = handling.get_connection_dossier(hpn=args.connection, rev=args.revision, port=args.specify_port,
-                                                 at_date=date_query, exact_match=args.exact_match)
+        connection_dossier = handling.get_connection_dossier(
+                                      hpn=args.connection, rev=args.revision, port=args.specify_port,
+                                      at_date=date_query, exact_match=args.exact_match)
         already_shown = handling.show_connections(connection_dossier, state_args)
         handling.show_other_connections(connection_dossier, already_shown)
     if args.mapr:
-        hookup = cm_hookup.Hookup(args)
-        hookup_dict = hookup.get_hookup(show_hookup=True)
+        hookup = cm_hookup.Hookup(session)
+        hookup_dict = hookup.get_hookup(hpn=args.mapr, rev=args.revision, port=args.specify_port,
+                                        at_date=date_query, exact_match=args.exact_match)
+        hookup.show_hookup(hookup_dict, args.mapr_cols, args.show_levels)
     if args.hptype:
         part_type_dict = handling.get_part_types(show_hptype=True)
     if args.update:
