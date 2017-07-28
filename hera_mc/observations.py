@@ -30,7 +30,7 @@ class Observation(MCDeclarativeBase):
         HERA array location (double)
     """
     __tablename__ = 'hera_obs'
-    obsid = Column(BigInteger, primary_key=True)
+    obsid = Column(BigInteger, primary_key=True, autoincrement=False)
     starttime = Column(Float, nullable=False)  # Float is mapped to DOUBLE PRECISION in postgresql
     stoptime = Column(Float, nullable=False)
     jd_start = Column(Float, nullable=False)

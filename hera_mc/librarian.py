@@ -33,7 +33,7 @@ class LibStatus(MCDeclarativeBase):
     git_hash: librarian git hash (String)
     """
     __tablename__ = 'lib_status'
-    time = Column(BigInteger, primary_key=True)
+    time = Column(BigInteger, primary_key=True, autoincrement=False)
     num_files = Column(BigInteger, nullable=False)
     data_volume_gb = Column(Float, nullable=False)
     free_space_gb = Column(Float, nullable=False)

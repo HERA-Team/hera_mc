@@ -33,7 +33,7 @@ class RTPStatus(MCDeclarativeBase):
     restart_hours_elapsed: hours elapsed since last restart (Float)
     """
     __tablename__ = 'rtp_status'
-    time = Column(BigInteger, primary_key=True)
+    time = Column(BigInteger, primary_key=True, autoincrement=False)
     status = Column(String(64), nullable=False)  # should this be an enum? or text?
     event_min_elapsed = Column(Float, nullable=False)
     num_processes = Column(Integer, nullable=False)
