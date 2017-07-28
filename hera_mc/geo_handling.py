@@ -78,7 +78,7 @@ class Handling:
                  on the default database is created and used.
         """
         if session is None:
-            db = mc.connect_to_mc_db()
+            db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
         else:
             self.session = session

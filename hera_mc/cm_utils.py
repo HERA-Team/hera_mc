@@ -79,8 +79,8 @@ def _get_datetime(_date, _time=0):
     return_date = None
     if isinstance(_date,Time):
         return_date = _date
-    elif _date is None:
-        return_date = None
+    elif _date is None or _date is False:
+        return_date = _date
     else:
         if _date == '<':
             return_date = Time(PAST_DATE,scale='utc')
