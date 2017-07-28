@@ -25,13 +25,15 @@ Be sure to do all your work on a branch off of master.
 7. Once the changes have been incorporated into master, you can log onto site, pull the master branch and run `alembic upgrade head` to update the onsite database to the new schema.
 
 # Deleting all the tables in a database (in psql shell)
+This can be useful to do on your local machine if your database is in a weird state. Never do this on site!!!
 ```
 DROP SCHEMA public CASCADE;
 CREATE SCHEMA public;
 ```
 
 # Deleting a database
-dropdb hera_mc
+This can be useful to do on your local machine if your database is in a weird state. Never do this on site!!!
+`dropdb hera_mc`
 
 # Running psql on qmaster
 
