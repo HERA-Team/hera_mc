@@ -14,16 +14,13 @@ from sqlalchemy.exc import NoForeignKeysError
 from hera_mc import mc, cm_transfer
 from hera_mc.rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord
 from hera_mc import utils
+from hera_mc.tests import TestHERAMC
 
 
-class test_hera_mc(unittest.TestCase):
+class TestRTP(TestHERAMC):
 
     def setUp(self):
-        self.test_db = mc.connect_to_mc_testing_db()
-        self.test_conn = self.test_db.engine.connect()
-        self.test_trans = self.test_conn.begin()
-        self.test_session = mc.MCSession(bind=self.test_conn)
-        cm_transfer._initialization(self.test_session)
+        super(TestRTP, self).setUp()
 
         time = Time.now()
         obsid = utils.calculate_obsid(time)
@@ -48,10 +45,6 @@ class test_hera_mc(unittest.TestCase):
         self.record_names = ['time', 'obsid', 'pipeline_list', 'git_version', 'git_hash']
         self.record_values = [time, obsid, 'sample_pipe', 'v0.0.1', 'lskdjf24l']
         self.record_columns = dict(zip(self.record_names, self.record_values))
-
-    def tearDown(self):
-        self.test_trans.rollback()
-        self.test_conn.close()
 
     def test_add_rtp_status(self):
         self.test_session.add_rtp_status(*self.status_values)
