@@ -22,6 +22,7 @@ install:
   # create environment and install dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy astropy sqlalchemy psycopg2 pandas matplotlib tabulate pytz pyproj nose pip
   - source activate test-environment
+  - conda install -c conda-forge alembic
   - pip install uptime
   - pip install coveralls
   - python setup.py install
@@ -33,7 +34,7 @@ before_script:
   - psql -c 'create user hera;' -U postgres
   - mkdir ~/.hera_mc
   - cp ci/example_config.json ~/.hera_mc/mc_config.json
-  - python scripts/mc_initialize_db.py
+  - alembic upgrade head
 script: nosetests --with-coverage --cover-package=hera_mc
 
 after_success:
