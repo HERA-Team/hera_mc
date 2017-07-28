@@ -71,4 +71,4 @@ PACKAGE_DATA = {
     ]
 }
 REQUIRES = ["astropy", "sqlalchemy", "psycopg2", "alembic", "uptime", "numpy",
-            "tabulate", "matplotlib", "pandas", "pytz", "pyproj"]
+            "tabulate", "matplotlib", "pandas", "psutil", "pyproj"]
