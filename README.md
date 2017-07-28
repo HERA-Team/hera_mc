@@ -24,6 +24,12 @@ Be sure to do all your work on a branch off of master.
 6. When you're satisified that everything works as expected, create a pull request on github to ask for a code review and to get your changes integrated into master.
 7. Once the changes have been incorporated into master, you can log onto site, pull the master branch and run `alembic upgrade head` to update the onsite database to the new schema.
 
+# Deleting all the tables in a database (in psql shell)
+```
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+```
+
 # Deleting a database
 dropdb hera_mc
 
