@@ -18,6 +18,7 @@ Python Prerequisites
 - tabulate
 - uptime
 - pandas
+- psutil
 - pyproj
 
 Database setup
