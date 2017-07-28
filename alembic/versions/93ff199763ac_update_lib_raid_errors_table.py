@@ -7,6 +7,7 @@ Create Date: 2017-07-27 00:13:29.765073+00:00
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.schema import Sequence, CreateSequence
 
 
 # revision identifiers, used by Alembic.
@@ -19,8 +20,10 @@ depends_on = None
 def upgrade():
     op.drop_constraint('lib_raid_errors_pkey', 'lib_raid_errors', type_='primary')
 
-    op.add_column('lib_raid_errors', sa.Column('id', sa.BigInteger(),
-                  autoincrement=True))
+    op.execute(CreateSequence(Sequence("lib_raid_errors_id_seq")))
+    op.add_column('lib_raid_errors', sa.Column('id', sa.BigInteger(), nullable=False,
+                  server_default=sa.text("nextval('lib_raid_errors_id_seq'::regclass)")))
+
     op.create_primary_key("lib_raid_errors_pkey", "lib_raid_errors", ["id", ])
     # ### end Alembic commands ###
 
