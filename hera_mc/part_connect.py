@@ -67,6 +67,41 @@ class Parts(MCDeclarativeBase):
                 value = value.upper()
             setattr(self, key, value)
 
+def stop_existing_parts(session, hpnr_list, at_date, actually_do_it):
+    """
+    This adds stop times to the previous parts.
+    """
+    stop_at = int(at_date.gps)
+    data = []
+
+    for hpnr in hpnr_list:
+        print("Stopping part %s %s at %s" % (hpnr[0], hpnr[1], str(at_date)))
+        data.append([hpnr[0], hpnr[1], 'stop_gpstime', stop_at])
+
+    if actually_do_it:
+        update_part(session, data, False)
+    else:
+        print(data)
+
+def add_new_parts(session, new_part_list, at_date, actually_do_it):
+    """
+    This adds the new parts.
+    """
+    start_at = int(at_date.gps)
+    data = []
+
+    for np in new_part_list:
+        print("Adding part %s %s at %s" % (np[0], np[1],  str(at_date)))
+        data.append([np[0], np[1], 'hpn', np[0]])
+        data.append([np[0], np[1], 'hpn_rev', np[1]])
+        data.append([np[0], np[1], 'hptype', np[2]])
+        data.append([np[0], np[1], 'manufacturer_number', np[3]])
+        data.append([np[0], np[1], 'start_gpstime', start_at])
+
+    if actually_do_it:
+        update_part(session, data, True)
+    else:
+        print(data)
 
 def update_part(session=None, data=None, add_new_part=False):
     """
@@ -278,6 +313,78 @@ class Connections(MCDeclarativeBase):
             elif key in lower_case:
                 value = value.lower()
             setattr(self, key, value)
+
+def stop_existing_connections(session, h, conn_list, at_date, actually_do_it):
+    """This adds stop times to the previous connections in conn_list
+    """
+
+    stop_at = int(at_date.gps)
+    data = []
+
+    for conn in conn_list:
+        CD = h.get_connection_dossier(conn[0],conn[1],conn[2],True)
+        ck = get_connection_key(CD,conn)
+        if ck is not None:
+            x = CD[ck]
+            print("Stopping connection <{}:{}<{}|{}>{}:{}>".format(
+                               x.upstream_part, x.up_part_rev, x.upstream_output_port,
+                               x.downstream_input_port, x.downstream_part, x.down_part_rev) )
+            stopping = [x.upstream_part, x.up_part_rev, x.downstream_part, x.down_part_rev, 
+                        x.upstream_output_port, x.downstream_input_port, x.start_gpstime, 'stop_gpstime', stop_at]
+            data.append(stopping)
+
+    if actually_do_it:
+        update_connection(session, data, False)
+    else:
+        print(data)
+
+def get_connection_key(c,p):
+    for ck in c.keys():
+        if p[0] in ck:
+            break
+    else:
+        ck = None
+    return ck
+
+def add_new_connections(session, c, conn_list, at_date, actually_do_it):
+    """
+    This generates a connection object to send to the updater
+    """
+    start_at = int(at_date.gps)
+    data = []
+
+    for conn in conn_list:
+        c.connection(upstream_part=conn[0],        up_part_rev=conn[1],
+                     downstream_part=conn[3],      down_part_rev=conn[4],
+                     upstream_output_port=conn[2], downstream_input_port=conn[5], 
+                     start_gpstime=start_at,       stop_gpstime=None)
+        data.append( 
+           [[c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+             'upstream_part', c.upstream_part],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+             'up_part_rev', c.up_part_rev],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+             'downstream_part', c.downstream_part],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+             'down_part_rev', c.down_part_rev],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+             'upstream_output_port', c.upstream_output_port],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+             'downstream_input_port', c.downstream_input_port],
+            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+             'start_gpstime', c.start_gpstime]])
+
+    if actually_do_it:
+        update_connection(session, data, True)
+    else:
+        print(data)
 
 
 def update_connection(session=None, data=None, add_new_connection=False):

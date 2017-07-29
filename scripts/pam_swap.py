@@ -29,126 +29,6 @@ def query_args(args):
     return args
 
 
-def stop_previous_parts(hpnr_list,session,at_date):
-    """
-    This adds stop times to the previous parts.
-    """
-    current = int(args.date.gps)
-    args.add_new_part = False
-
-    for hpnr in hpnr_list:
-        print("Stopping part %s %s at %s" % (hpnr[0], hpnr[1], str(args.date)))
-        data = [[hpnr[0], hpnr[1], 'stop_gpstime', current]]
-
-    if args.actually_do_it:
-        part_connect.update_part(args, data)
-    else:
-        print(data)
-
-def get_connection_key(c,p):
-    for ck in c.keys():
-        if p[0] in ck:
-            break
-    else:
-        ck = None
-    return ck
-
-def add_new_parts(session, new_part_list, at_date):
-    """
-    This adds the new parts.
-    """
-    current = int(at_date.gps)
-    data = []
-
-    for np in new_part_list:
-        print("Adding part %s %s at %s" % (np[0], np[1],  str(at_date)))
-        data.append([np[0], np[1], 'hpn', np[0]])
-        data.append([np[0], np[1], 'hpn_rev', np[1]])
-        data.append([np[0], np[1], 'hptype', np[2]])
-        data.append([np[0], np[1], 'manufacturer_number', np[3]])
-        data.append([np[0], np[1], 'start_gpstime', current])
-
-    if args.actually_do_it:
-        part_connect.update_part(session, data, True)
-    else:
-        print(data)
-
-
-def stop_previous_connections(args, h, conn_list):
-    """This adds stop times to the previous connections between:
-           station and antenna rev A
-           antenna revA and feed rev A
-    """
-
-    current = int(args.date.gps)
-    data = []
-    args.add_new_connection = False
-
-    for c in conn_list:
-        #print("Stopping connection <{}:{}<ground|ground>{}:{}>".format(srev[0],srev[1],arev[0],arev[1]))
-        CD = h.get_connections(c[0],c[1],c[2],True)
-        ck = get_connection_key(CD,c)
-        if ck is not None:
-            x = CD[ck]
-            stopping = [x.upstream_part, x.up_part_rev, x.downstream_part, x.down_part_rev, 
-                        x.upstream_output_port, x.downstream_input_port, x.start_gpstime, 'stop_gpstime', current]
-            data.append(stopping)
-
-    if args.actually_do_it:
-        part_connect.update_connection(args, data)
-    else:
-        print(data)
-
-def add_new_connections(args, c, srev, arev, frev, do_C7=False):
-    """
-    This generates a connection object to send to the updater
-       station and new antenna number/H
-       antenna and feed
-       if old feedrev is 'A', adds connection between B and FEAY/A
-    """
-    current = int(args.date.gps)
-
-    # First new connection
-    c.connection(upstream_part=srev[0],         up_part_rev=srev[1],
-                 downstream_part=arev[0],       down_part_rev=arev[1],
-                 upstream_output_port='ground', downstream_input_port='ground', start_gpstime=current,
-                 stop_gpstime=None)
-    __connection_updater(args,c)
-
-
-def __connection_updater(args, c):
-    """
-    This actually updates the connections
-    """
-    print("Adding ", c)
-    args.add_new_connection = True
-    data = [[c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'upstream_part', c.upstream_part],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'up_part_rev', c.up_part_rev],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'downstream_part', c.downstream_part],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'down_part_rev', c.down_part_rev],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'upstream_output_port', c.upstream_output_port],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'downstream_input_port', c.downstream_input_port],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-             c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'start_gpstime', c.start_gpstime]]
-
-    if args.actually_do_it:
-        part_connect.update_connection(args, data)
-    else:
-        print(data)
-
 def get_mfg_number(hrev):
     full_part = handling.get_part(hrev[0],hrev[1],exact_match=True)
     if len(full_part.keys())>1:
@@ -239,12 +119,12 @@ if __name__ == '__main__':
     go_ahead = False
     if go_ahead:
         # Add new PAM
-        new_pam = [(new_hpn,new_rev,'receiver',args.pam_number)]
-        add_new_parts(session, new_pam, at_date)
+        new_pam = [(new_hpn,new_rev,'post-amp module',args.pam_number)]
+        part_connect.add_new_parts(session, new_pam, at_date, args.actually_do_it)
 
         # Disconnect previousRCVR on both sides (RI/RO)
         pcs = [(rie,'A','b'),(rin,'A','b'),(old_rcvr,old_rrev,'eb'),(old_rcvr,old_rrev,'nb')]
-        stop_previous_connections(session, handling, pcs, at_date)
+        part_connect.stop_existing_connections(session, handling, pcs, at_date, args.actually_do_it)
 
         # Connect new PAM on both sides (RI/RO)
         
