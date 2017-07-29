@@ -12,7 +12,7 @@ from tabulate import tabulate
 import sys
 
 from hera_mc import mc, geo_location, correlator_levels, cm_utils, cm_handling
-from hera_mc import PC as PC
+from hera_mc import part_connect as PC
 import copy
 from difflib import SequenceMatcher
 
@@ -111,7 +111,7 @@ class Hookup:
                 part = conn.downstream_part
                 rev = conn.down_part_rev
                 port = conn.downstream_input_port
-            self.__recursive_go(direction, part, rev, port, session)
+            self.__recursive_go(direction, part, rev, port)
 
     def __follow_hookup_stream(self, part, rev, port, sn):
         self.__series_number = sn
@@ -144,7 +144,7 @@ class Hookup:
         self.at_date = cm_utils._get_datetime(at_date)
 
         # Get all the appropriate parts
-        parts = self.handling.get_part(hpn=hpn, rev=rev, exact_match=exact_match)
+        parts = self.handling.get_part_dossier(hpn=hpn, rev=rev, at_date=self.at_date, exact_match=exact_match)
         hookup_dict = {}
         col_len_max = [0,'-']
 
@@ -186,12 +186,12 @@ class Hookup:
     def __get_column_header(self, hup0):
         parts_col = []
         for hu in hup0:
-            get_part_type = self.handling.get_part(hpn=hu.upstream_part, rev=hu.up_part_rev,
+            get_part_type = self.handling.get_part_dossier(hpn=hu.upstream_part, rev=hu.up_part_rev,
                                                    at_date=self.at_date, exact_match=True)
             pr_key = cm_handling._make_part_key(hu.upstream_part, hu.up_part_rev)
             parts_col.append(get_part_type[pr_key]['part'].hptype)
         hu = hup0[-1]
-        get_part_type = self.handling.get_part(hpn=hu.downstream_part, rev=hu.down_part_rev,
+        get_part_type = self.handling.get_part_dossier(hpn=hu.downstream_part, rev=hu.down_part_rev,
                                                at_date=self.at_date, exact_match=True)
         pr_key = cm_handling._make_part_key(hu.downstream_part, hu.down_part_rev)
         parts_col.append(get_part_type[pr_key]['part'].hptype)
