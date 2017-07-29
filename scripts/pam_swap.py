@@ -53,16 +53,15 @@ def get_connection_key(c,p):
         ck = None
     return ck
 
-def add_new_parts(args,new_part_list, at_date):
+def add_new_parts(session, new_part_list, at_date):
     """
     This adds the new parts.
     """
     current = int(at_date.gps)
-    args.add_new_part = True
     data = []
 
     for np in new_part_list:
-        print("Adding part %s %s at %s" % (np[0], np[1],  str(args.date)))
+        print("Adding part %s %s at %s" % (np[0], np[1],  str(at_date)))
         data.append([np[0], np[1], 'hpn', np[0]])
         data.append([np[0], np[1], 'hpn_rev', np[1]])
         data.append([np[0], np[1], 'hptype', np[2]])
@@ -70,7 +69,7 @@ def add_new_parts(args,new_part_list, at_date):
         data.append([np[0], np[1], 'start_gpstime', current])
 
     if args.actually_do_it:
-        part_connect.update_part(args, data)
+        part_connect.update_part(session, data, True)
     else:
         print(data)
 
@@ -241,11 +240,11 @@ if __name__ == '__main__':
     if go_ahead:
         # Add new PAM
         new_pam = [(new_hpn,new_rev,'receiver',args.pam_number)]
-        add_new_parts(new_pam)
+        add_new_parts(session, new_pam, at_date)
 
         # Disconnect previousRCVR on both sides (RI/RO)
         pcs = [(rie,'A','b'),(rin,'A','b'),(old_rcvr,old_rrev,'eb'),(old_rcvr,old_rrev,'nb')]
-        stop_previous_connections(args, handling, pcs)
+        stop_previous_connections(session, handling, pcs, at_date)
 
         # Connect new PAM on both sides (RI/RO)
         

@@ -280,7 +280,7 @@ class Connections(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def update_connection(session=None, data=None):
+def update_connection(session=None, data=None, add_new_connection=False):
     """
     update the database given a connection with columns/values.
     adds if add_new_connection flag is true
@@ -323,7 +323,7 @@ def update_connection(session=None, data=None):
                                                      (Connections.start_gpstime == strt_to_change))
         num_conn = conn_rec.count()
         if num_conn == 0:
-            if args.add_new_connection:
+            if add_new_connection:
                 connection = Connections()
                 connection.connection(up=upcn_to_change, up_rev=urev_to_change,
                                       down=dncn_to_change, down_rev=drev_to_change,
@@ -333,7 +333,7 @@ def update_connection(session=None, data=None):
                 print("Error:", dkey, "does not exist and add_new_connection is not enabled.")
                 connection = None
         elif num_conn == 1:
-            if args.add_new_connection:
+            if add_new_connection:
                 print("Error:", dkey, "exists and and_new_connection is enabled")
                 connection = None
             else:
