@@ -60,8 +60,11 @@ class Handling:
         """
         at_date = cm_utils._get_datetime(return_active)
         connection_dossier = self.get_connection_dossier(hpn, rev, port='all', at_date=at_date, exact_match=True)
-        num_connections = len(connection_dossier.keys())
-        if num_connections == len(self.non_class_connection_dossier_entries):
+        num_connections = 0
+        for k in connection_dossier.keys():
+            if k not in self.non_class_connection_dossier_entries:
+                num_connections+=1
+        if num_connections == 0:
             found_connected = False
         else:
             found_connected = True

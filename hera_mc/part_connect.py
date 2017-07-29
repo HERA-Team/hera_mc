@@ -18,7 +18,7 @@ from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstrai
 
 from . import MCDeclarativeBase, NotNull
 
-from hera_mc import mc, cm_utils
+from hera_mc import mc, cm_utils, cm_revisions
 
 # Probably bad practice, but these currently mirror the class objects to get the case right for values in database.
 upper_case = ['hpn', 'hpn_rev', 'upstream_part', 'up_part_rev', 'downstream_part', 'down_part_rev']
@@ -68,32 +68,7 @@ class Parts(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def __get_part_revisions(session=None, hpn=None):
-    """
-    Retrieves revision numbers for a given part (exact match).  Called from cm_part_revisions.py
-    """
-    if hpn is None:
-        return None
-    close_session_when_done = False
-    if session is None:
-        db = mc.connect_mc_db()
-        session = db.sessionmaker()
-        close_session_when_done = True
-
-    revisions = {}
-    for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
-        parts_rec.gps2Time()
-        revisions[parts_rec.hpn_rev] = {}
-        revisions[parts_rec.hpn_rev]['hpn'] = hpn  # Just carry this along
-        revisions[parts_rec.hpn_rev]['started'] = parts_rec.start_date
-        revisions[parts_rec.hpn_rev]['ended'] = parts_rec.stop_date
-    if close_session_when_done:
-        session.close()
-
-    return revisions
-
-
-def update_part(session=None, data=None):
+def update_part(session=None, data=None, add_new_part=False):
     """
     update the database given a hera part number with columns/values.
     adds part if add_new_part flag is true
@@ -123,18 +98,18 @@ def update_part(session=None, data=None):
         hpn_to_change = data_dict[dkey][0][0]
         rev_to_change = data_dict[dkey][0][1]
         if rev_to_change[:4] == 'LAST':
-            rev_to_change = get_last_revision_number(args, hpn_to_change)
+            rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
         part_rec = session.query(Parts).filter((Parts.hpn == hpn_to_change) &
-                                               (Parts.hpn_rev == rev_to_change))
+                                               (Parts.hpn_rev == rev_to_change) )
         num_part = part_rec.count()
         if num_part == 0:
-            if args.add_new_part:
+            if add_new_part:
                 part = Parts()
             else:
                 print("Error: ", dkey, " does not exist and add_new_part not enabled.")
                 part = None
         elif num_part == 1:
-            if args.add_new_part:
+            if add_new_part:
                 print("Error: ", dkey, "exists and add_new_part is enabled.")
                 part = None
             else:
@@ -336,9 +311,9 @@ def update_connection(session=None, data=None):
         aodn_to_change = data_dict[dkey][0][5]
         strt_to_change = data_dict[dkey][0][6]
         if urev_to_change[:4] == 'LAST':
-            urev_to_change = get_last_revision_number(args, upcn_to_change)
+            urev_to_change = cm_revisions.get_last_revision(upcn_to_change, session)[0][0]
         if drev_to_change[:4] == 'LAST':
-            drev_to_change = get_last_revision_number(args, dncn_to_change)
+            drev_to_change = cm_revisions.get_last_revision(dncn_to_change, session)[0][0]
         conn_rec = session.query(Connections).filter((Connections.upstream_part == upcn_to_change) &
                                                      (Connections.up_part_rev == urev_to_change) &
                                                      (Connections.downstream_part == dncn_to_change) &

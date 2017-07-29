@@ -9,7 +9,7 @@ Script to handle swapping of PAMs.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling, geo_handling, cm_hookup, cm_part_revisions
+from hera_mc import mc, cm_utils, part_connect, cm_handling, geo_handling, cm_hookup, cm_revisions
 import sys
 import copy
 
@@ -29,9 +29,9 @@ def query_args(args):
     return args
 
 
-def stop_previous_parts(args,hpnr_list):
+def stop_previous_parts(hpnr_list,session,at_date):
     """
-    This adds stop times to the previous parts. NB:  Modify/move into cm_handling (but not in the class?)?
+    This adds stop times to the previous parts.
     """
     current = int(args.date.gps)
     args.add_new_part = False
@@ -53,11 +53,11 @@ def get_connection_key(c,p):
         ck = None
     return ck
 
-def add_new_parts(args,new_part_list):
+def add_new_parts(args,new_part_list, at_date):
     """
-    This adds the new parts.  NB:  Modify/move into cm_hanlding (but not in class)?
+    This adds the new parts.
     """
-    current = int(args.date.gps)
+    current = int(at_date.gps)
     args.add_new_part = True
     data = []
 
@@ -203,43 +203,45 @@ if __name__ == '__main__':
     # Pre-process some args
     args.r_input = args.r_input.upper()
     args.verbosity = args.verbosity.lower()
-    args.date = cm_utils._get_datetime(args.date,args.time)
+    at_date = cm_utils._get_datetime(args.date,args.time)
 
+    db = mc.connect_to_mc_db(args)
+    session = db.sessionmaker()
     connect = part_connect.Connections()
     part = part_connect.Parts()
-    handling = cm_handling.Handling(args)
-    hookup = cm_hookup.Hookup(args)
+    handling = cm_handling.Handling(session)
+    hookup = cm_hookup.Hookup(session)
 
-    # Stop previous PAM (aka "Receiver") if needed
-    hpn = 'PAM'+args.pam_number
-    rev = 'B'  #This is the current revision number of the supplied PAMs
+    # Check for PAM and find RCVR
+    new_hpn = 'PAM'+args.pam_number
+    new_rev = 'B'  #This is the current revision number of the supplied PAMs
     rie = 'RI'+args.receiverator+args.r_input+'E'
     rin = 'RI'+args.receiverator+args.r_input+'N'
     roe = 'RO'+args.receiverator+args.r_input+'E'
     ron = 'RO'+args.receiverator+args.r_input+'N'
-    if handling.is_in_connections(hpn, rev):
+    if handling.is_in_connections(new_hpn, new_rev):
         go_ahead = False
-        print("Error:  {} is already connected".format(hpn))
+        print("Error:  {} is already connected".format(new_hpn))
         print("Stopping this swap.")
     else:
         go_ahead = True
-        rc = handling.get_connections(rie,rev_query='A',port_query='b')
+        rc = handling.get_connection_dossier(hpn=rie,rev='A',port='b', at_date=at_date, exact_match=True)
         ctr = 0
         for k in rc.keys():
-            if k not in handling.non_class_connections_dict_entries:
+            if k not in handling.non_class_connection_dossier_entries:
                 ctr+=1
                 old_rcvr = rc[k].downstream_part
                 old_rrev = rc[k].down_part_rev
-                print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, hpn, rev))
+                print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, new_hpn, new_rev))
             if ctr>1:
                 go_ahead = False
-                print("Error:  multiple connections to {}".format(hpn))
+                print("Error:  multiple connections to {}".format(new_hpn))
                 print("Stopping this swap.")
-
+    go_ahead = False
     if go_ahead:
         # Add new PAM
-        prev = [(hpn,rev,'receiver',args.pam_number)]
-        add_new_parts(args,prev)
+        new_pam = [(new_hpn,new_rev,'receiver',args.pam_number)]
+        add_new_parts(new_pam)
 
         # Disconnect previousRCVR on both sides (RI/RO)
         pcs = [(rie,'A','b'),(rin,'A','b'),(old_rcvr,old_rrev,'eb'),(old_rcvr,old_rrev,'nb')]

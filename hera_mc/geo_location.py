@@ -88,7 +88,7 @@ class GeoLocation(MCDeclarativeBase):
         elevation={self.elevation}>'.format(self=self)
 
 
-def update(session=None, data=None):
+def update(session=None, data=None, add_new_geo=False):
     """
     update the database given a station_name and station_number with columns/values and provides some checking
     use with caution -- should usually use in a script which will do datetime primary key etc
@@ -118,13 +118,13 @@ def update(session=None, data=None):
         geo_rec = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
         num_rec = geo_rec.count()
         if num_rec == 0:
-            if args.add_new_geo:
+            if add_new_geo:
                 gr = GeoLocation()
             else:
                 print("Error: ", station_name, "does not exist and add_new_geo not enabled.")
                 gr = None
         elif num_rec == 1:
-            if args.add_new_geo:
+            if add_new_geo:
                 print("Error: ", station_name, "exists and and_new_geo is enabled.")
                 gr = None
             else:

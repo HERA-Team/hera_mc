@@ -92,7 +92,7 @@ def add_entry_to_geo_location(args):
         data.append([sname, 'easting', args.easting])
     if args.elevation:
         data.append([sname, 'elevation', args.elevation])
-    geo_location.update(args, data)
+    geo_location.update(args, data, args.add_new_geo)
 
 
 def add_entry_to_parts(args):
@@ -105,7 +105,7 @@ def add_entry_to_parts(args):
             [hpn, rev, 'hptype', 'station'],
             [hpn, rev, 'manufacturer_number', 'S2'],
             [hpn, rev, 'start_gpstime', dt.gps]]
-    part_connect.update_part(args, data)
+    part_connect.update_part(args, data, args.add_new_part)
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
