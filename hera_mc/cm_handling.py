@@ -15,7 +15,7 @@ from astropy.time import Time
 
 from hera_mc import mc, geo_handling, correlator_levels, cm_utils
 from hera_mc import part_connect as PC
-from hera_mc import cm_part_revisions as cmpr
+from hera_mc import cm_revisions as cmpr
 
 
 def _make_part_key(hpn, rev):

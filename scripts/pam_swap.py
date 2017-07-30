@@ -9,7 +9,7 @@ Script to handle swapping of PAMs.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling, geo_handling, cm_hookup, cm_revisions
+from hera_mc import mc, cm_utils, part_connect, cm_handling
 import sys
 import copy
 
@@ -62,19 +62,14 @@ def get_feed(hookup):
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-s', '--receiverator', help="Receiverator number (1-8)", default = None)
-    parser.add_argument('-i', '--r-input', dest='r_input', help="Input to receiverator (A1-B8)", default = None)
+    parser.add_argument('-r', '--receiverator', help="Receiverator number (1-8)", default = None)
+    parser.add_argument('-i', '--input', dest='r_input', help="Input to receiverator (A1-B8)", default = None)
     parser.add_argument('-p', '--pam-number', dest='pam_number', help="Serial number of PAM", default = None)
-    parser.add_argument('-r', '--rev', help="Revision number of PAM (currently B)", default='B')
+    parser.add_argument('--rev', help="Revision number of PAM (currently B)", default='B')
     parser.add_argument('--actually_do_it', help="Flag to actually do it, as opposed to printing out what it would do.", action='store_true')
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
-
-    # Add extra args needed for various things
-    args.show_levels = False
-    args.mapr_cols = 'all'
-    args.exact_match = True
 
     if args.receiverator is None or args.r_input is None or args.pam_number is None:
         args = query_args(args)
@@ -89,7 +84,6 @@ if __name__ == '__main__':
     connect = part_connect.Connections()
     part = part_connect.Parts()
     handling = cm_handling.Handling(session)
-    hookup = cm_hookup.Hookup(session)
 
     # Check for PAM and find RCVR
     new_hpn = 'PAM'+args.pam_number
@@ -116,16 +110,17 @@ if __name__ == '__main__':
                 go_ahead = False
                 print("Error:  multiple connections to {}".format(new_hpn))
                 print("Stopping this swap.")
-    go_ahead = False
     if go_ahead:
         # Add new PAM
         new_pam = [(new_hpn,new_rev,'post-amp module',args.pam_number)]
-        part_connect.add_new_parts(session, new_pam, at_date, args.actually_do_it)
+        part_connect.add_new_parts(session, part, new_pam, at_date, args.actually_do_it)
 
-        # Disconnect previousRCVR on both sides (RI/RO)
-        pcs = [(rie,'A','b'),(rin,'A','b'),(old_rcvr,old_rrev,'eb'),(old_rcvr,old_rrev,'nb')]
+        # Disconnect previous RCVR on both sides (RI/RO)
+        pcs = [(old_rcvr,old_rrev,'ea'),(old_rcvr,old_rrev,'na'),(old_rcvr,old_rrev,'eb'),(old_rcvr,old_rrev,'nb')]
         part_connect.stop_existing_connections(session, handling, pcs, at_date, args.actually_do_it)
 
         # Connect new PAM on both sides (RI/RO)
-        
-        #add_new_connections(args, connect, statrev, new_antrev, feedrev, do_C7)
+        npc = [(rie,'A','b',new_hpn,new_rev,'ea'),(rin,'A','b',new_hpn,new_rev,'na'),
+               (new_hpn,new_rev,'eb',roe,'A','a'),(new_hpn,new_rev,'nb',ron,'A','a')]
+        part_connect.add_new_connections(session, connect, npc, at_date, args.actually_do_it)
+

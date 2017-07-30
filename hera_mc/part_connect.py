@@ -18,7 +18,7 @@ from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstrai
 
 from . import MCDeclarativeBase, NotNull
 
-from hera_mc import mc, cm_utils, cm_revisions
+from hera_mc import mc, cm_utils
 
 # Probably bad practice, but these currently mirror the class objects to get the case right for values in database.
 upper_case = ['hpn', 'hpn_rev', 'upstream_part', 'up_part_rev', 'downstream_part', 'down_part_rev']
@@ -67,7 +67,7 @@ class Parts(MCDeclarativeBase):
                 value = value.upper()
             setattr(self, key, value)
 
-def stop_existing_parts(session, hpnr_list, at_date, actually_do_it):
+def stop_existing_parts(session, p, hpnr_list, at_date, actually_do_it):
     """
     This adds stop times to the previous parts.
     """
@@ -75,33 +75,39 @@ def stop_existing_parts(session, hpnr_list, at_date, actually_do_it):
     data = []
 
     for hpnr in hpnr_list:
-        print("Stopping part %s %s at %s" % (hpnr[0], hpnr[1], str(at_date)))
-        data.append([hpnr[0], hpnr[1], 'stop_gpstime', stop_at])
+        p.part(hpn=hpnr[0], hpn_rev=hpnr[1], hptype=hpnr[2], manufacturer_number=hpnr[3])
+        print("Stopping part {} at {}".format(p, str(at_date)))
+        data.append([p.hpn, p.hpn_rev, 'stop_gpstime', stop_at])
 
     if actually_do_it:
         update_part(session, data, False)
     else:
-        print(data)
+        print("--Here's what would happen if you set the --actually_do_it flag:")
+        for d in data:
+            print('\t'+str(d))
 
-def add_new_parts(session, new_part_list, at_date, actually_do_it):
+def add_new_parts(session, p, new_part_list, at_date, actually_do_it):
     """
     This adds the new parts.
     """
     start_at = int(at_date.gps)
     data = []
 
-    for np in new_part_list:
-        print("Adding part %s %s at %s" % (np[0], np[1],  str(at_date)))
-        data.append([np[0], np[1], 'hpn', np[0]])
-        data.append([np[0], np[1], 'hpn_rev', np[1]])
-        data.append([np[0], np[1], 'hptype', np[2]])
-        data.append([np[0], np[1], 'manufacturer_number', np[3]])
-        data.append([np[0], np[1], 'start_gpstime', start_at])
+    for hpnr in new_part_list:
+        p.part(hpn=hpnr[0], hpn_rev=hpnr[1], hptype=hpnr[2], manufacturer_number=hpnr[3])
+        print("Adding part {} at {}".format(p,  str(at_date)))
+        data.append([p.hpn, p.hpn_rev, 'hpn', p.hpn])
+        data.append([p.hpn, p.hpn_rev, 'hpn_rev', p.hpn_rev])
+        data.append([p.hpn, p.hpn_rev, 'hptype', p.hptype])
+        data.append([p.hpn, p.hpn_rev, 'manufacturer_number', p.manufacturer_number])
+        data.append([p.hpn, p.hpn_rev, 'start_gpstime', start_at])
 
     if actually_do_it:
         update_part(session, data, True)
     else:
-        print(data)
+        print("--Here's what would happen if you set the --actually_do_it flag:")
+        for d in data:
+            print('\t'+str(d))
 
 def update_part(session=None, data=None, add_new_part=False):
     """
@@ -226,6 +232,29 @@ def format_and_check_update_part_request(request):
             data[dkey] = [d]
     return data
 
+def __get_part_revisions(hpn, session=None):
+    """
+    Retrieves revision numbers for a given part (exact match).
+    """
+    if hpn is None:
+        return None
+    close_session_when_done = False
+    if session is None:
+        db = mc.connect_mc_db()
+        session = db.sessionmaker()
+        close_session_when_done = True
+
+    revisions = {}
+    for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
+        parts_rec.gps2Time()
+        revisions[parts_rec.hpn_rev] = {}
+        revisions[parts_rec.hpn_rev]['hpn'] = hpn  # Just carry this along
+        revisions[parts_rec.hpn_rev]['started'] = parts_rec.start_date
+        revisions[parts_rec.hpn_rev]['ended'] = parts_rec.stop_date
+    if close_session_when_done:
+        session.close()
+
+    return revisions
 
 class PartInfo(MCDeclarativeBase):
     """A table for logging test information etc for parts."""
@@ -308,10 +337,11 @@ class Connections(MCDeclarativeBase):
 
     def connection(self, **kwargs):
         for key, value in kwargs.items():
-            if key in upper_case:
-                value = value.upper()
-            elif key in lower_case:
-                value = value.lower()
+            if type(value) == str:
+                if key in upper_case:
+                    value = value.upper()
+                elif key in lower_case:
+                    value = value.lower()
             setattr(self, key, value)
 
 def stop_existing_connections(session, h, conn_list, at_date, actually_do_it):
@@ -322,13 +352,11 @@ def stop_existing_connections(session, h, conn_list, at_date, actually_do_it):
     data = []
 
     for conn in conn_list:
-        CD = h.get_connection_dossier(conn[0],conn[1],conn[2],True)
+        CD = h.get_connection_dossier(conn[0],conn[1],conn[2],at_date,True)
         ck = get_connection_key(CD,conn)
         if ck is not None:
             x = CD[ck]
-            print("Stopping connection <{}:{}<{}|{}>{}:{}>".format(
-                               x.upstream_part, x.up_part_rev, x.upstream_output_port,
-                               x.downstream_input_port, x.downstream_part, x.down_part_rev) )
+            print("Stopping connection {} at {}".format(x,str(at_date)))
             stopping = [x.upstream_part, x.up_part_rev, x.downstream_part, x.down_part_rev, 
                         x.upstream_output_port, x.downstream_input_port, x.start_gpstime, 'stop_gpstime', stop_at]
             data.append(stopping)
@@ -336,7 +364,9 @@ def stop_existing_connections(session, h, conn_list, at_date, actually_do_it):
     if actually_do_it:
         update_connection(session, data, False)
     else:
-        print(data)
+        print("--Here's what would happen if you set the --actually_do_it flag:")
+        for d in data:
+            print('\t'+str(d))
 
 def get_connection_key(c,p):
     for ck in c.keys():
@@ -358,33 +388,35 @@ def add_new_connections(session, c, conn_list, at_date, actually_do_it):
                      downstream_part=conn[3],      down_part_rev=conn[4],
                      upstream_output_port=conn[2], downstream_input_port=conn[5], 
                      start_gpstime=start_at,       stop_gpstime=None)
-        data.append( 
-           [[c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+        print("Starting connection {} at {}".format(c,str(at_date)))
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
              c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'upstream_part', c.upstream_part],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             'upstream_part', c.upstream_part])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
              c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'up_part_rev', c.up_part_rev],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             'up_part_rev', c.up_part_rev])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
              c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'downstream_part', c.downstream_part],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             'downstream_part', c.downstream_part])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
              c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'down_part_rev', c.down_part_rev],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             'down_part_rev', c.down_part_rev])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
              c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'upstream_output_port', c.upstream_output_port],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             'upstream_output_port', c.upstream_output_port])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
              c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'downstream_input_port', c.downstream_input_port],
-            [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+             'downstream_input_port', c.downstream_input_port])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
              c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-             'start_gpstime', c.start_gpstime]])
+             'start_gpstime', c.start_gpstime])
 
     if actually_do_it:
         update_connection(session, data, True)
     else:
-        print(data)
+        print("--Here's what would happen if you set the --actually_do_it flag:")
+        for d in data:
+            print('\t'+str(d))
 
 
 def update_connection(session=None, data=None, add_new_connection=False):
