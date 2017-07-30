@@ -24,6 +24,7 @@ class TestGeo(TestHERAMC):
         gl.created_gpstime = 1172539000
         self.test_session.add(gl)
         self.test_session.commit()
+        self.assertTrue
 
     def test_add_loc(self):
         gl = geo_location.GeoLocation()
@@ -32,6 +33,7 @@ class TestGeo(TestHERAMC):
         gl.created_gpstime = 1172539000
         self.test_session.add(gl)
         self.test_session.commit()
+        self.assertTrue
 
     def test_cofa(self):
         h = geo_handling.Handling(self.test_session)
