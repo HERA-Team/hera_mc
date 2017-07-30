@@ -17,8 +17,21 @@ from hera_mc.tests import TestHERAMC
 
 class TestGeo(TestHERAMC):
 
-    def test_add_part(self):
-        self.test_session.add(geo_location.GeoLocation())
+    def test_add_cofa(self):
+        gl = geo_location.GeoLocation()
+        gl.station_name = 'cofa_null'
+        gl.station_type_name = 'cofa'
+        gl.created_gpstime = 1172539000
+        self.test_session.add(gl)
+        self.test_session.commit()
+
+    def test_add_loc(self):
+        gl = geo_location.GeoLocation()
+        gl.station_name = 'ELEMENT'
+        gl.station_type_name = 'herahex'
+        gl.created_gpstime = 1172539000
+        self.test_session.add(gl)
+        self.test_session.commit()
 
     def test_cofa(self):
         h = geo_handling.Handling(self.test_session)
@@ -27,8 +40,8 @@ class TestGeo(TestHERAMC):
 
     def test_get_location(self):
         h = geo_handling.Handling(self.test_session)
-        located = h.get_location(['HH0'], 'now')
-        self.assertTrue(located[0].station_name == 'HH0')
+        located = h.get_location(['ELEMENT'], 'now')
+        self.assertTrue(located[0].station_name == 'ELEMENT')
 
 
 if __name__ == '__main__':

@@ -29,7 +29,6 @@ class TestConnections(TestHERAMC):
         part.manufacture_date = 'Oct 26, 2011'
         part.hptype = 'vapor'
         part.start_gpstime = Time('2016-01-10 01:15:23', scale='utc').gps
-        print(part)
         self.test_session.add(part)
         self.test_session.commit()
         self.assertTrue
