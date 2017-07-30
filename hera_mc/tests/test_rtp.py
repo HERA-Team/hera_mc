@@ -29,10 +29,6 @@ class TestRTP(TestHERAMC):
                                    obsid]
         self.observation_columns = dict(zip(self.observation_names,
                                             self.observation_values))
-        self.test_session.add_obs(*self.observation_values)
-        obs_result = self.test_session.get_obs()
-        self.assertTrue(len(obs_result), 1)
-
         self.status_names = ['time', 'status', 'event_min_elapsed',
                              'num_processes', 'restart_hours_elapsed']
         self.status_values = [time, 'happy', 3.6, 8, 10.2]
@@ -94,6 +90,10 @@ class TestRTP(TestHERAMC):
         #                   self.event_values[0], self.event_values[1] + 2,
         #                   self.event_values[2])
 
+        self.test_session.add_obs(*self.observation_values)
+        obs_result = self.test_session.get_obs()
+        self.assertTrue(len(obs_result), 1)
+
         self.test_session.add_rtp_process_event(*self.event_values)
 
         exp_columns = self.event_columns.copy()
@@ -154,6 +154,10 @@ class TestRTP(TestHERAMC):
         self.assertFalse(result_new_obsid.isclose(expected))
 
     def test_errors_rtp_process_event(self):
+        self.test_session.add_obs(*self.observation_values)
+        obs_result = self.test_session.get_obs()
+        self.assertTrue(len(obs_result), 1)
+
         self.assertRaises(ValueError, self.test_session.add_rtp_process_event, 'foo',
                           *self.event_values[1:])
 
@@ -168,6 +172,10 @@ class TestRTP(TestHERAMC):
         #                   'foo')
 
     def test_classes_not_equal(self):
+        self.test_session.add_obs(*self.observation_values)
+        obs_result = self.test_session.get_obs()
+        self.assertTrue(len(obs_result), 1)
+
         self.test_session.add_rtp_process_event(*self.event_values)
         self.test_session.add_rtp_status(*self.status_values)
 
@@ -184,6 +192,10 @@ class TestRTP(TestHERAMC):
         # self.assertRaises(NoForeignKeysError, self.test_session.add_rtp_process_record,
         #                   self.record_values[0], self.record_values[1] + 2,
         #                   self.record_values[2:5])
+
+        self.test_session.add_obs(*self.observation_values)
+        obs_result = self.test_session.get_obs()
+        self.assertTrue(len(obs_result), 1)
 
         self.test_session.add_rtp_process_record(*self.record_values)
 
@@ -248,6 +260,10 @@ class TestRTP(TestHERAMC):
         self.assertFalse(result_new_obsid.isclose(expected))
 
     def test_errors_rtp_process_record(self):
+        self.test_session.add_obs(*self.observation_values)
+        obs_result = self.test_session.get_obs()
+        self.assertTrue(len(obs_result), 1)
+
         self.assertRaises(ValueError, self.test_session.add_rtp_process_record, 'foo',
                           *self.status_values[1:])
 
