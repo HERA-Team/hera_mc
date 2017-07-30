@@ -48,9 +48,6 @@ class TestLibrarian(TestHERAMC):
                                    obsid]
         self.observation_columns = dict(zip(self.observation_names,
                                             self.observation_values))
-        self.test_session.add_obs(*self.observation_values)
-        obs_result = self.test_session.get_obs()
-        self.assertTrue(len(obs_result), 1)
 
         self.file_names = ['filename', 'obsid', 'time', 'size_gb']
         self.file_values = ['file1', obsid, time, 2.4]
@@ -251,6 +248,10 @@ class TestLibrarian(TestHERAMC):
         #                   self.file_values[0], self.file_values[1] + 2,
         #                   self.file_values[2:5])
 
+        self.test_session.add_obs(*self.observation_values)
+        obs_result = self.test_session.get_obs()
+        self.assertTrue(len(obs_result), 1)
+
         self.test_session.add_lib_file(*self.file_values)
 
         exp_columns = self.file_columns.copy()
@@ -285,6 +286,10 @@ class TestLibrarian(TestHERAMC):
             self.assertTrue(result_obsid[i].isclose(result_all[i]))
 
     def test_errors_add_lib_file(self):
+        self.test_session.add_obs(*self.observation_values)
+        obs_result = self.test_session.get_obs()
+        self.assertTrue(len(obs_result), 1)
+
         self.assertRaises(ValueError, self.test_session.add_lib_file,
                           self.status_values[0], self.status_values[1], 'foo',
                           self.status_values[3])
