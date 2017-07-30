@@ -17,30 +17,49 @@ from hera_mc.tests import TestHERAMC
 
 class TestGeo(TestHERAMC):
 
-    def test_add_cofa(self):
-        gl = geo_location.GeoLocation()
-        gl.station_name = 'cofa_null'
-        gl.station_type_name = 'cofa'
-        gl.created_gpstime = 1172539000
-        self.test_session.add(gl)
-        self.test_session.commit()
-        self.assertTrue
 
     def test_add_loc(self):
+        st = geo_location.StationType()
+        st.station_type_name='test_element'
+        st.prefix='TE'
+        self.test_session.add(st)
+        self.test_session.commit()
         gl = geo_location.GeoLocation()
         gl.station_name = 'ELEMENT'
-        gl.station_type_name = 'herahex'
-        gl.created_gpstime = 1172539000
+        gl.station_type_name = 'test_element'
+        gl.created_gpstime = 1172530000
         self.test_session.add(gl)
         self.test_session.commit()
         self.assertTrue
 
     def test_cofa(self):
+        st = geo_location.StationType()
+        st.station_type_name='cofa'
+        st.prefix='COFA'
+        self.test_session.add(st)
+        self.test_session.commit()
+        gl = geo_location.GeoLocation()
+        gl.station_name = 'cofa_null'
+        gl.station_type_name = 'cofa'
+        gl.created_gpstime = 1172530000
+        self.test_session.add(gl)
+        self.test_session.commit()
         h = geo_handling.Handling(self.test_session)
         cofa = h.cofa()
         self.assertTrue('cofa' in cofa.station_name.lower())
 
     def test_get_location(self):
+        st = geo_location.StationType()
+        st.station_type_name='test_element'
+        st.prefix='TE'
+        self.test_session.add(st)
+        self.test_session.commit()
+        gl = geo_location.GeoLocation()
+        gl.station_name = 'ELEMENT'
+        gl.station_type_name = 'test_element'
+        gl.created_gpstime = 1172530000
+        self.test_session.add(gl)
+        self.test_session.commit()
         h = geo_handling.Handling(self.test_session)
         located = h.get_location(['ELEMENT'], 'now')
         self.assertTrue(located[0].station_name == 'ELEMENT')

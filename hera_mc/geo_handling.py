@@ -91,9 +91,16 @@ class Handling:
     def cofa(self, show_cofa=False):
         self.get_station_types(add_stations=True)
         current_cofa = self.station_types['COFA']['Stations']
-        located = self.get_location(current_cofa, 'now', show_cofa, 'm')[0]
+        located = self.get_location(current_cofa, 'now', show_cofa, 'm')
+        if len(located)==0:
+            located_cofa = None
+        elif len(located)>1:
+            print("Warning:  {} has returned multiple cofa values.  Returning None.")
+            located_cofa = None
+        else:
+            located_cofa = located[0]
 
-        return located
+        return located_cofa
 
     def get_station_types(self, add_stations=True):
         """
@@ -232,7 +239,7 @@ class Handling:
                 antenna_number = int(L)
                 station_name = self.find_station_of_antenna(antenna_number, query_date)
             except ValueError:
-                station_name = L.upper()
+                station_name = L
             found_it = False
             if station_name:
                 for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == station_name):
