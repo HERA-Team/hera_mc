@@ -866,6 +866,24 @@ class MCSession(Session):
 
         self.add(metric_list.create(metric, desc))
 
+    def update_metric_desc(self, metric, desc):
+        """
+        Update the description of a metric in the M&C database.
+        This will be required when replace an RTP auto-generated description for
+        new metrics.
+
+        Parameters:
+        ------------
+        metric: string
+            metric name
+        desc: string
+            description of metric
+        """
+        from .qm import metric_list
+
+        self.query(metric_list).filter(metric_list.metric == metric)[0].desc = desc
+        self.commit()
+
     def get_metric_desc(self, metric=None):
         """
         Get metric description(s) from the M&C database.

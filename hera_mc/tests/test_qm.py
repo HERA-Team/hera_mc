@@ -118,6 +118,10 @@ class TestQM(TestHERAMC):
         self.assertEqual(r[0].metric, 'test2')
         self.assertEqual(r[0].desc, 'Second test')
 
+        self.test_session.update_metric_desc('test2', 'new desc')
+        r = self.test_session.get_metric_desc(metric='test2')
+        self.assertEqual(r[0].desc, 'new desc')
+
         # Test exceptions
         self.assertRaises(ValueError, self.test_session.add_metric_desc,
                           4, 'desc')
