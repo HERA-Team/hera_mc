@@ -18,7 +18,7 @@ def setup_package():
     test_db = mc.connect_to_mc_testing_db()
     test_db.create_tables()
     session = test_db.sessionmaker()
-    cm_transfer._initialization(session)
+    #cm_transfer._initialization(session)
 
 
 def teardown_package():
