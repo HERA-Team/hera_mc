@@ -17,7 +17,6 @@ from hera_mc.tests import TestHERAMC
 
 class TestGeo(TestHERAMC):
 
-
     def test_add_loc(self):
         st = geo_location.StationType()
         st.station_type_name='test_element'

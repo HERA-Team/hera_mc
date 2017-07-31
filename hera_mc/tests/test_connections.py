@@ -19,9 +19,6 @@ from hera_mc.tests import TestHERAMC
 
 class TestConnections(TestHERAMC):
 
-    def test_add_part(self):
-        self.test_session.add(part_connect.Parts())
-
     def test_commit_part(self):
         part = part_connect.Parts()
         part.hpn = 'happy_thing'

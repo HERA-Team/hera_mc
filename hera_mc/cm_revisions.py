@@ -14,6 +14,16 @@ from hera_mc import cm_utils, part_connect
 
 
 def get_revisions_of_type(rev_type, hpn, session=None):
+    """
+    Returns list of revisions of type
+
+    Parameters:
+    ------------
+    rev_type:  string for revision type
+    hpn:  string for hera part number
+    session:  db session
+    """
+
     rq = rev_type.upper()
     if rq == 'LAST':
         rq = get_last_revision(hpn, session)
@@ -27,6 +37,15 @@ def get_revisions_of_type(rev_type, hpn, session=None):
 
 
 def show_revisions(hpn, session=None):
+    """
+    Show revisions for hera part number
+
+    Parameters:
+    -------------
+    hpn:  string of hera part number
+    session:  db session
+    """
+
     revisions = part_connect.__get_part_revisions(hpn, session)
     sort_rev = sorted(revisions.keys())
     headers = ['HPN', 'Revision', 'Start', 'Stop']
@@ -40,6 +59,15 @@ def show_revisions(hpn, session=None):
 
 
 def get_last_revision(hpn, session=None):
+    """
+    Returns list of latest revision
+
+    Parameters:
+    -------------
+    hpn:  string of hera part number
+    session:  db session
+    """
+
     revisions = part_connect.__get_part_revisions(hpn, session)
     latest_end = cm_utils._get_datetime('<')
     num_no_end = 0
@@ -62,6 +90,15 @@ def get_last_revision(hpn, session=None):
 
 
 def get_all_revisions(hpn, session=None):
+    """
+    Returns list of all revisions
+
+    Parameters:
+    -------------
+    hpn:  string of hera part number
+    session:  db session
+    """
+
     revisions = part_connect.__get_part_revisions(hpn, session)
     sort_rev = sorted(revisions.keys())
     all_rev = []
@@ -73,6 +110,16 @@ def get_all_revisions(hpn, session=None):
 
 
 def get_particular_revision(rq, hpn, session=None):
+    """
+    Returns info on particular revision
+
+    Parameters:
+    -------------
+    rq:  revision number to find
+    hpn:  string of hera part number
+    session:  db session
+    """
+
     revisions = part_connect.__get_part_revisions(hpn, session)
     sort_rev = sorted(revisions.keys())
     this_rev = None
@@ -84,6 +131,15 @@ def get_particular_revision(rq, hpn, session=None):
 
 
 def get_contemporary_revision(hpn, session=None):
+    """
+    Returns list of contemporary revisions
+
+    Parameters:
+    -------------
+    hpn:  string of hera part number
+    session:  db session
+    """
+
     current = cm_utils._get_datetime(args.date,args.time)
     revisions = part_connect.__get_part_revisions(hpn, session)
     sort_rev = sorted(revisions.keys())

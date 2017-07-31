@@ -101,6 +101,7 @@ def update(session=None, data=None, add_new_geo=False):
            where
                 station_nameN:  station_name (starts with char)
                 values:  corresponding list of values
+    add_new_geo:  boolean to allow a new entry to be made.
     """
 
     data_dict = format_check_update_request(data)

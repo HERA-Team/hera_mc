@@ -56,14 +56,22 @@ class Handling:
         """
         checks to see if a part is in the connections database (which means it is also in parts)
 
-        returns True/False, unless return_active True (return list of active connections)
+        returns True/False, unless return_active is date (return list of active connections)
+
+        Parameters:
+        ------------
+        hpn:  hera part number, string for part number
+        rev:  revision of part number, string for rev or rev type
+        return_active: if it is a date, it will return a list of active connections
+
+
         """
         at_date = cm_utils._get_datetime(return_active)
         connection_dossier = self.get_connection_dossier(hpn, rev, port='all', at_date=at_date, exact_match=True)
         num_connections = 0
         for k in connection_dossier.keys():
             if k not in self.non_class_connection_dossier_entries:
-                num_connections+=1
+                num_connections += 1
         if num_connections == 0:
             found_connected = False
         else:
@@ -121,25 +129,35 @@ class Handling:
                     part = copy.copy(part_query.all()[0])
                     part.gps2Time()
                     pr_key = _make_part_key(part.hpn, part.hpn_rev)
-                    part_dossier[pr_key] = {'Time':at_date,      'part': part,       'part_info': None,
+                    part_dossier[pr_key] = {'Time': at_date,      'part': part,       'part_info': None,
                                             'input_ports': [],   'output_ports': [],
                                             'connections': None, 'geo': None}
                     for part_info in self.session.query(PC.PartInfo).filter((PC.PartInfo.hpn == part.hpn) &
                                                                             (PC.PartInfo.hpn_rev == part.hpn_rev)):
                         part_info.gps2Time()
                         part_dossier[pr_key]['part_info'] = part_info
-                    connections = self.get_connection_dossier(hpn=part.hpn, rev=part.hpn_rev, port='all', 
+                    connections = self.get_connection_dossier(hpn=part.hpn, rev=part.hpn_rev, port='all',
                                                               at_date=at_date, exact_match=True)
                     part_dossier[pr_key]['connections'] = connections
                     if part.hptype == 'station':
                         part_dossier[pr_key]['geo'] = geo_handling.get_location([part.hpn], at_date, show_location=False)
                     part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
-                                                          self.find_ports(part_dossier[pr_key]['connections'])
+                        self.find_ports(part_dossier[pr_key]['connections'])
                 else:
                     print("cm_handling[136]:  Warning: should only be one part/rev.", part.hpn, part.hpn_rev)
         return part_dossier
 
     def find_ports(self, connection_dossier):
+        """
+        Given a connection_dossier dictionary, it will return all of the ports.
+
+        Returns lists of input_ports and output_ports
+
+        Parameters:
+        ------------
+        connection_dossier:  dictionary as returned from get_connections.
+        """
+
         input_ports = []
         output_ports = []
         for k, v in connection_dossier.iteritems():
@@ -193,7 +211,7 @@ class Handling:
                     tdata.append(comment)
                     if part_dossier[hpnr]['geo'] is not None:
                         tdata.append("{:.1f}E, {:.1f}N, {:.1f}m".format(part_dossier[hpnr]['geo'][0].easting,
-                                                                        part_dossier[hpnr]['geo'][0].northing, 
+                                                                        part_dossier[hpnr]['geo'][0].northing,
                                                                         part_dossier[hpnr]['geo'][0].elevation))
                     else:
                         tdata.append(None)
@@ -220,7 +238,7 @@ class Handling:
         if not exact_match and hpn[-1] != '%':
             hpn = hpn + '%'
         at_date = cm_utils._get_datetime(at_date)
-        connection_dossier = {'ordered_pairs': [], 'Time':at_date}
+        connection_dossier = {'ordered_pairs': [], 'Time': at_date}
 
         rev_part = {}
         for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.like(hpn)):
@@ -234,7 +252,7 @@ class Handling:
                 this_rev = xrev[0]
                 # Find where the part is in the upward position, so identify its downward connection
                 for conn in self.session.query(PC.Connections).filter((PC.Connections.upstream_part == xhpn) &
-                                                                           (PC.Connections.up_part_rev == this_rev)):
+                                                                      (PC.Connections.up_part_rev == this_rev)):
                     if port.lower() == 'all' or conn.upstream_output_port.lower() == port.lower():
                         conn.gps2Time()
                         prc_key = _make_connection_key(xhpn, this_rev, conn.upstream_output_port, 'down',
@@ -244,7 +262,7 @@ class Handling:
                         down_parts.append(prc_key)
                 # Find where the part is in the downward position, so identify its upward connection
                 for conn in self.session.query(PC.Connections).filter((PC.Connections.downstream_part == xhpn) &
-                                                                           (PC.Connections.down_part_rev == this_rev)):
+                                                                      (PC.Connections.down_part_rev == this_rev)):
                     if port.lower() == 'all' or conn.downstream_input_port.lower() == port.lower():
                         conn.gps2Time()
                         prc_key = _make_connection_key(xhpn, this_rev, conn.downstream_input_port, 'up',
@@ -263,7 +281,7 @@ class Handling:
                 elif len(down_parts) > len(up_parts):
                     up_parts = (up_parts + len(down_parts) * [up_parts[-1]])[:len(down_parts)]
                 connection_dossier['ordered_pairs'].append([sorted(up_parts), sorted(down_parts)])
-        ###I forget why I did this
+        # I forget why I did this
         #-#nc = self.no_connection_designator
         #-#connection_dossier[nc] = PC.Connections(upstream_part=nc, upstream_output_port=nc, up_part_rev=nc,
         #-#                                               downstream_part=nc, downstream_input_port=nc, down_part_rev=nc,
@@ -275,10 +293,14 @@ class Handling:
         """
         Print out active connection information.  Uses tabulate package.
 
+        Returns list of already_shown connections.
+
         Parameters
         -----------
         connection_dossier:  input dictionary of parts, generated by self.get_connection
+        show_args:  keyword dictionary specifying show        
         """
+
         table_data = []
         already_shown = []
         vb = show_args['verbosity']
@@ -363,6 +385,15 @@ class Handling:
         return already_shown
 
     def show_other_connections(self, connection_dossier, already_shown):
+        """
+        Shows the connections that are not active (the ones in connection_dossier but not in already_shown)
+
+        Parameters
+        -----------
+        connection_dossier:  dictionary of connections from get_connections
+        already_shown: list of shown connections from show_connections
+        """
+
         for k, v in connection_dossier.iteritems():
             if k in self.non_class_connection_dossier_entries:
                 continue

@@ -25,7 +25,6 @@ class Hookup:
     """
     Class to find and display the hookup.
     """
-
     def __init__(self, session=None):
         if session is None:
             db = mc.connect_to_mc_db()
@@ -136,11 +135,14 @@ class Hookup:
 
         Parameters
         -----------
-        hpn_query:  the input hera part number (whole or first part thereof)
-        rev_query:  the revision number
-        port_query:  a specifiable port name,  default is 'all'.  Unverified.
-        show_hookup:  boolean to call show_hookup or not
+        hpn:  the input hera part number (whole or first part thereof)
+        rev_:  the revision number
+        port_:  a specifiable port name,  default is 'all'.  Unverified.
+        at_date:  date for hookup validity
+        state_args:  keyword dictionary specifying parameters for hookup
+        exact_match:  boolean for either exact_match or partial
         """
+
         self.at_date = cm_utils._get_datetime(at_date)
 
         # Get all the appropriate parts
@@ -228,7 +230,10 @@ class Hookup:
         Parameters
         -----------
         hookup_dict:  generated in self.get_hookup
+        cols_to_show:  list of columns to include in hookup listing
+        show_levels:  boolean to either show the correlator levels or not
         """
+        
         headers, show_flag = self.__make_header_row(hookup_dict['columns'],cols_to_show, show_levels)
 
         table_data = []

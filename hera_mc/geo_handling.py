@@ -29,6 +29,7 @@ def cofa(show_cofa=False, session=None):
     Parameters:
     -------------
     show_cofa:  boolean to print out cofa info or just return class
+    session:  db session to use
     """
 
     h = Handling(session)
@@ -47,6 +48,10 @@ def get_location(location_names, query_date='now', show_location=False, verbosit
     Parameters:
     -------------
     location_name:  location name, may be either a station (geo_location key) or an antenna
+    query_date:  date for query
+    show_location:  boolean to show location or not
+    verbosity:  string to specify verbosity
+    session:  db session to use
     """
 
     query_date = cm_utils._get_datetime(query_date)
@@ -59,6 +64,10 @@ def get_location(location_names, query_date='now', show_location=False, verbosit
 def show_it_now(fignm):
     """
     Used in scripts to actually make plot (as opposed to within python).  Seems to be needed...
+
+    Parameters:
+    -------------
+    fignm:  string/int for figure
     """
     if fignm is not False and fignm is not None:
         plt.figure(fignm)
@@ -86,15 +95,28 @@ class Handling:
         self.station_types = None
 
     def close(self):
+        """
+        Close the session
+        """
         self.session.close()
 
     def cofa(self, show_cofa=False):
+        """
+        Get the current center of array.
+
+        Returns located cofa.
+
+        Parameters:
+        ------------
+        show_cofa:  boolean to either show cofa or not
+        """
+
         self.get_station_types(add_stations=True)
         current_cofa = self.station_types['COFA']['Stations']
         located = self.get_location(current_cofa, 'now', show_cofa, 'm')
-        if len(located)==0:
+        if len(located) == 0:
             located_cofa = None
-        elif len(located)>1:
+        elif len(located) > 1:
             print("Warning:  {} has returned multiple cofa values.  Returning None.")
             located_cofa = None
         else:
