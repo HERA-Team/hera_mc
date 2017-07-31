@@ -158,7 +158,7 @@ def format_check_update_request(request):
     Parameters:
     ------------
     request:  station_name0:column0:value0, [station_name1:]column1:value1, [...] or list
-        station_nameN: first entry must have the station_name, 
+        station_nameN: first entry must have the station_name,
                        if it does not then propagate first station_name but can't restart 3 then 2
         columnN:  name of geo_location column
         valueN:  corresponding new value

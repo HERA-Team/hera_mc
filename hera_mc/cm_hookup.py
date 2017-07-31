@@ -36,7 +36,7 @@ class Hookup:
 
     def __get_connection(self, direction, part, rev, port):
         """
-        Get next parts going the given direction.  
+        Get next parts going the given direction.
         """
         options = []
         if direction == 'up':      # Going upstream
@@ -118,7 +118,7 @@ class Hookup:
         self.__first_port = port
         self.upstream = []
         self.downstream = []
-        self.__recursive_go('up',   part, rev, port)
+        self.__recursive_go('up', part, rev, port)
         self.__recursive_go('down', part, rev, port)
 
         hu = []
@@ -226,7 +226,7 @@ class Hookup:
 
     def show_hookup(self, hookup_dict, cols_to_show, show_levels):
         """
-        Print out the hookup table -- uses tabulate package.  
+        Print out the hookup table -- uses tabulate package.
 
         Parameters
         -----------
