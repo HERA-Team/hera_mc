@@ -21,7 +21,6 @@ from astropy.time import Time
 import netifaces
 import numpy as np
 import psutil
-import uptime
 
 from hera_mc import mc
 
@@ -123,7 +122,7 @@ with db.sessionmaker() as session:
                 system_time = Time.now()
                 num_cores = os.sysconf('SC_NPROCESSORS_ONLN')
                 cpu_load_pct = os.getloadavg()[1] / num_cores * 100.
-                uptime_days = uptime.uptime() / 86400.
+                uptime_days = (time.time() - psutil.boot_time()) / 86400.
 
                 memory_size_gb = vmem.total / 1024**3 # bytes => GiB
 

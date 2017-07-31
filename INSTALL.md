@@ -16,7 +16,6 @@ Python Prerequisites
 - numpy
 - astropy
 - tabulate
-- uptime
 - pandas
 - psutil
 - pyproj
