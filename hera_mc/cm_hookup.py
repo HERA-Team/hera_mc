@@ -25,6 +25,7 @@ class Hookup:
     """
     Class to find and display the hookup.
     """
+
     def __init__(self, session=None):
         if session is None:
             db = mc.connect_to_mc_db()
@@ -62,7 +63,7 @@ class Hookup:
             outp = len(options['output_ports'])
             if inp == 0:  # it is a station
                 rv = 2
-            elif options['part'].hpn[-1] in ['E','N']:
+            elif options['part'].hpn[-1] in ['E', 'N']:
                 rv = 1
             elif inp == 1 and outp > 0:  # they are different since in get_hookup we loop over input ports unless it's a station
                 rv = 2
@@ -148,7 +149,7 @@ class Hookup:
         # Get all the appropriate parts
         parts = self.handling.get_part_dossier(hpn=hpn, rev=rev, at_date=self.at_date, exact_match=exact_match)
         hookup_dict = {}
-        col_len_max = [0,'-']
+        col_len_max = [0, '-']
 
         for hpnr in parts.keys():
             if not cm_utils._is_active(self.at_date, parts[hpnr]['part'].start_date, parts[hpnr]['part'].stop_date):
@@ -189,12 +190,12 @@ class Hookup:
         parts_col = []
         for hu in hup0:
             get_part_type = self.handling.get_part_dossier(hpn=hu.upstream_part, rev=hu.up_part_rev,
-                                                   at_date=self.at_date, exact_match=True)
+                                                           at_date=self.at_date, exact_match=True)
             pr_key = cm_handling._make_part_key(hu.upstream_part, hu.up_part_rev)
             parts_col.append(get_part_type[pr_key]['part'].hptype)
         hu = hup0[-1]
         get_part_type = self.handling.get_part_dossier(hpn=hu.downstream_part, rev=hu.down_part_rev,
-                                               at_date=self.at_date, exact_match=True)
+                                                       at_date=self.at_date, exact_match=True)
         pr_key = cm_handling._make_part_key(hu.downstream_part, hu.down_part_rev)
         parts_col.append(get_part_type[pr_key]['part'].hptype)
         return parts_col
@@ -216,12 +217,12 @@ class Hookup:
             hookup_dict['levels'][k] = lstr
         return hookup_dict
 
-    def __header_entry_name_adjust(self,col):
+    def __header_entry_name_adjust(self, col):
         if col[-2:] == '_e' or col[-2:] == '_n':  # Makes these specific pol parts generic
             colhead = col[:-2]
         else:
             colhead = col
-        return colhead 
+        return colhead
 
     def show_hookup(self, hookup_dict, cols_to_show, show_levels):
         """
@@ -233,8 +234,8 @@ class Hookup:
         cols_to_show:  list of columns to include in hookup listing
         show_levels:  boolean to either show the correlator levels or not
         """
-        
-        headers, show_flag = self.__make_header_row(hookup_dict['columns'],cols_to_show, show_levels)
+
+        headers, show_flag = self.__make_header_row(hookup_dict['columns'], cols_to_show, show_levels)
 
         table_data = []
         for hukey in sorted(hookup_dict.keys()):
@@ -264,7 +265,7 @@ class Hookup:
                 show_flag.append(False)
         return headers, show_flag
 
-    def __make_table_row(self,hup, headers, show_flag, show_level):
+    def __make_table_row(self, hup, headers, show_flag, show_level):
         nc = '-'
         td = []
         if show_flag[0]:
@@ -292,7 +293,7 @@ class Hookup:
                     continue
                 for hu in hup:
                     get_part_type = self.handling.get_part(hpn_query=hu.upstream_part, rev_query=hu.up_part_rev,
-                        exact_match=True, return_dictionary=True, show_part=False)
+                                                           exact_match=True, return_dictionary=True, show_part=False)
                     pr_key = cm_handling._make_part_key(hu.upstream_part, hu.up_part_rev)
                     part_col = get_part_type[pr_key]['part'].hptype
                     if self.__header_entry_name_adjust(part_col) == hdr:
@@ -300,13 +301,13 @@ class Hookup:
                         break
                 else:
                     get_part_type = self.handling.get_part(hpn_query=hu.downstream_part, rev_query=hu.down_part_rev,
-                        exact_match=True, return_dictionary=True, show_part=False)
+                                                           exact_match=True, return_dictionary=True, show_part=False)
                     pr_key = cm_handling._make_part_key(hu.downstream_part, hu.down_part_rev)
                     part_col = get_part_type[pr_key]['part'].hptype
                     if self.__header_entry_name_adjust(part_col) == hdr:
                         continue
                     else:
-                        new_hup.append(PC.Connections(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc, 
-                                                               downstream_part=nc, down_part_rev=nc, downstream_input_port=nc))
+                        new_hup.append(PC.Connections(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
+                                                      downstream_part=nc, down_part_rev=nc, downstream_input_port=nc))
             td = self.__make_table_row(new_hup, headers, show_flag, show_level)
         return td

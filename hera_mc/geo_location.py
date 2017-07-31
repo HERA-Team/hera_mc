@@ -74,7 +74,7 @@ class GeoLocation(MCDeclarativeBase):
     "The date when the station assigned by project."
 
     def gps2Time(self):
-        self.created_date = Time(self.created_gpstime,format='gps')
+        self.created_date = Time(self.created_gpstime, format='gps')
 
     def geo(self, **kwargs):
         for key, value in kwargs.items():
@@ -132,7 +132,7 @@ def update(session=None, data=None, add_new_geo=False):
                 gr = geo_rec.first()
                 make_update = True
         else:
-            print("Error:  more than one of ",station_name," exists (which should not happen).")
+            print("Error:  more than one of ", station_name, " exists (which should not happen).")
         if make_update:
             for d in data_dict[station_name]:
                 try:
