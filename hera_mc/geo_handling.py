@@ -16,7 +16,6 @@ import copy
 from astropy.time import Time
 
 import numpy as np
-import matplotlib.pyplot as plt
 from pyproj import Proj
 
 from hera_mc import mc, part_connect, cm_utils, geo_location
@@ -69,6 +68,8 @@ def show_it_now(fignm):
     -------------
     fignm:  string/int for figure
     """
+    import matplotlib.pyplot as plt
+
     if fignm is not False and fignm is not None:
         plt.figure(fignm)
         plt.show()
@@ -355,6 +356,8 @@ class Handling:
         query_date:  date to use to check if active
         state_args:  dictionary with state arguments (fig_num, marker_color, marker_shape, marker_size, show_label)
         """
+        import matplotlib.pyplot as plt
+
         query_date = cm_utils._get_datetime(query_date)
         displaying_label = bool(state_args['show_label'])
         if displaying_label:
@@ -405,6 +408,7 @@ class Handling:
         query_date:  date to use to check if active.
         state_args:  dictionary with state arguments (fig_num, marker_color, marker_shape, marker_size, show_label)
         """
+        import matplotlib.pyplot as plt
 
         query_date = cm_utils._get_datetime(query_date)
         if state_args['background'][0] == 'all':
@@ -439,6 +443,8 @@ class Handling:
            located_stations:  geo class of station to plot
            state_args:  dictionary with state arguments (fig_num, marker_color, marker_shape, marker_size, show_label)
         """
+        import matplotlib.pyplot as plt
+
         for located in located_stations:
             ever_connected = self.is_in_connections(located.station_name)
             active = self.is_in_connections(located.station_name, query_date)
