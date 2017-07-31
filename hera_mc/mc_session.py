@@ -730,7 +730,7 @@ class MCSession(Session):
         return self._time_filter(PaperTemperatures, 'time', starttime,
                                  stoptime=stoptime)
 
-    def add_ant_metric(self, obsid, ant, pol, metric, metric_id, val):
+    def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
         Add a new antenna metric to the M&C database.
 
@@ -744,8 +744,6 @@ class MCSession(Session):
             polarization
         metric: string
             metric name
-        metric_id: integer
-            metric ID
         val: float
             value of metric
         """
@@ -753,10 +751,10 @@ class MCSession(Session):
 
         db_time = self.get_current_db_time()
 
-        self.add(ant_metrics.create(obsid, ant, pol, metric, metric_id, db_time, val))
+        self.add(ant_metrics.create(obsid, ant, pol, metric, db_time, val))
 
-    def get_ant_metric(self, ant=None, pol=None, metric=None, metric_id=None,
-                       starttime=None, stoptime=None):
+    def get_ant_metric(self, ant=None, pol=None, metric=None, starttime=None,
+                       stoptime=None):
         """
         Get antenna metric(s) from the M&C database.
 
@@ -768,8 +766,6 @@ class MCSession(Session):
             polarization. Defaults to returning all pols.
         metric: string or list of strings
             metric name. Defaults to returning all metrics.
-        metric_id: integer or list of integers.
-            metric ID. Defaults to returning all IDs.
         starttime: astropy time object OR gps second.
             beginning of query time interval. Defaults to gps=0 (6 Jan, 1980)
         stoptime: astropy time object OR gps second.
@@ -788,8 +784,6 @@ class MCSession(Session):
             args.append(ant_metrics.pol.in_(get_iterable(pol)))
         if metric is not None:
             args.append(ant_metrics.metric.in_(get_iterable(metric)))
-        if metric_id is not None:
-            args.append(ant_metrics.metric_id.in_(get_iterable(metric_id)))
         if starttime is None:
             starttime = 0
         else:
@@ -803,7 +797,7 @@ class MCSession(Session):
         args.append(ant_metrics.obsid.between(starttime, stoptime))
         return self.query(ant_metrics).filter(*args).all()
 
-    def add_array_metric(self, obsid, metric, metric_id, val):
+    def add_array_metric(self, obsid, metric, val):
         """
         Add a new array metric to the M&C database.
 
@@ -813,8 +807,6 @@ class MCSession(Session):
             observation identification number
         metric: string
             metric name
-        metric_id: integer
-            metric ID
         val: float
             value of metric
         """
@@ -822,10 +814,9 @@ class MCSession(Session):
 
         db_time = self.get_current_db_time()
 
-        self.add(array_metrics.create(obsid, metric, metric_id, db_time, val))
+        self.add(array_metrics.create(obsid, metric, db_time, val))
 
-    def get_array_metric(self, metric=None, metric_id=None, starttime=None,
-                         stoptime=None):
+    def get_array_metric(self, metric=None, starttime=None, stoptime=None):
         """
         Get array metric(s) from the M&C database.
 
@@ -833,8 +824,6 @@ class MCSession(Session):
         ------------
         metric: string or list of strings
             metric name. Defaults to returning all metrics.
-        metric_id: integer or list of integers.
-            metric ID. Defaults to returning all IDs.
         starttime: astropy time object OR gps second.
             beginning of query time interval. Defaults to gps=0 (6 Jan, 1980)
         stoptime: astropy time object OR gps second.
@@ -849,8 +838,6 @@ class MCSession(Session):
         args = []
         if metric is not None:
             args.append(array_metrics.metric.in_(get_iterable(metric)))
-        if metric_id is not None:
-            args.append(array_metrics.metric_id.in_(get_iterable(metric_id)))
         if starttime is None:
             starttime = 0
         else:
@@ -864,7 +851,7 @@ class MCSession(Session):
         args.append(array_metrics.obsid.between(starttime, stoptime))
         return self.query(array_metrics).filter(*args).all()
 
-    def add_metric_desc(self, metric, metric_id, desc):
+    def add_metric_desc(self, metric, desc):
         """
         Add a new metric description to the M&C database.
 
@@ -872,16 +859,14 @@ class MCSession(Session):
         ------------
         metric: string
             metric name
-        metric_id: integer
-            metric ID
         desc: string
             description of metric
         """
         from .qm import metric_list
 
-        self.add(metric_list.create(metric, metric_id, desc))
+        self.add(metric_list.create(metric, desc))
 
-    def get_metric_desc(self, metric=None, metric_id=None):
+    def get_metric_desc(self, metric=None):
         """
         Get metric description(s) from the M&C database.
 
@@ -889,8 +874,6 @@ class MCSession(Session):
         ------------
         metric: string or list of strings
             metric name. Defaults to returning all metrics.
-        metric_id: integer or list of integers.
-            metric ID. Defaults to returning all IDs.
 
         Returns:
         --------
@@ -901,7 +884,5 @@ class MCSession(Session):
         args = []
         if metric is not None:
             args.append(metric_list.metric.in_(get_iterable(metric)))
-        if metric_id is not None:
-            args.append(metric_list.metric_id.in_(get_iterable(metric_id)))
 
         return self.query(metric_list).filter(*args).all()

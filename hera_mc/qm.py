@@ -28,7 +28,6 @@ class ant_metrics(MCDeclarativeBase):
     ant:        Antenna number (int >= 0)
     pol:        Polarization ('x' or 'y')
     metric:     Name of metric (str)
-    metric_id:  ID number within metric (int)
     mc_time:    time metric is reported to M&C in floor(gps seconds) (BigInteger)
     val:        Value of metric (double)
     """
@@ -36,14 +35,9 @@ class ant_metrics(MCDeclarativeBase):
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
     ant = Column(Integer, primary_key=True)
     pol = Column(String, primary_key=True)
-    metric = Column(String, primary_key=True)
-    metric_id = Column(Integer, primary_key=True)
+    metric = Column(String, ForeignKey('metric_list.metric'), primary_key=True)
     mc_time = Column(BigInteger, nullable=False)
     val = Column(Float, nullable=False)
-
-    __table_args__ = (ForeignKeyConstraint(['metric', 'metric_id'],
-                                           ['metric_list.metric',
-                                            'metric_list.metric_id']),)
 
     # tolerances set to 1ms
     tols = {'mc_time': DEFAULT_GPS_TOL}
@@ -52,12 +46,8 @@ class ant_metrics(MCDeclarativeBase):
     def antpol(self):
         return (self.ant, self.pol)
 
-    @hybrid_property
-    def mmid(self):
-        return (self.metric, self.metric_id)
-
     @classmethod
-    def create(cls, obsid, ant, pol, metric, metric_id, db_time, val):
+    def create(cls, obsid, ant, pol, metric, db_time, val):
         """
         Create a new ant_metric object using Astropy to compute the LST.
 
@@ -71,8 +61,6 @@ class ant_metrics(MCDeclarativeBase):
             polarization
         metric: string
             metric name
-        metric_id: integer
-            metric ID
         db_time: astropy time object
             astropy time object based on a timestamp from the database.
             Usually generated from MCSession.get_current_db_time()
@@ -91,8 +79,6 @@ class ant_metrics(MCDeclarativeBase):
             raise ValueError('pol must be string "x" or "y".')
         if not isinstance(metric, str):
             raise ValueError('metric must be string.')
-        if not isinstance(metric_id, (int, long)):
-            raise ValueError('metric_id must be an integer.')
         if not isinstance(db_time, Time):
             raise ValueError('db_time must be an astropy Time object')
         mc_time = floor(db_time.gps)
@@ -101,7 +87,7 @@ class ant_metrics(MCDeclarativeBase):
         except ValueError:
             raise ValueError('val must be castable as float.')
 
-        return cls(obsid=obsid, ant=ant, pol=pol, metric=metric, metric_id=metric_id,
+        return cls(obsid=obsid, ant=ant, pol=pol, metric=metric,
                    mc_time=mc_time, val=val)
 
 
@@ -112,30 +98,20 @@ class array_metrics(MCDeclarativeBase):
     obsid:      observation identification number, generally equal to the floor
                 of the start time in gps seconds (long integer)
     metric:     Name of metric (str)
-    metric_id:  ID number within metric (int)
     mc_time:    time metric is reported to M&C in floor(gps seconds) (BigInteger)
     val:        Value of metric (double)
     """
     __tablename__ = 'array_metrics'
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
-    metric = Column(String, primary_key=True)
-    metric_id = Column(Integer, primary_key=True)
+    metric = Column(String, ForeignKey('metric_list.metric'), primary_key=True)
     mc_time = Column(BigInteger, nullable=False)
     val = Column(Float, nullable=False)
-
-    __table_args__ = (ForeignKeyConstraint(['metric', 'metric_id'],
-                                           ['metric_list.metric',
-                                            'metric_list.metric_id']),)
 
     # tolerances set to 1ms
     tols = {'mc_time': DEFAULT_GPS_TOL}
 
-    @hybrid_property
-    def mmid(self):
-        return (self.metric, self.metric_id)
-
     @classmethod
-    def create(cls, obsid, metric, metric_id, db_time, val):
+    def create(cls, obsid, metric, db_time, val):
         """
         Create a new ant_metric object using Astropy to compute the LST.
 
@@ -145,8 +121,6 @@ class array_metrics(MCDeclarativeBase):
             observation identification number.
         metric: string
             metric name
-        metric_id: integer
-            metric ID
         db_time: astropy time object
             astropy time object based on a timestamp from the database.
             Usually generated from MCSession.get_current_db_time()
@@ -158,8 +132,6 @@ class array_metrics(MCDeclarativeBase):
             raise ValueError('obsid must be an integer.')
         if not isinstance(metric, str):
             raise ValueError('metric must be string.')
-        if not isinstance(metric_id, (int, long)):
-            raise ValueError('metric_id must be an integer.')
         if not isinstance(db_time, Time):
             raise ValueError('db_time must be an astropy Time object')
         mc_time = floor(db_time.gps)
@@ -168,8 +140,7 @@ class array_metrics(MCDeclarativeBase):
         except ValueError:
             raise ValueError('val must be castable as float.')
 
-        return cls(obsid=obsid, metric=metric, metric_id=metric_id,
-                   mc_time=mc_time, val=val)
+        return cls(obsid=obsid, metric=metric, mc_time=mc_time, val=val)
 
 
 class metric_list(MCDeclarativeBase):
@@ -177,20 +148,14 @@ class metric_list(MCDeclarativeBase):
     Definition of metric_list table, which provides descriptions of metrics
 
     metric:     Name of metric (str)
-    metric_id:  ID number within metric (int)
     desc:       Description of metric (str)
     """
     __tablename__ = 'metric_list'
     metric = Column(String, primary_key=True)
-    metric_id = Column(Integer, primary_key=True)
     desc = Column(String, nullable=False)
 
-    @hybrid_property
-    def mmid(self):
-        return (self.metric, self.metric_id)
-
     @classmethod
-    def create(cls, metric, metric_id, desc):
+    def create(cls, metric, desc):
         """
         Create a new ant_metric object using Astropy to compute the LST.
 
@@ -198,17 +163,13 @@ class metric_list(MCDeclarativeBase):
         ------------
         metric: string
             metric name
-        metric_id: integer
-            metric ID
         desc: string
             description of metric
         """
 
         if not isinstance(metric, str):
             raise ValueError('metric must be string.')
-        if not isinstance(metric_id, (int, long)):
-            raise ValueError('metric_id must be an integer.')
         if not isinstance(desc, str):
             raise ValueError('metric description must be a string.')
 
-        return cls(metric=metric, metric_id=metric_id, desc=desc)
+        return cls(metric=metric, desc=desc)
