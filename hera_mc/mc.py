@@ -110,6 +110,7 @@ def get_mc_argument_parser():
                    help='Name of the database to connect to. The default is used if unspecified.')
     return p
 
+
 def get_cm_csv_path(args):
     """Returns the full path read from the config file"""
     if args is None:

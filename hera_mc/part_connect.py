@@ -121,7 +121,7 @@ def add_new_parts(session, p, new_part_list, at_date, actually_do_it):
 
     for hpnr in new_part_list:
         p.part(hpn=hpnr[0], hpn_rev=hpnr[1], hptype=hpnr[2], manufacturer_number=hpnr[3])
-        print("Adding part {} at {}".format(p,  str(at_date)))
+        print("Adding part {} at {}".format(p, str(at_date)))
         data.append([p.hpn, p.hpn_rev, 'hpn', p.hpn])
         data.append([p.hpn, p.hpn_rev, 'hpn_rev', p.hpn_rev])
         data.append([p.hpn, p.hpn_rev, 'hptype', p.hptype])
@@ -349,7 +349,7 @@ class Connections(MCDeclarativeBase):
     downstream_input_port = NotNull(String(64), primary_key=True)
     "connected input port on downstream (further from the sky) part"
 
-    __table_args__ = (ForeignKeyConstraint(['upstream_part',   'up_part_rev'],
+    __table_args__ = (ForeignKeyConstraint(['upstream_part', 'up_part_rev'],
                                            ['parts_paper.hpn', 'parts_paper.hpn_rev']),
                       ForeignKeyConstraint(['downstream_part', 'down_part_rev'],
                                            ['parts_paper.hpn', 'parts_paper.hpn_rev']))
@@ -456,10 +456,10 @@ def add_new_connections(session, c, conn_list, at_date, actually_do_it):
     data = []
 
     for conn in conn_list:
-        c.connection(upstream_part=conn[0],        up_part_rev=conn[1],
-                     downstream_part=conn[3],      down_part_rev=conn[4],
+        c.connection(upstream_part=conn[0], up_part_rev=conn[1],
+                     downstream_part=conn[3], down_part_rev=conn[4],
                      upstream_output_port=conn[2], downstream_input_port=conn[5],
-                     start_gpstime=start_at,       stop_gpstime=None)
+                     start_gpstime=start_at, stop_gpstime=None)
         print("Starting connection {} at {}".format(c, str(at_date)))
         data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
                      c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
