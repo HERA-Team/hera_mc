@@ -93,5 +93,6 @@ class TestGeo(TestHERAMC):
         located = h.get_location([self.test_element_station_name], 'now')
         self.assertTrue(located[0].elevation == 1100.0)
 
+
 if __name__ == '__main__':
     unittest.main()
