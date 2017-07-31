@@ -27,6 +27,11 @@ class Hookup:
     """
 
     def __init__(self, session=None):
+        """
+        Hookup traces parts and connections through the signal path (as defined by the connections).
+        Generally will only call _.get_hookup()
+        """
+
         if session is None:
             db = mc.connect_to_mc_db()
             self.session = db.sessionmaker()

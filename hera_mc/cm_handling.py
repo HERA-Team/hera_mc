@@ -281,12 +281,6 @@ class Handling:
                 elif len(down_parts) > len(up_parts):
                     up_parts = (up_parts + len(down_parts) * [up_parts[-1]])[:len(down_parts)]
                 connection_dossier['ordered_pairs'].append([sorted(up_parts), sorted(down_parts)])
-        # I forget why I did this
-        #-#nc = self.no_connection_designator
-        #-#connection_dossier[nc] = PC.Connections(upstream_part=nc, upstream_output_port=nc, up_part_rev=nc,
-        #-#                                               downstream_part=nc, downstream_input_port=nc, down_part_rev=nc,
-        #-#                                               start_gpstime=cm_utils._get_datetime('<', '<').gps,
-        #-#                                               stop_gpstime=cm_utils._get_datetime('>', '>').gps)
         return connection_dossier
 
     def show_connections(self, connection_dossier, show_args):

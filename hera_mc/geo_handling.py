@@ -47,7 +47,7 @@ def get_location(location_names, query_date='now', show_location=False, verbosit
 
     Parameters:
     -------------
-    location_name:  location name, may be either a station (geo_location key) or an antenna
+    location_names:  location name, may be either a station (geo_location key) or an antenna
     query_date:  date for query
     show_location:  boolean to show location or not
     verbosity:  string to specify verbosity
