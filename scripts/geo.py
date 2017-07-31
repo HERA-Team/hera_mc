@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--cofa', help="Print out center of array information [False]", action='store_true')
     parser.add_argument('-f', '--find', help="Find location of given station_name(s) or antenna_number(s) (if # or A#); csv_list [None]", default=None)
     parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
-    parser.add_argument('-d', '--since_date', help="Only show antennas (set by background) installed since date/time [False]", action='store_true')
+    parser.add_argument('--since_date', help="Only show antennas (set by background) installed since date/time [False]", action='store_true')
 
     # parameter state/value arguments
     cm_utils.add_verbosity_args(parser)

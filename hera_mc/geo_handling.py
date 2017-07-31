@@ -22,24 +22,23 @@ from pyproj import Proj
 from hera_mc import mc, part_connect, cm_utils, geo_location
 
 
-def cofa(show_cofa=False):
+def cofa(show_cofa=False, session=None):
     """
     Returns location class of current COFA
 
     Parameters:
     -------------
     show_cofa:  boolean to print out cofa info or just return class
+    session:  db session to use
     """
 
-    parser = mc.get_mc_argument_parser()
-    args = parser.parse_args([])
-    h = Handling(args)
+    h = Handling(session)
     located = h.cofa(show_cofa)
     h.close()
     return located
 
 
-def get_location(location_names, query_date='now', show_location=False, verbosity='m'):
+def get_location(location_names, query_date='now', show_location=False, verbosity='m', session=None):
     """
     This provides a function to query a location and get a geo_location class back, with lon/lat added to the class.
     This is the wrapper for other modules outside cm to call.
@@ -48,13 +47,15 @@ def get_location(location_names, query_date='now', show_location=False, verbosit
 
     Parameters:
     -------------
-    location_name:  location name, may be either a station (geo_location key) or an antenna
+    location_names:  location name, may be either a station (geo_location key) or an antenna
+    query_date:  date for query
+    show_location:  boolean to show location or not
+    verbosity:  string to specify verbosity
+    session:  db session to use
     """
 
-    parser = mc.get_mc_argument_parser()
-    args = parser.parse_args([])
     query_date = cm_utils._get_datetime(query_date)
-    h = Handling(args)
+    h = Handling(session)
     located = h.get_location(location_names, query_date, show_location=show_location, verbosity=verbosity)
     h.close()
     return located
@@ -63,6 +64,10 @@ def get_location(location_names, query_date='now', show_location=False, verbosit
 def show_it_now(fignm):
     """
     Used in scripts to actually make plot (as opposed to within python).  Seems to be needed...
+
+    Parameters:
+    -------------
+    fignm:  string/int for figure
     """
     if fignm is not False and fignm is not None:
         plt.figure(fignm)
@@ -82,7 +87,7 @@ class Handling:
                  on the default database is created and used.
         """
         if session is None:
-            db = mc.connect_to_mc_db()
+            db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
         else:
             self.session = session
@@ -90,14 +95,34 @@ class Handling:
         self.station_types = None
 
     def close(self):
+        """
+        Close the session
+        """
         self.session.close()
 
     def cofa(self, show_cofa=False):
+        """
+        Get the current center of array.
+
+        Returns located cofa.
+
+        Parameters:
+        ------------
+        show_cofa:  boolean to either show cofa or not
+        """
+
         self.get_station_types(add_stations=True)
         current_cofa = self.station_types['COFA']['Stations']
-        located = self.get_location(current_cofa, 'now', show_cofa, 'm')[0]
+        located = self.get_location(current_cofa, 'now', show_cofa, 'm')
+        if len(located) == 0:
+            located_cofa = None
+        elif len(located) > 1:
+            print("Warning:  {} has returned multiple cofa values.  Returning None.")
+            located_cofa = None
+        else:
+            located_cofa = located[0]
 
-        return located
+        return located_cofa
 
     def get_station_types(self, add_stations=True):
         """
@@ -218,7 +243,7 @@ class Handling:
 
     def get_location(self, to_find, query_date, show_location=False, verbosity='m'):
         """
-        Return the location of station_name or antenna_number as contained in args.locate.
+        Return the location of station_name or antenna_number as contained in to_find.
         This accepts the fact that antennas are sort of stations, even though they are parts
 
         Parameters:
@@ -236,7 +261,7 @@ class Handling:
                 antenna_number = int(L)
                 station_name = self.find_station_of_antenna(antenna_number, query_date)
             except ValueError:
-                station_name = L.upper()
+                station_name = L
             found_it = False
             if station_name:
                 for a in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.station_name == station_name):

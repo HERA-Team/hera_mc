@@ -111,6 +111,21 @@ def get_mc_argument_parser():
     return p
 
 
+def get_cm_csv_path(args):
+    """Returns the full path read from the config file"""
+    if args is None:
+        config_path = default_config_file
+    else:
+        config_path = args.mc_config_path
+
+    import json
+
+    with open(config_path) as f:
+        config_data = json.load(f)
+
+    return config_data.get('cm_csv_path')
+
+
 def connect_to_mc_db(args, forced_db_name=None):
     """Return an instance of the `DB` class providing access to the M&C database.
 

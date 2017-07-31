@@ -55,38 +55,88 @@ class Parts(MCDeclarativeBase):
         return '<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype}>'.format(self=self)
 
     def gps2Time(self):
-        self.start_date = Time(self.start_gpstime,format='gps')
+        """
+        Adds gps seconds to the Time
+        """
+
+        self.start_date = Time(self.start_gpstime, format='gps')
         if self.stop_gpstime is None:
             self.stop_date = None
         else:
-            self.stop_date = Time(self.stop_gpstime,format='gps')
+            self.stop_date = Time(self.stop_gpstime, format='gps')
 
     def part(self, **kwargs):
+        """
+        Allows one to specify and arbitrary part.
+        """
         for key, value in kwargs.items():
             if key in upper_case:
                 value = value.upper()
             setattr(self, key, value)
 
 
-def __get_part_revisions(args, hpn=None):
+def stop_existing_parts(session, p, hpnr_list, at_date, actually_do_it):
     """
-    Retrieves revision numbers for a given part (exact match).  Called from cm_part_revisions.py
+    This adds stop times to the previous parts.
+
+    Parameters:
+    ------------
+    session:  db session to use
+    p:  part object
+    hpnr_list:  list containing hpn and revision
+    at_date:  date to use for stopping
+    actually_do_it:  boolean to allow the part to be stopped
     """
-    if hpn is None:
-        hpn = args.hpn
-    revisions = {}
-    db = mc.connect_to_mc_db(args)
-    with db.sessionmaker() as session:
-        for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
-            parts_rec.gps2Time()
-            revisions[parts_rec.hpn_rev] = {}
-            revisions[parts_rec.hpn_rev]['hpn'] = hpn  # Just carry this along
-            revisions[parts_rec.hpn_rev]['started'] = parts_rec.start_date
-            revisions[parts_rec.hpn_rev]['ended'] = parts_rec.stop_date
-    return revisions
+
+    stop_at = int(at_date.gps)
+    data = []
+
+    for hpnr in hpnr_list:
+        p.part(hpn=hpnr[0], hpn_rev=hpnr[1], hptype=hpnr[2], manufacturer_number=hpnr[3])
+        print("Stopping part {} at {}".format(p, str(at_date)))
+        data.append([p.hpn, p.hpn_rev, 'stop_gpstime', stop_at])
+
+    if actually_do_it:
+        update_part(session, data, False)
+    else:
+        print("--Here's what would happen if you set the --actually_do_it flag:")
+        for d in data:
+            print('\t' + str(d))
 
 
-def update_part(args, data):
+def add_new_parts(session, p, new_part_list, at_date, actually_do_it):
+    """
+    This adds the new parts.
+    Parameters:
+    ------------
+    session:  db session to use
+    p:  part object
+    hpnr_list:  list containing hpn and revision
+    at_date:  date to use for stopping
+    actually_do_it:  boolean to allow the part to be added
+    """
+
+    start_at = int(at_date.gps)
+    data = []
+
+    for hpnr in new_part_list:
+        p.part(hpn=hpnr[0], hpn_rev=hpnr[1], hptype=hpnr[2], manufacturer_number=hpnr[3])
+        print("Adding part {} at {}".format(p, str(at_date)))
+        data.append([p.hpn, p.hpn_rev, 'hpn', p.hpn])
+        data.append([p.hpn, p.hpn_rev, 'hpn_rev', p.hpn_rev])
+        data.append([p.hpn, p.hpn_rev, 'hptype', p.hptype])
+        data.append([p.hpn, p.hpn_rev, 'manufacturer_number', p.manufacturer_number])
+        data.append([p.hpn, p.hpn_rev, 'start_gpstime', start_at])
+
+    if actually_do_it:
+        update_part(session, data, True)
+    else:
+        print("--Here's what would happen if you set the --actually_do_it flag:")
+        for d in data:
+            print('\t' + str(d))
+
+
+def update_part(session=None, data=None, add_new_part=False):
     """
     update the database given a hera part number with columns/values.
     adds part if add_new_part flag is true
@@ -94,51 +144,62 @@ def update_part(args, data):
 
     Parameters:
     ------------
+    session:  db session to use
     data:  [[hpn0,rev0,column0,value0],[...]]
-    hpnN:  hera part number as primary key
-    revN:  hera part number revision as primary key
-    columnN:  column name(s)
-    values:  corresponding list of values
+        hpnN:  hera part number as primary key
+        revN:  hera part number revision as primary key
+        columnN:  column name(s)
+        values:  corresponding list of values
+    add_new_part:  boolean to allow a new part to be added
     """
+
     data_dict = format_and_check_update_part_request(data)
     if data_dict is None:
-        print('Error: invalid update')
+        print('Error: invalid update_part -- doing nothing.')
         return False
-    db = mc.connect_to_mc_db(args)
-    with db.sessionmaker() as session:
-        for dkey in data_dict.keys():
-            hpn_to_change = data_dict[dkey][0][0]
-            rev_to_change = data_dict[dkey][0][1]
-            if rev_to_change[:4] == 'LAST':
-                rev_to_change = get_last_revision_number(args, hpn_to_change)
-            part_rec = session.query(Parts).filter((Parts.hpn == hpn_to_change) &
-                                                   (Parts.hpn_rev == rev_to_change))
-            npc = part_rec.count()
-            if npc == 0:
-                if args.add_new_part:
-                    part = Parts()
-                else:
-                    print("Error: ", dkey,
-                          "does not exist and add_new_part not enabled.")
-                    part = None
-            elif npc == 1:
-                if args.add_new_part:
-                    print("Error: ", dkey, "exists and add_new_part is enabled.")
-                    part = None
-                else:
-                    part = part_rec.first()
+
+    close_session_when_done = False
+    if session is None:
+        db = mc.connect_mc_db()
+        session = db.sessionmaker()
+        close_session_when_done = True
+
+    for dkey in data_dict.keys():
+        hpn_to_change = data_dict[dkey][0][0]
+        rev_to_change = data_dict[dkey][0][1]
+        if rev_to_change[:4] == 'LAST':
+            rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
+        part_rec = session.query(Parts).filter((Parts.hpn == hpn_to_change) &
+                                               (Parts.hpn_rev == rev_to_change))
+        num_part = part_rec.count()
+        if num_part == 0:
+            if add_new_part:
+                part = Parts()
             else:
-                print("Shouldn't ever get here.")
+                print("Error: ", dkey, " does not exist and add_new_part not enabled.")
                 part = None
-            if part:
-                for d in data_dict[dkey]:
-                    try:
-                        setattr(part, d[2], d[3])
-                    except AttributeError:
-                        print(d[2], 'does not exist as a field')
-                        continue
-                session.add(part)
+        elif num_part == 1:
+            if add_new_part:
+                print("Error: ", dkey, "exists and add_new_part is enabled.")
+                part = None
+            else:
+                part = part_rec.first()
+        else:
+            print("Error:  more than one of ", dkey, " exists (which should not happen).")
+            part = None
+        if part:
+            for d in data_dict[dkey]:
+                try:
+                    setattr(part, d[2], d[3])
+                except AttributeError:
+                    print(d[2], 'does not exist as a field')
+                    continue
+            session.add(part)
+            session.commit()
     cm_utils._log('part_connect part update', data_dict=data_dict)
+    if close_session_when_done:
+        session.close()
+
     return True
 
 
@@ -151,11 +212,13 @@ def format_and_check_update_part_request(request):
     Parameters:
     ------------
     request:  hpn0:[rev0:]column0:value0,hpn1:[rev0]:]column1:value1,[...] or list
-    hpnN:  hera part number, first entry must have one, if absent propagate first
-    revN:  hera part revision number, if absent, propagate first, which, if absent, defaults to 'last'
-    columnN:  name of parts column
-    valueN:  corresponding new value
+        hpnN:  hera part number, first entry must have one, if absent propagate first
+        revN:  hera part revision number, if absent, propagate first, which, if absent, defaults to 'last'
+        columnN:  name of parts column
+        valueN:  corresponding new value
     """
+    if request is None:
+        return None
 
     # Split out and get first
     data = {}
@@ -199,6 +262,37 @@ def format_and_check_update_part_request(request):
     return data
 
 
+def __get_part_revisions(hpn, session=None):
+    """
+    Retrieves revision numbers for a given part (exact match).
+
+    Parameters:
+    -------------
+    hpn:  string for hera part number
+    session:  db session to use
+    """
+
+    if hpn is None:
+        return None
+    close_session_when_done = False
+    if session is None:
+        db = mc.connect_mc_db()
+        session = db.sessionmaker()
+        close_session_when_done = True
+
+    revisions = {}
+    for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
+        parts_rec.gps2Time()
+        revisions[parts_rec.hpn_rev] = {}
+        revisions[parts_rec.hpn_rev]['hpn'] = hpn  # Just carry this along
+        revisions[parts_rec.hpn_rev]['started'] = parts_rec.start_date
+        revisions[parts_rec.hpn_rev]['ended'] = parts_rec.stop_date
+    if close_session_when_done:
+        session.close()
+
+    return revisions
+
+
 class PartInfo(MCDeclarativeBase):
     """A table for logging test information etc for parts."""
 
@@ -223,7 +317,7 @@ class PartInfo(MCDeclarativeBase):
         return '<heraPartNumber id = {self.hpn} comment = {self.comment}>'.format(self=self)
 
     def gps2Time():
-        self.posting_date = Time(self.posting_gpstime,format='gps')
+        self.posting_date = Time(self.posting_gpstime, format='gps')
 
     def info(self, **kwargs):
         for key, value in kwargs.items():
@@ -255,7 +349,7 @@ class Connections(MCDeclarativeBase):
     downstream_input_port = NotNull(String(64), primary_key=True)
     "connected input port on downstream (further from the sky) part"
 
-    __table_args__ = (ForeignKeyConstraint(['upstream_part',   'up_part_rev'],
+    __table_args__ = (ForeignKeyConstraint(['upstream_part', 'up_part_rev'],
                                            ['parts_paper.hpn', 'parts_paper.hpn_rev']),
                       ForeignKeyConstraint(['downstream_part', 'down_part_rev'],
                                            ['parts_paper.hpn', 'parts_paper.hpn_rev']))
@@ -272,87 +366,208 @@ class Connections(MCDeclarativeBase):
         return '<{}<{self.upstream_output_port}|{self.downstream_input_port}>{}>'.format(up, down, self=self)
 
     def gps2Time(self):
-        self.start_date = Time(self.start_gpstime,format='gps')
+        """
+        Adds gps seconds to Time.
+        """
+        self.start_date = Time(self.start_gpstime, format='gps')
         if self.stop_gpstime is None:
             self.stop_date = None
         else:
-            self.stop_date = Time(self.stop_gpstime,format='gps')
+            self.stop_date = Time(self.stop_gpstime, format='gps')
 
     def connection(self, **kwargs):
+        """
+        Allows arbitrary connection to be specified.
+        """
         for key, value in kwargs.items():
-            if key in upper_case:
-                value = value.upper()
-            elif key in lower_case:
-                value = value.lower()
+            if type(value) == str:
+                if key in upper_case:
+                    value = value.upper()
+                elif key in lower_case:
+                    value = value.lower()
             setattr(self, key, value)
 
 
-def update_connection(args, data):
+def stop_existing_connections(session, h, conn_list, at_date, actually_do_it):
+    """
+    This adds stop times to the previous connections in conn_list
+
+    Parameters:
+    -------------
+    session:  db session to use
+    h:  part handling object
+    conn_list:  list containing parts to stop
+    at_date:  date to stop
+    actually_do_it:  boolean to actually stop the part
+    """
+
+    stop_at = int(at_date.gps)
+    data = []
+
+    for conn in conn_list:
+        CD = h.get_connection_dossier(conn[0], conn[1], conn[2], at_date, True)
+        ck = get_connection_key(CD, conn)
+        if ck is not None:
+            x = CD[ck]
+            print("Stopping connection {} at {}".format(x, str(at_date)))
+            stopping = [x.upstream_part, x.up_part_rev, x.downstream_part, x.down_part_rev,
+                        x.upstream_output_port, x.downstream_input_port, x.start_gpstime, 'stop_gpstime', stop_at]
+            data.append(stopping)
+
+    if actually_do_it:
+        update_connection(session, data, False)
+    else:
+        print("--Here's what would happen if you set the --actually_do_it flag:")
+        for d in data:
+            print('\t' + str(d))
+
+
+def get_connection_key(c, p):
+    """
+    Returns the key to use
+
+    Parameters:
+    ------------
+    c:  connection_dossier dictionary
+    p:  connection to find
+    """
+
+    for ck in c.keys():
+        if p[0] in ck:
+            break
+    else:
+        ck = None
+    return ck
+
+
+def add_new_connections(session, c, conn_list, at_date, actually_do_it):
+    """
+    This generates a connection object to send to the updater for a new connection
+
+    Parameters:
+    -------------
+    session:  db session to use
+    c:  connection handling object
+    conn_list:  list containing parts to stop
+    at_date:  date to stop
+    actually_do_it:  boolean to actually stop the part
+    """
+    start_at = int(at_date.gps)
+    data = []
+
+    for conn in conn_list:
+        c.connection(upstream_part=conn[0], up_part_rev=conn[1],
+                     downstream_part=conn[3], down_part_rev=conn[4],
+                     upstream_output_port=conn[2], downstream_input_port=conn[5],
+                     start_gpstime=start_at, stop_gpstime=None)
+        print("Starting connection {} at {}".format(c, str(at_date)))
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+                     'upstream_part', c.upstream_part])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+                     'up_part_rev', c.up_part_rev])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+                     'downstream_part', c.downstream_part])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+                     'down_part_rev', c.down_part_rev])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+                     'upstream_output_port', c.upstream_output_port])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+                     'downstream_input_port', c.downstream_input_port])
+        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
+                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+                     'start_gpstime', c.start_gpstime])
+
+    if actually_do_it:
+        update_connection(session, data, True)
+    else:
+        print("--Here's what would happen if you set the --actually_do_it flag:")
+        for d in data:
+            print('\t' + str(d))
+
+
+def update_connection(session=None, data=None, add_new_connection=False):
     """
     update the database given a connection with columns/values.
     adds if add_new_connection flag is true
 
     Parameters:
     ------------
-
-    columnN:  column name(s)
-    values:  corresponding list of values
+    session:  db session to use
+    data:  data for connection:
+        columnN:  column name(s)
+        values:  corresponding list of values
+    add_new_connection:  boolean to actually allow it to be updated
     """
+
     data_dict = format_check_update_connection_request(data)
     if data_dict is None:
         print('Error: invalid update')
         return False
-    db = mc.connect_to_mc_db(args)
-    with db.sessionmaker() as session:
-        for dkey in data_dict.keys():
-            upcn_to_change = data_dict[dkey][0][0]
-            urev_to_change = data_dict[dkey][0][1]
-            dncn_to_change = data_dict[dkey][0][2]
-            drev_to_change = data_dict[dkey][0][3]
-            boup_to_change = data_dict[dkey][0][4]
-            aodn_to_change = data_dict[dkey][0][5]
-            strt_to_change = data_dict[dkey][0][6]
-            if urev_to_change[:4] == 'LAST':
-                urev_to_change = get_last_revision_number(args, upcn_to_change)
-            if drev_to_change[:4] == 'LAST':
-                drev_to_change = get_last_revision_number(args, dncn_to_change)
-            conn_rec = session.query(Connections).filter((Connections.upstream_part == upcn_to_change) &
-                                                         (Connections.up_part_rev == urev_to_change) &
-                                                         (Connections.downstream_part == dncn_to_change) &
-                                                         (Connections.down_part_rev == drev_to_change) &
-                                                         (Connections.upstream_output_port == boup_to_change) &
-                                                         (Connections.downstream_input_port == aodn_to_change) &
-                                                         (Connections.start_gpstime == strt_to_change))
-            ncc = conn_rec.count()
-            if ncc == 0:
-                if args.add_new_connection:
-                    connection = Connections()
-                    connection.connection(up=upcn_to_change, up_rev=urev_to_change,
-                                          down=dncn_to_change, down_rev=drev_to_change,
-                                          upstream_output_port=boup_to_change, downstream_input_port=aodn_to_change,
-                                          start_gpstime=strt_to_change)
-                else:
-                    print(
-                        "Error:", dkey, "does not exist and add_new_connection is not enabled.")
-                    connection = None
-            elif ncc == 1:
-                if args.add_new_connection:
-                    print("Error:", dkey, "exists and and_new_connection is enabled")
-                    connection = None
-                else:
-                    connection = conn_rec.first()
+
+    close_session_when_done = False
+    if session is None:
+        db = mc.connect_mc_db()
+        session = db.sessionmaker()
+        close_session_when_done = True
+
+    for dkey in data_dict.keys():
+        upcn_to_change = data_dict[dkey][0][0]
+        urev_to_change = data_dict[dkey][0][1]
+        dncn_to_change = data_dict[dkey][0][2]
+        drev_to_change = data_dict[dkey][0][3]
+        boup_to_change = data_dict[dkey][0][4]
+        aodn_to_change = data_dict[dkey][0][5]
+        strt_to_change = data_dict[dkey][0][6]
+        if urev_to_change[:4] == 'LAST':
+            urev_to_change = cm_revisions.get_last_revision(upcn_to_change, session)[0][0]
+        if drev_to_change[:4] == 'LAST':
+            drev_to_change = cm_revisions.get_last_revision(dncn_to_change, session)[0][0]
+        conn_rec = session.query(Connections).filter((Connections.upstream_part == upcn_to_change) &
+                                                     (Connections.up_part_rev == urev_to_change) &
+                                                     (Connections.downstream_part == dncn_to_change) &
+                                                     (Connections.down_part_rev == drev_to_change) &
+                                                     (Connections.upstream_output_port == boup_to_change) &
+                                                     (Connections.downstream_input_port == aodn_to_change) &
+                                                     (Connections.start_gpstime == strt_to_change))
+        num_conn = conn_rec.count()
+        if num_conn == 0:
+            if add_new_connection:
+                connection = Connections()
+                connection.connection(up=upcn_to_change, up_rev=urev_to_change,
+                                      down=dncn_to_change, down_rev=drev_to_change,
+                                      upstream_output_port=boup_to_change, downstream_input_port=aodn_to_change,
+                                      start_gpstime=strt_to_change)
             else:
-                print("Shouldn't ever get here.")
+                print("Error:", dkey, "does not exist and add_new_connection is not enabled.")
                 connection = None
-            if connection:
-                for d in data_dict[dkey]:
-                    try:
-                        setattr(connection, d[7], d[8])
-                    except AttributeError:
-                        print(dkey, 'does not exist as a field')
-                        continue
-                session.add(connection)
+        elif num_conn == 1:
+            if add_new_connection:
+                print("Error:", dkey, "exists and and_new_connection is enabled")
+                connection = None
+            else:
+                connection = conn_rec.first()
+        else:
+            print("Error:  more than one of ", dkey, " exists (which should not happen).")
+            connection = None
+        if connection:
+            for d in data_dict[dkey]:
+                try:
+                    setattr(connection, d[7], d[8])
+                except AttributeError:
+                    print(dkey, 'does not exist as a field')
+                    continue
+            session.add(connection)
+            session.commit()
     cm_utils._log('part_connect connection update', data_dict=data_dict)
+    if close_session_when_done:
+        session.close()
+
     return True
 
 
@@ -365,10 +580,12 @@ def format_check_update_connection_request(request):
     Parameters:
     ------------
     request:   or list
-    columnN:  name of parts column
-    valueN:  corresponding new value
+        columnN:  name of parts column
+        valueN:  corresponding new value
     """
 
+    if request is None:
+        return None
     # Split out and get first
     data = {}
     if type(request) == str:

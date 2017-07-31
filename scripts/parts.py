@@ -30,12 +30,9 @@ if __name__ == '__main__':
                         dest='mapr_cols', default='all')
     parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible - keep False to use actual correlator [False]", 
                         dest='levels_testing', default=False)
+    parser.add_argument('--show_state', help="Show only the 'active' stations or all [all]", default='all')
     cm_utils.add_date_time_args(parser)
 
-    active_group = parser.add_mutually_exclusive_group()
-    active_group.add_argument('--show-active', help="Flag to show only the active parts/connections (default)",dest='active', action='store_true')
-    active_group.add_argument('--show-all', help="Flag to show all parts/connections",dest='active', action='store_false')
-    parser.set_defaults(active=True)
     args = parser.parse_args()
 
     # Prep args
@@ -45,26 +42,41 @@ if __name__ == '__main__':
         args.connection = args.connection.upper()
     if args.mapr:
         args.mapr = args.mapr.upper()
-    args.verbosity = args.verbosity.lower()
-    args.mapr_cols = args.mapr_cols.lower()
     args.revision = args.revision.upper()
-    if args.revision == 'ALL':
-        args.active = False
+    date_query = cm_utils._get_datetime(args.date,args.time)
+
     if type(args.levels_testing) == str:
         if args.levels_testing.lower() == 'none' or args.levels_testing.lower() == 'false':
             args.levels_testing = False
         elif args.levels_testing == 'levels.tst':
             args.levels_testing = os.path.join(mc.test_data_path, 'levels.tst')
 
+    state_args = {'verbosity':args.verbosity.lower(),
+                  'mapr_cols':args.mapr_cols.lower(),
+                  'show_levels':args.show_levels,
+                  'show_state':args.show_state,
+                  'levels_testing':args.levels_testing}
+
     # Execute script
-    handling = cm_handling.Handling(args)
+    db = mc.connect_to_mc_db(args)
+    session = db.sessionmaker()
+
+    handling = cm_handling.Handling(session)
     if args.hpn:
-        part_dict = handling.get_part(show_part=True)
+        part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision, 
+                                                 at_date=date_query, exact_match=args.exact_match)
+        handling.show_parts(part_dossier, state_args)
     if args.connection:
-        connection_dict = handling.get_connections(show_connection=True)
+        connection_dossier = handling.get_connection_dossier(
+                                      hpn=args.connection, rev=args.revision, port=args.specify_port,
+                                      at_date=date_query, exact_match=args.exact_match)
+        already_shown = handling.show_connections(connection_dossier, state_args)
+        handling.show_other_connections(connection_dossier, already_shown)
     if args.mapr:
-        hookup = cm_hookup.Hookup(args)
-        hookup_dict = hookup.get_hookup(show_hookup=True)
+        hookup = cm_hookup.Hookup(session)
+        hookup_dict = hookup.get_hookup(hpn=args.mapr, rev=args.revision, port=args.specify_port,
+                                        at_date=date_query, state_args=state_args, exact_match=args.exact_match)
+        hookup.show_hookup(hookup_dict, args.mapr_cols, args.show_levels)
     if args.hptype:
         part_type_dict = handling.get_part_types(show_hptype=True)
     if args.update:
