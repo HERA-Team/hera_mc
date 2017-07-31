@@ -25,12 +25,12 @@ class TestObservation(TestHERAMC):
         stn = 'cofa'
         prefix = 'COFA'
         st = geo_location.StationType()
-        st.station_type_name=stn
-        st.prefix=prefix
+        st.station_type_name = stn
+        st.prefix = prefix
         self.test_session.add(st)
         self.test_session.commit()
         gl = geo_location.GeoLocation()
-        gl.station_name = prefix+'_null'
+        gl.station_name = prefix + '_null'
         gl.station_type_name = stn
         gl.datum = 'WGS84'
         gl.tile = '34J'
