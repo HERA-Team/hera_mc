@@ -113,7 +113,7 @@ class array_metrics(MCDeclarativeBase):
     @classmethod
     def create(cls, obsid, metric, db_time, val):
         """
-        Create a new ant_metric object using Astropy to compute the LST.
+        Create a new array_metric object using Astropy to compute the LST.
 
         Parameters:
         ------------
