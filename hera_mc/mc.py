@@ -110,16 +110,22 @@ def get_mc_argument_parser():
                    help='Name of the database to connect to. The default is used if unspecified.')
     return p
 
-def get_cm_csv_path(args):
-    """Returns the full path read from the config file"""
-    if args is None:
-        config_path = default_config_file
-    else:
-        config_path = args.mc_config_path
+
+def get_cm_csv_path(mc_config_file=None):
+    """
+    Returns the full path to csv files read from the mc config file
+
+    Parameters:
+    -------------
+    mc_config_file:  pass a different config file if desired.  None goes to default.
+    """
+
+    if mc_config_file is None:
+        mc_config_file = default_config_file
 
     import json
 
-    with open(config_path) as f:
+    with open(mc_config_file) as f:
         config_data = json.load(f)
 
     return config_data.get('cm_csv_path')

@@ -153,6 +153,7 @@ def _initialization(session=None, tables='all', base=False, maindb=False):
     if session is None:
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
+    cm_csv_path = mc.get_cm_csv_path(None)
 
     # Check that db flag and actual db agree for remote v main
     success = check_if_db_location_agrees(maindb)
@@ -178,7 +179,7 @@ def _initialization(session=None, tables='all', base=False, maindb=False):
     use_table = list(tables_to_read)
     keyed_file = {}
     for table in tables_to_read:
-        data_filename = os.path.join(mc.data_path, data_prefix + table + '.csv')
+        data_filename = os.path.join(cm_csv_path, data_prefix + table + '.csv')
         dbkey = check_csv_file_and_get_key(data_filename)
         if not dbkey:
             print('Initialization for %s not found' % (table))
