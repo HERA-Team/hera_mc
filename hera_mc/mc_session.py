@@ -5,6 +5,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from astropy.time import Time
+from .utils import get_iterable
 """
 Primary session object which handles most DB queries.
 
@@ -754,22 +755,25 @@ class MCSession(Session):
 
         self.add(ant_metrics.create(obsid, ant, pol, metric, metric_id, db_time, val))
 
-    def get_ant_metric(self, obsid, ant, pol, metric, metric_id):
+    def get_ant_metric(self, ant=None, pol=None, metric=None, metric_id=None,
+                       starttime=None, stoptime=None):
         """
         Get antenna metric(s) from the M&C database.
 
         Parameters:
         ------------
-        obsid: long integer
-            observation identification number
-        ant: integer
-            antenna number
-        pol: string ('x' or 'y')
-            polarization
-        metric: string
-            metric name
-        metric_id: integer
-            metric ID
+        ant: integer or list of integers
+            antenna number. Defaults to returning all antennas.
+        pol: string ('x' or 'y'), or list
+            polarization. Defaults to returning all pols.
+        metric: string or list of strings
+            metric name. Defaults to returning all metrics.
+        metric_id: integer or list of integers.
+            metric ID. Defaults to returning all IDs.
+        starttime: astropy time object OR gps second.
+            beginning of query time interval. Defaults to gps=0 (6 Jan, 1980)
+        stoptime: astropy time object OR gps second.
+            end of query time interval. Defaults to now.
 
         Returns:
         --------
@@ -777,11 +781,27 @@ class MCSession(Session):
         """
         from .qm import ant_metrics
 
-        return self.query(ant_metrics).filter(ant_metrics.obsid == obsid,
-                                              ant_metrics.ant == ant,
-                                              ant_metrics.pol == pol,
-                                              ant_metrics.metric == metric,
-                                              ant_metrics.metric_id == metric_id).all()
+        args = []
+        if ant is not None:
+            args.append(ant_metrics.ant.in_(get_iterable(ant)))
+        if pol is not None:
+            args.append(ant_metrics.pol.in_(get_iterable(pol)))
+        if metric is not None:
+            args.append(ant_metrics.metric.in_(get_iterable(metric)))
+        if metric_id is not None:
+            args.append(ant_metrics.metric_id.in_(get_iterable(metric_id)))
+        if starttime is None:
+            starttime = 0
+        else:
+            if isinstance(starttime, Time):
+                starttime = starttime.gps
+        if stoptime is None:
+            stoptime = Time.now().gps
+        else:
+            if isinstance(stoptime, Time):
+                stoptime = stoptime.gps
+        args.append(ant_metrics.obsid.between(starttime, stoptime))
+        return self.query(ant_metrics).filter(*args).all()
 
     def add_array_metric(self, obsid, metric, metric_id, val):
         """
@@ -804,18 +824,21 @@ class MCSession(Session):
 
         self.add(array_metrics.create(obsid, metric, metric_id, db_time, val))
 
-    def get_array_metric(self, obsid, metric, metric_id):
+    def get_array_metric(self, metric=None, metric_id=None, starttime=None,
+                         stoptime=None):
         """
         Get array metric(s) from the M&C database.
 
         Parameters:
         ------------
-        obsid: long integer
-            observation identification number
-        metric: string
-            metric name
-        metric_id: integer
-            metric ID
+        metric: string or list of strings
+            metric name. Defaults to returning all metrics.
+        metric_id: integer or list of integers.
+            metric ID. Defaults to returning all IDs.
+        starttime: astropy time object OR gps second.
+            beginning of query time interval. Defaults to gps=0 (6 Jan, 1980)
+        stoptime: astropy time object OR gps second.
+            end of query time interval. Defaults to now.
 
         Returns:
         --------
@@ -823,9 +846,23 @@ class MCSession(Session):
         """
         from .qm import array_metrics
 
-        return self.query(array_metrics).filter(array_metrics.obsid == obsid,
-                                                array_metrics.metric == metric,
-                                                array_metrics.metric_id == metric_id).all()
+        args = []
+        if metric is not None:
+            args.append(array_metrics.metric.in_(get_iterable(metric)))
+        if metric_id is not None:
+            args.append(array_metrics.metric_id.in_(get_iterable(metric_id)))
+        if starttime is None:
+            starttime = 0
+        else:
+            if isinstance(starttime, Time):
+                starttime = starttime.gps
+        if stoptime is None:
+            stoptime = Time.now().gps
+        else:
+            if isinstance(stoptime, Time):
+                stoptime = stoptime.gps
+        args.append(array_metrics.obsid.between(starttime, stoptime))
+        return self.query(array_metrics).filter(*args).all()
 
     def add_metric_desc(self, metric, metric_id, desc):
         """
@@ -844,16 +881,16 @@ class MCSession(Session):
 
         self.add(metric_list.create(metric, metric_id, desc))
 
-    def get_metric_desc(self, metric, metric_id):
+    def get_metric_desc(self, metric=None, metric_id=None):
         """
         Get metric description(s) from the M&C database.
 
         Parameters:
         ------------
-        metric: string
-            metric name
-        metric_id: integer
-            metric ID
+        metric: string or list of strings
+            metric name. Defaults to returning all metrics.
+        metric_id: integer or list of integers.
+            metric ID. Defaults to returning all IDs.
 
         Returns:
         --------
@@ -861,5 +898,10 @@ class MCSession(Session):
         """
         from .qm import metric_list
 
-        return self.query(metric_list).filter(metric_list.metric == metric,
-                                              metric_list.metric_id == metric_id).all()
+        args = []
+        if metric is not None:
+            args.append(metric_list.metric.in_(get_iterable(metric)))
+        if metric_id is not None:
+            args.append(metric_list.metric_id.in_(get_iterable(metric_id)))
+
+        return self.query(metric_list).filter(*args).all()

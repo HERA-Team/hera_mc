@@ -32,7 +32,7 @@ class TestQM(TestHERAMC):
 
     def test_ant_metrics(self):
         self.test_session.add_ant_metric(self.obsid, 0, 'x', 'test', 0, 4.5)
-        r = self.test_session.get_ant_metric(self.obsid, 0, 'x', 'test', 0)
+        r = self.test_session.get_ant_metric()
         self.assertEqual(len(r), 1)
         self.assertEqual(r[0].antpol, (0, 'x'))
         self.assertEqual(r[0].mmid, ('test', 0))
@@ -58,7 +58,7 @@ class TestQM(TestHERAMC):
 
     def test_array_metrics(self):
         self.test_session.add_array_metric(self.obsid, 'test', 0, 6.2)
-        r = self.test_session.get_array_metric(self.obsid, 'test', 0)
+        r = self.test_session.get_array_metric()
         self.assertEqual(r[0].mmid, ('test', 0))
         self.assertEqual(r[0].val, 6.2)
 
@@ -76,7 +76,7 @@ class TestQM(TestHERAMC):
 
     def test_metric_list(self):
         self.test_session.add_metric_desc('test2', 0, 'Second test')
-        r = self.test_session.get_metric_desc('test2', 0)
+        r = self.test_session.get_metric_desc(metric='test2', metric_id=0)
         self.assertEqual(r[0].mmid, ('test2', 0))
         self.assertEqual(r[0].desc, 'Second test')
 
