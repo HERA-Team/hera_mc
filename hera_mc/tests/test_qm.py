@@ -26,17 +26,45 @@ class TestQM(TestHERAMC):
         self.obsid = utils.calculate_obsid(t1)
         # Create obs to satifsy foreign key constraints
         self.test_session.add_obs(t1, t2, self.obsid)
+        self.test_session.add_obs(t1 - TimeDelta(10.0, format='sec'), t2,
+                                  self.obsid - 10)
+        self.test_session.add_obs(t1 + TimeDelta(10.0, format='sec'), t2,
+                                  self.obsid + 10)
         # Same for metric description
         self.test_session.add_metric_desc('test', 'Test metric')
         self.test_session.commit()
 
     def test_ant_metrics(self):
         self.test_session.add_ant_metric(self.obsid, 0, 'x', 'test', 4.5)
-        r = self.test_session.get_ant_metric()
+        r = self.test_session.get_ant_metric(metric='test')
         self.assertEqual(len(r), 1)
         self.assertEqual(r[0].antpol, (0, 'x'))
         self.assertEqual(r[0].metric, 'test')
         self.assertEqual(r[0].val, 4.5)
+
+        # Test more exciting queries
+        self.test_session.add_ant_metric(self.obsid, 0, 'y', 'test', 2.5)
+        self.test_session.add_ant_metric(self.obsid, 3, 'x', 'test', 2.5)
+        self.test_session.add_ant_metric(self.obsid, 3, 'y', 'test', 2.5)
+        r = self.test_session.get_ant_metric()
+        self.assertEqual(len(r), 4)
+        r = self.test_session.get_ant_metric(ant=0)
+        self.assertEqual(len(r), 2)
+        for ri in r:
+            self.assertEqual(ri.ant, 0)
+        r = self.test_session.get_ant_metric(pol='x')
+        self.assertEqual(len(r), 2)
+        for ri in r:
+            self.assertEqual(ri.pol, 'x')
+        r = self.test_session.get_ant_metric(starttime=self.obsid - 10,
+                                             stoptime=self.obsid + 4)
+        self.assertEqual(len(r), 4)
+        t1 = Time(self.obsid - 10, format='gps')
+        t2 = Time(self.obsid + 4, format='gps')
+        r = self.test_session.get_ant_metric(starttime=t1, stoptime=t2)
+        self.assertEqual(len(r), 4)
+        r = self.test_session.get_ant_metric(ant=[0, 3], pol=['x', 'y'])
+        self.assertEqual(len(r), 4)
 
         # Test exceptions
         self.assertRaises(ValueError, self.test_session.add_ant_metric, 'obs',
@@ -59,6 +87,20 @@ class TestQM(TestHERAMC):
         r = self.test_session.get_array_metric()
         self.assertEqual(r[0].metric, 'test')
         self.assertEqual(r[0].val, 6.2)
+
+        # Test more exciting queries
+        self.test_session.add_array_metric(self.obsid + 10, 'test', 2.5)
+        self.test_session.add_array_metric(self.obsid - 10, 'test', 2.5)
+        r = self.test_session.get_array_metric(metric='test')
+        self.assertEqual(len(r), 3)
+        r = self.test_session.get_array_metric(starttime=self.obsid)
+        self.assertEqual(len(r), 2)
+        r = self.test_session.get_array_metric(stoptime=self.obsid)
+        self.assertEqual(len(r), 2)
+        t1 = Time(self.obsid - 20, format='gps')
+        t2 = Time(self.obsid + 20, format='gps')
+        r = self.test_session.get_array_metric(starttime=t1, stoptime=t2)
+        self.assertEqual(len(r), 3)
 
         # Test exceptions
         self.assertRaises(ValueError, self.test_session.add_array_metric, 'obs',
