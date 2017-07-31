@@ -33,14 +33,16 @@ class TestGeo(TestHERAMC):
         self.assertTrue
 
     def test_cofa(self):
+        stn = 'cofa'
+        prefix = 'COFA'
         st = geo_location.StationType()
-        st.station_type_name='cofa'
-        st.prefix='COFA'
+        st.station_type_name=stn
+        st.prefix=prefix
         self.test_session.add(st)
         self.test_session.commit()
         gl = geo_location.GeoLocation()
-        gl.station_name = 'cofa_null'
-        gl.station_type_name = 'cofa'
+        gl.station_name = prefix+'_null'
+        gl.station_type_name = stn
         gl.created_gpstime = 1172530000
         self.test_session.add(gl)
         self.test_session.commit()
@@ -49,20 +51,22 @@ class TestGeo(TestHERAMC):
         self.assertTrue('cofa' in cofa.station_name.lower())
 
     def test_get_location(self):
+        stn = 'test_element'
+        prefix = 'TE'
         st = geo_location.StationType()
-        st.station_type_name='test_element'
-        st.prefix='TE'
+        st.station_type_name=stn
+        st.prefix=prefix
         self.test_session.add(st)
         self.test_session.commit()
         gl = geo_location.GeoLocation()
-        gl.station_name = 'ELEMENT'
-        gl.station_type_name = 'test_element'
+        gl.station_name = prefix+'_ELEMENT'
+        gl.station_type_name = stn
         gl.created_gpstime = 1172530000
         self.test_session.add(gl)
         self.test_session.commit()
         h = geo_handling.Handling(self.test_session)
-        located = h.get_location(['ELEMENT'], 'now')
-        self.assertTrue(located[0].station_name == 'ELEMENT')
+        located = h.get_location([gl.station_name], 'now')
+        self.assertTrue(located[0].station_name == gl.station_name)
 
 
 if __name__ == '__main__':

@@ -254,8 +254,11 @@ class Handling:
                     ever_connected = self.is_in_connections(a.station_name)
                     active = self.is_in_connections(a.station_name, query_date, return_antrev=True)
                     found_it = True
-                    hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
-                    a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
+                    if a.tile is not None and a.datum is not None:
+                        hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
+                        a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
+                    else:
+                        a.lon, a.lat = (21.428304, -30.721526)
                     found_location.append(copy.copy(a))
                     if show_location:
                         if verbosity == 'm' or verbosity == 'h':

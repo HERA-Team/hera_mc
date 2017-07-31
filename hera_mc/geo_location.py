@@ -40,7 +40,7 @@ class StationType(MCDeclarativeBase):
     "matplotlib marker type to use"
 
     def __repr__(self):
-        return '<subarray prefix={self.prefix} description={self.description} marker={self.plot_marker}>'.format(self=self)
+        return '<subarray {self.station_type_name}: prefix={self.prefix} description={self.description} marker={self.plot_marker}>'.format(self=self)
 
 
 class GeoLocation(MCDeclarativeBase):
