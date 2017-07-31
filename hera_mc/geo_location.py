@@ -118,22 +118,22 @@ def update(session=None, data=None, add_new_geo=False):
     for station_name in data_dict.keys():
         geo_rec = session.query(GeoLocation).filter(GeoLocation.station_name == station_name)
         num_rec = geo_rec.count()
+        make_update = False
         if num_rec == 0:
             if add_new_geo:
                 gr = GeoLocation()
+                make_update = True
             else:
                 print("Error: ", station_name, "does not exist and add_new_geo not enabled.")
-                gr = None
         elif num_rec == 1:
             if add_new_geo:
                 print("Error: ", station_name, "exists and and_new_geo is enabled.")
-                gr = None
             else:
                 gr = geo_rec.first()
+                make_update = True
         else:
             print("Error:  more than one of ",station_name," exists (which should not happen).")
-            gr = None
-        if gr:
+        if make_update:
             for d in data_dict[station_name]:
                 try:
                     setattr(gr, d[1], d[2])
@@ -158,10 +158,10 @@ def format_check_update_request(request):
     Parameters:
     ------------
     request:  station_name0:column0:value0, [station_name1:]column1:value1, [...] or list
-    station_nameN: first entry must have the station_name, 
-                   if it does not then propagate first station_name but can't restart 3 then 2
-    columnN:  name of geo_location column
-    valueN:  corresponding new value
+        station_nameN: first entry must have the station_name, 
+                       if it does not then propagate first station_name but can't restart 3 then 2
+        columnN:  name of geo_location column
+        valueN:  corresponding new value
     """
     if request is None:
         return None
@@ -174,7 +174,7 @@ def format_check_update_request(request):
     else:
         data_to_proc = request
     if len(data_to_proc[0]) == 3:
-        station_name0 = data_to_proc[0][0].upper()
+        station_name0 = data_to_proc[0][0]
         for d in data_to_proc:
             if len(d) == 3:
                 pass
@@ -183,8 +183,6 @@ def format_check_update_request(request):
             else:
                 print('Invalid format for update request.')
                 continue
-            if d[1] == 'station_name':
-                d[2] = d[2].upper()
             if d[0] in data.keys():
                 data[d[0]].append(d)
             else:
