@@ -20,10 +20,9 @@ install:
   - conda info -a
 
   # create environment and install dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy astropy sqlalchemy psycopg2 pandas matplotlib tabulate pyproj nose pip
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy astropy sqlalchemy psycopg2 pandas matplotlib tabulate psutil pyproj nose pip
   - source activate test-environment
   - conda install -c conda-forge alembic
-  - pip install uptime
   - pip install coveralls
   - python setup.py install
 services:

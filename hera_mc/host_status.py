@@ -1,5 +1,5 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2016-2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """M&C logging of the uptime, load, etc., on our computers out in the Karoo.
@@ -12,9 +12,10 @@ from __future__ import absolute_import, division, print_function
 
 import datetime
 import os
+import psutil
 import socket
-import uptime
 import numpy as np
+import time
 
 from sqlalchemy import BigInteger, Column, DateTime, Float, String, func
 
@@ -50,7 +51,7 @@ class HostStatus(MCDeclarativeBase):
         self.time = datetime.datetime.utcnow()
         self.hostname = socket.gethostname()
         self.load_average = os.getloadavg()[1]
-        self.uptime = uptime.uptime() / 86400.
+        self.uptime = (time.time() - psutil.boot_time()) / 86400.
 
     def __repr__(self):
         return('<HostStatus id={self.id} time={self.time} hostname={self.hostname} '
