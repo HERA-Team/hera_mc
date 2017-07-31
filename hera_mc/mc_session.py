@@ -728,3 +728,138 @@ class MCSession(Session):
 
         return self._time_filter(PaperTemperatures, 'time', starttime,
                                  stoptime=stoptime)
+
+    def add_ant_metric(self, obsid, ant, pol, metric, metric_id, val):
+        """
+        Add a new antenna metric to the M&C database.
+
+        Parameters:
+        ------------
+        obsid: long integer
+            observation identification number
+        ant: integer
+            antenna number
+        pol: string ('x' or 'y')
+            polarization
+        metric: string
+            metric name
+        metric_id: integer
+            metric ID
+        val: float
+            value of metric
+        """
+        from .qm import ant_metrics
+
+        db_time = self.get_current_db_time()
+
+        self.add(ant_metrics.create(obsid, ant, pol, metric, metric_id, db_time, val))
+
+    def get_ant_metric(self, obsid, ant, pol, metric, metric_id):
+        """
+        Get antenna metric(s) from the M&C database.
+
+        Parameters:
+        ------------
+        obsid: long integer
+            observation identification number
+        ant: integer
+            antenna number
+        pol: string ('x' or 'y')
+            polarization
+        metric: string
+            metric name
+        metric_id: integer
+            metric ID
+
+        Returns:
+        --------
+        list of ant_metrics objects
+        """
+        from .qm import ant_metrics
+
+        return self.query(ant_metrics).filter(ant_metrics.obsid == obsid,
+                                              ant_metrics.ant == ant,
+                                              ant_metrics.pol == pol,
+                                              ant_metrics.metric == metric,
+                                              ant_metrics.metric_id == metric_id).all()
+
+    def add_array_metric(self, obsid, metric, metric_id, val):
+        """
+        Add a new array metric to the M&C database.
+
+        Parameters:
+        ------------
+        obsid: long integer
+            observation identification number
+        metric: string
+            metric name
+        metric_id: integer
+            metric ID
+        val: float
+            value of metric
+        """
+        from .qm import array_metrics
+
+        db_time = self.get_current_db_time()
+
+        self.add(array_metrics.create(obsid, metric, metric_id, db_time, val))
+
+    def get_array_metric(self, obsid, metric, metric_id):
+        """
+        Get array metric(s) from the M&C database.
+
+        Parameters:
+        ------------
+        obsid: long integer
+            observation identification number
+        metric: string
+            metric name
+        metric_id: integer
+            metric ID
+
+        Returns:
+        --------
+        list of array_metrics objects
+        """
+        from .qm import array_metrics
+
+        return self.query(array_metrics).filter(array_metrics.obsid == obsid,
+                                                array_metrics.metric == metric,
+                                                array_metrics.metric_id == metric_id).all()
+
+    def add_metric_desc(self, metric, metric_id, desc):
+        """
+        Add a new metric description to the M&C database.
+
+        Parameters:
+        ------------
+        metric: string
+            metric name
+        metric_id: integer
+            metric ID
+        desc: string
+            description of metric
+        """
+        from .qm import metric_list
+
+        self.add(metric_list.create(metric, metric_id, desc))
+
+    def get_metric_desc(self, metric, metric_id):
+        """
+        Get metric description(s) from the M&C database.
+
+        Parameters:
+        ------------
+        metric: string
+            metric name
+        metric_id: integer
+            metric ID
+
+        Returns:
+        --------
+        list of metric_list objects
+        """
+        from .qm import metric_list
+
+        return self.query(metric_list).filter(metric_list.metric == metric,
+                                              metric_list.metric_id == metric_id).all()
