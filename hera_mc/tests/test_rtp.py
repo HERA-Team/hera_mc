@@ -52,6 +52,11 @@ class TestRTP(TestHERAMC):
         gl = geo_location.GeoLocation()
         gl.station_name = prefix+'_null'
         gl.station_type_name = stn
+        gl.datum = 'WGS84'
+        gl.tile = '34J'
+        gl.northing = 6601181.0
+        gl.easting = 541007.0
+        gl.elevation = 1051.69
         gl.created_gpstime = 1172530000
         self.test_session.add(gl)
         self.test_session.commit()
