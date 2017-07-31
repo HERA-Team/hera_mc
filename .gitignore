@@ -45,6 +45,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
+hera_mc/tests/cover
 
 # Translations
 *.mo
