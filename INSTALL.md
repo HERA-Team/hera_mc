@@ -13,6 +13,7 @@ Python Prerequisites
 - sqlalchemy
 - psycopg2
 - alembic
+- dateutil
 - numpy
 - astropy
 - tabulate
