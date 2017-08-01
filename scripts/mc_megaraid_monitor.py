@@ -92,7 +92,7 @@ args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 
 
-# Get the seqNum of the last even that we've noticed
+# Get the seqNum of the last event that we've noticed
 
 try:
     ticker_file = open(event_ticker, 'r')
@@ -130,7 +130,7 @@ for line in show_all.stdout:
 
 if show_all.wait() != 0:
     print('error: storcli exited with an error code', file=sys.stderr)
-    print('unfortunately this script may have swallwed its error message', file=sys.stderr)
+    print('unfortunately this script may have swallowed its error message', file=sys.stderr)
     sys.exit(1)
 
 num_disks = int(item_values.pop('Physical Drives', 0))
