@@ -106,8 +106,8 @@ if __name__ == '__main__':
             print("Stopping this swap.")
         else:
             k = rc['connections'].keys()[0]
-            old_rcvr = rc[k].downstream_part
-            old_rrev = rc[k].down_part_rev
+            old_rcvr = rc['connections'][k].downstream_part
+            old_rrev = rc['connections'][k].down_part_rev
             print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, new_hpn, new_rev))
 
     if go_ahead:
