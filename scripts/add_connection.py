@@ -57,38 +57,19 @@ if __name__ == '__main__':
     part = part_connect.Parts()
     handling = cm_handling.Handling(session)
     up_check = handling.get_connection_dossier(hpn=args.uppart, rev=args.uprev, port=args.upport, at_date=at_date, exact_match=True)
-    dn_check = handling.get_connection_dossier(hpn=args.dnpart, rev=args.uprev, port=args.upport, at_date=at_date, exact_match=True)
+    dn_check = handling.get_connection_dossier(hpn=args.dnpart, rev=args.dnrev, port=args.dnport, at_date=at_date, exact_match=True)
 
     # Check for connection
-    if len(part_check.keys()>0):
+    if len(up_check['connections'].keys()>0 or dn_check['connections'].keys()>0):
         go_ahead = False
-        print("Error:  {} is already connected".format(new_hpn))
+        print("Error:  {} and/or {} already connected".format(args.uppart,args.dnpart))
         print("Stopping this swap.")
     else:
         go_ahead = True
-        rc = handling.get_connection_dossier(hpn=rie,rev='A',port='b', at_date=at_date, exact_match=True)
-        ctr = 0
-        for k in rc.keys():
-            if k not in handling.non_class_connection_dossier_entries:
-                ctr+=1
-                old_rcvr = rc[k].downstream_part
-                old_rrev = rc[k].down_part_rev
-                print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, new_hpn, new_rev))
-            if ctr>1:
-                go_ahead = False
-                print("Error:  multiple connections to {}".format(new_hpn))
-                print("Stopping this swap.")
+        print('Adding connections {}:{}:{} <-> {}:{}:{}'.format(args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport))
+
     if go_ahead:
-        # Add new PAM
-        new_pam = [(new_hpn,new_rev,'post-amp module',args.pam_number)]
-        part_connect.add_new_parts(session, part, new_pam, at_date, args.actually_do_it)
-
-        # Disconnect previous RCVR on both sides (RI/RO)
-        pcs = [(old_rcvr,old_rrev,'ea'),(old_rcvr,old_rrev,'na'),(old_rcvr,old_rrev,'eb'),(old_rcvr,old_rrev,'nb')]
-        part_connect.stop_existing_connections(session, handling, pcs, at_date, args.actually_do_it)
-
-        # Connect new PAM on both sides (RI/RO)
-        npc = [(rie,'A','b',new_hpn,new_rev,'ea'),(rin,'A','b',new_hpn,new_rev,'na'),
-               (new_hpn,new_rev,'eb',roe,'A','a'),(new_hpn,new_rev,'nb',ron,'A','a')]
+        # Connect parts
+        npc = [[args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport]]
         part_connect.add_new_connections(session, connect, npc, at_date, args.actually_do_it)
 
