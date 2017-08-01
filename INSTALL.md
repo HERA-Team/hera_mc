@@ -32,7 +32,7 @@ this, or follow the OS-X-specific notes below.
 
 
 Configure hera_mc to talk to the db:
-After setting up the database, you need to fill in the configuration file
+After setting up the database (see below), you need to fill in the configuration file
 `~/.hera_mc/mc_config.json`, which tells the M&C system how to talk to the
 database. An example file is:
 
@@ -63,9 +63,32 @@ If desired, populate the configuration management tables by running the `cm_init
 
 ### Basic OS X PostgreSQL installation
 
-Follow the directions under `Interactive installer by EnterpriseDB` here: https://www.postgresql.org/download/macosx/
+There are many options for installing postgres, several of which are described and
+linked on this page: https://www.postgresql.org/download/macosx/. For the
+instructions below, we are following the installation of the app version, found
+here: https://postgresapp.com/. Follow steps 1 and 2 on that page, and optionally step 3.
 
-This will install the PostgreSQL app on your machine. Starting the app will start the postgres database and give an option to open a psql command line. Then you can create the hera_mc and hera_mc_test databases.
+The app will initialize three databases `postgres`, `template1`, and `<username>`, where username
+is your username on your system. You can double click any of these dbs, or use the
+command `psql` in the terminal to get a psql prompt. From there create the hera user:
+
+`<username>=# CREATE ROLE hera;`
+
+Next create the two databases hera_mc will use:
+
+```
+<username>=# CREATE DATABASE hera_mc;
+<username>=# CREATE DATABASE hera_mc_test;
+```
+
+Back in the GUI, you should see that your two new databases have appeared.
+To get out of the psql prompt, use `Ctrl-d` or the command `\q`.
+Finally, run the alembic script to upgrade your databases to the current schema.
+This is done from the shell, in the root hera_mc directory (where the .ini file lives).
+
+`$ alembic upgrade head`
+
+If desired, populate the configuration management tables by running the `cm_init.py` script.
 
 ### Installing on Mac OS X with homebrew (not particularly recommended)
 
