@@ -244,7 +244,7 @@ class Handling:
                     if port.lower() == 'all' or conn.downstream_input_port.lower() == port.lower():
                         conn.gps2Time()
                         ckey = cm_utils._make_connection_key(conn.upstream_part,       conn.up_part_rev, 
-                                                    conn.upstream_input_port, conn.start_gpstime)
+                                                    conn.upstream_output_port, conn.start_gpstime)
                         connection_dossier['connections'][ckey] = copy.copy(conn)
                         up_parts.append(ckey)
                 if len(up_parts) == 0:
