@@ -93,7 +93,7 @@ def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False)
     print("This will erase and rewrite the configuration management tables.")
     you_are_sure = cm_utils._query_yn("Are you sure you want to do this? ", 'n')
     if you_are_sure:
-        success = _initialization(session=session, tables=tables, base=base, maindb=maindb)
+        success = _initialization(session=session, cm_csv_path=None, tables=tables, base=base, maindb=maindb)
     else:
         print("Exit with no rewrite.")
         success = False
@@ -134,7 +134,7 @@ def check_csv_file_and_get_key(data_filename):
     return dbkey
 
 
-def _initialization(session=None, tables='all', base=False, maindb=False):
+def _initialization(session=None, cm_csv_path=None, tables='all', base=False, maindb=False):
     """
     Internal initialization method, should be called via initialize_db_from_csv
 
@@ -153,6 +153,8 @@ def _initialization(session=None, tables='all', base=False, maindb=False):
     if session is None:
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
+    if cm_csv_path is None:
+        cm_csv_path = mc.get_cm_csv_path(None)
 
     # Check that db flag and actual db agree for remote v main
     success = check_if_db_location_agrees(maindb)
@@ -178,7 +180,7 @@ def _initialization(session=None, tables='all', base=False, maindb=False):
     use_table = list(tables_to_read)
     keyed_file = {}
     for table in tables_to_read:
-        data_filename = os.path.join(mc.data_path, data_prefix + table + '.csv')
+        data_filename = os.path.join(cm_csv_path, data_prefix + table + '.csv')
         dbkey = check_csv_file_and_get_key(data_filename)
         if not dbkey:
             print('Initialization for %s not found' % (table))
@@ -210,7 +212,7 @@ def _initialization(session=None, tables='all', base=False, maindb=False):
     tables_to_init = list(reversed(use_table))
     # Initialize tables
     for table in tables_to_init:
-        data_filename = os.path.join(mc.data_path, data_prefix + table + '.csv')
+        data_filename = os.path.join(cm_csv_path, data_prefix + table + '.csv')
         cm_utils._log('cm_initialization: ' + data_filename)
         key_row = keyed_file[table]
         field_row = not key_row
