@@ -63,11 +63,9 @@ class Parts(MCDeclarativeBase):
 
     def part(self, **kwargs):
         """
-        Allows one to specify and arbitrary part.
+        Allows one to specify an arbitrary part.
         """
         for key, value in kwargs.items():
-            if key in upper_case:
-                value = value.upper()
             setattr(self, key, value)
 
 
@@ -313,8 +311,6 @@ class PartInfo(MCDeclarativeBase):
 
     def info(self, **kwargs):
         for key, value in kwargs.items():
-            if key in upper_case:
-                value = value.upper()
             setattr(self, key, value)
 
 
@@ -372,11 +368,6 @@ class Connections(MCDeclarativeBase):
         Allows arbitrary connection to be specified.
         """
         for key, value in kwargs.items():
-            if type(value) == str:
-                if key in upper_case:
-                    value = value.upper()
-                elif key in lower_case:
-                    value = value.lower()
             setattr(self, key, value)
 
 
@@ -598,15 +589,6 @@ def format_check_update_connection_request(request):
             print('Invalid format for connection update request.')
             continue
         dkey = d[0] + ':' + d[2] + ':' + d[4] + ':' + d[5]
-        # Make the case of everything correct
-        for i in range(4):
-            d[i] = d[i].upper()
-        for i in range(4, 6):
-            d[i] = d[i].lower()
-        if d[7] in upper_case:
-            d[8] = d[8].upper()
-        elif d[7] in lower_case:
-            d[8] = d[8].lower()
         if dkey in data.keys():
             data[dkey].append(d)
         else:
