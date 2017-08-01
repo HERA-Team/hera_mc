@@ -1,0 +1,7 @@
+upstream_part,up_part_rev,downstream_part,down_part_rev,upstream_output_port,downstream_input_port,start_gpstime,stop_gpstime
+RCVR73,A,RO8A1E,A,eb,a,1096484416,1185570532.0
+RCVR73,A,RO8A1N,A,nb,a,1096484416,1185570532.0
+PAM75133,B,RO8A1E,A,eb,a,1185570532,
+PAM75133,B,RO8A1N,A,nb,a,1185570532,
+RI8A1N,A,PAM75133,B,b,na,1185570532,
+RI8A1E,A,PAM75133,B,b,ea,1185570532,

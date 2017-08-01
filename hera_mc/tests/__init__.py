@@ -18,9 +18,7 @@ def setup_package():
     test_db = mc.connect_to_mc_testing_db()
     test_db.create_tables()
     session = test_db.sessionmaker()
-    # This has to be deleted (if we want to reinstate, we need to wait until after the csv change has happened --
-    #                         I don't think we do though.)
-    # cm_transfer._initialization(session)
+    cm_transfer._initialization(session,mc.test_data_path)
 
 
 def teardown_package():
