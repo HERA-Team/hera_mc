@@ -29,37 +29,6 @@ def query_args(args):
     return args
 
 
-def get_mfg_number(hrev):
-    full_part = handling.get_part(hrev[0],hrev[1],exact_match=True)
-    if len(full_part.keys())>1:
-        print("Too many parts for old rev:  ",hrev, full_part.keys())
-        raise ValueError
-    else:
-        mfg = full_part[full_part.keys()[0]]['part'].manufacturer_number
-    if mfg[:3]=='S/N':
-        mfg = 'H' + mfg[3:]
-    elif hrev[0][0]=='A':
-        print("Mfg number wrong:  ",mfg)
-        raise ValueError
-    elif hrev[0][0]!='F':
-        print('Wrong rev:  ',hrev)
-    return mfg
-def get_feed(hookup):
-    feed_col = previous_hookup['columns'].index('feed')
-    feeds = []
-    frs = []
-    for pk in previous_hookup.keys():
-        if pk != 'columns':
-            feeds.append(previous_hookup[pk][feed_col].upstream_part)
-            frs.append(previous_hookup[pk][feed_col].up_part_rev)
-    if len(feeds)!=2:
-        print('Wrong number of feed options.')
-        raise ValueError
-    if feeds[0]!=feeds[1] or frs[0]!=frs[1]:
-        print("Feed options don't match",feeds,frs)
-        raise ValueError
-    return feeds[0],frs[0]
-
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-r', '--receiverator', help="Receiverator number (1-8)", default = None)
