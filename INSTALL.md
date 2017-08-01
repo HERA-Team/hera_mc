@@ -31,7 +31,7 @@ this, or follow the OS-X-specific notes below.
 
 
 Configure hera_mc to talk to the db:
-After setting up the database, you need to fill in the configuration file
+After setting up the database (see below), you need to fill in the configuration file
 `~/.hera_mc/mc_config.json`, which tells the M&C system how to talk to the
 database. An example file is:
 
@@ -62,7 +62,10 @@ If desired, populate the configuration management tables by running the `cm_init
 
 ### Basic OS X PostgreSQL installation
 
-Install the app found here: http://postgresapp.com/, and follow steps 1 and 2 on that page.
+There are many options for installing postgres, several of which are described and
+linked on this page: https://www.postgresql.org/download/macosx/. For the
+instructions below, we are following the installation of the app version, found
+here: https://postgresapp.com/. Follow steps 1 and 2 on that page, and optionally step 3.
 
 The app will initialize three databases `postgres`, `template1`, and `<username>`, where username
 is your username on your system. You can double click any of these dbs, or use the
