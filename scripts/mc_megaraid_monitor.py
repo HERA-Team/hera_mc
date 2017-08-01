@@ -14,6 +14,8 @@ client requires.
 """
 from __future__ import absolute_import, division, print_function
 
+import datetime
+import dateutil.tz
 import errno
 import json
 import os.path
@@ -68,19 +70,19 @@ _months = {
 }
 
 def parse_storcli_datetime(text):
-    """Example input text: "Sat May 20 00:16:57 2017". Returns and Astropy Time
-    object.
-
-    TBD: I think these times are in system local time (and not, say, UTC), but
-    it's not clear!
+    """Example input text: "Sat May 20 00:16:57 2017". Returns an Astropy Time
+    object. The time reported by storcli is in the system local time (and not,
+    say, UTC).
 
     """
-    dow, month, dom, hhmmss, year = text.split()
+    _, month, day, hhmmss, year = text.split()
     month = _months[month]
-    dom = int(dom)
+    day = int(day)
     year = int(year)
-    iso_format = '%04d-%02d-%02d %s' % (year, month, dom, hhmmss)
-    return Time(iso_format, format='iso')
+    hour, minute, second = [int(s) for s in hhmmss.split(':')]
+    local_tz = dateutil.tz.tzlocal()
+    t = datetime.datetime(year, month, day, hour, minute, second, tzinfo=local_tz)
+    return Time(t) # auto-converts to UTC timescale
 
 
 # Before running anything, make sure we can connect to the DB.
