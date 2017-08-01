@@ -54,7 +54,7 @@ def _split_part_key(key):
     return key.split(':')[0], key.split(':')[1]
 
 def _make_connection_key(hpn, rev, port, start_gps):
-    return ":".join([hpn, rev, port, start_gps]).strip()
+    return ":".join([hpn, rev, port, str(start_gps)]).strip()
 def _split_connection_key(key):
     ks = key.split(':')
     return ks[0], ks[1], ks[2], ks[3]
