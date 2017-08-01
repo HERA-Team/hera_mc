@@ -99,17 +99,17 @@ if __name__ == '__main__':
     else:
         go_ahead = True
         rc = handling.get_connection_dossier(hpn=rie,rev='A',port='b', at_date=at_date, exact_match=True)
-        ctr = 0
-        for k in rc.keys():
-            if k not in handling.non_class_connection_dossier_entries:
-                ctr+=1
-                old_rcvr = rc[k].downstream_part
-                old_rrev = rc[k].down_part_rev
-                print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, new_hpn, new_rev))
-            if ctr>1:
-                go_ahead = False
-                print("Error:  multiple connections to {}".format(new_hpn))
-                print("Stopping this swap.")
+        ctr = len(rc['connections'].keys())
+        if ctr>1:
+            go_ahead = False
+            print("Error:  multiple connections to {}".format(new_hpn))
+            print("Stopping this swap.")
+        else:
+            k = rc['connections'].keys()[0]
+            old_rcvr = rc[k].downstream_part
+            old_rrev = rc[k].down_part_rev
+            print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, new_hpn, new_rev))
+
     if go_ahead:
         # Add new PAM
         new_pam = [(new_hpn,new_rev,'post-amp module',args.pam_number)]

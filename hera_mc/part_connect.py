@@ -20,10 +20,6 @@ from . import MCDeclarativeBase, NotNull
 
 from hera_mc import mc, cm_utils
 
-# Probably bad practice, but these currently mirror the class objects to get the case right for values in database.
-upper_case = ['hpn', 'hpn_rev', 'upstream_part', 'up_part_rev', 'downstream_part', 'down_part_rev']
-lower_case = ['upstream_output_port', 'downstream_input_port']
-
 
 class Parts(MCDeclarativeBase):
     """A table logging parts within the HERA system
@@ -164,9 +160,9 @@ def update_part(session=None, data=None, add_new_part=False):
         session = db.sessionmaker()
         close_session_when_done = True
 
-    for dkey in data_dict.keys():
-        hpn_to_change = data_dict[dkey][0][0]
-        rev_to_change = data_dict[dkey][0][1]
+    for dkey, dval in data_dict.iteritems():
+        hpn_to_change = dval[0][0]
+        rev_to_change = dval[0][1]
         if rev_to_change[:4] == 'LAST':
             rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
         part_rec = session.query(Parts).filter((Parts.hpn == hpn_to_change) &
@@ -188,7 +184,7 @@ def update_part(session=None, data=None, add_new_part=False):
             print("Error:  more than one of ", dkey, " exists (which should not happen).")
             part = None
         if part:
-            for d in data_dict[dkey]:
+            for d in dval:
                 try:
                     setattr(part, d[2], d[3])
                 except AttributeError:
@@ -250,10 +246,6 @@ def format_and_check_update_part_request(request):
         else:
             print('Invalid format for update request.')
             continue
-        d[0] = d[0].upper()
-        d[1] = d[1].upper()
-        if d[2] in upper_case:
-            d[3] = d[3].upper()
         dkey = d[0] + ':' + d[1]
         if dkey in data.keys():
             data[dkey].append(d)
@@ -408,7 +400,7 @@ def stop_existing_connections(session, h, conn_list, at_date, actually_do_it):
         CD = h.get_connection_dossier(conn[0], conn[1], conn[2], at_date, True)
         ck = get_connection_key(CD, conn)
         if ck is not None:
-            x = CD[ck]
+            x = CD['connections'][ck]
             print("Stopping connection {} at {}".format(x, str(at_date)))
             stopping = [x.upstream_part, x.up_part_rev, x.downstream_part, x.down_part_rev,
                         x.upstream_output_port, x.downstream_input_port, x.start_gpstime, 'stop_gpstime', stop_at]
@@ -432,8 +424,9 @@ def get_connection_key(c, p):
     p:  connection to find
     """
 
-    for ck in c.keys():
-        if p[0] in ck:
+    pkey = cm_utils._make_connection_key(p[0],p[1],p[2],'')
+    for ckey in c['connections'].keys():
+        if pkey in ckey:
             break
     else:
         ck = None

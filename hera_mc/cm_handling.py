@@ -17,19 +17,6 @@ from hera_mc import mc, geo_handling, correlator_levels, cm_utils
 from hera_mc import part_connect as PC
 from hera_mc import cm_revisions as cmpr
 
-
-def _make_part_key(hpn, rev):
-    return ":".join([hpn, rev])
-def _split_part_key(key):
-    return key.split(':')[0], key.split(':')[1]
-
-def _make_connection_key(hpn, rev, port, start_gps):
-    return ":".join([hpn, rev, port, start_gps])
-def _split_connection_key(key):
-    ks = key.split(':')
-    return ks[0], ks[1], ks[2], ks[3]
-
-
 class Handling:
     """
     Class to allow various manipulations of parts and their properties etc.  Things are
@@ -121,7 +108,7 @@ class Handling:
                 elif part_cnt == 1:
                     part = copy.copy(part_query.all()[0])
                     part.gps2Time()
-                    pr_key = _make_part_key(part.hpn, part.hpn_rev)
+                    pr_key = cm_utils._make_part_key(part.hpn, part.hpn_rev)
                     part_dossier[pr_key] = {'Time': at_date, 'part': part, 'part_info': None,
                                             'input_ports': [], 'output_ports': [],
                                             'connections': None, 'geo': None}
@@ -247,7 +234,7 @@ class Handling:
                                                                       (PC.Connections.up_part_rev == this_rev)):
                     if port.lower() == 'all' or conn.upstream_output_port.lower() == port.lower():
                         conn.gps2Time()
-                        ckey = _make_connection_key(conn.downstream_part,       conn.down_part_rev, 
+                        ckey = cm_utils._make_connection_key(conn.downstream_part,       conn.down_part_rev, 
                                                     conn.downstream_input_port, conn.start_gpstime)
                         connection_dossier['connections'][ckey] = copy.copy(conn)
                         down_parts.append(ckey)
@@ -256,7 +243,7 @@ class Handling:
                                                                       (PC.Connections.down_part_rev == this_rev)):
                     if port.lower() == 'all' or conn.downstream_input_port.lower() == port.lower():
                         conn.gps2Time()
-                        ckey = _make_connection_key(conn.upstream_part,       conn.up_part_rev, 
+                        ckey = cm_utils._make_connection_key(conn.upstream_part,       conn.up_part_rev, 
                                                     conn.upstream_input_port, conn.start_gpstime)
                         connection_dossier['connections'][ckey] = copy.copy(conn)
                         up_parts.append(ckey)
@@ -397,7 +384,7 @@ class Handling:
 
         self.part_type_dict = {}
         for part in self.session.query(PC.Parts).all():
-            key = _make_part_key(part.hpn, part.hpn_rev)
+            key = cm_utils._make_part_key(part.hpn, part.hpn_rev)
             if part.hptype not in self.part_type_dict.keys():
                 self.part_type_dict[part.hptype] = {'part_list': [key], 'input_ports': [], 'output_ports': [], 'revisions': []}
             else:
