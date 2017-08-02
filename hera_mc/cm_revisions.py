@@ -75,7 +75,7 @@ def get_last_revision(hpn, session=None):
         end_date = revisions[rev]['ended']
         if end_date is None:
             latest_rev = rev
-            latest_end = cm_utils.__get_datetime('>')
+            latest_end = cm_utils._get_datetime('>')
             num_no_end += 1
         elif end_date > latest_end:
             latest_rev = rev
