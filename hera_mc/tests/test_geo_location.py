@@ -61,14 +61,14 @@ class TestGeo(TestHERAMC):
         self.test_session.add(gl)
         self.test_session.commit()
 
+        self.h = geo_handling.Handling(self.test_session)
+
     def test_cofa(self):
-        h = geo_handling.Handling(self.test_session)
-        cofa = h.cofa()
+        cofa = self.h.cofa()
         self.assertTrue('cofa' in cofa.station_name.lower())
 
     def test_get_location(self):
-        h = geo_handling.Handling(self.test_session)
-        located = h.get_location([self.test_element_station_name], 'now')
+        located = self.h.get_location([self.test_element_station_name], 'now')
         self.assertTrue(located[0].station_name == self.test_element_station_name)
 
     def test_update_new(self):
@@ -82,16 +82,22 @@ class TestGeo(TestHERAMC):
                 [nte, 'elevation', 1050.0],
                 [nte, 'created_gpstime', 1172530000]]
         geo_location.update(self.test_session, data, add_new_geo=True)
-        h = geo_handling.Handling(self.test_session)
-        located = h.get_location([nte], 'now')
+        located = self.h.get_location([nte], 'now')
         self.assertTrue(located[0].station_type_name == self.test_element_stn)
 
     def test_update_update(self):
         data = [[self.test_element_station_name, 'elevation', 1100.0]]
         geo_location.update(self.test_session, data, add_new_geo=False)
-        h = geo_handling.Handling(self.test_session)
-        located = h.get_location([self.test_element_station_name], 'now')
+        located = self.h.get_location([self.test_element_station_name], 'now')
         self.assertTrue(located[0].elevation == 1100.0)
+
+    def test_station_types(self):
+        self.h.get_station_types(add_stations=True)
+        self.assertTrue(self.h.station_types['COFA']['Name'] == 'cofa')
+
+    def test_is_in_geo_location(self):
+        found_it = self.h.is_in_geo_location(self.test_element_station_name)
+        self.assertTrue(found_it)
 
 
 if __name__ == '__main__':

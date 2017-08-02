@@ -48,6 +48,17 @@ def _log(msg, **kwargs):
     fp.close()
 
 
+def _make_part_key(hpn, rev):
+    return ":".join([hpn, rev]).strip()
+def _split_part_key(key):
+    return key.split(':')[0], key.split(':')[1]
+
+def _make_connection_key(hpn, rev, port, start_gps):
+    return ":".join([hpn, rev, port, str(start_gps)]).strip()
+def _split_connection_key(key):
+    ks = key.split(':')
+    return ks[0], ks[1], ks[2], ks[3]
+
 def add_verbosity_args(parser):
     """Add a standardized "--verbosity" argument to an ArgParser object. Supported
     values are "l", "m", and "h", which presumably stand for "low", "medium",

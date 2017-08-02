@@ -32,10 +32,10 @@ class TestParts(TestHERAMC):
         part.start_gpstime = Time('2017-07-01 01:00:00', scale='utc').gps
         self.test_session.add(part)
         self.test_session.commit()
+        self.h = cm_handling.Handling(self.test_session)
 
     def test_get_part(self):
-        h = cm_handling.Handling(self.test_session)
-        located = h.get_part_dossier(self.test_part, self.test_rev, 'now', True)
+        located = self.h.get_part_dossier(self.test_part, self.test_rev, 'now', True)
         if len(located.keys() == 1):
             self.assertTrue(located[located.keys()[0]].hpn_rev == self.test_rev)
         else:
@@ -48,8 +48,7 @@ class TestParts(TestHERAMC):
                 [ntp, 'hptype', 'vapor_part'],
                 [ntp, 'start_gpstime', 1172530000]]
         part_connect.update(self.test_session, data, add_new_part=True)
-        h = cm_handling.Handling(self.test_session)
-        located = h.get_part_dossier(ntp, 'X', 'now', True)
+        located = self.h.get_part_dossier(ntp, 'X', 'now', True)
         if len(located.keys() == 1):
             self.assertTrue(located[located.keys()[0]].hpn == ntp)
         else:
@@ -58,9 +57,18 @@ class TestParts(TestHERAMC):
     def test_update_update(self):
         data = [[self.test_part, 'hpn_rev', 'Z']]
         part_connect.update(self.test_session, data, add_new_part=False)
-        h = cm_handling.Handling(self.test_session)
-        located = h.get_part_dossier(self.test_part, 'Z', 'now', True)
+        located = self.h.get_part_dossier(self.test_part, 'Z', 'now', True)
         if len(located.keys() == 1):
             self.assertTrue(located[located.keys()[0]].hpn == ntp)
+        else:
+            self.assertFalse("Part Number should be unique.")
+
+    def test_add_new_parts(self):
+        data = [['part_X','X','hptype_X','mfg_X']]
+        p = part_connect.Parts()
+        part_connect.test_add_new_parts(self.test_session, p, data, Time('2017-07-01 01:00:00', scale='utc'), True)
+        located = self.h.get_part_dossier('part_X', 'X', 'now', True)
+        if len(located.keys() == 1):
+            self.assertTrue(located[located.keys()[0]].hpn == 'part_X')
         else:
             self.assertFalse("Part Number should be unique.")
