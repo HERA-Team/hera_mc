@@ -366,9 +366,7 @@ class Handling:
         """
 
         for k, v in connection_dossier['connections'].iteritems():
-            if k in already_shown:
-                continue
-            else:
+            if k not in already_shown:
                 print(v, v.start_date, v.stop_date)
 
     def get_part_types(self, show_hptype=False):
