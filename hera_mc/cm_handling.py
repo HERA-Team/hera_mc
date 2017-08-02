@@ -143,7 +143,7 @@ class Handling:
         for k, c in connection_dossier['connections'].iteritems():
             if c.downstream_input_port not in input_ports:
                 input_ports.append(c.downstream_input_port)
-            elif c.upstream_output_port not in output_ports:
+            if c.upstream_output_port not in output_ports:
                 output_ports.append(c.upstream_output_port)
         input_ports.sort()
         output_ports.sort()
