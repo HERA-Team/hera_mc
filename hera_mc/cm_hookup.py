@@ -186,7 +186,7 @@ class Hookup:
             return None
 
         hookup_dict['columns'] = self.__get_column_header(hookup_dict[col_len_max[1]])
-        if state_args['show_levels']:
+        if state_args['show-levels']:
             hookup_dict = self.__hookup_add_correlator_levels(hookup_dict, state_args['levels_testing'])
 
         return hookup_dict
