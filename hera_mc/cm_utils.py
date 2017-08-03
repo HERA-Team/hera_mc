@@ -81,7 +81,7 @@ def add_date_time_args(parser):
     parser.add_argument(
         '--date', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]", default='now')
     parser.add_argument(
-        '--time', help="UTC hh:mm or '<' or '>' or 'n/a' or 'now' [now]", default='now')
+        '--time', help="UTC hh:mm or float (hours)", default=0.0)
 
 
 def _get_datetime(_date, _time=0):
@@ -110,6 +110,7 @@ def _get_datetime(_date, _time=0):
                 return_date = Time(_date, scale='utc')
             except ValueError:
                 raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
+            s_time = str(_time)
             if ':' in str(_time):
                 data = _time.split(':')
                 add_time = float(data[0]) * 3600.0 + float(data[1]) * 60.0
