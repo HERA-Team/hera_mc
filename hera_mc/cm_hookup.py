@@ -186,7 +186,7 @@ class Hookup:
             return None
 
         hookup_dict['columns'] = self.__get_column_header(hookup_dict['hookup'][col_len_max[1]])
-        if state_args['show-levels']:
+        if state_args['show_levels']:
             hookup_dict = self.__hookup_add_correlator_levels(hookup_dict, state_args['levels_testing'])
 
         return hookup_dict
@@ -291,17 +291,17 @@ class Hookup:
                 if hdr == 'levels':
                     continue
                 for hu in hup:
-                    get_part_type = self.handling.get_part(hpn_query=hu.upstream_part, rev_query=hu.up_part_rev,
-                                                           exact_match=True, return_dictionary=True, show_part=False)
-                    pr_key = cm_handling._make_part_key(hu.upstream_part, hu.up_part_rev)
+                    get_part_type = self.handling.get_part_dossier(hpn=hu.upstream_part, rev=hu.up_part_rev,
+                                                           at_date=None, exact_match=True)
+                    pr_key = cm_utils._make_part_key(hu.upstream_part, hu.up_part_rev)
                     part_col = get_part_type[pr_key]['part'].hptype
                     if self.__header_entry_name_adjust(part_col) == hdr:
                         new_hup.append(hu)
                         break
                 else:
-                    get_part_type = self.handling.get_part(hpn_query=hu.downstream_part, rev_query=hu.down_part_rev,
-                                                           exact_match=True, return_dictionary=True, show_part=False)
-                    pr_key = cm_handling._make_part_key(hu.downstream_part, hu.down_part_rev)
+                    get_part_type = self.handling.get_part_dossier(hpn=hu.downstream_part, rev=hu.down_part_rev,
+                                                           at_date=None, exact_match=True)
+                    pr_key = cm_utils._make_part_key(hu.downstream_part, hu.down_part_rev)
                     part_col = get_part_type[pr_key]['part'].hptype
                     if self.__header_entry_name_adjust(part_col) == hdr:
                         continue

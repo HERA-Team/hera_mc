@@ -46,7 +46,7 @@ if __name__ == '__main__':
     args.verbosity = args.verbosity.lower()
     at_date = cm_utils._get_datetime(args.date, args.time)
     fem_hpn = 'FEM' + args.fem_number
-    show_args = {'show-levels': False}
+    show_args = {'show_levels': False}
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
@@ -64,29 +64,39 @@ if __name__ == '__main__':
         hd = hookup.get_hookup(hpn=args.ant, rev='H', port='all', at_date=at_date, state_args=show_args, exact_match=True)
         k = hd['hookup'].keys()[0]
         old_fe = hd['hookup'][k][3]
-        hookup.show_hookup(hd, 'all', False)
-        print('Old front-end "balun":  {}:{}'.format(old_fe.upstream_part,old_fe.up_part_rev))
-        ctr = 99
-        if ctr > 1:
+        bal_conn = handling.get_connection_dossier(old_fe.upstream_part,old_fe.up_part_rev,'all',at_date,exact_match=True)
+        ctr = len(bal_conn['connections'].keys())
+        if ctr != 6:
             go_ahead = False
-            print("Error:  multiple connections to {}".format(fem_hpn))
+            print("Error:  unexpected number of connections to {}".format(old_fe.upstream_part))
             print("Stopping this swap.")
         else:
-            k = rc['connections'].keys()[0]
-            old_balun = rc['connections'][k].downstream_part
-            old_brev = rc['connections'][k].down_part_rev
-            print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, new_hpn, new_rev))
+            balun = old_fe.upstream_part
+            brev = old_fe.up_part_rev
+            print('Replacing {}:{} with {}:{}'.format(balun, brev, fem_hpn, args.rev))
 
     if go_ahead:
-        # Add new PAM
-        new_pam = [(new_hpn, new_rev, 'post-amp module', args.pam_number)]
-        part_connect.add_new_parts(session, part, new_pam, at_date, args.actually_do_it)
+        # Add new FEM
+        new_fem = [(fem_hpn, args.rev, 'front-end module', args.fem_number)]
+        part_connect.add_new_parts(session, part, new_fem, at_date, args.actually_do_it)
 
-        # Disconnect previous RCVR on both sides (RI/RO)
-        pcs = [(old_rcvr, old_rrev, 'ea'), (old_rcvr, old_rrev, 'na'), (old_rcvr, old_rrev, 'eb'), (old_rcvr, old_rrev, 'nb')]
+        # Disconnect previous FE on both sides (FD/C7)
+        pcs = [(balun, brev, 'input'), (balun, brev, 'n'), (balun, brev, 'e')]
         part_connect.stop_existing_connections(session, handling, pcs, at_date, args.actually_do_it)
 
-        # Connect new PAM on both sides (RI/RO)
-        npc = [(rie, 'A', 'b', new_hpn, new_rev, 'ea'), (rin, 'A', 'b', new_hpn, new_rev, 'na'),
-               (new_hpn, new_rev, 'eb', roe, 'A', 'a'), (new_hpn, new_rev, 'nb', ron, 'A', 'a')]
+        # Connect new FEM on both sides (FD/C7)
+        npc = []
+        for k, c in bal_conn['connections'].iteritems():
+            x = None
+            if c.stop_gpstime is None:
+                if c.downstream_part.upper() == balun.upper() and c.down_part_rev.upper() == brev.upper():
+                    x = [c.upstream_part, c.up_part_rev, c.upstream_output_port, fem_hpn, args.rev, 'input']
+                elif c.upstream_part.upper() == balun.upper() and c.up_part_rev.upper() == brev.upper():
+                    port_name = c.downstream_input_port.lower()[0]
+                    x = [fem_hpn, args.rev, port_name, c.downstream_part, c.down_part_rev, c.downstream_input_port]
+                else:
+                    print("Didn't find the part...")
+                    print(c)
+                if x is not None:
+                    npc.append(x)
         part_connect.add_new_connections(session, connect, npc, at_date, args.actually_do_it)
