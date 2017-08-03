@@ -153,7 +153,7 @@ class Hookup:
 
         # Get all the appropriate parts
         parts = self.handling.get_part_dossier(hpn=hpn, rev=rev, at_date=self.at_date, exact_match=exact_match)
-        hookup_dict = {}
+        hookup_dict = {'hookup':{}}
         col_len_max = [0, '-']
 
         for hpnr in parts.keys():
@@ -177,15 +177,15 @@ class Hookup:
             for i, p in enumerate(port_query_loop):
                 for sn in range(how_many_to_do):
                     hukey = _make_hookup_key(parts[hpnr]['part'].hpn, parts[hpnr]['part'].hpn_rev, p, str(sn))
-                    hookup_dict[hukey] = self.__follow_hookup_stream(parts[hpnr]['part'].hpn, parts[hpnr]['part'].hpn_rev, p, sn)
-                    if len(hookup_dict[hukey]) > col_len_max[0]:
-                        col_len_max[0] = len(hookup_dict[hukey])
+                    hookup_dict['hookup'][hukey] = self.__follow_hookup_stream(parts[hpnr]['part'].hpn, parts[hpnr]['part'].hpn_rev, p, sn)
+                    if len(hookup_dict['hookup'][hukey]) > col_len_max[0]:
+                        col_len_max[0] = len(hookup_dict['hookup'][hukey])
                         col_len_max[1] = hukey
-        if len(hookup_dict.keys()) == 0:
+        if len(hookup_dict['hookup'].keys()) == 0:
             print(hpn, rev, 'not active')
             return None
 
-        hookup_dict['columns'] = self.__get_column_header(hookup_dict[col_len_max[1]])
+        hookup_dict['columns'] = self.__get_column_header(hookup_dict['hookup'][col_len_max[1]])
         if state_args['show-levels']:
             hookup_dict = self.__hookup_add_correlator_levels(hookup_dict, state_args['levels_testing'])
 
@@ -209,15 +209,11 @@ class Hookup:
         hookup_dict['columns'].append('levels')
         hookup_dict['levels'] = {}
         pf_input = []
-        for k in sorted(hookup_dict.keys()):
-            if k == 'columns' or k == 'levels':
-                continue
-            f_engine = hookup_dict[k][-1].downstream_part
+        for k in sorted(hookup_dict['hookup'].keys()):
+            f_engine = hookup_dict['hookup'][k][-1].downstream_part
             pf_input.append(f_engine)
         levels = correlator_levels.get_levels(pf_input, testing)
-        for i, k in enumerate(sorted(hookup_dict.keys())):
-            if k == 'columns' or k == 'levels':
-                continue
+        for i, k in enumerate(sorted(hookup_dict['hookup'].keys())):
             lstr = '%s' % (levels[i])
             hookup_dict['levels'][k] = lstr
         return hookup_dict
@@ -243,14 +239,12 @@ class Hookup:
         headers, show_flag = self.__make_header_row(hookup_dict['columns'], cols_to_show, show_levels)
 
         table_data = []
-        for hukey in sorted(hookup_dict.keys()):
-            if hukey == 'columns' or hukey == 'levels':
-                continue
+        for hukey in sorted(hookup_dict['hookup'].keys()):
             if show_levels:
                 level = hookup_dict['levels'][hukey]
             else:
                 level = False
-            td = self.__make_table_row(hookup_dict[hukey], headers, show_flag, level)
+            td = self.__make_table_row(hookup_dict['hookup'][hukey], headers, show_flag, level)
             table_data.append(td)
         print('\n')
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
