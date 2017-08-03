@@ -136,7 +136,9 @@ class Hookup:
     def get_hookup(self, hpn, rev, port, at_date, state_args, exact_match=False):
         """
         Return the full hookup.
-        Returns hookup_dict, a dictionary keyed on derived key of hpn:port.
+        Returns hookup_dict, a dictionary with two entries:
+            'hookup': another dictionary keyed on part:rev:port:sn
+            'columns': names of column headers
         This only gets the contemporary hookups (unlike parts and connections, which get all.)
 
         Parameters

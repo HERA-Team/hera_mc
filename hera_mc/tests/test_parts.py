@@ -72,3 +72,7 @@ class TestParts(TestHERAMC):
             self.assertTrue(located[located.keys()[0]].hpn == 'part_X')
         else:
             self.assertFalse("Part Number should be unique.")
+
+    def test_get_part_revisions(self):
+        revision = __get_part_revisions('test_part', session=self.test_session):
+        self.assertTrue(revision['Q']['hpn'] == 'test_part')
