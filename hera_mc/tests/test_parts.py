@@ -13,7 +13,7 @@ from __future__ import absolute_import, division, print_function
 
 from astropy.time import Time, TimeDelta
 
-from hera_mc import part_connect, mc
+from hera_mc import part_connect, mc, cm_utils
 from hera_mc.tests import TestHERAMC
 
 
@@ -76,3 +76,8 @@ class TestParts(TestHERAMC):
     def test_get_part_revisions(self):
         revision = __get_part_revisions('test_part', session=self.test_session):
         self.assertTrue(revision['Q']['hpn'] == 'test_part')
+
+    def test_datetime(self):
+        dt = cm_utils._get_datetime('2017-01-01',0.0)
+        gps_direct = int(Time('2017-01-01 00:00:00', scale='utc').gps)
+        self.assertTrue(int(dt.gps) == gps_direct)
