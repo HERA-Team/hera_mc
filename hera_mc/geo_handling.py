@@ -373,11 +373,11 @@ class Handling:
     def get_correlator_input_from_location(self, loc, at_date):
         from hera_mc import cm_hookup
         hookup = cm_hookup.Hookup(self.session)
-        hookup_dict = hookup.get_hookup(hpn=loc, rev='A', port='all', at_date=at_date, 
-                                      state_args={'show_levels':False}, exact_match=True)
+        hookup_dict = hookup.get_hookup(hpn=loc, rev='A', port='all', at_date=at_date,
+                                        state_args={'show_levels': False}, exact_match=True)
         last_col = hookup_dict['columns'][-1]
         corr_input = []
-        if last_col == 'f_engine' and len(hookup_dict['hookup']) in [1,2]:
+        if last_col == 'f_engine' and len(hookup_dict['hookup']) in [1, 2]:
             for k, h in hookup_dict['hookup'].iteritems():
                 corr_input.append(h[-1].downstream_part)
         return corr_input
