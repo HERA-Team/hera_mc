@@ -333,7 +333,6 @@ class Handling:
                     conn.gps2Time()
                     stations_conn.append({'station_name': stn.station_name,
                                           'station_type': stn.station_type_name,
-                                          'proj': 'utm',
                                           'tile': stn.tile,
                                           'datum': stn.datum,
                                           'easting': stn.easting,
@@ -375,7 +374,6 @@ class Handling:
                         conn.gps2Time()
                         stations_conn.append({'station_name': stn.station_name,
                                               'station_type': stn.station_type_name,
-                                              'proj': 'utm',
                                               'tile': stn.tile,
                                               'datum': stn.datum,
                                               'easting': stn.easting,
@@ -388,6 +386,58 @@ class Handling:
                                               'start_date': conn.start_date,
                                               'stop_date': conn.stop_date})
         return stations_conn
+
+    def get_cminfo_correlator(self):
+        """
+        Returns a dict with info needed by the correlator:
+            Antenna numbers
+            Antenna locations in UTM
+            Antenna locations in miriad coords (antpos)
+            Antenna names
+            correlator input numbers
+
+        Note: This method requires pyuvdata
+        """
+        from pyuvdata import utils as uvutils
+
+        cofa_loc = self.cofa()
+        stations_conn = self.get_connected_locations('now')
+
+        ant_nums = []
+        stn_names = []
+        corr_inputs = []
+        tiles = []
+        datums = []
+        eastings = []
+        northings = []
+        longitudes = []
+        latitudes = []
+        elevations = []
+        for stn in stations_conn:
+            ant_nums.append(stn.antenna_number)
+            stn_names.append(stn.station_name)
+            corr_inputs.append(stn.correlator_input)
+            tiles.append(stn.tile)
+            datums.append(stn.datum)
+            eastings.append(stn.easting)
+            northings.append(stn.northing)
+            longitudes.append(stn.longitude)
+            latitudes.append(stn.latitude)
+            elevations.append(stn.elevation)
+
+        ecef_positions = uvutils.XYZ_from_LatLonAlt(latitudes, longitudes, elevations)
+        rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions, cofa_loc.lon)
+
+        corr_dict = {'antenna_numbers': ant_nums,
+                     'antenna_names': stn_names,
+                     'correlator_inputs': corr_inputs,
+                     'antenna_utm_datum': datums,
+                     'antenna_utm_tile': tiles,
+                     'antenna_utm_easting': eastings,
+                     'antenna_utm_northing': northings,
+                     'antenna_positions': rotecef_positions}
+
+        return corr_dict
 
     def get_ants_installed_since(self, query_date, station_types_to_check='all'):
         """
