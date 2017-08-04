@@ -13,11 +13,32 @@ from astropy.time import Time, TimeDelta
 
 from hera_mc import mc, cm_transfer
 from hera_mc.qm import ant_metrics, array_metrics, metric_list
-from hera_mc import utils
+from hera_mc import utils, geo_location
 from hera_mc.tests import TestHERAMC
 
 
 class TestQM(TestHERAMC):
+
+    def setUp(self):
+        super(TestQM, self).setUp()
+        stn = 'cofa'
+        prefix = 'COFA'
+        st = geo_location.StationType()
+        st.station_type_name = stn
+        st.prefix = prefix
+        self.test_session.add(st)
+        self.test_session.commit()
+        gl = geo_location.GeoLocation()
+        gl.station_name = prefix + '_null'
+        gl.station_type_name = stn
+        gl.datum = 'WGS84'
+        gl.tile = '34J'
+        gl.northing = 6601181.0
+        gl.easting = 541007.0
+        gl.elevation = 1051.69
+        gl.created_gpstime = 1172530000
+        self.test_session.add(gl)
+        self.test_session.commit()
 
     def test_ant_metrics(self):
         # Initialize
