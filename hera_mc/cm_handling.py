@@ -52,7 +52,7 @@ class Handling:
 
 
         """
-        at_date = cm_utils._get_datetime(return_active)
+        at_date = cm_utils._get_astropytime(return_active)
         connection_dossier = self.get_connection_dossier(hpn, rev, port='all', at_date=at_date, exact_match=True)
         num_connections = len(connection_dossier['connections'].keys())
         if num_connections == 0:
@@ -87,7 +87,7 @@ class Handling:
 
         if not exact_match and hpn[-1] != '%':
             hpn = hpn + '%'
-        at_date = cm_utils._get_datetime(at_date)
+        at_date = cm_utils._get_astropytime(at_date)
 
         part_dossier = {}
         rev_part = {}
@@ -216,7 +216,7 @@ class Handling:
 
         if not exact_match and hpn[-1] != '%':
             hpn = hpn + '%'
-        at_date = cm_utils._get_datetime(at_date)
+        at_date = cm_utils._get_astropytime(at_date)
         connection_dossier = {'ordered-pairs': [], 'Time': at_date, 'connected-to': (hpn,rev,port), 'connections':{}}
 
         rev_part = {}
@@ -234,7 +234,7 @@ class Handling:
                                                                       (PC.Connections.up_part_rev == this_rev)):
                     if port.lower() == 'all' or conn.upstream_output_port.lower() == port.lower():
                         conn.gps2Time()
-                        ckey = cm_utils._make_connection_key(conn.downstream_part,       conn.down_part_rev, 
+                        ckey = cm_utils._make_connection_key(conn.downstream_part,       conn.down_part_rev,
                                                     conn.downstream_input_port, conn.start_gpstime)
                         connection_dossier['connections'][ckey] = copy.copy(conn)
                         down_parts.append(ckey)
@@ -243,7 +243,7 @@ class Handling:
                                                                       (PC.Connections.down_part_rev == this_rev)):
                     if port.lower() == 'all' or conn.downstream_input_port.lower() == port.lower():
                         conn.gps2Time()
-                        ckey = cm_utils._make_connection_key(conn.upstream_part,       conn.up_part_rev, 
+                        ckey = cm_utils._make_connection_key(conn.upstream_part,       conn.up_part_rev,
                                                     conn.upstream_output_port, conn.start_gpstime)
                         connection_dossier['connections'][ckey] = copy.copy(conn)
                         up_parts.append(ckey)

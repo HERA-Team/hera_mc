@@ -151,7 +151,7 @@ class Hookup:
         exact_match:  boolean for either exact_match or partial
         """
 
-        self.at_date = cm_utils._get_datetime(at_date)
+        self.at_date = cm_utils._get_astropytime(at_date)
 
         # Get all the appropriate parts
         parts = self.handling.get_part_dossier(hpn=hpn, rev=rev, at_date=self.at_date, exact_match=exact_match)

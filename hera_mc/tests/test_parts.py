@@ -88,7 +88,7 @@ class TestParts(TestHERAMC):
     #    self.assertTrue(revision['Q']['hpn'] == 'test_part')
 
     def test_datetime(self):
-        dt = cm_utils._get_datetime('2017-01-01',0.0)
+        dt = cm_utils._get_astropytime('2017-01-01',0.0)
         gps_direct = int(Time('2017-01-01 00:00:00', scale='utc').gps)
         self.assertTrue(int(dt.gps) == gps_direct)
 

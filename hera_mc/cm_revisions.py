@@ -69,13 +69,13 @@ def get_last_revision(hpn, session=None):
     """
 
     revisions = part_connect.__get_part_revisions(hpn, session)
-    latest_end = cm_utils._get_datetime('<')
+    latest_end = cm_utils._get_astropytime('<')
     num_no_end = 0
     for rev in revisions.keys():
         end_date = revisions[rev]['ended']
         if end_date is None:
             latest_rev = rev
-            latest_end = cm_utils._get_datetime('>')
+            latest_end = cm_utils._get_astropytime('>')
             num_no_end += 1
         elif end_date > latest_end:
             latest_rev = rev
@@ -140,7 +140,7 @@ def get_contemporary_revision(hpn, session=None):
     session:  db session
     """
 
-    current = cm_utils._get_datetime(args.date, args.time)
+    current = cm_utils._get_astropytime(args.date, args.time)
     revisions = part_connect.__get_part_revisions(hpn, session)
     sort_rev = sorted(revisions.keys())
     return_contemporary = None

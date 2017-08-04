@@ -75,7 +75,7 @@ def add_verbosity_args(parser):
 def add_date_time_args(parser):
     """Add standardized "--date" and "--time" arguments to an ArgParser object.
     Their values should then be converted into a Python DateTime object using
-    the function `_get_datetime`.
+    the function `_get_astropytime`.
 
     """
     parser.add_argument(
@@ -84,7 +84,7 @@ def add_date_time_args(parser):
         '--time', help="UTC hh:mm or float (hours)", default=0.0)
 
 
-def _get_datetime(_date, _time=0):
+def _get_astropytime(_date, _time=0):
     """
     Take in various incarnations of _date/_time and return an astropy.Time object
     """

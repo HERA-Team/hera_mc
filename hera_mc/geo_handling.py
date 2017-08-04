@@ -53,7 +53,7 @@ def get_location(location_names, query_date='now', show_location=False, verbosit
     session:  db session to use
     """
 
-    query_date = cm_utils._get_datetime(query_date)
+    query_date = cm_utils._get_astropytime(query_date)
     h = Handling(session)
     located = h.get_location(location_names, query_date, show_location=show_location, verbosity=verbosity)
     h.close()
@@ -189,7 +189,7 @@ class Handling:
         return_antrev:  boolean flag to return True/False or antrev tuple, default is True
         """
 
-        active_date = cm_utils._get_datetime(active_date)
+        active_date = cm_utils._get_astropytime(active_date)
         connected_antenna = self.session.query(part_connect.Connections).filter(part_connect.Connections.upstream_part == station_name)
         if connected_antenna.count() > 0:
             antenna_connected = True
@@ -226,7 +226,7 @@ class Handling:
         query_date:  is the astropy Time for contemporary antenna
         """
 
-        query_date = cm_utils._get_datetime(query_date)
+        query_date = cm_utils._get_astropytime(query_date)
         if type(antenna) == float or type(antenna) == int or antenna[0] != 'A':
             antenna = 'A' + str(antenna).strip('0')
         connected_antenna = self.session.query(part_connect.Connections).filter((part_connect.Connections.downstream_part == antenna) &
@@ -358,7 +358,7 @@ class Handling:
         """
         import matplotlib.pyplot as plt
 
-        query_date = cm_utils._get_datetime(query_date)
+        query_date = cm_utils._get_astropytime(query_date)
         displaying_label = bool(state_args['show_label'])
         if displaying_label:
             label_to_show = state_args['show_label'].lower()
@@ -410,7 +410,7 @@ class Handling:
         """
         import matplotlib.pyplot as plt
 
-        query_date = cm_utils._get_datetime(query_date)
+        query_date = cm_utils._get_astropytime(query_date)
         if state_args['background'][0] == 'all':
             prefixes_to_plot = 'all'
         else:
