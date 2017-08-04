@@ -16,6 +16,12 @@ import os.path
 PAST_DATE = '2000-01-01'
 
 
+def get_cm_version():
+    """
+    Get the current cm_version for recording with antenna locations.
+    """
+
+
 def _future_date():
     """
     Future is defined here, since defining a far FUTURE_DATE typically gives a

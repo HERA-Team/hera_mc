@@ -400,6 +400,7 @@ class Handling:
         """
         from pyuvdata import utils as uvutils
 
+        cm_version = cm_utils.get_cm_version()
         cofa_loc = self.cofa()
         stations_conn = self.get_connected_locations('now')
 
@@ -429,13 +430,14 @@ class Handling:
         rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions, cofa_loc.lon)
 
         corr_dict = {'antenna_numbers': ant_nums,
-                     'antenna_names': stn_names,
+                     'antenna_names': stn_names,  # This is actually station names, not antenna names
                      'correlator_inputs': corr_inputs,
-                     'antenna_utm_datum': datums,
-                     'antenna_utm_tile': tiles,
-                     'antenna_utm_easting': eastings,
-                     'antenna_utm_northing': northings,
-                     'antenna_positions': rotecef_positions}
+                     'antenna_utm_datum_vals': datums,
+                     'antenna_utm_tiles': tiles,
+                     'antenna_utm_eastings': eastings,
+                     'antenna_utm_northings': northings,
+                     'antenna_positions': rotecef_positions
+                     'cm_version': cm_version}
 
         return corr_dict
 
