@@ -19,7 +19,7 @@ db = mc.connect_to_mc_db(args)
 session = db.sessionmaker()
 
 h = geo_handling.Handling(session)
-locations = h.get_all_everconnected_locations()
+locations = h.get_connected_locations()
 cofa_loc = h.cofa()
 locations.append({'station_name': cofa_loc.station_name,
                   'station_type': cofa_loc.station_type_name,
