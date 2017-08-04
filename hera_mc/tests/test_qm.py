@@ -14,7 +14,7 @@ from astropy.time import Time, TimeDelta
 from hera_mc import mc, cm_transfer
 from hera_mc.qm import ant_metrics, array_metrics, metric_list
 from hera_mc import utils, geo_location
-from hera_mc.tests import TestHERAMC
+from hera_mc.tests import TestHERAMC, checkWarnings
 
 
 class TestQM(TestHERAMC):
@@ -175,6 +175,15 @@ class TestQM(TestHERAMC):
                           4, 'desc')
         self.assertRaises(ValueError, self.test_session.add_metric_desc,
                           'test', 5)
+
+        # Test check_metric_desc function to auto-fill descriptions
+        self.test_session.check_metric_desc('test')
+        r = self.test_session.get_metric_desc(metric='test')
+        self.assertEqual(r[0].desc, 'new desc')
+        checkWarnings(self.test_session.check_metric_desc, ['test2'],
+                      message='Metric test2 not found in db')
+        r = self.test_session.get_metric_desc(metric='test2')
+        self.assertTrue('Auto-generated description.' in r[0].desc)
 
 if __name__ == '__main__':
     unittest.main()

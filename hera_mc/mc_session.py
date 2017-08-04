@@ -921,7 +921,7 @@ class MCSession(Session):
                           'Please update ASAP with hera_mc/scripts/update_qm_list.py.')
             self.add_metric_desc(metric, 'Auto-generated description. Update with '
                                  'hera_mc/scripts/update_qm_list.py')
-            s.commit()
+            self.commit()
 
     def add_metrics_file(self, filename, ftype):
         """
