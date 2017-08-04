@@ -11,6 +11,8 @@ record.
 
 from __future__ import absolute_import, division, print_function
 
+import unittest
+
 from astropy.time import Time, TimeDelta
 
 from hera_mc import part_connect, mc, cm_utils
@@ -81,3 +83,7 @@ class TestParts(TestHERAMC):
         dt = cm_utils._get_datetime('2017-01-01',0.0)
         gps_direct = int(Time('2017-01-01 00:00:00', scale='utc').gps)
         self.assertTrue(int(dt.gps) == gps_direct)
+
+
+if __name__ == '__main__':
+    unittest.main()

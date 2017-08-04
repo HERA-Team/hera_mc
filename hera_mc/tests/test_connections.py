@@ -11,6 +11,8 @@ record.
 
 from __future__ import absolute_import, division, print_function
 
+import unittest
+
 from astropy.time import Time, TimeDelta
 
 from hera_mc import part_connect, mc
@@ -74,3 +76,5 @@ class TestConnections(TestHERAMC):
         self.assertTrue(located[located.keys()[0]].upstream_part == u)
 
 
+if __name__ == '__main__':
+    unittest.main()
