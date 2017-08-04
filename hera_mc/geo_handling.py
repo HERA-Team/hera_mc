@@ -333,12 +333,60 @@ class Handling:
                     conn.gps2Time()
                     stations_conn.append({'station_name': stn.station_name,
                                           'station_type': stn.station_type_name,
+                                          'proj': 'utm',
+                                          'tile': stn.tile,
+                                          'datum': stn.datum,
+                                          'easting': stn.easting,
+                                          'northing': stn.northing,
                                           'longitude': stn.lon,
                                           'latitude': stn.lat,
                                           'elevation': stn.elevation,
                                           'antenna_number': ant_num,
+                                          'correlator_input': -1,  # placeholder
                                           'start_date': conn.start_date,
                                           'stop_date': conn.stop_date})
+        return stations_conn
+
+    def get_connected_locations(self, active_date, station_types_to_check='all'):
+        """
+        Returns a list of all of the locations connected on active_date that
+        have station_types in station_types_to_check
+
+        Parameters
+        -----------
+        active_date:  date to check for connections
+        station_types_to_check:  list of stations types to limit check
+        """
+
+        stations = self.session.query(geo_location.GeoLocation).all()
+        connections = self.session.query(part_connect.Connections).all()
+        stations_conn = []
+        for stn in stations:
+            if (station_types_to_check == 'all' or
+                    self.flipped_station_types[a.station_type_name] in station_types_to_check):
+                connected = self.is_in_connections(stn.station_name, active_date=active_date)
+                if connected:
+                    hera_proj = Proj(proj='utm', zone=stn.tile, ellps=stn.datum, south=True)
+                    stn.lon, stn.lat = hera_proj(stn.easting, stn.northing, inverse=True)
+                    connections = self.session.query(part_connect.Connections).filter(
+                        part_connect.Connections.upstream_part == stn.station_name)
+                    for conn in connections:
+                        ant_num = int(conn.downstream_part[1:])
+                        conn.gps2Time()
+                        stations_conn.append({'station_name': stn.station_name,
+                                              'station_type': stn.station_type_name,
+                                              'proj': 'utm',
+                                              'tile': stn.tile,
+                                              'datum': stn.datum,
+                                              'easting': stn.easting,
+                                              'northing': stn.northing,
+                                              'longitude': stn.lon,
+                                              'latitude': stn.lat,
+                                              'elevation': stn.elevation,
+                                              'antenna_number': ant_num,
+                                              'correlator_input': -1,  # placeholder
+                                              'start_date': conn.start_date,
+                                              'stop_date': conn.stop_date})
         return stations_conn
 
     def get_ants_installed_since(self, query_date, station_types_to_check='all'):
