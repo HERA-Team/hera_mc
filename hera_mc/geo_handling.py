@@ -313,49 +313,18 @@ class Handling:
                     print(L, ' not found.')
         return found_location
 
-    def get_all_everconnected_locations(self):
-        """
-        Returns a list of all of the locations ever connected.
-        """
-
-        stations = self.session.query(geo_location.GeoLocation).all()
-        connections = self.session.query(part_connect.Connections).all()
-        stations_conn = []
-        for stn in stations:
-            hera_proj = Proj(proj='utm', zone=stn.tile, ellps=stn.datum, south=True)
-            stn.lon, stn.lat = hera_proj(stn.easting, stn.northing, inverse=True)
-            ever_connected = self.is_in_connections(stn.station_name)
-            if ever_connected:
-                connections = self.session.query(part_connect.Connections).filter(
-                    part_connect.Connections.upstream_part == stn.station_name)
-                for conn in connections:
-                    ant_num = int(conn.downstream_part[1:])
-                    conn.gps2Time()
-                    stations_conn.append({'station_name': stn.station_name,
-                                          'station_type': stn.station_type_name,
-                                          'tile': stn.tile,
-                                          'datum': stn.datum,
-                                          'easting': stn.easting,
-                                          'northing': stn.northing,
-                                          'longitude': stn.lon,
-                                          'latitude': stn.lat,
-                                          'elevation': stn.elevation,
-                                          'antenna_number': ant_num,
-                                          'correlator_input': -1,  # placeholder
-                                          'start_date': conn.start_date,
-                                          'stop_date': conn.stop_date})
-        return stations_conn
-
-    def get_connected_locations(self, active_date, station_types_to_check='all'):
+    def get_connected_locations(self, active_date=None, station_types_to_check='all'):
         """
         Returns a list of all of the locations connected on active_date that
         have station_types in station_types_to_check
 
         Parameters
         -----------
-        active_date:  date to check for connections
+        active_date:  date to check for connections. If active_date is None, it
+                        will get all locations that were ever connected
         station_types_to_check:  list of stations types to limit check
         """
+        active_date = cm_utils._get_astropytime(active_date)
 
         stations = self.session.query(geo_location.GeoLocation).all()
         connections = self.session.query(part_connect.Connections).all()
@@ -367,8 +336,19 @@ class Handling:
                 if connected:
                     hera_proj = Proj(proj='utm', zone=stn.tile, ellps=stn.datum, south=True)
                     stn.lon, stn.lat = hera_proj(stn.easting, stn.northing, inverse=True)
-                    connections = self.session.query(part_connect.Connections).filter(
-                        part_connect.Connections.upstream_part == stn.station_name)
+
+                    if active_date is None:
+                        # get all connections
+                        connections = self.session.query(part_connect.Connections).filter(
+                            part_connect.Connections.upstream_part == stn.station_name)
+                    else:
+                        # only get current connections
+                        connections = self.session.query(part_connect.Connections).filter(
+                            (part_connect.Connections.upstream_part == stn.station_name) &
+                            (part_connect.Connections.start_gpstime < active_date) &
+                            ((part_connect.Connections.stop_gpstime > active_date) |
+                             (part_connect.Connections.stop_gpstime is None)))
+
                     for conn in connections:
                         ant_num = int(conn.downstream_part[1:])
                         conn.gps2Time()
@@ -402,7 +382,7 @@ class Handling:
 
         cm_version = cm_utils.get_cm_version()
         cofa_loc = self.cofa()
-        stations_conn = self.get_connected_locations('now')
+        stations_conn = self.get_connected_locations(active_date='now')
 
         ant_nums = []
         stn_names = []
@@ -436,7 +416,7 @@ class Handling:
                      'antenna_utm_tiles': tiles,
                      'antenna_utm_eastings': eastings,
                      'antenna_utm_northings': northings,
-                     'antenna_positions': rotecef_positions
+                     'antenna_positions': rotecef_positions,
                      'cm_version': cm_version}
 
         return corr_dict
