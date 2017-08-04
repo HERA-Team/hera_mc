@@ -161,8 +161,8 @@ def update_part(session=None, data=None, add_new_part=False):
     for dkey, dval in data_dict.iteritems():
         hpn_to_change = dval[0][0]
         rev_to_change = dval[0][1]
-        if rev_to_change[:4] == 'LAST':
-            rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
+        #if rev_to_change[:4] == 'LAST':
+        #    rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
         part_rec = session.query(Parts).filter((Parts.hpn == hpn_to_change) &
                                                (Parts.hpn_rev == rev_to_change))
         num_part = part_rec.count()

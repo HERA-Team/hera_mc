@@ -138,7 +138,7 @@ class Hookup:
         Return the full hookup.
         Returns hookup_dict, a dictionary with two entries:
             'hookup': another dictionary keyed on part:rev:port:sn
-            'columns': names of column headers
+            'columns': names of parts that are used in displaying the hookup as column headers
         This only gets the contemporary hookups (unlike parts and connections, which get all.)
 
         Parameters
