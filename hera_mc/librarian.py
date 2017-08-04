@@ -212,7 +212,7 @@ class LibFiles(MCDeclarativeBase):
     size_gb: file size in gb (Float)
     """
     __tablename__ = 'lib_files'
-    filename = Column(String(32), primary_key=True)
+    filename = Column(String(256), primary_key=True)
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), nullable=False)
     time = Column(BigInteger, nullable=False)
     size_gb = Column(Float, nullable=False)
