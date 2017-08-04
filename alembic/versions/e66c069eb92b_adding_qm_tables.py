@@ -1,8 +1,8 @@
-"""Adding QM tables
+"""adding qm tables
 
-Revision ID: db5e722836e0
-Revises: 4653b4902dc0
-Create Date: 2017-08-01 19:19:41.281981+00:00
+Revision ID: e66c069eb92b
+Revises: 3e86ac6195d8
+Create Date: 2017-08-04 23:04:23.097038+00:00
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'db5e722836e0'
-down_revision = '4653b4902dc0'
+revision = 'e66c069eb92b'
+down_revision = '3e86ac6195d8'
 branch_labels = None
 depends_on = None
 
