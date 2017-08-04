@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from astropy.time import Time
 from .utils import get_iterable
+import warnings
 """
 Primary session object which handles most DB queries.
 
@@ -904,3 +905,47 @@ class MCSession(Session):
             args.append(metric_list.metric.in_(get_iterable(metric)))
 
         return self.query(metric_list).filter(*args).all()
+
+    def check_metric_desc(self, metric):
+        """
+        Check that metric has a description in the db. If not, fill in and issue warning.
+
+        Parameters:
+        -----------
+        metrics: string or list of strings
+            metric name.
+        """
+        r = self.get_metric_desc(metric=metric)
+        if len(r) == 0:
+            warnings.warn('Metric ' + metric + ' not found in db. Adding a filler description.'
+                          'Please update ASAP with hera_mc/scripts/update_qm_list.py.')
+            self.add_metric_desc(metric, 'Auto-generated description. Update with '
+                                 'hera_mc/scripts/update_qm_list.py')
+            s.commit()
+
+    def add_metrics_file(self, filename, ftype):
+        """
+        Adds a file worth of quality metrics to the db.
+
+        Parameters:
+        -----------
+        filename: string
+            file containing metrics to be added to db.
+        ftype: string
+            Type of metrics file. Options are ['ant', 'firstcal', 'omnical']
+        """
+        from hera_qm.utils import metrics2mc
+
+        try:
+            obsid = self.get_lib_files(filename=os.path.basename(filename))[0].obsid
+        except IndexError:
+            raise ValueError('File ' + filename + ' has not been logged in '
+                             'Librarian, so we cannot add to M&C.')
+        d = metrics2mc(filename, ftype)
+        for metric, dd in d['ant_metrics'].items():
+            self.check_metric_desc(metric)
+            for ant, pol, val in dd.items():
+                self.add_ant_metric(obsid, ant, pol, metric, val)
+        for metric, val in d['array_metrics'].itmes():
+            self.check_metric_desc(metric)
+            self.add_array_metric(obsid, metric, val)
