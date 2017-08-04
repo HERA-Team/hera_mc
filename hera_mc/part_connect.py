@@ -161,8 +161,8 @@ def update_part(session=None, data=None, add_new_part=False):
     for dkey, dval in data_dict.iteritems():
         hpn_to_change = dval[0][0]
         rev_to_change = dval[0][1]
-        if rev_to_change[:4] == 'LAST':
-            rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
+        #if rev_to_change[:4] == 'LAST':
+        #    rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
         part_rec = session.query(Parts).filter((Parts.hpn == hpn_to_change) &
                                                (Parts.hpn_rev == rev_to_change))
         num_part = part_rec.count()
@@ -390,7 +390,9 @@ def stop_existing_connections(session, h, conn_list, at_date, actually_do_it):
     for conn in conn_list:
         CD = h.get_connection_dossier(conn[0], conn[1], conn[2], at_date, True)
         ck = get_connection_key(CD, conn)
-        if ck is not None:
+        if ck is None:
+            print('There are no connections to stop')
+        else:
             x = CD['connections'][ck]
             print("Stopping connection {} at {}".format(x, str(at_date)))
             stopping = [x.upstream_part, x.up_part_rev, x.downstream_part, x.down_part_rev,
@@ -407,7 +409,7 @@ def stop_existing_connections(session, h, conn_list, at_date, actually_do_it):
 
 def get_connection_key(c, p):
     """
-    Returns the key to use
+    Returns the key to use:  this is to make sure edge cases don't trip you up.
 
     Parameters:
     ------------
@@ -415,13 +417,20 @@ def get_connection_key(c, p):
     p:  connection to find
     """
 
-    pkey = cm_utils._make_connection_key(p[0],p[1],p[2],'')
-    for ckey in c['connections'].keys():
-        if pkey in ckey:
-            break
-    else:
-        ck = None
-    return ck
+    p = [p[0].upper(),p[1].upper(),p[2].upper()]
+    ctr = 0
+    return_key = None
+    for ckey, cval in c['connections'].iteritems():
+        ca = (cval.upstream_part.upper(), cval.downstream_part.upper())
+        cr = (cval.up_part_rev.upper(), cval.down_part_rev.upper())
+        co = (cval.upstream_output_port.upper(), cval.downstream_input_port.upper())
+        if cval.stop_gpstime is None and p[0] in ca and p[1] in cr and p[2] in co:
+            ctr+=1
+            return_key = ckey
+    if ctr > 1:
+        print("Warning:  too many connections were found.  Returning None")
+        return_key = None
+    return return_key
 
 
 def add_new_connections(session, c, conn_list, at_date, actually_do_it):
