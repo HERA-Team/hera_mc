@@ -7,19 +7,23 @@
 """
 
 from __future__ import print_function
-
+import os.path
+import subprocess
 from hera_mc import mc
 from astropy.time import Time
 from astropy.time import TimeDelta
-import os.path
 
 PAST_DATE = '2000-01-01'
 
 
-def get_cm_version():
+def get_cm_version(mc_config_file=None):
     """
     Get the current cm_version for recording with antenna locations.
     """
+    cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_file)
+    git_hash = subprocess.check_output(['git', '-C', cm_csv_path, 'rev-parse', 'HEAD'],
+                                       stderr=subprocess.STDOUT).strip()
+    return git_hash
 
 
 def _future_date():
