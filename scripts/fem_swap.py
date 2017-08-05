@@ -44,7 +44,7 @@ if __name__ == '__main__':
     if args.ant[0].upper() != 'A':
         args.ant = 'A' + args.ant
     args.verbosity = args.verbosity.lower()
-    at_date = cm_utils._get_datetime(args.date, args.time)
+    at_date = cm_utils._get_astropytime(args.date, args.time)
     fem_hpn = 'FEM' + args.fem_number
     show_args = {'show_levels': False}
 

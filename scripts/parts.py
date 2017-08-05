@@ -43,7 +43,7 @@ if __name__ == '__main__':
     if args.mapr:
         args.mapr = args.mapr.upper()
     args.revision = args.revision.upper()
-    date_query = cm_utils._get_datetime(args.date,args.time)
+    date_query = cm_utils._get_astropytime(args.date,args.time)
 
     if type(args.levels_testing) == str:
         if args.levels_testing.lower() == 'none' or args.levels_testing.lower() == 'false':

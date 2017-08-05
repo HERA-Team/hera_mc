@@ -44,7 +44,7 @@ if __name__ == '__main__':
         args = query_args(args)
 
     # Pre-process some args
-    at_date = cm_utils._get_datetime(args.date,args.time)
+    at_date = cm_utils._get_astropytime(args.date, args.time)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()

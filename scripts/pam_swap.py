@@ -46,7 +46,7 @@ if __name__ == '__main__':
     # Pre-process some args
     args.r_input = args.r_input.upper()
     args.verbosity = args.verbosity.lower()
-    at_date = cm_utils._get_datetime(args.date,args.time)
+    at_date = cm_utils._get_astropytime(args.date, args.time)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()

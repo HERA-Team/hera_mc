@@ -40,7 +40,7 @@ if __name__ == '__main__':
             args.find = args.find.split(',')
         else:
             args.find = [args.find]
-    query_date = cm_utils._get_datetime(args.date,args.time)
+    query_date = cm_utils._get_astropytime(args.date,args.time)
     args.background = args.background.upper()
     if ',' in args.background:
         args.background = args.background.split(',')

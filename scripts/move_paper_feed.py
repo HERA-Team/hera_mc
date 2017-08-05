@@ -44,7 +44,7 @@ def OK_to_add(args, connect, handling, geo):
         print("You need to add_station.py", connect.upstream_part, "to geo_location database")
         is_OK_to_add = False
     # 2 - check to see if the station is already connected (shouldn't be)
-    current = cm_utils._get_datetime(args.date, args.time)
+    current = cm_utils._get_astropytime(args.date, args.time)
     if handling.is_in_connections(connect.upstream_part, 'A', return_active=True):
         print('Error: ', connect.upstream_part, "already connected.")
         is_OK_to_add = False
@@ -61,7 +61,7 @@ def OK_to_add(args, connect, handling, geo):
 
 def stop_previous_parts(args):
     """This adds stop times to the previously connected rev A antenna and FDP rev A, if needed"""
-    current = int(cm_utils._get_datetime(args.date, args.time).gps)
+    current = int(cm_utils._get_astropytime(args.date, args.time).gps)
     args.add_new_part = False
 
     is_connected = handling.is_in_connections(args.antenna_number, 'P', return_active=True)
@@ -83,7 +83,7 @@ def stop_previous_parts(args):
 
 def add_new_parts(args):
     """This adds the new rev B antenna and FDA rev B"""
-    current = int(cm_utils._get_datetime(args.date, args.time).gps)
+    current = int(cm_utils._get_astropytime(args.date, args.time).gps)
     args.add_new_part = True
 
     print("Adding part %s %s at %s" % (args.antenna_number, 'T', str(args.date)))
@@ -114,7 +114,7 @@ def stop_previous_connections(args, handling):
            antenna revA and feed rev A
            feed rev A and frontend
     """
-    current = int(cm_utils._get_datetime(args.date, args.time).gps)
+    current = int(cm_utils._get_astropytime(args.date, args.time).gps)
     data = []
     args.add_new_connection = False
 
