@@ -116,6 +116,9 @@ if __name__ == '__main__':
         geo_handling.show_it_now(show_fig)
     h.close()
 
+    print('GEO[112]:  THIS IS JUST TESTING FOR NOW')
+    h.get_correlator_input_from_location('HH0')
+
     if args.update:
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a "
                                           "script -- are you sure you want to do this? ", 'n')
