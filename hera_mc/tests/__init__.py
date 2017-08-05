@@ -66,6 +66,18 @@ def checkWarnings(func, func_args=[], func_kwargs={},
                   category=UserWarning,
                   nwarnings=1, message=None, known_warning=None):
     """Function to check expected warnings."""
+    if (not isinstance(category, list) or len(category) == 1) and nwarnings > 1:
+        if isinstance(category, list):
+            category = category * nwarnings
+        else:
+            category = [category] * nwarnings
+
+    if (not isinstance(message, list) or len(message) == 1) and nwarnings > 1:
+        if isinstance(message, list):
+            message = message * nwarnings
+        else:
+            message = [message] * nwarnings
+
     category = get_iterable(category)
     message = get_iterable(message)
 
