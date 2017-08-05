@@ -28,7 +28,8 @@ class Hookup:
 
     def __init__(self, session=None):
         """
-        Hookup traces parts and connections through the signal path (as defined by the connections).
+        Hookup traces parts and connections through the signal path (as defined
+            by the connections).
         Generally will only call _.get_hookup()
         """
 
@@ -45,14 +46,16 @@ class Hookup:
         """
         options = []
         if direction == 'up':      # Going upstream
-            for conn in self.session.query(PC.Connections).filter((PC.Connections.downstream_part == part) &
-                                                                  (PC.Connections.down_part_rev == rev)):
+            for conn in self.session.query(PC.Connections).filter(
+                    (PC.Connections.downstream_part == part) &
+                    (PC.Connections.down_part_rev == rev)):
                 conn.gps2Time()
                 if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
         elif direction == 'down':  # Going downstream
-            for conn in self.session.query(PC.Connections).filter((PC.Connections.upstream_part == part) &
-                                                                  (PC.Connections.up_part_rev == rev)):
+            for conn in self.session.query(PC.Connections).filter(
+                    (PC.Connections.upstream_part == part) &
+                    (PC.Connections.up_part_rev == rev)):
                 conn.gps2Time()
                 if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
@@ -61,16 +64,21 @@ class Hookup:
 
     def __wade_through_the_messy_stuff(self, options, how_many=False, direction=None):
         """
-        For now put all of the messy, system specific, ad hoc ugly stuff here -- hopefully make it elegant later
+        For now put all of the messy, system specific, ad hoc ugly stuff here
+            -- hopefully make it elegant later
         """
-        if how_many:  # Return how many streams to do.  Is here to keep the ugly together - and make it even uglier!
+        if how_many:
+            # Return how many streams to do.  Is here to keep the ugly together -
+            # and make it even uglier!
             inp = len(options['input_ports'])
             outp = len(options['output_ports'])
             if inp == 0:  # it is a station
                 rv = 2
             elif options['part'].hpn[-1] in ['E', 'N']:
                 rv = 1
-            elif inp == 1 and outp > 0:  # they are different since in get_hookup we loop over input ports unless it's a station
+            elif inp == 1 and outp > 0:
+                # they are different since in get_hookup we loop over input
+                # ports unless it's a station
                 rv = 2
             else:
                 rv = 1
@@ -80,17 +88,20 @@ class Hookup:
                 rv = None
             elif len(options) == 1:
                 rv = options[0]
-            else:  # Figures out which port to use.  This sort of works for now, not guaranteed
+            else:
+                # Figures out which port to use.  This sort of works for now, not guaranteed
                 if self.__how_many == 1:
                     srn = -1
                     ports_ratio = []
                     for i, optn in enumerate(options):
                         if direction == 'up':
-                            ports_ratio.append(SequenceMatcher(None, optn.upstream_output_port, self.__first_port).ratio())
+                            ports_ratio.append(SequenceMatcher(
+                                None, optn.upstream_output_port, self.__first_port).ratio())
                             if optn.downstream_input_port[0] == self.__first_port[0]:
                                 srn = i
                         elif direction == 'down':
-                            ports_ratio.append(SequenceMatcher(None, optn.downstream_input_port, self.__first_port).ratio())
+                            ports_ratio.append(SequenceMatcher(
+                                None, optn.downstream_input_port, self.__first_port).ratio())
                             if optn.upstream_output_port[0] == self.__first_port[0]:
                                 srn = i
                     if srn == -1:
@@ -138,8 +149,10 @@ class Hookup:
         Return the full hookup.
         Returns hookup_dict, a dictionary with two entries:
             'hookup': another dictionary keyed on part:rev:port:sn
-            'columns': names of parts that are used in displaying the hookup as column headers
-        This only gets the contemporary hookups (unlike parts and connections, which get all.)
+            'columns': names of parts that are used in displaying the hookup as
+                       column headers
+        This only gets the contemporary hookups (unlike parts and connections,
+            which get all.)
 
         Parameters
         -----------
@@ -151,15 +164,19 @@ class Hookup:
         exact_match:  boolean for either exact_match or partial
         """
 
-        self.at_date = cm_utils._get_datetime(at_date)
+        self.at_date = cm_utils._get_astropytime(at_date)
 
         # Get all the appropriate parts
-        parts = self.handling.get_part_dossier(hpn=hpn, rev=rev, at_date=self.at_date, exact_match=exact_match)
-        hookup_dict = {'hookup':{}}
+        parts = self.handling.get_part_dossier(hpn=hpn, rev=rev,
+                                               at_date=self.at_date,
+                                               exact_match=exact_match)
+        hookup_dict = {'hookup': {}}
         col_len_max = [0, '-']
 
         for hpnr in parts.keys():
-            if not cm_utils._is_active(self.at_date, parts[hpnr]['part'].start_date, parts[hpnr]['part'].stop_date):
+            if not cm_utils._is_active(self.at_date,
+                                       parts[hpnr]['part'].start_date,
+                                       parts[hpnr]['part'].stop_date):
                 continue
             if len(parts[hpnr]['connections']['ordered-pairs'][0]) == 0:
                 continue
@@ -172,14 +189,17 @@ class Hookup:
                 if len(port_query_loop) == 0:
                     port_query_loop = parts[hpnr]['output_ports']
             else:  # This to handle range of port_query possibilities outside of 'all'
-                print("Not really supported.  Need a way to check if upstream or downstream port etcetc")
+                print("Not really supported.  Need a way to check if upstream or "
+                      "downstream port etcetc")
                 if type(port) != list:
                     port_query_loop = [port]
 
             for i, p in enumerate(port_query_loop):
                 for sn in range(how_many_to_do):
-                    hukey = _make_hookup_key(parts[hpnr]['part'].hpn, parts[hpnr]['part'].hpn_rev, p, str(sn))
-                    hookup_dict['hookup'][hukey] = self.__follow_hookup_stream(parts[hpnr]['part'].hpn, parts[hpnr]['part'].hpn_rev, p, sn)
+                    hukey = _make_hookup_key(parts[hpnr]['part'].hpn,
+                                             parts[hpnr]['part'].hpn_rev, p, str(sn))
+                    hookup_dict['hookup'][hukey] = self.__follow_hookup_stream(
+                        parts[hpnr]['part'].hpn, parts[hpnr]['part'].hpn_rev, p, sn)
                     if len(hookup_dict['hookup'][hukey]) > col_len_max[0]:
                         col_len_max[0] = len(hookup_dict['hookup'][hukey])
                         col_len_max[1] = hukey
@@ -187,22 +207,28 @@ class Hookup:
             print(hpn, rev, 'not active')
             return None
 
-        hookup_dict['columns'] = self.__get_column_header(hookup_dict['hookup'][col_len_max[1]])
+        hookup_dict['columns'] = self.__get_column_header(
+            hookup_dict['hookup'][col_len_max[1]])
         if state_args['show_levels']:
-            hookup_dict = self.__hookup_add_correlator_levels(hookup_dict, state_args['levels_testing'])
+            hookup_dict = self.__hookup_add_correlator_levels(
+                hookup_dict, state_args['levels_testing'])
 
         return hookup_dict
 
     def __get_column_header(self, hup0):
         parts_col = []
         for hu in hup0:
-            get_part_type = self.handling.get_part_dossier(hpn=hu.upstream_part, rev=hu.up_part_rev,
-                                                           at_date=self.at_date, exact_match=True)
+            get_part_type = self.handling.get_part_dossier(hpn=hu.upstream_part,
+                                                           rev=hu.up_part_rev,
+                                                           at_date=self.at_date,
+                                                           exact_match=True)
             pr_key = cm_utils._make_part_key(hu.upstream_part, hu.up_part_rev)
             parts_col.append(get_part_type[pr_key]['part'].hptype)
         hu = hup0[-1]
-        get_part_type = self.handling.get_part_dossier(hpn=hu.downstream_part, rev=hu.down_part_rev,
-                                                       at_date=self.at_date, exact_match=True)
+        get_part_type = self.handling.get_part_dossier(hpn=hu.downstream_part,
+                                                       rev=hu.down_part_rev,
+                                                       at_date=self.at_date,
+                                                       exact_match=True)
         pr_key = cm_utils._make_part_key(hu.downstream_part, hu.down_part_rev)
         parts_col.append(get_part_type[pr_key]['part'].hptype)
         return parts_col
@@ -221,7 +247,8 @@ class Hookup:
         return hookup_dict
 
     def __header_entry_name_adjust(self, col):
-        if col[-2:] == '_e' or col[-2:] == '_n':  # Makes these specific pol parts generic
+        if col[-2:] == '_e' or col[-2:] == '_n':
+            # Makes these specific pol parts generic
             colhead = col[:-2]
         else:
             colhead = col
@@ -238,7 +265,8 @@ class Hookup:
         show_levels:  boolean to either show the correlator levels or not
         """
 
-        headers, show_flag = self.__make_header_row(hookup_dict['columns'], cols_to_show, show_levels)
+        headers, show_flag = self.__make_header_row(hookup_dict['columns'],
+                                                    cols_to_show, show_levels)
 
         table_data = []
         for hukey in sorted(hookup_dict['hookup'].keys()):
@@ -246,7 +274,8 @@ class Hookup:
                 level = hookup_dict['levels'][hukey]
             else:
                 level = False
-            td = self.__make_table_row(hookup_dict['hookup'][hukey], headers, show_flag, level)
+            td = self.__make_table_row(hookup_dict['hookup'][hukey], headers,
+                                       show_flag, level)
             table_data.append(td)
         print('\n')
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
@@ -271,18 +300,21 @@ class Hookup:
         td = []
         if show_flag[0]:
             pn = hup[0]
-            prpn = pn.upstream_part + ':' + pn.up_part_rev + ' <' + pn.upstream_output_port
+            prpn = (pn.upstream_part + ':' + pn.up_part_rev + ' <' +
+                    pn.upstream_output_port)
             td.append(prpn)
         for i in range(1, len(hup)):
             if show_flag[i]:
                 pn = hup[i - 1]
-                prpn = pn.downstream_input_port + '> ' + pn.downstream_part + ':' + pn.down_part_rev
+                prpn = (pn.downstream_input_port + '> ' + pn.downstream_part + ':' +
+                        pn.down_part_rev)
                 pn = hup[i]
                 prpn += ' <' + pn.upstream_output_port
                 td.append(prpn)
         if show_flag[-1]:
             pn = hup[-1]
-            prpn = pn.downstream_input_port + '> ' + pn.downstream_part + ':' + pn.down_part_rev
+            prpn = (pn.downstream_input_port + '> ' + pn.downstream_part + ':' +
+                    pn.down_part_rev)
             td.append(prpn)
         if show_level:
             td.append(show_level)
@@ -293,22 +325,28 @@ class Hookup:
                 if hdr == 'levels':
                     continue
                 for hu in hup:
-                    get_part_type = self.handling.get_part_dossier(hpn=hu.upstream_part, rev=hu.up_part_rev,
-                                                           at_date=None, exact_match=True)
+                    get_part_type = self.handling.get_part_dossier(
+                        hpn=hu.upstream_part, rev=hu.up_part_rev,
+                        at_date=None, exact_match=True)
                     pr_key = cm_utils._make_part_key(hu.upstream_part, hu.up_part_rev)
                     part_col = get_part_type[pr_key]['part'].hptype
                     if self.__header_entry_name_adjust(part_col) == hdr:
                         new_hup.append(hu)
                         break
                 else:
-                    get_part_type = self.handling.get_part_dossier(hpn=hu.downstream_part, rev=hu.down_part_rev,
-                                                           at_date=None, exact_match=True)
+                    get_part_type = self.handling.get_part_dossier(
+                        hpn=hu.downstream_part, rev=hu.down_part_rev,
+                        at_date=None, exact_match=True)
                     pr_key = cm_utils._make_part_key(hu.downstream_part, hu.down_part_rev)
                     part_col = get_part_type[pr_key]['part'].hptype
                     if self.__header_entry_name_adjust(part_col) == hdr:
                         continue
                     else:
-                        new_hup.append(PC.Connections(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
-                                                      downstream_part=nc, down_part_rev=nc, downstream_input_port=nc))
+                        new_hup.append(PC.Connections(upstream_part=nc,
+                                                      up_part_rev=nc,
+                                                      upstream_output_port=nc,
+                                                      downstream_part=nc,
+                                                      down_part_rev=nc,
+                                                      downstream_input_port=nc))
             td = self.__make_table_row(new_hup, headers, show_flag, show_level)
         return td

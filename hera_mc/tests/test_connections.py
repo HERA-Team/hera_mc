@@ -42,7 +42,7 @@ class TestConnections(TestHERAMC):
 
         # Add test connection
         self.connection = part_connect.Connections()
-        self.connection.upstream_part=self.test_part1
+        self.connection.upstream_part = self.test_part1
         self.connection.up_part_rev = self.test_rev
         self.connection.downstream_part = self.test_part2
         self.connection.down_part_rev = self.test_rev
@@ -52,20 +52,19 @@ class TestConnections(TestHERAMC):
 
         self.h = cm_handling.Handling(self.test_session)
 
-    #def test_get_connection(self):
-        # self.part.hpn = self.test_part1
-        # self.test_session.add(self.part)
-        # self.test_session.commit()
-        # self.part.hpn = self.test_part2
-        # self.test_session.add(self.part)
-        # self.test_session.commit()
-        # self.test_session.add(self.connection)
-        # self.test_session.commit()
-
-        # located = self.h.get_connection_dossier(self.test_part1, self.test_rev, 'up_and_out', 'now', True)
-        # print(located['connections'])
-        # self.assertTrue(located['connections'][located.keys()[0]].upstream_part == self.test_part1)
-
+    # def test_get_connection(self):
+    #     self.part.hpn = self.test_part1
+    #     self.test_session.add(self.part)
+    #     self.test_session.commit()
+    #     self.part.hpn = self.test_part2
+    #     self.test_session.add(self.part)
+    #     self.test_session.commit()
+    #     self.test_session.add(self.connection)
+    #     self.test_session.commit()
+    #
+    #     located = self.h.get_connection_dossier(self.test_part1, self.test_rev, 'up_and_out', 'now', True)
+    #     print(located['connections'])
+    #     self.assertTrue(located['connections'][located.keys()[0]].upstream_part == self.test_part1)
 
     # def test_update_new(self):
     #     u = 'new_test_part_up'

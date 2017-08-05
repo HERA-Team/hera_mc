@@ -17,18 +17,18 @@ if __name__ == '__main__':
     parser.add_argument('-t','--hptype', help="List the hera part types. [False]", action='store_true')
     cm_utils.add_verbosity_args(parser)
     parser.add_argument('-c','--connection', help="Show all connections directly to a part. [None]", default=None)
-    parser.add_argument('-u','--update', 
+    parser.add_argument('-u','--update',
                         help="Update part number records.  Format hpn0:[rev0]:col0:val0, [hpn1:[rev1]]col1:val1...  [None]", default=None)
     parser.add_argument('-m','--mapr', help="Show full hookup chains from given part. [None]", default=None)
     parser.add_argument('-r','--revision', help="Specify revision for hpn (it's a letter).  [LAST]", default='LAST')
     parser.add_argument('--specify-port', help="Define desired port(s) for hookup. [all]", dest='specify_port', default='all')
     parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')
-    parser.add_argument('-e','--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]", dest='exact_match', 
+    parser.add_argument('-e','--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]", dest='exact_match',
                         action='store_true')
     parser.add_argument('--add-new-part', help="Flag to allow update to add a new record.  [False]", dest='add_new_part', action='store_true')
-    parser.add_argument('--mapr-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]", 
+    parser.add_argument('--mapr-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
                         dest='mapr_cols', default='all')
-    parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible - keep False to use actual correlator [False]", 
+    parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible - keep False to use actual correlator [False]",
                         dest='levels_testing', default=False)
     parser.add_argument('--show_state', help="Show only the 'active' stations or all [all]", default='all')
     cm_utils.add_date_time_args(parser)
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     if args.mapr:
         args.mapr = args.mapr.upper()
     args.revision = args.revision.upper()
-    date_query = cm_utils._get_datetime(args.date,args.time)
+    date_query = cm_utils._get_astropytime(args.date,args.time)
 
     if type(args.levels_testing) == str:
         if args.levels_testing.lower() == 'none' or args.levels_testing.lower() == 'false':
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     handling = cm_handling.Handling(session)
     if args.hpn:
-        part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision, 
+        part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision,
                                                  at_date=date_query, exact_match=args.exact_match)
         handling.show_parts(part_dossier, state_args)
     if args.connection:

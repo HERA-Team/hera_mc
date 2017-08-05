@@ -119,11 +119,11 @@ for line in show_all.stdout:
 
     # This is not at all scalable, but ... meh. We're looking for:
     #
-    #----------------------------------------------------------------
-    #DG/VD TYPE   State Access Consist Cache Cac sCC       Size Name
-    #----------------------------------------------------------------
-    #0/0   RAID60 Optl  RW     Yes     RWBD  -   ON  196.475 TB
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
+    # DG/VD TYPE   State Access Consist Cache Cac sCC       Size Name
+    # ----------------------------------------------------------------
+    # 0/0   RAID60 Optl  RW     Yes     RWBD  -   ON  196.475 TB
+    # ----------------------------------------------------------------
 
     if line.startswith('0/0'):
         item_values['VD 0/0 State'] = line.split()[2]
@@ -162,13 +162,13 @@ for line in event_log.stdout:
         if line.startswith('======='):
             continue
 
-        if line.startswith('Event Data:'): # just a separator
+        if line.startswith('Event Data:'):  # just a separator
             continue
 
-        if line == 'None': # appears for events with no data after the ====== divider
+        if line == 'None':  # appears for events with no data after the ====== divider
             continue
 
-        if line.startswith('seqNum:'): # new event, finishing old one
+        if line.startswith('seqNum:'):  # new event, finishing old one
             if seq_num is not None:
                 events.append((seq_num, cur_event_data))
                 seq_num = None
@@ -178,7 +178,7 @@ for line in event_log.stdout:
             state = IN_EVENT
             continue
 
-        if line.startswith('Controller ='): # we've reached the footer
+        if line.startswith('Controller ='):  # we've reached the footer
             if seq_num is not None:
                 events.append((seq_num, cur_event_data))
                 seq_num = None
@@ -227,7 +227,8 @@ with db.sessionmaker() as session:
             time = parse_storcli_datetime(abs_time_str)
         else:
             boot_rel_time = int(data.pop('Seconds since last reboot'))
-            import datetime, psutil
+            import datetime
+            import psutil
             boot = datetime.datetime.fromtimestamp(psutil.boot_time())
             delta = TimeDelta(boot_rel_time, format='sec')
             time = Time(boot) + delta

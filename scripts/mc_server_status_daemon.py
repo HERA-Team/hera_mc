@@ -28,8 +28,8 @@ from hera_mc import mc
 # Preliminaries. We have a small sanity check since the M&C design specifies
 # the memory, network, and system load are to be 5-minute averages.
 
-MONITORING_INTERVAL = 60 # seconds
-REPORTING_CADENCE = 5 # number of MONITORING_INTERVALS between reports to M&C
+MONITORING_INTERVAL = 60  # seconds
+REPORTING_CADENCE = 5  # number of MONITORING_INTERVALS between reports to M&C
 
 if REPORTING_CADENCE * MONITORING_INTERVAL != 300:
     print('warning: averaging time should be 300s but it will be %ds' %
@@ -54,7 +54,7 @@ def get_ip_address():
             if ifname != 'lo':
                 addrs = netifaces.ifaddresses(ifname)
                 break
-        else: # triggered if we never did the 'break'
+        else:  # triggered if we never did the 'break'
             return '?.?.?.?'
 
     return addrs[netifaces.AF_INET][0]['addr']
@@ -96,12 +96,12 @@ with db.sessionmaker() as session:
             # Update the higher-cadence monitoring data
 
             vmem = psutil.virtual_memory()
-            mem_buf[index] = vmem.used # bytes
+            mem_buf[index] = vmem.used  # bytes
 
             net = psutil.net_io_counters()
 
-            if net.bytes_sent < tx_buf[prev_index]: # have we wrapped?
-                net_tx_offset += (1L << 32) # assuming wraparound only affects 32-bit
+            if net.bytes_sent < tx_buf[prev_index]:  # have we wrapped?
+                net_tx_offset += (1L << 32)  # assuming wraparound only affects 32-bit
             tx_buf[index] = net.bytes_sent + net_tx_offset
 
             if net.bytes_recv < rx_buf[prev_index]:
@@ -124,7 +124,7 @@ with db.sessionmaker() as session:
                 cpu_load_pct = os.getloadavg()[1] / num_cores * 100.
                 uptime_days = (time.time() - psutil.boot_time()) / 86400.
 
-                memory_size_gb = vmem.total / 1024**3 # bytes => GiB
+                memory_size_gb = vmem.total / 1024**3  # bytes => GiB
 
                 # We only track disk usage on the root filesystem partition. We could
                 # potentially use `psutil.disk_partitions(all=False)` to try to track
@@ -133,8 +133,8 @@ with db.sessionmaker() as session:
                 # specialized channels.
 
                 disk = psutil.disk_usage('/')
-                disk_size_gb = disk.total / 1024**3 # bytes => GiB
-                disk_space_pct = disk.percent # note, this is misnamed a bit - it's the % used
+                disk_size_gb = disk.total / 1024**3  # bytes => GiB
+                disk_space_pct = disk.percent  # note, this is misnamed a bit - it's the % used
 
                 # Compute the longer averages. We have advanced `index` and
                 # `prev_index` so that the differences below give the total number

@@ -14,10 +14,14 @@ import os.path
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     cm_utils.add_date_time_args(parser)
-    parser.add_argument('-r','--revision', help="Specify revision for hpn (it's a letter).  [LAST]", default='LAST')
+    parser.add_argument('-r', '--revision', help="Specify revision for hpn "
+                        "(it's a letter).  [LAST]", default='LAST')
     active_group = parser.add_mutually_exclusive_group()
-    active_group.add_argument('--show-active', help="Flag to show only the active parts/connections (default)",dest='active', action='store_true')
-    active_group.add_argument('--show-all', help="Flag to show all parts/connections",dest='active', action='store_false')
+    active_group.add_argument('--show-active', help="Flag to show only the active "
+                              "parts/connections (default)", dest='active',
+                              action='store_true')
+    active_group.add_argument('--show-all', help="Flag to show all parts/connections",
+                              dest='active', action='store_false')
     parser.set_defaults(active=True)
     args = parser.parse_args()
 
@@ -32,7 +36,7 @@ if __name__ == '__main__':
     hookup = cm_hookup.Hookup(args)
     hookup_dict = hookup.get_hookup(show_hookup=True)
     for i in hookup_dict:
-        print("-------------",i)
+        print("-------------", i)
         for j in hookup_dict[i]:
             print(j)
 #        print('\t',i,hookup_dict[i][1][0],hookup_dict[i][1][1])

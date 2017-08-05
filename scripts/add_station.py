@@ -35,7 +35,7 @@ def query_geo_information(args):
     """
     Gets geo_location information from user
     """
-    if args.station_name == None:
+    if args.station_name is None:
         args.station_name = raw_input('Station name:  ').upper()
     if not args.from_file:
         args.from_file = cm_utils._query_yn(
@@ -77,7 +77,7 @@ def entry_OK_to_add(args):
 def add_entry_to_geo_location(args):
     # NotNull
     sname = args.station_name
-    dt = cm_utils._get_datetime(args.date, args.time)
+    dt = cm_utils._get_astropytime(args.date, args.time)
     data = [[sname, 'station_name', sname],
             [sname, 'station_type_name', args.station_type_name],
             [sname, 'created_gpstime', dt.gps]]
@@ -99,7 +99,7 @@ def add_entry_to_parts(args):
     # NotNull
     hpn = args.station_name
     rev = 'A'
-    dt = cm_utils._get_datetime(args.date, args.time)
+    dt = cm_utils._get_astropytime(args.date, args.time)
     data = [[hpn, rev, 'hpn', hpn],
             [hpn, rev, 'hpn_rev', rev],
             [hpn, rev, 'hptype', 'station'],
@@ -107,24 +107,34 @@ def add_entry_to_parts(args):
             [hpn, rev, 'start_gpstime', dt.gps]]
     part_connect.update_part(args, data, args.add_new_part)
 
+
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('station_name', nargs='?', help="Name of station (HH# for hera)", default=None)
-    parser.add_argument('-q', '--query', help="Flag to query user for parameters [False]", action='store_true')
-    parser.add_argument('-e', '--easting',help="Easting of new station", default=None)
-    parser.add_argument('-n', '--northing',help="Northing of new station", default=None)
-    parser.add_argument('-z', '--elevation',help="Elevation of new station", default=None)
+    parser.add_argument('station_name', nargs='?', help="Name of station (HH# for hera)",
+                        default=None)
+    parser.add_argument('-q', '--query', help="Flag to query user for parameters [False]",
+                        action='store_true')
+    parser.add_argument('-e', '--easting', help="Easting of new station", default=None)
+    parser.add_argument('-n', '--northing', help="Northing of new station", default=None)
+    parser.add_argument('-z', '--elevation', help="Elevation of new station", default=None)
     cm_utils.add_date_time_args(parser)
-    parser.add_argument('--station_type_name', help="Station category name [herahex]", default='herahex')
+    parser.add_argument('--station_type_name', help="Station category name [herahex]",
+                        default='herahex')
     parser.add_argument('--datum', help="Datum of UTM [WGS84]", default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]", default='34J')
     cm_utils.add_verbosity_args(parser)
-    parser.add_argument('--add_new_geo', help="Flag to allow update to add a new record.  [True]", action='store_false')
-    parser.add_argument('--add_new_part', help="Flag to allow update to add a new record.  [True]", action='store_false')
+    parser.add_argument('--add_new_geo', help="Flag to allow update to add a new "
+                        "record.  [True]", action='store_false')
+    parser.add_argument('--add_new_part', help="Flag to allow update to add a new "
+                        "record.  [True]", action='store_false')
     file_group = parser.add_mutually_exclusive_group()
-    file_group.add_argument('-f', '--use-file', help="Use default coordinate file",dest='from_file', action='store_const', const=default_coord_file_name)
-    file_group.add_argument('-X', '--dont-use-file', help="Don't use file for coordinates.",dest='from_file', action='store_const', const=False)
-    file_group.add_argument('--from_file', help="Use file to retrieve coordinate information.")
+    file_group.add_argument('-f', '--use-file', help="Use default coordinate file",
+                            dest='from_file', action='store_const',
+                            const=default_coord_file_name)
+    file_group.add_argument('-X', '--dont-use-file', help="Don't use file for coordinates.",
+                            dest='from_file', action='store_const', const=False)
+    file_group.add_argument('--from_file', help="Use file to retrieve coordinate "
+                            "information.")
     parser.set_defaults(from_file=default_coord_file_name)
 
     args = parser.parse_args()

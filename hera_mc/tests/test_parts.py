@@ -64,31 +64,31 @@ class TestParts(TestHERAMC):
         located = self.h.get_part_dossier(self.test_part, 'Z', Time('2017-07-01 01:00:00', scale='utc'), True)
         print(located)
         for k in located.keys():
-            print("  **   ",k)
+            print("  **   ", k)
         if len(located.keys()) == 1:
             self.assertTrue(located[located.keys()[0]]['part'].hpn == self.test_part)
         else:
             self.assertFalse()
 
     def test_add_new_parts(self):
-        data = [['part_X','X','hptype_X','mfg_X']]
+        data = [['part_X', 'X', 'hptype_X', 'mfg_X']]
         p = part_connect.Parts()
         part_connect.add_new_parts(self.test_session, p, data, Time('2017-07-01 01:00:00', scale='utc'), True)
         located = self.h.get_part_dossier('part_X', 'X', Time('2017-07-01 01:00:00'), True)
         print(located)
         for k in located.keys():
-            print("  **   ",k)
+            print("  **   ", k)
         if len(located.keys()) == 1:
             self.assertTrue(located[located.keys()[0]]['part'].hpn == 'part_X')
         else:
             self.assertFalse()
 
-    #def test_get_part_revisions(self):
+    # def test_get_part_revisions(self):
     #    revision = part_connect.__get_part_revisions('test_part', session=self.test_session)
     #    self.assertTrue(revision['Q']['hpn'] == 'test_part')
 
     def test_datetime(self):
-        dt = cm_utils._get_datetime('2017-01-01',0.0)
+        dt = cm_utils._get_astropytime('2017-01-01', 0.0)
         gps_direct = int(Time('2017-01-01 00:00:00', scale='utc').gps)
         self.assertTrue(int(dt.gps) == gps_direct)
 

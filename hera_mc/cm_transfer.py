@@ -93,7 +93,8 @@ def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False)
     print("This will erase and rewrite the configuration management tables.")
     you_are_sure = cm_utils._query_yn("Are you sure you want to do this? ", 'n')
     if you_are_sure:
-        success = _initialization(session=session, cm_csv_path=None, tables=tables, base=base, maindb=maindb)
+        success = _initialization(session=session, cm_csv_path=None,
+                                  tables=tables, base=base, maindb=maindb)
     else:
         print("Exit with no rewrite.")
         success = False
@@ -134,7 +135,8 @@ def check_csv_file_and_get_key(data_filename):
     return dbkey
 
 
-def _initialization(session=None, cm_csv_path=None, tables='all', base=False, maindb=False):
+def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
+                    maindb=False):
     """
     Internal initialization method, should be called via initialize_db_from_csv
 

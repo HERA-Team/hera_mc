@@ -8,14 +8,19 @@ import urllib2
 
 in_container = True
 
+
 def get_levels(pf_input, testing):
     """
     This assumes the f_engine name structure of 'DF<int=pf_chassis><letter=input_row><int=input_col>'
     """
-    pf_in__to__file_col = {'A1':0,'A2':1,'A3':2,'A4':3,'B1':4,'B2':5,'B3':6,'B4':7,
-                           'C1':8,'C2':9,'C3':10,'C4':11,'D1':12,'D2':13,'D3':14,'D4':15,
-                           'E1':16,'E2':17,'E3':18,'E4':19,'F1':20,'F2':21,'F3':22,'F4':23,
-                           'G1':24,'G2':25,'G3':26,'G4':27,'H1':28,'H2':29,'H3':30,'H4':31}
+    pf_in__to__file_col = {'A1': 0, 'A2': 1, 'A3': 2, 'A4': 3,
+                           'B1': 4, 'B2': 5, 'B3': 6, 'B4': 7,
+                           'C1': 8, 'C2': 9, 'C3': 10, 'C4': 11,
+                           'D1': 12, 'D2': 13, 'D3': 14, 'D4': 15,
+                           'E1': 16, 'E2': 17, 'E3': 18, 'E4': 19,
+                           'F1': 20, 'F2': 21, 'F3': 22, 'F4': 23,
+                           'G1': 24, 'G2': 25, 'G3': 26, 'G4': 27,
+                           'H1': 28, 'H2': 29, 'H3': 30, 'H4': 31}
     default_url_levels_filename = '__levels.tmp'
     if testing:
         levels_filename = testing
@@ -28,7 +33,7 @@ def get_levels(pf_input, testing):
     pf_levels = []
     for pf in pf_input:
         try:
-            pf_chassis = 'F'+str(pf[-3])
+            pf_chassis = 'F' + str(pf[-3])
         except ValueError:
             print("Not standard f_engine naming format (pf chassis)", pf)
             continue
@@ -44,11 +49,12 @@ def get_levels(pf_input, testing):
             pf_levels.append('-')
     return pf_levels
 
+
 def __read_levels_file(name):
     try:
-        lfp = open(name,'r')
+        lfp = open(name, 'r')
     except IOError:
-        print('Warning:',name,'not found.')
+        print('Warning:', name, 'not found.')
         return None
     levels = {}
     for line in lfp:
@@ -58,6 +64,7 @@ def __read_levels_file(name):
     lfp.close()
     return levels
 
+
 def __get_current_levels_from_url(name):
     try:
         if in_container:
@@ -65,7 +72,7 @@ def __get_current_levels_from_url(name):
         else:
             url = urllib2.urlopen('http://paper1.karoo.kat.ac.za:3000/')
         levels_url = url.read()
-        fp = open(name,'w')
+        fp = open(name, 'w')
         fp.write(levels_url)
         fp.close()
     except urllib2.URLError:

@@ -36,6 +36,7 @@ class _MeasurementTypes(object):
     names = ['median']
     "A list of textual names corresponding to each value."
 
+
 MeasurementTypes = _MeasurementTypes()
 
 

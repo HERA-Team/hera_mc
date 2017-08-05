@@ -29,13 +29,16 @@ def query_args(args):
     args.date = cm_utils._query_default('date', args)
     return args
 
+
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-p', '--hpn', help="HERA part number", default = None)
+    parser.add_argument('-p', '--hpn', help="HERA part number", default=None)
     parser.add_argument('-r', '--rev', help="Revision number of part", default=None)
-    parser.add_argument('-t', '--hptype', help="HERA part type", default = None)
-    parser.add_argument('-m', '--mfg', help="Manufacturers number for part", default = None)
-    parser.add_argument('--actually_do_it', help="Flag to actually do it, as opposed to printing out what it would do.", action='store_true')
+    parser.add_argument('-t', '--hptype', help="HERA part type", default=None)
+    parser.add_argument('-m', '--mfg', help="Manufacturers number for part", default=None)
+    parser.add_argument('--actually_do_it', help="Flag to actually do it, "
+                        "as opposed to printing out what it would do.",
+                        action='store_true')
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
@@ -44,24 +47,22 @@ if __name__ == '__main__':
         args = query_args(args)
 
     # Pre-process some args
-    at_date = cm_utils._get_datetime(args.date,args.time)
+    at_date = cm_utils._get_astropytime(args.date, args.time)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
     connect = part_connect.Connections()
     part = part_connect.Parts()
     handling = cm_handling.Handling(session)
-    part_check = handling.get_part_dossier(hpn=args.hpn, rev=args.rev, at_date=at_date, exact_match=True)
+    part_check = handling.get_part_dossier(hpn=args.hpn, rev=args.rev,
+                                           at_date=at_date, exact_match=True)
 
     # Check for part
-    if len(part_check.keys()>0):
+    if len(part_check.keys() > 0):
         print("Error:  {} is already in parts database".format(args.hpn))
         print("Stopping this addition.")
     else:
         # Add new part
-        print("Adding new part {}:{}".format(args.hpn,args.rev))
+        print("Adding new part {}:{}".format(args.hpn, args.rev))
         new_part_add = [(args.hpn, args.rev, args.hptype, args.mfg)]
         part_connect.add_new_parts(session, part, new_part_add, at_date, args.actually_do_it)
-
-
-

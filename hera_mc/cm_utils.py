@@ -18,8 +18,8 @@ PAST_DATE = '2000-01-01'
 
 def _future_date():
     """
-    Future is defined here, since defining a far FUTURE_DATE typically gives a warning about
-    UTC vs UT1 etc
+    Future is defined here, since defining a far FUTURE_DATE typically gives a
+    warning about UTC vs UT1 etc
     """
     return Time.now() + TimeDelta(100, format='jd')
 
@@ -27,7 +27,8 @@ def _future_date():
 def _log(msg, **kwargs):
     fp = open(mc.cm_log_file, 'a')
     dt = Time.now()
-    fp.write('-------------------' + str(dt.datetime) + '  ' + msg + '-------------------\n\n')
+    fp.write('-------------------' + str(dt.datetime) + '  ' + msg +
+             '-------------------\n\n')
     for key, value in kwargs.items():
         if key == 'args':
             fp.write('--args\n\t')
@@ -50,14 +51,20 @@ def _log(msg, **kwargs):
 
 def _make_part_key(hpn, rev):
     return ":".join([hpn, rev]).strip()
+
+
 def _split_part_key(key):
     return key.split(':')[0], key.split(':')[1]
 
+
 def _make_connection_key(hpn, rev, port, start_gps):
     return ":".join([hpn, rev, port, str(start_gps)]).strip()
+
+
 def _split_connection_key(key):
     ks = key.split(':')
     return ks[0], ks[1], ks[2], ks[3]
+
 
 def add_verbosity_args(parser):
     """Add a standardized "--verbosity" argument to an ArgParser object. Supported
@@ -75,16 +82,17 @@ def add_verbosity_args(parser):
 def add_date_time_args(parser):
     """Add standardized "--date" and "--time" arguments to an ArgParser object.
     Their values should then be converted into a Python DateTime object using
-    the function `_get_datetime`.
+    the function `_get_astropytime`.
 
     """
     parser.add_argument(
-        '--date', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]", default='now')
+        '--date', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]",
+        default='now')
     parser.add_argument(
         '--time', help="UTC hh:mm or float (hours)", default=0.0)
 
 
-def _get_datetime(_date, _time=0):
+def _get_astropytime(_date, _time=0):
     """
     Take in various incarnations of _date/_time and return an astropy.Time object
     """
@@ -120,7 +128,8 @@ def _get_datetime(_date, _time=0):
                 try:
                     add_time = float(_time) * 3600.0
                 except ValueError:
-                    raise ValueError('Invalid format:  time should be H[:M[:S]] (HMS can be float or int)')
+                    raise ValueError('Invalid format:  time should be H[:M[:S]] '
+                                     '(HMS can be float or int)')
         if return_date is not None:
             return_date += TimeDelta(add_time, format='sec')
     return return_date
