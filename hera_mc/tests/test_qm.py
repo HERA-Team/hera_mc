@@ -10,6 +10,7 @@ import unittest
 import numpy as np
 from math import floor
 from astropy.time import Time, TimeDelta
+import os
 
 from hera_mc import mc, cm_transfer
 from hera_mc.qm import ant_metrics, array_metrics, metric_list
@@ -184,6 +185,20 @@ class TestQM(TestHERAMC):
                       message='Metric test2 not found in db')
         r = self.test_session.get_metric_desc(metric='test2')
         self.assertTrue('Auto-generated description.' in r[0].desc)
+
+    def test_add_metrics_file(self):
+        # Initialize
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        t2 = t1 + TimeDelta(120.0, format='sec')
+        self.obsid = utils.calculate_obsid(t1)
+        # Create obs to satifsy foreign key constraints
+        self.test_session.add_obs(t1, t2, self.obsid)
+        filename = os.path.join(mc.test_data_path, 'ant_metrics_output.json')
+        filebase = os.path.basename(filename)
+        self.test_session.commit()
+        self.test_session.add_lib_file(filebase, self.obsid, t2, 0.1)
+        self.test_session.commit()
+        self.test_session.add_metrics_file(filename, 'ant')
 
 if __name__ == '__main__':
     unittest.main()

@@ -935,6 +935,7 @@ class MCSession(Session):
             Type of metrics file. Options are ['ant', 'firstcal', 'omnical']
         """
         from hera_qm.utils import metrics2mc
+        import os
 
         try:
             obsid = self.get_lib_files(filename=os.path.basename(filename))[0].obsid
@@ -944,8 +945,8 @@ class MCSession(Session):
         d = metrics2mc(filename, ftype)
         for metric, dd in d['ant_metrics'].items():
             self.check_metric_desc(metric)
-            for ant, pol, val in dd.items():
+            for ant, pol, val in dd:
                 self.add_ant_metric(obsid, ant, pol, metric, val)
-        for metric, val in d['array_metrics'].itmes():
+        for metric, val in d['array_metrics'].items():
             self.check_metric_desc(metric)
             self.add_array_metric(obsid, metric, val)

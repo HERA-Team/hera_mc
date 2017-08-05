@@ -24,6 +24,7 @@ install:
   - source activate test-environment
   - conda install -c conda-forge alembic
   - pip install coveralls
+  - pip install git+https://github.com/HERA-Team/hera_qm.git
   - python setup.py install
 services:
   - postgresql
