@@ -193,11 +193,14 @@ class TestQM(TestHERAMC):
         self.obsid = utils.calculate_obsid(t1)
         # Create obs to satifsy foreign key constraints
         self.test_session.add_obs(t1, t2, self.obsid)
+        self.test_session.commit()
         filename = os.path.join(mc.test_data_path, 'ant_metrics_output.json')
         filebase = os.path.basename(filename)
-        self.test_session.commit()
+        self.assertRaises(ValueError, self.test_session.add_metrics_file,
+                          filename, 'ant')
         self.test_session.add_lib_file(filebase, self.obsid, t2, 0.1)
         self.test_session.commit()
+        self.test_session.update_qm_list()
         self.test_session.add_metrics_file(filename, 'ant')
 
 if __name__ == '__main__':
