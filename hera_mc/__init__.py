@@ -81,7 +81,6 @@ def NotNull(kind, **kwargs):
 
 from .version import __version__
 from . import autocorrelations
-from . import host_status
 from . import part_connect
 from . import geo_location
 from . import temperatures
