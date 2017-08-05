@@ -19,9 +19,11 @@ class ServerStatus(MCDeclarativeBase):
     Definition of server_status table.
 
     hostname: name of server (String). Part of primary_key
-    mc_time: time report received by M&C in floor(gps seconds) (BigInteger). Part of primary_key
+    mc_time: time report received by M&C in floor(gps seconds) (BigInteger).
+        Part of primary_key
     ip_address: IP address of server (String)
-    mc_system_timediff: difference between M&C time and time report sent by server in seconds (Float)
+    mc_system_timediff: difference between M&C time and time report sent by
+        server in seconds (Float)
     num_cores: number of cores on server (Integer)
     cpu_load_pct: CPU load percent = total load / num_cores, 5 min average (Float)
     uptime_days: server uptime in decimal days (Float)
@@ -29,7 +31,8 @@ class ServerStatus(MCDeclarativeBase):
     memory_size_gb: Amount of memory on server in GB (Float)
     disk_space_pct: Percent of disk used (Float)
     disk_size_gb: Amount of disk space on server in GB (Float)
-    network_bandwidth_mbs: Network bandwidth in MB/s, 5 min average. Can be null if not applicable
+    network_bandwidth_mbs: Network bandwidth in MB/s, 5 min average. Can be null
+        if not applicable
     """
     __abstract__ = True
     hostname = Column(String(32), primary_key=True)

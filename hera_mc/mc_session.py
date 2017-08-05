@@ -83,10 +83,12 @@ class MCSession(Session):
             if filter_value is not None:
                 result_list = self.query(table_object).filter(
                     getattr(table_object, filter_column) == filter_value,
-                    getattr(table_object, time_column).between(starttime.gps, stoptime.gps)).all()
+                    getattr(table_object, time_column).between(
+                        starttime.gps, stoptime.gps)).all()
             else:
                 result_list = self.query(table_object).filter(
-                    getattr(table_object, time_column).between(starttime.gps, stoptime.gps)).all()
+                    getattr(table_object, time_column).between(
+                        starttime.gps, stoptime.gps)).all()
         else:
             if filter_value is not None:
                 result_list = self.query(table_object).filter(
@@ -520,7 +522,8 @@ class MCSession(Session):
 
         obsid: long
             obsid to get records for. If starttime and filename are none,
-            all files for this obsid will be returned. If none, all obsid will be included.
+            all files for this obsid will be returned. If none, all obsid will
+            be included.
 
         starttime: astropy time object
             time to look for records after. If starttime, filename and obsid
@@ -586,7 +589,8 @@ class MCSession(Session):
             time to look for records after
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after starttime will be returned.
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
 
         Returns:
         --------
@@ -640,7 +644,8 @@ class MCSession(Session):
                                  stoptime=stoptime, filter_column='obsid',
                                  filter_value=obsid)
 
-    def add_rtp_process_record(self, time, obsid, pipeline_list, git_version, git_hash):
+    def add_rtp_process_record(self, time, obsid, pipeline_list, git_version,
+                               git_hash):
         """
         Add a new rtp_process_record row.
 

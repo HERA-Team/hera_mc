@@ -66,7 +66,8 @@ class RTPStatus(MCDeclarativeBase):
         time = floor(time.gps)
 
         return cls(time=time, status=status, event_min_elapsed=event_min_elapsed,
-                   num_processes=num_processes, restart_hours_elapsed=restart_hours_elapsed)
+                   num_processes=num_processes,
+                   restart_hours_elapsed=restart_hours_elapsed)
 
 
 class RTPProcessEvent(MCDeclarativeBase):

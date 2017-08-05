@@ -85,7 +85,8 @@ class AutomappedDB(DB):
 
         with self.sessionmaker() as session:
             if not is_sane_database(MCDeclarativeBase, session):
-                raise RuntimeError('database {0} does not match expected schema'.format(db_url))
+                raise RuntimeError('database {0} does not match expected schema'
+                                   .format(db_url))
 
 
 def get_mc_argument_parser():
@@ -158,8 +159,9 @@ def connect_to_mc_db(args, forced_db_name=None):
     if db_name is None:
         db_name = config_data.get('default_db_name')
         if db_name is None:
-            raise RuntimeError('cannot connect to M&C database: no DB name provided, and no '
-                               'default listed in {0!r}'.format(config_path))
+            raise RuntimeError('cannot connect to M&C database: no DB name '
+                               'provided, and no default listed in {0!r}'
+                               .format(config_path))
 
     db_data = config_data.get('databases')
     if db_data is None:
@@ -187,7 +189,8 @@ def connect_to_mc_db(args, forced_db_name=None):
         db = AutomappedDB(db_url)
     else:
         raise RuntimeError('cannot connect to M&C database: unrecognized mode {0!r} for'
-                           'the DB named {1!r} in {2!r}'.format(db_mode, db_name, config_path))
+                           'the DB named {1!r} in {2!r}'.format(db_mode, db_name,
+                                                                config_path))
 
     return db
 

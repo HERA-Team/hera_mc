@@ -22,33 +22,34 @@ from hera_mc import mc, cm_utils
 
 
 class Parts(MCDeclarativeBase):
-    """A table logging parts within the HERA system
-       Stations will be considered parts of type='station'
-       Note that ideally install_date would also be a primary key, but that screws up ForeignKey in connections
+    """
+    A table logging parts within the HERA system
+    Stations will be considered parts of type='station'
+    Note that ideally install_date would also be a primary key, but that
+    screws up ForeignKey in connections
+
+    hpn: HERA part number for each part; intend to QRcode with this string.
+         Part of the primary key.
+    hpn_rev: A revision letter of sequences of hpn - starts with A. . Part of the primary_key
+    hptype: A part-dependent string, i.e. feed, frontend, ...
+        This is also uniquely encoded in the hera part number
+        (see PARTS.md) -- this could be derived from it but this removes that constraint.
+    manufacturer_number: A part number/serial number as specified by manufacturer
+    start_gpstime: The date when the part was installed (or otherwise assigned by project).
+    stop_gpstime: The date when the part was removed (or otherwise de-assigned by project).
     """
     __tablename__ = 'parts_paper'
 
     hpn = Column(String(64), primary_key=True)
-    "HERA part number for each part; intend to QRcode with this string.  hpn+hpn_rev is unique"
-
     hpn_rev = Column(String(32), primary_key=True)
-    "A revision letter of sequences of hpn - starts with A.  hpn+hpn_rev is unique"
-
     hptype = NotNull(String(64))
-    "A part-dependent string, i.e. feed, frontend, ...  This is also uniquely encoded in the hera part number \
-     (see PARTS.md) -- this could be derived from it but this removes that constraint."
-
     manufacturer_number = Column(String(64))
-    "A part number/serial number as specified by manufacturer"
-
     start_gpstime = Column(BigInteger, nullable=False)
-    "The date when the part was installed (or otherwise assigned by project)."
-
     stop_gpstime = Column(BigInteger)
-    "The date when the part was removed (or otherwise de-assigned by project)."
 
     def __repr__(self):
-        return '<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype}>'.format(self=self)
+        return ('<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype}>'
+                .format(self=self))
 
     def gps2Time(self):
         """
@@ -161,7 +162,7 @@ def update_part(session=None, data=None, add_new_part=False):
     for dkey, dval in data_dict.iteritems():
         hpn_to_change = dval[0][0]
         rev_to_change = dval[0][1]
-        #if rev_to_change[:4] == 'LAST':
+        # if rev_to_change[:4] == 'LAST':
         #    rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
         part_rec = session.query(Parts).filter((Parts.hpn == hpn_to_change) &
                                                (Parts.hpn_rev == rev_to_change))
@@ -207,7 +208,8 @@ def format_and_check_update_part_request(request):
     ------------
     request:  hpn0:[rev0:]column0:value0,hpn1:[rev0]:]column1:value1,[...] or list
         hpnN:  hera part number, first entry must have one, if absent propagate first
-        revN:  hera part revision number, if absent, propagate first, which, if absent, defaults to 'last'
+        revN:  hera part revision number, if absent, propagate first, which, if
+                    absent, defaults to 'last'
         columnN:  name of parts column
         valueN:  corresponding new value
     """
@@ -284,24 +286,26 @@ def __get_part_revisions(hpn, session=None):
 
 
 class PartInfo(MCDeclarativeBase):
-    """A table for logging test information etc for parts."""
+    """
+    A table for logging test information etc for parts.
+
+    hpn: A HERA part number for each part; intend to QRcode with this string.
+        Part of the primary_key
+    hpn_rev: HERA part revision number for each part; if sequencing same part number.
+        Part of the primary_key
+    posting_gpstime: time that the data are posted
+        Part of the primary_key
+    comment: Comment associated with this data - or the data itself...
+    library_file: Name of datafile held in library
+    """
 
     __tablename__ = 'part_info'
 
     hpn = Column(String(64), nullable=False, primary_key=True)
-    "A HERA part number for each part; intend to QRcode with this string."
-
     hpn_rev = Column(String(32), nullable=False, primary_key=True)
-    "HERA part revision number for each part; if sequencing same part number."
-
     posting_gpstime = NotNull(BigInteger, primary_key=True)
-    "time that the data are posted"
-
     comment = NotNull(String(2048))
-    "Comment associated with this data - or the data itself..."
-
     library_file = Column(String(256))
-    "Name of datafile held in library"
 
     def __repr__(self):
         return '<heraPartNumber id = {self.hpn} comment = {self.comment}>'.format(self=self)
@@ -315,27 +319,37 @@ class PartInfo(MCDeclarativeBase):
 
 
 class Connections(MCDeclarativeBase):
-    """A table for logging connections between parts.  Part and Port must be unique when combined
+    """
+    A table for logging connections between parts.
+    Part and Port must be unique when combined
+
+    upstream_part: up refers to the skyward part,
+        e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.
+        Signal flows from A->B"
+        Part of the primary_key, Foreign Key into parts_paper
+    up_part_rev: up refers to the skyward part revision number.
+        Part of the primary_key, Foreign Key into parts_paper
+    upstream_output_port: connected output port on upstream (skyward) part.
+        Part of the primary_key
+    downstream_part: down refers to the part that is further from the sky, e.g.
+        Part of the primary_key, Foreign Key into parts_paper
+    down_part_rev: down refers to the part that is further from the sky, e.g.
+        Part of the primary_key, Foreign Key into parts_paper
+    downstream_input_port: connected input port on downstream (further from the sky) part
+        Part of the primary_key
+    start_gpstime: start_time is the time that the connection is set
+        Part of the primary_key
+    stop_gpstime: stop_time is the time that the connection is removed
+
     """
     __tablename__ = 'connections'
 
     upstream_part = Column(String(64), nullable=False, primary_key=True)
-    "up refers to the skyward part, e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.  Signal flows from A->B"
-
     up_part_rev = Column(String(32), nullable=False, primary_key=True)
-    "up refers to the skyward part revision number"
-
     upstream_output_port = NotNull(String(64), primary_key=True)
-    "connected output port on upstream (skyward) part"
-
     downstream_part = Column(String(64), nullable=False, primary_key=True)
-    "down refers to the part that is further from the sky, e.g. "
-
     down_part_rev = Column(String(64), nullable=False, primary_key=True)
-    "down refers to the part that is further from the sky, e.g. "
-
     downstream_input_port = NotNull(String(64), primary_key=True)
-    "connected input port on downstream (further from the sky) part"
 
     __table_args__ = (ForeignKeyConstraint(['upstream_part', 'up_part_rev'],
                                            ['parts_paper.hpn', 'parts_paper.hpn_rev']),
@@ -343,15 +357,13 @@ class Connections(MCDeclarativeBase):
                                            ['parts_paper.hpn', 'parts_paper.hpn_rev']))
 
     start_gpstime = NotNull(BigInteger, primary_key=True)
-    "start_time is the time that the connection is set"
-
     stop_gpstime = Column(BigInteger)
-    "stop_time is the time that the connection is removed"
 
     def __repr__(self):
         up = '{self.upstream_part}:{self.up_part_rev}'.format(self=self)
         down = '{self.downstream_part}:{self.down_part_rev}'.format(self=self)
-        return '<{}<{self.upstream_output_port}|{self.downstream_input_port}>{}>'.format(up, down, self=self)
+        return ('<{}<{self.upstream_output_port}|{self.downstream_input_port}>{}>'
+                .format(up, down, self=self))
 
     def gps2Time(self):
         """
@@ -395,8 +407,10 @@ def stop_existing_connections(session, h, conn_list, at_date, actually_do_it):
         else:
             x = CD['connections'][ck]
             print("Stopping connection {} at {}".format(x, str(at_date)))
-            stopping = [x.upstream_part, x.up_part_rev, x.downstream_part, x.down_part_rev,
-                        x.upstream_output_port, x.downstream_input_port, x.start_gpstime, 'stop_gpstime', stop_at]
+            stopping = [x.upstream_part, x.up_part_rev, x.downstream_part,
+                        x.down_part_rev, x.upstream_output_port,
+                        x.downstream_input_port, x.start_gpstime,
+                        'stop_gpstime', stop_at]
             data.append(stopping)
 
     if actually_do_it:
@@ -417,7 +431,7 @@ def get_connection_key(c, p):
     p:  connection to find
     """
 
-    p = [p[0].upper(),p[1].upper(),p[2].upper()]
+    p = [p[0].upper(), p[1].upper(), p[2].upper()]
     ctr = 0
     return_key = None
     for ckey, cval in c['connections'].iteritems():
@@ -425,7 +439,7 @@ def get_connection_key(c, p):
         cr = (cval.up_part_rev.upper(), cval.down_part_rev.upper())
         co = (cval.upstream_output_port.upper(), cval.downstream_input_port.upper())
         if cval.stop_gpstime is None and p[0] in ca and p[1] in cr and p[2] in co:
-            ctr+=1
+            ctr += 1
             return_key = ckey
     if ctr > 1:
         print("Warning:  too many connections were found.  Returning None")
@@ -521,23 +535,28 @@ def update_connection(session=None, data=None, add_new_connection=False):
             urev_to_change = cm_revisions.get_last_revision(upcn_to_change, session)[0][0]
         if drev_to_change[:4] == 'LAST':
             drev_to_change = cm_revisions.get_last_revision(dncn_to_change, session)[0][0]
-        conn_rec = session.query(Connections).filter((Connections.upstream_part == upcn_to_change) &
-                                                     (Connections.up_part_rev == urev_to_change) &
-                                                     (Connections.downstream_part == dncn_to_change) &
-                                                     (Connections.down_part_rev == drev_to_change) &
-                                                     (Connections.upstream_output_port == boup_to_change) &
-                                                     (Connections.downstream_input_port == aodn_to_change) &
-                                                     (Connections.start_gpstime == strt_to_change))
+        conn_rec = session.query(Connections).filter(
+            (Connections.upstream_part == upcn_to_change) &
+            (Connections.up_part_rev == urev_to_change) &
+            (Connections.downstream_part == dncn_to_change) &
+            (Connections.down_part_rev == drev_to_change) &
+            (Connections.upstream_output_port == boup_to_change) &
+            (Connections.downstream_input_port == aodn_to_change) &
+            (Connections.start_gpstime == strt_to_change))
         num_conn = conn_rec.count()
         if num_conn == 0:
             if add_new_connection:
                 connection = Connections()
-                connection.connection(up=upcn_to_change, up_rev=urev_to_change,
-                                      down=dncn_to_change, down_rev=drev_to_change,
-                                      upstream_output_port=boup_to_change, downstream_input_port=aodn_to_change,
+                connection.connection(up=upcn_to_change,
+                                      up_rev=urev_to_change,
+                                      down=dncn_to_change,
+                                      down_rev=drev_to_change,
+                                      upstream_output_port=boup_to_change,
+                                      downstream_input_port=aodn_to_change,
                                       start_gpstime=strt_to_change)
             else:
-                print("Error:", dkey, "does not exist and add_new_connection is not enabled.")
+                print("Error:", dkey, "does not exist and add_new_connection is "
+                      "not enabled.")
                 connection = None
         elif num_conn == 1:
             if add_new_connection:
