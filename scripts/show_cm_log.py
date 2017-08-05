@@ -20,6 +20,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.verbosity = args.verbosity.lower()
 
-    with open(mc.cm_log_file,'r') as log_file:
+    with open(mc.cm_log_file, 'r') as log_file:
         for line in log_file:
             print(line.strip())

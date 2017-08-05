@@ -13,24 +13,27 @@ from hera_mc import mc, cm_utils, part_connect, cm_handling, geo_location, cm_ho
 import sys
 import copy
 
-def print4test(data,verbosity,comment):
-    if verbosity=='h':
-        print(comment+'\n')
+
+def print4test(data, verbosity, comment):
+    if verbosity == 'h':
+        print(comment + '\n')
         for d in data:
-            print('\t',d)
-    elif verbosity=='m':
-        print(comment+'\n')
+            print('\t', d)
+    elif verbosity == 'm':
+        print(comment + '\n')
+
 
 def query_connection(args):
     """
     Gets connection information from user
     """
-    if args.antenna_number == None:
+    if args.antenna_number is None:
         args.antenna_number = raw_input('PAPER antenna number being moved:  ')
-    if args.station_name == None:
+    if args.station_name is None:
         args.station_name = raw_input('Station name where it is going:  ')
     if args.serial_number == -1:
-        args.serial_number = raw_input("Serial number of HERA station/antenna (use -1 if you don't know):  ")
+        args.serial_number = raw_input("Serial number of HERA station/antenna "
+                                       "(use -1 if you don't know):  ")
         if args.serial_number[0] != 'S':
             args.serial_number = 'S/N' + args.serial_number
     args.date = cm_utils._query_default('date', args)
@@ -41,26 +44,31 @@ def OK_to_add(args, connect, handling, geo):
     is_OK_to_add = True
     # 1 - check to see if station is in geo_location database (should be)
     if not geo.is_in_geo_location(connect.upstream_part):
-        print("You need to add_station.py", connect.upstream_part, "to geo_location database")
+        print("You need to add_station.py", connect.upstream_part,
+              "to geo_location database")
         is_OK_to_add = False
     # 2 - check to see if the station is already connected (shouldn't be)
     current = cm_utils._get_astropytime(args.date, args.time)
     if handling.is_in_connections(connect.upstream_part, 'A', return_active=True):
         print('Error: ', connect.upstream_part, "already connected.")
         is_OK_to_add = False
-    # 3 - check to see if antenna is already connected (should be, but isn't necesarily active)
-    is_connected = handling.is_in_connections(connect.downstream_part, 'P', return_active=True)
+    # 3 - check to see if antenna is already connected (should be, but isn't
+    # necesarily active)
+    is_connected = handling.is_in_connections(connect.downstream_part, 'P',
+                                              return_active=True)
     if not is_connected:
         print('Error:  ', connect.downstream_part, 'not present')
         is_OK_to_add = False
     if type(is_connected) != list:
-        print('Note:',connect.downstream_part,'is connected, but not active.')
+        print('Note:', connect.downstream_part, 'is connected, but not active.')
 
     return is_OK_to_add
 
 
 def stop_previous_parts(args):
-    """This adds stop times to the previously connected rev A antenna and FDP rev A, if needed"""
+    """
+    This adds stop times to the previously connected rev A antenna and FDP rev A, if needed
+    """
     current = int(cm_utils._get_astropytime(args.date, args.time).gps)
     args.add_new_part = False
 
@@ -78,7 +86,7 @@ def stop_previous_parts(args):
     if args.make_update:
         part_connect.update_part(args, data)
     else:
-        print4test(data,args.verbosity,'Test: stop_previous_parts')
+        print4test(data, args.verbosity, 'Test: stop_previous_parts')
 
 
 def add_new_parts(args):
@@ -93,7 +101,7 @@ def add_new_parts(args):
     data.append([args.antenna_number, 'T', 'manufacturer_number', args.serial_number])
     data.append([args.antenna_number, 'T', 'start_gpstime', current])
 
-    feed = 'FD'+args.antenna_number
+    feed = 'FD' + args.antenna_number
     print("Adding part %s %s at %s" % (feed, 'B', str(args.date)))
     mfg_number = 'P' + args.antenna_number.strip('A')
     data.append([feed, 'B', 'hpn', feed])
@@ -105,7 +113,7 @@ def add_new_parts(args):
     if args.make_update:
         part_connect.update_part(args, data)
     else:
-        print4test(data,args.verbosity,'Test: add_new_parts')
+        print4test(data, args.verbosity, 'Test: add_new_parts')
 
 
 def stop_previous_connections(args, handling):
@@ -124,14 +132,16 @@ def stop_previous_connections(args, handling):
             continue
         if c.downstream_part == args.antenna_number and c.down_part_rev == 'P':
             print("Stopping connection ", c)
-            station_connection = [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                                  c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-                                 'stop_gpstime', current]
+            station_connection = [c.upstream_part, c.up_part_rev, c.downstream_part,
+                                  c.down_part_rev, c.upstream_output_port,
+                                  c.downstream_input_port, c.start_gpstime,
+                                  'stop_gpstime', current]
             data.append(station_connection)
         if c.upstream_part == args.antenna_number and c.up_part_rev == 'P':
             print("Stopping connection ", c)
-            feed_connection = [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                               c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+            feed_connection = [c.upstream_part, c.up_part_rev, c.downstream_part,
+                               c.down_part_rev, c.upstream_output_port,
+                               c.downstream_input_port, c.start_gpstime,
                                'stop_gpstime', current]
             data.append(feed_connection)
     feed = feed_connection[2]
@@ -142,14 +152,16 @@ def stop_previous_connections(args, handling):
             continue
         if c.upstream_part == feed and c.up_part_rev == feed_rev:
             print("Stopping connection ", c)
-            frontend_connection = [c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                                   c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
+            frontend_connection = [c.upstream_part, c.up_part_rev,
+                                   c.downstream_part, c.down_part_rev,
+                                   c.upstream_output_port, c.downstream_input_port,
+                                   c.start_gpstime,
                                    'stop_gpstime', current]
             data.append(frontend_connection)
     if args.make_update:
         part_connect.update_connection(args, data)
     else:
-        print4test(data,args.verbosity,'Test: stop_previous_connections')
+        print4test(data, args.verbosity, 'Test: stop_previous_connections')
 
 
 def add_new_connection(args, c):
@@ -180,16 +192,20 @@ def add_new_connection(args, c):
     if args.make_update:
         part_connect.update_connection(args, data)
     else:
-        print4test(data,args.verbosity,'Test: add_new_connection')
+        print4test(data, args. verbosity, 'Test: add_new_connection')
 
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-a', '--antenna_number', help="PAPER antenna number", default=None)
-    parser.add_argument('-s', '--station_name', help="Name of station (HH# for hera)", default=None)
-    parser.add_argument('-n', '--serial_number', help="Serial number of HERA station/antenna", default=-1)
+    parser.add_argument('-a', '--antenna_number', help="PAPER antenna number",
+                        default=None)
+    parser.add_argument('-s', '--station_name', help="Name of station (HH# for hera)",
+                        default=None)
+    parser.add_argument('-n', '--serial_number', help="Serial number of HERA "
+                        "station/antenna", default=-1)
     cm_utils.add_date_time_args(parser)
-    parser.add_argument('--make-update', help="Set to actually change database (otherwise it just shows).",
+    parser.add_argument('--make-update', help="Set to actually change database "
+                        "(otherwise it just shows).",
                         dest='make_update', action='store_true')
     cm_utils.add_verbosity_args(parser)
 
@@ -206,7 +222,7 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 1:
         query = True
-    elif args.antenna_number == None or args.station_name == None:
+    elif args.antenna_number is None or args.station_name is None:
         query = True
     else:
         query = False
@@ -232,16 +248,17 @@ if __name__ == '__main__':
     if args.make_update:
         print("\nUpdating antenna/feed installation.\n")
     else:
-        print("\nThis will only print out the actions.\n\t'--make-update' to actually make changes.\n")
+        print("\nThis will only print out the actions.\n\t'--make-update' to "
+              "actually make changes.\n")
 
     print("Showing previous hookup:")
     previous_hookup = hookup.get_hookup(args.antenna_number, show_hookup=True)
 
     # This is the new station/antenna connection to be checked
     connect.connection(upstream_part=args.station_name, up_part_rev='A',
-               downstream_part=args.antenna_number, down_part_rev='T',
-               upstream_output_port='ground', downstream_input_port='ground',
-               start_gpstime=int(cm_utils._get_datetime(args.date, args.time).gps))
+                       downstream_part=args.antenna_number, down_part_rev='T',
+                       upstream_output_port='ground', downstream_input_port='ground',
+                       start_gpstime=int(cm_utils._get_astropytime(args.date, args.time).gps))
     if OK_to_add(args, connect, handling, geo):
         if args.make_update:
             print("OK to update -- actually doing it.")
@@ -256,16 +273,16 @@ if __name__ == '__main__':
         # Adding new antenna/feed connection
         feed = 'FD' + args.antenna_number
         connect.connection(upstream_part=args.antenna_number, up_part_rev='T',
-                           downstream_part=feed,              down_part_rev='B',
-                           upstream_output_port='focus',      downstream_input_port='input',
-                           start_gpstime=int(cm_utils._get_datetime(args.date, args.time).gps),
+                           downstream_part=feed, down_part_rev='B',
+                           upstream_output_port='focus', downstream_input_port='input',
+                           start_gpstime=int(cm_utils._get_astropytime(args.date, args.time).gps),
                            stop_gpstime=None)
         add_new_connection(args, connect)
         # Adding new feed/frontend connection
         frontend = 'FE' + args.antenna_number
-        connect.connection(upstream_part=feed,               up_part_rev='B',
-                           downstream_part=frontend,         down_part_rev='A',
+        connect.connection(upstream_part=feed, up_part_rev='B',
+                           downstream_part=frontend, down_part_rev='A',
                            upstream_output_port='terminals', downstream_input_port='input',
-                           start_gpstime=int(cm_utils._get_datetime(args.date, args.time).gps),
+                           start_gpstime=int(cm_utils._get_astropytime(args.date, args.time).gps),
                            stop_gpstime=None)
         add_new_connection(args, connect)
