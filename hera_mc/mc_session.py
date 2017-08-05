@@ -923,6 +923,28 @@ class MCSession(Session):
                                  'hera_mc/scripts/update_qm_list.py')
             self.commit()
 
+    def update_qm_list(self):
+        """
+        Updates metric list according to descriptions in hera_qm.
+        """
+        from hera_qm.ant_metrics import ant_metric_list
+        from hera_qm.cal_metrics import firstcal_metric_list
+        from hera_qm.cal_metrics import omnical_metric_list
+        import copy
+
+        metric_list = copy.copy(ant_metric_list)
+        metric_list.update(firstcal_metric_list)
+        metric_list.update(omnical_metric_list)
+
+        for metric, desc in metric_list.items():
+            # Check if metric is already in db.
+            r = self.get_metric_desc(metric=metric)
+            if len(r) == 0:
+                self.add_metric_desc(metric, desc)
+            else:
+                self.update_metric_desc(metric, desc)
+        self.commit()
+
     def add_metrics_file(self, filename, ftype):
         """
         Adds a file worth of quality metrics to the db.
