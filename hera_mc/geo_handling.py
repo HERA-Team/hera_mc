@@ -362,6 +362,7 @@ class Handling:
                                               'latitude': stn.lat,
                                               'elevation': stn.elevation,
                                               'antenna_number': ant_num,
+                                              # this is a string giving the f-engine and input name
                                               'correlator_input': -1,  # placeholder
                                               'start_date': conn.start_date,
                                               'stop_date': conn.stop_date})
@@ -410,7 +411,10 @@ class Handling:
         rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions, cofa_loc.lon)
 
         corr_dict = {'antenna_numbers': ant_nums,
-                     'antenna_names': stn_names,  # This is actually station names, not antenna names
+                     # This is actually station names, not antenna names,
+                     # but antenna_names is what it's called in pyuvdata
+                     'antenna_names': stn_names,
+                     # this is a string giving the f-engine and input name
                      'correlator_inputs': corr_inputs,
                      'antenna_utm_datum_vals': datums,
                      'antenna_utm_tiles': tiles,
