@@ -10,6 +10,7 @@ import unittest
 from hera_mc import mc, cm_transfer
 import warnings
 import sys
+import collections
 
 test_db = None
 
@@ -41,6 +42,14 @@ class TestHERAMC(unittest.TestCase):
         self.test_conn.close()
 
 
+def get_iterable(x):
+    """Helper function to ensure iterability."""
+    if isinstance(x, collections.Iterable):
+        return x
+    else:
+        return (x,)
+
+
 # Functions that are useful for testing:
 def clearWarnings():
     """Quick code to make warnings reproducible."""
@@ -57,6 +66,8 @@ def checkWarnings(func, func_args=[], func_kwargs={},
                   category=UserWarning,
                   nwarnings=1, message=None, known_warning=None):
     """Function to check expected warnings."""
+    category = get_iterable(category)
+    message = get_iterable(message)
 
     clearWarnings()
     with warnings.catch_warnings(record=True) as w:
