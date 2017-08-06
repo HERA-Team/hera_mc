@@ -16,6 +16,10 @@ from hera_mc import mc, cm_transfer
 from hera_mc.qm import ant_metrics, array_metrics, metric_list
 from hera_mc import utils, geo_location
 from hera_mc.tests import TestHERAMC, checkWarnings
+from hera_qm.ant_metrics import ant_metrics_list
+from hera_qm.cal_metrics import firstcal_metrics_list
+from hera_qm.cal_metrics import omnical_metrics_list
+import copy
 
 
 class TestQM(TestHERAMC):
@@ -96,7 +100,7 @@ class TestQM(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.add_ant_metric, self.obsid,
                           0, 'N', 'test', 4.5)
         self.assertRaises(ValueError, self.test_session.add_ant_metric, self.obsid,
-                          0, -1, 'test', 4.5)
+                          0, u'\xff', 'test', 4.5)
         self.assertRaises(ValueError, self.test_session.add_ant_metric, self.obsid,
                           0, 'x', 4, 4.5)
         self.assertRaises(ValueError, self.test_session.add_ant_metric, self.obsid,
@@ -186,6 +190,26 @@ class TestQM(TestHERAMC):
         r = self.test_session.get_metric_desc(metric='test2')
         self.assertTrue('Auto-generated description.' in r[0].desc)
 
+    def test_update_qm_list(self):
+        self.test_session.update_qm_list()
+        r = self.test_session.get_metric_desc()
+        metric_list = copy.copy(ant_metrics_list)
+        metric_list.update(firstcal_metrics_list)
+        metric_list.update(omnical_metrics_list)
+        results = []
+        for result in r:
+            self.assertTrue(result.metric in metric_list.keys())
+            results.append(result.metric)
+        for metric in metric_list.keys():
+            self.assertTrue(metric in results)
+        metric = metric_list.keys()[0]
+        self.test_session.update_metric_desc(metric, 'foo')
+        self.test_session.commit()
+        # Doing it again will update rather than insert.
+        self.test_session.update_qm_list()
+        r = self.test_session.get_metric_desc(metric=metric)
+        self.assertTrue(r[0].desc == metric_list[metric])
+
     def test_add_metrics_file(self):
         # Initialize
         t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -194,14 +218,14 @@ class TestQM(TestHERAMC):
         # Create obs to satifsy foreign key constraints
         self.test_session.add_obs(t1, t2, self.obsid)
         self.test_session.commit()
-        filename = os.path.join(mc.test_data_path, 'ant_metrics_output.json')
+        filename = os.path.join(mc.test_data_path, 'example_firstcal_metrics.json')
         filebase = os.path.basename(filename)
         self.assertRaises(ValueError, self.test_session.add_metrics_file,
-                          filename, 'ant')
+                          filename, 'firstcal')
         self.test_session.add_lib_file(filebase, self.obsid, t2, 0.1)
         self.test_session.commit()
         self.test_session.update_qm_list()
-        self.test_session.add_metrics_file(filename, 'ant')
+        self.test_session.add_metrics_file(filename, 'firstcal')
 
 if __name__ == '__main__':
     unittest.main()

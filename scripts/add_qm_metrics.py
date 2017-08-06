@@ -3,6 +3,10 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
+"""
+Script to add quality metrics file to M&C database.
+"""
+
 import hera_mc.mc as mc
 import os
 import numpy as np

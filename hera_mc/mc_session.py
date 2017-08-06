@@ -927,14 +927,14 @@ class MCSession(Session):
         """
         Updates metric list according to descriptions in hera_qm.
         """
-        from hera_qm.ant_metrics import ant_metric_list
-        from hera_qm.cal_metrics import firstcal_metric_list
-        from hera_qm.cal_metrics import omnical_metric_list
+        from hera_qm.ant_metrics import ant_metrics_list
+        from hera_qm.cal_metrics import firstcal_metrics_list
+        from hera_qm.cal_metrics import omnical_metrics_list
         import copy
 
-        metric_list = copy.copy(ant_metric_list)
-        metric_list.update(firstcal_metric_list)
-        metric_list.update(omnical_metric_list)
+        metric_list = copy.copy(ant_metrics_list)
+        metric_list.update(firstcal_metrics_list)
+        metric_list.update(omnical_metrics_list)
 
         for metric, desc in metric_list.items():
             # Check if metric is already in db.
