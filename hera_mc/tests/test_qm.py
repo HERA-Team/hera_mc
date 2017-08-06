@@ -44,6 +44,9 @@ class TestQM(TestHERAMC):
         gl.created_gpstime = 1172530000
         self.test_session.add(gl)
         self.test_session.commit()
+        self.metric_list = copy.copy(ant_metrics_list)
+        self.metric_list.update(firstcal_metrics_list)
+        self.metric_list.update(omnical_metrics_list)
 
     def test_ant_metrics(self):
         # Initialize
@@ -193,22 +196,19 @@ class TestQM(TestHERAMC):
     def test_update_qm_list(self):
         self.test_session.update_qm_list()
         r = self.test_session.get_metric_desc()
-        metric_list = copy.copy(ant_metrics_list)
-        metric_list.update(firstcal_metrics_list)
-        metric_list.update(omnical_metrics_list)
         results = []
         for result in r:
-            self.assertTrue(result.metric in metric_list.keys())
+            self.assertTrue(result.metric in self.metric_list.keys())
             results.append(result.metric)
-        for metric in metric_list.keys():
+        for metric in self.metric_list.keys():
             self.assertTrue(metric in results)
-        metric = metric_list.keys()[0]
+        metric = self.metric_list.keys()[0]
         self.test_session.update_metric_desc(metric, 'foo')
         self.test_session.commit()
         # Doing it again will update rather than insert.
         self.test_session.update_qm_list()
         r = self.test_session.get_metric_desc(metric=metric)
-        self.assertTrue(r[0].desc == metric_list[metric])
+        self.assertTrue(r[0].desc == self.metric_list[metric])
 
     def test_add_metrics_file(self):
         # Initialize
@@ -226,6 +226,18 @@ class TestQM(TestHERAMC):
         self.test_session.commit()
         self.test_session.update_qm_list()
         self.test_session.add_metrics_file(filename, 'firstcal')
+        # Check that things got in
+        firstcal_array_metrics = set(['firstcal_metrics_agg_std',
+                                      'firstcal_metrics_good_sol'])
+        r = self.test_session.get_array_metric()
+        self.assertEqual(len(r), 2)
+        for result in r:
+            self.assertTrue(result.metric in firstcal_array_metrics)
+        firstcal_ant_metrics = set(firstcal_metrics_list.keys()) - firstcal_array_metrics
+        r = self.test_session.get_ant_metric()
+        for result in r:
+            self.assertTrue(result.metric in firstcal_ant_metrics)
+
 
 if __name__ == '__main__':
     unittest.main()
