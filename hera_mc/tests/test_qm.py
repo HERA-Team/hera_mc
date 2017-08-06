@@ -17,8 +17,8 @@ from hera_mc.qm import ant_metrics, array_metrics, metric_list
 from hera_mc import utils, geo_location
 from hera_mc.tests import TestHERAMC, checkWarnings
 from hera_qm.ant_metrics import ant_metrics_list
-from hera_qm.cal_metrics import firstcal_metrics_list
-from hera_qm.cal_metrics import omnical_metrics_list
+from hera_qm.firstcal_metrics import firstcal_metrics_list
+from hera_qm.omnical_metrics import omnical_metrics_list
 import copy
 
 

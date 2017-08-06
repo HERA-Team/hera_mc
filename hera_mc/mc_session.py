@@ -928,8 +928,8 @@ class MCSession(Session):
         Updates metric list according to descriptions in hera_qm.
         """
         from hera_qm.ant_metrics import ant_metrics_list
-        from hera_qm.cal_metrics import firstcal_metrics_list
-        from hera_qm.cal_metrics import omnical_metrics_list
+        from hera_qm.firstcal_metrics import firstcal_metrics_list
+        from hera_qm.omnical_metrics import omnical_metrics_list
         import copy
 
         metric_list = copy.copy(ant_metrics_list)
