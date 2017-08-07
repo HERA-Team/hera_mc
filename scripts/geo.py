@@ -117,7 +117,7 @@ if __name__ == '__main__':
     h.close()
 
     print('GEO[112]:  THIS IS JUST TESTING FOR NOW')
-    h.get_correlator_input_from_location('HH0')
+    h.get_correlator_input_from_location('HH0', query_date)
 
     if args.update:
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a "
