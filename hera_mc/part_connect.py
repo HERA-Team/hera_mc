@@ -383,9 +383,10 @@ class Connections(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def stop_existing_connections(session, h, conn_list, at_date, actually_do_it):
+def stop_existing_connections_to_part(session, h, conn_list, at_date, actually_do_it):
     """
-    This adds stop times to the previous connections in conn_list
+    This adds stop times to the previous connections in conn_list.  This is probably 
+    a dangerous module as is.
 
     Parameters:
     -------------
@@ -447,9 +448,40 @@ def get_connection_key(c, p):
     return return_key
 
 
+def stop_connections(session, conn_list, at_date, actually_do_it):
+    """
+    This adds a stop_date to the connections in conn_list
+
+    Parameters:
+    -------------
+    Session:  db session to use
+    conn_list:  list of lists with data [[upstream_part,rev,port,downstream_part,rev,port,start_gpstime],...]
+    at_date:  date to stop connection
+    actually_do_it:  boolean to actually stop the part
+    """
+    stop_at = int(at_date.gps)
+    data = []
+    for conn in conn_list:
+        print("Stopping connection {}:{}<{} - {}>{}:{} at {}".format(conn[0], conn[1], conn[2],
+                                                                     conn[5], conn[3], conn[4], str(at_date)))
+        this_one = []
+        for cc in conn:
+            this_one.append(cc)
+        this_one.append('stop_gpstime')
+        this_one.append(stop_at)
+        data.append(this_one)
+
+    if actually_do_it:
+        update_connection(session, data, True)
+    else:
+        print("--Here's what would happen if you set the --actually_do_it flag:")
+        for d in data:
+            print('\t' + str(d))
+
+
 def add_new_connections(session, c, conn_list, at_date, actually_do_it):
     """
-    This generates a connection object to send to the updater for a new connection
+    This uses a connection object to send data to the updater for a new connection
 
     Parameters:
     -------------
@@ -457,7 +489,7 @@ def add_new_connections(session, c, conn_list, at_date, actually_do_it):
     c:  connection handling object
     conn_list:  list containing parts to stop
     at_date:  date to stop
-    actually_do_it:  boolean to actually stop the part
+    actually_do_it:  boolean to actually add the part
     """
     start_at = int(at_date.gps)
     data = []

@@ -57,7 +57,6 @@ if __name__ == '__main__':
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
     connect = part_connect.Connections()
-    part = part_connect.Parts()
     handling = cm_handling.Handling(session)
     up_check = handling.get_connection_dossier(hpn=args.uppart, rev=args.uprev,
                                                port=args.upport, at_date=at_date,
@@ -67,14 +66,15 @@ if __name__ == '__main__':
                                                exact_match=True)
 
     # Check for connection
+    print("ADD_CONNECTION[70]:  FIXIT:  Need to only check for appropriate direction of the connection.")
     if len(up_check['connections'].keys() > 0 or dn_check['connections'].keys() > 0):
         go_ahead = False
         print("Error:  {} and/or {} already connected".format(args.uppart,
                                                               args.dnpart))
-        print("Stopping this swap.")
+        print("Stopping this transaction.")
     else:
         go_ahead = True
-        print('Adding connections {}:{}:{} <-> {}:{}:{}'
+        print('Adding connection {}:{}:{} <-> {}:{}:{}'
               .format(args.uppart, args.uprev, args.upport, args.dnpart,
                       args.dnrev, args.dnport))
 

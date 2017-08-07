@@ -225,6 +225,45 @@ class Handling:
                     table_data.append(tdata)
         print('\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
 
+    def get_specific_connection(self, c, at_date=None):
+        """
+        Finds and returns a list of connections matching the not None components of the query.
+        At the very least upstream_part and downstream_part must be included.  Revisions and 
+        ports are included if not None.
+        If at_date is a Time, it will return ones at that time.  Otherwise it ignores Time.
+
+        Returns a list of connections (class)
+
+        Parameters:
+        ------------
+        c:  connection class containing the query
+        at_date:  Astropy Time to check epoch.  If None is ignored.
+        """
+        fnd = []
+        for conn in self.session.query(PC.Connections).filter(
+                (PC.Connections.upstream_part == c.upstream_part) &
+                (PC.Connections.downstream_part == c.downstream_part)):
+            conn.gps2Time()
+            include_this_one = True
+            if c.up_part_rev is not None and \
+                    c.up_part_rev.lower() != conn.up_part_rev.lower():
+                include_this_one = False
+            if c.down_part_rev is not None and \
+                    c.down_part_rev.lower() != conn.down_part_rev.lower():
+                include_this_one = False
+            if c.upstream_output_port is not None and \
+                    c.upstream_output_port.lower() != conn.upstream_output_port.lower():
+                include_this_one = False
+            if c.downstream_input_port is not None and \
+                    c.downstream_input_port.lower() != conn.downstream_input_port.lower():
+                include_this_one = False
+            if at_date is not None and \
+                    not cm_utils._is_active(at_date, conn.start_date, conn.stop_date):
+                include_this_one = False
+            if include_this_one:
+                fnd.append(copy.copy(conn))
+        return fnd
+
     def get_connection_dossier(self, hpn, rev, port, at_date, exact_match=False):
         """
         Return information on parts connected to hpn
