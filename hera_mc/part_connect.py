@@ -385,8 +385,10 @@ class Connections(MCDeclarativeBase):
 
 def stop_existing_connections_to_part(session, h, conn_list, at_date, actually_do_it):
     """
-    This adds stop times to the previous connections in conn_list.  This is probably 
-    a dangerous module as is.
+    This adds stop times to the connections for parts listed in conn_list.  Use this method with
+    caution, as it currently doesn't include much checking.  You probably should use the much
+    more specific stop_connections method below.  It is being kept around for possible use in 
+    future scripts that "remove" replaced parts.
 
     Parameters:
     -------------
@@ -481,7 +483,7 @@ def stop_connections(session, conn_list, at_date, actually_do_it):
 
 def add_new_connections(session, c, conn_list, at_date, actually_do_it):
     """
-    This uses a connection object to send data to the updater for a new connection
+    This uses a connection object to send data to the update_connection method to make a new connection
 
     Parameters:
     -------------
