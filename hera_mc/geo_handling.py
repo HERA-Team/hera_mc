@@ -368,15 +368,19 @@ class Handling:
                                               'stop_date': conn.stop_date})
         return stations_conn
 
-    def get_correlator_input_from_location(self, loc):
-        hookup = cm_hookup.get_hookup(hpn=loc, rev='A', port='all', at_date=active_date, 
+    def get_correlator_input_from_location(self, loc, at_date):
+        from hera_mc import cm_hookup
+        hookup = cm_hookup.Hookup(self.session)
+        hookup_dict = hookup.get_hookup(hpn=loc, rev='A', port='all', at_date=at_date, 
                                       state_args={'show_levels':False}, exact_match=True)
         last_col = hookup_dict['columns'][-1]
-        print(last_col)
-        for k, h in hookup_dict['hookup'].iteritems():
-            print('-----{}-----'.format(k))
-            for dd in h:
-                print(dd.upstream_part)
+        last_col = 'f_engine'
+        if last_col == 'f_engine':
+            corr_input = hookup_dict['hookup']
+            for k, h in hookup_dict['hookup'].iteritems():
+                print('-----{}-----'.format(k))
+                for dd in h:
+                    print(dd.upstream_part,dd.downstream_part)
 
     def get_cminfo_correlator(self):
         """

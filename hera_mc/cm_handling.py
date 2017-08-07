@@ -14,7 +14,7 @@ import sys
 import copy
 from astropy.time import Time
 
-from hera_mc import mc, geo_handling, correlator_levels, cm_utils
+from hera_mc import mc, correlator_levels, cm_utils
 from hera_mc import part_connect as PC
 from hera_mc import cm_revisions as cmpr
 
@@ -129,6 +129,7 @@ class Handling:
                         at_date=at_date, exact_match=True)
                     part_dossier[pr_key]['connections'] = connections
                     if part.hptype == 'station':
+                        from hera_mc import geo_handling
                         part_dossier[pr_key]['geo'] = geo_handling.get_location(
                             [part.hpn], at_date, show_location=False)
                     part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
