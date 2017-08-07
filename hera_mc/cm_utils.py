@@ -159,9 +159,9 @@ def _get_stopdate(_stop_date):
         return _future_date()
 
 
-def _is_active(current, _start_date, _stop_date):
+def _is_active(at_date, _start_date, _stop_date):
     _stop_date = _get_stopdate(_stop_date)
-    return current >= _start_date and current <= _stop_date
+    return at_date >= _start_date and at_date <= _stop_date
 
 
 def _return_TF(x):
@@ -180,9 +180,11 @@ def _query_default(a, args):
     vargs = vars(args)
     default = vargs[a]
     s = '%s [%s]:  ' % (a, str(default))
-    v = raw_input(s).strip()
+    v = raw_input(s)
     if len(v) == 0:
         v = default
+    elif v.lower() == 'none':
+        v = None
     return v
 
 
