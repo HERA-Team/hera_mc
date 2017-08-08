@@ -11,6 +11,7 @@ from hera_mc import mc, cm_transfer
 import warnings
 import sys
 import collections
+from hera_mc.utils import get_iterable
 
 test_db = None
 
@@ -40,14 +41,6 @@ class TestHERAMC(unittest.TestCase):
     def tearDown(self):
         self.test_trans.rollback()
         self.test_conn.close()
-
-
-def get_iterable(x):
-    """Helper function to ensure iterability."""
-    if isinstance(x, collections.Iterable):
-        return x
-    else:
-        return (x,)
 
 
 # Functions that are useful for testing:
