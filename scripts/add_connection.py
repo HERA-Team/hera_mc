@@ -65,20 +65,26 @@ if __name__ == '__main__':
                                                port=args.dnport, at_date=at_date,
                                                exact_match=True)
 
-    # Check for connection
-    print("ADD_CONNECTION[70]:  FIXIT:  Need to only check for appropriate direction of the connection.")
-    if len(up_check['connections'].keys() > 0 or dn_check['connections'].keys() > 0):
-        go_ahead = False
-        print("Error:  {} and/or {} already connected".format(args.uppart,
-                                                              args.dnpart))
-        print("Stopping this transaction.")
-    else:
-        go_ahead = True
+    # Check for upward connection downstream
+    for k, v in up_check['connection'].iteritems():
+        if v.upstream_part.lower() == args.uppart.lower() and v.up_part_rev.lower() == args.uprev and
+            v.upstream_output_port.lower() == args.upport.lower() and v.stop_gpstime is not None:
+                go_ahead = False
+                print("Error:  {}:{}<{}> is already actively connected to {}".format(args.uppart, 
+                    args.uprev, args.upport, v.downstream_part))
+    # Check for downward connection upstream
+    for k, v in dn_check['connection'].iteritems():
+        if v.downstream_part.lower() == args.dnpart.lower() and v.down_part_rev.lower() == args.dnrev and
+            v.downstream_input_port.lower() == args.dnport.lower() and v.stop_gpstime is not None:
+                go_ahead = False
+                print("Error:  {}:{}<{}> is already actively connected to {}".format(args.dnpart, 
+                    args.dnrev, args.dnport, v.upstream_part))
+
+
+    if go_ahead:
         print('Adding connection {}:{}:{} <-> {}:{}:{}'
               .format(args.uppart, args.uprev, args.upport, args.dnpart,
                       args.dnrev, args.dnport))
-
-    if go_ahead:
         # Connect parts
         npc = [[args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport]]
         part_connect.add_new_connections(session, connect, npc, at_date, args.actually_do_it)
