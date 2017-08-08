@@ -13,13 +13,11 @@ from astropy.time import Time, TimeDelta
 import os
 
 from hera_mc import mc, cm_transfer
-from hera_mc.qm import ant_metrics, array_metrics, metric_list
+from hera_mc.qm import ant_metrics, array_metrics
 from hera_mc import utils, geo_location
 from hera_mc.tests import TestHERAMC, checkWarnings
-from hera_qm.ant_metrics import ant_metrics_list
-from hera_qm.firstcal_metrics import firstcal_metrics_list
-from hera_qm.omnical_metrics import omnical_metrics_list
-import copy
+from hera_qm.firstcal_metrics import get_firstcal_metrics_dict
+from hera_qm.utils import get_metrics_dict
 
 
 class TestQM(TestHERAMC):
@@ -44,9 +42,7 @@ class TestQM(TestHERAMC):
         gl.created_gpstime = 1172530000
         self.test_session.add(gl)
         self.test_session.commit()
-        self.metric_list = copy.copy(ant_metrics_list)
-        self.metric_list.update(firstcal_metrics_list)
-        self.metric_list.update(omnical_metrics_list)
+        self.metrics_dict = get_metrics_dict()
 
     def test_ant_metrics(self):
         # Initialize
@@ -198,17 +194,17 @@ class TestQM(TestHERAMC):
         r = self.test_session.get_metric_desc()
         results = []
         for result in r:
-            self.assertTrue(result.metric in self.metric_list.keys())
+            self.assertTrue(result.metric in self.metrics_dict.keys())
             results.append(result.metric)
-        for metric in self.metric_list.keys():
+        for metric in self.metrics_dict.keys():
             self.assertTrue(metric in results)
-        metric = self.metric_list.keys()[0]
+        metric = self.metrics_dict.keys()[0]
         self.test_session.update_metric_desc(metric, 'foo')
         self.test_session.commit()
         # Doing it again will update rather than insert.
         self.test_session.update_qm_list()
         r = self.test_session.get_metric_desc(metric=metric)
-        self.assertTrue(r[0].desc == self.metric_list[metric])
+        self.assertTrue(r[0].desc == self.metrics_dict[metric])
 
     def test_add_metrics_file(self):
         # Initialize
@@ -233,7 +229,8 @@ class TestQM(TestHERAMC):
         self.assertEqual(len(r), 2)
         for result in r:
             self.assertTrue(result.metric in firstcal_array_metrics)
-        firstcal_ant_metrics = set(firstcal_metrics_list.keys()) - firstcal_array_metrics
+        firstcal_ant_metrics = (set(get_firstcal_metrics_dict().keys()) -
+                                firstcal_array_metrics)
         r = self.test_session.get_ant_metric()
         for result in r:
             self.assertTrue(result.metric in firstcal_ant_metrics)

@@ -927,14 +927,9 @@ class MCSession(Session):
         """
         Updates metric list according to descriptions in hera_qm.
         """
-        from hera_qm.ant_metrics import ant_metrics_list
-        from hera_qm.firstcal_metrics import firstcal_metrics_list
-        from hera_qm.omnical_metrics import omnical_metrics_list
-        import copy
+        from hera_qm.utils import get_metrics_dict
 
-        metric_list = copy.copy(ant_metrics_list)
-        metric_list.update(firstcal_metrics_list)
-        metric_list.update(omnical_metrics_list)
+        metric_list = get_metrics_dict()
 
         for metric, desc in metric_list.items():
             # Check if metric is already in db.
