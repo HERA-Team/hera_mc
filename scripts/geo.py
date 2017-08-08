@@ -21,6 +21,7 @@ if __name__ == '__main__':
                         action='store_true')
     parser.add_argument('--since_date', help="Only show antennas (set by background) "
                         "installed since date/time [False]", action='store_true')
+    parser.add_argument('--correlator', help="Print correlator inputs for antenna(s) at location(s)", action='store_true')
 
     # parameter state/value arguments
     cm_utils.add_verbosity_args(parser)
@@ -98,19 +99,22 @@ if __name__ == '__main__':
             state_args['marker_shape'] = '*'
             state_args['marker_size'] = 14
             show_fig = h.plot_stations(new_antennas, query_date, state_args)
-    if args.find is not None:
+    if args.find is not None and not args.correlator:
         located = h.get_location(args.find, query_date, show_location=True,
                                  verbosity=state_args['verbosity'])
         if args.graph and len(located) > 0:
             state_args['marker_size'] = 14
             h.overplot(located, state_args)
+    elif args.find and args.correlator:
+        for a2f in args.find:
+            corin = h.get_correlator_input_from_location(a2f, query_date)
+            print("Correlator inputs for {}:".format(a2f))
+            for c in corin:
+                print('\t'+c)
 
     if show_fig:
         geo_handling.show_it_now(show_fig)
     h.close()
-
-    print('GEO[112]:  THIS IS JUST TESTING FOR NOW')
-    h.get_correlator_input_from_location('HH0', query_date)
 
     if args.update:
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a "

@@ -341,6 +341,7 @@ class Handling:
                         # get all connections
                         connections = self.session.query(part_connect.Connections).filter(
                             part_connect.Connections.upstream_part == stn.station_name)
+                        correlator_inputs = []
                     else:
                         # only get current connections
                         connections = self.session.query(part_connect.Connections).filter(
@@ -348,6 +349,7 @@ class Handling:
                             (part_connect.Connections.start_gpstime < active_date) &
                             ((part_connect.Connections.stop_gpstime > active_date) |
                              (part_connect.Connections.stop_gpstime is None)))
+                        correlator_inputs = self.get_correlator_input_from_location(stn.station_name, active_date)
 
                     for conn in connections:
                         ant_num = int(conn.downstream_part[1:])
@@ -363,7 +365,7 @@ class Handling:
                                               'elevation': stn.elevation,
                                               'antenna_number': ant_num,
                                               # this is a string giving the f-engine and input name
-                                              'correlator_input': -1,  # placeholder
+                                              'correlator_input': correlator_inputs,
                                               'start_date': conn.start_date,
                                               'stop_date': conn.stop_date})
         return stations_conn
@@ -374,13 +376,11 @@ class Handling:
         hookup_dict = hookup.get_hookup(hpn=loc, rev='A', port='all', at_date=at_date, 
                                       state_args={'show_levels':False}, exact_match=True)
         last_col = hookup_dict['columns'][-1]
-        last_col = 'f_engine'
-        if last_col == 'f_engine':
-            corr_input = hookup_dict['hookup']
+        corr_input = []
+        if last_col == 'f_engine' and len(hookup_dict['hookup']) in [1,2]:
             for k, h in hookup_dict['hookup'].iteritems():
-                print('-----{}-----'.format(k))
-                for dd in h:
-                    print(dd.upstream_part,dd.downstream_part)
+                corr_input.append(h[-1].downstream_part)
+        return corr_input
 
     def get_cminfo_correlator(self):
         """
@@ -428,7 +428,7 @@ class Handling:
                      # This is actually station names, not antenna names,
                      # but antenna_names is what it's called in pyuvdata
                      'antenna_names': stn_names,
-                     # this is a string giving the f-engine and input name
+                     # this is an array giving the f-engine and input name
                      'correlator_inputs': corr_inputs,
                      'antenna_utm_datum_vals': datums,
                      'antenna_utm_tiles': tiles,

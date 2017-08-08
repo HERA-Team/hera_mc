@@ -8,3 +8,4 @@ paperhex,PH,PAPER Hex locations,rs
 paperimaging,PI,PAPER Imaging locations,gs
 paperpolarized,PP,PAPER Polarized locations,bd
 stationgrid,S,Station grid locations,ks
+cofa,COFA,Center of array,bs
