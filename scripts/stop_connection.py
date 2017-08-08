@@ -75,5 +75,5 @@ if __name__ == '__main__':
 
     if go_ahead:
         # Connect parts
-        npc = [[args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport, connection_start_was]]
+        npc = [[args.uppart, args.uprev, args.dnpart, args.dnrev, args.upport, args.dnport, connection_start_was]]
         part_connect.stop_connections(session, npc, at_date, args.actually_do_it)
