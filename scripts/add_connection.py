@@ -64,21 +64,22 @@ if __name__ == '__main__':
     dn_check = handling.get_connection_dossier(hpn=args.dnpart, rev=args.dnrev,
                                                port=args.dnport, at_date=at_date,
                                                exact_match=True)
-
     # Check for connection
-    print("ADD_CONNECTION[70]:  FIXIT:  Need to only check for appropriate direction of the connection.")
-    if len(up_check['connections'].keys() > 0 or dn_check['connections'].keys() > 0):
-        go_ahead = False
-        print("Error:  {} and/or {} already connected".format(args.uppart,
-                                                              args.dnpart))
-        print("Stopping this transaction.")
-    else:
+    c = part_connect.Connections()
+    c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
+                 downstream_part=args.dnpart, down_part_rev=args.dnrev, downstream_input_port=args.dnport)
+    chk = handling.get_specific_connection(c, at_date)
+    if len(chk) == 0:
         go_ahead = True
+    elif len(chk) == 1 and chk[0].stop_gpstime is not None:
+        go_ahead = True
+    else:
+        go_ahead = False
+
+    if go_ahead:
         print('Adding connection {}:{}:{} <-> {}:{}:{}'
               .format(args.uppart, args.uprev, args.upport, args.dnpart,
                       args.dnrev, args.dnport))
-
-    if go_ahead:
         # Connect parts
         npc = [[args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport]]
         part_connect.add_new_connections(session, connect, npc, at_date, args.actually_do_it)
