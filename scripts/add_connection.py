@@ -64,22 +64,15 @@ if __name__ == '__main__':
     dn_check = handling.get_connection_dossier(hpn=args.dnpart, rev=args.dnrev,
                                                port=args.dnport, at_date=at_date,
                                                exact_match=True)
-
-    # Check for upward connection downstream
-    for k, v in up_check['connection'].iteritems():
-        if v.upstream_part.lower() == args.uppart.lower() and v.up_part_rev.lower() == args.uprev and
-            v.upstream_output_port.lower() == args.upport.lower() and v.stop_gpstime is not None:
-                go_ahead = False
-                print("Error:  {}:{}<{}> is already actively connected to {}".format(args.uppart, 
-                    args.uprev, args.upport, v.downstream_part))
-    # Check for downward connection upstream
-    for k, v in dn_check['connection'].iteritems():
-        if v.downstream_part.lower() == args.dnpart.lower() and v.down_part_rev.lower() == args.dnrev and
-            v.downstream_input_port.lower() == args.dnport.lower() and v.stop_gpstime is not None:
-                go_ahead = False
-                print("Error:  {}:{}<{}> is already actively connected to {}".format(args.dnpart, 
-                    args.dnrev, args.dnport, v.upstream_part))
-
+    # Check for connection
+    c = part_connect.Connections()
+    c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
+                 downstream_part=args.dnpart, down_part_rev=args.dnrev, downstream_input_port=args.dnport)
+    chk = handling.get_specific_connection(c, at_date)
+    if len(chk) == 1 and chk[0].stop_gpstime is not None:
+        go_ahead = True
+    else:
+        go_ahead = False
 
     if go_ahead:
         print('Adding connection {}:{}:{} <-> {}:{}:{}'
