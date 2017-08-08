@@ -30,7 +30,8 @@ def query_args(args):
         args.dnrev = raw_input('Downstream part revision:  ')
     if args.dnport is None:
         args.dnport = raw_input('Downstream input port:  ')
-    args.date = cm_utils._query_default('date', args)
+    if args.date == 'now': # note that 'now' is the current default.
+        args.date = cm_utils._query_default('date', args)
     return args
 
 
