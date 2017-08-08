@@ -69,7 +69,9 @@ if __name__ == '__main__':
     c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
                  downstream_part=args.dnpart, down_part_rev=args.dnrev, downstream_input_port=args.dnport)
     chk = handling.get_specific_connection(c, at_date)
-    if len(chk) == 1 and chk[0].stop_gpstime is not None:
+    if len(chk) == 0:
+        go_ahead = True
+    elif len(chk) == 1 and chk[0].stop_gpstime is not None:
         go_ahead = True
     else:
         go_ahead = False
