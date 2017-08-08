@@ -464,8 +464,8 @@ def stop_connections(session, conn_list, at_date, actually_do_it):
     stop_at = int(at_date.gps)
     data = []
     for conn in conn_list:
-        print("Stopping connection {}:{}<{} - {}>{}:{} at {}".format(conn[0], conn[1], conn[2],
-                                                                     conn[5], conn[3], conn[4], str(at_date)))
+        print("Stopping connection {}:{}<{} - {}>{}:{} at {}".format(conn[0], conn[1], conn[4],
+                                                                     conn[2], conn[3], conn[5], str(at_date)))
         this_one = []
         for cc in conn:
             this_one.append(cc)
@@ -474,7 +474,7 @@ def stop_connections(session, conn_list, at_date, actually_do_it):
         data.append(this_one)
 
     if actually_do_it:
-        update_connection(session, data, True)
+        update_connection(session, data, False)
     else:
         print("--Here's what would happen if you set the --actually_do_it flag:")
         for d in data:
