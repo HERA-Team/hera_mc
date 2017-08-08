@@ -74,15 +74,15 @@ class Hookup:
             outp = len(options['output_ports'])
             if inp == 0:  # it is a station
                 rv = 2
-            elif options['part'].hpn[-1] in ['E', 'N']:
+            elif options['part'].hpn[-1].upper() in ['E', 'N']: # is a polarized part
                 rv = 1
             elif inp == 1 and outp > 0:
-                # they are different since in get_hookup we loop over input
-                # ports unless it's a station
+                # they are different since in get_hookup we loop over input ports
+                # unless it's a station
                 rv = 2
             else:
                 rv = 1
-            self.__how_many = rv
+            self.__how_many_to_do = rv
         else:
             if options is None or len(options) == 0:
                 rv = None
@@ -90,7 +90,7 @@ class Hookup:
                 rv = options[0]
             else:
                 # Figures out which port to use.  This sort of works for now, not guaranteed
-                if self.__how_many == 1:
+                if self.__how_many_to_do == 1:
                     srn = -1
                     ports_ratio = []
                     for i, optn in enumerate(options):
@@ -130,8 +130,9 @@ class Hookup:
             self.__recursive_go(direction, part, rev, port)
 
     def __follow_hookup_stream(self, part, rev, port, sn):
+        # This is part of the messy stuff to try and get the right next port
         self.__series_number = sn
-        self.__first_port = port
+        # ---------
         self.upstream = []
         self.downstream = []
         self.__recursive_go('up', part, rev, port)
@@ -180,7 +181,7 @@ class Hookup:
                 continue
             if len(parts[hpnr]['connections']['ordered-pairs'][0]) == 0:
                 continue
-            how_many_to_do = self.__wade_through_the_messy_stuff(parts[hpnr], True)
+            how_many_to_do = self.__wade_through_the_messy_stuff(parts[hpnr], how_many=True)
 
             parts[hpnr]['input_ports'].sort()
             parts[hpnr]['output_ports'].sort()
