@@ -3,7 +3,8 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Returns info from Time for given date/time
+"""
+Prints Time info for given date/time
 
 """
 from __future__ import absolute_import, division, print_function
