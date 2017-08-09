@@ -19,7 +19,7 @@ from hera_mc import geo_handling
 from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_TOL
 
 
-class ant_metrics(MCDeclarativeBase):
+class AntMetrics(MCDeclarativeBase):
     """
     Definition of ant_metrics table.
 
@@ -93,7 +93,7 @@ class ant_metrics(MCDeclarativeBase):
                    mc_time=mc_time, val=val)
 
 
-class array_metrics(MCDeclarativeBase):
+class ArrayMetrics(MCDeclarativeBase):
     """
     Definition of array_metrics table.
 
@@ -145,7 +145,7 @@ class array_metrics(MCDeclarativeBase):
         return cls(obsid=obsid, metric=metric, mc_time=mc_time, val=val)
 
 
-class metric_list(MCDeclarativeBase):
+class MetricList(MCDeclarativeBase):
     """
     Definition of metric_list table, which provides descriptions of metrics
 

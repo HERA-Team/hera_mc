@@ -748,11 +748,11 @@ class MCSession(Session):
         val: float
             value of metric
         """
-        from .qm import ant_metrics
+        from .qm import AntMetrics
 
         db_time = self.get_current_db_time()
 
-        self.add(ant_metrics.create(obsid, ant, pol, metric, db_time, val))
+        self.add(AntMetrics.create(obsid, ant, pol, metric, db_time, val))
 
     def get_ant_metric(self, ant=None, pol=None, metric=None, starttime=None,
                        stoptime=None):
@@ -774,29 +774,27 @@ class MCSession(Session):
 
         Returns:
         --------
-        list of ant_metrics objects
+        list of AntMetrics objects
         """
-        from .qm import ant_metrics
+        from .qm import AntMetrics
 
         args = []
         if ant is not None:
-            args.append(ant_metrics.ant.in_(get_iterable(ant)))
+            args.append(AntMetrics.ant.in_(get_iterable(ant)))
         if pol is not None:
-            args.append(ant_metrics.pol.in_(get_iterable(pol)))
+            args.append(AntMetrics.pol.in_(get_iterable(pol)))
         if metric is not None:
-            args.append(ant_metrics.metric.in_(get_iterable(metric)))
+            args.append(AntMetrics.metric.in_(get_iterable(metric)))
         if starttime is None:
             starttime = 0
-        else:
-            if isinstance(starttime, Time):
-                starttime = starttime.gps
+        elif isinstance(starttime, Time):
+            starttime = starttime.gps
         if stoptime is None:
             stoptime = Time.now().gps
-        else:
-            if isinstance(stoptime, Time):
-                stoptime = stoptime.gps
-        args.append(ant_metrics.obsid.between(starttime, stoptime))
-        return self.query(ant_metrics).filter(*args).all()
+        elif isinstance(stoptime, Time):
+            stoptime = stoptime.gps
+        args.append(AntMetrics.obsid.between(starttime, stoptime))
+        return self.query(AntMetrics).filter(*args).all()
 
     def add_array_metric(self, obsid, metric, val):
         """
@@ -811,11 +809,11 @@ class MCSession(Session):
         val: float
             value of metric
         """
-        from .qm import array_metrics
+        from .qm import ArrayMetrics
 
         db_time = self.get_current_db_time()
 
-        self.add(array_metrics.create(obsid, metric, db_time, val))
+        self.add(ArrayMetrics.create(obsid, metric, db_time, val))
 
     def get_array_metric(self, metric=None, starttime=None, stoptime=None):
         """
@@ -832,25 +830,23 @@ class MCSession(Session):
 
         Returns:
         --------
-        list of array_metrics objects
+        list of ArrayMetrics objects
         """
-        from .qm import array_metrics
+        from .qm import ArrayMetrics
 
         args = []
         if metric is not None:
-            args.append(array_metrics.metric.in_(get_iterable(metric)))
+            args.append(ArrayMetrics.metric.in_(get_iterable(metric)))
         if starttime is None:
             starttime = 0
-        else:
-            if isinstance(starttime, Time):
-                starttime = starttime.gps
+        elif isinstance(starttime, Time):
+            starttime = starttime.gps
         if stoptime is None:
             stoptime = Time.now().gps
-        else:
-            if isinstance(stoptime, Time):
-                stoptime = stoptime.gps
-        args.append(array_metrics.obsid.between(starttime, stoptime))
-        return self.query(array_metrics).filter(*args).all()
+        elif isinstance(stoptime, Time):
+            stoptime = stoptime.gps
+        args.append(ArrayMetrics.obsid.between(starttime, stoptime))
+        return self.query(ArrayMetrics).filter(*args).all()
 
     def add_metric_desc(self, metric, desc):
         """
@@ -863,14 +859,14 @@ class MCSession(Session):
         desc: string
             description of metric
         """
-        from .qm import metric_list
+        from .qm import MetricList
 
-        self.add(metric_list.create(metric, desc))
+        self.add(MetricList.create(metric, desc))
 
     def update_metric_desc(self, metric, desc):
         """
         Update the description of a metric in the M&C database.
-        This will be required when replace an RTP auto-generated description for
+        This will be required when replacing an RTP auto-generated description for
         new metrics.
 
         Parameters:
@@ -880,9 +876,9 @@ class MCSession(Session):
         desc: string
             description of metric
         """
-        from .qm import metric_list
+        from .qm import MetricList
 
-        self.query(metric_list).filter(metric_list.metric == metric)[0].desc = desc
+        self.query(MetricList).filter(MetricList.metric == metric)[0].desc = desc
         self.commit()
 
     def get_metric_desc(self, metric=None):
@@ -896,15 +892,15 @@ class MCSession(Session):
 
         Returns:
         --------
-        list of metric_list objects
+        list of MetricList objects
         """
-        from .qm import metric_list
+        from .qm import MetricList
 
         args = []
         if metric is not None:
-            args.append(metric_list.metric.in_(get_iterable(metric)))
+            args.append(MetricList.metric.in_(get_iterable(metric)))
 
-        return self.query(metric_list).filter(*args).all()
+        return self.query(MetricList).filter(*args).all()
 
     def check_metric_desc(self, metric):
         """
@@ -940,7 +936,7 @@ class MCSession(Session):
                 self.update_metric_desc(metric, desc)
         self.commit()
 
-    def add_metrics_file(self, filename, ftype):
+    def ingest_metrics_file(self, filename, ftype):
         """
         Adds a file worth of quality metrics to the db.
 

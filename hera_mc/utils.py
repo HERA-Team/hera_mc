@@ -34,7 +34,8 @@ def get_iterable(x):
     if isinstance(x, str):
         return (x,)
     else:
-        if isinstance(x, collections.Iterable):
-            return x
-        else:
+        try:
+            iter(x)
+        except TypeError:
             return (x,)
+    return x

@@ -10,10 +10,6 @@ args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 session = db.sessionmaker()
 
-metric_list = copy(ant_metric_list)
-metric_list.update(firstcal_metric_list)
-metric_list.update(omnical_metric_list)
-
 session.update_qm_list()
 
 session.commit()

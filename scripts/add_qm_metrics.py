@@ -24,9 +24,11 @@ session = db.sessionmaker()
 
 files = args.files
 if len(files) == 0:
-    raise AssertionError('Please provide a list of quality metric files.')
+    import sys
+    print >>sys.stderr, 'Please provide a list of quality metric files.'
+    sys.exit(1)
 
 for f in files:
-    session.add_metrics_file(f, args.type)
+    session.ingest_metrics_file(f, args.type)
 
 session.commit()

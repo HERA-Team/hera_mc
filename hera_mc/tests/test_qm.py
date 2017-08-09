@@ -13,7 +13,7 @@ from astropy.time import Time, TimeDelta
 import os
 
 from hera_mc import mc, cm_transfer
-from hera_mc.qm import ant_metrics, array_metrics
+from hera_mc.qm import AntMetrics, ArrayMetrics
 from hera_mc import utils, geo_location
 from hera_mc.tests import TestHERAMC, checkWarnings
 from hera_qm.firstcal_metrics import get_firstcal_metrics_dict
@@ -44,7 +44,7 @@ class TestQM(TestHERAMC):
         self.test_session.commit()
         self.metrics_dict = get_metrics_dict()
 
-    def test_ant_metrics(self):
+    def test_AntMetrics(self):
         # Initialize
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
@@ -104,10 +104,10 @@ class TestQM(TestHERAMC):
                           0, 'x', 4, 4.5)
         self.assertRaises(ValueError, self.test_session.add_ant_metric, self.obsid,
                           0, 'x', 'test', 'value')
-        self.assertRaises(ValueError, ant_metrics.create, self.obsid, 0, 'x',
+        self.assertRaises(ValueError, AntMetrics.create, self.obsid, 0, 'x',
                           'test', self.obsid, 4.5)
 
-    def test_array_metrics(self):
+    def test_ArrayMetrics(self):
         # Initialize
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
@@ -149,10 +149,10 @@ class TestQM(TestHERAMC):
                           4, 4.5)
         self.assertRaises(ValueError, self.test_session.add_array_metric, self.obsid,
                           'test', 'value')
-        self.assertRaises(ValueError, array_metrics.create, self.obsid,
+        self.assertRaises(ValueError, ArrayMetrics.create, self.obsid,
                           'test', self.obsid, 4.5)
 
-    def test_metric_list(self):
+    def test_MetricList(self):
         # Initialize
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
@@ -206,7 +206,7 @@ class TestQM(TestHERAMC):
         r = self.test_session.get_metric_desc(metric=metric)
         self.assertTrue(r[0].desc == self.metrics_dict[metric])
 
-    def test_add_metrics_file(self):
+    def test_ingest_metrics_file(self):
         # Initialize
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
@@ -216,12 +216,12 @@ class TestQM(TestHERAMC):
         self.test_session.commit()
         filename = os.path.join(mc.test_data_path, 'example_firstcal_metrics.json')
         filebase = os.path.basename(filename)
-        self.assertRaises(ValueError, self.test_session.add_metrics_file,
+        self.assertRaises(ValueError, self.test_session.ingest_metrics_file,
                           filename, 'firstcal')
         self.test_session.add_lib_file(filebase, self.obsid, t2, 0.1)
         self.test_session.commit()
         self.test_session.update_qm_list()
-        self.test_session.add_metrics_file(filename, 'firstcal')
+        self.test_session.ingest_metrics_file(filename, 'firstcal')
         # Check that things got in
         firstcal_array_metrics = set(['firstcal_metrics_agg_std',
                                       'firstcal_metrics_good_sol'])
