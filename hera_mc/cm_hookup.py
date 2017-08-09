@@ -18,7 +18,7 @@ import copy
 
 class Hookup:
     """
-    Class to find and display the hookup.
+    Class to find and display the signal path hookup.
     """
 
     def __init__(self, session=None):
@@ -77,6 +77,7 @@ class Hookup:
                 if len(hookup_dict['hookup'][k][pol]) > col_len_max[0]:
                     col_len_max[0] = len(hookup_dict['hookup'][k][pol])
                     col_len_max[1] = k
+        hookup_dict = self.__add_hookup_timing(hookup_dict)
 
         hookup_dict['columns'] = self.__get_column_header(
             hookup_dict['hookup'][col_len_max[1]][pol])
@@ -172,6 +173,23 @@ class Hookup:
                     next_one = opc
         return next_one
 
+    def __add_hookup_timing(self, hookup_dict):
+        really_late = 9999999999
+        hookup_dict['timing'] = {}
+        for akey, hk in hookup_dict['hookup'].iteritems():
+            hookup_dict['timing'][akey] = {}
+            for pkey, pol in hk.iteritems():
+                latest_start = 0
+                earliest_stop = really_late
+                for c in pol:
+                    if c.start_gpstime > latest_start:
+                        latest_start = c.start_gpstime
+                    if c.stop_gpstime is not None and c.stop_gpstime < earliest_stop:
+                        earliest_stop = c.stop_gpstime
+                if earliest_stop == really_late:
+                    earliest_stop = None
+                hookup_dict['timing'][akey][pkey] = [latest_start, earliest_stop]
+        return hookup_dict
 
     def __get_column_header(self, hup0):
         parts_col = []
@@ -189,9 +207,13 @@ class Hookup:
                                                        exact_match=True)
         pr_key = cm_utils._make_part_key(hu.downstream_part, hu.down_part_rev)
         parts_col.append(get_part_type[pr_key]['part'].hptype)
+        parts_col.append('Start')
+        parts_col.append('Stop')
         return parts_col
 
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
+        print("CM_HOOKUP[208]:  Adding correlator levels doesn't work with new pol hookup scheme yet.")
+        return hookup_dict
         hookup_dict['columns'].append('levels')
         hookup_dict['levels'] = {}
         pf_input = []
@@ -229,12 +251,13 @@ class Hookup:
         table_data = []
         for hukey in sorted(hookup_dict['hookup'].keys()):
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
+                timing = hookup_dict['timing'][hukey][pol]
                 if show_levels:
                     level = hookup_dict['levels'][hukey][pol]
                 else:
                     level = False
                 td = self.__make_table_row(hookup_dict['hookup'][hukey][pol], headers,
-                                           show_flag, level)
+                                           show_flag, timing, level)
                 table_data.append(td)
         print('\n')
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
@@ -254,7 +277,7 @@ class Hookup:
                 show_flag.append(False)
         return headers, show_flag
 
-    def __make_table_row(self, hup, headers, show_flag, show_level):
+    def __make_table_row(self, hup, headers, show_flag, timing, show_level):
         nc = '-'
         td = []
         if show_flag[0]:
@@ -275,6 +298,8 @@ class Hookup:
             prpn = (pn.downstream_input_port + '> ' + pn.downstream_part + ':' +
                     pn.down_part_rev)
             td.append(prpn)
+        td.append(str(timing[0]))
+        td.append(str(timing[1]))
         if show_level:
             td.append(show_level)
         if len(td) != len(headers):
