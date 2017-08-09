@@ -161,16 +161,13 @@ class Hookup:
         else:
             for opc in options:
                 if direction.lower() == 'up':
-                    nppart = opc.upstream_part
-                    npport = opc.upstream_output_port
-                elif direction.lower() == 'down':
-                    nppart = opc.downstream_part
-                    npport = opc.downstream_input_port
+                    if self.__get_pols_to_do(opc.upstream_part, opc.upstream_output_port, check_pol=pol):
+                        next_one = opc
+                        break
                 else:
-                    print("Error:  direction must be up or down")
-                    return None
-                if self.__get_pols_to_do(nppart, npport, check_pol=pol):
-                    next_one = opc
+                    if self.__get_pols_to_do(opc.downstream_part, opc.downstream_input_port, check_pol=pol):
+                        next_one = opc
+                        break
         return next_one
 
     def __add_hookup_timing(self, hookup_dict):
