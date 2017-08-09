@@ -7,7 +7,7 @@ Common utility fuctions
 """
 from astropy.time import Time
 from math import floor
-from .mc_session import MCSession
+import collections
 
 
 def calculate_obsid(starttime):
@@ -27,3 +27,15 @@ def calculate_obsid(starttime):
         raise ValueError('starttime must be an astropy Time object')
 
     return int(floor(starttime.gps))
+
+
+def get_iterable(x):
+    """Helper function to ensure iterability."""
+    if isinstance(x, str):
+        return (x,)
+    else:
+        try:
+            iter(x)
+        except TypeError:
+            return (x,)
+    return x

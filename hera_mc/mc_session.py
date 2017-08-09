@@ -5,6 +5,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from astropy.time import Time
+from .utils import get_iterable
+import warnings
 """
 Primary session object which handles most DB queries.
 
@@ -728,3 +730,236 @@ class MCSession(Session):
 
         return self._time_filter(PaperTemperatures, 'time', starttime,
                                  stoptime=stoptime)
+
+    def add_ant_metric(self, obsid, ant, pol, metric, val):
+        """
+        Add a new antenna metric to the M&C database.
+
+        Parameters:
+        ------------
+        obsid: long integer
+            observation identification number
+        ant: integer
+            antenna number
+        pol: string ('x' or 'y')
+            polarization
+        metric: string
+            metric name
+        val: float
+            value of metric
+        """
+        from .qm import AntMetrics
+
+        db_time = self.get_current_db_time()
+
+        self.add(AntMetrics.create(obsid, ant, pol, metric, db_time, val))
+
+    def get_ant_metric(self, ant=None, pol=None, metric=None, starttime=None,
+                       stoptime=None):
+        """
+        Get antenna metric(s) from the M&C database.
+
+        Parameters:
+        ------------
+        ant: integer or list of integers
+            antenna number. Defaults to returning all antennas.
+        pol: string ('x' or 'y'), or list
+            polarization. Defaults to returning all pols.
+        metric: string or list of strings
+            metric name. Defaults to returning all metrics.
+        starttime: astropy time object OR gps second.
+            beginning of query time interval. Defaults to gps=0 (6 Jan, 1980)
+        stoptime: astropy time object OR gps second.
+            end of query time interval. Defaults to now.
+
+        Returns:
+        --------
+        list of AntMetrics objects
+        """
+        from .qm import AntMetrics
+
+        args = []
+        if ant is not None:
+            args.append(AntMetrics.ant.in_(get_iterable(ant)))
+        if pol is not None:
+            args.append(AntMetrics.pol.in_(get_iterable(pol)))
+        if metric is not None:
+            args.append(AntMetrics.metric.in_(get_iterable(metric)))
+        if starttime is None:
+            starttime = 0
+        elif isinstance(starttime, Time):
+            starttime = starttime.gps
+        if stoptime is None:
+            stoptime = Time.now().gps
+        elif isinstance(stoptime, Time):
+            stoptime = stoptime.gps
+        args.append(AntMetrics.obsid.between(starttime, stoptime))
+        return self.query(AntMetrics).filter(*args).all()
+
+    def add_array_metric(self, obsid, metric, val):
+        """
+        Add a new array metric to the M&C database.
+
+        Parameters:
+        ------------
+        obsid: long integer
+            observation identification number
+        metric: string
+            metric name
+        val: float
+            value of metric
+        """
+        from .qm import ArrayMetrics
+
+        db_time = self.get_current_db_time()
+
+        self.add(ArrayMetrics.create(obsid, metric, db_time, val))
+
+    def get_array_metric(self, metric=None, starttime=None, stoptime=None):
+        """
+        Get array metric(s) from the M&C database.
+
+        Parameters:
+        ------------
+        metric: string or list of strings
+            metric name. Defaults to returning all metrics.
+        starttime: astropy time object OR gps second.
+            beginning of query time interval. Defaults to gps=0 (6 Jan, 1980)
+        stoptime: astropy time object OR gps second.
+            end of query time interval. Defaults to now.
+
+        Returns:
+        --------
+        list of ArrayMetrics objects
+        """
+        from .qm import ArrayMetrics
+
+        args = []
+        if metric is not None:
+            args.append(ArrayMetrics.metric.in_(get_iterable(metric)))
+        if starttime is None:
+            starttime = 0
+        elif isinstance(starttime, Time):
+            starttime = starttime.gps
+        if stoptime is None:
+            stoptime = Time.now().gps
+        elif isinstance(stoptime, Time):
+            stoptime = stoptime.gps
+        args.append(ArrayMetrics.obsid.between(starttime, stoptime))
+        return self.query(ArrayMetrics).filter(*args).all()
+
+    def add_metric_desc(self, metric, desc):
+        """
+        Add a new metric description to the M&C database.
+
+        Parameters:
+        ------------
+        metric: string
+            metric name
+        desc: string
+            description of metric
+        """
+        from .qm import MetricList
+
+        self.add(MetricList.create(metric, desc))
+
+    def update_metric_desc(self, metric, desc):
+        """
+        Update the description of a metric in the M&C database.
+        This will be required when replacing an RTP auto-generated description for
+        new metrics.
+
+        Parameters:
+        ------------
+        metric: string
+            metric name
+        desc: string
+            description of metric
+        """
+        from .qm import MetricList
+
+        self.query(MetricList).filter(MetricList.metric == metric)[0].desc = desc
+        self.commit()
+
+    def get_metric_desc(self, metric=None):
+        """
+        Get metric description(s) from the M&C database.
+
+        Parameters:
+        ------------
+        metric: string or list of strings
+            metric name. Defaults to returning all metrics.
+
+        Returns:
+        --------
+        list of MetricList objects
+        """
+        from .qm import MetricList
+
+        args = []
+        if metric is not None:
+            args.append(MetricList.metric.in_(get_iterable(metric)))
+
+        return self.query(MetricList).filter(*args).all()
+
+    def check_metric_desc(self, metric):
+        """
+        Check that metric has a description in the db. If not, fill in and issue warning.
+
+        Parameters:
+        -----------
+        metrics: string or list of strings
+            metric name.
+        """
+        r = self.get_metric_desc(metric=metric)
+        if len(r) == 0:
+            warnings.warn('Metric ' + metric + ' not found in db. Adding a filler description.'
+                          'Please update ASAP with hera_mc/scripts/update_qm_list.py.')
+            self.add_metric_desc(metric, 'Auto-generated description. Update with '
+                                 'hera_mc/scripts/update_qm_list.py')
+            self.commit()
+
+    def update_qm_list(self):
+        """
+        Updates metric list according to descriptions in hera_qm.
+        """
+        from hera_qm.utils import get_metrics_dict
+
+        metric_list = get_metrics_dict()
+
+        for metric, desc in metric_list.items():
+            # Check if metric is already in db.
+            r = self.get_metric_desc(metric=metric)
+            if len(r) == 0:
+                self.add_metric_desc(metric, desc)
+            else:
+                self.update_metric_desc(metric, desc)
+        self.commit()
+
+    def ingest_metrics_file(self, filename, ftype):
+        """
+        Adds a file worth of quality metrics to the db.
+
+        Parameters:
+        -----------
+        filename: string
+            file containing metrics to be added to db.
+        ftype: string
+            Type of metrics file. Options are ['ant', 'firstcal', 'omnical']
+        """
+        from hera_qm.utils import metrics2mc
+        import os
+
+        try:
+            obsid = self.get_lib_files(filename=os.path.basename(filename))[0].obsid
+        except IndexError:
+            raise ValueError('File ' + filename + ' has not been logged in '
+                             'Librarian, so we cannot add to M&C.')
+        d = metrics2mc(filename, ftype)
+        for metric, dd in d['ant_metrics'].items():
+            self.check_metric_desc(metric)
+            for ant, pol, val in dd:
+                self.add_ant_metric(obsid, ant, pol, metric, val)
+        for metric, val in d['array_metrics'].items():
+            self.check_metric_desc(metric)
+            self.add_array_metric(obsid, metric, val)
