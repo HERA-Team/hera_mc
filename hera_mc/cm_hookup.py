@@ -64,29 +64,25 @@ class Hookup:
         hookup_dict = {'hookup': {}}
         col_len_max = [0, '-']
 
-        pols_to_do = self.__get_pols_to_do(part, port, check_pol=False)
+        pols_to_do = self.__get_pols_to_do(hpn, port, check_pol=False)
 
         for k, part in parts.iteritems():
-            if not cm_utils._is_active(self.at_date, parts.start_date, parts.stop_date):
+            if not cm_utils._is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
                 continue
-            print("CM_HANDLING[182]: checkout below")
-            print(part)
-            if len(parts[hpnr]['connections']['ordered-pairs'][0]) == 0:
-                continue
+            #if len(part['connections']['ordered-pairs'][0]) == 0:
+            #    continue
+            hookup_dict['hookup'][k] = {}
             for pol in pols_to_do:
-                hookup_dict['hookup'][k] = {}
-                hookup_dict['hookup'][k][p] = self.__follow_hookup_stream(part.hpn, part.hpn_rev, pol)
-                print("CM_HANDLING[182]: checkout below (What?/why?)")
-                if len(hookup_dict['hookup'][hukey]) > col_len_max[0]:
-                    col_len_max[0] = len(hookup_dict['hookup'][k])
+                hookup_dict['hookup'][k][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
+                if len(hookup_dict['hookup'][k][pol]) > col_len_max[0]:
+                    col_len_max[0] = len(hookup_dict['hookup'][k][pol])
                     col_len_max[1] = k
 
         hookup_dict['columns'] = self.__get_column_header(
-            hookup_dict['hookup'][col_len_max[1]])
+            hookup_dict['hookup'][col_len_max[1]][pol])
         if state_args['show_levels']:
             hookup_dict = self.__hookup_add_correlator_levels(
                 hookup_dict, state_args['levels_testing'])
-
         return hookup_dict
 
     def __get_pols_to_do(self, part, port, check_pol=False):
@@ -137,8 +133,8 @@ class Hookup:
         """
         Get next connected part going the given direction.
         """
-        next_one = None
-        if direction == 'up':      # Going upstream
+        options = []
+        if direction.lower() == 'up':      # Going upstream
             for conn in self.session.query(PC.Connections).filter(
                     (PC.Connections.downstream_part == part) &
                     (PC.Connections.down_part_rev == rev)):
@@ -146,9 +142,8 @@ class Hookup:
                 if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
                     nppart = conn.upstream_part
                     npport = conn.upstream_output_port
-                    if self.__get_pols_to_do(nppart, npport, check_pol=pol)
-                        next_one = copy.copy(conn)
-        elif direction == 'down':  # Going downstream
+                    options.append(copy.copy(conn))
+        elif direction.lower() == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
                     (PC.Connections.upstream_part == part) &
                     (PC.Connections.up_part_rev == rev)):
@@ -156,10 +151,27 @@ class Hookup:
                 if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
                     nppart = conn.downstream_part
                     npport = conn.downstream_input_port
-                    if self.__get_pols_to_do(nppart, npport, check_pol=pol)
-                        next_one = copy.copy(conn)
-        use_this = self.__wade_through_the_messy_stuff(options, direction=direction)
+                    options.append(copy.copy(conn))
+        next_one = None
+        if len(options) == 0:
+            next_one = None
+        elif len(options) == 1:
+            next_one = options[0]
+        else:
+            for opc in options:
+                if direction.lower() == 'up':
+                    nppart = opc.upstream_part
+                    npport = opc.upstream_output_port
+                elif direction.lower() == 'down':
+                    nppart = opc.downstream_part
+                    npport = opc.downstream_input_port
+                else:
+                    print("Error:  direction must be up or down")
+                    return None
+                if self.__get_pols_to_do(nppart, npport, check_pol=pol):
+                    next_one = opc
         return next_one
+
 
     def __get_column_header(self, hup0):
         parts_col = []
@@ -216,13 +228,14 @@ class Hookup:
 
         table_data = []
         for hukey in sorted(hookup_dict['hookup'].keys()):
-            if show_levels:
-                level = hookup_dict['levels'][hukey]
-            else:
-                level = False
-            td = self.__make_table_row(hookup_dict['hookup'][hukey], headers,
-                                       show_flag, level)
-            table_data.append(td)
+            for pol in sorted(hookup_dict['hookup'][hukey].keys()):
+                if show_levels:
+                    level = hookup_dict['levels'][hukey][pol]
+                else:
+                    level = False
+                td = self.__make_table_row(hookup_dict['hookup'][hukey][pol], headers,
+                                           show_flag, level)
+                table_data.append(td)
         print('\n')
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
         print('\n')
