@@ -324,6 +324,9 @@ class Handling:
                         will get all locations that were ever connected
         station_types_to_check:  list of stations types to limit check
         """
+        from hera_mc import cm_hookup
+        hookup = cm_hookup.Hookup(self.session)
+
         active_date = cm_utils._get_astropytime(active_date)
 
         stations = self.session.query(geo_location.GeoLocation).all()
@@ -341,7 +344,7 @@ class Handling:
                         # get all connections
                         connections = self.session.query(part_connect.Connections).filter(
                             part_connect.Connections.upstream_part == stn.station_name)
-                        correlator_inputs = []
+                        correlator_inputs = {}
                     else:
                         # only get current connections
                         connections = self.session.query(part_connect.Connections).filter(
@@ -349,7 +352,8 @@ class Handling:
                             (part_connect.Connections.start_gpstime < active_date) &
                             ((part_connect.Connections.stop_gpstime > active_date) |
                              (part_connect.Connections.stop_gpstime is None)))
-                        correlator_inputs = self.get_correlator_input_from_location(stn.station_name, active_date)
+                        correlator_input = hookup.get_correlator_info_from_part(
+                            hpn=stn.station_name, rev='A', port='all', at_date=active_date)
 
                     for conn in connections:
                         ant_num = int(conn.downstream_part[1:])
@@ -364,8 +368,8 @@ class Handling:
                                               'latitude': stn.lat,
                                               'elevation': stn.elevation,
                                               'antenna_number': ant_num,
-                                              # this is a string giving the f-engine and input name
-                                              'correlator_input': correlator_inputs,
+                                              'correlator_input_x': correlator_input['e'],
+                                              'correlator_input_y': correlator_input['n'],
                                               'start_date': conn.start_date,
                                               'stop_date': conn.stop_date})
         return stations_conn
@@ -394,6 +398,7 @@ class Handling:
         Note: This method requires pyuvdata
         """
         from pyuvdata import utils as uvutils
+        from hera_mc import cm_hookup
 
         cm_version = cm_utils.get_cm_version()
         cofa_loc = self.cofa()
@@ -412,7 +417,7 @@ class Handling:
         for stn in stations_conn:
             ant_nums.append(stn.antenna_number)
             stn_names.append(stn.station_name)
-            corr_inputs.append(stn.correlator_input)
+            corr_inputs.append((stn.correlator_input_x,stn.correlator_input_y))
             tiles.append(stn.tile)
             datums.append(stn.datum)
             eastings.append(stn.easting)
@@ -428,7 +433,7 @@ class Handling:
                      # This is actually station names, not antenna names,
                      # but antenna_names is what it's called in pyuvdata
                      'antenna_names': stn_names,
-                     # this is an array giving the f-engine and input name
+                     # this is a dictionary giving the f-engine and input name
                      'correlator_inputs': corr_inputs,
                      'antenna_utm_datum_vals': datums,
                      'antenna_utm_tiles': tiles,

@@ -195,17 +195,17 @@ class Hookup:
 
     def __get_column_headers(self, huh):
         """
-        The columns in the hookup_dict contain parts in the hookup chain and the column headers are 
+        The columns in the hookup_dict contain parts in the hookup chain and the column headers are
         the part types contained in that column.  This returns the headers for the retrieved hookup.
         This gets the full set of headers for a future show_hookup that doesn't require the same
-        hookup starting point.  
+        hookup starting point.
 
         Returns a single column for now (the one/long_column stuff).
 
         The method searches all of the hookup chains to find the longest one and returns those
         part-type header names.
 
-        Parameters: 
+        Parameters:
         -------------
         huh: the 'hookup' part of the hookup_dictionary
         """
@@ -277,7 +277,7 @@ class Hookup:
             colhead = col
         return colhead
 
-    def show_hookup(self, hookup_dict, cols_to_show, show_levels):
+    def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False):
         """
         Print out the hookup table -- uses tabulate package.
 
