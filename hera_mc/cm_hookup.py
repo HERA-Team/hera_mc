@@ -13,7 +13,7 @@ import sys
 
 from hera_mc import mc, geo_location, correlator_levels, cm_utils, cm_handling
 from hera_mc import part_connect as PC
-import copy
+import copy, warnings
 
 
 class Hookup:
@@ -209,7 +209,7 @@ class Hookup:
         return parts_col
 
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
-        print("Warning:  correlator levels don't work with new pol hookup scheme yet (CM_HOOKUP[212]).")
+        warnings.warn("Warning:  correlator levels don't work with new pol hookup scheme yet (CM_HOOKUP[212]).")
         return hookup_dict
         hookup_dict['columns'].append('levels')
         hookup_dict['levels'] = {}
