@@ -194,6 +194,7 @@ def connect_to_mc_db(args, forced_db_name=None):
 
     # Test validity of database
     with db.sessionmaker() as session:
+        from . import db_check
         if not db_check.is_sane_database(None, session):
             raise AssertionError('cannot connect to M&C database: '
                                  'is_sane_database failed.')
