@@ -457,7 +457,7 @@ class Handling:
             if k not in already_shown:
                 print(v, v.start_date, v.stop_date)
 
-    def get_part_types(self, show_hptype=False):
+    def get_part_types(self, at_date, show_hptype=False):
         """
         Goes through database and pulls out part types and some other info to
             display in a table.
@@ -489,11 +489,11 @@ class Handling:
             input_ports = []
             output_ports = []
             for pa in self.part_type_dict[k]['part_list']:
-                hpn, rev = _split_part_key(pa)
+                hpn, rev = cm_utils._split_part_key(pa)
                 if rev not in found_revisions:
                     found_revisions.append(rev)
                 if not found_connection:
-                    pd = self.get_part(hpn, rev, show_part=False)
+                    pd = self.get_part_dossier(hpn, rev, at_date)
                     if len(pd[pa]['input_ports']) > 0 or len(pd[pa]['output_ports']) > 0:
                         input_ports = pd[pa]['input_ports']
                         output_ports = pd[pa]['output_ports']

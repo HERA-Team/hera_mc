@@ -50,7 +50,7 @@ def _log(msg, **kwargs):
 
 
 def _make_part_key(hpn, rev):
-    return ":".join([hpn.lower(), rev.lower()]).strip()
+    return ":".join([hpn, rev]).strip()
 
 
 def _split_part_key(key):
@@ -58,7 +58,7 @@ def _split_part_key(key):
 
 
 def _make_connection_key(hpn, rev, port, start_gps):
-    return ":".join([hpn.lower(), rev.lower(), port.lower(), str(start_gps)]).strip()
+    return ":".join([hpn, rev, port, str(start_gps)]).strip()
 
 
 def _split_connection_key(key):
