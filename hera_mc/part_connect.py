@@ -77,7 +77,7 @@ def stop_existing_parts(session, hpnr_list, at_date, actually_do_it):
     Parameters:
     ------------
     session:  db session to use
-    hpnr_list:  list containing hpn
+    hpnr_list:  list of lists containing hpn and revision number
     at_date:  date to use for stopping
     actually_do_it:  boolean to allow the part to be stopped
     """

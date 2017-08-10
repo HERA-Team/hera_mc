@@ -4,7 +4,13 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Script to add a general connection to the database.
+Script to stop a specified part in the parts_paper table.
+
+Note that 'now' is the default --date.  If you don't want to be
+queried for a --date, then you should include --date <date> on the
+command line.  One "trick" is that if you wish to not be queried but
+use 'now' (e.g. in a script), you can specify --date Now;  or just
+use the date.
 """
 
 from __future__ import absolute_import, division, print_function
@@ -40,8 +46,7 @@ if __name__ == '__main__':
     args = query_args(args)
 
     # Pre-process some args
-    if args.date is not None:
-        at_date = cm_utils._get_astropytime(args.date, args.time)
+    at_date = cm_utils._get_astropytime(args.date, args.time)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
