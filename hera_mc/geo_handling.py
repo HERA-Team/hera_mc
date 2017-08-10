@@ -433,7 +433,7 @@ class Handling:
                      # This is actually station names, not antenna names,
                      # but antenna_names is what it's called in pyuvdata
                      'antenna_names': stn_names,
-                     # this is a dictionary giving the f-engine and input name
+                     # this is a tuple giving the f-engine names for x, y
                      'correlator_inputs': corr_inputs,
                      'antenna_utm_datum_vals': datums,
                      'antenna_utm_tiles': tiles,
