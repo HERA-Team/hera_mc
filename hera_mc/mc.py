@@ -192,6 +192,12 @@ def connect_to_mc_db(args, forced_db_name=None):
                            'the DB named {1!r} in {2!r}'.format(db_mode, db_name,
                                                                 config_path))
 
+    # Test validity of database
+    with db.sessionmaker() as session:
+        if not db_check.is_sane_database(None, session):
+            raise AssertionError('cannot connect to M&C database: '
+                                 'is_sane_database failed.')
+
     return db
 
 
