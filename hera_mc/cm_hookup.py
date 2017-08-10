@@ -69,7 +69,7 @@ class Hookup:
         for k, part in parts.iteritems():
             if not cm_utils._is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
                 continue
-            #if len(part['connections']['ordered-pairs'][0]) == 0:
+            # if len(part['connections']['ordered-pairs'][0]) == 0:
             #    continue
             hookup_dict['hookup'][k] = {}
             for pol in pols_to_do:
@@ -209,7 +209,7 @@ class Hookup:
         return parts_col
 
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
-        print("CM_HOOKUP[208]:  Adding correlator levels doesn't work with new pol hookup scheme yet.")
+        print("Warning:  correlator levels don't work with new pol hookup scheme yet (CM_HOOKUP[212]).")
         return hookup_dict
         hookup_dict['columns'].append('levels')
         hookup_dict['levels'] = {}
