@@ -78,7 +78,7 @@ if __name__ == '__main__':
                                         at_date=date_query, state_args=state_args, exact_match=args.exact_match)
         hookup.show_hookup(hookup_dict, args.mapr_cols, args.show_levels)
     if args.hptype:
-        part_type_dict = handling.get_part_types(show_hptype=True)
+        part_type_dict = handling.get_part_types(date_query, show_hptype=True)
     if args.update:
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script -- are you sure you want to do this? ", 'n')
         if you_are_sure:
