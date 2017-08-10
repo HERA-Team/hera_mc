@@ -315,7 +315,7 @@ class PartInfo(MCDeclarativeBase):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-
+no_connection_designator = '-X-'
 class Connections(MCDeclarativeBase):
     """
     A table for logging connections between parts.
@@ -380,6 +380,13 @@ class Connections(MCDeclarativeBase):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+def get_null_connection():
+    nc = no_connection_designator
+    no_connect = Connections()
+    no_connect.connection(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
+                            downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
+                            start_gpstime=nc)
+    return no_connect
 
 def stop_existing_connections_to_part(session, h, conn_list, at_date, actually_do_it):
     """
