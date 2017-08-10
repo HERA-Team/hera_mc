@@ -70,15 +70,14 @@ class Parts(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def stop_existing_parts(session, p, hpnr_list, at_date, actually_do_it):
+def stop_existing_parts(session, hpnr_list, at_date, actually_do_it):
     """
     This adds stop times to the previous parts.
 
     Parameters:
     ------------
     session:  db session to use
-    p:  part object
-    hpnr_list:  list containing hpn and revision
+    hpnr_list:  list containing hpn
     at_date:  date to use for stopping
     actually_do_it:  boolean to allow the part to be stopped
     """
@@ -87,9 +86,8 @@ def stop_existing_parts(session, p, hpnr_list, at_date, actually_do_it):
     data = []
 
     for hpnr in hpnr_list:
-        p.part(hpn=hpnr[0], hpn_rev=hpnr[1], hptype=hpnr[2], manufacturer_number=hpnr[3])
-        print("Stopping part {} at {}".format(p, str(at_date)))
-        data.append([p.hpn, p.hpn_rev, 'stop_gpstime', stop_at])
+        print("Stopping part {}:{} at {}".format(hpnr[0], hpnr[1], str(at_date)))
+        data.append([hpnr[0], hpnr[1], 'stop_gpstime', stop_at])
 
     if actually_do_it:
         update_part(session, data, False)
