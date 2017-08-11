@@ -327,9 +327,9 @@ class Handling:
                         connection_dossier['connections'][ckey] = copy.copy(conn)
                         up_parts.append(ckey)
                 if len(up_parts) == 0:
-                    up_parts = [self.no_connection_designator]
+                    up_parts = [PC.no_connection_designator]
                 if len(down_parts) == 0:
-                    down_parts = [self.no_connection_designator]
+                    down_parts = [PC.no_connection_designator]
                 up_parts.sort()
                 down_parts.sort()
                 if len(up_parts) > len(down_parts):
@@ -363,21 +363,21 @@ class Handling:
                        'Part', '<Output:', ':Input>', 'Downstream', 'dStart', 'dStop']
         for ordered_pairs in connection_dossier['ordered-pairs']:
             for up, dn in zip(ordered_pairs[0], ordered_pairs[1]):
-                if (self.no_connection_designator in up and
-                        self.no_connection_designator in dn):
+                if (PC.no_connection_designator in up and
+                        PC.no_connection_designator in dn):
                     continue
                 already_shown.append(up)
                 already_shown.append(dn)
                 tdata = range(0, len(headers))
                 # Do upstream
-                if up==self.no_connection_designator:
+                if up == PC.no_connection_designator:
                     connup = PC.get_null_connection()
                 else:
                     connup = connection_dossier['connections'][up]
                 uup = connup.upstream_part + ':' + connup.up_part_rev
-                if self.no_connection_designator in uup:
-                    start_date = self.no_connection_designator
-                    stop_date = self.no_connection_designator
+                if PC.no_connection_designator in uup:
+                    start_date = PC.no_connection_designator
+                    stop_date = PC.no_connection_designator
                 else:
                     start_date = connup.start_date
                     stop_date = connup.stop_date
@@ -405,22 +405,22 @@ class Handling:
                     del tdata[pos['Part'][vb]]
                     tdata.insert(pos['Part'][vb], '[' + udn + ']')
                 # Do downstream
-                if dn == self.no_connection_designator:
+                if dn == PC.no_connection_designator:
                     conndn = PC.get_null_connection()
                 else:
                     conndn = connection_dossier['connections'][dn]
                 dup = conndn.upstream_part + ':' + conndn.up_part_rev
                 ddn = conndn.downstream_part + ':' + conndn.down_part_rev
-                if self.no_connection_designator in ddn:
-                    start_date = self.no_connection_designator
-                    stop_date = self.no_connection_designator
+                if PC.no_connection_designator in ddn:
+                    start_date = PC.no_connection_designator
+                    stop_date = PC.no_connection_designator
                 else:
                     start_date = conndn.start_date
                     stop_date = conndn.stop_date
                 pos = {'Part': {'h': 5, 'm': 3}, 'Output': {'h': 6, 'm': 4},
                        'Input': {'h': 7, 'm': 5}, 'Downstream': {'h': 8, 'm': 6},
                        'dStart': {'h': 9, 'm': -1}, 'dStop': {'h': 10, 'm': -1}}
-                if self.no_connection_designator in udn:
+                if PC.no_connection_designator in udn:
                     if pos['Part'][vb] > -1:
                         del tdata[pos['Part'][vb]]
                         tdata.insert(pos['Part'][vb], '[' + dup + ']')
@@ -504,9 +504,9 @@ class Handling:
                         output_ports = pd[pa]['output_ports']
                         found_connection = True
             if len(input_ports) == 0:
-                input_ports = [self.no_connection_designator]
+                input_ports = [PC.no_connection_designator]
             if len(output_ports) == 0:
-                output_ports = [self.no_connection_designator]
+                output_ports = [PC.no_connection_designator]
             self.part_type_dict[k]['input_ports'] = input_ports
             self.part_type_dict[k]['output_ports'] = output_ports
             self.part_type_dict[k]['revisions'] = sorted(found_revisions)
