@@ -24,7 +24,7 @@ class Handling:
     Class to allow various manipulations of parts and their properties etc.
     Things are manipulated/passed as dictionaries currently.
     """
-    no_connection_designator = PC.no_connection_designator
+    no_connection_designator = '-X-'
 
     def __init__(self, session=None):
         """
@@ -313,7 +313,8 @@ class Handling:
                                                              conn.start_gpstime)
                         connection_dossier['connections'][ckey] = copy.copy(conn)
                         down_parts.append(ckey)
-                # Find where the part is in the downward position, so identify its upward connection
+                # Find where the part is in the downward position, so identify its
+                # upward connection
                 for conn in self.session.query(PC.Connections).filter(
                         (PC.Connections.downstream_part == xhpn) &
                         (PC.Connections.down_part_rev == this_rev)):
@@ -370,10 +371,7 @@ class Handling:
                 already_shown.append(dn)
                 tdata = range(0, len(headers))
                 # Do upstream
-                if up==self.no_connection_designator:
-                    connup = PC.get_null_connection()
-                else:
-                    connup = connection_dossier['connections'][up]
+                connup = connection_dossier['connections'][up]
                 uup = connup.upstream_part + ':' + connup.up_part_rev
                 if self.no_connection_designator in uup:
                     start_date = self.no_connection_designator
@@ -405,10 +403,7 @@ class Handling:
                     del tdata[pos['Part'][vb]]
                     tdata.insert(pos['Part'][vb], '[' + udn + ']')
                 # Do downstream
-                if dn == self.no_connection_designator:
-                    conndn = PC.get_null_connection()
-                else:
-                    conndn = connection_dossier['connections'][dn]
+                conndn = connection_dossier['connections'][dn]
                 dup = conndn.upstream_part + ':' + conndn.up_part_rev
                 ddn = conndn.downstream_part + ':' + conndn.down_part_rev
                 if self.no_connection_designator in ddn:
