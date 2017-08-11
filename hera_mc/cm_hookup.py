@@ -207,7 +207,7 @@ class Hookup:
         return parts_col
 
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
-        warnings.warn("Warning:  correlator levels don't work with new pol hookup scheme yet (CM_HOOKUP[212]).")
+        warnings.warn("Warning:  correlator levels don't work with new pol hookup scheme yet (CM_HOOKUP[210]).")
         return hookup_dict
         hookup_dict['columns'].append('levels')
         hookup_dict['levels'] = {}
