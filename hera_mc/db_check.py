@@ -5,7 +5,28 @@ from sqlalchemy.orm import RelationshipProperty
 from . import logger
 
 
-def is_sane_database(base, session):
+def check_connection(session):
+    """
+    Check whether the database connection is live and responsive.
+
+    Parameters
+    ----------
+    session: SQLAlchemy session bound to an engine
+
+    Returns
+    ---------
+    True if database responds to simple SQL query. Otherwise False.
+    """
+    from sqlalchemy.exc import OperationalError
+    result = True
+    try:
+        r = session.execute('SELECT 1')
+    except OperationalError:
+        result = False
+    return result
+
+
+def is_valid_database(base, session):
     """
     Check whether the current database matches the models declared in model
     base.
@@ -49,7 +70,7 @@ def is_sane_database(base, session):
         if table in tables:
             # Check all columns are found
             # Looks like [{'default':
-            #                  "nextval('sanity_check_test_id_seq'::regclass)",
+            #                  "nextval('validity_check_test_id_seq'::regclass)",
             #              'autoincrement': True, 'nullable': False,
             #              'type': INTEGER(), 'name': 'id'}]
 
@@ -58,7 +79,7 @@ def is_sane_database(base, session):
 
             for column_prop in mapper.attrs:
                 if isinstance(column_prop, RelationshipProperty):
-                    # TODO: Add sanity checks for relations
+                    # TODO: Add validity checks for relations
                     pass
                 else:
                     for column in column_prop.columns:

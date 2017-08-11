@@ -81,10 +81,10 @@ class AutomappedDB(DB):
     def __init__(self, db_url):
         super(AutomappedDB, self).__init__(automap_base(), db_url)
 
-        from .db_check import is_sane_database
+        from .db_check import is_valid_database
 
         with self.sessionmaker() as session:
-            if not is_sane_database(MCDeclarativeBase, session):
+            if not is_valid_database(MCDeclarativeBase, session):
                 raise RuntimeError('database {0} does not match expected schema'
                                    .format(db_url))
 
@@ -132,7 +132,7 @@ def get_cm_csv_path(mc_config_file=None):
     return config_data.get('cm_csv_path')
 
 
-def connect_to_mc_db(args, forced_db_name=None):
+def connect_to_mc_db(args, forced_db_name=None, check_connect=True):
     """Return an instance of the `DB` class providing access to the M&C database.
 
     *args* should be the result of calling `parse_args` on an
@@ -192,12 +192,12 @@ def connect_to_mc_db(args, forced_db_name=None):
                            'the DB named {1!r} in {2!r}'.format(db_mode, db_name,
                                                                 config_path))
 
-    # Test validity of database
-    with db.sessionmaker() as session:
-        from . import db_check
-        if not db_check.is_sane_database(None, session):
-            raise AssertionError('cannot connect to M&C database: '
-                                 'is_sane_database failed.')
+    if check_connect:
+        # Test database connection
+        with db.sessionmaker() as session:
+            from . import db_check
+            if not db_check.check_connection(session):
+                raise RuntimeError('Could not establish valid connection to database.')
 
     return db
 

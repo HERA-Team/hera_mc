@@ -5,7 +5,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import ForeignKey
 
-from hera_mc.db_check import is_sane_database
+from hera_mc.db_check import is_valid_database
+from hera_mc.db_check import check_connection
 from hera_mc import mc
 
 
@@ -20,15 +21,15 @@ def gen_test_model():
 
     Base = declarative_base()
 
-    class SaneTestModel(Base):
+    class ValidTestModel(Base):
         """A sample SQLAlchemy model to demostrate db conflicts. """
 
-        __tablename__ = "sanity_check_test"
+        __tablename__ = "validity_check_test"
 
         #: Running counter used in foreign key references
         id = Column(Integer, primary_key=True)
 
-    return Base, SaneTestModel
+    return Base, ValidTestModel
 
 
 def gen_relation_models():
@@ -36,14 +37,14 @@ def gen_relation_models():
     Base = declarative_base()
 
     class RelationTestModel(Base):
-        __tablename__ = "sanity_check_test_2"
+        __tablename__ = "validity_check_test_2"
         id = Column(Integer, primary_key=True)
 
     class RelationTestModel2(Base):
-        __tablename__ = "sanity_check_test_3"
+        __tablename__ = "validity_check_test_3"
         id = Column(Integer, primary_key=True)
 
-        test_relationship_id = Column(ForeignKey("sanity_check_test_2.id"))
+        test_relationship_id = Column(ForeignKey("validity_check_test_2.id"))
         test_relationship = relationship(RelationTestModel,
                                          primaryjoin=test_relationship_id ==
                                          RelationTestModel.id)
@@ -56,7 +57,7 @@ def gen_declarative():
     Base = declarative_base()
 
     class DeclarativeTestModel(Base):
-        __tablename__ = "sanity_check_test_4"
+        __tablename__ = "validity_check_test_4"
         id = Column(Integer, primary_key=True)
 
         @declared_attr
@@ -70,49 +71,49 @@ def gen_declarative():
     return Base, DeclarativeTestModel
 
 
-def test_sanity_pass():
+def test_validity_pass():
     """
-    See database sanity check completes when tables and columns are created.
+    See database validity check completes when tables and columns are created.
     """
     engine = mc.connect_to_mc_testing_db().engine
     conn = engine.connect()
     trans = conn.begin()
 
-    Base, SaneTestModel = gen_test_model()
+    Base, ValidTestModel = gen_test_model()
     Session = sessionmaker(bind=engine)
     session = Session()
     try:
-        Base.metadata.drop_all(engine, tables=[SaneTestModel.__table__])
+        Base.metadata.drop_all(engine, tables=[ValidTestModel.__table__])
     except sqlalchemy.exc.NoSuchTableError:
         pass
 
-    Base.metadata.create_all(engine, tables=[SaneTestModel.__table__])
+    Base.metadata.create_all(engine, tables=[ValidTestModel.__table__])
 
     try:
-        assert is_sane_database(Base, session) is True
+        assert is_valid_database(Base, session) is True
     finally:
         Base.metadata.drop_all(engine)
 
 
-def test_sanity_table_missing():
+def test_validity_table_missing():
     """See check fails when there is a missing table"""
     engine = mc.connect_to_mc_testing_db().engine
     conn = engine.connect()
     trans = conn.begin()
 
-    Base, SaneTestModel = gen_test_model()
+    Base, ValidTestModel = gen_test_model()
     Session = sessionmaker(bind=engine)
     session = Session()
 
     try:
-        Base.metadata.drop_all(engine, tables=[SaneTestModel.__table__])
+        Base.metadata.drop_all(engine, tables=[ValidTestModel.__table__])
     except sqlalchemy.exc.NoSuchTableError:
         pass
 
-    assert is_sane_database(Base, session) is False
+    assert is_valid_database(Base, session) is False
 
 
-def test_sanity_column_missing():
+def test_validity_column_missing():
     """See check fails when there is a missing table"""
     engine = mc.connect_to_mc_testing_db().engine
     conn = engine.connect()
@@ -120,22 +121,22 @@ def test_sanity_column_missing():
 
     Session = sessionmaker(bind=engine)
     session = Session()
-    Base, SaneTestModel = gen_test_model()
+    Base, ValidTestModel = gen_test_model()
     try:
-        Base.metadata.drop_all(engine, tables=[SaneTestModel.__table__])
+        Base.metadata.drop_all(engine, tables=[ValidTestModel.__table__])
     except sqlalchemy.exc.NoSuchTableError:
         pass
-    Base.metadata.create_all(engine, tables=[SaneTestModel.__table__])
+    Base.metadata.create_all(engine, tables=[ValidTestModel.__table__])
 
     # Delete one of the columns
-    engine.execute("ALTER TABLE sanity_check_test DROP COLUMN id")
+    engine.execute("ALTER TABLE validity_check_test DROP COLUMN id")
 
-    assert is_sane_database(Base, session) is False
+    assert is_valid_database(Base, session) is False
 
 
-def test_sanity_pass_relationship():
+def test_validity_pass_relationship():
     """
-    See database sanity check understands about relationships and don't
+    See database validity check understands about relationships and don't
     deem them as missing column.
     """
     engine = mc.connect_to_mc_testing_db().engine
@@ -156,14 +157,14 @@ def test_sanity_pass_relationship():
                                              RelationTestModel2.__table__])
 
     try:
-        assert is_sane_database(Base, session) is True
+        assert is_valid_database(Base, session) is True
     finally:
         Base.metadata.drop_all(engine)
 
 
-def test_sanity_pass_declarative():
+def test_validity_pass_declarative():
     """
-    See database sanity check understands about relationships and don't deem
+    See database validity check understands about relationships and don't deem
     them as missing column.
     """
     engine = mc.connect_to_mc_testing_db().engine
@@ -182,6 +183,14 @@ def test_sanity_pass_declarative():
     Base.metadata.create_all(engine, tables=[DeclarativeTestModel.__table__])
 
     try:
-        assert is_sane_database(Base, session) is True
+        assert is_valid_database(Base, session) is True
     finally:
         Base.metadata.drop_all(engine)
+
+
+def test_check_connection():
+    """ Check that a missing database raises appropriate exception. """
+    # Create database connection with fake url
+    db = mc.DeclarativeDB('postgresql://hera@localhost/foo')
+    with db.sessionmaker() as s:
+        assert check_connection(s) is False
