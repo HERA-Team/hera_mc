@@ -38,15 +38,20 @@ class Hookup:
 
     def get_hookup(self, hpn, rev, port, at_date, state_args, exact_match=False):
         """
-        Return the full hookup.
-        Returns hookup_dict, a dictionary with two entries:
-            'hookup': another dictionary keyed on part:rev:port:sn
+        Return the full hookup to the supplied part/rev/port in the form of a dictionary
+        Returns hookup_dict, a dictionary with three to four entries:
+            'hookup': another dictionary keyed on part:rev then pol (e/n)
             'columns': names of parts that are used in displaying the hookup as
                        column headers
+            'timing':  valid times for the corresponding hookup in dictionary
+            'levels':  correlator levels, if desired
         This only gets the contemporary hookups (unlike parts and connections,
-            which get all.)
+            which get all.)  That is, only hookups valid at_date are returned.
         Note that this also assumes all hookups returned are connected at the same
-            furthest upstream place.
+            furthest upstream place.  This means that the columns heading won't match
+            if valid hookups for a list start at different upstream locations.  The plan
+            is to fix that.
+
 
         Parameters
         -----------
@@ -73,14 +78,14 @@ class Hookup:
             hookup_dict['hookup'][k] = {}
             for pol in pols_to_do:
                 hookup_dict['hookup'][k][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
-        if len(hookup_dict['hookup'].keys()) > 0:
+        if len(hookup_dict['hookup'].keys()) == 0:
+            hookup_dict['columns'] = []
+        else:
             hookup_dict = self.__add_hookup_timing(hookup_dict)
             hookup_dict['columns'] = self.__get_column_headers(hookup_dict['hookup'])
             if state_args['show_levels']:
                 hookup_dict = self.__hookup_add_correlator_levels(
                     hookup_dict, state_args['levels_testing'])
-        else:
-            hookup_dict['columns'] = []
 
         return hookup_dict
 
@@ -188,20 +193,25 @@ class Hookup:
 
     def __get_column_headers(self, huh):
         """
+        The columns in the hookup_dict contain parts in the hookup chain and the column headers are 
+        the part types contained in that column.  This returns the headers for the retrieved hookup.
         This gets the full set of headers for a future show_hookup that doesn't require the same
-        hookup starting point.  Returns a single column for now (the one/long_column stuff)
+        hookup starting point.  Returns a single column for now (the one/long_column stuff).
+        The method searches all of the hookup chains to find the longest one, which occurs at 
         """
+        lc = cm_utils.utility_method()  # This tracks the part and pol keys for the longest hookup
+        lc.v(part=huh.keys()[0], pol=huh[huh.keys()[0]].keys()[0], hlen=0)
+
         hu_col = {}
         return_one_column_for_now = True
         if return_one_column_for_now:  # This is to just not find part_dossiers on everything for now
-            lc = [huh.keys()[0], huh[huh.keys()[0]].keys()[0], 0]  # ...and maybe we'll use the full
-            for hk, hu in huh.iteritems():                        # ...dictionary later
+            for hk, hu in huh.iteritems():
                 for pk, pv in hu.iteritems():
-                    if len(pv) > lc[-1]:
-                        lc = [hk, pk, len(pv)]
-            huh = {hk: {pk: huh[lc[0]][lc[1]]}}
+                    if len(pv) > lc.hlen:
+                        lc.v(part=hk, pol=pk, hlen=pv)
+            huh = {hk: {pk: huh[lc.part][lc.pol]}}
 
-        long_column = [huh.keys()[0], huh[huh.keys()[0]].keys()[0], 0]  # Pick first one to start
+        lc.v(hlen=0)
         for hk, hu in huh.iteritems():
             hu_col[hk] = {}
             for pk, pv in hu.iteritems():
@@ -223,9 +233,9 @@ class Hookup:
                 hu_col[hk][pk].append('Start')
                 hu_col[hk][pk].append('Stop')
                 # Next two lines for "one column" solution
-                if len(hu_col[hk][pk]) > long_column[-1]:
-                    long_column = [hk, pk, len(hu_col[hk][pk])]
-        return hu_col[long_column[0]][long_column[1]]
+                if len(hu_col[hk][pk]) >= lc.hlen:
+                    lc.v(part=hk, pol=pk, hlen=len(hu_col[hk][pk]))
+        return hu_col[lc.part][lc.pol]
 
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
         warnings.warn("Warning:  correlator levels don't work with new pol hookup scheme yet (CM_HOOKUP[210]).")

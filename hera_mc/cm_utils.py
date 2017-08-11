@@ -16,6 +16,17 @@ import os.path
 PAST_DATE = '2000-01-01'
 
 
+class utility_method:
+    def __init__(self, **kwargs):
+        self.v(**kwargs)
+
+    def v(self, **kwargs):
+        """
+        Allows one to specify arbitrary elements.
+        """
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
 def _future_date():
     """
     Future is defined here, since defining a far FUTURE_DATE typically gives a
