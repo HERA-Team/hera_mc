@@ -12,7 +12,7 @@ from __future__ import absolute_import, division, print_function
 import pandas as pd
 from hera_mc import mc, geo_location, part_connect, cm_table_info, cm_utils
 import os.path
-import csv
+import csv, time
 
 
 def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
@@ -209,7 +209,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
 
     # Initialize tables in reversed order
     for table, data_filename, key_row in reversed(use_table):
-        print("CM_TRANSFER[212]:  ",table, data_filename, key_row)
+        #print("CM_TRANSFER[212]:  ",table, data_filename, key_row)
         cm_utils._log('cm_initialization: ' + data_filename)
         table_inst = cm_tables[table][0]()
         field_row = not key_row
@@ -220,13 +220,10 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
                 if key_row:
                     key_row = False
                     field_row = True
-                    print("AAA")
                 elif field_row:
                     field_name = row
                     field_row = False
-                    print("BBB:  ",row)
                 else:
-                    print("CCC", row)
                     for i, r in enumerate(row):
                         if r == '':
                             r = None
@@ -236,5 +233,5 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
                             r = int(float(r))
                         setattr(table_inst, field_name[i], r)
                     session.add(table_inst)
-        session.commit()
-        session.flush()
+                    time.sleep(0.01)
+    session.commit()
