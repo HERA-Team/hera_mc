@@ -7,7 +7,7 @@ Test that default database matches code schema.
 """
 from sqlalchemy.orm import sessionmaker
 from hera_mc import mc, MCDeclarativeBase
-from hera_mc.db_check import is_sane_database
+from hera_mc.db_check import is_valid_database
 
 
 def test_default_db_schema():
@@ -21,4 +21,4 @@ def test_default_db_schema():
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    assert is_sane_database(MCDeclarativeBase, session) is True
+    assert is_valid_database(MCDeclarativeBase, session) is True

@@ -25,7 +25,7 @@ import psutil
 from hera_mc import mc
 
 
-# Preliminaries. We have a small sanity check since the M&C design specifies
+# Preliminaries. We have a small validity check since the M&C design specifies
 # the memory, network, and system load are to be 5-minute averages.
 
 MONITORING_INTERVAL = 60  # seconds

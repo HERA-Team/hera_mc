@@ -6,7 +6,7 @@
 from __future__ import absolute_import, division, print_function
 
 from hera_mc import MCDeclarativeBase, mc
-from hera_mc.db_check import is_sane_database
+from hera_mc.db_check import is_valid_database
 
 parser = mc.get_mc_argument_parser()
 args = parser.parse_args()
@@ -21,5 +21,5 @@ except RuntimeError as e:
 # in production mode, so let's just check again.
 
 with db.sessionmaker() as session:
-    if not is_sane_database(MCDeclarativeBase, session):
+    if not is_valid_database(MCDeclarativeBase, session):
         raise SystemExit('database {0} does not match expected schema'.format(db.engine.url))
