@@ -15,6 +15,7 @@ from hera_mc import mc, geo_location, correlator_levels, cm_utils, cm_handling
 from hera_mc import part_connect as PC
 import copy
 import warnings
+from argparse import Namespace
 
 
 class Hookup:
@@ -208,8 +209,8 @@ class Hookup:
         huh: the 'hookup' part of the hookup_dictionary
         """
 
-        lc = cm_utils.utility_method()  # This tracks the part and pol keys for the longest hookup
-        lc.v(part=huh.keys()[0], pol=huh[huh.keys()[0]].keys()[0], hlen=0)
+        # This tracks the part and pol keys for the longest hookup
+        lc = Namespace(part=huh.keys()[0], pol=huh[huh.keys()[0]].keys()[0], hlen=0)
 
         hu_col = {}
         return_one_column_for_now = True
@@ -217,10 +218,10 @@ class Hookup:
             for hk, hu in huh.iteritems():
                 for pk, pv in hu.iteritems():
                     if len(pv) > lc.hlen:
-                        lc.v(part=hk, pol=pk, hlen=pv)
+                        lc.part=hk; lc.pol=pk; lc.hlen=len(pv)
             huh = {hk: {pk: huh[lc.part][lc.pol]}}
 
-        lc.v(hlen=0)
+        lc.hlen=0
         for hk, hu in huh.iteritems():
             hu_col[hk] = {}
             for pk, pv in hu.iteritems():
@@ -243,7 +244,7 @@ class Hookup:
                 hu_col[hk][pk].append('Stop')
                 # Next two lines for "one column" solution
                 if len(hu_col[hk][pk]) >= lc.hlen:
-                    lc.v(part=hk, pol=pk, hlen=len(hu_col[hk][pk]))
+                    lc.part=hk; lc.pol=pk; lc.hlen=len(hu_col[hk][pk])
         return hu_col[lc.part][lc.pol]
 
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
