@@ -12,7 +12,7 @@ from __future__ import absolute_import, division, print_function
 import pandas as pd
 from hera_mc import mc, geo_location, part_connect, cm_table_info, cm_utils
 import os.path
-import csv
+import csv, time
 
 
 def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
@@ -102,35 +102,48 @@ def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False)
 
 
 def check_if_main():
+    # the 'hostname' call on qmaster returns the following value:
     import socket
     return (socket.gethostname() == 'per210-1')
 
 
-def check_if_db_location_agrees(maindb_flagged):
-    # the 'hostname' call on qmaster returns the following value:
+def db_validation(maindb_tag, data_to_check):
+    """
+    Check if you are working on the main db and if so, if you have the right key
+    and get a few other checks.
+    """
     is_maindb = check_if_main()
 
-    if maindb_flagged and not is_maindb:
-        print('Error:  attempting main db access to remote db')
-        success = False
-    elif not maindb_flagged and is_maindb:
+    if is_maindb and not maindb_tag:
         print('Error:  attempting unkeyed access to main db')
-        success = False
+        return False, None
+
+    # Check tables and reduce list to valid use_table
+    use_table = []
+    for table, data_filename in data_to_check:
+        dbkey = check_csv_file_and_get_key(data_filename)
+        if is_maindb:
+            if maindb_tag == dbkey:
+                use_table.append([table, data_filename, True])
+            else:
+                print('Invalid maindb key for %s  (%s)' % (table, dbkey))
+        else:
+            if dbkey:
+                use_table.append([table, data_filename, True])
+            else:
+                use_table.append([table, data_filename, False])
+    if len(use_table) == 0:
+        return False, None
     else:
-        success = True
-    return success
+        return True, use_table
 
 
 def check_csv_file_and_get_key(data_filename):
-    try:
-        fp = open(data_filename, 'r')
-    except IOError:
-        return None
+    fp = open(data_filename, 'r')
     firstline = fp.readline()
+    dbkey = None
     if firstline.split(':')[0] == '$_maindb_$':
         dbkey = firstline.split(':')[1].strip()
-    else:
-        dbkey = '$_remote_$'
     fp.close()
     return dbkey
 
@@ -158,14 +171,10 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
     if cm_csv_path is None:
         cm_csv_path = mc.get_cm_csv_path(None)
 
-    # Check that db flag and actual db agree for remote v main
-    success = check_if_db_location_agrees(maindb)
-    if not success:
-        return success
-
     if tables != 'all':
         print("You may encounter foreign_key issues by not using 'all' tables.")
         print("If it doesn't complain though you should be ok.")
+
     # Get tables to deal with in proper order
     cm_tables = cm_table_info.cm_tables
     if tables == 'all':
@@ -178,28 +187,14 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
     else:
         data_prefix = cm_table_info.data_prefix
 
-    # Check tables and reduce list to valid use_table
-    use_table = list(tables_to_read)
-    keyed_file = {}
+    __tabfil = []
     for table in tables_to_read:
-        data_filename = os.path.join(cm_csv_path, data_prefix + table + '.csv')
-        dbkey = check_csv_file_and_get_key(data_filename)
-        if not dbkey:
-            print('Initialization for %s not found' % (table))
-            use_table.remove(table)
-        else:
-            if maindb:
-                if dbkey != maindb:
-                    print('Invalid maindb key for %s  (%s)' % (table, dbkey))
-                    use_table.remove(table)
-                else:
-                    keyed_file[table] = True
-            else:
-                keyed_file[table] = False
-                if dbkey != '$_remote_$':
-                    print('Allowing maindb access for remotedb table: ', table)
-                    keyed_file[table] = True
-    if len(use_table) != len(tables_to_read):
+        __tabfil.append([table, os.path.join(cm_csv_path, data_prefix + table + '.csv')])
+    valid_to_proceed, use_table = db_validation(maindb, __tabfil)
+
+    if not valid_to_proceed:
+        return False
+    elif len(use_table) != len(tables_to_read):
         print("All of the tables weren't valid to change, so for now none will be.")
         print("This will likely be changed in the future, but for now caution abounds.")
         print("(This possibility is why 'use_table' and 'tables_to_read' are both there.)")
@@ -207,16 +202,14 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
         print(tables_to_read)
         return False
 
-    for table in use_table:
+    # Delete tables in this order
+    for table, data_filename, keyed_table in use_table:
         num_rows_deleted = session.query(cm_tables[table][0]).delete()
         print("%d rows deleted in %s" % (num_rows_deleted, table))
 
-    tables_to_init = list(reversed(use_table))
-    # Initialize tables
-    for table in tables_to_init:
-        data_filename = os.path.join(cm_csv_path, data_prefix + table + '.csv')
+    # Initialize tables in reversed order
+    for table, data_filename, key_row in reversed(use_table):
         cm_utils._log('cm_initialization: ' + data_filename)
-        key_row = keyed_file[table]
         field_row = not key_row
         field_name = []
         with open(data_filename, 'rb') as csvfile:
