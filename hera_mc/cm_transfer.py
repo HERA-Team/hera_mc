@@ -234,4 +234,4 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
                             r = int(float(r))
                         setattr(table_inst, field_name[i], r)
                     session.add(table_inst)
-                    session.commit()
+        session.commit()
