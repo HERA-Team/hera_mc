@@ -209,6 +209,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
 
     # Initialize tables in reversed order
     for table, data_filename, key_row in reversed(use_table):
+        print("CM_TRANSFER[212]:  ",table, data_filename)
         cm_utils._log('cm_initialization: ' + data_filename)
         table_inst = cm_tables[table][0]()
         field_row = not key_row
@@ -216,6 +217,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
         with open(data_filename, 'rb') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
+                print("CM_TRANSFER[219]:  ",row)
                 if key_row:
                     key_row = False
                     field_row = True
