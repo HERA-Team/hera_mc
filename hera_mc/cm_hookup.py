@@ -13,7 +13,8 @@ import sys
 
 from hera_mc import mc, geo_location, correlator_levels, cm_utils, cm_handling
 from hera_mc import part_connect as PC
-import copy, warnings
+import copy
+import warnings
 
 
 class Hookup:
@@ -44,6 +45,8 @@ class Hookup:
                        column headers
         This only gets the contemporary hookups (unlike parts and connections,
             which get all.)
+        Note that this also assumes all hookups returned are connected at the same
+            furthest upstream place.
 
         Parameters
         -----------
@@ -62,8 +65,6 @@ class Hookup:
                                                at_date=self.at_date,
                                                exact_match=exact_match)
         hookup_dict = {'hookup': {}}
-        col_len_max = [0, '-']
-
         pols_to_do = self.__get_pols_to_do(hpn, port, check_pol=False)
 
         for k, part in parts.iteritems():
@@ -72,16 +73,15 @@ class Hookup:
             hookup_dict['hookup'][k] = {}
             for pol in pols_to_do:
                 hookup_dict['hookup'][k][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
-                if len(hookup_dict['hookup'][k][pol]) > col_len_max[0]:
-                    col_len_max[0] = len(hookup_dict['hookup'][k][pol])
-                    col_len_max[1] = k
-        hookup_dict = self.__add_hookup_timing(hookup_dict)
+        if len(hookup_dict['hookup'].keys()) > 0:
+            hookup_dict = self.__add_hookup_timing(hookup_dict)
+            hookup_dict['columns'] = self.__get_column_headers(hookup_dict['hookup'])
+            if state_args['show_levels']:
+                hookup_dict = self.__hookup_add_correlator_levels(
+                    hookup_dict, state_args['levels_testing'])
+        else:
+            hookup_dict['columns'] = []
 
-        hookup_dict['columns'] = self.__get_column_header(
-            hookup_dict['hookup'][col_len_max[1]][pol])
-        if state_args['show_levels']:
-            hookup_dict = self.__hookup_add_correlator_levels(
-                hookup_dict, state_args['levels_testing'])
         return hookup_dict
 
     def __get_pols_to_do(self, part, port, check_pol=False):
@@ -186,25 +186,46 @@ class Hookup:
                 hookup_dict['timing'][akey][pkey] = [latest_start, earliest_stop]
         return hookup_dict
 
-    def __get_column_header(self, hup0):
-        parts_col = []
-        for hu in hup0:
-            get_part_type = self.handling.get_part_dossier(hpn=hu.upstream_part,
-                                                           rev=hu.up_part_rev,
-                                                           at_date=self.at_date,
-                                                           exact_match=True)
-            pr_key = cm_utils._make_part_key(hu.upstream_part, hu.up_part_rev)
-            parts_col.append(get_part_type[pr_key]['part'].hptype)
-        hu = hup0[-1]
-        get_part_type = self.handling.get_part_dossier(hpn=hu.downstream_part,
-                                                       rev=hu.down_part_rev,
-                                                       at_date=self.at_date,
-                                                       exact_match=True)
-        pr_key = cm_utils._make_part_key(hu.downstream_part, hu.down_part_rev)
-        parts_col.append(get_part_type[pr_key]['part'].hptype)
-        parts_col.append('Start')
-        parts_col.append('Stop')
-        return parts_col
+    def __get_column_headers(self, huh):
+        """
+        This gets the full set of headers for a future show_hookup that doesn't require the same
+        hookup starting point.  Returns a single column for now (the one/long_column stuff)
+        """
+        hu_col = {}
+        return_one_column_for_now = True
+        if return_one_column_for_now:  # This is to just not find part_dossiers on everything for now
+            lc = [huh.keys()[0], huh[huh.keys()[0]].keys()[0], 0]  # ...and maybe we'll use the full
+            for hk, hu in huh.iteritems():                        # ...dictionary later
+                for pk, pv in hu.iteritems():
+                    if len(pv) > lc[-1]:
+                        lc = [hk, pk, len(pv)]
+            huh = {hk: {pk: huh[lc[0]][lc[1]]}}
+
+        long_column = [huh.keys()[0], huh[huh.keys()[0]].keys()[0], 0]  # Pick first one to start
+        for hk, hu in huh.iteritems():
+            hu_col[hk] = {}
+            for pk, pv in hu.iteritems():
+                hu_col[hk][pk] = []
+                for h in pv:
+                    get_part_type = self.handling.get_part_dossier(hpn=h.upstream_part,
+                                                                   rev=h.up_part_rev,
+                                                                   at_date=self.at_date,
+                                                                   exact_match=True)
+                    pr_key = cm_utils._make_part_key(h.upstream_part, h.up_part_rev)
+                    hu_col[hk][pk].append(get_part_type[pr_key]['part'].hptype)
+                h = pv[-1]
+                get_part_type = self.handling.get_part_dossier(hpn=h.downstream_part,
+                                                               rev=h.down_part_rev,
+                                                               at_date=self.at_date,
+                                                               exact_match=True)
+                pr_key = cm_utils._make_part_key(h.downstream_part, h.down_part_rev)
+                hu_col[hk][pk].append(get_part_type[pr_key]['part'].hptype)
+                hu_col[hk][pk].append('Start')
+                hu_col[hk][pk].append('Stop')
+                # Next two lines for "one column" solution
+                if len(hu_col[hk][pk]) > long_column[-1]:
+                    long_column = [hk, pk, len(hu_col[hk][pk])]
+        return hu_col[long_column[0]][long_column[1]]
 
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
         warnings.warn("Warning:  correlator levels don't work with new pol hookup scheme yet (CM_HOOKUP[210]).")
@@ -242,7 +263,6 @@ class Hookup:
 
         headers, show_flag = self.__make_header_row(hookup_dict['columns'],
                                                     cols_to_show, show_levels)
-
         table_data = []
         for hukey in sorted(hookup_dict['hookup'].keys()):
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
@@ -251,9 +271,10 @@ class Hookup:
                     level = hookup_dict['levels'][hukey][pol]
                 else:
                     level = False
-                td = self.__make_table_row(hookup_dict['hookup'][hukey][pol], headers,
-                                           show_flag, timing, level)
-                table_data.append(td)
+                if len(hookup_dict['hookup'][hukey][pol]) > 0:
+                    td = self.__make_table_row(hookup_dict['hookup'][hukey][pol], headers,
+                                               show_flag, timing, level)
+                    table_data.append(td)
         print('\n')
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
         print('\n')
