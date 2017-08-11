@@ -196,9 +196,18 @@ class Hookup:
         The columns in the hookup_dict contain parts in the hookup chain and the column headers are 
         the part types contained in that column.  This returns the headers for the retrieved hookup.
         This gets the full set of headers for a future show_hookup that doesn't require the same
-        hookup starting point.  Returns a single column for now (the one/long_column stuff).
-        The method searches all of the hookup chains to find the longest one, which occurs at 
+        hookup starting point.  
+
+        Returns a single column for now (the one/long_column stuff).
+
+        The method searches all of the hookup chains to find the longest one and returns those
+        part-type header names.
+
+        Parameters: 
+        -------------
+        huh: the 'hookup' part of the hookup_dictionary
         """
+
         lc = cm_utils.utility_method()  # This tracks the part and pol keys for the longest hookup
         lc.v(part=huh.keys()[0], pol=huh[huh.keys()[0]].keys()[0], hlen=0)
 

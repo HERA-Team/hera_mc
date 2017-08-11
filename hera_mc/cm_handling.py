@@ -24,7 +24,6 @@ class Handling:
     Class to allow various manipulations of parts and their properties etc.
     Things are manipulated/passed as dictionaries currently.
     """
-    no_connection_designator = PC.no_connection_designator
 
     def __init__(self, session=None):
         """
