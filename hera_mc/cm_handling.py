@@ -65,7 +65,7 @@ class Handling:
             if return_active:
                 connections_found = []
                 for k, c in connection_dossier['connections'].iteritems():
-                    if cm_utils._is_active(query_datetime, c.start_date, c.stop_date):
+                    if cm_utils._is_active(at_date, c.start_date, c.stop_date):
                         connections_found.append(c)
                 if len(connections_found) > 0:
                     found_connected = connections_found
