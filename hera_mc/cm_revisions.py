@@ -26,18 +26,18 @@ def get_revisions_of_type(rev_type, hpn, at_date=None, session=None):
 
     rq = rev_type.upper()
     if rq == 'LAST':
-        rq = get_last_revision(hpn, session)
-    elif rq == 'ACTIVE':
+        return get_last_revision(hpn, session)
+    
+    if rq == 'ACTIVE':
         if at_date is None:
-            print("Need a date to find active revision.")
-            rq = None
+            raise Exception('To find ACTIVE revisions, you must supply an astropyTime')
         else:
-            rq = get_contemporary_revision(hpn, at_date, session)
-    elif rq == 'ALL':
-        rq = get_all_revisions(hpn, session)
-    else:
-        rq = get_particular_revision(rq, hpn, session)
-    return rq
+            return get_contemporary_revision(hpn, at_date, session)
+
+    if rq == 'ALL':
+        return get_all_revisions(hpn, session)
+    
+    return get_particular_revision(rq, hpn, session)
 
 
 def show_revisions(hpn, session=None):
