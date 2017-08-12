@@ -28,25 +28,25 @@ class TestConnections(TestHERAMC):
         self.query_time = Time('2017-08-01 01:00:00', scale='utc')
 
         for tp in self.test_hpn:
-            self.part = part_connect.Parts()
-            self.part.hpn = tp
-            self.part.hpn_rev = self.test_rev
-            self.part.hptype = self.test_hptype
-            self.part.manufacture_number = self.test_mfg
-            self.part.start_gpstime = self.test_time
-            self.test_session.add(self.part)
+            part = part_connect.Parts()
+            part.hpn = tp
+            part.hpn_rev = self.test_rev
+            part.hptype = self.test_hptype
+            part.manufacture_number = self.test_mfg
+            part.start_gpstime = self.test_time
+            self.test_session.add(part)
         self.test_session.commit()
 
         # Add test connection
-        self.connection = part_connect.Connections()
-        self.connection.upstream_part = self.test_hpn[0]
-        self.connection.up_part_rev = self.test_rev
-        self.connection.downstream_part = self.test_hpn[1]
-        self.connection.down_part_rev = self.test_rev
-        self.connection.upstream_output_port = 'up_and_out'
-        self.connection.downstream_input_port = 'down_and_in'
-        self.connection.start_gpstime = self.test_time
-        self.test_session.add(self.connection)
+        connection = part_connect.Connections()
+        connection.upstream_part = self.test_hpn[0]
+        connection.up_part_rev = self.test_rev
+        connection.downstream_part = self.test_hpn[1]
+        connection.down_part_rev = self.test_rev
+        connection.upstream_output_port = 'up_and_out'
+        connection.downstream_input_port = 'down_and_in'
+        connection.start_gpstime = self.test_time
+        self.test_session.add(connection)
         self.test_session.commit()
 
         self.h = cm_handling.Handling(self.test_session)
@@ -59,13 +59,13 @@ class TestConnections(TestHERAMC):
         b = 'down_and_in'
         g = self.test_time
         for tp in [u, d]:
-            self.part = part_connect.Parts()
-            self.part.hpn = tp
-            self.part.hpn_rev = r
-            self.part.hptype = self.test_hptype
-            self.part.manufacture_number = self.test_mfg
-            self.part.start_gpstime = self.test_time
-            self.test_session.add(self.part)
+            part = part_connect.Parts()
+            part.hpn = tp
+            part.hpn_rev = r
+            part.hptype = self.test_hptype
+            part.manufacture_number = self.test_mfg
+            part.start_gpstime = self.test_time
+            self.test_session.add(part)
         self.test_session.commit()
         data = [[u,r,d,r,a,b,g,'upstream_part',u],
                 [u,r,d,r,a,b,g,'up_part_rev',r],
