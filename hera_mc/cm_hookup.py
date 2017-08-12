@@ -37,7 +37,7 @@ class Hookup:
             self.session = session
         self.handling = cm_handling.Handling(session)
 
-    def get_hookup(self, hpn, rev, port, state_args, exact_match=False, **kwargs):
+    def get_hookup(self, hpn, rev, port, at_date, exact_match=False, **kwargs):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary
         Returns hookup_dict, a dictionary with three to four entries:
