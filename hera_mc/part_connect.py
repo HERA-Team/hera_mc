@@ -252,7 +252,7 @@ def format_and_check_update_part_request(request):
     return data
 
 
-def __get_part_revisions(hpn, session=None):
+def get_part_revisions(hpn, session=None):
     """
     Retrieves revision numbers for a given part (exact match).
 

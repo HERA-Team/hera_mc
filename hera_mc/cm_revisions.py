@@ -13,7 +13,7 @@ from tabulate import tabulate
 from hera_mc import cm_utils, part_connect
 
 
-def get_revisions_of_type(rev_type, hpn, session=None):
+def get_revisions_of_type(rev_type, hpn, at_date=None, session=None):
     """
     Returns list of revisions of type
 
@@ -28,7 +28,11 @@ def get_revisions_of_type(rev_type, hpn, session=None):
     if rq == 'LAST':
         rq = get_last_revision(hpn, session)
     elif rq == 'ACTIVE':
-        rq = get_contemporary_revision(hpn, session)
+        if at_date is None:
+            print("Need a date to find active revision.")
+            rq = None
+        else:
+            rq = get_contemporary_revision(hpn, at_date, session)
     elif rq == 'ALL':
         rq = get_all_revisions(hpn, session)
     else:
@@ -46,7 +50,7 @@ def show_revisions(hpn, session=None):
     session:  db session
     """
 
-    revisions = part_connect.__get_part_revisions(hpn, session)
+    revisions = part_connect.get_part_revisions(hpn, session)
     sort_rev = sorted(revisions.keys())
     headers = ['HPN', 'Revision', 'Start', 'Stop']
     table_data = []
@@ -68,7 +72,7 @@ def get_last_revision(hpn, session=None):
     session:  db session
     """
 
-    revisions = part_connect.__get_part_revisions(hpn, session)
+    revisions = part_connect.get_part_revisions(hpn, session)
     latest_end = cm_utils._get_astropytime('<')
     num_no_end = 0
     for rev in revisions.keys():
@@ -99,7 +103,7 @@ def get_all_revisions(hpn, session=None):
     session:  db session
     """
 
-    revisions = part_connect.__get_part_revisions(hpn, session)
+    revisions = part_connect.get_part_revisions(hpn, session)
     sort_rev = sorted(revisions.keys())
     all_rev = []
     for rev in sort_rev:
@@ -120,7 +124,7 @@ def get_particular_revision(rq, hpn, session=None):
     session:  db session
     """
 
-    revisions = part_connect.__get_part_revisions(hpn, session)
+    revisions = part_connect.get_part_revisions(hpn, session)
     sort_rev = sorted(revisions.keys())
     this_rev = None
     if rq in sort_rev:
@@ -130,7 +134,7 @@ def get_particular_revision(rq, hpn, session=None):
     return this_rev
 
 
-def get_contemporary_revision(hpn, session=None):
+def get_contemporary_revision(hpn, at_date, session=None):
     """
     Returns list of contemporary revisions
 
@@ -140,14 +144,13 @@ def get_contemporary_revision(hpn, session=None):
     session:  db session
     """
 
-    current = cm_utils._get_astropytime(args.date, args.time)
-    revisions = part_connect.__get_part_revisions(hpn, session)
+    revisions = part_connect.get_part_revisions(hpn, session)
     sort_rev = sorted(revisions.keys())
     return_contemporary = None
     for rev in sort_rev:
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
-        if cm_utils._is_active(current, started, ended):
+        if cm_utils._is_active(at_date, started, ended):
             return_contemporary = [[rev, started, ended]]
             break
     return return_contemporary
