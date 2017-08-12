@@ -15,7 +15,6 @@ import os.path
 
 PAST_DATE = '2000-01-01'
 
-
 def _future_date():
     """
     Future is defined here, since defining a far FUTURE_DATE typically gives a
