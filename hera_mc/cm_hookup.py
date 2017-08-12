@@ -37,7 +37,7 @@ class Hookup:
             self.session = session
         self.handling = cm_handling.Handling(session)
 
-    def get_hookup(self, hpn, rev, port, at_date, state_args, exact_match=False):
+    def get_hookup(self, hpn, rev, port, state_args, exact_match=False, **kwargs):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary
         Returns hookup_dict, a dictionary with three to four entries:
@@ -57,11 +57,14 @@ class Hookup:
         Parameters
         -----------
         hpn:  the input hera part number (whole or first part thereof)
-        rev_:  the revision number
-        port_:  a specifiable port name,  default is 'all'.  Unverified.
+        rev:  the revision number
+        port:  a specifiable port name,  default is 'all'.  Unverified.
         at_date:  date for hookup validity
-        state_args:  keyword dictionary specifying parameters for hookup
         exact_match:  boolean for either exact_match or partial
+        kwargs:  optional arguments to allow for inserting levels
+                    show_levels:  boolean to include levels
+                    levels_testing:  if present and not False will pull levels from
+                                     the file given in levels_testing
         """
 
         self.at_date = cm_utils._get_astropytime(at_date)
@@ -84,9 +87,10 @@ class Hookup:
         else:
             hookup_dict = self.__add_hookup_timing(hookup_dict)
             hookup_dict['columns'] = self.__get_column_headers(hookup_dict['hookup'])
-            if state_args['show_levels']:
-                hookup_dict = self.__hookup_add_correlator_levels(
-                    hookup_dict, state_args['levels_testing'])
+            if 'show_levels' in kwargs.keys() and kwargs['show_levels'] is True:
+                if 'levels_testing' not in kwargs.keys():
+                    kwargs['levels_testing'] = False
+                hookup_dict = self.__hookup_add_correlator_levels(hookup_dict, kwargs['levels_testing'])
 
         return hookup_dict
 
