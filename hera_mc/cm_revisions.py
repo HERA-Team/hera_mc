@@ -85,6 +85,7 @@ def check_part_for_overlapping_revisions(hpn, session=None):
             print('\n\tWarning!!!  {} and {} are overlapping revisions of part {}\n\n'.format(
                 ol[0].rev, ol[1].rev, hpn))
         show_revisions(overlapping_revs_in_single_list, session)
+    return overlap
 
 
 def show_revisions(rev_list):

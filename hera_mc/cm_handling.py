@@ -96,7 +96,7 @@ class Handling:
         part_dossier = {}
         rev_part = {}
         for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.like(hpn)):
-            rev_part[part.hpn] = cmpr.get_revisions_of_type(rev, part.hpn, at_date=at_date, 
+            rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, at_date=at_date, 
                                                             session=self.session)
 
         # Now get unique part/revs and put into dictionary
@@ -291,7 +291,7 @@ class Handling:
 
         rev_part = {}
         for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.like(hpn)):
-            rev_part[part.hpn] = cmpr.get_revisions_of_type(rev, part.hpn, session=self.session)
+            rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, session=self.session)
         for xhpn in rev_part.keys():
             if rev_part[xhpn] is None:
                 continue

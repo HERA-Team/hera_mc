@@ -209,9 +209,11 @@ class Hookup:
         huh: the 'hookup' part of the hookup_dictionary
         """
 
+        if len(huh) == 0:
+            return []
         # This tracks the part and pol keys for the longest hookup
         lc = Namespace(part=huh.keys()[0], pol=huh[huh.keys()[0]].keys()[0], hlen=0)
-
+        print("CM_HOOKUP[216]:  ", huh)
         hu_col = {}
         return_one_column_for_now = True
         if return_one_column_for_now:  # This is to just not find part_dossiers on everything for now
@@ -225,6 +227,8 @@ class Hookup:
         for hk, hu in huh.iteritems():
             hu_col[hk] = {}
             for pk, pv in hu.iteritems():
+                if len(pv) == 0:
+                    continue
                 hu_col[hk][pk] = []
                 for h in pv:
                     get_part_type = self.handling.get_part_dossier(hpn=h.upstream_part,
@@ -245,7 +249,10 @@ class Hookup:
                 # Next two lines for "one column" solution
                 if len(hu_col[hk][pk]) >= lc.hlen:
                     lc.part=hk; lc.pol=pk; lc.hlen=len(hu_col[hk][pk])
-        return hu_col[lc.part][lc.pol]
+        if len(hu_col[lc.part]) == 0:
+            return []
+        else:
+            return hu_col[lc.part][lc.pol]
 
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
         warnings.warn("Warning:  correlator levels don't work with new pol hookup scheme yet (CM_HOOKUP[210]).")
