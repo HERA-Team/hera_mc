@@ -111,18 +111,32 @@ class RTPProcessRecord(MCDeclarativeBase):
     time: time of this status in floor(gps seconds) (BigInteger). Part of primary_key
     obsid: observation obsid (BigInteger). Part of primary_key. Foreign key into Observation table
     pipeline_list: concatentated list of RTP tasks (String)
-    git_version: RTP git version (String)
-    git_hash: RTP git hash (String)
+    rtp_git_version: RTP git version (String)
+    rtp_git_hash: RTP git hash (String)
+    hera_qm_git_version: hera_qm git version (String)
+    hera_qm_git_hash: hera_qm git hash (String)
+    hera_cal_git_version: hera_cal git version (String)
+    hera_cal_git_hash: hera_cal git hash (String)
+    pyuvdata_git_version: pyuvdata git version (String)
+    pyuvdata_git_hash: pyuvdata git hash (String)
     """
     __tablename__ = 'rtp_process_record'
     time = Column(BigInteger, primary_key=True)
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
     pipeline_list = Column(Text, nullable=False)
-    git_version = Column(String(32), nullable=False)
-    git_hash = Column(String(64), nullable=False)
+    rtp_git_version = Column(String(32), nullable=False)
+    rtp_git_hash = Column(String(64), nullable=False)
+    hera_qm_git_version = Column(String(32), nullable=False)
+    hera_qm_git_hash = Column(String(64), nullable=False)
+    hera_cal_git_version = Column(String(32), nullable=False)
+    hera_cal_git_hash = Column(String(64), nullable=False)
+    pyuvdata_git_version = Column(String(32), nullable=False)
+    pyuvdata_git_hash = Column(String(64), nullable=False)
 
     @classmethod
-    def create(cls, time, obsid, pipeline_list, git_version, git_hash):
+    def create(cls, time, obsid, pipeline_list, rtp_git_version, rtp_git_hash, hera_qm_git_version,
+               hera_qm_git_hash, hera_cal_git_version, hera_cal_git_hash, pyuvdata_git_version,
+               pyuvdata_git_hash):
         """
         Create a new rtp_process_record object.
 
@@ -134,14 +148,29 @@ class RTPProcessRecord(MCDeclarativeBase):
             observation obsid (Foreign key into Observation)
         pipeline_list: string
             concatentated list of RTP tasks
-        git_version: string
+        rtp_git_version: string
             RTP git version
-        git_hash: string
+        rtp_git_hash: string
             RTP git hash
+        hera_qm_git_version: string
+            hera_qm git version
+        hera_qm_git_hash: string
+            hera_qm git hash
+        hera_cal_git_version: string
+            hera_cal git version
+        hera_cal_git_hash: string
+            hera_cal git hash
+        pyuvdata_git_version: string
+            pyuvdata git version
+        pyuvdata_git_hash: string
+            pyuvdata git hash
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
         time = floor(time.gps)
 
         return cls(time=time, obsid=obsid, pipeline_list=pipeline_list,
-                   git_version=git_version, git_hash=git_hash)
+                   rtp_git_version=rtp_git_version, rtp_git_hash=rtp_git_hash,
+                   hera_qm_git_version=hera_qm_git_version, hera_qm_git_hash=hera_qm_git_hash,
+                   hera_cal_git_version=hera_cal_git_version, hera_cal_git_hash=hera_cal_git_hash,
+                   pyuvdata_git_version=pyuvdata_git_version, pyuvdata_git_hash=pyuvdata_git_hash)

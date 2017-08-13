@@ -646,8 +646,10 @@ class MCSession(Session):
                                  stoptime=stoptime, filter_column='obsid',
                                  filter_value=obsid)
 
-    def add_rtp_process_record(self, time, obsid, pipeline_list, git_version,
-                               git_hash):
+    def add_rtp_process_record(self, time, obsid, pipeline_list, rtp_git_version,
+                               rtp_git_hash, hera_qm_git_version, hera_qm_git_hash,
+                               hera_cal_git_version, hera_cal_git_hash,
+                               pyuvdata_git_version, pyuvdata_git_hash):
         """
         Add a new rtp_process_record row.
 
@@ -659,15 +661,30 @@ class MCSession(Session):
             observation obsid (Foreign key into observation)
         pipeline_list: string
             concatentated list of RTP tasks
-        git_version: string
+        rtp_git_version: string
             RTP git version
-        git_hash: string
+        rtp_git_hash: string
             RTP git hash
+        hera_qm_git_version: string
+            hera_qm git version
+        hera_qm_git_hash: string
+            hera_qm git hash
+        hera_cal_git_version: string
+            hera_cal git version
+        hera_cal_git_hash: string
+            hera_cal git hash
+        pyuvdata_git_version: string
+            pyuvdata git version
+        pyuvdata_git_hash: string
+            pyuvdata git hash
         """
         from .rtp import RTPProcessRecord
 
         self.add(RTPProcessRecord.create(time, obsid, pipeline_list,
-                                         git_version, git_hash))
+                                         rtp_git_version, rtp_git_hash,
+                                         hera_qm_git_version, hera_qm_git_hash,
+                                         hera_cal_git_version, hera_cal_git_hash,
+                                         pyuvdata_git_version, pyuvdata_git_hash))
 
     def get_rtp_process_record(self, starttime, stoptime=None, obsid=None):
         """
