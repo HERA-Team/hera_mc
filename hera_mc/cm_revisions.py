@@ -15,24 +15,36 @@ import warnings
 def get_revisions_of_type(rev_type, hpn, at_date=None, session=None):
     """
     Returns list of revisions of queried type.
-    Allowed types are:  LAST, FULL[Y_CONNECTED], ALL, PARTICULAR
+    Allowed types are:  
+        ACTIVE:  revisions that are not stopped at_date
+        LAST:  the last connected revision (could be active or not) 
+        FULL[Y_CONNECTED]:  revision that is part of a fully connected signal path at_date
+        ALL:  all revisions
+        PARTICULAR:  check for a particular version
 
     Parameters:
     ------------
     rev_type:  string for revision type
     hpn:  string for hera part number
+    at_date:  astropy.Time to check for
     session:  db session
     """
 
     rq = rev_type.upper()
     if rq[:4] == 'LAST':
         return get_last_revision(hpn, session)
+
+    if rq[0:4] == 'ACTIVE':
+        if at_date is None:
+            raise Exception('To find FULLY_CONNECTED revisions, you must supply an astropy.Time')
+        else:
+            return get_active_revision(hpn, at_date, session)
     
     if rq[0:4] == 'FULL':   #FULLY_CONNECTED'
         if at_date is None:
-            raise Exception('To find FULLY_CONNECTED revisions, you must supply an astropyTime')
+            raise Exception('To find FULLY_CONNECTED revisions, you must supply an astropy.Time')
         else:
-            return get_contemporary_revision(hpn, at_date, session)
+            return get_full_revision(hpn, at_date, session)
 
     if rq[0] == 'ALL':
         return get_all_revisions(hpn, session)
@@ -46,20 +58,24 @@ def check_revisions(hpn, session=None):
 
     overlap = []
     revisions = get_all_revisions(hpn, session)
-    for k1, r1 in revisions.iteritems():
-        for k2, r2 in revisions.iteritems():
-            if k1 == k2:
+    for i, r1 in enumerate(revisions):
+        for j, r2 in enumerate(revisions):
+            if i >= j:
                 continue
-            first_one = k1 if r1['started']<=r2['started'] else k2
-            second_one = k1 if r1['started']>r2['started'] else k2
-            if revisions[first_one]['ended'] is None:
-                revisions[first_one]['ended'] = cm_utils._get_astropytime('>')
-            if revisions[second_one]['started']>revisions[first_one]['ended']:
-                overlap.append([k1,k2])
+            first_one = i if r1[1]<=r2[1] else j
+            second_one = i if r1[1]>r2[1] else j
+            if revisions[first_one][2] is None:
+                revisions[first_one][2] = cm_utils._get_astropytime('>')
+            if revisions[second_one][1]>revisions[first_one][2]:
+                overlap.append([i,j])
 
     if len(overlap)>0:
         for ol in overlap:
-            warnings.warn('Warning:  {} and {} are overlapping revisions of part {}'.format(ol[0],ol[1]))
+            print('\n\tWarning!!!  {} and {} are overlapping revisions of part {}\n\n'.format(
+                          revisions[ol[0]][0],revisions[ol[1]][0], hpn))
+            show_revisions(hpn, session)
+    else:
+        print("OK")
 
 def show_revisions(hpn, session=None):
     """
@@ -100,13 +116,14 @@ def get_last_revision(hpn, session=None):
         end_date = revisions[rev]['ended']
         if end_date is None:
             latest_end = cm_utils._get_astropytime('>')
-            num_no_end.append(rev, revisions[rev]['started'], revisions[rev]['ended'])
+            no_end.append([rev, revisions[rev]['started'], revisions[rev]['ended']])
         elif end_date > latest_end:
             latest_rev = rev
             latest_end = end_date
     if len(no_end) > 0:
         if len(no_end) > 1:
-            warnings.warn("Warning:  {} has multiple open revisions.  Returning all open.".format(hpn))
+            s = "Warning:  {} has multiple open revisions.  Returning all open.".format(hpn)
+            warnings.warn(s)
         return no_end
     else:
         return [[latest_rev, revisions[latest_rev]['started'], revisions[latest_rev]['ended']]]
@@ -153,23 +170,43 @@ def get_particular_revision(rq, hpn, session=None):
     return this_rev
 
 
-def get_contemporary_revision(hpn, at_date, session=None):
+def get_active_revision(hpn, at_date, session=None):
     """
-    Returns list of contemporary revisions
+    Returns list of active revisions at_date
 
     Parameters:
     -------------
     hpn:  string of hera part number
+    at_date:  date to check if fully connected
     session:  db session
     """
 
     revisions = part_connect.get_part_revisions(hpn, session)
     sort_rev = sorted(revisions.keys())
-    return_contemporary = None
+    return_active = None
     for rev in sort_rev:
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
         if cm_utils._is_active(at_date, started, ended):
-            return_contemporary = [[rev, started, ended]]
+            return_active = [[rev, started, ended]]
             break
-    return return_contemporary
+    if len(return_active) > 1:
+        s = '{} has multiple active revisions at {}'.format(hpn, str(at_date))
+        warning.warn(s)
+
+    return return_active
+
+def get_full_revisions(hpn, at_date, session=None):
+    """
+    Returns list of fully connected revisions of part at_date
+
+    Parameters:
+    -------------
+    hpn:  string of hera part number
+    at_date:  date to check if fully connected
+    session:  db session
+    """
+
+    revisions = part_connect.get_part_revisions(hpn, session)
+    print("CM_REVISIONS[209]:  Working on fully connected revisions")
+
