@@ -14,7 +14,7 @@ import warnings
 from argparse import Namespace
 
 
-def get_revisions_of_type(rev_type, hpn, at_date=None, session=None):
+def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     """
     Returns namespace of revisions (hpn, rev, started, ended) of queried type.
     Allowed types are:  
@@ -51,10 +51,16 @@ def get_revisions_of_type(rev_type, hpn, at_date=None, session=None):
     if rq == 'ALL':
         return get_all_revisions(hpn, session)
 
-    return get_particular_revision(rq, hpn, session)
+    return get_particular_revision(hpn, rq, session)
 
+def check_rev(hpn, rev, chk, at_date, session=None):
+    rev_chk = get_revisions_of_type(hpn, chk, at_date, session)
+    if len(rev_chk)==0 or rev != rev_chk[0].rev:
+        return False
+    else:
+        return True
 
-def check_revisions(hpn, session=None):
+def check_part_for_overlapping_revisions(hpn, session=None):
     """
     Checks hpn for parts that overlap in time.  Should be none.
     """
@@ -90,12 +96,15 @@ def show_revisions(rev_list):
     rev_list:  list as provided by one of the other methods
     """
 
-    headers = ['HPN', 'Revision', 'Start', 'Stop']
-    table_data = []
-    for r in rev_list:
-        table_data.append([r.hpn, r.rev, r.started, r.ended])
-    print(tabulate(table_data, headers=headers, tablefmt='simple'))
-    print('\n')
+    if len(rev_list) == 0:
+        print("No revisions found.")
+    else:
+        headers = ['HPN', 'Revision', 'Start', 'Stop']
+        table_data = []
+        for r in rev_list:
+            table_data.append([r.hpn, r.rev, r.started, r.ended])
+        print(tabulate(table_data, headers=headers, tablefmt='simple'))
+        print('\n')
 
 
 def get_last_revision(hpn, session=None):
@@ -109,6 +118,8 @@ def get_last_revision(hpn, session=None):
     """
 
     revisions = part_connect.get_part_revisions(hpn, session)
+    if len(revisions.keys())==0:
+        return []
     latest_end = cm_utils._get_astropytime('<')
     no_end = []
     for rev in revisions.keys():
@@ -141,6 +152,8 @@ def get_all_revisions(hpn, session=None):
     """
 
     revisions = part_connect.get_part_revisions(hpn, session)
+    if len(revisions.keys())==0:
+        return []
     sort_rev = sorted(revisions.keys())
     all_rev = []
     for rev in sort_rev:
@@ -150,7 +163,7 @@ def get_all_revisions(hpn, session=None):
     return all_rev
 
 
-def get_particular_revision(rq, hpn, session=None):
+def get_particular_revision(hpn, rq, session=None):
     """
     Returns info on particular revision
 
@@ -162,8 +175,10 @@ def get_particular_revision(rq, hpn, session=None):
     """
 
     revisions = part_connect.get_part_revisions(hpn, session)
+    if len(revisions.keys())==0:
+        return []
     sort_rev = sorted(revisions.keys())
-    this_rev = None
+    this_rev = []
     if rq in sort_rev:
         start_date = revisions[rq]['started']
         end_date = revisions[rq]['ended']
@@ -183,6 +198,8 @@ def get_active_revision(hpn, at_date, session=None):
     """
 
     revisions = part_connect.get_part_revisions(hpn, session)
+    if len(revisions.keys())==0:
+        return []
     sort_rev = sorted(revisions.keys())
     return_active = []
     for rev in sort_rev:
@@ -209,6 +226,8 @@ def get_full_revision(hpn, at_date, session=None):
     """
     from hera_mc import cm_hookup
     revisions = part_connect.get_part_revisions(hpn, session)
+    if len(revisions.keys())==0:
+        return []
     rev = get_active_revision(hpn, at_date, session)
     if len(rev) > 1:
         s = "Multiple active revisions of {}".format(hpn)
@@ -216,7 +235,9 @@ def get_full_revision(hpn, at_date, session=None):
     print("CM_REVISIONS[217]:  Need to remove state_args from here when change over")
     state_args = {'show_levels':False}
     hookup = cm_hookup.Hookup(session)
-    hu = hookup.get_hookup(rev[0].hpn, rev[0].rev, 'all', at_date, state_args, True)
-    #print(hu['hookup'][hu['hookup'].keys()[0]])
+    hu = hookup.get_hookup(hpn, rev[0].rev, 'all', at_date, state_args, True)
+    return_full = []
     if 'station' in hu['columns'] and 'f_engine' in hu['columns']:
-        print('FULLLLLL')
+        return_full.append(Namespace(hpn=hpn, rev=rev[0].rev, started=rev[0].started, ended=rev[0].ended))
+
+    return return_full

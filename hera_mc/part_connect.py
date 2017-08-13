@@ -263,7 +263,8 @@ def get_part_revisions(hpn, session=None):
     """
 
     if hpn is None:
-        return None
+        return {}
+
     close_session_when_done = False
     if session is None:
         db = mc.connect_mc_db()

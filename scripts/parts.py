@@ -8,34 +8,39 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, cm_handling, cm_hookup, cm_utils, mc
+from hera_mc import part_connect, cm_handling, cm_utils, mc
 import os.path
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
+    # set values for these to execute
     parser.add_argument('-p','--hpn', help="Get part information. [None]", default=None)
     parser.add_argument('-t','--hptype', help="List the hera part types. [False]", action='store_true')
-    cm_utils.add_verbosity_args(parser)
     parser.add_argument('-c','--connection', help="Show all connections directly to a part. [None]", default=None)
-    parser.add_argument('-u','--update',
-                        help="Update part number records.  Format hpn0:[rev0]:col0:val0, [hpn1:[rev1]]col1:val1...  [None]", default=None)
     parser.add_argument('-m','--mapr', help="Show full hookup chains from given part. [None]", default=None)
-    parser.add_argument('-r','--revision', help="Specify revision for hpn (it's a letter).  [LAST]", default='LAST')
+    parser.add_argument('--check-rev', help="Check hpn revision for either 'active' or 'full' [full].", default=None)
+    parser.add_argument('--update', help="Update part number records.  Format hpn0:[rev0]:col0:val0, \
+                                          [hpn1:[rev1]]col1:val1...  [None]", default=None)
+    
+    # set values for these for info
+    parser.add_argument('-r','--revision', help="Specify revision or last/active/full/all for hpn.  [LAST]", default='LAST')
     parser.add_argument('--specify-port', help="Define desired port(s) for hookup. [all]", dest='specify_port', default='all')
-    parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')
-    parser.add_argument('-e','--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]", dest='exact_match',
-                        action='store_true')
-    parser.add_argument('--add-new-part', help="Flag to allow update to add a new record.  [False]", dest='add_new_part', action='store_true')
     parser.add_argument('--mapr-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
                         dest='mapr_cols', default='all')
-    parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible - keep False to use actual correlator [False]",
-                        dest='levels_testing', default=False)
     parser.add_argument('--show_state', help="Show only the 'active' parts or all [all]", default='all')
-    parser.add_argument('--check-rev', help="Check revisions of hpn to make sure there are no overlapping ones.", dest='check_rev', 
-                        action='store_true')
-    parser.add_argument('--show-all-revs', help="Show revisions of hpn.", dest='show_all_revs', action='store_true')
-    parser.add_argument('--show-rev', help="Show particular revisions of hpn.", dest='show_rev', action='store_true')
+    parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible - keep False \
+                                                  to use actual correlator [False]", dest='levels_testing', default=False)
+    cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
+
+    # Boolean flags
+    parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')
+    parser.add_argument('--add-new-part', help="Flag to allow update to add a new record.  [False]", dest='add_new_part', action='store_true')
+    parser.add_argument('--check-part-overlap', help="Check hpn to make sure there are no overlapping revisions.", 
+                        dest='check_part_overlap', action='store_true')
+    parser.add_argument('--show-rev', help="Show revisions from --rev of --hpn (-p).", dest='show_rev', action='store_true')
+    parser.add_argument('-e','--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]", dest='exact_match',
+                        action='store_true')
 
     args = parser.parse_args()
 
@@ -80,6 +85,7 @@ if __name__ == '__main__':
         handling.show_other_connections(connection_dossier, already_shown)
 
     if args.mapr:
+        from hera_mc import cm_hookup
         hookup = cm_hookup.Hookup(session)
         hookup_dict = hookup.get_hookup(hpn=args.mapr, rev=args.revision, port=args.specify_port,
                                         at_date=date_query, state_args=state_args, exact_match=args.exact_match)
@@ -88,17 +94,17 @@ if __name__ == '__main__':
     if args.hptype:
         part_type_dict = handling.get_part_types(date_query, show_hptype=True)
 
-    if args.show_all_revs and args.hpn is not None:
-        all_revs = cm_handling.cmpr.get_revisions_of_type('ALL', args.hpn, session=session)
-        cm_handling.cmpr.show_revisions(all_revs)
-
     if args.show_rev and args.hpn is not None:
-        rev_ret = cm_handling.cmpr.get_revisions_of_type(args.revision, args.hpn, date_query, session)
-        print("CM_REVISIONS[97]:  ",rev_ret)
+        rev_ret = cm_handling.cmpr.get_revisions_of_type(args.hpn, args.revision, date_query, session)
         cm_handling.cmpr.show_revisions(rev_ret)
 
-    if args.check_rev and args.hpn is not None:
-        cm_handling.cmpr.check_revisions(args.hpn, session)
+    if args.check_rev is not None and args.hpn is not None:
+        r = cm_handling.cmpr.check_rev(args.hpn, args.revision, args.check_rev, date_query, session)
+        rrr = '' if r else ' not'
+        print("{} rev {} is{} {}".format(args.hpn, args.revision, rrr, args.check_rev))
+
+    if args.check_part_overlap and args.hpn is not None:
+        cm_handling.cmpr.check_part_for_overlapping_revisions(args.hpn, session)
 
     if args.update:
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script -- are you sure you want to do this? ", 'n')
