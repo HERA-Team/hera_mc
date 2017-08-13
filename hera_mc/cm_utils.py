@@ -20,7 +20,7 @@ def _future_date():
     Future is defined here, since defining a far FUTURE_DATE typically gives a
     warning about UTC vs UT1 etc
     """
-    return Time.now() + TimeDelta(100, format='jd')
+    return Time.now() + TimeDelta(300, format='jd')
 
 
 def _log(msg, **kwargs):

@@ -30,7 +30,10 @@ if __name__ == '__main__':
                         dest='mapr_cols', default='all')
     parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible - keep False to use actual correlator [False]",
                         dest='levels_testing', default=False)
-    parser.add_argument('--show_state', help="Show only the 'active' stations or all [all]", default='all')
+    parser.add_argument('--show_state', help="Show only the 'active' parts or all [all]", default='all')
+    parser.add_argument('--check-rev', help="Check revisions of hpn to make sure there are no overlapping ones.", dest='check_rev', 
+                        action='store_true')
+    parser.add_argument('--show-rev', help="Show revisions of hpn.", dest='show_rev', action='store_true')
     cm_utils.add_date_time_args(parser)
 
     args = parser.parse_args()
@@ -62,23 +65,34 @@ if __name__ == '__main__':
     session = db.sessionmaker()
 
     handling = cm_handling.Handling(session)
+
     if args.hpn:
         part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision,
                                                  at_date=date_query, exact_match=args.exact_match)
         handling.show_parts(part_dossier, state_args)
+
     if args.connection:
         connection_dossier = handling.get_connection_dossier(
                                       hpn=args.connection, rev=args.revision, port=args.specify_port,
                                       at_date=date_query, exact_match=args.exact_match)
         already_shown = handling.show_connections(connection_dossier, state_args)
         handling.show_other_connections(connection_dossier, already_shown)
+
     if args.mapr:
         hookup = cm_hookup.Hookup(session)
         hookup_dict = hookup.get_hookup(hpn=args.mapr, rev=args.revision, port=args.specify_port,
                                         at_date=date_query, state_args=state_args, exact_match=args.exact_match)
         hookup.show_hookup(hookup_dict, args.mapr_cols, args.show_levels)
+
     if args.hptype:
         part_type_dict = handling.get_part_types(date_query, show_hptype=True)
+
+    if args.show_rev and args.hpn is not None:
+        cm_handling.cmpr.show_revisions(args.hpn, session)
+
+    if args.check_rev and args.hpn is not None:
+        cm_handling.cmpr.check_revisions(args.hpn, session)
+
     if args.update:
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script -- are you sure you want to do this? ", 'n')
         if you_are_sure:
