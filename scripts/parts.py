@@ -33,7 +33,8 @@ if __name__ == '__main__':
     parser.add_argument('--show_state', help="Show only the 'active' parts or all [all]", default='all')
     parser.add_argument('--check-rev', help="Check revisions of hpn to make sure there are no overlapping ones.", dest='check_rev', 
                         action='store_true')
-    parser.add_argument('--show-rev', help="Show revisions of hpn.", dest='show_rev', action='store_true')
+    parser.add_argument('--show-all-revs', help="Show revisions of hpn.", dest='show_all_revs', action='store_true')
+    parser.add_argument('--show-rev', help="Show particular revisions of hpn.", dest='show_rev', action='store_true')
     cm_utils.add_date_time_args(parser)
 
     args = parser.parse_args()
@@ -87,8 +88,14 @@ if __name__ == '__main__':
     if args.hptype:
         part_type_dict = handling.get_part_types(date_query, show_hptype=True)
 
+    if args.show_all_revs and args.hpn is not None:
+        all_revs = cm_handling.cmpr.get_revisions_of_type('ALL', args.hpn, session=session)
+        cm_handling.cmpr.show_revisions(all_revs)
+
     if args.show_rev and args.hpn is not None:
-        cm_handling.cmpr.show_revisions(args.hpn, session)
+        rev_ret = cm_handling.cmpr.get_revisions_of_type(args.revision, args.hpn, date_query, session)
+        print("CM_REVISIONS[97]:  ",rev_ret)
+        cm_handling.cmpr.show_revisions(rev_ret)
 
     if args.check_rev and args.hpn is not None:
         cm_handling.cmpr.check_revisions(args.hpn, session)

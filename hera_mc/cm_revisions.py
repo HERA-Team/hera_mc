@@ -11,10 +11,12 @@ from __future__ import absolute_import, print_function
 from tabulate import tabulate
 from hera_mc import cm_utils, part_connect
 import warnings
+from argparse import Namespace
+
 
 def get_revisions_of_type(rev_type, hpn, at_date=None, session=None):
     """
-    Returns list of revisions of queried type.
+    Returns namespace of revisions (hpn, rev, started, ended) of queried type.
     Allowed types are:  
         ACTIVE:  revisions that are not stopped at_date
         LAST:  the last connected revision (could be active or not) 
@@ -31,25 +33,26 @@ def get_revisions_of_type(rev_type, hpn, at_date=None, session=None):
     """
 
     rq = rev_type.upper()
-    if rq[:4] == 'LAST':
+    if rq == 'LAST':
         return get_last_revision(hpn, session)
 
-    if rq[0:4] == 'ACTIVE':
+    if rq == 'ACTIVE':
         if at_date is None:
-            raise Exception('To find FULLY_CONNECTED revisions, you must supply an astropy.Time')
+            raise Exception('To find ACTIVE revisions, you must supply an astropy.Time')
         else:
             return get_active_revision(hpn, at_date, session)
-    
-    if rq[0:4] == 'FULL':   #FULLY_CONNECTED'
+
+    if rq[0:4] == 'FULL':  # FULLY_CONNECTED'
         if at_date is None:
             raise Exception('To find FULLY_CONNECTED revisions, you must supply an astropy.Time')
         else:
             return get_full_revision(hpn, at_date, session)
 
-    if rq[0] == 'ALL':
+    if rq == 'ALL':
         return get_all_revisions(hpn, session)
-    
+
     return get_particular_revision(rq, hpn, session)
+
 
 def check_revisions(hpn, session=None):
     """
@@ -62,39 +65,35 @@ def check_revisions(hpn, session=None):
         for j, r2 in enumerate(revisions):
             if i >= j:
                 continue
-            first_one = i if r1[1]<=r2[1] else j
-            second_one = i if r1[1]>r2[1] else j
-            if revisions[first_one][2] is None:
-                revisions[first_one][2] = cm_utils._get_astropytime('>')
-            if revisions[second_one][1]>revisions[first_one][2]:
-                overlap.append([i,j])
-
-    if len(overlap)>0:
+            first_one = i if r1.started <= r2.started else j
+            second_one = i if r1.started > r2.started else j
+            if revisions[first_one].ended is None:
+                revisions[first_one].ended = cm_utils._get_astropytime('>')
+            if revisions[second_one].started > revisions[first_one].ended:
+                overlap.append([r1, r2])
+    if len(overlap) > 0:
+        overlapping_revs_in_single_list = []
         for ol in overlap:
+            overlapping_revs_in_single_list.append(ol[0])
+            overlapping_revs_in_single_list.append(ol[1])
             print('\n\tWarning!!!  {} and {} are overlapping revisions of part {}\n\n'.format(
-                          revisions[ol[0]][0],revisions[ol[1]][0], hpn))
-            show_revisions(hpn, session)
-    else:
-        print("OK")
+                ol[0].rev, ol[1].rev, hpn))
+        show_revisions(overlapping_revs_in_single_list, session)
 
-def show_revisions(hpn, session=None):
+
+def show_revisions(rev_list):
     """
-    Show revisions for hera part number
+    Show revisions for provided revision list
 
     Parameters:
     -------------
-    hpn:  string of hera part number
-    session:  db session
+    rev_list:  list as provided by one of the other methods
     """
 
-    revisions = part_connect.get_part_revisions(hpn, session)
-    sort_rev = sorted(revisions.keys())
     headers = ['HPN', 'Revision', 'Start', 'Stop']
     table_data = []
-    for rev in sort_rev:
-        started = revisions[rev]['started']
-        ended = revisions[rev]['ended']
-        table_data.append([hpn, rev, started, ended])
+    for r in rev_list:
+        table_data.append([r.hpn, r.rev, r.started, r.ended])
     print(tabulate(table_data, headers=headers, tablefmt='simple'))
     print('\n')
 
@@ -116,7 +115,8 @@ def get_last_revision(hpn, session=None):
         end_date = revisions[rev]['ended']
         if end_date is None:
             latest_end = cm_utils._get_astropytime('>')
-            no_end.append([rev, revisions[rev]['started'], revisions[rev]['ended']])
+            no_end.append(Namespace(hpn=hpn, rev=rev, started=revisions[rev]['started'],
+                                    ended=revisions[rev]['ended']))
         elif end_date > latest_end:
             latest_rev = rev
             latest_end = end_date
@@ -126,7 +126,8 @@ def get_last_revision(hpn, session=None):
             warnings.warn(s)
         return no_end
     else:
-        return [[latest_rev, revisions[latest_rev]['started'], revisions[latest_rev]['ended']]]
+        return [Namespace(hpn=hpn, rev=latest_rev, started=revisions[latest_rev]['started'],
+                          ended=revisions[latest_rev]['ended'])]
 
 
 def get_all_revisions(hpn, session=None):
@@ -143,9 +144,9 @@ def get_all_revisions(hpn, session=None):
     sort_rev = sorted(revisions.keys())
     all_rev = []
     for rev in sort_rev:
-        start_date = revisions[rev]['started']
-        end_date = revisions[rev]['ended']
-        all_rev.append([rev, start_date, end_date])
+        started = revisions[rev]['started']
+        ended = revisions[rev]['ended']
+        all_rev.append(Namespace(hpn=hpn, rev=rev, started=started, ended=ended))
     return all_rev
 
 
@@ -166,7 +167,7 @@ def get_particular_revision(rq, hpn, session=None):
     if rq in sort_rev:
         start_date = revisions[rq]['started']
         end_date = revisions[rq]['ended']
-        this_rev = [[rq, start_date, end_date]]
+        this_rev = [Namespace(hpn=hpn, rev=rq, started=start_date, ended=end_date)]
     return this_rev
 
 
@@ -183,20 +184,20 @@ def get_active_revision(hpn, at_date, session=None):
 
     revisions = part_connect.get_part_revisions(hpn, session)
     sort_rev = sorted(revisions.keys())
-    return_active = None
+    return_active = []
     for rev in sort_rev:
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
         if cm_utils._is_active(at_date, started, ended):
-            return_active = [[rev, started, ended]]
-            break
+            return_active.append(Namespace(hpn=hpn, rev=rev, started=started, ended=ended))
     if len(return_active) > 1:
         s = '{} has multiple active revisions at {}'.format(hpn, str(at_date))
         warning.warn(s)
 
     return return_active
 
-def get_full_revisions(hpn, at_date, session=None):
+
+def get_full_revision(hpn, at_date, session=None):
     """
     Returns list of fully connected revisions of part at_date
 
@@ -206,7 +207,16 @@ def get_full_revisions(hpn, at_date, session=None):
     at_date:  date to check if fully connected
     session:  db session
     """
-
+    from hera_mc import cm_hookup
     revisions = part_connect.get_part_revisions(hpn, session)
-    print("CM_REVISIONS[209]:  Working on fully connected revisions")
-
+    rev = get_active_revision(hpn, at_date, session)
+    if len(rev) > 1:
+        s = "Multiple active revisions of {}".format(hpn)
+        raise Exception(s)
+    print("CM_REVISIONS[217]:  Need to remove state_args from here when change over")
+    state_args = {'show_levels':False}
+    hookup = cm_hookup.Hookup(session)
+    hu = hookup.get_hookup(rev[0].hpn, rev[0].rev, 'all', at_date, state_args, True)
+    #print(hu['hookup'][hu['hookup'].keys()[0]])
+    if 'station' in hu['columns'] and 'f_engine' in hu['columns']:
+        print('FULLLLLL')
