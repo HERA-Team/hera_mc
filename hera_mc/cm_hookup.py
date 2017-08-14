@@ -86,10 +86,8 @@ class Hookup:
         else:
             hookup_dict = self.__add_hookup_timing(hookup_dict)
             hookup_dict['columns'] = self.__get_column_headers(hookup_dict['hookup'])
-            if 'show_levels' in kwargs.keys() and kwargs['show_levels'] is True:
-                if 'levels_testing' not in kwargs.keys():
-                    kwargs['levels_testing'] = False
-                hookup_dict = self.__hookup_add_correlator_levels(hookup_dict, kwargs['levels_testing'])
+            if show_levels:
+                hookup_dict = self.__hookup_add_correlator_levels(hookup_dict, levels_testing)
 
         return hookup_dict
 
