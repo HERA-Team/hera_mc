@@ -9,21 +9,22 @@
 from __future__ import absolute_import, division, print_function
 
 from hera_mc import part_connect, cm_handling, cm_utils, mc
-import os.path, sys
+import os.path
+import sys
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('action', nargs='?', help="Actions are:  info, hookup, types, part_info, conn_info, rev_info, \
                                                    check_rev, overlap_check, update.  'info' for more.", default='hookup')
     # set values for 'action' to use
-    parser.add_argument('-p','--hpn', help="Part number (required). [None]", default=None)
-    parser.add_argument('-r','--revision', help="Specify revision or last/active/full/all for hpn.  [LAST]", default='LAST')
-    parser.add_argument('-e','--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]", 
-                                              dest='exact_match', action='store_true')
+    parser.add_argument('-p', '--hpn', help="Part number (required). [None]", default=None)
+    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [LAST]", default='LAST')
+    parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
+                        dest='exact_match', action='store_true')
     parser.add_argument('--port', help="Define desired port(s) for hookup. [all]", dest='port', default='all')
     parser.add_argument('--show_state', help="Show only the 'full', active' or 'all' parts [active]", default='active')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
-                                       dest='hookup_cols', default='all')
+                        dest='hookup_cols', default='all')
     parser.add_argument('--full-req', help="hookup columns needed to constitute fully connected, comma-delimited no-space list\
                                             [station, f_engine]", dest='full_req', default='station,f_engine')
     parser.add_argument('--update', help="Update part number records.  Format hpn0:[rev0]:col0:val0, \
@@ -37,11 +38,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    date_query = cm_utils._get_astropytime(args.date,args.time)
+    date_query = cm_utils._get_astropytime(args.date, args.time)
 
     if args.action[:2].lower() == 'in':
         print(
-        """
+            """
         Available actions are (only need first two letters) [hookup]:
             info:  this information
             hookup:  provide hookup information for supplied part/rev/port
@@ -96,19 +97,19 @@ if __name__ == '__main__':
     handling = cm_handling.Handling(session)
 
     # Process
-    if args.action[:2].lower() == 'pa': # part_info
+    if args.action[:2].lower() == 'pa':  # part_info
         part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision,
                                                  at_date=date_query, exact_match=args.exact_match)
         handling.show_parts(part_dossier, verbosity=args.verbosity)
-        
-    elif args.action[:2].lower() == 'co': # connection_info
+
+    elif args.action[:2].lower() == 'co':  # connection_info
         connection_dossier = handling.get_connection_dossier(
-                                      hpn=args.hpn, rev=args.revision, port=args.port,
-                                      at_date=date_query, exact_match=args.exact_match)
+            hpn=args.hpn, rev=args.revision, port=args.port,
+            at_date=date_query, exact_match=args.exact_match)
         already_shown = handling.show_connections(connection_dossier, verbosity=args.verbosity)
         handling.show_other_connections(connection_dossier, already_shown)
 
-    elif args.action[:2].lower() == 'ho': # hookup
+    elif args.action[:2].lower() == 'ho':  # hookup
         from hera_mc import cm_hookup
         hookup = cm_hookup.Hookup(session)
         hookup_dict = hookup.get_hookup(hpn=args.hpn, rev=args.revision, port=args.port,
@@ -116,24 +117,24 @@ if __name__ == '__main__':
                                         show_levels=args.show_levels, levels_testing=args.levels_testing)
         hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
 
-    elif args.action[:2].lower() == 'ty': # types of parts
+    elif args.action[:2].lower() == 'ty':  # types of parts
         part_type_dict = handling.get_part_types(date_query, show_hptype=True)
 
-    elif args.action[:2].lower() == 're': # revisions
-        rev_ret = cm_handling.cmpr.get_revisions_of_type(args.hpn, args.revision, date_query, 
+    elif args.action[:2].lower() == 're':  # revisions
+        rev_ret = cm_handling.cmpr.get_revisions_of_type(args.hpn, args.revision, date_query,
                                                          args.full_req, session)
         cm_handling.cmpr.show_revisions(rev_ret)
 
     elif args.action[:2].lower() == 'ch':  # check revisions
-        r = cm_handling.cmpr.check_rev(args.hpn, args.revision, args.check_rev, date_query, 
+        r = cm_handling.cmpr.check_rev(args.hpn, args.revision, args.check_rev, date_query,
                                        args.full_req, session)
         rrr = '' if r else ' not'
         print("{} rev {} is{} {}".format(args.hpn, args.revision, rrr, args.check_rev))
 
-    elif args.action[:2].lower() == 'ov': # overlapping revisions
+    elif args.action[:2].lower() == 'ov':  # overlapping revisions
         cm_handling.cmpr.check_part_for_overlapping_revisions(args.hpn, session)
 
-    elif args.action[:2].lower() == 'up': # update
+    elif args.action[:2].lower() == 'up':  # update
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script \
                                             -- are you sure you want to do this? ", 'n')
         if you_are_sure:

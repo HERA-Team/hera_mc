@@ -67,13 +67,13 @@ class TestConnections(TestHERAMC):
             part.start_gpstime = self.test_time
             self.test_session.add(part)
         self.test_session.commit()
-        data = [[u,r,d,r,a,b,g,'upstream_part',u],
-                [u,r,d,r,a,b,g,'up_part_rev',r],
-                [u,r,d,r,a,b,g,'downstream_part',d],
-                [u,r,d,r,a,b,g,'down_part_rev',r],
-                [u,r,d,r,a,b,g,'upstream_output_port',a],
-                [u,r,d,r,a,b,g,'downstream_input_port',b],
-                [u,r,d,r,a,b,g,'start_gpstime',g]]
+        data = [[u, r, d, r, a, b, g, 'upstream_part', u],
+                [u, r, d, r, a, b, g, 'up_part_rev', r],
+                [u, r, d, r, a, b, g, 'downstream_part', d],
+                [u, r, d, r, a, b, g, 'down_part_rev', r],
+                [u, r, d, r, a, b, g, 'upstream_output_port', a],
+                [u, r, d, r, a, b, g, 'downstream_input_port', b],
+                [u, r, d, r, a, b, g, 'start_gpstime', g]]
         part_connect.update_connection(self.test_session, data, add_new_connection=True)
         located = self.h.get_connection_dossier(u, r, a, 'now', True)
         self.assertTrue(located['connections'][located['connections'].keys()[0]].upstream_part == u)
@@ -85,7 +85,6 @@ class TestConnections(TestHERAMC):
     def test_return_is_in_connections(self):
         at_date = Time('2017-07-01 01:00:00', scale='utc')
         checking = self.h.is_in_connections(self.test_hpn[0], self.test_rev, at_date)
-        print(checking)
         self.assertTrue(checking[0].upstream_part == self.test_hpn[0])
 
     def test_get_specific_connection(self):
@@ -97,10 +96,11 @@ class TestConnections(TestHERAMC):
         c.upstream_output_port = 'up_and_out'
         c.downstream_input_port = 'down_and_in'
         sc = self.h.get_specific_connection(c)
-        self.assertTrue(len(sc)==1)
+        self.assertTrue(len(sc) == 1)
         at_date = Time('2017-05-01 01:00:00', scale='utc')
         sc = self.h.get_specific_connection(c, at_date)
-        self.assertTrue(len(sc)==0)
+        self.assertTrue(len(sc) == 0)
+
 
 if __name__ == '__main__':
     unittest.main()

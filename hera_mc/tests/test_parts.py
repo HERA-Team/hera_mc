@@ -84,28 +84,23 @@ class TestParts(TestHERAMC):
             self.assertFalse()
 
     def test_get_revisions_of_type(self):
-        at_date =  self.start_time
+        at_date = self.start_time
         full_req = ['vapor']
-        rev_types = ['LAST','ACTIVE','ALL', self.test_rev]#, 'FULL']
+        rev_types = ['LAST', 'ACTIVE', 'ALL', self.test_rev]  # , 'FULL']
         for rq in rev_types:
-            print(rq)
             revision = cm_revisions.get_revisions_of_type(self.test_part, rq, at_date, full_req, self.test_session)
             self.assertTrue(revision[0].rev == self.test_rev)
-
 
     def test_check_overlapping(self):
         c = cm_revisions.check_part_for_overlapping_revisions(self.test_part, self.test_session)
         self.assertTrue(len(c) == 0)
 
-
     def test_check_rev(self):
         full_req = ['vapor']
-        rev_types = ['LAST', 'ACTIVE']#, 'FULL']
+        rev_types = ['LAST', 'ACTIVE']  # , 'FULL']
         for r in rev_types:
-            print(r)
             c = cm_revisions.check_rev(self.test_part, self.test_rev, r, self.start_time, full_req, self.test_session)
             self.assertTrue(c)
-
 
     def test_datetime(self):
         dt = cm_utils._get_astropytime('2017-01-01', 0.0)
