@@ -70,13 +70,12 @@ class TestParts(TestHERAMC):
             self.assertFalse()
 
     def test_get_revisions_of_type(self):
-        """
-        Should add FULL when the test db has a full complement of connections etc
-        """
         at_date =  self.part.start
-        rev_types = ['LAST','ACTIVE','ALL', self.test_rev]
+        full_req = ['vapor']
+        rev_types = ['LAST','ACTIVE','ALL', self.test_rev]#, 'FULL']
         for rq in rev_types:
-            revision = cm_revisions.get_revisions_of_type(self.test_part,rq,at_date,self.test_session)
+            print(rq)
+            revision = cm_revisions.get_revisions_of_type(self.test_part, rq, at_date, full_req, self.test_session)
             self.assertTrue(revision[0].rev == self.test_rev)
 
 
@@ -86,9 +85,11 @@ class TestParts(TestHERAMC):
 
 
     def test_check_rev(self):
-        rev_types = ['LAST','ACTIVE']
+        full_req = ['vapor']
+        rev_types = ['LAST', 'ACTIVE']#, 'FULL']
         for r in rev_types:
-            c = cm_revisions.check_rev(self.test_part, self.test_rev, r, self.part.start, self.test_session)
+            print(r)
+            c = cm_revisions.check_rev(self.test_part, self.test_rev, r, self.part.start, full_req, self.test_session)
             self.assertTrue(c)
 
 

@@ -214,7 +214,6 @@ class Hookup:
             return []
         # This tracks the part and pol keys for the longest hookup
         lc = Namespace(part=huh.keys()[0], pol=huh[huh.keys()[0]].keys()[0], hlen=0)
-        print("CM_HOOKUP[216]:  ", huh)
         hu_col = {}
         return_one_column_for_now = True
         if return_one_column_for_now:  # This is to just not find part_dossiers on everything for now
@@ -310,11 +309,9 @@ class Hookup:
     def __make_header_row(self, header_col, cols_to_show, show_levels):
         headers = []
         show_flag = []
-        if cols_to_show != 'all':
-            cols_to_show = cols_to_show.split(',')
         for col in header_col:
             colhead = self.__header_entry_name_adjust(col)
-            if cols_to_show == 'all' or colhead in cols_to_show:
+            if cols_to_show[0].lower() == 'all' or colhead in cols_to_show:
                 show_flag.append(True)
                 headers.append(colhead)
             else:
