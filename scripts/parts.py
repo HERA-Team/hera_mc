@@ -35,14 +35,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # Prep args
-    if args.hpn:
-        args.hpn = args.hpn.upper()
-    if args.connection:
-        args.connection = args.connection.upper()
-    if args.mapr:
-        args.mapr = args.mapr.upper()
-    args.revision = args.revision.upper()
     date_query = cm_utils._get_astropytime(args.date,args.time)
 
     if type(args.levels_testing) == str:
@@ -50,12 +42,6 @@ if __name__ == '__main__':
             args.levels_testing = False
         elif args.levels_testing == 'levels.tst':
             args.levels_testing = os.path.join(mc.test_data_path, 'levels.tst')
-
-    state_args = {'verbosity':args.verbosity.lower(),
-                  'mapr_cols':args.mapr_cols.lower(),
-                  'show_levels':args.show_levels,
-                  'show_state':args.show_state,
-                  'levels_testing':args.levels_testing}
 
     # Execute script
     db = mc.connect_to_mc_db(args)
@@ -65,17 +51,18 @@ if __name__ == '__main__':
     if args.hpn:
         part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision,
                                                  at_date=date_query, exact_match=args.exact_match)
-        handling.show_parts(part_dossier, state_args)
+        handling.show_parts(part_dossier, verbosity=args.verbosity)
     if args.connection:
         connection_dossier = handling.get_connection_dossier(
                                       hpn=args.connection, rev=args.revision, port=args.specify_port,
                                       at_date=date_query, exact_match=args.exact_match)
-        already_shown = handling.show_connections(connection_dossier, state_args)
+        already_shown = handling.show_connections(connection_dossier, verbosity=args.verbosity)
         handling.show_other_connections(connection_dossier, already_shown)
     if args.mapr:
         hookup = cm_hookup.Hookup(session)
         hookup_dict = hookup.get_hookup(hpn=args.mapr, rev=args.revision, port=args.specify_port,
-                                        at_date=date_query, state_args=state_args, exact_match=args.exact_match)
+                                        at_date=date_query, exact_match=args.exact_match,
+                                        show_levels=args.show_levels, levels_testing=args.levels_testing)
         hookup.show_hookup(hookup_dict, args.mapr_cols, args.show_levels)
     if args.hptype:
         part_type_dict = handling.get_part_types(date_query, show_hptype=True)
