@@ -13,34 +13,30 @@ import os.path
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    # set values for these to execute
-    parser.add_argument('-p','--hpn', help="Get part information. [None]", default=None)
-    parser.add_argument('-t','--hptype', help="List the hera part types. [False]", action='store_true')
-    parser.add_argument('-c','--connection', help="Show all connections directly to a part. [None]", default=None)
-    parser.add_argument('-m','--mapr', help="Show full hookup chains from given part. [None]", default=None)
-    parser.add_argument('--check-rev', help="Check hpn revision for either 'active' or 'full' [full].", default=None)
+    # Actions are:  mapr, type, part_info, conn_info, rev_info, check_rev, overlap_check, update
+    parser.add_argument('action', nargs='?', help="Actions are:  mapr, type, part_info, conn_info, rev_info, \
+                                                   check_rev, overlap_check, update", default='mapr')
+
+    # set values for 'action' to use
+    parser.add_argument('-p','--hpn', help="Part number (required). [None]", default=None)
+    parser.add_argument('-r','--revision', help="Specify revision or last/active/full/all for hpn.  [LAST]", default='LAST')
+    parser.add_argument('-e','--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]", 
+                                              dest='exact_match', action='store_true')
+    parser.add_argument('--specify-port', help="Define desired port(s) for hookup. [all]", dest='specify_port', default='all')
+    parser.add_argument('--show_state', help="Show only the 'active' parts or all [all]", default='all')
+    parser.add_argument('--mapr-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
+                                       dest='mapr_cols', default='all')
+    parser.add_argument('--full-req', help="hookup columns needed to constitute fully connected, comma-delimited no-space list\
+                                            [station, f_engine]", dest=full_req, default='station,f_engine')
     parser.add_argument('--update', help="Update part number records.  Format hpn0:[rev0]:col0:val0, \
                                           [hpn1:[rev1]]col1:val1...  [None]", default=None)
-    
-    # set values for these for info
-    parser.add_argument('-r','--revision', help="Specify revision or last/active/full/all for hpn.  [LAST]", default='LAST')
-    parser.add_argument('--specify-port', help="Define desired port(s) for hookup. [all]", dest='specify_port', default='all')
-    parser.add_argument('--mapr-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
-                        dest='mapr_cols', default='all')
-    parser.add_argument('--show_state', help="Show only the 'active' parts or all [all]", default='all')
+    parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')
     parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible - keep False \
                                                   to use actual correlator [False]", dest='levels_testing', default=False)
+    parser.add_argument('--add-new-part', help="Flag to allow update to add a new record.  [False]", dest='add_new_part', action='store_true')
+    
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
-
-    # Boolean flags
-    parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')
-    parser.add_argument('--add-new-part', help="Flag to allow update to add a new record.  [False]", dest='add_new_part', action='store_true')
-    parser.add_argument('--check-part-overlap', help="Check hpn to make sure there are no overlapping revisions.", 
-                        dest='check_part_overlap', action='store_true')
-    parser.add_argument('--show-rev', help="Show revisions from --rev of --hpn (-p).", dest='show_rev', action='store_true')
-    parser.add_argument('-e','--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]", dest='exact_match',
-                        action='store_true')
 
     args = parser.parse_args()
 
