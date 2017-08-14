@@ -88,5 +88,19 @@ class TestConnections(TestHERAMC):
         print(checking)
         self.assertTrue(checking[0].upstream_part == self.test_hpn[0])
 
+    def test_get_specific_connection(self):
+        c = part_connect.Connections()
+        c.upstream_part = self.test_hpn[0]
+        c.up_part_rev = self.test_rev
+        c.downstream_part = self.test_hpn[1]
+        c.down_part_rev = self.test_rev
+        c.upstream_output_port = 'up_and_out'
+        c.downstream_input_port = 'down_and_in'
+        sc = self.h.get_specific_connection(c)
+        self.assertTrue(len(sc)==1)
+        at_date = Time('2017-05-01 01:00:00', scale='utc')
+        sc = self.h.get_specific_connection(c, at_date)
+        self.assertTrue(len(sc)==0)
+
 if __name__ == '__main__':
     unittest.main()

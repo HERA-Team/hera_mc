@@ -122,7 +122,7 @@ class Handling:
                     for part_info in self.session.query(PC.PartInfo).filter(
                             (PC.PartInfo.hpn == part.hpn) &
                             (PC.PartInfo.hpn_rev == part.hpn_rev)):
-                        part_info.gps2Time()
+                        #part_info.gps2Time()
                         part_dossier[pr_key]['part_info'] = part_info
                     connections = self.get_connection_dossier(
                         hpn=part.hpn, rev=part.hpn_rev, port='all',
