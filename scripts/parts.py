@@ -43,9 +43,6 @@ if __name__ == '__main__':
         elif args.levels_testing == 'levels.tst':
             args.levels_testing = os.path.join(mc.test_data_path, 'levels.tst')
 
-    state_args = {'verbosity':args.verbosity,
-                  'show_state':args.show_state}
-
     # Execute script
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
