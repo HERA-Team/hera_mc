@@ -286,8 +286,9 @@ class TestRTP(TestHERAMC):
         obs_result = self.test_session.get_obs()
         self.assertTrue(len(obs_result), 1)
 
+        fake_vals = [1., 'a', 2., 'b', 3., 'c', 4., 'd', 5., 'e']
         self.assertRaises(ValueError, self.test_session.add_rtp_process_record, 'foo',
-                          *((self.status_values)*2))
+                          *fake_vals)
 
         self.test_session.add_rtp_process_record(*self.record_values)
         self.assertRaises(ValueError, self.test_session.get_rtp_process_record, 'foo')
