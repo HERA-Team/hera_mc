@@ -38,8 +38,11 @@ class TestRTP(TestHERAMC):
         self.event_values = [time, obsid, 'queued']
         self.event_columns = dict(zip(self.event_names, self.event_values))
 
-        self.record_names = ['time', 'obsid', 'pipeline_list', 'git_version', 'git_hash']
-        self.record_values = [time, obsid, 'sample_pipe', 'v0.0.1', 'lskdjf24l']
+        self.record_names = ['time', 'obsid', 'pipeline_list', 'rtp_git_version', 'rtp_git_hash',
+                             'hera_qm_git_version', 'hera_qm_git_hash', 'hera_cal_git_version',
+                             'hera_cal_git_hash', 'pyuvdata_git_version', 'pyuvdata_git_hash']
+        self.record_values = [time, obsid, 'sample_pipe', 'v0.0.1', 'lskdjf24l', 'v0.1.0', 'abcd34d',
+                              'v1.0.0', 'jkfldi39', 'v2.0.0', 'fjklj828']
         self.record_columns = dict(zip(self.record_names, self.record_values))
 
         stn = 'cofa'
@@ -245,7 +248,7 @@ class TestRTP(TestHERAMC):
 
         self.test_session.add_rtp_process_record(new_obsid_time,
                                                  new_obsid,
-                                                 *self.record_values[2:5])
+                                                 *self.record_values[2:11])
         result_obsid = self.test_session.get_rtp_process_record(self.record_columns['time'] -
                                                                 TimeDelta(2, format='sec'),
                                                                 obsid=self.record_columns['obsid'])
@@ -257,7 +260,7 @@ class TestRTP(TestHERAMC):
         new_pipeline = 'new_pipe'
         self.test_session.add_rtp_process_record(new_record_time,
                                                  self.record_columns['obsid'],
-                                                 new_pipeline, *self.record_values[3:5])
+                                                 new_pipeline, *self.record_values[3:11])
 
         result_mult = self.test_session.get_rtp_process_record(self.record_columns['time'] -
                                                                TimeDelta(2, format='sec'),
@@ -283,8 +286,9 @@ class TestRTP(TestHERAMC):
         obs_result = self.test_session.get_obs()
         self.assertTrue(len(obs_result), 1)
 
+        fake_vals = [1., 'a', 2., 'b', 3., 'c', 4., 'd', 5., 'e']
         self.assertRaises(ValueError, self.test_session.add_rtp_process_record, 'foo',
-                          *self.status_values[1:])
+                          *fake_vals)
 
         self.test_session.add_rtp_process_record(*self.record_values)
         self.assertRaises(ValueError, self.test_session.get_rtp_process_record, 'foo')
