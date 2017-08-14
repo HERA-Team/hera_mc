@@ -26,14 +26,25 @@ class TestParts(TestHERAMC):
 
         self.test_part = 'test_part'
         self.test_rev = 'Q'
-        self.part = part_connect.Parts()
-        self.part.hpn = self.test_part
-        self.part.hpn_rev = self.test_rev
-        self.part.hptype = 'vapor'
-        self.part.manufacture_number = 'XYZ'
-        self.part.start_gpstime = Time('2017-07-01 01:00:00', scale='utc').gps
+        self.start_time = Time('2017-07-01 01:00:00', scale='utc')
         self.h = cm_handling.Handling(self.test_session)
-        self.test_session.add(self.part)
+
+        # Add a test part
+        part = part_connect.Parts()
+        part.hpn = self.test_part
+        part.hpn_rev = self.test_rev
+        part.hptype = 'vapor'
+        part.manufacture_number = 'XYZ'
+        part.start_gpstime = self.start_time.gps
+        self.test_session.add(part)
+        self.test_session.commit()
+        # Add part_info
+        part_info = part_connect.PartInfo()
+        part_info.hpn = self.test_part
+        part_info.hpn_rev = self.test_rev
+        part_info.posting_gpstime = self.start_time.gps
+        part_info.comment = 'TEST'
+        self.test_session.add(part_info)
         self.test_session.commit()
 
     def test_update_new(self):
@@ -58,6 +69,10 @@ class TestParts(TestHERAMC):
         else:
             self.assertFalse()
 
+    def test_part_info(self):
+        located = self.h.get_part_dossier(self.test_part, self.test_rev, self.start_time, True)
+        self.assertTrue(located[located.keys()[0]]['part_info'].comment == 'TEST')
+
     def test_add_new_parts(self):
         data = [['part_X', 'X', 'hptype_X', 'mfg_X']]
         p = part_connect.Parts()
@@ -68,16 +83,24 @@ class TestParts(TestHERAMC):
         else:
             self.assertFalse()
 
-    def test_get_part_revisions(self):
-        revision = part_connect.get_part_revisions(self.test_part, session=self.test_session)
-        self.assertTrue(revision[self.test_rev]['hpn'] == self.test_part)
-
     def test_get_revisions_of_type(self):
-        at_date = Time('2017-07-01 01:00:00', scale='utc')
-        rev_types = ['LAST','ACTIVE','ALL', self.test_rev]
+        at_date = self.start_time
+        full_req = ['vapor']
+        rev_types = ['LAST', 'ACTIVE', 'ALL', self.test_rev]  # , 'FULL']
         for rq in rev_types:
-            revision = cm_revisions.get_revisions_of_type(rq,self.test_part,at_date,self.test_session)
-            self.assertTrue(revision[0][0] == self.test_rev)
+            revision = cm_revisions.get_revisions_of_type(self.test_part, rq, at_date, full_req, self.test_session)
+            self.assertTrue(revision[0].rev == self.test_rev)
+
+    def test_check_overlapping(self):
+        c = cm_revisions.check_part_for_overlapping_revisions(self.test_part, self.test_session)
+        self.assertTrue(len(c) == 0)
+
+    def test_check_rev(self):
+        full_req = ['vapor']
+        rev_types = ['LAST', 'ACTIVE']  # , 'FULL']
+        for r in rev_types:
+            c = cm_revisions.check_rev(self.test_part, self.test_rev, r, self.start_time, full_req, self.test_session)
+            self.assertTrue(c)
 
     def test_datetime(self):
         dt = cm_utils._get_astropytime('2017-01-01', 0.0)

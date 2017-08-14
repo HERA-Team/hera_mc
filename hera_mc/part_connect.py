@@ -20,6 +20,9 @@ from . import MCDeclarativeBase, NotNull
 
 from hera_mc import mc, cm_utils
 
+no_connection_designator = '-X-'
+full_connection_parts_paper = ['station', 'f_engine']
+
 
 class Parts(MCDeclarativeBase):
     """
@@ -263,7 +266,8 @@ def get_part_revisions(hpn, session=None):
     """
 
     if hpn is None:
-        return None
+        return {}
+
     close_session_when_done = False
     if session is None:
         db = mc.connect_mc_db()
@@ -315,7 +319,7 @@ class PartInfo(MCDeclarativeBase):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-no_connection_designator = '-X-'
+
 class Connections(MCDeclarativeBase):
     """
     A table for logging connections between parts.
@@ -392,7 +396,7 @@ def stop_existing_connections_to_part(session, h, conn_list, at_date, actually_d
     """
     This adds stop times to the connections for parts listed in conn_list.  Use this method with
     caution, as it currently doesn't include much checking.  You probably should use the much
-    more specific stop_connections method below.  It is being kept around for possible use in 
+    more specific stop_connections method below.  It is being kept around for possible use in
     future scripts that "remove" replaced parts.
 
     Parameters:

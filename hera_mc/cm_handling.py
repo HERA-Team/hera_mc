@@ -96,7 +96,7 @@ class Handling:
         part_dossier = {}
         rev_part = {}
         for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.like(hpn)):
-            rev_part[part.hpn] = cmpr.get_revisions_of_type(rev, part.hpn,
+            rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, at_date=at_date, 
                                                             session=self.session)
 
         # Now get unique part/revs and put into dictionary
@@ -104,7 +104,7 @@ class Handling:
             if rev_part[xhpn] is None:
                 continue
             for xrev in rev_part[xhpn]:
-                this_rev = xrev[0]
+                this_rev = xrev.rev
                 part_query = self.session.query(PC.Parts).filter(
                     (PC.Parts.hpn == xhpn) &
                     (PC.Parts.hpn_rev == this_rev))
@@ -122,7 +122,7 @@ class Handling:
                     for part_info in self.session.query(PC.PartInfo).filter(
                             (PC.PartInfo.hpn == part.hpn) &
                             (PC.PartInfo.hpn_rev == part.hpn_rev)):
-                        part_info.gps2Time()
+                        #part_info.gps2Time()
                         part_dossier[pr_key]['part_info'] = part_info
                     connections = self.get_connection_dossier(
                         hpn=part.hpn, rev=part.hpn_rev, port='all',
@@ -291,14 +291,14 @@ class Handling:
 
         rev_part = {}
         for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.like(hpn)):
-            rev_part[part.hpn] = cmpr.get_revisions_of_type(rev, part.hpn, session=self.session)
+            rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, session=self.session)
         for xhpn in rev_part.keys():
             if rev_part[xhpn] is None:
                 continue
             for xrev in rev_part[xhpn]:
                 up_parts = []
                 down_parts = []
-                this_rev = xrev[0]
+                this_rev = xrev.rev
                 # Find where the part is in the upward position, so identify its downward connection
                 for conn in self.session.query(PC.Connections).filter(
                         (PC.Connections.upstream_part == xhpn) &
