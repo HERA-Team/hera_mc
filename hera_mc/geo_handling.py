@@ -376,7 +376,7 @@ class Handling:
                                               'stop_date': ended})
         return stations_conn
 
-    def get_cminfo_correlator(self):
+    def get_cminfo_correlator(self, mc_config_file=None, cm_csv_path=None):
         """
         Returns a dict with info needed by the correlator:
             Antenna numbers
@@ -390,7 +390,8 @@ class Handling:
         from pyuvdata import utils as uvutils
         from hera_mc import cm_hookup
 
-        cm_version = cm_utils.get_cm_version()
+        cm_version = cm_utils.get_cm_version(mc_config_file=mc_config_file,
+                                             cm_csv_path=cm_csv_path)
         cofa_loc = self.cofa()
         stations_conn = self.get_fully_connected_locations(at_date='now')
 
