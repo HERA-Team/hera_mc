@@ -345,6 +345,7 @@ class Handling:
                         hu = fc[0].hookup
                         k0 = hu['hookup'].keys()[0]
                         ant_num = hu['hookup'][k0]['e'][0].downstream_part
+                        ant_num = int(str(ant_num).split('A')[1])
                         corr = hookup.get_correlator_input_from_hookup(hu)
                         fnd = self.get_location([stn], at_date, station_types=self.station_types)[0]
                         hera_proj = Proj(proj='utm', zone=fnd.tile, ellps=fnd.datum, south=True)
@@ -360,18 +361,18 @@ class Handling:
                             else:
                                 ended = hu['timing'][k0]['e'][1] if hu['timing'][k0]['e'][1] < hu['timing'][k0]['n'][1] \
                                     else hu['timing'][k0]['n'][1]
-                        stations_conn.append({'station_name': fnd.station_name,
-                                              'station_type': fnd.station_type_name,
-                                              'tile': fnd.tile,
-                                              'datum': fnd.datum,
+                        stations_conn.append({'station_name': str(fnd.station_name),
+                                              'station_type': str(fnd.station_type_name),
+                                              'tile': str(fnd.tile),
+                                              'datum': str(fnd.datum),
                                               'easting': fnd.easting,
                                               'northing': fnd.northing,
                                               'longitude': fnd.lon,
                                               'latitude': fnd.lat,
                                               'elevation': fnd.elevation,
                                               'antenna_number': ant_num,
-                                              'correlator_input_x': corr['e'],
-                                              'correlator_input_y': corr['n'],
+                                              'correlator_input_x': str(corr['e']),
+                                              'correlator_input_y': str(corr['n']),
                                               'start_date': started,
                                               'stop_date': ended})
         return stations_conn
