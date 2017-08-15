@@ -558,8 +558,8 @@ class MCSession(Session):
 
         return file_list
 
-    def add_rtp_status(self, time, status, event_min_elapsed, num_processes,
-                       restart_hours_elapsed):
+    def add_rtp_status(self, time, hostname, status, event_min_elapsed,
+                       num_processes, restart_hours_elapsed):
         """
         Add a new rtp_status object.
 
@@ -567,6 +567,8 @@ class MCSession(Session):
         ------------
         time: astropy time object
             time of this status
+        hostname: string
+            hostname of server
         status: string
             status (options TBD)
         event_min_elapsed: float
@@ -578,8 +580,8 @@ class MCSession(Session):
         """
         from .rtp import RTPStatus
 
-        self.add(RTPStatus.create(time, status, event_min_elapsed, num_processes,
-                                  restart_hours_elapsed))
+        self.add(RTPStatus.create(time, hostname, status, event_min_elapsed,
+                                  num_processes, restart_hours_elapsed))
 
     def get_rtp_status(self, starttime, stoptime=None):
         """

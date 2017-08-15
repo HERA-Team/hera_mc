@@ -29,9 +29,9 @@ class TestRTP(TestHERAMC):
                                    obsid]
         self.observation_columns = dict(zip(self.observation_names,
                                             self.observation_values))
-        self.status_names = ['time', 'status', 'event_min_elapsed',
+        self.status_names = ['time', 'hostname', 'status', 'event_min_elapsed',
                              'num_processes', 'restart_hours_elapsed']
-        self.status_values = [time, 'happy', 3.6, 8, 10.2]
+        self.status_values = [time, 'still1', 'happy', 3.6, 8, 10.2]
         self.status_columns = dict(zip(self.status_names, self.status_values))
 
         self.event_names = ['time', 'obsid', 'event']
@@ -81,6 +81,7 @@ class TestRTP(TestHERAMC):
         new_status_time = self.status_columns['time'] + TimeDelta(5 * 60, format='sec')
         new_status = 'unhappy'
         self.test_session.add_rtp_status(new_status_time,
+                                         self.status_columns['hostname'],
                                          new_status,
                                          self.status_columns['event_min_elapsed'] + 5,
                                          self.status_columns['num_processes'],
