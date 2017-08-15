@@ -418,7 +418,7 @@ class Handling:
             elevations.append(stn['elevation'])
 
         ecef_positions = uvutils.XYZ_from_LatLonAlt(latitudes, longitudes, elevations)
-        rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions, cofa_loc.lon)
+        rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions.T, cofa_loc.lon)
 
         corr_dict = {'antenna_numbers': ant_nums,
                      # This is actually station names, not antenna names,
