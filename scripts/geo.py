@@ -112,6 +112,11 @@ if __name__ == '__main__':
             print("Correlator inputs for {}:".format(a2f))
             for c in corin:
                 print('\t' + c)
+    elif args.correlator:
+        fully_connected = h.get_fully_connected_locations(query_date)
+        for fc in fully_connected:
+            print("Station {} connected to x:{}, y:{}".format(fc['station_name'],
+                  fc['correlator_input_x'], fc['correlator_input_y']))
 
     if show_fig:
         geo_handling.show_it_now(show_fig)
