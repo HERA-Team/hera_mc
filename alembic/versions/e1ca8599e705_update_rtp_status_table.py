@@ -23,6 +23,6 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_constraing('rtp_status_pkey', 'rtp_status', type_='primary')
+    op.drop_constraint('rtp_status_pkey', 'rtp_status', type_='primary')
     op.drop_column('rtp_status', 'hostname')
     op.create_primary_key('rtp_status_pkey', 'rtp_status', ['time', ])
