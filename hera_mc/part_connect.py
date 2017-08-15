@@ -21,7 +21,8 @@ from . import MCDeclarativeBase, NotNull
 from hera_mc import mc, cm_utils
 
 no_connection_designator = '-X-'
-full_connection_parts_paper = ['station', 'f_engine']
+roach_input_name = 'f_engine'
+full_connection_parts_paper = ['station', roach_input_name]
 
 
 class Parts(MCDeclarativeBase):
@@ -270,7 +271,7 @@ def get_part_revisions(hpn, session=None):
 
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db()
         session = db.sessionmaker()
         close_session_when_done = True
 
@@ -384,13 +385,15 @@ class Connections(MCDeclarativeBase):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+
 def get_null_connection():
     nc = no_connection_designator
     no_connect = Connections()
     no_connect.connection(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
-                            downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
-                            start_gpstime=nc)
+                          downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
+                          start_gpstime=nc)
     return no_connect
+
 
 def stop_existing_connections_to_part(session, h, conn_list, at_date, actually_do_it):
     """

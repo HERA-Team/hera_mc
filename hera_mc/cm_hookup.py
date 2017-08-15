@@ -220,10 +220,12 @@ class Hookup:
             for hk, hu in huh.iteritems():
                 for pk, pv in hu.iteritems():
                     if len(pv) > lc.hlen:
-                        lc.part=hk; lc.pol=pk; lc.hlen=len(pv)
+                        lc.part = hk
+                        lc.pol = pk
+                        lc.hlen = len(pv)
             huh = {hk: {pk: huh[lc.part][lc.pol]}}
 
-        lc.hlen=0
+        lc.hlen = 0
         for hk, hu in huh.iteritems():
             hu_col[hk] = {}
             for pk, pv in hu.iteritems():
@@ -248,7 +250,9 @@ class Hookup:
                 hu_col[hk][pk].append('Stop')
                 # Next two lines for "one column" solution
                 if len(hu_col[hk][pk]) >= lc.hlen:
-                    lc.part=hk; lc.pol=pk; lc.hlen=len(hu_col[hk][pk])
+                    lc.part = hk
+                    lc.pol = pk
+                    lc.hlen = len(hu_col[hk][pk])
         if len(hu_col[lc.part]) == 0:
             return []
         else:
@@ -276,6 +280,17 @@ class Hookup:
         else:
             colhead = col
         return colhead
+
+    def get_correlator_input_from_hookup(self, hookup_dict, corr_name=PC.roach_input_name):
+        """
+        Retrieve the correlator inputs from a hookup_dictionary
+        """
+        corr_input = {}
+        if corr_name in hookup_dict['columns']:
+            for k, h in hookup_dict['hookup'].iteritems():
+                for j, p in h.iteritems():
+                    corr_input[j] = p[-1].downstream_part
+        return corr_input
 
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False):
         """

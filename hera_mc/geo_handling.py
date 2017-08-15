@@ -13,6 +13,7 @@ from __future__ import absolute_import, division, print_function
 import os
 import sys
 import copy
+import warnings
 from astropy.time import Time
 
 import numpy as np
@@ -122,7 +123,8 @@ class Handling:
         if len(located) == 0:
             located_cofa = None
         elif len(located) > 1:
-            print("Warning:  {} has returned multiple cofa values.  Returning None.")
+            s = "{} has multiple cofa values.".format(str(current_cofa))
+            warnings.warn(s)
             located_cofa = None
         else:
             located_cofa = located[0]
@@ -217,8 +219,8 @@ class Handling:
                 else:
                     antenna_connected = False
             if counter > 1:
-                print("Warning:  more than one active connection for", station_name)
-                print("\tYou should check this out and correct it.")
+                s = "More than one active connection for {}".format(station_name)
+                warning.warn(s)
                 antenna_connected = False
         return antenna_connected
 
@@ -253,7 +255,7 @@ class Handling:
             raise ValueError('More than one active connection between station and antenna')
         return antenna_connected.upstream_part
 
-    def get_location(self, to_find, query_date, show_location=False, verbosity='m'):
+    def get_location(self, to_find, query_date, station_types=None, show_location=False, verbosity='m'):
         """
         Return the location of station_name or antenna_number as contained in to_find.
         This accepts the fact that antennas are sort of stations, even though they are parts
@@ -265,7 +267,9 @@ class Handling:
         show_location:   if True, it will print the information
         verbosity:  sets the verbosity of the print
         """
-        self.get_station_types(add_stations=True)
+        if station_types is None:
+            self.get_station_types(add_stations=True)
+            station_types = self.station_types
         found_location = []
         for L in to_find:
             station_name = False
@@ -313,78 +317,63 @@ class Handling:
                     print(L, ' not found.')
         return found_location
 
-    def get_connected_locations(self, active_date=None, station_types_to_check='all'):
+    def get_fully_connected_locations(self, at_date,
+                                      full_req=part_connect.full_connection_parts_paper,
+                                      station_types_to_check='all'):
         """
-        Returns a list of all of the locations connected on active_date that
-        have station_types in station_types_to_check
+        Returns a list of all of the locations fully connected on active_date that
+        have station_types in station_types_to_check.  Note that fully connected means
+        from the station to the correlator.
 
         Parameters
         -----------
-        active_date:  date to check for connections. If active_date is None, it
-                        will get all locations that were ever connected
-        station_types_to_check:  list of stations types to limit check
+        active_date:  date to check for connections.
+        station_types_to_check:  list of station types to limit check, or all
         """
-        from hera_mc import cm_hookup
+        from hera_mc import cm_hookup, cm_revisions
         hookup = cm_hookup.Hookup(self.session)
+        at_date = cm_utils._get_astropytime(at_date)
 
-        active_date = cm_utils._get_astropytime(active_date)
-
-        stations = self.session.query(geo_location.GeoLocation).all()
-        connections = self.session.query(part_connect.Connections).all()
+        self.get_station_types()
         stations_conn = []
-        for stn in stations:
-            if (station_types_to_check == 'all' or
-                    self.flipped_station_types[a.station_type_name] in station_types_to_check):
-                connected = self.is_in_connections(stn.station_name, active_date=active_date)
-                if connected:
-                    hera_proj = Proj(proj='utm', zone=stn.tile, ellps=stn.datum, south=True)
-                    stn.lon, stn.lat = hera_proj(stn.easting, stn.northing, inverse=True)
-
-                    if active_date is None:
-                        # get all connections
-                        connections = self.session.query(part_connect.Connections).filter(
-                            part_connect.Connections.upstream_part == stn.station_name)
-                        correlator_inputs = {}
-                    else:
-                        # only get current connections
-                        connections = self.session.query(part_connect.Connections).filter(
-                            (part_connect.Connections.upstream_part == stn.station_name) &
-                            (part_connect.Connections.start_gpstime < active_date) &
-                            ((part_connect.Connections.stop_gpstime > active_date) |
-                             (part_connect.Connections.stop_gpstime is None)))
-                        correlator_input = hookup.get_correlator_info_from_part(
-                            hpn=stn.station_name, rev='A', port='all', at_date=active_date)
-
-                    for conn in connections:
-                        ant_num = int(conn.downstream_part[1:])
-                        conn.gps2Time()
-                        stations_conn.append({'station_name': stn.station_name,
-                                              'station_type': stn.station_type_name,
-                                              'tile': stn.tile,
-                                              'datum': stn.datum,
-                                              'easting': stn.easting,
-                                              'northing': stn.northing,
-                                              'longitude': stn.lon,
-                                              'latitude': stn.lat,
-                                              'elevation': stn.elevation,
+        for k, stn_type in self.station_types.iteritems():
+            if (station_types_to_check == 'all' or k in station_types_to_check):
+                for stn in stn_type['Stations']:
+                    fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)
+                    if len(fc) == 1:
+                        hu = fc[0].hookup
+                        k0 = hu['hookup'].keys()[0]
+                        ant_num = hu['hookup'][k0]['e'][0].downstream_part
+                        corr = hookup.get_correlator_input_from_hookup(hu)
+                        fnd = self.get_location([stn], at_date, self.station_types)[0]
+                        hera_proj = Proj(proj='utm', zone=fnd.tile, ellps=fnd.datum, south=True)
+                        started = hu['timing'][k0]['e'][0] if hu['timing'][k0]['e'][0] > hu['timing'][k0]['n'][0] \
+                            else hu['timing'][k0]['n'][0]
+                        if hu['timing'][k0]['e'][1] is None and hu['timing'][k0]['n'][1] is None:
+                            ended = None
+                        else:
+                            if hu['timing'][k0]['e'][1] is None:
+                                ended = hu['timing'][k0]['n'][1]
+                            elif hu['timing'][k0]['n'][1] is None:
+                                ended = hu['timing'][k0]['e'][1]
+                            else:
+                                ended = hu['timing'][k0]['e'][1] if hu['timing'][k0]['e'][1] < hu['timing'][k0]['n'][1] \
+                                    else hu['timing'][k0]['n'][1]
+                        stations_conn.append({'station_name': fnd.station_name,
+                                              'station_type': fnd.station_type_name,
+                                              'tile': fnd.tile,
+                                              'datum': fnd.datum,
+                                              'easting': fnd.easting,
+                                              'northing': fnd.northing,
+                                              'longitude': fnd.lon,
+                                              'latitude': fnd.lat,
+                                              'elevation': fnd.elevation,
                                               'antenna_number': ant_num,
-                                              'correlator_input_x': correlator_input['e'],
-                                              'correlator_input_y': correlator_input['n'],
-                                              'start_date': conn.start_date,
-                                              'stop_date': conn.stop_date})
+                                              'correlator_input_x': corr['e'],
+                                              'correlator_input_y': corr['n'],
+                                              'start_date': started,
+                                              'stop_date': ended})
         return stations_conn
-
-    def get_correlator_input_from_location(self, loc, at_date):
-        from hera_mc import cm_hookup
-        hookup = cm_hookup.Hookup(self.session)
-        hookup_dict = hookup.get_hookup(hpn=loc, rev='A', port='all', at_date=at_date,
-                                        state_args={'show_levels': False}, exact_match=True)
-        last_col = hookup_dict['columns'][-1]
-        corr_input = []
-        if last_col == 'f_engine' and len(hookup_dict['hookup']) in [1, 2]:
-            for k, h in hookup_dict['hookup'].iteritems():
-                corr_input.append(h[-1].downstream_part)
-        return corr_input
 
     def get_cminfo_correlator(self):
         """
@@ -402,7 +391,7 @@ class Handling:
 
         cm_version = cm_utils.get_cm_version()
         cofa_loc = self.cofa()
-        stations_conn = self.get_connected_locations(active_date='now')
+        stations_conn = self.get_fully_connected_locations(at_date='now')
 
         ant_nums = []
         stn_names = []
@@ -415,16 +404,16 @@ class Handling:
         latitudes = []
         elevations = []
         for stn in stations_conn:
-            ant_nums.append(stn.antenna_number)
-            stn_names.append(stn.station_name)
-            corr_inputs.append((stn.correlator_input_x,stn.correlator_input_y))
-            tiles.append(stn.tile)
-            datums.append(stn.datum)
-            eastings.append(stn.easting)
-            northings.append(stn.northing)
-            longitudes.append(stn.longitude)
-            latitudes.append(stn.latitude)
-            elevations.append(stn.elevation)
+            ant_nums.append(stn['antenna_number'])
+            stn_names.append(stn['station_name'])
+            corr_inputs.append((stn['correlator_input_x'], stn['correlator_input_y']))
+            tiles.append(stn['tile'])
+            datums.append(stn['datum'])
+            eastings.append(stn['easting'])
+            northings.append(stn['northing'])
+            longitudes.append(stn['longitude'])
+            latitudes.append(stn['latitude'])
+            elevations.append(stn['elevation'])
 
         ecef_positions = uvutils.XYZ_from_LatLonAlt(latitudes, longitudes, elevations)
         rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions, cofa_loc.lon)

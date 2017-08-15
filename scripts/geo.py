@@ -55,7 +55,7 @@ if __name__ == '__main__':
             args.find = args.find.split(',')
         else:
             args.find = [args.find]
-    query_date = cm_utils._get_astropytime(args.date,args.time)
+    query_date = cm_utils._get_astropytime(args.date, args.time)
     args.background = args.background.upper()
     if ',' in args.background:
         args.background = args.background.split(',')
@@ -82,6 +82,7 @@ if __name__ == '__main__':
     session = db.sessionmaker()
 
     h = geo_handling.Handling(session)
+
     if args.graph:
         show_fig = h.plot_station_types(query_date, state_args)
     if args.cofa:
@@ -110,14 +111,14 @@ if __name__ == '__main__':
             corin = h.get_correlator_input_from_location(a2f, query_date)
             print("Correlator inputs for {}:".format(a2f))
             for c in corin:
-                print('\t'+c)
+                print('\t' + c)
 
     if show_fig:
         geo_handling.show_it_now(show_fig)
     h.close()
 
     if args.update:
-        you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a "
-                                          "script -- are you sure you want to do this? ", 'n')
+        you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a \
+                                           script -- are you sure you want to do this? ", 'n')
         if you_are_sure:
             geo_location.update(args, data)
