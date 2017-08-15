@@ -119,7 +119,8 @@ class Handling:
 
         self.get_station_types(add_stations=True)
         current_cofa = self.station_types['COFA']['Stations']
-        located = self.get_location(current_cofa, 'now', show_cofa, 'm')
+        located = self.get_location(current_cofa, 'now', show_location=show_cofa,
+                                    verbosity='m')
         if len(located) == 0:
             located_cofa = None
         elif len(located) > 1:
@@ -345,7 +346,7 @@ class Handling:
                         k0 = hu['hookup'].keys()[0]
                         ant_num = hu['hookup'][k0]['e'][0].downstream_part
                         corr = hookup.get_correlator_input_from_hookup(hu)
-                        fnd = self.get_location([stn], at_date, self.station_types)[0]
+                        fnd = self.get_location([stn], at_date, station_types=self.station_types)[0]
                         hera_proj = Proj(proj='utm', zone=fnd.tile, ellps=fnd.datum, south=True)
                         started = hu['timing'][k0]['e'][0] if hu['timing'][k0]['e'][0] > hu['timing'][k0]['n'][0] \
                             else hu['timing'][k0]['n'][0]
