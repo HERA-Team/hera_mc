@@ -16,11 +16,15 @@ from astropy.time import TimeDelta
 PAST_DATE = '2000-01-01'
 
 
-def get_cm_version(mc_config_file=None):
+def get_cm_version(mc_config_file=None, cm_csv_path=None):
     """
     Get the current cm_version for recording with antenna locations.
     """
-    cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_file)
+    if cm_csv_path is None:
+        cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_file)
+        if cm_csv_path is None:
+            raise ValueError('No cm_csv_path defined in mc_config_file file.')
+
     git_hash = subprocess.check_output(['git', '-C', cm_csv_path, 'rev-parse', 'HEAD'],
                                        stderr=subprocess.STDOUT).strip()
     return git_hash
