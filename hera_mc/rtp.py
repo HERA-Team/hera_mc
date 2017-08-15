@@ -27,6 +27,7 @@ class RTPStatus(MCDeclarativeBase):
     Definition of rtp_status table.
 
     time: time of this status in floor(gps seconds) (BigInteger). Primary_key
+    hostname: hostname of server (String)
     status: status (options TBD) (String)
     event_min_elapsed: minutes elapsed since last event (Float)
     num_processes: number of processes running (Integer)
@@ -34,6 +35,7 @@ class RTPStatus(MCDeclarativeBase):
     """
     __tablename__ = 'rtp_status'
     time = Column(BigInteger, primary_key=True, autoincrement=False)
+    hostname = Column(String(32), primary_key=True)
     status = Column(String(64), nullable=False)  # should this be an enum? or text?
     event_min_elapsed = Column(Float, nullable=False)
     num_processes = Column(Integer, nullable=False)
@@ -43,7 +45,7 @@ class RTPStatus(MCDeclarativeBase):
             'restart_hours_elapsed': DEFAULT_HOUR_TOL}
 
     @classmethod
-    def create(cls, time, status, event_min_elapsed, num_processes,
+    def create(cls, time, hostname, status, event_min_elapsed, num_processes,
                restart_hours_elapsed):
         """
         Create a new rtp_status object.
@@ -52,6 +54,8 @@ class RTPStatus(MCDeclarativeBase):
         ------------
         time: astropy time object
             time of this status
+        hostname: string
+            name of server
         status: string
             status (options TBD)
         event_min_elapsed: float
@@ -65,7 +69,8 @@ class RTPStatus(MCDeclarativeBase):
             raise ValueError('time must be an astropy Time object')
         time = floor(time.gps)
 
-        return cls(time=time, status=status, event_min_elapsed=event_min_elapsed,
+        return cls(time=time, hostname=hostname, status=status,
+                   event_min_elapsed=event_min_elapsed,
                    num_processes=num_processes,
                    restart_hours_elapsed=restart_hours_elapsed)
 
