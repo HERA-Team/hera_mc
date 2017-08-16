@@ -266,12 +266,12 @@ def get_full_revision(hpn, at_date, full_req, session=None):
     session:  db session
     """
     from hera_mc import cm_hookup
-    revisions = part_connect.get_part_revisions(hpn, session)
-    if len(revisions.keys()) == 0:
-        return []
     rev = get_active_revision(hpn, at_date, session)
+    if len(rev) == 0:
+        return []
     if len(rev) > 1:
         raise RevisionException(hpn)
+
     hookup = cm_hookup.Hookup(session)
     hu = hookup.get_hookup(hpn, rev[0].rev, 'all', at_date, True)
     return_full = []

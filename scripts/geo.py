@@ -82,6 +82,9 @@ if __name__ == '__main__':
     session = db.sessionmaker()
 
     h = geo_handling.Handling(session)
+    h.get_all_fully_connected_ever(station_types_to_check=['HH'])
+    print("GEO[86] early exit")
+    sys.exit()
 
     if args.graph:
         show_fig = h.plot_station_types(query_date, state_args)
@@ -108,12 +111,12 @@ if __name__ == '__main__':
             h.overplot(located, state_args)
     elif args.find and args.correlator:
         for a2f in args.find:
-            corin = h.get_correlator_input_from_location(a2f, query_date)
+            corin = h.get_fully_connected_location_at_date(a2f, query_date)
             print("Correlator inputs for {}:".format(a2f))
             for c in corin:
                 print('\t' + c)
     elif args.correlator:
-        fully_connected = h.get_fully_connected_locations(query_date)
+        fully_connected = h.get_all_fully_connected_at_date(query_date)
         for fc in fully_connected:
             print("Station {} connected to x:{}, y:{}".format(fc['station_name'],
                   fc['correlator_input_x'], fc['correlator_input_y']))

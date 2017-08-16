@@ -57,7 +57,7 @@ class Parts(MCDeclarativeBase):
 
     def gps2Time(self):
         """
-        Adds gps seconds to the Time
+        Make astropy.Time object from gps
         """
 
         self.start_date = Time(self.start_gpstime, format='gps')
@@ -269,6 +269,7 @@ def get_part_revisions(hpn, session=None):
     if hpn is None:
         return {}
 
+    uhpn = hpn.upper()
     close_session_when_done = False
     if session is None:
         db = mc.connect_to_mc_db()
@@ -276,7 +277,7 @@ def get_part_revisions(hpn, session=None):
         close_session_when_done = True
 
     revisions = {}
-    for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
+    for parts_rec in session.query(Parts).filter(func.upper(Parts.hpn) == uhpn):
         parts_rec.gps2Time()
         revisions[parts_rec.hpn_rev] = {}
         revisions[parts_rec.hpn_rev]['hpn'] = hpn  # Just carry this along
