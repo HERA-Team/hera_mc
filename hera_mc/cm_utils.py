@@ -17,14 +17,14 @@ import warnings
 PAST_DATE = '2000-01-01'
 
 
-def get_cm_version(mc_config_file=None, cm_csv_path=None):
+def get_cm_version(mc_config_path=None, cm_csv_path=None):
     """
     Get the current cm_version for recording with antenna locations.
     """
     if cm_csv_path is None:
-        cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_file)
+        cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_path)
         if cm_csv_path is None:
-            raise ValueError('No cm_csv_path defined in mc_config_file file.')
+            raise ValueError('No cm_csv_path defined in mc_config file.')
 
     git_hash = subprocess.check_output(['git', '-C', cm_csv_path, 'rev-parse', 'HEAD'],
                                        stderr=subprocess.STDOUT).strip()
