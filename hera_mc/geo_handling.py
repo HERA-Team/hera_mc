@@ -367,6 +367,7 @@ class Handling:
         for k, stn_type in self.station_types.iteritems():
             if station_types_to_check == 'all' or k in station_types_to_check:
                 for stn in stn_type['Stations']:
+                    print("Checking {}".format(stn))
                     # Get First one
                     ustn = stn.upper()
                     conn = self.session.query(part_connect.Connections).filter(
