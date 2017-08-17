@@ -285,7 +285,6 @@ def get_part_revisions(hpn, session=None):
         revisions[parts_rec.hpn_rev]['ended'] = parts_rec.stop_date
     if close_session_when_done:
         session.close()
-
     return revisions
 
 

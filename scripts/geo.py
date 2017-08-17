@@ -82,7 +82,8 @@ if __name__ == '__main__':
     session = db.sessionmaker()
 
     h = geo_handling.Handling(session)
-    h.get_all_fully_connected_ever(station_types_to_check=['HH'])
+    s = h.get_all_fully_connected_ever(station_types_to_check=['HH'])
+    print(s)
     print("GEO[86] early exit")
     sys.exit()
 

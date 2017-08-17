@@ -176,20 +176,21 @@ class Hookup:
         return next_one
 
     def __add_hookup_timing(self, hookup_dict):
-        really_late = 9999999999
         hookup_dict['timing'] = {}
         for akey, hk in hookup_dict['hookup'].iteritems():
             hookup_dict['timing'][akey] = {}
             for pkey, pol in hk.iteritems():
                 latest_start = 0
-                earliest_stop = really_late
+                earliest_stop = None
                 for c in pol:
                     if c.start_gpstime > latest_start:
                         latest_start = c.start_gpstime
-                    if c.stop_gpstime is not None and c.stop_gpstime < earliest_stop:
+                    if c.stop_gpstime is None:
+                        pass
+                    elif earliest_stop is None:
                         earliest_stop = c.stop_gpstime
-                if earliest_stop == really_late:
-                    earliest_stop = None
+                    elif c.stop_gpstime < earliest_stop:
+                        earliest_stop = c.stop_gpstime
                 hookup_dict['timing'][akey][pkey] = [latest_start, earliest_stop]
         return hookup_dict
 

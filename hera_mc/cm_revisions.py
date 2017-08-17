@@ -284,5 +284,4 @@ def get_full_revision(hpn, at_date, full_req, session=None):
         return_full.append(Namespace(hpn=hpn, rev=rev[0].rev,
                                      started=rev[0].started, ended=rev[0].ended,
                                      hookup=hu))
-
     return return_full
