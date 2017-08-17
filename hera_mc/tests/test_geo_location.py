@@ -89,6 +89,14 @@ class TestGeo(TestHERAMC):
         found_it = self.h.is_in_geo_location(self.test_element_station_name)
         self.assertTrue(found_it)
 
+    def test_ever_fully_connected(self):
+        now_list = self.h.get_all_fully_connected_at_date(at_date='now')
+        ever_list = self.h.get_all_fully_connected_ever()
+
+        self.assertEqual(len(now_list), len(ever_list))
+        for loc_i in range(len(now_list)):
+            self.assertEqual(now_list[loc_i], ever_list[loc_i])
+
     def test_correlator_info(self):
         corr_dict = self.h.get_cminfo_correlator(cm_csv_path=mc.test_data_path)
 
