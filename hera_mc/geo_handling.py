@@ -390,6 +390,8 @@ class Handling:
                     conn = self.session.query(part_connect.Connections).filter(
                         func.upper(part_connect.Connections.upstream_part) == ustn).order_by(
                         asc(part_connect.Connections.start_gpstime)).first()
+                    if conn is None:
+                        continue
                     conn.gps2Time()
                     if conn.start_date < earliest_date:
                         at_date = earliest_date
