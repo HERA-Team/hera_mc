@@ -326,10 +326,28 @@ class Handling:
         have station_types in station_types_to_check.  Note that fully connected means
         from the station to the correlator.
 
+        Each location is returned as one dict in the list. Dict keys are:
+            'station_name': name of station (string, e.g. 'HH27')
+            'station_type': type of station (string, e.g. 'HH', 'PI', etc)
+            'tile': UTM tile name (string, e.g. '34J'
+            'datum': UTM datum (string, e.g. 'WGS84')
+            'easting': station UTM easting (float)
+            'northing': station UTM northing (float)
+            'longitude': station longitude (float)
+            'latitude': station latitude (float)
+            'elevation': station elevation (float)
+            'antenna_number': antenna number (integer)
+            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4')
+            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4')
+            'start_date': start of connection in gps seconds (long)
+            'stop_date': end of connection in gps seconds (long or None no end time)
+
         Parameters
         -----------
-        active_date:  date to check for connections.
-        station_types_to_check:  list of station types to limit check, or all
+        at_date:  date to check for connections.
+        full_req: list of parts required for a connection to be a 'full' connection
+            (default: part_connect.full_connection_parts_paper)
+        station_types_to_check:  list of station types to limit check, or all (default: all)
         """
         from hera_mc import cm_hookup, cm_revisions
         hookup = cm_hookup.Hookup(self.session)
