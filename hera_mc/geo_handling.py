@@ -441,6 +441,22 @@ class Handling:
         Returns a list of all of the locations fully connected on at_date that
         have station_types in station_types_to_check.
 
+        Each location is returned as one dict in the list. Dict keys are:
+            'station_name': name of station (string, e.g. 'HH27')
+            'station_type': type of station (string, e.g. 'HH', 'PI', etc)
+            'tile': UTM tile name (string, e.g. '34J'
+            'datum': UTM datum (string, e.g. 'WGS84')
+            'easting': station UTM easting (float)
+            'northing': station UTM northing (float)
+            'longitude': station longitude (float)
+            'latitude': station latitude (float)
+            'elevation': station elevation (float)
+            'antenna_number': antenna number (integer)
+            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4')
+            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4')
+            'start_date': start of connection in gps seconds (long)
+            'stop_date': end of connection in gps seconds (long or None no end time)
+
         Parameters
         -----------
         at_date:  date to check for connections
@@ -468,7 +484,23 @@ class Handling:
     def get_fully_connected_location_at_date(self, stn, at_date, hookup, fc=None,
                                              full_req=part_connect.full_connection_parts_paper):
         """
-        Returns the fully connected info on at_date.
+        Returns a dict with the fully connected info on at_date.
+
+        The returned dict keys are:
+            'station_name': name of station (string, e.g. 'HH27')
+            'station_type': type of station (string, e.g. 'HH', 'PI', etc)
+            'tile': UTM tile name (string, e.g. '34J'
+            'datum': UTM datum (string, e.g. 'WGS84')
+            'easting': station UTM easting (float)
+            'northing': station UTM northing (float)
+            'longitude': station longitude (float)
+            'latitude': station latitude (float)
+            'elevation': station elevation (float)
+            'antenna_number': antenna number (integer)
+            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4')
+            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4')
+            'start_date': start of connection in gps seconds (long)
+            'stop_date': end of connection in gps seconds (long or None no end time)
 
         Parameters
         -----------
@@ -509,12 +541,21 @@ class Handling:
 
     def get_cminfo_correlator(self, mc_config_path=None, cm_csv_path=None):
         """
-        Returns a dict with info needed by the correlator:
-            Antenna numbers
-            Antenna locations in UTM
-            Antenna locations in miriad coords (antpos)
-            Antenna names
-            correlator input numbers
+        Returns a dict with info needed by the correlator.
+
+        Dict keys are:
+            'antenna_number': Antenna numbers (list of integers)
+            'antenna_names': Station names (we use antenna_names because that's
+                what they're called in data files) (list of strings)
+            'correlator_inputs': Correlator input strings for x/y (e/n)
+                polarizations (list of 2 element tuples of strings)
+            'antenna_utm_datum_vals': UTM Datum values (list of strings)
+            'antenna_utm_tiles': UTM Tile values (list of strings)
+            'antenna_utm_eastings': UTM eastings (list of floats)
+            'antenna_utm_northings': UTM northings (list of floats)
+            'antenna_positions': Antenna positions in standard Miriad coordinates
+                (list of 3-element vectors of floats)
+            'cm_version': CM git hash (string)
 
         Note: This method requires pyuvdata
         """
