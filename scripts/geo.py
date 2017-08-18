@@ -37,26 +37,28 @@ if __name__ == '__main__':
     parser.add_argument('--add-new-geo', help="Flag to enable adding of a new "
                         "geo_location under update.  [False]", action='store_true')
     args = parser.parse_args()
+    args.action = args.action.lower()[:3]
+
+    if args.action == 'inf':
+        print(
+            """
+        Available actions are (only need first tree letters) [geo]:
+        """
+        )
+        sys.exit()
 
     # interpret args
-    args.action = args.action.lower()[:3]
-    if args.action == 'geo':
-        args.graph = True
-    if args.action == 'info':
-        print("""Info""")
-        sys.exit()
-    if args.action == 'find':
-        if ',' in args.loc:
-            args.loc = args.loc.split(',')
-        else:
-            args.loc = [args.loc]
     at_date = cm_utils._get_astropytime(args.date, args.time)
+    if isinstance(args.loc, str) and ',' in args.loc:
+        args.loc = args.loc.split(',')
+    elif args.loc is not None:
+        args.loc = [str(args.loc)]
     if ',' in args.station_types:
         args.station_types = args.station_types.split(',')
     else:
         args.station_types = [args.station_types]
     args.show_label = args.show_label.lower()
-    if args.show_label.lower() == 'false':
+    if args.show_label == 'false':
         args.show_label = False
     if args.fig_num.lower() == 'default':
         args.fig_num = args.xgraph + args.ygraph
@@ -77,11 +79,10 @@ if __name__ == '__main__':
     h = geo_handling.Handling(session)
     hu = cm_hookup.Hookup(session)
 
+    # Process action
     if args.action == 'geo' or args.graph:   # Go ahead and show
         show_fig = h.plot_station_types(at_date, state_args)
-
-    # Process action
-    if args.action.lower() == 'cof':
+    if args.action == 'cof':
         cofa = h.cofa(show_cofa=True)
     elif args.action == 'fin':
         located = h.get_location(args.loc, at_date, show_location=True,
