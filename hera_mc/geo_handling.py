@@ -519,7 +519,9 @@ class Handling:
             hu = fc[0].hookup
             k0 = hu['hookup'].keys()[0]
             ant_num = hu['hookup'][k0]['e'][0].downstream_part
-            ant_num = int(str(ant_num).split('A')[1])
+            # ant_num here is unicode with an A in front of the number (e.g. u'A22').
+            # But we just want an integer, so we strip the A and cast it to int
+            ant_num = int(ant_num[1:])
             corr = hookup.get_correlator_input_from_hookup(hu)
             fnd = self.get_location([stn], at_date, station_types=self.station_types)[0]
             hera_proj = Proj(proj='utm', zone=fnd.tile, ellps=fnd.datum, south=True)
@@ -594,20 +596,18 @@ class Handling:
         ecef_positions = uvutils.XYZ_from_LatLonAlt(latitudes, longitudes, elevations)
         rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions.T, cofa_loc.lon)
 
-        corr_dict = {'antenna_numbers': ant_nums,
-                     # This is actually station names, not antenna names,
-                     # but antenna_names is what it's called in pyuvdata
-                     'antenna_names': stn_names,
-                     # this is a tuple giving the f-engine names for x, y
-                     'correlator_inputs': corr_inputs,
-                     'antenna_utm_datum_vals': datums,
-                     'antenna_utm_tiles': tiles,
-                     'antenna_utm_eastings': eastings,
-                     'antenna_utm_northings': northings,
-                     'antenna_positions': rotecef_positions,
-                     'cm_version': cm_version}
-
-        return corr_dict
+        return {'antenna_numbers': ant_nums,
+                # This is actually station names, not antenna names,
+                # but antenna_names is what it's called in pyuvdata
+                'antenna_names': stn_names,
+                # this is a tuple giving the f-engine names for x, y
+                'correlator_inputs': corr_inputs,
+                'antenna_utm_datum_vals': datums,
+                'antenna_utm_tiles': tiles,
+                'antenna_utm_eastings': eastings,
+                'antenna_utm_northings': northings,
+                'antenna_positions': rotecef_positions,
+                'cm_version': cm_version}
 
     def get_ants_installed_since(self, query_date, station_types_to_check='all'):
         """
