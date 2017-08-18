@@ -45,6 +45,6 @@ df = pd.DataFrame(locations)
 df = df[['station_name', 'station_type', 'datum', 'tile', 'easting', 'northing',
          'longitude', 'latitude', 'elevation', 'antenna_number',
          'correlator_input_x', 'correlator_input_y', 'start_date', 'stop_date']]
-df = df.rename(columns({'station_name': 'antenna_name'}))
+df.rename(columns={'station_name': 'antenna_name'}, inplace=True)
 df['cm_version'] = cm_version
 df.to_csv(filename, index=False)
