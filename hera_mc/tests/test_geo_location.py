@@ -93,9 +93,29 @@ class TestGeo(TestHERAMC):
         now_list = self.h.get_all_fully_connected_at_date(at_date='now')
         ever_list = self.h.get_all_fully_connected_ever()
 
-        self.assertEqual(len(now_list), len(ever_list))
-        for loc_i in range(len(now_list)):
-            self.assertEqual(now_list[loc_i], ever_list[loc_i])
+        self.assertEqual(len(now_list), 12)
+        self.assertEqual(len(ever_list), 163)
+
+        ever_ends = [loc['stop_date'] for loc in ever_list]
+        # The '==' notation below is required (rather than the pep8 suggestion of 'is') for the test to pass.
+        self.assertEqual(len(np.where(np.array(ever_ends) == None)[0]), len(now_list))
+
+        now_station_names = [loc['station_name'] for loc in now_list]
+        ever_station_names = [loc['station_name'] for loc in ever_list]
+        for name in now_station_names:
+            self.assertTrue(name in ever_station_names)
+
+        # check that every location fully connected now appears in fully connected ever
+        for loc_i, loc in enumerate(now_list):
+            this_station_list = [ever_list[i] for i in np.where(np.array(ever_station_names) == loc['station_name'])[0]]
+            this_station_starts = [loc['start_date'] for loc in this_station_list]
+            this_index = np.where(np.array(this_station_starts) == loc['start_date'])[0]
+
+            if len(this_index) == 1:
+                this_index = this_index[0]
+                print(loc)
+                print(this_station_list[this_index])
+                self.assertEqual(this_station_list[this_index], loc)
 
     def test_correlator_info(self):
         corr_dict = self.h.get_cminfo_correlator(cm_csv_path=mc.test_data_path)
