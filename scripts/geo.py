@@ -7,60 +7,54 @@
 
 """
 from __future__ import absolute_import, division, print_function
-import sys
-from hera_mc import mc, geo_handling, cm_utils
+from hera_mc import mc, geo_handling, cm_utils, cm_hookup, part_connect
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    # action arguments
-    parser.add_argument('-c', '--cofa', help="Print out center of array information [False]", action='store_true')
-    parser.add_argument('-f', '--find', help="Find location of given station_name(s) "
-                        "or antenna_number(s) (if # or A#); csv_list [None]",
-                        default=None)
-    parser.add_argument('-g', '--graph', help="Graph station types [False]",
-                        action='store_true')
-    parser.add_argument('--since_date', help="Only show antennas (set by background) "
-                        "installed since date/time [False]", action='store_true')
-    parser.add_argument('--correlator', help="Print correlator inputs for antenna(s) at location(s)", action='store_true')
+    parser.add_argument('action', nargs='?', help="Actions are:  geo, find, cofa, corr, since, info", default='geo')
 
-    # parameter state/value arguments
+    parser.add_argument('-l', '--loc', help="Location name", default=None)
+    parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
     cm_utils.add_verbosity_args(parser)
+    cm_utils.add_date_time_args(parser)
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
-    cm_utils.add_date_time_args(parser)
-    parser.add_argument('--background', help="Station types used for graph "
-                        "(csv_list or all) [HH,PH,S]", default='HH,PH,S')
-    parser.add_argument('--show_state', help="Show only the 'active' stations or "
-                        "all [all]", default='all')
-    parser.add_argument('--show_label', help="Label by station_name (name), "
-                        "ant_num (num) or serial_num (ser) or false [num]",
+    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or all) [HH]",
+                        dest='station_types', default='HH')
+    parser.add_argument('--show-state', help="Show only the 'active' stations or all [all]", dest='show_state',
+                        default='all')
+    parser.add_argument('--show-label', dest='show_label',
+                        help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]",
                         default='num')
-    parser.add_argument('--fig_num', help="Provide a specific figure number to "
-                        "the plot [default]", default='default')
+    parser.add_argument('--fig-num', help="Provide a specific figure number to the plot [default]",
+                        dest='fig_num', default='default')
 
     # database arguments
-    parser.add_argument('--update', help="Update station records.  "
-                        "Format station0:col0:val0, [station1:]col1:val1...  [None]",
+    parser.add_argument('--update', help="Update station records.  Format station0:col0:val0, [station1:]col1:val1...  [None]",
                         default=None)
     parser.add_argument('--add-new-geo', help="Flag to enable adding of a new "
                         "geo_location under update.  [False]", action='store_true')
     args = parser.parse_args()
 
     # interpret args
-    if args.find is not None:
-        args.find = args.find.upper()
-        if ',' in args.find:
-            args.find = args.find.split(',')
+    args.action = args.action.lower()[:3]
+    if args.action == 'geo':
+        args.graph = True
+    if args.action == 'info':
+        print("""Info""")
+        sys.exit()
+    if args.action == 'find':
+        if ',' in args.loc:
+            args.loc = args.loc.split(',')
         else:
-            args.find = [args.find]
-    query_date = cm_utils._get_astropytime(args.date, args.time)
-    args.background = args.background.upper()
-    if ',' in args.background:
-        args.background = args.background.split(',')
+            args.loc = [args.loc]
+    at_date = cm_utils._get_astropytime(args.date, args.time)
+    if ',' in args.station_types:
+        args.station_types = args.station_types.split(',')
     else:
-        args.background = [args.background]
+        args.station_types = [args.station_types]
     args.show_label = args.show_label.lower()
     if args.show_label.lower() == 'false':
         args.show_label = False
@@ -72,20 +66,42 @@ if __name__ == '__main__':
     state_args = {'verbosity': args.verbosity.lower(),
                   'xgraph': args.xgraph.upper(),
                   'ygraph': args.ygraph.upper(),
-                  'background': args.background,
+                  'station_types': args.station_types,
                   'show_state': args.show_state.lower(),
                   'show_label': args.show_label,
                   'fig_num': args.fig_num}
 
-    # process
+    # process and start
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
+    h = geo_handling.Handling(session)
+    hu = cm_hookup.Hookup(session)
 
-    if args.graph:
-        show_fig = h.plot_station_types(query_date, state_args)
-    if args.cofa:
+    if args.action == 'geo' or args.graph:   # Go ahead and show
+        show_fig = h.plot_station_types(at_date, state_args)
+
+    # Process action
+    if args.action.lower() == 'cof':
         cofa = h.cofa(show_cofa=True)
-    if args.since_date:
+    elif args.action == 'fin':
+        located = h.get_location(args.loc, at_date, show_location=True,
+                                 verbosity=state_args['verbosity'])
+        if args.graph and len(located) > 0:
+            state_args['marker_size'] = 14
+            h.overplot(located, state_args)
+    elif args.action == 'cor' and isinstance(args.loc, list):
+        for a2f in args.loc:
+            h.get_fully_connected_location_at_date(self, a2f, at_date, hookup, fc=None,
+                                                   full_req=part_connect.full_connection_parts_paper)
+            print("Correlator inputs for {}:".format(a2f))
+            for c in corin:
+                print('\t' + c)
+    elif args.action == 'cor':
+        fully_connected = h.get_all_fully_connected_at_date(at_date)
+        for fc in fully_connected:
+            print("Station {} connected to x:{}, y:{}".format(fc['station_name'],
+                  fc['correlator_input_x'], fc['correlator_input_y']))
+    elif args.action == 'sin':
         new_antennas = h.get_ants_installed_since(query_date, state_args['background'])
         print("{} new antennas since {}".format(len(new_antennas), query_date))
         if len(new_antennas) > 0:
@@ -98,24 +114,6 @@ if __name__ == '__main__':
             state_args['marker_shape'] = '*'
             state_args['marker_size'] = 14
             show_fig = h.plot_stations(new_antennas, query_date, state_args)
-    if args.find is not None and not args.correlator:
-        located = h.get_location(args.find, query_date, show_location=True,
-                                 verbosity=state_args['verbosity'])
-        if args.graph and len(located) > 0:
-            state_args['marker_size'] = 14
-            h.overplot(located, state_args)
-    elif args.find and args.correlator:
-        for a2f in args.find:
-            corin = h.get_fully_connected_location_at_date(a2f, query_date)
-            print("Correlator inputs for {}:".format(a2f))
-            for c in corin:
-                print('\t' + c)
-    elif args.correlator:
-        fully_connected = h.get_all_fully_connected_at_date(query_date)
-        for fc in fully_connected:
-            print("Station {} connected to x:{}, y:{}".format(fc['station_name'],
-                  fc['correlator_input_x'], fc['correlator_input_y']))
-
     if show_fig:
         geo_handling.show_it_now(show_fig)
     h.close()

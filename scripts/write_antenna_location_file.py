@@ -24,7 +24,7 @@ cm_version = cm_utils.get_cm_version(mc_config_path=args.mc_config_path,
                                      cm_csv_path=args.cm_csv_path)
 
 h = geo_handling.Handling(session)
-locations = h.get_all_fully_connected_ever()
+locations = h.get_all_fully_connected_ever(station_types_to_check=['HH'])
 
 cofa_loc = h.cofa()
 locations.append({'station_name': cofa_loc.station_name,

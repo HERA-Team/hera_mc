@@ -702,10 +702,10 @@ class Handling:
         import matplotlib.pyplot as plt
 
         query_date = cm_utils._get_astropytime(query_date)
-        if state_args['background'][0] == 'all':
+        if state_args['station_types'][0] == 'all':
             prefixes_to_plot = 'all'
         else:
-            prefixes_to_plot = [x.upper() for x in state_args['background']]
+            prefixes_to_plot = [x.upper() for x in state_args['station_types']]
         self.get_station_types(add_stations=True)
         for key in self.station_types.keys():
             if prefixes_to_plot == 'all' or key.upper() in prefixes_to_plot:
