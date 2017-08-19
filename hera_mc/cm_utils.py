@@ -152,7 +152,6 @@ def _get_astropytime(_date, _time=0):
 def get_date_from_pair(d1, d2, ret='earliest'):
     if d1 is None and d2 is None:
         return None
-    retdat = None
     if ret == 'earliest':
         if d1 is None:
             return d2
@@ -162,13 +161,13 @@ def get_date_from_pair(d1, d2, ret='earliest'):
             return d1 if d1 < d2 else d2
     elif ret == 'latest':
         if d1 is None:
-            return = d1
+            return d1
         elif d2 is None:
-            return = d2
+            return d2
         else:
-            return = d1 if d1 > d2 else d2
+            return d1 if d1 > d2 else d2
     else:
-        raise ValueError("Must supply earliest/latest")
+        raise ValueError("Must supply earliest/latest.")
 
 
 def _get_datekeystring(_datetime):
