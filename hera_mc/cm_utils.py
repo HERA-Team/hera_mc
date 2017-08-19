@@ -12,7 +12,6 @@ import subprocess
 from hera_mc import mc
 from astropy.time import Time
 from astropy.time import TimeDelta
-import warnings
 
 PAST_DATE = '2000-01-01'
 
@@ -156,21 +155,20 @@ def get_date_from_pair(d1, d2, ret='earliest'):
     retdat = None
     if ret == 'earliest':
         if d1 is None:
-            retdat = d2
+            return d2
         elif d2 is None:
-            retdat = d1
+            return d1
         else:
-            retdat = d1 if d1 < d2 else d2
+            return d1 if d1 < d2 else d2
     elif ret == 'latest':
         if d1 is None:
-            retdat = d1
+            return = d1
         elif d2 is None:
-            retdat = d2
+            return = d2
         else:
-            retdat = d1 if d1 > d2 else d2
+            return = d1 if d1 > d2 else d2
     else:
-        warnings.warn("No return comparison value given.")
-    return retdat
+        raise ValueError("Must supply earliest/latest")
 
 
 def _get_datekeystring(_datetime):
