@@ -578,10 +578,10 @@ class Handling:
         Note: This method requires pyuvdata
         """
         from pyuvdata import utils as uvutils
-        from hera_mc import cm_hookup
+        from hera_mc import cm_hookup, cm_handling
 
-        cm_version = cm_utils.get_cm_version(mc_config_path=mc_config_path,
-                                             cm_csv_path=cm_csv_path)
+        cm_h = cm_handling.Handling(session=self.session)
+        cm_version = cm_h.get_cm_version()
         cofa_loc = self.cofa()[0]
         stations_conn = self.get_all_fully_connected_at_date(at_date='now')
 

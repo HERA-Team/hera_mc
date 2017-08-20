@@ -16,7 +16,7 @@ from astropy.time import TimeDelta
 PAST_DATE = '2000-01-01'
 
 
-def get_cm_version(mc_config_path=None, cm_csv_path=None):
+def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
     """
     Get the current cm_version for recording with antenna locations.
     """
