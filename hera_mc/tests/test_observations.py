@@ -31,7 +31,7 @@ class TestObservation(TestHERAMC):
         t4 = t2 + TimeDelta(1e-3, format='sec')
 
         h = geo_handling.Handling(session=self.test_session)
-        hera_cofa = h.cofa()
+        hera_cofa = h.cofa()[0]
 
         obs1 = Observation.create(t1, t2, utils.calculate_obsid(t1), hera_cofa)
         obs2 = Observation.create(t3, t4, utils.calculate_obsid(t3), hera_cofa)

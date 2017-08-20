@@ -589,7 +589,7 @@ class Handling:
 
         cm_version = cm_utils.get_cm_version(mc_config_path=mc_config_path,
                                              cm_csv_path=cm_csv_path)
-        cofa_loc = self.cofa()
+        cofa_loc = self.cofa()[0]
         stations_conn = self.get_all_fully_connected_at_date(at_date='now')
 
         ant_nums = []
