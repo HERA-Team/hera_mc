@@ -32,7 +32,6 @@ def cofa(show_cofa=False, session=None):
     show_cofa:  boolean to print out cofa info or just return class
     session:  db session to use
     """
-
     h = Handling(session)
     located = h.cofa(show_cofa)
     h.close()
@@ -57,11 +56,11 @@ def get_location(location_names, query_date='now', show_location=False,
     verbosity:  string to specify verbosity
     session:  db session to use
     """
-
     query_date = cm_utils._get_astropytime(query_date)
     h = Handling(session)
-    located = h.get_location(location_names, query_date, show_location=show_location,
-                             verbosity=verbosity)
+    located = h.get_location(location_names, query_date)
+    if show_location:
+        h.print_loc_info(located)
     h.close()
     return located
 
@@ -117,11 +116,9 @@ class Handling:
         ------------
         show_cofa:  boolean to either show cofa or not
         """
-
         self.get_station_types(add_stations=True)
         current_cofa = self.station_types['COFA']['Stations']
-        located = self.get_location(current_cofa, 'now', show_location=show_cofa,
-                                    verbosity='m')
+        located = self.get_location(current_cofa, 'now', self.station_types)
         if len(located) == 0:
             located_cofa = None
         elif len(located) > 1:
@@ -129,7 +126,9 @@ class Handling:
             warnings.warn(s)
             located_cofa = None
         else:
-            located_cofa = located[0]
+            located_cofa = located
+        if show_cofa:
+            self.print_loc_info(located_cofa)
 
         return located_cofa
 
@@ -259,7 +258,7 @@ class Handling:
             raise ValueError('More than one active connection between station and antenna')
         return antenna_connected.upstream_part
 
-    def get_location(self, to_find, query_date, station_types=None, show_location=False, verbosity='m'):
+    def get_location(self, to_find, query_date, station_types=None):
         """
         Return the location of station_name or antenna_number as contained in to_find.
         This accepts the fact that antennas are sort of stations, even though they are parts
@@ -283,45 +282,47 @@ class Handling:
                 station_name = self.find_station_of_antenna(antenna_number, query_date)
             except ValueError:
                 station_name = L
-            found_it = False
             if station_name:
                 ustn = station_name.upper()
                 for a in self.session.query(geo_location.GeoLocation).filter(
                         func.upper(geo_location.GeoLocation.station_name) == ustn):
+                    this_station = None
                     for key in self.station_types.keys():
                         if a.station_name in self.station_types[key]['Stations']:
                             this_station = key
                             break
-                        else:
-                            this_station = 'No station type data.'
+                    if this_station is None:
+                        print("{} not found.".format(L))
+                        break
                     a.gps2Time()
-                    desc = self.station_types[this_station]['Description']
-                    ever_connected = self.is_in_connections(a.station_name)
-                    active = self.is_in_connections(a.station_name, query_date,
-                                                    return_antrev=True)
-                    found_it = True
+                    loc_info = {'loc': this_station}
+                    loc_info['desc'] = self.station_types[this_station]['Description']
+                    loc_info['ever_connected'] = self.is_in_connections(a.station_name)
+                    loc_info['active'] = self.is_in_connections(a.station_name, query_date,
+                                                                return_antrev=True)
+                    a.loc_info = loc_info
                     hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                     a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
                     found_location.append(copy.copy(a))
-                    if show_location:
-                        if verbosity == 'm' or verbosity == 'h':
-                            print('station_name: ', a.station_name)
-                            print('\teasting: ', a.easting)
-                            print('\tnorthing: ', a.northing)
-                            print('\tlon/lat:  ', a.lon, a.lat)
-                            print('\televation: ', a.elevation)
-                            print('\tstation description ({}):  {}'.format(this_station, desc))
-                            print('\tever connected:  ', ever_connected)
-                            print('\tactive:  ', active)
-                            print('\tcreated:  ', cm_utils._get_displayTime(a.created_date))
-                        elif verbosity == 'l':
-                            print(a, this_station)
-            else:
-                found_location.append(None)
-            if show_location:
-                if not found_it and verbosity == 'm' or verbosity == 'h':
-                    print(L, ' not found.')
         return found_location
+
+    def print_loc_info(self, loc, verbosity='h'):
+        if loc is None:
+            print("No location found.")
+            return
+        for a in loc:
+            if verbosity == 'm' or verbosity == 'h':
+                print('station_name: ', a.station_name)
+                print('\teasting: ', a.easting)
+                print('\tnorthing: ', a.northing)
+                print('\tlon/lat:  ', a.lon, a.lat)
+                print('\televation: ', a.elevation)
+                print('\tstation description ({}):  {}'.format(a.loc_info['loc'], a.loc_info['desc']))
+                print('\tever connected:  ', a.loc_info['ever_connected'])
+                print('\tactive:  ', a.loc_info['active'])
+                print('\tcreated:  ', cm_utils._get_displayTime(a.created_date))
+            elif verbosity == 'l':
+                print(a)
 
     def _search_loop(self, stn, at_date, now, m, base_tdelta, full_req):
         """
@@ -747,7 +748,7 @@ class Handling:
         plt.plot(xaxis=state_args['xgraph'], yaxis=state_args['ygraph'])
         return state_args['fig_num']
 
-    def overplot(self, located_stations, state_args):
+    def overplot(self, located_stations, at_date, state_args):
         """Overplot station on an existing plot.  It sets specific symbols/colors
             for active, connected, etc
 
@@ -761,7 +762,7 @@ class Handling:
 
         for located in located_stations:
             ever_connected = self.is_in_connections(located.station_name)
-            active = self.is_in_connections(located.station_name, query_date)
+            active = self.is_in_connections(located.station_name, at_date)
             if ever_connected and active:
                 over_marker = 'g*'
                 mkr_lbl = 'ca'
