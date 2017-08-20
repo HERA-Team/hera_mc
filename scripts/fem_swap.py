@@ -67,7 +67,7 @@ if __name__ == '__main__':
                            exact_match=True)
     k = hd['hookup'].keys()[0]
     if len(hd['hookup'][k]['e']) == 0:
-        print("<<<<<<<ERROR>>>>>>>")
+        print("<<<<<<<ERROR>>>>>>>  'e' hookup is len(0)")
         print(hd['hookup'][k]['e'])
         sys.exit()
     # ###ERROR EXIT POINT
