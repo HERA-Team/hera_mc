@@ -50,7 +50,6 @@ if __name__ == '__main__':
     args.verbosity = args.verbosity.lower()
     at_date = cm_utils._get_astropytime(args.date, args.time)
     fem_hpn = 'FEM' + args.fem_number
-    show_args = {'show_levels': False}
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
@@ -60,39 +59,47 @@ if __name__ == '__main__':
     hookup = cm_hookup.Hookup(session)
 
     if handling.is_in_connections(fem_hpn, args.rev):
-        go_ahead = False
-        print("Error:  {} is already connected".format(fem_hpn))
-        print("Stopping this swap.")
+        print("<<<<<<<Error>>>>>>>  {} is already connected".format(fem_hpn))
+        sys.exit()
+    # ###ERROR EXIT POINT
+
+    hd = hookup.get_hookup(hpn=args.ant, rev='H', port='all', at_date=at_date,
+                           exact_match=True)
+    k = hd['hookup'].keys()[0]
+    if len(hd['hookup'][k]['e']) == 0:
+        print("<<<<<<<ERROR>>>>>>>  'e' hookup is len(0)")
+        print(hd['hookup'][k]['e'])
+        sys.exit()
+    # ###ERROR EXIT POINT
+
+    old_fd = hd['hookup'][k]['e'][1]
+    if len(hd['hookup'][k]['e']) < 4:
+        print("<<< {} does not have the expected hookup.".format(k))
+        old_fe = None
     else:
-        go_ahead = True
-        hd = hookup.get_hookup(hpn=args.ant, rev='H', port='all', at_date=at_date,
-                               state_args=show_args, exact_match=True)
-        k = hd['hookup'].keys()[0]
-        old_fe = hd['hookup'][k][3]
+        old_fe = hd['hookup'][k]['e'][3]
         bal_conn = handling.get_connection_dossier(old_fe.upstream_part,
                                                    old_fe.up_part_rev, 'all',
                                                    at_date, exact_match=True)
         ctr = len(bal_conn['connections'].keys())
         if ctr != 6:
-            go_ahead = False
-            print("Error:  unexpected number of connections to {}"
-                  .format(old_fe.upstream_part))
-            print("Stopping this swap.")
-        else:
-            balun = old_fe.upstream_part
-            brev = old_fe.up_part_rev
-            print('Replacing {}:{} with {}:{}'.format(balun, brev, fem_hpn, args.rev))
+            print("<<<<<<<Error>>>>>>>  unexpected number of connections to {}".
+                  format(old_fe.upstream_part))
+            sys.exit()
+    # ###ERROR EXIT POINT
 
-    if go_ahead:
-        # Add new FEM
-        new_fem = [(fem_hpn, args.rev, 'front-end module', args.fem_number)]
-        part_connect.add_new_parts(session, part, new_fem, at_date, args.actually_do_it)
+    # Add new FEM
+    new_fem = [(fem_hpn, args.rev, 'front-end module', args.fem_number)]
+    part_connect.add_new_parts(session, part, new_fem, at_date, args.actually_do_it)
 
+    if old_fe is not None:
         # Disconnect previous FE on both sides (FD/C7)
+        balun = old_fe.upstream_part
+        brev = old_fe.up_part_rev
+        print('Replacing {}:{} with {}:{}'.format(balun, brev, fem_hpn, args.rev))
         pcs = [(balun, brev, 'input'), (balun, brev, 'n'), (balun, brev, 'e')]
-        part_connect.stop_existing_connections(session, handling, pcs, at_date,
-                                               args.actually_do_it)
-
+        part_connect.stop_existing_connections_to_part(session, handling, pcs, at_date,
+                                                       args.actually_do_it)
         # Connect new FEM on both sides (FD/C7)
         npc = []
         for k, c in bal_conn['connections'].iteritems():
@@ -112,5 +119,30 @@ if __name__ == '__main__':
                     print(c)
                 if x is not None:
                     npc.append(x)
+        part_connect.add_new_connections(session, connect, npc, at_date,
+                                         args.actually_do_it)
+    else:
+        # Disconnect previous FE on C7F side
+        C7F = 'C7F' + args.ant.strip('A')
+        C7F_rev = 'A'
+        c7_conn = handling.get_connection_dossier(C7F, C7F_rev, 'all',
+                                                  at_date, exact_match=True)
+        for k, c in c7_conn['connections'].iteritems():
+            if c.downstream_input_port == 'na':
+                balun = c7_conn['connections'][k].upstream_part
+                brev = c7_conn['connections'][k].up_part_rev
+        print("Stopping {}:{} - {}:{}".format(C7F, C7F_rev, balun, brev))
+        pcs = [(balun, brev, 'n'), (balun, brev, 'e')]
+        part_connect.stop_existing_connections_to_part(session, handling, pcs, at_date,
+                                                       args.actually_do_it)
+        # Connect new FEM on both sides (FD/C7)
+        feed = old_fd.downstream_part
+        frev = old_fd.down_part_rev
+        print('Adding {}:{} to {}:{}'.format(feed, frev, fem_hpn, args.rev))
+        npc = [
+              [feed, frev, 'terminals', fem_hpn, args.rev, 'input'],
+              [fem_hpn, args.rev, 'e', C7F, C7F_rev, 'ea'],
+              [fem_hpn, args.rev, 'n', C7F, C7F_rev, 'na']
+        ]
         part_connect.add_new_connections(session, connect, npc, at_date,
                                          args.actually_do_it)
