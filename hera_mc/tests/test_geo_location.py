@@ -94,7 +94,7 @@ class TestGeo(TestHERAMC):
         ever_list = self.h.get_all_fully_connected_ever()
 
         self.assertEqual(len(now_list), 1)
-        self.assertEqual(len(ever_list), 1)
+        self.assertEqual(len(ever_list), 2)
 
         ever_ends = [loc['stop_date'] for loc in ever_list]
         # The '==' notation below is required (rather than the pep8 suggestion of 'is') for the test to pass.
