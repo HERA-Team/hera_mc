@@ -286,21 +286,19 @@ class Handling:
                 ustn = station_name.upper()
                 for a in self.session.query(geo_location.GeoLocation).filter(
                         func.upper(geo_location.GeoLocation.station_name) == ustn):
-                    this_station = None
+                    this_station_type = None
                     for key in self.station_types.keys():
                         if a.station_name in self.station_types[key]['Stations']:
-                            this_station = key
+                            this_station_type = key
                             break
-                    if this_station is None:
+                    if this_station_type is None:
                         print("{} not found.".format(L))
                         break
                     a.gps2Time()
-                    loc_info = {'loc': this_station}
-                    loc_info['desc'] = self.station_types[this_station]['Description']
-                    loc_info['ever_connected'] = self.is_in_connections(a.station_name)
-                    loc_info['active'] = self.is_in_connections(a.station_name, query_date,
-                                                                return_antrev=True)
-                    a.loc_info = loc_info
+                    a.station_type = this_station_type
+                    a.desc = self.station_types[this_station_type]['Description']
+                    a.ever_connected = self.is_in_connections(a.station_name)
+                    a.active = self.is_in_connections(a.station_name, query_date, return_antrev=True)
                     hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                     a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
                     found_location.append(copy.copy(a))
@@ -317,9 +315,9 @@ class Handling:
                 print('\tnorthing: ', a.northing)
                 print('\tlon/lat:  ', a.lon, a.lat)
                 print('\televation: ', a.elevation)
-                print('\tstation description ({}):  {}'.format(a.loc_info['loc'], a.loc_info['desc']))
-                print('\tever connected:  ', a.loc_info['ever_connected'])
-                print('\tactive:  ', a.loc_info['active'])
+                print('\tstation description ({}):  {}'.format(a.station_type, a.desc))
+                print('\tever connected:  ', a.ever_connected)
+                print('\tactive:  ', a.active)
                 print('\tcreated:  ', cm_utils._get_displayTime(a.created_date))
             elif verbosity == 'l':
                 print(a)
