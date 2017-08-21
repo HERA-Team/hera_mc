@@ -5,7 +5,7 @@
 
 """
 Definitions to generate table initialization files.
-Used in scripts cm_init.py, cm_package.py
+Used in scripts cm_init.py, cm_pack.py
 """
 from __future__ import absolute_import, division, print_function
 
@@ -16,6 +16,7 @@ import pandas as pd
 import csv
 from sqlalchemy import Column, BigInteger, String
 from hera_mc import MCDeclarativeBase, mc, geo_location, part_connect, cm_table_info, cm_utils
+import subprocess
 
 
 class CMVersion(MCDeclarativeBase):
@@ -106,6 +107,31 @@ def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
             fpin.close()
             fpout.close()
             os.remove(tmp_filename)
+
+
+def pack_n_go(session, cm_csv_path):
+    """
+    This module will move the csv files to the distribution directory, commit them
+    and put the new commit hash into the database
+
+    Parameters:
+    ------------
+    cm_csv_path:  path to csv distribution directory
+    """
+
+    # move files over to dist dir
+    cmd = "mv -f *.csv {}".format(cm_csv_path)
+    subprocess.call(cmd, shell=True)
+
+    # commit new csv files
+    cmd = "git -C {} commit -am 'updating csv to repo.'".format(cm_csv_path)
+    subprocess.call(cmd, shell=True)
+
+    # get hash of this commit
+    cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path)
+
+    # add this cm git hash to cm_version table
+    session.add(CMVersion.create(Time.now(), cm_git_hash))
 
 
 def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False):

@@ -102,7 +102,6 @@ if __name__ == '__main__':
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
     h = geo_handling.Handling(session)
-    h
 
     # Process action.  Actions are:  geo, cofa, corr, since, info
     if args.action == 'geo':
