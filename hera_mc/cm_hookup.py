@@ -176,36 +176,37 @@ class Hookup:
         return next_one
 
     def __add_hookup_timing(self, hookup_dict):
-        really_late = 9999999999
         hookup_dict['timing'] = {}
         for akey, hk in hookup_dict['hookup'].iteritems():
             hookup_dict['timing'][akey] = {}
             for pkey, pol in hk.iteritems():
                 latest_start = 0
-                earliest_stop = really_late
+                earliest_stop = None
                 for c in pol:
                     if c.start_gpstime > latest_start:
                         latest_start = c.start_gpstime
-                    if c.stop_gpstime is not None and c.stop_gpstime < earliest_stop:
+                    if c.stop_gpstime is None:
+                        pass
+                    elif earliest_stop is None:
                         earliest_stop = c.stop_gpstime
-                if earliest_stop == really_late:
-                    earliest_stop = None
+                    elif c.stop_gpstime < earliest_stop:
+                        earliest_stop = c.stop_gpstime
                 hookup_dict['timing'][akey][pkey] = [latest_start, earliest_stop]
         return hookup_dict
 
     def __get_column_headers(self, huh):
         """
-        The columns in the hookup_dict contain parts in the hookup chain and the column headers are 
+        The columns in the hookup_dict contain parts in the hookup chain and the column headers are
         the part types contained in that column.  This returns the headers for the retrieved hookup.
         This gets the full set of headers for a future show_hookup that doesn't require the same
-        hookup starting point.  
+        hookup starting point.
 
         Returns a single column for now (the one/long_column stuff).
 
         The method searches all of the hookup chains to find the longest one and returns those
         part-type header names.
 
-        Parameters: 
+        Parameters:
         -------------
         huh: the 'hookup' part of the hookup_dictionary
         """
@@ -220,10 +221,12 @@ class Hookup:
             for hk, hu in huh.iteritems():
                 for pk, pv in hu.iteritems():
                     if len(pv) > lc.hlen:
-                        lc.part=hk; lc.pol=pk; lc.hlen=len(pv)
+                        lc.part = hk
+                        lc.pol = pk
+                        lc.hlen = len(pv)
             huh = {hk: {pk: huh[lc.part][lc.pol]}}
 
-        lc.hlen=0
+        lc.hlen = 0
         for hk, hu in huh.iteritems():
             hu_col[hk] = {}
             for pk, pv in hu.iteritems():
@@ -248,7 +251,9 @@ class Hookup:
                 hu_col[hk][pk].append('Stop')
                 # Next two lines for "one column" solution
                 if len(hu_col[hk][pk]) >= lc.hlen:
-                    lc.part=hk; lc.pol=pk; lc.hlen=len(hu_col[hk][pk])
+                    lc.part = hk
+                    lc.pol = pk
+                    lc.hlen = len(hu_col[hk][pk])
         if len(hu_col[lc.part]) == 0:
             return []
         else:
@@ -277,7 +282,18 @@ class Hookup:
             colhead = col
         return colhead
 
-    def show_hookup(self, hookup_dict, cols_to_show, show_levels):
+    def get_correlator_input_from_hookup(self, hookup_dict, corr_name=PC.roach_input_name):
+        """
+        Retrieve the correlator inputs from a hookup_dictionary
+        """
+        corr_input = {}
+        if corr_name in hookup_dict['columns']:
+            for k, h in hookup_dict['hookup'].iteritems():
+                for j, p in h.iteritems():
+                    corr_input[j] = p[-1].downstream_part
+        return corr_input
+
+    def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False):
         """
         Print out the hookup table -- uses tabulate package.
 

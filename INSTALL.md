@@ -48,7 +48,8 @@ database. An example file is:
       "url": "postgresql://hera@localhost/hera_mc_test",
       "mode": "testing"
     }
-  }
+  },
+  "cm_csv_path": "<<<Path-to-repo>>>/hera_cm_db_updates"
 }
 ```
 
@@ -60,6 +61,13 @@ mode, for the M&C test suite to work.
 
 Create the database schema by running `alembic upgrade head`
 If desired, populate the configuration management tables by running the `cm_init.py` script.
+
+Note the other line:  "cm_csv_path":.../hera_cm_db_updates, which is the full path to where you 
+have installed the local configuration management csv files, which are contained in the repo 
+hera_cm_db_updates.
+
+To update your local database, (after you pull hera_cm_db_updates and add line to mc_config.json), 
+type `cm_init.py`
 
 ### Basic OS X PostgreSQL installation
 

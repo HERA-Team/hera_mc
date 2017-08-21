@@ -7,13 +7,27 @@
 """
 
 from __future__ import print_function
-
+import os.path
+import subprocess
 from hera_mc import mc
 from astropy.time import Time
 from astropy.time import TimeDelta
-import os.path
 
 PAST_DATE = '2000-01-01'
+
+
+def get_cm_version(mc_config_path=None, cm_csv_path=None):
+    """
+    Get the current cm_version for recording with antenna locations.
+    """
+    if cm_csv_path is None:
+        cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_path)
+        if cm_csv_path is None:
+            raise ValueError('No cm_csv_path defined in mc_config file.')
+
+    git_hash = subprocess.check_output(['git', '-C', cm_csv_path, 'rev-parse', 'HEAD'],
+                                       stderr=subprocess.STDOUT).strip()
+    return git_hash
 
 
 def _future_date():
@@ -133,6 +147,27 @@ def _get_astropytime(_date, _time=0):
         if return_date is not None:
             return_date += TimeDelta(add_time, format='sec')
     return return_date
+
+
+def get_date_from_pair(d1, d2, ret='earliest'):
+    if d1 is None and d2 is None:
+        return None
+    if ret == 'earliest':
+        if d1 is None:
+            return d2
+        elif d2 is None:
+            return d1
+        else:
+            return d1 if d1 < d2 else d2
+    elif ret == 'latest':
+        if d1 is None:
+            return d1
+        elif d2 is None:
+            return d2
+        else:
+            return d1 if d1 > d2 else d2
+    else:
+        raise ValueError("Must supply earliest/latest.")
 
 
 def _get_datekeystring(_datetime):

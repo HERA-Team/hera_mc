@@ -121,7 +121,7 @@ class MCSession(Session):
         import geo_handling
 
         h = geo_handling.Handling(session=self)
-        hera_cofa = h.cofa()
+        hera_cofa = h.cofa()[0]
 
         self.add(Observation.create(starttime, stoptime, obsid, hera_cofa))
 

@@ -21,7 +21,8 @@ from . import MCDeclarativeBase, NotNull
 from hera_mc import mc, cm_utils
 
 no_connection_designator = '-X-'
-full_connection_parts_paper = ['station', 'f_engine']
+roach_input_name = 'f_engine'
+full_connection_parts_paper = ['station', roach_input_name]
 
 
 class Parts(MCDeclarativeBase):
@@ -56,7 +57,7 @@ class Parts(MCDeclarativeBase):
 
     def gps2Time(self):
         """
-        Adds gps seconds to the Time
+        Make astropy.Time object from gps
         """
 
         self.start_date = Time(self.start_gpstime, format='gps')
@@ -268,14 +269,15 @@ def get_part_revisions(hpn, session=None):
     if hpn is None:
         return {}
 
+    uhpn = hpn.upper()
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db()
         session = db.sessionmaker()
         close_session_when_done = True
 
     revisions = {}
-    for parts_rec in session.query(Parts).filter(Parts.hpn == hpn):
+    for parts_rec in session.query(Parts).filter(func.upper(Parts.hpn) == uhpn):
         parts_rec.gps2Time()
         revisions[parts_rec.hpn_rev] = {}
         revisions[parts_rec.hpn_rev]['hpn'] = hpn  # Just carry this along
@@ -283,7 +285,6 @@ def get_part_revisions(hpn, session=None):
         revisions[parts_rec.hpn_rev]['ended'] = parts_rec.stop_date
     if close_session_when_done:
         session.close()
-
     return revisions
 
 
@@ -384,13 +385,15 @@ class Connections(MCDeclarativeBase):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+
 def get_null_connection():
     nc = no_connection_designator
     no_connect = Connections()
     no_connect.connection(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
-                            downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
-                            start_gpstime=nc)
+                          downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
+                          start_gpstime=nc)
     return no_connect
+
 
 def stop_existing_connections_to_part(session, h, conn_list, at_date, actually_do_it):
     """

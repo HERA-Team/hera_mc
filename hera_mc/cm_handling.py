@@ -13,8 +13,9 @@ from tabulate import tabulate
 import sys
 import copy
 from astropy.time import Time
+from sqlalchemy import func
 
-from hera_mc import mc, geo_handling, correlator_levels, cm_utils
+from hera_mc import mc, correlator_levels, cm_utils
 from hera_mc import part_connect as PC
 from hera_mc import cm_revisions as cmpr
 
@@ -96,7 +97,7 @@ class Handling:
         part_dossier = {}
         rev_part = {}
         for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.like(hpn)):
-            rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, at_date=at_date, 
+            rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, at_date=at_date,
                                                             session=self.session)
 
         # Now get unique part/revs and put into dictionary
@@ -129,6 +130,7 @@ class Handling:
                         at_date=at_date, exact_match=True)
                     part_dossier[pr_key]['connections'] = connections
                     if part.hptype == 'station':
+                        from hera_mc import geo_handling
                         part_dossier[pr_key]['geo'] = geo_handling.get_location(
                             [part.hpn], at_date, show_location=False)
                     part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
@@ -229,7 +231,7 @@ class Handling:
         Finds and returns a list of connections matching the supplied components of the query.
         At the very least upstream_part and downstream_part must be included -- revisions and
         ports are ignored unless they are of type string.
-        If at_date is of type Time, it will only return connections valid at that time.  Otherwise 
+        If at_date is of type Time, it will only return connections valid at that time.  Otherwise
         it ignores at_date (i.e. it will return any such connection over all time.)
 
         Returns a list of connections (class)
