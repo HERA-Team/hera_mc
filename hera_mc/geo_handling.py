@@ -119,18 +119,13 @@ class Handling:
         self.get_station_types(add_stations=True)
         current_cofa = self.station_types['COFA']['Stations']
         located = self.get_location(current_cofa, 'now', self.station_types)
-        if len(located) == 0:
-            located_cofa = None
-        elif len(located) > 1:
+        if len(located) > 1:
             s = "{} has multiple cofa values.".format(str(current_cofa))
             warnings.warn(s)
-            located_cofa = None
-        else:
-            located_cofa = located
         if show_cofa:
             self.print_loc_info(located_cofa)
 
-        return located_cofa
+        return located
 
     def get_station_types(self, add_stations=True):
         """

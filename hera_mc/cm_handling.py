@@ -12,6 +12,7 @@ from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
 import sys
 import copy
+import warnings
 from astropy.time import Time
 from sqlalchemy import func
 
@@ -96,7 +97,7 @@ class Handling:
 
         part_dossier = {}
         rev_part = {}
-        for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.like(hpn)):
+        for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(hpn)):
             rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, at_date=at_date,
                                                             session=self.session)
 
@@ -107,8 +108,8 @@ class Handling:
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
                 part_query = self.session.query(PC.Parts).filter(
-                    (PC.Parts.hpn == xhpn) &
-                    (PC.Parts.hpn_rev == this_rev))
+                    (func.upper(PC.Parts.hpn) == xhpn.upper()) &
+                    (func.upper(PC.Parts.hpn_rev) == this_rev.upper()))
                 part_cnt = part_query.count()
                 if part_cnt == 0:
                     continue
@@ -121,9 +122,9 @@ class Handling:
                                             'input_ports': [], 'output_ports': [],
                                             'connections': None, 'geo': None}
                     for part_info in self.session.query(PC.PartInfo).filter(
-                            (PC.PartInfo.hpn == part.hpn) &
-                            (PC.PartInfo.hpn_rev == part.hpn_rev)):
-                        #part_info.gps2Time()
+                            (func.upper(PC.PartInfo.hpn) == part.hpn.upper()) &
+                            (func.upper(PC.PartInfo.hpn_rev) == part.hpn_rev.upper())):
+                        # part_info.gps2Time()
                         part_dossier[pr_key]['part_info'] = part_info
                     connections = self.get_connection_dossier(
                         hpn=part.hpn, rev=part.hpn_rev, port='all',
@@ -136,8 +137,8 @@ class Handling:
                     part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
                         self.find_ports(part_dossier[pr_key]['connections'])
                 else:
-                    print("cm_handling[136]:  Warning: should only be one part/rev.",
-                          part.hpn, part.hpn_rev)
+                    msg = "Should only be one part/rev for {}:{}.".format(part.hpn, part.hpn_rev)
+                    warnings.warn(msg)
         return part_dossier
 
     def find_ports(self, connection_dossier):
@@ -243,8 +244,8 @@ class Handling:
         """
         fnd = []
         for conn in self.session.query(PC.Connections).filter(
-                (PC.Connections.upstream_part == c.upstream_part) &
-                (PC.Connections.downstream_part == c.downstream_part)):
+                (func.upper(PC.Connections.upstream_part) == c.upstream_part.upper()) &
+                (func.upper(PC.Connections.downstream_part) == c.downstream_part.upper())):
             conn.gps2Time()
             include_this_one = True
             if isinstance(c.up_part_rev, str) and \
@@ -292,7 +293,7 @@ class Handling:
                               'connected-to': (hpn, rev, port), 'connections': {}}
 
         rev_part = {}
-        for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.like(hpn)):
+        for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(hpn)):
             rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, session=self.session)
         for xhpn in rev_part.keys():
             if rev_part[xhpn] is None:
@@ -303,8 +304,8 @@ class Handling:
                 this_rev = xrev.rev
                 # Find where the part is in the upward position, so identify its downward connection
                 for conn in self.session.query(PC.Connections).filter(
-                        (PC.Connections.upstream_part == xhpn) &
-                        (PC.Connections.up_part_rev == this_rev)):
+                        (func.upper(PC.Connections.upstream_part) == xhpn.upper()) &
+                        (func.upper(PC.Connections.up_part_rev) == this_rev.upper())):
                     if (port.lower() == 'all' or
                             conn.upstream_output_port.lower() == port.lower()):
                         conn.gps2Time()
@@ -316,8 +317,8 @@ class Handling:
                         down_parts.append(ckey)
                 # Find where the part is in the downward position, so identify its upward connection
                 for conn in self.session.query(PC.Connections).filter(
-                        (PC.Connections.downstream_part == xhpn) &
-                        (PC.Connections.down_part_rev == this_rev)):
+                        (func.upper(PC.Connections.downstream_part) == xhpn.upper()) &
+                        (func.upper(PC.Connections.down_part_rev) == this_rev.upper())):
                     if (port.lower() == 'all' or
                             conn.downstream_input_port.lower() == port.lower()):
                         conn.gps2Time()
