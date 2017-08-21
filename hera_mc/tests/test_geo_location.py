@@ -93,8 +93,8 @@ class TestGeo(TestHERAMC):
         now_list = self.h.get_all_fully_connected_at_date(at_date='now')
         ever_list = self.h.get_all_fully_connected_ever()
 
-        self.assertEqual(len(now_list), 12)
-        self.assertEqual(len(ever_list), 163)
+        self.assertEqual(len(now_list), 1)
+        self.assertEqual(len(ever_list), 2)
 
         ever_ends = [loc['stop_date'] for loc in ever_list]
         # The '==' notation below is required (rather than the pep8 suggestion of 'is') for the test to pass.
@@ -121,21 +121,21 @@ class TestGeo(TestHERAMC):
         corr_dict = self.h.get_cminfo_correlator(cm_csv_path=mc.test_data_path)
 
         ant_names = corr_dict['antenna_names']
-        self.assertEqual(len(ant_names), 12)
+        self.assertEqual(len(ant_names), 1)
 
         corr_inputs = corr_dict['correlator_inputs']
 
-        index = np.where(np.array(ant_names) == 'HH27')[0]
+        index = np.where(np.array(ant_names) == 'HH0')[0]
         self.assertEqual(len(index), 1)
         index = index[0]
 
-        self.assertEqual(corr_inputs[index], ('DF7B4', 'DF7B3'))
+        self.assertEqual(corr_inputs[index], ('DF8B2', 'DF8B1'))
 
         self.assertEqual([int(name.split('HH')[1]) for name in ant_names],
                          corr_dict['antenna_numbers'])
 
         self.assertEqual(set(corr_dict['antenna_numbers']),
-                         set([24, 25, 26, 27, 52, 53, 54, 55, 84, 85, 86, 87]))
+                         set([0]))
 
 
 if __name__ == '__main__':
