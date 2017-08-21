@@ -9,10 +9,47 @@ Used in scripts cm_init.py, cm_package.py
 """
 from __future__ import absolute_import, division, print_function
 
-import pandas as pd
-from hera_mc import mc, geo_location, part_connect, cm_table_info, cm_utils
 import os.path
-import csv, time
+from math import floor
+from astropy.time import Time
+import pandas as pd
+import csv
+from sqlalchemy import Column, BigInteger, String
+from hera_mc import MCDeclarativeBase, mc, geo_location, part_connect, cm_table_info, cm_utils
+
+
+class CMVersion(MCDeclarativeBase):
+    """
+    Definition of cm_version table. This table simply stores the git hash of the
+        repository to which the cm tables were packaged from the onsite database.
+
+    For offsite & test databases, this table is populated by the cm initialization
+        code using the git hash of the repository used for the initialization.
+
+    update_time: gps time of the cm update (long integer) Primary key.
+    git_hash: cm repo git hash (String)
+    """
+    __tablename__ = 'cm_version'
+    update_time = Column(BigInteger, primary_key=True, autoincrement=False)
+    git_hash = Column(String(64), nullable=False)
+
+    @classmethod
+    def create(cls, time, git_hash):
+        """
+        Create a new cm version object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of update
+        git_hash: String
+            git hash of cm repository
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        time = floor(time.gps)
+
+        return cls(update_time=time, git_hash=git_hash)
 
 
 def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
@@ -171,6 +208,8 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
     if cm_csv_path is None:
         cm_csv_path = mc.get_cm_csv_path(None)
 
+    cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path)
+
     if tables != 'all':
         print("You may encounter foreign_key issues by not using 'all' tables.")
         print("If it doesn't complain though you should be ok.")
@@ -201,6 +240,9 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
         print(use_table)
         print(tables_to_read)
         return False
+
+    # add this cm git hash to cm_version table
+    session.add(CMVersion.create(Time.now(), cm_git_hash))
 
     # Delete tables in this order
     for table, data_filename, keyed_table in use_table:

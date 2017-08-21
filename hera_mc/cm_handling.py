@@ -14,7 +14,7 @@ import sys
 import copy
 import warnings
 from astropy.time import Time
-from sqlalchemy import func
+from sqlalchemy import func, desc
 
 from hera_mc import mc, correlator_levels, cm_utils
 from hera_mc import part_connect as PC
@@ -40,6 +40,43 @@ class Handling:
 
     def close(self):
         self.session.close()
+
+    def add_cm_version(self, time, git_hash):
+        """
+        Add a new cm_version row to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            time of this cm_update
+        git_hash: string
+            git hash of the cm repo
+        """
+        from .cm_transfer import CMVersion
+
+        self.session.add(CMVersion.create(time, git_hash))
+
+    def get_cm_version(self, at_date='now'):
+        """
+        Get the cm_version git_hash active at a particular time (default: now)
+
+        Parameters:
+        ------------
+        time: time to get active cm_version for (passed to cm_utils._get_astropytime).
+            Default is 'now'
+
+        Returns:
+        --------
+        git hash (string) of the cm_version active at
+        """
+        from .cm_transfer import CMVersion
+
+        # make sure at_date is an astropy time object
+        at_date = cm_utils._get_astropytime(at_date)
+
+        # get last row before at_date
+        self.session.query(CMVersion).filter(CMVersion.update_time < at_date.gps).order_by(
+            desc(CMVersion.update_time)).limit(1).all()
 
     def is_in_connections(self, hpn, rev='ACTIVE', return_active=False):
         """
