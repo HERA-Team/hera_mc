@@ -16,6 +16,7 @@ from hera_mc import part_connect as PC
 import copy
 import warnings
 from argparse import Namespace
+from sqlalchemy import func
 
 
 class Hookup:
@@ -142,8 +143,8 @@ class Hookup:
         options = []
         if direction.lower() == 'up':      # Going upstream
             for conn in self.session.query(PC.Connections).filter(
-                    (PC.Connections.downstream_part == part) &
-                    (PC.Connections.down_part_rev == rev)):
+                    (func.upper(PC.Connections.downstream_part) == part.upper()) &
+                    (func.upper(PC.Connections.down_part_rev) == rev.upper())):
                 conn.gps2Time()
                 if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
                     nppart = conn.upstream_part
@@ -151,8 +152,8 @@ class Hookup:
                     options.append(copy.copy(conn))
         elif direction.lower() == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
-                    (PC.Connections.upstream_part == part) &
-                    (PC.Connections.up_part_rev == rev)):
+                    (func.upper(PC.Connections.upstream_part) == part.upper()) &
+                    (func.upper(PC.Connections.up_part_rev) == rev.upper())):
                 conn.gps2Time()
                 if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
                     nppart = conn.downstream_part
