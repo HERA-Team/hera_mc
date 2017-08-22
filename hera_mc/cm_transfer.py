@@ -48,7 +48,7 @@ class CMVersion(MCDeclarativeBase):
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
-        time = floor(time.gps)
+        time = int(floor(time.gps))
 
         return cls(update_time=time, git_hash=git_hash)
 
@@ -132,6 +132,7 @@ def pack_n_go(session, cm_csv_path):
 
     # add this cm git hash to cm_version table
     session.add(CMVersion.create(Time.now(), cm_git_hash))
+    session.commit()
 
 
 def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False):
