@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """This is meant to hold scripts to check various parts/revisions
