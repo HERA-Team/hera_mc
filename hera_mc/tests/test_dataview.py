@@ -12,6 +12,7 @@ from __future__ import absolute_import, division, print_function
 import unittest
 
 from astropy.time import Time, TimeDelta
+import os
 import os.path
 
 from hera_mc import mc, cm_utils, cm_dataview
@@ -41,6 +42,9 @@ class TestParts(TestHERAMC):
         parts, fc_map = cm_dataview.read_files(filename)
         self.assertTrue(parts[0] == 'HH0')
 
+    # def tearDown(self):
+    #     os.remove('testcorr.txt')
+    #     os.remove('testflag.txt')
 
 if __name__ == '__main__':
     unittest.main()
