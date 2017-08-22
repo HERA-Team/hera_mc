@@ -66,6 +66,7 @@ def plot_data(parts, fc_map, separate=True):
             y = y * (2.0 - i * dy)
         plt.plot(fc_map[p][0], y, 'o', label=p)
     plt.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
+    plt.grid()
 
 
 if __name__ == '__main__':
@@ -110,12 +111,13 @@ if __name__ == '__main__':
         fc_map = {}
         for p in args.parts:
             print("Finding ", p)
-            fc_map[p] = [[], []]
+            fc_map[p] = [[], [], []]
             at_date = cm_utils._get_astropytime(args.date, args.time)
             while at_date < stop_date:
                 fc = cm_revisions.get_full_revision(p, at_date, args.full_req, session)
                 fc_map[p][0].append(at_date.datetime)
                 fc_map[p][1].append(len(fc))
+                fc_map[p][2].append(fc)
                 at_date += TimeDelta(args.dt * 24 * 3600, format='sec')
         if args.file is not None:
             write_file(args.file, args.parts, fc_map)
