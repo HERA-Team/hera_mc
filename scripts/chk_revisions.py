@@ -40,7 +40,7 @@ if __name__ == '__main__':
     found_some = False
     for p in args.part:
         overlap = cm_revisions.check_part_for_overlapping_revisions(p, session)
-        if len(overlap) > 0:
+        if len(overlap):
             found_some = True
     if found_some:
         print("Overlapping part revisions were found.")
