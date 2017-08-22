@@ -72,9 +72,9 @@ def read_files(filenames):
     return parts, fc_map
 
 
-def read_db(parts, start_date, stop_date, dt, full_req, local_session):
+def read_db(parts, start_date, stop_date, dt, full_req, lsession):
     global session
-    session = local_session
+    session = lsession
     fc_map = {}
     for p in parts:
         print("Finding ", p)
