@@ -27,6 +27,7 @@ class TestParts(TestHERAMC):
         self.test_part = 'test_part'
         self.test_rev = 'Q'
         self.start_time = Time('2017-07-01 01:00:00', scale='utc')
+        self.now = cm_utils._get_astropytime('now')
         self.h = cm_handling.Handling(self.test_session)
 
         # Add a test part
@@ -84,22 +85,25 @@ class TestParts(TestHERAMC):
             self.assertFalse()
 
     def test_get_revisions_of_type(self):
-        at_date = self.start_time
-        full_req = ['vapor']
-        rev_types = ['LAST', 'ACTIVE', 'ALL', self.test_rev]  # , 'FULL']
+        at_date = self.now
+        fr = ['f_engine']
+        rev_types = ['LAST', 'ACTIVE', 'ALL', 'FULL', 'A']
         for rq in rev_types:
-            revision = cm_revisions.get_revisions_of_type(self.test_part, rq, at_date, full_req, self.test_session)
-            self.assertTrue(revision[0].rev == self.test_rev)
+            revision = cm_revisions.get_revisions_of_type('HH0', rq, at_date, fr, self.test_session)
+            self.assertTrue(revision[0].rev == 'A')
 
     def test_check_overlapping(self):
         c = cm_revisions.check_part_for_overlapping_revisions(self.test_part, self.test_session)
         self.assertTrue(len(c) == 0)
 
     def test_check_rev(self):
-        full_req = ['vapor']
-        rev_types = ['LAST', 'ACTIVE']  # , 'FULL']
+        fr = ['f_engine']
+        tcr = {'LAST': [self.test_part, self.test_rev],
+               'ACTIVE': [self.test_part, self.test_rev],
+               'FULL': ['HH0', 'A']}
+        rev_types = ['LAST', 'ACTIVE', 'FULL']
         for r in rev_types:
-            c = cm_revisions.check_rev(self.test_part, self.test_rev, r, self.start_time, full_req, self.test_session)
+            c = cm_revisions.check_rev(tcr[r][0], tcr[r][1], r, self.now, fr, self.test_session)
             self.assertTrue(c)
 
     def test_datetime(self):
