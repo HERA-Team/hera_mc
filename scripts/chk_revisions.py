@@ -3,9 +3,12 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""This is meant to hold scripts to check various parts/revisions
-
 """
+This checks either a supplied part list or all of the parts
+to find whether it has any overlapping revisions in time.  It
+only prints a warning and the info.
+"""
+
 from __future__ import absolute_import, division, print_function
 from hera_mc import mc, cm_revisions, cm_handling, cm_utils
 import sys
