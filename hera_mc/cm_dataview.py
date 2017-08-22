@@ -8,26 +8,40 @@ Currently this is only to look at the full connections of parts looped over time
 either via db calls or pre-written files.
 """
 
-from __future__ import absolute_import, division, print_function
-from hera_mc import mc, geo_handling, cm_utils, cm_revisions, part_connect
+from __future__ import absolute_import, print_function
+from hera_mc import mc, cm_utils, cm_revisions, cm_hookup
 from astropy.time import Time, TimeDelta
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-def write_file(filename, parts_list, fc_map):
+def write_file(filename, parts_list, fc_map, output='flag'):
+    from hera_mc import cm_hookup
+    hu = cm_hookup.Hookup(session)
     p0 = parts_list[0]
-    ndate = len(fc_map[p0][0])
+    ndate = len(fc_map[p0]['datetime'])
     print("Writing {}".format(filename))
     fp = open(filename, 'w')
-    fp.write('Date            \t')
+    fp.write('{:18}'.format('Date'))
     for p in parts_list:
-        fp.write('{}\t'.format(p))
+        if output == 'corr':
+            fp.write('{:^19}'.format(p))
+        else:
+            fp.write('{:^8}'.format(p))
     fp.write('\n')
     for i in range(ndate):
-        fp.write('{:%Y-%m-%d %H:%M}\t'.format(fc_map[p0][0][i]))
+        fp.write('{:%Y-%m-%d %H:%M}  '.format(fc_map[p0]['datetime'][i]))
         for p in parts_list:
-            fp.write('{:d}\t'.format(fc_map[p][1][i]))
+            if output == 'flag':
+                fp.write('{:^8d}'.format(fc_map[p]['flag'][i]))
+            elif output == 'corr':
+                if fc_map[p]['fc'][i]:
+                    this_hu = fc_map[p]['fc'][i][0].hookup
+                    c = hu.get_correlator_input_from_hookup(this_hu)
+                    s = 'e:{} n:{}'.format(c['e'], c['n'])
+                else:
+                    s = '---'
+                fp.write('{:^19}'.format(s))
         fp.write('\n')
     fp.close()
 
@@ -58,7 +72,9 @@ def read_files(filenames):
     return parts, fc_map
 
 
-def read_db(parts, start_date, stop_date, dt, full_req, session):
+def read_db(parts, start_date, stop_date, dt, full_req, local_session):
+    global session
+    session = local_session
     fc_map = {}
     for p in parts:
         print("Finding ", p)
@@ -82,3 +98,4 @@ def plot_data(parts, fc_map, separate=True):
         plt.plot(fc_map[p]['datetime'], y, 'o', label=p)
     plt.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
     plt.grid()
+    plt.show()

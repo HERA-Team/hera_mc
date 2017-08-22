@@ -33,7 +33,7 @@ class Handling:
                  on the default database is created and used.
         """
         if session is None:
-            db = mc.connect_to_mc_db()
+            db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
         else:
             self.session = session
@@ -170,7 +170,7 @@ class Handling:
                     if part.hptype == 'station':
                         from hera_mc import geo_handling
                         part_dossier[pr_key]['geo'] = geo_handling.get_location(
-                            [part.hpn], at_date, show_location=False)
+                            [part.hpn], at_date, show_location=False, session=self.session)
                     part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
                         self.find_ports(part_dossier[pr_key]['connections'])
                 else:

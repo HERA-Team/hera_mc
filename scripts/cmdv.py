@@ -17,6 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--parts', help="Part list (comma-separated,no spaces) [HH0]", default='HH0')
     parser.add_argument('--dt', help="Time resolution (in days) of view.  [1]", default=1.0)
     parser.add_argument('--file', help="Write data to file --file [None].", dest='file', default=None)
+    parser.add_argument('--output', help="Type of data output, either flag or corr", choices=['flag', 'corr'], default='flag')
     parser.add_argument('--full-req', help="Parts to include in for full connection.", dest='full_req', default='default')
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--date2', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]", default='now')
@@ -31,7 +32,10 @@ if __name__ == '__main__':
         Available actions are (only need first two letters) [fcview]:
             fc-view:  fully-connected view of part --part(-p) between date and date2.
                      both default to 'now', so at least date must be changed.
-            file-view:  plot file
+                     if --file is set, it will write a file with the data, which is either:
+                         --output flag [default] or
+                         --output corr
+            file-view:  plot file(s)
             info:  Print this information and exit.
         """
         )
@@ -53,12 +57,10 @@ if __name__ == '__main__':
         stop_date = cm_utils._get_astropytime(args.date2, args.time2)
         fc_map = cm_dataview.read_db(args.parts, start_date, stop_date, args.dt, args.full_req, session)
         if args.file is not None:
-            cm_dataview.write_file(args.file, args.parts, fc_map)
+            cm_dataview.write_file(args.file, args.parts, fc_map, output=args.output)
         cm_dataview.plot_data(args.parts, fc_map)
-        plt.show()
 
     elif args.action == 'fi':
         args.file = cm_utils.listify(args.file)
         parts, fc_map = cm_dataview.read_files(args.file)
-        cm.dataview.plot_data(parts, fc_map)
-        plt.show()
+        cm_dataview.plot_data(parts, fc_map)
