@@ -46,25 +46,40 @@ def read_files(filenames):
         del(part_fn[0])
         for p in part_fn:
             if p not in fc_map.keys():
-                fc_map[p] = [[], []]
+                fc_map[p] = {'datetime': [], 'flag': [], 'fc': []}
                 parts.append(p)
         for line in fp:
             data = line.split()
             date = cm_utils._get_astropytime(data[0], data[1])
             del(data[0:2])
             for i in range(len(data)):
-                fc_map[part_fn[i]][0].append(date.datetime)
-                fc_map[part_fn[i]][1].append(int(data[i]))
+                fc_map[part_fn[i]]['datetime'].append(date.datetime)
+                fc_map[part_fn[i]]['flag'].append(int(data[i]))
     return parts, fc_map
+
+
+def read_db(parts, start_date, stop_date, dt, full_req, session):
+    fc_map = {}
+    for p in parts:
+        print("Finding ", p)
+        fc_map[p] = {'datetime': [], 'flag': [], 'fc': []}
+        at_date = start_date
+        while at_date < stop_date:
+            fc = cm_revisions.get_full_revision(p, at_date, full_req, session)
+            fc_map[p]['datetime'].append(at_date.datetime)
+            fc_map[p]['flag'].append(len(fc))
+            fc_map[p]['fc'].append(fc)
+            at_date += TimeDelta(dt * 24 * 3600, format='sec')
+    return fc_map
 
 
 def plot_data(parts, fc_map, separate=True):
     dy = 1.0 / len(parts)
     for i, p in enumerate(parts):
-        y = np.array(fc_map[p][1])
+        y = np.array(fc_map[p]['flag'])
         if separate:
             y = y * (2.0 - i * dy)
-        plt.plot(fc_map[p][0], y, 'o', label=p)
+        plt.plot(fc_map[p]['datetime'], y, 'o', label=p)
     plt.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
     plt.grid()
 
@@ -107,18 +122,9 @@ if __name__ == '__main__':
         db = mc.connect_to_mc_db(args)
         session = db.sessionmaker()
         args.parts = cm_utils.listify(args.parts)
+        start_date = cm_utils._get_astropytime(args.date, args.time)
         stop_date = cm_utils._get_astropytime(args.date2, args.time2)
-        fc_map = {}
-        for p in args.parts:
-            print("Finding ", p)
-            fc_map[p] = [[], [], []]
-            at_date = cm_utils._get_astropytime(args.date, args.time)
-            while at_date < stop_date:
-                fc = cm_revisions.get_full_revision(p, at_date, args.full_req, session)
-                fc_map[p][0].append(at_date.datetime)
-                fc_map[p][1].append(len(fc))
-                fc_map[p][2].append(fc)
-                at_date += TimeDelta(args.dt * 24 * 3600, format='sec')
+        fc_map = read_db(args.parts, start_date, stop_date, args.dt, args.full_req, session)
         if args.file is not None:
             write_file(args.file, args.parts, fc_map)
         plot_data(args.parts, fc_map)
