@@ -37,14 +37,16 @@ class TestParts(TestHERAMC):
             cm_dataview.write_file(filename[i], parts_list, fc_map, output)
             self.assertTrue(os.path.isfile(filename[i]))
 
+        # cleanup files
+        for file in filename:
+            if os.path.exists(file):
+                os.remove(file)
+
     def test_read_files(self):
         filename = [os.path.join(mc.test_data_path, 'HH0_15_flag.txt')]
         parts, fc_map = cm_dataview.read_files(filename)
         self.assertTrue(parts[0] == 'HH0')
 
-    # def tearDown(self):
-    #     os.remove('testcorr.txt')
-    #     os.remove('testflag.txt')
 
 if __name__ == '__main__':
     unittest.main()
