@@ -28,11 +28,11 @@ class TestParts(TestHERAMC):
         self.now = cm_utils._get_astropytime('now')
 
     def test_dbread_write_file(self):
-        output_options = ['flag', 'corr']
+        output_options = cm_utils.listify('flag,corr')
         filename = ['testflag.txt', 'testcorr.txt']
         parts_list = ['HH0']
         fc_map = cm_dataview.read_db(parts_list, self.start_time, self.now, dt=1.0,
-                                     full_req=['station', 'f_engine'], lsession=self.test_session)
+                                     full_req=['station', 'f_engine'], session=self.test_session)
         for i, output in enumerate(output_options):
             cm_dataview.write_file(filename[i], parts_list, fc_map, output)
             self.assertTrue(os.path.isfile(filename[i]))
@@ -43,7 +43,7 @@ class TestParts(TestHERAMC):
                 os.remove(file)
 
     def test_read_files(self):
-        filename = [os.path.join(mc.test_data_path, 'HH0_15_flag.txt')]
+        filename = [os.path.join(mc.test_data_path, 'HH0_15_flag.txt'), 'not_a_real_file']
         parts, fc_map = cm_dataview.read_files(filename)
         self.assertTrue(parts[0] == 'HH0')
 

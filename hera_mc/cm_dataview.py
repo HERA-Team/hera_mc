@@ -9,13 +9,13 @@ either via db calls or pre-written files.
 """
 
 from __future__ import absolute_import, print_function
-from hera_mc import mc, cm_utils, cm_revisions, cm_hookup
+from hera_mc import mc, cm_utils, cm_revisions
 from astropy.time import Time, TimeDelta
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-def write_file(filename, parts_list, fc_map, output='flag'):
+def write_file(filename, parts_list, fc_map, output='flag', session=None):
     from hera_mc import cm_hookup
     hu = cm_hookup.Hookup(session)
     p0 = parts_list[0]
@@ -72,9 +72,7 @@ def read_files(filenames):
     return parts, fc_map
 
 
-def read_db(parts, start_date, stop_date, dt, full_req, lsession):
-    global session
-    session = lsession
+def read_db(parts, start_date, stop_date, dt, full_req, session):
     fc_map = {}
     for p in parts:
         print("Finding ", p)

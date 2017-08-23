@@ -57,7 +57,7 @@ if __name__ == '__main__':
         stop_date = cm_utils._get_astropytime(args.date2, args.time2)
         fc_map = cm_dataview.read_db(args.parts, start_date, stop_date, args.dt, args.full_req, session)
         if args.file is not None:
-            cm_dataview.write_file(args.file, args.parts, fc_map, output=args.output)
+            cm_dataview.write_file(args.file, args.parts, fc_map, output=args.output, session=session)
         cm_dataview.plot_data(args.parts, fc_map)
 
     elif args.action == 'fi':
