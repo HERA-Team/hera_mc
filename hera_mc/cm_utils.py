@@ -80,6 +80,14 @@ def _split_connection_key(key):
     return ks[0], ks[1], ks[2], ks[3]
 
 
+def listify(X):
+    if X is None:
+        return None
+    if isinstance(X, str) and ',' in X:
+        return X.split(',')
+    return [X]
+
+
 def add_verbosity_args(parser):
     """Add a standardized "--verbosity" argument to an ArgParser object. Supported
     values are "l", "m", and "h", which presumably stand for "low", "medium",
