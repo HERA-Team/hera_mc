@@ -20,7 +20,7 @@ filename = args.file
 db = mc.connect_to_mc_db(args)
 session = db.sessionmaker()
 
-h = cm_handling.Handling()
+h = cm_handling.Handling(session)
 cm_version = h.get_cm_version()
 
 h = geo_handling.Handling(session)
