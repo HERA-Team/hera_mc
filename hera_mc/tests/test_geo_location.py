@@ -141,6 +141,7 @@ class TestGeo(TestHERAMC):
         self.assertEqual(set(corr_dict['antenna_numbers']),
                          set([0]))
 
+        self.assertTrue(corr_dict['cm_version'] is not None)
 
 if __name__ == '__main__':
     unittest.main()
