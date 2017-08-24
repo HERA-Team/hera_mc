@@ -125,9 +125,13 @@ class TestGeo(TestHERAMC):
 
         corr_inputs = corr_dict['correlator_inputs']
 
+        stn_types = corr_dict['station_types']
+
         index = np.where(np.array(ant_names) == 'HH0')[0]
         self.assertEqual(len(index), 1)
         index = index[0]
+
+        self.assertEqual(stn_types[index], 'herahex')
 
         self.assertEqual(corr_inputs[index], ('DF8B2', 'DF8B1'))
 
