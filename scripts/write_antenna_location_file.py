@@ -7,7 +7,7 @@
 Script to write out antenna locations for use in cal files.
 """
 import pandas as pd
-from hera_mc import mc, geo_handling, cm_utils
+from hera_mc import mc, geo_handling, cm_handling
 import datetime
 
 parser = mc.get_mc_argument_parser()
@@ -20,8 +20,8 @@ filename = args.file
 db = mc.connect_to_mc_db(args)
 session = db.sessionmaker()
 
-cm_version = cm_utils.get_cm_version(mc_config_path=args.mc_config_path,
-                                     cm_csv_path=args.cm_csv_path)
+cm_version = cm_handling.get_cm_version(mc_config_path=args.mc_config_path,
+                                        cm_csv_path=args.cm_csv_path)
 
 h = geo_handling.Handling(session)
 locations = h.get_all_fully_connected_ever(station_types_to_check=['HH'])
