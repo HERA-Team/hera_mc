@@ -43,9 +43,9 @@ This can be useful to do on your local machine if your database is in a weird st
 # Using alembic for the first time with an existing (non-empty) database
 If you already have a database filled out with tables but have never run alembic before, you have two choices to start using alembic:
 
-Option 1) Drop all the tables (if you don't care about the data in the database this is easiest, see instructions above) and then run `alembic upgrade head`
+Option 1) Drop all the tables (if you don't care about the data in the database this is easiest, see instructions above) and then run `alembic upgrade head`.
 
-Option 2) identify which alembic version your database schema corresponds to and add a new table to your database called `alembic_version` with one column called 'version_num'. Fill this table with one row with the alembic version number that corresponds to your schema version. This tells alembic where to start trying to upgrade from.
+Option 2) identify which alembic version your database schema corresponds to and add a new table to your database called `alembic_version` with one column called 'version_num'. Fill this table with one row with the alembic version number that corresponds to your schema version to tell alembic where to start trying to upgrade from. Then run `alembic upgrade head`.
 
 # Running psql on qmaster
 
