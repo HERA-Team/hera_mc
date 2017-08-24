@@ -565,6 +565,8 @@ class Handling:
             'antenna_number': Antenna numbers (list of integers)
             'antenna_names': Station names (we use antenna_names because that's
                 what they're called in data files) (list of strings)
+            'station_type': Station type ('herahex', 'paperimaging', etc.)
+                (list of strings)
             'correlator_inputs': Correlator input strings for x/y (e/n)
                 polarizations (list of 2 element tuples of strings)
             'antenna_utm_datum_vals': UTM Datum values (list of strings)
@@ -587,6 +589,7 @@ class Handling:
 
         ant_nums = []
         stn_names = []
+        stn_types = []
         corr_inputs = []
         tiles = []
         datums = []
@@ -598,6 +601,7 @@ class Handling:
         for stn in stations_conn:
             ant_nums.append(stn['antenna_number'])
             stn_names.append(stn['station_name'])
+            stn_types.append(stn['station_type'])
             corr_inputs.append((stn['correlator_input_x'], stn['correlator_input_y']))
             tiles.append(stn['tile'])
             datums.append(stn['datum'])
@@ -614,6 +618,7 @@ class Handling:
                 # This is actually station names, not antenna names,
                 # but antenna_names is what it's called in pyuvdata
                 'antenna_names': stn_names,
+                'station_types': stn_types,
                 # this is a tuple giving the f-engine names for x, y
                 'correlator_inputs': corr_inputs,
                 'antenna_utm_datum_vals': datums,
