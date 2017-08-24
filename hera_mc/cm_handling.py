@@ -75,8 +75,10 @@ class Handling:
         at_date = cm_utils._get_astropytime(at_date)
 
         # get last row before at_date
-        self.session.query(CMVersion).filter(CMVersion.update_time < at_date.gps).order_by(
+        result = self.session.query(CMVersion).filter(CMVersion.update_time < at_date.gps).order_by(
             desc(CMVersion.update_time)).limit(1).all()
+
+        return result[0].git_hash
 
     def is_in_connections(self, hpn, rev='ACTIVE', return_active=False):
         """
