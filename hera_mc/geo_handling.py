@@ -626,7 +626,10 @@ class Handling:
                 'antenna_utm_eastings': eastings,
                 'antenna_utm_northings': northings,
                 'antenna_positions': rotecef_positions,
-                'cm_version': cm_version}
+                'cm_version': cm_version,
+                'cofa_lat': cofa_loc.lat,
+                'cofa_lon': cofa_loc.lon,
+                'cofa_alt': cofa_loc.elevation}
 
     def get_ants_installed_since(self, query_date, station_types_to_check='all'):
         """
