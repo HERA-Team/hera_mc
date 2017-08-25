@@ -151,6 +151,18 @@ class TestGeo(TestHERAMC):
                                               stderr=subprocess.STDOUT).strip()
         self.assertEqual(corr_dict['cm_version'], mc_git_hash)
 
+        expected_keys = ['antenna_numbers', 'antenna_names', 'station_types',
+                         'correlator_inputs', 'antenna_utm_datum_vals',
+                         'antenna_utm_tiles', 'antenna_utm_eastings',
+                         'antenna_utm_northings', 'antenna_positions',
+                         'cm_version', 'cofa_lat', 'cofa_lon', 'cofa_alt']
+        self.assertEqual(set(corr_dict.keys()), set(expected_keys))
+
+        cofa = self.h.cofa()[0]
+        self.assertEqual(cofa.lat, corr_dict['cofa_lat'])
+        self.assertEqual(cofa.lon, corr_dict['cofa_lon'])
+        self.assertEqual(cofa.elevation, corr_dict['cofa_alt'])
+
 
 if __name__ == '__main__':
     unittest.main()
