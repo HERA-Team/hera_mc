@@ -87,7 +87,9 @@ def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
     else:
         tables_to_write = tables.split(',')
 
-    print("Writing packaged files to current directory.  Copy to hera_mc/data to distribute.")
+    print("Writing packaged files to current directory.")
+    print("--> If packing from qmaster, be sure to use 'cm_pack.py --go' to copy, commit and log the change.")
+    print("    Note:  this works via the hera_cm_db_updates repo.")
     for table in tables_to_write:
         data_filename = data_prefix + table + '.csv'
         table_data = pd.read_sql_table(table, session.get_bind())
