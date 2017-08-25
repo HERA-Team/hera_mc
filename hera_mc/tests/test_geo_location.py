@@ -10,6 +10,8 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
+import os.path
+import subprocess
 import numpy as np
 from hera_mc import geo_location, geo_handling, mc, cm_transfer
 from hera_mc.tests import TestHERAMC
@@ -140,6 +142,14 @@ class TestGeo(TestHERAMC):
 
         self.assertEqual(set(corr_dict['antenna_numbers']),
                          set([0]))
+
+        self.assertTrue(corr_dict['cm_version'] is not None)
+
+        # cm_version should be the same as the git hash of m&c for the test data
+        mc_dir = os.path.dirname(os.path.realpath(__file__))
+        mc_git_hash = subprocess.check_output(['git', '-C', mc_dir, 'rev-parse', 'HEAD'],
+                                              stderr=subprocess.STDOUT).strip()
+        self.assertEqual(corr_dict['cm_version'], mc_git_hash)
 
 
 if __name__ == '__main__':
