@@ -657,8 +657,9 @@ class Handling:
             label_to_show = state_args['show_label'].lower()
         plt.figure(state_args['fig_num'])
         for station in stations_to_plot:
+            ustn = station.upper()
             for a in self.session.query(geo_location.GeoLocation).filter(
-                    geo_location.GeoLocation.station_name == station):
+                    func.upper(geo_location.GeoLocation.station_name) == ustn):
                 pt = {'easting': a.easting, 'northing': a.northing,
                       'elevation': a.elevation}
                 __X = pt[self.coord[state_args['xgraph']]]
@@ -728,29 +729,3 @@ class Handling:
             plt.axis('equal')
         plt.plot(xaxis=state_args['xgraph'], yaxis=state_args['ygraph'])
         return state_args['fig_num']
-
-    def overplot(self, located_stations, at_date, state_args):
-        """Overplot station on an existing plot.
-
-           Parameters:
-           ------------
-           located_stations:  geo class of station to plot
-           state_args:  dictionary with state arguments (fig_num, marker_color,
-                        marker_shape, marker_size, show_label)
-        """
-        import matplotlib.pyplot as plt
-
-        for located in located_stations:
-            over_marker = 'g*'
-            mkr_lbl = 'ca'
-            opt = {'easting': located.easting, 'northing': located.northing,
-                   'elevation': located.elevation}
-            plt.figure(state_args['fig_num'])
-            __X = opt[self.coord[state_args['xgraph']]]
-            __Y = opt[self.coord[state_args['ygraph']]]
-            overplot_station = plt.plot(__X, __Y, over_marker,
-                                        markersize=state_args['marker_size'])
-            legendEntries = [overplot_station]
-            legendText = [located.station_name]
-            plt.legend((overplot_station), (legendText), numpoints=1,
-                       loc='upper right')

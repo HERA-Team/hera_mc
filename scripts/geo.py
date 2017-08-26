@@ -111,16 +111,20 @@ if __name__ == '__main__':
             located = h.get_location(args.loc, at_date)
             h.print_loc_info(located, args.verbosity)
             if args.graph and len(located) > 0:
+                state_args['marker_color'] = 'g'
+                state_args['marker_shape'] = '*'
                 state_args['marker_size'] = 14
-                h.overplot(located, at_date, state_args)
+                show_fig = h.plot_stations(args.loc, at_date, state_args)
 
     elif args.action == 'cof':
         cofa = h.cofa(show_cofa=True)
         h.print_loc_info(cofa, args.verbosity)
         if args.graph:
             show_fig = h.plot_station_types(at_date, state_args)
+            state_args['marker_color'] = 'g'
+            state_args['marker_shape'] = '*'
             state_args['marker_size'] = 14
-            h.overplot(cofa, at_date, state_args)
+            show_fig = h.plot_stations(cofa, at_date, state_args)
 
     elif args.action == 'cor':
         from hera_mc import cm_hookup
