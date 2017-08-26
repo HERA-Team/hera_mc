@@ -146,10 +146,11 @@ if __name__ == '__main__':
             s = s.strip().strip(',') + '\n'
             print(s)
             if args.graph:
+                show_fig = h.plot_station_types('now', state_args)
                 state_args['marker_color'] = 'b'
                 state_args['marker_shape'] = '*'
                 state_args['marker_size'] = 14
-                show_fig = h.plot_stations(new_antennas, at_date, state_args)
+                show_fig = h.plot_stations(new_antennas, 'now', state_args)
 
     elif args.update:
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a \
