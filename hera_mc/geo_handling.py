@@ -106,7 +106,7 @@ class Handling:
         """
         self.session.close()
 
-    def cofa(self, show_cofa=False):
+    def cofa(self):
         """
         Get the current center of array.
 
@@ -122,8 +122,6 @@ class Handling:
         if len(located) > 1:
             s = "{} has multiple cofa values.".format(str(current_cofa))
             warnings.warn(s)
-        if show_cofa:
-            self.print_loc_info(located_cofa)
 
         return located
 
