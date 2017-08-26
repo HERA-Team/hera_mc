@@ -9,7 +9,7 @@ Methods are in cm_dataview.
 
 from __future__ import absolute_import, division, print_function
 from hera_mc import mc, cm_dataview, cm_utils, part_connect
-
+import sys
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
@@ -48,19 +48,21 @@ if __name__ == '__main__':
     else:
         args.full_req = cm_utils.listify(args.full_req)
 
+    # start session
+    db = mc.connect_to_mc_db(args)
+    session = db.sessionmaker()
+    dv = cm_dataview.Dataview(session)
+
     if args.action == 'fc':
-        # start session
-        db = mc.connect_to_mc_db(args)
-        session = db.sessionmaker()
         args.parts = cm_utils.listify(args.parts)
         start_date = cm_utils._get_astropytime(args.date, args.time)
         stop_date = cm_utils._get_astropytime(args.date2, args.time2)
-        fc_map = cm_dataview.read_db(args.parts, start_date, stop_date, args.dt, args.full_req, session)
+        fc_map = dv.read_db(args.parts, start_date, stop_date, args.dt, args.full_req)
         if args.file is not None:
-            cm_dataview.write_file(args.file, args.parts, fc_map, output=args.output, session=session)
-        cm_dataview.plot_data(args.parts, fc_map)
+            dv.write_fc_map_file(args.file, output=args.output)
+        dv.plot_fc_map()
 
     elif args.action == 'fi':
         args.file = cm_utils.listify(args.file)
-        parts, fc_map = cm_dataview.read_files(args.file)
-        cm_dataview.plot_data(parts, fc_map)
+        parts, fc_map = dv.read_files(args.file)
+        dv.plot_fc_map()
