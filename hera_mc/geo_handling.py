@@ -683,7 +683,7 @@ class Handling:
                                 labeling = '-'
                         else:
                             labeling = 'S'
-                        plt.annotate(labeling, xy=(__X, __Y), xytext=(__X + 2, __Y))
+                    plt.annotate(labeling, xy=(__X, __Y), xytext=(__X + 2, __Y))
         return state_args['fig_num']
 
     def plot_station_types(self, query_date, state_args):
