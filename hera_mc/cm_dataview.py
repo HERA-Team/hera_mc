@@ -26,8 +26,23 @@ class Dataview:
             self.session = db.sessionmaker()
         else:
             self.session = session
+        self.parts_list = None
+        self.fc_map = None
 
     def read_db(self, parts, start_date, stop_date, dt, full_req):
+        """
+        Reads the database to produce a "map" of fully connected antennas,
+        returned in a dictionary (fc_map)
+
+        Parameters:
+        ------------
+        parts:  list of parts (stations) to search for
+        start_date:  astropy.time to start map
+        stop_date:  astropytime to stop map
+        dt:  time-step for dictionary
+        full_req:  parts needed for full Hookup
+        """
+
         fc_map = {}
         for p in parts:
             print("Finding ", p)
@@ -44,6 +59,19 @@ class Dataview:
         return fc_map
 
     def write_fc_map_file(self, filename, output='flag'):
+        """
+        Writes the fc_map to the named filename.  Either a 'flag' file can be written
+        (i.e. 0 or 1) for the plotter, or the 'corr'elator hookups
+
+        Parameters:
+        ------------
+        filename:  name of output file
+        output:  type of file 'flag' or 'corr'
+        """
+
+        if self.fc_map is None or self.parts_list is None:
+            print("You first need to generate fc_map and parts_list")
+            return None
         from hera_mc import cm_hookup
         hu = cm_hookup.Hookup(self.session)
         p0 = self.parts_list[0]
@@ -74,6 +102,14 @@ class Dataview:
         fp.close()
 
     def read_fc_map_files(self, filenames):
+        """
+        Reads in fc_map from the supplied filenames list.
+
+        Parameters:
+        ------------
+        filenames:  list of filenames to read in .
+        """
+
         fc_map = {}
         parts = []
         for fn in filenames:
@@ -101,6 +137,14 @@ class Dataview:
         return parts, fc_map
 
     def plot_fc_map(self, separate=True):
+        """
+        Plots the fc_map flgs.
+
+        Parameters:
+        ------------
+        separate:  T/F to plot the rows separated.
+        """
+
         dy = 1.0 / len(self.parts_list)
         for i, p in enumerate(self.parts_list):
             y = np.array(self.fc_map[p]['flag'])
