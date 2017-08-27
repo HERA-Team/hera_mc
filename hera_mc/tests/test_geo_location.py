@@ -88,7 +88,7 @@ class TestGeo(TestHERAMC):
         self.assertTrue(self.h.station_types['COFA']['Name'] == 'cofa')
 
     def test_is_in_geo_location(self):
-        found_it = self.h.is_in_geo_location(self.test_element_station_name)
+        found_it = self.h.is_in_database(self.test_element_station_name, 'geo_location')
         self.assertTrue(found_it)
 
     def test_ever_fully_connected(self):

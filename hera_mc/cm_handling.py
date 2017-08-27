@@ -80,7 +80,7 @@ class Handling:
 
         return result[0].git_hash
 
-    def is_in_connections(self, hpn, rev='ACTIVE'):
+    def is_in_connections(self, hpn, rev='ACTIVE', at_date='now'):
         """
         checks to see if a part is in the connections database (which means it
             is also in parts)
@@ -92,7 +92,7 @@ class Handling:
         hpn:  hera part number, string for part number
         rev:  revision of part number, string for rev or rev type
         """
-        at_date = cm_utils._get_astropytime(return_active)
+        at_date = cm_utils._get_astropytime(at_date)
         connection_dossier = self.get_connection_dossier(hpn, rev, port='all',
                                                          at_date=at_date, exact_match=True)
         num_connections = len(connection_dossier['connections'].keys())
@@ -162,7 +162,7 @@ class Handling:
                     if part.hptype == 'station':
                         from hera_mc import geo_handling
                         part_dossier[pr_key]['geo'] = geo_handling.get_location(
-                            [part.hpn], at_date, show_location=False, session=self.session)
+                            [part.hpn], at_date, session=self.session)
                     part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
                         self.find_ports(part_dossier[pr_key]['connections'])
                 else:

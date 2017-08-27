@@ -23,7 +23,7 @@ from pyproj import Proj
 from hera_mc import mc, part_connect, cm_utils, geo_location, cm_revisions
 
 
-def cofa(show_cofa=False, session=None):
+def cofa(session=None):
     """
     Returns location class of current COFA
 
@@ -33,13 +33,12 @@ def cofa(show_cofa=False, session=None):
     session:  db session to use
     """
     h = Handling(session)
-    located = h.cofa(show_cofa)
+    located = h.cofa()
     h.close()
     return located
 
 
-def get_location(location_names, query_date='now', show_location=False,
-                 verbosity='m', session=None):
+def get_location(location_names, query_date='now', session=None):
     """
     This provides a function to query a location and get a geo_location
         class back, with lon/lat added to the class.
@@ -59,8 +58,6 @@ def get_location(location_names, query_date='now', show_location=False,
     query_date = cm_utils._get_astropytime(query_date)
     h = Handling(session)
     located = h.get_location(location_names, query_date)
-    if show_location:
-        h.print_loc_info(located)
     h.close()
     return located
 
