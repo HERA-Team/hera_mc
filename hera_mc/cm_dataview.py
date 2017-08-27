@@ -136,7 +136,7 @@ class Dataview:
         self.fc_map = fc_map
         return parts, fc_map
 
-    def plot_fc_map(self, separate=True):
+    def plot_fc_map(self):
         """
         Plots the fc_map flgs.
 
@@ -148,8 +148,8 @@ class Dataview:
         dy = 1.0 / len(self.parts_list)
         for i, p in enumerate(self.parts_list):
             y = np.array(self.fc_map[p]['flag'])
-            if separate:
-                y = y * (2.0 - i * dy)
+            # Separate out the lines a bit
+            y = y * (2.0 - i * dy)
             plt.plot(self.fc_map[p]['datetime'], y, 'o', label=p)
         plt.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
         plt.grid()

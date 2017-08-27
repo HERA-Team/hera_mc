@@ -64,5 +64,5 @@ if __name__ == '__main__':
 
     elif args.action == 'fi':
         args.file = cm_utils.listify(args.file)
-        parts, fc_map = dv.read_files(args.file)
+        parts, fc_map = dv.read_fc_map_files(args.file)
         dv.plot_fc_map()
