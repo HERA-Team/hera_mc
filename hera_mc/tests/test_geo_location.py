@@ -13,8 +13,9 @@ import unittest
 import os.path
 import subprocess
 import numpy as np
-from hera_mc import geo_location, geo_handling, mc, cm_transfer
+from hera_mc import geo_location, geo_handling, mc, cm_transfer, part_connect
 from hera_mc.tests import TestHERAMC
+from astropy.time import Time
 
 
 class TestGeo(TestHERAMC):
@@ -22,7 +23,7 @@ class TestGeo(TestHERAMC):
     def setUp(self):
         super(TestGeo, self).setUp()
 
-        # Add a test elelment
+        # Add a test element
         self.test_element_stn = 'test_element'
         self.test_element_prefix = 'TE'
         st = geo_location.StationType()
@@ -42,8 +43,34 @@ class TestGeo(TestHERAMC):
         gl.created_gpstime = 1172530000
         self.test_session.add(gl)
         self.test_session.commit()
-
         self.h = geo_handling.Handling(self.test_session)
+        pa1 = part_connect.Parts()
+        self.upte = 'TE_ELEMENT'
+        self.upterev = 'A'
+        pa1.hpn = self.upte
+        pa1.hpn_rev = self.upterev
+        pa1.hptype = 'station'
+        pa1.start_gpstime = Time('2017-07-01 01:00:00', scale='utc').gps
+        self.test_session.add(pa1)
+        pa2 = part_connect.Parts()
+        self.dna = 'A_ELEMENT'
+        self.dnarev = 'A'
+        pa2.hpn = self.dna
+        pa2.hpn_rev = self.dnarev
+        pa2.hptype = 'antenna'
+        pa2.start_gpstime = Time('2017-07-01 01:00:00', scale='utc').gps
+        self.test_session.add(pa2)
+        self.test_session.commit()
+        co = part_connect.Connections()
+        co.upstream_part = self.upte
+        co.up_part_rev = self.upterev
+        co.upstream_output_port = 'output'
+        co.downstream_part = self.dna
+        co.down_part_rev = self.dnarev
+        co.downstream_input_port = 'input'
+        co.start_gpstime = Time('2017-07-01 01:00:00', scale='utc').gps
+        self.test_session.add(co)
+        self.test_session.commit()
 
     def test_cofa(self):
         cofa = self.h.cofa()[0]
@@ -62,6 +89,10 @@ class TestGeo(TestHERAMC):
                                                  'now', session=self.test_session)
         for loc_i in range(len(located)):
             self.assertTrue(located[loc_i].isclose(located_func[loc_i]))
+        rlf = self.h.print_loc_info(located_func)
+        self.assertTrue(rlf)
+        rlf = self.h.print_loc_info(None)
+        self.assertFalse(rlf)
 
     def test_update_new(self):
         nte = self.test_element_prefix + '_new_test_element'
@@ -87,9 +118,16 @@ class TestGeo(TestHERAMC):
         self.h.get_station_types(add_stations=True)
         self.assertTrue(self.h.station_types['COFA']['Name'] == 'cofa')
 
-    def test_is_in_geo_location(self):
-        found_it = self.h.is_in_geo_location(self.test_element_station_name)
-        self.assertTrue(found_it)
+    def test_is_in_database(self):
+        self.assertTrue(self.h.is_in_database(self.test_element_station_name, 'geo_location'))
+        self.assertTrue(self.h.is_in_database(self.upte, 'connections'))
+        self.assertRaises(ValueError, self.h.is_in_database, self.upte, 'wrong_one')
+
+    def test_find_antenna_station_pair(self):
+        ant, rev = self.h.find_antenna_at_station(self.upte, 'now')
+        self.assertTrue(ant == self.dna)
+        stn = self.h.find_station_of_antenna(self.dna, 'now')
+        self.assertTrue(stn == self.upte)
 
     def test_ever_fully_connected(self):
         now_list = self.h.get_all_fully_connected_at_date(at_date='now')
@@ -101,7 +139,6 @@ class TestGeo(TestHERAMC):
         ever_ends = [loc['stop_date'] for loc in ever_list]
         # The '==' notation below is required (rather than the pep8 suggestion of 'is') for the test to pass.
         self.assertEqual(len(np.where(np.array(ever_ends) == None)[0]), len(now_list))
-
         now_station_names = [loc['station_name'] for loc in now_list]
         ever_station_names = [loc['station_name'] for loc in ever_list]
         for name in now_station_names:

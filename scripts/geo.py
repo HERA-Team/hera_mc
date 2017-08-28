@@ -111,16 +111,21 @@ if __name__ == '__main__':
             located = h.get_location(args.loc, at_date)
             h.print_loc_info(located, args.verbosity)
             if args.graph and len(located) > 0:
+                state_args['marker_color'] = 'g'
+                state_args['marker_shape'] = '*'
                 state_args['marker_size'] = 14
-                h.overplot(located, at_date, state_args)
+                show_fig = h.plot_stations(args.loc, at_date, state_args)
 
     elif args.action == 'cof':
-        cofa = h.cofa(show_cofa=True)
+        cofa = h.cofa()
         h.print_loc_info(cofa, args.verbosity)
         if args.graph:
             show_fig = h.plot_station_types(at_date, state_args)
+            state_args['marker_color'] = 'g'
+            state_args['marker_shape'] = '*'
             state_args['marker_size'] = 14
-            h.overplot(cofa, at_date, state_args)
+            state_args['show_label'] = 'name'
+            show_fig = h.plot_stations([cofa[0].station_name], at_date, state_args)
 
     elif args.action == 'cor':
         from hera_mc import cm_hookup
@@ -146,10 +151,11 @@ if __name__ == '__main__':
             s = s.strip().strip(',') + '\n'
             print(s)
             if args.graph:
+                show_fig = h.plot_station_types('now', state_args)
                 state_args['marker_color'] = 'b'
                 state_args['marker_shape'] = '*'
                 state_args['marker_size'] = 14
-                show_fig = h.plot_stations(new_antennas, at_date, state_args)
+                show_fig = h.plot_stations(new_antennas, 'now', state_args)
 
     elif args.update:
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a \
