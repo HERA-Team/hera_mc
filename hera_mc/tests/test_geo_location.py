@@ -118,6 +118,33 @@ class TestGeo(TestHERAMC):
         self.h.get_station_types(add_stations=True)
         self.assertTrue(self.h.station_types['COFA']['Name'] == 'cofa')
 
+    def test_get_ants_installed_since(self):
+        query_date = Time('2017-05-01 01:00:00', scale='utc')
+        ants_in = self.h.get_ants_installed_since(query_date, station_types_to_check=['HH'])
+        print(ants_in)
+        self.assertTrue(len(ants_in) == 3)
+
+    def test_plotting(self):
+        stations_to_plot = ['HH0']
+        query_date = Time('2017-08-25 01:00:00', scale='utc')
+        state_args = {'verbosity': 'm',
+                      'xgraph': 'E',
+                      'ygraph': 'N',
+                      'station_types': ['HH'],
+                      'marker_color': 'r',
+                      'marker_shape': '*',
+                      'marker_size': 12,
+                      'show_state': 'active',
+                      'show_label': 'name',
+                      'fig_num': 1}
+        self.h.plot_stations(stations_to_plot, query_date, state_args)
+        state_args['show_label'] = 'num'
+        self.h.plot_stations(stations_to_plot, query_date, state_args)
+        state_args['show_label'] = 'ser'
+        self.h.plot_stations(stations_to_plot, query_date, state_args)
+        state_args['show_label'] = 'other_thing'
+        self.h.plot_stations(stations_to_plot, query_date, state_args)
+
     def test_is_in_database(self):
         self.assertTrue(self.h.is_in_database(self.test_element_station_name, 'geo_location'))
         self.assertTrue(self.h.is_in_database(self.upte, 'connections'))

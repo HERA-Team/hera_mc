@@ -667,7 +667,11 @@ class Handling:
                     if label_to_show == 'name':
                         labeling = a.station_name
                     else:
-                        ant, rev = self.find_antenna_at_station(a.station_name, query_date)
+                        try:
+                            ant, rev = self.find_antenna_at_station(a.station_name, query_date)
+                        except TypeError:
+                            print("{} not found.".format(station))
+                            continue
                         if label_to_show == 'num':
                             labeling = ant.strip('A')
                         elif label_to_show == 'ser':
