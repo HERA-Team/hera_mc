@@ -159,6 +159,9 @@ class Dataview:
         ------------
         separate:  T/F to plot the rows separated.
         """
+        if self.fc_map is None or self.parts_list is None:
+            print("You first need to generate fc_map and parts_list")
+            return False
 
         dy = 1.0 / len(self.parts_list)
         for i, p in enumerate(self.parts_list):
@@ -169,3 +172,4 @@ class Dataview:
         plt.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
         plt.grid()
         plt.show()
+        return True
