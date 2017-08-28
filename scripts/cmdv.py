@@ -29,13 +29,17 @@ if __name__ == '__main__':
     if args.action == 'in':
         print(
             """
-        Available actions are (only need first two letters) [fcview]:
+        Available actions are (only need first two letters) [fc-view]:
             fc-view:  fully-connected view of part --part(-p) between date and date2.
                      both default to 'now', so at least date must be changed.
                      if --file is set, it will write a file with the data, which is either:
                          --output flag [default] or
                          --output corr
             file-view:  plot file(s)
+            corr:  Provides information on the correlator hookups for the supplied --date/--time.
+                cmdv.py corr:  will provide a list of correlator inputs for stations in --station-types
+                cmdv.py corr --parts(-p)  will provide the correlator input for --parts
+                cmdv.py corr --parts(-p)  will provide correlator info for --parts
             info:  Print this information and exit.
         """
         )
@@ -61,6 +65,20 @@ if __name__ == '__main__':
         if args.file is not None:
             dv.write_fc_map_file(args.file, output=args.output)
         dv.plot_fc_map()
+
+    elif args.action == 'co':
+        from hera_mc import cm_hookup
+        hookup = cm_hookup.Hookup(session)
+        if isinstance(args.loc, list):
+            for a2f in args.loc:
+                c = h.get_fully_connected_location_at_date(a2f, at_date, hookup, fc=None,
+                                                           full_req=part_connect.full_connection_parts_paper)
+                print("Correlator inputs for {}:  x:{}, y:{}".format(a2f, c['correlator_input_x'], c['correlator_input_y']))
+        else:
+            fully_connected = h.get_all_fully_connected_at_date(at_date)
+            for fv in fully_connected:
+                print("Station {} connected to x:{}, y:{}".format(fv['station_name'],
+                      fv['correlator_input_x'], fv['correlator_input_y']))
 
     elif args.action == 'fi':
         args.file = cm_utils.listify(args.file)

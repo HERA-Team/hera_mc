@@ -57,17 +57,47 @@ if __name__ == '__main__':
                 geo.py cofa              will provide the cofa information
                 geo.py cofa --graph(-g)  will plot cofa with "background" set in --station-types
 
-            corr:  Provides information on the correlator hookups.
-                geo.py corr:  will provide a list of correlator inputs for stations in --station-types
-                geo.py corr --loc(-l)              will provide the correlator input for --loc
-                geo.py corr --loc(-l) --graph(-g)  will provide/plot correlator info for --loc
-
             since: Provides a list of all antennas installed --since DATE
                  geo.py since --date DATE             will provide a list of all antennas built --since DATE
                  geo.py since --date DATE --graph(-g)  will provide a list/plot those antennas
 
             info:  Print this information and exit.
                 geo.py info
+
+        usage: geo.py [-h] [-l LOC] [-g]
+                      [-v {l,m,h}] [--date DATE] [--time TIME] [-x {N,n,E,e,Z,z}]
+                      [-y {N,n,E,e,Z,z}] [-t STATION_TYPES]
+                      [--show-state {active,all}] [--show-label {name,num,ser}]
+                      [--fig-num FIG_NUM] [--update UPDATE] [--add-new-geo]
+                      [action]
+
+                positional arguments:
+                action                Actions are: geo, cofa, since, update, info
+
+                optional arguments:
+                -h, --help            show this help message and exit
+                -l LOC, --loc LOC     Location name
+                -g, --graph           Graph station types [False]
+                -v {l,m,h}, --verbosity {l,m,h}
+                                    Verbosity level: 'l', 'm', or 'h'. [h].
+                --date DATE           UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]
+                --time TIME           UTC hh:mm or float (hours)
+                -x {N,n,E,e,Z,z}, --xgraph {N,n,E,e,Z,z}
+                                    X-axis of graph. [E]
+                -y {N,n,E,e,Z,z}, --ygraph {N,n,E,e,Z,z}
+                                    Y-axis of graph. [N]
+                -t STATION_TYPES, --station-types STATION_TYPES
+                                    Station types used for input (csv_list or all) [HH]
+                --show-state {active,all}
+                                    Show only the 'active' stations or 'all' ['all']
+                --show-label {name,num,ser}
+                                    Label by station_name (name), ant_num (num) or
+                                    serial_num (ser) or false [num]
+                --fig-num FIG_NUM     Provide a specific figure number to the plot [default]
+                --update UPDATE       Update station records. Format station0:col0:val0,
+                                    [station1:]col1:val1... [None]
+                --add-new-geo         Flag to enable adding of a new geo_location under
+                                    update. [False]
         """
         )
         sys.exit()
@@ -126,20 +156,6 @@ if __name__ == '__main__':
             state_args['marker_size'] = 14
             state_args['show_label'] = 'name'
             show_fig = h.plot_stations([cofa[0].station_name], at_date, state_args)
-
-    elif args.action == 'cor':
-        from hera_mc import cm_hookup
-        hookup = cm_hookup.Hookup(session)
-        if isinstance(args.loc, list):
-            for a2f in args.loc:
-                c = h.get_fully_connected_location_at_date(a2f, at_date, hookup, fc=None,
-                                                           full_req=part_connect.full_connection_parts_paper)
-                print("Correlator inputs for {}:  x:{}, y:{}".format(a2f, c['correlator_input_x'], c['correlator_input_y']))
-        else:
-            fully_connected = h.get_all_fully_connected_at_date(at_date)
-            for fv in fully_connected:
-                print("Station {} connected to x:{}, y:{}".format(fv['station_name'],
-                      fv['correlator_input_x'], fv['correlator_input_y']))
 
     elif args.action == 'sin':
         new_antennas = h.get_ants_installed_since(at_date, state_args['station_types'])
