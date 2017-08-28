@@ -62,6 +62,10 @@ class TestGeo(TestHERAMC):
                                                  'now', session=self.test_session)
         for loc_i in range(len(located)):
             self.assertTrue(located[loc_i].isclose(located_func[loc_i]))
+        rlf = self.h.print_loc_info(located_func)
+        self.assertTrue(rlf)
+        rlf = self.h.print_loc_info(None)
+        self.assertFalse(rlf)
 
     def test_update_new(self):
         nte = self.test_element_prefix + '_new_test_element'

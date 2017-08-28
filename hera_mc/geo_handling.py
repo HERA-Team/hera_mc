@@ -286,7 +286,7 @@ class Handling:
     def print_loc_info(self, loc, verbosity='h'):
         if loc is None:
             print("No location found.")
-            return
+            return False
         for a in loc:
             if verbosity == 'm' or verbosity == 'h':
                 print('station_name: ', a.station_name)
@@ -298,6 +298,7 @@ class Handling:
                 print('\tcreated:  ', cm_utils._get_displayTime(a.created_date))
             elif verbosity == 'l':
                 print(a)
+        return True
 
     def _search_loop(self, stn, at_date, now, m, base_tdelta, full_req):
         """
