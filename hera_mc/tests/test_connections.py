@@ -80,8 +80,7 @@ class TestConnections(TestHERAMC):
 
     def test_is_in_connections(self):
         at_date = Time('2017-07-01 01:00:00', scale='utc')
-        checking = self.h.is_in_connections(self.test_hpn[0], self.test_rev, at_date)
-        self.assertTrue(checking)
+        self.assertTrue(self.h.is_in_connections(self.test_hpn[0], self.test_rev, at_date))
 
     def test_get_specific_connection(self):
         c = part_connect.Connections()

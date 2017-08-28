@@ -29,7 +29,6 @@ def cofa(session=None):
 
     Parameters:
     -------------
-    show_cofa:  boolean to print out cofa info or just return class
     session:  db session to use
     """
     h = Handling(session)
@@ -51,8 +50,6 @@ def get_location(location_names, query_date='now', session=None):
     location_names:  location name, may be either a station (geo_location key)
                      or an antenna
     query_date:  date for query
-    show_location:  boolean to show location or not
-    verbosity:  string to specify verbosity
     session:  db session to use
     """
     query_date = cm_utils._get_astropytime(query_date)
@@ -108,10 +105,6 @@ class Handling:
         Get the current center of array.
 
         Returns located cofa.
-
-        Parameters:
-        ------------
-        show_cofa:  boolean to either show cofa or not
         """
         self.get_station_types(add_stations=True)
         current_cofa = self.station_types['COFA']['Stations']
@@ -172,7 +165,7 @@ class Handling:
             station = self.session.query(part_connect.Connections).filter(
                 func.upper(part_connect.Connections.upstream_part) == ustn)
         else:
-            raiseValueError('db not found.')
+            raise ValueError('db not found.')
         if station.count() > 0:
             station_present = True
         else:
@@ -183,8 +176,10 @@ class Handling:
         """
         checks to see what antenna is at a station
 
-        Returns None or the active antenna_name and revision (must be an active
-        antenna_name for the query_date)
+        Returns a tuple (antenna_name, antenna_revision), representing the antenna
+        that was active at the date query_date, or None if no antenna was active
+        at the station. Raises ValueError if the database lists multiple active
+        connections at the station at query_date.
 
         Parameters:
         ------------
@@ -203,7 +198,7 @@ class Handling:
                 antenna_connected = copy.copy(conn)
                 ctr += 1
         if ctr == 0:
-            antenna_connected = None
+            return None
         elif ctr > 1:
             raise ValueError('More than one active connection between station and antenna')
         return antenna_connected.downstream_part, antenna_connected.down_part_rev
@@ -284,6 +279,10 @@ class Handling:
         return found_location
 
     def print_loc_info(self, loc, verbosity='h'):
+        """
+        Prints out location information as returned from get_location.
+        Returns False if provided 'loc' is None, otherwise returns True.
+        """
         if loc is None:
             print("No location found.")
             return False
@@ -658,9 +657,9 @@ class Handling:
                     func.upper(geo_location.GeoLocation.station_name) == ustn):
                 pt = {'easting': a.easting, 'northing': a.northing,
                       'elevation': a.elevation}
-                __X = pt[self.coord[state_args['xgraph']]]
-                __Y = pt[self.coord[state_args['ygraph']]]
-                plt.plot(__X, __Y, color=state_args['marker_color'],
+                X = pt[self.coord[state_args['xgraph']]]
+                Y = pt[self.coord[state_args['ygraph']]]
+                plt.plot(X, Y, color=state_args['marker_color'],
                          marker=state_args['marker_shape'],
                          markersize=state_args['marker_size'],
                          label=a.station_name)
@@ -681,7 +680,7 @@ class Handling:
                                 labeling = '-'
                         else:
                             labeling = 'S'
-                    plt.annotate(labeling, xy=(__X, __Y), xytext=(__X + 2, __Y))
+                    plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
         return state_args['fig_num']
 
     def plot_station_types(self, query_date, state_args):
