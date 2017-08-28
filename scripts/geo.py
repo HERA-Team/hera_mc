@@ -64,10 +64,15 @@ if __name__ == '__main__':
             info:  Print this information and exit.
                 geo.py info
 
-        usage: geo.py [-h] [-l LOC] [-g]
-                      [-v {l,m,h}] [--date DATE] [--time TIME] [-x {N,n,E,e,Z,z}]
-                      [-y {N,n,E,e,Z,z}] [-t STATION_TYPES]
-                      [--show-state {active,all}] [--show-label {name,num,ser}]
+        usage: geo.py [-h]
+                      [-l LOC] [-g]
+                      [-v {l,m,h}]
+                      [--date DATE] [--time TIME]
+                      [-x {N,n,E,e,Z,z}]
+                      [-y {N,n,E,e,Z,z}]
+                      [-t STATION_TYPES]
+                      [--show-state {active,all}]
+                      [--show-label {name,num,ser}]
                       [--fig-num FIG_NUM] [--update UPDATE] [--add-new-geo]
                       [action]
 
