@@ -29,6 +29,14 @@ class Dataview:
         self.parts_list = None
         self.fc_map = None
 
+    def print_corr_info(self, fully_connected):
+        """
+        Prints out correlator information from 'standard' fully_connected list
+        """
+        for fv in fully_connected:
+            print("Station {} connected to x:{}, y:{}".format(fv['station_name'],
+                  fv['correlator_input_x'], fv['correlator_input_y']))
+
     def read_db(self, parts, start_date, stop_date, dt, full_req):
         """
         Reads the database to produce a "map" of fully connected antennas,

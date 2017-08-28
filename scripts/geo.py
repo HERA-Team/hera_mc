@@ -109,14 +109,8 @@ if __name__ == '__main__':
 
     # interpret args
     at_date = cm_utils._get_astropytime(args.date, args.time)
-    if isinstance(args.loc, str) and ',' in args.loc:
-        args.loc = args.loc.split(',')
-    elif args.loc is not None:
-        args.loc = [str(args.loc)]
-    if ',' in args.station_types:
-        args.station_types = args.station_types.split(',')
-    else:
-        args.station_types = [args.station_types]
+    args.loc = cm_utils.listify(args.loc)
+    args.station_types = cm_utils.listify(args.station_types)
     args.show_label = args.show_label.lower()
     if args.show_label == 'false':
         args.show_label = False
