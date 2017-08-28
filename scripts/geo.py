@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or all) [HH]",
                         dest='station_types', default='HH')
     parser.add_argument('--show-state', help="Show only the 'active' stations or 'all' ['all']", dest='show_state',
-                        choices=['active', 'all'], default='all')
+                        choices=['active', 'all'], default='active')
     parser.add_argument('--show-label', dest='show_label',
                         help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]",
                         choices=['name', 'num', 'ser'], default='num')
