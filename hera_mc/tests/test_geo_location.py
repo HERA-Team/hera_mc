@@ -23,7 +23,7 @@ class TestGeo(TestHERAMC):
     def setUp(self):
         super(TestGeo, self).setUp()
 
-        # Add a test elelment
+        # Add a test element
         self.test_element_stn = 'test_element'
         self.test_element_prefix = 'TE'
         st = geo_location.StationType()
@@ -44,6 +44,33 @@ class TestGeo(TestHERAMC):
         self.test_session.add(gl)
         self.test_session.commit()
         self.h = geo_handling.Handling(self.test_session)
+        pa1 = part_connect.Parts()
+        self.upte = 'TE_ELEMENT'
+        self.upterev = 'A'
+        pa1.hpn = self.upte
+        pa1.hpn_rev = self.upterev
+        pa1.hptype = 'station'
+        pa1.start_gpstime = Time('2017-07-01 01:00:00', scale='utc').gps
+        self.test_session.add(pa1)
+        pa2 = part_connect.Parts()
+        self.dna = 'A_ELEMENT'
+        self.dnarev = 'A'
+        pa2.hpn = self.dna
+        pa2.hpn_rev = self.dnarev
+        pa2.hptype = 'antenna'
+        pa2.start_gpstime = Time('2017-07-01 01:00:00', scale='utc').gps
+        self.test_session.add(pa2)
+        self.test_session.commit()
+        co = part_connect.Connections()
+        co.upstream_part = self.upte
+        co.up_part_rev = self.upterev
+        co.upstream_output_port = 'output'
+        co.downstream_part = self.dna
+        co.down_part_rev = self.dnarev
+        co.downstream_input_port = 'input'
+        co.start_gpstime = Time('2017-07-01 01:00:00', scale='utc').gps
+        self.test_session.add(co)
+        self.test_session.commit()
 
     def test_cofa(self):
         cofa = self.h.cofa()[0]
@@ -93,40 +120,14 @@ class TestGeo(TestHERAMC):
 
     def test_is_in_database(self):
         self.assertTrue(self.h.is_in_database(self.test_element_station_name, 'geo_location'))
+        self.assertTrue(self.h.is_in_database(self.upte, 'connections'))
+        self.assertRaises(ValueError, self.h.is_in_database, self.upte, 'wrong_one')
 
-    def test_find_antenna_at_station(self):
-        pa1 = part_connect.Parts()
-        upte = 'TE_ELEMENT'
-        upterev = 'A'
-        pa1.hpn = upte
-        pa1.hpn_rev = upterev
-        pa1.hptype = 'station'
-        pa1.start_gpstime = Time('2017-07-01 01:00:00', scale='utc').gps
-        self.test_session.add(pa1)
-        pa2 = part_connect.Parts()
-        dna = 'A_ELEMENT'
-        dnarev = 'A'
-        pa2.hpn = dna
-        pa2.hpn_rev = dnarev
-        pa2.hptype = 'antenna'
-        pa2.start_gpstime = Time('2017-07-01 01:00:00', scale='utc').gps
-        self.test_session.add(pa2)
-        self.test_session.commit()
-        co = part_connect.Connections()
-        co.upstream_part = upte
-        co.up_part_rev = upterev
-        co.upstream_output_port = 'output'
-        co.downstream_part = dna
-        co.down_part_rev = dnarev
-        co.downstream_input_port = 'input'
-        co.start_gpstime = Time('2017-07-01 01:00:00', scale='utc').gps
-        self.test_session.add(co)
-        print(co)
-        self.test_session.commit()
-        ant, rev = self.h.find_antenna_at_station(upte, 'now')
-        self.assertTrue(ant == dna)
-        stn = self.h.find_station_of_antenna(dna, 'now')
-        self.assertTrue(stn == upte)
+    def test_find_antenna_station_pair(self):
+        ant, rev = self.h.find_antenna_at_station(self.upte, 'now')
+        self.assertTrue(ant == self.dna)
+        stn = self.h.find_station_of_antenna(self.dna, 'now')
+        self.assertTrue(stn == self.upte)
 
     def test_ever_fully_connected(self):
         now_list = self.h.get_all_fully_connected_at_date(at_date='now')
