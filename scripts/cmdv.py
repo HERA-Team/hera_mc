@@ -8,12 +8,12 @@ Methods are in cm_dataview.
 """
 
 from __future__ import print_function
-from hera_mc import mc
+from hera_mc import mc, cm_utils
 import sys
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('action', nargs='?', help="Actions are:  fc-view, file-view, info [fc_view]", default='fc-view')
+    parser.add_argument('action', nargs='?', help="Actions are:  corr fc-view, file-view, info [fc_view]", default='corr')
     parser.add_argument('-p', '--parts', help="Part list (comma-separated,no spaces) or active [active]", default='active')
     parser.add_argument('--dt', help="Time resolution (in days) of view.  [1]", default=1.0)
     parser.add_argument('--file', help="Write data to file --file [None].", dest='file', default=None)
@@ -48,7 +48,7 @@ if __name__ == '__main__':
         )
         sys.exit()
 
-    from hera_mc import cm_dataview, cm_utils, part_connect, hera_mc, geo_handling
+    from hera_mc import cm_dataview, part_connect, geo_handling, cm_hookup
 
     if isinstance(args.dt, str):
         args.dt = float(args.dt)
@@ -64,7 +64,22 @@ if __name__ == '__main__':
     geo = geo_handling.Handling(session)
     hookup = cm_hookup.Hookup(session)
 
-    if args.action == 'fc':
+    if args.action == 'co':
+        at_date = cm_utils._get_astropytime(args.date, args.time)
+        if args.parts.lower() == 'active':
+            fully_connected = geo.get_all_fully_connected_at_date(at_date, full_req=args.full_req,
+                                                                  station_types_to_check=args.station_types)
+            dv.print_fully_connected(fully_connected)
+        else:
+            args.parts = cm_utils.listify(args.parts)
+            fully_connected = []
+            for a2f in args.parts:
+                c = geo.get_fully_connected_location_at_date(a2f, at_date, hookup, fc=None,
+                                                             full_req=args.full_req)
+                fully_connected.append(c)
+            dv.print_fully_connected(fully_connected)
+
+    elif args.action == 'fc':
         start_date = cm_utils._get_astropytime(args.date, args.time)
         stop_date = cm_utils._get_astropytime(args.date2, args.time2)
         args.station_types = cm_utils.listify(args.station_types)
@@ -74,29 +89,14 @@ if __name__ == '__main__':
                                                        station_types_to_check=args.station_types)
             args.parts = []
             for c in conn:
-                args.parts.append(c.station_name)
+                args.parts.append(c['station_name'])
+            args.parts = sorted(args.parts)
         else:
             args.parts = cm_utils.listify(args.parts)
         fc_map = dv.read_db(args.parts, start_date, stop_date, args.dt, args.full_req)
         if args.file is not None:
             dv.write_fc_map_file(args.file, output=args.output)
         dv.plot_fc_map()
-
-    elif args.action == 'co':
-        at_date = cm_utils._get_astropytime(args.date, args.time)
-        if args.parts.lower() == 'active':
-            fully_connected = h.get_all_fully_connected_at_date(at_date, full_req=args.full_req,
-                                                                station_types_to_check=args.station_types)
-            dv.print_fully_connected(fully_connected)
-
-        else:
-            args.parts = cm_utils.listify(args.parts)
-            fully_connected = []
-            for a2f in args.parts:
-                c = h.get_fully_connected_location_at_date(a2f, at_date, hookup, fc=None,
-                                                           full_req=args.full_req)
-                fully_connected.append(c)
-            dv.print_fully_connected(fully_connected)
 
     elif args.action == 'fi':
         args.file = cm_utils.listify(args.file)

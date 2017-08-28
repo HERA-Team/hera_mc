@@ -12,8 +12,7 @@ import sys
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('action', nargs='?', help="Actions are:  geo, cofa, corr, since, update, info", default='geo')
-
+    parser.add_argument('action', nargs='?', help="Actions are:  geo, cofa, since, update, info", default='geo')
     parser.add_argument('-l', '--loc', help="Location name", default=None)
     parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
     cm_utils.add_verbosity_args(parser)

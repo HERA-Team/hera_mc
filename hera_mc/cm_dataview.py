@@ -29,12 +29,19 @@ class Dataview:
         self.parts_list = None
         self.fc_map = None
 
-    def print_corr_info(self, fully_connected):
+    def print_fully_connected(self, fully_connected):
         """
         Prints out correlator information from 'standard' fully_connected list
+
+        Parameters:
+        ------------
+        fully_connected:  list of fully connected stations provided by the correlator
+        methods in geo_handling
         """
+        print("Part number    x/E input    y/N input")
+        print("-----------    ---------    ---------")
         for fv in fully_connected:
-            print("Station {} connected to x:{}, y:{}".format(fv['station_name'],
+            print("{:11}    {:9}    {:9}".format(fv['station_name'],
                   fv['correlator_input_x'], fv['correlator_input_y']))
 
     def read_db(self, parts, start_date, stop_date, dt, full_req):
