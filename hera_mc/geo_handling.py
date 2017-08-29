@@ -691,7 +691,7 @@ class Handling:
                         plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
         return state_args['fig_num']
 
-    def plot_station_types(self, query_date, state_args):
+    def plot_station_types(self, query_date, state_args, testing=False):
         """
         Plot the various sub-array types
 
@@ -703,7 +703,8 @@ class Handling:
         state_args:  dictionary with state arguments (fig_num, marker_color,
                      marker_shape, marker_size, show_label)
         """
-        import matplotlib.pyplot as plt
+        if not testing:
+            import matplotlib.pyplot as plt
 
         query_date = cm_utils._get_astropytime(query_date)
         if state_args['station_types'][0] == 'all':
@@ -727,8 +728,9 @@ class Handling:
                 state_args['marker_color'] = self.station_types[key]['Marker'][0]
                 state_args['marker_shape'] = self.station_types[key]['Marker'][1]
                 state_args['marker_size'] = 6
-                self.plot_stations(stations_to_plot, query_date, state_args)
-        if state_args['xgraph'].upper() != 'Z' and state_args['ygraph'].upper() != 'Z':
-            plt.axis('equal')
-        plt.plot(xaxis=state_args['xgraph'], yaxis=state_args['ygraph'])
+                self.plot_stations(stations_to_plot, query_date, state_args, testing)
+        if not testing:
+            if state_args['xgraph'].upper() != 'Z' and state_args['ygraph'].upper() != 'Z':
+                plt.axis('equal')
+            plt.plot(xaxis=state_args['xgraph'], yaxis=state_args['ygraph'])
         return state_args['fig_num']

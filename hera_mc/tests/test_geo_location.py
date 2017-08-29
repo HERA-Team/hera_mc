@@ -144,6 +144,8 @@ class TestGeo(TestHERAMC):
         self.h.plot_stations(stations_to_plot, query_date, state_args, True)
         state_args['show_label'] = 'other_thing'
         self.h.plot_stations(stations_to_plot, query_date, state_args, True)
+        state_args['show_label'] = 'name'
+        self.h.plot_station_types(query_date, state_args, True)
 
     def test_is_in_database(self):
         self.assertTrue(self.h.is_in_database(self.test_element_station_name, 'geo_location'))
