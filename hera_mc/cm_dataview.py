@@ -85,8 +85,7 @@ class Dataview:
         """
 
         if self.fc_map is None or self.parts_list is None:
-            print("You first need to generate fc_map and parts_list")
-            return None
+            raise RuntimeWarning("You first need to generate fc_map and parts_list")
         from hera_mc import cm_hookup
         hu = cm_hookup.Hookup(self.session)
         p0 = self.parts_list[0]
@@ -154,14 +153,9 @@ class Dataview:
     def plot_fc_map(self):
         """
         Plots the fc_map flgs.
-
-        Parameters:
-        ------------
-        separate:  T/F to plot the rows separated.
         """
         if self.fc_map is None or self.parts_list is None:
-            print("You first need to generate fc_map and parts_list")
-            return False
+            raise RuntimeWarning("You first need to generate fc_map and parts_list")
 
         dy = 1.0 / len(self.parts_list)
         for i, p in enumerate(self.parts_list):
