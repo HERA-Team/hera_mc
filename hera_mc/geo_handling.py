@@ -633,7 +633,7 @@ class Handling:
                 found_stations.append(a.station_name)
         return found_stations
 
-    def plot_stations(self, stations_to_plot, query_date, state_args):
+    def plot_stations(self, stations_to_plot, query_date, state_args, testing=False):
         """
         Plot a list of stations.
 
@@ -644,13 +644,15 @@ class Handling:
         state_args:  dictionary with state arguments (fig_num, marker_color,
                      marker_shape, marker_size, show_label)
         """
-        import matplotlib.pyplot as plt
+        if not testing:
+            import matplotlib.pyplot as plt
 
         query_date = cm_utils._get_astropytime(query_date)
         displaying_label = bool(state_args['show_label'])
         if displaying_label:
             label_to_show = state_args['show_label'].lower()
-        plt.figure(state_args['fig_num'])
+        if not testing:
+            plt.figure(state_args['fig_num'])
         for station in stations_to_plot:
             ustn = station.upper()
             for a in self.session.query(geo_location.GeoLocation).filter(
@@ -659,15 +661,20 @@ class Handling:
                       'elevation': a.elevation}
                 X = pt[self.coord[state_args['xgraph']]]
                 Y = pt[self.coord[state_args['ygraph']]]
-                plt.plot(X, Y, color=state_args['marker_color'],
-                         marker=state_args['marker_shape'],
-                         markersize=state_args['marker_size'],
-                         label=a.station_name)
+                if not testing:
+                    plt.plot(X, Y, color=state_args['marker_color'],
+                             marker=state_args['marker_shape'],
+                             markersize=state_args['marker_size'],
+                             label=a.station_name)
                 if displaying_label:
                     if label_to_show == 'name':
                         labeling = a.station_name
                     else:
-                        ant, rev = self.find_antenna_at_station(a.station_name, query_date)
+                        try:
+                            ant, rev = self.find_antenna_at_station(a.station_name, query_date)
+                        except TypeError:
+                            print("{} not found.".format(station))
+                            continue
                         if label_to_show == 'num':
                             labeling = ant.strip('A')
                         elif label_to_show == 'ser':
@@ -680,10 +687,11 @@ class Handling:
                                 labeling = '-'
                         else:
                             labeling = 'S'
-                    plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
+                    if not testing:
+                        plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
         return state_args['fig_num']
 
-    def plot_station_types(self, query_date, state_args):
+    def plot_station_types(self, query_date, state_args, testing=False):
         """
         Plot the various sub-array types
 
@@ -695,7 +703,8 @@ class Handling:
         state_args:  dictionary with state arguments (fig_num, marker_color,
                      marker_shape, marker_size, show_label)
         """
-        import matplotlib.pyplot as plt
+        if not testing:
+            import matplotlib.pyplot as plt
 
         query_date = cm_utils._get_astropytime(query_date)
         if state_args['station_types'][0] == 'all':
@@ -719,8 +728,9 @@ class Handling:
                 state_args['marker_color'] = self.station_types[key]['Marker'][0]
                 state_args['marker_shape'] = self.station_types[key]['Marker'][1]
                 state_args['marker_size'] = 6
-                self.plot_stations(stations_to_plot, query_date, state_args)
-        if state_args['xgraph'].upper() != 'Z' and state_args['ygraph'].upper() != 'Z':
-            plt.axis('equal')
-        plt.plot(xaxis=state_args['xgraph'], yaxis=state_args['ygraph'])
+                self.plot_stations(stations_to_plot, query_date, state_args, testing)
+        if not testing:
+            if state_args['xgraph'].upper() != 'Z' and state_args['ygraph'].upper() != 'Z':
+                plt.axis('equal')
+            plt.plot(xaxis=state_args['xgraph'], yaxis=state_args['ygraph'])
         return state_args['fig_num']

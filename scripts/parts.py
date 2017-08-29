@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('action', nargs='?', help="Actions are:  info, hookup, types, part_info, conn_info, rev_info, \
                                                    check_rev, overlap_check, update.  'info' for more.", default='hookup')
     # set values for 'action' to use
-    parser.add_argument('-p', '--hpn', help="Part number (required). [None]", default=None)
+    parser.add_argument('-p', '--hpn', help="Part number, csv-list (required). [None]", default=None)
     parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [LAST]", default='LAST')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
@@ -77,16 +77,9 @@ if __name__ == '__main__':
     if args.hpn is None:
         print("Must specify a part name (-p/--hpn)")
         sys.exit()
-
-    if ',' in args.hookup_cols:
-        args.hookup_cols = args.hookup_cols.split(',')
-    else:
-        args.hookup_cols = [args.hookup_cols]
-
-    if ',' in args.full_req:
-        args.full_req = args.full_req.split(',')
-    else:
-        args.full_req = [args.full_req]
+    # args.hpn = cm_utils.listify(args.hpn)
+    args.hookup_cols = cm_utils.listify(args.hookup_cols)
+    args.full_req = cm_utils.listify(args.full_req)
 
     if args.levels_testing is not False and args.levels_testing[0] == ':':
         args.levels_testing = os.path.join(mc.test_data_path, args.levels_testing[1:])
