@@ -114,21 +114,22 @@ class Handling:
 
         Parameters
         -----------
-        hpn:  the input hera part number (whole or first part thereof)
-        rev:  specific revision or category
-        at_date:  reference date of dossier
+        hpn:  the input hera part number [list of strings] (whole or first part thereof)
+        rev:  specific revision or category [string, currently not a list]
+        at_date:  reference date of dossier [something _get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
         """
 
-        if not exact_match and hpn[-1] != '%':
-            hpn = hpn + '%'
         at_date = cm_utils._get_astropytime(at_date)
 
         part_dossier = {}
         rev_part = {}
-        for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(hpn)):
-            rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, at_date=at_date,
-                                                            session=self.session)
+        for xhpn in hpn:
+            if not exact_match and xhpn[-1] != '%':
+                xhpn = xhpn + '%'
+            for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(xhpn)):
+                rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, at_date=at_date,
+                                                                session=self.session)
 
         # Now get unique part/revs and put into dictionary
         for xhpn in rev_part.keys():
@@ -308,22 +309,23 @@ class Handling:
 
         Parameters
         -----------
-        hpn:  the input hera part number (whole or first part thereof)
-        rev:  revision of part
-        port:  a specifiable port name,  default is 'all'
-        at_date: reference date of dossier
+        hpn:  the input hera part number [list of strings] (whole or first part thereof)
+        rev:  revision of part [string, not a list]
+        port:  a specifiable port name [string, not a list],  default is 'all'
+        at_date: reference date of dossier [anything _get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
         """
 
-        if not exact_match and hpn[-1] != '%':
-            hpn = hpn + '%'
         at_date = cm_utils._get_astropytime(at_date)
         connection_dossier = {'ordered-pairs': [], 'Time': at_date,
                               'connected-to': (hpn, rev, port), 'connections': {}}
 
         rev_part = {}
-        for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(hpn)):
-            rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, session=self.session)
+        for xhpn in hpn:
+            if not exact_match and xhpn[-1] != '%':
+                xhpn = xhpn + '%'
+            for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(xhpn)):
+                rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, session=self.session)
         for xhpn in rev_part.keys():
             if rev_part[xhpn] is None:
                 continue

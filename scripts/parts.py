@@ -74,10 +74,8 @@ if __name__ == '__main__':
         sys.exit()
 
     # Pre-process the args
-    if args.hpn is None:
-        print("Must specify a part name (-p/--hpn)")
-        sys.exit()
-    # args.hpn = cm_utils.listify(args.hpn)
+    action_tag = args.action[:2].lower()
+    args.hpn = cm_utils.listify(args.hpn)
     args.hookup_cols = cm_utils.listify(args.hookup_cols)
     args.full_req = cm_utils.listify(args.full_req)
 
@@ -90,44 +88,48 @@ if __name__ == '__main__':
     handling = cm_handling.Handling(session)
 
     # Process
-    if args.action[:2].lower() == 'pa':  # part_info
+    if action_tag == 'pa':  # part_info
         part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision,
                                                  at_date=date_query, exact_match=args.exact_match)
         handling.show_parts(part_dossier, verbosity=args.verbosity)
 
-    elif args.action[:2].lower() == 'co':  # connection_info
+    elif action_tag == 'co':  # connection_info
         connection_dossier = handling.get_connection_dossier(
             hpn=args.hpn, rev=args.revision, port=args.port,
             at_date=date_query, exact_match=args.exact_match)
         already_shown = handling.show_connections(connection_dossier, verbosity=args.verbosity)
         handling.show_other_connections(connection_dossier, already_shown)
 
-    elif args.action[:2].lower() == 'ho':  # hookup
+    elif action_tag == 'ho':  # hookup
         from hera_mc import cm_hookup
         hookup = cm_hookup.Hookup(session)
-        hookup_dict = hookup.get_hookup(hpn=args.hpn, rev=args.revision, port=args.port,
-                                        at_date=date_query, exact_match=args.exact_match,
-                                        show_levels=args.show_levels, levels_testing=args.levels_testing)
-        hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
+        for hpn in args.hpn:
+            hookup_dict = hookup.get_hookup(hpn=hpn, rev=args.revision, port=args.port,
+                                            at_date=date_query, exact_match=args.exact_match,
+                                            show_levels=args.show_levels, levels_testing=args.levels_testing)
+            hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
 
-    elif args.action[:2].lower() == 'ty':  # types of parts
+    elif action_tag == 'ty':  # types of parts
         part_type_dict = handling.get_part_types(date_query, show_hptype=True)
 
-    elif args.action[:2].lower() == 're':  # revisions
-        rev_ret = cm_handling.cmpr.get_revisions_of_type(args.hpn, args.revision, date_query,
-                                                         args.full_req, session)
-        cm_handling.cmpr.show_revisions(rev_ret)
+    elif action_tag == 're':  # revisions
+        for hpn in args.hpn:
+            rev_ret = cm_handling.cmpr.get_revisions_of_type(hpn, args.revision, date_query,
+                                                             args.full_req, session)
+            cm_handling.cmpr.show_revisions(rev_ret)
 
-    elif args.action[:2].lower() == 'ch':  # check revisions
-        r = cm_handling.cmpr.check_rev(args.hpn, args.revision, args.check_rev, date_query,
-                                       args.full_req, session)
-        rrr = '' if r else ' not'
-        print("{} rev {} is{} {}".format(args.hpn, args.revision, rrr, args.check_rev))
+    elif action_tag == 'ch':  # check revisions
+        for hpn in args.hpn:
+            r = cm_handling.cmpr.check_rev(hpn, args.revision, args.check_rev, date_query,
+                                           args.full_req, session)
+            rrr = '' if r else ' not'
+            print("{} rev {} is{} {}".format(hpn, args.revision, rrr, args.check_rev))
 
-    elif args.action[:2].lower() == 'ov':  # overlapping revisions
-        cm_handling.cmpr.check_part_for_overlapping_revisions(args.hpn, session)
+    elif action_tag == 'ov':  # overlapping revisions
+        for hpn in args.hpn:
+            cm_handling.cmpr.check_part_for_overlapping_revisions(hpn, session)
 
-    elif args.action[:2].lower() == 'up':  # update
+    elif action_tag == 'up':  # update
         you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script \
                                             -- are you sure you want to do this? ", 'n')
         if you_are_sure:

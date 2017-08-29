@@ -202,7 +202,7 @@ class Hookup:
         This gets the full set of headers for a future show_hookup that doesn't require the same
         hookup starting point.
 
-        Returns a single column for now (the one/long_column stuff).
+        Returns a single column for now (the one/long_column stuff)!!!!
 
         The method searches all of the hookup chains to find the longest one and returns those
         part-type header names.
