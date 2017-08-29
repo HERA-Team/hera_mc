@@ -633,7 +633,7 @@ class Handling:
                 found_stations.append(a.station_name)
         return found_stations
 
-    def plot_stations(self, stations_to_plot, query_date, state_args):
+    def plot_stations(self, stations_to_plot, query_date, state_args, testing=False):
         """
         Plot a list of stations.
 
@@ -644,13 +644,15 @@ class Handling:
         state_args:  dictionary with state arguments (fig_num, marker_color,
                      marker_shape, marker_size, show_label)
         """
-        import matplotlib.pyplot as plt
+        if not testing:
+            import matplotlib.pyplot as plt
 
         query_date = cm_utils._get_astropytime(query_date)
         displaying_label = bool(state_args['show_label'])
         if displaying_label:
             label_to_show = state_args['show_label'].lower()
-        plt.figure(state_args['fig_num'])
+        if not testing:
+            plt.figure(state_args['fig_num'])
         for station in stations_to_plot:
             ustn = station.upper()
             for a in self.session.query(geo_location.GeoLocation).filter(
@@ -659,10 +661,11 @@ class Handling:
                       'elevation': a.elevation}
                 X = pt[self.coord[state_args['xgraph']]]
                 Y = pt[self.coord[state_args['ygraph']]]
-                plt.plot(X, Y, color=state_args['marker_color'],
-                         marker=state_args['marker_shape'],
-                         markersize=state_args['marker_size'],
-                         label=a.station_name)
+                if not testing:
+                    plt.plot(X, Y, color=state_args['marker_color'],
+                             marker=state_args['marker_shape'],
+                             markersize=state_args['marker_size'],
+                             label=a.station_name)
                 if displaying_label:
                     if label_to_show == 'name':
                         labeling = a.station_name
@@ -684,7 +687,8 @@ class Handling:
                                 labeling = '-'
                         else:
                             labeling = 'S'
-                    plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
+                    if not testing:
+                        plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
         return state_args['fig_num']
 
     def plot_station_types(self, query_date, state_args):
