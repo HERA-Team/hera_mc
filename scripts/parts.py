@@ -25,8 +25,6 @@ if __name__ == '__main__':
     parser.add_argument('--show_state', help="Show only the 'full', active' or 'all' parts [active]", default='active')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
                         dest='hookup_cols', default='all')
-    parser.add_argument('--full-req', help="hookup columns needed to constitute fully connected, comma-delimited no-space list\
-                                            [station, f_engine]", dest='full_req', default='station,f_engine')
     parser.add_argument('--update', help="Update part number records.  Format hpn0:[rev0]:col0:val0, \
                                           [hpn1:[rev1]]col1:val1...  [None]", default=None)
     parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')
@@ -60,7 +58,6 @@ if __name__ == '__main__':
             --port:  port name (particular/all) [ALL]
             --show_state:  show 'full', 'active' or 'all' parts [ACTIVE]
             --hookup-cols:  comma-delimited list of columns to include in hookup (no spaces) [ALL]
-            --full-req:  comma-delimited list of columns to require for fully connections [station,f_engine]
             --levels-testing:  filename for test correlator information, prepend with ':' for test directory [False]
                                Note that ':levels.tst' should work.
             --update:  date for update (not recommended - do it via a script)
@@ -77,7 +74,6 @@ if __name__ == '__main__':
     action_tag = args.action[:2].lower()
     args.hpn = cm_utils.listify(args.hpn)
     args.hookup_cols = cm_utils.listify(args.hookup_cols)
-    args.full_req = cm_utils.listify(args.full_req)
 
     if args.levels_testing is not False and args.levels_testing[0] == ':':
         args.levels_testing = os.path.join(mc.test_data_path, args.levels_testing[1:])
@@ -113,14 +109,12 @@ if __name__ == '__main__':
 
     elif action_tag == 're':  # revisions
         for hpn in args.hpn:
-            rev_ret = cm_handling.cmpr.get_revisions_of_type(hpn, args.revision, date_query,
-                                                             args.full_req, session)
+            rev_ret = cm_handling.cmpr.get_revisions_of_type(hpn, args.revision, date_query, session)
             cm_handling.cmpr.show_revisions(rev_ret)
 
     elif action_tag == 'ch':  # check revisions
         for hpn in args.hpn:
-            r = cm_handling.cmpr.check_rev(hpn, args.revision, args.check_rev, date_query,
-                                           args.full_req, session)
+            r = cm_handling.cmpr.check_rev(hpn, args.revision, args.check_rev, date_query, session)
             rrr = '' if r else ' not'
             print("{} rev {} is{} {}".format(hpn, args.revision, rrr, args.check_rev))
 
