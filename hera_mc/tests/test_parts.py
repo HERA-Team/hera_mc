@@ -86,7 +86,7 @@ class TestParts(TestHERAMC):
 
     def test_get_revisions_of_type(self):
         at_date = self.now
-        fr = ['f_engine']
+        fr = ['f-engine']
         rev_types = ['LAST', 'ACTIVE', 'ALL', 'FULL', 'A']
         for rq in rev_types:
             revision = cm_revisions.get_revisions_of_type('HH0', rq, at_date, fr, self.test_session)
@@ -97,7 +97,7 @@ class TestParts(TestHERAMC):
         self.assertTrue(len(c) == 0)
 
     def test_check_rev(self):
-        fr = ['f_engine']
+        fr = ['f-engine']
         tcr = {'LAST': [self.test_part, self.test_rev],
                'ACTIVE': [self.test_part, self.test_rev],
                'FULL': ['HH0', 'A']}
