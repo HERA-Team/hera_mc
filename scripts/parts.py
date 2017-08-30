@@ -106,11 +106,6 @@ if __name__ == '__main__':
         hookup_dict = hookup.get_hookup(hpn=args.hpn, rev=args.revision, port=args.port,
                                         at_date=date_query, exact_match=args.exact_match,
                                         show_levels=args.show_levels, levels_testing=args.levels_testing)
-        print("PARTS.PY[110]")
-        for k in hookup_dict.keys():
-            print("---  ", k)
-            print(hookup_dict[k])
-        print("\n\n")
         hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
 
     elif action_tag == 'ty':  # types of parts

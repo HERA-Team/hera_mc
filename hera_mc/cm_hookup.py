@@ -205,8 +205,8 @@ class Hookup:
                 hookup_dict['timing'][akey][pkey] = [latest_start, earliest_stop]
                 hookup_dict['fully_connected'][akey][pkey] = (len(hookup_dict['hookup'][akey][pkey]) ==
                                                               full_hookup_length)
-        hookup_dict['columns'].append('Start')
-        hookup_dict['columns'].append('Stop')
+        hookup_dict['columns'].append('start')
+        hookup_dict['columns'].append('stop')
         return hookup_dict
 
     def __get_column_headers(self, part_types_found):
@@ -244,7 +244,7 @@ class Hookup:
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
         warnings.warn("Warning:  correlator levels don't work with new pol hookup scheme yet (CM_HOOKUP[210]).")
         return hookup_dict
-        hookup_dict['columns'].append('levels')
+        hookup_dict['columns'].append('level')
         hookup_dict['levels'] = {}
         pf_input = []
         for k in sorted(hookup_dict['hookup'].keys()):
@@ -280,8 +280,8 @@ class Hookup:
         cols_to_show:  list of columns to include in hookup listing
         show_levels:  boolean to either show the correlator levels or not
         """
-
         headers = self.__make_header_row(hookup_dict['columns'], cols_to_show)
+        print("cm_hookup[284]:  ", headers)
         table_data = []
         for hukey in sorted(hookup_dict['hookup'].keys()):
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
@@ -308,68 +308,37 @@ class Hookup:
 
     def __make_table_row(self, hup, headers, timing, show_level):
         td = ['-'] * len(headers)
+        dip = ''
+        j = 0  # This catches potentially duplicated part_types
         for d in hup:
             part_type = self.handling.get_part_type_for(d.upstream_part)
             if part_type == headers[0]:
-                td[0] = d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port \
-                    + d.downstream_input_port + '> '
-            try:
-                td[headers.index(part_type)] = d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port
-
-
-
-
-        if show_flag[0]:
-            pn = hup[0]
-            prpn = (pn.upstream_part + ':' + pn.up_part_rev + ' <' +
-                    pn.upstream_output_port)
-            td.append(prpn)
-        for i in range(1, len(hup)):
-            if show_flag[i]:
-                pn = hup[i - 1]
-                prpn = (pn.downstream_input_port + '> ' + pn.downstream_part + ':' +
-                        pn.down_part_rev)
-                pn = hup[i]
-                prpn += ' <' + pn.upstream_output_port
-                td.append(prpn)
-        if show_flag[-1]:
-            pn = hup[-1]
-            prpn = (pn.downstream_input_port + '> ' + pn.downstream_part + ':' +
-                    pn.down_part_rev)
-            td.append(prpn)
-        td.append(str(timing[0]))
-        td.append(str(timing[1]))
+                td[0] = d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port
+                dip = d.downstream_input_port + '> '
+                j += 1
+            else:
+                try:
+                    td[headers.index(part_type, j)] = dip + d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port
+                    j += 1
+                except ValueError:
+                    pass
+                dip = d.downstream_input_port + '> '
+        part_type = self.handling.get_part_type_for(d.downstream_part)
+        try:
+            td[headers.index(part_type, j)] = dip + d.downstream_part + ':' + d.down_part_rev
+        except ValueError:
+            pass
+        try:
+            td[headers.index('start')] = timing[0]
+        except ValueError:
+            pass
+        try:
+            td[headers.index('stop')] = timing[1]
+        except ValueError:
+            pass
         if show_level:
-            td.append(show_level)
-        if len(td) != len(headers):
-            new_hup = []
-            nc = '-'
-            for hdr in headers:
-                if hdr == 'levels':
-                    continue
-                for hu in hup:
-                    get_part_type = self.handling.get_part_dossier(
-                        hpn=hu.upstream_part, rev=hu.up_part_rev,
-                        at_date=None, exact_match=True)
-                    pr_key = cm_utils._make_part_key(hu.upstream_part, hu.up_part_rev)
-                    part_col = get_part_type[pr_key]['part'].hptype
-                    if self.__header_entry_name_adjust(part_col) == hdr:
-                        new_hup.append(hu)
-                        break
-                else:
-                    get_part_type = self.handling.get_part_dossier(
-                        hpn=hu.downstream_part, rev=hu.down_part_rev,
-                        at_date=None, exact_match=True)
-                    pr_key = cm_utils._make_part_key(hu.downstream_part, hu.down_part_rev)
-                    part_col = get_part_type[pr_key]['part'].hptype
-                    if self.__header_entry_name_adjust(part_col) == hdr:
-                        continue
-                    else:
-                        new_hup.append(PC.Connections(upstream_part=nc,
-                                                      up_part_rev=nc,
-                                                      upstream_output_port=nc,
-                                                      downstream_part=nc,
-                                                      down_part_rev=nc,
-                                                      downstream_input_port=nc))
-            td = self.__make_table_row(new_hup, headers, show_flag, show_level)
+            try:
+                td[headers.index('level')] = show_level
+            except ValueError:
+                pass
         return td
