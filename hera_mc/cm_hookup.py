@@ -37,6 +37,7 @@ class Hookup:
         else:
             self.session = session
         self.handling = cm_handling.Handling(session)
+        self.part_type_cache = {}
 
     def get_hookup(self, hpn, rev, port, at_date, exact_match=False, show_levels=False, levels_testing=False):
         """
@@ -69,7 +70,8 @@ class Hookup:
         # Get all the appropriate parts
         parts = self.handling.get_part_dossier(hpn=hpn, rev=rev,
                                                at_date=self.at_date,
-                                               exact_match=exact_match)
+                                               exact_match=exact_match,
+                                               full_version=False)
         hookup_dict = {'hookup': {}}
         pols_to_do = self.__get_pols_to_do(hpn[0], port, check_pol=False)
 
@@ -92,9 +94,11 @@ class Hookup:
     def __get_part_types_found(self, huco, part_types_found):
         for c in huco:
             part_type = self.handling.get_part_type_for(c.upstream_part).lower()
+            self.part_type_cache[c.upstream_part] = part_type
             if part_type not in part_types_found:
                 part_types_found.append(part_type)
         part_type = self.handling.get_part_type_for(huco[-1].downstream_part).lower()
+        self.part_type_cache[huco[-1].downstream_part] = part_type
         if part_type not in part_types_found:
             part_types_found.append(part_type)
         return part_types_found
@@ -221,23 +225,19 @@ class Hookup:
         -------------
         part_types_found:  list of the part types that were found
         """
-
         if len(part_types_found) == 0:
             return [], {}
-
-        is_parts_paper = True
-        for part_type in part_types_found:
-            if part_type not in PC.full_connection_path_parts_paper:
-                is_parts_paper = False
-                break
+        for sp in PC.full_connection_path.keys():
+            is_this_one = sp
+            for part_type in part_types_found:
+                if part_type not in PC.full_connection_path[sp]:
+                    is_this_one = False
+                    break
+        parts_epoch = {'epoch': is_this_one, 'path': PC.full_connection_path[is_this_one]}
         colhead = []
-        if is_parts_paper:
-            parts_epoch = {'epoch': 'parts_paper', 'path': PC.full_connection_path_parts_paper}
-            for c in PC.full_connection_path_parts_paper:
-                if c in part_types_found:
-                    colhead.append(c)
-        else:
-            raise RuntimeError('signal path not valid.')
+        for c in PC.full_connection_path[is_this_one]:
+            if c in part_types_found:
+                colhead.append(c)
 
         return colhead, parts_epoch
 
@@ -303,8 +303,8 @@ class Hookup:
                         level = hookup_dict['levels'][hukey][pol]
                     else:
                         level = False
-                    td = self.__make_table_row(hookup_dict['hookup'][hukey][pol], headers,
-                                               timing, level)
+                    td = self.__make_table_row(hookup_dict['hookup'][hukey][pol],
+                                               headers, timing, level)
                     table_data.append(td)
         print('\n')
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
@@ -323,7 +323,7 @@ class Hookup:
         dip = ''
         j = 0  # This catches potentially duplicated part_types
         for d in hup:
-            part_type = self.handling.get_part_type_for(d.upstream_part)
+            part_type = self.part_type_cache[d.upstream_part]
             if part_type == headers[0]:
                 td[0] = d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port
                 dip = d.downstream_input_port + '> '
@@ -333,7 +333,7 @@ class Hookup:
                     td[headers.index(part_type, j)] = dip + d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port
                     j += 1
                 dip = d.downstream_input_port + '> '
-        part_type = self.handling.get_part_type_for(d.downstream_part)
+        part_type = self.part_type_cache[d.downstream_part]
         if part_type in headers:
             td[headers.index(part_type, j)] = dip + d.downstream_part + ':' + d.down_part_rev
         if 'start' in headers:

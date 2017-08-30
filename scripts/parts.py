@@ -105,7 +105,8 @@ if __name__ == '__main__':
         hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
 
     elif action_tag == 'ty':  # types of parts
-        part_type_dict = handling.get_part_types(date_query, show_hptype=True)
+        part_type_dict = handling.get_part_types(date_query)
+        handling.show_part_types()
 
     elif action_tag == 're':  # revisions
         for hpn in args.hpn:
