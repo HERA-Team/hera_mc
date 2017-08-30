@@ -55,7 +55,7 @@ class Hookup:
 
         Parameters
         -----------
-        hpn:  the input hera part number (whole or first part thereof)
+        hpn:  list of input hera part numbers (whole or first part thereof)
         rev:  the revision number
         port:  a specifiable port name,  default is 'all'.  Unverified.
         at_date:  date for hookup validity
@@ -92,6 +92,8 @@ class Hookup:
         return hookup_dict
 
     def __get_part_types_found(self, huco, part_types_found):
+        print("CM_HOOKUP[95]:")
+        print(huco)
         for c in huco:
             part_type = self.handling.get_part_type_for(c.upstream_part).lower()
             self.part_type_cache[c.upstream_part] = part_type
