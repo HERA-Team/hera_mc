@@ -110,7 +110,8 @@ if __name__ == '__main__':
         for k in hookup_dict.keys():
             print("---  ", k)
             print(hookup_dict[k])
-            #hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
+        print("\n\n")
+        hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
 
     elif action_tag == 'ty':  # types of parts
         part_type_dict = handling.get_part_types(date_query, show_hptype=True)
