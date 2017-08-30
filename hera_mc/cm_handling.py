@@ -107,7 +107,7 @@ class Handling:
             (func.upper(PC.Parts.hpn) == hpn.upper())).first()
         return part_query.hptype
 
-    def get_part_dossier(self, hpn, rev, at_date, exact_match=False):
+    def get_part_dossier(self, hpn, rev, at_date, exact_match=False, full_version=True):
         """
         Return information on a part.  It will return all matching first
         characters unless exact_match==True.
@@ -123,6 +123,7 @@ class Handling:
         rev:  specific revision or category [string, currently not a list]
         at_date:  reference date of dossier [something _get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
+        full_version:  flag whether to populate the full_version or truncated version
         """
 
         at_date = cm_utils._get_astropytime(at_date)
@@ -152,25 +153,28 @@ class Handling:
                     part = copy.copy(part_query.all()[0])
                     part.gps2Time()
                     pr_key = cm_utils._make_part_key(part.hpn, part.hpn_rev)
-                    part_dossier[pr_key] = {'Time': at_date, 'part': part,
-                                            'part_info': None,
-                                            'input_ports': [], 'output_ports': [],
-                                            'connections': None, 'geo': None}
-                    for part_info in self.session.query(PC.PartInfo).filter(
-                            (func.upper(PC.PartInfo.hpn) == part.hpn.upper()) &
-                            (func.upper(PC.PartInfo.hpn_rev) == part.hpn_rev.upper())):
-                        # part_info.gps2Time()
-                        part_dossier[pr_key]['part_info'] = part_info
-                    connections = self.get_connection_dossier(
-                        hpn=part.hpn, rev=part.hpn_rev, port='all',
-                        at_date=at_date, exact_match=True)
-                    part_dossier[pr_key]['connections'] = connections
-                    if part.hptype == 'station':
-                        from hera_mc import geo_handling
-                        part_dossier[pr_key]['geo'] = geo_handling.get_location(
-                            [part.hpn], at_date, session=self.session)
-                    part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
-                        self.find_ports(part_dossier[pr_key]['connections'])
+                    part_dossier[pr_key] = {'Time': at_date, 'part': part}
+                    if full_version:
+                        part_dossier[pr_key]['part_info'] = None
+                        part_dossier[pr_key]['connections'] = None
+                        part_dossier[pr_key]['geo'] = None
+                        part_dossier[pr_key]['input_ports'] = []
+                        part_dossier[pr_key]['output_ports'] = []
+                        for part_info in self.session.query(PC.PartInfo).filter(
+                                (func.upper(PC.PartInfo.hpn) == part.hpn.upper()) &
+                                (func.upper(PC.PartInfo.hpn_rev) == part.hpn_rev.upper())):
+                            # part_info.gps2Time()
+                            part_dossier[pr_key]['part_info'] = part_info
+                        connections = self.get_connection_dossier(
+                            hpn=part.hpn, rev=part.hpn_rev, port='all',
+                            at_date=at_date, exact_match=True)
+                        part_dossier[pr_key]['connections'] = connections
+                        if part.hptype == 'station':
+                            from hera_mc import geo_handling
+                            part_dossier[pr_key]['geo'] = geo_handling.get_location(
+                                [part.hpn], at_date, session=self.session)
+                        part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
+                            self.find_ports(part_dossier[pr_key]['connections'])
                 else:
                     msg = "Should only be one part/rev for {}:{}.".format(part.hpn, part.hpn_rev)
                     warnings.warn(msg)
@@ -499,7 +503,7 @@ class Handling:
             if k not in already_shown:
                 print(v, v.start_date, v.stop_date)
 
-    def get_part_types(self, at_date, show_hptype=False):
+    def get_part_types(self, at_date):
         """
         Goes through database and pulls out part types and some other info to
             display in a table.
@@ -508,7 +512,7 @@ class Handling:
 
         Parameters
         -----------
-        show_hptype:  boolean variable to print it out
+        at_date:  date for part_types to be shown
         """
 
         self.part_type_dict = {}
@@ -521,10 +525,6 @@ class Handling:
                                                     'revisions': []}
             else:
                 self.part_type_dict[part.hptype]['part_list'].append(key)
-        if show_hptype:
-            headers = ['Part type', '# in dbase', 'Input ports', 'Output ports',
-                       'Revisions']
-            table_data = []
         for k in self.part_type_dict.keys():
             found_connection = False
             found_revisions = []
@@ -535,7 +535,7 @@ class Handling:
                 if rev not in found_revisions:
                     found_revisions.append(rev)
                 if not found_connection:
-                    pd = self.get_part_dossier(hpn, rev, at_date)
+                    pd = self.get_part_dossier(hpn, rev, at_date, exact_match=True, full_version=True)
                     if len(pd[pa]['input_ports']) > 0 or len(pd[pa]['output_ports']) > 0:
                         input_ports = pd[pa]['input_ports']
                         output_ports = pd[pa]['output_ports']
@@ -547,22 +547,30 @@ class Handling:
             self.part_type_dict[k]['input_ports'] = input_ports
             self.part_type_dict[k]['output_ports'] = output_ports
             self.part_type_dict[k]['revisions'] = sorted(found_revisions)
-            if show_hptype:
-                td = [k, len(self.part_type_dict[k]['part_list'])]
-                pts = ''
-                for a in self.part_type_dict[k]['input_ports']:
-                    pts += (a + ', ')
-                td.append(pts.strip().strip(','))
-                pts = ''
-                for b in self.part_type_dict[k]['output_ports']:
-                    pts += (b + ', ')
-                td.append(pts.strip().strip(','))
-                revs = ''
-                for r in self.part_type_dict[k]['revisions']:
-                    revs += (r + ', ')
-                td.append(revs.strip().strip(','))
-                table_data.append(td)
-        if show_hptype:
-            print('\n', tabulate(table_data, headers=headers, tablefmt='orgtbl'))
-        print()
         return self.part_type_dict
+
+    def show_part_types(self):
+        """
+        Displays the part_types dictionary
+        """
+
+        headers = ['Part type', '# in dbase', 'Input ports', 'Output ports',
+                   'Revisions']
+        table_data = []
+        for k in self.part_type_dict.keys():
+            td = [k, len(self.part_type_dict[k]['part_list'])]
+            pts = ''
+            for a in self.part_type_dict[k]['input_ports']:
+                pts += (a + ', ')
+            td.append(pts.strip().strip(','))
+            pts = ''
+            for b in self.part_type_dict[k]['output_ports']:
+                pts += (b + ', ')
+            td.append(pts.strip().strip(','))
+            revs = ''
+            for r in self.part_type_dict[k]['revisions']:
+                revs += (r + ', ')
+            td.append(revs.strip().strip(','))
+            table_data.append(td)
+        print('\n', tabulate(table_data, headers=headers, tablefmt='orgtbl'))
+        print()

@@ -299,7 +299,7 @@ class Handling:
                 print(a)
         return True
 
-    def _search_loop(self, stn, at_date, now, m, base_tdelta, full_req):
+    def _search_loop(self, stn, at_date, now, m, base_tdelta):
         """
         To find a fully connected signal path, you must loop through times.
         To speed it up, this has one loop with bigger time steps (but not too
@@ -312,22 +312,21 @@ class Handling:
             at_date += TimeDelta(m * base_tdelta, format='sec')
             if at_date > now:
                 at_date = now + TimeDelta(10.0, format='sec')
-            fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)
+            fc = cm_revisions.get_full_revision(stn, at_date, self.session)
             if len(fc) == 1:
                 at_date -= TimeDelta(m * base_tdelta - 600.0, format='sec')
-                fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)
+                fc = cm_revisions.get_full_revision(stn, at_date, self.session)
                 while len(fc) == 0 and at_date < now:
                     at_date += TimeDelta(base_tdelta, format='sec')
                     if at_date > now:
                         at_date = now + TimeDelta(10.0, format='sec')
-                    fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)
+                    fc = cm_revisions.get_full_revision(stn, at_date, self.session)
                 break
             elif at_date > now:
                 break
         return fc, at_date
 
     def get_all_fully_connected_ever(self, earliest_date=Time('2016-09-01'),
-                                     full_req=part_connect.full_connection_path_parts_paper,
                                      station_types_to_check='all'):
         """
         Returns a list of dictionaries of all of the locations fully connected ever that
@@ -358,7 +357,6 @@ class Handling:
         Parameters
         -----------
         earliest_date:  earliest_date to check for connections.
-        full_req: list of parts required for a connection to be a 'full' connection
             (default: part_connect.full_connection_path_parts_paper)
         station_types_to_check:  list of station types to limit check, or 'all' (default: 'all')
         """
@@ -391,13 +389,13 @@ class Handling:
                 else:
                     at_date = conn.start_date + TimeDelta(600.0, format='sec')
                 # Find the first fully connected signal path from location.
-                fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)
+                fc = cm_revisions.get_full_revision(stn, at_date, self.session)
                 if len(fc) == 0 and at_date < now:
-                    fc, at_date = self._search_loop(stn, at_date, now, m, base_tdelta, full_req)
+                    fc, at_date = self._search_loop(stn, at_date, now, m, base_tdelta)
                 if len(fc) == 0:
                     continue
                 station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date,
-                                                                         hookup=hookup, fc=fc, full_req=full_req)
+                                                                         hookup=hookup, fc=fc)
                 station_conn.append(station_dict)
                 # Get subsequent ones up to 'now'.  To speed up the search, start the next time at the stop time of previous connection.
                 k0 = fc[0].hookup['timing'].keys()[0]
@@ -409,13 +407,12 @@ class Handling:
                 fc_stop = Time(fc_stop, format='gps')
                 at_date = fc_stop + TimeDelta(base_tdelta, format='sec')
                 while fc_stop is not None:  # Keep searching until there are no more full connections up to now.
-                    fc, at_date = self._search_loop(stn, at_date, now, m, base_tdelta, full_req)
+                    fc, at_date = self._search_loop(stn, at_date, now, m, base_tdelta)
                     if len(fc) == 0:
                         break
                     # Found one - add it to list.
                     station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date,
-                                                                             hookup=hookup, fc=fc,
-                                                                             full_req=full_req)
+                                                                             hookup=hookup, fc=fc)
                     station_conn.append(station_dict)
                     # Get the connection stop time to start looking for next one.  Break as appropriate
                     k0 = fc[0].hookup['timing'].keys()[0]
@@ -429,9 +426,7 @@ class Handling:
                         break
         return station_conn
 
-    def get_all_fully_connected_at_date(self, at_date,
-                                        full_req=part_connect.full_connection_path_parts_paper,
-                                        station_types_to_check='all'):
+    def get_all_fully_connected_at_date(self, at_date, station_types_to_check='all'):
         """
         Returns a list of dictionaries of all of the locations fully connected at_date
         have station_types in station_types_to_check.  The dictonary is defined in
@@ -456,7 +451,6 @@ class Handling:
         Parameters
         -----------
         at_date:  date to check for connections
-        full_req:  list containing needed parts to be considered complete
         station_types_to_check:  list of station types to limit check, or 'all' [default 'all']
         """
         from hera_mc import cm_hookup
@@ -472,14 +466,12 @@ class Handling:
                 station_dict = self.get_fully_connected_location_at_date(stn=stn,
                                                                          at_date=at_date,
                                                                          hookup=hookup,
-                                                                         fc=None,
-                                                                         full_req=full_req)
+                                                                         fc=None)
                 if len(station_dict.keys()) > 1:
                     station_conn.append(station_dict)
         return station_conn
 
-    def get_fully_connected_location_at_date(self, stn, at_date, hookup, fc=None,
-                                             full_req=part_connect.full_connection_path_parts_paper):
+    def get_fully_connected_location_at_date(self, stn, at_date, hookup, fc=None):
         """
         Returns a dictionary for location stn that is fully connected at_date.  Provides
         the dictonary used in other methods.
@@ -506,10 +498,9 @@ class Handling:
         at_date:  date to check for connections, must be an astropy.Time
         hookup:  is to provide a hookup instance to not have to do it everytime
         fc:  is the full hookup/revision, in case you already have it don't call it again
-        full_req:  list containing needed parts to be considered complete
         """
         if fc is None:
-            fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)
+            fc = cm_revisions.get_full_revision(stn, at_date, self.session)
         station_dict = {}
         if len(fc) == 1:
             hu = fc[0].hookup
