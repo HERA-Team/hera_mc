@@ -205,6 +205,8 @@ class Hookup:
                 hookup_dict['timing'][akey][pkey] = [latest_start, earliest_stop]
                 hookup_dict['fully_connected'][akey][pkey] = (len(hookup_dict['hookup'][akey][pkey]) ==
                                                               full_hookup_length)
+        hookup_dict['columns'].append('Start')
+        hookup_dict['columns'].append('Stop')
         return hookup_dict
 
     def __get_column_headers(self, part_types_found):
@@ -279,39 +281,44 @@ class Hookup:
         show_levels:  boolean to either show the correlator levels or not
         """
 
-        headers, show_flag = self.__make_header_row(hookup_dict['columns'],
-                                                    cols_to_show, show_levels)
+        headers = self.__make_header_row(hookup_dict['columns'], cols_to_show)
         table_data = []
         for hukey in sorted(hookup_dict['hookup'].keys()):
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
-                timing = hookup_dict['timing'][hukey][pol]
-                if show_levels:
-                    level = hookup_dict['levels'][hukey][pol]
-                else:
-                    level = False
-                if len(hookup_dict['hookup'][hukey][pol]) > 0:
+                if len(hookup_dict['hookup'][hukey][pol]):
+                    timing = hookup_dict['timing'][hukey][pol]
+                    if show_levels:
+                        level = hookup_dict['levels'][hukey][pol]
+                    else:
+                        level = False
                     td = self.__make_table_row(hookup_dict['hookup'][hukey][pol], headers,
-                                               show_flag, timing, level)
+                                               timing, level)
                     table_data.append(td)
         print('\n')
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
         print('\n')
 
-    def __make_header_row(self, header_col, cols_to_show, show_levels):
+    def __make_header_row(self, header_col, cols_to_show):
         headers = []
         show_flag = []
         for col in header_col:
-            colhead = self.__header_entry_name_adjust(col)
-            if cols_to_show[0].lower() == 'all' or colhead in cols_to_show:
-                show_flag.append(True)
-                headers.append(colhead)
-            else:
-                show_flag.append(False)
-        return headers, show_flag
+            if cols_to_show[0].lower() == 'all' or col in cols_to_show:
+                headers.append(col)
+        return headers
 
-    def __make_table_row(self, hup, headers, show_flag, timing, show_level):
-        nc = '-'
-        td = []
+    def __make_table_row(self, hup, headers, timing, show_level):
+        td = ['-'] * len(headers)
+        for d in hup:
+            part_type = self.handling.get_part_type_for(d.upstream_part)
+            if part_type == headers[0]:
+                td[0] = d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port \
+                    + d.downstream_input_port + '> '
+            try:
+                td[headers.index(part_type)] = d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port
+
+
+
+
         if show_flag[0]:
             pn = hup[0]
             prpn = (pn.upstream_part + ':' + pn.up_part_rev + ' <' +
