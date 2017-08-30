@@ -29,7 +29,7 @@ class NoTimeError(Exception):
 
 
 def get_revisions_of_type(hpn, rev_type, at_date=None,
-                          full_req=part_connect.full_connection_parts_paper,
+                          full_req=part_connect.full_connection_path_parts_paper,
                           session=None):
     """
     Returns namespace of revisions (hpn, rev, started, ended) of queried type.

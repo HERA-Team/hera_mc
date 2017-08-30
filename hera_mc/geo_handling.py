@@ -327,7 +327,7 @@ class Handling:
         return fc, at_date
 
     def get_all_fully_connected_ever(self, earliest_date=Time('2016-09-01'),
-                                     full_req=part_connect.full_connection_parts_paper,
+                                     full_req=part_connect.full_connection_path_parts_paper,
                                      station_types_to_check='all'):
         """
         Returns a list of dictionaries of all of the locations fully connected ever that
@@ -359,7 +359,7 @@ class Handling:
         -----------
         earliest_date:  earliest_date to check for connections.
         full_req: list of parts required for a connection to be a 'full' connection
-            (default: part_connect.full_connection_parts_paper)
+            (default: part_connect.full_connection_path_parts_paper)
         station_types_to_check:  list of station types to limit check, or 'all' (default: 'all')
         """
         from hera_mc import cm_hookup
@@ -430,7 +430,7 @@ class Handling:
         return station_conn
 
     def get_all_fully_connected_at_date(self, at_date,
-                                        full_req=part_connect.full_connection_parts_paper,
+                                        full_req=part_connect.full_connection_path_parts_paper,
                                         station_types_to_check='all'):
         """
         Returns a list of dictionaries of all of the locations fully connected at_date
@@ -456,7 +456,7 @@ class Handling:
         Parameters
         -----------
         at_date:  date to check for connections
-        full_req:  list contining needed parts to be considered complete
+        full_req:  list containing needed parts to be considered complete
         station_types_to_check:  list of station types to limit check, or 'all' [default 'all']
         """
         from hera_mc import cm_hookup
@@ -479,7 +479,7 @@ class Handling:
         return station_conn
 
     def get_fully_connected_location_at_date(self, stn, at_date, hookup, fc=None,
-                                             full_req=part_connect.full_connection_parts_paper):
+                                             full_req=part_connect.full_connection_path_parts_paper):
         """
         Returns a dictionary for location stn that is fully connected at_date.  Provides
         the dictonary used in other methods.
@@ -506,7 +506,7 @@ class Handling:
         at_date:  date to check for connections, must be an astropy.Time
         hookup:  is to provide a hookup instance to not have to do it everytime
         fc:  is the full hookup/revision, in case you already have it don't call it again
-        full_req:  list contining needed parts to be considered complete
+        full_req:  list containing needed parts to be considered complete
         """
         if fc is None:
             fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)

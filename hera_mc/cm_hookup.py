@@ -41,19 +41,16 @@ class Hookup:
     def get_hookup(self, hpn, rev, port, at_date, exact_match=False, show_levels=False, levels_testing=False):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary
-        Returns hookup_dict, a dictionary with three to four entries:
-            'hookup': another dictionary keyed on part:rev then pol (e/n)
-            'columns': names of parts that are used in displaying the hookup as
-                       column headers
+        Returns hookup_dict, a dictionary with the following entries:
+            'hookup': another dictionary keyed on part then pol (e/n)
+            'columns': names of parts that are used in displaying the hookup as column headers
             'timing':  valid times for the corresponding hookup in dictionary
+            'parts_epoch':  either ['parts_paper', full_path_list] or ['parts_hera', full_path_list]
+            'fully_connected':  flags whether it is a full connection for corresponding hookup
             'levels':  correlator levels, if desired
         This only gets the contemporary hookups (unlike parts and connections,
             which get all.)  That is, only hookups valid at_date are returned.
-        Note that this also assumes all hookups returned are connected at the same
-            furthest upstream place.  This means that the columns heading won't match
-            if valid hookups for a list start at different upstream locations.  The plan
-            is to fix that.
-
+            They are therefore only within one parts_epoch
 
         Parameters
         -----------
@@ -74,22 +71,33 @@ class Hookup:
                                                at_date=self.at_date,
                                                exact_match=exact_match)
         hookup_dict = {'hookup': {}}
-        pols_to_do = self.__get_pols_to_do(hpn, port, check_pol=False)
+        pols_to_do = self.__get_pols_to_do(hpn[0], port, check_pol=False)
 
+        part_types_found = []
         for k, part in parts.iteritems():
             if not cm_utils._is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
                 continue
             hookup_dict['hookup'][k] = {}
             for pol in pols_to_do:
                 hookup_dict['hookup'][k][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
-        if len(hookup_dict['hookup'].keys()) == 0:
-            hookup_dict['columns'] = []
-        else:
-            hookup_dict = self.__add_hookup_timing(hookup_dict)
-            hookup_dict['columns'] = self.__get_column_headers(hookup_dict['hookup'])
+                part_types_found = self.__get_part_types_found(hookup_dict['hookup'][k][pol], part_types_found)
+        # Add other information in to the hookup_dict
+        hookup_dict['columns'], hookup_dict['parts_epoch'] = self.__get_column_headers(part_types_found)
+        if len(hookup_dict['columns']):
+            hookup_dict = self.__add_hookup_timing_and_flags(hookup_dict)
             if show_levels:
                 hookup_dict = self.__hookup_add_correlator_levels(hookup_dict, levels_testing)
         return hookup_dict
+
+    def __get_part_types_found(self, huco, part_types_found):
+        for c in huco:
+            part_type = self.handling.get_part_type_for(c.upstream_part).lower()
+            if part_type not in part_types_found:
+                part_types_found.append(part_type)
+        part_type = self.handling.get_part_type_for(huco[-1].downstream_part).lower()
+        if part_type not in part_types_found:
+            part_types_found.append(part_type)
+        return part_types_found
 
     def __get_pols_to_do(self, part, port, check_pol=False):
         all_pols = ['e', 'n']
@@ -175,10 +183,13 @@ class Hookup:
                         break
         return next_one
 
-    def __add_hookup_timing(self, hookup_dict):
+    def __add_hookup_timing_and_flags(self, hookup_dict):
+        full_hookup_length = len(hookup_dict['parts_epoch']['path']) - 1
         hookup_dict['timing'] = {}
+        hookup_dict['fully_connected'] = {}
         for akey, hk in hookup_dict['hookup'].iteritems():
             hookup_dict['timing'][akey] = {}
+            hookup_dict['fully_connected'][akey] = {}
             for pkey, pol in hk.iteritems():
                 latest_start = 0
                 earliest_stop = None
@@ -192,68 +203,41 @@ class Hookup:
                     elif c.stop_gpstime < earliest_stop:
                         earliest_stop = c.stop_gpstime
                 hookup_dict['timing'][akey][pkey] = [latest_start, earliest_stop]
+                hookup_dict['fully_connected'][akey][pkey] = (len(hookup_dict['hookup'][akey][pkey]) ==
+                                                              full_hookup_length)
         return hookup_dict
 
-    def __get_column_headers(self, hu):
+    def __get_column_headers(self, part_types_found):
         """
         The columns in the hookup_dict contain parts in the hookup chain and the column headers are
         the part types contained in that column.  This returns the headers for the retrieved hookup.
 
-        The method searches all of the hookup chains to find the longest one and returns those
-        part-type header names.  It will miss if the chains go "opposite directions"
+        It just checks which era the parts are in (parts_paper or parts_hera) and keeps however many
+        parts are used.
 
         Parameters:
         -------------
-        hu: the 'hookup' part of the hookup_dictionary
+        part_types_found:  list of the part types that were found
         """
 
-        if len(huh) == 0:
-            return []
-        # This tracks the part and pol keys for the longest hookup
-        lc = Namespace(part=huh.keys()[0], pol=huh[huh.keys()[0]].keys()[0], hlen=0)
-        hu_col = {}
-        return_one_column_for_now = True
-        if return_one_column_for_now:  # This is to just not find part_dossiers on everything for now
-            for hk, hu in huh.iteritems():
-                for pk, pv in hu.iteritems():
-                    if len(pv) > lc.hlen:
-                        lc.part = hk
-                        lc.pol = pk
-                        lc.hlen = len(pv)
-            huh = {hk: {pk: huh[lc.part][lc.pol]}}
+        if len(part_types_found) == 0:
+            return [], {}
 
-        lc.hlen = 0
-        for hk, hu in huh.iteritems():
-            hu_col[hk] = {}
-            for pk, pv in hu.iteritems():
-                if len(pv) == 0:
-                    continue
-                hu_col[hk][pk] = []
-                for h in pv:
-                    get_part_type = self.handling.get_part_dossier(hpn=h.upstream_part,
-                                                                   rev=h.up_part_rev,
-                                                                   at_date=self.at_date,
-                                                                   exact_match=True)
-                    pr_key = cm_utils._make_part_key(h.upstream_part, h.up_part_rev)
-                    hu_col[hk][pk].append(get_part_type[pr_key]['part'].hptype)
-                h = pv[-1]
-                get_part_type = self.handling.get_part_dossier(hpn=h.downstream_part,
-                                                               rev=h.down_part_rev,
-                                                               at_date=self.at_date,
-                                                               exact_match=True)
-                pr_key = cm_utils._make_part_key(h.downstream_part, h.down_part_rev)
-                hu_col[hk][pk].append(get_part_type[pr_key]['part'].hptype)
-                hu_col[hk][pk].append('Start')
-                hu_col[hk][pk].append('Stop')
-                # Next two lines for "one column" solution
-                if len(hu_col[hk][pk]) >= lc.hlen:
-                    lc.part = hk
-                    lc.pol = pk
-                    lc.hlen = len(hu_col[hk][pk])
-        if len(hu_col[lc.part]) == 0:
-            return []
+        is_parts_paper = True
+        for part_type in part_types_found:
+            if part_type not in PC.full_connection_path_parts_paper:
+                is_parts_paper = False
+                break
+        colhead = []
+        if is_parts_paper:
+            parts_epoch = {'epoch': 'parts_paper', 'path': PC.full_connection_path_parts_paper}
+            for c in PC.full_connection_path_parts_paper:
+                if c in part_types_found:
+                    colhead.append(c)
         else:
-            return hu_col[lc.part][lc.pol]
+            raise RuntimeError('signal path not valid.')
+
+        return colhead, parts_epoch
 
     def __hookup_add_correlator_levels(self, hookup_dict, testing):
         warnings.warn("Warning:  correlator levels don't work with new pol hookup scheme yet (CM_HOOKUP[210]).")
@@ -270,19 +254,14 @@ class Hookup:
             hookup_dict['levels'][k] = lstr
         return hookup_dict
 
-    def __header_entry_name_adjust(self, col):
-        if col[-2:] == '_e' or col[-2:] == '_n':
-            # Makes these specific pol parts generic
-            colhead = col[:-2]
-        else:
-            colhead = col
-        return colhead
-
-    def get_correlator_input_from_hookup(self, hookup_dict, corr_name=PC.roach_input_name):
+    def get_correlator_input_from_hookup(self, hookup_dict):
         """
         Retrieve the correlator inputs from a hookup_dictionary
         """
+        if len(hookup_dict['hookup'].keys()) > 1:
+            raise RuntimeError('Too many hookups provided to give e/n correlator inputs.')
         corr_input = {}
+        corr_name = hookup_dict['parts_epoch']['path'][-1]
         if corr_name in hookup_dict['columns']:
             for k, h in hookup_dict['hookup'].iteritems():
                 for j, p in h.iteritems():
