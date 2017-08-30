@@ -317,28 +317,18 @@ class Hookup:
                 dip = d.downstream_input_port + '> '
                 j += 1
             else:
-                try:
+                if part_type in headers:
                     td[headers.index(part_type, j)] = dip + d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port
                     j += 1
-                except ValueError:
-                    pass
                 dip = d.downstream_input_port + '> '
         part_type = self.handling.get_part_type_for(d.downstream_part)
-        try:
+        if part_type in headers:
             td[headers.index(part_type, j)] = dip + d.downstream_part + ':' + d.down_part_rev
-        except ValueError:
-            pass
-        try:
+        if 'start' in headers:
             td[headers.index('start')] = timing[0]
-        except ValueError:
-            pass
-        try:
+        if 'stop' in headers:
             td[headers.index('stop')] = timing[1]
-        except ValueError:
-            pass
         if show_level:
-            try:
+            if 'level' in headers:
                 td[headers.index('level')] = show_level
-            except ValueError:
-                pass
         return td
