@@ -270,6 +270,9 @@ def get_full_revision(hpn, at_date, session=None):
 
     hookup = cm_hookup.Hookup(session)
     hu = hookup.get_hookup(hpn, rev[0].rev, 'all', at_date, True)
+    print("CM_REVISIONS[273]:  ")
+    print('hpn:  ', hpn)
+    print(hu)
     return_full = []
     if hookup.is_fully_connected(hu, 'all'):
         return_full.append(Namespace(hpn=hpn, rev=rev[0].rev,
