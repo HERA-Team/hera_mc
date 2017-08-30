@@ -281,7 +281,6 @@ class Hookup:
         show_levels:  boolean to either show the correlator levels or not
         """
         headers = self.__make_header_row(hookup_dict['columns'], cols_to_show)
-        print("cm_hookup[284]:  ", headers)
         table_data = []
         for hukey in sorted(hookup_dict['hookup'].keys()):
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
