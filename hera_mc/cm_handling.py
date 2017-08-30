@@ -93,7 +93,7 @@ class Handling:
         rev:  revision of part number, string for rev or rev type
         """
         at_date = cm_utils._get_astropytime(at_date)
-        connection_dossier = self.get_connection_dossier(hpn, rev, port='all',
+        connection_dossier = self.get_connection_dossier([hpn], rev, port='all',
                                                          at_date=at_date, exact_match=True)
         num_connections = len(connection_dossier['connections'].keys())
         if num_connections == 0:

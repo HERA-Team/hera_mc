@@ -263,6 +263,8 @@ class Hookup:
         if len(hookup_dict['hookup'].keys()) > 1:
             raise RuntimeError('Too many hookups provided to give e/n correlator inputs.')
         corr_input = {}
+        print("CM_HOOKUP[266]:")
+        print(hookup_dict)
         corr_name = hookup_dict['parts_epoch']['path'][-1]
         if corr_name in hookup_dict['columns']:
             for k, h in hookup_dict['hookup'].iteritems():
