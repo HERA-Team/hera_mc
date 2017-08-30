@@ -102,6 +102,11 @@ class Handling:
             found_connected = True
         return found_connected
 
+    def get_part_type_for(self, hpn):
+        part_query = self.session.query(PC.Parts).filter(
+            (func.upper(PC.Parts.hpn) == hpn.upper())).first()
+        return part_query.hptype
+
     def get_part_dossier(self, hpn, rev, at_date, exact_match=False):
         """
         Return information on a part.  It will return all matching first

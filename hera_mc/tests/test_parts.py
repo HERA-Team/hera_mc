@@ -26,6 +26,7 @@ class TestParts(TestHERAMC):
 
         self.test_part = 'test_part'
         self.test_rev = 'Q'
+        self.test_hptype = 'vapor'
         self.start_time = Time('2017-07-01 01:00:00', scale='utc')
         self.now = cm_utils._get_astropytime('now')
         self.h = cm_handling.Handling(self.test_session)
@@ -34,7 +35,7 @@ class TestParts(TestHERAMC):
         part = part_connect.Parts()
         part.hpn = self.test_part
         part.hpn_rev = self.test_rev
-        part.hptype = 'vapor'
+        part.hptype = self.test_hptype
         part.manufacture_number = 'XYZ'
         part.start_gpstime = self.start_time.gps
         self.test_session.add(part)
@@ -60,6 +61,10 @@ class TestParts(TestHERAMC):
             self.assertTrue(located[located.keys()[0]]['part'].hpn == ntp)
         else:
             self.assertFalse("Part Number should be unique.")
+
+    def test_find_part_type(self):
+        pt = self.h.get_part_type_for(self.test_part)
+        self.assertTrue(pt == self.test_hptype)
 
     def test_update_update(self):
         data = [[self.test_part, self.test_rev, 'hpn_rev', 'Z']]

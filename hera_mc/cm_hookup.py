@@ -89,7 +89,6 @@ class Hookup:
             hookup_dict['columns'] = self.__get_column_headers(hookup_dict['hookup'])
             if show_levels:
                 hookup_dict = self.__hookup_add_correlator_levels(hookup_dict, levels_testing)
-
         return hookup_dict
 
     def __get_pols_to_do(self, part, port, check_pol=False):
@@ -195,21 +194,17 @@ class Hookup:
                 hookup_dict['timing'][akey][pkey] = [latest_start, earliest_stop]
         return hookup_dict
 
-    def __get_column_headers(self, huh):
+    def __get_column_headers(self, hu):
         """
         The columns in the hookup_dict contain parts in the hookup chain and the column headers are
         the part types contained in that column.  This returns the headers for the retrieved hookup.
-        This gets the full set of headers for a future show_hookup that doesn't require the same
-        hookup starting point.
-
-        Returns a single column for now (the one/long_column stuff)!!!!
 
         The method searches all of the hookup chains to find the longest one and returns those
-        part-type header names.
+        part-type header names.  It will miss if the chains go "opposite directions"
 
         Parameters:
         -------------
-        huh: the 'hookup' part of the hookup_dictionary
+        hu: the 'hookup' part of the hookup_dictionary
         """
 
         if len(huh) == 0:
