@@ -21,7 +21,7 @@ from . import MCDeclarativeBase, NotNull
 from hera_mc import mc, cm_utils
 
 no_connection_designator = '-X-'
-roach_input_name = 'f_engine'
+roach_input_name = 'f-engine'
 full_connection_parts_paper = ['station', roach_input_name]
 
 
