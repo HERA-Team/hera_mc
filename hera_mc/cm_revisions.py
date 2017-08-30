@@ -28,9 +28,7 @@ class NoTimeError(Exception):
         super(NoTimeError, self).__init__(message)
 
 
-def get_revisions_of_type(hpn, rev_type, at_date=None,
-                          full_req=part_connect.full_connection_path_parts_paper,
-                          session=None):
+def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     """
     Returns namespace of revisions (hpn, rev, started, ended) of queried type.
     Allowed types are:
@@ -45,7 +43,6 @@ def get_revisions_of_type(hpn, rev_type, at_date=None,
     rev_type:  string for revision type
     hpn:  string for hera part number
     at_date:  astropy.Time to check for
-    full_req:  list of part types needed to be present for a revision to be FULLY_CONNECTED
     session:  db session
     """
 
@@ -63,7 +60,7 @@ def get_revisions_of_type(hpn, rev_type, at_date=None,
         if at_date is None:
             raise NoTimeException('FULLY_CONNECTED')
         else:
-            return get_full_revision(hpn, at_date, full_req, session)
+            return get_full_revision(hpn, at_date, session)
 
     if rq == 'ALL':
         return get_all_revisions(hpn, session)
@@ -71,7 +68,7 @@ def get_revisions_of_type(hpn, rev_type, at_date=None,
     return get_particular_revision(hpn, rq, session)
 
 
-def check_rev(hpn, rev, chk, at_date, full_req=None, session=None):
+def check_rev(hpn, rev, chk, at_date, session=None):
     """
     Check whether a revision exists.
 
@@ -83,10 +80,9 @@ def check_rev(hpn, rev, chk, at_date, full_req=None, session=None):
     rev:  revision to check
     chk:  revision type to check against (ACTIVE/FULL/PARTICULAR)
     at_date:  date at which to check
-    full_req:  list of the parts needed to be in hookup for FULL
     session:  database session
     """
-    rev_chk = get_revisions_of_type(hpn, chk, at_date, full_req, session)
+    rev_chk = get_revisions_of_type(hpn, chk, at_date, session)
     if len(rev_chk) == 0 or rev != rev_chk[0].rev:
         return False
     else:
@@ -255,7 +251,7 @@ def get_active_revision(hpn, at_date, session=None):
     return return_active
 
 
-def get_full_revision(hpn, at_date, full_req, session=None):
+def get_full_revision(hpn, at_date, session=None):
     """
     Returns list of fully connected revisions as Namespace(hpn,rev,started,ended)
 
@@ -275,12 +271,7 @@ def get_full_revision(hpn, at_date, full_req, session=None):
     hookup = cm_hookup.Hookup(session)
     hu = hookup.get_hookup(hpn, rev[0].rev, 'all', at_date, True)
     return_full = []
-    is_fully_connected = True
-    for req_part in full_req:
-        if req_part not in hu['columns']:
-            is_fully_connected = False
-            break
-    if is_fully_connected:
+    if hookup.is_fully_connected(hu, 'all'):
         return_full.append(Namespace(hpn=hpn, rev=rev[0].rev,
                                      started=rev[0].started, ended=rev[0].ended,
                                      hookup=hu))

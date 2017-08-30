@@ -270,6 +270,19 @@ class Hookup:
                     corr_input[j] = p[-1].downstream_part
         return corr_input
 
+    def is_fully_connected(self, hookup_dict, any_or_all='all'):
+        num_fully_connected = 0
+        num_in_dict = 0
+        for akey, hk in hookup_dict['hookup'].iteritems():
+            for pkey, pol in hk.iteritems():
+                num_in_dict += 1
+                if hookup_dict['fully_connected'][akey][pkey]:
+                    num_fully_connected += 1
+        if any_or_all == 'all':
+            return num_fully_connected == num_in_dict
+        else:
+            return num_fully_connected > 0
+
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False):
         """
         Print out the hookup table -- uses tabulate package.
