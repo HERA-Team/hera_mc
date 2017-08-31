@@ -357,7 +357,6 @@ class Handling:
         Parameters
         -----------
         earliest_date:  earliest_date to check for connections.
-            (default: part_connect.full_connection_path_parts_paper)
         station_types_to_check:  list of station types to limit check, or 'all' (default: 'all')
         """
         from hera_mc import cm_hookup
@@ -713,9 +712,7 @@ class Handling:
                 for loc in self.station_types[key]['Stations']:
                     show_it = True
                     if state_args['show_state'] == 'active':
-                        fc = cm_revisions.get_full_revision(loc, query_date,
-                                                            part_connect.full_connection_parts_paper,
-                                                            self.session)
+                        fc = cm_revisions.get_full_revision(loc, query_date, self.session)
                         if len(fc) == 0:
                             show_it = False
                     if show_it:

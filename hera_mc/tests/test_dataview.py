@@ -32,8 +32,7 @@ class TestParts(TestHERAMC):
         output_options = cm_utils.listify('flag,corr')
         filename = ['testflag.txt', 'testcorr.txt']
         parts_list = ['HH0']
-        fc_map = self.dv.read_db(parts_list, self.start_time, self.now, dt=1.0,
-                                 full_req=['station', 'f_engine'])
+        fc_map = self.dv.read_db(parts_list, self.start_time, self.now, dt=1.0)
         for i, output in enumerate(output_options):
             self.dv.write_fc_map_file(filename[i], output)
             self.assertTrue(os.path.isfile(filename[i]))
