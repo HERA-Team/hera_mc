@@ -39,7 +39,8 @@ class Hookup:
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
 
-    def get_hookup(self, hpn, rev, port, at_date, exact_match=False, show_levels=False, levels_testing=False):
+    def get_hookup(self, hpn_list, rev, port, at_date, exact_match=False,
+                   show_levels=False, levels_testing=False):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary
         Returns hookup_dict, a dictionary with the following entries:
@@ -55,7 +56,7 @@ class Hookup:
 
         Parameters
         -----------
-        hpn:  list of input hera part numbers (whole or first part thereof)
+        hpn_list:  list of input hera part numbers (whole or first part thereof)
         rev:  the revision number
         port:  a specifiable port name,  default is 'all'.  Unverified.
         at_date:  date for hookup validity
@@ -68,12 +69,12 @@ class Hookup:
         self.at_date = cm_utils._get_astropytime(at_date)
 
         # Get all the appropriate parts
-        parts = self.handling.get_part_dossier(hpn=hpn, rev=rev,
+        parts = self.handling.get_part_dossier(hpn_list=hpn_list, rev=rev,
                                                at_date=self.at_date,
                                                exact_match=exact_match,
                                                full_version=False)
-        hookup_dict = {'hookup': {}}
-        pols_to_do = self.__get_pols_to_do(hpn[0], port, check_pol=False)
+        hookup_dict = {'hookup': {}, 'fully_connected': {}, 'parts_epoch': []}
+        pols_to_do = self.__get_pols_to_do(hpn_list[0], port, check_pol=False)
 
         part_types_found = []
         for k, part in parts.iteritems():
@@ -92,8 +93,8 @@ class Hookup:
         return hookup_dict
 
     def __get_part_types_found(self, huco, part_types_found):
-        print("CM_HOOKUP[95]:")
-        print(huco)
+        if not len(huco):
+            return part_types_found
         for c in huco:
             part_type = self.handling.get_part_type_for(c.upstream_part).lower()
             self.part_type_cache[c.upstream_part] = part_type
@@ -235,11 +236,14 @@ class Hookup:
                 if part_type not in PC.full_connection_path[sp]:
                     is_this_one = False
                     break
-        parts_epoch = {'epoch': is_this_one, 'path': PC.full_connection_path[is_this_one]}
         colhead = []
-        for c in PC.full_connection_path[is_this_one]:
-            if c in part_types_found:
-                colhead.append(c)
+        if not is_this_one:
+            parts_epoch = {'epoch': None, 'path': None}
+        else:
+            parts_epoch = {'epoch': is_this_one, 'path': PC.full_connection_path[is_this_one]}
+            for c in PC.full_connection_path[is_this_one]:
+                if c in part_types_found:
+                    colhead.append(c)
 
         return colhead, parts_epoch
 
@@ -260,19 +264,33 @@ class Hookup:
 
     def get_correlator_input_from_hookup(self, hookup_dict):
         """
-        Retrieve the correlator inputs from a hookup_dictionary
+        Retrieve the correlator inputs from a hookup_dictionary.  This currently
+        only allows for one entry in hookup_dict.  Need to rationalize.
         """
         if len(hookup_dict['hookup'].keys()) > 1:
             raise RuntimeError('Too many hookups provided to give e/n correlator inputs.')
         corr_input = {}
-        print("CM_HOOKUP[266]:")
-        print(hookup_dict)
-        corr_name = hookup_dict['parts_epoch']['path'][-1]
-        if corr_name in hookup_dict['columns']:
+        corr_type_name = hookup_dict['parts_epoch']['path'][-1]
+        if corr_type_name in hookup_dict['columns']:
             for k, h in hookup_dict['hookup'].iteritems():
                 for j, p in h.iteritems():
                     corr_input[j] = p[-1].downstream_part
         return corr_input
+
+    def get_station_from_hookup(self, hookup_dict):
+        """
+        Retrieve the station from a hookup_dictionary.  This currently
+        only allows for one entry in hookup_dict.  Need to rationalize.
+        """
+        if len(hookup_dict['hookup'].keys()) > 1:
+            raise RuntimeError('Too many hookups provided to give unique station.')
+        station_name = None
+        station_type_name = hookup_dict['parts_epoch']['path'][0]
+        if station_type_name in hookup_dict['columns']:
+            for k, h in hookup_dict['hookup'].iteritems():
+                for j, p in h.iteritems():
+                    station_name = p[0].upstream_part
+        return station_name
 
     def is_fully_connected(self, hookup_dict, any_or_all='all'):
         num_fully_connected = 0
@@ -280,7 +298,8 @@ class Hookup:
         for akey, hk in hookup_dict['hookup'].iteritems():
             for pkey, pol in hk.iteritems():
                 num_in_dict += 1
-                if hookup_dict['fully_connected'][akey][pkey]:
+                if akey in hookup_dict['fully_connected'].keys() and \
+                        hookup_dict['fully_connected'][akey][pkey]:
                     num_fully_connected += 1
         if any_or_all == 'all':
             return num_fully_connected == num_in_dict
@@ -314,19 +333,19 @@ class Hookup:
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
         print('\n')
 
-    def __make_header_row(self, header_col, cols_to_show):
+    def __make_header_row(self, header_col_list, cols_to_show):
         headers = []
         show_flag = []
-        for col in header_col:
+        for col in header_col_list:
             if cols_to_show[0].lower() == 'all' or col in cols_to_show:
                 headers.append(col)
         return headers
 
-    def __make_table_row(self, hup, headers, timing, show_level):
+    def __make_table_row(self, hup_list, headers, timing, show_level):
         td = ['-'] * len(headers)
         dip = ''
         j = 0  # This catches potentially duplicated part_types
-        for d in hup:
+        for d in hup_list:
             part_type = self.part_type_cache[d.upstream_part]
             if part_type == headers[0]:
                 td[0] = d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port

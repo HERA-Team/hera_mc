@@ -26,7 +26,7 @@ class TestParts(TestHERAMC):
 
         self.test_part = 'test_part'
         self.test_rev = 'Q'
-        self.test_hptype = 'vapor'
+        self.test_hptype = 'antenna'
         self.start_time = Time('2017-07-01 01:00:00', scale='utc')
         self.now = cm_utils._get_astropytime('now')
         self.h = cm_handling.Handling(self.test_session)
@@ -53,7 +53,7 @@ class TestParts(TestHERAMC):
         ntp = 'new_test_part'
         data = [[ntp, 'X', 'hpn', ntp],
                 [ntp, 'X', 'hpn_rev', 'X'],
-                [ntp, 'X', 'hptype', 'vapor_part'],
+                [ntp, 'X', 'hptype', 'antenna'],
                 [ntp, 'X', 'start_gpstime', 1172530000]]
         part_connect.update_part(self.test_session, data, add_new_part=True)
         located = self.h.get_part_dossier([ntp], 'X', 'now', True)
@@ -80,7 +80,7 @@ class TestParts(TestHERAMC):
         self.assertTrue(located[located.keys()[0]]['part_info'].comment == 'TEST')
 
     def test_add_new_parts(self):
-        data = [['part_X', 'X', 'hptype_X', 'mfg_X']]
+        data = [['part_X', 'X', 'station', 'mfg_X']]
         p = part_connect.Parts()
         part_connect.add_new_parts(self.test_session, p, data, Time('2017-07-01 01:00:00', scale='utc'), True)
         located = self.h.get_part_dossier(['part_X'], 'X', Time('2017-07-01 01:00:00'), True)

@@ -14,6 +14,7 @@ import os.path
 import subprocess
 import numpy as np
 from hera_mc import geo_location, geo_handling, mc, cm_transfer, part_connect
+from hera_mc import cm_hookup
 from hera_mc.tests import TestHERAMC
 from astropy.time import Time
 
@@ -163,7 +164,7 @@ class TestGeo(TestHERAMC):
         ever_list = self.h.get_all_fully_connected_ever()
 
         self.assertEqual(len(now_list), 1)
-        self.assertEqual(len(ever_list), 2)
+        self.assertEqual(len(ever_list), 1)
 
         ever_ends = [loc['stop_date'] for loc in ever_list]
         # The '==' notation below is required (rather than the pep8 suggestion of 'is') for the test to pass.
