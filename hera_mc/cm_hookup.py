@@ -344,7 +344,7 @@ class Hookup:
     def __make_table_row(self, hup_list, headers, timing, show_level):
         td = ['-'] * len(headers)
         dip = ''
-        j = 0  # This catches potentially duplicated part_types
+        j = 0  # This catches potentially duplicated part_type names
         for d in hup_list:
             part_type = self.part_type_cache[d.upstream_part]
             if part_type == headers[0]:
