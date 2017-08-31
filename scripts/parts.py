@@ -22,6 +22,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
     parser.add_argument('--port', help="Define desired port(s) for hookup. [all]", dest='port', default='all')
+    parser.add_argument('--check-rev', help="Revision type to check against. [FULL]", dest='check_rev', default='FULL')
     parser.add_argument('--show_state', help="Show only the 'full', active' or 'all' parts [active]", default='active')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
                         dest='hookup_cols', default='all')
@@ -85,13 +86,13 @@ if __name__ == '__main__':
 
     # Process
     if action_tag == 'pa':  # part_info
-        part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision,
+        part_dossier = handling.get_part_dossier(hpn_list=args.hpn, rev=args.revision,
                                                  at_date=date_query, exact_match=args.exact_match)
         handling.show_parts(part_dossier, verbosity=args.verbosity)
 
     elif action_tag == 'co':  # connection_info
         connection_dossier = handling.get_connection_dossier(
-            hpn=args.hpn, rev=args.revision, port=args.port,
+            hpn_list=args.hpn, rev=args.revision, port=args.port,
             at_date=date_query, exact_match=args.exact_match)
         already_shown = handling.show_connections(connection_dossier, verbosity=args.verbosity)
         handling.show_other_connections(connection_dossier, already_shown)
@@ -99,7 +100,7 @@ if __name__ == '__main__':
     elif action_tag == 'ho':  # hookup
         from hera_mc import cm_hookup
         hookup = cm_hookup.Hookup(session)
-        hookup_dict = hookup.get_hookup(hpn=args.hpn, rev=args.revision, port=args.port,
+        hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port=args.port,
                                         at_date=date_query, exact_match=args.exact_match,
                                         show_levels=args.show_levels, levels_testing=args.levels_testing)
         hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)

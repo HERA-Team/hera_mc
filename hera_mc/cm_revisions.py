@@ -82,6 +82,7 @@ def check_rev(hpn, rev, chk, at_date, session=None):
     at_date:  date at which to check
     session:  database session
     """
+    print("CM_REVISIONS[85]:  This is not debugged.")
     rev_chk = get_revisions_of_type(hpn, chk, at_date, session)
     if len(rev_chk) == 0 or rev != rev_chk[0].rev:
         return False
@@ -120,7 +121,7 @@ def check_part_for_overlapping_revisions(hpn, session=None):
             s = '{} and {} are overlapping revisions of part {}'.format(
                 ol[0].rev, ol[1].rev, hpn)
             warnings.warn(s)
-        show_revisions(overlapping_revs_in_single_list, session)
+        show_revisions(overlapping_revs_in_single_list)
     return overlap
 
 
@@ -253,7 +254,7 @@ def get_active_revision(hpn, at_date, session=None):
 
 def get_full_revision(hpn, at_date, session=None):
     """
-    Returns list of fully connected revisions as Namespace(hpn,rev,started,ended)
+    Returns list of fully connected list revisions as Namespace(hpn,rev,started,ended)
 
     Parameters:
     -------------

@@ -38,11 +38,12 @@ class Dataview:
         fully_connected:  list of fully connected stations provided by the correlator
         methods in geo_handling
         """
-        print("Part number    x/E input    y/N input")
-        print("-----------    ---------    ---------")
+        print("Station      x/E input    y/N input")
+        print("---------    ---------    ---------")
         for fv in fully_connected:
-            print("{:11}    {:9}    {:9}".format(fv['station_name'],
-                  fv['correlator_input_x'], fv['correlator_input_y']))
+            if len(fv.keys()) > 0:
+                print("{:11}    {:9}    {:9}".format(fv['station_name'],
+                                                     fv['correlator_input_x'], fv['correlator_input_y']))
 
     def read_db(self, parts, start_date, stop_date, dt):
         """

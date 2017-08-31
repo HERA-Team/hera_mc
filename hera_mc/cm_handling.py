@@ -107,7 +107,7 @@ class Handling:
             (func.upper(PC.Parts.hpn) == hpn.upper())).first()
         return part_query.hptype
 
-    def get_part_dossier(self, hpn, rev, at_date, exact_match=False, full_version=True):
+    def get_part_dossier(self, hpn_list, rev, at_date, exact_match=False, full_version=True):
         """
         Return information on a part.  It will return all matching first
         characters unless exact_match==True.
@@ -119,7 +119,7 @@ class Handling:
 
         Parameters
         -----------
-        hpn:  the input hera part number [list of strings] (whole or first part thereof)
+        hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
         rev:  specific revision or category [string, currently not a list]
         at_date:  reference date of dossier [something _get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
@@ -130,7 +130,7 @@ class Handling:
 
         part_dossier = {}
         rev_part = {}
-        for xhpn in hpn:
+        for xhpn in hpn_list:
             if not exact_match and xhpn[-1] != '%':
                 xhpn = xhpn + '%'
             for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(xhpn)):
@@ -166,7 +166,7 @@ class Handling:
                             # part_info.gps2Time()
                             part_dossier[pr_key]['part_info'] = part_info
                         connections = self.get_connection_dossier(
-                            hpn=part.hpn, rev=part.hpn_rev, port='all',
+                            hpn_list=[part.hpn], rev=part.hpn_rev, port='all',
                             at_date=at_date, exact_match=True)
                         part_dossier[pr_key]['connections'] = connections
                         if part.hptype == 'station':
@@ -306,7 +306,7 @@ class Handling:
                 fnd.append(copy.copy(conn))
         return fnd
 
-    def get_connection_dossier(self, hpn, rev, port, at_date, exact_match=False):
+    def get_connection_dossier(self, hpn_list, rev, port, at_date, exact_match=False):
         """
         Return information on parts connected to hpn
         It should get connections immediately adjacent to one part (upstream and
@@ -318,7 +318,7 @@ class Handling:
 
         Parameters
         -----------
-        hpn:  the input hera part number [list of strings] (whole or first part thereof)
+        hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
         rev:  revision of part [string, not a list]
         port:  a specifiable port name [string, not a list],  default is 'all'
         at_date: reference date of dossier [anything _get_astropytime can handle]
@@ -327,10 +327,10 @@ class Handling:
 
         at_date = cm_utils._get_astropytime(at_date)
         connection_dossier = {'ordered-pairs': [], 'Time': at_date,
-                              'connected-to': (hpn, rev, port), 'connections': {}}
+                              'connected-to': (hpn_list, rev, port), 'connections': {}}
 
         rev_part = {}
-        for xhpn in hpn:
+        for xhpn in hpn_list:
             if not exact_match and xhpn[-1] != '%':
                 xhpn = xhpn + '%'
             for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(xhpn)):
@@ -535,7 +535,7 @@ class Handling:
                 if rev not in found_revisions:
                     found_revisions.append(rev)
                 if not found_connection:
-                    pd = self.get_part_dossier(hpn, rev, at_date, exact_match=True, full_version=True)
+                    pd = self.get_part_dossier([hpn], rev, at_date, exact_match=True, full_version=True)
                     if len(pd[pa]['input_ports']) > 0 or len(pd[pa]['output_ports']) > 0:
                         input_ports = pd[pa]['input_ports']
                         output_ports = pd[pa]['output_ports']

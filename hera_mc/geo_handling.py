@@ -234,14 +234,14 @@ class Handling:
             raise ValueError('More than one active connection between station and antenna')
         return antenna_connected.upstream_part
 
-    def get_location(self, to_find, query_date, station_types=None):
+    def get_location(self, to_find_list, query_date, station_types=None):
         """
         Return the location of station_name or antenna_number as contained in to_find.
         This accepts the fact that antennas are sort of stations, even though they are parts
 
         Parameters:
         ------------
-        to_find:  station names to find (must be a list)
+        to_find_list:  station names to find (must be a list)
         query_date:  astropy Time for contemporary antenna
         station_types: list of station_type prefixes (e.g. HH)
         show_location:   if True, it will print the information
@@ -251,7 +251,7 @@ class Handling:
             self.get_station_types(add_stations=True)
             station_types = self.station_types
         found_location = []
-        for L in to_find:
+        for L in to_find_list:
             station_name = False
             try:
                 antenna_number = int(L)
@@ -278,15 +278,15 @@ class Handling:
                     found_location.append(copy.copy(a))
         return found_location
 
-    def print_loc_info(self, loc, verbosity='h'):
+    def print_loc_info(self, loc_list, verbosity='h'):
         """
         Prints out location information as returned from get_location.
         Returns False if provided 'loc' is None, otherwise returns True.
         """
-        if loc is None:
-            print("No location found.")
+        if loc_list is None or len(loc_list) == 0:
+            print("No locations found.")
             return False
-        for a in loc:
+        for a in loc_list:
             if verbosity == 'm' or verbosity == 'h':
                 print('station_name: ', a.station_name)
                 print('\teasting: ', a.easting)
@@ -509,7 +509,15 @@ class Handling:
             # But we just want an integer, so we strip the A and cast it to int
             ant_num = int(ant_num[1:])
             corr = hookup.get_correlator_input_from_hookup(hu)
-            fnd = self.get_location([stn], at_date, station_types=self.station_types)[0]
+            stn = hookup.get_station_from_hookup(hu)
+            fnd_list = self.get_location([stn], at_date, station_types=self.station_types)
+            if not len(fnd_list):
+                return station_dict
+            if len(fnd_list) > 1:
+                print("More than one part found:  ", str(fnd))
+                print("Setting to first to continue.")
+            fnd = fnd_list[0]
+
             hera_proj = Proj(proj='utm', zone=fnd.tile, ellps=fnd.datum, south=True)
             strtd = cm_utils.get_date_from_pair(hu['timing'][k0]['e'][0], hu['timing'][k0]['n'][0], 'latest')
             ended = cm_utils.get_date_from_pair(hu['timing'][k0]['e'][1], hu['timing'][k0]['n'][1], 'earliest')
@@ -627,13 +635,13 @@ class Handling:
                 found_stations.append(a.station_name)
         return found_stations
 
-    def plot_stations(self, stations_to_plot, query_date, state_args, testing=False):
+    def plot_stations(self, stations_to_plot_list, query_date, state_args, testing=False):
         """
         Plot a list of stations.
 
         Parameters:
         ------------
-        stations_to_plot:  list containing station_names (note:  NOT antenna_numbers)
+        stations_to_plot_list:  list containing station_names (note:  NOT antenna_numbers)
         query_date:  date to use to check if active
         state_args:  dictionary with state arguments (fig_num, marker_color,
                      marker_shape, marker_size, show_label)
@@ -647,7 +655,7 @@ class Handling:
             label_to_show = state_args['show_label'].lower()
         if not testing:
             plt.figure(state_args['fig_num'])
-        for station in stations_to_plot:
+        for station in stations_to_plot_list:
             ustn = station.upper()
             for a in self.session.query(geo_location.GeoLocation).filter(
                     func.upper(geo_location.GeoLocation.station_name) == ustn):
