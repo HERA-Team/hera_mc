@@ -38,13 +38,14 @@ class Dataview:
         fully_connected:  list of fully connected stations provided by the correlator
         methods in geo_handling
         """
-        print("Part number    x/E input    y/N input")
-        print("-----------    ---------    ---------")
+        print("Station      x/E input    y/N input")
+        print("---------    ---------    ---------")
         for fv in fully_connected:
-            print("{:11}    {:9}    {:9}".format(fv['station_name'],
-                  fv['correlator_input_x'], fv['correlator_input_y']))
+            if len(fv.keys()) > 0:
+                print("{:11}    {:9}    {:9}".format(fv['station_name'],
+                                                     fv['correlator_input_x'], fv['correlator_input_y']))
 
-    def read_db(self, parts, start_date, stop_date, dt, full_req):
+    def read_db(self, parts, start_date, stop_date, dt):
         """
         Reads the database to produce a "map" of fully connected antennas,
         returned in a dictionary (fc_map)
@@ -64,7 +65,7 @@ class Dataview:
             fc_map[p] = {'datetime': [], 'flag': [], 'fc': []}
             at_date = start_date
             while at_date < stop_date:
-                fc = cm_revisions.get_full_revision(p, at_date, full_req, self.session)
+                fc = cm_revisions.get_full_revision(p, at_date, self.session)
                 fc_map[p]['datetime'].append(at_date.datetime)
                 fc_map[p]['flag'].append(len(fc))
                 fc_map[p]['fc'].append(fc)
@@ -107,6 +108,7 @@ class Dataview:
                 elif output == 'corr':
                     if self.fc_map[p]['fc'][i]:
                         this_hu = self.fc_map[p]['fc'][i][0].hookup
+                        print(this_hu)
                         c = hu.get_correlator_input_from_hookup(this_hu)
                         s = 'e:{} n:{}'.format(c['e'], c['n'])
                     else:

@@ -18,7 +18,6 @@ if __name__ == '__main__':
     parser.add_argument('--dt', help="Time resolution (in days) of view.  [1]", default=1.0)
     parser.add_argument('--file', help="Write data to file --file [None].", dest='file', default=None)
     parser.add_argument('--output', help="Type of data output, either flag or corr", choices=['flag', 'corr'], default='flag')
-    parser.add_argument('--full-req', help="Parts to include in for full connection.", dest='full_req', default='default')
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--date2', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]", default='now')
     parser.add_argument('--time2', help="UTC hh:mm or float (hours)", default=0.0)
@@ -41,7 +40,6 @@ if __name__ == '__main__':
             file-view:  plot file(s)
             corr:  Provides information on the correlator hookups for the supplied --date/--time.
                 cmdv.py corr:  will provide a list of correlator inputs for stations in --station-types
-                cmdv.py corr --parts(-p)  will provide the correlator input for --parts
                 cmdv.py corr --parts(-p)  will provide correlator info for --parts
             info:  Print this information and exit.
         """
@@ -52,10 +50,6 @@ if __name__ == '__main__':
 
     if isinstance(args.dt, str):
         args.dt = float(args.dt)
-    if args.full_req == 'default':
-        args.full_req = part_connect.full_connection_parts_paper
-    else:
-        args.full_req = cm_utils.listify(args.full_req)
 
     # start session
     db = mc.connect_to_mc_db(args)
@@ -67,15 +61,14 @@ if __name__ == '__main__':
     if args.action == 'co':
         at_date = cm_utils._get_astropytime(args.date, args.time)
         if args.parts.lower() == 'active':
-            fully_connected = geo.get_all_fully_connected_at_date(at_date, full_req=args.full_req,
+            fully_connected = geo.get_all_fully_connected_at_date(at_date,
                                                                   station_types_to_check=args.station_types)
             dv.print_fully_connected(fully_connected)
         else:
             args.parts = cm_utils.listify(args.parts)
             fully_connected = []
             for a2f in args.parts:
-                c = geo.get_fully_connected_location_at_date(a2f, at_date, hookup, fc=None,
-                                                             full_req=args.full_req)
+                c = geo.get_fully_connected_location_at_date(a2f, at_date, hookup, fc=None)
                 fully_connected.append(c)
             dv.print_fully_connected(fully_connected)
 
@@ -84,16 +77,14 @@ if __name__ == '__main__':
         stop_date = cm_utils._get_astropytime(args.date2, args.time2)
         args.station_types = cm_utils.listify(args.station_types)
         if args.parts.lower() == 'active':
-            conn = geo.get_all_fully_connected_at_date('now',
-                                                       full_req=args.full_req,
-                                                       station_types_to_check=args.station_types)
+            conn = geo.get_all_fully_connected_at_date('now', station_types_to_check=args.station_types)
             args.parts = []
             for c in conn:
                 args.parts.append(c['station_name'])
             args.parts = sorted(args.parts)
         else:
             args.parts = cm_utils.listify(args.parts)
-        fc_map = dv.read_db(args.parts, start_date, stop_date, args.dt, args.full_req)
+        fc_map = dv.read_db(args.parts, start_date, stop_date, args.dt)
         if args.file is not None:
             dv.write_fc_map_file(args.file, output=args.output)
         dv.plot_fc_map()

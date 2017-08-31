@@ -21,8 +21,9 @@ from . import MCDeclarativeBase, NotNull
 from hera_mc import mc, cm_utils
 
 no_connection_designator = '-X-'
-roach_input_name = 'f-engine'
-full_connection_parts_paper = ['station', roach_input_name]
+# This lists the fully complete signal paths
+full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end', 'cable-feed75', 'cable-post-amp(in)',
+                                        'post-amp', 'cable-post-amp(out)', 'cable-receiverator', 'cable-container', 'f-engine']}
 
 
 class Parts(MCDeclarativeBase):

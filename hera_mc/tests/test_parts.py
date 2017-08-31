@@ -26,6 +26,7 @@ class TestParts(TestHERAMC):
 
         self.test_part = 'test_part'
         self.test_rev = 'Q'
+        self.test_hptype = 'antenna'
         self.start_time = Time('2017-07-01 01:00:00', scale='utc')
         self.now = cm_utils._get_astropytime('now')
         self.h = cm_handling.Handling(self.test_session)
@@ -34,7 +35,7 @@ class TestParts(TestHERAMC):
         part = part_connect.Parts()
         part.hpn = self.test_part
         part.hpn_rev = self.test_rev
-        part.hptype = 'vapor'
+        part.hptype = self.test_hptype
         part.manufacture_number = 'XYZ'
         part.start_gpstime = self.start_time.gps
         self.test_session.add(part)
@@ -52,33 +53,37 @@ class TestParts(TestHERAMC):
         ntp = 'new_test_part'
         data = [[ntp, 'X', 'hpn', ntp],
                 [ntp, 'X', 'hpn_rev', 'X'],
-                [ntp, 'X', 'hptype', 'vapor_part'],
+                [ntp, 'X', 'hptype', 'antenna'],
                 [ntp, 'X', 'start_gpstime', 1172530000]]
         part_connect.update_part(self.test_session, data, add_new_part=True)
-        located = self.h.get_part_dossier(ntp, 'X', 'now', True)
+        located = self.h.get_part_dossier([ntp], 'X', 'now', True)
         if len(located.keys()) == 1:
             self.assertTrue(located[located.keys()[0]]['part'].hpn == ntp)
         else:
             self.assertFalse("Part Number should be unique.")
 
+    def test_find_part_type(self):
+        pt = self.h.get_part_type_for(self.test_part)
+        self.assertTrue(pt == self.test_hptype)
+
     def test_update_update(self):
         data = [[self.test_part, self.test_rev, 'hpn_rev', 'Z']]
         part_connect.update_part(self.test_session, data, add_new_part=False)
-        located = self.h.get_part_dossier(self.test_part, 'Z', Time('2017-07-01 01:00:00', scale='utc'), True)
+        located = self.h.get_part_dossier([self.test_part], 'Z', Time('2017-07-01 01:00:00', scale='utc'), True)
         if len(located.keys()) == 1:
             self.assertTrue(located[located.keys()[0]]['part'].hpn_rev == 'Z')
         else:
             self.assertFalse()
 
     def test_part_info(self):
-        located = self.h.get_part_dossier(self.test_part, self.test_rev, self.start_time, True)
+        located = self.h.get_part_dossier([self.test_part], self.test_rev, self.start_time, True)
         self.assertTrue(located[located.keys()[0]]['part_info'].comment == 'TEST')
 
     def test_add_new_parts(self):
-        data = [['part_X', 'X', 'hptype_X', 'mfg_X']]
+        data = [['part_X', 'X', 'station', 'mfg_X']]
         p = part_connect.Parts()
         part_connect.add_new_parts(self.test_session, p, data, Time('2017-07-01 01:00:00', scale='utc'), True)
-        located = self.h.get_part_dossier('part_X', 'X', Time('2017-07-01 01:00:00'), True)
+        located = self.h.get_part_dossier(['part_X'], 'X', Time('2017-07-01 01:00:00'), True)
         if len(located.keys()) == 1:
             self.assertTrue(located[located.keys()[0]]['part'].hpn == 'part_X')
         else:
@@ -86,10 +91,9 @@ class TestParts(TestHERAMC):
 
     def test_get_revisions_of_type(self):
         at_date = self.now
-        fr = ['f-engine']
         rev_types = ['LAST', 'ACTIVE', 'ALL', 'FULL', 'A']
         for rq in rev_types:
-            revision = cm_revisions.get_revisions_of_type('HH0', rq, at_date, fr, self.test_session)
+            revision = cm_revisions.get_revisions_of_type('HH0', rq, at_date, self.test_session)
             self.assertTrue(revision[0].rev == 'A')
 
     def test_check_overlapping(self):
@@ -97,13 +101,12 @@ class TestParts(TestHERAMC):
         self.assertTrue(len(c) == 0)
 
     def test_check_rev(self):
-        fr = ['f-engine']
         tcr = {'LAST': [self.test_part, self.test_rev],
                'ACTIVE': [self.test_part, self.test_rev],
                'FULL': ['HH0', 'A']}
         rev_types = ['LAST', 'ACTIVE', 'FULL']
         for r in rev_types:
-            c = cm_revisions.check_rev(tcr[r][0], tcr[r][1], r, self.now, fr, self.test_session)
+            c = cm_revisions.check_rev(tcr[r][0], tcr[r][1], r, self.now, self.test_session)
             self.assertTrue(c)
 
     def test_datetime(self):

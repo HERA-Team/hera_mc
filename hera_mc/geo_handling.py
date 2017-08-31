@@ -234,14 +234,14 @@ class Handling:
             raise ValueError('More than one active connection between station and antenna')
         return antenna_connected.upstream_part
 
-    def get_location(self, to_find, query_date, station_types=None):
+    def get_location(self, to_find_list, query_date, station_types=None):
         """
         Return the location of station_name or antenna_number as contained in to_find.
         This accepts the fact that antennas are sort of stations, even though they are parts
 
         Parameters:
         ------------
-        to_find:  station names to find (must be a list)
+        to_find_list:  station names to find (must be a list)
         query_date:  astropy Time for contemporary antenna
         station_types: list of station_type prefixes (e.g. HH)
         show_location:   if True, it will print the information
@@ -251,7 +251,7 @@ class Handling:
             self.get_station_types(add_stations=True)
             station_types = self.station_types
         found_location = []
-        for L in to_find:
+        for L in to_find_list:
             station_name = False
             try:
                 antenna_number = int(L)
@@ -278,15 +278,15 @@ class Handling:
                     found_location.append(copy.copy(a))
         return found_location
 
-    def print_loc_info(self, loc, verbosity='h'):
+    def print_loc_info(self, loc_list, verbosity='h'):
         """
         Prints out location information as returned from get_location.
         Returns False if provided 'loc' is None, otherwise returns True.
         """
-        if loc is None:
-            print("No location found.")
+        if loc_list is None or len(loc_list) == 0:
+            print("No locations found.")
             return False
-        for a in loc:
+        for a in loc_list:
             if verbosity == 'm' or verbosity == 'h':
                 print('station_name: ', a.station_name)
                 print('\teasting: ', a.easting)
@@ -299,7 +299,7 @@ class Handling:
                 print(a)
         return True
 
-    def _search_loop(self, stn, at_date, now, m, base_tdelta, full_req):
+    def _search_loop(self, stn, at_date, now, m, base_tdelta):
         """
         To find a fully connected signal path, you must loop through times.
         To speed it up, this has one loop with bigger time steps (but not too
@@ -312,22 +312,21 @@ class Handling:
             at_date += TimeDelta(m * base_tdelta, format='sec')
             if at_date > now:
                 at_date = now + TimeDelta(10.0, format='sec')
-            fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)
+            fc = cm_revisions.get_full_revision(stn, at_date, self.session)
             if len(fc) == 1:
                 at_date -= TimeDelta(m * base_tdelta - 600.0, format='sec')
-                fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)
+                fc = cm_revisions.get_full_revision(stn, at_date, self.session)
                 while len(fc) == 0 and at_date < now:
                     at_date += TimeDelta(base_tdelta, format='sec')
                     if at_date > now:
                         at_date = now + TimeDelta(10.0, format='sec')
-                    fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)
+                    fc = cm_revisions.get_full_revision(stn, at_date, self.session)
                 break
             elif at_date > now:
                 break
         return fc, at_date
 
     def get_all_fully_connected_ever(self, earliest_date=Time('2016-09-01'),
-                                     full_req=part_connect.full_connection_parts_paper,
                                      station_types_to_check='all'):
         """
         Returns a list of dictionaries of all of the locations fully connected ever that
@@ -358,8 +357,6 @@ class Handling:
         Parameters
         -----------
         earliest_date:  earliest_date to check for connections.
-        full_req: list of parts required for a connection to be a 'full' connection
-            (default: part_connect.full_connection_parts_paper)
         station_types_to_check:  list of station types to limit check, or 'all' (default: 'all')
         """
         from hera_mc import cm_hookup
@@ -391,13 +388,13 @@ class Handling:
                 else:
                     at_date = conn.start_date + TimeDelta(600.0, format='sec')
                 # Find the first fully connected signal path from location.
-                fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)
+                fc = cm_revisions.get_full_revision(stn, at_date, self.session)
                 if len(fc) == 0 and at_date < now:
-                    fc, at_date = self._search_loop(stn, at_date, now, m, base_tdelta, full_req)
+                    fc, at_date = self._search_loop(stn, at_date, now, m, base_tdelta)
                 if len(fc) == 0:
                     continue
                 station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date,
-                                                                         hookup=hookup, fc=fc, full_req=full_req)
+                                                                         hookup=hookup, fc=fc)
                 station_conn.append(station_dict)
                 # Get subsequent ones up to 'now'.  To speed up the search, start the next time at the stop time of previous connection.
                 k0 = fc[0].hookup['timing'].keys()[0]
@@ -409,13 +406,12 @@ class Handling:
                 fc_stop = Time(fc_stop, format='gps')
                 at_date = fc_stop + TimeDelta(base_tdelta, format='sec')
                 while fc_stop is not None:  # Keep searching until there are no more full connections up to now.
-                    fc, at_date = self._search_loop(stn, at_date, now, m, base_tdelta, full_req)
+                    fc, at_date = self._search_loop(stn, at_date, now, m, base_tdelta)
                     if len(fc) == 0:
                         break
                     # Found one - add it to list.
                     station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date,
-                                                                             hookup=hookup, fc=fc,
-                                                                             full_req=full_req)
+                                                                             hookup=hookup, fc=fc)
                     station_conn.append(station_dict)
                     # Get the connection stop time to start looking for next one.  Break as appropriate
                     k0 = fc[0].hookup['timing'].keys()[0]
@@ -429,9 +425,7 @@ class Handling:
                         break
         return station_conn
 
-    def get_all_fully_connected_at_date(self, at_date,
-                                        full_req=part_connect.full_connection_parts_paper,
-                                        station_types_to_check='all'):
+    def get_all_fully_connected_at_date(self, at_date, station_types_to_check='all'):
         """
         Returns a list of dictionaries of all of the locations fully connected at_date
         have station_types in station_types_to_check.  The dictonary is defined in
@@ -456,7 +450,6 @@ class Handling:
         Parameters
         -----------
         at_date:  date to check for connections
-        full_req:  list contining needed parts to be considered complete
         station_types_to_check:  list of station types to limit check, or 'all' [default 'all']
         """
         from hera_mc import cm_hookup
@@ -472,14 +465,12 @@ class Handling:
                 station_dict = self.get_fully_connected_location_at_date(stn=stn,
                                                                          at_date=at_date,
                                                                          hookup=hookup,
-                                                                         fc=None,
-                                                                         full_req=full_req)
+                                                                         fc=None)
                 if len(station_dict.keys()) > 1:
                     station_conn.append(station_dict)
         return station_conn
 
-    def get_fully_connected_location_at_date(self, stn, at_date, hookup, fc=None,
-                                             full_req=part_connect.full_connection_parts_paper):
+    def get_fully_connected_location_at_date(self, stn, at_date, hookup, fc=None):
         """
         Returns a dictionary for location stn that is fully connected at_date.  Provides
         the dictonary used in other methods.
@@ -506,10 +497,9 @@ class Handling:
         at_date:  date to check for connections, must be an astropy.Time
         hookup:  is to provide a hookup instance to not have to do it everytime
         fc:  is the full hookup/revision, in case you already have it don't call it again
-        full_req:  list contining needed parts to be considered complete
         """
         if fc is None:
-            fc = cm_revisions.get_full_revision(stn, at_date, full_req, self.session)
+            fc = cm_revisions.get_full_revision(stn, at_date, self.session)
         station_dict = {}
         if len(fc) == 1:
             hu = fc[0].hookup
@@ -519,7 +509,15 @@ class Handling:
             # But we just want an integer, so we strip the A and cast it to int
             ant_num = int(ant_num[1:])
             corr = hookup.get_correlator_input_from_hookup(hu)
-            fnd = self.get_location([stn], at_date, station_types=self.station_types)[0]
+            stn = hookup.get_station_from_hookup(hu)
+            fnd_list = self.get_location([stn], at_date, station_types=self.station_types)
+            if not len(fnd_list):
+                return station_dict
+            if len(fnd_list) > 1:
+                print("More than one part found:  ", str(fnd))
+                print("Setting to first to continue.")
+            fnd = fnd_list[0]
+
             hera_proj = Proj(proj='utm', zone=fnd.tile, ellps=fnd.datum, south=True)
             strtd = cm_utils.get_date_from_pair(hu['timing'][k0]['e'][0], hu['timing'][k0]['n'][0], 'latest')
             ended = cm_utils.get_date_from_pair(hu['timing'][k0]['e'][1], hu['timing'][k0]['n'][1], 'earliest')
@@ -637,13 +635,13 @@ class Handling:
                 found_stations.append(a.station_name)
         return found_stations
 
-    def plot_stations(self, stations_to_plot, query_date, state_args, testing=False):
+    def plot_stations(self, stations_to_plot_list, query_date, state_args, testing=False):
         """
         Plot a list of stations.
 
         Parameters:
         ------------
-        stations_to_plot:  list containing station_names (note:  NOT antenna_numbers)
+        stations_to_plot_list:  list containing station_names (note:  NOT antenna_numbers)
         query_date:  date to use to check if active
         state_args:  dictionary with state arguments (fig_num, marker_color,
                      marker_shape, marker_size, show_label)
@@ -657,7 +655,7 @@ class Handling:
             label_to_show = state_args['show_label'].lower()
         if not testing:
             plt.figure(state_args['fig_num'])
-        for station in stations_to_plot:
+        for station in stations_to_plot_list:
             ustn = station.upper()
             for a in self.session.query(geo_location.GeoLocation).filter(
                     func.upper(geo_location.GeoLocation.station_name) == ustn):
@@ -722,9 +720,7 @@ class Handling:
                 for loc in self.station_types[key]['Stations']:
                     show_it = True
                     if state_args['show_state'] == 'active':
-                        fc = cm_revisions.get_full_revision(loc, query_date,
-                                                            part_connect.full_connection_parts_paper,
-                                                            self.session)
+                        fc = cm_revisions.get_full_revision(loc, query_date, self.session)
                         if len(fc) == 0:
                             show_it = False
                     if show_it:
