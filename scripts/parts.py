@@ -103,11 +103,14 @@ if __name__ == '__main__':
     elif action_tag == 'ho':  # hookup
         from hera_mc import cm_hookup
         hookup = cm_hookup.Hookup(session)
-        for hpn in args.hpn:
-            hookup_dict = hookup.get_hookup(hpn=hpn, rev=args.revision, port=args.port,
-                                            at_date=date_query, exact_match=args.exact_match,
-                                            show_levels=args.show_levels, levels_testing=args.levels_testing)
-            hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
+        hookup_dict = hookup.get_hookup(hpn=args.hpn, rev=args.revision, port=args.port,
+                                        at_date=date_query, exact_match=args.exact_match,
+                                        show_levels=args.show_levels, levels_testing=args.levels_testing)
+        print("PARTS.PY[110]")
+        for k in hookup_dict.keys():
+            print("---  ", k)
+            print(hookup_dict[k])
+            #hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
 
     elif action_tag == 'ty':  # types of parts
         part_type_dict = handling.get_part_types(date_query, show_hptype=True)
