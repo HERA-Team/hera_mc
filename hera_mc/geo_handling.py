@@ -592,9 +592,13 @@ class Handling:
             longitudes.append(stn['longitude'])
             latitudes.append(stn['latitude'])
             elevations.append(stn['elevation'])
-
-        ecef_positions = uvutils.XYZ_from_LatLonAlt(latitudes, longitudes, elevations)
-        rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions.T, cofa_loc.lon)
+        # latitudes, longitudes output by get_all_fully_connected_at_date are in degrees
+        # XYZ_from_LatLonAlt wants radians
+        ecef_positions = uvutils.XYZ_from_LatLonAlt(np.array(latitudes) * np.pi / 180.,
+                                                    np.array(longitudes) * np.pi / 180.,
+                                                    elevations)
+        rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions.T,
+                                                      cofa_loc.lon * np.pi / 180.)
 
         return {'antenna_numbers': ant_nums,
                 # This is actually station names, not antenna names,
