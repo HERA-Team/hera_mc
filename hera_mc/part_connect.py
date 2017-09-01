@@ -416,7 +416,7 @@ def stop_existing_connections_to_part(session, h, conn_list, at_date, actually_d
     data = []
 
     for conn in conn_list:
-        CD = h.get_connection_dossier(conn[0], conn[1], conn[2], at_date, True)
+        CD = h.get_connection_dossier([conn[0]], conn[1], conn[2], at_date, True)
         ck = get_connection_key(CD, conn)
         if ck is None:
             print('There are no connections to stop')

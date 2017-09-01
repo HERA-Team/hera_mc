@@ -63,7 +63,7 @@ if __name__ == '__main__':
         sys.exit()
     # ###ERROR EXIT POINT
 
-    hd = hookup.get_hookup(hpn=args.ant, rev='H', port='all', at_date=at_date,
+    hd = hookup.get_hookup(hpn_list=[args.ant], rev='H', port='all', at_date=at_date,
                            exact_match=True)
     k = hd['hookup'].keys()[0]
     if len(hd['hookup'][k]['e']) == 0:
@@ -78,18 +78,20 @@ if __name__ == '__main__':
         old_fe = None
     else:
         old_fe = hd['hookup'][k]['e'][3]
-        bal_conn = handling.get_connection_dossier(old_fe.upstream_part,
+        bal_conn = handling.get_connection_dossier([old_fe.upstream_part],
                                                    old_fe.up_part_rev, 'all',
                                                    at_date, exact_match=True)
         ctr = len(bal_conn['connections'].keys())
-        if ctr != 6:
+        if ctr < 3:  # This is an ill-defined variable...
             print("<<<<<<<Error>>>>>>>  unexpected number of connections to {}".
                   format(old_fe.upstream_part))
+            print(bal_conn['connections'])
+            print(len(bal_conn['connections']))
             sys.exit()
     # ###ERROR EXIT POINT
 
     # Add new FEM
-    new_fem = [(fem_hpn, args.rev, 'front-end module', args.fem_number)]
+    new_fem = [(fem_hpn, args.rev, 'front-end', args.fem_number)]
     part_connect.add_new_parts(session, part, new_fem, at_date, args.actually_do_it)
 
     if old_fe is not None:

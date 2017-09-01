@@ -30,7 +30,7 @@ def query_args(args):
         args.dnrev = raw_input('Downstream part revision:  ')
     if args.dnport is None:
         args.dnport = raw_input('Downstream input port:  ')
-    if args.date == 'now': # note that 'now' is the current default.
+    if args.date == 'now':  # note that 'now' is the current default.
         args.date = cm_utils._query_default('date', args)
     return args
 
@@ -59,10 +59,10 @@ if __name__ == '__main__':
     session = db.sessionmaker()
     connect = part_connect.Connections()
     handling = cm_handling.Handling(session)
-    up_check = handling.get_connection_dossier(hpn=args.uppart, rev=args.uprev,
+    up_check = handling.get_connection_dossier(hpn_list=[args.uppart], rev=args.uprev,
                                                port=args.upport, at_date=at_date,
                                                exact_match=True)
-    dn_check = handling.get_connection_dossier(hpn=args.dnpart, rev=args.dnrev,
+    dn_check = handling.get_connection_dossier(hpn_list=[args.dnpart], rev=args.dnrev,
                                                port=args.dnport, at_date=at_date,
                                                exact_match=True)
     # Check for connection

@@ -238,6 +238,8 @@ class Hookup:
                     break
         colhead = []
         if not is_this_one:
+            # raise ValueError('Parts did not conform to any parts epoch')
+            print('Parts did not conform to any parts epoch')
             parts_epoch = {'epoch': None, 'path': None}
         else:
             parts_epoch = {'epoch': is_this_one, 'path': PC.full_connection_path[is_this_one]}
