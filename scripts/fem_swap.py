@@ -63,7 +63,7 @@ if __name__ == '__main__':
         sys.exit()
     # ###ERROR EXIT POINT
 
-    hd = hookup.get_hookup(hpn=args.ant, rev='H', port='all', at_date=at_date,
+    hd = hookup.get_hookup(hpn_list=[args.ant], rev='H', port='all', at_date=at_date,
                            exact_match=True)
     k = hd['hookup'].keys()[0]
     if len(hd['hookup'][k]['e']) == 0:
@@ -78,7 +78,7 @@ if __name__ == '__main__':
         old_fe = None
     else:
         old_fe = hd['hookup'][k]['e'][3]
-        bal_conn = handling.get_connection_dossier(old_fe.upstream_part,
+        bal_conn = handling.get_connection_dossier([old_fe.upstream_part],
                                                    old_fe.up_part_rev, 'all',
                                                    at_date, exact_match=True)
         ctr = len(bal_conn['connections'].keys())
