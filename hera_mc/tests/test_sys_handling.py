@@ -109,10 +109,10 @@ class TestGeo(TestHERAMC):
 
     def test_get_pam_info(self):
         h = sys_handling.Handling()
-        pams = h.get_pam_info('HH51', '2017-09-03')
+        pams = h.get_pam_info('HH23', '2017-09-03')
         self.assertEqual(len(pams), 2)
-        self.assertEqual(pams['e'][0], 'RI4A1E')  # the rcvr cable (which tells us location)
-        self.assertEqual(pams['e'][1], 'RCVR93')  # the actual pam number (the thing written on the case)
+        self.assertEqual(pams['e'][0], 'RI5A3E')  # the rcvr cable (which tells us location)
+        self.assertEqual(pams['e'][1], 'PAM75103')  # the actual pam number (the thing written on the case)
 
 
 if __name__ == '__main__':
