@@ -303,7 +303,6 @@ class Hookup:
         if pam_name in hookup_dict['columns']:
             for k, h in hookup_dict['hookup'].iteritems(): #iterates over antennas
                 for pol, p in h.iteritems():#iterates over pols
-                    print(p[pam_ind-1].upstream_part)
                     pams[pol] = (p[pam_ind-1].upstream_part,p[pam_ind-1].downstream_part)
         return pams
 
