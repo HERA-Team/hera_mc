@@ -1,7 +1,7 @@
 #! /usr/bin/env python
-#Copyright Peter Williams, 2017
-#MIT License
-
+# -*- mode: python; coding: utf-8 -*-
+# Copyright 2017 the HERA Collaboration
+# Licensed under the 2-clause BSD license.
 
 import argparse,pyuvdata,aipy
 from hera_mc.observations import Observation
