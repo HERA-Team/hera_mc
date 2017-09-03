@@ -267,7 +267,7 @@ class Hookup:
     def get_correlator_input_from_hookup(self, hookup_dict):
         """
         Retrieve the correlator inputs from a hookup_dictionary.  This currently
-        only allows for one entry in hookup_dict.  Need to rationalize.
+        only allows for one entry in hookup_dict, which isn't necessarily what we want.
         """
         if len(hookup_dict['hookup'].keys()) > 1:
             raise RuntimeError('Too many hookups provided to give e/n correlator inputs.')
@@ -282,7 +282,6 @@ class Hookup:
     def get_pam_from_hookup(self, hookup_dict, pam_name='post-amp'):
         """
         Retrieve the PAM connections from a hookup dictionary.
-        No rationalization is provided.
 
         returns:
             pams[pol] = (location,pam number)
@@ -293,12 +292,7 @@ class Hookup:
         if len(hookup_dict['hookup'].keys()) > 1:
             raise RuntimeError('Too many hookups provided to give e/n PAM inputs.')
         pams = {}
-        # search through the connection path for the pam_name
-        pam_ind = 0
-        for item in hookup_dict['parts_epoch']['path']:
-            if item == pam_name:
-                break
-            pam_ind += 1
+        pam_ind = hookup_dict['parts_epoch']['path'].index(pam_name)
         if pam_name in hookup_dict['columns']:
             for k, h in hookup_dict['hookup'].iteritems():  # iterates over parts
                 for pol, p in h.iteritems():  # iterates over pols
