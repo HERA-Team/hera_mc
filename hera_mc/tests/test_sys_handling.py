@@ -97,22 +97,22 @@ class TestGeo(TestHERAMC):
         self.assertEqual(cofa.elevation, corr_dict['cofa_alt'])
 
     def test_get_pam_from_hookup(self):
-        h = sys_handling.Handling()
-        at_date = cm_utils._get_astropytime('2017-09-03')
-        fc = cm_revisions.get_full_revision('HH51', at_date, h.session)
+        h = sys_handling.Handling(self.test_session)
+        at_date = cm_utils._get_astropytime('2017-07-03')
+        fc = cm_revisions.get_full_revision('HH23', at_date, h.session)
         hu = fc[0].hookup
         H = cm_hookup.Hookup()
         pams = H.get_pam_from_hookup(hu)
         self.assertEqual(len(pams), 2)
-        self.assertEqual(pams['e'][0], 'RI4A1E')  # the rcvr cable (which tells us location)
-        self.assertEqual(pams['e'][1], 'RCVR93')  # the actual pam number (the thing written on the case)
+        self.assertEqual(pams['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
+        self.assertEqual(pams['e'][1], 'PAM75123')  # the actual pam number (the thing written on the case)
 
     def test_get_pam_info(self):
-        h = sys_handling.Handling()
-        pams = h.get_pam_info('HH23', '2017-09-03')
+        h = sys_handling.Handling(self.test_session)
+        pams = h.get_pam_info('HH23', '2017-07-03')
         self.assertEqual(len(pams), 2)
-        self.assertEqual(pams['e'][0], 'RI5A3E')  # the rcvr cable (which tells us location)
-        self.assertEqual(pams['e'][1], 'PAM75103')  # the actual pam number (the thing written on the case)
+        self.assertEqual(pams['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
+        self.assertEqual(pams['e'][1], 'PAM75123')  # the actual pam number (the thing written on the case)
 
 
 if __name__ == '__main__':
