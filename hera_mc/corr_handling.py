@@ -354,7 +354,8 @@ class Handling:
                 'cofa_lat': cofa_loc.lat,
                 'cofa_lon': cofa_loc.lon,
                 'cofa_alt': cofa_loc.elevation}
-    def get_pam_info(self,stn, at_date, fc=None):
+
+    def get_pam_info(self, stn, at_date, fc=None):
         """
         input:
             stn: antenna number of format HHi where i is antenna number
@@ -363,9 +364,8 @@ class Handling:
             dict of {pol:(rcvr location,pam #)}
         """
         at_date = cm_utils._get_astropytime(at_date)
-        h = Handling()
-        fc = cm_revisions.get_full_revision(stn, at_date, h.session)
+        fc = cm_revisions.get_full_revision(stn, at_date, self.session)
         hu = fc[0].hookup
-        H = cm_hookup.Hookup()
+        H = cm_hookup.Hookup(self.session)
         pams = H.get_pam_from_hookup(hu)
         return pams

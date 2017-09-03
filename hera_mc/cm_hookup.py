@@ -279,7 +279,7 @@ class Hookup:
                     corr_input[j] = p[-1].downstream_part
         return corr_input
 
-    def get_pam_from_hookup(self,hookup_dict,pam_name='post-amp'):
+    def get_pam_from_hookup(self, hookup_dict, pam_name='post-amp'):
         """
         Retrieve the PAM connections from a hookup dictionary.
         No rationalization is provided.
@@ -293,19 +293,17 @@ class Hookup:
         if len(hookup_dict['hookup'].keys()) > 1:
             raise RuntimeError('Too many hookups provided to give e/n PAM inputs.')
         pams = {}
-        #corr_type_name = hookup_dict['parts_epoch']['path'][-1]
-        #search through the connection path for the pam_name
+        # search through the connection path for the pam_name
         pam_ind = 0
         for item in hookup_dict['parts_epoch']['path']:
-            if item==pam_name:
+            if item == pam_name:
                 break
-            pam_ind+=1
+            pam_ind += 1
         if pam_name in hookup_dict['columns']:
-            for k, h in hookup_dict['hookup'].iteritems(): #iterates over antennas
-                for pol, p in h.iteritems():#iterates over pols
-                    pams[pol] = (p[pam_ind-1].upstream_part,p[pam_ind-1].downstream_part)
+            for k, h in hookup_dict['hookup'].iteritems():  # iterates over parts
+                for pol, p in h.iteritems():  # iterates over pols
+                    pams[pol] = (p[pam_ind - 1].upstream_part, p[pam_ind - 1].downstream_part)
         return pams
-
 
     def get_station_from_hookup(self, hookup_dict):
         """
