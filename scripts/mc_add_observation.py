@@ -1,3 +1,8 @@
+#! /usr/bin/env python
+#Copyright Peter Williams, 2017
+#MIT License
+
+
 import argparse,pyuvdata,aipy
 from hera_mc.observations import Observation
 from hera_mc import mc
