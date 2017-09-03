@@ -13,8 +13,8 @@ import unittest
 import os.path
 import subprocess
 import numpy as np
-from hera_mc import geo_location, corr_handling, mc, cm_transfer, part_connect
-from hera_mc import cm_hookup,cm_utils,cm_revisions
+from hera_mc import geo_location, sys_handling, mc, cm_transfer, part_connect
+from hera_mc import cm_hookup, cm_utils, cm_revisions
 from hera_mc.tests import TestHERAMC
 from astropy.time import Time
 
@@ -23,7 +23,7 @@ class TestGeo(TestHERAMC):
 
     def setUp(self):
         super(TestGeo, self).setUp()
-        self.h = corr_handling.Handling(self.test_session)
+        self.h = sys_handling.Handling(self.test_session)
 
     def test_ever_fully_connected(self):
         now_list = self.h.get_all_fully_connected_at_date(at_date='now')
@@ -97,20 +97,23 @@ class TestGeo(TestHERAMC):
         self.assertEqual(cofa.elevation, corr_dict['cofa_alt'])
 
     def test_get_pam_from_hookup(self):
-        h = corr_handling.Handling()
+        h = sys_handling.Handling()
         at_date = cm_utils._get_astropytime('2017-09-03')
         fc = cm_revisions.get_full_revision('HH51', at_date, h.session)
         hu = fc[0].hookup
         H = cm_hookup.Hookup()
         pams = H.get_pam_from_hookup(hu)
-        self.assertEqual(len(pams),2)
-        self.assertEqual(pams['e'][0],'RI4A1E')#the rcvr cable (which tells us location)
-        self.assertEqual(pams['e'][1],'RCVR93')#the actual pam number (the thing written on the case)
+        self.assertEqual(len(pams), 2)
+        self.assertEqual(pams['e'][0], 'RI4A1E')  # the rcvr cable (which tells us location)
+        self.assertEqual(pams['e'][1], 'RCVR93')  # the actual pam number (the thing written on the case)
+
     def test_get_pam_info(self):
-        h = corr_handling.Handling()
-        pams = h.get_pam_info('HH51','2017-09-03')
-        self.assertEqual(len(pams),2)
-        self.assertEqual(pams['e'][0],'RI4A1E')#the rcvr cable (which tells us location)
-        self.assertEqual(pams['e'][1],'RCVR93')#the actual pam number (the thing written on the case)
+        h = sys_handling.Handling()
+        pams = h.get_pam_info('HH51', '2017-09-03')
+        self.assertEqual(len(pams), 2)
+        self.assertEqual(pams['e'][0], 'RI4A1E')  # the rcvr cable (which tells us location)
+        self.assertEqual(pams['e'][1], 'RCVR93')  # the actual pam number (the thing written on the case)
+
+
 if __name__ == '__main__':
     unittest.main()

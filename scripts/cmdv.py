@@ -46,7 +46,7 @@ if __name__ == '__main__':
         )
         sys.exit()
 
-    from hera_mc import cm_dataview, part_connect, corr_handling
+    from hera_mc import cm_dataview, part_connect, sys_handling
 
     if isinstance(args.dt, str):
         args.dt = float(args.dt)
@@ -55,19 +55,19 @@ if __name__ == '__main__':
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
     dv = cm_dataview.Dataview(session)
-    corr = corr_handling.Handling(session)
+    sys = sys_handling.Handling(session)
 
     if args.action == 'co':
         at_date = cm_utils._get_astropytime(args.date, args.time)
         if args.parts.lower() == 'active':
-            fully_connected = corr.get_all_fully_connected_at_date(at_date,
-                                                                   station_types_to_check=args.station_types)
+            fully_connected = sys.get_all_fully_connected_at_date(at_date,
+                                                                  station_types_to_check=args.station_types)
             dv.print_fully_connected(fully_connected)
         else:
             args.parts = cm_utils.listify(args.parts)
             fully_connected = []
             for a2f in args.parts:
-                c = corr.get_fully_connected_location_at_date(a2f, at_date, fc=None)
+                c = sys.get_fully_connected_location_at_date(a2f, at_date, fc=None)
                 fully_connected.append(c)
             dv.print_fully_connected(fully_connected)
 
@@ -76,7 +76,7 @@ if __name__ == '__main__':
         stop_date = cm_utils._get_astropytime(args.date2, args.time2)
         args.station_types = cm_utils.listify(args.station_types)
         if args.parts.lower() == 'active':
-            conn = corr.get_all_fully_connected_at_date('now', station_types_to_check=args.station_types)
+            conn = sys.get_all_fully_connected_at_date('now', station_types_to_check=args.station_types)
             args.parts = []
             for c in conn:
                 args.parts.append(c['station_name'])
