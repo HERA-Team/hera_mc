@@ -54,11 +54,11 @@ if __name__ == '__main__':
     connect = part_connect.Connections()
     part = part_connect.Parts()
     handling = cm_handling.Handling(session)
-    part_check = handling.get_part_dossier(hpn=args.hpn, rev=args.rev,
+    part_check = handling.get_part_dossier(hpn_list=[args.hpn], rev=args.rev,
                                            at_date=at_date, exact_match=True)
 
     # Check for part
-    if len(part_check.keys() > 0):
+    if len(part_check.keys()) > 0:
         print("Error:  {} is already in parts database".format(args.hpn))
         print("Stopping this addition.")
     else:
