@@ -3,7 +3,7 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-import argparse,pyuvdata,aipy
+import argparse,aipy
 from hera_mc.observations import Observation
 from hera_mc import mc
 from astropy.time import Time,TimeDelta
@@ -22,11 +22,8 @@ for uvfile in args.files:
     aipy.miriad.itemtable['duration'] = 'd'
     UV = aipy.miriad.UV(uvfile)
     stoptime = Time(UV['stopt'],scale='utc',format='gps')
-
-    UVData = pyuvdata.UVData()
-    UVData.read_miriad(uvfile)
-    obsid = UVData.extra_keywords['obsid']
-    starttime = Time(UVData.extra_keywords['startt'],scale='utc',format='gps')
+    starttime = Time(UV['startt'],scale='utc',format='gps')
+    obsid = UV['startt']
 
     with db.sessionmaker() as session:
         session.add_obs(starttime, stoptime, obsid)
