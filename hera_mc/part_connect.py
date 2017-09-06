@@ -168,8 +168,8 @@ def update_part(session=None, data=None, add_new_part=False):
         rev_to_change = dval[0][1]
         # if rev_to_change[:4] == 'LAST':
         #    rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
-        part_rec = session.query(Parts).filter((Parts.hpn == hpn_to_change) &
-                                               (Parts.hpn_rev == rev_to_change))
+        part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn_to_change.upper()) &
+                                               (func.upper(Parts.hpn_rev) == rev_to_change.upper()))
         num_part = part_rec.count()
         if num_part == 0:
             if add_new_part:
@@ -321,6 +321,33 @@ class PartInfo(MCDeclarativeBase):
     def info(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+
+def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
+    """
+    Add part information into database.
+    """
+    close_session_when_done = False
+    if session is None:
+        db = mc.connect_mc_db()
+        session = db.sessionmaker()
+        close_session_when_done = True
+    part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn.upper()) &
+                                           (func.upper(Parts.hpn_rev) == rev.upper()))
+    if not part_rec.count():
+        print("FYI - {}:{} does not exist in parts database.".format(hpn, rev))
+        print("This is not a requirement, but you might want to consider adding it.")
+
+    pi = PartInfo()
+    pi.hpn = hpn
+    pi.hpn_rev = rev
+    pi.posting_gpstime = cm_utils._get_astropytime(at_date).gps
+    pi.comment = comment
+    pi.library_file = library_file
+    session.add(pi)
+    session.commit()
+    if close_session_when_done:
+        session.close()
 
 
 class Connections(MCDeclarativeBase):
