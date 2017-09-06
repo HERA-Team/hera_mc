@@ -39,7 +39,7 @@ class Hookup:
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
 
-    def get_hookup(self, hpn_list, rev, port, at_date, exact_match=False,
+    def get_hookup(self, hpn_list, rev, port_query, at_date, exact_match=False,
                    show_levels=False, levels_testing=False):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary
@@ -58,7 +58,7 @@ class Hookup:
         -----------
         hpn_list:  list of input hera part numbers (whole or first part thereof)
         rev:  the revision number
-        port:  a specifiable port name,  default is 'all'.  Unverified.
+        port_query:  a specifiable port name to follow or 'all',  default is 'all'.
         at_date:  date for hookup validity
         exact_match:  boolean for either exact_match or partial
         show_levels:  boolean to include correlator levels
@@ -74,13 +74,12 @@ class Hookup:
                                                exact_match=exact_match,
                                                full_version=False)
         hookup_dict = {'hookup': {}, 'fully_connected': {}, 'parts_epoch': []}
-        pols_to_do = self.__get_pols_to_do(hpn_list[0], port, check_pol=False)
-
         part_types_found = []
         for k, part in parts.iteritems():
             if not cm_utils._is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
                 continue
             hookup_dict['hookup'][k] = {}
+            pols_to_do = self.__get_pols_to_do(part, port_query)
             for pol in pols_to_do:
                 hookup_dict['hookup'][k][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
                 part_types_found = self.__get_part_types_found(hookup_dict['hookup'][k][pol], part_types_found)
@@ -106,20 +105,51 @@ class Hookup:
             part_types_found.append(part_type)
         return part_types_found
 
-    def __get_pols_to_do(self, part, port, check_pol=False):
-        all_pols = ['e', 'n']
-        if port[0].lower() in all_pols:
-            pols = [port[0].lower()]
-        elif port.lower() in ['a', 'b']:
-            pols = [part[-1].lower()]
-        else:
-            pols = all_pols
-        if check_pol is not False:
-            if check_pol in pols:
-                pols = True
+    def __get_pols_to_do(self, part, port_query):
+        """
+        Given the current part and port_query (which is either 'all', 'e', or 'n')
+        this figures out which pols to do.  Basically, given 'all' and part it
+        figures out whether to return ['e'], ['n'], ['e', 'n']
+
+        Parameter:
+        -----------
+        part:  current part dossier
+        port_query:  the ports that were requested.
+        """
+        single_pol_parts_paper = ['RI', 'RO', 'CR']
+        port_query = port_query.lower()
+        if port_query == 'all':  # Need to figure out if return 'e', 'n' or both
+            if part['part'].hpn[:2].upper() in single_pol_parts_paper:
+                pols = [part['part'].hpn[-1].lower()]
             else:
-                pols = False
+                pols = PC.both_pols
+        elif port_query in PC.both_pols:
+            pols = [port_query]
+        else:
+            raise ValueError('Invalid port_query')
         return pols
+
+    def _check_next_port(self, next_part, option_port, pol, lenopt):
+        """
+        This checks that the port is the correct one to follow through as you
+        follow the hookup.
+        """
+        if lenopt == 1:
+            if next_part[:3].upper() == 'PAM' and option_port[0].lower() != pol.lower():
+                return False
+            else:
+                return True
+        if pol.lower() in PC.both_pols:
+
+            if option_port.lower() in ['a', 'b']:
+                p = next_part[-1].lower()
+            elif option_port[0].lower() in PC.both_pols:
+                p = option_port[0].lower()
+            else:
+                p = pol
+            return p == pol
+        else:
+            raise ValueError("Invalid polarization.")
 
     def __follow_hookup_stream(self, part, rev, pol):
         self.upstream = []
@@ -161,8 +191,6 @@ class Hookup:
                     (func.upper(PC.Connections.down_part_rev) == rev.upper())):
                 conn.gps2Time()
                 if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
-                    nppart = conn.upstream_part
-                    npport = conn.upstream_output_port
                     options.append(copy.copy(conn))
         elif direction.lower() == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
@@ -170,22 +198,26 @@ class Hookup:
                     (func.upper(PC.Connections.up_part_rev) == rev.upper())):
                 conn.gps2Time()
                 if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
-                    nppart = conn.downstream_part
-                    npport = conn.downstream_input_port
                     options.append(copy.copy(conn))
         next_one = None
         if len(options) == 0:
             next_one = None
         elif len(options) == 1:
-            next_one = options[0]
+            opc = options[0]
+            if direction.lower() == 'up':
+                if self._check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
+                    next_one = opc
+            else:
+                if self._check_next_port(opc.downstream_part, opc.downstream_input_port, pol, len(options)):
+                    next_one = opc
         else:
             for opc in options:
                 if direction.lower() == 'up':
-                    if self.__get_pols_to_do(opc.upstream_part, opc.upstream_output_port, check_pol=pol):
+                    if self._check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
                         next_one = opc
                         break
                 else:
-                    if self.__get_pols_to_do(opc.downstream_part, opc.downstream_input_port, check_pol=pol):
+                    if self._check_next_port(opc.downstream_part, opc.downstream_input_port, pol, len(options)):
                         next_one = opc
                         break
         return next_one

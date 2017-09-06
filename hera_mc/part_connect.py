@@ -24,6 +24,7 @@ no_connection_designator = '-X-'
 # This lists the fully complete signal paths
 full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end', 'cable-feed75', 'cable-post-amp(in)',
                                         'post-amp', 'cable-post-amp(out)', 'cable-receiverator', 'cable-container', 'f-engine']}
+both_pols = ['e', 'n']
 
 
 class Parts(MCDeclarativeBase):

@@ -100,7 +100,7 @@ if __name__ == '__main__':
     elif action_tag == 'ho':  # hookup
         from hera_mc import cm_hookup
         hookup = cm_hookup.Hookup(session)
-        hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port=args.port,
+        hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
                                         at_date=date_query, exact_match=args.exact_match,
                                         show_levels=args.show_levels, levels_testing=args.levels_testing)
         hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
