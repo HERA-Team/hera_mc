@@ -192,9 +192,6 @@ class Hookup:
                 conn.gps2Time()
                 if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
-                    cpo = conn.downstream_input_port
-                    npa = conn.upstream_part
-                    npo = conn.upstream_output_port
         elif direction.lower() == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
                     (func.upper(PC.Connections.upstream_part) == part.upper()) &
@@ -202,9 +199,6 @@ class Hookup:
                 conn.gps2Time()
                 if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
-                    cpo = conn.upstream_output_port
-                    npa = conn.downstream_part
-                    npo = conn.downstream_input_port
         next_one = None
         if len(options) == 0:
             next_one = None
