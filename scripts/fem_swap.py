@@ -63,7 +63,7 @@ if __name__ == '__main__':
         sys.exit()
     # ###ERROR EXIT POINT
 
-    hd = hookup.get_hookup(hpn_list=[args.ant], rev='H', port='all', at_date=at_date,
+    hd = hookup.get_hookup(hpn_list=[args.ant], rev='H', port_query='all', at_date=at_date,
                            exact_match=True)
     k = hd['hookup'].keys()[0]
     if len(hd['hookup'][k]['e']) == 0:

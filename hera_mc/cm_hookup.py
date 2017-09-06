@@ -58,7 +58,7 @@ class Hookup:
         -----------
         hpn_list:  list of input hera part numbers (whole or first part thereof)
         rev:  the revision number
-        port:  a specifiable port name,  default is 'all'.  Unverified.
+        port_query:  a specifiable port name to follow or 'all',  default is 'all'.
         at_date:  date for hookup validity
         exact_match:  boolean for either exact_match or partial
         show_levels:  boolean to include correlator levels
@@ -117,19 +117,23 @@ class Hookup:
         port_query:  the ports that were requested.
         """
         single_pol_parts_paper = ['RI', 'RO', 'CR']
-        pq = port_query.lower()
-        if pq == 'all':  # Need to figure out if return 'e', 'n' or both
+        port_query = port_query.lower()
+        if port_query == 'all':  # Need to figure out if return 'e', 'n' or both
             if part['part'].hpn[:2].upper() in single_pol_parts_paper:
                 pols = [part['part'].hpn[-1].lower()]
             else:
                 pols = PC.both_pols
-        elif pq in PC.both_pols:
-            pols = [ports]
+        elif port_query in PC.both_pols:
+            pols = [port_query]
         else:
-            pols = PC.both_pols
+            raise ValueError('Invalid port_query')
         return pols
 
     def _check_next_port(self, next_part, option_port, pol, lenopt):
+        """
+        This checks that the port is the correct one to follow through as you
+        follow the hookup.
+        """
         if lenopt == 1:
             if next_part[:3].upper() == 'PAM' and option_port[0].lower() != pol.lower():
                 return False
@@ -206,8 +210,12 @@ class Hookup:
             next_one = None
         elif len(options) == 1:
             opc = options[0]
-            if self._check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
-                next_one = opc
+            if direction.lower() == 'up':
+                if self._check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
+                    next_one = opc
+            else:
+                if self._check_next_port(opc.downstream_part, opc.downstream_input_port, pol, len(options)):
+                    next_one = opc
         else:
             for opc in options:
                 if direction.lower() == 'up':
