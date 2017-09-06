@@ -82,6 +82,11 @@ class TestParts(TestHERAMC):
         else:
             self.assertFalse()
 
+    def test_cm_version(self):
+        self.h.add_cm_version(cm_utils._get_astropytime('now'), 'Test-git-hash')
+        gh = self.h.get_cm_version()
+        self.assertTrue(gh == 'Test-git-hash')
+
     def test_get_revisions_of_type(self):
         at_date = self.now
         rev_types = ['LAST', 'ACTIVE', 'ALL', 'FULL', 'A']

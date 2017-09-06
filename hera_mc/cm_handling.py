@@ -252,10 +252,7 @@ class Handling:
                     tdata.append(ptsin.strip().strip(','))
                     tdata.append(ptsout.strip().strip(','))
                     if len(part_dossier[hpnr]['part_info']):
-                        comment_list = []
-                        for pi in part_dossier[hpnr]['part_info']:
-                                comment_list.append(pi.comment)
-                        comment = ', '.join(comment_list)
+                        comment = ', '.join(pi.comment for pi in part_dossier[hpnr]['part_info'])
                     else:
                         comment = None
                     tdata.append(comment)
