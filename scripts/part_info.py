@@ -37,8 +37,7 @@ if __name__ == '__main__':
     cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
-    if args.hpn is None or args.rev is None or args.comment is None:
-        args = query_args(args)
+    args = query_args(args)
 
     # Pre-process some args
     at_date = cm_utils._get_astropytime(args.date, args.time)
@@ -47,5 +46,5 @@ if __name__ == '__main__':
     session = db.sessionmaker()
 
     # Check for part
-    print("Adding comment for part {}:{}".format(args.hpn, args.rev))
+    print("Adding info for part {}:{}".format(args.hpn, args.rev))
     part_connect.add_part_info(session, args.hpn, args.rev, at_date, args.comment, args.library_file)
