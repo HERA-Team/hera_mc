@@ -40,14 +40,6 @@ class TestParts(TestHERAMC):
         part.start_gpstime = self.start_time.gps
         self.test_session.add(part)
         self.test_session.commit()
-        # Add part_info
-        part_info = part_connect.PartInfo()
-        part_info.hpn = self.test_part
-        part_info.hpn_rev = self.test_rev
-        part_info.posting_gpstime = self.start_time.gps
-        part_info.comment = 'TEST'
-        self.test_session.add(part_info)
-        self.test_session.commit()
 
     def test_update_new(self):
         ntp = 'new_test_part'
@@ -76,8 +68,9 @@ class TestParts(TestHERAMC):
             self.assertFalse()
 
     def test_part_info(self):
+        part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, 'now', 'Testing', 'library_file')
         located = self.h.get_part_dossier([self.test_part], self.test_rev, self.start_time, True)
-        self.assertTrue(located[located.keys()[0]]['part_info'].comment == 'TEST')
+        self.assertTrue(located[located.keys()[0]]['part_info'][0].comment == 'Testing')
 
     def test_add_new_parts(self):
         data = [['part_X', 'X', 'station', 'mfg_X']]
