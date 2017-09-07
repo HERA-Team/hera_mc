@@ -6,7 +6,7 @@
 from __future__ import print_function
 import urllib2
 
-in_container = False
+paper_network = True
 
 
 def get_levels(pf_input, testing):
@@ -69,7 +69,7 @@ def __read_levels_file(name):
 
 def __get_current_levels_from_url(name, timeout=5):
     try:
-        if in_container:
+        if paper_network:
             url = urllib2.urlopen('http://10.0.1.1:3000/instruments/psa256/levels.txt', timeout=timeout)
         else:
             url = urllib2.urlopen('http://10.0.1.1:3000/instruments/psa256/levels.txt', timeout=timeout)
