@@ -23,14 +23,12 @@ if __name__ == '__main__':
                         dest='exact_match', action='store_true')
     parser.add_argument('--port', help="Define desired port(s) for hookup. [all]", dest='port', default='all')
     parser.add_argument('--check-rev', help="Revision type to check against. [FULL]", dest='check_rev', default='FULL')
-    parser.add_argument('--show_state', help="Show only the 'full', active' or 'all' parts [active]", default='active')
+    parser.add_argument('--show-state', help="Show only the 'full', active' or 'all' parts [active]", dest='show_state', default='active')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
                         dest='hookup_cols', default='all')
     parser.add_argument('--update', help="Update part number records.  Format hpn0:[rev0]:col0:val0, \
                                           [hpn1:[rev1]]col1:val1...  [None]", default=None)
     parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')
-    parser.add_argument('--levels-testing', help="Set to test filename if correlator levels not accessible - keep False \
-                                                  to use actual correlator [False]", dest='levels_testing', default=False)
     parser.add_argument('--add-new-part', help="Flag to allow update to add a new record.  [False]", dest='add_new_part', action='store_true')
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
@@ -57,10 +55,8 @@ if __name__ == '__main__':
             -p/--hpn:  part name (required)
             -r/--revision:  revision (particular/last/active/full/all) [LAST]
             --port:  port name (particular/all) [ALL]
-            --show_state:  show 'full', 'active' or 'all' parts [ACTIVE]
+            --show-state:  show 'full', 'active' or 'all' parts [ACTIVE]
             --hookup-cols:  comma-delimited list of columns to include in hookup (no spaces) [ALL]
-            --levels-testing:  filename for test correlator information, prepend with ':' for test directory [False]
-                               Note that ':levels.tst' should work.
             --update:  date for update (not recommended - do it via a script)
 
         Args that are flags
@@ -75,9 +71,6 @@ if __name__ == '__main__':
     action_tag = args.action[:2].lower()
     args.hpn = cm_utils.listify(args.hpn)
     args.hookup_cols = cm_utils.listify(args.hookup_cols)
-
-    if args.levels_testing is not False and args.levels_testing[0] == ':':
-        args.levels_testing = os.path.join(mc.test_data_path, args.levels_testing[1:])
 
     # Start session
     db = mc.connect_to_mc_db(args)
@@ -102,7 +95,7 @@ if __name__ == '__main__':
         hookup = cm_hookup.Hookup(session)
         hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
                                         at_date=date_query, exact_match=args.exact_match,
-                                        show_levels=args.show_levels, levels_testing=args.levels_testing)
+                                        show_levels=args.show_levels)
         hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
 
     elif action_tag == 'ty':  # types of parts

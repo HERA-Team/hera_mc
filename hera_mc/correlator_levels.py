@@ -6,7 +6,7 @@
 from __future__ import print_function
 import urllib2
 
-in_container = True
+in_container = False
 
 
 def get_levels(pf_input, testing):
@@ -21,12 +21,13 @@ def get_levels(pf_input, testing):
                            'F1': 20, 'F2': 21, 'F3': 22, 'F4': 23,
                            'G1': 24, 'G2': 25, 'G3': 26, 'G4': 27,
                            'H1': 28, 'H2': 29, 'H3': 30, 'H4': 31}
-    default_url_levels_filename = '__levels.tmp'
-    if testing:
-        levels_filename = testing
+    default_levels_filename = '__levels.tmp'
+    live_values = __get_current_levels_from_url(default_levels_filename)
+    if live_values:
+        levels_filename = default_levels_filename
     else:
-        levels_filename = default_url_levels_filename
-        __get_current_levels_from_url(levels_filename)
+        levels_filename = testing
+
     levels = __read_levels_file(levels_filename)
     if type(pf_input) is not list:
         pf_input = [pf_input]
@@ -68,12 +69,13 @@ def __read_levels_file(name):
 def __get_current_levels_from_url(name):
     try:
         if in_container:
-            url = urllib2.urlopen('http://paper1.paper.pvt:3000/instruments/psa256/levels.txt')
+            url = urllib2.urlopen('http://10.0.1.1:3000/instruments/psa256/levels.txt', timeout=5)
         else:
-            url = urllib2.urlopen('http://paper1.karoo.kat.ac.za:3000/')
+            url = urllib2.urlopen('http://10.0.1.1:3000/instruments/psa256/levels.txt', timeout=5)
         levels_url = url.read()
         fp = open(name, 'w')
         fp.write(levels_url)
         fp.close()
+        return True
     except urllib2.URLError:
-        pass
+        return False
