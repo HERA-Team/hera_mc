@@ -26,6 +26,7 @@ def get_levels(pf_input, testing):
     if live_values:
         levels_filename = default_levels_filename
     else:
+        print("\nNOT LIVE CORRELATOR VALUES:  Reading from default test file.")
         levels_filename = testing
 
     levels = __read_levels_file(levels_filename)
