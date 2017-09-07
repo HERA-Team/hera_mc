@@ -66,12 +66,12 @@ def __read_levels_file(name):
     return levels
 
 
-def __get_current_levels_from_url(name):
+def __get_current_levels_from_url(name, timeout=5):
     try:
         if in_container:
-            url = urllib2.urlopen('http://10.0.1.1:3000/instruments/psa256/levels.txt', timeout=5)
+            url = urllib2.urlopen('http://10.0.1.1:3000/instruments/psa256/levels.txt', timeout=timeout)
         else:
-            url = urllib2.urlopen('http://10.0.1.1:3000/instruments/psa256/levels.txt', timeout=5)
+            url = urllib2.urlopen('http://10.0.1.1:3000/instruments/psa256/levels.txt', timeout=timeout)
         levels_url = url.read()
         fp = open(name, 'w')
         fp.write(levels_url)
