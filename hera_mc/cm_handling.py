@@ -155,7 +155,7 @@ class Handling:
                     pr_key = cm_utils._make_part_key(part.hpn, part.hpn_rev)
                     part_dossier[pr_key] = {'Time': at_date, 'part': part}
                     if full_version:
-                        part_dossier[pr_key]['part_info'] = None
+                        part_dossier[pr_key]['part_info'] = []
                         part_dossier[pr_key]['connections'] = None
                         part_dossier[pr_key]['geo'] = None
                         part_dossier[pr_key]['input_ports'] = []
@@ -164,7 +164,7 @@ class Handling:
                                 (func.upper(PC.PartInfo.hpn) == part.hpn.upper()) &
                                 (func.upper(PC.PartInfo.hpn_rev) == part.hpn_rev.upper())):
                             # part_info.gps2Time()
-                            part_dossier[pr_key]['part_info'] = part_info
+                            part_dossier[pr_key]['part_info'].append(part_info)
                         connections = self.get_connection_dossier(
                             hpn_list=[part.hpn], rev=part.hpn_rev, port='all',
                             at_date=at_date, exact_match=True)
@@ -251,8 +251,8 @@ class Handling:
                         ptsout += k + ', '
                     tdata.append(ptsin.strip().strip(','))
                     tdata.append(ptsout.strip().strip(','))
-                    if (part_dossier[hpnr]['part_info'] is not None):
-                        comment = part_dossier[hpnr]['part_info'].comment
+                    if len(part_dossier[hpnr]['part_info']):
+                        comment = ', '.join(pi.comment for pi in part_dossier[hpnr]['part_info'])
                     else:
                         comment = None
                     tdata.append(comment)
