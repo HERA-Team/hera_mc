@@ -280,7 +280,7 @@ class Hookup:
 
     def __hookup_add_correlator_levels(self, hookup_dict):
         import os.path
-        test_file = os.path.join(mc.test_data_path, 'levels.tst')
+        dummy_file = os.path.join(mc.test_data_path, 'levels.tst')
         hookup_dict['columns'].append('level')
         hookup_dict['levels'] = {}
         pf_input = []
@@ -288,7 +288,7 @@ class Hookup:
             for p in hookup_dict['hookup'][k].keys():
                 f_engine = hookup_dict['hookup'][k][p][-1].downstream_part
                 pf_input.append(f_engine)
-        levels = correlator_levels.get_levels(pf_input, test_file)
+        levels = correlator_levels.get_levels(pf_input, dummy_file)
         level_ctr = 0
         for k in sorted(hookup_dict['hookup'].keys()):
             hookup_dict['levels'][k] = {}

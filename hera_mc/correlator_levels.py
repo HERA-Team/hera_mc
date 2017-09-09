@@ -46,12 +46,14 @@ def get_levels(pf_input, testing, network='local', timeout=5):
             pf_chassis = 'F' + str(pf[-3])
         except ValueError:
             print("Not standard f_engine naming format (pf chassis)", pf)
+            pf_levels.append('0.0')
             continue
         pf_rowcol_designator = pf[-2:]
         try:
             level_col = pf_in__to__file_col[pf_rowcol_designator]
         except KeyError:
             print("Not standard f_engine naming format (pf input)", pf)
+            pf_levels.append('0.0')
             continue
         if levels is not None:
             pf_levels.append(levels[pf_chassis][level_col])
