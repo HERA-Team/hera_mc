@@ -7,9 +7,19 @@ from __future__ import print_function
 import urllib2
 
 
-def get_levels(pf_input, testing, timeout=5, network='local'):
+def get_levels(pf_input, testing, network='local', timeout=5):
     """
-    This assumes the f_engine name structure of 'DF<int=pf_chassis><letter=input_row><int=input_col>'
+    This returns a dictionary containing the correlator levels for inputs givin in pf_input.
+    This assumes the f-engine name structure of 'DF<int=pf_chassis><letter=input_row><int=input_col>'
+    It tries to read the correlator "rails" fail, and it that fails it provides dummy values (that
+    was just to check the formats...)
+
+    Parameters:
+    -----------
+    pf_input:  list of f-engine inputs at prescribed naming convention.
+    testing:  names of testing file (used if fail at reading values)
+    network:  meant to describe different network locations.  Currently only 'local'
+    timeout:  time to allow valid connection to read values.
     """
     pf_in__to__file_col = {'A1': 0, 'A2': 1, 'A3': 2, 'A4': 3,
                            'B1': 4, 'B2': 5, 'B3': 6, 'B4': 7,
@@ -20,14 +30,14 @@ def get_levels(pf_input, testing, timeout=5, network='local'):
                            'G1': 24, 'G2': 25, 'G3': 26, 'G4': 27,
                            'H1': 28, 'H2': 29, 'H3': 30, 'H4': 31}
     default_levels_filename = '__levels.tmp'
-    live_values = __get_current_levels_from_url(default_levels_filename, timeout, network)
+    live_values = get_current_levels_from_url(default_levels_filename, network, timeout)
     if live_values:
         levels_filename = default_levels_filename
     else:
         print("\nNOT LIVE CORRELATOR VALUES:  Reading from default test file.")
         levels_filename = testing
 
-    levels = __read_levels_file(levels_filename)
+    levels = read_levels_file(levels_filename)
     if type(pf_input) is not list:
         pf_input = [pf_input]
     pf_levels = []
@@ -50,7 +60,7 @@ def get_levels(pf_input, testing, timeout=5, network='local'):
     return pf_levels
 
 
-def __read_levels_file(name):
+def read_levels_file(name):
     try:
         lfp = open(name, 'r')
     except IOError:
@@ -65,7 +75,7 @@ def __read_levels_file(name):
     return levels
 
 
-def __get_current_levels_from_url(name, timeout, network):
+def get_current_levels_from_url(name, network, timeout):
     try:
         if network == 'local':
             url = urllib2.urlopen('http://10.0.1.1:3000/instruments/psa256/levels.txt', timeout=timeout)
