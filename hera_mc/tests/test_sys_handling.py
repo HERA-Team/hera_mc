@@ -96,12 +96,19 @@ class TestGeo(TestHERAMC):
         self.assertEqual(cofa.lon, corr_dict['cofa_lon'])
         self.assertEqual(cofa.elevation, corr_dict['cofa_alt'])
 
+    def test_correlator_levels(self):
+        at_date = cm_utils._get_astropytime('2017-07-03')
+        H = cm_hookup.Hookup(self.test_session)
+        hu = H.get_hookup(['HH23'], 'A', 'all', at_date, exact_match=True, show_levels=True)
+        hh23level = float(hu['levels']['HH23:A']['e'])
+        self.assertEqual(type(hh23level), float)
+
     def test_get_pam_from_hookup(self):
         h = sys_handling.Handling(self.test_session)
         at_date = cm_utils._get_astropytime('2017-07-03')
         fc = cm_revisions.get_full_revision('HH23', at_date, h.session)
         hu = fc[0].hookup
-        H = cm_hookup.Hookup()
+        H = cm_hookup.Hookup(self.test_session)
         pams = H.get_pam_from_hookup(hu)
         self.assertEqual(len(pams), 2)
         self.assertEqual(pams['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)

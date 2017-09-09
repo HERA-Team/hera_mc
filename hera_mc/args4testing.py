@@ -40,9 +40,6 @@ parser.add_argument('--add-new-part', help="Flag to allow update to add a new "
 parser.add_argument('--mapr-cols', help="Specify a subset of parts to show in mapr, "
                     "comma-delimited no-space list. [all]",
                     dest='mapr_cols', default='all')
-parser.add_argument('--levels-testing', help="Set to test filename if correlator "
-                    "levels not accessible [levels.tst]",
-                    dest='levels_testing', default='levels.tst')
 parser.add_argument('--date', help="UTC YYYY/MM/DD or now [now]", default='now')
 parser.add_argument('--time', help="UTC hh:mm or now [now]", default='now')
 active_group = parser.add_mutually_exclusive_group()
@@ -63,5 +60,3 @@ args.verbosity = args.verbosity.lower()
 args.mapr_cols = args.mapr_cols.lower()
 args.revision = args.revision.upper()
 args.active = False
-args.levels_testing = False
-args.levels_testing = os.path.join(mc.test_data_path, 'levels.tst')
