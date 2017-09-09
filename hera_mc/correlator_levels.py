@@ -6,10 +6,8 @@
 from __future__ import print_function
 import urllib2
 
-paper_network = True
 
-
-def get_levels(pf_input, testing):
+def get_levels(pf_input, testing, timeout=5, network='local'):
     """
     This assumes the f_engine name structure of 'DF<int=pf_chassis><letter=input_row><int=input_col>'
     """
@@ -22,7 +20,7 @@ def get_levels(pf_input, testing):
                            'G1': 24, 'G2': 25, 'G3': 26, 'G4': 27,
                            'H1': 28, 'H2': 29, 'H3': 30, 'H4': 31}
     default_levels_filename = '__levels.tmp'
-    live_values = __get_current_levels_from_url(default_levels_filename)
+    live_values = __get_current_levels_from_url(default_levels_filename, timeout, network)
     if live_values:
         levels_filename = default_levels_filename
     else:
@@ -67,12 +65,13 @@ def __read_levels_file(name):
     return levels
 
 
-def __get_current_levels_from_url(name, timeout=5):
+def __get_current_levels_from_url(name, timeout, network):
     try:
-        if paper_network:
+        if network == 'local':
             url = urllib2.urlopen('http://10.0.1.1:3000/instruments/psa256/levels.txt', timeout=timeout)
         else:
-            url = urllib2.urlopen('http://10.0.1.1:3000/instruments/psa256/levels.txt', timeout=timeout)
+            print("Currently only support local network for live values.")
+            return False
         levels_url = url.read()
         fp = open(name, 'w')
         fp.write(levels_url)
