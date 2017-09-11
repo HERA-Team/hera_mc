@@ -102,6 +102,36 @@ class TestGeo(TestHERAMC):
         hu = H.get_hookup(['HH23'], 'A', 'all', at_date, exact_match=True, show_levels=True)
         hh23level = float(hu['levels']['HH23:A']['e'])
         self.assertEqual(type(hh23level), float)
+        # Now get some failures
+        self.test_hpn = ['test_part1', 'test_part2']
+        self.test_rev = 'Q'
+        self.test_mfg = 'XYZ'
+        self.test_hptype = 'vapor'
+        self.test_time = Time('2017-07-01 01:00:00', scale='utc').gps
+        self.query_time = Time('2017-08-01 01:00:00', scale='utc')
+        for tp in self.test_hpn:
+            part = part_connect.Parts()
+            part.hpn = tp
+            part.hpn_rev = self.test_rev
+            part.hptype = self.test_hptype
+            part.manufacture_number = self.test_mfg
+            part.start_gpstime = self.test_time
+            self.test_session.add(part)
+        self.test_session.commit()
+        connection = part_connect.Connections()
+        connection.upstream_part = self.test_hpn[0]
+        connection.up_part_rev = self.test_rev
+        connection.downstream_part = self.test_hpn[1]
+        connection.down_part_rev = self.test_rev
+        connection.upstream_output_port = 'up_and_out'
+        connection.downstream_input_port = 'down_and_in'
+        connection.start_gpstime = self.test_time
+        self.test_session.add(connection)
+        self.test_session.commit()
+        hu = H.get_hookup(['test_part1'], 'Q', 'all', at_date, exact_match=True, show_levels=True)
+        tplevel = hu['levels']['test_part1:Q']['e']
+        print(tplevel)
+        self.assertEqual(tplevel, '-')
 
     def test_get_pam_from_hookup(self):
         h = sys_handling.Handling(self.test_session)

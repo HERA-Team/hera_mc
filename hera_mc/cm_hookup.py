@@ -259,15 +259,16 @@ class Hookup:
         """
         if len(part_types_found) == 0:
             return [], {}
+        is_this_one = False
         for sp in PC.full_connection_path.keys():
-            is_this_one = sp
             for part_type in part_types_found:
                 if part_type not in PC.full_connection_path[sp]:
-                    is_this_one = False
                     break
+            else:
+                is_this_one = sp
+                break
         colhead = []
         if not is_this_one:
-            # raise ValueError('Parts did not conform to any parts epoch')
             print('Parts did not conform to any parts epoch')
             parts_epoch = {'epoch': None, 'path': None}
         else:
