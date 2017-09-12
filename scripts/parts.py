@@ -64,6 +64,8 @@ if __name__ == '__main__':
         Args that are flags
             -e/--exact-match:  match part number exactly, or specify first characters [False]
             --show-levels:  include correlator levels in hookup output [False]
+            --show-ports:  include ports in hookup display [False]
+            --show-revs:  include revisions in hookup display [False]
             --add-new-part:  flag to allow including a new part for update
         """
         )
