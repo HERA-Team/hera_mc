@@ -37,6 +37,10 @@ class TestHERAMC(unittest.TestCase):
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
+        import astropy
+        #astropy.utils.iers.conf.auto_download = False
+        #astropy.utils.iers.conf.auto_max_download = 1e5
+        astropy.utils.iers.conf.auto_max_age = None
 
     def tearDown(self):
         self.test_trans.rollback()

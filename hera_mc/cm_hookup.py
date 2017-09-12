@@ -39,8 +39,8 @@ class Hookup:
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
 
-    def get_hookup(self, hpn_list, rev, port_query, at_date, exact_match=False,
-                   show_levels=False, levels_testing=False):
+    def get_hookup(self, hpn_list, rev, port_query, at_date,
+                   exact_match=False, show_levels=False):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary
         Returns hookup_dict, a dictionary with the following entries:
@@ -62,8 +62,6 @@ class Hookup:
         at_date:  date for hookup validity
         exact_match:  boolean for either exact_match or partial
         show_levels:  boolean to include correlator levels
-        levels_testing:  if present and not False will pull levels from
-                                     the file given in levels_testing
         """
 
         self.at_date = cm_utils._get_astropytime(at_date)
@@ -88,7 +86,7 @@ class Hookup:
         if len(hookup_dict['columns']):
             hookup_dict = self.__add_hookup_timing_and_flags(hookup_dict)
             if show_levels:
-                hookup_dict = self.__hookup_add_correlator_levels(hookup_dict, levels_testing)
+                hookup_dict = self.__hookup_add_correlator_levels(hookup_dict)
         return hookup_dict
 
     def __get_part_types_found(self, huco, part_types_found):
@@ -140,7 +138,6 @@ class Hookup:
             else:
                 return True
         if pol.lower() in PC.both_pols:
-
             if option_port.lower() in ['a', 'b']:
                 p = next_part[-1].lower()
             elif option_port[0].lower() in PC.both_pols:
@@ -262,15 +259,16 @@ class Hookup:
         """
         if len(part_types_found) == 0:
             return [], {}
+        is_this_one = False
         for sp in PC.full_connection_path.keys():
-            is_this_one = sp
             for part_type in part_types_found:
                 if part_type not in PC.full_connection_path[sp]:
-                    is_this_one = False
                     break
+            else:
+                is_this_one = sp
+                break
         colhead = []
         if not is_this_one:
-            # raise ValueError('Parts did not conform to any parts epoch')
             print('Parts did not conform to any parts epoch')
             parts_epoch = {'epoch': None, 'path': None}
         else:
@@ -281,19 +279,24 @@ class Hookup:
 
         return colhead, parts_epoch
 
-    def __hookup_add_correlator_levels(self, hookup_dict, testing):
-        warnings.warn("Warning:  correlator levels don't work with new pol hookup scheme yet (CM_HOOKUP[210]).")
-        return hookup_dict
+    def __hookup_add_correlator_levels(self, hookup_dict):
+        import os.path
+        dummy_file = os.path.join(mc.test_data_path, 'levels.tst')
         hookup_dict['columns'].append('level')
         hookup_dict['levels'] = {}
         pf_input = []
         for k in sorted(hookup_dict['hookup'].keys()):
-            f_engine = hookup_dict['hookup'][k][-1].downstream_part
-            pf_input.append(f_engine)
-        levels = correlator_levels.get_levels(pf_input, testing)
-        for i, k in enumerate(sorted(hookup_dict['hookup'].keys())):
-            lstr = '%s' % (levels[i])
-            hookup_dict['levels'][k] = lstr
+            for p in hookup_dict['hookup'][k].keys():
+                f_engine = hookup_dict['hookup'][k][p][-1].downstream_part
+                pf_input.append(f_engine)
+        levels = correlator_levels.get_levels(pf_input, dummy_file)
+        level_ctr = 0
+        for k in sorted(hookup_dict['hookup'].keys()):
+            hookup_dict['levels'][k] = {}
+            for p in hookup_dict['hookup'][k].keys():
+                lstr = '%s' % (levels[level_ctr])
+                level_ctr += 1
+                hookup_dict['levels'][k][p] = lstr
         return hookup_dict
 
     def get_correlator_input_from_hookup(self, hookup_dict):
