@@ -363,7 +363,7 @@ class Hookup:
         else:
             return num_fully_connected > 0
 
-    def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False):
+    def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True):
         """
         Print out the hookup table -- uses tabulate package.
 
@@ -384,7 +384,8 @@ class Hookup:
                     else:
                         level = False
                     td = self.__make_table_row(hookup_dict['hookup'][hukey][pol],
-                                               headers, timing, level)
+                                               headers, timing, level,
+                                               show_ports, show_revs)
                     table_data.append(td)
         print('\n')
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
@@ -398,24 +399,41 @@ class Hookup:
                 headers.append(col)
         return headers
 
-    def __make_table_row(self, hup_list, headers, timing, show_level):
+    def __make_table_row(self, hup_list, headers, timing, show_level, show_port, show_rev):
         td = ['-'] * len(headers)
         dip = ''
         j = 0  # This catches potentially duplicated part_type names
         for d in hup_list:
             part_type = self.part_type_cache[d.upstream_part]
             if part_type == headers[0]:
-                td[0] = d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port
+                td[0] = d.upstream_part
+                if show_rev:
+                    td[0] += ':' + d.up_part_rev
+                if show_port:
+                    td[0] += ' <' + d.upstream_output_port
                 dip = d.downstream_input_port + '> '
                 j += 1
-            else:
-                if part_type in headers:
-                    td[headers.index(part_type, j)] = dip + d.upstream_part + ':' + d.up_part_rev + ' <' + d.upstream_output_port
-                    j += 1
+            elif part_type in headers:
+                if show_port:
+                    td[headers.index(part_type, j)] = dip
+                else:
+                    td[headers.index(part_type, j)] = ''
+                td[headers.index(part_type, j)] += d.upstream_part
+                if show_rev:
+                    td[headers.index(part_type, j)] += ':' + d.up_part_rev
+                if show_port:
+                    td[headers.index(part_type, j)] += ' <' + d.upstream_output_port
                 dip = d.downstream_input_port + '> '
+                j += 1
         part_type = self.part_type_cache[d.downstream_part]
         if part_type in headers:
-            td[headers.index(part_type, j)] = dip + d.downstream_part + ':' + d.down_part_rev
+            if show_port:
+                td[headers.index(part_type, j)] = dip
+            else:
+                td[headers.index(part_type, j)] = ''
+            td[headers.index(part_type, j)] += d.downstream_part
+            if show_rev:
+                td[headers.index(part_type, j)] += ':' + d.down_part_rev
         if 'start' in headers:
             td[headers.index('start')] = timing[0]
         if 'stop' in headers:
