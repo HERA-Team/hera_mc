@@ -24,7 +24,8 @@ def query_args(args):
         args.comment = raw_input('Comment:  ')
     if args.library_file is None:
         args.library_file = cm_utils._query_default('library_file', args)
-    args.date = cm_utils._query_default('date', args)
+    if args.date == 'now':  # Note that 'now' is the current default.
+        args.date = cm_utils._query_default('date', args)
     return args
 
 
@@ -34,6 +35,7 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--rev', help="Revision of part", default=None)
     parser.add_argument('-c', '--comment', help="Comment on part", default=None)
     parser.add_argument('-l', '--library_file', help="Library filename", default=None)
+    parser.add_argument('--swap-underscores', dest='swap_underscores', help="Replaces underscores in comment with spaces.", action='store_true')
     cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
@@ -41,10 +43,21 @@ if __name__ == '__main__':
 
     # Pre-process some args
     at_date = cm_utils._get_astropytime(args.date, args.time)
+    if args.library_file.lower() == 'none':
+        args.library_file = None
+    if args.swap_underscores:
+        comment = ''
+        for c in args.comment:
+            if c == '_':
+                comment += ' '
+            else:
+                comment += c
+    else:
+        comment = args.comment
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
 
     # Check for part
     print("Adding info for part {}:{}".format(args.hpn, args.rev))
-    part_connect.add_part_info(session, args.hpn, args.rev, at_date, args.comment, args.library_file)
+    part_connect.add_part_info(session, args.hpn, args.rev, at_date, comment, args.library_file)
