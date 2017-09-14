@@ -402,38 +402,28 @@ class Hookup:
     def __make_table_row(self, hup_list, headers, timing, show_level, show_port, show_rev):
         td = ['-'] * len(headers)
         dip = ''
-        j = 0  # This catches potentially duplicated part_type names
         for d in hup_list:
             part_type = self.part_type_cache[d.upstream_part]
-            if part_type == headers[0]:
-                td[0] = d.upstream_part
+            if part_type in headers:
+                new_row_entry = ''
+                if show_port:
+                    new_row_entry = dip
+                new_row_entry += d.upstream_part
                 if show_rev:
-                    td[0] += ':' + d.up_part_rev
+                    new_row_entry += ':' + d.up_part_rev
                 if show_port:
-                    td[0] += ' <' + d.upstream_output_port
+                    new_row_entry += ' <' + d.upstream_output_port
+                td[headers.index(part_type)] = new_row_entry
                 dip = d.downstream_input_port + '> '
-                j += 1
-            elif part_type in headers:
-                if show_port:
-                    td[headers.index(part_type, j)] = dip
-                else:
-                    td[headers.index(part_type, j)] = ''
-                td[headers.index(part_type, j)] += d.upstream_part
-                if show_rev:
-                    td[headers.index(part_type, j)] += ':' + d.up_part_rev
-                if show_port:
-                    td[headers.index(part_type, j)] += ' <' + d.upstream_output_port
-                dip = d.downstream_input_port + '> '
-                j += 1
         part_type = self.part_type_cache[d.downstream_part]
         if part_type in headers:
+            new_row_entry = ''
             if show_port:
-                td[headers.index(part_type, j)] = dip
-            else:
-                td[headers.index(part_type, j)] = ''
-            td[headers.index(part_type, j)] += d.downstream_part
+                new_row_entry = dip
+            new_row_entry += d.downstream_part
             if show_rev:
-                td[headers.index(part_type, j)] += ':' + d.down_part_rev
+                new_row_entry += ':' + d.down_part_rev
+            td[headers.index(part_type)] = new_row_entry
         if 'start' in headers:
             td[headers.index('start')] = timing[0]
         if 'stop' in headers:

@@ -24,7 +24,8 @@ def query_args(args):
         args.comment = raw_input('Comment:  ')
     if args.library_file is None:
         args.library_file = cm_utils._query_default('library_file', args)
-    args.date = cm_utils._query_default('date', args)
+    if args.date == 'now':  # Note that 'now' is the current default.
+        args.date = cm_utils._query_default('date', args)
     return args
 
 
@@ -41,6 +42,8 @@ if __name__ == '__main__':
 
     # Pre-process some args
     at_date = cm_utils._get_astropytime(args.date, args.time)
+    if args.library_file.lower() == 'none':
+        args.library_file = None
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
