@@ -402,11 +402,9 @@ class Hookup:
     def __make_table_row(self, hup_list, headers, timing, show_level, show_port, show_rev):
         td = ['-'] * len(headers)
         dip = ''
-        j = 0  # This catches potentially duplicated part_type names
         for d in hup_list:
             part_type = self.part_type_cache[d.upstream_part]
             if part_type in headers:
-                entry_index = headers.index(part_type, j)
                 new_row_entry = ''
                 if show_port:
                     new_row_entry = dip
@@ -415,9 +413,8 @@ class Hookup:
                     new_row_entry += ':' + d.up_part_rev
                 if show_port:
                     new_row_entry += ' <' + d.upstream_output_port
-                td[entry.index] = new_row_entry
+                td[headers.index(part_type)] = new_row_entry
                 dip = d.downstream_input_port + '> '
-                j += 1
         part_type = self.part_type_cache[d.downstream_part]
         if part_type in headers:
             new_row_entry = ''
@@ -426,7 +423,7 @@ class Hookup:
             new_row_entry += d.downstream_part
             if show_rev:
                 new_row_entry += ':' + d.down_part_rev
-            td[headers.index(part_type, j)] = new_row_entry
+            td[headers.index(part_type)] = new_row_entry
         if 'start' in headers:
             td[headers.index('start')] = timing[0]
         if 'stop' in headers:
