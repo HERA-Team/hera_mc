@@ -8,6 +8,8 @@ Common server_status table
 The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
 """
+from __future__ import absolute_import, division, print_function
+
 from math import floor
 from astropy.time import Time
 from sqlalchemy import Column, Integer, String, Float, BigInteger
@@ -100,3 +102,75 @@ class ServerStatus(MCDeclarativeBase):
                    memory_used_pct=memory_used_pct, memory_size_gb=memory_size_gb,
                    disk_space_pct=disk_space_pct, disk_size_gb=disk_size_gb,
                    network_bandwidth_mbs=network_bandwidth_mbs)
+
+
+def plot_host_status_for_plotly(session):
+    from astropy.time import Time
+    from plotly import graph_objs as go, plotly
+
+    THIRTY_DAYS = 24 * 3600 * 30
+    gps_time_cutoff = Time.now().gps - THIRTY_DAYS
+    plot_items = []
+
+    # Gather data about Librarian servers
+
+    from .librarian import LibServerStatus
+
+    librarian_hosts_of_interest = [
+        'qmaster',
+        #'pot1',
+        #'pot6.karoo.kat.ac.za',
+        'pot7.still.pvt',
+        'pot8.still.pvt',
+    ]
+
+    internal_hostname_to_ui_hostname = {
+        'pot7.still.pvt': 'pot7',
+        'pot8.still.pvt': 'pot8',
+    }
+
+    for host in librarian_hosts_of_interest:
+        times = []
+        loads = []
+
+        q = (session.query(LibServerStatus)
+             .filter(LibServerStatus.mc_time > gps_time_cutoff)
+             .filter(LibServerStatus.hostname == host)
+             .order_by(LibServerStatus.mc_time)
+             .all())
+
+        for item in q:
+            times.append(Time(item.mc_time, format='gps').datetime)
+            loads.append(item.cpu_load_pct)
+
+        ui_hostname = internal_hostname_to_ui_hostname.get(host, host)
+
+        plot_items.append(go.Scatter(
+            x = times,
+            y = loads,
+            name = ui_hostname,
+        ))
+
+    # Finish plot
+
+    layout = go.Layout(
+        showlegend = True,
+        title = 'Host load averages',
+        xaxis = {
+            'title': 'Date',
+        },
+        yaxis = {
+            'title': '5-minute load average (percent per CPU)',
+        },
+    )
+
+    fig = go.Figure(
+        data = plot_items,
+        layout = layout,
+    )
+
+    plotly.plot(
+        fig,
+        auto_open = False,
+        filename = 'karoo_host_load_averages',
+    )
