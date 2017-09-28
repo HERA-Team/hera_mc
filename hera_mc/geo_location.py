@@ -114,8 +114,7 @@ def update(session=None, data=None, add_new_geo=False):
         close_session_when_done = True
 
     for station_name in data_dict.keys():
-        geo_rec = session.query(GeoLocation).filter(
-            GeoLocation.station_name == station_name)
+        geo_rec = session.query(GeoLocation).filter(func.upper(GeoLocation.station_name) == station_name.upper())
         num_rec = geo_rec.count()
         make_update = False
         if num_rec == 0:
