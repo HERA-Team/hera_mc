@@ -20,10 +20,7 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-
-  # create environment and install dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy astropy scipy python-dateutil sqlalchemy psycopg2 pandas matplotlib tabulate psutil pyproj nose pip
-  - source activate test-environment
+  - conda install numpy astropy scipy python-dateutil sqlalchemy psycopg2 pandas matplotlib tabulate psutil pyproj nose pip
   - conda install -c conda-forge alembic
   - pip install coveralls
   - conda install -c conda-forge aipy
