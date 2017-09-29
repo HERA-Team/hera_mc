@@ -60,21 +60,17 @@ def query_geo_information(args):
     return args
 
 
-def entry_OK_to_add(args):
+def entry_OK_to_add(session, station_name):
     OK = True
-
-    db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
-
     h = geo_handling.Handling(session)
-    if h.is_in_geo_location(args.station_name):
-        print(args.station_name, ' already present.')
+    if h.is_in_database(station_name):
+        print(station_name, ' already present.')
         OK = False
     h.close()
     return OK
 
 
-def add_entry_to_geo_location(args):
+def add_entry_to_geo_location(session, args):
     # NotNull
     sname = args.station_name
     dt = cm_utils._get_astropytime(args.date, args.time)
@@ -92,10 +88,10 @@ def add_entry_to_geo_location(args):
         data.append([sname, 'easting', args.easting])
     if args.elevation:
         data.append([sname, 'elevation', args.elevation])
-    geo_location.update(args, data, args.add_new_geo)
+    geo_location.update(session, data, args.add_new_geo)
 
 
-def add_entry_to_parts(args):
+def add_entry_to_parts(session, args):
     # NotNull
     hpn = args.station_name
     rev = 'A'
@@ -103,9 +99,9 @@ def add_entry_to_parts(args):
     data = [[hpn, rev, 'hpn', hpn],
             [hpn, rev, 'hpn_rev', rev],
             [hpn, rev, 'hptype', 'station'],
-            [hpn, rev, 'manufacturer_number', 'S2'],
+            [hpn, rev, 'manufacturer_number', hpn],
             [hpn, rev, 'start_gpstime', dt.gps]]
-    part_connect.update_part(args, data, args.add_new_part)
+    part_connect.update_part(session, data, args.add_new_part)
 
 
 if __name__ == '__main__':
@@ -152,10 +148,13 @@ if __name__ == '__main__':
             args.northing = coords[2]
             args.elevation = coords[3]
 
+    db = mc.connect_to_mc_db(args)
+    session = db.sessionmaker()
+
     if args.query:
         args = query_geo_information(args)
 
-    if entry_OK_to_add(args):
+    if entry_OK_to_add(session, args.station_name):
         cm_utils._log('add_station', args=args)
-        add_entry_to_geo_location(args)
-        add_entry_to_parts(args)
+        add_entry_to_geo_location(session, args)
+        add_entry_to_parts(session, args)
