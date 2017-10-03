@@ -43,23 +43,22 @@ def query_connection(args):
 def OK_to_add(args, connect, handling, geo):
     is_OK_to_add = True
     # 1 - check to see if station is in geo_location database (should be)
-    if not geo.is_in_geo_location(connect.upstream_part):
+    if not geo.is_in_database(connect.upstream_part):
         print("You need to add_station.py", connect.upstream_part,
               "to geo_location database")
         is_OK_to_add = False
     # 2 - check to see if the station is already connected (shouldn't be)
     current = cm_utils._get_astropytime(args.date, args.time)
-    if handling.is_in_connections(connect.upstream_part, 'A', return_active=True):
+    if handling.is_in_connections(connect.upstream_part, 'A'):
         print('Error: ', connect.upstream_part, "already connected.")
         is_OK_to_add = False
     # 3 - check to see if antenna is already connected (should be, but isn't
     # necesarily active)
-    is_connected = handling.is_in_connections(connect.downstream_part, 'P',
-                                              return_active=True)
+    is_connected = handling.is_in_connections(connect.downstream_part, 'P')
     if not is_connected:
         print('Error:  ', connect.downstream_part, 'not present')
         is_OK_to_add = False
-    if type(is_connected) != list:
+    if not is_connected:
         print('Note:', connect.downstream_part, 'is connected, but not active.')
 
     return is_OK_to_add
@@ -72,14 +71,14 @@ def stop_previous_parts(args):
     current = int(cm_utils._get_astropytime(args.date, args.time).gps)
     args.add_new_part = False
 
-    is_connected = handling.is_in_connections(args.antenna_number, 'P', return_active=True)
-    if type(is_connected) == list:  # It is active
+    is_connected = handling.is_in_connections(args.antenna_number, 'P')
+    if is_connected:  # It is active
         print("Stopping part %s %s at %s" % (args.antenna_number, 'P', str(args.date)))
         data = [[args.antenna_number, 'P', 'stop_gpstime', current]]
 
     feed = 'FDP' + args.antenna_number.strip('A')
-    is_connected = handling.is_in_connections(feed, 'A', return_active=True)
-    if type(is_connected) == list:  # It is active
+    is_connected = handling.is_in_connections(feed, 'A')
+    if is_connected:  # It is active
         print("Stopping part %s %s at %s" % (feed, 'A', str(args.date)))
         data.append([feed, 'A', 'stop_gpstime', current])
 
@@ -126,7 +125,7 @@ def stop_previous_connections(args, handling):
     data = []
     args.add_new_connection = False
 
-    existing = handling.get_connections(args.antenna_number, 'P', exact_match=True)
+    existing = handling.get_connection_dossier(args.antenna_number, 'P', exact_match=True)
     for k, c in existing.iteritems():
         if k in handling.non_class_connections_dict_entries:
             continue
@@ -241,8 +240,8 @@ if __name__ == '__main__':
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
 
-    handling = cm_handling.Handling(args)
-    hookup = cm_hookup.Hookup(args)
+    handling = cm_handling.Handling(session)
+    hookup = cm_hookup.Hookup(session)
     geo = geo_handling.Handling(session)
 
     if args.make_update:
@@ -250,9 +249,6 @@ if __name__ == '__main__':
     else:
         print("\nThis will only print out the actions.\n\t'--make-update' to "
               "actually make changes.\n")
-
-    print("Showing previous hookup:")
-    previous_hookup = hookup.get_hookup(args.antenna_number, show_hookup=True)
 
     # This is the new station/antenna connection to be checked
     connect.connection(upstream_part=args.station_name, up_part_rev='A',
