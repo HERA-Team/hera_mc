@@ -141,8 +141,8 @@ def _get_astropytime(_date, _time=0):
             except ValueError:
                 raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
             s_time = str(_time)
-            if ':' in str(_time):
-                data = _time.split(':')
+            if ':' in s_time:
+                data = s_time.split(':')
                 add_time = float(data[0]) * 3600.0 + float(data[1]) * 60.0
                 if len(data) == 3:
                     add_time += float(data[2])
