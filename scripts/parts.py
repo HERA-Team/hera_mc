@@ -29,6 +29,8 @@ if __name__ == '__main__':
     parser.add_argument('--update', help="Update part number records.  Format hpn0:[rev0]:col0:val0, \
                                           [hpn1:[rev1]]col1:val1...  [None]", default=None)
     parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')
+    parser.add_argument('--show-ports', help="Show ports on hookup.", dest='show_ports', action='store_true')
+    parser.add_argument('--show-revs', help="Show revs on hookup.", dest='show_revs', action='store_true')
     parser.add_argument('--add-new-part', help="Flag to allow update to add a new record.  [False]", dest='add_new_part', action='store_true')
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
@@ -62,6 +64,8 @@ if __name__ == '__main__':
         Args that are flags
             -e/--exact-match:  match part number exactly, or specify first characters [False]
             --show-levels:  include correlator levels in hookup output [False]
+            --show-ports:  include ports in hookup display [False]
+            --show-revs:  include revisions in hookup display [False]
             --add-new-part:  flag to allow including a new part for update
         """
         )
@@ -96,7 +100,7 @@ if __name__ == '__main__':
         hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
                                         at_date=date_query, exact_match=args.exact_match,
                                         show_levels=args.show_levels)
-        hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels)
+        hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels, args.show_ports, args.show_revs)
 
     elif action_tag == 'ty':  # types of parts
         part_type_dict = handling.get_part_types(date_query)
