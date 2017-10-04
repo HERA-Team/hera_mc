@@ -56,7 +56,7 @@ if __name__ == '__main__':
     if args.date is not None:
         at_date = cm_utils._get_astropytime(args.date, args.time)
     c = part_connect.Connections()
-    c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport, \
+    c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
                  downstream_part=args.dnpart, down_part_rev=args.dnrev, downstream_input_port=args.dnport)
 
     db = mc.connect_to_mc_db(args)
