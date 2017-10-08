@@ -228,23 +228,19 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
     session.add(CMVersion.create(Time.now(), cm_git_hash))
 
     # Delete tables in this order
-    for table, data_filename, keyed_table in use_table:
+    for table, data_filename in use_table:
         num_rows_deleted = session.query(cm_tables[table][0]).delete()
         print("%d rows deleted in %s" % (num_rows_deleted, table))
 
     # Initialize tables in reversed order
-    for table, data_filename, key_row in reversed(use_table):
+    for table, data_filename in reversed(use_table):
         cm_utils._log('cm_initialization: ' + data_filename)
-        field_row = not key_row
-        field_name = []
+        field_row = True  # This is the first row
         with open(data_filename, 'rb') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 table_inst = cm_tables[table][0]()
-                if key_row:
-                    key_row = False
-                    field_row = True
-                elif field_row:
+                if field_row:
                     field_name = row
                     field_row = False
                 else:
