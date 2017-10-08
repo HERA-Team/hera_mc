@@ -205,10 +205,11 @@ class TestQM(TestHERAMC):
         self.test_session.update_qm_list()
         self.test_session.ingest_metrics_file(filename, 'firstcal')
         # Check that things got in
-        firstcal_array_metrics = set(['firstcal_metrics_agg_std_y',
-                                      'firstcal_metrics_good_sol_y'])
+        firstcal_array_metrics = set(['firstcal_metrics_agg_std_x',
+                                      'firstcal_metrics_good_sol_x',
+                                      'firstcal_metrics_max_std_x'])
         r = self.test_session.get_array_metric()
-        self.assertEqual(len(r), 2)
+        self.assertEqual(len(r), 3)
         for result in r:
             self.assertTrue(result.metric in firstcal_array_metrics)
         firstcal_ant_metrics = (set(get_firstcal_metrics_dict().keys()) -
