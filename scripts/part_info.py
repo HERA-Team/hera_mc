@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     # Pre-process some args
     at_date = cm_utils._get_astropytime(args.date, args.time)
-    if args.library_file.lower() == 'none':
+    if type(args.library_file) == str and args.library_file.lower() == 'none':
         args.library_file = None
 
     db = mc.connect_to_mc_db(args)
