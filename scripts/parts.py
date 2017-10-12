@@ -21,6 +21,7 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [LAST]", default='LAST')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
+    parser.add_argument('-q', '--quick', help="Shortcut to show a subset of cols and correlator level", action='store_true')
     parser.add_argument('--port', help="Define desired port(s) for hookup. [all]", dest='port', default='all')
     parser.add_argument('--check-rev', help="Revision type to check against. [FULL]", dest='check_rev', default='FULL')
     parser.add_argument('--show-state', help="Show only the 'full', active' or 'all' parts [active]", dest='show_state', default='active')
@@ -75,6 +76,9 @@ if __name__ == '__main__':
     action_tag = args.action[:2].lower()
     args.hpn = cm_utils.listify(args.hpn)
     args.hookup_cols = cm_utils.listify(args.hookup_cols)
+    if args.quick:
+        args.show_levels = True
+        args.hookup_cols = ['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level']
 
     # Start session
     db = mc.connect_to_mc_db(args)
