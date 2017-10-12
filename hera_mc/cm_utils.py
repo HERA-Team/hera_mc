@@ -111,7 +111,7 @@ def add_date_time_args(parser):
         '--date', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]",
         default='now')
     parser.add_argument(
-        '--time', help="UTC hh:mm or float (hours)", default=0.0)
+        '--time', help="UTC hh:mm or float (hours), must include --date if use --time", default=0.0)
 
 
 def _get_astropytime(_date, _time=0):
