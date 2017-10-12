@@ -149,10 +149,12 @@ def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False)
     return success
 
 
-def check_if_main():
+def check_if_main(expected_hostname='qmaster'):
     # the 'hostname' call on qmaster returns the following value:
     import socket
-    return (socket.gethostname() == 'per210-1')
+    hostname = socket.gethostname()
+    print("Checking {} for main.".format(hostname))
+    return (hostname == expected_hostname)
 
 
 def db_validation(maindb_pw):
@@ -191,6 +193,11 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
     maindb: boolean or string
         Either False or password to change from main db. Default is False
     """
+
+    if not db_validation(maindb):
+        print("cm_init not allowed.")
+        return False
+
     if session is None:
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
@@ -219,10 +226,6 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
     for table in tables_to_read:
         csv_table_name = data_prefix + table + '.csv'
         use_table.append([table, os.path.join(cm_csv_path, csv_table_name)])
-    valid_to_proceed = db_validation(maindb)
-
-    if not valid_to_proceed:
-        return False
 
     # add this cm git hash to cm_version table
     session.add(CMVersion.create(Time.now(), cm_git_hash))
