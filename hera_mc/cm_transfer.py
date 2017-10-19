@@ -153,8 +153,10 @@ def check_if_main(expected_hostname='qmaster'):
     # the 'hostname' call on qmaster returns the following value:
     import socket
     hostname = socket.gethostname()
-    print("Checking {} for main.".format(hostname))
-    return (hostname == expected_hostname)
+    is_main = (hostname == expected_hostname)
+    if is_main:
+        print('Found main db at hostname {}'.format(hostname))
+    return is_main
 
 
 def db_validation(maindb_pw):

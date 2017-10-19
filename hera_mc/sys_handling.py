@@ -3,17 +3,13 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Methods for handling locating correlator.
-Top modules are generally called by external (to CM) scripts.
-Bottom part is the class that does the work.
+Methods for handling locating correlator and various system aspects.
 """
 
 from __future__ import absolute_import, division, print_function
 
-import warnings
 from astropy.time import Time, TimeDelta
 from sqlalchemy import func, asc
-
 import numpy as np
 
 from hera_mc import mc, part_connect, cm_utils, cm_hookup, cm_revisions
@@ -369,3 +365,20 @@ class Handling:
         H = cm_hookup.Hookup(self.session)
         pams = H.get_pam_from_hookup(hu)
         return pams
+
+    def publish_summary(self, hlist=['HH'], rev='A', exact_match=False,
+                        hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level']):
+        file2write = 'sys_conn.html'
+        location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
+        hookup_dict = self.hookup.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
+                                             at_date='now', exact_match=exact_match, show_levels=True)
+        self.hookup.show_hookup(hookup_dict, hookup_cols, True, False, False, write_to_file=file2write)
+        import subprocess
+        from hera_mc import cm_transfer
+        if cm_transfer.check_if_main():
+            sc_command = 'scp -i ~/.ssh/id_rsa_qmaster {} {}'.format(file2write, location_on_paper1)
+            subprocess.call(sc_command, shell=True)
+            return 'OK'
+        else:
+            print('You are not on "main"')
+            return 'Not on "main"'

@@ -287,14 +287,20 @@ class Hookup:
         pf_input = []
         for k in sorted(hookup_dict['hookup'].keys()):
             for p in hookup_dict['hookup'][k].keys():
-                f_engine = hookup_dict['hookup'][k][p][-1].downstream_part
+                try:
+                    f_engine = hookup_dict['hookup'][k][p][-1].downstream_part
+                except IndexError:
+                    continue
                 pf_input.append(f_engine)
         levels = correlator_levels.get_levels(pf_input, dummy_file)
         level_ctr = 0
         for k in sorted(hookup_dict['hookup'].keys()):
             hookup_dict['levels'][k] = {}
             for p in hookup_dict['hookup'][k].keys():
-                lstr = '%s' % (levels[level_ctr])
+                try:
+                    lstr = '%s' % (levels[level_ctr])
+                except IndexError:
+                    lstr = 'x'
                 level_ctr += 1
                 hookup_dict['levels'][k][p] = lstr
         return hookup_dict
@@ -363,7 +369,8 @@ class Hookup:
         else:
             return num_fully_connected > 0
 
-    def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True):
+    def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,
+                    write_to_file=False):
         """
         Print out the hookup table -- uses tabulate package.
 
@@ -372,10 +379,14 @@ class Hookup:
         hookup_dict:  generated in self.get_hookup
         cols_to_show:  list of columns to include in hookup listing
         show_levels:  boolean to either show the correlator levels or not
+        show_ports:  boolean to include ports or not
+        show_revs:  boolean to include revisions letter or not
+        wrie_to_file:  write to the supplied filename instead of screen
         """
         headers = self.__make_header_row(hookup_dict['columns'], cols_to_show)
         table_data = []
-        for hukey in sorted(hookup_dict['hookup'].keys()):
+        numerical_keys = cm_utils.put_keys_in_numerical_order(sorted(hookup_dict['hookup'].keys()))
+        for hukey in numerical_keys:
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
                 if len(hookup_dict['hookup'][hukey][pol]):
                     timing = hookup_dict['timing'][hukey][pol]
@@ -387,9 +398,15 @@ class Hookup:
                                                headers, timing, level,
                                                show_ports, show_revs)
                     table_data.append(td)
-        print('\n')
-        print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
-        print('\n')
+        if type(write_to_file) == str:
+            fp = open(write_to_file, 'w')
+            fp.write('<html>\n<body>\n<pre>\n')
+            fp.write(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
+            fp.close()
+        else:
+            print('\n')
+            print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
+            print('\n')
 
     def __make_header_row(self, header_col_list, cols_to_show):
         headers = []

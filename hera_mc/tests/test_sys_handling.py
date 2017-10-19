@@ -52,6 +52,10 @@ class TestGeo(TestHERAMC):
                 print(this_station_list[this_index])
                 self.assertEqual(this_station_list[this_index], loc)
 
+    def test_publish_summary(self):
+        msg = self.h.publish_summary()
+        self.assertEqual(msg, 'Not on "main"')
+
     def test_correlator_info(self):
         corr_dict = self.h.get_cminfo_correlator(cm_csv_path=mc.test_data_path)
 
