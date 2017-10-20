@@ -238,9 +238,8 @@ def get_active_revision(hpn, at_date, session=None):
     revisions = part_connect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
-    sort_rev = sorted(revisions.keys())
     return_active = []
-    for rev in sort_rev:
+    for rev in sorted(revisions.keys()):
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
         if cm_utils._is_active(at_date, started, ended):

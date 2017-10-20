@@ -369,7 +369,7 @@ class Hookup:
             return num_fully_connected > 0
 
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,
-                    file=None, output_format='ascii'):
+                    show_state='active', file=None, output_format='ascii'):
         """
         Print out the hookup table -- uses tabulate package.
 

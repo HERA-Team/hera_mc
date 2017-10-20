@@ -373,7 +373,8 @@ class Handling:
         hookup_dict = self.hookup.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
                                              at_date='now', exact_match=exact_match, show_levels=True)
         with open(output_file, 'w') as f:
-            self.hookup.show_hookup(hookup_dict, hookup_cols, True, False, False, file=f, output_format='html')
+            self.hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, show_levels=True, show_ports=False,
+                                    show_revs=False, show_state='active', file=f, output_format='html')
         import subprocess
         from hera_mc import cm_transfer
         if cm_transfer.check_if_main():
