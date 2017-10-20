@@ -85,6 +85,8 @@ def listify(X):
         return None
     if isinstance(X, str) and ',' in X:
         return X.split(',')
+    if isinstance(X, list):
+        return X
     return [X]
 
 
@@ -155,6 +157,33 @@ def _get_astropytime(_date, _time=0):
         if return_date is not None:
             return_date += TimeDelta(add_time, format='sec')
     return return_date
+
+
+def put_keys_in_numerical_order(keys):
+    """
+    Takes a list of hookup keys in the format of prefix+number:revision and puts them in number order.
+    Returns the ordered list of keys
+    """
+    keylib = {}
+    for k in keys:
+        colon = k.find(':')
+        for i in range(len(k)):
+            try:
+                n = int(k[i:colon])
+                break
+            except ValueError:
+                continue
+        if n in keylib.keys():
+            dup_key = keylib[n][0] + str(n) + keylib[n][1]
+            return keys
+        keylib[n] = [k[:i], k[colon:]]
+    if not len(keylib.keys()):
+        return keys
+    keyordered = []
+    for n in sorted(keylib.keys()):
+        kre = keylib[n][0] + str(n) + keylib[n][1]
+        keyordered.append(kre)
+    return keyordered
 
 
 def get_date_from_pair(d1, d2, ret='earliest'):

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """
@@ -285,18 +285,23 @@ class Hookup:
         hookup_dict['columns'].append('level')
         hookup_dict['levels'] = {}
         pf_input = []
-        for k in sorted(hookup_dict['hookup'].keys()):
-            for p in hookup_dict['hookup'][k].keys():
-                f_engine = hookup_dict['hookup'][k][p][-1].downstream_part
+        sorted_hkeys = sorted(hookup_dict['hookup'].keys())
+        # *** These nested loops must be in the same order as below ***
+        for k in sorted_hkeys:
+            for p in sorted(hookup_dict['hookup'][k].keys()):
+                if len(hookup_dict['hookup'][k][p]):
+                    f_engine = hookup_dict['hookup'][k][p][-1].downstream_part
+                else:
+                    f_engine = None
                 pf_input.append(f_engine)
         levels = correlator_levels.get_levels(pf_input, dummy_file)
+        # *** These nested loops must be in the same order as above ***
         level_ctr = 0
-        for k in sorted(hookup_dict['hookup'].keys()):
+        for k in sorted_hkeys:
             hookup_dict['levels'][k] = {}
-            for p in hookup_dict['hookup'][k].keys():
-                lstr = '%s' % (levels[level_ctr])
+            for p in sorted(hookup_dict['hookup'][k].keys()):
+                hookup_dict['levels'][k][p] = str(levels[level_ctr])
                 level_ctr += 1
-                hookup_dict['levels'][k][p] = lstr
         return hookup_dict
 
     def get_correlator_input_from_hookup(self, hookup_dict):
@@ -363,7 +368,8 @@ class Hookup:
         else:
             return num_fully_connected > 0
 
-    def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True):
+    def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,
+                    file=None, output_format='ascii'):
         """
         Print out the hookup table -- uses tabulate package.
 
@@ -372,10 +378,14 @@ class Hookup:
         hookup_dict:  generated in self.get_hookup
         cols_to_show:  list of columns to include in hookup listing
         show_levels:  boolean to either show the correlator levels or not
+        show_ports:  boolean to include ports or not
+        show_revs:  boolean to include revisions letter or not
+        file:  file to use, None goes to stdout
         """
         headers = self.__make_header_row(hookup_dict['columns'], cols_to_show)
         table_data = []
-        for hukey in sorted(hookup_dict['hookup'].keys()):
+        numerical_keys = cm_utils.put_keys_in_numerical_order(sorted(hookup_dict['hookup'].keys()))
+        for hukey in numerical_keys:
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
                 if len(hookup_dict['hookup'][hukey][pol]):
                     timing = hookup_dict['timing'][hukey][pol]
@@ -387,9 +397,13 @@ class Hookup:
                                                headers, timing, level,
                                                show_ports, show_revs)
                     table_data.append(td)
-        print('\n')
-        print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
-        print('\n')
+        table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
+        if file is None:
+            import sys
+            file = sys.stdout
+        if output_format == 'html':
+            table = '<html>\n\t<body>\n\t\t<pre>\n' + table + '\t\t</pre>\n\t</body>\n</html>\n'
+        print(table, file=file)
 
     def __make_header_row(self, header_col_list, cols_to_show):
         headers = []

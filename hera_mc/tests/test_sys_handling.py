@@ -1,5 +1,5 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.geo_location and geo_handling`.
@@ -51,6 +51,10 @@ class TestGeo(TestHERAMC):
                 print(loc)
                 print(this_station_list[this_index])
                 self.assertEqual(this_station_list[this_index], loc)
+
+    def test_publish_summary(self):
+        msg = self.h.publish_summary()
+        self.assertEqual(msg, 'Not on "main"')
 
     def test_correlator_info(self):
         corr_dict = self.h.get_cminfo_correlator(cm_csv_path=mc.test_data_path)
