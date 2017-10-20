@@ -19,7 +19,7 @@ if __name__ == '__main__':
                         dest='exact_match', action='store_true')
     parser.add_argument('-q', '--quick', help="Shortcut to show a subset of cols and correlator level", action='store_true')
     parser.add_argument('--port', help="Define desired port(s) for hookup. [all]", dest='port', default='all')
-    parser.add_argument('--show-state', help="Show only the 'full', active' or 'all' parts [active]", dest='show_state', default='active')
+    parser.add_argument('--show-state', help="Show 'full' or 'all' hookups [full]", dest='show_state', default='full')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
                         dest='hookup_cols', default='all')
     parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')

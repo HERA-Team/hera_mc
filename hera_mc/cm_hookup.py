@@ -380,14 +380,21 @@ class Hookup:
         show_levels:  boolean to either show the correlator levels or not
         show_ports:  boolean to include ports or not
         show_revs:  boolean to include revisions letter or not
+        show_state:  show the full hookups only, or all
         file:  file to use, None goes to stdout
+        output_format:  set to html for the web-page version
         """
         headers = self.__make_header_row(hookup_dict['columns'], cols_to_show)
         table_data = []
         numerical_keys = cm_utils.put_keys_in_numerical_order(sorted(hookup_dict['hookup'].keys()))
         for hukey in numerical_keys:
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
-                if len(hookup_dict['hookup'][hukey][pol]):
+                use_this_row = False
+                if show_state.lower() == 'all' and len(hookup_dict['hookup'][hukey][pol]):
+                    use_this_row = True
+                elif show_state.lower() == 'full' and hookup_dict['fully_connected'][hukey][pol]:
+                    use_this_row = True
+                if use_this_row:
                     timing = hookup_dict['timing'][hukey][pol]
                     if show_levels:
                         level = hookup_dict['levels'][hukey][pol]
