@@ -368,11 +368,12 @@ class Handling:
 
     def publish_summary(self, hlist=['HH'], rev='A', exact_match=False,
                         hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level']):
-        file2write = 'sys_conn.html'
+        output_file = 'sys_conn_tmp.html'
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
         hookup_dict = self.hookup.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
                                              at_date='now', exact_match=exact_match, show_levels=True)
-        self.hookup.show_hookup(hookup_dict, hookup_cols, True, False, False, write_to_file=file2write)
+        with open(output_file, 'w') as f:
+            self.hookup.show_hookup(hookup_dict, hookup_cols, True, False, False, file=f, output_format='html')
         import subprocess
         from hera_mc import cm_transfer
         if cm_transfer.check_if_main():

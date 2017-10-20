@@ -47,7 +47,7 @@ def get_levels(pf_input, testing, network='local', timeout=5):
     for pf in pf_input:
         if levels is None:
             print('No valid correlator level file.')
-            pf_levels.append('x')
+            pf_levels.append('X')
         elif valid_input_name(pf):
             pf_chassis = 'F' + str(pf[2])
             pf_rowcol_designator = pf[-2:]
@@ -56,12 +56,13 @@ def get_levels(pf_input, testing, network='local', timeout=5):
         else:
             print("Invalid f-engine call", pf)
             pf_levels.append('-')
-            continue
     return pf_levels
 
 
 def valid_input_name(pf):
-    if pf[:2].upper() != 'DF':
+    if pf is None:
+        return False
+    elif pf[:2].upper() != 'DF':
         return False
     elif pf[2] not in DF_chassis_list:
         return False

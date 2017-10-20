@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""This is meant to hold utility scripts for handling parts and connections
+"""This publishes a webpage on paper1 (leveraging the rails stuff) that includes power levels.
+If not on qmaster, it just writes the html file.
 
 """
 from __future__ import absolute_import, division, print_function

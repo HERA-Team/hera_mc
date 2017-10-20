@@ -175,15 +175,12 @@ def put_keys_in_numerical_order(keys):
                 continue
         if n in keylib.keys():
             dup_key = keylib[n][0] + str(n) + keylib[n][1]
-            print('Duplicated number found while trying to put keys in numerical order ({}, {})'.format(k, dup_key))
-            print('Returning original order')
             return keys
         keylib[n] = [k[:i], k[colon:]]
     if not len(keylib.keys()):
         return keys
-    sortkn = sorted(keylib.keys())
     keyordered = []
-    for n in sortkn:
+    for n in sorted(keylib.keys()):
         kre = keylib[n][0] + str(n) + keylib[n][1]
         keyordered.append(kre)
     return keyordered
