@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """This is meant to hold utility scripts for handling parts and connections
@@ -14,25 +14,15 @@ import sys
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('action', nargs='?', help="Actions are:  info, hookup, types, part_info, conn_info, rev_info, \
-                                                   check_rev, overlap_check, update.  'info' for more.", default='hookup')
+    parser.add_argument('action', nargs='?', help="Actions are:  info, types, part_info, conn_info, rev_info, \
+                                                   check_rev, overlap_check.  'info' for more.", default='part_info')
     # set values for 'action' to use
     parser.add_argument('-p', '--hpn', help="Part number, csv-list (required). [None]", default=None)
     parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [LAST]", default='LAST')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
-    parser.add_argument('-q', '--quick', help="Shortcut to show a subset of cols and correlator level", action='store_true')
-    parser.add_argument('--port', help="Define desired port(s) for hookup. [all]", dest='port', default='all')
     parser.add_argument('--check-rev', help="Revision type to check against. [FULL]", dest='check_rev', default='FULL')
     parser.add_argument('--show-state', help="Show only the 'full', active' or 'all' parts [active]", dest='show_state', default='active')
-    parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
-                        dest='hookup_cols', default='all')
-    parser.add_argument('--update', help="Update part number records.  Format hpn0:[rev0]:col0:val0, \
-                                          [hpn1:[rev1]]col1:val1...  [None]", default=None)
-    parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')
-    parser.add_argument('--show-ports', help="Show ports on hookup.", dest='show_ports', action='store_true')
-    parser.add_argument('--show-revs', help="Show revs on hookup.", dest='show_revs', action='store_true')
-    cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
 
     args = parser.parse_args()
@@ -44,29 +34,20 @@ if __name__ == '__main__':
             """
         Available actions are (only need first two letters) [hookup]:
             info:  this information
-            hookup:  provide hookup information for supplied part/rev/port
             part_info:  provide a summary of given part/rev
             conn_info:  provide a summary of connections to given part/rev/port
             rev_info:  provide a summary of revisions of given part/rev
             types:  provide a summary of part types
             check_rev:  checks whether a given part/rev exists
             overlap_check:  checks whether a given part has any overlapping active revisions
-            update:  update a part (not recommended - do it via a script)
 
         Args needing values (or defaulted):
             -p/--hpn:  part name (required)
             -r/--revision:  revision (particular/last/active/full/all) [LAST]
-            --port:  port name (particular/all) [ALL]
             --show-state:  show 'full', 'active' or 'all' parts [ACTIVE]
-            --hookup-cols:  comma-delimited list of columns to include in hookup (no spaces) [ALL]
-            --update:  date for update (not recommended - do it via a script)
 
         Args that are flags
             -e/--exact-match:  match part number exactly, or specify first characters [False]
-            --show-levels:  include correlator levels in hookup output [False]
-            --show-ports:  include ports in hookup display [False]
-            --show-revs:  include revisions in hookup display [False]
-            --add-new-part:  flag to allow including a new part for update
         """
         )
         sys.exit()
@@ -74,10 +55,6 @@ if __name__ == '__main__':
     # Pre-process the args
     action_tag = args.action[:2].lower()
     args.hpn = cm_utils.listify(args.hpn)
-    args.hookup_cols = cm_utils.listify(args.hookup_cols)
-    if args.quick:
-        args.show_levels = True
-        args.hookup_cols = ['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level']
 
     # Start session
     db = mc.connect_to_mc_db(args)
@@ -97,14 +74,6 @@ if __name__ == '__main__':
         already_shown = handling.show_connections(connection_dossier, verbosity=args.verbosity)
         handling.show_other_connections(connection_dossier, already_shown)
 
-    elif action_tag == 'ho':  # hookup
-        from hera_mc import cm_hookup
-        hookup = cm_hookup.Hookup(session)
-        hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
-                                        at_date=date_query, exact_match=args.exact_match,
-                                        show_levels=args.show_levels)
-        hookup.show_hookup(hookup_dict, args.hookup_cols, args.show_levels, args.show_ports, args.show_revs)
-
     elif action_tag == 'ty':  # types of parts
         part_type_dict = handling.get_part_types(date_query)
         handling.show_part_types()
@@ -123,9 +92,3 @@ if __name__ == '__main__':
     elif action_tag == 'ov':  # overlapping revisions
         for hpn in args.hpn:
             cm_handling.cmpr.check_part_for_overlapping_revisions(hpn, session)
-
-    elif action_tag == 'up':  # update
-        you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a script \
-                                            -- are you sure you want to do this? ", 'n')
-        if you_are_sure:
-            part_connect.update(session, args.update, args.add_new_part)
