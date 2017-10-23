@@ -18,7 +18,7 @@ DF_chassis_list = ['1', '2', '3', '4', '5', '6', '7', '8']
 default_levels_filename = 'levels.tmp'
 
 
-def get_levels(pf_input, testing, network='local', timeout=5):
+def get_levels(pf_input, testing, network='local', timeout=2):
     """
     This returns a dictionary containing the correlator levels for inputs givin in pf_input.
     This assumes the f-engine name structure of 'DF<int=pf_chassis><letter=input_row><int=input_col>'
@@ -48,6 +48,8 @@ def get_levels(pf_input, testing, network='local', timeout=5):
         if levels is None:
             print('No valid correlator level file.')
             pf_levels.append('X')
+        elif pf is None:
+            pf_levels.append('-')
         elif valid_input_name(pf):
             pf_chassis = 'F' + str(pf[2])
             pf_rowcol_designator = pf[-2:]

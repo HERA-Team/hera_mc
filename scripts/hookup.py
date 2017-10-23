@@ -18,6 +18,8 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
     parser.add_argument('-q', '--quick', help="Shortcut to show a subset of cols and correlator level", action='store_true')
+    parser.add_argument('-f', '--force-new', dest='force_new', help="Force it to write a new hookup file.", action='store_true')
+    parser.add_argument('--force-specific', dest='force_specific', help="Force db and local cache file to use these values", action='store_true')
     parser.add_argument('--port', help="Define desired port(s) for hookup. [all]", dest='port', default='all')
     parser.add_argument('--show-state', help="Show 'full' or 'all' hookups [full]", dest='show_state', default='full')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
@@ -44,6 +46,7 @@ if __name__ == '__main__':
     hookup = cm_hookup.Hookup(session)
     hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
                                     at_date=date_query, exact_match=args.exact_match,
-                                    show_levels=args.show_levels)
+                                    show_levels=args.show_levels,
+                                    force_new=args.force_new, force_specific=args.force_specific)
     hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols, show_levels=args.show_levels,
                        show_ports=args.show_ports, show_revs=args.show_revs, show_state=args.show_state)
