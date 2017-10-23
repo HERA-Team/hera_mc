@@ -103,7 +103,7 @@ class TestGeo(TestHERAMC):
     def test_correlator_levels(self):
         at_date = cm_utils._get_astropytime('2017-07-03')
         H = cm_hookup.Hookup(self.test_session)
-        hu = H.get_hookup(['HH23'], 'A', 'all', at_date, exact_match=True, show_levels=True)
+        hu = H.get_hookup(['HH23'], 'A', 'all', at_date, exact_match=True, show_levels=True, force_specific=True)
         hh23level = float(hu['levels']['HH23:A']['e'])
         self.assertEqual(type(hh23level), float)
         # Now get some failures
@@ -132,7 +132,7 @@ class TestGeo(TestHERAMC):
         connection.start_gpstime = self.test_time
         self.test_session.add(connection)
         self.test_session.commit()
-        hu = H.get_hookup(['test_part1'], 'Q', 'all', at_date, exact_match=True, show_levels=True)
+        hu = H.get_hookup(['test_part1'], 'Q', 'all', at_date, exact_match=True, show_levels=True, force_specific=True)
         tplevel = hu['levels']['test_part1:Q']['e']
         print(tplevel)
         self.assertEqual(tplevel, '-')

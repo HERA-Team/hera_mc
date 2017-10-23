@@ -69,7 +69,7 @@ class Hookup:
         force_new:  boolean to force a full database read as opposed to checking file
         force_specific:  boolean to force this to read/write the file to use the supplied values
         """
-        if force_specfic:
+        if force_specific:
             force_new = True
         if force_new or not self.check_if_hookup_file_is_current():
             if force_specific:
@@ -78,7 +78,7 @@ class Hookup:
                 p = port_query
             else:
                 h = self.hookup_list_to_cache
-                r = 'LAST'
+                r = 'ACTIVE'
                 p = 'all'
             hookup_dict = self.__get_hookup(hpn_list=h, rev=r, port_query=p,
                                             at_date=at_date, exact_match=exact_match, show_levels=show_levels)
@@ -87,20 +87,20 @@ class Hookup:
             hookup_dict = self.read_hookup_from_file()
             if show_levels:
                 hookup_dict = self.__hookup_add_correlator_levels(hookup_dict)
-
         # Now we need to delete the ones we don't use since the file (probably) has all of them.
-        for k in hookup_dict['hookup'].keys():
-            if exact_match:
-                if k not in hpn_list:
-                    del hookup_dict['hookup'][k]
-            else:
-                del_this_one = True
-                for p in hpn_list:
-                    if k.lower()[:len(p)] == p.lower():
-                        del_this_one = False
-                        break
-                if del_this_one:
-                    del hookup_dict['hookup'][k]
+        if not force_specific:
+            for k in hookup_dict['hookup'].keys():
+                if exact_match:
+                    if k not in hpn_list:
+                        del hookup_dict['hookup'][k]
+                else:
+                    del_this_one = True
+                    for p in hpn_list:
+                        if k.lower()[:len(p)] == p.lower():
+                            del_this_one = False
+                            break
+                    if del_this_one:
+                        del hookup_dict['hookup'][k]
         return hookup_dict
 
     def __get_hookup(self, hpn_list, rev, port_query, at_date,
@@ -118,7 +118,7 @@ class Hookup:
                                                full_version=False)
         print(hpn_list)
         print(parts)
-        hookup_dict = {'hookup': {}, 'fully_connected': {}, 'parts_epoch': []}
+        hookup_dict = {'hookup': {}, 'fully_connected': {}, 'parts_epoch': {}}
         part_types_found = []
         for k, part in parts.iteritems():
             if not cm_utils._is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
