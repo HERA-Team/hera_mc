@@ -7,10 +7,11 @@
 This is computes and displays part hookups.
 
 """
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
 import sys
 import numpy as np
+import os.path
 
 from hera_mc import mc, geo_location, correlator_levels, cm_utils, cm_handling
 from hera_mc import part_connect as PC
@@ -36,8 +37,7 @@ class Hookup:
             self.session = session
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
-        self.hookup_local_file = 'hookup_tmp.npy'
-        self.part_type_cache_file = 'part_type_cache_tmp.npy'
+        self.hookup_local_file = os.path.join(os.path.expanduser('~'), 'hookup_tmp.npy')
         self.hookup_list_to_cache = hookup_list_to_cache
 
     def get_hookup(self, hpn_list, rev, port_query='all', at_date='now',
@@ -68,6 +68,8 @@ class Hookup:
         show_levels:  boolean to include correlator levels
         force_new:  boolean to force a full database read as opposed to checking file
         force_specific:  boolean to force this to read/write the file to use the supplied values
+                         Setting this makes get_hookup provide specific hookups (mimicking the
+                         action before the file option was instituted)
         """
         if force_specific:
             force_new = True
@@ -89,14 +91,16 @@ class Hookup:
                 hookup_dict = self.__hookup_add_correlator_levels(hookup_dict)
         # Now we need to delete the ones we don't use since the file (probably) has all of them.
         if not force_specific:
+            hpn_list = [x.lower() for x in hpn_list]
             for k in hookup_dict['hookup'].keys():
+                hpn = k.split(':')[0].lower()
                 if exact_match:
-                    if k not in hpn_list:
+                    if hpn not in hpn_list:
                         del hookup_dict['hookup'][k]
                 else:
                     del_this_one = True
                     for p in hpn_list:
-                        if k.lower()[:len(p)] == p.lower():
+                        if hpn[:len(p)] == p.lower():
                             del_this_one = False
                             break
                     if del_this_one:
@@ -116,8 +120,6 @@ class Hookup:
                                                at_date=self.at_date,
                                                exact_match=exact_match,
                                                full_version=False)
-        print(hpn_list)
-        print(parts)
         hookup_dict = {'hookup': {}, 'fully_connected': {}, 'parts_epoch': {}}
         part_types_found = []
         for k, part in parts.iteritems():
@@ -417,26 +419,31 @@ class Hookup:
             return num_fully_connected > 0
 
     def write_hookup_to_file(self, hookup_dict):
-        np.save(self.hookup_local_file, hookup_dict)
-        np.save(self.part_type_cache_file, self.part_type_cache)
+        with open(self.hookup_local_file, 'wb') as f:
+            np.save(f, hookup_dict)
+            np.save(f, self.part_type_cache)
 
     def check_if_hookup_file_is_current(self):
         import os
         import time
         from astropy.time import Time
         from hera_mc import cm_transfer
-        if os.path.isfile(self.hookup_local_file):
-            result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
-            cm_hash_time = Time(result[-1].update_time, format='gps')
+        try:
             stats = os.stat(self.hookup_local_file)
-            file_mod_time = Time(stats.st_mtime, format='unix')
-            return file_mod_time > cm_hash_time
-        else:
-            return False
+        except OSError as e:
+            if e.errno == 2:
+                return False  # File does not exist
+            print("OS error:  {0}".format(e))
+            raise
+        result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
+        cm_hash_time = Time(result[-1].update_time, format='gps')
+        file_mod_time = Time(stats.st_mtime, format='unix')
+        return file_mod_time > cm_hash_time
 
     def read_hookup_from_file(self):
-        hookup_dict = np.load(self.hookup_local_file).item()
-        self.part_type_cache = np.load(self.part_type_cache_file).item()
+        with open(self.hookup_local_file, 'rb') as f:
+            hookup_dict = np.load(f).item()
+            self.part_type_cache = np.load(f).item()
         return hookup_dict
 
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,
