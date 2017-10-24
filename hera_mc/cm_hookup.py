@@ -37,7 +37,7 @@ class Hookup:
             self.session = session
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
-        self.hookup_local_file = os.path.join(os.path.expanduser('~'), 'hookup_tmp.npy')
+        self.hookup_local_file = os.path.expanduser('~/.hera_mc_hookup_cache.npy')
         self.hookup_list_to_cache = hookup_list_to_cache
 
     def get_hookup(self, hpn_list, rev, port_query='all', at_date='now',
@@ -72,17 +72,11 @@ class Hookup:
                          action before the file option was instituted)
         """
         if force_specific:
-            force_new = True
+            return self.__get_hookup(hpn_list=hpn_list, rev=rev, port_query=port_query,
+                                     at_date=at_date, exact_match=exact_match, show_levels=show_levels)
+
         if force_new or not self.check_if_hookup_file_is_current():
-            if force_specific:
-                h = hpn_list
-                r = rev
-                p = port_query
-            else:
-                h = self.hookup_list_to_cache
-                r = 'ACTIVE'
-                p = 'all'
-            hookup_dict = self.__get_hookup(hpn_list=h, rev=r, port_query=p,
+            hookup_dict = self.__get_hookup(hpn_list=self.hookup_list_to_cache, rev='ACTIVE', port_query='all',
                                             at_date=at_date, exact_match=exact_match, show_levels=show_levels)
             self.write_hookup_to_file(hookup_dict)
         else:
@@ -90,21 +84,20 @@ class Hookup:
             if show_levels:
                 hookup_dict = self.__hookup_add_correlator_levels(hookup_dict)
         # Now we need to delete the ones we don't use since the file (probably) has all of them.
-        if not force_specific:
-            hpn_list = [x.lower() for x in hpn_list]
-            for k in hookup_dict['hookup'].keys():
-                hpn = k.split(':')[0].lower()
-                if exact_match:
-                    if hpn not in hpn_list:
-                        del hookup_dict['hookup'][k]
-                else:
-                    del_this_one = True
-                    for p in hpn_list:
-                        if hpn[:len(p)] == p.lower():
-                            del_this_one = False
-                            break
-                    if del_this_one:
-                        del hookup_dict['hookup'][k]
+        hpn_list = [x.lower() for x in hpn_list]
+        for k in hookup_dict['hookup'].keys():
+            hpn = k.split(':')[0].lower()
+            if exact_match:
+                if hpn not in hpn_list:
+                    del hookup_dict['hookup'][k]
+            else:
+                del_this_one = True
+                for p in hpn_list:
+                    if hpn[:len(p)] == p.lower():
+                        del_this_one = False
+                        break
+                if del_this_one:
+                    del hookup_dict['hookup'][k]
         return hookup_dict
 
     def __get_hookup(self, hpn_list, rev, port_query, at_date,
