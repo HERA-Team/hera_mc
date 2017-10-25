@@ -39,6 +39,7 @@ class Hookup:
         self.part_type_cache = {}
         self.hookup_local_file = os.path.expanduser('~/.hera_mc_hookup_cache.npy')
         self.hookup_list_to_cache = hookup_list_to_cache
+        self.hookup_dict_library = None
 
     def get_hookup(self, hpn_list, rev, port_query='all', at_date='now',
                    exact_match=False, show_levels=False,
@@ -79,10 +80,15 @@ class Hookup:
             hookup_dict = self.__get_hookup(hpn_list=self.hookup_list_to_cache, rev='ACTIVE', port_query='all',
                                             at_date=at_date, exact_match=exact_match, show_levels=show_levels)
             self.write_hookup_to_file(hookup_dict)
+            self.hookup_dict_library = copy.copy(hookup_dict)
         else:
-            hookup_dict = self.read_hookup_from_file()
-            if show_levels:
-                hookup_dict = self.__hookup_add_correlator_levels(hookup_dict)
+            if self.hookup_dict_library is None:
+                hookup_dict = self.read_hookup_from_file()
+                if show_levels:
+                    hookup_dict = self.__hookup_add_correlator_levels(hookup_dict)
+                self.hookup_dict_library = copy.copy(hookup_dict)
+            else:
+                hookup_dict = copy.copy(self.hookup_dict_library)
         # Now we need to delete the ones we don't use since the file (probably) has all of them.
         hpn_list = [x.lower() for x in hpn_list]
         for k in hookup_dict['hookup'].keys():
