@@ -367,11 +367,14 @@ class Handling:
         return pams
 
     def publish_summary(self, hlist=['HH'], rev='A', exact_match=False,
-                        hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level']):
+                        hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
+                        force_new_hookup_dict=True, force_specific_hookup_dict=False):
         output_file = 'sys_conn_tmp.html'
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
         hookup_dict = self.hookup.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
-                                             at_date='now', exact_match=exact_match, show_levels=True)
+                                             at_date='now', exact_match=exact_match, show_levels=True,
+                                             force_new=force_new_hookup_dict, force_specific=force_specific_hookup_dict)
+
         with open(output_file, 'w') as f:
             self.hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, show_levels=True, show_ports=False,
                                     show_revs=False, show_state='full', file=f, output_format='html')

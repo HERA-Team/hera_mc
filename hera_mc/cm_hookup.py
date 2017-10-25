@@ -10,12 +10,12 @@ This is computes and displays part hookups.
 from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
 import sys
+import numpy as np
+import os.path
 
 from hera_mc import mc, geo_location, correlator_levels, cm_utils, cm_handling
 from hera_mc import part_connect as PC
 import copy
-import warnings
-from argparse import Namespace
 from sqlalchemy import func
 
 
@@ -24,11 +24,10 @@ class Hookup:
     Class to find and display the signal path hookup.
     """
 
-    def __init__(self, session=None):
+    def __init__(self, session=None, hookup_list_to_cache=['HH']):
         """
         Hookup traces parts and connections through the signal path (as defined
             by the connections).
-        The only external method is get_hookup(...)
         """
 
         if session is None:
@@ -38,11 +37,16 @@ class Hookup:
             self.session = session
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
+        self.hookup_local_file = os.path.expanduser('~/.hera_mc_hookup_cache.npy')
+        self.hookup_list_to_cache = hookup_list_to_cache
 
-    def get_hookup(self, hpn_list, rev, port_query, at_date,
-                   exact_match=False, show_levels=False):
+    def get_hookup(self, hpn_list, rev, port_query='all', at_date='now',
+                   exact_match=False, show_levels=False,
+                   force_new=True, force_specific=False):
         """
-        Return the full hookup to the supplied part/rev/port in the form of a dictionary
+        Return the full hookup to the supplied part/rev/port in the form of a dictionary.
+        Unless force_new is True, it will check a local hookup file and return that if current
+        otherwise it will go through the full database to get hookup.
         Returns hookup_dict, a dictionary with the following entries:
             'hookup': another dictionary keyed on part then pol (e/n)
             'columns': names of parts that are used in displaying the hookup as column headers
@@ -62,6 +66,44 @@ class Hookup:
         at_date:  date for hookup validity
         exact_match:  boolean for either exact_match or partial
         show_levels:  boolean to include correlator levels
+        force_new:  boolean to force a full database read as opposed to checking file
+        force_specific:  boolean to force this to read/write the file to use the supplied values
+                         Setting this makes get_hookup provide specific hookups (mimicking the
+                         action before the file option was instituted)
+        """
+        if force_specific:
+            return self.__get_hookup(hpn_list=hpn_list, rev=rev, port_query=port_query,
+                                     at_date=at_date, exact_match=exact_match, show_levels=show_levels)
+
+        if force_new or not self.check_if_hookup_file_is_current():
+            hookup_dict = self.__get_hookup(hpn_list=self.hookup_list_to_cache, rev='ACTIVE', port_query='all',
+                                            at_date=at_date, exact_match=exact_match, show_levels=show_levels)
+            self.write_hookup_to_file(hookup_dict)
+        else:
+            hookup_dict = self.read_hookup_from_file()
+            if show_levels:
+                hookup_dict = self.__hookup_add_correlator_levels(hookup_dict)
+        # Now we need to delete the ones we don't use since the file (probably) has all of them.
+        hpn_list = [x.lower() for x in hpn_list]
+        for k in hookup_dict['hookup'].keys():
+            hpn = k.split(':')[0].lower()
+            if exact_match:
+                if hpn not in hpn_list:
+                    del hookup_dict['hookup'][k]
+            else:
+                del_this_one = True
+                for p in hpn_list:
+                    if hpn[:len(p)] == p.lower():
+                        del_this_one = False
+                        break
+                if del_this_one:
+                    del hookup_dict['hookup'][k]
+        return hookup_dict
+
+    def __get_hookup(self, hpn_list, rev, port_query, at_date,
+                     exact_match=False, show_levels=False):
+        """
+        This gets called by the get_hookup wrapper if the database is to be read.
         """
 
         self.at_date = cm_utils._get_astropytime(at_date)
@@ -71,7 +113,7 @@ class Hookup:
                                                at_date=self.at_date,
                                                exact_match=exact_match,
                                                full_version=False)
-        hookup_dict = {'hookup': {}, 'fully_connected': {}, 'parts_epoch': []}
+        hookup_dict = {'hookup': {}, 'fully_connected': {}, 'parts_epoch': {}}
         part_types_found = []
         for k, part in parts.iteritems():
             if not cm_utils._is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
@@ -282,14 +324,15 @@ class Hookup:
     def __hookup_add_correlator_levels(self, hookup_dict):
         import os.path
         dummy_file = os.path.join(mc.test_data_path, 'levels.tst')
-        hookup_dict['columns'].append('level')
+        if 'level' not in hookup_dict['columns']:
+            hookup_dict['columns'].append('level')
         hookup_dict['levels'] = {}
         pf_input = []
         sorted_hkeys = sorted(hookup_dict['hookup'].keys())
         # *** These nested loops must be in the same order as below ***
         for k in sorted_hkeys:
             for p in sorted(hookup_dict['hookup'][k].keys()):
-                if len(hookup_dict['hookup'][k][p]):
+                if hookup_dict['fully_connected'][k][p]:
                     f_engine = hookup_dict['hookup'][k][p][-1].downstream_part
                 else:
                     f_engine = None
@@ -368,8 +411,36 @@ class Hookup:
         else:
             return num_fully_connected > 0
 
+    def write_hookup_to_file(self, hookup_dict):
+        with open(self.hookup_local_file, 'wb') as f:
+            np.save(f, hookup_dict)
+            np.save(f, self.part_type_cache)
+
+    def check_if_hookup_file_is_current(self):
+        import os
+        import time
+        from astropy.time import Time
+        from hera_mc import cm_transfer
+        try:
+            stats = os.stat(self.hookup_local_file)
+        except OSError as e:
+            if e.errno == 2:
+                return False  # File does not exist
+            print("OS error:  {0}".format(e))
+            raise
+        result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
+        cm_hash_time = Time(result[-1].update_time, format='gps')
+        file_mod_time = Time(stats.st_mtime, format='unix')
+        return file_mod_time > cm_hash_time
+
+    def read_hookup_from_file(self):
+        with open(self.hookup_local_file, 'rb') as f:
+            hookup_dict = np.load(f).item()
+            self.part_type_cache = np.load(f).item()
+        return hookup_dict
+
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,
-                    show_state='active', file=None, output_format='ascii'):
+                    show_state='full', file=None, output_format='ascii'):
         """
         Print out the hookup table -- uses tabulate package.
 
@@ -384,7 +455,7 @@ class Hookup:
         file:  file to use, None goes to stdout
         output_format:  set to html for the web-page version
         """
-        headers = self.__make_header_row(hookup_dict['columns'], cols_to_show)
+        headers = self.__make_header_row(hookup_dict['columns'], cols_to_show, show_levels)
         table_data = []
         numerical_keys = cm_utils.put_keys_in_numerical_order(sorted(hookup_dict['hookup'].keys()))
         for hukey in numerical_keys:
@@ -412,11 +483,13 @@ class Hookup:
             table = '<html>\n\t<body>\n\t\t<pre>\n' + table + '\t\t</pre>\n\t</body>\n</html>\n'
         print(table, file=file)
 
-    def __make_header_row(self, header_col_list, cols_to_show):
+    def __make_header_row(self, header_col_list, cols_to_show, show_levels):
         headers = []
         show_flag = []
         for col in header_col_list:
-            if cols_to_show[0].lower() == 'all' or col in cols_to_show:
+            if show_levels and col == 'level':
+                headers.append(col)
+            elif cols_to_show[0].lower() == 'all' or col in cols_to_show:
                 headers.append(col)
         return headers
 
