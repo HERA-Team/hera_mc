@@ -37,7 +37,7 @@ class Hookup:
             self.session = session
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
-        self.hookup_local_file = os.path.expanduser('~/.hera_mc_hookup_cache.npy')
+        self.hookup_local_file = os.path.expanduser('~/.hera_mc/hookup_cache.npy')
         self.hookup_list_to_cache = hookup_list_to_cache
         self.cached_hookup_dict = None
 
