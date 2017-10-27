@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 
 class Dataview:
-    def __init__(self, session=None):
+    def __init__(self, session=None, hookup_list_to_cache=['HH']):
         """
         session: session on current database. If session is None, a new session
                  on the default database is created and used.
@@ -26,6 +26,7 @@ class Dataview:
             self.session = db.sessionmaker()
         else:
             self.session = session
+        self.hookup_list_to_cache = hookup_list_to_cache
         self.parts_list = None
         self.fc_map = None
 
@@ -65,7 +66,7 @@ class Dataview:
             fc_map[p] = {'datetime': [], 'flag': [], 'fc': []}
             at_date = start_date
             while at_date < stop_date:
-                fc = cm_revisions.get_full_revision(p, at_date, self.session)
+                fc = cm_revisions.get_full_revision(p, at_date, self.session, self.hookup_list_to_cache)
                 fc_map[p]['datetime'].append(at_date.datetime)
                 fc_map[p]['flag'].append(len(fc))
                 fc_map[p]['fc'].append(fc)
@@ -88,7 +89,7 @@ class Dataview:
         if self.fc_map is None or self.parts_list is None:
             raise RuntimeError("You first need to generate fc_map and parts_list")
         from hera_mc import cm_hookup
-        hu = cm_hookup.Hookup(self.session)
+        hu = cm_hookup.Hookup(self.session, self.hookup_list_to_cache)
         p0 = self.parts_list[0]
         ndate = len(self.fc_map[p0]['datetime'])
         print("Writing {}".format(filename))

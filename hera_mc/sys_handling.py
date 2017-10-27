@@ -21,7 +21,7 @@ class Handling:
     Class to allow various manipulations of correlator inputs etc
     """
 
-    def __init__(self, session=None):
+    def __init__(self, session=None, hookup_list_to_cache=['HH']):
         """
         session: session on current database. If session is None, a new session
                  on the default database is created and used.
@@ -31,8 +31,8 @@ class Handling:
             self.session = db.sessionmaker()
         else:
             self.session = session
-
-        self.hookup = cm_hookup.Hookup(self.session)
+        self.hookup_list_to_cache = hookup_list_to_cache
+        self.hookup = cm_hookup.Hookup(self.session, hookup_list_to_cache=hookup_list_to_cache)
         self.geo = geo_handling.Handling(self.session)
 
     def close(self):
@@ -58,15 +58,15 @@ class Handling:
             at_date += TimeDelta(m * base_tdelta, format='sec')
             if at_date > now:
                 at_date = now + TimeDelta(10.0, format='sec')
-            fc = cm_revisions.get_full_revision(stn, at_date, self.session)
+            fc = cm_revisions.get_full_revision(stn, at_date, self.session, hookup_list_to_cache=self.hookup_list_to_cache)
             if len(fc) == 1:
                 at_date -= TimeDelta(m * base_tdelta - 600.0, format='sec')
-                fc = cm_revisions.get_full_revision(stn, at_date, self.session)
+                fc = cm_revisions.get_full_revision(stn, at_date, self.session, hookup_list_to_cache=self.hookup_list_to_cache)
                 while len(fc) == 0 and at_date < now:
                     at_date += TimeDelta(base_tdelta, format='sec')
                     if at_date > now:
                         at_date = now + TimeDelta(10.0, format='sec')
-                    fc = cm_revisions.get_full_revision(stn, at_date, self.session)
+                    fc = cm_revisions.get_full_revision(stn, at_date, self.session, hookup_list_to_cache=self.hookup_list_to_cache)
                 break
             elif at_date > now:
                 break
@@ -131,12 +131,14 @@ class Handling:
                 else:
                     at_date = conn.start_date + TimeDelta(600.0, format='sec')
                 # Find the first fully connected signal path from location.
-                fc = cm_revisions.get_full_revision(stn, at_date, self.session)
+                fc = cm_revisions.get_full_revision(stn, at_date, self.session, hookup_list_to_cache=self.hookup_list_to_cache)
                 if len(fc) == 0 and at_date < now:
                     fc, at_date = self._search_loop(stn, at_date, now, m, base_tdelta)
                 if len(fc) == 0:
                     continue
                 station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date, fc=fc)
+                if station_dict is None:
+                    continue
                 station_conn.append(station_dict)
                 # Get subsequent ones up to 'now'.  To speed up the search, start the next time at the stop time of previous connection.
                 k0 = fc[0].hookup['timing'].keys()[0]
@@ -153,6 +155,8 @@ class Handling:
                         break
                     # Found one - add it to list.
                     station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date, fc=fc)
+                    if station_dict is None:
+                        break
                     station_conn.append(station_dict)
                     # Get the connection stop time to start looking for next one.  Break as appropriate
                     k0 = fc[0].hookup['timing'].keys()[0]
@@ -236,11 +240,14 @@ class Handling:
         fc:  is the full hookup/revision, in case you already have it don't call it again
         """
         if fc is None:
-            fc = cm_revisions.get_full_revision(stn, at_date, self.session)
+            fc = cm_revisions.get_full_revision(stn, at_date, self.session, hookup_list_to_cache=self.hookup_list_to_cache)
         station_dict = {}
         if len(fc) == 1:
             hu = fc[0].hookup
-            k0 = hu['hookup'].keys()[0]
+            if len(hu['hookup'].keys()):
+                k0 = hu['hookup'].keys()[0]
+            else:
+                return None
             ant_num = hu['hookup'][k0]['e'][0].downstream_part
             # ant_num here is unicode with an A in front of the number (e.g. u'A22').
             # But we just want an integer, so we strip the A and cast it to int
@@ -360,7 +367,7 @@ class Handling:
             dict of {pol:(rcvr location,pam #)}
         """
         at_date = cm_utils._get_astropytime(at_date)
-        fc = cm_revisions.get_full_revision(stn, at_date, self.session)
+        fc = cm_revisions.get_full_revision(stn, at_date, self.session, hookup_list_to_cache=self.hookup_list_to_cache)
         hu = fc[0].hookup
         H = cm_hookup.Hookup(self.session)
         pams = H.get_pam_from_hookup(hu)

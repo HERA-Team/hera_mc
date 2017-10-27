@@ -251,9 +251,11 @@ def get_active_revision(hpn, at_date, session=None):
     return return_active
 
 
-def get_full_revision(hpn, at_date, session=None):
+def get_full_revision(hpn, at_date, session=None, hookup_list_to_cache=['HH']):
     """
-    Returns list of fully connected list revisions as Namespace(hpn,rev,started,ended)
+    Returns list of fully connected list revisions as Namespace(hpn, rev, started, ended, hookup_dict)
+    Note that the hookup_dict is included since it has to be found for this, so we keep it to speed
+    things up.
 
     Parameters:
     -------------
@@ -268,8 +270,8 @@ def get_full_revision(hpn, at_date, session=None):
     if len(rev) > 1:
         raise RevisionException(hpn)
 
-    hookup = cm_hookup.Hookup(session)
-    hu = hookup.get_hookup([hpn], rev[0].rev, 'all', at_date, True, force_specific=True)
+    hookup = cm_hookup.Hookup(session, hookup_list_to_cache=hookup_list_to_cache)
+    hu = hookup.get_hookup([hpn], rev[0].rev, 'all', at_date, True)
     return_full = []
     if hookup.is_fully_connected(hu, 'all'):
         return_full.append(Namespace(hpn=hpn, rev=rev[0].rev,

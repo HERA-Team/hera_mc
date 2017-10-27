@@ -26,7 +26,7 @@ class TestParts(TestHERAMC):
 
         self.start_time = Time('2017-07-01 01:00:00', scale='utc')
         self.now = cm_utils._get_astropytime('now')
-        self.dv = cm_dataview.Dataview(self.test_session)
+        self.dv = cm_dataview.Dataview(self.test_session, hookup_list_to_cache=['testing'])
 
     def test_dbread_write_file(self):
         output_options = cm_utils.listify('flag,corr')
