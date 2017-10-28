@@ -5,6 +5,7 @@
 
 from __future__ import print_function
 import urllib2
+import os.path
 
 pf_in__to__file_col = {'A1': 0, 'A2': 1, 'A3': 2, 'A4': 3,
                        'B1': 4, 'B2': 5, 'B3': 6, 'B4': 7,
@@ -15,7 +16,7 @@ pf_in__to__file_col = {'A1': 0, 'A2': 1, 'A3': 2, 'A4': 3,
                        'G1': 24, 'G2': 25, 'G3': 26, 'G4': 27,
                        'H1': 28, 'H2': 29, 'H3': 30, 'H4': 31}
 DF_chassis_list = ['1', '2', '3', '4', '5', '6', '7', '8']
-default_levels_filename = 'levels.tmp'
+default_levels_filename = os.path.expanduser('~/.hera_mc/levels.tmp')
 
 
 def get_levels(pf_input, testing, network='local', timeout=2):
