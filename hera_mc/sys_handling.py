@@ -252,8 +252,8 @@ class Handling:
             # ant_num here is unicode with an A in front of the number (e.g. u'A22').
             # But we just want an integer, so we strip the A and cast it to int
             ant_num = int(ant_num[1:])
-            corr = self.hookup.get_correlator_input_from_hookup(hu)
-            stn = self.hookup.get_station_from_hookup(hu)
+            corr = cm_hookup.get_correlator_input_from_hookup(hu)
+            stn = cm_hookup.get_station_from_hookup(hu)
             fnd_list = self.geo.get_location([stn], at_date, station_types=self.geo.station_types)
             if not len(fnd_list):
                 return station_dict
@@ -369,8 +369,7 @@ class Handling:
         at_date = cm_utils._get_astropytime(at_date)
         fc = cm_revisions.get_full_revision(stn, at_date, self.session, hookup_list_to_cache=self.hookup_list_to_cache)
         hu = fc[0].hookup
-        H = cm_hookup.Hookup(self.session)
-        pams = H.get_pam_from_hookup(hu)
+        pams = cm_hookup.get_pam_from_hookup(hu)
         return pams
 
     def publish_summary(self, hlist=['HH'], rev='A', exact_match=False,

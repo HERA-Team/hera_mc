@@ -19,6 +19,74 @@ import copy
 from sqlalchemy import func
 
 
+def get_correlator_input_from_hookup(hookup_dict):
+    """
+    Retrieve the correlator inputs from a hookup_dictionary.  This currently
+    only allows for one entry in hookup_dict, which isn't necessarily what we want.
+    """
+    if len(hookup_dict['hookup'].keys()) > 1:
+        raise RuntimeError('Too many hookups provided to give e/n correlator inputs.')
+    corr_input = {}
+    corr_type_name = hookup_dict['parts_epoch']['path'][-1]
+    if corr_type_name in hookup_dict['columns']:
+        for k, h in hookup_dict['hookup'].iteritems():
+            for j, p in h.iteritems():
+                corr_input[j] = p[-1].downstream_part
+    return corr_input
+
+
+def get_pam_from_hookup(hookup_dict, pam_name='post-amp'):
+    """
+    Retrieve the PAM connections from a hookup dictionary.
+
+    returns:
+        pams[pol] = (location,pam number)
+        location example: RI4A1E:A
+        pam number example: RCVR93:A (for a PAPER RCVR)
+        pam number example: PAM75101:B (for a HERA PAM)
+    """
+    if len(hookup_dict['hookup'].keys()) > 1:
+        raise RuntimeError('Too many hookups provided to give e/n PAM inputs.')
+    pams = {}
+    pam_ind = hookup_dict['parts_epoch']['path'].index(pam_name)
+    if pam_name in hookup_dict['columns']:
+        for k, h in hookup_dict['hookup'].iteritems():  # iterates over parts
+            for pol, p in h.iteritems():  # iterates over pols
+                pams[pol] = (p[pam_ind - 1].upstream_part, p[pam_ind - 1].downstream_part)
+    return pams
+
+
+def get_station_from_hookup(hookup_dict):
+    """
+    Retrieve the station from a hookup_dictionary.  This currently
+    only allows for one entry in hookup_dict.  Need to rationalize.
+    """
+    if len(hookup_dict['hookup'].keys()) > 1:
+        raise RuntimeError('Too many hookups provided to give unique station.')
+    station_name = None
+    station_type_name = hookup_dict['parts_epoch']['path'][0]
+    if station_type_name in hookup_dict['columns']:
+        for k, h in hookup_dict['hookup'].iteritems():
+            for j, p in h.iteritems():
+                station_name = p[0].upstream_part
+    return station_name
+
+
+def is_fully_connected(hookup_dict, any_or_all='all'):
+    num_fully_connected = 0
+    num_in_dict = 0
+    for akey, hk in hookup_dict['hookup'].iteritems():
+        for pkey, pol in hk.iteritems():
+            num_in_dict += 1
+            if akey in hookup_dict['fully_connected'].keys() and \
+                    hookup_dict['fully_connected'][akey][pkey]:
+                num_fully_connected += 1
+    if any_or_all == 'all':
+        return num_fully_connected == num_in_dict
+    else:
+        return num_fully_connected > 0
+
+
 class Hookup:
     """
     Class to find and display the signal path hookup.

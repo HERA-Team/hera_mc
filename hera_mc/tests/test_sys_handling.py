@@ -142,8 +142,7 @@ class TestSys(TestHERAMC):
         at_date = cm_utils._get_astropytime('2017-07-03')
         fc = cm_revisions.get_full_revision('HH23', at_date, h.session, hookup_list_to_cache=['force_specific'])
         hu = fc[0].hookup
-        H = cm_hookup.Hookup(self.test_session, hookup_list_to_cache=['force_specific'])
-        pams = H.get_pam_from_hookup(hu)
+        pams = cm_hookup.get_pam_from_hookup(hu)
         self.assertEqual(len(pams), 2)
         self.assertEqual(pams['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
         self.assertEqual(pams['e'][1], 'PAM75123')  # the actual pam number (the thing written on the case)

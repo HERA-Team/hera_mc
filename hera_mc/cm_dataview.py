@@ -89,7 +89,6 @@ class Dataview:
         if self.fc_map is None or self.parts_list is None:
             raise RuntimeError("You first need to generate fc_map and parts_list")
         from hera_mc import cm_hookup
-        hu = cm_hookup.Hookup(self.session, self.hookup_list_to_cache)
         p0 = self.parts_list[0]
         ndate = len(self.fc_map[p0]['datetime'])
         print("Writing {}".format(filename))
@@ -110,7 +109,7 @@ class Dataview:
                     if self.fc_map[p]['fc'][i]:
                         this_hu = self.fc_map[p]['fc'][i][0].hookup
                         print(this_hu)
-                        c = hu.get_correlator_input_from_hookup(this_hu)
+                        c = cm_hookup.get_correlator_input_from_hookup(this_hu)
                         s = 'e:{} n:{}'.format(c['e'], c['n'])
                     else:
                         s = '---'
