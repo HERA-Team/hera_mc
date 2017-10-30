@@ -40,8 +40,8 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
 
     Parameters:
     ------------
-    rev_type:  string for revision type
     hpn:  string for hera part number
+    rev_type:  string for revision type
     at_date:  astropy.Time to check for
     session:  db session
     """
@@ -55,12 +55,6 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
             raise NoTimeException('ACTIVE')
         else:
             return get_active_revision(hpn, at_date, session)
-
-    if rq[0:4] == 'FULL':  # FULLY_CONNECTED'
-        if at_date is None:
-            raise NoTimeException('FULLY_CONNECTED')
-        else:
-            return get_full_revision(hpn, at_date, session)
 
     if rq == 'ALL':
         return get_all_revisions(hpn, session)
@@ -251,30 +245,25 @@ def get_active_revision(hpn, at_date, session=None):
     return return_active
 
 
-def get_full_revision(hpn, at_date, session=None, hookup_list_to_cache=['HH']):
+def get_full_revision(hpn, hookup_dict):
     """
-    Returns list of fully connected list revisions as Namespace(hpn, rev, started, ended, hookup_dict)
+    Returns list of fully connected list revisions as Namespace(hpn, rev, hookup_key, started, ended)
     Note that the hookup_dict is included since it has to be found for this, so we keep it to speed
     things up.
+    It assumes both polarizations have the same status and timing
 
     Parameters:
     -------------
     hpn:  string of hera part number
-    at_date:  date to check if fully connected
-    session:  db session
+    hookup_dict:  hookup dictionary to check for full revision
     """
-    from hera_mc import cm_hookup
-    rev = get_active_revision(hpn, at_date, session)
-    if len(rev) == 0:
-        return []
-    if len(rev) > 1:
-        raise RevisionException(hpn)
 
-    hookup = cm_hookup.Hookup(session, hookup_list_to_cache=hookup_list_to_cache)
-    hu = hookup.get_hookup([hpn], rev[0].rev, 'all', at_date, True)
     return_full = []
-    if hookup.is_fully_connected(hu, 'all'):
-        return_full.append(Namespace(hpn=hpn, rev=rev[0].rev,
-                                     started=rev[0].started, ended=rev[0].ended,
-                                     hookup=hu))
+    for hukey in hookup_dict['hookup'].keys():
+        hpn_hu, rev_hu = cm_utils._split_part_key(hukey)
+        if hpn_hu.lower() == hpn.lower() and hookup_dict['fully_connected'][hukey]:
+            use_pol = hookup_dict['timing'][hukey].keys()[0]
+            started = hookup_dict['timing'][hukey][use_pol][0]
+            ended = hookup_dict['timing'][hukey][use_pol][1]
+            return_full.append(Namespace(hpn=hpn, rev=rev_hu, hookup_key=hukey, started=started, ended=ended))
     return return_full

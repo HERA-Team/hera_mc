@@ -80,6 +80,16 @@ def _split_connection_key(key):
     return ks[0], ks[1], ks[2], ks[3]
 
 
+def stringify(X):
+    if X is None:
+        return None
+    if isinstance(X, str):
+        return X
+    if isinstance(X, list):
+        return ','.join(X)
+    return str(X)
+
+
 def listify(X):
     if X is None:
         return None
@@ -187,6 +197,10 @@ def put_keys_in_numerical_order(keys):
 
 
 def get_date_from_pair(d1, d2, ret='earliest'):
+    """
+    Returns either the earliest or latest of two dates.  This handles either ordering
+    and when either or both are None.
+    """
     if d1 is None and d2 is None:
         return None
     if ret == 'earliest':

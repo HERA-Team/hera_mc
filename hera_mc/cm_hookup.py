@@ -4,72 +4,49 @@
 # Licensed under the 2-clause BSD license.
 
 """
-This is computes and displays part hookups.
+This finds and displays part hookups.
 
 """
 from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
 import sys
 import numpy as np
-import os.path
+import os
+import time
+from astropy.time import Time, TimeDelta
 
-from hera_mc import mc, geo_location, correlator_levels, cm_utils, cm_handling
+from hera_mc import mc, geo_location, correlator_levels, cm_utils, cm_handling, cm_transfer
 from hera_mc import part_connect as PC
 import copy
 from sqlalchemy import func
 
 
-def get_correlator_input_from_hookup(hookup_dict):
+def get_part_from_hookup(part_name, hookup_dict):
     """
-    Retrieve the correlator inputs from a hookup_dictionary.  This currently
-    only allows for one entry in hookup_dict, which isn't necessarily what we want.
-    """
-    if len(hookup_dict['hookup'].keys()) > 1:
-        raise RuntimeError('Too many hookups provided to give e/n correlator inputs.')
-    corr_input = {}
-    corr_type_name = hookup_dict['parts_epoch']['path'][-1]
-    if corr_type_name in hookup_dict['columns']:
-        for k, h in hookup_dict['hookup'].iteritems():
-            for j, p in h.iteritems():
-                corr_input[j] = p[-1].downstream_part
-    return corr_input
-
-
-def get_pam_from_hookup(hookup_dict, pam_name='post-amp'):
-    """
-    Retrieve the PAM connections from a hookup dictionary.
+    Retrieve the value for a part name from a hookup_dict
+    Parameters:
+    ------------
+    part_name:  string of valid part name in hookup_dict
+    hookup_dict:  hookup_dict to use
 
     returns:
-        pams[pol] = (location,pam number)
+        parts[hpn][pol] = (location, pam number)
         location example: RI4A1E:A
         pam number example: RCVR93:A (for a PAPER RCVR)
         pam number example: PAM75101:B (for a HERA PAM)
     """
-    if len(hookup_dict['hookup'].keys()) > 1:
-        raise RuntimeError('Too many hookups provided to give e/n PAM inputs.')
-    pams = {}
-    pam_ind = hookup_dict['parts_epoch']['path'].index(pam_name)
-    if pam_name in hookup_dict['columns']:
-        for k, h in hookup_dict['hookup'].iteritems():  # iterates over parts
-            for pol, p in h.iteritems():  # iterates over pols
-                pams[pol] = (p[pam_ind - 1].upstream_part, p[pam_ind - 1].downstream_part)
-    return pams
-
-
-def get_station_from_hookup(hookup_dict):
-    """
-    Retrieve the station from a hookup_dictionary.  This currently
-    only allows for one entry in hookup_dict.  Need to rationalize.
-    """
-    if len(hookup_dict['hookup'].keys()) > 1:
-        raise RuntimeError('Too many hookups provided to give unique station.')
-    station_name = None
-    station_type_name = hookup_dict['parts_epoch']['path'][0]
-    if station_type_name in hookup_dict['columns']:
-        for k, h in hookup_dict['hookup'].iteritems():
-            for j, p in h.iteritems():
-                station_name = p[0].upstream_part
-    return station_name
+    if part_name not in hookup_dict['columns']:
+        return None
+    parts = {}
+    part_ind = hookup_dict['columns'].index(part_name)
+    for k, h in hookup_dict['hookup'].iteritems():  # iterates over parts
+        parts[k] = {}
+        for pol, p in h.iteritems():  # iterates over pols
+            pind = part_ind - 1
+            if pind < 0:
+                pind = 0
+            parts[k][pol] = (p[pind].upstream_part, p[pind].downstream_part)
+    return parts
 
 
 def is_fully_connected(hookup_dict, any_or_all='all'):
@@ -89,35 +66,53 @@ def is_fully_connected(hookup_dict, any_or_all='all'):
 
 class Hookup:
     """
-    Class to find and display the signal path hookup.
+    Class to find and display the signal path hookup.  It only has three public methods:
+        get_hookup
+        show_hookup
+        add_correlator_levels
     """
 
-    def __init__(self, session=None, hookup_list_to_cache=['HH']):
+    def __init__(self, at_date='now', session=None, hookup_list_to_cache=['HH']):
         """
         Hookup traces parts and connections through the signal path (as defined
             by the connections).
         """
-
         if session is None:
             db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
         else:
             self.session = session
+        self.at_date = cm_utils._get_astropytime(at_date)
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
         self.hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache.npy')
         self.hookup_list_to_cache = hookup_list_to_cache
         self.cached_hookup_dict = None
 
-    def get_hookup(self, hpn_list, rev, port_query='all', at_date='now',
-                   exact_match=False, show_levels=False,
-                   force_new=True, force_specific=False):
+    def __set_hookup_cache(self, force_new=False):
+        """
+        Reads in the appropriate hookup cache file if needed.
+
+        Parameters
+        -----------
+        force_new:  boolean to force a new read as opposed to using file, if valid.
+        """
+        if force_new or not self.__check_hookup_cache_file():
+            self.cached_hookup_dict = self.__get_hookup(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
+                                                        port_query='all', at_date=self.at_date,
+                                                        exact_match=False, show_levels=False)
+            self.__write_hookup_cache_to_file()
+        elif self.cached_hookup_dict is None:
+            self.__read_hookup_cache_from_file()
+
+    def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, show_levels=False,
+                   force_new=False, force_specific=False, force_specific_at_date='now'):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary.
         Unless force_new is True, it will check a local hookup file and return that if current
         otherwise it will go through the full database to get hookup.
         Returns hookup_dict, a dictionary with the following entries:
-            'hookup': another dictionary keyed on part then pol (e/n)
+            'hookup': another dictionary keyed on part:rev (e/n)
             'columns': names of parts that are used in displaying the hookup as column headers
             'timing':  valid times for the corresponding hookup in dictionary
             'parts_epoch':  either ['parts_paper', full_path_list] or ['parts_hera', full_path_list]
@@ -130,9 +125,11 @@ class Hookup:
         Parameters
         -----------
         hpn_list:  list of input hera part numbers (whole or first part thereof)
+                   may be one of the following string(s):
+                                     'cached':  return the actual cached file
         rev:  the revision number or descriptor
         port_query:  a specifiable port name to follow or 'all',  default is 'all'.
-        at_date:  date for hookup validity
+        force_specific_at_date:  date for hookup check -- use only if force_specific
         exact_match:  boolean for either exact_match or partial
         show_levels:  boolean to include correlator levels
         force_new:  boolean to force a full database read as opposed to checking file
@@ -141,56 +138,60 @@ class Hookup:
                          action before the file option was instituted)
         """
         if force_specific or self.hookup_list_to_cache[0] == 'force_specific':
-            # print("HOOKUP78:  specific")
             return self.__get_hookup(hpn_list=hpn_list, rev=rev, port_query=port_query,
-                                     at_date=at_date, exact_match=exact_match, show_levels=show_levels)
+                                     at_date=force_specific_at_date,
+                                     exact_match=exact_match, show_levels=show_levels)
 
-        if force_new or not self.check_if_hookup_file_is_current():
-            # print("HOOKUP83:  new")
-            hookup_dict = self.__get_hookup(hpn_list=self.hookup_list_to_cache, rev='ACTIVE', port_query='all',
-                                            at_date=at_date, exact_match=exact_match, show_levels=show_levels)
-            self.write_hookup_to_file(hookup_dict)
-            self.cached_hookup_dict = copy.copy(hookup_dict)
-        else:
-            # print("HOOKUP89:  file")
-            if self.cached_hookup_dict is None:
-                hookup_dict = self.read_hookup_from_file()
-                if show_levels:
-                    hookup_dict = self.__hookup_add_correlator_levels(hookup_dict)
-                self.cached_hookup_dict = copy.copy(hookup_dict)
-            else:
-                hookup_dict = copy.copy(self.cached_hookup_dict)
-        # Now we need to delete the ones we don't use since the file (probably) has all of them.
+        self.__set_hookup_cache(force_new=force_new)
+        if type(hpn_list) == str and hpn_list.lower() == 'cached':
+            return self.cached_hookup_dict
+        # Now build up the returned hookup_dict
+        hookup_dict = self.__get_empty_hookup_dict()
+        for entry in ['parts_epoch', 'columns']:
+            hookup_dict[entry] = copy.copy(self.cached_hookup_dict[entry])
         hpn_list = [x.lower() for x in hpn_list]
-        for k in hookup_dict['hookup'].keys():
-            hpn = k.split(':')[0].lower()
+        for k in self.cached_hookup_dict['hookup'].keys():
+            hpn, rev = cm_utils._split_part_key(k)
+            use_this_one = False
             if exact_match:
-                if hpn not in hpn_list:
-                    del hookup_dict['hookup'][k]
+                if hpn.lower() in hpn_list:
+                    use_this_one = True
             else:
-                del_this_one = True
                 for p in hpn_list:
-                    if hpn[:len(p)] == p.lower():
-                        del_this_one = False
+                    if hpn[:len(p)].lower() == p:
+                        use_this_one = True
                         break
-                if del_this_one:
-                    del hookup_dict['hookup'][k]
+            if use_this_one:
+                for entry in ['hookup', 'fully_connected', 'timing']:
+                    hookup_dict[entry][k] = copy.copy(self.cached_hookup_dict[entry][k])
+        if show_levels:
+            hookup_dict = self.add_correlator_levels(hookup_dict)
         return hookup_dict
+
+    def __get_empty_hookup_dict(self):
+        """
+        This is the structure of the hookup_dict.  Some get fully redone, but here for
+        completeness.
+        """
+        empty = {'hookup': {},  # actual hookup dictionary (parts_key hpn:rev)
+                 'fully_connected': {},  # flag if fully connected (parts_key hpn:rev)
+                 'parts_epoch': {},  # dictionary specifying the epoch of the parts
+                 'columns': [],  # list with the actual column headers in hookup
+                 'timing': {},  # aggregate hookup start and stop (parts_key hpn:rev)
+                 'levels': {}}  # correlator levels - only populated if flagged
+        return empty
 
     def __get_hookup(self, hpn_list, rev, port_query, at_date,
                      exact_match=False, show_levels=False):
         """
         This gets called by the get_hookup wrapper if the database is to be read.
         """
-
-        self.at_date = cm_utils._get_astropytime(at_date)
-
         # Get all the appropriate parts
         parts = self.handling.get_part_dossier(hpn_list=hpn_list, rev=rev,
-                                               at_date=self.at_date,
+                                               at_date=at_date,
                                                exact_match=exact_match,
                                                full_version=False)
-        hookup_dict = {'hookup': {}, 'fully_connected': {}, 'parts_epoch': {}}
+        hookup_dict = self.__get_empty_hookup_dict()
         part_types_found = []
         for k, part in parts.iteritems():
             if not cm_utils._is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
@@ -205,7 +206,7 @@ class Hookup:
         if len(hookup_dict['columns']):
             hookup_dict = self.__add_hookup_timing_and_flags(hookup_dict)
             if show_levels:
-                hookup_dict = self.__hookup_add_correlator_levels(hookup_dict)
+                hookup_dict = self.add_correlator_levels(hookup_dict)
         return hookup_dict
 
     def __get_part_types_found(self, huco, part_types_found):
@@ -246,7 +247,7 @@ class Hookup:
             raise ValueError('Invalid port_query')
         return pols
 
-    def _check_next_port(self, next_part, option_port, pol, lenopt):
+    def __check_next_port(self, next_part, option_port, pol, lenopt):
         """
         This checks that the port is the correct one to follow through as you
         follow the hookup.
@@ -321,19 +322,19 @@ class Hookup:
         elif len(options) == 1:
             opc = options[0]
             if direction.lower() == 'up':
-                if self._check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
+                if self.__check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
                     next_one = opc
             else:
-                if self._check_next_port(opc.downstream_part, opc.downstream_input_port, pol, len(options)):
+                if self.__check_next_port(opc.downstream_part, opc.downstream_input_port, pol, len(options)):
                     next_one = opc
         else:
             for opc in options:
                 if direction.lower() == 'up':
-                    if self._check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
+                    if self.__check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
                         next_one = opc
                         break
                 else:
-                    if self._check_next_port(opc.downstream_part, opc.downstream_input_port, pol, len(options)):
+                    if self.__check_next_port(opc.downstream_part, opc.downstream_input_port, pol, len(options)):
                         next_one = opc
                         break
         return next_one
@@ -398,8 +399,7 @@ class Hookup:
 
         return colhead, parts_epoch
 
-    def __hookup_add_correlator_levels(self, hookup_dict):
-        import os.path
+    def add_correlator_levels(self, hookup_dict):
         dummy_file = os.path.join(mc.test_data_path, 'levels.tst')
         if 'level' not in hookup_dict['columns']:
             hookup_dict['columns'].append('level')
@@ -424,80 +424,14 @@ class Hookup:
                 level_ctr += 1
         return hookup_dict
 
-    def get_correlator_input_from_hookup(self, hookup_dict):
-        """
-        Retrieve the correlator inputs from a hookup_dictionary.  This currently
-        only allows for one entry in hookup_dict, which isn't necessarily what we want.
-        """
-        if len(hookup_dict['hookup'].keys()) > 1:
-            raise RuntimeError('Too many hookups provided to give e/n correlator inputs.')
-        corr_input = {}
-        corr_type_name = hookup_dict['parts_epoch']['path'][-1]
-        if corr_type_name in hookup_dict['columns']:
-            for k, h in hookup_dict['hookup'].iteritems():
-                for j, p in h.iteritems():
-                    corr_input[j] = p[-1].downstream_part
-        return corr_input
-
-    def get_pam_from_hookup(self, hookup_dict, pam_name='post-amp'):
-        """
-        Retrieve the PAM connections from a hookup dictionary.
-
-        returns:
-            pams[pol] = (location,pam number)
-            location example: RI4A1E:A
-            pam number example: RCVR93:A (for a PAPER RCVR)
-            pam number example: PAM75101:B (for a HERA PAM)
-        """
-        if len(hookup_dict['hookup'].keys()) > 1:
-            raise RuntimeError('Too many hookups provided to give e/n PAM inputs.')
-        pams = {}
-        pam_ind = hookup_dict['parts_epoch']['path'].index(pam_name)
-        if pam_name in hookup_dict['columns']:
-            for k, h in hookup_dict['hookup'].iteritems():  # iterates over parts
-                for pol, p in h.iteritems():  # iterates over pols
-                    pams[pol] = (p[pam_ind - 1].upstream_part, p[pam_ind - 1].downstream_part)
-        return pams
-
-    def get_station_from_hookup(self, hookup_dict):
-        """
-        Retrieve the station from a hookup_dictionary.  This currently
-        only allows for one entry in hookup_dict.  Need to rationalize.
-        """
-        if len(hookup_dict['hookup'].keys()) > 1:
-            raise RuntimeError('Too many hookups provided to give unique station.')
-        station_name = None
-        station_type_name = hookup_dict['parts_epoch']['path'][0]
-        if station_type_name in hookup_dict['columns']:
-            for k, h in hookup_dict['hookup'].iteritems():
-                for j, p in h.iteritems():
-                    station_name = p[0].upstream_part
-        return station_name
-
-    def is_fully_connected(self, hookup_dict, any_or_all='all'):
-        num_fully_connected = 0
-        num_in_dict = 0
-        for akey, hk in hookup_dict['hookup'].iteritems():
-            for pkey, pol in hk.iteritems():
-                num_in_dict += 1
-                if akey in hookup_dict['fully_connected'].keys() and \
-                        hookup_dict['fully_connected'][akey][pkey]:
-                    num_fully_connected += 1
-        if any_or_all == 'all':
-            return num_fully_connected == num_in_dict
-        else:
-            return num_fully_connected > 0
-
-    def write_hookup_to_file(self, hookup_dict):
+    def __write_hookup_cache_to_file(self):
         with open(self.hookup_cache_file, 'wb') as f:
-            np.save(f, hookup_dict)
+            np.save(f, self.at_date)
+            np.save(f, cm_utils.stringify(self.hookup_list_to_cache))
+            np.save(f, self.cached_hookup_dict)
             np.save(f, self.part_type_cache)
 
-    def check_if_hookup_file_is_current(self):
-        import os
-        import time
-        from astropy.time import Time
-        from hera_mc import cm_transfer
+    def __check_hookup_cache_file(self, contemporaneous_minutes=5.0):
         try:
             stats = os.stat(self.hookup_cache_file)
         except OSError as e:
@@ -508,13 +442,24 @@ class Hookup:
         result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
         cm_hash_time = Time(result[-1].update_time, format='gps')
         file_mod_time = Time(stats.st_mtime, format='unix')
-        return file_mod_time > cm_hash_time
-
-    def read_hookup_from_file(self):
+        if file_mod_time < cm_hash_time:
+            return False
         with open(self.hookup_cache_file, 'rb') as f:
-            hookup_dict = np.load(f).item()
+            cached_at_date = Time(np.load(f).item())
+        if cached_at_date > cm_hash_time and self.at_date > cm_hash_time:
+            return True
+        # OK if current hash and the at_date and cached_at_date are basically the same
+        # could go through entire cm_version table and check...  maybe later
+        if abs(cached_at_date - self.at_date) < TimeDelta(60.0 * contemporaneous_minutes, format='sec'):
+            return True
+        return False
+
+    def __read_hookup_cache_from_file(self):
+        with open(self.hookup_cache_file, 'rb') as f:
+            self.cached_at_date = Time(np.load(f).item())
+            self.cached_hookup_list = cm_utils.listify(np.load(f).item())
+            self.cached_hookup_dict = np.load(f).item()
             self.part_type_cache = np.load(f).item()
-        return hookup_dict
 
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,
                     show_state='full', file=None, output_format='ascii'):

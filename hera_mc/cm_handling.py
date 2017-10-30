@@ -120,7 +120,7 @@ class Handling:
         Parameters
         -----------
         hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
-        rev:  specific revision or category [string, currently not a list]
+        rev:  specific revision or category ('LAST', 'ACTIVE', 'ALL') [string, currently not a list]
         at_date:  reference date of dossier [something _get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
         full_version:  flag whether to populate the full_version or truncated version

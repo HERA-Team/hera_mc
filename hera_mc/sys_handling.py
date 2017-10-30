@@ -21,7 +21,7 @@ class Handling:
     Class to allow various manipulations of correlator inputs etc
     """
 
-    def __init__(self, session=None, hookup_list_to_cache=['HH']):
+    def __init__(self, at_date='now', session=None, hookup_list_to_cache=['HH']):
         """
         session: session on current database. If session is None, a new session
                  on the default database is created and used.
@@ -32,7 +32,7 @@ class Handling:
         else:
             self.session = session
         self.hookup_list_to_cache = hookup_list_to_cache
-        self.hookup = cm_hookup.Hookup(self.session, hookup_list_to_cache=hookup_list_to_cache)
+        self.hookup = cm_hookup.Hookup(at_date, self.session, hookup_list_to_cache=hookup_list_to_cache)
         self.geo = geo_handling.Handling(self.session)
 
     def close(self):
@@ -72,8 +72,8 @@ class Handling:
                 break
         return fc, at_date
 
-    def get_all_fully_connected_ever(self, earliest_date=Time('2016-09-01'),
-                                     station_types_to_check='all'):
+    def get_all_fully_connected_ever(self, hookup_dict, earliest_date=Time('2016-09-01'),
+                                     base_tdelta=86400.0, m=10.0):
         """
         Returns a list of dictionaries of all of the locations fully connected ever that
         have station_types in station_types_to_check.  The dictonary is defined in
@@ -104,14 +104,10 @@ class Handling:
         -----------
         earliest_date:  earliest_date to check for connections.
         station_types_to_check:  list of station types to limit check, or 'all' (default: 'all')
+        base_tdelta:  shorter "inner" loop that sets the time resolution
+        m: multiplier that sets the scale of the longer "outer" loop to speed it up.
         """
 
-        base_tdelta = 86400.0  # This the shorter "inner" loop that sets the time resolution.
-        m = 10.0  # This multiplier sets the scale of the longer "outer" loop to speed it up.
-        if type(station_types_to_check) == str:
-            station_types_to_check = station_types_to_check.lower()
-        self.geo.get_station_types()
-        station_conn = []
         now = cm_utils._get_astropytime('now')
         for k, stn_type in self.geo.station_types.iteritems():
             if station_types_to_check != 'all' and k not in station_types_to_check:
@@ -170,7 +166,7 @@ class Handling:
                         break
         return station_conn
 
-    def get_all_fully_connected_at_date(self, at_date, station_types_to_check='all'):
+    def get_all_fully_connected_at_date(self, hookup_dict, at_date):
         """
         Returns a list of dictionaries of all of the locations fully connected at_date
         have station_types in station_types_to_check.  The dictonary is defined in

@@ -23,7 +23,7 @@ class TestSys(TestHERAMC):
 
     def setUp(self):
         super(TestSys, self).setUp()
-        self.h = sys_handling.Handling(self.test_session, hookup_list_to_cache=['force_specific'])
+        self.h = sys_handling.Handling('now', self.test_session, hookup_list_to_cache=['force_specific'])
 
     def test_ever_fully_connected(self):
         now_list = self.h.get_all_fully_connected_at_date(at_date='now')
