@@ -19,7 +19,7 @@ from sqlalchemy import func
 
 from pyproj import Proj
 
-from hera_mc import mc, part_connect, cm_utils, geo_location, cm_revisions
+from hera_mc import mc, part_connect, cm_utils, geo_location
 
 
 def cofa(session=None):
@@ -391,7 +391,7 @@ class Handling:
         if not testing:
             import matplotlib.pyplot as plt
         if state_args['show_state'] == 'active':
-            from hera_mc import cm_hookup
+            from hera_mc import cm_hookup, cm_revisions
             hookup = cm_hookup.Hookup(query_date, self.session)
             hookup_dict = hookup.get_hookup('cached')
 

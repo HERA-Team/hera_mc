@@ -21,7 +21,7 @@ import copy
 from sqlalchemy import func
 
 
-def get_part_from_hookup(part_name, hookup_dict):
+def get_parts_from_hookup(part_name, hookup_dict):
     """
     Retrieve the value for a part name from a hookup_dict
     Parameters:
@@ -67,6 +67,7 @@ def is_fully_connected(hookup_dict, any_or_all='all'):
 class Hookup:
     """
     Class to find and display the signal path hookup.  It only has three public methods:
+        set_hookup_cache
         get_hookup
         show_hookup
         add_correlator_levels
@@ -89,15 +90,22 @@ class Hookup:
         self.hookup_list_to_cache = hookup_list_to_cache
         self.cached_hookup_dict = None
 
-    def __set_hookup_cache(self, force_new=False):
+    def set_hookup_cache(self, force_new=False, provided_hookup=None, reset_cache=False):
         """
-        Reads in the appropriate hookup cache file if needed.
+        Reads in the appropriate hookup cache file if needed.  Order is:
+            reset_cache, provided_hookup, force_new
 
         Parameters
         -----------
         force_new:  boolean to force a new read as opposed to using file, if valid.
+        provided_hookup:  will set the cached_hookup_dict to this, if present
+        reset_cache:  will reset cached_hookup_dict to None, if True
         """
-        if force_new or not self.__check_hookup_cache_file():
+        if reset_cache:
+            self.cached_hookup_dict = None
+        elif provided_hookup is not None:
+            self.cached_hookup_dict = provided_hookup
+        elif force_new or not self.__check_hookup_cache_file():
             self.cached_hookup_dict = self.__get_hookup(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
                                                         port_query='all', at_date=self.at_date,
                                                         exact_match=False, show_levels=False)
@@ -142,7 +150,7 @@ class Hookup:
                                      at_date=force_specific_at_date,
                                      exact_match=exact_match, show_levels=show_levels)
 
-        self.__set_hookup_cache(force_new=force_new)
+        self.set_hookup_cache(force_new=force_new)
         if type(hpn_list) == str and hpn_list.lower() == 'cached':
             return self.cached_hookup_dict
         # Now build up the returned hookup_dict

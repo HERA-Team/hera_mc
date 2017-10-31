@@ -21,7 +21,7 @@ class Handling:
     Class to allow various manipulations of correlator inputs etc
     """
 
-    def __init__(self, at_date='now', session=None, hookup_list_to_cache=['HH']):
+    def __init__(self, session=None, hookup_list_to_cache=['HH']):
         """
         session: session on current database. If session is None, a new session
                  on the default database is created and used.
@@ -32,7 +32,6 @@ class Handling:
         else:
             self.session = session
         self.hookup_list_to_cache = hookup_list_to_cache
-        self.hookup = cm_hookup.Hookup(at_date, self.session, hookup_list_to_cache=hookup_list_to_cache)
         self.geo = geo_handling.Handling(self.session)
 
     def close(self):
@@ -45,7 +44,7 @@ class Handling:
         cofa = self.geo.cofa()
         return cofa
 
-    def _search_loop(self, stn, at_date, now, m, base_tdelta):
+    def __search_loop(self, stn, at_date, now, m, base_tdelta):
         """
         To find a fully connected signal path, you must loop through times.
         To speed it up, this has one loop with bigger time steps (but not too
@@ -58,15 +57,21 @@ class Handling:
             at_date += TimeDelta(m * base_tdelta, format='sec')
             if at_date > now:
                 at_date = now + TimeDelta(10.0, format='sec')
-            fc = cm_revisions.get_full_revision(stn, at_date, self.session, hookup_list_to_cache=self.hookup_list_to_cache)
+            H0 = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
+            hookup_dict = H0.get_hookup('cached')
+            fc = cm_revisions.get_full_revision(stn, hookup_dict)
             if len(fc) == 1:
                 at_date -= TimeDelta(m * base_tdelta - 600.0, format='sec')
-                fc = cm_revisions.get_full_revision(stn, at_date, self.session, hookup_list_to_cache=self.hookup_list_to_cache)
+                H1 = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
+                hookup_dict = H1.get_hookup('cached')
+                fc = cm_revisions.get_full_revision(stn, hookup_dict)
                 while len(fc) == 0 and at_date < now:
                     at_date += TimeDelta(base_tdelta, format='sec')
                     if at_date > now:
                         at_date = now + TimeDelta(10.0, format='sec')
-                    fc = cm_revisions.get_full_revision(stn, at_date, self.session, hookup_list_to_cache=self.hookup_list_to_cache)
+                    H2 = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
+                    hookup_dict = H2.get_hookup('cached')
+                    fc = cm_revisions.get_full_revision(stn, hookup_dict)
                 break
             elif at_date > now:
                 break
@@ -207,7 +212,7 @@ class Handling:
                     station_conn.append(station_dict)
         return station_conn
 
-    def get_fully_connected_location_at_date(self, stn, at_date, fc=None):
+    def get_fully_connected_location_at_date(self, stn, at_date):
         """
         Returns a dictionary for location stn that is fully connected at_date.  Provides
         the dictonary used in other methods.
@@ -232,24 +237,22 @@ class Handling:
         -----------
         stn:  is the station information to check
         at_date:  date to check for connections, must be an astropy.Time
-        hookup:  is to provide a hookup instance to not have to do it everytime
-        fc:  is the full hookup/revision, in case you already have it don't call it again
         """
-        if fc is None:
-            fc = cm_revisions.get_full_revision(stn, at_date, self.session, hookup_list_to_cache=self.hookup_list_to_cache)
+        H = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
+        hud = H.get_hookup([stn], exact_match=True)
         station_dict = {}
+        fc = cm_revisions.get_full_revision_keys(stn, hud)
         if len(fc) == 1:
-            hu = fc[0].hookup
-            if len(hu['hookup'].keys()):
-                k0 = hu['hookup'].keys()[0]
-            else:
-                return None
-            ant_num = hu['hookup'][k0]['e'][0].downstream_part
+            k = fc[0][0]
+            p = fc[0][1]
+            ant_num = hud['hookup'][k][p][0].downstream_part
             # ant_num here is unicode with an A in front of the number (e.g. u'A22').
             # But we just want an integer, so we strip the A and cast it to int
             ant_num = int(ant_num[1:])
-            corr = cm_hookup.get_correlator_input_from_hookup(hu)
-            stn = cm_hookup.get_station_from_hookup(hu)
+            stn_name = hud['parts_epoch']['path'][0]
+            stn = cm_hookup.get_parts_from_hookup(stn_name, hud)[k][p]
+            corr_name = hud['parts_epoch']['path'][-1]
+            corr = cm_hookup.get_parts_from_hookup(corr_name, hud)[k][p]
             fnd_list = self.geo.get_location([stn], at_date, station_types=self.geo.station_types)
             if not len(fnd_list):
                 return station_dict
@@ -258,8 +261,8 @@ class Handling:
                 print("Setting to first to continue.")
             fnd = fnd_list[0]
 
-            strtd = cm_utils.get_date_from_pair(hu['timing'][k0]['e'][0], hu['timing'][k0]['n'][0], 'latest')
-            ended = cm_utils.get_date_from_pair(hu['timing'][k0]['e'][1], hu['timing'][k0]['n'][1], 'earliest')
+            strtd = hud['timing'][k][p][0]
+            ended = hud['timing'][k][p][1]
             station_dict = {'station_name': str(fnd.station_name),
                             'station_type': str(fnd.station_type_name),
                             'tile': str(fnd.tile),
