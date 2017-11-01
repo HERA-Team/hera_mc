@@ -39,7 +39,7 @@ def check_rev_query(h, rev):
         else:
             raise RevisionError("List lengths don't match.")
     if type(rev) == str:
-        return = N * [rev]
+        return N * [rev]
     raise RevisionError("Not correct type.")
 
 
@@ -272,20 +272,19 @@ def get_full_revision_keys(hpn, hookup_dict):
     hookup_dict:  hookup dictionary to check for full connection
     """
     return_full_keys = []
-    if type(hpn) not str:
-        return return_full_keys
     hpn = [hpn]  # anticipate making it a list later...
     for h in hpn:
         found_this_hpn = False
         for hukey in hookup_dict['hookup'].keys():
             hpn_hu, rev_hu = cm_utils._split_part_key(hukey)
             if hpn_hu.lower() == h.lower():
-                for pkey in hookup_dict['fully_connected'][hukey].keys():
-                    if hookup_dict['fully_connected'][hukey][pkey]:
-                        return_full_keys.append((hukey, pkey))
-                        found_this_hpn = True
-                        break
+                if len(hookup_dict['fully_connected'].keys()):
+                    for pkey in hookup_dict['fully_connected'][hukey].keys():
+                        if hookup_dict['fully_connected'][hukey][pkey]:
+                            return_full_keys.append((hukey, pkey))
+                            found_this_hpn = True
+                            break
             if found_this_hpn:
                 break
 
-    return return_full_keys()
+    return return_full_keys

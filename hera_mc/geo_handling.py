@@ -407,7 +407,7 @@ class Handling:
                 for loc in self.station_types[key]['Stations']:
                     show_it = True
                     if state_args['show_state'] == 'active':
-                        fc = cm_revisions.get_full_revision(loc, hookup_dict)
+                        fc = cm_revisions.get_full_revision_keys(loc, hookup_dict)
                         if len(fc) == 0:
                             show_it = False
                     if show_it:

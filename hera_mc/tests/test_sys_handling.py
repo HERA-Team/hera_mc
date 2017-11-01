@@ -23,12 +23,13 @@ class TestSys(TestHERAMC):
 
     def setUp(self):
         super(TestSys, self).setUp()
-        self.h = sys_handling.Handling('now', self.test_session, hookup_list_to_cache=['force_specific'])
+        self.h = sys_handling.Handling(self.test_session, hookup_list_to_cache=['force_specific'])
 
     def test_ever_fully_connected(self):
         now_list = self.h.get_all_fully_connected_at_date(at_date='now')
         ever_list = self.h.get_all_fully_connected_ever()
-
+        print(now_list)
+        print(ever_list)
         self.assertEqual(len(now_list), 1)
         self.assertEqual(len(ever_list), 2)
 
@@ -57,7 +58,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(msg, 'Not on "main"')
 
     def test_correlator_info(self):
-        corr_dict = self.h.get_cminfo_correlator(cm_csv_path=mc.test_data_path)
+        corr_dict = self.h.get_cminfo_correlator()
 
         ant_names = corr_dict['antenna_names']
         self.assertEqual(len(ant_names), 1)
@@ -102,8 +103,8 @@ class TestSys(TestHERAMC):
 
     def test_correlator_levels(self):
         at_date = cm_utils._get_astropytime('2017-07-03')
-        H = cm_hookup.Hookup(self.test_session, hookup_list_to_cache=['force_specific'])
-        hu = H.get_hookup(['HH23'], 'A', 'all', at_date, exact_match=True, show_levels=True)
+        H = cm_hookup.Hookup(at_date, self.test_session, hookup_list_to_cache=['force_specific'])
+        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True)
         hh23level = float(hu['levels']['HH23:A']['e'])
         self.assertEqual(type(hh23level), float)
         # Now get some failures
@@ -132,23 +133,25 @@ class TestSys(TestHERAMC):
         connection.start_gpstime = self.test_time
         self.test_session.add(connection)
         self.test_session.commit()
-        hu = H.get_hookup(['test_part1'], 'Q', 'all', at_date, exact_match=True, show_levels=True)
+        hu = H.get_hookup(['test_part1'], 'Q', 'all', exact_match=True, show_levels=True)
         tplevel = hu['levels']['test_part1:Q']['e']
         print(tplevel)
         self.assertEqual(tplevel, '-')
 
     def test_get_pam_from_hookup(self):
-        h = sys_handling.Handling(self.test_session, hookup_list_to_cache=['force_specific'])
         at_date = cm_utils._get_astropytime('2017-07-03')
-        fc = cm_revisions.get_full_revision('HH23', at_date, h.session, hookup_list_to_cache=['force_specific'])
-        hu = fc[0].hookup
-        pams = cm_hookup.get_pam_from_hookup(hu)
-        self.assertEqual(len(pams), 2)
-        self.assertEqual(pams['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
-        self.assertEqual(pams['e'][1], 'PAM75123')  # the actual pam number (the thing written on the case)
+        H = cm_hookup.Hookup(at_date, self.test_session)
+        stn = 'HH23'
+        hud = H.get_hookup([stn], exact_match=True)
+        fc = cm_revisions.get_full_revision_keys(stn, hud)
+        pams = cm_hookup.get_parts_from_hookup('post-amp', hud)
+        self.assertEqual(len(pams.keys()), 1)
+        key = pams.keys()[0]
+        self.assertEqual(pams[key]['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
+        self.assertEqual(pams[key]['e'][1], 'PAM75123')  # the actual pam number (the thing written on the case)
 
     def test_get_pam_info(self):
-        h = sys_handling.Handling(self.test_session, hookup_list_to_cache=['force_specific'])
+        h = sys_handling.Handling(self.test_session)
         pams = h.get_pam_info('HH23', '2017-07-03')
         self.assertEqual(len(pams), 2)
         self.assertEqual(pams['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
