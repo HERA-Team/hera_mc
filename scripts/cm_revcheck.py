@@ -24,6 +24,7 @@ if __name__ == '__main__':
     session = db.sessionmaker()
     h = cm_handling.Handling(session)
     at_date = cm_utils._get_astropytime('now')
+    args.part = cm_utils.listify(args.part)
 
     if args.part is None:
         part_dict = h.get_part_types(at_date, show_hptype=True)
@@ -32,10 +33,6 @@ if __name__ == '__main__':
             for p in v['part_list']:
                 if p not in args.part:
                     args.part.append(p)
-    elif ',' in args.part:
-        args.part = args.part.split(',')
-    else:
-        args.part = [args.part]
 
     found_some = False
     for p in args.part:

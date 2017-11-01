@@ -30,7 +30,7 @@ class NoTimeError(Exception):
 
 def check_rev_query(h, rev):
     """
-    Checks that the rev query is properly configured and return a list of revs
+    Checks that the rev query is properly configured and return a list of revs that are used
     """
     N = len(h)
     if type(rev) == list:
