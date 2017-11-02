@@ -51,7 +51,7 @@ def get_parts_from_hookup(part_name, hookup_dict):
 
 class Hookup:
     """
-    Class to find and display the signal path hookup.  It only has three public methods:
+    Class to find and display the signal path hookup.  It only has a few public methods:
         set_hookup_cache
         get_hookup
         show_hookup
