@@ -49,21 +49,6 @@ def get_parts_from_hookup(part_name, hookup_dict):
     return parts
 
 
-def is_fully_connected(hookup_dict, any_or_all='all'):
-    num_fully_connected = 0
-    num_in_dict = 0
-    for akey, hk in hookup_dict['hookup'].iteritems():
-        for pkey, pol in hk.iteritems():
-            num_in_dict += 1
-            if akey in hookup_dict['fully_connected'].keys() and \
-                    hookup_dict['fully_connected'][akey][pkey]:
-                num_fully_connected += 1
-    if any_or_all == 'all':
-        return num_fully_connected == num_in_dict
-    else:
-        return num_fully_connected > 0
-
-
 class Hookup:
     """
     Class to find and display the signal path hookup.  It only has three public methods:
