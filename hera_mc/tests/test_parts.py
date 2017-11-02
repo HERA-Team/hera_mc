@@ -94,6 +94,11 @@ class TestParts(TestHERAMC):
             revision = cm_revisions.get_revisions_of_type('HH0', rq, at_date, self.test_session)
             self.assertTrue(revision[0].rev == 'A')
 
+    def test_get_part_types(self):
+        at_date = self.now
+        a = self.h.get_part_types(at_date)
+        self.assertTrue(a['feed']['input_ports'][0] == 'input')
+
     def test_check_overlapping(self):
         c = cm_revisions.check_part_for_overlapping_revisions(self.test_part, self.test_session)
         self.assertTrue(len(c) == 0)
