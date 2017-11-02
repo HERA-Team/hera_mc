@@ -20,7 +20,6 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
     parser.add_argument('-f', '--force-new', dest='force_new', help="Force it to write a new hookup file.", action='store_true')
-    parser.add_argument('--force-specific', dest='force_specific', help="Force db and local cache file to use these values", action='store_true')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list.",
                         dest='hookup_cols', default=default_hookup_cols)
 

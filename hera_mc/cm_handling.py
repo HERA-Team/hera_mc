@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """
@@ -24,7 +24,6 @@ from hera_mc import cm_revisions as cmpr
 class Handling:
     """
     Class to allow various manipulations of parts and their properties etc.
-    Things are manipulated/passed as dictionaries currently.
     """
 
     def __init__(self, session=None):
@@ -120,21 +119,23 @@ class Handling:
         Parameters
         -----------
         hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
-        rev:  specific revision or category [string, currently not a list]
+        rev:  if string, specific revision or category ('LAST', 'ACTIVE', 'ALL')
+              if list, must match length of hpn_list
         at_date:  reference date of dossier [something _get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
         full_version:  flag whether to populate the full_version or truncated version
         """
 
         at_date = cm_utils._get_astropytime(at_date)
+        rev_list = cmpr.check_rev_query(hpn_list, rev)
 
         part_dossier = {}
         rev_part = {}
-        for xhpn in hpn_list:
+        for i, xhpn in enumerate(hpn_list):
             if not exact_match and xhpn[-1] != '%':
                 xhpn = xhpn + '%'
             for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(xhpn)):
-                rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev, at_date=at_date,
+                rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev_list[i], at_date=at_date,
                                                                 session=self.session)
 
         # Now get unique part/revs and put into dictionary
@@ -535,7 +536,7 @@ class Handling:
                 if rev not in found_revisions:
                     found_revisions.append(rev)
                 if not found_connection:
-                    pd = self.get_part_dossier([hpn], rev, at_date, exact_match=True, full_version=True)
+                    pd = self.get_part_dossier([hpn], [rev], at_date, exact_match=True, full_version=True)
                     if len(pd[pa]['input_ports']) > 0 or len(pd[pa]['output_ports']) > 0:
                         input_ports = pd[pa]['input_ports']
                         output_ports = pd[pa]['output_ports']

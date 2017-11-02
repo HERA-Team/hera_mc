@@ -1,5 +1,5 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """Returns cm revisions
@@ -28,6 +28,21 @@ class NoTimeError(Exception):
         super(NoTimeError, self).__init__(message)
 
 
+def check_rev_query(h, rev):
+    """
+    Checks that the rev query is properly configured and return a list of revs that are used
+    """
+    N = len(h)
+    if type(rev) == list:
+        if len(rev) == N:
+            return rev
+        else:
+            raise RevisionError("List lengths don't match.")
+    if type(rev) == str:
+        return N * [rev]
+    raise RevisionError("Not correct type.")
+
+
 def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     """
     Returns namespace of revisions (hpn, rev, started, ended) of queried type.
@@ -40,8 +55,8 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
 
     Parameters:
     ------------
-    rev_type:  string for revision type
     hpn:  string for hera part number
+    rev_type:  string for revision type
     at_date:  astropy.Time to check for
     session:  db session
     """
@@ -55,12 +70,6 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
             raise NoTimeException('ACTIVE')
         else:
             return get_active_revision(hpn, at_date, session)
-
-    if rq[0:4] == 'FULL':  # FULLY_CONNECTED'
-        if at_date is None:
-            raise NoTimeException('FULLY_CONNECTED')
-        else:
-            return get_full_revision(hpn, at_date, session)
 
     if rq == 'ALL':
         return get_all_revisions(hpn, session)
@@ -78,7 +87,7 @@ def check_rev(hpn, rev, chk, at_date, session=None):
     ------------
     hpn:  hera part name
     rev:  revision to check
-    chk:  revision type to check against (ACTIVE/FULL/PARTICULAR)
+    chk:  revision type to check against (ACTIVE/PARTICULAR)
     at_date:  date at which to check
     session:  database session
     """
@@ -251,30 +260,31 @@ def get_active_revision(hpn, at_date, session=None):
     return return_active
 
 
-def get_full_revision(hpn, at_date, session=None, hookup_list_to_cache=['HH']):
+def get_full_revision_keys(hpn, hookup_dict):
     """
-    Returns list of fully connected list revisions as Namespace(hpn, rev, started, ended, hookup_dict)
-    Note that the hookup_dict is included since it has to be found for this, so we keep it to speed
-    things up.
+    Returns list of fully connected keys as a tuple with the first polarization found.
+    If either pol is fully connected, it is returned.
+    The hpn type must match the hookup_dict keys part type
 
     Parameters:
     -------------
-    hpn:  string of hera part number
-    at_date:  date to check if fully connected
-    session:  db session
+    hpn:  string of hera part number (must match hookup_dict keys part type)
+    hookup_dict:  hookup dictionary to check for full connection
     """
-    from hera_mc import cm_hookup
-    rev = get_active_revision(hpn, at_date, session)
-    if len(rev) == 0:
-        return []
-    if len(rev) > 1:
-        raise RevisionException(hpn)
+    return_full_keys = []
+    hpn = [hpn]  # anticipate making it a list later...
+    for h in hpn:
+        found_this_hpn = False
+        for hukey in hookup_dict['hookup'].keys():
+            hpn_hu, rev_hu = cm_utils._split_part_key(hukey)
+            if hpn_hu.lower() == h.lower():
+                if len(hookup_dict['fully_connected'].keys()):
+                    for pkey in hookup_dict['fully_connected'][hukey].keys():
+                        if hookup_dict['fully_connected'][hukey][pkey]:
+                            return_full_keys.append((hukey, pkey))
+                            found_this_hpn = True
+                            break
+            if found_this_hpn:
+                break
 
-    hookup = cm_hookup.Hookup(session, hookup_list_to_cache=hookup_list_to_cache)
-    hu = hookup.get_hookup([hpn], rev[0].rev, 'all', at_date, True)
-    return_full = []
-    if hookup.is_fully_connected(hu, 'all'):
-        return_full.append(Namespace(hpn=hpn, rev=rev[0].rev,
-                                     started=rev[0].started, ended=rev[0].ended,
-                                     hookup=hu))
-    return return_full
+    return return_full_keys

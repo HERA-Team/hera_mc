@@ -43,10 +43,9 @@ if __name__ == '__main__':
     # Start session
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
-    hookup = cm_hookup.Hookup(session)
+    hookup = cm_hookup.Hookup(date_query, session)
     hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
-                                    at_date=date_query, exact_match=args.exact_match,
-                                    show_levels=args.show_levels,
+                                    exact_match=args.exact_match, show_levels=args.show_levels,
                                     force_new=args.force_new, force_specific=args.force_specific)
     hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols, show_levels=args.show_levels,
                        show_ports=args.show_ports, show_revs=args.show_revs, show_state=args.show_state)

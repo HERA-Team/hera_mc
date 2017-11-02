@@ -19,7 +19,7 @@ from sqlalchemy import func
 
 from pyproj import Proj
 
-from hera_mc import mc, part_connect, cm_utils, geo_location, cm_revisions
+from hera_mc import mc, part_connect, cm_utils, geo_location
 
 
 def cofa(session=None):
@@ -390,6 +390,10 @@ class Handling:
         """
         if not testing:
             import matplotlib.pyplot as plt
+        if state_args['show_state'] == 'active':
+            from hera_mc import cm_hookup, cm_revisions
+            hookup = cm_hookup.Hookup(query_date, self.session)
+            hookup_dict = hookup.get_hookup('cached')
 
         query_date = cm_utils._get_astropytime(query_date)
         if state_args['station_types'][0] == 'all':
@@ -403,7 +407,7 @@ class Handling:
                 for loc in self.station_types[key]['Stations']:
                     show_it = True
                     if state_args['show_state'] == 'active':
-                        fc = cm_revisions.get_full_revision(loc, query_date, self.session)
+                        fc = cm_revisions.get_full_revision_keys(loc, hookup_dict)
                         if len(fc) == 0:
                             show_it = False
                     if show_it:
