@@ -268,8 +268,6 @@ class Handling:
         import subprocess
         from hera_mc import cm_transfer
         if cm_transfer.check_if_main():
-            import time
-            time.sleep(2)
             sc_command = 'scp -i ~/.ssh/id_rsa_qmaster {} {}'.format(output_file, location_on_paper1)
             subprocess.call(sc_command, shell=True)
             return 'OK'
