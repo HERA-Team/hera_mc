@@ -226,15 +226,17 @@ def _get_datekeystring(_datetime):
 
 
 def _get_displayTime(display):
-    if type(display) == str:
-        d = display
+    if isinstance(display, str):
+        if display.lower() == 'now':
+            d = Time.now()
+        else:
+            d = display
     elif display is None:
         d = 'None'
     elif not isinstance(display, Time):
-        print('Non astropy time not supported')
         d = 'N/A'
-    else:
-        d = "{:%Y-%m-%d %H:%M:%S}".format(display.datetime)
+    if isinstance(d, Time):
+        d = "{:%Y-%m-%d %H:%M:%S}".format(d.datetime)
     return d
 
 

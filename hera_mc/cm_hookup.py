@@ -495,7 +495,8 @@ class Hookup:
             import sys
             file = sys.stdout
         if output_format == 'html':
-            table = '<html>\n\t<body>\n\t\t<pre>\n' + table + '\t\t</pre>\n\t</body>\n</html>\n'
+            dtime = cm_utils._get_displayTime('now') + '\n'
+            table = '<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime + '\t\t</pre>\n\t</body>\n</html>\n'
         print(table, file=file)
 
     def __make_header_row(self, header_col_list, cols_to_show, show_levels):

@@ -254,7 +254,8 @@ class Handling:
     def publish_summary(self, hlist=['HH'], rev='A', exact_match=False,
                         hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
                         force_new_hookup_dict=True):
-        output_file = 'sys_conn_tmp.html'
+        import os.path
+        output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
         H = cm_hookup.Hookup('now', self.session, self.hookup_list_to_cache)
         hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
@@ -267,9 +268,10 @@ class Handling:
         import subprocess
         from hera_mc import cm_transfer
         if cm_transfer.check_if_main():
+            import time
+            time.sleep(2)
             sc_command = 'scp -i ~/.ssh/id_rsa_qmaster {} {}'.format(output_file, location_on_paper1)
             subprocess.call(sc_command, shell=True)
             return 'OK'
         else:
-            print('You are not on "main"')
             return 'Not on "main"'
