@@ -1,0 +1,32 @@
+Detail for sensor anc_weather_temperature:
+    name: anc_weather_temperature
+    systype: mkat
+    component: anc
+    site: karoo
+    katcp_name: anc.weather.temperature
+    params: [-50.0, 50.0]
+    units: deg
+    type: float
+    description: Air Temperature
+    
+Detail for sensor anc_wind_direction:
+    name: anc_wind_direction
+    systype: mkat
+    component: anc
+    site: karoo
+    katcp_name: anc.wind_direction
+    params: []
+    units: 
+    type: float
+    description: Mean of  ['wind.wind-direction'] in (1 * 10.0s) window
+
+Detail for sensor anc_wind_wind_speed:
+    name: anc_wind_wind_speed
+    systype: mkat
+    component: anc
+    site: karoo
+    katcp_name: anc.wind.wind-speed
+    params: [0.0, 70.0]
+    units: m/s
+    type: float
+    description: Wind speed
