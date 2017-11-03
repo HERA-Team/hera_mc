@@ -21,37 +21,62 @@ from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_
 class WeatherData(MCDeclarativeBase):
     """
     Definition of weather table.
-
-    obsid:      observation identification number, generally equal to the floor
-                of the start time in gps seconds (long integer)
+    
+    weather_time: timestamp of KAT weather sensor data, floored (BigInteger).
+    
     mc_time:    time metric is reported to M&C in floor(gps seconds) (BigInteger)
     
+    wind_speed: wind speed reported by sensor name "anc_wind_wind_speed" in m/s (Float)
+    
+    wind_direction: wind direction reported by sensor name "anc_wind_wind_direction" 
+                    in degrees (Float)
+    
+    temperature: air temperature reported by sensor name "anc_weather_temperature" in
+                 degrees Celcius (Float)
     """
     __tablename__ = 'ant_metrics'
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    weather_time = Column(BigInteger, primary_key=True)
     mc_time = Column(BigInteger, nullable=False)
-
+    
+    # these sensors can go down some times, so I'm going to keep them nullable
+    wind_speed = Column(Float)
+    wind_direction = Column(Float)
+    temperature = Column(Float)
+    
     # tolerances set to 1ms
     tols = {'mc_time': DEFAULT_GPS_TOL}
     
     @classmethod
-    def create(cls, obsid, ant, pol, metric, db_time, val):
+    def create(cls, weather_time, mc_time, windspeedval, winddirval, tempval):
         """
-        Create a new weather object using Astropy to compute the LST.
+        Create a new weather object.
 
         Parameters:
         ------------
-        obsid: long integer
-            observation identification number.
-        db_time: astropy time object
+        weather_time: long integer
+            sensor time
+        mc_time: astropy time object
             astropy time object based on a timestamp from the database.
             Usually generated from MCSession.get_current_db_time()
+        windspeedval: float
+            wind speed from KAT sensor
+        winddirval: float
+            wind direction from KAT sensor
+        tempval: float
+            temperature from KAT sensor
         """
-
-        if not isinstance(obsid, (int, long)):
-            raise ValueError('obsid must be an integer.')
-        if not isinstance(db_time, Time):
+        if not isinstance(weather_time, (int, long)):
+            raise ValueError('weather_time must be an integer.')
+        if not isinstance(mc_time, Time):
             raise ValueError('db_time must be an astropy Time object')
-        mc_time = floor(db_time.gps)
+        if not isinstance(windspeedval, (float)):
+            raise ValueError('wind_speed must be a float.')
+        if not isinstance(winddirval, (float)):
+            raise ValueError('wind_direction must be a float.')
+        if not isinstance(tempval, (float)):
+            raise ValueError('temperature must be a float.')
+        mc_time = floor(mc_time.gps)
 
-        return cls(obsid=obsid, mc_time=mc_time)
+        return cls(weather_time=weather_time, mc_time=mc_time,
+                   wind_speed=windspeedval, wind_direction=winddirval,
+                   temperature=tempval)
