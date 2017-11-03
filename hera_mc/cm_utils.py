@@ -235,6 +235,8 @@ def _get_displayTime(display):
         d = 'None'
     elif not isinstance(display, Time):
         d = 'N/A'
+    else:
+        d = display
     if isinstance(d, Time):
         d = "{:%Y-%m-%d %H:%M:%S}".format(d.datetime)
     return d
