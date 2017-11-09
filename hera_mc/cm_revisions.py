@@ -119,7 +119,7 @@ def check_part_for_overlapping_revisions(hpn, session=None):
             first_one = i if r1.started <= r2.started else j
             second_one = i if r1.started > r2.started else j
             if revisions[first_one].ended is None:
-                revisions[first_one].ended = cm_utils._get_astropytime('>')
+                revisions[first_one].ended = cm_utils.get_astropytime('>')
             if revisions[second_one].started > revisions[first_one].ended:
                 overlap.append([r1, r2])
     if len(overlap) > 0:
@@ -167,12 +167,12 @@ def get_last_revision(hpn, session=None):
     revisions = part_connect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
-    latest_end = cm_utils._get_astropytime('<')
+    latest_end = cm_utils.get_astropytime('<')
     no_end = []
     for rev in revisions.keys():
         end_date = revisions[rev]['ended']
         if end_date is None:
-            latest_end = cm_utils._get_astropytime('>')
+            latest_end = cm_utils.get_astropytime('>')
             no_end.append(Namespace(hpn=hpn, rev=rev, started=revisions[rev]['started'],
                                     ended=revisions[rev]['ended']))
         elif end_date > latest_end:
@@ -251,7 +251,7 @@ def get_active_revision(hpn, at_date, session=None):
     for rev in sorted(revisions.keys()):
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
-        if cm_utils._is_active(at_date, started, ended):
+        if cm_utils.is_active(at_date, started, ended):
             return_active.append(Namespace(hpn=hpn, rev=rev, started=started, ended=ended))
     if len(return_active) > 1:
         s = '{} has multiple active revisions at {}'.format(hpn, str(at_date))
@@ -276,7 +276,7 @@ def get_full_revision_keys(hpn, hookup_dict):
     for h in hpn:
         found_this_hpn = False
         for hukey in hookup_dict['hookup'].keys():
-            hpn_hu, rev_hu = cm_utils._split_part_key(hukey)
+            hpn_hu, rev_hu = cm_utils.split_part_key(hukey)
             if hpn_hu.lower() == h.lower():
                 if len(hookup_dict['fully_connected'].keys()):
                     for pkey in hookup_dict['fully_connected'][hukey].keys():

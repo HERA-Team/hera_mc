@@ -26,7 +26,7 @@ def query_args(args):
         args.hptype = raw_input('HERA part type:  ')
     if args.mfg is None:
         args.mfg = raw_input('Manufacturers number for part:  ')
-    args.date = cm_utils._query_default('date', args)
+    args.date = cm_utils.query_default('date', args)
     return args
 
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         args = query_args(args)
 
     # Pre-process some args
-    at_date = cm_utils._get_astropytime(args.date, args.time)
+    at_date = cm_utils.get_astropytime(args.date, args.time)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()

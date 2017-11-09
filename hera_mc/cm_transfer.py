@@ -139,7 +139,7 @@ def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False)
     """
 
     print("This will erase and rewrite the configuration management tables.")
-    you_are_sure = cm_utils._query_yn("Are you sure you want to do this? ", 'n')
+    you_are_sure = cm_utils.query_yn("Are you sure you want to do this? ", 'n')
     if you_are_sure:
         success = _initialization(session=session, cm_csv_path=None,
                                   tables=tables, base=base, maindb=maindb)
@@ -239,7 +239,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
 
     # Initialize tables in reversed order
     for table, data_filename in reversed(use_table):
-        cm_utils._log('cm_initialization: ' + data_filename)
+        cm_utils.log('cm_initialization: ' + data_filename)
         field_row = True  # This is the first row
         with open(data_filename, 'rb') as csvfile:
             reader = csv.reader(csvfile)

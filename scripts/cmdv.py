@@ -58,7 +58,7 @@ if __name__ == '__main__':
     sys = sys_handling.Handling(session)
 
     if args.action == 'co':
-        at_date = cm_utils._get_astropytime(args.date, args.time)
+        at_date = cm_utils.get_astropytime(args.date, args.time)
         if args.parts.lower() == 'active':
             fully_connected = sys.get_all_fully_connected_at_date(at_date,
                                                                   station_types_to_check=args.station_types)
@@ -72,8 +72,8 @@ if __name__ == '__main__':
             dv.print_fully_connected(fully_connected)
 
     elif args.action == 'fc':
-        start_date = cm_utils._get_astropytime(args.date, args.time)
-        stop_date = cm_utils._get_astropytime(args.date2, args.time2)
+        start_date = cm_utils.get_astropytime(args.date, args.time)
+        stop_date = cm_utils.get_astropytime(args.date2, args.time2)
         args.station_types = cm_utils.listify(args.station_types)
         if args.parts.lower() == 'active':
             conn = sys.get_all_fully_connected_at_date('now', station_types_to_check=args.station_types)

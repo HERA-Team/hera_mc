@@ -18,7 +18,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
 if args.gps is None:
-    Time_object = cm_utils._get_astropytime(args.date, args.time)
+    Time_object = cm_utils.get_astropytime(args.date, args.time)
     print("\n\tThe supplied date was  {}".format(str(Time_object)))
     print("\t...corresponding gps is  {}\n".format(Time_object.gps))
 else:

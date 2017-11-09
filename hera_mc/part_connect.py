@@ -197,7 +197,7 @@ def update_part(session=None, data=None, add_new_part=False):
                     continue
             session.add(part)
             session.commit()
-    cm_utils._log('part_connect part update', data_dict=data_dict)
+    cm_utils.log('part_connect part update', data_dict=data_dict)
     if close_session_when_done:
         session.close()
 
@@ -343,7 +343,7 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
     pi = PartInfo()
     pi.hpn = hpn
     pi.hpn_rev = rev
-    pi.posting_gpstime = cm_utils._get_astropytime(at_date).gps
+    pi.posting_gpstime = cm_utils.get_astropytime(at_date).gps
     pi.comment = comment
     pi.library_file = library_file
     session.add(pi)
@@ -653,7 +653,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
                     continue
             session.add(connection)
             session.commit()
-    cm_utils._log('part_connect connection update', data_dict=data_dict)
+    cm_utils.log('part_connect connection update', data_dict=data_dict)
     if close_session_when_done:
         session.close()
 

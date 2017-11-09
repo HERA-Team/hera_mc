@@ -72,7 +72,7 @@ class Handling:
         at_date:  date to check for connections
         station_types_to_check:  list of station types to limit check, or 'all' [default 'all']
         """
-        at_date = cm_utils._get_astropytime(at_date)
+        at_date = cm_utils.get_astropytime(at_date)
         self.H = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
         self.geo.get_station_types()
         station_conn = []

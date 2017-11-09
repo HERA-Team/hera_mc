@@ -258,7 +258,7 @@ if __name__ == '__main__':
     if OK_to_add(args, connect, handling, geo):
         if args.make_update:
             print("OK to update -- actually doing it.")
-            cm_utils._log('move_paper_feed', args=args)
+            cm_utils.log('move_paper_feed', args=args)
         else:
             print("This is what would be happening if --make-update was enabled:")
         stop_previous_parts(args)
