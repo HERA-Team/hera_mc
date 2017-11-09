@@ -18,34 +18,31 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from hera_mc import geo_handling
 from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_TOL
 
+
 class WeatherData(MCDeclarativeBase):
     """
     Definition of weather table.
-    
+
     weather_time: timestamp of KAT weather sensor data, floored (BigInteger).
-    
     mc_time:    time metric is reported to M&C in floor(gps seconds) (BigInteger)
-    
     wind_speed: wind speed reported by sensor name "anc_wind_wind_speed" in m/s (Float)
-    
-    wind_direction: wind direction reported by sensor name "anc_wind_wind_direction" 
+    wind_direction: wind direction reported by sensor name "anc_wind_wind_direction"
                     in degrees (Float)
-    
     temperature: air temperature reported by sensor name "anc_weather_temperature" in
                  degrees Celcius (Float)
     """
     __tablename__ = 'ant_metrics'
     weather_time = Column(BigInteger, primary_key=True)
     mc_time = Column(BigInteger, nullable=False)
-    
+
     # these sensors can go down some times, so I'm going to keep them nullable
     wind_speed = Column(Float)
     wind_direction = Column(Float)
     temperature = Column(Float)
-    
+
     # tolerances set to 1ms
     tols = {'mc_time': DEFAULT_GPS_TOL}
-    
+
     @classmethod
     def create(cls, weather_time, mc_time, windspeedval, winddirval, tempval):
         """

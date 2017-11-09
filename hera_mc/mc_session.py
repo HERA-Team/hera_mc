@@ -711,7 +711,7 @@ class MCSession(Session):
         return self._time_filter(RTPProcessRecord, 'time', starttime,
                                  stoptime=stoptime, filter_column='obsid',
                                  filter_value=obsid)
-    
+
     def add_paper_temps(self, read_time, temp_list):
         """
         Add a new PaperTemperatures record to the M&C database.
@@ -747,11 +747,11 @@ class MCSession(Session):
 
         return self._time_filter(PaperTemperatures, 'time', starttime,
                                  stoptime=stoptime)
-    
+
     def add_weather_data(self, weather_time, mc_time, windspeedval, winddirval, tempval):
         """
         Add new weather data to the M&C database.
-        
+
         Parameters:
         ------------
         weather_time: long integer
@@ -769,10 +769,11 @@ class MCSession(Session):
         from .weather import WeatherData
         db_time = self.get_current_db_time()
         self.add(WeatherData.create(weather_time, mc_time, windspeedval, winddirval, tempval))
-    
+
     import tornado.gen
+
     @tornado.gen.coroutine
-    def get_weather_data_from_sensors(self,start_time,stop_time):
+    def get_weather_data_from_sensors(self, start_time, stop_time):
         """
         Acquire weather data for a given timespan from KAT sensors.
 
@@ -786,28 +787,26 @@ class MCSession(Session):
         logger = 'example.example'
         portal_client = KATPortalClient('http://portal.mkat.karoo.kat.ac.za/api/client',
                                         on_update_callback=None, logger=logger)
-        wind_speed_sensor=u"anc_wind_wind_speed"
-        wind_direction_sensor=u"anc_wind_wind_direction"
-        temperature_sensor=u"anc_weather_temperature"
+        wind_speed_sensor = u"anc_wind_wind_speed"
+        wind_direction_sensor = u"anc_wind_wind_direction"
+        temperature_sensor = u"anc_weather_temperature"
 
-        sensor_names = [wind_speed_sensor,wind_direction_sensor,temperature_sensor]
+        sensor_names = [wind_speed_sensor, wind_direction_sensor, temperature_sensor]
         num_sensors = len(sensor_names)
         if num_sensors == 0:
             print "\nNo matching sensors found - no history to request!"
         else:
             histories = yield portal_client.sensors_histories(
-                                sensor_names, start_time, end_time, timeout_sec=60
-                                )
-    
-        #data = portal_client.sensors_histories(sensor_names, start_time, stop_time)
+                sensor_names, start_time, end_time, timeout_sec=60)
+
+        # data = portal_client.sensors_histories(sensor_names, start_time, stop_time)
 
         for sensor_name, history in histories.items():
             nsamples = len(history)
-            if nsamples>0:
-                for count in range(0,nsamples):
-                    print count,history[count].csv()
-        
-    
+            if nsamples > 0:
+                for count in range(0, nsamples):
+                    print count, history[count].csv()
+
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
         Add a new antenna metric to the M&C database.
