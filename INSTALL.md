@@ -136,7 +136,10 @@ psql: could not connect to server: No such file or directory
   Is the server running locally and accepting
   connections on Unix domain socket "/tmp/.s.PGSQL.5432"?
 
-you can try the following:  rm /usr/local/var/postgres/postmaster.pid
+you can try the following:  
+    rm /usr/local/var/postgres/postmaster.pid
+then try restarting
+    brew services restart postgresql
 
 ### Installing on Mac OS X with macports (not particularly recommended)
 

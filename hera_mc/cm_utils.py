@@ -175,6 +175,7 @@ def put_keys_in_numerical_order(keys):
     Returns the ordered list of keys
     """
     keylib = {}
+    n = None
     for k in keys:
         colon = k.find(':')
         for i in range(len(k)):
