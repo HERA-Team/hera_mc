@@ -30,7 +30,7 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
     return git_hash
 
 
-def _future_date():
+def future_date():
     """
     Future is defined here, since defining a far FUTURE_DATE typically gives a
     warning about UTC vs UT1 etc
@@ -38,7 +38,7 @@ def _future_date():
     return Time.now() + TimeDelta(300, format='jd')
 
 
-def _log(msg, **kwargs):
+def log(msg, **kwargs):
     fp = open(mc.cm_log_file, 'a')
     dt = Time.now()
     fp.write('-------------------' + str(dt.datetime) + '  ' + msg +
@@ -63,19 +63,19 @@ def _log(msg, **kwargs):
     fp.close()
 
 
-def _make_part_key(hpn, rev):
+def make_part_key(hpn, rev):
     return ":".join([hpn, rev]).strip()
 
 
-def _split_part_key(key):
+def split_part_key(key):
     return key.split(':')[0], key.split(':')[1]
 
 
-def _make_connection_key(hpn, rev, port, start_gps):
+def make_connection_key(hpn, rev, port, start_gps):
     return ":".join([hpn, rev, port, str(start_gps)]).strip()
 
 
-def _split_connection_key(key):
+def split_connection_key(key):
     ks = key.split(':')
     return ks[0], ks[1], ks[2], ks[3]
 
@@ -116,7 +116,7 @@ def add_verbosity_args(parser):
 def add_date_time_args(parser):
     """Add standardized "--date" and "--time" arguments to an ArgParser object.
     Their values should then be converted into a Python DateTime object using
-    the function `_get_astropytime`.
+    the function `get_astropytime`.
 
     """
     parser.add_argument(
@@ -126,7 +126,7 @@ def add_date_time_args(parser):
         '--time', help="UTC hh:mm or float (hours), must include --date if use --time", default=0.0)
 
 
-def _get_astropytime(_date, _time=0):
+def get_astropytime(_date, _time=0):
     """
     Take in various incarnations of _date/_time and return an astropy.Time object
     """
@@ -141,7 +141,7 @@ def _get_astropytime(_date, _time=0):
         if _date == '<':
             return_date = Time(PAST_DATE, scale='utc')
         elif _date == '>':
-            return_date = _future_date()
+            return_date = future_date()
         elif _date.lower().replace('/', '') == 'na' or _date.lower() == 'none':
             return_date = None
         elif _date.lower() == 'now':
@@ -175,6 +175,7 @@ def put_keys_in_numerical_order(keys):
     Returns the ordered list of keys
     """
     keylib = {}
+    n = None
     for k in keys:
         colon = k.find(':')
         for i in range(len(k)):
@@ -221,11 +222,7 @@ def get_date_from_pair(d1, d2, ret='earliest'):
         raise ValueError("Must supply earliest/latest.")
 
 
-def _get_datekeystring(_datetime):
-    return "{:%Y%m%d-%H%M}".format(_datetime.datetime)
-
-
-def _get_displayTime(display):
+def get_displayTime(display):
     if isinstance(display, str):
         if display.lower() == 'now':
             d = Time.now()
@@ -242,31 +239,19 @@ def _get_displayTime(display):
     return d
 
 
-def _get_stopdate(_stop_date):
-    if isinstance(_stop_date, Time):
-        return _stop_date
+def get_stopdate(stop_date):
+    if isinstance(stop_date, Time):
+        return stop_date
     else:
-        return _future_date()
+        return future_date()
 
 
-def _is_active(at_date, _start_date, _stop_date):
-    _stop_date = _get_stopdate(_stop_date)
-    return at_date >= _start_date and at_date <= _stop_date
+def is_active(at_date, start_date, stop_date):
+    stop_date = get_stopdate(stop_date)
+    return at_date >= start_date and at_date <= stop_date
 
 
-def _return_TF(x):
-    """
-    This returns a boolean based on strings from input args
-    For y/n queries, use _query_yn below.
-    """
-    if x or x[0].upper == 'T' or x[0].upper == 'Y':
-        TF = True
-    else:
-        TF = False
-    return TF
-
-
-def _query_default(a, args):
+def query_default(a, args):
     vargs = vars(args)
     default = vargs[a]
     s = '%s [%s]:  ' % (a, str(default))
@@ -278,7 +263,7 @@ def _query_default(a, args):
     return v
 
 
-def _query_yn(s, default='y'):
+def query_yn(s, default='y'):
     if default:
         s += ' [' + default + ']'
     s += ':  '
@@ -289,5 +274,5 @@ def _query_yn(s, default='y'):
         ans = ans.lower()
     else:
         print('No answer provided.')
-        ans = _query_yn(s)
+        ans = query_yn(s)
     return ans[0] == 'y'

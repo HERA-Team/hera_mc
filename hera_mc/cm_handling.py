@@ -61,7 +61,7 @@ class Handling:
 
         Parameters:
         ------------
-        time: time to get active cm_version for (passed to cm_utils._get_astropytime).
+        time: time to get active cm_version for (passed to cm_utils.get_astropytime).
             Default is 'now'
 
         Returns:
@@ -71,7 +71,7 @@ class Handling:
         from .cm_transfer import CMVersion
 
         # make sure at_date is an astropy time object
-        at_date = cm_utils._get_astropytime(at_date)
+        at_date = cm_utils.get_astropytime(at_date)
 
         # get last row before at_date
         result = self.session.query(CMVersion).filter(CMVersion.update_time < at_date.gps).order_by(
@@ -91,7 +91,7 @@ class Handling:
         hpn:  hera part number, string for part number
         rev:  revision of part number, string for rev or rev type
         """
-        at_date = cm_utils._get_astropytime(at_date)
+        at_date = cm_utils.get_astropytime(at_date)
         connection_dossier = self.get_connection_dossier([hpn], rev, port='all',
                                                          at_date=at_date, exact_match=True)
         num_connections = len(connection_dossier['connections'].keys())
@@ -121,12 +121,12 @@ class Handling:
         hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
         rev:  if string, specific revision or category ('LAST', 'ACTIVE', 'ALL')
               if list, must match length of hpn_list
-        at_date:  reference date of dossier [something _get_astropytime can handle]
+        at_date:  reference date of dossier [something get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
         full_version:  flag whether to populate the full_version or truncated version
         """
 
-        at_date = cm_utils._get_astropytime(at_date)
+        at_date = cm_utils.get_astropytime(at_date)
         rev_list = cmpr.check_rev_query(hpn_list, rev)
 
         part_dossier = {}
@@ -153,7 +153,7 @@ class Handling:
                 elif part_cnt == 1:
                     part = copy.copy(part_query.all()[0])
                     part.gps2Time()
-                    pr_key = cm_utils._make_part_key(part.hpn, part.hpn_rev)
+                    pr_key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
                     part_dossier[pr_key] = {'Time': at_date, 'part': part}
                     if full_version:
                         part_dossier[pr_key]['part_info'] = []
@@ -225,7 +225,7 @@ class Handling:
                        'Active', 'Input', 'Output', 'Info', 'Geo']
         for hpnr in sorted(part_dossier.keys()):
             pdpart = part_dossier[hpnr]['part']
-            is_active = cm_utils._is_active(part_dossier[hpnr]['Time'],
+            is_active = cm_utils.is_active(part_dossier[hpnr]['Time'],
                                             pdpart.start_date, pdpart.stop_date)
             if (is_active and len(part_dossier[hpnr]['connections']) > 0):
                 is_connected = 'Yes'
@@ -240,8 +240,8 @@ class Handling:
                          pdpart.hpn_rev,
                          pdpart.hptype,
                          pdpart.manufacturer_number,
-                         cm_utils._get_displayTime(pdpart.start_date),
-                         cm_utils._get_displayTime(pdpart.stop_date),
+                         cm_utils.get_displayTime(pdpart.start_date),
+                         cm_utils.get_displayTime(pdpart.stop_date),
                          is_connected]
                 if verbosity == 'h':
                     ptsin = ''
@@ -301,7 +301,7 @@ class Handling:
                     c.downstream_input_port.lower() != conn.downstream_input_port.lower():
                 include_this_one = False
             if isinstance(at_date, Time) and \
-                    not cm_utils._is_active(at_date, conn.start_date, conn.stop_date):
+                    not cm_utils.is_active(at_date, conn.start_date, conn.stop_date):
                 include_this_one = False
             if include_this_one:
                 fnd.append(copy.copy(conn))
@@ -322,11 +322,11 @@ class Handling:
         hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
         rev:  revision of part [string, not a list]
         port:  a specifiable port name [string, not a list],  default is 'all'
-        at_date: reference date of dossier [anything _get_astropytime can handle]
+        at_date: reference date of dossier [anything get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
         """
 
-        at_date = cm_utils._get_astropytime(at_date)
+        at_date = cm_utils.get_astropytime(at_date)
         connection_dossier = {'ordered-pairs': [], 'Time': at_date,
                               'connected-to': (hpn_list, rev, port), 'connections': {}}
 
@@ -350,7 +350,7 @@ class Handling:
                     if (port.lower() == 'all' or
                             conn.upstream_output_port.lower() == port.lower()):
                         conn.gps2Time()
-                        ckey = cm_utils._make_connection_key(conn.downstream_part,
+                        ckey = cm_utils.make_connection_key(conn.downstream_part,
                                                              conn.down_part_rev,
                                                              conn.downstream_input_port,
                                                              conn.start_gpstime)
@@ -363,7 +363,7 @@ class Handling:
                     if (port.lower() == 'all' or
                             conn.downstream_input_port.lower() == port.lower()):
                         conn.gps2Time()
-                        ckey = cm_utils._make_connection_key(conn.upstream_part,
+                        ckey = cm_utils.make_connection_key(conn.upstream_part,
                                                              conn.up_part_rev,
                                                              conn.upstream_output_port,
                                                              conn.start_gpstime)
@@ -430,10 +430,10 @@ class Handling:
                        'Part': {'h': 5, 'm': 3}}
                 if pos['uStart'][verbosity] > -1:
                     del tdata[pos['uStart'][verbosity]]
-                    tdata.insert(pos['uStart'][verbosity], cm_utils._get_displayTime(start_date))
+                    tdata.insert(pos['uStart'][verbosity], cm_utils.get_displayTime(start_date))
                 if pos['uStop'][verbosity] > -1:
                     del tdata[pos['uStop'][verbosity]]
-                    tdata.insert(pos['uStop'][verbosity], cm_utils._get_displayTime(stop_date))
+                    tdata.insert(pos['uStop'][verbosity], cm_utils.get_displayTime(stop_date))
                 if pos['Upstream'][verbosity] > -1:
                     del tdata[pos['Upstream'][verbosity]]
                     tdata.insert(pos['Upstream'][verbosity], uup)
@@ -477,10 +477,10 @@ class Handling:
                     tdata.insert(pos['Downstream'][verbosity], ddn)
                 if pos['dStart'][verbosity] > -1:
                     del tdata[pos['dStart'][verbosity]]
-                    tdata.insert(pos['dStart'][verbosity], cm_utils._get_displayTime(start_date))
+                    tdata.insert(pos['dStart'][verbosity], cm_utils.get_displayTime(start_date))
                 if pos['dStop'][verbosity] > -1:
                     del tdata[pos['dStop'][verbosity]]
-                    tdata.insert(pos['dStop'][verbosity], cm_utils._get_displayTime(stop_date))
+                    tdata.insert(pos['dStop'][verbosity], cm_utils.get_displayTime(stop_date))
                 if verbosity == 'h' or verbosity == 'm':
                     table_data.append(tdata)
                 else:
@@ -518,7 +518,7 @@ class Handling:
 
         self.part_type_dict = {}
         for part in self.session.query(PC.Parts).all():
-            key = cm_utils._make_part_key(part.hpn, part.hpn_rev)
+            key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
             if part.hptype not in self.part_type_dict.keys():
                 self.part_type_dict[part.hptype] = {'part_list': [key],
                                                     'input_ports': [],
@@ -532,7 +532,7 @@ class Handling:
             input_ports = []
             output_ports = []
             for pa in self.part_type_dict[k]['part_list']:
-                hpn, rev = cm_utils._split_part_key(pa)
+                hpn, rev = cm_utils.split_part_key(pa)
                 if rev not in found_revisions:
                     found_revisions.append(rev)
                 if not found_connection:

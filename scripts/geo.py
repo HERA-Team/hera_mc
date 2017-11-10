@@ -107,7 +107,7 @@ if __name__ == '__main__':
         sys.exit()
 
     # interpret args
-    at_date = cm_utils._get_astropytime(args.date, args.time)
+    at_date = cm_utils.get_astropytime(args.date, args.time)
     args.loc = cm_utils.listify(args.loc)
     args.station_types = cm_utils.listify(args.station_types)
     args.show_label = args.show_label.lower()
@@ -172,7 +172,7 @@ if __name__ == '__main__':
                 show_fig = h.plot_stations(new_antennas, 'now', state_args)
 
     elif args.update:
-        you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a \
+        you_are_sure = cm_utils.query_yn("Warning:  Update is best done via a \
                                            script -- are you sure you want to do this? ", 'n')
         if you_are_sure:
             geo_location.update(session, data, args.add_new_geo)

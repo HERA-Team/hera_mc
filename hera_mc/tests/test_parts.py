@@ -28,7 +28,7 @@ class TestParts(TestHERAMC):
         self.test_rev = 'Q'
         self.test_hptype = 'antenna'
         self.start_time = Time('2017-07-01 01:00:00', scale='utc')
-        self.now = cm_utils._get_astropytime('now')
+        self.now = cm_utils.get_astropytime('now')
         self.h = cm_handling.Handling(self.test_session)
 
         # Add a test part
@@ -83,7 +83,7 @@ class TestParts(TestHERAMC):
             self.assertFalse()
 
     def test_cm_version(self):
-        self.h.add_cm_version(cm_utils._get_astropytime('now'), 'Test-git-hash')
+        self.h.add_cm_version(cm_utils.get_astropytime('now'), 'Test-git-hash')
         gh = self.h.get_cm_version()
         self.assertTrue(gh == 'Test-git-hash')
 
@@ -113,7 +113,7 @@ class TestParts(TestHERAMC):
             self.assertTrue(c)
 
     def test_datetime(self):
-        dt = cm_utils._get_astropytime('2017-01-01', 0.0)
+        dt = cm_utils.get_astropytime('2017-01-01', 0.0)
         gps_direct = int(Time('2017-01-01 00:00:00', scale='utc').gps)
         self.assertTrue(int(dt.gps) == gps_direct)
 

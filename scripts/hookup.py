@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    date_query = cm_utils._get_astropytime(args.date, args.time)
+    date_query = cm_utils.get_astropytime(args.date, args.time)
 
     # Pre-process the args
     args.hpn = cm_utils.listify(args.hpn)

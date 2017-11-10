@@ -31,7 +31,7 @@ def query_args(args):
     if args.dnport is None:
         args.dnport = raw_input('Downstream input port:  ')
     if args.date == 'now':  # note that 'now' is the current default.
-        args.date = cm_utils._query_default('date', args)
+        args.date = cm_utils.query_default('date', args)
     return args
 
 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     args = query_args(args)
 
     # Pre-process some args
-    at_date = cm_utils._get_astropytime(args.date, args.time)
+    at_date = cm_utils.get_astropytime(args.date, args.time)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()

@@ -78,7 +78,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(cofa.elevation, corr_dict['cofa_alt'])
 
     def test_correlator_levels(self):
-        at_date = cm_utils._get_astropytime('2017-07-03')
+        at_date = cm_utils.get_astropytime('2017-07-03')
         H = cm_hookup.Hookup(at_date, self.test_session, hookup_list_to_cache=['force_specific'])
         hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True)
         hh23level = float(hu['levels']['HH23:A']['e'])
@@ -115,7 +115,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(tplevel, '-')
 
     def test_get_pam_from_hookup(self):
-        at_date = cm_utils._get_astropytime('2017-07-03')
+        at_date = cm_utils.get_astropytime('2017-07-03')
         H = cm_hookup.Hookup(at_date, self.test_session)
         stn = 'HH23'
         hud = H.get_hookup([stn], exact_match=True)

@@ -68,7 +68,7 @@ class Hookup:
             self.session = db.sessionmaker()
         else:
             self.session = session
-        self.at_date = cm_utils._get_astropytime(at_date)
+        self.at_date = cm_utils.get_astropytime(at_date)
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
         self.hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache.npy')
@@ -144,7 +144,7 @@ class Hookup:
             hookup_dict[entry] = copy.copy(self.cached_hookup_dict[entry])
         hpn_list = [x.lower() for x in hpn_list]
         for k in self.cached_hookup_dict['hookup'].keys():
-            hpn, rev = cm_utils._split_part_key(k)
+            hpn, rev = cm_utils.split_part_key(k)
             use_this_one = False
             if exact_match:
                 if hpn.lower() in hpn_list:
@@ -187,7 +187,7 @@ class Hookup:
         hookup_dict = self.__get_empty_hookup_dict()
         part_types_found = []
         for k, part in parts.iteritems():
-            if not cm_utils._is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
+            if not cm_utils.is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
                 continue
             hookup_dict['hookup'][k] = {}
             pols_to_do = self.__get_pols_to_do(part, port_query)
@@ -300,14 +300,14 @@ class Hookup:
                     (func.upper(PC.Connections.downstream_part) == part.upper()) &
                     (func.upper(PC.Connections.down_part_rev) == rev.upper())):
                 conn.gps2Time()
-                if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
+                if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
         elif direction.lower() == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
                     (func.upper(PC.Connections.upstream_part) == part.upper()) &
                     (func.upper(PC.Connections.up_part_rev) == rev.upper())):
                 conn.gps2Time()
-                if cm_utils._is_active(self.at_date, conn.start_date, conn.stop_date):
+                if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
         next_one = None
         if len(options) == 0:
@@ -495,7 +495,7 @@ class Hookup:
             import sys
             file = sys.stdout
         if output_format == 'html':
-            dtime = cm_utils._get_displayTime('now') + '\n'
+            dtime = cm_utils.get_displayTime('now') + '\n'
             table = '<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime + '\t\t</pre>\n\t</body>\n</html>\n'
         print(table, file=file)
 

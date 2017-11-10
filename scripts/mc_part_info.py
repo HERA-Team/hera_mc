@@ -23,9 +23,9 @@ def query_args(args):
     if args.comment is None:
         args.comment = raw_input('Comment:  ')
     if args.library_file is None:
-        args.library_file = cm_utils._query_default('library_file', args)
+        args.library_file = cm_utils.query_default('library_file', args)
     if args.date == 'now':  # Note that 'now' is the current default.
-        args.date = cm_utils._query_default('date', args)
+        args.date = cm_utils.query_default('date', args)
     return args
 
 
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     args = query_args(args)
 
     # Pre-process some args
-    at_date = cm_utils._get_astropytime(args.date, args.time)
+    at_date = cm_utils.get_astropytime(args.date, args.time)
     if type(args.library_file) == str and args.library_file.lower() == 'none':
         args.library_file = None
 

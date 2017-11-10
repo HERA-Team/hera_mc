@@ -141,7 +141,7 @@ def update(session=None, data=None, add_new_geo=False):
                     continue
             session.add(gr)
             session.commit()
-    cm_utils._log('geo_location update', data_dict=data_dict)
+    cm_utils.log('geo_location update', data_dict=data_dict)
     if close_session_when_done:
         session.close()
 

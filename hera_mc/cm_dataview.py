@@ -145,7 +145,7 @@ class Dataview:
                     parts.append(p)
             for line in fp:
                 data = line.split()
-                date = cm_utils._get_astropytime(data[0], data[1])
+                date = cm_utils.get_astropytime(data[0], data[1])
                 del(data[0:2])
                 for i in range(len(data)):
                     fc_map[part_fn[i]]['datetime'].append(date.datetime)
