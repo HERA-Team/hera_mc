@@ -107,6 +107,7 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
 
     weather_obj_list = []
     for sensor_name, history in histories.items():
+        obj_times = []
         for item in history:
             # status is usually nominal, but can indicate sensor errors.
             # Since we can't do anything about those and the data might be bad, ignore them
@@ -121,6 +122,10 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
             else:
                 timestamp = item.timestamp
             time_use = Time(timestamp, format='unix')
+            # if this record is within the same second as a previous record, ignore it.
+            if time_use in obj_times:
+                continue
+            obj_times.append(time_use)
             value = float(item.value)
             weather_obj_list.append(WeatherData.create(time_use,
                                                        sensor_var_dict[sensor_name],
