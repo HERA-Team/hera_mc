@@ -769,7 +769,7 @@ class MCSession(Session):
     def _helper_add_sensor_data(self, starttime, stoptime, variables=None):
         from .weather import create_from_sensors
 
-        weather_data_list = create_from_sensors(starttime, stoptime, variables=variables)
+        weather_data_list = yield create_from_sensors(starttime, stoptime, variables=variables)
         for obj in weather_data_list:
             self.add(obj)
 
