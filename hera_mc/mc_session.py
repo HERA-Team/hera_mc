@@ -5,7 +5,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from astropy.time import Time
-import tornado.gen
 from .utils import get_iterable
 import warnings
 """
@@ -763,15 +762,8 @@ class MCSession(Session):
             value from the sensor associated with the variable
         """
         from .weather import WeatherData
+
         self.add(WeatherData.create(time, variable, value))
-
-    @tornado.gen.coroutine
-    def _helper_add_sensor_data(self, starttime, stoptime, variables=None):
-        from .weather import create_from_sensors
-
-        weather_data_list = yield create_from_sensors(starttime, stoptime, variables=variables)
-        for obj in weather_data_list:
-            self.add(obj)
 
     def add_weather_data_from_sensors(self, starttime, stoptime, variables=None):
         """
@@ -787,8 +779,19 @@ class MCSession(Session):
             variable to get history for. Must be a key in weather.weather_sensor_dict,
             defaults to all keys in weather.weather_sensor_dict
         """
-        io_loop = tornado.ioloop.IOLoop.current()
-        io_loop.run_sync(lambda: self._helper_add_sensor_data(starttime, stoptime, variables=variables))
+        from .weather import weather_sensor_dict, create_from_sensors
+        if variables is not None:
+            if isinstance(variables, (list, tuple)):
+                for var in variables:
+                    if var not in weather_sensor_dict.keys():
+                        raise ValueError('variables must be a key in weather_sensor_dict.')
+            else:
+                if variables not in weather_sensor_dict.keys():
+                    raise ValueError('variables must be a key in weather_sensor_dict.')
+
+        weather_data_list = create_from_sensors(starttime, stoptime, variables=variables)
+        for obj in weather_data_list:
+            self.add(obj)
 
     def get_weather_data(self, starttime, stoptime=None, variable=None):
         """
@@ -804,7 +807,7 @@ class MCSession(Session):
             starttime will be returned.
 
         variable: string
-            Name of variablen to get records for, must be a key in weather.weather_sensor_dict.
+            Name of variable to get records for, must be a key in weather.weather_sensor_dict.
             If none, all variables will be included.
 
         Returns:

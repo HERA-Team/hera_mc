@@ -22,7 +22,6 @@ def upgrade():
     sa.Column('time', sa.BigInteger(), nullable=False),
     sa.Column('variable', sa.String(), nullable=False),
     sa.Column('value', sa.Float(), nullable=False),
-    sa.Column('units', sa.String(), nullable=False),
     sa.PrimaryKeyConstraint('time', 'variable')
     )
     # ### end Alembic commands ###

@@ -18,7 +18,7 @@ from . import MCDeclarativeBase
 
 weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_wind_wind_speed', 'units': 'm/s'},
                        'wind_direction': {'sensor_name': 'anc_wind_wind_direction', 'units': 'degrees'},
-                       'temperature': {'sensor_name': 'anc_weather_temperature', 'units': 'deg. Celcius'}}
+                       'temperature': {'sensor_name': 'anc_weather_temperature', 'units': 'deg. Celsius'}}
 
 
 class WeatherData(MCDeclarativeBase):
@@ -28,13 +28,11 @@ class WeatherData(MCDeclarativeBase):
     time: gps time of KAT weather sensor data, floored (BigInteger, part of primary_key).
     variable: name of weather variable. One of the keys in weather_sensor_dict (String, part of primary_key)
     value: measured value (Float)
-    units: units of value (String)
     """
     __tablename__ = 'weather_data'
     time = Column(BigInteger, primary_key=True)
     variable = Column(String, nullable=False, primary_key=True)
     value = Column(Float, nullable=False)
-    units = Column(String, nullable=False)
 
     @classmethod
     def create(cls, time, variable, value):
@@ -54,18 +52,17 @@ class WeatherData(MCDeclarativeBase):
             raise ValueError('time must be an astropy Time object')
         if variable not in weather_sensor_dict.keys():
             raise ValueError('variable must be a key in weather_sensor_dict.')
-        if not isinstance(value, (float)):
+        if not isinstance(value, float):
             raise ValueError('value must be a float.')
         weather_time = floor(time.gps)
 
-        return cls(time=weather_time, variable=variable, value=value,
-                   units=weather_sensor_dict[variable]['units'])
+        return cls(time=weather_time, variable=variable, value=value)
 
 
 @tornado.gen.coroutine
-def create_from_sensors(starttime, stoptime, variables=None):
+def _helper_create_from_sensors(starttime, stoptime, variables=None):
     """
-    Create a list of weather objects from sensor data.
+    Create a list of weather objects from sensor data using tornado server.
 
     Parameters:
     ------------
@@ -79,7 +76,7 @@ def create_from_sensors(starttime, stoptime, variables=None):
 
     Returns:
     -----------
-    A list of WeatherData objects
+    A list of WeatherData objects (only accessible via a yield call)
     """
     from katportalclient import KATPortalClient
 
@@ -105,24 +102,50 @@ def create_from_sensors(starttime, stoptime, variables=None):
     portal_client = KATPortalClient('http://portal.mkat.karoo.kat.ac.za/api/client',
                                     on_update_callback=None)
 
-    sensor_names = yield portal_client.sensor_names(sensor_names)
-
     histories = yield portal_client.sensors_histories(sensor_names, starttime.unix,
                                                       stoptime.unix, timeout_sec=60)
 
     weather_obj_list = []
     for sensor_name, history in histories.items():
-        if len(history) > 0:
-            for count in range(len(history)):
-                if 'value_timestamp' in history[count]._fields:
-                    timestamp = history[count].value_timestamp
-                else:
-                    timestamp = history[count].timestamp
-                time_use = Time(timestamp, format='unix')
-                value = float(history[count].value)
-                status = history[count].status
-                if status == 'nominal':
-                    weather_obj_list.append(WeatherData.create(time_use,
-                                                               sensor_var_dict[sensor_name],
-                                                               value))
+        for item in history:
+            # status is usually nominal, but can indicate sensor errors.
+            # Since we can't do anything about those and the data might be bad, ignore them
+            if item.status != 'nominal':
+                continue
+
+            # the value_timestamp is the sensor timestamp, while the other is
+            # when the recording system got it. The value_timestamp isn't always
+            # present, so test for it
+            if 'value_timestamp' in item._fields:
+                timestamp = item.value_timestamp
+            else:
+                timestamp = item.timestamp
+            time_use = Time(timestamp, format='unix')
+            value = float(item.value)
+            weather_obj_list.append(WeatherData.create(time_use,
+                                                       sensor_var_dict[sensor_name],
+                                                       value))
     raise tornado.gen.Return(weather_obj_list)
+
+
+def create_from_sensors(starttime, stoptime, variables=None):
+    """
+    Return a list of weather objects from sensor data.
+
+    Parameters:
+    ------------
+    starttime: astropy time object
+        time to start getting history.
+    stoptime: astropy time object
+        time to stop getting history.
+    variable: string
+        variable to get history for. Must be a key in weather_sensor_dict,
+        defaults to all keys in weather_sensor_dict
+
+    Returns:
+    -----------
+    A list of WeatherData objects
+    """
+    io_loop = tornado.ioloop.IOLoop.current()
+    return io_loop.run_sync(lambda: _helper_create_from_sensors(starttime, stoptime,
+                                                                variables=variables))
