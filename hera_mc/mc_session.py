@@ -788,7 +788,7 @@ class MCSession(Session):
             defaults to all keys in weather.weather_sensor_dict
         """
         io_loop = tornado.ioloop.IOLoop.current()
-        io_loop.run_sync(lambda: _helper_add_sensor_data(starttime, stoptime, variables=variables))
+        io_loop.run_sync(lambda: self._helper_add_sensor_data(starttime, stoptime, variables=variables))
 
     def get_weather_data(self, starttime, stoptime=None, variable=None):
         """
