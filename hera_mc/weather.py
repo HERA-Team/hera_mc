@@ -9,71 +9,120 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 from astropy.time import Time
-from astropy.coordinates import EarthLocation
 from math import floor
-from sqlalchemy import (Column, Integer, BigInteger, Float, ForeignKey,
-                        String, ForeignKeyConstraint)
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import Column, BigInteger, Float, String
 
-from hera_mc import geo_handling
-from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_TOL
+import tornado.gen
+from katportalclient import KATPortalClient
+
+from . import MCDeclarativeBase
+
+weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_wind_wind_speed', 'units': 'm/s'},
+                       'wind_direction': {'sensor_name': 'anc_wind_wind_direction', 'units': 'degrees'},
+                       'temperature': {'sensor_name': 'anc_weather_temperature', 'units': 'deg. Celcius'}}
 
 
 class WeatherData(MCDeclarativeBase):
     """
     Definition of weather table.
 
-    weather_time: timestamp of KAT weather sensor data, floored (BigInteger).
-    mc_time:    time metric is reported to M&C in floor(gps seconds) (BigInteger)
-    wind_speed: wind speed reported by sensor name "anc_wind_wind_speed" in m/s (Float)
-    wind_direction: wind direction reported by sensor name "anc_wind_wind_direction"
-                    in degrees (Float)
-    temperature: air temperature reported by sensor name "anc_weather_temperature" in
-                 degrees Celcius (Float)
+    time: gps time of KAT weather sensor data, floored (BigInteger, part of primary_key).
+    variable: name of weather variable. One of the keys in weather_sensor_dict (String, part of primary_key)
+    value: measured value (Float)
+    units: units of value (String)
     """
-    __tablename__ = 'ant_metrics'
-    weather_time = Column(BigInteger, primary_key=True)
-    mc_time = Column(BigInteger, nullable=False)
-
-    # these sensors can go down some times, so I'm going to keep them nullable
-    wind_speed = Column(Float)
-    wind_direction = Column(Float)
-    temperature = Column(Float)
-
-    # tolerances set to 1ms
-    tols = {'mc_time': DEFAULT_GPS_TOL}
+    __tablename__ = 'weather_data'
+    time = Column(BigInteger, primary_key=True)
+    variable = Column(String, nullable=False, primary_key=True)
+    value = Column(Float, nullable=False)
+    units = Column(String, nullable=False)
 
     @classmethod
-    def create(cls, weather_time, mc_time, windspeedval, winddirval, tempval):
+    def create(cls, time, variable, value):
         """
         Create a new weather object.
 
         Parameters:
         ------------
-        weather_time: long integer
-            sensor time
-        mc_time: astropy time object
-            astropy time object based on a timestamp from the database.
-            Usually generated from MCSession.get_current_db_time()
-        windspeedval: float
-            wind speed from KAT sensor
-        winddirval: float
-            wind direction from KAT sensor
-        tempval: float
-            temperature from KAT sensor
+        time: astropy time object
+            astropy time object based on a timestamp from the katportal sensor.
+        variable: string
+            must be a key in weather_sensor_dict
+        value: float
+            value from the sensor associated with the variable
         """
-        if not isinstance(weather_time, (int, long)):
-            raise ValueError('weather_time must be an integer.')
-        if not isinstance(mc_time, Time):
-            raise ValueError('db_time must be an astropy Time object')
-        if not isinstance(windspeedval, (float)):
-            raise ValueError('wind_speed must be a float.')
-        if not isinstance(winddirval, (float)):
-            raise ValueError('wind_direction must be a float.')
-        if not isinstance(tempval, (float)):
-            raise ValueError('temperature must be a float.')
-        mc_time = floor(mc_time.gps)
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        if variable not in weather_sensor_dict.keys():
+            raise ValueError('variable must be a key in weather_sensor_dict.')
+        if not isinstance(value, (float)):
+            raise ValueError('value must be a float.')
+        weather_time = floor(time.gps)
 
-        return cls(weather_time=weather_time, mc_time=mc_time,
-                   wind_speed=windspeedval, wind_direction=winddirval,
-                   temperature=tempval)
+        return cls(time=weather_time, variable=variable, value=value,
+                   units=weather_sensor_dict[variable]['units'])
+
+
+@tornado.gen.coroutine
+def create_from_sensors(starttime, stoptime, variables=None):
+    """
+    Create a list of weather objects from sensor data.
+
+    Parameters:
+    ------------
+    starttime: astropy time object
+        time to start getting history.
+    stoptime: astropy time object
+        time to stop getting history.
+    variable: string
+        variable to get history for. Must be a key in weather_sensor_dict,
+        defaults to all keys in weather_sensor_dict
+
+    Returns:
+    -----------
+    A list of WeatherData objects
+    """
+
+    if not isinstance(starttime, Time):
+        raise ValueError('starttime must be an astropy Time object')
+
+    if not isinstance(stoptime, Time):
+        raise ValueError('stoptime must be an astropy Time object')
+
+    if variables is None:
+        variables = weather_sensor_dict.keys()
+    elif not isinstance(variables, (list, tuple)):
+        variables = [variables]
+
+    sensor_names = []
+    sensor_var_dict = {}
+    for var in variables:
+        if var not in weather_sensor_dict.keys():
+            raise ValueError('variable must be a key in weather_sensor_dict')
+        sensor_names.append(weather_sensor_dict[var]['sensor_name'])
+        sensor_var_dict[weather_sensor_dict[var]['sensor_name']] = var
+
+    portal_client = KATPortalClient('http://portal.mkat.karoo.kat.ac.za/api/client',
+                                    on_update_callback=None)
+
+    sensor_names = yield portal_client.sensor_names(sensor_names)
+
+    histories = yield portal_client.sensors_histories(sensor_names, starttime.unix,
+                                                      stoptime.unix, timeout_sec=60)
+
+    weather_obj_list = []
+    for sensor_name, history in histories.items():
+        if len(history) > 0:
+            for count in range(len(history)):
+                if 'value_timestamp' in history[count]._fields:
+                    timestamp = history[count].value_timestamp
+                else:
+                    timestamp = history[count].timestamp
+                time_use = Time(timestamp, format='unix')
+                value = float(history[count].value)
+                status = history[count].status
+                if status == 'nominal':
+                    weather_obj_list.append(WeatherData.create(time_use,
+                                                               sensor_var_dict[sensor_name],
+                                                               value))
+    raise tornado.gen.Return(weather_obj_list)

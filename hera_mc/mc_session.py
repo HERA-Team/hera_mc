@@ -5,6 +5,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from astropy.time import Time
+import tornado.gen
 from .utils import get_iterable
 import warnings
 """
@@ -748,64 +749,76 @@ class MCSession(Session):
         return self._time_filter(PaperTemperatures, 'time', starttime,
                                  stoptime=stoptime)
 
-    def add_weather_data(self, weather_time, mc_time, windspeedval, winddirval, tempval):
+    def add_weather_data(self, time, variable, value):
         """
         Add new weather data to the M&C database.
 
         Parameters:
         ------------
-        weather_time: long integer
-            sensor time
-        mc_time: astropy time object
-            astropy time object based on a timestamp from the database.
-            Usually generated from MCSession.get_current_db_time()
-        windspeedval: float
-            wind speed from KAT sensor
-        winddirval: float
-            wind direction from KAT sensor
-        tempval: float
-            temperature from KAT sensor
+        time: astropy time object
+            astropy time object based on a timestamp from the katportal sensor.
+        variable: string
+            must be a key in weather.weather_sensor_dict
+        value: float
+            value from the sensor associated with the variable
         """
         from .weather import WeatherData
-        db_time = self.get_current_db_time()
-        self.add(WeatherData.create(weather_time, mc_time, windspeedval, winddirval, tempval))
-
-    import tornado.gen
+        self.add(WeatherData.create(time, variable, value))
 
     @tornado.gen.coroutine
-    def get_weather_data_from_sensors(self, start_time, stop_time):
+    def _helper_add_sensor_data(self, starttime, stoptime, variables=None):
+        from .weather import create_from_sensors
+
+        weather_data_list = create_from_sensors(starttime, stoptime, variables=variables)
+        for obj in weather_data_list:
+            self.add(obj)
+
+    def add_weather_data_from_sensors(self, starttime, stoptime, variables=None):
         """
-        Acquire weather data for a given timespan from KAT sensors.
+        Add weather data for a given variable and timespan from KAT sensors.
 
-        Paramters:
-        -----------
-        start_time: UNIX time for start of query
-        stop_time: UNIX time for end of query
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to start getting history.
+        stoptime: astropy time object
+            time to stop getting history.
+        variable: string
+            variable to get history for. Must be a key in weather.weather_sensor_dict,
+            defaults to all keys in weather.weather_sensor_dict
         """
-        from katportalclient import KATPortalClient
-        import logging
-        logger = 'example.example'
-        portal_client = KATPortalClient('http://portal.mkat.karoo.kat.ac.za/api/client',
-                                        on_update_callback=None, logger=logger)
-        wind_speed_sensor = u"anc_wind_wind_speed"
-        wind_direction_sensor = u"anc_wind_wind_direction"
-        temperature_sensor = u"anc_weather_temperature"
+        io_loop = tornado.ioloop.IOLoop.current()
+        io_loop.run_sync(lambda: _helper_add_sensor_data(starttime, stoptime, variables=variables))
 
-        sensor_names = [wind_speed_sensor, wind_direction_sensor, temperature_sensor]
-        num_sensors = len(sensor_names)
-        if num_sensors == 0:
-            print "\nNo matching sensors found - no history to request!"
-        else:
-            histories = yield portal_client.sensors_histories(
-                sensor_names, start_time, end_time, timeout_sec=60)
+    def get_weather_data(self, starttime, stoptime=None, variable=None):
+        """
+        Get weather_data record(s) from the M&C database.
 
-        # data = portal_client.sensors_histories(sensor_names, start_time, stop_time)
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
 
-        for sensor_name, history in histories.items():
-            nsamples = len(history)
-            if nsamples > 0:
-                for count in range(0, nsamples):
-                    print count, history[count].csv()
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        variable: string
+            Name of variablen to get records for, must be a key in weather.weather_sensor_dict.
+            If none, all variables will be included.
+
+        Returns:
+        --------
+        list of WeatherData objects
+        """
+        from .weather import weather_sensor_dict, WeatherData
+        if variable is not None:
+            if variable not in weather_sensor_dict.keys():
+                raise ValueError('variable must be a key in weather_sensor_dict.')
+
+        return self._time_filter(WeatherData, 'time', starttime,
+                                 stoptime=stoptime, filter_column='variable',
+                                 filter_value=variable)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
