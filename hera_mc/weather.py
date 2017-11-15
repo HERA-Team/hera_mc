@@ -13,7 +13,6 @@ from math import floor
 from sqlalchemy import Column, BigInteger, Float, String
 
 import tornado.gen
-from katportalclient import KATPortalClient
 
 from . import MCDeclarativeBase
 
@@ -82,6 +81,7 @@ def create_from_sensors(starttime, stoptime, variables=None):
     -----------
     A list of WeatherData objects
     """
+    from katportalclient import KATPortalClient
 
     if not isinstance(starttime, Time):
         raise ValueError('starttime must be an astropy Time object')
