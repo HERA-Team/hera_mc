@@ -8,6 +8,7 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
+import nose.tools as nt
 import socket
 from math import floor
 import numpy as np
@@ -22,6 +23,55 @@ def is_at_katcp_enabled_site():
         return True
     else:
         return False
+
+
+def test_reduce_time_vals():
+    times = np.array(range(125)) + 31.24
+    values = np.array(range(125)) + 31.24
+
+    dec_times, dec_vals = weather._reduce_time_vals(times, values, 60)
+
+    nt.assert_equal(len(dec_times), 2)
+    nt.assert_true(np.allclose(dec_times, np.array(range(60, 156, 60))))
+    nt.assert_true(np.allclose(dec_vals, np.array(range(60, 156, 60)) + .24))
+
+    dec_times, dec_vals = weather._reduce_time_vals(times, values, 3)
+
+    nt.assert_equal(len(dec_times), 41)
+    nt.assert_true(np.allclose(dec_times, np.array(range(33, 156, 3))))
+    nt.assert_true(np.allclose(dec_vals, np.array(range(33, 156, 3)) + .24))
+
+    nt.assert_raises(ValueError, weather._reduce_time_vals, times, values, 1.5)
+
+    # test mean strategy
+    dec_times, dec_vals = weather._reduce_time_vals(times, values, 10, strategy='mean')
+
+    nt.assert_equal(len(dec_times), 11)
+    nt.assert_true(np.allclose(dec_times, np.array(range(40, 146, 10))))
+    exp_vals = np.zeros(11)
+    for ind in range(11):
+        exp_vals[ind] = np.mean(values[ind * 10 + 9: (ind + 1) * 10 + 9])
+    nt.assert_true(np.allclose(dec_vals, exp_vals))
+
+    # test max strategy
+    dec_times, dec_vals = weather._reduce_time_vals(times, values, 10, strategy='max')
+
+    nt.assert_equal(len(dec_times), 11)
+    nt.assert_true(np.allclose(dec_times, np.array(range(40, 146, 10))))
+    exp_vals = np.zeros(11)
+    for ind in range(11):
+        exp_vals[ind] = np.max(values[ind * 10 + 9: (ind + 1) * 10 + 9])
+    nt.assert_true(np.allclose(dec_vals, exp_vals))
+
+    # test sum strategy
+    dec_times, dec_vals = weather._reduce_time_vals(times, values, 10, strategy='sum')
+
+    nt.assert_equal(len(dec_times), 11)
+    nt.assert_true(np.allclose(dec_times, np.array(range(40, 146, 10))))
+    exp_vals = np.zeros(11)
+    for ind in range(11):
+        exp_vals[ind] = np.sum(values[ind * 10 + 9: (ind + 1) * 10 + 9])
+    nt.assert_true(np.allclose(dec_vals, exp_vals))
 
 
 class TestWeather(TestHERAMC):
@@ -80,9 +130,9 @@ class TestWeather(TestHERAMC):
 
     def test_add_from_sensor(self):
         t1 = Time('2017-11-10 01:15:23', scale='utc')
-        t2 = t1 + TimeDelta(5.0, format='sec')
-        t3 = t2 + TimeDelta(10.0, format='sec')
-        t4 = t3 + TimeDelta(5.0, format='sec')
+        t2 = t1 + TimeDelta(280.0, format='sec')
+        t3 = t2 + TimeDelta(300.0, format='sec')
+        t4 = t3 + TimeDelta(280.0, format='sec')
 
         self.assertRaises(ValueError, self.test_session.add_weather_data_from_sensors,
                           starttime=t1, stoptime=t2, variables='foo')
@@ -94,23 +144,22 @@ class TestWeather(TestHERAMC):
             self.test_session.add_weather_data_from_sensors(t1, t2)
             result = self.test_session.get_weather_data(t1 - TimeDelta(3.0, format='sec'),
                                                         stoptime=t1)
-            self.assertTrue(len(result) <= 3)
+            self.assertTrue(len(result) <= 7)
+            result = self.test_session.get_weather_data(t1 - TimeDelta(3.0, format='sec'),
+                                                        stoptime=t2)
+            self.assertTrue(len(result) > 1)
+            self.assertTrue(len(result) <= (5 * 4 + 2 * 28))
 
             self.test_session.add_weather_data_from_sensors(t3, t4, variables='wind_speed')
             result = self.test_session.get_weather_data(t3 - TimeDelta(3.0, format='sec'),
-                                                        stoptime=t3)
-            self.assertTrue(len(result) <= 1)
+                                                        stoptime=t4)
+            self.assertTrue(len(result) <= 4)
 
             self.test_session.add_weather_data_from_sensors(t3, t4, variables=['wind_direction',
                                                                                'temperature'])
             result = self.test_session.get_weather_data(t3 - TimeDelta(3.0, format='sec'),
                                                         stoptime=t3)
             self.assertTrue(len(result) <= 3)
-
-            result = self.test_session.get_weather_data(t1 - TimeDelta(3.0, format='sec'),
-                                                        stoptime=t4)
-            self.assertTrue(len(result) > 1)
-            self.assertTrue(len(result) <= 10 * 3)
 
             self.assertRaises(ValueError, weather.create_from_sensors, t1, t2, variables='foo')
 

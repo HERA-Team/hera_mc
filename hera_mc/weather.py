@@ -16,9 +16,65 @@ import tornado.gen
 
 from . import MCDeclarativeBase
 
-weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_wind_wind_speed', 'units': 'm/s'},
-                       'wind_direction': {'sensor_name': 'anc_wind_wind_direction', 'units': 'degrees'},
-                       'temperature': {'sensor_name': 'anc_weather_temperature', 'units': 'deg. Celsius'}}
+weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_mean_wind_speed',
+                                      'units': 'm/s',
+                                      'reduction': 'mean', 'period': 60,
+                                      'description': "Mean of  ['wind.wind-speed', 'weather.wind-speed'] in (600 * 1.0s) window (report period: 1s)"},
+                       'wind_gust': {'sensor_name': 'anc_gust_wind_speed',
+                                     'units': 'm/s',
+                                     'reduction': 'max', 'period': 60,
+                                     'description': "Max of  ['wind.wind-speed', 'weather.wind-speed'] in (3 * 1.0s) window (report period: 1s)"},
+                       'wind_direction': {'sensor_name': 'anc_wind_wind_direction',
+                                          'units': 'deg', 'reduction': None,
+                                          'description': "Wind direction angle (report period: 10s)"},
+                       'temperature': {'sensor_name': 'anc_weather_temperature',
+                                       'units': 'deg Celsius', 'reduction': None,
+                                       'description': "Air temperature (report period: 10s)"},
+                       'humidity': {'sensor_name': 'anc_weather_humidity',
+                                    'units': 'percent',
+                                    'reduction': 'mean', 'period': 60
+                                    'description': "Air humidity (report period: 10s)"},
+                       'pressure': {'sensor_name': 'anc_weather_pressure', 'units': 'mbar'
+                                    'reduction': 'mean', 'period': 60
+                                    'description': "Barometric pressure (report period: 10s)"},
+                       'rain': {'sensor_name': 'anc_weather_rain', 'units': 'mm',
+                                'reduction': 'sum', 'period': 60,
+                                'description': "Rainfall (report period: 10s)"}}
+
+
+def _reduce_time_vals(times, vals, period, strategy='decimate'):
+    if not isinstance(report period, (int, np.int)):
+        raise ValueError('period must be an integer')
+
+    times_keep, inds = np.unique(np.floor(times / period) * period, return_index=True)
+    if times_keep[0] < np.min(times):
+        times_keep = times_keep[1:]
+        inds = inds[1:]
+
+    if strategy == 'decimate':
+        vals_keep = vals[inds]
+    elif strategy == 'max':
+        vals_keep = []
+        times_keep = times_keep[:-1]
+        for count in range(len(times_keep)):
+            vals_keep.append(np.max(vals[inds[count]:inds[count + 1]]))
+        vals_keep = np.array(vals_keep)
+    elif strategy == 'mean':
+        vals_keep = []
+        times_keep = times_keep[:-1]
+        for count in range(len(times_keep)):
+            vals_keep.append(np.mean(vals[inds[count]:inds[count + 1]]))
+        vals_keep = np.array(vals_keep)
+    elif strategy == 'sum':
+        vals_keep = []
+        times_keep = times_keep[:-1]
+        for count in range(len(times_keep)):
+            vals_keep.append(np.sum(vals[inds[count]:inds[count + 1]]))
+        vals_keep = np.array(vals_keep)
+    else:
+        raise ValueError('unknown reduction strategy')
+
+    return times_keep, vals_keep
 
 
 class WeatherData(MCDeclarativeBase):
@@ -107,7 +163,9 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
 
     weather_obj_list = []
     for sensor_name, history in histories.items():
-        obj_times = []
+        times = []
+        values = []
+        variable = sensor_var_dict[sensor_name]
         for item in history:
             # status is usually nominal, but can indicate sensor errors.
             # Since we can't do anything about those and the data might be bad, ignore them
@@ -121,15 +179,27 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
                 timestamp = item.value_timestamp
             else:
                 timestamp = item.timestamp
-            time_use = Time(timestamp, format='unix')
-            # if this record is within the same second as a previous record, ignore it.
-            if time_use in obj_times:
-                continue
-            obj_times.append(time_use)
-            value = float(item.value)
-            weather_obj_list.append(WeatherData.create(time_use,
-                                                       sensor_var_dict[sensor_name],
-                                                       value))
+            # sometimes there are duplicates. Protect against that
+            if timestamp not in times:
+                times.append(timestamp)
+                values.append(value)
+
+        reduction = weather_sensor_dict[variable]['reduction']
+        if reduction is None:
+            # decimate to 1Hz to prevent duplicate keys
+            reduction = 'decimate'
+            period = 1
+        else:
+            period = weather_sensor_dict[variable]['period']
+
+        times_use, values_use = _reduce_time_vals(np.array(times), np.array(values),
+                                                  period, strategy=reduction)
+
+        for count, timestamp in enumerate(times_use.tolist()):
+            time_obj = Time(timestamp, format='unix')
+            weather_obj_list.append(WeatherData.create(time_obj, variable,
+                                                       values_use[count]))
+
     raise tornado.gen.Return(weather_obj_list)
 
 
