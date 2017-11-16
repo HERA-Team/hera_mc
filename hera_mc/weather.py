@@ -182,7 +182,7 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
             # sometimes there are duplicates. Protect against that
             if timestamp not in times:
                 times.append(timestamp)
-                values.append(value)
+                values.append(item.value)
 
         reduction = weather_sensor_dict[variable]['reduction']
         if reduction is None:
