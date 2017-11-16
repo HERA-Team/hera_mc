@@ -73,6 +73,9 @@ def test_reduce_time_vals():
         exp_vals[ind] = np.sum(values[ind * 10 + 9: (ind + 1) * 10 + 9])
     nt.assert_true(np.allclose(dec_vals, exp_vals))
 
+    # test error
+    nt.assert_raises(ValueError, weather._reduce_time_vals, times, values, 10, strategy='foo')
+
 
 class TestWeather(TestHERAMC):
 
