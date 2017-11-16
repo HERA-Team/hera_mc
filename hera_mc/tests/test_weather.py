@@ -91,20 +91,16 @@ class TestWeather(TestHERAMC):
                           starttime=t1, stoptime=t2, variables=['foo', 'bar'])
 
         if is_at_katcp_enabled_site():
-            print(weather.create_from_sensors(t1, t2))
             self.test_session.add_weather_data_from_sensors(t1, t2)
             result = self.test_session.get_weather_data(t1 - TimeDelta(3.0, format='sec'),
                                                         stoptime=t1)
             self.assertTrue(len(result) <= 3)
 
-            print(weather.create_from_sensors(t3, t4, variables='wind_speed'))
             self.test_session.add_weather_data_from_sensors(t3, t4, variables='wind_speed')
             result = self.test_session.get_weather_data(t3 - TimeDelta(3.0, format='sec'),
                                                         stoptime=t3)
             self.assertTrue(len(result) <= 1)
 
-            print(weather.create_from_sensors(t3, t4, variables=['wind_direction',
-                                                                 'temperature']))
             self.test_session.add_weather_data_from_sensors(t3, t4, variables=['wind_direction',
                                                                                'temperature'])
             result = self.test_session.get_weather_data(t3 - TimeDelta(3.0, format='sec'),
