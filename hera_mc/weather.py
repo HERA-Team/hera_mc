@@ -32,10 +32,10 @@ weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_mean_wind_speed',
                                        'description': "Air temperature (report period: 10s)"},
                        'humidity': {'sensor_name': 'anc_weather_humidity',
                                     'units': 'percent',
-                                    'reduction': 'mean', 'period': 60
+                                    'reduction': 'mean', 'period': 60,
                                     'description': "Air humidity (report period: 10s)"},
-                       'pressure': {'sensor_name': 'anc_weather_pressure', 'units': 'mbar'
-                                    'reduction': 'mean', 'period': 60
+                       'pressure': {'sensor_name': 'anc_weather_pressure', 'units': 'mbar',
+                                    'reduction': 'mean', 'period': 60,
                                     'description': "Barometric pressure (report period: 10s)"},
                        'rain': {'sensor_name': 'anc_weather_rain', 'units': 'mm',
                                 'reduction': 'sum', 'period': 60,
@@ -43,7 +43,7 @@ weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_mean_wind_speed',
 
 
 def _reduce_time_vals(times, vals, period, strategy='decimate'):
-    if not isinstance(report period, (int, np.int)):
+    if not isinstance(period, (int, np.int)):
         raise ValueError('period must be an integer')
 
     times_keep, inds = np.unique(np.floor(times / period) * period, return_index=True)
