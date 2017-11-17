@@ -2,7 +2,7 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Handling quality metrics of HERA data.
+"""Handling weather data sourced from meerkat's katportalclient.
 
 """
 from __future__ import absolute_import, division, print_function
@@ -16,6 +16,14 @@ import tornado.gen
 
 from . import MCDeclarativeBase
 
+katportal_url = 'http://portal.mkat.karoo.kat.ac.za/api/client'
+
+# These are the weather measurements that can be added to the M&C database.
+# To add a sensor, add a similar entry in this dict (paying particular attention
+# to data volume and reduction strategies and periods)
+# Also please add the sensor information to docs/weather_sensor_details.txt
+# You can get the needed information using the katportal example scripts at:
+#   https://github.com/ska-sa/katportalclient/tree/master/examples
 weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_mean_wind_speed',
                                       'units': 'm/s',
                                       'reduction': 'mean', 'period': 60,
@@ -155,8 +163,7 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
         sensor_names.append(weather_sensor_dict[var]['sensor_name'])
         sensor_var_dict[weather_sensor_dict[var]['sensor_name']] = var
 
-    portal_client = KATPortalClient('http://portal.mkat.karoo.kat.ac.za/api/client',
-                                    on_update_callback=None)
+    portal_client = KATPortalClient(katportal_url, on_update_callback=None)
 
     histories = yield portal_client.sensors_histories(sensor_names, starttime.unix,
                                                       stoptime.unix, timeout_sec=60)

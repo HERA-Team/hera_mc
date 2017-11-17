@@ -768,6 +768,8 @@ class MCSession(Session):
     def add_weather_data_from_sensors(self, starttime, stoptime, variables=None):
         """
         Add weather data for a given variable and timespan from KAT sensors.
+        This function connects to the meerkat db and grabs the latest data
+        using the "create_from_sensors" function.
 
         Parameters:
         ------------
