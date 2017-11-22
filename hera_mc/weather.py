@@ -192,12 +192,7 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
                 time_vals[timestamp] = float(item.value)
 
         reduction = weather_sensor_dict[variable]['reduction']
-        if reduction is None:
-            # decimate to 1Hz to prevent duplicate keys
-            reduction = 'decimate'
-            period = 1
-        else:
-            period = weather_sensor_dict[variable]['period']
+        period = weather_sensor_dict[variable]['period']
 
         times_use, values_use = _reduce_time_vals(np.array(time_vals.keys()),
                                                   np.array(time_vals.values()),
