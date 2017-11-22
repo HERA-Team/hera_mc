@@ -91,4 +91,5 @@ from . import server_status
 from . import librarian
 from . import rtp
 from . import qm
+from . import weather
 from . import mc  # keep this last.
