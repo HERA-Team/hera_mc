@@ -21,7 +21,6 @@ katportal_url = 'http://portal.mkat.karoo.kat.ac.za/api/client'
 # These are the weather measurements that can be added to the M&C database.
 # To add a sensor, add a similar entry in this dict (paying particular attention
 # to data volume and reduction strategies and periods)
-# Also please add the sensor information to docs/weather_sensor_details.txt
 # You can get the needed information using the katportal example scripts at:
 #   https://github.com/ska-sa/katportalclient/tree/master/examples
 weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_mean_wind_speed',
