@@ -33,10 +33,12 @@ weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_mean_wind_speed',
                                      'reduction': 'max', 'period': 60,
                                      'description': "Max of  ['wind.wind-speed', 'weather.wind-speed'] in (3 * 1.0s) window (report period: 1s)"},
                        'wind_direction': {'sensor_name': 'anc_wind_wind_direction',
-                                          'units': 'deg', 'reduction': None,
+                                          'units': 'deg',
+                                          'reduction': 'decimate', 'period': 1,
                                           'description': "Wind direction angle (report period: 10s)"},
                        'temperature': {'sensor_name': 'anc_weather_temperature',
-                                       'units': 'deg Celsius', 'reduction': None,
+                                       'units': 'deg Celsius',
+                                       'reduction': 'decimate', 'period': 1,
                                        'description': "Air temperature (report period: 10s)"},
                        'humidity': {'sensor_name': 'anc_weather_humidity',
                                     'units': 'percent',
@@ -54,7 +56,8 @@ def _reduce_time_vals(times, vals, period, strategy='decimate'):
     if not isinstance(period, (int, np.int)):
         raise ValueError('period must be an integer')
 
-    times_keep, inds = np.unique(np.floor(times / period) * period, return_index=True)
+    # the // operator is a floored divide.
+    times_keep, inds = np.unique((times // period) * period, return_index=True)
     if times_keep[0] < np.min(times):
         times_keep = times_keep[1:]
         inds = inds[1:]
@@ -64,19 +67,19 @@ def _reduce_time_vals(times, vals, period, strategy='decimate'):
     elif strategy == 'max':
         vals_keep = []
         times_keep = times_keep[:-1]
-        for count in range(len(times_keep)):
+        for count in range(len(inds) - 1):
             vals_keep.append(np.max(vals[inds[count]:inds[count + 1]]))
         vals_keep = np.array(vals_keep)
     elif strategy == 'mean':
         vals_keep = []
         times_keep = times_keep[:-1]
-        for count in range(len(times_keep)):
+        for count in range(len(inds) - 1):
             vals_keep.append(np.mean(vals[inds[count]:inds[count + 1]]))
         vals_keep = np.array(vals_keep)
     elif strategy == 'sum':
         vals_keep = []
         times_keep = times_keep[:-1]
-        for count in range(len(times_keep)):
+        for count in range(len(inds) - 1):
             vals_keep.append(np.sum(vals[inds[count]:inds[count + 1]]))
         vals_keep = np.array(vals_keep)
     else:
@@ -170,8 +173,7 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
 
     weather_obj_list = []
     for sensor_name, history in histories.items():
-        times = []
-        values = []
+        time_vals = {}
         variable = sensor_var_dict[sensor_name]
         for item in history:
             # status is usually nominal, but can indicate sensor errors.
@@ -187,9 +189,8 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
             else:
                 timestamp = item.timestamp
             # sometimes there are duplicates. Protect against that
-            if timestamp not in times:
-                times.append(timestamp)
-                values.append(float(item.value))
+            if timestamp not in time_vals.keys():
+                time_vals[timestamp] = float(item.value)
 
         reduction = weather_sensor_dict[variable]['reduction']
         if reduction is None:
@@ -199,7 +200,8 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
         else:
             period = weather_sensor_dict[variable]['period']
 
-        times_use, values_use = _reduce_time_vals(np.array(times), np.array(values),
+        times_use, values_use = _reduce_time_vals(np.array(time_vals.keys()),
+                                                  np.array(time_vals.values()),
                                                   period, strategy=reduction)
 
         for count, timestamp in enumerate(times_use.tolist()):

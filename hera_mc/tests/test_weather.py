@@ -18,11 +18,7 @@ from hera_mc.tests import TestHERAMC
 
 
 def is_at_katcp_enabled_site():
-    hostname = socket.gethostname()
-    if hostname == 'qmaster':
-        return True
-    else:
-        return False
+    return (socket.gethostname() == 'qmaster')
 
 
 def test_reduce_time_vals():
