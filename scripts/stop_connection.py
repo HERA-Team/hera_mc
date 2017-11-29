@@ -71,6 +71,8 @@ if __name__ == '__main__':
         go_ahead = True
     else:
         print("Error:  Connection to stop is not valid.  Quitting.")
+        print('{}:{}:{} <X> {}:{}:{}'
+              .format(args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport))
         go_ahead = False
 
     if go_ahead:

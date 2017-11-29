@@ -130,6 +130,8 @@ class Hookup:
                          Setting this makes get_hookup provide specific hookups (mimicking the
                          action before the file option was instituted)
         """
+        if True in [x[:2] != 'HH' for x in hpn_list]:
+            force_specific = True
         if force_specific or self.hookup_list_to_cache[0] == 'force_specific':
             return self.__get_hookup(hpn_list=hpn_list, rev=rev, port_query=port_query,
                                      at_date=force_specific_at_date,
