@@ -273,9 +273,20 @@ This will come from many sources. These are some suggestions for the future, thi
 \end{outline}
 
 \subsection{Site Info}
-These are suggestions for the future, things we might like to see.
+
+\textbf{\large{weather\_data}}: Weather data from KAT sensors
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & long & status time in floor(gps seconds)\\ \hline
+\textbf{variable} & string & name of weather variable (e.g. wind\_speed,  wind\_direction, temperature) \\ \hline
+value & float & value of the variable at this time \\\hline
+\end{tabular}
+\end{center}
+
+The following are suggestions for the future, things we might like to see.
 \begin{outline}[enumerate]
-	\1 Weather info
 	\1 site power
 	\1 network status
 \end{outline}

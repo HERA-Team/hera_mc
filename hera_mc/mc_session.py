@@ -748,6 +748,83 @@ class MCSession(Session):
         return self._time_filter(PaperTemperatures, 'time', starttime,
                                  stoptime=stoptime)
 
+    def add_weather_data(self, time, variable, value):
+        """
+        Add new weather data to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp from the katportal sensor.
+        variable: string
+            must be a key in weather.weather_sensor_dict
+        value: float
+            value from the sensor associated with the variable
+        """
+        from .weather import WeatherData
+
+        self.add(WeatherData.create(time, variable, value))
+
+    def add_weather_data_from_sensors(self, starttime, stoptime, variables=None):
+        """
+        Add weather data for a given variable and timespan from KAT sensors.
+        This function connects to the meerkat db and grabs the latest data
+        using the "create_from_sensors" function.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to start getting history.
+        stoptime: astropy time object
+            time to stop getting history.
+        variable: string
+            variable to get history for. Must be a key in weather.weather_sensor_dict,
+            defaults to all keys in weather.weather_sensor_dict
+        """
+        from .weather import weather_sensor_dict, create_from_sensors
+        if variables is not None:
+            if isinstance(variables, (list, tuple)):
+                for var in variables:
+                    if var not in weather_sensor_dict.keys():
+                        raise ValueError('variables must be a key in weather_sensor_dict.')
+            else:
+                if variables not in weather_sensor_dict.keys():
+                    raise ValueError('variables must be a key in weather_sensor_dict.')
+
+        weather_data_list = create_from_sensors(starttime, stoptime, variables=variables)
+        for obj in weather_data_list:
+            self.add(obj)
+
+    def get_weather_data(self, starttime, stoptime=None, variable=None):
+        """
+        Get weather_data record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        variable: string
+            Name of variable to get records for, must be a key in weather.weather_sensor_dict.
+            If none, all variables will be included.
+
+        Returns:
+        --------
+        list of WeatherData objects
+        """
+        from .weather import weather_sensor_dict, WeatherData
+        if variable is not None:
+            if variable not in weather_sensor_dict.keys():
+                raise ValueError('variable must be a key in weather_sensor_dict.')
+
+        return self._time_filter(WeatherData, 'time', starttime,
+                                 stoptime=stoptime, filter_column='variable',
+                                 filter_value=variable)
+
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
         Add a new antenna metric to the M&C database.
