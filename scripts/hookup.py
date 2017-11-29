@@ -34,12 +34,13 @@ if __name__ == '__main__':
     date_query = cm_utils.get_astropytime(args.date, args.time)
 
     # Pre-process the args
-    args.hpn = cm_utils.listify(args.hpn)
     args.hookup_cols = cm_utils.listify(args.hookup_cols)
     if args.quick:
+        if args.hpn is None:
+            args.hpn = ['HH']
         args.show_levels = True
         args.hookup_cols = ['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level']
-
+    args.hpn = cm_utils.listify(args.hpn)
     # Start session
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()

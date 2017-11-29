@@ -18,11 +18,13 @@ if __name__ == '__main__':
                                                    check_rev, overlap_check.  'info' for more.", default='part_info')
     # set values for 'action' to use
     parser.add_argument('-p', '--hpn', help="Part number, csv-list (required). [None]", default=None)
-    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [ACTIVE]", default='ACTIVE')
+    parser.add_argument('-r', '--revision', help="Specify revision or last/full/all for hpn.  [all]", default='all')
+    parser.add_argument('--port', help="Specify port [all]", default='all')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
     parser.add_argument('--check-rev', help="Revision type to check against. [FULL]", dest='check_rev', default='FULL')
     parser.add_argument('--show-state', help="Show only the 'active' or 'all' parts [active]", dest='show_state', default='active')
+    cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
 
     args = parser.parse_args()
