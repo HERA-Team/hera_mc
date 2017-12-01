@@ -10,7 +10,7 @@ from __future__ import absolute_import, division, print_function
 
 from hera_mc import cm_utils, weather, mc
 
-wx_options = ['wind_speed', 'wind_gust', 'wind_direction', 'temperature', 'humidity', 'temperature', 'rain']
+wx_options = ['wind_speed', 'wind_gust', 'wind_direction', 'humidity', 'pressure', 'temperature', 'rain']
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-v', '--variables', help="Part number, csv-list (required). [None]",
