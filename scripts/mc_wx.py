@@ -18,7 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('--start-time', dest='start_time', help="Start time in HH:MM", default='17:00')
     parser.add_argument('--stop-date', dest='stop_date', help="Stop date YYYY/MM/DD", default=None)
     parser.add_argument('--stop-time', dest='stop_time', help="Stop time in HH:MM", default='7:00')
-    parser.add_argument('--add-to-db', dest='add_to_db', help="Flag to only print data to screen", action='store_true')
+    parser.add_argument('--add-to-db', dest='add_to_db', help="Flag to actually write to database.", action='store_true')
     parser.add_argument('-l', '--last-period', dest='last_period', default=None,
                         help="Time period into past to produce (in minutes).  If present ignore start/stop.")
 
