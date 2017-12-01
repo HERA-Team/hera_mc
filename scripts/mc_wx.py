@@ -46,7 +46,7 @@ if __name__ == '__main__':
             from hera_mc import weather
             wx = weather.create_from_sensors(start_time, stop_time, variables)
             for w in wx:
-                displayTime = cm_utils.get_displayTime(w.time)
+                displayTime = cm_utils.get_displayTime(Time(w.time, format='gps'))
                 print("{}: {} ({}) -- {}".format(w.variable, displayTime, w.time, w.value))
     else:
         print("Need valid start/stop times - or can specify last-period.")
