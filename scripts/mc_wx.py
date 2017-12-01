@@ -37,14 +37,14 @@ if __name__ == '__main__':
         start_time = cm_utils.get_astropytime(args.start_date, args.start_time)
         stop_time = cm_utils.get_astropytime(args.stop_date, args.stop_time)
 
-    if isinstance(start_time, Time) and isinstand(stop_time, Time):
+    if isinstance(start_time, Time) and isinstance(stop_time, Time):
         if args.add_to_db:
             db = mc.connect_to_mc_db(args)
             session = db.sessionmaker()
             session.add_weather_data_from_sensors(start_time, stop_time, variables)
         else:
-            import weather
-            wx = weather.create_from_sensor(start_time, stop_time, variables)
+            import hera_mc import weather
+            wx = weather.create_from_sensors(start_time, stop_time, variables)
             for w in wx:
                 displayTime = cm_utils.get_displayTime(w.time)
                 print("{}: {} ({}) -- {}".format(w.variable, w.time, displayTime, w.time, w.value))
