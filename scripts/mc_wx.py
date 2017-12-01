@@ -28,4 +28,4 @@ if __name__ == '__main__':
 
     wx = weather.create_from_sensors(start_time, stop_time, variables)
     for w in wx:
-        print(wx.time, wx.value)
+        print(w.time, w.value)
