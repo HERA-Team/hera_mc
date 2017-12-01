@@ -176,6 +176,8 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
     for sensor_name, history in histories.items():
         time_vals = {}
         variable = sensor_var_dict[sensor_name]
+        value_times = []
+        sensor_values = []
         for item in history:
             # status is usually nominal, but can indicate sensor errors.
             # Since we can't do anything about those and the data might be bad, ignore them
@@ -194,14 +196,16 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
                 timestamp = item.timestamp
             # sometimes there are duplicates. Protect against that
             if timestamp not in time_vals.keys():
-                time_vals[timestamp] = float(item.value)
+                time_vals[timestamp] = item.value
+                value_times.append(timestamp)
+                sensor_values.append(float(item.value))
 
         if len(time_vals.keys()):
             reduction = weather_sensor_dict[variable]['reduction']
             period = weather_sensor_dict[variable]['period']
 
-            times_use, values_use = _reduce_time_vals(np.array(time_vals.keys()),
-                                                      np.array(time_vals.values()),
+            times_use, values_use = _reduce_time_vals(np.array(value_times),
+                                                      np.array(sensor_values),
                                                       period, strategy=reduction)
             if times_use is not None:
                 for count, timestamp in enumerate(times_use.tolist()):
