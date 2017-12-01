@@ -32,7 +32,7 @@ if __name__ == '__main__':
         from astropy.time import Time
         from astropy.time import TimeDelta
         stop_time = Time.now()
-        start_time = stop_time - TimeDelta(float(args.last_period) / 24.0, format='jd')
+        start_time = stop_time - TimeDelta(float(args.last_period) / (60.0 * 24.0), format='jd')
     else:
         start_time = cm_utils.get_astropytime(args.start_date, args.start_time)
         stop_time = cm_utils.get_astropytime(args.stop_date, args.stop_time)
@@ -43,10 +43,10 @@ if __name__ == '__main__':
             session = db.sessionmaker()
             session.add_weather_data_from_sensors(start_time, stop_time, variables)
         else:
-            import hera_mc import weather
+            from hera_mc import weather
             wx = weather.create_from_sensors(start_time, stop_time, variables)
             for w in wx:
                 displayTime = cm_utils.get_displayTime(w.time)
-                print("{}: {} ({}) -- {}".format(w.variable, w.time, displayTime, w.time, w.value))
+                print("{}: {} ({}) -- {}".format(w.variable, displayTime, w.time, w.value))
     else:
         print("Need valid start/stop times - or can specify last-period.")
