@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import cm_utils, weather
+from hera_mc import cm_utils, weather, mc
 
 wx_options = ['wind_speed', 'wind_gust', 'wind_direction', 'temperature', 'humidity', 'temperature', 'rain']
 if __name__ == '__main__':
@@ -27,4 +27,5 @@ if __name__ == '__main__':
     stop_time = cm_utils.get_astropytime(args.stop_date, args.stop_time)
 
     wx = weather.create_from_sensors(start_time, stop_time, variables)
-    print(wx)
+    for w in wx:
+        print(wx.time, wx.value)
