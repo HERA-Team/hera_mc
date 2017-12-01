@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 from astropy.time import Time
-from math import floor
+from math import floor, isnan
 from sqlalchemy import Column, BigInteger, Float, String
 
 import tornado.gen
@@ -179,6 +179,9 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
             # Since we can't do anything about those and the data might be bad, ignore them
             if item.status != 'nominal':
                 continue
+            # skip it if nan is supplied
+            if math.isnan(float(item.value)):
+                continue
 
             # the value_timestamp is the sensor timestamp, while the other is
             # when the recording system got it. The value_timestamp isn't always
@@ -191,17 +194,18 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
             if timestamp not in time_vals.keys():
                 time_vals[timestamp] = float(item.value)
 
-        reduction = weather_sensor_dict[variable]['reduction']
-        period = weather_sensor_dict[variable]['period']
+        if len(time_vals.keys()):
+            reduction = weather_sensor_dict[variable]['reduction']
+            period = weather_sensor_dict[variable]['period']
 
-        times_use, values_use = _reduce_time_vals(np.array(time_vals.keys()),
-                                                  np.array(time_vals.values()),
-                                                  period, strategy=reduction)
+            times_use, values_use = _reduce_time_vals(np.array(time_vals.keys()),
+                                                      np.array(time_vals.values()),
+                                                      period, strategy=reduction)
 
-        for count, timestamp in enumerate(times_use.tolist()):
-            time_obj = Time(timestamp, format='unix')
-            weather_obj_list.append(WeatherData.create(time_obj, variable,
-                                                       values_use[count]))
+            for count, timestamp in enumerate(times_use.tolist()):
+                time_obj = Time(timestamp, format='unix')
+                weather_obj_list.append(WeatherData.create(time_obj, variable,
+                                                           values_use[count]))
 
     raise tornado.gen.Return(weather_obj_list)
 
