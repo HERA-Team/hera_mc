@@ -61,8 +61,10 @@ def _reduce_time_vals(times, vals, period, strategy='decimate'):
         times_keep = times_keep[1:]
         inds = inds[1:]
 
+    if len(inds) < 2:
+        return None, None
     if strategy == 'decimate':
-        vals_keep = vals[inds]
+        vals_keep = vals[inds]  # Could keep with len(inds) == 1, but oh well
     elif strategy == 'max':
         vals_keep = []
         times_keep = times_keep[:-1]
@@ -168,7 +170,7 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
     portal_client = KATPortalClient(katportal_url, on_update_callback=None)
 
     histories = yield portal_client.sensors_histories(sensor_names, starttime.unix,
-                                                      stoptime.unix, timeout_sec=60)
+                                                      stoptime.unix, timeout_sec=120)
 
     weather_obj_list = []
     for sensor_name, history in histories.items():
@@ -180,7 +182,7 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
             if item.status != 'nominal':
                 continue
             # skip it if nan is supplied
-            if math.isnan(float(item.value)):
+            if isnan(float(item.value)):
                 continue
 
             # the value_timestamp is the sensor timestamp, while the other is
@@ -201,11 +203,11 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
             times_use, values_use = _reduce_time_vals(np.array(time_vals.keys()),
                                                       np.array(time_vals.values()),
                                                       period, strategy=reduction)
-
-            for count, timestamp in enumerate(times_use.tolist()):
-                time_obj = Time(timestamp, format='unix')
-                weather_obj_list.append(WeatherData.create(time_obj, variable,
-                                                           values_use[count]))
+            if times_use is not None:
+                for count, timestamp in enumerate(times_use.tolist()):
+                    time_obj = Time(timestamp, format='unix')
+                    weather_obj_list.append(WeatherData.create(time_obj, variable,
+                                                               values_use[count]))
 
     raise tornado.gen.Return(weather_obj_list)
 
