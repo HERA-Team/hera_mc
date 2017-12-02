@@ -57,6 +57,8 @@ def _reduce_time_vals(times, vals, period, strategy='decimate'):
 
     # the // operator is a floored divide.
     times_keep, inds = np.unique((times // period) * period, return_index=True)
+    times_keep = sorted(times_keep)
+    inds = sorted(inds)
     if times_keep[0] < np.min(times):
         times_keep = times_keep[1:]
         inds = inds[1:]
@@ -175,8 +177,8 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
     weather_obj_list = []
     for sensor_name, history in histories.items():
         variable = sensor_var_dict[sensor_name]
-        value_times = []
-        sensor_values = []
+        # value_times = []
+        sensor_data = {}
         for item in history:
             # status is usually nominal, but can indicate sensor errors.
             # Since we can't do anything about those and the data might be bad, ignore them
@@ -194,16 +196,16 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
             else:
                 timestamp = item.timestamp
             # sometimes there are duplicates. Protect against that
-            if timestamp not in value_times:
-                value_times.append(timestamp)
-                sensor_values.append(float(item.value))
+            if timestamp not in sensor_data.keys():
+                # value_times.append(timestamp)
+                sensor_data[timestamp] = float(item.value)
 
         if len(value_times):
             reduction = weather_sensor_dict[variable]['reduction']
             period = weather_sensor_dict[variable]['period']
 
-            times_use, values_use = _reduce_time_vals(np.array(value_times),
-                                                      np.array(sensor_values),
+            times_use, values_use = _reduce_time_vals(np.array(sensor_data.keys()),
+                                                      np.array(sensor_data.values()),
                                                       period, strategy=reduction)
             if times_use is not None:
                 for count, timestamp in enumerate(times_use.tolist()):
