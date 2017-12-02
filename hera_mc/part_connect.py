@@ -292,6 +292,19 @@ def get_part_revisions(hpn, session=None):
     return revisions
 
 
+class Dubitable(MCDeclarativeBase):
+    """
+    A table to track the dubitable antennas.
+
+    dubitable:  list of "unapproved" antennas
+    start_gpstime:  start time of list
+    stop_gpstime:  stop time of list
+    """
+
+    start_gpstime = Column(BigInteger, nullable=False)
+    stop_gpstime = Column(BigInteger)
+
+
 class PartInfo(MCDeclarativeBase):
     """
     A table for logging test information etc for parts.
