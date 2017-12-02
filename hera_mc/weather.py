@@ -57,8 +57,6 @@ def _reduce_time_vals(times, vals, period, strategy='decimate'):
 
     # the // operator is a floored divide.
     times_keep, inds = np.unique((times // period) * period, return_index=True)
-    times_keep = np.sort(times_keep)
-    inds = np.sort(inds)
     if times_keep[0] < np.min(times):
         times_keep = times_keep[1:]
         inds = inds[1:]
@@ -201,7 +199,7 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
                 sensor_data.append(float(item.value))
                 duplicate_check[timestamp] = 1
 
-        if len(sensor_data.keys()):
+        if len(sensor_data):
             reduction = weather_sensor_dict[variable]['reduction']
             period = weather_sensor_dict[variable]['period']
 

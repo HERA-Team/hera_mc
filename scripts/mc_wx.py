@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, print_function
 
 from hera_mc import cm_utils, mc
 import sys
+from astropy.time import Time
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
@@ -26,7 +27,6 @@ if __name__ == '__main__':
 
     variables = cm_utils.listify(args.variables)
     if args.last_period:
-        from astropy.time import Time
         from astropy.time import TimeDelta
         stop_time = Time.now()
         start_time = stop_time - TimeDelta(float(args.last_period) / (60.0 * 24.0), format='jd')
@@ -42,6 +42,7 @@ if __name__ == '__main__':
         db = mc.connect_to_mc_db(args)
         session = db.sessionmaker()
         session.add_weather_data_from_sensors(start_time, stop_time, variables)
+        session.commit()
     else:
         from hera_mc import weather
         wx = weather.create_from_sensors(start_time, stop_time, variables)
