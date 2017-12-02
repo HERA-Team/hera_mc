@@ -47,4 +47,5 @@ if __name__ == '__main__':
         wx = weather.create_from_sensors(start_time, stop_time, variables)
         for w in wx:
             displayTime = cm_utils.get_displayTime(Time(w.time, format='gps'))
-            print("{}: {} ({:.0f}) -- {}".format(w.variable, displayTime, w.time, w.value))
+            units = weather.weather_sensor_dict[w.variable]['units']
+            print("{}: {} ({:.0f}) = {} {}".format(w.variable, displayTime, w.time, w.value, units))
