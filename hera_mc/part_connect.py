@@ -162,7 +162,7 @@ def update_part(session=None, data=None, add_new_part=False):
 
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
@@ -277,7 +277,7 @@ def get_part_revisions(hpn, session=None):
     uhpn = hpn.upper()
     close_session_when_done = False
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
@@ -306,10 +306,11 @@ class Dubitable(MCDeclarativeBase):
 
     start_gpstime = Column(BigInteger, nullable=False, primary_key=True)
     stop_gpstime = Column(BigInteger)
-    ant_list = Column(ARRAY(Integer), nullable=False)
+    ant_list = Column(ARRAY(String), nullable=False)
 
     def __repr__(self):
-        return ('<{len(self.ant_list)} dubitable entries>'.format(self=self))
+        return ('<{self.start_gpstime}>'.format(self=self))
+    #    return ('<{} dubitable entries>'.format(len(self.ant_list)))
 
 
 def update_dubitables(session=None, transition_gpstime=None, data=None):
@@ -327,19 +328,21 @@ def update_dubitables(session=None, transition_gpstime=None, data=None):
 
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
     last_one = session.query(Dubitable).filter(Dubitable.stop_gpstime is None)
-    if last_one:  # Stop the previous valid list.
-        old_dubi = last_one[0]
+    print(last_one.first())
+    if last_one.first():  # Stop the previous valid list.
+        old_dubi = last_one.first()
         old_dubi.stop_gpstime = transition_gpstime
         session.add(old_dubi)
 
     new_dubi = Dubitable()
     new_dubi.start_gpstime = transition_gpstime + 1
-    new_dubi.data = data
+    new_dubi.ant_list = ARRAY(data)
+    print(new_dubi)
     session.add(new_dubi)
     session.commit()
     data_dict = {'transition_gpstime': transition_gpstime}
@@ -389,7 +392,7 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
     """
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
     part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn.upper()) &
@@ -654,7 +657,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
 
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
