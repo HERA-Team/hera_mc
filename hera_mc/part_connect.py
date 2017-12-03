@@ -15,6 +15,7 @@ import math
 from astropy.time import Time
 
 from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, func
+from sqlalchemy.dialects.postgresql import ARRAY
 
 from . import MCDeclarativeBase, NotNull
 
@@ -296,13 +297,55 @@ class Dubitable(MCDeclarativeBase):
     """
     A table to track the dubitable antennas.
 
-    dubitable:  list of "unapproved" antennas
     start_gpstime:  start time of list
     stop_gpstime:  stop time of list
+    ant_list:  list of "unapproved" antennas
     """
 
-    start_gpstime = Column(BigInteger, nullable=False)
+    start_gpstime = Column(BigInteger, nullable=False, primary_key=True)
     stop_gpstime = Column(BigInteger)
+    ant_list = Column(ARRAY(Integer), nullable=False)
+
+    def __repr__(self):
+        return ('<{len(self.ant_list)} dubitable entries>'.format(self=self))
+
+
+def update_dubitables(session=None, transition_gpstime, data=None):
+    """
+    update the database given a new list of dubitable antennas.
+    It will stop the previous list at transition_gpstime and start the new one
+    at transition_gpstime + 1sec
+
+    Parameters:
+    ------------
+    session:  db session to use
+    transition_gpstime:  time to make the change
+    data:  list of antennas
+    """
+
+    close_session_when_done = False
+    if session is None:
+        db = mc.connect_mc_db()
+        session = db.sessionmaker()
+        close_session_when_done = True
+
+    last_one = session.query(Dubitable).filter(Dubitable.stop_gpstime is None)
+    if last_one:  # Stop the previous valid list.
+        old_dubi = last_one[0]
+        old_dubi.stop_gpstime = transition_gpstime
+        session.add(old_dubi)
+
+    new_dubi = Dubitable()
+    new_dubi.start_gpstime = transition_gpstime + 1
+    new_dubi.data = data
+    session.add(new_dubi)
+    session.commit()
+    data_dict = {'transition_gpstime': transition_gpstime}
+    data_dict = {'ant_list:len': len(data)}
+    cm_utils.log('part_connect dubitable update', data_dict=data_dict)
+
+    if close_session_when_done:
+        session.close()
 
 
 class PartInfo(MCDeclarativeBase):

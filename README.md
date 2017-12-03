@@ -21,7 +21,7 @@ Be sure to do all your work on a branch off of master.
 5. Run `alembic revision --autogenerate -m 'version description'` to create a new alembic revision file that will reflect the changes to the database schema you just introduced. Inspect the resulting file carefully -- alembic's autogeneration is very clever but it's certainly not perfect. It tends to make more mistakes with table or column alterations than with table creations.
 4. Run `alembic upgrade head` to apply your schema changes. At this point it's a very good idea to inspect the database table (using the psql command line) to make sure the right thing happened. It's also a very good idea to run `alembic downgrade -1` to back up to before your revision and check that the database looks right (of course you then need to re-run the upgrade command to get back to where you meant to be.)
 5. Run `nosetests` to check that all the tests pass.
-6. When you're satisified that everything works as expected, create a pull request on github to ask for a code review and to get your changes integrated into master.
+6. When you're satisfied that everything works as expected, create a pull request on github to ask for a code review and to get your changes integrated into master.
 7. Once the changes have been incorporated into master, you can log onto site, pull the master branch and run `alembic upgrade head` to update the onsite database to the new schema.
 
 # Deleting all the tables in a database (in psql shell)
