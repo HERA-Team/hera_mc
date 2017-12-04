@@ -45,19 +45,30 @@ class Handling:
         cofa = self.geo.cofa()
         return cofa
 
-    def get_dubitable_list(self):
+    def get_dubitable_list(self, date='now'):
         """
-        Returns a list with the dubitable antennas.
+        Returns start_time and a list with the dubitable antennas.
+        If date is supplied, returns for that date, otherwise now.
+
+        Parameters:
+        ------------
+        date:  something understandable by cm_utils.get_astropytime
         """
-        last_one = self.session.query(part_connect.Dubitable).filter(part_connect.Dubitable.stop_gpstime == None)
-        if last_one.count() == 1:  # Stop the previous valid list.
-            dubi = last_one.first()
-        elif last_one.count() > 1:
-            raise ValueError('Too many open dubitable lists.')
+
+        at_date = cm_utils.get_astropytime(date)
+        fnd = []
+        for dubi in self.session.query(part_connect.Dubitable):
+            start_time = cm_utils.get_astropytime(dubi.start_gpstime)
+            stop_time = cm_utils.get_astropytime(dubi.stop_gpstime)
+            if cm_utils.is_active(at_date, start_time, stop_time):
+                fnd.append(dubi)
+        if len(fnd) == 1:
+            dubi = fnd[0]
+            return Time(dubi.start_gpstime, format='gps'), cm_utils.listify(dubi.ant_list)
+        elif len(fnd) == 0:
+            return None, None
         else:
-            raise ValueError('No current one found.')
-        start_gpstime = dubi.start_gpstime
-        return cm_utils.listify(dubi.ant_list)
+            raise ValueError('Too many open dubitable lists.')
 
     def get_all_fully_connected_at_date(self, at_date, station_types_to_check='all'):
         """

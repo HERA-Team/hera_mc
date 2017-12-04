@@ -30,14 +30,6 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
     return git_hash
 
 
-def future_date():
-    """
-    Future is defined here, since defining a far FUTURE_DATE typically gives a
-    warning about UTC vs UT1 etc
-    """
-    return Time.now() + TimeDelta(300, format='jd')
-
-
 def log(msg, **kwargs):
     fp = open(mc.cm_log_file, 'a')
     dt = Time.now()
@@ -63,6 +55,7 @@ def log(msg, **kwargs):
     fp.close()
 
 
+# #######################################Key stuff
 def make_part_key(hpn, rev):
     return ":".join([hpn, rev]).strip()
 
@@ -113,6 +106,7 @@ def add_verbosity_args(parser):
                         choices=['l', 'm', 'h'], default="h")
 
 
+# ##############################################DATE STUFF
 def add_date_time_args(parser):
     """Add standardized "--date" and "--time" arguments to an ArgParser object.
     Their values should then be converted into a Python DateTime object using
@@ -126,9 +120,42 @@ def add_date_time_args(parser):
         '--time', help="UTC hh:mm or float (hours), must include --date if use --time", default=0.0)
 
 
+def is_active(at_date, start_date, stop_date):
+    stop_date = get_stopdate(stop_date)
+    return at_date >= start_date and at_date <= stop_date
+
+
+def future_date():
+    """
+    Future is defined here, since defining a far FUTURE_DATE typically gives a
+    warning about UTC vs UT1 etc
+    """
+    return Time.now() + TimeDelta(300, format='jd')
+
+
+def get_stopdate(stop_date):
+    if isinstance(stop_date, Time):
+        return stop_date
+    else:
+        return future_date()
+
+
+def get_displayTime(display):
+    if isinstance(display, str) and display.lower() != 'now':
+        d = display
+    else:
+        d = get_astropytime(display)
+
+    if d is None:
+        d = 'None'
+    elif isinstance(d, Time):
+        d = "{:%Y-%m-%d %H:%M:%S}".format(d.datetime)
+    return d
+
+
 def get_astropytime(_date, _time=0):
     """
-    Take in various incarnations of _date/_time and return an astropy.Time object
+    Take in various incarnations of _date/_time and return an astropy.Time object or None
     """
 
     add_time = 0.
@@ -137,7 +164,10 @@ def get_astropytime(_date, _time=0):
         return_date = _date
     elif _date is None or _date is False:
         return_date = _date
-    else:
+    elif isinstance(_date, (int, long, float)):
+        if int(_date) > 1000000000:
+            return Time(_date, format='gps')
+    elif isinstance(_date, str):
         if _date == '<':
             return_date = Time(PAST_DATE, scale='utc')
         elif _date == '>':
@@ -146,7 +176,7 @@ def get_astropytime(_date, _time=0):
             return_date = None
         elif _date.lower() == 'now':
             return_date = Time.now()
-        elif _date is not None:
+        elif isinstance(_date, str):
             _date = _date.replace('/', '-')
             try:
                 return_date = Time(_date, scale='utc')
@@ -164,6 +194,9 @@ def get_astropytime(_date, _time=0):
                 except ValueError:
                     raise ValueError('Invalid format:  time should be H[:M[:S]] '
                                      '(HMS can be float or int)')
+        else:
+            raise TypeError("Not supported:  type {}".format(type(_date)))
+
         if return_date is not None:
             return_date += TimeDelta(add_time, format='sec')
     return return_date
@@ -220,35 +253,6 @@ def get_date_from_pair(d1, d2, ret='earliest'):
             return d1 if d1 > d2 else d2
     else:
         raise ValueError("Must supply earliest/latest.")
-
-
-def get_displayTime(display):
-    if isinstance(display, str):
-        if display.lower() == 'now':
-            d = Time.now()
-        else:
-            d = display
-    elif display is None:
-        d = 'None'
-    elif not isinstance(display, Time):
-        d = 'N/A'
-    else:
-        d = display
-    if isinstance(d, Time):
-        d = "{:%Y-%m-%d %H:%M:%S}".format(d.datetime)
-    return d
-
-
-def get_stopdate(stop_date):
-    if isinstance(stop_date, Time):
-        return stop_date
-    else:
-        return future_date()
-
-
-def is_active(at_date, start_date, stop_date):
-    stop_date = get_stopdate(stop_date)
-    return at_date >= start_date and at_date <= stop_date
 
 
 def query_default(a, args):
