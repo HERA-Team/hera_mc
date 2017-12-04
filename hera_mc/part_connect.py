@@ -14,8 +14,8 @@ from tabulate import tabulate
 import math
 from astropy.time import Time
 
-from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, func
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Text, func
+#from sqlalchemy.dialects.postgresql import ARRAY
 
 from . import MCDeclarativeBase, NotNull
 
@@ -304,9 +304,9 @@ class Dubitable(MCDeclarativeBase):
 
     __tablename__ = 'dubitable'
 
-    start_gpstime = Column(BigInteger, nullable=False, primary_key=True)
+    start_gpstime = Column(BigInteger, primary_key=True)
     stop_gpstime = Column(BigInteger)
-    ant_list = Column('ant_list', ARRAY(String), nullable=False)
+    ant_list = Column(Text, nullable=False)
 
     def __repr__(self):
         return ('<{self.start_gpstime}>'.format(self=self))
@@ -341,12 +341,15 @@ def update_dubitables(session=None, transition_gpstime=None, data=None):
 
     new_dubi = Dubitable()
     new_dubi.start_gpstime = transition_gpstime + 1
-    new_dubi.ant_list = ARRAY(data)
+    new_dubi.ant_list = ''
+    for a in data:
+        new_dubi.ant_list += (str(a) + ',')
+    new_dubi.ant_list = new_dubi.ant_list.strip(',')
     print(new_dubi)
     session.add(new_dubi)
     session.commit()
     data_dict = {'transition_gpstime': transition_gpstime}
-    data_dict = {'ant_list:len': len(data)}
+    data_dict = {'ant_list:len': [len(data)]}
     cm_utils.log('part_connect dubitable update', data_dict=data_dict)
 
     if close_session_when_done:
