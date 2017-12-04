@@ -25,19 +25,19 @@ katportal_url = 'http://portal.mkat.karoo.kat.ac.za/api/client'
 #   https://github.com/ska-sa/katportalclient/tree/master/examples
 weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_mean_wind_speed',
                                       'units': 'm/s',
-                                      'reduction': 'mean', 'period': 60,
+                                      'reduction': 'mean', 'period': 300,
                                       'description': "Mean of  ['wind.wind-speed', 'weather.wind-speed'] in (600 * 1.0s) window (report period: 1s)"},
                        'wind_gust': {'sensor_name': 'anc_gust_wind_speed',
                                      'units': 'm/s',
-                                     'reduction': 'max', 'period': 60,
+                                     'reduction': 'max', 'period': 120,
                                      'description': "Max of  ['wind.wind-speed', 'weather.wind-speed'] in (3 * 1.0s) window (report period: 1s)"},
                        'wind_direction': {'sensor_name': 'anc_wind_wind_direction',
                                           'units': 'deg',
-                                          'reduction': 'decimate', 'period': 1,
+                                          'reduction': 'mean', 'period': 30,
                                           'description': "Wind direction angle (report period: 10s)"},
                        'temperature': {'sensor_name': 'anc_weather_temperature',
                                        'units': 'deg Celsius',
-                                       'reduction': 'decimate', 'period': 1,
+                                       'reduction': 'decimate', 'period': 6,
                                        'description': "Air temperature (report period: 10s)"},
                        'humidity': {'sensor_name': 'anc_weather_humidity',
                                     'units': 'percent',
@@ -196,8 +196,8 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
             if timestamp > sensor_times[-1]:
                 sensor_times.append(timestamp)
                 sensor_data.append(float(item.value))
+        del(sensor_times[0])
         if len(sensor_data):
-            del(sensor_times[0])
             reduction = weather_sensor_dict[variable]['reduction']
             period = weather_sensor_dict[variable]['period']
 
