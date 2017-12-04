@@ -15,7 +15,6 @@ import math
 from astropy.time import Time
 
 from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Text, func
-#from sqlalchemy.dialects.postgresql import ARRAY
 
 from . import MCDeclarativeBase, NotNull
 
