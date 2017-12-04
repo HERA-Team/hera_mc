@@ -306,7 +306,7 @@ class Dubitable(MCDeclarativeBase):
 
     start_gpstime = Column(BigInteger, nullable=False, primary_key=True)
     stop_gpstime = Column(BigInteger)
-    ant_list = Column(ARRAY(String), nullable=False)
+    ant_list = Column('ant_list', ARRAY(String), nullable=False)
 
     def __repr__(self):
         return ('<{self.start_gpstime}>'.format(self=self))
