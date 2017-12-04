@@ -72,7 +72,7 @@ class Handling:
                 alist = cm_utils.listify(fnd[0].ant_list)
                 return (start, stop, alist)
             else:
-                return fnd[0].ant_list
+                return str(fnd[0].ant_list)
         elif len(fnd) == 0:
             return None
         else:
