@@ -346,7 +346,6 @@ def update_dubitables(session=None, transition_gpstime=None, data=None):
     for a in data:
         new_dubi.ant_list += (str(a) + ',')
     new_dubi.ant_list = new_dubi.ant_list.strip(',')
-    print(new_dubi)
     session.add(new_dubi)
     session.commit()
     data_dict = {'transition_gpstime': transition_gpstime}
