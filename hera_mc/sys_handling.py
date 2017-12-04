@@ -63,12 +63,16 @@ class Handling:
             if cm_utils.is_active(at_date, start_time, stop_time):
                 fnd.append(dubi)
         if len(fnd) == 1:
-            dubi = fnd[0]
-            return Time(dubi.start_gpstime, format='gps'), cm_utils.listify(dubi.ant_list)
+            start = Time(fnd[0].start_gpstime, format='gps')
+            stop = fnd[0].stop_gpstime
+            if stop is not None:
+                stop = Time(stop, format='gps')
+            alist = cm_utils.listify(fnd[0].ant_list)
+            return start, stop, alist
         elif len(fnd) == 0:
-            return None, None
+            return None, None, None
         else:
-            raise ValueError('Too many open dubitable lists.')
+            raise ValueError('Too many open dubitable lists ({}).'.format(len(fnd)))
 
     def get_all_fully_connected_at_date(self, at_date, station_types_to_check='all'):
         """

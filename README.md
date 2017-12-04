@@ -17,13 +17,11 @@ Be sure to do all your work on a branch off of master.
 1. Create a new module under `hera_mc`, basing on e.g. `subsystem_error.py` or `observation.py`.
 2. Add `from . import my_new_module` line in `__init__.py`.
 3. Add methods to interact with your new table. This is most commonly done in `mc_session.py`, and there are many examples there to refer to.
-4. Add testing code to cover these methods.
---be sure to python setup.py install
+4. Add testing code to cover these methods. -- Be sure to `python setup.py install` before the next step.
 5. Run `alembic revision --autogenerate -m 'version description'` to create a new alembic revision file that will reflect the changes to the database schema you just introduced. Inspect the resulting file carefully -- alembic's autogeneration is very clever but it's certainly not perfect. It tends to make more mistakes with table or column alterations than with table creations.
-4. Run `alembic upgrade head` to apply your schema changes. At this point it's a very good idea to inspect the database table (using the psql command line) to make sure the right thing happened. It's also a very good idea to run `alembic downgrade -1` to back up to before your revision and check that the database looks right (of course you then need to re-run the upgrade command to get back to where you meant to be.)
+4. Run `alembic upgrade head` to apply your schema changes -- be sure to `python setup.py install` first. At this point it's a very good idea to inspect the database table (using the psql command line) to make sure the right thing happened. It's also a very good idea to run `alembic downgrade -1` to back up to before your revision and check that the database looks right (of course you then need to re-run the upgrade command to get back to where you meant to be.)
 5. Run `nosetests` to check that all the tests pass.
-
-6. git add the alembic/version that was created
+6. git add the alembic/version that was created and commit your work.
 7. When you're satisfied that everything works as expected, create a pull request on github to ask for a code review and to get your changes integrated into master.
 8. Once the changes have been incorporated into master, you can log onto site, pull the master branch and run `alembic upgrade head` to update the onsite database to the new schema.
 
