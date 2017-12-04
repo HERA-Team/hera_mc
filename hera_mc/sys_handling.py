@@ -45,7 +45,7 @@ class Handling:
         cofa = self.geo.cofa()
         return cofa
 
-    def get_dubitable_list(self, date='now'):
+    def get_dubitable_list(self, date='now', return_full=False):
         """
         Returns start_time and a list with the dubitable antennas.
         If date is supplied, returns for that date, otherwise now.
@@ -53,6 +53,7 @@ class Handling:
         Parameters:
         ------------
         date:  something understandable by cm_utils.get_astropytime
+        return_full:  boolean to return the full object as opposed to the csv string
         """
 
         at_date = cm_utils.get_astropytime(date)
@@ -63,14 +64,17 @@ class Handling:
             if cm_utils.is_active(at_date, start_time, stop_time):
                 fnd.append(dubi)
         if len(fnd) == 1:
-            start = Time(fnd[0].start_gpstime, format='gps')
-            stop = fnd[0].stop_gpstime
-            if stop is not None:
-                stop = Time(stop, format='gps')
-            alist = cm_utils.listify(fnd[0].ant_list)
-            return start, stop, alist
+            if return_full:
+                start = Time(fnd[0].start_gpstime, format='gps')
+                stop = fnd[0].stop_gpstime
+                if stop is not None:
+                    stop = Time(stop, format='gps')
+                alist = cm_utils.listify(fnd[0].ant_list)
+                return (start, stop, alist)
+            else:
+                return fnd[0].ant_list
         elif len(fnd) == 0:
-            return None, None, None
+            return None
         else:
             raise ValueError('Too many open dubitable lists ({}).'.format(len(fnd)))
 
