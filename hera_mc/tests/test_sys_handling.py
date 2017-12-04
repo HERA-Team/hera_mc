@@ -16,7 +16,7 @@ import numpy as np
 from hera_mc import geo_location, sys_handling, mc, cm_transfer, part_connect
 from hera_mc import cm_hookup, cm_utils, cm_revisions
 from hera_mc.tests import TestHERAMC
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
 
 
 class TestSys(TestHERAMC):
@@ -76,6 +76,15 @@ class TestSys(TestHERAMC):
         self.assertEqual(cofa.lat, corr_dict['cofa_lat'])
         self.assertEqual(cofa.lon, corr_dict['cofa_lon'])
         self.assertEqual(cofa.elevation, corr_dict['cofa_alt'])
+
+    def test_dubitable(self):
+        at_date = cm_utils.get_astropytime('2017-01-01')
+        part_connect.update_dubitable(self.test_session, at_date.gps, ['1', '2', '3'])
+        a = self.h.get_dubitable_list()
+        alist = a.split(",")
+        self.assertEqual(len(alist), 3)
+        a = self.h.get_dubitable_list(return_full=True)
+        self.assertEqual(len(a[2]), 3)
 
     def test_correlator_levels(self):
         at_date = cm_utils.get_astropytime('2017-07-03')

@@ -322,7 +322,7 @@ def update_dubitable(session=None, transition_gpstime=None, data=None):
     Parameters:
     ------------
     session:  db session to use
-    transition_gpstime:  time to make the change
+    transition_gpstime:  gps time to make the change
     data:  list of antennas
     """
 
