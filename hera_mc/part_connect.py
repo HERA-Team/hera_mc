@@ -313,7 +313,7 @@ class Dubitable(MCDeclarativeBase):
     #    return ('<{} dubitable entries>'.format(len(self.ant_list)))
 
 
-def update_dubitables(session=None, transition_gpstime=None, data=None):
+def update_dubitable(session=None, transition_gpstime=None, data=None):
     """
     update the database given a new list of dubitable antennas.
     It will stop the previous list at transition_gpstime and start the new one
