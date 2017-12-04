@@ -45,6 +45,18 @@ class Handling:
         cofa = self.geo.cofa()
         return cofa
 
+    def get_dubitable_list(self):
+        last_one = session.query(Dubitable).filter(Dubitable.stop_gpstime == None)
+        if last_one.count() == 1:  # Stop the previous valid list.
+            dubi = last_one.first()
+            transition_gpstime = dubi.stop_gpstime
+        elif last_one.count() > 1:
+            raise ValueError('Too many open dubitable lists.')
+        else:
+            raise ValueError('No current one found.')
+
+        return cm_utils.listify(dubi)
+
     def get_all_fully_connected_at_date(self, at_date, station_types_to_check='all'):
         """
         Returns a list of dictionaries of all of the locations fully connected at_date
