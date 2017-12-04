@@ -348,7 +348,7 @@ def update_dubitable(session=None, transition_gpstime=None, data=None):
     new_dubi.ant_list = new_dubi.ant_list.strip(',')
     session.add(new_dubi)
     session.commit()
-    data_dict = {'start_gpstime': transition_gpstime, 'ant_list:len': [len(data)]}
+    data_dict = {'start_gpstime': [transition_gpstime], 'ant_list:len': [len(data)]}
     cm_utils.log('part_connect dubitable update', data_dict=data_dict)
 
     if close_session_when_done:
