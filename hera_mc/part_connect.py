@@ -342,6 +342,7 @@ def update_dubitable(session=None, transition_gpstime=None, data=None):
 
     new_dubi = Dubitable()
     new_dubi.start_gpstime = transition_gpstime + 1
+    new_dubi.ant_list = ''
     for a in data:
         new_dubi.ant_list += (str(a) + ',')
     new_dubi.ant_list = new_dubi.ant_list.strip(',')
