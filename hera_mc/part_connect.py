@@ -332,12 +332,13 @@ def update_dubitables(session=None, transition_gpstime=None, data=None):
         session = db.sessionmaker()
         close_session_when_done = True
 
-    last_one = session.query(Dubitable).filter(Dubitable.stop_gpstime is None)
-    print(last_one.first())
-    if last_one.first():  # Stop the previous valid list.
+    last_one = session.query(Dubitable).filter(Dubitable.stop_gpstime == None)
+    if last_one.count() == 1:  # Stop the previous valid list.
         old_dubi = last_one.first()
         old_dubi.stop_gpstime = transition_gpstime
         session.add(old_dubi)
+    elif last_one.count() > 1:
+        raise ValueError('Too many open dubitable lists.')
 
     new_dubi = Dubitable()
     new_dubi.start_gpstime = transition_gpstime + 1
