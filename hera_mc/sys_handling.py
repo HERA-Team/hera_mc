@@ -46,15 +46,17 @@ class Handling:
         return cofa
 
     def get_dubitable_list(self):
+        """
+        Returns a list with the dubitable antennas.
+        """
         last_one = self.session.query(part_connect.Dubitable).filter(part_connect.Dubitable.stop_gpstime == None)
         if last_one.count() == 1:  # Stop the previous valid list.
             dubi = last_one.first()
-            transition_gpstime = dubi.stop_gpstime
         elif last_one.count() > 1:
             raise ValueError('Too many open dubitable lists.')
         else:
             raise ValueError('No current one found.')
-
+        start_gpstime = dubi.start_gpstime
         return cm_utils.listify(dubi.ant_list)
 
     def get_all_fully_connected_at_date(self, at_date, station_types_to_check='all'):
