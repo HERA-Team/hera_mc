@@ -298,7 +298,9 @@ class Dubitable(MCDeclarativeBase):
 
     start_gpstime:  start time of list
     stop_gpstime:  stop time of list
-    ant_list:  list of "unapproved" antennas
+    ant_list:  list of dubitable antennas.
+               It is a comma-separated list of antenna integers.  E.g. 1,4,5,23,51
+               (No spaces betweeen).
     """
 
     __tablename__ = 'dubitable'
@@ -308,8 +310,7 @@ class Dubitable(MCDeclarativeBase):
     ant_list = Column(Text, nullable=False)
 
     def __repr__(self):
-        return ('<{self.start_gpstime}>'.format(self=self))
-    #    return ('<{} dubitable entries>'.format(len(self.ant_list)))
+        return ('<{self.start_gpstime}, {self.stop_gpstime}, {self.ant_list}>'.format(self=self))
 
 
 def update_dubitable(session=None, transition_gpstime=None, data=None):
@@ -322,7 +323,8 @@ def update_dubitable(session=None, transition_gpstime=None, data=None):
     ------------
     session:  db session to use
     transition_gpstime:  gps time to make the change
-    data:  list of antennas
+    data:  list of antennas, specified by integers.
+           Same number as the HH#, but leave off the 'HH'
     """
 
     close_session_when_done = False
@@ -341,10 +343,7 @@ def update_dubitable(session=None, transition_gpstime=None, data=None):
 
     new_dubi = Dubitable()
     new_dubi.start_gpstime = transition_gpstime + 1
-    new_dubi.ant_list = ''
-    for a in data:
-        new_dubi.ant_list += (str(a) + ',')
-    new_dubi.ant_list = new_dubi.ant_list.strip(',')
+    new_dubi.ant_list = ','.join(str(a) for a in data)
     session.add(new_dubi)
     session.commit()
     data_dict = {'start_gpstime': [transition_gpstime], 'ant_list:len': [len(data)]}

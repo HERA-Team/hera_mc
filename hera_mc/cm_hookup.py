@@ -497,7 +497,7 @@ class Hookup:
             import sys
             file = sys.stdout
         if output_format == 'html':
-            dtime = cm_utils.get_displayTime('now') + '\n'
+            dtime = cm_utils.get_time_for_display('now') + '\n'
             table = '<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime + '\t\t</pre>\n\t</body>\n</html>\n'
         print(table, file=file)
 

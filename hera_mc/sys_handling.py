@@ -63,6 +63,8 @@ class Handling:
             stop_time = cm_utils.get_astropytime(dubi.stop_gpstime)
             if cm_utils.is_active(at_date, start_time, stop_time):
                 fnd.append(dubi)
+        if len(fnd) == 0:
+            return None
         if len(fnd) == 1:
             if return_full:
                 start = Time(fnd[0].start_gpstime, format='gps')
@@ -73,10 +75,8 @@ class Handling:
                 return (start, stop, alist)
             else:
                 return str(fnd[0].ant_list)
-        elif len(fnd) == 0:
-            return None
-        else:
-            raise ValueError('Too many open dubitable lists ({}).'.format(len(fnd)))
+
+        raise ValueError('Too many open dubitable lists ({}).'.format(len(fnd)))
 
     def get_all_fully_connected_at_date(self, at_date, station_types_to_check='all'):
         """

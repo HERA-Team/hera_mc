@@ -240,8 +240,8 @@ class Handling:
                          pdpart.hpn_rev,
                          pdpart.hptype,
                          pdpart.manufacturer_number,
-                         cm_utils.get_displayTime(pdpart.start_date),
-                         cm_utils.get_displayTime(pdpart.stop_date),
+                         cm_utils.get_time_for_display(pdpart.start_date),
+                         cm_utils.get_time_for_display(pdpart.stop_date),
                          is_connected]
                 if verbosity == 'h':
                     ptsin = ''
@@ -430,10 +430,10 @@ class Handling:
                        'Part': {'h': 5, 'm': 3}}
                 if pos['uStart'][verbosity] > -1:
                     del tdata[pos['uStart'][verbosity]]
-                    tdata.insert(pos['uStart'][verbosity], cm_utils.get_displayTime(start_date))
+                    tdata.insert(pos['uStart'][verbosity], cm_utils.get_time_for_display(start_date))
                 if pos['uStop'][verbosity] > -1:
                     del tdata[pos['uStop'][verbosity]]
-                    tdata.insert(pos['uStop'][verbosity], cm_utils.get_displayTime(stop_date))
+                    tdata.insert(pos['uStop'][verbosity], cm_utils.get_time_for_display(stop_date))
                 if pos['Upstream'][verbosity] > -1:
                     del tdata[pos['Upstream'][verbosity]]
                     tdata.insert(pos['Upstream'][verbosity], uup)
@@ -477,10 +477,10 @@ class Handling:
                     tdata.insert(pos['Downstream'][verbosity], ddn)
                 if pos['dStart'][verbosity] > -1:
                     del tdata[pos['dStart'][verbosity]]
-                    tdata.insert(pos['dStart'][verbosity], cm_utils.get_displayTime(start_date))
+                    tdata.insert(pos['dStart'][verbosity], cm_utils.get_time_for_display(start_date))
                 if pos['dStop'][verbosity] > -1:
                     del tdata[pos['dStop'][verbosity]]
-                    tdata.insert(pos['dStop'][verbosity], cm_utils.get_displayTime(stop_date))
+                    tdata.insert(pos['dStop'][verbosity], cm_utils.get_time_for_display(stop_date))
                 if verbosity == 'h' or verbosity == 'm':
                     table_data.append(tdata)
                 else:

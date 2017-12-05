@@ -136,15 +136,17 @@ def future_date():
 def get_stopdate(stop_date):
     if isinstance(stop_date, Time):
         return stop_date
-    else:
+    if stop_date is None:
         return future_date()
+    raise ValueError('Unexpected value for "stop_date" argument: %r' % (stop_date,))
 
 
-def get_displayTime(display):
-    if isinstance(display, str) and display.lower() != 'now':
-        d = display
-    else:
-        d = get_astropytime(display)
+def get_time_for_display(display):
+    """
+    Provide a reader-friendly time string for any time parse-able by get_astropytime -
+    if that results in None, then the string None is displayed.
+    """
+    d = get_astropytime(display)
 
     if d is None:
         d = 'None'
@@ -155,51 +157,43 @@ def get_displayTime(display):
 
 def get_astropytime(_date, _time=0):
     """
-    Take in various incarnations of _date/_time and return an astropy.Time object or None
+    Take in various incarnations of _date/_time and return an astropy.Time object or None.
+    - _time should either be a number in hours or HH:MM[:SS]
     """
 
-    add_time = 0.
-    return_date = None
     if isinstance(_date, Time):
-        return_date = _date
-    elif _date is None or _date is False:
-        return_date = _date
-    elif isinstance(_date, (int, long, float)):
+        return _date
+    if _date is None or _date is False:
+        return None
+    if isinstance(_date, (int, long, float)):
         if int(_date) > 1000000000:
             return Time(_date, format='gps')
-    elif isinstance(_date, str):
+        raise ValueError('Invalid format:  date as a number should be gps time, not {}.'.format(_date))
+    if isinstance(_date, str):
         if _date == '<':
-            return_date = Time(PAST_DATE, scale='utc')
-        elif _date == '>':
-            return_date = future_date()
-        elif _date.lower().replace('/', '') == 'na' or _date.lower() == 'none':
-            return_date = None
-        elif _date.lower() == 'now':
-            return_date = Time.now()
-        elif isinstance(_date, str):
-            _date = _date.replace('/', '-')
-            try:
-                return_date = Time(_date, scale='utc')
-            except ValueError:
-                raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
-            s_time = str(_time)
-            if ':' in s_time:
-                data = s_time.split(':')
-                add_time = float(data[0]) * 3600.0 + float(data[1]) * 60.0
-                if len(data) == 3:
-                    add_time += float(data[2])
-            else:
-                try:
-                    add_time = float(_time) * 3600.0
-                except ValueError:
-                    raise ValueError('Invalid format:  time should be H[:M[:S]] '
-                                     '(HMS can be float or int)')
-        else:
-            raise TypeError("Not supported:  type {}".format(type(_date)))
+            return Time(PAST_DATE, scale='utc')
+        if _date == '>':
+            return future_date()
+        if _date.lower() == 'now' or _date.lower() == 'current':
+            return Time.now()
+        if _date.lower().replace('/', '') == 'na' or _date.lower() == 'none':
+            return None
+        _date = _date.replace('/', '-')
+        try:
+            return_date = Time(_date, scale='utc')
+        except ValueError:
+            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
+        if isinstance(_time, (float, int)):
+            return return_date + TimeDelta(_time * 3600.0, format='sec')
+        if isinstance(_time, str) and ':' in _time:
+            data = _time.split(':')
+            add_time = float(data[0]) * 3600.0 + float(data[1]) * 60.0
+            if len(data) == 3:
+                add_time += float(data[2])
+            return return_date + TimeDelta(add_time, format='sec')
+        raise ValueError('Invalid format:  time should be H[:M[:S]].  If just H, can be float or int.')
 
-        if return_date is not None:
-            return_date += TimeDelta(add_time, format='sec')
-    return return_date
+    raise TypeError("Not supported:  type {}".format(type(_date)))
 
 
 def put_keys_in_numerical_order(keys):

@@ -293,7 +293,7 @@ class Handling:
                 print('\tlon/lat:  ', a.lon, a.lat)
                 print('\televation: ', a.elevation)
                 print('\tstation description ({}):  {}'.format(a.station_type, a.desc))
-                print('\tcreated:  ', cm_utils.get_displayTime(a.created_date))
+                print('\tcreated:  ', cm_utils.get_time_for_display(a.created_date))
             elif verbosity == 'l':
                 print(a)
         return True

@@ -48,4 +48,4 @@ if __name__ == '__main__':
         wx = weather.create_from_sensors(start_time, stop_time, variables)
         for w in wx:
             units = weather.weather_sensor_dict[w.variable]['units']
-            print("{}: {} ({:.0f}) = {} {}".format(w.variable, cm_utils.get_displayTime(w.time), w.time, w.value, units))
+            print("{}: {} ({:.0f}) = {} {}".format(w.variable, cm_utils.get_time_for_display(w.time), w.time, w.value, units))
