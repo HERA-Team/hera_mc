@@ -12,6 +12,7 @@ import subprocess
 from hera_mc import mc
 from astropy.time import Time
 from astropy.time import TimeDelta
+import datetime
 
 PAST_DATE = '2000-01-01'
 
@@ -163,6 +164,8 @@ def get_astropytime(_date, _time=0):
 
     if isinstance(_date, Time):
         return _date
+    if isinstance(_date, datetime.datetime):
+        return Time(_date, format='datetime')
     if _date is None or _date is False:
         return None
     if isinstance(_date, (int, long, float)):
