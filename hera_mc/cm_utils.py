@@ -159,7 +159,25 @@ def get_time_for_display(display):
 def get_astropytime(_date, _time=0):
     """
     Take in various incarnations of _date/_time and return an astropy.Time object or None.
-    - _time should either be a number in hours or HH:MM[:SS]
+    No time zone is allowed.
+
+    Returns:  either astropy Time or None
+
+    Parameters:
+    -----------
+    _date:  date in various formats:
+                astropy time:  just gets returned
+                datetime: just gets converted
+                int, long, float:  interpreted as gps_second
+                string:  '<' - PAST_DATE
+                         '>' - future_date()
+                         'now' or 'current'
+                         'YYYY/M/D' or 'YYYY-M-D'
+                None/False:  return None
+                string:  'na', 'n/a', or 'none' return None
+    _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string
+                float, int:  hours in decimal time
+                string:  HH[:MM[:SS]]
     """
 
     if isinstance(_date, Time):
@@ -188,11 +206,14 @@ def get_astropytime(_date, _time=0):
             raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
         if isinstance(_time, (float, int)):
             return return_date + TimeDelta(_time * 3600.0, format='sec')
-        if isinstance(_time, str) and ':' in _time:
-            data = _time.split(':')
-            add_time = float(data[0]) * 3600.0 + float(data[1]) * 60.0
-            if len(data) == 3:
-                add_time += float(data[2])
+        if isinstance(_time, str):
+            add_time = 0.0
+            time_v = _time.split(':')
+            if len(time_v) < 4:
+                for i, d in enumerate(time_v):
+                    add_time += (float(d)) * 3600.0 / (60.0**i)
+            else:
+                raise ValueError('Time can only have hours[:minutes[:seconds]].')
             return return_date + TimeDelta(add_time, format='sec')
         raise ValueError('Invalid format:  time should be H[:M[:S]].  If just H, can be float or int.')
 
