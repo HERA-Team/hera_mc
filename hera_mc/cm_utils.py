@@ -173,8 +173,8 @@ def get_astropytime(_date, _time=0):
                          '>' - future_date()
                          'now' or 'current'
                          'YYYY/M/D' or 'YYYY-M-D'
-                None/False:  return None
                 string:  'na', 'n/a', or 'none' return None
+                None/False:  return None
     _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string
                 float, int:  hours in decimal time
                 string:  HH[:MM[:SS]]
