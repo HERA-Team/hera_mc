@@ -166,15 +166,17 @@ def get_astropytime(_date, _time=0):
     Parameters:
     -----------
     _date:  date in various formats:
-                astropy time:  just gets returned
-                datetime: just gets converted
-                int, long, float:  interpreted as gps_second
-                string:  '<' - PAST_DATE
-                         '>' - future_date()
-                         'now' or 'current'
-                         'YYYY/M/D' or 'YYYY-M-D'
-                string:  'na', 'n/a', or 'none' return None
-                None/False:  return None
+                return astropy Time
+                    astropy Time:  just gets returned
+                    datetime: just gets converted
+                    int, long, float:  interpreted as gps_second
+                    string:  '<' - PAST_DATE
+                             '>' - future_date()
+                             'now' or 'current'
+                             'YYYY/M/D' or 'YYYY-M-D'
+                return None:
+                    string:  'none' return None
+                    None/False:  return None
     _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string
                 float, int:  hours in decimal time
                 string:  HH[:MM[:SS]]
@@ -197,7 +199,7 @@ def get_astropytime(_date, _time=0):
             return future_date()
         if _date.lower() == 'now' or _date.lower() == 'current':
             return Time.now()
-        if _date.lower().replace('/', '') == 'na' or _date.lower() == 'none':
+        if _date.lower() == 'none':
             return None
         _date = _date.replace('/', '-')
         try:
@@ -208,14 +210,12 @@ def get_astropytime(_date, _time=0):
             return return_date + TimeDelta(_time * 3600.0, format='sec')
         if isinstance(_time, str):
             add_time = 0.0
-            time_v = _time.split(':')
-            if len(time_v) < 4:
-                for i, d in enumerate(time_v):
-                    add_time += (float(d)) * 3600.0 / (60.0**i)
-            else:
-                raise ValueError('Time can only have hours[:minutes[:seconds]].')
+            for i, d in enumerate(_time.split(':')):
+                if i > 2:
+                    raise ValueError('Time can only have hours[:minutes[:seconds]].')
+                add_time += (float(d)) * 3600.0 / (60.0**i)
             return return_date + TimeDelta(add_time, format='sec')
-        raise ValueError('Invalid format:  time should be H[:M[:S]].  If just H, can be float or int.')
+        raise ValueError('Invalid format:  time should be H[:M[:S]].')
 
     raise TypeError("Not supported:  type {}".format(type(_date)))
 
