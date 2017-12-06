@@ -212,10 +212,10 @@ def get_astropytime(_date, _time=0):
             add_time = 0.0
             for i, d in enumerate(_time.split(':')):
                 if i > 2:
-                    raise ValueError('Time can only have hours[:minutes[:seconds]].')
+                    raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'.format(_time))
                 add_time += (float(d)) * 3600.0 / (60.0**i)
             return return_date + TimeDelta(add_time, format='sec')
-        raise ValueError('Invalid format:  time should be H[:M[:S]].')
+        raise ValueError('Invalid format:  time should be H[:M[:S]] (ints or floats)')
 
     raise TypeError("Not supported:  type {}".format(type(_date)))
 
