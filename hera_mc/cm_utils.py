@@ -12,6 +12,7 @@ import subprocess
 from hera_mc import mc
 from astropy.time import Time
 from astropy.time import TimeDelta
+import datetime
 
 PAST_DATE = '2000-01-01'
 
@@ -28,14 +29,6 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
     git_hash = subprocess.check_output(['git', '-C', cm_csv_path, 'rev-parse', 'HEAD'],
                                        stderr=subprocess.STDOUT).strip()
     return git_hash
-
-
-def future_date():
-    """
-    Future is defined here, since defining a far FUTURE_DATE typically gives a
-    warning about UTC vs UT1 etc
-    """
-    return Time.now() + TimeDelta(300, format='jd')
 
 
 def log(msg, **kwargs):
@@ -63,6 +56,7 @@ def log(msg, **kwargs):
     fp.close()
 
 
+# #######################################Key stuff
 def make_part_key(hpn, rev):
     return ":".join([hpn, rev]).strip()
 
@@ -93,7 +87,7 @@ def stringify(X):
 def listify(X):
     if X is None:
         return None
-    if isinstance(X, str) and ',' in X:
+    if isinstance(X, (str, unicode)) and ',' in X:
         return X.split(',')
     if isinstance(X, list):
         return X
@@ -113,6 +107,7 @@ def add_verbosity_args(parser):
                         choices=['l', 'm', 'h'], default="h")
 
 
+# ##############################################DATE STUFF
 def add_date_time_args(parser):
     """Add standardized "--date" and "--time" arguments to an ArgParser object.
     Their values should then be converted into a Python DateTime object using
@@ -126,47 +121,103 @@ def add_date_time_args(parser):
         '--time', help="UTC hh:mm or float (hours), must include --date if use --time", default=0.0)
 
 
+def is_active(at_date, start_date, stop_date):
+    stop_date = get_stopdate(stop_date)
+    return at_date >= start_date and at_date <= stop_date
+
+
+def future_date():
+    """
+    Future is defined here, since defining a far FUTURE_DATE typically gives a
+    warning about UTC vs UT1 etc
+    """
+    return Time.now() + TimeDelta(300, format='jd')
+
+
+def get_stopdate(stop_date):
+    if isinstance(stop_date, Time):
+        return stop_date
+    if stop_date is None:
+        return future_date()
+    raise ValueError('Unexpected value for "stop_date" argument: %r' % (stop_date,))
+
+
+def get_time_for_display(display):
+    """
+    Provide a reader-friendly time string for any time parse-able by get_astropytime -
+    if that results in None, then the string None is displayed.
+    """
+    d = get_astropytime(display)
+
+    if d is None:
+        d = 'None'
+    elif isinstance(d, Time):
+        d = "{:%Y-%m-%d %H:%M:%S}".format(d.datetime)
+    return d
+
+
 def get_astropytime(_date, _time=0):
     """
-    Take in various incarnations of _date/_time and return an astropy.Time object
+    Take in various incarnations of _date/_time and return an astropy.Time object or None.
+    No time zone is allowed.
+
+    Returns:  either astropy Time or None
+
+    Parameters:
+    -----------
+    _date:  date in various formats:
+                return astropy Time
+                    astropy Time:  just gets returned
+                    datetime: just gets converted
+                    int, long, float:  interpreted as gps_second
+                    string:  '<' - PAST_DATE
+                             '>' - future_date()
+                             'now' or 'current'
+                             'YYYY/M/D' or 'YYYY-M-D'
+                return None:
+                    string:  'none' return None
+                    None/False:  return None
+    _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string
+                float, int:  hours in decimal time
+                string:  HH[:MM[:SS]]
     """
 
-    add_time = 0.
-    return_date = None
     if isinstance(_date, Time):
-        return_date = _date
-    elif _date is None or _date is False:
-        return_date = _date
-    else:
+        return _date
+    if isinstance(_date, datetime.datetime):
+        return Time(_date, format='datetime')
+    if _date is None or _date is False:
+        return None
+    if isinstance(_date, (int, long, float)):
+        if int(_date) > 1000000000:
+            return Time(_date, format='gps')
+        raise ValueError('Invalid format:  date as a number should be gps time, not {}.'.format(_date))
+    if isinstance(_date, str):
         if _date == '<':
-            return_date = Time(PAST_DATE, scale='utc')
-        elif _date == '>':
-            return_date = future_date()
-        elif _date.lower().replace('/', '') == 'na' or _date.lower() == 'none':
-            return_date = None
-        elif _date.lower() == 'now':
-            return_date = Time.now()
-        elif _date is not None:
-            _date = _date.replace('/', '-')
-            try:
-                return_date = Time(_date, scale='utc')
-            except ValueError:
-                raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
-            s_time = str(_time)
-            if ':' in s_time:
-                data = s_time.split(':')
-                add_time = float(data[0]) * 3600.0 + float(data[1]) * 60.0
-                if len(data) == 3:
-                    add_time += float(data[2])
-            else:
-                try:
-                    add_time = float(_time) * 3600.0
-                except ValueError:
-                    raise ValueError('Invalid format:  time should be H[:M[:S]] '
-                                     '(HMS can be float or int)')
-        if return_date is not None:
-            return_date += TimeDelta(add_time, format='sec')
-    return return_date
+            return Time(PAST_DATE, scale='utc')
+        if _date == '>':
+            return future_date()
+        if _date.lower() == 'now' or _date.lower() == 'current':
+            return Time.now()
+        if _date.lower() == 'none':
+            return None
+        _date = _date.replace('/', '-')
+        try:
+            return_date = Time(_date, scale='utc')
+        except ValueError:
+            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
+        if isinstance(_time, (float, int)):
+            return return_date + TimeDelta(_time * 3600.0, format='sec')
+        if isinstance(_time, str):
+            add_time = 0.0
+            for i, d in enumerate(_time.split(':')):
+                if i > 2:
+                    raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'.format(_time))
+                add_time += (float(d)) * 3600.0 / (60.0**i)
+            return return_date + TimeDelta(add_time, format='sec')
+        raise ValueError('Invalid format:  time should be H[:M[:S]] (ints or floats)')
+
+    raise TypeError("Not supported:  type {}".format(type(_date)))
 
 
 def put_keys_in_numerical_order(keys):
@@ -220,35 +271,6 @@ def get_date_from_pair(d1, d2, ret='earliest'):
             return d1 if d1 > d2 else d2
     else:
         raise ValueError("Must supply earliest/latest.")
-
-
-def get_displayTime(display):
-    if isinstance(display, str):
-        if display.lower() == 'now':
-            d = Time.now()
-        else:
-            d = display
-    elif display is None:
-        d = 'None'
-    elif not isinstance(display, Time):
-        d = 'N/A'
-    else:
-        d = display
-    if isinstance(d, Time):
-        d = "{:%Y-%m-%d %H:%M:%S}".format(d.datetime)
-    return d
-
-
-def get_stopdate(stop_date):
-    if isinstance(stop_date, Time):
-        return stop_date
-    else:
-        return future_date()
-
-
-def is_active(at_date, start_date, stop_date):
-    stop_date = get_stopdate(stop_date)
-    return at_date >= start_date and at_date <= stop_date
 
 
 def query_default(a, args):

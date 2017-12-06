@@ -14,7 +14,7 @@ from tabulate import tabulate
 import math
 from astropy.time import Time
 
-from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, func
+from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Text, func
 
 from . import MCDeclarativeBase, NotNull
 
@@ -161,7 +161,7 @@ def update_part(session=None, data=None, add_new_part=False):
 
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
@@ -276,7 +276,7 @@ def get_part_revisions(hpn, session=None):
     uhpn = hpn.upper()
     close_session_when_done = False
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
@@ -290,6 +290,67 @@ def get_part_revisions(hpn, session=None):
     if close_session_when_done:
         session.close()
     return revisions
+
+
+class Dubitable(MCDeclarativeBase):
+    """
+    A table to track the dubitable antennas.
+
+    start_gpstime:  start time of list
+    stop_gpstime:  stop time of list
+    ant_list:  list of dubitable antennas.
+               It is a comma-separated list of antenna integers.  E.g. 1,4,5,23,51
+               (No spaces betweeen).
+    """
+
+    __tablename__ = 'dubitable'
+
+    start_gpstime = Column(BigInteger, primary_key=True)
+    stop_gpstime = Column(BigInteger)
+    ant_list = Column(Text, nullable=False)
+
+    def __repr__(self):
+        return ('<{self.start_gpstime}, {self.stop_gpstime}, {self.ant_list}>'.format(self=self))
+
+
+def update_dubitable(session=None, transition_gpstime=None, data=None):
+    """
+    update the database given a new list of dubitable antennas.
+    It will stop the previous list at transition_gpstime and start the new one
+    at transition_gpstime + 1sec
+
+    Parameters:
+    ------------
+    session:  db session to use
+    transition_gpstime:  gps time to make the change
+    data:  list of antennas, specified by integers.
+           Same number as the HH#, but leave off the 'HH'
+    """
+
+    close_session_when_done = False
+    if session is None:
+        db = mc.connect_to_mc_db(None)
+        session = db.sessionmaker()
+        close_session_when_done = True
+
+    last_one = session.query(Dubitable).filter(Dubitable.stop_gpstime == None)
+    if last_one.count() == 1:  # Stop the previous valid list.
+        old_dubi = last_one.first()
+        old_dubi.stop_gpstime = transition_gpstime
+        session.add(old_dubi)
+    elif last_one.count() > 1:
+        raise ValueError('Too many open dubitable lists.')
+
+    new_dubi = Dubitable()
+    new_dubi.start_gpstime = transition_gpstime + 1
+    new_dubi.ant_list = ','.join(str(a) for a in data)
+    session.add(new_dubi)
+    session.commit()
+    data_dict = {'start_gpstime': [transition_gpstime], 'ant_list:len': [len(data)]}
+    cm_utils.log('part_connect dubitable update', data_dict=data_dict)
+
+    if close_session_when_done:
+        session.close()
 
 
 class PartInfo(MCDeclarativeBase):
@@ -331,7 +392,7 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
     """
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
     part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn.upper()) &
@@ -596,7 +657,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
 
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
