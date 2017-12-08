@@ -21,7 +21,7 @@ class Handling:
     Class to allow various manipulations of correlator inputs etc
     """
 
-    def __init__(self, session=None, hookup_list_to_cache=['HH']):
+    def __init__(self, session=None):
         """
         session: session on current database. If session is None, a new session
                  on the default database is created and used.
@@ -78,7 +78,7 @@ class Handling:
 
         raise ValueError('Too many open dubitable lists ({}).'.format(len(fnd)))
 
-    def get_all_fully_connected_at_date(self, at_date, station_types_to_check='all'):
+    def get_all_fully_connected_at_date(self, at_date, station_types_to_check='HH'):
         """
         Returns a list of dictionaries of all of the locations fully connected at_date
         have station_types in station_types_to_check.  The dictonary is defined in
@@ -104,9 +104,11 @@ class Handling:
         -----------
         at_date:  date to check for connections
         station_types_to_check:  list of station types to limit check, or 'all' [default 'all']
+                                 note that if it is not ['HH'] it will re-read the database and
+                                 not use the cache file.
         """
         at_date = cm_utils.get_astropytime(at_date)
-        self.H = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
+        self.H = cm_hookup.Hookup(at_date, self.session)
         self.geo.get_station_types()
         station_conn = []
         for k, stn_type in self.geo.station_types.iteritems():
@@ -148,8 +150,8 @@ class Handling:
         if self.H is not None:
             H = self.H
         else:
-            H = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
-        hud = H.get_hookup([stn], exact_match=True)
+            H = cm_hookup.Hookup(at_date, self.session)
+        hud = H.get_hookup(hpn_list=[stn], exact_match=True)
         station_dict = {}
         fc = cm_revisions.get_full_revision_keys(stn, hud)
         if len(fc) == 1:
@@ -275,8 +277,8 @@ class Handling:
             dict of {pol:(rcvr location,pam #)}
         """
         pams = {}
-        H = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
-        hud = H.get_hookup([stn], exact_match=True)
+        H = cm_hookup.Hookup(at_date, self.session)
+        hud = H.get_hookup(hpn_list=[stn], exact_match=True)
         fc = cm_revisions.get_full_revision_keys(stn, hud)
         if len(fc) == 1:
             k = fc[0][0]
@@ -290,7 +292,7 @@ class Handling:
         import os.path
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
-        H = cm_hookup.Hookup('now', self.session, self.hookup_list_to_cache)
+        H = cm_hookup.Hookup('now', self.session)
         hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
                                    exact_match=exact_match, show_levels=True,
                                    force_new=force_new_hookup_dict, force_specific=False)

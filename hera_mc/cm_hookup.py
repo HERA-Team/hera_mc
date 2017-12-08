@@ -55,10 +55,13 @@ class Hookup:
         set_hookup_cache
         get_hookup
         show_hookup
-        add_correlator_levels
+    To speed things up, it uses a cache file, but only if the query is for HH* stuff and
+    if the cache file is current relative to the cm_version
     """
+    hookup_list_to_cache = ['HH']
+    hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache.npy')
 
-    def __init__(self, at_date='now', session=None, hookup_list_to_cache=['HH']):
+    def __init__(self, at_date='now', session=None):
         """
         Hookup traces parts and connections through the signal path (as defined
             by the connections).
@@ -71,26 +74,24 @@ class Hookup:
         self.at_date = cm_utils.get_astropytime(at_date)
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
-        self.hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache.npy')
-        self.hookup_list_to_cache = hookup_list_to_cache
         self.cached_hookup_dict = None
 
     def set_hookup_cache(self, force_new=False, provided_hookup=None, reset_cache=False):
         """
-        Reads in the appropriate hookup cache file if needed.  Order is:
-            reset_cache, provided_hookup, force_new
+        Reads in the appropriate hookup cache file if needed.
+        If new one is needed, it re-writes the cache file.
 
         Parameters
         -----------
-        force_new:  boolean to force a new read as opposed to using file, if valid.
-        provided_hookup:  will set the cached_hookup_dict to this, if present
-        reset_cache:  will reset cached_hookup_dict to None, if True
+        force_new:  boolean to force a new read as opposed to using (valid) file.
+        provided_hookup:  will set the cached_hookup_dict to this, if present (only does this)
+        reset_cache:  will reset cached_hookup_dict to None, if True (only does this)
         """
         if reset_cache:
             self.cached_hookup_dict = None
         elif provided_hookup is not None:
             self.cached_hookup_dict = provided_hookup
-        elif force_new or not self.__check_hookup_cache_file():
+        elif force_new or not self.__check_hookup_cache_file_date():
             self.cached_hookup_dict = self.__get_hookup(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
                                                         port_query='all', at_date=self.at_date,
                                                         exact_match=False, show_levels=False)
@@ -119,7 +120,8 @@ class Hookup:
         -----------
         hpn_list:  list of input hera part numbers (whole or first part thereof)
                    may be one of the following string(s):
-                                     'cached':  return the actual cached file
+                                     'cached':  return the actual dict from cache file
+                   if there are any non-HH items in list, it defaults to force_specific
         rev:  the revision number or descriptor
         port_query:  a specifiable port name to follow or 'all',  default is 'all'.
         force_specific_at_date:  date for hookup check -- use only if force_specific
@@ -128,11 +130,11 @@ class Hookup:
         force_new:  boolean to force a full database read as opposed to checking file
         force_specific:  boolean to force this to read/write the file to use the supplied values
                          Setting this makes get_hookup provide specific hookups (mimicking the
-                         action before the file option was instituted)
+                         action before the cache file option was instituted)
         """
-        if not all([x[:2] == 'HH' for x in hpn_list]):
+        if not all([x[:2].upper() == 'HH' for x in hpn_list]):
             force_specific = True
-        if force_specific or self.hookup_list_to_cache[0] == 'force_specific':
+        if force_specific:
             return self.__get_hookup(hpn_list=hpn_list, rev=rev, port_query=port_query,
                                      at_date=force_specific_at_date,
                                      exact_match=exact_match, show_levels=show_levels)
@@ -180,6 +182,7 @@ class Hookup:
                      exact_match=False, show_levels=False):
         """
         This gets called by the get_hookup wrapper if the database is to be read.
+        It is the full original method.
         """
         # Get all the appropriate parts
         parts = self.handling.get_part_dossier(hpn_list=hpn_list, rev=rev,
@@ -426,7 +429,7 @@ class Hookup:
             np.save(f, self.cached_hookup_dict)
             np.save(f, self.part_type_cache)
 
-    def __check_hookup_cache_file(self, contemporaneous_minutes=5.0):
+    def __check_hookup_cache_file_date(self, contemporaneous_minutes=5.0):
         try:
             stats = os.stat(self.hookup_cache_file)
         except OSError as e:
