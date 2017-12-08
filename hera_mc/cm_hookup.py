@@ -95,7 +95,7 @@ class Hookup:
             self.cached_hookup_dict = self.__get_hookup(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
                                                         port_query='all', at_date=self.at_date,
                                                         exact_match=False, show_levels=False)
-            self.__write_hookup_cache_to_file()
+            self.__write_hookup_cache_to_file(force_new)
         elif self.cached_hookup_dict is None:
             self.__read_hookup_cache_from_file()
 
@@ -194,11 +194,12 @@ class Hookup:
         for k, part in parts.iteritems():
             if not cm_utils.is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
                 continue
-            hookup_dict['hookup'][k] = {}
+            huk = k.upper()
+            hookup_dict['hookup'][huk] = {}
             pols_to_do = self.__get_pols_to_do(part, port_query)
             for pol in pols_to_do:
-                hookup_dict['hookup'][k][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
-                part_types_found = self.__get_part_types_found(hookup_dict['hookup'][k][pol], part_types_found)
+                hookup_dict['hookup'][huk][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
+                part_types_found = self.__get_part_types_found(hookup_dict['hookup'][huk][pol], part_types_found)
         # Add other information in to the hookup_dict
         hookup_dict['columns'], hookup_dict['parts_epoch'] = self.__get_column_headers(part_types_found)
         if len(hookup_dict['columns']):
@@ -422,12 +423,16 @@ class Hookup:
                 level_ctr += 1
         return hookup_dict
 
-    def __write_hookup_cache_to_file(self):
+    def __write_hookup_cache_to_file(self, force_new):
         with open(self.hookup_cache_file, 'wb') as f:
             np.save(f, self.at_date)
             np.save(f, cm_utils.stringify(self.hookup_list_to_cache))
             np.save(f, self.cached_hookup_dict)
             np.save(f, self.part_type_cache)
+        log_dict = {'hu-list': cm_utils.stringify(self.hookup_list_to_cache),
+                    'check_hookup': str(self.__check_hookup_cache_file_date()),
+                    'force_new': str(force_new)}
+        cm_utils.log('update_cache', log_dict=log_dict)
 
     def __check_hookup_cache_file_date(self, contemporaneous_minutes=5.0):
         try:
