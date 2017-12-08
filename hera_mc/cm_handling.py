@@ -226,7 +226,7 @@ class Handling:
         for hpnr in sorted(part_dossier.keys()):
             pdpart = part_dossier[hpnr]['part']
             is_active = cm_utils.is_active(part_dossier[hpnr]['Time'],
-                                            pdpart.start_date, pdpart.stop_date)
+                                           pdpart.start_date, pdpart.stop_date)
             if (is_active and len(part_dossier[hpnr]['connections']) > 0):
                 is_connected = 'Yes'
             elif is_active:
@@ -351,9 +351,9 @@ class Handling:
                             conn.upstream_output_port.lower() == port.lower()):
                         conn.gps2Time()
                         ckey = cm_utils.make_connection_key(conn.downstream_part,
-                                                             conn.down_part_rev,
-                                                             conn.downstream_input_port,
-                                                             conn.start_gpstime)
+                                                            conn.down_part_rev,
+                                                            conn.downstream_input_port,
+                                                            conn.start_gpstime)
                         connection_dossier['connections'][ckey] = copy.copy(conn)
                         down_parts.append(ckey)
                 # Find where the part is in the downward position, so identify its upward connection
@@ -364,9 +364,9 @@ class Handling:
                             conn.downstream_input_port.lower() == port.lower()):
                         conn.gps2Time()
                         ckey = cm_utils.make_connection_key(conn.upstream_part,
-                                                             conn.up_part_rev,
-                                                             conn.upstream_output_port,
-                                                             conn.start_gpstime)
+                                                            conn.up_part_rev,
+                                                            conn.upstream_output_port,
+                                                            conn.start_gpstime)
                         connection_dossier['connections'][ckey] = copy.copy(conn)
                         up_parts.append(ckey)
                 if len(up_parts) == 0:
