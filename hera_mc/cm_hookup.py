@@ -194,7 +194,7 @@ class Hookup:
         for k, part in parts.iteritems():
             if not cm_utils.is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
                 continue
-            huk = k.upper()
+            huk = k
             hookup_dict['hookup'][huk] = {}
             pols_to_do = self.__get_pols_to_do(part, port_query)
             for pol in pols_to_do:

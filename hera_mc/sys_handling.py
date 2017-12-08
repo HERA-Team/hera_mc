@@ -31,7 +31,6 @@ class Handling:
             self.session = db.sessionmaker()
         else:
             self.session = session
-        self.hookup_list_to_cache = hookup_list_to_cache
         self.geo = geo_handling.Handling(self.session)
         self.H = None
 
