@@ -21,7 +21,7 @@ class Handling:
     Class to allow various manipulations of correlator inputs etc
     """
 
-    def __init__(self, session=None, hookup_list_to_cache=['HH']):
+    def __init__(self, session=None):
         """
         session: session on current database. If session is None, a new session
                  on the default database is created and used.
@@ -31,7 +31,6 @@ class Handling:
             self.session = db.sessionmaker()
         else:
             self.session = session
-        self.hookup_list_to_cache = hookup_list_to_cache
         self.geo = geo_handling.Handling(self.session)
         self.H = None
 
@@ -78,7 +77,7 @@ class Handling:
 
         raise ValueError('Too many open dubitable lists ({}).'.format(len(fnd)))
 
-    def get_all_fully_connected_at_date(self, at_date, station_types_to_check='all'):
+    def get_all_fully_connected_at_date(self, at_date, station_types_to_check=['HH']):
         """
         Returns a list of dictionaries of all of the locations fully connected at_date
         have station_types in station_types_to_check.  The dictonary is defined in
@@ -103,19 +102,28 @@ class Handling:
         Parameters
         -----------
         at_date:  date to check for connections
-        station_types_to_check:  list of station types to limit check, or 'all' [default 'all']
+        station_types_to_check:  list of station types to check, or 'all' [default ['HH']]
+                                 it can either be the prefix or the "Name" (e.g. 'herahex')
+                                 note that if it is not only ['HH'] it will re-read the database.
         """
         at_date = cm_utils.get_astropytime(at_date)
-        self.H = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
+        self.H = cm_hookup.Hookup(at_date, self.session)
         self.geo.get_station_types()
+        if type(station_types_to_check) == str:
+            if station_types_to_check.lower() == 'all':
+                station_types_to_check = self.geo.station_types.keys()
+            else:
+                station_types_to_check = [station_types_to_check]
+        if type(station_types_to_check) != list:
+            raise ValueError('Invalid station_type request {}'.format(station_types_to_check))
+        station_types_to_check = [x.lower() for x in station_types_to_check]
         station_conn = []
         for k, stn_type in self.geo.station_types.iteritems():
-            if station_types_to_check != 'all' and k not in station_types_to_check:
-                continue
-            for stn in stn_type['Stations']:
-                station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date)
-                if len(station_dict.keys()) > 1:
-                    station_conn.append(station_dict)
+            if k.lower() in station_types_to_check or stn_type['Name'].lower() in station_types_to_check:
+                for stn in stn_type['Stations']:
+                    station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date)
+                    if len(station_dict.keys()) > 0:
+                        station_conn.append(station_dict)
         self.H = None  # Reset back in case gets called again outside of this method.
         return station_conn
 
@@ -148,8 +156,8 @@ class Handling:
         if self.H is not None:
             H = self.H
         else:
-            H = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
-        hud = H.get_hookup([stn], exact_match=True)
+            H = cm_hookup.Hookup(at_date, self.session)
+        hud = H.get_hookup(hpn_list=[stn], exact_match=True)
         station_dict = {}
         fc = cm_revisions.get_full_revision_keys(stn, hud)
         if len(fc) == 1:
@@ -165,7 +173,7 @@ class Handling:
             corr = cm_hookup.get_parts_from_hookup(corr_name, hud)[k]
             fnd_list = self.geo.get_location([stn[0]], at_date, station_types=self.geo.station_types)
             if not len(fnd_list):
-                return station_dict
+                return {}
             if len(fnd_list) > 1:
                 print("More than one part found:  ", str(fnd))
                 print("Setting to first to continue.")
@@ -217,7 +225,7 @@ class Handling:
         cm_h = cm_handling.Handling(session=self.session)
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
-        stations_conn = self.get_all_fully_connected_at_date(at_date='now')
+        stations_conn = self.get_all_fully_connected_at_date(at_date='now', station_types_to_check=['HH'])
         ant_nums = []
         stn_names = []
         stn_types = []
@@ -275,8 +283,8 @@ class Handling:
             dict of {pol:(rcvr location,pam #)}
         """
         pams = {}
-        H = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
-        hud = H.get_hookup([stn], exact_match=True)
+        H = cm_hookup.Hookup(at_date, self.session)
+        hud = H.get_hookup(hpn_list=[stn], exact_match=True)
         fc = cm_revisions.get_full_revision_keys(stn, hud)
         if len(fc) == 1:
             k = fc[0][0]
@@ -286,11 +294,11 @@ class Handling:
 
     def publish_summary(self, hlist=['HH'], rev='A', exact_match=False,
                         hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
-                        force_new_hookup_dict=True):
+                        force_new_hookup_dict=False):
         import os.path
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
-        H = cm_hookup.Hookup('now', self.session, self.hookup_list_to_cache)
+        H = cm_hookup.Hookup('now', self.session)
         hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
                                    exact_match=exact_match, show_levels=True,
                                    force_new=force_new_hookup_dict, force_specific=False)

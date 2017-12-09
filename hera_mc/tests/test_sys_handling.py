@@ -23,7 +23,7 @@ class TestSys(TestHERAMC):
 
     def setUp(self):
         super(TestSys, self).setUp()
-        self.h = sys_handling.Handling(self.test_session, hookup_list_to_cache=['force_specific'])
+        self.h = sys_handling.Handling(self.test_session)
 
     def test_ever_fully_connected(self):
         now_list = self.h.get_all_fully_connected_at_date(at_date='now')
@@ -88,8 +88,8 @@ class TestSys(TestHERAMC):
 
     def test_correlator_levels(self):
         at_date = cm_utils.get_astropytime('2017-07-03')
-        H = cm_hookup.Hookup(at_date, self.test_session, hookup_list_to_cache=['force_specific'])
-        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True)
+        H = cm_hookup.Hookup(at_date, self.test_session)
+        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True, force_new=True)
         hh23level = float(hu['levels']['HH23:A']['e'])
         self.assertEqual(type(hh23level), float)
         # Now get some failures
@@ -107,7 +107,7 @@ class TestSys(TestHERAMC):
             part.manufacture_number = self.test_mfg
             part.start_gpstime = self.test_time
             self.test_session.add(part)
-        self.test_session.commit()
+            self.test_session.commit()
         connection = part_connect.Connections()
         connection.upstream_part = self.test_hpn[0]
         connection.up_part_rev = self.test_rev
@@ -118,7 +118,7 @@ class TestSys(TestHERAMC):
         connection.start_gpstime = self.test_time
         self.test_session.add(connection)
         self.test_session.commit()
-        hu = H.get_hookup(['test_part1'], 'Q', 'all', exact_match=True, show_levels=True)
+        hu = H.get_hookup(['test_part1'], 'Q', 'all', exact_match=True, show_levels=True, force_specific=True)
         tplevel = hu['levels']['test_part1:Q']['e']
         print(tplevel)
         self.assertEqual(tplevel, '-')
