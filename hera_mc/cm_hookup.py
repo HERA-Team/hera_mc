@@ -120,7 +120,7 @@ class Hookup:
         -----------
         hpn_list:  list of input hera part numbers (whole or first part thereof)
                    may be one of the following string(s):
-                                     'cached':  return the actual dict from cache file
+                        'cached':  return the actual dict from cache file
                    if there are any non-HH items in list, it defaults to force_specific
         rev:  the revision number or descriptor
         port_query:  a specifiable port name to follow or 'all',  default is 'all'.

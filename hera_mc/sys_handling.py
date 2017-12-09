@@ -294,7 +294,7 @@ class Handling:
 
     def publish_summary(self, hlist=['HH'], rev='A', exact_match=False,
                         hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
-                        force_new_hookup_dict=True):
+                        force_new_hookup_dict=False):
         import os.path
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
