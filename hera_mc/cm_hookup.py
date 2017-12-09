@@ -78,12 +78,14 @@ class Hookup:
 
     def set_hookup_cache(self, force_new=False, provided_hookup=None, reset_cache=False):
         """
-        Reads in the appropriate hookup cache file if needed.
-        If new one is needed, it re-writes the cache file.
+        Determines action regarding using an existing cache file or writing and using a new one.
+        If force_new is set, it automatically writes/uses a new one.
+        If reset_cache is set, this only sets the cache file to None (looked at first)
+        if provided_hookup is provided, it sets the internal cache hookup dict to this.
 
         Parameters
         -----------
-        force_new:  boolean to force a new read as opposed to using (valid) file.
+        force_new:  boolean to force a new read as opposed to using file.
         provided_hookup:  will set the cached_hookup_dict to this, if present (only does this)
         reset_cache:  will reset cached_hookup_dict to None, if True (only does this)
         """
@@ -183,7 +185,7 @@ class Hookup:
                      exact_match=False, show_levels=False):
         """
         This gets called by the get_hookup wrapper if the database is to be read.
-        It is the full original method.
+        It is the full original method that was used prior to the cache file wrapper stuff.
         """
         # Get all the appropriate parts
         parts = self.handling.get_part_dossier(hpn_list=hpn_list, rev=rev,
@@ -195,12 +197,11 @@ class Hookup:
         for k, part in parts.iteritems():
             if not cm_utils.is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
                 continue
-            huk = k
-            hookup_dict['hookup'][huk] = {}
+            hookup_dict['hookup'][k] = {}
             pols_to_do = self.__get_pols_to_do(part, port_query)
             for pol in pols_to_do:
-                hookup_dict['hookup'][huk][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
-                part_types_found = self.__get_part_types_found(hookup_dict['hookup'][huk][pol], part_types_found)
+                hookup_dict['hookup'][k][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
+                part_types_found = self.__get_part_types_found(hookup_dict['hookup'][k][pol], part_types_found)
         # Add other information in to the hookup_dict
         hookup_dict['columns'], hookup_dict['parts_epoch'] = self.__get_column_headers(part_types_found)
         if len(hookup_dict['columns']):
