@@ -825,6 +825,72 @@ class MCSession(Session):
                                  stoptime=stoptime, filter_column='variable',
                                  filter_value=variable)
 
+    def add_roach_temperature(self, time, roach, ambient_temp, inlet_temp,
+                              outlet_temp, fpga_temp, ppc_temp):
+        """
+        Add new roach temperature to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp from the katportal sensor.
+        roach: int
+            roach number
+        ambient_temp: float
+            ambient temperature reported by roach for this time in Celcius
+        inlet_temp: float
+            inlet temperature reported by roach for this time in Celcius
+        outlet_temp: float
+            outlet temperature reported by roach for this time in Celcius
+        fpga_temp: float
+            fpga temperature reported by roach for this time in Celcius
+        ppc_temp: float
+            ppc temperature reported by roach for this time in Celcius
+        """
+        from .roach import RoachTemperature
+
+        self.add(RoachTemperature.create(time, roach, ambient_temp, inlet_temp,
+                                         outlet_temp, fpga_temp, ppc_temp))
+
+    def add_roach_temperature_from_redis(self):
+        """
+        Read and add roach temperatures from the Redis database
+        This function connects to the Redis database and grabs the latest data
+        using the "create_from_redis" function.
+
+        """
+        from .roach import create_from_redis
+
+        roach_temperature_list = create_from_redis()
+        for obj in roach_temperature_list:
+            self.add(obj)
+
+    def get_roach_temperature(self, starttime, stoptime=None, roach=None):
+        """
+        Get roach_temperature record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        roach: int
+            Roach number to get records for. If none, all roaches will be included.
+
+        Returns:
+        --------
+        list of WeatherData objects
+        """
+        from .roach import RoachTemperature
+
+        return self._time_filter(RoachTemperature, 'time', starttime,
+                                 stoptime=stoptime, filter_column='roach',
+                                 filter_value=roach)
+
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
         Add a new antenna metric to the M&C database.

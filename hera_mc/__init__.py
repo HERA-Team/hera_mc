@@ -92,4 +92,5 @@ from . import librarian
 from . import rtp
 from . import qm
 from . import weather
+from . import roach
 from . import mc  # keep this last.
