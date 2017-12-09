@@ -128,6 +128,7 @@ class Hookup:
         exact_match:  boolean for either exact_match or partial
         show_levels:  boolean to include correlator levels
         force_new:  boolean to force a full database read as opposed to checking file
+                    this will also rewrite the cache-file
         force_specific:  boolean to force this to read/write the file to use the supplied values
                          Setting this makes get_hookup provide specific hookups (mimicking the
                          action before the cache file option was instituted)
