@@ -204,7 +204,7 @@ class TestRoach(TestHERAMC):
     def test_add_from_redis(self):
 
         if is_at_katcp_enabled_site():
-            self.test_session.add_roach_temperature_from_sensors()
+            self.test_session.add_roach_temperature_from_redis()
             result = self.test_session.get_roach_temperature(Time.now() - TimeDelta(3.0, format='sec'))
             self.assertEqual(len(result), 8)
 
