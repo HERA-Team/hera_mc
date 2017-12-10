@@ -223,7 +223,22 @@ size\_gb & float & file size in gigabytes \\ \hline
 
 \textbf{\large{corr\_server\_status}}: Correlator version of the server\_status table\\
 
-The correlator tables are not yet defined, the following are notes about suggestions and plans for correlator tables. Most of the correlator data will be recorded in a Redis database (a rolling log, ephemeral), that info needs to be grabbed and put in \mc tables.
+\textbf{\large{roach\_temperature}}: Roach (correlator fpga board) temperatures
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & long & measurement time in floor(gps seconds)\\ \hline
+\textbf{roach} & string & name or number of roach (correlator fpga board) \\ \hline
+ambient\_temp & float & ambient temperature reported by the roach in degrees C \\\hline
+inlet\_temp & float & inlet temperature reported by the roach in degrees C \\\hline
+oulet\_temp & float & oulet temperature reported by the roach in degrees C \\\hline
+fpga\_temp & float & fpga temperature reported by the roach in degrees C \\\hline
+ppc\_temp & float & ppc temperature reported by the roach in degrees C \\\hline
+\end{tabular}
+\end{center}
+
+The correlator tables are not all defined yet, the following are notes about suggestions and plans for correlator tables. Most of the correlator data will be recorded in a Redis database (a rolling log, ephemeral), that info needs to be grabbed and put in \mc tables.
 \begin{outline}[enumerate]
 	\1 correlator on/off?	**this is a control**
 	\1 Bit statistics (overflows, ADC clipping, bit statistics after bit selects)
