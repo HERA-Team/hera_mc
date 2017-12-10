@@ -76,24 +76,34 @@ class Hookup:
         self.part_type_cache = {}
         self.cached_hookup_dict = None
 
-    def set_hookup_cache(self, force_new=False, provided_hookup=None, reset_cache=False):
+    def reset_cache(self, hookup=None):
         """
-        Determines action regarding using an existing cache file or writing and using a new one.
-        If force_new is set, it automatically writes/uses a new one.
-        If reset_cache is set, this only sets the cache file to None (looked at first)
-        if provided_hookup is provided, it sets the internal cache hookup dict to this.
+        Resets the class cache dictionary to the supplied hookup dict, which can be None.  If None,
+        then the next time it will re-read from the file.
 
         Parameters
         -----------
-        force_new:  boolean to force a new read as opposed to using file.
-        provided_hookup:  will set the cached_hookup_dict to this, if present (only does this)
-        reset_cache:  will reset cached_hookup_dict to None, if True (only does this)
+        hookup:  will set the cached_hookup_dict to this, which is either a hookup dict or None.
         """
-        if reset_cache:
-            self.cached_hookup_dict = None
-        elif provided_hookup is not None:
-            self.cached_hookup_dict = provided_hookup
-        elif force_new or not self.__check_hookup_cache_file_date():
+        self.cached_hookup_dict = hookup
+
+    def set_hookup_cache(self, force_new=False):
+        """
+        Determines action regarding using an existing cache file or writing and using a new one.
+        If force_new is set, it automatically writes/uses a new one.  If the cache file is out of
+        date it writes/uses a new one.  Otherwise it uses the existing one (rereading from the
+        cache file if not one in memory.)
+
+        If the cache file is up-to-date and is in memory, this does nothing.
+
+        Parameters
+        -----------
+        force_new:  boolean to force a new read as opposed to using cache file,
+                    if the existing file is valid.  If the existing cache file is out-of-date
+                    relative to the cm_version it will also generate/write a new one.
+
+        """
+        if force_new or not self.__hookup_cache_file_date_OK():
             self.cached_hookup_dict = self.__get_hookup(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
                                                         port_query='all', at_date=self.at_date,
                                                         exact_match=False, show_levels=False)
@@ -120,10 +130,9 @@ class Hookup:
 
         Parameters
         -----------
-        hpn_list:  list of input hera part numbers (whole or first part thereof)
-                   may be one of the following string(s):
-                        'cached':  return the actual dict from cache file
-                   if there are any non-HH items in list, it defaults to force_specific
+        hpn_list:  list/string of input hera part number(s) (whole or first part thereof)
+                   if string == 'cached' it returns the current dict that would be used
+                   if there are any non-hookup-cached items in list, it defaults to force_specific
         rev:  the revision number or descriptor
         port_query:  a specifiable port name to follow or 'all',  default is 'all'.
         force_specific_at_date:  date for hookup check -- use only if force_specific
@@ -135,16 +144,22 @@ class Hookup:
                          Setting this makes get_hookup provide specific hookups (mimicking the
                          action before the cache file option was instituted)
         """
-        if not all([x[:2].upper() == 'HH' for x in hpn_list]):
-            force_specific = True
-        if force_specific:
+        # Take appropriate action if hpn_list is a string
+        if type(hpn_list) == str and hpn_list.lower() == 'cached':
+            return self.cached_hookup_dict
+        if type(hpn_list) == str:
+            hpn_list = [hpn_list]
+
+        # Check if force_specific return either requested or needed
+        requested_list_OK_for_cache = self.__double_check_request(hpn_list)
+        if force_specific or not requested_list_OK_for_cache:
             return self.__get_hookup(hpn_list=hpn_list, rev=rev, port_query=port_query,
                                      at_date=force_specific_at_date,
                                      exact_match=exact_match, show_levels=show_levels)
 
+        # Check/get the appropriate hookup dict
         self.set_hookup_cache(force_new=force_new)
-        if type(hpn_list) == str and hpn_list.lower() == 'cached':
-            return self.cached_hookup_dict
+
         # Now build up the returned hookup_dict
         hookup_dict = self.__get_empty_hookup_dict()
         for entry in ['parts_epoch', 'columns']:
@@ -167,6 +182,18 @@ class Hookup:
         if show_levels:
             hookup_dict = self.add_correlator_levels(hookup_dict)
         return hookup_dict
+
+    def __double_check_cache_keys(self, hpn_list):
+        """
+        Checks that all hookup requests match the cached keys.
+        """
+        for x in hpn_list:
+            for key_prefix in self.hookup_list_to_cache:
+                if x[:len(key_prefix)].upper() == key_prefix.upper():
+                    break
+            else:
+                return False
+        return True
 
     def __get_empty_hookup_dict(self):
         """
@@ -436,7 +463,18 @@ class Hookup:
                     'force_new': str(force_new)}
         cm_utils.log('update_cache', log_dict=log_dict)
 
-    def __check_hookup_cache_file_date(self, contemporaneous_minutes=5.0):
+    def __hookup_cache_file_date_OK(self, contemporaneous_minutes=5.0):
+        """
+        This determines if the cache file is up-to-date relative to the cm database.
+        There are 4 relevant dates:
+            cm_hash_time:  last time the database was updated per CMVersion
+            file_mod_time:  when the cache file was last changed (ie written)
+            at_date:  the date of the get hookup request (self.at_date)
+            cached_at_date:  the date in the cache file for which it was written.
+        If the cache_file was written before the latest cm_version, it fails because
+        anything could have changed within the database.
+        """
+        # Get the relevant dates (checking the cache_file/cm_version up front)
         try:
             stats = os.stat(self.hookup_cache_file)
         except OSError as e:
@@ -447,16 +485,21 @@ class Hookup:
         result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
         cm_hash_time = Time(result[-1].update_time, format='gps')
         file_mod_time = Time(stats.st_mtime, format='unix')
+        # If CMVersion changed since file was written, don't know so fail...
         if file_mod_time < cm_hash_time:
             return False
         with open(self.hookup_cache_file, 'rb') as f:
             cached_at_date = Time(np.load(f).item())
+
+        # If the cached and query dates are after the last hash time it's ok
         if cached_at_date > cm_hash_time and self.at_date > cm_hash_time:
             return True
-        # OK if current hash and the at_date and cached_at_date are basically the same
-        # could go through entire cm_version table and check...  maybe later
+
+        # OK if cached_at_date and the at_date are basically the same is OK
         if abs(cached_at_date - self.at_date) < TimeDelta(60.0 * contemporaneous_minutes, format='sec'):
             return True
+
+        # Otherwise, not OK
         return False
 
     def __read_hookup_cache_from_file(self):
