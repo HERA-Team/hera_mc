@@ -828,14 +828,14 @@ class MCSession(Session):
     def add_roach_temperature(self, time, roach, ambient_temp, inlet_temp,
                               outlet_temp, fpga_temp, ppc_temp):
         """
-        Add new roach temperature to the M&C database.
+        Add new roach (fpga correlator board) temperature to the M&C database.
 
         Parameters:
         ------------
         time: astropy time object
             astropy time object based on a timestamp from the katportal sensor.
-        roach: int
-            roach number
+        roach: string
+            roach name or number
         ambient_temp: float
             ambient temperature reported by roach for this time in Celcius
         inlet_temp: float
@@ -854,7 +854,7 @@ class MCSession(Session):
 
     def add_roach_temperature_from_redis(self):
         """
-        Read and add roach temperatures from the Redis database
+        Read and add roach (fpga correlator board) temperatures from the Redis database
         This function connects to the Redis database and grabs the latest data
         using the "create_from_redis" function.
 
@@ -878,8 +878,8 @@ class MCSession(Session):
             last time to get records for. If none, only the first record after
             starttime will be returned.
 
-        roach: int
-            Roach number to get records for. If none, all roaches will be included.
+        roach: string
+            Roach name or number to get records for. If none, all roaches will be included.
 
         Returns:
         --------

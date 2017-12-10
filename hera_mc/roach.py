@@ -26,7 +26,7 @@ class RoachTemperature(MCDeclarativeBase):
     Definition of roach (fpga correlator board) temperature table.
 
     time: gps time of the roach data, floored (BigInteger, part of primary_key).
-    roach: roach number (Integer, part of primary_key)
+    roach: roach name or number (String, part of primary_key)
     ambient_temp: ambient temperature reported by roach in Celcius
     inlet_temp: inlet temperature reported by roach in Celcius
     outlet_temp: outlet temperature reported by roach in Celcius
