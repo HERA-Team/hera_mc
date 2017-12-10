@@ -835,7 +835,7 @@ class MCSession(Session):
         time: astropy time object
             astropy time object based on a timestamp from the katportal sensor.
         roach: string
-            roach name or number
+            roach name
         ambient_temp: float
             ambient temperature reported by roach for this time in Celcius
         inlet_temp: float
@@ -879,7 +879,7 @@ class MCSession(Session):
             starttime will be returned.
 
         roach: string
-            Roach name or number to get records for. If none, all roaches will be included.
+            Roach name to get records for. If none, all roaches will be included.
 
         Returns:
         --------

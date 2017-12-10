@@ -20,13 +20,16 @@ roach_key_dict = {'ambient_temp': 'raw.temp.ambient', 'inlet_temp': 'raw.temp.in
                   'outlet_temp': 'raw.temp.outlet', 'fpga_temp': 'raw.temp.fpga',
                   'ppc_temp': 'raw.temp.ppc'}
 
+# roachhostnames are pf1, pf2, ..., pf8
+roach_hostnames = ['pf%d' % roach_num for roach_num in range(1, 9)]
+
 
 class RoachTemperature(MCDeclarativeBase):
     """
     Definition of roach (fpga correlator board) temperature table.
 
     time: gps time of the roach data, floored (BigInteger, part of primary_key).
-    roach: roach name or number (String, part of primary_key)
+    roach: roach name (String, part of primary_key)
     ambient_temp: ambient temperature reported by roach in Celcius
     inlet_temp: inlet temperature reported by roach in Celcius
     outlet_temp: outlet temperature reported by roach in Celcius
@@ -52,7 +55,7 @@ class RoachTemperature(MCDeclarativeBase):
         time: astropy time object
             astropy time object based on a timestamp from the katportal sensor.
         roach: string
-            roach name or number
+            roach name
         ambient_temp: float
             ambient temperature reported by roach for this time in Celcius
         inlet_temp: float
@@ -73,16 +76,14 @@ class RoachTemperature(MCDeclarativeBase):
                    fpga_temp=fpga_temp, ppc_temp=ppc_temp)
 
 
-def _get_redis_dict(roach_num):
+def _get_redis_dict(roach_hostname):
     import redis
 
     r = redis.Redis(redis_dbname)
 
-    # redis key names have the form "roachsensor:<roachhostname>"
-    # roachhostnames are pf1, pf2, ..., pf8
     # Each key stores a hash table of different sensors
-    roach = "pf%d" % roach_num
-    rkey = "roachsensor:%s" % roach
+    # redis key names have the form "roachsensor:<roachhostname>"
+    rkey = "roachsensor:%s" % roach_hostname
 
     # Get the entire hash table for this ROACH's key, returned as a dictionary
     return r.hgetall(rkey)
@@ -103,13 +104,13 @@ def create_from_redis(redis_dict=None):
     """
 
     roach_obj_list = []
-    for i in range(1, 9):
+    for roach in roach_hostnames:
 
         if redis_dict is None:
             # All items in this dictionary are strings.
-            rdict = _get_redis_dict(i)
+            rdict = _get_redis_dict(roach)
         else:
-            rdict = redis_dict["pf%d" % i]
+            rdict = redis_dict[roach]
 
         time = Time(float(rdict['timestamp']), format='unix')
 
@@ -120,7 +121,7 @@ def create_from_redis(redis_dict=None):
         fpga_temp = float(rdict[roach_key_dict['fpga_temp']]) / 1000.
         ppc_temp = float(rdict[roach_key_dict['ppc_temp']]) / 1000.
 
-        roach_obj_list.append(RoachTemperature.create(time, str(i), ambient_temp,
+        roach_obj_list.append(RoachTemperature.create(time, roach, ambient_temp,
                                                       inlet_temp, outlet_temp,
                                                       fpga_temp, ppc_temp))
 

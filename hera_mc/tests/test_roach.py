@@ -146,10 +146,10 @@ class TestRoach(TestHERAMC):
         outlet_temp = float(roach_example_dict['pf1']['raw.temp.outlet']) / 1000.
         fpga_temp = float(roach_example_dict['pf1']['raw.temp.fpga']) / 1000.
         ppc_temp = float(roach_example_dict['pf1']['raw.temp.ppc']) / 1000.
-        self.test_session.add_roach_temperature(t1, 1, ambient_temp, inlet_temp,
+        self.test_session.add_roach_temperature(t1, 'pf1', ambient_temp, inlet_temp,
                                                 outlet_temp, fpga_temp, ppc_temp)
 
-        expected = roach.RoachTemperature(time=int(floor(t1.gps)), roach='1',
+        expected = roach.RoachTemperature(time=int(floor(t1.gps)), roach='pf1',
                                           ambient_temp=30., inlet_temp=32.,
                                           outlet_temp=31.75, fpga_temp=57.,
                                           ppc_temp=45.)
@@ -163,11 +163,11 @@ class TestRoach(TestHERAMC):
         outlet_temp = float(roach_example_dict['pf2']['raw.temp.outlet']) / 1000.
         fpga_temp = float(roach_example_dict['pf2']['raw.temp.fpga']) / 1000.
         ppc_temp = float(roach_example_dict['pf2']['raw.temp.ppc']) / 1000.
-        self.test_session.add_roach_temperature(t1, '2', ambient_temp, inlet_temp,
+        self.test_session.add_roach_temperature(t1, 'pf2', ambient_temp, inlet_temp,
                                                 outlet_temp, fpga_temp, ppc_temp)
 
         result = self.test_session.get_roach_temperature(t1 - TimeDelta(3.0, format='sec'),
-                                                         roach='1')
+                                                         roach='pf1')
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
@@ -187,9 +187,9 @@ class TestRoach(TestHERAMC):
 
         t1 = Time(1512770942.726777, format='unix')
         result = self.test_session.get_roach_temperature(t1 - TimeDelta(3.0, format='sec'),
-                                                         roach='1')
+                                                         roach='pf1')
 
-        expected = roach.RoachTemperature(time=int(floor(t1.gps)), roach='1',
+        expected = roach.RoachTemperature(time=int(floor(t1.gps)), roach='pf1',
                                           ambient_temp=30., inlet_temp=32.,
                                           outlet_temp=31.75, fpga_temp=57.,
                                           ppc_temp=45.)
