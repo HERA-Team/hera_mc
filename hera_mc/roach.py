@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 
 from astropy.time import Time
 from math import floor
-from sqlalchemy import Column, BigInteger, Float, Integer
+from sqlalchemy import Column, BigInteger, Float, String
 
 from . import MCDeclarativeBase
 
@@ -23,7 +23,7 @@ roach_key_dict = {'ambient_temp': 'raw.temp.ambient', 'inlet_temp': 'raw.temp.in
 
 class RoachTemperature(MCDeclarativeBase):
     """
-    Definition of roach temperature table.
+    Definition of roach (fpga correlator board) temperature table.
 
     time: gps time of the roach data, floored (BigInteger, part of primary_key).
     roach: roach number (Integer, part of primary_key)
@@ -35,7 +35,7 @@ class RoachTemperature(MCDeclarativeBase):
     """
     __tablename__ = 'roach_temperature'
     time = Column(BigInteger, primary_key=True)
-    roach = Column(Integer, primary_key=True)
+    roach = Column(String, primary_key=True)
     ambient_temp = Column(Float)
     inlet_temp = Column(Float)
     outlet_temp = Column(Float)
@@ -51,8 +51,8 @@ class RoachTemperature(MCDeclarativeBase):
         ------------
         time: astropy time object
             astropy time object based on a timestamp from the katportal sensor.
-        roach: int
-            roach number
+        roach: string
+            roach name or number
         ambient_temp: float
             ambient temperature reported by roach for this time in Celcius
         inlet_temp: float
@@ -120,7 +120,7 @@ def create_from_redis(redis_dict=None):
         fpga_temp = float(rdict[roach_key_dict['fpga_temp']]) / 1000.
         ppc_temp = float(rdict[roach_key_dict['ppc_temp']]) / 1000.
 
-        roach_obj_list.append(RoachTemperature.create(time, i, ambient_temp,
+        roach_obj_list.append(RoachTemperature.create(time, str(i), ambient_temp,
                                                       inlet_temp, outlet_temp,
                                                       fpga_temp, ppc_temp))
 
