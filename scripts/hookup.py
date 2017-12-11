@@ -27,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--show-levels', help="Show power levels if enabled (and able) [False]", dest='show_levels', action='store_true')
     parser.add_argument('--show-ports', help="Show ports on hookup.", dest='show_ports', action='store_true')
     parser.add_argument('--show-revs', help="Show revs on hookup.", dest='show_revs', action='store_true')
+    parser.add_argument('--show-cache-info', help="Shows information about the hookup cache file.", dest='show_cache_info', action='store_true')
     cm_utils.add_date_time_args(parser)
 
     args = parser.parse_args()
@@ -45,8 +46,11 @@ if __name__ == '__main__':
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
     hookup = cm_hookup.Hookup(date_query, session)
-    hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
-                                    exact_match=args.exact_match, show_levels=args.show_levels,
-                                    force_new=args.force_new, force_specific=args.force_specific)
-    hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols, show_levels=args.show_levels,
-                       show_ports=args.show_ports, show_revs=args.show_revs, show_state=args.show_state)
+    if args.show_cache_info:
+        hookup.show_hookup_cache_file_info()
+    else:
+        hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
+                                        exact_match=args.exact_match, show_levels=args.show_levels,
+                                        force_new=args.force_new, force_specific=args.force_specific)
+        hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols, show_levels=args.show_levels,
+                           show_ports=args.show_ports, show_revs=args.show_revs, show_state=args.show_state)
