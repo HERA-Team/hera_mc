@@ -9,11 +9,10 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 import nose.tools as nt
-import socket
 from math import floor
 from astropy.time import Time, TimeDelta
 from hera_mc import mc, roach
-from hera_mc.tests import TestHERAMC
+from hera_mc.tests import TestHERAMC, is_onsite
 
 
 roach_example_dict = {
@@ -131,10 +130,6 @@ roach_example_dict = {
             'raw.temp.ppc': '49000'}}
 
 
-def is_at_katcp_enabled_site():
-    return (socket.gethostname() == 'qmaster')
-
-
 class TestRoach(TestHERAMC):
 
     def test_add_roach(self):
@@ -203,7 +198,7 @@ class TestRoach(TestHERAMC):
 
     def test_add_from_redis(self):
 
-        if is_at_katcp_enabled_site():
+        if is_onsite():
             self.test_session.add_roach_temperature_from_redis()
             result = self.test_session.get_roach_temperature(Time.now() - TimeDelta(120.0, format='sec'),
                                                              stoptime=Time.now() + TimeDelta(120.0, format='sec'))

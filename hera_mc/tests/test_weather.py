@@ -9,16 +9,11 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 import nose.tools as nt
-import socket
 from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
 from hera_mc import mc, weather
-from hera_mc.tests import TestHERAMC
-
-
-def is_at_katcp_enabled_site():
-    return (socket.gethostname() == 'qmaster')
+from hera_mc.tests import TestHERAMC, is_onsite
 
 
 def test_reduce_time_vals():
@@ -139,7 +134,7 @@ class TestWeather(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.add_weather_data_from_sensors,
                           starttime=t1, stoptime=t2, variables=['foo', 'bar'])
 
-        if is_at_katcp_enabled_site():
+        if is_onsite():
             self.test_session.add_weather_data_from_sensors(t1, t2)
             result = self.test_session.get_weather_data(t1 - TimeDelta(3.0, format='sec'),
                                                         stoptime=t1)
