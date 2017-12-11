@@ -393,7 +393,7 @@ class Handling:
         if state_args['show_state'] == 'active':
             from hera_mc import cm_hookup, cm_revisions
             hookup = cm_hookup.Hookup(query_date, self.session)
-            hookup_dict = hookup.get_hookup('cached')
+            hookup_dict = hookup.get_hookup('HH')
 
         query_date = cm_utils.get_astropytime(query_date)
         if state_args['station_types'][0] == 'all':
