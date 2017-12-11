@@ -520,6 +520,9 @@ class Hookup:
         print('Cache file mod time:  {}'.format(cm_utils.get_time_for_display(file_mod_time)))
         print('Cached hookup list:  {}'.format(self.cached_hookup_list))
         print('Cached dict has {} keys.'.format(len(self.cached_hookup_dict['hookup'].keys())))
+        result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
+        cm_hash_time = Time(result[-1].update_time, format='gps')
+        print('CM Version latest hash time:  {}'.format(cm_utils.get_time_for_display(cm_hash_time)))
 
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,
                     show_state='full', file=None, output_format='ascii'):
