@@ -22,8 +22,9 @@ Be sure to do all your work on a branch off of master.
 4. Run `alembic upgrade head` to apply your schema changes -- be sure to `python setup.py install` first. At this point it's a very good idea to inspect the database table (using the psql command line) to make sure the right thing happened. It's also a very good idea to run `alembic downgrade -1` to back up to before your revision and check that the database looks right (of course you then need to re-run the upgrade command to get back to where you meant to be.)
 5. Run `nosetests` to check that all the tests pass.
 6. git add the alembic/version that was created and commit your work.
-7. When you're satisfied that everything works as expected, create a pull request on github to ask for a code review and to get your changes integrated into master.
-8. Once the changes have been incorporated into master, you can log onto site, pull the master branch and run `alembic upgrade head` to update the onsite database to the new schema.
+7. When you're satisfied that everything works as expected, add a description of your new table to the documentation -- to cm.tex if it's a configuration management table or to mc_definition.tex otherwise.
+8. Create a pull request on github to ask for a code review and to get your changes integrated into master.
+9. Once the changes have been incorporated into master, you can log onto site, pull the master branch and run `alembic upgrade head` to update the onsite database to the new schema.
 
 # Deleting all the tables in a database (in psql shell)
 This can be useful to do on your local machine if your database is in a weird state. Never do this on site!!!
