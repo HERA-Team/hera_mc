@@ -183,7 +183,7 @@ class Hookup:
             hookup_dict = self.add_correlator_levels(hookup_dict)
         return hookup_dict
 
-    def __double_check_cache_keys(self, hpn_list):
+    def __double_check_request(self, hpn_list):
         """
         Checks that all hookup requests match the cached keys.
         """
@@ -459,7 +459,7 @@ class Hookup:
             np.save(f, self.cached_hookup_dict)
             np.save(f, self.part_type_cache)
         log_dict = {'hu-list': cm_utils.stringify(self.hookup_list_to_cache),
-                    'check_hookup': str(self.__check_hookup_cache_file_date()),
+                    'check_hookup': str(self.__hookup_cache_file_date_OK()),
                     'force_new': str(force_new)}
         cm_utils.log('update_cache', log_dict=log_dict)
 
