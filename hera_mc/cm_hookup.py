@@ -51,12 +51,9 @@ def get_parts_from_hookup(part_name, hookup_dict):
 
 class Hookup:
     """
-    Class to find and display the signal path hookup.  It only has a few public methods:
-        set_hookup_cache
-        get_hookup
-        show_hookup
-    To speed things up, it uses a cache file, but only if the query is for HH* stuff and
-    if the cache file is current relative to the cm_version
+    Class to find and display the signal path hookup, with a few utility functions.
+    To speed things up, it uses a cache file, but only if the query is for prefixes in
+    hookup_list_to_cache and if the cache file is current relative to the cm_version
     """
     hookup_list_to_cache = ['HH']
     hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache.npy')
