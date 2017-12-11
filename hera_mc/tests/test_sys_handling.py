@@ -33,6 +33,12 @@ class TestSys(TestHERAMC):
         msg = self.h.publish_summary()
         self.assertEqual(msg, 'Not on "main"')
 
+    def test_other_hookup(self):
+        H = cm_hookup.Hookup(at_date='now', session=self.test_session)
+        H.reset_cache(None)
+        self.assertEqual(H.cached_hookup_dict, None)
+        H.show_hookup_cache_file_info()
+
     def test_correlator_info(self):
         corr_dict = self.h.get_cminfo_correlator()
 
