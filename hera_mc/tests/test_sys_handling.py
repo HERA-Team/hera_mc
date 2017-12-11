@@ -39,7 +39,6 @@ class TestSys(TestHERAMC):
         H.reset_cache(None)
         self.assertEqual(H.cached_hookup_dict, None)
         hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True, force_new=True)
-        print(hu)
         H.reset_cache(hu)
         self.assertEqual(H.cached_hookup_dict['hookup']['HH23:A']['e'][0].upstream_part, 'HH23')
 
