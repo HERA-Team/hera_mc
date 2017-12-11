@@ -509,6 +509,17 @@ class Hookup:
             self.cached_hookup_dict = np.load(f).item()
             self.part_type_cache = np.load(f).item()
 
+    def show_hookup_cache_file_info(self):
+        if not os.path.exists(self.hookup_cache_file):
+            return "{} does not exist.".format(self.hookup_cache_file)
+        self.__read_hookup_cache_from_file()
+        print('Cache time:  {}'.format(cm_utils.get_time_for_display(self.cached_at_date)))
+        stats = os.stat(self.hookup_cache_file)
+        file_mod_time = Time(stats.st_mtime, format='unix')
+        print('Cache file mod time:  {}'.format(cm_utils.get_time_for_display(file_mod_time)))
+        print('Cached hookup list:  {}'.format(self.cached_hookup_list))
+        print('Cached dict has {} keys.'.format(len(self.cached_hookup_dict).keys()))
+
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,
                     show_state='full', file=None, output_format='ascii'):
         """
