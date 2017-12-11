@@ -7,6 +7,7 @@
 """
 
 import unittest
+import socket
 from hera_mc import mc, cm_transfer
 import warnings
 import sys
@@ -14,6 +15,10 @@ import collections
 from hera_mc.utils import get_iterable
 
 test_db = None
+
+
+def is_onsite():
+    return (socket.gethostname() == 'qmaster')
 
 
 def setup_package():
