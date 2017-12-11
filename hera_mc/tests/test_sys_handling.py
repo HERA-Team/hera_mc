@@ -34,9 +34,17 @@ class TestSys(TestHERAMC):
         self.assertEqual(msg, 'Not on "main"')
 
     def test_other_hookup(self):
-        H = cm_hookup.Hookup(at_date='now', session=self.test_session)
+        at_date = cm_utils.get_astropytime('2017-07-03')
+        H = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
         H.reset_cache(None)
         self.assertEqual(H.cached_hookup_dict, None)
+        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True, force_new=True)
+        print(hu)
+        H.reset_cache(hu)
+        self.assertEqual(H.cached_hookup_dict['hookup']['HH23:A']['e'][0].upstream_part, 'HH23')
+
+    def test_show_hookup_cache_file(self):
+        H = cm_hookup.Hookup(at_date='now', session=self.test_session)
         H.show_hookup_cache_file_info()
 
     def test_correlator_info(self):

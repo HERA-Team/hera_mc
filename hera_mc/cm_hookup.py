@@ -145,12 +145,14 @@ class Hookup:
         """
         # Take appropriate action if hpn_list is a string
         if type(hpn_list) == str and hpn_list.lower() == 'cached':
+            if self.cached_hookup_dict is None:
+                self.__read_hookup_cache_from_file()
             return self.cached_hookup_dict
         if type(hpn_list) == str:
             hpn_list = [hpn_list]
 
         # Check if force_specific return either requested or needed
-        requested_list_OK_for_cache = self.__double_check_request(hpn_list)
+        requested_list_OK_for_cache = self.__double_check_request_for_cache_keys(hpn_list)
         if force_specific or not requested_list_OK_for_cache:
             return self.__get_hookup(hpn_list=hpn_list, rev=rev, port_query=port_query,
                                      at_date=force_specific_at_date,
@@ -182,7 +184,7 @@ class Hookup:
             hookup_dict = self.add_correlator_levels(hookup_dict)
         return hookup_dict
 
-    def __double_check_request(self, hpn_list):
+    def __double_check_request_for_cache_keys(self, hpn_list):
         """
         Checks that all hookup requests match the cached keys.
         """
@@ -483,7 +485,7 @@ class Hookup:
             raise
         result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
         cm_hash_time = Time(result[-1].update_time, format='gps')
-        file_mod_time = Time(stats.st_ctime, format='unix')
+        file_mod_time = Time(stats.st_mtime, format='unix')
         # If CMVersion changed since file was written, don't know so fail...
         if file_mod_time < cm_hash_time:
             return False
@@ -510,15 +512,16 @@ class Hookup:
 
     def show_hookup_cache_file_info(self):
         if not os.path.exists(self.hookup_cache_file):
-            return "{} does not exist.".format(self.hookup_cache_file)
-        self.__read_hookup_cache_from_file()
-        print('Cache file:  {}'.format(self.hookup_cache_file))
-        print('Cache time:  {}'.format(cm_utils.get_time_for_display(self.cached_at_date)))
-        stats = os.stat(self.hookup_cache_file)
-        file_mod_time = Time(stats.st_ctime, format='unix')
-        print('Cache file mod time:  {}'.format(cm_utils.get_time_for_display(file_mod_time)))
-        print('Cached hookup list:  {}'.format(self.cached_hookup_list))
-        print('Cached dict has {} keys.'.format(len(self.cached_hookup_dict['hookup'].keys())))
+            print("{} does not exist.".format(self.hookup_cache_file))
+        else:
+            self.__read_hookup_cache_from_file()
+            print('Cache file:  {}'.format(self.hookup_cache_file))
+            print('Cache time:  {}'.format(cm_utils.get_time_for_display(self.cached_at_date)))
+            stats = os.stat(self.hookup_cache_file)
+            file_mod_time = Time(stats.st_mtime, format='unix')
+            print('Cache file mod time:  {}'.format(cm_utils.get_time_for_display(file_mod_time)))
+            print('Cached hookup list:  {}'.format(self.cached_hookup_list))
+            print('Cached dict has {} keys.'.format(len(self.cached_hookup_dict['hookup'].keys())))
         result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
         cm_hash_time = Time(result[-1].update_time, format='gps')
         print('CM Version latest hash time:  {}'.format(cm_utils.get_time_for_display(cm_hash_time)))
