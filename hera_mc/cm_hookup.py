@@ -463,7 +463,7 @@ class Hookup:
                     'force_new': str(force_new)}
         cm_utils.log('update_cache', log_dict=log_dict)
 
-    def __hookup_cache_file_date_OK(self, contemporaneous_minutes=5.0):
+    def __hookup_cache_file_date_OK(self, contemporaneous_minutes=15.0):
         """
         This determines if the cache file is up-to-date relative to the cm database.
         There are 4 relevant dates:
@@ -484,7 +484,7 @@ class Hookup:
             raise
         result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
         cm_hash_time = Time(result[-1].update_time, format='gps')
-        file_mod_time = Time(stats.st_mtime, format='unix')
+        file_mod_time = Time(stats.st_ctime, format='unix')
         # If CMVersion changed since file was written, don't know so fail...
         if file_mod_time < cm_hash_time:
             return False
@@ -513,12 +513,13 @@ class Hookup:
         if not os.path.exists(self.hookup_cache_file):
             return "{} does not exist.".format(self.hookup_cache_file)
         self.__read_hookup_cache_from_file()
+        print('Cache file:  {}'.format(self.hookup_cache_file))
         print('Cache time:  {}'.format(cm_utils.get_time_for_display(self.cached_at_date)))
         stats = os.stat(self.hookup_cache_file)
-        file_mod_time = Time(stats.st_mtime, format='unix')
+        file_mod_time = Time(stats.st_ctime, format='unix')
         print('Cache file mod time:  {}'.format(cm_utils.get_time_for_display(file_mod_time)))
         print('Cached hookup list:  {}'.format(self.cached_hookup_list))
-        print('Cached dict has {} keys.'.format(len(self.cached_hookup_dict).keys()))
+        print('Cached dict has {} keys.'.format(len(self.cached_hookup_dict['hookup'].keys())))
 
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,
                     show_state='full', file=None, output_format='ascii'):
