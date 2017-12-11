@@ -94,6 +94,8 @@ class Hookup:
         date it writes/uses a new one.  Otherwise it uses the existing one (rereading from the
         cache file if not one in memory.)
 
+        This assumes that if a hookup_dict is read in, it corresponds to the cache_file.
+
         If the cache file is up-to-date and is in memory, this does nothing.
 
         Parameters
