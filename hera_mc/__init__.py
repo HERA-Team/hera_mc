@@ -70,6 +70,7 @@ MCDeclarativeBase.__repr__ = MethodType(MCDeclarativeBase_repr, None, MCDeclarat
 MCDeclarativeBase.isclose = MethodType(MCDeclarativeBase_close, None, MCDeclarativeBase)
 
 import logging
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # Now we can pull in the rest of our definitions.
