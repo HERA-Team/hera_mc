@@ -11,6 +11,7 @@ import numpy as np
 from astropy.time import Time
 from math import floor, isnan
 from sqlalchemy import Column, BigInteger, Float, String
+from . import mc
 
 import tornado.gen
 
@@ -128,6 +129,7 @@ class WeatherData(MCDeclarativeBase):
 
 
 class Handling:
+
     def __init__(self, session=None):
         """
         This is a class to take various actions with the weather data in the database.
@@ -149,13 +151,13 @@ class Handling:
                 self.wx[wl.variable] = {}
             self.wx[wl.variable][wl.time] = wl.value
 
-    def write_weather_files(self, path='~/.hera_mc'):
+    def write_weather_files(self, path='.'):
         """
-        Writes all of the weather data to files named by the variable.
+        Writes all of the weather data to files to <path>/<variable>.txt
 
         Parameters:
         -----------
-        path:  path to write files.  Defaults to ~/.hera_mc.
+        path:  path to write files.  Defaults to current.
         """
         import os.path
         if self.wx is None:
@@ -169,14 +171,14 @@ class Handling:
                     s = '{}\t{}\n'.format(t, v[t])
                     f.write(s)
 
-    def read_weather_files(self, wxlist=['humidity', 'pressure', 'rain', 'temperature', 'wind_direction', 'wind_speed', 'wind_gust'], path='~/.hera_mc'):
+    def read_weather_files(self, wxlist=['humidity', 'pressure', 'rain', 'temperature', 'wind_direction', 'wind_speed', 'wind_gust'], path='.'):
         """
         Reads in the weather files as written by self.write_weather_files.
 
         Parameters:
         -----------
         wxlist:  variables to be read.
-        path:  path to read files.  Defaults to ~/.hera_mc
+        path:  path to read files.  Defaults to current
         """
         import os.path
         self.wx = {}
