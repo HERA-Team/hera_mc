@@ -127,6 +127,69 @@ class WeatherData(MCDeclarativeBase):
         return cls(time=weather_time, variable=variable, value=value)
 
 
+class Handling:
+    def __init__(self, session=None):
+        """
+        This is a class to take various actions with the weather data in the database.
+        """
+        if session is None:
+            db = mc.connect_to_mc_db(None)
+            self.session = db.sessionmaker()
+        else:
+            self.session = session
+        self.wx = None
+
+    def read_weather_table(self):
+        """
+        Pulls all of the weather data from the table and writes self.wx dictionary.
+        """
+        self.wx = {}
+        for wl in self.session.query(W.WeatherData):
+            if wl.variable not in self.wx.keys():
+                self.wx[wl.variable] = {}
+            self.wx[wl.variable][wl.time] = wl.value
+
+    def write_weather_files(self, path='~/.hera_mc'):
+        """
+        Writes all of the weather data to files named by the variable.
+
+        Parameters:
+        -----------
+        path:  path to write files.  Defaults to ~/.hera_mc.
+        """
+        import os.path
+        if self.wx is None:
+            self.read_weather_table()
+        path = os.path.expanduser(path)
+        for wvar, v in self.wx.iteritems():
+            fn = os.path.join(path, (wvar + '.txt'))
+            with open(fn, 'w') as f:
+                times = sorted(v.keys())
+                for t in times:
+                    s = '{}\t{}\n'.format(t, v[t])
+                    f.write(s)
+
+    def read_weather_files(self, wxlist=['humidity', 'pressure', 'rain', 'temperature', 'wind_direction', 'wind_speed', 'wind_gust'], path='~/.hera_mc'):
+        """
+        Reads in the weather files as written by self.write_weather_files.
+
+        Parameters:
+        -----------
+        wxlist:  variables to be read.
+        path:  path to read files.  Defaults to ~/.hera_mc
+        """
+        import os.path
+        self.wx = {}
+        path = os.path.expanduser(path)
+        for wvar in wxlist:
+            self.wx[wvar] = {}
+            fn = os.path.join(path, (wvar + '.txt'))
+            with open(fn, 'r') as f:
+                for data in f:
+                    d = data.split()
+                    self.wx[wvar][int(d[0])] = float(d[1])
+
+
 @tornado.gen.coroutine
 def _helper_create_from_sensors(starttime, stoptime, variables=None):
     """
