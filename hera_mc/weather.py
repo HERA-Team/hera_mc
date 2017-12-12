@@ -146,7 +146,7 @@ class Handling:
         Pulls all of the weather data from the table and writes self.wx dictionary.
         """
         self.wx = {}
-        for wl in self.session.query(W.WeatherData):
+        for wl in self.session.query(WeatherData):
             if wl.variable not in self.wx.keys():
                 self.wx[wl.variable] = {}
             self.wx[wl.variable][wl.time] = wl.value
@@ -171,7 +171,7 @@ class Handling:
                     s = '{}\t{}\n'.format(t, v[t])
                     f.write(s)
 
-    def read_weather_files(self, wxlist=['humidity', 'pressure', 'rain', 'temperature', 'wind_direction', 'wind_speed', 'wind_gust'], path='.'):
+    def read_weather_files(self, wx=['humidity', 'pressure', 'rain', 'temperature', 'wind_direction', 'wind_speed', 'wind_gust'], path='.'):
         """
         Reads in the weather files as written by self.write_weather_files.
 
@@ -183,7 +183,7 @@ class Handling:
         import os.path
         self.wx = {}
         path = os.path.expanduser(path)
-        for wvar in wxlist:
+        for wvar in wx:
             self.wx[wvar] = {}
             fn = os.path.join(path, (wvar + '.txt'))
             with open(fn, 'r') as f:
