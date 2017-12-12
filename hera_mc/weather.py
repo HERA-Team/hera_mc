@@ -143,7 +143,7 @@ class Handling:
 
     def read_weather_table(self):
         """
-        Pulls all of the weather data from the table and writes self.wx dictionary.
+        Pulls all of the weather data from the table and makes self.wx dictionary.
         """
         self.wx = {}
         for wl in self.session.query(WeatherData):
@@ -164,8 +164,7 @@ class Handling:
             self.read_weather_table()
         path = os.path.expanduser(path)
         for wvar, v in self.wx.iteritems():
-            fn = os.path.join(path, (wvar + '.txt'))
-            with open(fn, 'w') as f:
+            with open(os.path.join(path, (wvar + '.txt')), 'w') as f:
                 times = sorted(v.keys())
                 for t in times:
                     s = '{}\t{}\n'.format(t, v[t])
@@ -177,7 +176,7 @@ class Handling:
 
         Parameters:
         -----------
-        wxlist:  variables to be read.
+        wx:  variables to be read.
         path:  path to read files.  Defaults to current
         """
         import os.path
@@ -185,8 +184,7 @@ class Handling:
         path = os.path.expanduser(path)
         for wvar in wx:
             self.wx[wvar] = {}
-            fn = os.path.join(path, (wvar + '.txt'))
-            with open(fn, 'r') as f:
+            with open(os.path.join(path, (wvar + '.txt')), 'r') as f:
                 for data in f:
                     d = data.split()
                     self.wx[wvar][int(d[0])] = float(d[1])

@@ -14,7 +14,7 @@ from astropy.time import Time
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-W', '--write-weather', dest='write_weather', help="Dumps all weather table data to '.hera_mc/<variable>.txt'", action='store_true')
+    parser.add_argument('-W', '--write-weather', dest='write_weather', help="Dumps all weather table data to './<variable>.txt'", action='store_true')
     parser.add_argument('-v', '--variables', help="Weather variable(s) in csv-list. Defaults to all.", default=None)
     parser.add_argument('--start-date', dest='start_date', help="Start date YYYY/MM/DD", default=None)
     parser.add_argument('--start-time', dest='start_time', help="Start time in HH:MM", default='17:00')
@@ -28,7 +28,8 @@ if __name__ == '__main__':
 
     if args.write_weather:
         from hera_mc import weather
-        weather.write_weather_files()
+        W = weather.Handling()
+        W.write_weather_files()
         sys.exit()
 
     variables = cm_utils.listify(args.variables)
