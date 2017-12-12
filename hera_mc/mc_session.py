@@ -2,6 +2,8 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
+from __future__ import absolute_import, division, print_function
+
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from astropy.time import Time
@@ -118,7 +120,7 @@ class MCSession(Session):
             observation identification number
         """
         from .observations import Observation
-        import geo_handling
+        from . import geo_handling
 
         h = geo_handling.Handling(session=self)
         hera_cofa = h.cofa()[0]
@@ -824,6 +826,55 @@ class MCSession(Session):
         return self._time_filter(WeatherData, 'time', starttime,
                                  stoptime=stoptime, filter_column='variable',
                                  filter_value=variable)
+
+    def write_weather_files(self, start_time, stop_time, variables=None):
+        """Dump the weather data to text files in the current directory, to aid in
+        diagnostics.
+
+        Parameters:
+        ------------
+        start_time: astropy time object or None
+            time to start getting history.
+        stop_time: astropy time object or None
+            time to stop getting history.
+        variables: string or None
+            A comma-separated list of names of variables to get data for, as
+            named in the Python variable
+            `hera_mc.weather.weather_sensor_dict`. If None, data for all
+            variables will be written.
+
+        """
+        # Avoid _time_filter since it loads every row into an in-memory list, which
+        # could get huge.
+
+        from .cm_utils import listify
+        from .weather import WeatherData, weather_sensor_dict
+
+        if variables is None:
+            variables = list(weather_sensor_dict.keys())
+        else:
+            variables = listify(variables)
+
+            for v in variables:
+                if v not in weather_sensor_dict:
+                    raise ValueError('unknown weather variable name %r' % v)
+
+        q = self.query(WeatherData).filter(WeatherData.variable.in_(variables))
+
+        if start_time is not None:
+            if stop_time is not None:
+                q = q.filter(WeatherData.time.between(start_time.gps, stop_time.gps))
+            else:
+                q = q.filter(WeatherData.time >= start_time.gps)
+        elif stop_time is not None:
+            q = q.filter(WeatherData.time <= stop_time.gps)
+
+        q = q.order_by(WeatherData.time)
+        files = dict((v, open(v + '.txt', 'wt')) for v in variables)
+
+        for item in q:
+            print('{}\t{}'.format(item.astropy_time, item.value), file=files[item.variable])
+
 
     def add_roach_temperature(self, time, roach, ambient_temp, inlet_temp,
                               outlet_temp, fpga_temp, ppc_temp):

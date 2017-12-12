@@ -15,6 +15,8 @@ from astropy.time import Time
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-v', '--variables', help="Weather variable(s) in csv-list. Defaults to all.", default=None)
+    parser.add_argument('-W', '--write-weather', dest='write_weather', action='store_true',
+                        help='Dumps all weather data to text files in the current directory.')
     parser.add_argument('--start-date', dest='start_date', help="Start date YYYY/MM/DD", default=None)
     parser.add_argument('--start-time', dest='start_time', help="Start time in HH:MM", default='17:00')
     parser.add_argument('--stop-date', dest='stop_date', help="Stop date YYYY/MM/DD", default=None)
@@ -34,11 +36,15 @@ if __name__ == '__main__':
         start_time = cm_utils.get_astropytime(args.start_date, args.start_time)
         stop_time = cm_utils.get_astropytime(args.stop_date, args.stop_time)
 
-    if not isinstance(start_time, Time) or not isinstance(stop_time, Time):
-        print("Need valid start/stop times - or can specify last-period.", file=sys.stderr)
-        sys.exit(1)
+    if args.write_weather:
+        db = mc.connect_to_mc_db(args)
+        session = db.sessionmaker()
+        session.write_weather_files(start_time, stop_time, variables)
+    elif args.add_to_db:
+        if not isinstance(start_time, Time) or not isinstance(stop_time, Time):
+            print("Need valid start/stop times - or can specify last-period.", file=sys.stderr)
+            sys.exit(1)
 
-    if args.add_to_db:
         db = mc.connect_to_mc_db(args)
         session = db.sessionmaker()
         session.add_weather_data_from_sensors(start_time, stop_time, variables)
