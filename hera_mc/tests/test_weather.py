@@ -157,6 +157,36 @@ class TestWeather(TestHERAMC):
 
             self.assertRaises(ValueError, weather.create_from_sensors, t1, t2, variables='foo')
 
+    def test_read_weather_table(self):
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        t2 = t1 + TimeDelta(120.0, format='sec')
+
+        wind_speeds = [2.5487029167, 2.5470608333]
+        wind_directions = [239.382, 223.11]
+        temperatures = [11.505, 12.29]
+
+        self.test_session.add_weather_data(t1, 'wind_speed', wind_speeds[0])
+        self.test_session.add_weather_data(t1, 'wind_direction', wind_directions[0])
+        self.test_session.add_weather_data(t1, 'temperature', temperatures[0])
+        self.test_session.add_weather_data(t2, 'wind_speed', wind_speeds[1])
+        self.test_session.add_weather_data(t2, 'wind_direction', wind_directions[1])
+        self.test_session.add_weather_data(t2, 'temperature', temperatures[1])
+
+        W = weather.Handling(self.test_session)
+        W.read_weather_table()
+        read_t1 = min(W.wx['wind_speed'].keys())
+        self.assertTrue(int(t1.gps), read_t1)
+        self.assertTrue(W.wx['wind_speed'][read_t1], wind_speeds[0])
+
+        W.write_weather_files(path='.')
+        W.read_weather_files(wx=['wind_speed', 'wind_direction', 'temperature'], path='.')
+        self.assertTrue(int(t1.gps), read_t1)
+        self.assertTrue(W.wx['wind_speed'][read_t1], wind_speeds[0])
+
+        import os
+        os.remove('wind_speed.txt')
+        os.remove('wind_direction.txt')
+        os.remove('temperature.txt')
 
     def test_dump_weather_table(self):
         # Just make sure it doesn't crash.

@@ -11,6 +11,7 @@ import numpy as np
 from astropy.time import Time
 from math import floor, isnan
 from sqlalchemy import Column, BigInteger, Float, String
+from . import mc
 
 import tornado.gen
 
@@ -129,6 +130,68 @@ class WeatherData(MCDeclarativeBase):
     @property
     def astropy_time(self):
         return Time(self.time, format='gps')
+
+class Handling:
+
+    def __init__(self, session=None):
+        """
+        This is a class to take various actions with the weather data in the database.
+        """
+        if session is None:
+            db = mc.connect_to_mc_db(None)
+            self.session = db.sessionmaker()
+        else:
+            self.session = session
+        self.wx = None
+
+    def read_weather_table(self):
+        """
+        Pulls all of the weather data from the table and makes self.wx dictionary.
+        """
+        self.wx = {}
+        for wl in self.session.query(WeatherData):
+            if wl.variable not in self.wx.keys():
+                self.wx[wl.variable] = {}
+            self.wx[wl.variable][wl.time] = wl.value
+
+    def write_weather_files(self, path='.'):
+        """
+        Writes all of the weather data to files to <path>/<variable>.txt
+
+        Parameters:
+        -----------
+        path:  path to write files.  Defaults to current.
+        """
+        import os.path
+        if self.wx is None:
+            self.read_weather_table()
+        path = os.path.expanduser(path)
+        for wvar, v in self.wx.iteritems():
+            with open(os.path.join(path, (wvar + '.txt')), 'w') as f:
+                times = sorted(v.keys())
+                for t in times:
+                    s = '{}\t{}\n'.format(t, v[t])
+                    f.write(s)
+
+    def read_weather_files(self, wx=['humidity', 'pressure', 'rain', 'temperature', 'wind_direction', 'wind_speed', 'wind_gust'], path='.'):
+        """
+        Reads in the weather files as written by self.write_weather_files.
+
+        Parameters:
+        -----------
+        wx:  variables to be read.
+        path:  path to read files.  Defaults to current
+        """
+        import os.path
+        self.wx = {}
+        path = os.path.expanduser(path)
+        for wvar in wx:
+            self.wx[wvar] = {}
+            with open(os.path.join(path, (wvar + '.txt')), 'r') as f:
+                for data in f:
+                    d = data.split()
+                    self.wx[wvar][int(d[0])] = float(d[1])
+
 
 @tornado.gen.coroutine
 def _helper_create_from_sensors(starttime, stoptime, variables=None):

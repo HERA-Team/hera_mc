@@ -14,6 +14,7 @@ from astropy.time import Time
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
+    parser.add_argument('-W', '--write-weather', dest='write_weather', help="Dumps all weather table data to './<variable>.txt'", action='store_true')
     parser.add_argument('-v', '--variables', help="Weather variable(s) in csv-list. Defaults to all.", default=None)
     parser.add_argument('-W', '--write-weather', dest='write_weather', action='store_true',
                         help='Dumps all weather data to text files in the current directory.')
@@ -26,6 +27,12 @@ if __name__ == '__main__':
                         help="Time period from present for data (in minutes).  If present ignores start/stop.")
 
     args = parser.parse_args()
+
+    if args.write_weather:
+        from hera_mc import weather
+        W = weather.Handling()
+        W.write_weather_files()
+        sys.exit()
 
     variables = cm_utils.listify(args.variables)
     if args.last_period:
