@@ -126,6 +126,9 @@ class WeatherData(MCDeclarativeBase):
 
         return cls(time=weather_time, variable=variable, value=value)
 
+    @property
+    def astropy_time(self):
+        return Time(self.time, format='gps')
 
 @tornado.gen.coroutine
 def _helper_create_from_sensors(starttime, stoptime, variables=None):
