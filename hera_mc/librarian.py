@@ -208,12 +208,14 @@ class LibFiles(MCDeclarativeBase):
 
     filename: name of file created (String). Primary_key
     obsid: observation obsid (Long). Foreign key into Observation table
+      Null values allowed for maintenance files not associated with
+      particular observations.
     time: time this file was created in floor(gps seconds) (BigInteger)
     size_gb: file size in gb (Float)
     """
     __tablename__ = 'lib_files'
     filename = Column(String(256), primary_key=True)
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), nullable=False)
+    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), nullable=True)
     time = Column(BigInteger, nullable=False)
     size_gb = Column(Float, nullable=False)
 
@@ -226,8 +228,10 @@ class LibFiles(MCDeclarativeBase):
         ------------
         filename: string
             name of file created
-        obsid: long
-            observation obsid (Foreign key into Observation)
+        obsid: long or None
+            observation obsid (Foreign key into Observation), or None if
+            this file is a maintenance file not associated with a
+            particular observation.
         time: astropy time object
             time file was created
         size_gb: float

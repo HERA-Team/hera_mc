@@ -212,7 +212,7 @@ bandwidth\_mps & float & bandwidth to remote in Mb/s, 15 minute average \\\hline
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{filename} & string & name of file created \\ \hline
-\textit{obsid} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
+\textit{obsid} & long integer & observation identifier, foreign key into hera\_obs table. Can be null. \\ \hline
 time & long & file creation time in floor(gps seconds)\\ \hline
 size\_gb & float & file size in gigabytes \\ \hline
 \end{tabular}
