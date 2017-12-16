@@ -503,8 +503,8 @@ class MCSession(Session):
         ------------
         filename: string
             name of file created
-        obsid: long
-            observation obsid (Foreign key into Observation)
+        obsid: long or None
+            optional observation obsid (Foreign key into Observation)
         time: astropy time object
             time file was created
         size_gb: float

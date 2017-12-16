@@ -285,6 +285,28 @@ class TestLibrarian(TestHERAMC):
         for i in range(0, len(result_obsid)):
             self.assertTrue(result_obsid[i].isclose(result_all[i]))
 
+    def test_lib_file_null_obsid(self):
+        self.test_session.add_obs(*self.observation_values)
+
+        time = Time.now()
+        file_values = ['nullobsfile', None, time, 1.234]
+        self.test_session.add_lib_file(*file_values)
+
+        expected = LibFiles(
+            filename = file_values[0],
+            obsid = None,
+            time = int(floor(time.gps)),
+            size_gb = file_values[3],
+        )
+
+        result = self.test_session.get_lib_files(filename=file_values[0])
+        self.assertEqual(len(result), 1)
+        self.assertTrue(result[0].isclose(expected))
+
+        # Clean up so as not to step on toes of `test_add_lib_file()` test.
+        self.test_session.delete(result[0])
+        self.test_session.commit()
+
     def test_errors_add_lib_file(self):
         self.test_session.add_obs(*self.observation_values)
         obs_result = self.test_session.get_obs()
