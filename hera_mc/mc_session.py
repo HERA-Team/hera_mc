@@ -904,17 +904,43 @@ class MCSession(Session):
                                          outlet_temp, fpga_temp, ppc_temp))
 
     def add_roach_temperature_from_redis(self):
-        """
-        Read and add roach (fpga correlator board) temperatures from the Redis database
-        This function connects to the Redis database and grabs the latest data
-        using the "create_from_redis" function.
+        """Read and add ROACH (FPGA correlator board) temperatures from the Redis
+        database. This function connects to the Redis database and grabs the
+        latest data using the `create_from_redis` function.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the ROACH/Redis data densely on qmaster.
 
         """
         from .roach import create_from_redis
 
         roach_temperature_list = create_from_redis()
-        for obj in roach_temperature_list:
-            self.add(obj)
+
+        if self.bind.dialect.name == 'postgresql':
+            from sqlalchemy import inspect
+            from sqlalchemy.dialects.postgresql import insert
+            from .roach import RoachTemperature
+
+            ies = [c.name for c in inspect(RoachTemperature).primary_key]
+            conn = self.connection()
+
+            for obj in roach_temperature_list:
+                # This appears to be the most correct way to map each row
+                # object into a dictionary:
+                values = {}
+                for col in inspect(obj).mapper.column_attrs:
+                    values[col.expression.name] = getattr(obj, col.key)
+
+                # The special PostgreSQL insert statement lets us ignore
+                # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
+                stmt = insert(RoachTemperature).values(**values).on_conflict_do_nothing(index_elements=ies)
+                conn.execute(stmt)
+        else:
+            # Generic approach:
+            for obj in roach_temperature_list:
+                self.add(obj)
 
     def get_roach_temperature(self, starttime, stoptime=None, roach=None):
         """
