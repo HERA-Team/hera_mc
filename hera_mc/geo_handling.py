@@ -390,10 +390,9 @@ class Handling:
         """
         if not testing:
             import matplotlib.pyplot as plt
-        if state_args['show_state'] == 'active':
-            from hera_mc import cm_hookup, cm_revisions
-            hookup = cm_hookup.Hookup(query_date, self.session)
-            hookup_dict = hookup.get_hookup('HH')
+        from hera_mc import cm_hookup, cm_revisions
+        hookup = cm_hookup.Hookup(query_date, self.session)
+        hookup_dict = hookup.get_hookup('HH')
 
         query_date = cm_utils.get_astropytime(query_date)
         if state_args['station_types'][0] == 'all':
@@ -404,18 +403,25 @@ class Handling:
         for key in self.station_types.keys():
             if prefixes_to_plot == 'all' or key.upper() in prefixes_to_plot:
                 stations_to_plot = []
+                active_stations = []
                 for loc in self.station_types[key]['Stations']:
                     show_it = True
-                    if state_args['show_state'] == 'active':
-                        fc = cm_revisions.get_full_revision_keys(loc, hookup_dict)
-                        if len(fc) == 0:
-                            show_it = False
+                    fc = cm_revisions.get_full_revision_keys(loc, hookup_dict)
+                    if len(fc) > 0:
+                        active_stations.append(loc)
+                    if state_args['show_state'] == 'active' and len(fc) == 0:
+                        show_it = False
                     if show_it:
                         stations_to_plot.append(loc)
                 state_args['marker_color'] = self.station_types[key]['Marker'][0]
                 state_args['marker_shape'] = self.station_types[key]['Marker'][1]
                 state_args['marker_size'] = 6
                 self.plot_stations(stations_to_plot, query_date, state_args, testing)
+                if state_args['show_state'] == 'all':
+                    state_args['marker_color'] = 'g'
+                    state_args['marker_shape'] = 'o'
+                    state_args['marker_size'] = 7
+                    self.plot_stations(active_stations, query_date, state_args, testing)
         if not testing:
             if state_args['xgraph'].upper() != 'Z' and state_args['ygraph'].upper() != 'Z':
                 plt.axis('equal')
