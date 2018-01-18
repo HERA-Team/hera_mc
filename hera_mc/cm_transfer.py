@@ -53,7 +53,7 @@ class CMVersion(MCDeclarativeBase):
         return cls(update_time=time, git_hash=git_hash)
 
 
-def package_db_to_csv(session=None, tables='all', base=False):
+def package_db_to_csv(session=None, tables='all'):
     """
     This will get the configuration management tables from the database
        and package them to csv files to be read by initialize_db_from_csv
@@ -65,17 +65,12 @@ def package_db_to_csv(session=None, tables='all', base=False):
              on the default database is created and used.
     tables: string
         comma-separated list of names of tables to initialize or 'all'. Default is 'all'
-    base: boolean
-        use base set of initialization data files. Default is False
     """
     if session is None:
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
 
-    if base:
-        data_prefix = cm_table_info.base_data_prefix
-    else:
-        data_prefix = cm_table_info.data_prefix
+    data_prefix = cm_table_info.data_prefix
     cm_tables = cm_table_info.cm_tables
 
     if tables == 'all':
@@ -119,7 +114,7 @@ def pack_n_go(session, cm_csv_path):
     session.commit()
 
 
-def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False):
+def initialize_db_from_csv(session=None, tables='all', maindb=False):
     """
     This entry module provides a double-check entry point to read the csv files and
        repopulate the configuration management database.  It destroys all current entries,
@@ -132,8 +127,6 @@ def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False)
              on the default database is created and used.
     tables: string
         comma-separated list of names of tables to initialize or 'all'. Default is 'all'
-    base: boolean
-        use base set of initialization data files. Default is False
     maindb: boolean or string
         Either False or the password to change from main db. Default is False
     """
@@ -142,7 +135,7 @@ def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False)
     you_are_sure = cm_utils.query_yn("Are you sure you want to do this? ", 'n')
     if you_are_sure:
         success = _initialization(session=session, cm_csv_path=None,
-                                  tables=tables, base=base, maindb=maindb)
+                                  tables=tables, maindb=maindb)
     else:
         print("Exit with no rewrite.")
         success = False
@@ -178,8 +171,7 @@ def db_validation(maindb_pw):
     return allowed
 
 
-def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
-                    maindb=False):
+def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
     """
     Internal initialization method, should be called via initialize_db_from_csv
 
@@ -190,8 +182,6 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
              on the default database is created and used.
     tables: string
         comma-separated list of names of tables to initialize or 'all'. Default is 'all'
-    base: boolean
-        use base set of initialization data files. Default is False
     maindb: boolean or string
         Either False or password to change from main db. Default is False
     """
@@ -219,10 +209,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
     else:
         tables_to_read_unordered = tables.split(',')
     tables_to_read = cm_table_info.order_the_tables(tables_to_read_unordered)
-    if base:
-        data_prefix = cm_table_info.base_data_prefix
-    else:
-        data_prefix = cm_table_info.data_prefix
+    data_prefix = cm_table_info.data_prefix
 
     use_table = []
     for table in tables_to_read:
