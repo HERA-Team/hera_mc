@@ -259,3 +259,28 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
                         setattr(table_inst, field_name[i], r)
                     session.add(table_inst)
                     session.commit()
+
+
+def convert_all_csv_to_sqlite3():
+    import sqlite3
+    import json
+
+    with open(mc.default_config_file, 'r') as f:
+        mc_files = json.load(f)
+
+    try:
+        dbfile = mc_files['databases']['hera_mc_sqlite']['url'][9:]
+    except KeyError:
+        print('databases/hera_mc_sqlite key not found in {}'.format(mc.default_config_file))
+        return
+    print(dbfile)
+    conn = sqlite3.connect(dbfile)
+
+    cm_csv_path = mc.get_cm_csv_path(None)
+    data_prefix = cm_table_info.data_prefix
+    cm_tables = cm_table_info.cm_tables.keys()
+
+    for table in cm_tables:
+        dataf = os.path.join(cm_csv_path, data_prefix + table + '.csv')
+        rcsv = pd.read_csv(dataf)
+        rcsv.to_sql(table, conn)
