@@ -12,15 +12,13 @@ from hera_mc import mc, cm_transfer
 parser = mc.get_mc_argument_parser()
 parser.add_argument('--tables', help="name of table for which to generate "
                     "initialization data file", default='all')
-parser.add_argument('--base', help="can define a base set of initialization "
-                    "data files", action='store_true')
 parser.add_argument('--go', help="If set, will move files to dist directory, commit and add \
                                  hash to table.", action='store_true')
 parser.add_argument('--cm_csv_path', help="Available if you want to redirect 'go' dir.",
                     default=None)
 args = parser.parse_args()
 
-cm_transfer.package_db_to_csv(tables=args.tables, base=args.base)
+cm_transfer.package_db_to_csv(tables=args.tables)
 
 if args.go:
     db = mc.connect_to_mc_db(args)
