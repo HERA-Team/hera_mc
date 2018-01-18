@@ -4,19 +4,43 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Script to read configuration management csv files and initialize tables.
+Script to setup the mc_config file.
 """
 
-from hera_mc import mc
+import os
 
-parser = mc.get_mc_argument_parser()
-parser.add_argument('--maindb', help="user-generated key to change from main db [False]",
-                    default=False)
-parser.add_argument('--tables', help="name of table for which to initialize or 'all' ['all']",
-                    default='all')
-parser.add_argument('--base', help="use base set of initialization data files [False]",
-                    action='store_true')
-args = parser.parse_args()
+logname = os.getenv('LOGNAME')
+mc_config_path = os.path.expanduser('~/.hera_mc')
+if os.path.exists(mc_config_path):
+    if os.path.exists(os.path.join(mc_config_path, 'mc_config.json')):
+        print("~/.hera_mc/mc_config.json already exists -- renaming to mc_config.json.bak")
+        os.rename(os.path.join(mc_config_path, 'mc_config.json'), os.path.join(mc_config_path, 'mc_config.json.bak'))
+else:
+    print("Creating {}".format(mc_config_path))
+    os.mkdir(mc_config_path)
 
-cm_transfer.initialize_db_from_csv(tables=args.tables, base=args.base,
-                                   maindb=args.maindb)
+assumed_hera_mc_db_updates_location = os.path.join(os.getcwd(), 'hera_cm_db_updates')
+
+mc_config = """
+{
+    "default_db_name": "hera_mc_sqlite",
+    "databases": {
+        "hera_mc": {
+            "url": "postgresql://{}@localhost/hera_mc",
+            "mode": "production"
+            },
+        "testing": {
+            "url": "postgresql://{}@localhost/hera_mc_test",
+            "mode": "testing"
+            },
+        "hera_mc_sqlite": {
+            "url": "sqlite:///{}/hera_mc.db",
+            "mode": "production"
+            }
+        },
+    "cm_csv_path": "{}"
+}
+""".format(logname, logname, assumed_hera_cm_db_updates_location, assumed_hera_cm_db_updates_location)
+
+with open(os.path.join(mc_config_path, 'mc_config.json'), 'w') as f:
+    f.write(mc_config)
