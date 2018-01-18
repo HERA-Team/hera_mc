@@ -30,8 +30,10 @@ different database backends as best it can, it is very desirable that you run
 PostgreSQL in your test environment as well. Use Google to learn how to do
 this, or follow the OS-X-specific notes below.
 
-
+_____________________________________
 Configure hera_mc to talk to the db:
+
+*OPTION 1:  Manually setup config file*
 After setting up the database (see below), you need to fill in the configuration file
 `~/.hera_mc/mc_config.json`, which tells the M&C system how to talk to the
 database. An example file is:
@@ -69,6 +71,16 @@ second line in mc_config.json:
 "default_db_name": "hera_mc_sqlite",
 ```
 
+*OPTION 2:  Use the script*
+After you get the repos:
+ 1 - hera_mc (and then python setup.py install it),
+ 2 - hera_cm_db_updates (no additional install)
+go to the parent directory of hera_cm_db_updates and run the script
+`mc_setup_home.py`
+
+It defaults to the sqlite option
+
+_____________________________________
 Create the database schema by running `alembic upgrade head`
 If desired, populate the configuration management tables by running the `cm_init.py` script.
 
@@ -80,6 +92,8 @@ To update your local database, (after you pull hera_cm_db_updates and add line t
 type `cm_init.py`
 
 ### Basic OS X PostgreSQL installation
+
+NOTE:  If you are only running sqlite, you don't need to install PostgresSQL to use the cm stuff.
 
 There are many options for installing postgres, several of which are described and
 linked on this page: https://www.postgresql.org/download/macosx/. For the

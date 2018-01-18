@@ -19,28 +19,30 @@ else:
     print("Creating {}".format(mc_config_path))
     os.mkdir(mc_config_path)
 
-assumed_hera_mc_db_updates_location = os.path.join(os.getcwd(), 'hera_cm_db_updates')
-
-mc_config = """
-{
+assumed_hera_cm_db_updates_location = os.path.join(os.getcwd(), 'hera_cm_db_updates')
+mc_config = """{{
     "default_db_name": "hera_mc_sqlite",
-    "databases": {
-        "hera_mc": {
+    "databases": {{
+        "hera_mc": {{
             "url": "postgresql://{}@localhost/hera_mc",
             "mode": "production"
-            },
-        "testing": {
+            }},
+        "testing": {{
             "url": "postgresql://{}@localhost/hera_mc_test",
             "mode": "testing"
-            },
-        "hera_mc_sqlite": {
+            }},
+        "hera_mc_sqlite": {{
             "url": "sqlite:///{}/hera_mc.db",
             "mode": "production"
-            }
-        },
+            }}
+        }},
     "cm_csv_path": "{}"
-}
+}}
 """.format(logname, logname, assumed_hera_cm_db_updates_location, assumed_hera_cm_db_updates_location)
 
 with open(os.path.join(mc_config_path, 'mc_config.json'), 'w') as f:
     f.write(mc_config)
+
+print("\nThis assumes your login name is\n\t{}".format(logname))
+print("and that hera_cm_db_updates is installed at\n\t{}".format(assumed_hera_cm_db_updates_location))
+print("\nIf either of these are incorrect, please edit {}".format(os.path.join(mc_config_path, 'mc_config.json')))
