@@ -16,7 +16,6 @@ cm_tables = {'part_info': [part_connect.PartInfo, 0],
              'geo_location': [geo_location.GeoLocation, 3],
              'station_type': [geo_location.StationType, 4],
              'dubitable': [part_connect.Dubitable, 5]}
-base_data_prefix = 'initialization_base_data_'
 data_prefix = 'initialization_data_'
 
 
