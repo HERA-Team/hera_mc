@@ -2,10 +2,23 @@ HERA M&C Installation
 =====================
 
 Installation of the Python code is just done with a standard
-
 ```
 python setup.py install
 ```
+
+# Begin simplified cm-only user installation
+*If you are using hera_mc to view configuration, just follow the instructions in this short section*
+
+Clone the following two repositories:
+https://github.com/HERA-Team/hera_mc
+https://github.com/HERA-Team/hera_cm_db_updates
+Then install by:
+  1 - within the hera_mc directory type `python setup.py install`
+  2 - in the parent directory of hera_cm_db_updates type `mc_setup_home.py`
+To run hera_mc, you will likely need to install some additional python modules (see Python Prerequisites below.)
+
+To test if it works, try `geo.py -g`
+# End simplified cm-only user installation
 
 
 Python Prerequisites
@@ -33,7 +46,6 @@ this, or follow the OS-X-specific notes below.
 _____________________________________
 Configure hera_mc to talk to the db:
 
-*OPTION 1:  Manually setup config file*
 After setting up the database (see below), you need to fill in the configuration file
 `~/.hera_mc/mc_config.json`, which tells the M&C system how to talk to the
 database. An example file is:
@@ -70,15 +82,6 @@ second line in mc_config.json:
 ```
 "default_db_name": "hera_mc_sqlite",
 ```
-
-*OPTION 2:  Use the script*
-After you get the repos:
- 1 - hera_mc (and then python setup.py install it),
- 2 - hera_cm_db_updates (no additional install)
-go to the parent directory of hera_cm_db_updates and run the script
-`mc_setup_home.py`
-
-It defaults to the sqlite option
 
 _____________________________________
 Create the database schema by running `alembic upgrade head`
