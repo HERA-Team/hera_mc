@@ -305,6 +305,28 @@ class TestRTP(TestHERAMC):
         elapsed = result.elapsed
         self.assertTrue(np.isclose(elapsed, 600.))
 
+    def test_add_rtp_task_resource_record_nulls(self):
+        self.test_session.add_obs(*self.observation_values)
+        obs_result = self.test_session.get_obs()
+        self.assertTrue(len(obs_result), 1)
+
+        # don't pass in max_memory or avg_cpu_load
+        self.test_session.add_rtp_task_resource_record(*self.task_resource_values[:-2])
+
+        exp_columns = self.task_resource_columns.copy()
+        # get rid of max_memory and avg_cpu_load columns
+        exp_columns.pop('max_memory')
+        exp_columns.pop('avg_cpu_load')
+        exp_columns['start_time'] = int(floor(exp_columns['start_time'].gps))
+        exp_columns['stop_time'] = int(floor(exp_columns['stop_time'].gps))
+        expected = RTPTaskResourceRecord(**exp_columns)
+
+        result = self.test_session.get_rtp_task_resource_record(self.task_resource_columns['obsid'],
+                                                                self.task_resource_columns['task_name'])
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
     def test_errors_rtp_task_resource_record(self):
         self.test_session.add_obs(*self.observation_values)
         obs_result = self.test_session.get_obs()
