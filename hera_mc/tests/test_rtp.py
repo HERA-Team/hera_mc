@@ -334,6 +334,9 @@ class TestRTP(TestHERAMC):
 
         fake_vals = [1, 'a', 2, 'b', 3, 'c']
         self.assertRaises(ValueError, self.test_session.add_rtp_task_resource_record, *fake_vals)
+        # test case where start_time is an astropy.time object, but stop_time isn't
+        fake_vals2 = [1, 'a', Time.now(), 'b', 3, 'c']
+        self.assertRaises(ValueError, self.test_session.add_rtp_task_resource_record, *fake_vals2)
 
         self.test_session.add_rtp_task_resource_record(*self.task_resource_values)
         self.assertRaises(ValueError, self.test_session.get_rtp_process_record, 1, 2)
