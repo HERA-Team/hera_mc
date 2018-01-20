@@ -714,6 +714,53 @@ class MCSession(Session):
                                  stoptime=stoptime, filter_column='obsid',
                                  filter_value=obsid)
 
+    def add_rtp_task_resource_record(self, obsid, task_name, start_time, stop_time,
+                                     max_memory=None, avg_cpu_load=None):
+        """
+        Add a new rtp_task_resource_record row
+
+        Parameters:
+        ------------
+        obsid: long
+            observation obsid (Foreign key into observation)
+        task_name: string
+            name of the task (e.g., OMNICAL)
+        start_time: astropy time object
+            time of task start
+        stop_time: astropy time object
+            time of task end
+        max_memory: float
+            maximum amount of memory used by the task, in MB
+        avg_cpu_load: float
+            average number of CPUs used by task
+        """
+        from .rtp import RTPTaskResourceRecord
+
+        self.add(RTPTaskResourceRecord.create(obsid, task_name, start_time, stop_time,
+                                              max_memory, avg_cpu_load))
+
+    def get_rtp_task_resource_record(self, obsid, task_name):
+        """
+        Get rtp_task_resource_record from the M&C database.
+
+        Parameters:
+        ------------
+        obsid: long
+            observation obsid (Foreign key into observation)
+        task_name: string
+            name of the task (e.g., OMNICAL)
+
+        Returns:
+        -----------
+        list of RTPTaskResourceRecord objects
+
+        """
+        from .rtp import RTPTaskResourceRecord
+
+        return self.query(RTPTaskResourceRecord).filter(
+            getattr(RTPTaskResourceRecord, 'obsid') == obsid,
+            getattr(RTPTaskResourceRecord, 'task_name') == task_name).limit(1).all()
+
     def add_paper_temps(self, read_time, temp_list):
         """
         Add a new PaperTemperatures record to the M&C database.
