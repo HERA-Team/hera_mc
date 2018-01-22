@@ -12,6 +12,7 @@ the documentation needs to be kept up to date with any changes.
 from math import floor
 from astropy.time import Time
 from sqlalchemy import Column, ForeignKey, Integer, BigInteger, String, Text, Float, Enum
+from sqlalchemy.ext.hybrid import hybrid_property
 from . import MCDeclarativeBase, DEFAULT_MIN_TOL, DEFAULT_HOUR_TOL
 from .server_status import ServerStatus
 
@@ -174,3 +175,59 @@ class RTPProcessRecord(MCDeclarativeBase):
                    hera_qm_git_version=hera_qm_git_version, hera_qm_git_hash=hera_qm_git_hash,
                    hera_cal_git_version=hera_cal_git_version, hera_cal_git_hash=hera_cal_git_hash,
                    pyuvdata_git_version=pyuvdata_git_version, pyuvdata_git_hash=pyuvdata_git_hash)
+
+
+class RTPTaskResourceRecord(MCDeclarativeBase):
+    """
+    Definition of rtp_task_resource_record table.
+
+    obsid: observation obsid (BigInteger). Part of primary_key. Foreign key into Observation table
+    task_name: name of task in pipeline (e.g., OMNICAL) (String). Part of primary_key
+    start_time: start time of the task in floor(gps_seconds) (BigInteger)
+    stop_time: stop time of the task in floor(gps_seconds) (BigInteger)
+    max_memory: the maximum amount of memory consumed by a task, in MB (Float)
+    avg_cpu_load: the average amount of CPU used by the task, as number of cores (e.g.,
+                  2.00 means 2 CPUs used) (Float)
+    """
+    __tablename__ = 'rtp_task_resource_record'
+    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    task_name = Column(Text, primary_key=True)
+    start_time = Column(BigInteger, nullable=False)
+    stop_time = Column(BigInteger, nullable=False)
+    max_memory = Column(Float, nullable=True)
+    avg_cpu_load = Column(Float, nullable=True)
+
+    @hybrid_property
+    def elapsed(self):
+        return self.stop_time - self.start_time
+
+    @classmethod
+    def create(cls, obsid, task_name, start_time, stop_time, max_memory=None,
+               avg_cpu_load=None):
+        """
+        Create a new rtp_process_record object.
+
+        Parameters:
+        ------------
+        obsid: long
+            observation obsid (Foreign key into Observation)
+        task_name: string
+            name of the task in the pipeline (e.g., OMNICAL)
+        start_time: astropy time object
+            start time of the task
+        stop_time: astropy time object
+            stop time of the task
+        max_memory: float
+            max amount of memory used, in MB
+        avg_cpu_load: float
+            average cpu load, in number of cores
+        """
+        if not isinstance(start_time, Time):
+            raise ValueError('start_time must be an astropy Time object')
+        if not isinstance(stop_time, Time):
+            raise ValueError('stop_time must be an astropy Time object')
+        start_time = floor(start_time.gps)
+        stop_time = floor(stop_time.gps)
+
+        return cls(obsid=obsid, task_name=task_name, start_time=start_time, stop_time=stop_time,
+                   max_memory=max_memory, avg_cpu_load=avg_cpu_load)
