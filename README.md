@@ -6,6 +6,12 @@
 This is the main repository for HERA's monitor and control subsystems.
 Installation instructions may be found in [INSTALL.md](./INSTALL.md).
 
+# CM-only users
+*Note:  if you are only using hera_mc to locally use configuration management (cm) info via sqlite, you may ignore most of this.
+        if this is the case, follow the simplified instructions in INSTALL.md*
+
+
+
 # Adding a new table
 
 To add a new table into the M&C database:

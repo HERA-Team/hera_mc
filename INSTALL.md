@@ -2,10 +2,24 @@ HERA M&C Installation
 =====================
 
 Installation of the Python code is just done with a standard
-
 ```
 python setup.py install
 ```
+
+# Begin simplified cm-only user installation
+*If you are using hera_mc to view configuration, just follow the instructions in this short section*
+
+Clone the following two repositories:
+* https://github.com/HERA-Team/hera_mc
+* https://github.com/HERA-Team/hera_cm_db_updates
+
+Then install by:
+1. within the hera_mc directory type `python setup.py install`
+2.  in the parent directory of hera_cm_db_updates type `mc_setup_home.py`
+
+To run hera_mc, you will likely need to install some additional python modules (see Python Prerequisites below.)
+
+To test if it works, try `geo.py -g`
 
 
 Python Prerequisites
@@ -30,8 +44,9 @@ different database backends as best it can, it is very desirable that you run
 PostgreSQL in your test environment as well. Use Google to learn how to do
 this, or follow the OS-X-specific notes below.
 
-
+_____________________________________
 Configure hera_mc to talk to the db:
+
 After setting up the database (see below), you need to fill in the configuration file
 `~/.hera_mc/mc_config.json`, which tells the M&C system how to talk to the
 database. An example file is:
@@ -69,6 +84,7 @@ second line in mc_config.json:
 "default_db_name": "hera_mc_sqlite",
 ```
 
+_____________________________________
 Create the database schema by running `alembic upgrade head`
 If desired, populate the configuration management tables by running the `cm_init.py` script.
 
@@ -80,6 +96,8 @@ To update your local database, (after you pull hera_cm_db_updates and add line t
 type `cm_init.py`
 
 ### Basic OS X PostgreSQL installation
+
+NOTE:  If you are only running sqlite, you don't need to install PostgresSQL to use the cm stuff.
 
 There are many options for installing postgres, several of which are described and
 linked on this page: https://www.postgresql.org/download/macosx/. For the
