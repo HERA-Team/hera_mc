@@ -20,7 +20,6 @@ Then install by:
 To run hera_mc, you will likely need to install some additional python modules (see Python Prerequisites below.)
 
 To test if it works, try `geo.py -g`
-# End simplified cm-only user installation
 
 
 Python Prerequisites
