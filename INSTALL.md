@@ -10,11 +10,13 @@ python setup.py install
 *If you are using hera_mc to view configuration, just follow the instructions in this short section*
 
 Clone the following two repositories:
-https://github.com/HERA-Team/hera_mc
-https://github.com/HERA-Team/hera_cm_db_updates
+* https://github.com/HERA-Team/hera_mc
+* https://github.com/HERA-Team/hera_cm_db_updates
+
 Then install by:
-  1 - within the hera_mc directory type `python setup.py install`
-  2 - in the parent directory of hera_cm_db_updates type `mc_setup_home.py`
+1. within the hera_mc directory type `python setup.py install`
+2.  in the parent directory of hera_cm_db_updates type `mc_setup_home.py`
+
 To run hera_mc, you will likely need to install some additional python modules (see Python Prerequisites below.)
 
 To test if it works, try `geo.py -g`
