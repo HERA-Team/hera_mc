@@ -295,8 +295,9 @@ class TestRTP(TestHERAMC):
         exp_columns['stop_time'] = int(floor(exp_columns['stop_time'].gps))
         expected = RTPTaskResourceRecord(**exp_columns)
 
-        result = self.test_session.get_rtp_task_resource_record(self.task_resource_columns['obsid'],
-                                                                self.task_resource_columns['task_name'])
+        result = self.test_session.get_rtp_task_resource_record(self.task_resource_columns['start_time'] -
+                                                                TimeDelta(2, format='sec'),
+                                                                obsid=self.record_columns['obsid'])
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
@@ -321,8 +322,9 @@ class TestRTP(TestHERAMC):
         exp_columns['stop_time'] = int(floor(exp_columns['stop_time'].gps))
         expected = RTPTaskResourceRecord(**exp_columns)
 
-        result = self.test_session.get_rtp_task_resource_record(self.task_resource_columns['obsid'],
-                                                                self.task_resource_columns['task_name'])
+        result = self.test_session.get_rtp_task_resource_record(self.task_resource_columns['start_time'] -
+                                                                TimeDelta(2, format='sec'),
+                                                                obsid=self.record_columns['obsid'])
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))

@@ -739,16 +739,19 @@ class MCSession(Session):
         self.add(RTPTaskResourceRecord.create(obsid, task_name, start_time, stop_time,
                                               max_memory, avg_cpu_load))
 
-    def get_rtp_task_resource_record(self, obsid, task_name):
+    def get_rtp_task_resource_record(self, starttime, stoptime=None, obsid=None):
         """
         Get rtp_task_resource_record from the M&C database.
 
         Parameters:
         ------------
+        starttime: astropy time object
+            time to look for records after; applies to start_time column
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
         obsid: long
-            observation obsid (Foreign key into observation)
-        task_name: string
-            name of the task (e.g., OMNICAL)
+            obsid to get records for. If none, all obsid will be included
 
         Returns:
         -----------
@@ -757,9 +760,9 @@ class MCSession(Session):
         """
         from .rtp import RTPTaskResourceRecord
 
-        return self.query(RTPTaskResourceRecord).filter(
-            getattr(RTPTaskResourceRecord, 'obsid') == obsid,
-            getattr(RTPTaskResourceRecord, 'task_name') == task_name).limit(1).all()
+        return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
+                                 stoptime=stoptime, filter_column='obsid',
+                                 filter_value=obsid)
 
     def add_paper_temps(self, read_time, temp_list):
         """
