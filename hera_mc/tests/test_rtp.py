@@ -405,6 +405,8 @@ class TestRTP(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.get_rtp_task_resource_record,
                           task_name=self.task_resource_columns['task_name'])
 
+        self.assertRaises(ValueError, self.test_session.get_rtp_task_resource_record)
+
 
 if __name__ == '__main__':
     unittest.main()
