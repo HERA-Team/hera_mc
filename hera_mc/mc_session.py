@@ -739,7 +739,7 @@ class MCSession(Session):
         self.add(RTPTaskResourceRecord.create(obsid, task_name, start_time, stop_time,
                                               max_memory, avg_cpu_load))
 
-    def get_rtp_task_resource_record(self, starttime, stoptime=None, obsid=None,
+    def get_rtp_task_resource_record(self, starttime=None, stoptime=None, obsid=None,
                                      task_name=None):
         """
         Get rtp_task_resource_record from the M&C database.
@@ -747,10 +747,12 @@ class MCSession(Session):
         Parameters:
         ------------
         starttime: astropy time object
-            time to look for records after; applies to start_time column
+            time to look for records after; applies to start_time column.
+            Ignored if both obsid and task_name are not None
         stoptime: astropy time object
             last time to get records for. If none, only the first record after
             starttime will be returned.
+            Ignored if both obsid and task_name are not None
         obsid: long
             obsid to get records for. If none, all obsid will be included
         task_name: string
@@ -764,10 +766,18 @@ class MCSession(Session):
         from .rtp import RTPTaskResourceRecord
 
         if task_name is None:
-            return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
-                                     stoptime=stoptime, filter_column='obsid',
-                                     filter_value=obsid)
+            if starttime is not None:
+                return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
+                                         stoptime=stoptime, filter_column='obsid',
+                                         filter_value=obsid)
+            elif obsid is not None:
+                return self.query(RTPTaskResourceRecord).filter(
+                    RTPTaskResourceRecord.obsid == obsid).all()
+            else:
+                raise ValueError('Starttime or obsid must be specified')
         elif obsid is None:
+            if starttime is None:
+                raise ValueError('Starttime or obsid must be specified')
             return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
                                      stoptime=stoptime, filter_column='task_name',
                                      filter_value=task_name)

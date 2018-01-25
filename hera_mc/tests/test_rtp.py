@@ -295,23 +295,68 @@ class TestRTP(TestHERAMC):
         expected = RTPTaskResourceRecord(**exp_columns)
 
         result = self.test_session.get_rtp_task_resource_record(
-            self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            obsid=self.task_resource_columns['obsid'])
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        new_task_time = self.task_resource_columns['start_time'] + TimeDelta(60, format='sec')
+        new_task = 'task2'
+        self.test_session.add_rtp_task_resource_record(
+            self.task_resource_columns['obsid'], new_task, new_task_time,
+            *self.task_resource_values[3:])
+
+        result = self.test_session.get_rtp_task_resource_record(
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
             obsid=self.task_resource_columns['obsid'])
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
         result = self.test_session.get_rtp_task_resource_record(
-            self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
-            task_name=self.task_resource_columns['task_name'])
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            obsid=self.task_resource_columns['obsid'],
+            stoptime=self.task_resource_columns['start_time'] + TimeDelta(2 * 60, format='sec'))
+        self.assertEqual(len(result), 2)
+
+        result = self.test_session.get_rtp_task_resource_record(
+            obsid=self.task_resource_columns['obsid'])
+        self.assertEqual(len(result), 2)
+
+        result = self.test_session.get_rtp_task_resource_record(
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            task_name=self.task_resource_columns['task_name'],
+            stoptime=self.task_resource_columns['start_time'] + TimeDelta(2 * 60, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
+        new_task_time = self.task_resource_columns['start_time'] + TimeDelta(3 * 60, format='sec')
+
+        new_obsid_time = self.task_resource_columns['start_time'] + TimeDelta(3 * 60, format='sec')
+        new_obsid = utils.calculate_obsid(new_obsid_time)
+        self.test_session.add_obs(Time(new_obsid_time),
+                                  Time(new_obsid_time + TimeDelta(10 * 60, format='sec')),
+                                  new_obsid)
+        obs_result = self.test_session.get_obs(obsid=new_obsid)
+        self.assertEqual(obs_result[0].obsid, new_obsid)
+
+        self.test_session.add_rtp_task_resource_record(
+            new_obsid, self.task_resource_columns['task_name'], new_task_time,
+            *self.task_resource_values[3:])
+
         result = self.test_session.get_rtp_task_resource_record(
-            self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            task_name=self.task_resource_columns['task_name'],
+            stoptime=self.task_resource_columns['start_time'] + TimeDelta(5 * 60, format='sec'))
+        self.assertEqual(len(result), 2)
+
+        result = self.test_session.get_rtp_task_resource_record(
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
             obsid=self.task_resource_columns['obsid'],
-            task_name=self.task_resource_columns['task_name'])
+            task_name=self.task_resource_columns['task_name'],
+            stoptime=self.task_resource_columns['start_time'] + TimeDelta(5 * 60, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
@@ -336,9 +381,9 @@ class TestRTP(TestHERAMC):
         exp_columns['stop_time'] = int(floor(exp_columns['stop_time'].gps))
         expected = RTPTaskResourceRecord(**exp_columns)
 
-        result = self.test_session.get_rtp_task_resource_record(self.task_resource_columns['start_time'] -
-                                                                TimeDelta(2, format='sec'),
-                                                                obsid=self.record_columns['obsid'])
+        result = self.test_session.get_rtp_task_resource_record(
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            obsid=self.record_columns['obsid'])
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
@@ -356,6 +401,9 @@ class TestRTP(TestHERAMC):
 
         self.test_session.add_rtp_task_resource_record(*self.task_resource_values)
         self.assertRaises(ValueError, self.test_session.get_rtp_process_record, 1, 2)
+
+        self.assertRaises(ValueError, self.test_session.get_rtp_task_resource_record,
+                          task_name=self.task_resource_columns['task_name'])
 
 
 if __name__ == '__main__':
