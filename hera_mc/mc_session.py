@@ -739,7 +739,8 @@ class MCSession(Session):
         self.add(RTPTaskResourceRecord.create(obsid, task_name, start_time, stop_time,
                                               max_memory, avg_cpu_load))
 
-    def get_rtp_task_resource_record(self, starttime, stoptime=None, obsid=None):
+    def get_rtp_task_resource_record(self, starttime, stoptime=None, obsid=None,
+                                     task_name=None):
         """
         Get rtp_task_resource_record from the M&C database.
 
@@ -752,6 +753,8 @@ class MCSession(Session):
             starttime will be returned.
         obsid: long
             obsid to get records for. If none, all obsid will be included
+        task_name: string
+            task_name to get records for. If none, all tasks will be included
 
         Returns:
         -----------
@@ -760,9 +763,18 @@ class MCSession(Session):
         """
         from .rtp import RTPTaskResourceRecord
 
-        return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
-                                 stoptime=stoptime, filter_column='obsid',
-                                 filter_value=obsid)
+        if task_name is None:
+            return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
+                                     stoptime=stoptime, filter_column='obsid',
+                                     filter_value=obsid)
+        elif obsid is None:
+            return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
+                                     stoptime=stoptime, filter_column='task_name',
+                                     filter_value=task_name)
+        else:
+            return self.query(RTPTaskResourceRecord).filter(
+                RTPTaskResourceRecord.obsid == obsid,
+                RTPTaskResourceRecord.task_name == task_name).all()
 
     def add_paper_temps(self, read_time, temp_list):
         """
@@ -924,7 +936,6 @@ class MCSession(Session):
 
         for item in q:
             print('{}\t{}'.format(item.astropy_time, item.value), file=files[item.variable])
-
 
     def add_roach_temperature(self, time, roach, ambient_temp, inlet_temp,
                               outlet_temp, fpga_temp, ppc_temp):

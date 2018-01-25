@@ -51,7 +51,6 @@ class TestRTP(TestHERAMC):
                                      16.2, 1.01]
         self.task_resource_columns = dict(zip(self.task_resource_names, self.task_resource_values))
 
-
     def test_add_rtp_status(self):
         self.test_session.add_rtp_status(*self.status_values)
 
@@ -295,9 +294,24 @@ class TestRTP(TestHERAMC):
         exp_columns['stop_time'] = int(floor(exp_columns['stop_time'].gps))
         expected = RTPTaskResourceRecord(**exp_columns)
 
-        result = self.test_session.get_rtp_task_resource_record(self.task_resource_columns['start_time'] -
-                                                                TimeDelta(2, format='sec'),
-                                                                obsid=self.record_columns['obsid'])
+        result = self.test_session.get_rtp_task_resource_record(
+            self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            obsid=self.task_resource_columns['obsid'])
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result = self.test_session.get_rtp_task_resource_record(
+            self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            task_name=self.task_resource_columns['task_name'])
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result = self.test_session.get_rtp_task_resource_record(
+            self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            obsid=self.task_resource_columns['obsid'],
+            task_name=self.task_resource_columns['task_name'])
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
@@ -342,6 +356,7 @@ class TestRTP(TestHERAMC):
 
         self.test_session.add_rtp_task_resource_record(*self.task_resource_values)
         self.assertRaises(ValueError, self.test_session.get_rtp_process_record, 1, 2)
+
 
 if __name__ == '__main__':
     unittest.main()
