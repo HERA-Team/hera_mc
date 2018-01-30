@@ -24,6 +24,8 @@ no_connection_designator = '-X-'
 # This lists the fully complete signal paths
 full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end', 'cable-feed75', 'cable-post-amp(in)',
                                         'post-amp', 'cable-post-amp(out)', 'cable-receiverator', 'cable-container', 'f-engine'],
+                        'parts_hera': ['station', 'antenna', 'feed', 'fem', 'cable-feed50', 'cable-node(in)',
+                                       'pam', 'snap'],
                         'parts_test': ['vapor']
                         }
 both_pols = ['e', 'n']
@@ -46,7 +48,7 @@ class Parts(MCDeclarativeBase):
     start_gpstime: The date when the part was installed (or otherwise assigned by project).
     stop_gpstime: The date when the part was removed (or otherwise de-assigned by project).
     """
-    __tablename__ = 'parts_paper'
+    __tablename__ = 'parts'
 
     hpn = Column(String(64), primary_key=True)
     hpn_rev = Column(String(32), primary_key=True)
@@ -421,15 +423,15 @@ class Connections(MCDeclarativeBase):
     upstream_part: up refers to the skyward part,
         e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.
         Signal flows from A->B"
-        Part of the primary_key, Foreign Key into parts_paper
+        Part of the primary_key, Foreign Key into parts
     up_part_rev: up refers to the skyward part revision number.
-        Part of the primary_key, Foreign Key into parts_paper
+        Part of the primary_key, Foreign Key into parts
     upstream_output_port: connected output port on upstream (skyward) part.
         Part of the primary_key
     downstream_part: down refers to the part that is further from the sky, e.g.
-        Part of the primary_key, Foreign Key into parts_paper
+        Part of the primary_key, Foreign Key into parts
     down_part_rev: down refers to the part that is further from the sky, e.g.
-        Part of the primary_key, Foreign Key into parts_paper
+        Part of the primary_key, Foreign Key into parts
     downstream_input_port: connected input port on downstream (further from the sky) part
         Part of the primary_key
     start_gpstime: start_time is the time that the connection is set
@@ -447,9 +449,9 @@ class Connections(MCDeclarativeBase):
     downstream_input_port = NotNull(String(64), primary_key=True)
 
     __table_args__ = (ForeignKeyConstraint(['upstream_part', 'up_part_rev'],
-                                           ['parts_paper.hpn', 'parts_paper.hpn_rev']),
+                                           ['parts.hpn', 'parts.hpn_rev']),
                       ForeignKeyConstraint(['downstream_part', 'down_part_rev'],
-                                           ['parts_paper.hpn', 'parts_paper.hpn_rev']))
+                                           ['parts.hpn', 'parts.hpn_rev']))
 
     start_gpstime = NotNull(BigInteger, primary_key=True)
     stop_gpstime = Column(BigInteger)

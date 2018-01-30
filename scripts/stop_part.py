@@ -4,7 +4,7 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Script to stop a specified part in the parts_paper table.
+Script to stop a specified part in the parts table.
 
 Note that 'now' is the default --date.  If you don't want to be
 queried for a --date, then you should include --date <date> on the
