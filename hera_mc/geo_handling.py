@@ -406,7 +406,7 @@ class Handling:
                 active_stations = []
                 for loc in self.station_types[key]['Stations']:
                     show_it = True
-                    fc = cm_revisions.get_full_revision_keys(loc, hookup_dict)
+                    fc = cm_revisions.get_full_revision(loc, hookup_dict)
                     if len(fc) > 0:
                         active_stations.append(loc)
                     if state_args['show_state'] == 'active' and len(fc) == 0:

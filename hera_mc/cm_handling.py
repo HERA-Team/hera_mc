@@ -112,7 +112,8 @@ class Handling:
         characters unless exact_match==True.
         It gets all parts, the receiving module should filter on e.g. date if desired.
 
-        Returns part_dossier: {'Time':Time, 'part':CLASS , 'part_info':CLASS,
+        Returns part_dossier: a dictionary keyed on the part_number:
+                              {'Time':Time, 'part':CLASS , 'part_info':CLASS,
                                'connections':CLASS, 'geo':CLASS,
                                'input_ports':[],'output_ports':[]}
 
@@ -123,9 +124,18 @@ class Handling:
               if list, must match length of hpn_list
         at_date:  reference date of dossier [something get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
-        full_version:  flag whether to populate the full_version or truncated version
+        full_version:  flag whether to populate the full_version or truncated version of the dossier
         """
 
+        if isinstance(hpn_list, (str, unicode)):
+            hpn_list = [hpn_list]
+        if isinstance(rev, (str, unicode)):
+            rev_list = len(hpn_list) * rev
+        else:
+            rev_list = rev
+        if len(hpn_list) != len(rev_list):
+            print("Unmatched hpn and rev lists.")
+            return
         at_date = cm_utils.get_astropytime(at_date)
         rev_list = cmpr.check_rev_query(hpn_list, rev)
 
@@ -135,7 +145,8 @@ class Handling:
             if not exact_match and xhpn[-1] != '%':
                 xhpn = xhpn + '%'
             for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(xhpn)):
-                rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev_list[i], at_date=at_date,
+                rev_part[part.hpn] = cmpr.get_revisions_of_type(part.hpn, rev_list[i],
+                                                                at_date=at_date,
                                                                 session=self.session)
 
         # Now get unique part/revs and put into dictionary

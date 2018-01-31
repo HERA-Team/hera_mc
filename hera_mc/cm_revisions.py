@@ -2,7 +2,7 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Returns cm revisions
+"""Functions to handle various cm revision queries and checks.
 
 """
 
@@ -28,53 +28,177 @@ class NoTimeError(Exception):
         super(NoTimeError, self).__init__(message)
 
 
-def check_rev_query(h, rev):
-    """
-    Checks that the rev query is properly configured and return a list of revs that are used
-    """
-    N = len(h)
-    if type(rev) == list:
-        if len(rev) == N:
-            return rev
-        else:
-            raise RevisionError("List lengths don't match.")
-    if type(rev) == str:
-        return N * [rev]
-    raise RevisionError("Not correct type.")
-
-
 def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     """
-    Returns namespace of revisions (hpn, rev, started, ended) of queried type.
+    Returns namespace of revisions (hpn, rev, started, ended, [hukey], [pkey]) of queried type
+    where the [hukey], [pkey] are included for fully_connected queries.
     Allowed types are:
-        ACTIVE:  revisions that are not stopped at_date
-        LAST:  the last connected revision (could be active or not)
-        FULL[Y_CONNECTED]:  revision that is part of a fully connected signal path at_date
-        ALL:  all revisions
-        PARTICULAR:  check for a particular version
+        [AC]TIVE:  revisions that are not stopped at_date
+        [LA]ST:  the last connected revision (could be active or not)
+        [FU]LLY_CONNECTED:  revision that is part of a fully connected signal path at_date
+        [AL]L:  all revisions
+        particular:  check for a particular revision
 
     Parameters:
     ------------
     hpn:  string for hera part number
     rev_type:  string for revision type
     at_date:  astropy.Time to check for
-    session:  db session
+    session:  db session, or hookup_dict if FULLY_CONNECTED
     """
 
-    rq = rev_type.upper()
-    if rq == 'LAST':
+    rq = rev_type.upper()[:2]
+    if rq == 'LA':  # LAST
         return get_last_revision(hpn, session)
 
-    if rq == 'ACTIVE':
+    if rq == 'AC':  # ACTIVE
         if at_date is None:
             raise NoTimeException('ACTIVE')
         else:
             return get_active_revision(hpn, at_date, session)
 
-    if rq == 'ALL':
+    if rq == 'AL':  # ALL
         return get_all_revisions(hpn, session)
 
-    return get_particular_revision(hpn, rq, session)
+    if rq == 'FU':  # FULLY_CONNECTED
+        if at_date is None:
+            raise NoTimeException('ACTIVE')
+        else:
+            return get_full_revision_keys(hpn, session)
+
+    return get_particular_revision(hpn, rev_type, session)
+
+
+def get_last_revision(hpn, session=None):
+    """
+    Returns list of latest revisions as Namespace(hpn,rev,started,ended)
+
+    Parameters:
+    -------------
+    hpn:  hera part name
+    session:  db session
+    """
+
+    revisions = part_connect.get_part_revisions(hpn, session)
+    if len(revisions.keys()) == 0:
+        return []
+    latest_end = cm_utils.get_astropytime('<')
+    no_end = []
+    for rev in revisions.keys():
+        end_date = revisions[rev]['ended']
+        if end_date is None:
+            latest_end = cm_utils.get_astropytime('>')
+            no_end.append(Namespace(hpn=hpn, rev=rev, started=revisions[rev]['started'],
+                                    ended=revisions[rev]['ended']))
+        elif end_date > latest_end:
+            latest_rev = rev
+            latest_end = end_date
+    if len(no_end) > 0:
+        return no_end
+    else:
+        return [Namespace(hpn=hpn, rev=latest_rev, started=revisions[latest_rev]['started'],
+                          ended=revisions[latest_rev]['ended'])]
+
+
+def get_all_revisions(hpn, session=None):
+    """
+    Returns list of all revisions as Namespace(hpn,rev,started,ended)
+
+    Parameters:
+    -------------
+    hpn:  string of hera part number
+    session:  db session
+    """
+
+    revisions = part_connect.get_part_revisions(hpn, session)
+    if len(revisions.keys()) == 0:
+        return []
+    sort_rev = sorted(revisions.keys())
+    all_rev = []
+    for rev in sort_rev:
+        started = revisions[rev]['started']
+        ended = revisions[rev]['ended']
+        all_rev.append(Namespace(hpn=hpn, rev=rev, started=started, ended=ended))
+    return all_rev
+
+
+def get_particular_revision(hpn, rq, session=None):
+    """
+    Returns list of a particular revision as Namespace(hpn,rev,started,ended)
+
+    Parameters:
+    -------------
+    rq:  revision number to find
+    hpn:  string of hera part number
+    session:  db session
+    """
+
+    revisions = part_connect.get_part_revisions(hpn, session)
+    if len(revisions.keys()) == 0:
+        return []
+    this_rev = []
+    for rev in revisions.keys():
+        if rq.upper() == rev.upper():
+            start_date = revisions[rev]['started']
+            end_date = revisions[rev]['ended']
+            this_rev = [Namespace(hpn=hpn, rev=rev, started=start_date, ended=end_date)]
+    return this_rev
+
+
+def get_active_revision(hpn, at_date, session=None):
+    """
+    Returns list of active revisions as Namespace(hpn,rev,started,ended)
+
+    Parameters:
+    -------------
+    hpn:  string of hera part number
+    at_date:  date to check if fully connected
+    session:  db session
+    """
+
+    revisions = part_connect.get_part_revisions(hpn, session)
+    if len(revisions.keys()) == 0:
+        return []
+    return_active = []
+    for rev in sorted(revisions.keys()):
+        started = revisions[rev]['started']
+        ended = revisions[rev]['ended']
+        if cm_utils.is_active(at_date, started, ended):
+            return_active.append(Namespace(hpn=hpn, rev=rev, started=started, ended=ended))
+
+    return return_active
+
+
+def get_full_revision(hpn, hookup_dict):
+    """
+    Returns list of fully connected keys as a tuple with the first polarization found.
+    If either pol is fully connected, it is returned.
+    The hpn type must match the hookup_dict keys part type
+
+    Parameters:
+    -------------
+    hpn:  string of hera part number (must match hookup_dict keys part type)
+    hookup_dict:  hookup dictionary to check for full connection
+    """
+    return_full_keys = []
+    found_this_hpn = False
+    for hukey in hookup_dict['hookup'].keys():
+        hpn_hu, rev_hu = cm_utils.split_part_key(hukey)
+        if hpn_hu.lower() == hpn.lower():
+            if len(hookup_dict['fully_connected'].keys()):
+                for pkey in hookup_dict['fully_connected'][hukey].keys():
+                    if hookup_dict['fully_connected'][hukey][pkey]:
+                        tsrt = hookup_dict['timing'][hukey][pkey][0]
+                        tend = hookup_dict['timing'][hukey][pkey][1]
+                        return_full_keys.append(Namespace(hpn=hpn, rev=rev_hu,
+                                                          started=tsrt, ended=tend,
+                                                          hukey=hukey, pkey=pkey))
+                        found_this_hpn = True
+                        break
+        if found_this_hpn:
+            break
+
+    return return_full_keys
 
 
 def check_rev(hpn, rev, chk, at_date, session=None):
@@ -152,139 +276,3 @@ def show_revisions(rev_list):
             table_data.append([r.hpn, r.rev, r.started, r.ended])
         print(tabulate(table_data, headers=headers, tablefmt='simple'))
         print('\n')
-
-
-def get_last_revision(hpn, session=None):
-    """
-    Returns list of latest revisions as Namespace(hpn,rev,started,ended)
-
-    Parameters:
-    -------------
-    hpn:  hera part name
-    session:  db session
-    """
-
-    revisions = part_connect.get_part_revisions(hpn, session)
-    if len(revisions.keys()) == 0:
-        return []
-    latest_end = cm_utils.get_astropytime('<')
-    no_end = []
-    for rev in revisions.keys():
-        end_date = revisions[rev]['ended']
-        if end_date is None:
-            latest_end = cm_utils.get_astropytime('>')
-            no_end.append(Namespace(hpn=hpn, rev=rev, started=revisions[rev]['started'],
-                                    ended=revisions[rev]['ended']))
-        elif end_date > latest_end:
-            latest_rev = rev
-            latest_end = end_date
-    if len(no_end) > 0:
-        if len(no_end) > 1:
-            s = "Warning:  {} has multiple open revisions.  Returning all open.".format(hpn)
-            warnings.warn(s)
-        return no_end
-    else:
-        return [Namespace(hpn=hpn, rev=latest_rev, started=revisions[latest_rev]['started'],
-                          ended=revisions[latest_rev]['ended'])]
-
-
-def get_all_revisions(hpn, session=None):
-    """
-    Returns list of all revisions as Namespace(hpn,rev,started,ended)
-
-    Parameters:
-    -------------
-    hpn:  string of hera part number
-    session:  db session
-    """
-
-    revisions = part_connect.get_part_revisions(hpn, session)
-    if len(revisions.keys()) == 0:
-        return []
-    sort_rev = sorted(revisions.keys())
-    all_rev = []
-    for rev in sort_rev:
-        started = revisions[rev]['started']
-        ended = revisions[rev]['ended']
-        all_rev.append(Namespace(hpn=hpn, rev=rev, started=started, ended=ended))
-    return all_rev
-
-
-def get_particular_revision(hpn, rq, session=None):
-    """
-    Returns list of a particular revision as Namespace(hpn,rev,started,ended)
-
-    Parameters:
-    -------------
-    rq:  revision number to find
-    hpn:  string of hera part number
-    session:  db session
-    """
-
-    revisions = part_connect.get_part_revisions(hpn, session)
-    if len(revisions.keys()) == 0:
-        return []
-    sort_rev = sorted(revisions.keys())
-    this_rev = []
-    if rq in sort_rev:
-        start_date = revisions[rq]['started']
-        end_date = revisions[rq]['ended']
-        this_rev = [Namespace(hpn=hpn, rev=rq, started=start_date, ended=end_date)]
-    return this_rev
-
-
-def get_active_revision(hpn, at_date, session=None):
-    """
-    Returns list of active revision as Namespace(hpn,rev,started,ended)
-
-    Parameters:
-    -------------
-    hpn:  string of hera part number
-    at_date:  date to check if fully connected
-    session:  db session
-    """
-
-    revisions = part_connect.get_part_revisions(hpn, session)
-    if len(revisions.keys()) == 0:
-        return []
-    return_active = []
-    for rev in sorted(revisions.keys()):
-        started = revisions[rev]['started']
-        ended = revisions[rev]['ended']
-        if cm_utils.is_active(at_date, started, ended):
-            return_active.append(Namespace(hpn=hpn, rev=rev, started=started, ended=ended))
-    if len(return_active) > 1:
-        s = '{} has multiple active revisions at {}'.format(hpn, str(at_date))
-        warning.warn(s)
-
-    return return_active
-
-
-def get_full_revision_keys(hpn, hookup_dict):
-    """
-    Returns list of fully connected keys as a tuple with the first polarization found.
-    If either pol is fully connected, it is returned.
-    The hpn type must match the hookup_dict keys part type
-
-    Parameters:
-    -------------
-    hpn:  string of hera part number (must match hookup_dict keys part type)
-    hookup_dict:  hookup dictionary to check for full connection
-    """
-    return_full_keys = []
-    hpn = [hpn]  # anticipate making it a list later...
-    for h in hpn:
-        found_this_hpn = False
-        for hukey in hookup_dict['hookup'].keys():
-            hpn_hu, rev_hu = cm_utils.split_part_key(hukey)
-            if hpn_hu.lower() == h.lower():
-                if len(hookup_dict['fully_connected'].keys()):
-                    for pkey in hookup_dict['fully_connected'][hukey].keys():
-                        if hookup_dict['fully_connected'][hukey][pkey]:
-                            return_full_keys.append((hukey, pkey))
-                            found_this_hpn = True
-                            break
-            if found_this_hpn:
-                break
-
-    return return_full_keys
