@@ -33,10 +33,10 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     Returns namespace of revisions (hpn, rev, started, ended, [hukey], [pkey]) of queried type
     where the [hukey], [pkey] are included for fully_connected queries.
     Allowed types are:
-        [AC]TIVE:  revisions that are not stopped at_date
-        [LA]ST:  the last connected revision (could be active or not)
-        [FU]LLY_CONNECTED:  revision that is part of a fully connected signal path at_date
-        [AL]L:  all revisions
+        [ACT]IVE:  revisions that are not stopped at_date
+        [LAS]T:  the last connected revision (could be active or not)
+        [FUL]LY_CONNECTED:  revision that is part of a fully connected signal path in hookup_dict/session
+        [ALL]:  all revisions
         particular:  check for a particular revision
 
     Parameters:
@@ -47,24 +47,21 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     session:  db session, or hookup_dict if FULLY_CONNECTED
     """
 
-    rq = rev_type.upper()[:2]
-    if rq == 'LA':  # LAST
+    rq = rev_type.upper()[:3]
+    if rq == 'LAS':  # LAST
         return get_last_revision(hpn, session)
 
-    if rq == 'AC':  # ACTIVE
+    if rq == 'ACT':  # ACTIVE
         if at_date is None:
             raise NoTimeException('ACTIVE')
         else:
             return get_active_revision(hpn, at_date, session)
 
-    if rq == 'AL':  # ALL
+    if rq == 'ALL':  # ALL
         return get_all_revisions(hpn, session)
 
-    if rq == 'FU':  # FULLY_CONNECTED
-        if at_date is None:
-            raise NoTimeException('ACTIVE')
-        else:
-            return get_full_revision_keys(hpn, session)
+    if rq == 'FUL':  # FULLY_CONNECTED
+        return get_full_revision(hpn, session)
 
     return get_particular_revision(hpn, rev_type, session)
 
@@ -171,7 +168,7 @@ def get_active_revision(hpn, at_date, session=None):
 
 def get_full_revision(hpn, hookup_dict):
     """
-    Returns list of fully connected keys as a tuple with the first polarization found.
+    Returns Namespace list of fully connected parts
     If either pol is fully connected, it is returned.
     The hpn type must match the hookup_dict keys part type
 
@@ -180,6 +177,10 @@ def get_full_revision(hpn, hookup_dict):
     hpn:  string of hera part number (must match hookup_dict keys part type)
     hookup_dict:  hookup dictionary to check for full connection
     """
+    from hera_mc import cm_hookup
+    if not isinstance(hookup_dict, cm_hookup.Hookup):
+        H = cm_hookup.Hookup()
+        hookup_dict = H.get_hookup('cached')
     return_full_keys = []
     found_this_hpn = False
     for hukey in hookup_dict['hookup'].keys():
@@ -201,7 +202,7 @@ def get_full_revision(hpn, hookup_dict):
     return return_full_keys
 
 
-def check_rev(hpn, rev, chk, at_date, session=None):
+def check_rev(hpn, rev, chk='ALL', at_date='Now', session=None):
     """
     Check whether a revision exists.
 
@@ -211,13 +212,14 @@ def check_rev(hpn, rev, chk, at_date, session=None):
     ------------
     hpn:  hera part name
     rev:  revision to check
-    chk:  revision type to check against (ACTIVE/PARTICULAR)
-    at_date:  date at which to check
-    session:  database session
+    chk:  revision type to check against (FULL/ALL/ACTIVE/particular) [ALL]
+    at_date:  date at which to check ['Now']
+    session:  database session [None]
     """
-    print("CM_REVISIONS[85]:  This is not debugged.")
+    at_date = cm_utils.get_astropytime(at_date)
     rev_chk = get_revisions_of_type(hpn, chk, at_date, session)
-    if len(rev_chk) == 0 or rev != rev_chk[0].rev:
+    revs_found = [x.rev.upper() for x in rev_chk]
+    if len(rev_chk) == 0 or rev.upper() not in revs_found:
         return False
     else:
         return True

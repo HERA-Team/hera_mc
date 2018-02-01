@@ -141,7 +141,7 @@ class TestSys(TestHERAMC):
         H = cm_hookup.Hookup(at_date, self.test_session)
         stn = 'HH23'
         hud = H.get_hookup([stn], exact_match=True)
-        fc = cm_revisions.get_full_revision_keys(stn, hud)
+        fc = cm_revisions.get_full_revision(stn, hud)
         pams = cm_hookup.get_parts_from_hookup('post-amp', hud)
         self.assertEqual(len(pams.keys()), 1)
         key = pams.keys()[0]
