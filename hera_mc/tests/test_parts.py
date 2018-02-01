@@ -103,15 +103,6 @@ class TestParts(TestHERAMC):
         c = cm_revisions.check_part_for_overlapping_revisions(self.test_part, self.test_session)
         self.assertTrue(len(c) == 0)
 
-    def test_check_rev(self):
-        tcr = {'LAST': [self.test_part, self.test_rev],
-               'ACTIVE': [self.test_part, self.test_rev]
-               }
-        rev_types = ['LAST', 'ACTIVE']
-        for r in rev_types:
-            c = cm_revisions.check_rev(tcr[r][0], tcr[r][1], r, self.now, self.test_session)
-            self.assertTrue(c)
-
     def test_datetime(self):
         dt = cm_utils.get_astropytime('2017-01-01', 0.0)
         gps_direct = int(Time('2017-01-01 00:00:00', scale='utc').gps)

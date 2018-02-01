@@ -202,29 +202,6 @@ def get_full_revision(hpn, hookup_dict):
     return return_full_keys
 
 
-def check_rev(hpn, rev, chk='ALL', at_date='Now', session=None):
-    """
-    Check whether a revision exists.
-
-    Return True or False
-
-    Parameters:
-    ------------
-    hpn:  hera part name
-    rev:  revision to check
-    chk:  revision type to check against (FULL/ALL/ACTIVE/particular) [ALL]
-    at_date:  date at which to check ['Now']
-    session:  database session [None]
-    """
-    at_date = cm_utils.get_astropytime(at_date)
-    rev_chk = get_revisions_of_type(hpn, chk, at_date, session)
-    revs_found = [x.rev.upper() for x in rev_chk]
-    if len(rev_chk) == 0 or rev.upper() not in revs_found:
-        return False
-    else:
-        return True
-
-
 def check_part_for_overlapping_revisions(hpn, session=None):
     """
     Checks hpn for parts that overlap in time.  Should be none.

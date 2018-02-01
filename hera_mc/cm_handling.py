@@ -79,34 +79,24 @@ class Handling:
 
         return result[0].git_hash
 
-    def is_in_connections(self, hpn, rev='ACTIVE', at_date='now'):
-        """
-        checks to see if a part is in the connections database (which means it
-            is also in parts)
-
-        returns True/False
-
-        Parameters:
-        ------------
-        hpn:  hera part number, string for part number
-        rev:  revision of part number, string for rev or rev type
-        """
-        at_date = cm_utils.get_astropytime(at_date)
-        connection_dossier = self.get_connection_dossier([hpn], rev, port='all',
-                                                         at_date=at_date, exact_match=True)
-        num_connections = len(connection_dossier['connections'].keys())
-        if num_connections == 0:
-            found_connected = False
-        else:
-            found_connected = True
-        return found_connected
-
     def get_part_type_for(self, hpn):
         part_query = self.session.query(PC.Parts).filter(
             (func.upper(PC.Parts.hpn) == hpn.upper())).first()
         return part_query.hptype
 
-    def __get_rev_part_for_dossiers(self, hpn_list, rev, at_date, exact_match):
+    def get_rev_part_dictionary(self, hpn_list, rev, at_date, exact_match):
+        """
+        This gets the list of hpn that match the rev -- the resulting dictionary
+        is used to get the part and connection "dossiers"
+
+        Parameters
+        -----------
+        hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
+        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL')
+              if list, must match length of hpn_list
+        at_date:  reference date of dossier [something get_astropytime can handle]
+        exact_match:  boolean to enforce full part number match
+        """
         if isinstance(hpn_list, (str, unicode)):
             hpn_list = [hpn_list]
         if isinstance(rev, (str, unicode)):
@@ -151,7 +141,7 @@ class Handling:
         full_version:  flag whether to populate the full_version or truncated version of the dossier
         """
 
-        rev_part = self.__get_rev_part_for_dossiers(hpn_list, rev, at_date, exact_match)
+        rev_part = self.get_rev_part_dictionary(hpn_list, rev, at_date, exact_match)
 
         part_dossier = {}
         # Now get unique part/revs and put into dictionary
@@ -219,7 +209,7 @@ class Handling:
         output_ports.sort()
         return input_ports, output_ports
 
-    def show_parts(self, part_dossier, verbosity='h'):
+    def show_parts(self, part_dossier):
         """
         Print out part information.  Uses tabulate package.
 
@@ -233,12 +223,8 @@ class Handling:
             print('Part not found')
             return
         table_data = []
-        if verbosity == 'm':
-            headers = ['HERA P/N', 'Rev', 'Part Type', 'Mfg #', 'Start', 'Stop',
-                       'Active']
-        elif verbosity == 'h':
-            headers = ['HERA P/N', 'Rev', 'Part Type', 'Mfg #', 'Start', 'Stop',
-                       'Active', 'Input', 'Output', 'Info', 'Geo']
+        headers = ['HERA P/N', 'Rev', 'Part Type', 'Mfg #', 'Start', 'Stop',
+                   'Active', 'Input', 'Output', 'Info', 'Geo']
         for hpnr in sorted(part_dossier.keys()):
             pdpart = part_dossier[hpnr]['part']
             is_active = cm_utils.is_active(part_dossier[hpnr]['Time'],
@@ -249,38 +235,34 @@ class Handling:
                 is_connected = 'N/C'
             else:
                 is_connected = 'No'
-            if verbosity == 'l':
-                print(pdpart)
+            tdata = [pdpart.hpn,
+                     pdpart.hpn_rev,
+                     pdpart.hptype,
+                     pdpart.manufacturer_number,
+                     cm_utils.get_time_for_display(pdpart.start_date),
+                     cm_utils.get_time_for_display(pdpart.stop_date),
+                     is_connected]
+            ptsin = ''
+            ptsout = ''
+            for k in part_dossier[hpnr]['input_ports']:
+                ptsin += k + ', '
+            for k in part_dossier[hpnr]['output_ports']:
+                ptsout += k + ', '
+            tdata.append(ptsin.strip().strip(','))
+            tdata.append(ptsout.strip().strip(','))
+            if len(part_dossier[hpnr]['part_info']):
+                comment = ', '.join(pi.comment for pi in part_dossier[hpnr]['part_info'])
             else:
-                tdata = [pdpart.hpn,
-                         pdpart.hpn_rev,
-                         pdpart.hptype,
-                         pdpart.manufacturer_number,
-                         cm_utils.get_time_for_display(pdpart.start_date),
-                         cm_utils.get_time_for_display(pdpart.stop_date),
-                         is_connected]
-                if verbosity == 'h':
-                    ptsin = ''
-                    ptsout = ''
-                    for k in part_dossier[hpnr]['input_ports']:
-                        ptsin += k + ', '
-                    for k in part_dossier[hpnr]['output_ports']:
-                        ptsout += k + ', '
-                    tdata.append(ptsin.strip().strip(','))
-                    tdata.append(ptsout.strip().strip(','))
-                    if len(part_dossier[hpnr]['part_info']):
-                        comment = ', '.join(pi.comment for pi in part_dossier[hpnr]['part_info'])
-                    else:
-                        comment = None
-                    tdata.append(comment)
-                    if part_dossier[hpnr]['geo'] is not None:
-                        tdata.append("{:.1f}E, {:.1f}N, {:.1f}m"
-                                     .format(part_dossier[hpnr]['geo'][0].easting,
-                                             part_dossier[hpnr]['geo'][0].northing,
-                                             part_dossier[hpnr]['geo'][0].elevation))
-                    else:
-                        tdata.append(None)
-                    table_data.append(tdata)
+                comment = None
+            tdata.append(comment)
+            if part_dossier[hpnr]['geo'] is not None:
+                tdata.append("{:.1f}E, {:.1f}N, {:.1f}m"
+                             .format(part_dossier[hpnr]['geo'][0].easting,
+                                     part_dossier[hpnr]['geo'][0].northing,
+                                     part_dossier[hpnr]['geo'][0].elevation))
+            else:
+                tdata.append(None)
+            table_data.append(tdata)
         print('\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
 
     def get_specific_connection(self, c, at_date=None):
@@ -341,7 +323,7 @@ class Handling:
         exact_match:  boolean to enforce full part number match
         """
 
-        rev_part = self.__get_rev_part_for_dossiers(hpn_list, rev, at_date, exact_match)
+        rev_part = self.get_rev_part_dictionary(hpn_list, rev, at_date, exact_match)
 
         connection_dossier = {'ordered-pairs': [], 'Time': at_date,
                               'connected-to': (hpn_list, rev, port), 'connections': {}}
