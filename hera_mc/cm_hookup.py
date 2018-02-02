@@ -113,7 +113,7 @@ class Hookup:
             self.__read_hookup_cache_from_file()
 
     def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, show_levels=False,
-                   force_new_cache=False, force_db=False, force_db_at_date='now'):
+                   force_new_cache=False, use_db=False, use_db_at_date='now'):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary.
         Unless force_new is True, it will check a local hookup file and return that if current
@@ -133,17 +133,17 @@ class Hookup:
         -----------
         hpn_list:  list/string of input hera part number(s) (whole or first part thereof)
                    if string == 'cached' it returns the current dict that would be used
-                   if there are any non-hookup-cached items in list, it defaults to force_specific
-        rev:  the revision number or descriptor
-        port_query:  a specifiable port name to follow or 'all',  default is 'all'.
-        exact_match:  boolean for either exact_match or partial
-        show_levels:  boolean to include correlator levels
-        force_new_cache:  boolean to force a full database read as opposed to checking file
-                          this will also rewrite the cache-file
-        force_db:  boolean to force using the database
-                   Setting this makes get_hookup provide specific hookups from the database
-                   (mimicking the action before the cache file option was instituted)
-        force_db_at_date:  date for hookup check -- use only if force_db
+                   if there are any non-hookup-cached key types in list, it defaults to use_db
+        rev:  the revision number or type (ALL/ACTIVE/FULL) [ACTIVE]
+        port_query:  a specifiable port name to follow or 'all'  [all]
+        exact_match:  boolean for either exact_match or partial  [False]
+        show_levels:  boolean to include correlator levels [False]
+        force_new_cache:  boolean to force a full database read as opposed to checking/using file
+                          this will also rewrite the cache-file with the new database data [False]
+        use_db:  boolean to force using the database [False]
+                 Setting this makes get_hookup provide specific hookups from the database
+                 (mimicking the action before the cache file option was instituted)
+        use_db_at_date:  date for hookup check -- used only if use_db it True
         """
         # Take appropriate action if hpn_list is a string and/or if only want full cached hookup.
         if isinstance(hpn_list, (str, unicode)):
@@ -192,18 +192,6 @@ class Hookup:
             hookup_dict = self.add_correlator_levels(hookup_dict)
         return hookup_dict
 
-    def __double_check_request_for_cache_keys(self, hpn_list):
-        """
-        Checks that all hookup requests match the cached keys.
-        """
-        for x in hpn_list:
-            for key_prefix in self.hookup_list_to_cache:
-                if x[:len(key_prefix)].upper() == key_prefix.upper():
-                    break
-            else:
-                return False
-        return True
-
     def __get_empty_hookup_dict(self):
         """
         This is the structure of the hookup_dict.  Some get fully redone, but here for
@@ -217,6 +205,7 @@ class Hookup:
                  'levels': {}}  # correlator levels - only populated if flagged
         return empty
 
+    # #*-START-*# This section is the "original" get_hookup from the database."
     def __get_hookup(self, hpn_list, rev, port_query, at_date,
                      exact_match=False, show_levels=False):
         """
@@ -460,17 +449,30 @@ class Hookup:
                 hookup_dict['levels'][k][p] = str(levels[level_ctr])
                 level_ctr += 1
         return hookup_dict
+    # #*--END--*#
+
+    def __double_check_request_for_cache_keys(self, hpn_list):
+        """
+        Checks that all hookup requests match the cached keys.
+        """
+        for x in hpn_list:
+            for key_prefix in self.hookup_list_to_cache:
+                if x[:len(key_prefix)].upper() == key_prefix.upper():
+                    break
+            else:
+                return False
+        return True
 
     def __write_hookup_cache_to_file(self, log_msg):
+        cache_info = self.hookup_cache_file_info()
+        log_dict = {'hu-list': cm_utils.stringify(self.hookup_list_to_cache),
+                    'log_msg': log_msg, 'cache_info': cache_info}
+        cm_utils.log('update_cache', log_dict=log_dict)
         with open(self.hookup_cache_file, 'wb') as f:
             np.save(f, self.at_date)
             np.save(f, cm_utils.stringify(self.hookup_list_to_cache))
             np.save(f, self.cached_hookup_dict)
             np.save(f, self.part_type_cache)
-        cache_info = self.hookup_cache_file_info()
-        log_dict = {'hu-list': cm_utils.stringify(self.hookup_list_to_cache),
-                    'log_msg': log_msg, 'cache_info': cache_info}
-        cm_utils.log('update_cache', log_dict=log_dict)
 
     def __hookup_cache_file_date_OK(self, contemporaneous_minutes=15.0):
         """
@@ -488,6 +490,7 @@ class Hookup:
             stats = os.stat(self.hookup_cache_file)
         except OSError as e:
             if e.errno == 2:
+                cm_utils.log('__hookup_cache_file_date_OK:  no cache file found.')
                 return False  # File does not exist
             print("OS error:  {0}".format(e))
             raise
@@ -496,6 +499,9 @@ class Hookup:
         file_mod_time = Time(stats.st_mtime, format='unix')
         # If CMVersion changed since file was written, don't know so fail...
         if file_mod_time < cm_hash_time:
+            log_dict = {'file_mod_time': cm_utils.get_time_for_display(file_mod_time),
+                        'cm_hash_time': cm_utils.get_time_for_display(cm_hash_time)}
+            cm_utils.log('__hookup_cache_file_date_OK:  out of date.', log_dict=log_dict)
             return False
         with open(self.hookup_cache_file, 'rb') as f:
             cached_at_date = Time(np.load(f).item())
