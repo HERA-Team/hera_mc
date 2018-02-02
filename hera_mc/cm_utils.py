@@ -34,8 +34,8 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
 def log(msg, **kwargs):
     fp = open(mc.cm_log_file, 'a')
     dt = Time.now()
-    fp.write('-------------------' + str(dt.datetime) + '  ' + msg +
-             '-------------------\n\n')
+    fp.write('------------' + str(dt.datetime) + '  ' + msg +
+             '------------\n\n')
     for key, value in kwargs.items():
         if key == 'args':
             fp.write('--args\n\t')
