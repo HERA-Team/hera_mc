@@ -18,8 +18,8 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
     parser.add_argument('-q', '--quick', help="Shortcut to show a subset of cols and correlator level", action='store_true')
-    parser.add_argument('-f', '--force-new', dest='force_new', help="Force it to write a new hookup file.", action='store_true')
-    parser.add_argument('--force-specific', dest='force_specific', help="Force db and local cache file to use these values", action='store_true')
+    parser.add_argument('-f', '--force-new-cache', dest='force_new_cache', help="Force it to write/use a new hookup cache file.", action='store_true')
+    parser.add_argument('--use-db', dest='use_db', help="Force use of db rather than cache file.", action='store_true')
     parser.add_argument('--port', help="Define desired port(s) for hookup. [all]", dest='port', default='all')
     parser.add_argument('--show-state', help="Show 'full' or 'all' hookups [full]", dest='show_state', default='full')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list. [all]",
@@ -47,10 +47,10 @@ if __name__ == '__main__':
     session = db.sessionmaker()
     hookup = cm_hookup.Hookup(date_query, session)
     if args.show_cache_info:
-        hookup.show_hookup_cache_file_info()
+        print(hookup.hookup_cache_file_info())
     else:
         hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
                                         exact_match=args.exact_match, show_levels=args.show_levels,
-                                        force_new=args.force_new, force_specific=args.force_specific)
+                                        force_new_cache=args.force_new_cache, use_db=args.use_db, use_db_at_date=date_query)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols, show_levels=args.show_levels,
                            show_ports=args.show_ports, show_revs=args.show_revs, show_state=args.show_state)

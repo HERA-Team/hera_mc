@@ -35,4 +35,4 @@ if __name__ == '__main__':
 
     system = sys_handling.Handling(session)
     system.publish_summary(args.hpn, rev=args.revision, exact_match=args.exact_match, hookup_cols=args.hookup_cols,
-                           force_new_hookup_dict=args.force_new)
+                           force_new_cache=args.force_new)

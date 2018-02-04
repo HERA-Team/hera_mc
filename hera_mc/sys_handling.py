@@ -294,14 +294,14 @@ class Handling:
 
     def publish_summary(self, hlist=['HH'], rev='A', exact_match=False,
                         hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
-                        force_new_hookup_dict=False):
+                        force_new_cache=False):
         import os.path
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
         H = cm_hookup.Hookup('now', self.session)
         hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
                                    exact_match=exact_match, show_levels=True,
-                                   force_new=force_new_hookup_dict, force_specific=False)
+                                   force_new_cache=force_new_cache, use_db=False)
 
         with open(output_file, 'w') as f:
             H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, show_levels=True, show_ports=False,
