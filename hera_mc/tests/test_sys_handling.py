@@ -2,21 +2,21 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Testing for `hera_mc.geo_location and geo_handling`.
-
+"""Testing for `hera_mc.geo_location and sys_handling`.
 
 """
 
 from __future__ import absolute_import, division, print_function
 
 import unittest
-import os.path
+import os
 import subprocess
 import numpy as np
 from hera_mc import geo_location, sys_handling, mc, cm_transfer, part_connect
 from hera_mc import cm_hookup, cm_utils, cm_revisions
 from hera_mc.tests import TestHERAMC
 from astropy.time import Time, TimeDelta
+import tempfile
 
 
 class TestSys(TestHERAMC):
@@ -44,6 +44,7 @@ class TestSys(TestHERAMC):
 
     def test_hookup_cache_file_info(self):
         H = cm_hookup.Hookup(at_date='now', session=self.test_session)
+        H.hookup_cache_file = self.tmpfile
         cfi = H.hookup_cache_file_info()
 
     def test_correlator_info(self):

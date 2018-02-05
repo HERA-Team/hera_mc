@@ -164,7 +164,7 @@ class Hookup:
         # Check if use_db return either requested or needed
         requested_list_OK_for_cache = self.__double_check_request_for_cache_keys(hpn_list)
         if not requested_list_OK_for_cache:
-            s = "Hookup request list does not match cache file - using databse."
+            s = "Hookup request list does not match cache file - using database."
             d = {'hpn_list (request)': hpn_list, 'hookup_list_to_cache': self.hookup_list_to_cache}
             cm_utils.log(s, params=d)
         if use_db or not requested_list_OK_for_cache:
