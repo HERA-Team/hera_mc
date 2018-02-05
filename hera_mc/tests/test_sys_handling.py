@@ -2,21 +2,21 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Testing for `hera_mc.geo_location and geo_handling`.
-
+"""Testing for `hera_mc.geo_location and sys_handling`.
 
 """
 
 from __future__ import absolute_import, division, print_function
 
 import unittest
-import os.path
+import os
 import subprocess
 import numpy as np
 from hera_mc import geo_location, sys_handling, mc, cm_transfer, part_connect
 from hera_mc import cm_hookup, cm_utils, cm_revisions
 from hera_mc.tests import TestHERAMC
 from astropy.time import Time, TimeDelta
+import tempfile
 
 
 class TestSys(TestHERAMC):
@@ -36,15 +36,16 @@ class TestSys(TestHERAMC):
     def test_other_hookup(self):
         at_date = cm_utils.get_astropytime('2017-07-03')
         H = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
-        H.reset_cache(None)
+        H.reset_memory_cache(None)
         self.assertEqual(H.cached_hookup_dict, None)
-        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True, force_new=True)
-        H.reset_cache(hu)
+        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True, use_db=True)
+        H.reset_memory_cache(hu)
         self.assertEqual(H.cached_hookup_dict['hookup']['HH23:A']['e'][0].upstream_part, 'HH23')
 
-    def test_show_hookup_cache_file(self):
+    def test_hookup_cache_file_info(self):
         H = cm_hookup.Hookup(at_date='now', session=self.test_session)
-        H.show_hookup_cache_file_info()
+        H.hookup_cache_file = self.tmpfile
+        cfi = H.hookup_cache_file_info()
 
     def test_correlator_info(self):
         corr_dict = self.h.get_cminfo_correlator()
@@ -102,7 +103,7 @@ class TestSys(TestHERAMC):
     def test_correlator_levels(self):
         at_date = cm_utils.get_astropytime('2017-07-03')
         H = cm_hookup.Hookup(at_date, self.test_session)
-        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True, force_new=True)
+        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True, use_db=True)
         hh23level = float(hu['levels']['HH23:A']['e'])
         self.assertEqual(type(hh23level), float)
         # Now get some failures
@@ -131,7 +132,7 @@ class TestSys(TestHERAMC):
         connection.start_gpstime = self.test_time
         self.test_session.add(connection)
         self.test_session.commit()
-        hu = H.get_hookup(['test_part1'], 'Q', 'all', exact_match=True, show_levels=True, force_specific=True)
+        hu = H.get_hookup(['test_part1'], 'Q', 'all', exact_match=True, show_levels=True, use_db=True)
         tplevel = hu['levels']['test_part1:Q']['e']
         print(tplevel)
         self.assertEqual(tplevel, '-')
@@ -140,7 +141,7 @@ class TestSys(TestHERAMC):
         at_date = cm_utils.get_astropytime('2017-07-03')
         H = cm_hookup.Hookup(at_date, self.test_session)
         stn = 'HH23'
-        hud = H.get_hookup([stn], exact_match=True)
+        hud = H.get_hookup([stn], exact_match=True, use_db=True)
         fc = cm_revisions.get_full_revision_keys(stn, hud)
         pams = cm_hookup.get_parts_from_hookup('post-amp', hud)
         self.assertEqual(len(pams.keys()), 1)
