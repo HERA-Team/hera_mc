@@ -18,13 +18,11 @@ if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-k', '--keyword', help="Keyword for comments [general]", default='geneRAL')
     parser.add_argument('-c', '--comment', help="Comment on part", default=None)
-    parser.add_argument('-l', '--library_file', help="Library filename", default=None)
+    parser.add_argument('-l', '--library_file', help="Library filename/URL", default=None)
     parser.add_argument('-v', '--view', help='View all (or just keyword, if supplied) system comments', action='store_true')
-    cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
     # Pre-process some args
-    at_date = cm_utils.get_astropytime(args.date, args.time)
     if args.view:
         if args.keyword == 'geneRAL':
             args.keyword = 'ALL'
