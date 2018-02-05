@@ -314,3 +314,10 @@ class Handling:
             return 'OK'
         else:
             return 'Not on "main"'
+
+    def system_comments(self, system_kw='System', kword='all'):
+        s = ''
+        for P in self.session.query(part_connect.PartInfo).filter((func.upper(part_connect.PartInfo.hpn) == system_kw.upper())):
+            if kword.lower() == 'all' or P.hpn_rev.lower() == kword.lower():
+                s += "{} ({}):  {} [{}] - {}\n".format(P.hpn, P.hpn_rev, P.comment, P.library_file, cm_utils.get_time_for_display(P.posting_gpstime))
+        return s
