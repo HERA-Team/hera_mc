@@ -78,10 +78,6 @@ class TestConnections(TestHERAMC):
         located = self.h.get_connection_dossier([u], r, a, 'now', True)
         self.assertTrue(located['connections'][located['connections'].keys()[0]].upstream_part == u)
 
-    def test_is_in_connections(self):
-        at_date = Time('2017-07-01 01:00:00', scale='utc')
-        self.assertTrue(self.h.is_in_connections(self.test_hpn[0], self.test_rev, at_date))
-
     def test_get_specific_connection(self):
         c = part_connect.Connections()
         c.upstream_part = self.test_hpn[0]

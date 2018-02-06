@@ -159,10 +159,10 @@ class Handling:
             H = cm_hookup.Hookup(at_date, self.session)
         hud = H.get_hookup(hpn_list=[stn], exact_match=True)
         station_dict = {}
-        fc = cm_revisions.get_full_revision_keys(stn, hud)
+        fc = cm_revisions.get_full_revision(stn, hud)
         if len(fc) == 1:
-            k = fc[0][0]
-            p = fc[0][1]
+            k = fc[0].hukey
+            p = fc[0].pkey
             ant_num = hud['hookup'][k][p][0].downstream_part
             # ant_num here is unicode with an A in front of the number (e.g. u'A22').
             # But we just want an integer, so we strip the A and cast it to int
@@ -285,10 +285,10 @@ class Handling:
         pams = {}
         H = cm_hookup.Hookup(at_date, self.session)
         hud = H.get_hookup(hpn_list=[stn], exact_match=True)
-        fc = cm_revisions.get_full_revision_keys(stn, hud)
+        fc = cm_revisions.get_full_revision(stn, hud)
         if len(fc) == 1:
-            k = fc[0][0]
-            p = fc[0][1]
+            k = fc[0].hukey
+            p = fc[0].pkey
             pams = cm_hookup.get_parts_from_hookup(pam_name, hud)[k]
         return pams
 

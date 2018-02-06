@@ -22,8 +22,6 @@ if __name__ == '__main__':
     parser.add_argument('--port', help="Specify port [all]", default='all')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
-    parser.add_argument('--check-rev', help="Revision type to check against. [FULL]", dest='check_rev', default='FULL')
-    parser.add_argument('--show-state', help="Show only the 'active' or 'all' parts [active]", dest='show_state', default='active')
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
 
@@ -45,8 +43,8 @@ if __name__ == '__main__':
 
         Args needing values (or defaulted):
             -p/--hpn:  part name (required)
-            -r/--revision:  revision (particular/last/active/full/all) [ACTIVE]
-            --show-state:  show 'active' or 'all' parts [ACTIVE]
+            -r/--revision:  revision (particular/last/active/full/all) [ALL]
+            --port:  port name [ALL]
 
         Args that are flags
             -e/--exact-match:  match part number exactly, or specify first characters [False]
@@ -65,47 +63,38 @@ if __name__ == '__main__':
 
     # Process
     if action_tag == 'pa':  # part_info
-        if args.hpn is not None:
-            part_dossier = handling.get_part_dossier(hpn_list=args.hpn, rev=args.revision,
-                                                     at_date=date_query, exact_match=args.exact_match)
-            handling.show_parts(part_dossier, verbosity=args.verbosity)
-        else:
-            print("Need to supply part(s)")
+        part_dossier = handling.get_part_dossier(hpn_list=args.hpn, rev=args.revision,
+                                                 at_date=date_query, exact_match=args.exact_match)
+        handling.show_parts(part_dossier)
 
     elif action_tag == 'co':  # connection_info
-        if args.hpn is not None:
-            connection_dossier = handling.get_connection_dossier(
-                hpn_list=args.hpn, rev=args.revision, port=args.port,
-                at_date=date_query, exact_match=args.exact_match)
-            already_shown = handling.show_connections(connection_dossier, verbosity=args.verbosity)
-            handling.show_other_connections(connection_dossier, already_shown)
-        else:
-            print("Need to supply part(s)")
+        connection_dossier = handling.get_connection_dossier(
+            hpn_list=args.hpn, rev=args.revision, port=args.port,
+            at_date=date_query, exact_match=args.exact_match)
+        already_shown = handling.show_connections(connection_dossier, verbosity=args.verbosity)
+        handling.show_other_connections(connection_dossier, already_shown)
 
     elif action_tag == 'ty':  # types of parts
         part_type_dict = handling.get_part_types(date_query)
         handling.show_part_types()
 
     elif action_tag == 're':  # revisions
-        if args.hpn is not None:
-            for hpn in args.hpn:
-                rev_ret = cm_handling.cmpr.get_revisions_of_type(hpn, args.revision, date_query, session)
-                cm_handling.cmpr.show_revisions(rev_ret)
-        else:
-            print("Need to supply parts(s)")
+        for hpn in args.hpn:
+            rev_ret = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
+            cm_handling.cmrev.show_revisions(rev_ret)
 
     elif action_tag == 'ch':  # check revisions
-        if args.hpn is not None:
-            for hpn in args.hpn:
-                r = cm_handling.cmpr.check_rev(hpn, args.revision, args.check_rev, date_query, session)
-                rrr = '' if r else ' not'
-                print("{} rev {} is{} {}".format(hpn, args.revision, rrr, args.check_rev))
-        else:
-            print("Need to supply part(s)")
+        for hpn in args.hpn:
+            rev_chk = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
+            print("{}:{} ".format(hpn, args.revision), end='')
+            if len(rev_chk):
+                for r in rev_chk:
+                    start = cm_utils.get_time_for_display(r.started)
+                    end = cm_utils.get_time_for_display(r.ended)
+                    print("found as {}:{}    start: {}  end: {}".format(r.hpn, r.rev, start, end))
+            else:
+                print("not found.")
 
     elif action_tag == 'ov':  # overlapping revisions
-        if args.hpn is not None:
-            for hpn in args.hpn:
-                cm_handling.cmpr.check_part_for_overlapping_revisions(hpn, session)
-        else:
-            print("Need to supply part(s)")
+        for hpn in args.hpn:
+            cm_handling.cmrev.check_part_for_overlapping_revisions(hpn, session)
