@@ -533,9 +533,13 @@ class Hookup:
             return True
 
         # Otherwise, not OK
+        __A = cached_at_date > cm_hash_time
+        __B = self.at_date > cm_hash_time
+        __C = abs(cached_at_date - self.at_date) < TimeDelta(60.0 * contemporaneous_minutes, format='sec')
         log_dict = {'cached_at_date': cm_utils.get_time_for_display(cached_at_date),
                     'at_date': cm_utils.get_time_for_display(self.at_date),
-                    'cm_hash_time': cm_utils.get_time_for_display(cm_hash_time)}
+                    'cm_hash_time': cm_utils.get_time_for_display(cm_hash_time),
+                    '__A': __A, '__B': __B, '__C': __C}
         cm_utils.log('__hookup_cache_file_OK:  timing incorrect.', log_dict=log_dict)
         return False
 
