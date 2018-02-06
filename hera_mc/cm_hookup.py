@@ -518,8 +518,11 @@ class Hookup:
                         'cm_hash_time': cm_utils.get_time_for_display(cm_hash_time)}
             cm_utils.log('__hookup_cache_file_date_OK:  out of date.', log_dict=log_dict)
             return False
-        with open(self.hookup_cache_file, 'rb') as f:
-            cached_at_date = Time(np.load(f).item())
+        if os.path.exists(self.hookup_cache_file):
+            with open(self.hookup_cache_file, 'rb') as f:
+                cached_at_date = Time(np.load(f).item())
+        else:
+            return False
 
         # If the cached and query dates are after the last hash time it's ok
         if cached_at_date > cm_hash_time and self.at_date > cm_hash_time:
@@ -530,6 +533,14 @@ class Hookup:
             return True
 
         # Otherwise, not OK
+        __A = cached_at_date > cm_hash_time
+        __B = self.at_date > cm_hash_time
+        __C = abs(cached_at_date - self.at_date) < TimeDelta(60.0 * contemporaneous_minutes, format='sec')
+        log_dict = {'cached_at_date': cm_utils.get_time_for_display(cached_at_date),
+                    'at_date': cm_utils.get_time_for_display(self.at_date),
+                    'cm_hash_time': cm_utils.get_time_for_display(cm_hash_time),
+                    '__A': __A, '__B': __B, '__C': __C}
+        cm_utils.log('__hookup_cache_file_OK:  timing incorrect.', log_dict=log_dict)
         return False
 
     def hookup_cache_file_info(self):
@@ -538,15 +549,15 @@ class Hookup:
         else:
             self.__read_hookup_cache_from_file()
             s = 'Cache file:  {}\n'.format(self.hookup_cache_file)
-            s += 'Cache time:  {}\n'.format(cm_utils.get_time_for_display(self.cached_at_date))
+            s += 'Cached_at_date:  {}\n'.format(cm_utils.get_time_for_display(self.cached_at_date))
             stats = os.stat(self.hookup_cache_file)
             file_mod_time = Time(stats.st_mtime, format='unix')
-            s += 'Cache file mod time:  {}\n'.format(cm_utils.get_time_for_display(file_mod_time))
+            s += 'Cache file_mod_time:  {}\n'.format(cm_utils.get_time_for_display(file_mod_time))
             s += 'Cached hookup list:  {}\n'.format(self.cached_hookup_list)
             s += 'Cached hookup has {} keys.\n'.format(len(self.cached_hookup_dict['hookup'].keys()))
         result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
         cm_hash_time = Time(result[-1].update_time, format='gps')
-        s += 'CM Version latest hash time:  {}\n'.format(cm_utils.get_time_for_display(cm_hash_time))
+        s += 'CM Version latest cm_hash_time:  {}\n'.format(cm_utils.get_time_for_display(cm_hash_time))
         return s
 
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,
