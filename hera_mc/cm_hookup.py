@@ -55,7 +55,7 @@ class Hookup:
     To speed things up, it uses a cache file, but only if the query is for prefixes in
     hookup_list_to_cache and if the cache file is current relative to the cm_version
     """
-    hookup_list_to_cache = ['HH']
+    hookup_list_to_cache = ['HH', 'HA', 'HB']
     hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache.npy')
 
     def __init__(self, at_date='now', session=None):
@@ -73,7 +73,7 @@ class Hookup:
         self.part_type_cache = {}
         self.cached_hookup_dict = None
 
-    def reset_cache(self, hookup=None):
+    def reset_memory_cache(self, hookup=None):
         """
         Resets the class cache dictionary to the supplied hookup dict, which can be None.  If None,
         then the next time it will re-read from the file.
@@ -84,7 +84,11 @@ class Hookup:
         """
         self.cached_hookup_dict = hookup
 
-    def set_hookup_cache(self, force_new=False):
+    def delete_cache_file(self):
+        if os.path.exists(self.hookup_cache_file):
+            os.remove(self.hookup_cache_file)
+
+    def determine_hookup_cache_to_use(self, force_new=False):
         """
         Determines action regarding using an existing cache file or writing and using a new one.
         If force_new is set, it automatically writes/uses a new one.  If the cache file is out of
@@ -102,13 +106,18 @@ class Hookup:
                     relative to the cm_version it will also generate/write a new one.
 
         """
-        if force_new or not self.__hookup_cache_file_date_OK():
+        cache_file_date_OK = self.__hookup_cache_file_date_OK()
+        if force_new or not cache_file_date_OK:
             self.cached_hookup_dict = self.__get_hookup(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
                                                         port_query='all', at_date=self.at_date,
                                                         exact_match=False, show_levels=False)
-            self.__write_hookup_cache_to_file(force_new)
+            log_msg = "force_new:  {};  cache_file_date_OK:  {}".format(force_new, cache_file_date_OK)
+            self.__write_hookup_cache_to_file(log_msg)
         elif self.cached_hookup_dict is None:
-            self.__read_hookup_cache_from_file()
+            if os.path.exists(self.hookup_cache_file):
+                self.__read_hookup_cache_from_file()
+            else:
+                self.determine_hookup_cache_to_use(force_new=True)
 
     def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, show_levels=False,
                    force_new=False, force_specific=False, force_specific_at_date='now'):
@@ -134,7 +143,6 @@ class Hookup:
                    if there are any non-hookup-cached items in list, it defaults to force_specific
         rev:  the revision number or descriptor
         port_query:  a specifiable port name to follow or 'all',  default is 'all'.
-        force_specific_at_date:  date for hookup check -- use only if force_specific
         exact_match:  boolean for either exact_match or partial
         show_levels:  boolean to include correlator levels
         force_new:  boolean to force a full database read as opposed to checking file
@@ -142,24 +150,31 @@ class Hookup:
         force_specific:  boolean to force this to read/write the file to use the supplied values
                          Setting this makes get_hookup provide specific hookups (mimicking the
                          action before the cache file option was instituted)
+        force_specific_at_date:  date for hookup check -- use only if force_specific
         """
         # Take appropriate action if hpn_list is a string
-        if type(hpn_list) == str and hpn_list.lower() == 'cached':
-            if self.cached_hookup_dict is None:
-                self.__read_hookup_cache_from_file()
-            return self.cached_hookup_dict
-        if type(hpn_list) == str:
-            hpn_list = [hpn_list]
+        if isinstance(hpn_list, (str, unicode)):
+            if hpn_list.lower() == 'cached':
+                if self.cached_hookup_dict is None:
+                    self.__read_hookup_cache_from_file()
+                return self.cached_hookup_dict
+            else:
+                hpn_list = [hpn_list]
 
         # Check if force_specific return either requested or needed
         requested_list_OK_for_cache = self.__double_check_request_for_cache_keys(hpn_list)
+        if not requested_list_OK_for_cache:
+            s = "Hookup request list does not match cache file - using database."
+            d = {'hpn_list (request)': hpn_list, 'hookup_list_to_cache': self.hookup_list_to_cache}
+            cm_utils.log(s, params=d)
         if force_specific or not requested_list_OK_for_cache:
             return self.__get_hookup(hpn_list=hpn_list, rev=rev, port_query=port_query,
                                      at_date=force_specific_at_date,
                                      exact_match=exact_match, show_levels=show_levels)
 
         # Check/get the appropriate hookup dict
-        self.set_hookup_cache(force_new=force_new)
+        # (a) in memory, (b) re-read cache file, or (c) generate new
+        self.determine_hookup_cache_to_use(force_new=force_new)
 
         # Now build up the returned hookup_dict
         hookup_dict = self.__get_empty_hookup_dict()
@@ -209,6 +224,7 @@ class Hookup:
                  'levels': {}}  # correlator levels - only populated if flagged
         return empty
 
+    # #*-START-*# This section is the "original" get_hookup from the database."
     def __get_hookup(self, hpn_list, rev, port_query, at_date,
                      exact_match=False, show_levels=False):
         """
@@ -452,17 +468,26 @@ class Hookup:
                 hookup_dict['levels'][k][p] = str(levels[level_ctr])
                 level_ctr += 1
         return hookup_dict
+    # #*--END--*#
 
-    def __write_hookup_cache_to_file(self, force_new):
+    def __write_hookup_cache_to_file(self, log_msg):
         with open(self.hookup_cache_file, 'wb') as f:
             np.save(f, self.at_date)
             np.save(f, cm_utils.stringify(self.hookup_list_to_cache))
             np.save(f, self.cached_hookup_dict)
             np.save(f, self.part_type_cache)
+        cf_info = self.hookup_cache_file_info()
         log_dict = {'hu-list': cm_utils.stringify(self.hookup_list_to_cache),
-                    'check_hookup': str(self.__hookup_cache_file_date_OK()),
-                    'force_new': str(force_new)}
+                    'log_msg': log_msg, 'cache_file_info': cf_info}
         cm_utils.log('update_cache', log_dict=log_dict)
+
+    def __read_hookup_cache_from_file(self):
+        if os.path.exists(self.hookup_cache_file):
+            with open(self.hookup_cache_file, 'rb') as f:
+                self.cached_at_date = Time(np.load(f).item())
+                self.cached_hookup_list = cm_utils.listify(np.load(f).item())
+                self.cached_hookup_dict = np.load(f).item()
+                self.part_type_cache = np.load(f).item()
 
     def __hookup_cache_file_date_OK(self, contemporaneous_minutes=15.0):
         """
@@ -480,6 +505,7 @@ class Hookup:
             stats = os.stat(self.hookup_cache_file)
         except OSError as e:
             if e.errno == 2:
+                cm_utils.log('__hookup_cache_file_date_OK:  no cache file found.')
                 return False  # File does not exist
             print("OS error:  {0}".format(e))
             raise
@@ -488,6 +514,9 @@ class Hookup:
         file_mod_time = Time(stats.st_mtime, format='unix')
         # If CMVersion changed since file was written, don't know so fail...
         if file_mod_time < cm_hash_time:
+            log_dict = {'file_mod_time': cm_utils.get_time_for_display(file_mod_time),
+                        'cm_hash_time': cm_utils.get_time_for_display(cm_hash_time)}
+            cm_utils.log('__hookup_cache_file_date_OK:  out of date.', log_dict=log_dict)
             return False
         with open(self.hookup_cache_file, 'rb') as f:
             cached_at_date = Time(np.load(f).item())
@@ -503,28 +532,22 @@ class Hookup:
         # Otherwise, not OK
         return False
 
-    def __read_hookup_cache_from_file(self):
-        with open(self.hookup_cache_file, 'rb') as f:
-            self.cached_at_date = Time(np.load(f).item())
-            self.cached_hookup_list = cm_utils.listify(np.load(f).item())
-            self.cached_hookup_dict = np.load(f).item()
-            self.part_type_cache = np.load(f).item()
-
-    def show_hookup_cache_file_info(self):
+    def hookup_cache_file_info(self):
         if not os.path.exists(self.hookup_cache_file):
-            print("{} does not exist.".format(self.hookup_cache_file))
+            s = "{} does not exist.\n".format(self.hookup_cache_file)
         else:
             self.__read_hookup_cache_from_file()
-            print('Cache file:  {}'.format(self.hookup_cache_file))
-            print('Cache time:  {}'.format(cm_utils.get_time_for_display(self.cached_at_date)))
+            s = 'Cache file:  {}\n'.format(self.hookup_cache_file)
+            s += 'Cache time:  {}\n'.format(cm_utils.get_time_for_display(self.cached_at_date))
             stats = os.stat(self.hookup_cache_file)
             file_mod_time = Time(stats.st_mtime, format='unix')
-            print('Cache file mod time:  {}'.format(cm_utils.get_time_for_display(file_mod_time)))
-            print('Cached hookup list:  {}'.format(self.cached_hookup_list))
-            print('Cached dict has {} keys.'.format(len(self.cached_hookup_dict['hookup'].keys())))
+            s += 'Cache file mod time:  {}\n'.format(cm_utils.get_time_for_display(file_mod_time))
+            s += 'Cached hookup list:  {}\n'.format(self.cached_hookup_list)
+            s += 'Cached hookup has {} keys.\n'.format(len(self.cached_hookup_dict['hookup'].keys()))
         result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
         cm_hash_time = Time(result[-1].update_time, format='gps')
-        print('CM Version latest hash time:  {}'.format(cm_utils.get_time_for_display(cm_hash_time)))
+        s += 'CM Version latest hash time:  {}\n'.format(cm_utils.get_time_for_display(cm_hash_time))
+        return s
 
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,
                     show_state='full', file=None, output_format='ascii'):
