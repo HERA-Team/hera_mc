@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2017 the HERA Collaboration
+# Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """
@@ -20,6 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--comment', help="Comment on part", default=None)
     parser.add_argument('-l', '--library_file', help="Library filename/URL", default=None)
     parser.add_argument('-v', '--view', help='View all (or just keyword, if supplied) system comments', action='store_true')
+    cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
     # Pre-process some args
@@ -30,6 +31,7 @@ if __name__ == '__main__':
         if args.comment is None:
             args.comment = raw_input('Comment:  ')
     args.keyword = args.keyword.lower()
+    at_date = cm_utils.get_astropytime(args.date, args.time)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
