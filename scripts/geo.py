@@ -13,7 +13,7 @@ import sys
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('action', nargs='?', help="Actions are:  geo, cofa, since, update, info", default='geo')
-    parser.add_argument('-l', '--loc', help="Location name", default=None)
+    parser.add_argument('-p', '--position', help="Position (i.e. 'station') name", default=None)
     parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
@@ -108,7 +108,7 @@ if __name__ == '__main__':
 
     # interpret args
     at_date = cm_utils.get_astropytime(args.date, args.time)
-    args.loc = cm_utils.listify(args.loc)
+    args.position = cm_utils.listify(args.position)
     args.station_types = cm_utils.listify(args.station_types)
     args.show_label = args.show_label.lower()
     if args.show_label == 'false':
@@ -135,14 +135,14 @@ if __name__ == '__main__':
     if args.action == 'geo':
         if args.graph:
             show_fig = h.plot_station_types(at_date, state_args)
-        if args.loc is not None:
-            located = h.get_location(args.loc, at_date)
+        if args.position is not None:
+            located = h.get_location(args.position, at_date)
             h.print_loc_info(located, args.verbosity)
             if args.graph and len(located) > 0:
                 state_args['marker_color'] = 'g'
                 state_args['marker_shape'] = '*'
                 state_args['marker_size'] = 14
-                show_fig = h.plot_stations(args.loc, at_date, state_args)
+                show_fig = h.plot_stations(args.position, at_date, state_args)
 
     elif args.action == 'cof':
         cofa = h.cofa()
