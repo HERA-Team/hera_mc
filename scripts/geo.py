@@ -21,13 +21,13 @@ if __name__ == '__main__':
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
-    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or all) [HH]",
-                        dest='station_types', default='HH')
+    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or all) [HH,HA,HB]",
+                        dest='station_types', default='HH,HA,HB')
     parser.add_argument('--show-state', help="Show only the 'active' stations or 'all' ['all']", dest='show_state',
                         choices=['active', 'all'], default='all')
     parser.add_argument('--show-label', dest='show_label',
                         help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]",
-                        choices=['name', 'num', 'ser'], default='num')
+                        choices=['name', 'num', 'ser', 'false'], default='num')
     parser.add_argument('--fig-num', help="Provide a specific figure number to the plot [default]",
                         dest='fig_num', default='default')
 
