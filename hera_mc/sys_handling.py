@@ -1,5 +1,5 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2017 the HERA Collaboration
+# Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """
@@ -314,3 +314,28 @@ class Handling:
             return 'OK'
         else:
             return 'Not on "main"'
+
+    def system_comments(self, system_kw='System', kword='all'):
+        col = {'key': ['Keyword'], 'date': ['Posting'], 'comment': ['Comment  <file/url>']}
+        for k, v in col.iteritems():
+            col[k].append(len(v[0]))
+        found_entries = []
+        for x in self.session.query(part_connect.PartInfo).filter((func.upper(part_connect.PartInfo.hpn) == system_kw.upper())):
+            if kword.lower() == 'all' or x.hpn_rev.lower() == kword.lower():
+                commlib = '{}  <{}>'.format(x.comment, x.library_file)
+                display_time = cm_utils.get_time_for_display(x.posting_gpstime)
+                sys_comm = {'key': x.hpn_rev, 'date': display_time, 'comment': commlib}
+                found_entries.append(sys_comm)
+                for k, v in sys_comm.iteritems():
+                    if len(v) > col[k][1]:
+                        col[k][1] = len(v)
+        if not len(found_entries):
+            return 'None'
+        rows = ["\n{:{tkw}s} | {:{pt}s} | {}".format(col['key'][0], col['date'][0], col['comment'][0], tkw=col['key'][1], pt=col['date'][1])]
+        rows.append("{}+{}+{}".format((col['key'][1] + 1) * '-', (col['date'][1] + 2) * '-', (col['comment'][1] + 1) * '-'))
+        for fnd in found_entries:
+            rows.append("{:{tkw}s} | {:{pt}s} | {}".format(fnd['key'], fnd['date'], fnd['comment'],
+                                                           tkw=col['key'][1], pt=col['date'][1]))
+        comments = '\n'.join(rows)
+
+        return comments
