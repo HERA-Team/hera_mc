@@ -392,7 +392,7 @@ class Handling:
             import matplotlib.pyplot as plt
         from hera_mc import cm_hookup, cm_revisions
         hookup = cm_hookup.Hookup(query_date, self.session)
-        hookup_dict = hookup.get_hookup('HH')
+        hookup_dict = hookup.get_hookup('cached')
 
         query_date = cm_utils.get_astropytime(query_date)
         if state_args['station_types'][0] == 'all':

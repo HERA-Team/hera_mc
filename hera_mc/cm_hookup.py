@@ -155,8 +155,7 @@ class Hookup:
         # Take appropriate action if hpn_list is a string
         if isinstance(hpn_list, (str, unicode)):
             if hpn_list.lower() == 'cached':
-                if self.cached_hookup_dict is None:
-                    self.__read_hookup_cache_from_file()
+                self.__read_hookup_cache_from_file()
                 return self.cached_hookup_dict
             else:
                 hpn_list = [hpn_list]
@@ -488,6 +487,9 @@ class Hookup:
                 self.cached_hookup_list = cm_utils.listify(np.load(f).item())
                 self.cached_hookup_dict = np.load(f).item()
                 self.part_type_cache = np.load(f).item()
+        else:
+            self.determine_hookup_cache_to_use(force_new=True)
+            self.__read_hookup_cache_from_file(self)
 
     def __hookup_cache_file_date_OK(self, contemporaneous_minutes=15.0):
         """
