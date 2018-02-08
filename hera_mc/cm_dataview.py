@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 
 class Dataview:
-    def __init__(self, session=None, hookup_list_to_cache=['HH']):
+    def __init__(self, session=None):
         """
         session: session on current database. If session is None, a new session
                  on the default database is created and used.
@@ -26,7 +26,6 @@ class Dataview:
             self.session = db.sessionmaker()
         else:
             self.session = session
-        self.hookup_list_to_cache = hookup_list_to_cache
         self.parts_list = None
         self.fc_map = None
 
@@ -66,8 +65,8 @@ class Dataview:
             fc_map[p] = {'datetime': [], 'flag': [], 'fc': []}
             at_date = start_date
             while at_date < stop_date:
-                hookup = cm_hookup.Hookup(at_date, self.session, self.hookup_list_to_cache)
-                hookup_dict = hookup.get_hookup('cached')
+                hookup = cm_hookup.Hookup(at_date, self.session)
+                hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
                 fc = cm_revisions.get_full_revision(p, hookup_dict)
                 fc_map[p]['datetime'].append(at_date.datetime)
                 fc_map[p]['flag'].append(len(fc))
