@@ -178,9 +178,9 @@ def get_full_revision(hpn, hookup_dict):
     hookup_dict:  hookup dictionary to check for full connection
     """
     from hera_mc import cm_hookup
-    if not isinstance(hookup_dict, cm_hookup.Hookup):
+    if not isinstance(hookup_dict, dict):
         H = cm_hookup.Hookup()
-        hookup_dict = H.get_hookup('cached')
+        hookup_dict = H.get_hookup(H.hookup_list_to_cache)
     return_full_keys = []
     found_this_hpn = False
     for hukey in hookup_dict['hookup'].keys():
