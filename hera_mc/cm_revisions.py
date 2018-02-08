@@ -180,7 +180,7 @@ def get_full_revision(hpn, hookup_dict):
     from hera_mc import cm_hookup
     if not isinstance(hookup_dict, cm_hookup.Hookup):
         H = cm_hookup.Hookup()
-        hookup_dict = H.get_hookup(H.hookup_list_to_cache)
+        hookup_dict = H.get_hookup('cached')
     return_full_keys = []
     found_this_hpn = False
     for hukey in hookup_dict['hookup'].keys():
