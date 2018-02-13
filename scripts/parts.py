@@ -15,7 +15,7 @@ import sys
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('action', nargs='?', help="Actions are:  info, types, part_info, conn_info, rev_info, \
-                                                   check_rev, overlap_check.  'info' for more.", default='part_info')
+                                                   check_rev, health.  'info' for more.", default='part_info')
     # set values for 'action' to use
     parser.add_argument('-p', '--hpn', help="Part number, csv-list (required). [None]", default=None)
     parser.add_argument('-r', '--revision', help="Specify revision or last/full/all for hpn.  [all]", default='all')
@@ -39,7 +39,7 @@ if __name__ == '__main__':
             rev_info:  provide a summary of revisions of given part/rev
             types:  provide a summary of part types
             check_rev:  checks whether a given part/rev exists
-            overlap_check:  checks whether a given part has any overlapping active revisions
+            health:  runs various "health" checks
 
         Args needing values (or defaulted):
             -p/--hpn:  part name (required)
@@ -96,5 +96,8 @@ if __name__ == '__main__':
                 print("not found.")
 
     elif action_tag == 'ov':  # overlapping revisions
+        from hera_mc import cm_health
+        healthy = cm_health.Connections(session)
+        healthy.check_for_duplicate_connections()
         for hpn in args.hpn:
             cm_handling.cmrev.check_part_for_overlapping_revisions(hpn, session)
