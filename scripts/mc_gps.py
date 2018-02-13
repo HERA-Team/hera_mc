@@ -21,7 +21,9 @@ if args.gps is None:
     Time_object = cm_utils.get_astropytime(args.date, args.time)
     print("\n\tThe supplied date was  {}".format(str(Time_object)))
     print("\t...corresponding gps is  {}\n".format(Time_object.gps))
+    print("\tThe Julian Date is {}\n".format(Time_object.jd))
 else:
     Time_object = Time(int(args.gps), format='gps')
     print("\n\tThe supplied gps second was {}".format(args.gps))
     print("\t...corresponding Time is {}".format(str(Time_object.isot)))
+    print("\tThe Julian Date is {}\n".format(Time_object.jd))
