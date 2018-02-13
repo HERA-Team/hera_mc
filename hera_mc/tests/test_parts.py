@@ -100,7 +100,8 @@ class TestParts(TestHERAMC):
         self.assertTrue(a['feed']['input_ports'][0] == 'input')
 
     def test_check_overlapping(self):
-        c = cm_revisions.check_part_for_overlapping_revisions(self.test_part, self.test_session)
+        from hera_mc import cm_health
+        c = cm_health.check_part_for_overlapping_revisions(self.test_part, self.test_session)
         self.assertTrue(len(c) == 0)
 
     def test_datetime(self):
