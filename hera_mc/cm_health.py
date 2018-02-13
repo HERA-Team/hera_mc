@@ -60,8 +60,12 @@ class Connections:
                     stop_i = cm_utils.get_stopdate(self.conndict[k][i][1])
                     start_j = cm_utils.get_astropytime(self.conndict[k][j][0])
                     stop_j = cm_utils.get_stopdate(self.conndict[k][j][1])
+                    print("CM_H:  ", k)
                     if start_j <= start_i:
                         if stop_j > start_i:
+                            duplicates.append([k, i, j])
+                    else:
+                        if start_j <= stop_i:
                             duplicates.append([k, i, j])
         if len(duplicates):
             print('{} duplications found.'.format(len(duplicates)))
@@ -83,7 +87,7 @@ class Connections:
         k = ':'.join(connection)
         if self.conndict is None:
             self.get_conndict()
-        if connection not in self.conndict.keys():
+        if k not in self.conndict.keys():
             return False
         for t in self.conndict[k]:
             start_t = cm_utils.get_astropytime(t[0])
