@@ -7,10 +7,10 @@
 """
 
 from __future__ import absolute_import, print_function
-
+import warnings
 from hera_mc import mc, cm_utils
 from hera_mc import part_connect as PC
-from hera_mc import cm_revisions as cmrev
+from hera_mc import cm_revisions
 
 
 class RevisionError(Exception):
@@ -106,7 +106,7 @@ def check_part_for_overlapping_revisions(hpn, session=None):
     """
 
     overlap = []
-    revisions = get_all_revisions(hpn, session)
+    revisions = cm_revisions.get_all_revisions(hpn, session)
     for i, r1 in enumerate(revisions):
         for j, r2 in enumerate(revisions):
             if i >= j:
@@ -125,5 +125,5 @@ def check_part_for_overlapping_revisions(hpn, session=None):
             s = '{} and {} are overlapping revisions of part {}'.format(
                 ol[0].rev, ol[1].rev, hpn)
             warnings.warn(s)
-        show_revisions(overlapping_revs_in_single_list)
+        cm_revisions.show_revisions(overlapping_revs_in_single_list)
     return overlap

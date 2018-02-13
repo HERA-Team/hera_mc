@@ -95,9 +95,13 @@ if __name__ == '__main__':
             else:
                 print("not found.")
 
-    elif action_tag == 'ov':  # overlapping revisions
+    elif action_tag == 'he':  # overlapping revisions
         from hera_mc import cm_health
         healthy = cm_health.Connections(session)
-        healthy.check_for_duplicate_connections()
-        for hpn in args.hpn:
-            cm_handling.cmrev.check_part_for_overlapping_revisions(hpn, session)
+        if args.hpn is None:
+            healthy.check_for_duplicate_connections()
+        else:
+            for hpn in args.hpn:
+                healthy.check_for_existing_connection(hpn)
+            for hpn in args.hpn:
+                cm_health.check_part_for_overlapping_revisions(hpn, session)
