@@ -20,11 +20,11 @@ class RevisionError(Exception):
         super(RevisionError, self).__init__(message)
 
 
-def check_for_overlap(start_i, stop_i, start_j, stop_j):
-    if start_j <= start_i:
-        if stop_j > start_i:
+def check_for_overlap(interval_i, interval_j):
+    if interval_j[0] <= interval_i[0]:
+        if interval_j[1] > interval_i[0]:
             return True
-    elif start_j <= stop_i:
+    elif interval_j[0] <= interval_i[1]:
             return True
     return False
 
@@ -87,20 +87,14 @@ class Connections:
         for k in self.multiples:
             for i in range(len(self.conndict[k])):
                 for j in range(i):
-                    start_i = self.conndict[k][i][0]
-                    stop_i = self.conndict[k][i][1]
-                    start_j = self.conndict[k][j][0]
-                    stop_j = self.conndict[k][j][1]
-                    if check_for_overlap(start_i, stop_i, start_j, stop_j):
+                    if check_for_overlap(self.conndict[k][i], self.conndict[k][j]):
                         self.duplicates.append([k, i, j])
         if len(self.duplicates):
             print('{} duplications found.'.format(len(self.duplicates)))
             for d in self.duplicates:
-                start_i = self.conndict[d[0]][d[1]][0]
-                stop_i = self.conndict[d[0]][d[1]][1]
-                start_j = self.conndict[d[0]][d[2]][0]
-                stop_j = self.conndict[d[0]][d[2]][1]
-                print('\t{} <1>{}-{}  <2>{}-{}'.format(k, start_i, stop_i, start_j, stop_j))
+                i = self.conndict[d[0]][d[1]]
+                j = self.conndict[d[0]][d[2]]
+                print('\t{} <1>{}-{}  <2>{}-{}'.format(k, i[0], i[1], j[0], j[1]))
         else:
             print('No duplications found.')
         print('Out of {} connections checked.'.format(self.num_connections))
@@ -145,11 +139,9 @@ def check_part_for_overlapping_revisions(hpn, session=None):
     revisions = cm_revisions.get_all_revisions(hpn, session)
     for i in range(len(revisions)):
         for j in range(i):
-            start_i = revisions[i].started
-            stop_i = cm_utils.get_stopdate(revisions[i].ended)
-            start_j = revisions[j].started
-            stop_j = cm_utils.get_stopdate(revisions[j].ended)
-            if check_for_overlap(start_i, stop_i, start_j, stop_j):
+            interval_i = [revisions[i].started, cm_utils.get_stopdate(revisions[i].ended)]
+            interval_j = [revisions[j].started, cm_utils.get_stopdate(revisions[j].ended)]
+            if check_for_overlap(interval_i, interval_j):
                 self.overlap.append([revisions[i], revisions[j]])
 
     if len(overlap) > 0:
