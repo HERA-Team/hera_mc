@@ -5,6 +5,7 @@
 
 from __future__ import print_function
 import urllib2
+import os.path
 
 pf_in__to__file_col = {'A1': 0, 'A2': 1, 'A3': 2, 'A4': 3,
                        'B1': 4, 'B2': 5, 'B3': 6, 'B4': 7,
@@ -15,10 +16,10 @@ pf_in__to__file_col = {'A1': 0, 'A2': 1, 'A3': 2, 'A4': 3,
                        'G1': 24, 'G2': 25, 'G3': 26, 'G4': 27,
                        'H1': 28, 'H2': 29, 'H3': 30, 'H4': 31}
 DF_chassis_list = ['1', '2', '3', '4', '5', '6', '7', '8']
-default_levels_filename = 'levels.tmp'
+default_levels_filename = os.path.expanduser('~/.hera_mc/levels.tmp')
 
 
-def get_levels(pf_input, testing, network='local', timeout=5):
+def get_levels(pf_input, testing, network='local', timeout=2):
     """
     This returns a dictionary containing the correlator levels for inputs givin in pf_input.
     This assumes the f-engine name structure of 'DF<int=pf_chassis><letter=input_row><int=input_col>'
@@ -47,7 +48,9 @@ def get_levels(pf_input, testing, network='local', timeout=5):
     for pf in pf_input:
         if levels is None:
             print('No valid correlator level file.')
-            pf_levels.append('x')
+            pf_levels.append('X')
+        elif pf is None:
+            pf_levels.append('-')
         elif valid_input_name(pf):
             pf_chassis = 'F' + str(pf[2])
             pf_rowcol_designator = pf[-2:]
@@ -56,12 +59,13 @@ def get_levels(pf_input, testing, network='local', timeout=5):
         else:
             print("Invalid f-engine call", pf)
             pf_levels.append('-')
-            continue
     return pf_levels
 
 
 def valid_input_name(pf):
-    if pf[:2].upper() != 'DF':
+    if pf is None:
+        return False
+    elif pf[:2].upper() != 'DF':
         return False
     elif pf[2] not in DF_chassis_list:
         return False

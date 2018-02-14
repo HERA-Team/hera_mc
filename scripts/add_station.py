@@ -38,7 +38,7 @@ def query_geo_information(args):
     if args.station_name is None:
         args.station_name = raw_input('Station name:  ').upper()
     if not args.from_file:
-        args.from_file = cm_utils._query_yn(
+        args.from_file = cm_utils.query_yn(
             'Do you want to get coords from default file?', 'y')
     if args.from_file:
         coords = get_coord_from_file(args.station_name, args.from_file)
@@ -53,10 +53,10 @@ def query_geo_information(args):
         args.easting = float(raw_input('Easting:  '))
         args.northing = float(raw_input('Northing:  '))
         args.elevation = float(raw_input('Elevation:  '))
-        args.datum = cm_utils._query_default('datum', args)
-        args.tile = cm_utils._query_default('tile', args)
-    args.station_type_name = cm_utils._query_default('station_type_name', args)
-    args.date = cm_utils._query_default('date', args)
+        args.datum = cm_utils.query_default('datum', args)
+        args.tile = cm_utils.query_default('tile', args)
+    args.station_type_name = cm_utils.query_default('station_type_name', args)
+    args.date = cm_utils.query_default('date', args)
     return args
 
 
@@ -73,7 +73,7 @@ def entry_OK_to_add(session, station_name):
 def add_entry_to_geo_location(session, args):
     # NotNull
     sname = args.station_name
-    dt = cm_utils._get_astropytime(args.date, args.time)
+    dt = cm_utils.get_astropytime(args.date, args.time)
     data = [[sname, 'station_name', sname],
             [sname, 'station_type_name', args.station_type_name],
             [sname, 'created_gpstime', dt.gps]]
@@ -95,7 +95,7 @@ def add_entry_to_parts(session, args):
     # NotNull
     hpn = args.station_name
     rev = 'A'
-    dt = cm_utils._get_astropytime(args.date, args.time)
+    dt = cm_utils.get_astropytime(args.date, args.time)
     data = [[hpn, rev, 'hpn', hpn],
             [hpn, rev, 'hpn_rev', rev],
             [hpn, rev, 'hptype', 'station'],
@@ -155,6 +155,6 @@ if __name__ == '__main__':
         args = query_geo_information(args)
 
     if entry_OK_to_add(session, args.station_name):
-        cm_utils._log('add_station', args=args)
+        cm_utils.log('add_station', args=args)
         add_entry_to_geo_location(session, args)
         add_entry_to_parts(session, args)

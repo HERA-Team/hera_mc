@@ -1,19 +1,15 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2017 the HERA Collaboration
+# Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """
-Methods for handling locating correlator.
-Top modules are generally called by external (to CM) scripts.
-Bottom part is the class that does the work.
+Methods for handling locating correlator and various system aspects.
 """
 
 from __future__ import absolute_import, division, print_function
 
-import warnings
 from astropy.time import Time, TimeDelta
 from sqlalchemy import func, asc
-
 import numpy as np
 
 from hera_mc import mc, part_connect, cm_utils, cm_hookup, cm_revisions
@@ -35,9 +31,8 @@ class Handling:
             self.session = db.sessionmaker()
         else:
             self.session = session
-
-        self.hookup = cm_hookup.Hookup(self.session)
         self.geo = geo_handling.Handling(self.session)
+        self.H = None
 
     def close(self):
         """
@@ -49,128 +44,40 @@ class Handling:
         cofa = self.geo.cofa()
         return cofa
 
-    def _search_loop(self, stn, at_date, now, m, base_tdelta):
+    def get_dubitable_list(self, date='now', return_full=False):
         """
-        To find a fully connected signal path, you must loop through times.
-        To speed it up, this has one loop with bigger time steps (but not too
-        big to miss connections), then a shorter time step to the desired
-        resolution.  The big loop is m*base_tdelta and the smaller is base_tdelta.
-        These parameters can be tuned in the future.
-        """
-        fc = []
-        for i in range(1000):  # Just to give some reasonable outer limit
-            at_date += TimeDelta(m * base_tdelta, format='sec')
-            if at_date > now:
-                at_date = now + TimeDelta(10.0, format='sec')
-            fc = cm_revisions.get_full_revision(stn, at_date, self.session)
-            if len(fc) == 1:
-                at_date -= TimeDelta(m * base_tdelta - 600.0, format='sec')
-                fc = cm_revisions.get_full_revision(stn, at_date, self.session)
-                while len(fc) == 0 and at_date < now:
-                    at_date += TimeDelta(base_tdelta, format='sec')
-                    if at_date > now:
-                        at_date = now + TimeDelta(10.0, format='sec')
-                    fc = cm_revisions.get_full_revision(stn, at_date, self.session)
-                break
-            elif at_date > now:
-                break
-        return fc, at_date
+        Returns start_time and a list with the dubitable antennas.
+        If date is supplied, returns for that date, otherwise now.
 
-    def get_all_fully_connected_ever(self, earliest_date=Time('2016-09-01'),
-                                     station_types_to_check='all'):
-        """
-        Returns a list of dictionaries of all of the locations fully connected ever that
-        have station_types in station_types_to_check.  The dictonary is defined in
-        get_fully_connected_location_at_date.
-
-        It loops through the stations within station_types (which you select, e.g. HH).
-        The time loop starts at either when the station was first "installed" or earliest_date,
-        whichever is later.  It finds the earliest connection first, then loops over time
-        after that.
-
-        Each location is returned as one dict in the list. Dict keys are:
-            'station_name': name of station (string, e.g. 'HH27')
-            'station_type': type of station (string, e.g. 'HH', 'PI', etc)
-            'tile': UTM tile name (string, e.g. '34J'
-            'datum': UTM datum (string, e.g. 'WGS84')
-            'easting': station UTM easting (float)
-            'northing': station UTM northing (float)
-            'longitude': station longitude (float)
-            'latitude': station latitude (float)
-            'elevation': station elevation (float)
-            'antenna_number': antenna number (integer)
-            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4')
-            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4')
-            'start_date': start of connection in gps seconds (long)
-            'stop_date': end of connection in gps seconds (long or None no end time)
-
-        Parameters
-        -----------
-        earliest_date:  earliest_date to check for connections.
-        station_types_to_check:  list of station types to limit check, or 'all' (default: 'all')
+        Parameters:
+        ------------
+        date:  something understandable by cm_utils.get_astropytime
+        return_full:  boolean to return the full object as opposed to the csv string
         """
 
-        base_tdelta = 86400.0  # This the shorter "inner" loop that sets the time resolution.
-        m = 10.0  # This multiplier sets the scale of the longer "outer" loop to speed it up.
-        if type(station_types_to_check) == str:
-            station_types_to_check = station_types_to_check.lower()
-        self.geo.get_station_types()
-        station_conn = []
-        now = cm_utils._get_astropytime('now')
-        for k, stn_type in self.geo.station_types.iteritems():
-            if station_types_to_check != 'all' and k not in station_types_to_check:
-                continue
-            for stn in stn_type['Stations']:
-                print("Checking {}".format(stn))
-                # Get First one to set the starting time for that station.
-                ustn = stn.upper()
-                conn = self.session.query(part_connect.Connections).filter(
-                    func.upper(part_connect.Connections.upstream_part) == ustn).order_by(
-                    asc(part_connect.Connections.start_gpstime)).first()
-                if conn is None:  # This location was never connected, so move on.
-                    continue
-                conn.gps2Time()
-                if conn.start_date < earliest_date:  # Get the later of the two.
-                    at_date = earliest_date
-                else:
-                    at_date = conn.start_date + TimeDelta(600.0, format='sec')
-                # Find the first fully connected signal path from location.
-                fc = cm_revisions.get_full_revision(stn, at_date, self.session)
-                if len(fc) == 0 and at_date < now:
-                    fc, at_date = self._search_loop(stn, at_date, now, m, base_tdelta)
-                if len(fc) == 0:
-                    continue
-                station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date, fc=fc)
-                station_conn.append(station_dict)
-                # Get subsequent ones up to 'now'.  To speed up the search, start the next time at the stop time of previous connection.
-                k0 = fc[0].hookup['timing'].keys()[0]
-                tp = fc[0].hookup['timing'][k0]
-                fc_strt = Time(cm_utils.get_date_from_pair(tp['e'][0], tp['n'][0], 'earliest'), format='gps')
-                fc_stop = cm_utils.get_date_from_pair(tp['e'][1], tp['n'][1], 'earliest')
-                if fc_stop is None or fc_stop > now.gps:
-                    continue
-                fc_stop = Time(fc_stop, format='gps')
-                at_date = fc_stop + TimeDelta(base_tdelta, format='sec')
-                while fc_stop is not None:  # Keep searching until there are no more full connections up to now.
-                    fc, at_date = self._search_loop(stn, at_date, now, m, base_tdelta)
-                    if len(fc) == 0:
-                        break
-                    # Found one - add it to list.
-                    station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date, fc=fc)
-                    station_conn.append(station_dict)
-                    # Get the connection stop time to start looking for next one.  Break as appropriate
-                    k0 = fc[0].hookup['timing'].keys()[0]
-                    tp = fc[0].hookup['timing'][k0]
-                    fc_stop = cm_utils.get_date_from_pair(tp['e'][1], tp['n'][1], 'earliest')
-                    if fc_stop is None:
-                        break
-                    fc_stop = Time(fc_stop, format='gps')
-                    at_date = fc_stop + TimeDelta(base_tdelta, format='sec')
-                    if fc_stop > now:
-                        break
-        return station_conn
+        at_date = cm_utils.get_astropytime(date)
+        fnd = []
+        for dubi in self.session.query(part_connect.Dubitable):
+            start_time = cm_utils.get_astropytime(dubi.start_gpstime)
+            stop_time = cm_utils.get_astropytime(dubi.stop_gpstime)
+            if cm_utils.is_active(at_date, start_time, stop_time):
+                fnd.append(dubi)
+        if len(fnd) == 0:
+            return None
+        if len(fnd) == 1:
+            if return_full:
+                start = Time(fnd[0].start_gpstime, format='gps')
+                stop = fnd[0].stop_gpstime
+                if stop is not None:
+                    stop = Time(stop, format='gps')
+                alist = cm_utils.listify(fnd[0].ant_list)
+                return (start, stop, alist)
+            else:
+                return str(fnd[0].ant_list)
 
-    def get_all_fully_connected_at_date(self, at_date, station_types_to_check='all'):
+        raise ValueError('Too many open dubitable lists ({}).'.format(len(fnd)))
+
+    def get_all_fully_connected_at_date(self, at_date, station_types_to_check=['HH']):
         """
         Returns a list of dictionaries of all of the locations fully connected at_date
         have station_types in station_types_to_check.  The dictonary is defined in
@@ -195,23 +102,32 @@ class Handling:
         Parameters
         -----------
         at_date:  date to check for connections
-        station_types_to_check:  list of station types to limit check, or 'all' [default 'all']
+        station_types_to_check:  list of station types to check, or 'all' [default ['HH']]
+                                 it can either be the prefix or the "Name" (e.g. 'herahex')
+                                 note that if it is not only ['HH'] it will re-read the database.
         """
-        at_date = cm_utils._get_astropytime(at_date)
+        at_date = cm_utils.get_astropytime(at_date)
+        self.H = cm_hookup.Hookup(at_date, self.session)
         self.geo.get_station_types()
+        if type(station_types_to_check) == str:
+            if station_types_to_check.lower() == 'all':
+                station_types_to_check = self.geo.station_types.keys()
+            else:
+                station_types_to_check = [station_types_to_check]
+        if type(station_types_to_check) != list:
+            raise ValueError('Invalid station_type request {}'.format(station_types_to_check))
+        station_types_to_check = [x.lower() for x in station_types_to_check]
         station_conn = []
         for k, stn_type in self.geo.station_types.iteritems():
-            if station_types_to_check != 'all' and k not in station_types_to_check:
-                continue
-            for stn in stn_type['Stations']:
-                station_dict = self.get_fully_connected_location_at_date(stn=stn,
-                                                                         at_date=at_date,
-                                                                         fc=None)
-                if len(station_dict.keys()) > 1:
-                    station_conn.append(station_dict)
+            if k.lower() in station_types_to_check or stn_type['Name'].lower() in station_types_to_check:
+                for stn in stn_type['Stations']:
+                    station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date)
+                    if len(station_dict.keys()) > 0:
+                        station_conn.append(station_dict)
+        self.H = None  # Reset back in case gets called again outside of this method.
         return station_conn
 
-    def get_fully_connected_location_at_date(self, stn, at_date, fc=None):
+    def get_fully_connected_location_at_date(self, stn, at_date):
         """
         Returns a dictionary for location stn that is fully connected at_date.  Provides
         the dictonary used in other methods.
@@ -236,31 +152,35 @@ class Handling:
         -----------
         stn:  is the station information to check
         at_date:  date to check for connections, must be an astropy.Time
-        hookup:  is to provide a hookup instance to not have to do it everytime
-        fc:  is the full hookup/revision, in case you already have it don't call it again
         """
-        if fc is None:
-            fc = cm_revisions.get_full_revision(stn, at_date, self.session)
+        if self.H is not None:
+            H = self.H
+        else:
+            H = cm_hookup.Hookup(at_date, self.session)
+        hud = H.get_hookup(hpn_list=[stn], exact_match=True)
         station_dict = {}
+        fc = cm_revisions.get_full_revision(stn, hud)
         if len(fc) == 1:
-            hu = fc[0].hookup
-            k0 = hu['hookup'].keys()[0]
-            ant_num = hu['hookup'][k0]['e'][0].downstream_part
+            k = fc[0].hukey
+            p = fc[0].pkey
+            ant_num = hud['hookup'][k][p][0].downstream_part
             # ant_num here is unicode with an A in front of the number (e.g. u'A22').
             # But we just want an integer, so we strip the A and cast it to int
             ant_num = int(ant_num[1:])
-            corr = self.hookup.get_correlator_input_from_hookup(hu)
-            stn = self.hookup.get_station_from_hookup(hu)
-            fnd_list = self.geo.get_location([stn], at_date, station_types=self.geo.station_types)
+            stn_name = hud['parts_epoch']['path'][0]
+            stn = cm_hookup.get_parts_from_hookup(stn_name, hud)[k][p]
+            corr_name = hud['parts_epoch']['path'][-1]
+            corr = cm_hookup.get_parts_from_hookup(corr_name, hud)[k]
+            fnd_list = self.geo.get_location([stn[0]], at_date, station_types=self.geo.station_types)
             if not len(fnd_list):
-                return station_dict
+                return {}
             if len(fnd_list) > 1:
                 print("More than one part found:  ", str(fnd))
                 print("Setting to first to continue.")
             fnd = fnd_list[0]
 
-            strtd = cm_utils.get_date_from_pair(hu['timing'][k0]['e'][0], hu['timing'][k0]['n'][0], 'latest')
-            ended = cm_utils.get_date_from_pair(hu['timing'][k0]['e'][1], hu['timing'][k0]['n'][1], 'earliest')
+            strtd = hud['timing'][k][p][0]
+            ended = hud['timing'][k][p][1]
             station_dict = {'station_name': str(fnd.station_name),
                             'station_type': str(fnd.station_type_name),
                             'tile': str(fnd.tile),
@@ -271,13 +191,13 @@ class Handling:
                             'latitude': fnd.lat,
                             'elevation': fnd.elevation,
                             'antenna_number': ant_num,
-                            'correlator_input_x': str(corr['e']),
-                            'correlator_input_y': str(corr['n']),
+                            'correlator_input_x': str(corr['e'][1]),
+                            'correlator_input_y': str(corr['n'][1]),
                             'start_date': strtd,
                             'stop_date': ended}
         return station_dict
 
-    def get_cminfo_correlator(self, mc_config_path=None, cm_csv_path=None):
+    def get_cminfo_correlator(self):
         """
         Returns a dict with info needed by the correlator.
 
@@ -305,8 +225,7 @@ class Handling:
         cm_h = cm_handling.Handling(session=self.session)
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
-        stations_conn = self.get_all_fully_connected_at_date(at_date='now')
-
+        stations_conn = self.get_all_fully_connected_at_date(at_date='now', station_types_to_check=['HH'])
         ant_nums = []
         stn_names = []
         stn_types = []
@@ -355,7 +274,7 @@ class Handling:
                 'cofa_lon': cofa_loc.lon,
                 'cofa_alt': cofa_loc.elevation}
 
-    def get_pam_info(self, stn, at_date, fc=None):
+    def get_pam_info(self, stn, at_date, pam_name='post-amp'):
         """
         input:
             stn: antenna number of format HHi where i is antenna number
@@ -363,9 +282,60 @@ class Handling:
         returns:
             dict of {pol:(rcvr location,pam #)}
         """
-        at_date = cm_utils._get_astropytime(at_date)
-        fc = cm_revisions.get_full_revision(stn, at_date, self.session)
-        hu = fc[0].hookup
-        H = cm_hookup.Hookup(self.session)
-        pams = H.get_pam_from_hookup(hu)
+        pams = {}
+        H = cm_hookup.Hookup(at_date, self.session)
+        hud = H.get_hookup(hpn_list=[stn], exact_match=True)
+        fc = cm_revisions.get_full_revision(stn, hud)
+        if len(fc) == 1:
+            k = fc[0].hukey
+            p = fc[0].pkey
+            pams = cm_hookup.get_parts_from_hookup(pam_name, hud)[k]
         return pams
+
+    def publish_summary(self, hlist=['HH'], rev='A', exact_match=False,
+                        hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
+                        force_new_hookup_dict=False):
+        import os.path
+        output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
+        location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
+        H = cm_hookup.Hookup('now', self.session)
+        hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
+                                   exact_match=exact_match, show_levels=True,
+                                   force_new=force_new_hookup_dict, force_specific=False)
+
+        with open(output_file, 'w') as f:
+            H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, show_levels=True, show_ports=False,
+                          show_revs=False, show_state='full', file=f, output_format='html')
+        import subprocess
+        from hera_mc import cm_transfer
+        if cm_transfer.check_if_main():
+            sc_command = 'scp -i ~/.ssh/id_rsa_qmaster {} {}'.format(output_file, location_on_paper1)
+            subprocess.call(sc_command, shell=True)
+            return 'OK'
+        else:
+            return 'Not on "main"'
+
+    def system_comments(self, system_kw='System', kword='all'):
+        col = {'key': ['Keyword'], 'date': ['Posting'], 'comment': ['Comment  <file/url>']}
+        for k, v in col.iteritems():
+            col[k].append(len(v[0]))
+        found_entries = []
+        for x in self.session.query(part_connect.PartInfo).filter((func.upper(part_connect.PartInfo.hpn) == system_kw.upper())):
+            if kword.lower() == 'all' or x.hpn_rev.lower() == kword.lower():
+                commlib = '{}  <{}>'.format(x.comment, x.library_file)
+                display_time = cm_utils.get_time_for_display(x.posting_gpstime)
+                sys_comm = {'key': x.hpn_rev, 'date': display_time, 'comment': commlib}
+                found_entries.append(sys_comm)
+                for k, v in sys_comm.iteritems():
+                    if len(v) > col[k][1]:
+                        col[k][1] = len(v)
+        if not len(found_entries):
+            return 'None'
+        rows = ["\n{:{tkw}s} | {:{pt}s} | {}".format(col['key'][0], col['date'][0], col['comment'][0], tkw=col['key'][1], pt=col['date'][1])]
+        rows.append("{}+{}+{}".format((col['key'][1] + 1) * '-', (col['date'][1] + 2) * '-', (col['comment'][1] + 1) * '-'))
+        for fnd in found_entries:
+            rows.append("{:{tkw}s} | {:{pt}s} | {}".format(fnd['key'], fnd['date'], fnd['comment'],
+                                                           tkw=col['key'][1], pt=col['date'][1]))
+        comments = '\n'.join(rows)
+
+        return comments

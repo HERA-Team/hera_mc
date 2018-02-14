@@ -31,7 +31,7 @@ def query_args(args):
     if args.dnport is None:
         args.dnport = raw_input("Downstream input port:  ")
     if args.date == 'now':
-        args.date = cm_utils._query_default('date', args)
+        args.date = cm_utils.query_default('date', args)
     return args
 
 
@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
     # Pre-process some args
     if args.date is not None:
-        at_date = cm_utils._get_astropytime(args.date, args.time)
+        at_date = cm_utils.get_astropytime(args.date, args.time)
     c = part_connect.Connections()
     c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
                  downstream_part=args.dnpart, down_part_rev=args.dnrev, downstream_input_port=args.dnport)
@@ -71,6 +71,8 @@ if __name__ == '__main__':
         go_ahead = True
     else:
         print("Error:  Connection to stop is not valid.  Quitting.")
+        print('{}:{}:{} <X> {}:{}:{}'
+              .format(args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport))
         go_ahead = False
 
     if go_ahead:

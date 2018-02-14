@@ -2,6 +2,8 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
+from __future__ import absolute_import, division, print_function
+
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from astropy.time import Time
@@ -118,7 +120,7 @@ class MCSession(Session):
             observation identification number
         """
         from .observations import Observation
-        import geo_handling
+        from . import geo_handling
 
         h = geo_handling.Handling(session=self)
         hera_cofa = h.cofa()[0]
@@ -501,8 +503,8 @@ class MCSession(Session):
         ------------
         filename: string
             name of file created
-        obsid: long
-            observation obsid (Foreign key into Observation)
+        obsid: long or None
+            optional observation obsid (Foreign key into Observation)
         time: astropy time object
             time file was created
         size_gb: float
@@ -712,6 +714,78 @@ class MCSession(Session):
                                  stoptime=stoptime, filter_column='obsid',
                                  filter_value=obsid)
 
+    def add_rtp_task_resource_record(self, obsid, task_name, start_time, stop_time,
+                                     max_memory=None, avg_cpu_load=None):
+        """
+        Add a new rtp_task_resource_record row
+
+        Parameters:
+        ------------
+        obsid: long
+            observation obsid (Foreign key into observation)
+        task_name: string
+            name of the task (e.g., OMNICAL)
+        start_time: astropy time object
+            time of task start
+        stop_time: astropy time object
+            time of task end
+        max_memory: float
+            maximum amount of memory used by the task, in MB
+        avg_cpu_load: float
+            average number of CPUs used by task
+        """
+        from .rtp import RTPTaskResourceRecord
+
+        self.add(RTPTaskResourceRecord.create(obsid, task_name, start_time, stop_time,
+                                              max_memory, avg_cpu_load))
+
+    def get_rtp_task_resource_record(self, starttime=None, stoptime=None, obsid=None,
+                                     task_name=None):
+        """
+        Get rtp_task_resource_record from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after; applies to start_time column.
+            Ignored if both obsid and task_name are not None
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+            Ignored if both obsid and task_name are not None
+        obsid: long
+            obsid to get records for. If none, all obsid will be included
+        task_name: string
+            task_name to get records for. If none, all tasks will be included
+
+        Returns:
+        -----------
+        list of RTPTaskResourceRecord objects
+
+        """
+        from .rtp import RTPTaskResourceRecord
+
+        if task_name is None:
+            if starttime is not None:
+                return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
+                                         stoptime=stoptime, filter_column='obsid',
+                                         filter_value=obsid)
+            elif obsid is not None:
+                return self.query(RTPTaskResourceRecord).filter(
+                    RTPTaskResourceRecord.obsid == obsid).all()
+            else:
+                raise ValueError('Starttime or obsid must be specified')
+        elif obsid is None:
+            if starttime is None:
+                raise ValueError('Starttime or obsid must be specified')
+            return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
+                                     stoptime=stoptime, filter_column='task_name',
+                                     filter_value=task_name)
+        else:
+            return self.query(RTPTaskResourceRecord).filter(
+                RTPTaskResourceRecord.obsid == obsid,
+                RTPTaskResourceRecord.task_name == task_name).all()
+
     def add_paper_temps(self, read_time, temp_list):
         """
         Add a new PaperTemperatures record to the M&C database.
@@ -747,6 +821,223 @@ class MCSession(Session):
 
         return self._time_filter(PaperTemperatures, 'time', starttime,
                                  stoptime=stoptime)
+
+    def add_weather_data(self, time, variable, value):
+        """
+        Add new weather data to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp from the katportal sensor.
+        variable: string
+            must be a key in weather.weather_sensor_dict
+        value: float
+            value from the sensor associated with the variable
+        """
+        from .weather import WeatherData
+
+        self.add(WeatherData.create(time, variable, value))
+
+    def add_weather_data_from_sensors(self, starttime, stoptime, variables=None):
+        """
+        Add weather data for a given variable and timespan from KAT sensors.
+        This function connects to the meerkat db and grabs the latest data
+        using the "create_from_sensors" function.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to start getting history.
+        stoptime: astropy time object
+            time to stop getting history.
+        variable: string
+            variable to get history for. Must be a key in weather.weather_sensor_dict,
+            defaults to all keys in weather.weather_sensor_dict
+        """
+        from .weather import weather_sensor_dict, create_from_sensors
+        if variables is not None:
+            if isinstance(variables, (list, tuple)):
+                for var in variables:
+                    if var not in weather_sensor_dict.keys():
+                        raise ValueError('variables must be a key in weather_sensor_dict.')
+            else:
+                if variables not in weather_sensor_dict.keys():
+                    raise ValueError('variables must be a key in weather_sensor_dict.')
+
+        weather_data_list = create_from_sensors(starttime, stoptime, variables=variables)
+        for obj in weather_data_list:
+            self.add(obj)
+
+    def get_weather_data(self, starttime, stoptime=None, variable=None):
+        """
+        Get weather_data record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        variable: string
+            Name of variable to get records for, must be a key in weather.weather_sensor_dict.
+            If none, all variables will be included.
+
+        Returns:
+        --------
+        list of WeatherData objects
+        """
+        from .weather import weather_sensor_dict, WeatherData
+        if variable is not None:
+            if variable not in weather_sensor_dict.keys():
+                raise ValueError('variable must be a key in weather_sensor_dict.')
+
+        return self._time_filter(WeatherData, 'time', starttime,
+                                 stoptime=stoptime, filter_column='variable',
+                                 filter_value=variable)
+
+    def write_weather_files(self, start_time, stop_time, variables=None):
+        """Dump the weather data to text files in the current directory, to aid in
+        diagnostics.
+
+        Parameters:
+        ------------
+        start_time: astropy time object or None
+            time to start getting history.
+        stop_time: astropy time object or None
+            time to stop getting history.
+        variables: string or None
+            A comma-separated list of names of variables to get data for, as
+            named in the Python variable
+            `hera_mc.weather.weather_sensor_dict`. If None, data for all
+            variables will be written.
+
+        """
+        # Avoid _time_filter since it loads every row into an in-memory list, which
+        # could get huge.
+
+        from .cm_utils import listify
+        from .weather import WeatherData, weather_sensor_dict
+
+        if variables is None:
+            variables = list(weather_sensor_dict.keys())
+        else:
+            variables = listify(variables)
+
+            for v in variables:
+                if v not in weather_sensor_dict:
+                    raise ValueError('unknown weather variable name %r' % v)
+
+        q = self.query(WeatherData).filter(WeatherData.variable.in_(variables))
+
+        if start_time is not None:
+            if stop_time is not None:
+                q = q.filter(WeatherData.time.between(start_time.gps, stop_time.gps))
+            else:
+                q = q.filter(WeatherData.time >= start_time.gps)
+        elif stop_time is not None:
+            q = q.filter(WeatherData.time <= stop_time.gps)
+
+        q = q.order_by(WeatherData.time)
+        files = dict((v, open(v + '.txt', 'wt')) for v in variables)
+
+        for item in q:
+            print('{}\t{}'.format(item.astropy_time, item.value), file=files[item.variable])
+
+    def add_roach_temperature(self, time, roach, ambient_temp, inlet_temp,
+                              outlet_temp, fpga_temp, ppc_temp):
+        """
+        Add new roach (fpga correlator board) temperature to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp from the katportal sensor.
+        roach: string
+            roach name
+        ambient_temp: float
+            ambient temperature reported by roach for this time in Celcius
+        inlet_temp: float
+            inlet temperature reported by roach for this time in Celcius
+        outlet_temp: float
+            outlet temperature reported by roach for this time in Celcius
+        fpga_temp: float
+            fpga temperature reported by roach for this time in Celcius
+        ppc_temp: float
+            ppc temperature reported by roach for this time in Celcius
+        """
+        from .roach import RoachTemperature
+
+        self.add(RoachTemperature.create(time, roach, ambient_temp, inlet_temp,
+                                         outlet_temp, fpga_temp, ppc_temp))
+
+    def add_roach_temperature_from_redis(self):
+        """Read and add ROACH (FPGA correlator board) temperatures from the Redis
+        database. This function connects to the Redis database and grabs the
+        latest data using the `create_from_redis` function.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the ROACH/Redis data densely on qmaster.
+
+        """
+        from .roach import create_from_redis
+
+        roach_temperature_list = create_from_redis()
+
+        if self.bind.dialect.name == 'postgresql':
+            from sqlalchemy import inspect
+            from sqlalchemy.dialects.postgresql import insert
+            from .roach import RoachTemperature
+
+            ies = [c.name for c in inspect(RoachTemperature).primary_key]
+            conn = self.connection()
+
+            for obj in roach_temperature_list:
+                # This appears to be the most correct way to map each row
+                # object into a dictionary:
+                values = {}
+                for col in inspect(obj).mapper.column_attrs:
+                    values[col.expression.name] = getattr(obj, col.key)
+
+                # The special PostgreSQL insert statement lets us ignore
+                # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
+                stmt = insert(RoachTemperature).values(**values).on_conflict_do_nothing(index_elements=ies)
+                conn.execute(stmt)
+        else:
+            # Generic approach:
+            for obj in roach_temperature_list:
+                self.add(obj)
+
+    def get_roach_temperature(self, starttime, stoptime=None, roach=None):
+        """
+        Get roach_temperature record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        roach: string
+            Roach name to get records for. If none, all roaches will be included.
+
+        Returns:
+        --------
+        list of WeatherData objects
+        """
+        from .roach import RoachTemperature
+
+        return self._time_filter(RoachTemperature, 'time', starttime,
+                                 stoptime=stoptime, filter_column='roach',
+                                 filter_value=roach)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """

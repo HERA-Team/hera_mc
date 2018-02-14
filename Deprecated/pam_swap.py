@@ -73,18 +73,12 @@ if __name__ == '__main__':
         print("Stopping this swap.")
     else:
         go_ahead = True
-        rc = handling.get_connection_dossier(hpn=rie, rev='A', port='b',
+        rc = handling.get_connection_dossier(hpn_list=[rie], rev='A', port='b',
                                              at_date=at_date, exact_match=True)
-        ctr = len(rc['connections'].keys())
-        if ctr > 1:
-            go_ahead = False
-            print("Error:  multiple connections to {}".format(new_hpn))
-            print("Stopping this swap.")
-        else:
-            k = rc['connections'].keys()[0]
-            old_rcvr = rc['connections'][k].downstream_part
-            old_rrev = rc['connections'][k].down_part_rev
-            print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, new_hpn, new_rev))
+        k = rc['connections'].keys()[0]
+        old_rcvr = rc['connections'][k].downstream_part
+        old_rrev = rc['connections'][k].down_part_rev
+        print('Replacing {}:{} with {}:{}'.format(old_rcvr, old_rrev, new_hpn, new_rev))
 
     if go_ahead:
         # Add new PAM
@@ -94,8 +88,8 @@ if __name__ == '__main__':
         # Disconnect previous RCVR on both sides (RI/RO)
         pcs = [(old_rcvr, old_rrev, 'ea'), (old_rcvr, old_rrev, 'na'),
                (old_rcvr, old_rrev, 'eb'), (old_rcvr, old_rrev, 'nb')]
-        part_connect.stop_existing_connections(session, handling, pcs, at_date,
-                                               args.actually_do_it)
+        part_connect.stop_existing_connections_to_part(session, handling, pcs, at_date,
+                                                       args.actually_do_it)
 
         # Connect new PAM on both sides (RI/RO)
         npc = [(rie, 'A', 'b', new_hpn, new_rev, 'ea'),

@@ -53,7 +53,7 @@ class CMVersion(MCDeclarativeBase):
         return cls(update_time=time, git_hash=git_hash)
 
 
-def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
+def package_db_to_csv(session=None, tables='all'):
     """
     This will get the configuration management tables from the database
        and package them to csv files to be read by initialize_db_from_csv
@@ -65,21 +65,12 @@ def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
              on the default database is created and used.
     tables: string
         comma-separated list of names of tables to initialize or 'all'. Default is 'all'
-    base: boolean
-        use base set of initialization data files. Default is False
-    maindb: boolean or string
-        Either False or a user-generated key to change from main db. Default is False
     """
     if session is None:
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
 
-    tmp_filename = '__tmp_initfile.tmp'
-
-    if base:
-        data_prefix = cm_table_info.base_data_prefix
-    else:
-        data_prefix = cm_table_info.data_prefix
+    data_prefix = cm_table_info.data_prefix
     cm_tables = cm_table_info.cm_tables
 
     if tables == 'all':
@@ -93,22 +84,8 @@ def package_db_to_csv(session=None, tables='all', base=False, maindb=False):
     for table in tables_to_write:
         data_filename = data_prefix + table + '.csv'
         table_data = pd.read_sql_table(table, session.get_bind())
-        if maindb:
-            print("\tPackaging for maindb:  " + data_filename)
-            table_data.to_csv(tmp_filename, index=False)
-        else:
-            print("\tPackaging:  " + data_filename)
-            table_data.to_csv(data_filename, index=False)
-        if maindb:  # Put key in first line
-            fpout = open(data_filename, 'w')
-            fpin = open(tmp_filename, 'r')
-            keyline = '$_maindb_$:' + maindb + '\n'
-            fpout.write(keyline)
-            for line in fpin:
-                fpout.write(line)
-            fpin.close()
-            fpout.close()
-            os.remove(tmp_filename)
+        print("\tPackaging:  " + data_filename)
+        table_data.to_csv(data_filename, index=False)
 
 
 def pack_n_go(session, cm_csv_path):
@@ -137,7 +114,7 @@ def pack_n_go(session, cm_csv_path):
     session.commit()
 
 
-def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False):
+def initialize_db_from_csv(session=None, tables='all', maindb=False):
     """
     This entry module provides a double-check entry point to read the csv files and
        repopulate the configuration management database.  It destroys all current entries,
@@ -150,72 +127,51 @@ def initialize_db_from_csv(session=None, tables='all', base=False, maindb=False)
              on the default database is created and used.
     tables: string
         comma-separated list of names of tables to initialize or 'all'. Default is 'all'
-    base: boolean
-        use base set of initialization data files. Default is False
     maindb: boolean or string
-        Either False or a user-generated key to change from main db. Default is False
+        Either False or the password to change from main db. Default is False
     """
 
     print("This will erase and rewrite the configuration management tables.")
-    you_are_sure = cm_utils._query_yn("Are you sure you want to do this? ", 'n')
+    you_are_sure = cm_utils.query_yn("Are you sure you want to do this? ", 'n')
     if you_are_sure:
         success = _initialization(session=session, cm_csv_path=None,
-                                  tables=tables, base=base, maindb=maindb)
+                                  tables=tables, maindb=maindb)
     else:
         print("Exit with no rewrite.")
         success = False
     return success
 
 
-def check_if_main():
+def check_if_main(expected_hostname='qmaster'):
     # the 'hostname' call on qmaster returns the following value:
     import socket
-    return (socket.gethostname() == 'per210-1')
+    hostname = socket.gethostname()
+    is_main = (hostname == expected_hostname)
+    if is_main:
+        print('Found main db at hostname {}'.format(hostname))
+    return is_main
 
 
-def db_validation(maindb_tag, data_to_check):
+def db_validation(maindb_pw):
     """
-    Check if you are working on the main db and if so, if you have the right key
-    and get a few other checks.
+    Check if you are working on the main db and if so if you have the right password
     """
     is_maindb = check_if_main()
 
-    if is_maindb and not maindb_tag:
-        print('Error:  attempting unkeyed access to main db')
-        return False, None
+    if not is_maindb:
+        return True
 
-    # Check tables and reduce list to valid use_table
-    use_table = []
-    for table, data_filename in data_to_check:
-        dbkey = check_csv_file_and_get_key(data_filename)
-        if is_maindb:
-            if maindb_tag == dbkey:
-                use_table.append([table, data_filename, True])
-            else:
-                print('Invalid maindb key for %s  (%s)' % (table, dbkey))
-        else:
-            if dbkey:
-                use_table.append([table, data_filename, True])
-            else:
-                use_table.append([table, data_filename, False])
-    if len(use_table) == 0:
-        return False, None
-    else:
-        return True, use_table
+    allowed = True
+    if maindb_pw is False:
+        print('Error:  attempting access to main db without a password')
+        allowed = False
+    elif maindb_pw != 'pw4maindb':
+        print('Error:  incorrect password for main db')
+        allowed = False
+    return allowed
 
 
-def check_csv_file_and_get_key(data_filename):
-    fp = open(data_filename, 'r')
-    firstline = fp.readline()
-    dbkey = None
-    if firstline.split(':')[0] == '$_maindb_$':
-        dbkey = firstline.split(':')[1].strip()
-    fp.close()
-    return dbkey
-
-
-def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
-                    maindb=False):
+def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
     """
     Internal initialization method, should be called via initialize_db_from_csv
 
@@ -226,11 +182,14 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
              on the default database is created and used.
     tables: string
         comma-separated list of names of tables to initialize or 'all'. Default is 'all'
-    base: boolean
-        use base set of initialization data files. Default is False
     maindb: boolean or string
-        Either False or a user-generated key to change from main db. Default is False
+        Either False or password to change from main db. Default is False
     """
+
+    if not db_validation(maindb):
+        print("cm_init not allowed.")
+        return False
+
     if session is None:
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
@@ -250,47 +209,30 @@ def _initialization(session=None, cm_csv_path=None, tables='all', base=False,
     else:
         tables_to_read_unordered = tables.split(',')
     tables_to_read = cm_table_info.order_the_tables(tables_to_read_unordered)
-    if base:
-        data_prefix = cm_table_info.base_data_prefix
-    else:
-        data_prefix = cm_table_info.data_prefix
+    data_prefix = cm_table_info.data_prefix
 
-    __tabfil = []
+    use_table = []
     for table in tables_to_read:
-        __tabfil.append([table, os.path.join(cm_csv_path, data_prefix + table + '.csv')])
-    valid_to_proceed, use_table = db_validation(maindb, __tabfil)
-
-    if not valid_to_proceed:
-        return False
-    elif len(use_table) != len(tables_to_read):
-        print("All of the tables weren't valid to change, so for now none will be.")
-        print("This will likely be changed in the future, but for now caution abounds.")
-        print("(This possibility is why 'use_table' and 'tables_to_read' are both there.)")
-        print(use_table)
-        print(tables_to_read)
-        return False
+        csv_table_name = data_prefix + table + '.csv'
+        use_table.append([table, os.path.join(cm_csv_path, csv_table_name)])
 
     # add this cm git hash to cm_version table
     session.add(CMVersion.create(Time.now(), cm_git_hash))
 
     # Delete tables in this order
-    for table, data_filename, keyed_table in use_table:
+    for table, data_filename in use_table:
         num_rows_deleted = session.query(cm_tables[table][0]).delete()
         print("%d rows deleted in %s" % (num_rows_deleted, table))
 
     # Initialize tables in reversed order
-    for table, data_filename, key_row in reversed(use_table):
-        cm_utils._log('cm_initialization: ' + data_filename)
-        field_row = not key_row
-        field_name = []
+    for table, data_filename in reversed(use_table):
+        cm_utils.log('cm_initialization: ' + data_filename)
+        field_row = True  # This is the first row
         with open(data_filename, 'rb') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 table_inst = cm_tables[table][0]()
-                if key_row:
-                    key_row = False
-                    field_row = True
-                elif field_row:
+                if field_row:
                     field_name = row
                     field_row = False
                 else:

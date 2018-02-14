@@ -14,9 +14,6 @@ parser.add_argument('--maindb', help="user-generated key to change from main db 
                     default=False)
 parser.add_argument('--tables', help="name of table for which to initialize or 'all' ['all']",
                     default='all')
-parser.add_argument('--base', help="use base set of initialization data files [False]",
-                    action='store_true')
 args = parser.parse_args()
 
-cm_transfer.initialize_db_from_csv(tables=args.tables, base=args.base,
-                                   maindb=args.maindb)
+cm_transfer.initialize_db_from_csv(tables=args.tables, maindb=args.maindb)

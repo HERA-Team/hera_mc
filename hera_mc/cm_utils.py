@@ -1,5 +1,5 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016-2017 the HERA Collaboration
+# Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """Some low-level configuration management utility functions.
@@ -12,6 +12,7 @@ import subprocess
 from hera_mc import mc
 from astropy.time import Time
 from astropy.time import TimeDelta
+import datetime
 
 PAST_DATE = '2000-01-01'
 
@@ -30,15 +31,7 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
     return git_hash
 
 
-def _future_date():
-    """
-    Future is defined here, since defining a far FUTURE_DATE typically gives a
-    warning about UTC vs UT1 etc
-    """
-    return Time.now() + TimeDelta(300, format='jd')
-
-
-def _log(msg, **kwargs):
+def log(msg, **kwargs):
     fp = open(mc.cm_log_file, 'a')
     dt = Time.now()
     fp.write('-------------------' + str(dt.datetime) + '  ' + msg +
@@ -63,28 +56,41 @@ def _log(msg, **kwargs):
     fp.close()
 
 
-def _make_part_key(hpn, rev):
+# #######################################Key stuff
+def make_part_key(hpn, rev):
     return ":".join([hpn, rev]).strip()
 
 
-def _split_part_key(key):
+def split_part_key(key):
     return key.split(':')[0], key.split(':')[1]
 
 
-def _make_connection_key(hpn, rev, port, start_gps):
+def make_connection_key(hpn, rev, port, start_gps):
     return ":".join([hpn, rev, port, str(start_gps)]).strip()
 
 
-def _split_connection_key(key):
+def split_connection_key(key):
     ks = key.split(':')
     return ks[0], ks[1], ks[2], ks[3]
+
+
+def stringify(X):
+    if X is None:
+        return None
+    if isinstance(X, str):
+        return X
+    if isinstance(X, list):
+        return ','.join(X)
+    return str(X)
 
 
 def listify(X):
     if X is None:
         return None
-    if isinstance(X, str) and ',' in X:
+    if isinstance(X, (str, unicode)) and ',' in X:
         return X.split(',')
+    if isinstance(X, list):
+        return X
     return [X]
 
 
@@ -101,63 +107,152 @@ def add_verbosity_args(parser):
                         choices=['l', 'm', 'h'], default="h")
 
 
+# ##############################################DATE STUFF
 def add_date_time_args(parser):
     """Add standardized "--date" and "--time" arguments to an ArgParser object.
     Their values should then be converted into a Python DateTime object using
-    the function `_get_astropytime`.
+    the function `get_astropytime`.
 
     """
     parser.add_argument(
         '--date', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]",
         default='now')
     parser.add_argument(
-        '--time', help="UTC hh:mm or float (hours)", default=0.0)
+        '--time', help="UTC hh:mm or float (hours), must include --date if use --time", default=0.0)
 
 
-def _get_astropytime(_date, _time=0):
+def is_active(at_date, start_date, stop_date):
+    stop_date = get_stopdate(stop_date)
+    return at_date >= start_date and at_date <= stop_date
+
+
+def future_date():
     """
-    Take in various incarnations of _date/_time and return an astropy.Time object
+    Future is defined here, since defining a far FUTURE_DATE typically gives a
+    warning about UTC vs UT1 etc
+    """
+    return Time.now() + TimeDelta(300, format='jd')
+
+
+def get_stopdate(stop_date):
+    if isinstance(stop_date, Time):
+        return stop_date
+    if stop_date is None:
+        return future_date()
+    raise ValueError('Unexpected value for "stop_date" argument: %r' % (stop_date,))
+
+
+def get_time_for_display(display):
+    """
+    Provide a reader-friendly time string for any time parse-able by get_astropytime -
+    if that results in None, then the string None is displayed.
+    """
+    d = get_astropytime(display)
+
+    if d is None:
+        d = 'None'
+    elif isinstance(d, Time):
+        d = "{:%Y-%m-%d %H:%M:%S}".format(d.datetime)
+    return d
+
+
+def get_astropytime(_date, _time=0):
+    """
+    Take in various incarnations of _date/_time and return an astropy.Time object or None.
+    No time zone is allowed.
+
+    Returns:  either astropy Time or None
+
+    Parameters:
+    -----------
+    _date:  date in various formats:
+                return astropy Time
+                    astropy Time:  just gets returned
+                    datetime: just gets converted
+                    int, long, float:  interpreted as gps_second
+                    string:  '<' - PAST_DATE
+                             '>' - future_date()
+                             'now' or 'current'
+                             'YYYY/M/D' or 'YYYY-M-D'
+                return None:
+                    string:  'none' return None
+                    None/False:  return None
+    _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string
+                float, int:  hours in decimal time
+                string:  HH[:MM[:SS]]
     """
 
-    add_time = 0.
-    return_date = None
     if isinstance(_date, Time):
-        return_date = _date
-    elif _date is None or _date is False:
-        return_date = _date
-    else:
+        return _date
+    if isinstance(_date, datetime.datetime):
+        return Time(_date, format='datetime')
+    if _date is None or _date is False:
+        return None
+    if isinstance(_date, (int, long, float)):
+        if int(_date) > 1000000000:
+            return Time(_date, format='gps')
+        raise ValueError('Invalid format:  date as a number should be gps time, not {}.'.format(_date))
+    if isinstance(_date, str):
         if _date == '<':
-            return_date = Time(PAST_DATE, scale='utc')
-        elif _date == '>':
-            return_date = _future_date()
-        elif _date.lower().replace('/', '') == 'na' or _date.lower() == 'none':
-            return_date = None
-        elif _date.lower() == 'now':
-            return_date = Time.now()
-        elif _date is not None:
-            _date = _date.replace('/', '-')
+            return Time(PAST_DATE, scale='utc')
+        if _date == '>':
+            return future_date()
+        if _date.lower() == 'now' or _date.lower() == 'current':
+            return Time.now()
+        if _date.lower() == 'none':
+            return None
+        _date = _date.replace('/', '-')
+        try:
+            return_date = Time(_date, scale='utc')
+        except ValueError:
+            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
+        if isinstance(_time, (float, int)):
+            return return_date + TimeDelta(_time * 3600.0, format='sec')
+        if isinstance(_time, str):
+            add_time = 0.0
+            for i, d in enumerate(_time.split(':')):
+                if i > 2:
+                    raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'.format(_time))
+                add_time += (float(d)) * 3600.0 / (60.0**i)
+            return return_date + TimeDelta(add_time, format='sec')
+        raise ValueError('Invalid format:  time should be H[:M[:S]] (ints or floats)')
+
+    raise TypeError("Not supported:  type {}".format(type(_date)))
+
+
+def put_keys_in_numerical_order(keys):
+    """
+    Takes a list of hookup keys in the format of prefix+number:revision and puts them in number order.
+    Returns the ordered list of keys
+    """
+    keylib = {}
+    n = None
+    for k in keys:
+        colon = k.find(':')
+        for i in range(len(k)):
             try:
-                return_date = Time(_date, scale='utc')
+                n = int(k[i:colon])
+                break
             except ValueError:
-                raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
-            s_time = str(_time)
-            if ':' in s_time:
-                data = s_time.split(':')
-                add_time = float(data[0]) * 3600.0 + float(data[1]) * 60.0
-                if len(data) == 3:
-                    add_time += float(data[2])
-            else:
-                try:
-                    add_time = float(_time) * 3600.0
-                except ValueError:
-                    raise ValueError('Invalid format:  time should be H[:M[:S]] '
-                                     '(HMS can be float or int)')
-        if return_date is not None:
-            return_date += TimeDelta(add_time, format='sec')
-    return return_date
+                continue
+        if n in keylib.keys():
+            dup_key = keylib[n][0] + str(n) + keylib[n][1]
+            return keys
+        keylib[n] = [k[:i], k[colon:]]
+    if not len(keylib.keys()):
+        return keys
+    keyordered = []
+    for n in sorted(keylib.keys()):
+        kre = keylib[n][0] + str(n) + keylib[n][1]
+        keyordered.append(kre)
+    return keyordered
 
 
 def get_date_from_pair(d1, d2, ret='earliest'):
+    """
+    Returns either the earliest or latest of two dates.  This handles either ordering
+    and when either or both are None.
+    """
     if d1 is None and d2 is None:
         return None
     if ret == 'earliest':
@@ -178,48 +273,7 @@ def get_date_from_pair(d1, d2, ret='earliest'):
         raise ValueError("Must supply earliest/latest.")
 
 
-def _get_datekeystring(_datetime):
-    return "{:%Y%m%d-%H%M}".format(_datetime.datetime)
-
-
-def _get_displayTime(display):
-    if type(display) == str:
-        d = display
-    elif display is None:
-        d = 'None'
-    elif not isinstance(display, Time):
-        print('Non astropy time not supported')
-        d = 'N/A'
-    else:
-        d = "{:%Y-%m-%d %H:%M:%S}".format(display.datetime)
-    return d
-
-
-def _get_stopdate(_stop_date):
-    if isinstance(_stop_date, Time):
-        return _stop_date
-    else:
-        return _future_date()
-
-
-def _is_active(at_date, _start_date, _stop_date):
-    _stop_date = _get_stopdate(_stop_date)
-    return at_date >= _start_date and at_date <= _stop_date
-
-
-def _return_TF(x):
-    """
-    This returns a boolean based on strings from input args
-    For y/n queries, use _query_yn below.
-    """
-    if x or x[0].upper == 'T' or x[0].upper == 'Y':
-        TF = True
-    else:
-        TF = False
-    return TF
-
-
-def _query_default(a, args):
+def query_default(a, args):
     vargs = vars(args)
     default = vargs[a]
     s = '%s [%s]:  ' % (a, str(default))
@@ -231,7 +285,7 @@ def _query_default(a, args):
     return v
 
 
-def _query_yn(s, default='y'):
+def query_yn(s, default='y'):
     if default:
         s += ' [' + default + ']'
     s += ':  '
@@ -242,5 +296,5 @@ def _query_yn(s, default='y'):
         ans = ans.lower()
     else:
         print('No answer provided.')
-        ans = _query_yn(s)
+        ans = query_yn(s)
     return ans[0] == 'y'

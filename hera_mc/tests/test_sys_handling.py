@@ -1,5 +1,5 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.geo_location and geo_handling`.
@@ -16,44 +16,38 @@ import numpy as np
 from hera_mc import geo_location, sys_handling, mc, cm_transfer, part_connect
 from hera_mc import cm_hookup, cm_utils, cm_revisions
 from hera_mc.tests import TestHERAMC
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
 
 
-class TestGeo(TestHERAMC):
+class TestSys(TestHERAMC):
 
     def setUp(self):
-        super(TestGeo, self).setUp()
+        super(TestSys, self).setUp()
         self.h = sys_handling.Handling(self.test_session)
 
     def test_ever_fully_connected(self):
         now_list = self.h.get_all_fully_connected_at_date(at_date='now')
-        ever_list = self.h.get_all_fully_connected_ever()
-
         self.assertEqual(len(now_list), 1)
-        self.assertEqual(len(ever_list), 2)
 
-        ever_ends = [loc['stop_date'] for loc in ever_list]
-        # The '==' notation below is required (rather than the pep8 suggestion of 'is') for the test to pass.
-        self.assertEqual(len(np.where(np.array(ever_ends) == None)[0]), len(now_list))
-        now_station_names = [loc['station_name'] for loc in now_list]
-        ever_station_names = [loc['station_name'] for loc in ever_list]
-        for name in now_station_names:
-            self.assertTrue(name in ever_station_names)
+    def test_publish_summary(self):
+        msg = self.h.publish_summary()
+        self.assertEqual(msg, 'Not on "main"')
 
-        # check that every location fully connected now appears in fully connected ever
-        for loc_i, loc in enumerate(now_list):
-            this_station_list = [ever_list[i] for i in np.where(np.array(ever_station_names) == loc['station_name'])[0]]
-            this_station_starts = [loc['start_date'] for loc in this_station_list]
-            this_index = np.where(np.array(this_station_starts) == loc['start_date'])[0]
+    def test_other_hookup(self):
+        at_date = cm_utils.get_astropytime('2017-07-03')
+        H = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
+        H.reset_memory_cache(None)
+        self.assertEqual(H.cached_hookup_dict, None)
+        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True, force_new=True)
+        H.reset_memory_cache(hu)
+        self.assertEqual(H.cached_hookup_dict['hookup']['HH23:A']['e'][0].upstream_part, 'HH23')
 
-            if len(this_index) == 1:
-                this_index = this_index[0]
-                print(loc)
-                print(this_station_list[this_index])
-                self.assertEqual(this_station_list[this_index], loc)
+    def test_hookup_cache_file_info(self):
+        H = cm_hookup.Hookup(at_date='now', session=self.test_session)
+        s = H.hookup_cache_file_info()
 
     def test_correlator_info(self):
-        corr_dict = self.h.get_cminfo_correlator(cm_csv_path=mc.test_data_path)
+        corr_dict = self.h.get_cminfo_correlator()
 
         ant_names = corr_dict['antenna_names']
         self.assertEqual(len(ant_names), 1)
@@ -96,10 +90,19 @@ class TestGeo(TestHERAMC):
         self.assertEqual(cofa.lon, corr_dict['cofa_lon'])
         self.assertEqual(cofa.elevation, corr_dict['cofa_alt'])
 
+    def test_dubitable(self):
+        at_date = cm_utils.get_astropytime('2017-01-01')
+        part_connect.update_dubitable(self.test_session, at_date.gps, ['1', '2', '3'])
+        a = self.h.get_dubitable_list()
+        alist = a.split(",")
+        self.assertEqual(len(alist), 3)
+        a = self.h.get_dubitable_list(return_full=True)
+        self.assertEqual(len(a[2]), 3)
+
     def test_correlator_levels(self):
-        at_date = cm_utils._get_astropytime('2017-07-03')
-        H = cm_hookup.Hookup(self.test_session)
-        hu = H.get_hookup(['HH23'], 'A', 'all', at_date, exact_match=True, show_levels=True)
+        at_date = cm_utils.get_astropytime('2017-07-03')
+        H = cm_hookup.Hookup(at_date, self.test_session)
+        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True, force_new=True)
         hh23level = float(hu['levels']['HH23:A']['e'])
         self.assertEqual(type(hh23level), float)
         # Now get some failures
@@ -117,7 +120,7 @@ class TestGeo(TestHERAMC):
             part.manufacture_number = self.test_mfg
             part.start_gpstime = self.test_time
             self.test_session.add(part)
-        self.test_session.commit()
+            self.test_session.commit()
         connection = part_connect.Connections()
         connection.upstream_part = self.test_hpn[0]
         connection.up_part_rev = self.test_rev
@@ -128,21 +131,22 @@ class TestGeo(TestHERAMC):
         connection.start_gpstime = self.test_time
         self.test_session.add(connection)
         self.test_session.commit()
-        hu = H.get_hookup(['test_part1'], 'Q', 'all', at_date, exact_match=True, show_levels=True)
+        hu = H.get_hookup(['test_part1'], 'Q', 'all', exact_match=True, show_levels=True, force_specific=True)
         tplevel = hu['levels']['test_part1:Q']['e']
         print(tplevel)
         self.assertEqual(tplevel, '-')
 
     def test_get_pam_from_hookup(self):
-        h = sys_handling.Handling(self.test_session)
-        at_date = cm_utils._get_astropytime('2017-07-03')
-        fc = cm_revisions.get_full_revision('HH23', at_date, h.session)
-        hu = fc[0].hookup
-        H = cm_hookup.Hookup(self.test_session)
-        pams = H.get_pam_from_hookup(hu)
-        self.assertEqual(len(pams), 2)
-        self.assertEqual(pams['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
-        self.assertEqual(pams['e'][1], 'PAM75123')  # the actual pam number (the thing written on the case)
+        at_date = cm_utils.get_astropytime('2017-07-03')
+        H = cm_hookup.Hookup(at_date, self.test_session)
+        stn = 'HH23'
+        hud = H.get_hookup([stn], exact_match=True)
+        fc = cm_revisions.get_full_revision(stn, hud)
+        pams = cm_hookup.get_parts_from_hookup('post-amp', hud)
+        self.assertEqual(len(pams.keys()), 1)
+        key = pams.keys()[0]
+        self.assertEqual(pams[key]['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
+        self.assertEqual(pams[key]['e'][1], 'PAM75123')  # the actual pam number (the thing written on the case)
 
     def test_get_pam_info(self):
         h = sys_handling.Handling(self.test_session)

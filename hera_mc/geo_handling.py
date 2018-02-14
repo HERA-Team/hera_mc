@@ -1,5 +1,5 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """
@@ -19,7 +19,7 @@ from sqlalchemy import func
 
 from pyproj import Proj
 
-from hera_mc import mc, part_connect, cm_utils, geo_location, cm_revisions
+from hera_mc import mc, part_connect, cm_utils, geo_location
 
 
 def cofa(session=None):
@@ -51,7 +51,7 @@ def get_location(location_names, query_date='now', session=None):
     query_date:  date for query
     session:  db session to use
     """
-    query_date = cm_utils._get_astropytime(query_date)
+    query_date = cm_utils.get_astropytime(query_date)
     h = Handling(session)
     located = h.get_location(location_names, query_date)
     h.close()
@@ -186,7 +186,7 @@ class Handling:
         query_date:  is the astropy Time for contemporary antenna
         """
 
-        query_date = cm_utils._get_astropytime(query_date)
+        query_date = cm_utils.get_astropytime(query_date)
         ustn = station.upper()
         connected_antenna = self.session.query(part_connect.Connections).filter(
             (func.upper(part_connect.Connections.upstream_part) == ustn) &
@@ -215,7 +215,7 @@ class Handling:
         query_date:  is the astropy Time for contemporary antenna
         """
 
-        query_date = cm_utils._get_astropytime(query_date)
+        query_date = cm_utils.get_astropytime(query_date)
         if type(antenna) == float or type(antenna) == int or antenna[0] != 'A':
             antenna = 'A' + str(antenna).strip('0')
         uant = antenna.upper()
@@ -293,7 +293,7 @@ class Handling:
                 print('\tlon/lat:  ', a.lon, a.lat)
                 print('\televation: ', a.elevation)
                 print('\tstation description ({}):  {}'.format(a.station_type, a.desc))
-                print('\tcreated:  ', cm_utils._get_displayTime(a.created_date))
+                print('\tcreated:  ', cm_utils.get_time_for_display(a.created_date))
             elif verbosity == 'l':
                 print(a)
         return True
@@ -332,7 +332,7 @@ class Handling:
         if not testing:
             import matplotlib.pyplot as plt
 
-        query_date = cm_utils._get_astropytime(query_date)
+        query_date = cm_utils.get_astropytime(query_date)
         displaying_label = bool(state_args['show_label'])
         if displaying_label:
             label_to_show = state_args['show_label'].lower()
@@ -390,8 +390,11 @@ class Handling:
         """
         if not testing:
             import matplotlib.pyplot as plt
+        from hera_mc import cm_hookup, cm_revisions
+        hookup = cm_hookup.Hookup(query_date, self.session)
+        hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
 
-        query_date = cm_utils._get_astropytime(query_date)
+        query_date = cm_utils.get_astropytime(query_date)
         if state_args['station_types'][0] == 'all':
             prefixes_to_plot = 'all'
         else:
@@ -400,18 +403,25 @@ class Handling:
         for key in self.station_types.keys():
             if prefixes_to_plot == 'all' or key.upper() in prefixes_to_plot:
                 stations_to_plot = []
+                active_stations = []
                 for loc in self.station_types[key]['Stations']:
                     show_it = True
-                    if state_args['show_state'] == 'active':
-                        fc = cm_revisions.get_full_revision(loc, query_date, self.session)
-                        if len(fc) == 0:
-                            show_it = False
+                    fc = cm_revisions.get_full_revision(loc, hookup_dict)
+                    if len(fc) > 0:
+                        active_stations.append(loc)
+                    if state_args['show_state'] == 'active' and len(fc) == 0:
+                        show_it = False
                     if show_it:
                         stations_to_plot.append(loc)
                 state_args['marker_color'] = self.station_types[key]['Marker'][0]
                 state_args['marker_shape'] = self.station_types[key]['Marker'][1]
                 state_args['marker_size'] = 6
                 self.plot_stations(stations_to_plot, query_date, state_args, testing)
+                if state_args['show_state'] == 'all':
+                    state_args['marker_color'] = 'g'
+                    state_args['marker_shape'] = 'o'
+                    state_args['marker_size'] = 7
+                    self.plot_stations(active_stations, query_date, state_args, testing)
         if not testing:
             if state_args['xgraph'].upper() != 'Z' and state_args['ygraph'].upper() != 'Z':
                 plt.axis('equal')

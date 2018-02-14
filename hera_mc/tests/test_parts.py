@@ -28,7 +28,7 @@ class TestParts(TestHERAMC):
         self.test_rev = 'Q'
         self.test_hptype = 'antenna'
         self.start_time = Time('2017-07-01 01:00:00', scale='utc')
-        self.now = cm_utils._get_astropytime('now')
+        self.now = cm_utils.get_astropytime('now')
         self.h = cm_handling.Handling(self.test_session)
 
         # Add a test part
@@ -83,32 +83,28 @@ class TestParts(TestHERAMC):
             self.assertFalse()
 
     def test_cm_version(self):
-        self.h.add_cm_version(cm_utils._get_astropytime('now'), 'Test-git-hash')
+        self.h.add_cm_version(cm_utils.get_astropytime('now'), 'Test-git-hash')
         gh = self.h.get_cm_version()
         self.assertTrue(gh == 'Test-git-hash')
 
     def test_get_revisions_of_type(self):
         at_date = self.now
-        rev_types = ['LAST', 'ACTIVE', 'ALL', 'FULL', 'A']
+        rev_types = ['LAST', 'ACTIVE', 'ALL', 'A']
         for rq in rev_types:
             revision = cm_revisions.get_revisions_of_type('HH0', rq, at_date, self.test_session)
             self.assertTrue(revision[0].rev == 'A')
+
+    def test_get_part_types(self):
+        at_date = self.now
+        a = self.h.get_part_types(at_date)
+        self.assertTrue(a['feed']['input_ports'][0] == 'input')
 
     def test_check_overlapping(self):
         c = cm_revisions.check_part_for_overlapping_revisions(self.test_part, self.test_session)
         self.assertTrue(len(c) == 0)
 
-    def test_check_rev(self):
-        tcr = {'LAST': [self.test_part, self.test_rev],
-               'ACTIVE': [self.test_part, self.test_rev],
-               'FULL': ['HH0', 'A']}
-        rev_types = ['LAST', 'ACTIVE', 'FULL']
-        for r in rev_types:
-            c = cm_revisions.check_rev(tcr[r][0], tcr[r][1], r, self.now, self.test_session)
-            self.assertTrue(c)
-
     def test_datetime(self):
-        dt = cm_utils._get_astropytime('2017-01-01', 0.0)
+        dt = cm_utils.get_astropytime('2017-01-01', 0.0)
         gps_direct = int(Time('2017-01-01 00:00:00', scale='utc').gps)
         self.assertTrue(int(dt.gps) == gps_direct)
 

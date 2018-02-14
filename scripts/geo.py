@@ -13,7 +13,7 @@ import sys
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('action', nargs='?', help="Actions are:  geo, cofa, since, update, info", default='geo')
-    parser.add_argument('-l', '--loc', help="Location name", default=None)
+    parser.add_argument('-p', '--position', help="Position (i.e. station) name", default=None)
     parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
@@ -21,13 +21,13 @@ if __name__ == '__main__':
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
-    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or all) [HH]",
-                        dest='station_types', default='HH')
+    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or all) [HH, HA, HB]",
+                        dest='station_types', default=['HH', 'HA', 'HB'])
     parser.add_argument('--show-state', help="Show only the 'active' stations or 'all' ['all']", dest='show_state',
-                        choices=['active', 'all'], default='active')
+                        choices=['active', 'all'], default='all')
     parser.add_argument('--show-label', dest='show_label',
                         help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]",
-                        choices=['name', 'num', 'ser'], default='num')
+                        choices=['name', 'num', 'ser', 'false'], default='num')
     parser.add_argument('--fig-num', help="Provide a specific figure number to the plot [default]",
                         dest='fig_num', default='default')
 
@@ -107,8 +107,8 @@ if __name__ == '__main__':
         sys.exit()
 
     # interpret args
-    at_date = cm_utils._get_astropytime(args.date, args.time)
-    args.loc = cm_utils.listify(args.loc)
+    at_date = cm_utils.get_astropytime(args.date, args.time)
+    args.position = cm_utils.listify(args.position)
     args.station_types = cm_utils.listify(args.station_types)
     args.show_label = args.show_label.lower()
     if args.show_label == 'false':
@@ -135,14 +135,14 @@ if __name__ == '__main__':
     if args.action == 'geo':
         if args.graph:
             show_fig = h.plot_station_types(at_date, state_args)
-        if args.loc is not None:
-            located = h.get_location(args.loc, at_date)
+        if args.position is not None:
+            located = h.get_location(args.position, at_date)
             h.print_loc_info(located, args.verbosity)
             if args.graph and len(located) > 0:
                 state_args['marker_color'] = 'g'
                 state_args['marker_shape'] = '*'
                 state_args['marker_size'] = 14
-                show_fig = h.plot_stations(args.loc, at_date, state_args)
+                show_fig = h.plot_stations(args.position, at_date, state_args)
 
     elif args.action == 'cof':
         cofa = h.cofa()
@@ -172,7 +172,7 @@ if __name__ == '__main__':
                 show_fig = h.plot_stations(new_antennas, 'now', state_args)
 
     elif args.update:
-        you_are_sure = cm_utils._query_yn("Warning:  Update is best done via a \
+        you_are_sure = cm_utils.query_yn("Warning:  Update is best done via a \
                                            script -- are you sure you want to do this? ", 'n')
         if you_are_sure:
             geo_location.update(session, data, args.add_new_geo)

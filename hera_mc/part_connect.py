@@ -14,7 +14,7 @@ from tabulate import tabulate
 import math
 from astropy.time import Time
 
-from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, func
+from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Text, func
 
 from . import MCDeclarativeBase, NotNull
 
@@ -24,7 +24,10 @@ no_connection_designator = '-X-'
 # This lists the fully complete signal paths
 full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end', 'cable-feed75', 'cable-post-amp(in)',
                                         'post-amp', 'cable-post-amp(out)', 'cable-receiverator', 'cable-container', 'f-engine'],
-                        'parts_test': ['vapor']}
+                        'parts_hera': ['station', 'antenna', 'feed', 'fem', 'cable-feed50', 'cable-node(in)',
+                                       'pam', 'snap'],
+                        'parts_test': ['vapor']
+                        }
 both_pols = ['e', 'n']
 
 
@@ -45,7 +48,7 @@ class Parts(MCDeclarativeBase):
     start_gpstime: The date when the part was installed (or otherwise assigned by project).
     stop_gpstime: The date when the part was removed (or otherwise de-assigned by project).
     """
-    __tablename__ = 'parts_paper'
+    __tablename__ = 'parts'
 
     hpn = Column(String(64), primary_key=True)
     hpn_rev = Column(String(32), primary_key=True)
@@ -160,7 +163,7 @@ def update_part(session=None, data=None, add_new_part=False):
 
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
@@ -196,7 +199,7 @@ def update_part(session=None, data=None, add_new_part=False):
                     continue
             session.add(part)
             session.commit()
-    cm_utils._log('part_connect part update', data_dict=data_dict)
+    cm_utils.log('part_connect part update', data_dict=data_dict)
     if close_session_when_done:
         session.close()
 
@@ -275,7 +278,7 @@ def get_part_revisions(hpn, session=None):
     uhpn = hpn.upper()
     close_session_when_done = False
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
@@ -289,6 +292,67 @@ def get_part_revisions(hpn, session=None):
     if close_session_when_done:
         session.close()
     return revisions
+
+
+class Dubitable(MCDeclarativeBase):
+    """
+    A table to track the dubitable antennas.
+
+    start_gpstime:  start time of list
+    stop_gpstime:  stop time of list
+    ant_list:  list of dubitable antennas.
+               It is a comma-separated list of antenna integers.  E.g. 1,4,5,23,51
+               (No spaces betweeen).
+    """
+
+    __tablename__ = 'dubitable'
+
+    start_gpstime = Column(BigInteger, primary_key=True)
+    stop_gpstime = Column(BigInteger)
+    ant_list = Column(Text, nullable=False)
+
+    def __repr__(self):
+        return ('<{self.start_gpstime}, {self.stop_gpstime}, {self.ant_list}>'.format(self=self))
+
+
+def update_dubitable(session=None, transition_gpstime=None, data=None):
+    """
+    update the database given a new list of dubitable antennas.
+    It will stop the previous list at transition_gpstime and start the new one
+    at transition_gpstime + 1sec
+
+    Parameters:
+    ------------
+    session:  db session to use
+    transition_gpstime:  gps time to make the change
+    data:  list of antennas, specified by integers.
+           Same number as the HH#, but leave off the 'HH'
+    """
+
+    close_session_when_done = False
+    if session is None:
+        db = mc.connect_to_mc_db(None)
+        session = db.sessionmaker()
+        close_session_when_done = True
+
+    last_one = session.query(Dubitable).filter(Dubitable.stop_gpstime == None)
+    if last_one.count() == 1:  # Stop the previous valid list.
+        old_dubi = last_one.first()
+        old_dubi.stop_gpstime = transition_gpstime
+        session.add(old_dubi)
+    elif last_one.count() > 1:
+        raise ValueError('Too many open dubitable lists.')
+
+    new_dubi = Dubitable()
+    new_dubi.start_gpstime = transition_gpstime + 1
+    new_dubi.ant_list = ','.join(str(a) for a in data)
+    session.add(new_dubi)
+    session.commit()
+    data_dict = {'start_gpstime': [transition_gpstime], 'ant_list:len': [len(data)]}
+    cm_utils.log('part_connect dubitable update', data_dict=data_dict)
+
+    if close_session_when_done:
+        session.close()
 
 
 class PartInfo(MCDeclarativeBase):
@@ -330,7 +394,7 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
     """
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
     part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn.upper()) &
@@ -342,7 +406,7 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
     pi = PartInfo()
     pi.hpn = hpn
     pi.hpn_rev = rev
-    pi.posting_gpstime = cm_utils._get_astropytime(at_date).gps
+    pi.posting_gpstime = cm_utils.get_astropytime(at_date).gps
     pi.comment = comment
     pi.library_file = library_file
     session.add(pi)
@@ -359,15 +423,15 @@ class Connections(MCDeclarativeBase):
     upstream_part: up refers to the skyward part,
         e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.
         Signal flows from A->B"
-        Part of the primary_key, Foreign Key into parts_paper
+        Part of the primary_key, Foreign Key into parts
     up_part_rev: up refers to the skyward part revision number.
-        Part of the primary_key, Foreign Key into parts_paper
+        Part of the primary_key, Foreign Key into parts
     upstream_output_port: connected output port on upstream (skyward) part.
         Part of the primary_key
     downstream_part: down refers to the part that is further from the sky, e.g.
-        Part of the primary_key, Foreign Key into parts_paper
+        Part of the primary_key, Foreign Key into parts
     down_part_rev: down refers to the part that is further from the sky, e.g.
-        Part of the primary_key, Foreign Key into parts_paper
+        Part of the primary_key, Foreign Key into parts
     downstream_input_port: connected input port on downstream (further from the sky) part
         Part of the primary_key
     start_gpstime: start_time is the time that the connection is set
@@ -385,9 +449,9 @@ class Connections(MCDeclarativeBase):
     downstream_input_port = NotNull(String(64), primary_key=True)
 
     __table_args__ = (ForeignKeyConstraint(['upstream_part', 'up_part_rev'],
-                                           ['parts_paper.hpn', 'parts_paper.hpn_rev']),
+                                           ['parts.hpn', 'parts.hpn_rev']),
                       ForeignKeyConstraint(['downstream_part', 'down_part_rev'],
-                                           ['parts_paper.hpn', 'parts_paper.hpn_rev']))
+                                           ['parts.hpn', 'parts.hpn_rev']))
 
     start_gpstime = NotNull(BigInteger, primary_key=True)
     stop_gpstime = Column(BigInteger)
@@ -595,7 +659,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
 
     close_session_when_done = False
     if session is None:
-        db = mc.connect_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
@@ -652,7 +716,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
                     continue
             session.add(connection)
             session.commit()
-    cm_utils._log('part_connect connection update', data_dict=data_dict)
+    cm_utils.log('part_connect connection update', data_dict=data_dict)
     if close_session_when_done:
         session.close()
 

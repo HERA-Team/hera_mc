@@ -148,6 +148,20 @@ git\_hash & string & git hash of RTP code  \\\hline
 \end{tabular}
 \end{center}
 
+\textbf{\large{rtp\_task\_resource\_record}}: RTP record of start and stop times for a task (e.g., omnical) for an obsid, as well as CPU and memory used (if available)
+\begin{center}
+  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex] \hline\hline
+\textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
+\textbf{task\_name} & string & name of specific task (e.g., \verb+OMNICAL+) \\ \hline
+start\_time & long & start time of task in floor(gps seconds) \\ \hline
+stop\_time & long & stop time of task in floor(gps seconds) \\ \hline
+max\_mem & float & maximum memory, in MB, consumed by the task; nullable column \\ \hline
+avg\_cpu\_load & float & average CPU load, in number of CPUs, for task (e.g., 2.00 means 2 CPUs used); nullable column \\ \hline
+\end{tabular}
+\end{center}
+
 
 \subsection{Librarian Tables}
 \textbf{\large{lib\_server\_status}}: Librarian version of the server\_status table\\
@@ -212,7 +226,7 @@ bandwidth\_mps & float & bandwidth to remote in Mb/s, 15 minute average \\\hline
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{filename} & string & name of file created \\ \hline
-\textit{obsid} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
+\textit{obsid} & long integer & observation identifier, foreign key into hera\_obs table. Can be null. \\ \hline
 time & long & file creation time in floor(gps seconds)\\ \hline
 size\_gb & float & file size in gigabytes \\ \hline
 \end{tabular}
@@ -223,7 +237,22 @@ size\_gb & float & file size in gigabytes \\ \hline
 
 \textbf{\large{corr\_server\_status}}: Correlator version of the server\_status table\\
 
-The correlator tables are not yet defined, the following are notes about suggestions and plans for correlator tables. Most of the correlator data will be recorded in a Redis database (a rolling log, ephemeral), that info needs to be grabbed and put in \mc tables.
+\textbf{\large{roach\_temperature}}: Roach (correlator fpga board) temperatures
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & long & measurement time in floor(gps seconds)\\ \hline
+\textbf{roach} & string & name of roach (correlator fpga board) \\ \hline
+ambient\_temp & float & ambient temperature reported by the roach in degrees C \\\hline
+inlet\_temp & float & inlet temperature reported by the roach in degrees C \\\hline
+oulet\_temp & float & oulet temperature reported by the roach in degrees C \\\hline
+fpga\_temp & float & fpga temperature reported by the roach in degrees C \\\hline
+ppc\_temp & float & ppc temperature reported by the roach in degrees C \\\hline
+\end{tabular}
+\end{center}
+
+The correlator tables are not all defined yet, the following are notes about suggestions and plans for correlator tables. Most of the correlator data will be recorded in a Redis database (a rolling log, ephemeral), that info needs to be grabbed and put in \mc tables.
 \begin{outline}[enumerate]
 	\1 correlator on/off?	**this is a control**
 	\1 Bit statistics (overflows, ADC clipping, bit statistics after bit selects)
@@ -273,9 +302,20 @@ This will come from many sources. These are some suggestions for the future, thi
 \end{outline}
 
 \subsection{Site Info}
-These are suggestions for the future, things we might like to see.
+
+\textbf{\large{weather\_data}}: Weather data from KAT sensors
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & long & status time in floor(gps seconds)\\ \hline
+\textbf{variable} & string & name of weather variable (e.g. wind\_speed,  wind\_direction, temperature) \\ \hline
+value & float & value of the variable at this time \\\hline
+\end{tabular}
+\end{center}
+
+The following are suggestions for the future, things we might like to see.
 \begin{outline}[enumerate]
-	\1 Weather info
 	\1 site power
 	\1 network status
 \end{outline}

@@ -52,6 +52,8 @@ def MCDeclarativeBase_close(self, other):
             if not np.all(self_c == other_c):
                 print('column {col} is an int-like array, values are not equal'.format(col=c))
                 return False
+        elif self_c is None and other_c is None:
+            pass # nullable columns, both null
         else:
             if hasattr(self, 'tols') and c.name in self.tols.keys():
                 atol = self.tols[c.name]['atol']
@@ -70,6 +72,7 @@ MCDeclarativeBase.__repr__ = MethodType(MCDeclarativeBase_repr, None, MCDeclarat
 MCDeclarativeBase.isclose = MethodType(MCDeclarativeBase_close, None, MCDeclarativeBase)
 
 import logging
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # Now we can pull in the rest of our definitions.
@@ -91,4 +94,6 @@ from . import server_status
 from . import librarian
 from . import rtp
 from . import qm
+from . import weather
+from . import roach
 from . import mc  # keep this last.

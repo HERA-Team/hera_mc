@@ -9,7 +9,7 @@ either via db calls or pre-written files.
 """
 
 from __future__ import absolute_import, print_function
-from hera_mc import mc, cm_utils, cm_revisions
+from hera_mc import mc, cm_utils, cm_revisions, cm_hookup
 from astropy.time import Time, TimeDelta
 import numpy as np
 import matplotlib.pyplot as plt
@@ -65,10 +65,12 @@ class Dataview:
             fc_map[p] = {'datetime': [], 'flag': [], 'fc': []}
             at_date = start_date
             while at_date < stop_date:
-                fc = cm_revisions.get_full_revision(p, at_date, self.session)
+                hookup = cm_hookup.Hookup(at_date, self.session)
+                hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
+                fc = cm_revisions.get_full_revision(p, hookup_dict)
                 fc_map[p]['datetime'].append(at_date.datetime)
                 fc_map[p]['flag'].append(len(fc))
-                fc_map[p]['fc'].append(fc)
+                fc_map[p]['hookup'].append(hookup_dict['hookup'][fc.hookup_key])
                 at_date += TimeDelta(dt * 24 * 3600, format='sec')
         self.parts_list = parts
         self.fc_map = fc_map
@@ -88,7 +90,6 @@ class Dataview:
         if self.fc_map is None or self.parts_list is None:
             raise RuntimeError("You first need to generate fc_map and parts_list")
         from hera_mc import cm_hookup
-        hu = cm_hookup.Hookup(self.session)
         p0 = self.parts_list[0]
         ndate = len(self.fc_map[p0]['datetime'])
         print("Writing {}".format(filename))
@@ -107,9 +108,9 @@ class Dataview:
                     fp.write('{:^8d}'.format(self.fc_map[p]['flag'][i]))
                 elif output == 'corr':
                     if self.fc_map[p]['fc'][i]:
-                        this_hu = self.fc_map[p]['fc'][i][0].hookup
+                        this_hu = self.fc_map[p]['hookup'][i]
                         print(this_hu)
-                        c = hu.get_correlator_input_from_hookup(this_hu)
+                        c = this_hu[-1].downstream_part
                         s = 'e:{} n:{}'.format(c['e'], c['n'])
                     else:
                         s = '---'
@@ -139,11 +140,11 @@ class Dataview:
             del(part_fn[0])
             for p in part_fn:
                 if p not in fc_map.keys():
-                    fc_map[p] = {'datetime': [], 'flag': [], 'fc': []}
+                    fc_map[p] = {'datetime': [], 'flag': [], 'hookup': []}
                     parts.append(p)
             for line in fp:
                 data = line.split()
-                date = cm_utils._get_astropytime(data[0], data[1])
+                date = cm_utils.get_astropytime(data[0], data[1])
                 del(data[0:2])
                 for i in range(len(data)):
                     fc_map[part_fn[i]]['datetime'].append(date.datetime)

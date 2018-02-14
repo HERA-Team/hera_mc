@@ -12,7 +12,7 @@ from astropy.time import Time, TimeDelta
 from sqlalchemy.exc import NoForeignKeysError
 
 from hera_mc import mc, cm_transfer
-from hera_mc.rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord
+from hera_mc.rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord
 from hera_mc import utils, geo_location
 from hera_mc.tests import TestHERAMC
 
@@ -44,6 +44,12 @@ class TestRTP(TestHERAMC):
         self.record_values = [time, obsid, 'sample_pipe', 'v0.0.1', 'lskdjf24l', 'v0.1.0', 'abcd34d',
                               'v1.0.0', 'jkfldi39', 'v2.0.0', 'fjklj828']
         self.record_columns = dict(zip(self.record_names, self.record_values))
+
+        self.task_resource_names = ['obsid', 'task_name', 'start_time', 'stop_time', 'max_memory',
+                                    'avg_cpu_load']
+        self.task_resource_values = [obsid, 'OMNICAL', time, time + TimeDelta(10 * 60, format='sec'),
+                                     16.2, 1.01]
+        self.task_resource_columns = dict(zip(self.task_resource_names, self.task_resource_values))
 
     def test_add_rtp_status(self):
         self.test_session.add_rtp_status(*self.status_values)
@@ -275,6 +281,131 @@ class TestRTP(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.get_rtp_process_record, 'foo')
         self.assertRaises(ValueError, self.test_session.get_rtp_process_record,
                           self.record_columns['time'], stoptime='bar')
+
+    def test_add_rtp_task_resource_record(self):
+        self.test_session.add_obs(*self.observation_values)
+        obs_result = self.test_session.get_obs()
+        self.assertTrue(len(obs_result), 1)
+
+        self.test_session.add_rtp_task_resource_record(*self.task_resource_values)
+
+        exp_columns = self.task_resource_columns.copy()
+        exp_columns['start_time'] = int(floor(exp_columns['start_time'].gps))
+        exp_columns['stop_time'] = int(floor(exp_columns['stop_time'].gps))
+        expected = RTPTaskResourceRecord(**exp_columns)
+
+        result = self.test_session.get_rtp_task_resource_record(
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            obsid=self.task_resource_columns['obsid'])
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        new_task_time = self.task_resource_columns['start_time'] + TimeDelta(60, format='sec')
+        new_task = 'task2'
+        self.test_session.add_rtp_task_resource_record(
+            self.task_resource_columns['obsid'], new_task, new_task_time,
+            *self.task_resource_values[3:])
+
+        result = self.test_session.get_rtp_task_resource_record(
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            obsid=self.task_resource_columns['obsid'])
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result = self.test_session.get_rtp_task_resource_record(
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            obsid=self.task_resource_columns['obsid'],
+            stoptime=self.task_resource_columns['start_time'] + TimeDelta(2 * 60, format='sec'))
+        self.assertEqual(len(result), 2)
+
+        result = self.test_session.get_rtp_task_resource_record(
+            obsid=self.task_resource_columns['obsid'])
+        self.assertEqual(len(result), 2)
+
+        result = self.test_session.get_rtp_task_resource_record(
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            task_name=self.task_resource_columns['task_name'],
+            stoptime=self.task_resource_columns['start_time'] + TimeDelta(2 * 60, format='sec'))
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        new_task_time = self.task_resource_columns['start_time'] + TimeDelta(3 * 60, format='sec')
+
+        new_obsid_time = self.task_resource_columns['start_time'] + TimeDelta(3 * 60, format='sec')
+        new_obsid = utils.calculate_obsid(new_obsid_time)
+        self.test_session.add_obs(Time(new_obsid_time),
+                                  Time(new_obsid_time + TimeDelta(10 * 60, format='sec')),
+                                  new_obsid)
+        obs_result = self.test_session.get_obs(obsid=new_obsid)
+        self.assertEqual(obs_result[0].obsid, new_obsid)
+
+        self.test_session.add_rtp_task_resource_record(
+            new_obsid, self.task_resource_columns['task_name'], new_task_time,
+            *self.task_resource_values[3:])
+
+        result = self.test_session.get_rtp_task_resource_record(
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            task_name=self.task_resource_columns['task_name'],
+            stoptime=self.task_resource_columns['start_time'] + TimeDelta(5 * 60, format='sec'))
+        self.assertEqual(len(result), 2)
+
+        result = self.test_session.get_rtp_task_resource_record(
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            obsid=self.task_resource_columns['obsid'],
+            task_name=self.task_resource_columns['task_name'],
+            stoptime=self.task_resource_columns['start_time'] + TimeDelta(5 * 60, format='sec'))
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        # test computed column
+        elapsed = result.elapsed
+        self.assertTrue(np.isclose(elapsed, 600.))
+
+    def test_add_rtp_task_resource_record_nulls(self):
+        self.test_session.add_obs(*self.observation_values)
+        obs_result = self.test_session.get_obs()
+        self.assertTrue(len(obs_result), 1)
+
+        # don't pass in max_memory or avg_cpu_load
+        self.test_session.add_rtp_task_resource_record(*self.task_resource_values[:-2])
+
+        exp_columns = self.task_resource_columns.copy()
+        # get rid of max_memory and avg_cpu_load columns
+        exp_columns.pop('max_memory')
+        exp_columns.pop('avg_cpu_load')
+        exp_columns['start_time'] = int(floor(exp_columns['start_time'].gps))
+        exp_columns['stop_time'] = int(floor(exp_columns['stop_time'].gps))
+        expected = RTPTaskResourceRecord(**exp_columns)
+
+        result = self.test_session.get_rtp_task_resource_record(
+            starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
+            obsid=self.record_columns['obsid'])
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+    def test_errors_rtp_task_resource_record(self):
+        self.test_session.add_obs(*self.observation_values)
+        obs_result = self.test_session.get_obs()
+        self.assertTrue(len(obs_result), 1)
+
+        fake_vals = [1, 'a', 2, 'b', 3, 'c']
+        self.assertRaises(ValueError, self.test_session.add_rtp_task_resource_record, *fake_vals)
+        # test case where start_time is an astropy.time object, but stop_time isn't
+        fake_vals2 = [1, 'a', Time.now(), 'b', 3, 'c']
+        self.assertRaises(ValueError, self.test_session.add_rtp_task_resource_record, *fake_vals2)
+
+        self.test_session.add_rtp_task_resource_record(*self.task_resource_values)
+        self.assertRaises(ValueError, self.test_session.get_rtp_process_record, 1, 2)
+
+        self.assertRaises(ValueError, self.test_session.get_rtp_task_resource_record,
+                          task_name=self.task_resource_columns['task_name'])
+
+        self.assertRaises(ValueError, self.test_session.get_rtp_task_resource_record)
 
 
 if __name__ == '__main__':
