@@ -142,7 +142,7 @@ def check_part_for_overlapping_revisions(hpn, session=None):
             interval_i = [revisions[i].started, cm_utils.get_stopdate(revisions[i].ended)]
             interval_j = [revisions[j].started, cm_utils.get_stopdate(revisions[j].ended)]
             if check_for_overlap(interval_i, interval_j):
-                self.overlap.append([revisions[i], revisions[j]])
+                overlap.append([revisions[i], revisions[j]])
 
     if len(overlap) > 0:
         overlapping_revs_in_single_list = []
