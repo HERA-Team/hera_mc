@@ -225,7 +225,7 @@ class Handling:
         cm_h = cm_handling.Handling(session=self.session)
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
-        stations_conn = self.get_all_fully_connected_at_date(at_date='now', station_types_to_check=['HH'])
+        stations_conn = self.get_all_fully_connected_at_date(at_date='now', station_types_to_check=['HH', 'HA', 'HB'])
         ant_nums = []
         stn_names = []
         stn_types = []
