@@ -202,41 +202,6 @@ def get_full_revision(hpn, hookup_dict):
     return return_full_keys
 
 
-def check_part_for_overlapping_revisions(hpn, session=None):
-    """
-    Checks hpn for parts that overlap in time.  Should be none.
-
-    Returns list of overlapping part revisions
-
-    Parameters:
-    ------------
-    hpn:  hera part name
-    """
-
-    overlap = []
-    revisions = get_all_revisions(hpn, session)
-    for i, r1 in enumerate(revisions):
-        for j, r2 in enumerate(revisions):
-            if i >= j:
-                continue
-            first_one = i if r1.started <= r2.started else j
-            second_one = i if r1.started > r2.started else j
-            if revisions[first_one].ended is None:
-                revisions[first_one].ended = cm_utils.get_astropytime('>')
-            if revisions[second_one].started > revisions[first_one].ended:
-                overlap.append([r1, r2])
-    if len(overlap) > 0:
-        overlapping_revs_in_single_list = []
-        for ol in overlap:
-            overlapping_revs_in_single_list.append(ol[0])
-            overlapping_revs_in_single_list.append(ol[1])
-            s = '{} and {} are overlapping revisions of part {}'.format(
-                ol[0].rev, ol[1].rev, hpn)
-            warnings.warn(s)
-        show_revisions(overlapping_revs_in_single_list)
-    return overlap
-
-
 def show_revisions(rev_list):
     """
     Show revisions for provided revision list

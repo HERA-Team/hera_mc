@@ -63,6 +63,7 @@ if __name__ == '__main__':
         print("Stopping this addition.")
     else:
         # Add new part
-        print("Adding new part {}:{}".format(args.hpn, args.rev))
+        if args.verbosity == 'h':
+            print("Adding new part {}:{}".format(args.hpn, args.rev))
         new_part_add = [(args.hpn, args.rev, args.hptype, args.mfg)]
         part_connect.add_new_parts(session, part, new_part_add, at_date, args.actually_do_it)
