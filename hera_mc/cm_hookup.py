@@ -558,9 +558,14 @@ class Hookup:
             s += 'Cache file_mod_time:  {}\n'.format(cm_utils.get_time_for_display(file_mod_time))
             s += 'Cached hookup list:  {}\n'.format(self.cached_hookup_list)
             s += 'Cached hookup has {} keys.\n'.format(len(self.cached_hookup_dict['hookup'].keys()))
+            hooked_up = 0
+            for k, p in self.cached_hookup_dict['fully_connected'].iteritems():
+                if p['e'] is True or p['n'] is True:
+                    hooked_up += 1
+            s += "Number hooked up is {}\n".format(hooked_up)
         result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
         cm_hash_time = Time(result[-1].update_time, format='gps')
-        s += 'CM Version latest cm_hash_time:  {}\n'.format(cm_utils.get_time_for_display(cm_hash_time))
+        s += '\nCM Version latest cm_hash_time:  {}\n'.format(cm_utils.get_time_for_display(cm_hash_time))
         return s
 
     def show_hookup(self, hookup_dict, cols_to_show='all', show_levels=False, show_ports=True, show_revs=True,

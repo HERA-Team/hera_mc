@@ -19,6 +19,7 @@ if __name__ == '__main__':
                         dest='exact_match', action='store_true')
     parser.add_argument('-q', '--quick', help="Shortcut to show a subset of cols and correlator level", action='store_true')
     parser.add_argument('-f', '--force-new', dest='force_new', help="Force it to write a new hookup file.", action='store_true')
+    parser.add_argument('-c', '--cache-info', help="Shows information about the hookup cache file.", dest='cache_info', action='store_true')
     parser.add_argument('--force-specific', dest='force_specific', help="Force db use", action='store_true')
     parser.add_argument('--port', help="Define desired port(s) for hookup. [all]", dest='port', default='all')
     parser.add_argument('--show-state', help="Show 'full' or 'all' hookups [full]", dest='show_state', default='full')
@@ -46,7 +47,7 @@ if __name__ == '__main__':
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
     hookup = cm_hookup.Hookup(date_query, session)
-    if args.show_cache_info:
+    if args.cache_info:
         print(hookup.hookup_cache_file_info())
     else:
         hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
