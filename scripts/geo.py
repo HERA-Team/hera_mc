@@ -44,9 +44,9 @@ if __name__ == '__main__':
         Available actions are (only need first three letters) [geo]:
             geo:  This has several possibilities, depending on the arguments --loc (-l) and --graph (-g)
                   It is the default action, so not including this positional argument sets the action to geo.
-                geo.py [geo] --loc(-l) HPN           will list location information on part HPN
-                geo.py [geo] --loc(-l) --graph(-g)   will list and plot, with "background" locations
-                                                     from --station-types
+                geo.py [geo] --position(-p) HPN           will list location information on part HPN
+                geo.py [geo] --position(-p) --graph(-g)   will list and plot, with "background" locations
+                                                          from --station-types
                 geo.py [geo] [--graph(-g)]           will just make the "background" plot (i.e. just typing
                                                      geo.py will do this).
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
                 geo.py info
 
         usage: geo.py [-h]
-                      [-l LOC] [-g]
+                      [-p position] [-g]
                       [-v {l,m,h}]
                       [--date DATE] [--time TIME]
                       [-x {N,n,E,e,Z,z}]
@@ -118,8 +118,7 @@ if __name__ == '__main__':
                   'ygraph': args.ygraph.upper(),
                   'station_types': args.station_types,
                   'show_state': args.show_state.lower(),
-                  'show_label': args.show_label,
-                  'fig_num': args.fig_num}
+                  'show_label': args.show_label}
 
     # start session and instances
     db = mc.connect_to_mc_db(args)

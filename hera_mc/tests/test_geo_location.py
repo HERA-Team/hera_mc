@@ -32,7 +32,7 @@ class TestGeo(TestHERAMC):
         st.prefix = self.test_element_prefix
         self.test_session.add(st)
         self.test_session.commit()
-        gl = geo_location.GeoLocation()
+        gl = geo_location.GeoLocation(testing=True)
         gl.station_name = self.test_element_prefix + '_ELEMENT'
         self.test_element_station_name = gl.station_name
         gl.station_type_name = self.test_element_stn

@@ -22,14 +22,6 @@ from pyproj import Proj
 from hera_mc import mc, part_connect, cm_utils, geo_location
 
 
-class FauxPlot():
-    def figure(x):
-        return
-
-    def plot(x, y, **kwargs):
-        return
-
-
 def cofa(session=None):
     """
     Returns location class of current COFA
@@ -98,10 +90,9 @@ class Handling:
             self.session = db.sessionmaker()
         else:
             self.session = session
-        if testing:
-            self.plt = FauxPlot()
-        else:
-            import matplotlib.pyplot as self.plt
+        self.testing = testing
+        if not testing:
+            import matplotlib.pyplot as plt
 
         self.station_types = None
         self.__stations_added_to_types = False
@@ -146,9 +137,9 @@ class Handling:
         station_data = self.session.query(geo_location.StationType).all()
         stations = {}
         for sta in station_data:
-            stations[sta.station_type_name] = {'Prefix': sta.prefix,
-                                               'Description': sta.description,
-                                               'Marker': sta.plot_marker, 'Stations': []}
+            stations[sta.station_type_name.lower()] = {'Prefix': sta.prefix.upper(),
+                                                       'Description': sta.description,
+                                                       'Marker': sta.plot_marker, 'Stations': []}
         if add_stations:
             self.__station_added_to_types = True
             locations = self.session.query(geo_location.GeoLocation).all()
@@ -202,9 +193,8 @@ class Handling:
         """
 
         query_date = cm_utils.get_astropytime(query_date)
-        ustn = station.upper()
         connected_antenna = self.session.query(part_connect.Connections).filter(
-            (func.upper(part_connect.Connections.upstream_part) == ustn) &
+            (func.upper(part_connect.Connections.upstream_part) == station.upper()) &
             (query_date.gps >= part_connect.Connections.start_gpstime))
         ctr = 0
         for conn in connected_antenna:
@@ -247,7 +237,7 @@ class Handling:
             raise ValueError('More than one active connection between station and antenna')
         return antenna_connected.upstream_part
 
-    def get_location(self, to_find_list, query_date, station_types=None):
+    def get_location(self, to_find_list, query_date):
         """
         Return the location of station_name or antenna_number as contained in to_find.
         This accepts the fact that antennas are sort of stations, even though they are parts
@@ -256,12 +246,9 @@ class Handling:
         ------------
         to_find_list:  station/antenna names to find (must be a list)
         query_date:  astropy Time for contemporary antenna
-        station_types: list of station_type prefixes (e.g. HH)
-        show_location:   if True, it will print the information
-        verbosity:  sets the verbosity of the print
         """
-        self.get_station_types(add_stations=True)
-        found_location = []
+        self.get_station_types(add_stations=False)
+        locations = []
         for L in to_find_list:
             station_name = False
             try:
@@ -276,8 +263,8 @@ class Handling:
                     a.desc = self.station_types[a.station_type_name]['Description']
                     hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                     a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
-                    found_location.append(copy.copy(a))
-        return found_location
+                    locations.append(copy.copy(a))
+        return locations
 
     def print_loc_info(self, loc_list, verbosity='h'):
         """
@@ -300,6 +287,23 @@ class Handling:
                 print(a)
         return True
 
+    def __parse_station_types_to_check(self, sttc, add_stations):
+        self.get_station_types(add_stations=add_stations)
+        if isinstance(sttc, (str, unicode)):
+            if sttc.lower() == 'all':
+                return self.station_types.keys()
+            else:
+                sttc = [sttc]
+        sttypes = []
+        for s in sttc:
+            if s.lower() in self.station_types.keys():
+                sttypes.append(s.lower())
+            else:
+                for k in self.station_types.keys():
+                    if s.upper() in self.station_types[k]['Prefix']:
+                        sttypes.append(k)
+        return sttypes
+
     def get_ants_installed_since(self, query_date, station_types_to_check='all'):
         """
         Returns list of antennas installed since query_date.
@@ -310,17 +314,38 @@ class Handling:
         station_types_to_check:  list of stations types to limit check
         """
 
-        self.get_station_types(add_stations=False)
+        station_types_to_check = self.__parse_station_types_to_check(station_types_to_check, add_stations=False)
         dt = query_date.gps
         found_stations = []
         for a in self.session.query(geo_location.GeoLocation).filter(
                 geo_location.GeoLocation.created_gpstime >= dt):
-            if (station_types_to_check == 'all' or
-                    a.station_type_name in station_types_to_check):
+            if a.station_type_name.lower() in station_types_to_check:
                 found_stations.append(a.station_name)
         return found_stations
 
-    def plot_stations(self, stations_to_plot_list, query_date, **state_args):
+    def get_antenna_label(self, label_to_show, stn, query_date):
+        labeling = None
+        if label_to_show == 'name':
+            labeling = stn.station_name
+        else:
+            try:
+                ant, rev = self.find_antenna_at_station(stn.station_name, query_date)
+            except TypeError:
+                print("{} not found.".format(stn.station_name))
+                return None
+            if label_to_show == 'num':
+                labeling = ant.strip('A')
+            elif label_to_show == 'ser':
+                p = self.session.query(part_connect.Parts).filter(
+                    (part_connect.Parts.hpn == ant) &
+                    (part_connect.Parts.hpn_rev == rev))
+                if p.count() == 1:
+                    labeling = p.first().manufacturer_number.replace('S/N', '')
+                else:
+                    labeling = '-'
+        return labeling
+
+    def plot_stations(self, stations_to_plot_list, query_date, **kwargs):
         """
         Plot a list of stations.
 
@@ -333,47 +358,28 @@ class Handling:
         """
 
         query_date = cm_utils.get_astropytime(query_date)
-        displaying_label = bool(state_args['show_label'])
+        displaying_label = bool(kwargs['show_label'])
         if displaying_label:
-            label_to_show = state_args['show_label'].lower()
-        for station in stations_to_plot_list:
-            for a in self.session.query(geo_location.GeoLocation).filter(
-                    func.upper(geo_location.GeoLocation.station_name) == station.upper()):
-                pt = {'easting': a.easting, 'northing': a.northing,
-                      'elevation': a.elevation}
-                X = pt[self.coord[state_args['xgraph']]]
-                Y = pt[self.coord[state_args['ygraph']]]
-                if not self.testing:
-                    self.plt.plot(X, Y, color=state_args['marker_color'],
-                                  marker=state_args['marker_shape'],
-                                  markersize=state_args['marker_size'],
-                                  label=a.station_name)
-                if displaying_label:
-                    if label_to_show == 'name':
-                        labeling = a.station_name
-                    else:
-                        try:
-                            ant, rev = self.find_antenna_at_station(a.station_name, query_date)
-                        except TypeError:
-                            print("{} not found.".format(station))
-                            continue
-                        if label_to_show == 'num':
-                            labeling = ant.strip('A')
-                        elif label_to_show == 'ser':
-                            p = self.session.query(part_connect.Parts).filter(
-                                (part_connect.Parts.hpn == ant) &
-                                (part_connect.Parts.hpn_rev == rev))
-                            if p.count() == 1:
-                                labeling = p.first().manufacturer_number.replace('S/N', '')
-                            else:
-                                labeling = '-'
-                        else:
-                            labeling = 'S'
-                    if not testing:
-                        plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
-        return state_args['fig_num']
+            label_to_show = kwargs['show_label'].lower()
+        locations = self.get_location(stations_to_plot_list, query_date)
+        fig_label = kwargs['xgraph'] + kwargs['ygraph']
+        if not self.testing:
+            plt.figure(fig_label)
+        for a in locations:
+            pt = {'easting': a.easting, 'northing': a.northing,
+                  'elevation': a.elevation}
+            X = pt[self.coord[kwargs['xgraph']]]
+            Y = pt[self.coord[kwargs['ygraph']]]
+            if not self.testing:
+                plt.plot(X, Y, color=kwargs['marker_color'], label=a.station_name,
+                         marker=kwargs['marker_shape'], markersize=kwargs['marker_size'])
+            if displaying_label:
+                labeling = self.get_antenna_label(label_to_show, a, query_date)
+                if labeling and not self.testing:
+                    plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
+        return fig_label
 
-    def plot_station_types(self, query_date, station_types, **state_args):
+    def plot_station_types(self, query_date, station_types_to_use, **kwargs):
         """
         Plot the various sub-array types
 
@@ -382,6 +388,7 @@ class Handling:
         Parameters:
         ------------
         query_date:  date to use to check if active.
+        station_types:  station_types or prefixes to plot
         state_args:  dictionary with state arguments (fig_num, marker_color,
                      marker_shape, marker_size, show_label)
         """
@@ -389,36 +396,24 @@ class Handling:
         hookup = cm_hookup.Hookup(query_date, self.session)
         hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
 
+        station_types_to_use = self.__parse_station_types_to_check(station_types_to_use, add_stations=True)
         query_date = cm_utils.get_astropytime(query_date)
-        if state_args['station_types'][0] == 'all':
-            prefixes_to_plot = 'all'
-        else:
-            prefixes_to_plot = [x.upper() for x in state_args['station_types']]
-        self.get_station_types(add_stations=True)
-        for key in self.station_types.keys():
-            if prefixes_to_plot == 'all' or key.upper() in prefixes_to_plot:
-                stations_to_plot = []
-                active_stations = []
-                for loc in self.station_types[key]['Stations']:
-                    show_it = True
-                    fc = cm_revisions.get_full_revision(loc, hookup_dict)
-                    if len(fc) > 0:
-                        active_stations.append(loc)
-                    if state_args['show_state'] == 'active' and len(fc) == 0:
-                        show_it = False
-                    if show_it:
-                        stations_to_plot.append(loc)
-                state_args['marker_color'] = self.station_types[key]['Marker'][0]
-                state_args['marker_shape'] = self.station_types[key]['Marker'][1]
-                state_args['marker_size'] = 6
-                self.plot_stations(stations_to_plot, query_date, state_args, testing)
-                if state_args['show_state'] == 'all':
-                    state_args['marker_color'] = 'g'
-                    state_args['marker_shape'] = 'o'
-                    state_args['marker_size'] = 7
-                    self.plot_stations(active_stations, query_date, state_args, testing)
-        if not testing:
-            if state_args['xgraph'].upper() != 'Z' and state_args['ygraph'].upper() != 'Z':
+        for st in station_types_to_use:
+            active_stations = []
+            for loc in self.station_types[st]['Stations']:
+                if cm_revisions.get_full_revision(loc, hookup_dict):
+                    active_stations.append(loc)
+            kwargs['marker_color'] = self.station_types[st]['Marker'][0]
+            kwargs['marker_shape'] = self.station_types[st]['Marker'][1]
+            kwargs['marker_size'] = 6
+            fig_num = self.plot_stations(self.station_types[st]['Stations'], query_date, **kwargs)
+            if kwargs['show_state'] == 'all':  # Make active stations different
+                kwargs['marker_color'] = 'g'
+                kwargs['marker_shape'] = 'o'
+                kwargs['marker_size'] = 7
+                fig_num = self.plot_stations(active_stations, query_date, **kwargs)
+        if not self.testing:
+            if kwargs['xgraph'].upper() != 'Z' and kwargs['ygraph'].upper() != 'Z':
                 plt.axis('equal')
-            plt.plot(xaxis=state_args['xgraph'], yaxis=state_args['ygraph'])
-        return state_args['fig_num']
+            plt.plot(xaxis=kwargs['xgraph'], yaxis=kwargs['ygraph'])
+        return fig_num
