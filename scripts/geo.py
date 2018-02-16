@@ -12,10 +12,9 @@ import sys
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('action', nargs='?', help="Actions are:  geo, cofa, since, update, info", default='geo')
+    parser.add_argument('action', nargs='?', help="Actions are:  geo, cofa, since", default='geo')
     parser.add_argument('-p', '--position', help="Position (i.e. station) name", default=None)
     parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
-    cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
@@ -29,79 +28,8 @@ if __name__ == '__main__':
                         help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]",
                         choices=['name', 'num', 'ser', 'false'], default='num')
 
-    # database arguments
-    parser.add_argument('--update', help="Update station records.  Format station0:col0:val0, [station1:]col1:val1...  [None]",
-                        default=None)
-    parser.add_argument('--add-new-geo', help="Flag to enable adding of a new "
-                        "geo_location under update.  [False]", action='store_true')
     args = parser.parse_args()
     args.action = args.action.lower()[:3]
-
-    if args.action == 'inf':
-        print(
-            """
-        See geo.py -h for all arguments.  This information summarizes the actions.
-        Available actions are (only need first three letters) [geo]:
-            geo:  This has several possibilities, depending on the arguments --loc (-l) and --graph (-g)
-                  It is the default action, so not including this positional argument sets the action to geo.
-                geo.py [geo] --position(-p) HPN           will list location information on part HPN
-                geo.py [geo] --position(-p) --graph(-g)   will list and plot, with "background" locations
-                                                          from --station-types
-                geo.py [geo] [--graph(-g)]           will just make the "background" plot (i.e. just typing
-                                                     geo.py will do this).
-
-            cofa:  Provides info on the center of the array
-                geo.py cofa              will provide the cofa information
-                geo.py cofa --graph(-g)  will plot cofa with "background" set in --station-types
-
-            since: Provides a list of all antennas installed --since DATE
-                 geo.py since --date DATE             will provide a list of all antennas built --since DATE
-                 geo.py since --date DATE --graph(-g)  will provide a list/plot those antennas
-
-            info:  Print this information and exit.
-                geo.py info
-
-        usage: geo.py [-h]
-                      [-p position] [-g]
-                      [-v {l,m,h}]
-                      [--date DATE] [--time TIME]
-                      [-x {N,n,E,e,Z,z}]
-                      [-y {N,n,E,e,Z,z}]
-                      [-t STATION_TYPES]
-                      [--show-state {active,all}]
-                      [--show-label {name,num,ser}]
-                      [--update UPDATE] [--add-new-geo]
-                      [action]
-
-                positional arguments:
-                action                Actions are: geo, cofa, since, update, info
-
-                optional arguments:
-                -h, --help            show this help message and exit
-                -p, --position,       position name
-                -g, --graph           Graph station types [False]
-                -v {l,m,h}, --verbosity {l,m,h}
-                                    Verbosity level: 'l', 'm', or 'h'. [h].
-                --date DATE           UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]
-                --time TIME           UTC hh:mm or float (hours)
-                -x {N,n,E,e,Z,z}, --xgraph {N,n,E,e,Z,z}
-                                    X-axis of graph. [E]
-                -y {N,n,E,e,Z,z}, --ygraph {N,n,E,e,Z,z}
-                                    Y-axis of graph. [N]
-                -t STATION_TYPES, --station-types STATION_TYPES
-                                    Station types used for input (csv_list or all) [HH, HA, HB]
-                --show-state {active,all}
-                                    Show only the 'active' stations or 'all' ['all']
-                --show-label {name,num,ser}
-                                    Label by station_name (name), ant_num (num) or
-                                    serial_num (ser) or false [num]
-                --update UPDATE       Update station records. Format station0:col0:val0,
-                                    [station1:]col1:val1... [None]
-                --add-new-geo         Flag to enable adding of a new geo_location under
-                                    update. [False]
-        """
-        )
-        sys.exit()
 
     # interpret args
     at_date = cm_utils.get_astropytime(args.date, args.time)
@@ -111,48 +39,35 @@ if __name__ == '__main__':
     if args.show_label.lower() == 'false':
         args.show_label = False
     show_fig = False
-
-    # package up state to dictionary
-    state_args = {'verbosity': args.verbosity.lower(),
-                  'xgraph': args.xgraph.upper(),
-                  'ygraph': args.ygraph.upper(),
-                  'station_types': args.station_types,
-                  'show_state': args.show_state.lower(),
-                  'show_label': args.show_label}
+    xgraph = args.xgraph.upper()
+    ygraph = args.ygraph.upper()
+    show_state = args.show_state.lower()
 
     # start session and instances
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
-    h = geo_handling.Handling(session)
+    G = geo_handling.Handling(session)
 
+    # If args.graph is set, you will always have this "background"
+    if args.graph:
+        show_fig = G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
+                                        xgraph=xgraph, ygraph=ygraph,
+                                        show_state=show_state, show_label=args.show_label)
     # Process action.  Actions are:  geo, cofa, corr, since, info
-    if args.action == 'geo':
-        if args.graph:
-            show_fig = h.plot_station_types(query_date=at_date, station_types=args.station_types,
-                                            xgraph=args.xgraph.upper(), ygraph=args.ygraph.upper(),
-                                            show_state=args.show_state.lower(), show_label=args.show_label)
-        if args.position is not None:
-            located = h.get_location(args.position, at_date)
-            h.print_loc_info(located, args.verbosity)
-            if args.graph and len(located) > 0:
-                state_args['marker_color'] = 'g'
-                state_args['marker_shape'] = '*'
-                state_args['marker_size'] = 14
-                show_fig = h.plot_stations(args.position, at_date, state_args)
-
+    if args.action == 'geo' and args.position is not None:
+        located = G.get_location(args.position, at_date)
+        G.print_loc_info(located)
+        if args.graph and len(located) > 0:
+            G.plot_stations(args.position, at_date, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
+                            marker_color='g', marker_shape='*', marker_size=14)
     elif args.action == 'cof':
-        cofa = h.cofa()
-        h.print_loc_info(cofa, args.verbosity)
+        cofa = G.cofa()
+        G.print_loc_info(cofa)
         if args.graph:
-            show_fig = h.plot_station_types(at_date, state_args)
-            state_args['marker_color'] = 'g'
-            state_args['marker_shape'] = '*'
-            state_args['marker_size'] = 14
-            state_args['show_label'] = 'name'
-            show_fig = h.plot_stations([cofa[0].station_name], at_date, state_args)
-
+            G.plot_stations([cofa[0].station_name], at_date, xgraph=xgraph, ygraph=ygraph, show_label='name',
+                            marker_color='g', marker_shape='*', marker_size=14)
     elif args.action == 'sin':
-        new_antennas = h.get_ants_installed_since(at_date, state_args['station_types'])
+        new_antennas = G.get_ants_installed_since(at_date, state_args['station_types'])
         print("{} new antennas since {}".format(len(new_antennas), at_date))
         if len(new_antennas) > 0:
             s = ''
@@ -161,18 +76,9 @@ if __name__ == '__main__':
             s = s.strip().strip(',') + '\n'
             print(s)
             if args.graph:
-                show_fig = h.plot_station_types('now', state_args)
-                state_args['marker_color'] = 'b'
-                state_args['marker_shape'] = '*'
-                state_args['marker_size'] = 14
-                show_fig = h.plot_stations(new_antennas, 'now', state_args)
-
-    elif args.update:
-        you_are_sure = cm_utils.query_yn("Warning:  Update is best done via a \
-                                           script -- are you sure you want to do this? ", 'n')
-        if you_are_sure:
-            geo_location.update(session, data, args.add_new_geo)
+                G.plot_stations(new_antennas, at_date, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
+                                marker_color='b', marker_shape='*', marker_size=14)
 
     if show_fig:
         geo_handling.show_it_now(show_fig)
-    h.close()
+    G.close()

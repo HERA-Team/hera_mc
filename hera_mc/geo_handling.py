@@ -16,7 +16,7 @@ import copy
 import warnings
 from astropy.time import Time, TimeDelta
 from sqlalchemy import func
-
+import matplotlib.pyplot as plt
 from pyproj import Proj
 
 from hera_mc import mc, part_connect, cm_utils, geo_location
@@ -66,7 +66,6 @@ def show_it_now(fignm):
     -------------
     fignm:  string/int for figure
     """
-    import matplotlib.pyplot as plt
 
     if fignm is not False and fignm is not None:
         plt.figure(fignm)
@@ -91,8 +90,6 @@ class Handling:
         else:
             self.session = session
         self.testing = testing
-        if not testing:
-            import matplotlib.pyplot as plt
 
         self.station_types = None
         self.__stations_added_to_types = False
@@ -266,7 +263,7 @@ class Handling:
                     locations.append(copy.copy(a))
         return locations
 
-    def print_loc_info(self, loc_list, verbosity='h'):
+    def print_loc_info(self, loc_list):
         """
         Prints out location information as returned from get_location.
         Returns False if provided 'loc' is None, otherwise returns True.
@@ -275,16 +272,13 @@ class Handling:
             print("No locations found.")
             return False
         for a in loc_list:
-            if verbosity == 'm' or verbosity == 'h':
-                print('station_name: ', a.station_name)
-                print('\teasting: ', a.easting)
-                print('\tnorthing: ', a.northing)
-                print('\tlon/lat:  ', a.lon, a.lat)
-                print('\televation: ', a.elevation)
-                print('\tstation description ({}):  {}'.format(a.station_type_name, a.desc))
-                print('\tcreated:  ', cm_utils.get_time_for_display(a.created_date))
-            elif verbosity == 'l':
-                print(a)
+            print('station_name: ', a.station_name)
+            print('\teasting: ', a.easting)
+            print('\tnorthing: ', a.northing)
+            print('\tlon/lat:  ', a.lon, a.lat)
+            print('\televation: ', a.elevation)
+            print('\tstation description ({}):  {}'.format(a.station_type_name, a.desc))
+            print('\tcreated:  ', cm_utils.get_time_for_display(a.created_date))
         return True
 
     def __parse_station_types_to_check(self, sttc, add_stations):
@@ -353,8 +347,7 @@ class Handling:
         ------------
         stations_to_plot_list:  list containing station_names (note:  NOT antenna_numbers)
         query_date:  date to use to check if active
-        state_args:  dictionary with state arguments (fig_num, marker_color,
-                     marker_shape, marker_size, show_label)
+        kwargs:  arguments for marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
         """
 
         query_date = cm_utils.get_astropytime(query_date)
@@ -389,8 +382,7 @@ class Handling:
         ------------
         query_date:  date to use to check if active.
         station_types:  station_types or prefixes to plot
-        state_args:  dictionary with state arguments (fig_num, marker_color,
-                     marker_shape, marker_size, show_label)
+        kwargs:  marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
         """
         from hera_mc import cm_hookup, cm_revisions
         hookup = cm_hookup.Hookup(query_date, self.session)
@@ -411,7 +403,7 @@ class Handling:
                 kwargs['marker_color'] = 'g'
                 kwargs['marker_shape'] = 'o'
                 kwargs['marker_size'] = 7
-                fig_num = self.plot_stations(active_stations, query_date, **kwargs)
+                self.plot_stations(active_stations, query_date, **kwargs)
         if not self.testing:
             if kwargs['xgraph'].upper() != 'Z' and kwargs['ygraph'].upper() != 'Z':
                 plt.axis('equal')
