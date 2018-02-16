@@ -22,6 +22,14 @@ from pyproj import Proj
 from hera_mc import mc, part_connect, cm_utils, geo_location
 
 
+class FauxPlot():
+    def figure(x):
+        return
+
+    def plot(x, y, **kwargs):
+        return
+
+
 def cofa(session=None):
     """
     Returns location class of current COFA
@@ -80,7 +88,7 @@ class Handling:
 
     coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
 
-    def __init__(self, session=None):
+    def __init__(self, session=None, testing=False):
         """
         session: session on current database. If session is None, a new session
                  on the default database is created and used.
@@ -90,8 +98,13 @@ class Handling:
             self.session = db.sessionmaker()
         else:
             self.session = session
+        if testing:
+            self.plt = FauxPlot()
+        else:
+            import matplotlib.pyplot as self.plt
 
         self.station_types = None
+        self.__stations_added_to_types = False
 
     def close(self):
         """
@@ -117,8 +130,7 @@ class Handling:
     def get_station_types(self, add_stations=True):
         """
         adds a dictionary of sub-arrays (station_types) to the class
-             [prefix]{'Description':'...', 'plot_marker':'...', 'stations':[]}
-        also adds the "flipped" dictionary
+             [station_type_name]{'Prefix', 'Description':'...', 'plot_marker':'...', 'stations':[]}
 
         return dictionary with station information
 
@@ -127,23 +139,27 @@ class Handling:
         add_stations:  if True, add all of the stations to their types
                        if False, just return station types
         """
-
+        if self.__stations_added_to_types:
+            return
+        if not add_stations and self.station_types is not None:
+            return
         station_data = self.session.query(geo_location.StationType).all()
         stations = {}
         for sta in station_data:
-            stations[sta.prefix] = {'Name': sta.station_type_name,
-                                    'Description': sta.description,
-                                    'Marker': sta.plot_marker, 'Stations': []}
+            stations[sta.station_type_name] = {'Prefix': sta.prefix,
+                                               'Description': sta.description,
+                                               'Marker': sta.plot_marker, 'Stations': []}
         if add_stations:
+            self.__station_added_to_types = True
             locations = self.session.query(geo_location.GeoLocation).all()
             for loc in locations:
-                for k in stations.keys():
-                    if loc.station_name[:len(k)] == k:
-                        stations[k]['Stations'].append(loc.station_name)
+                stations[loc.station_type_name]['Stations'].append(loc.station_name)
+                expected_prefix = stations[loc.station_type_name]['Prefix'].upper()
+                actual_prefix = loc.station_name[:len(expected_prefix)].upper()
+                if expected_prefix != actual_prefix:
+                    s = "Prefixes don't match: expected {} but got {} for {}".format(expected_prefix, actual_prefix, loc.station_name)
+                    warnings.warn(s)
         self.station_types = stations
-        self.flipped_station_types = {}
-        for key in self.station_types.keys():
-            self.flipped_station_types[self.station_types[key]['Name']] = key
 
     def is_in_database(self, station_name, db_name='geo_location'):
         """
@@ -156,13 +172,12 @@ class Handling:
         station_name:  string name of station
         db_name:  name of database table
         """
-        ustn = station_name.upper()
         if db_name == 'geo_location':
             station = self.session.query(geo_location.GeoLocation).filter(
-                func.upper(geo_location.GeoLocation.station_name) == ustn)
+                func.upper(geo_location.GeoLocation.station_name) == station_name.upper())
         elif db_name == 'connections':
             station = self.session.query(part_connect.Connections).filter(
-                func.upper(part_connect.Connections.upstream_part) == ustn)
+                func.upper(part_connect.Connections.upstream_part) == station_name.upper())
         else:
             raise ValueError('db not found.')
         if station.count() > 0:
@@ -218,9 +233,8 @@ class Handling:
         query_date = cm_utils.get_astropytime(query_date)
         if type(antenna) == float or type(antenna) == int or antenna[0] != 'A':
             antenna = 'A' + str(antenna).strip('0')
-        uant = antenna.upper()
         connected_antenna = self.session.query(part_connect.Connections).filter(
-            (func.upper(part_connect.Connections.downstream_part) == uant) &
+            (func.upper(part_connect.Connections.downstream_part) == antenna.upper()) &
             (query_date.gps >= part_connect.Connections.start_gpstime))
         ctr = 0
         for conn in connected_antenna:
@@ -240,15 +254,13 @@ class Handling:
 
         Parameters:
         ------------
-        to_find_list:  station names to find (must be a list)
+        to_find_list:  station/antenna names to find (must be a list)
         query_date:  astropy Time for contemporary antenna
         station_types: list of station_type prefixes (e.g. HH)
         show_location:   if True, it will print the information
         verbosity:  sets the verbosity of the print
         """
-        if station_types is None:
-            self.get_station_types(add_stations=True)
-            station_types = self.station_types
+        self.get_station_types(add_stations=True)
         found_location = []
         for L in to_find_list:
             station_name = False
@@ -258,20 +270,10 @@ class Handling:
             except ValueError:
                 station_name = L
             if station_name:
-                ustn = station_name.upper()
                 for a in self.session.query(geo_location.GeoLocation).filter(
-                        func.upper(geo_location.GeoLocation.station_name) == ustn):
-                    this_station_type = None
-                    for key in self.station_types.keys():
-                        if a.station_name in self.station_types[key]['Stations']:
-                            this_station_type = key
-                            break
-                    if this_station_type is None:
-                        print("{} not found.".format(L))
-                        break
+                        func.upper(geo_location.GeoLocation.station_name) == station_name.upper()):
                     a.gps2Time()
-                    a.station_type = this_station_type
-                    a.desc = self.station_types[this_station_type]['Description']
+                    a.desc = self.station_types[a.station_type_name]['Description']
                     hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                     a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
                     found_location.append(copy.copy(a))
@@ -292,7 +294,7 @@ class Handling:
                 print('\tnorthing: ', a.northing)
                 print('\tlon/lat:  ', a.lon, a.lat)
                 print('\televation: ', a.elevation)
-                print('\tstation description ({}):  {}'.format(a.station_type, a.desc))
+                print('\tstation description ({}):  {}'.format(a.station_type_name, a.desc))
                 print('\tcreated:  ', cm_utils.get_time_for_display(a.created_date))
             elif verbosity == 'l':
                 print(a)
@@ -314,11 +316,11 @@ class Handling:
         for a in self.session.query(geo_location.GeoLocation).filter(
                 geo_location.GeoLocation.created_gpstime >= dt):
             if (station_types_to_check == 'all' or
-                    self.flipped_station_types[a.station_type_name] in station_types_to_check):
+                    a.station_type_name in station_types_to_check):
                 found_stations.append(a.station_name)
         return found_stations
 
-    def plot_stations(self, stations_to_plot_list, query_date, state_args, testing=False):
+    def plot_stations(self, stations_to_plot_list, query_date, **state_args):
         """
         Plot a list of stations.
 
@@ -329,28 +331,23 @@ class Handling:
         state_args:  dictionary with state arguments (fig_num, marker_color,
                      marker_shape, marker_size, show_label)
         """
-        if not testing:
-            import matplotlib.pyplot as plt
 
         query_date = cm_utils.get_astropytime(query_date)
         displaying_label = bool(state_args['show_label'])
         if displaying_label:
             label_to_show = state_args['show_label'].lower()
-        if not testing:
-            plt.figure(state_args['fig_num'])
         for station in stations_to_plot_list:
-            ustn = station.upper()
             for a in self.session.query(geo_location.GeoLocation).filter(
-                    func.upper(geo_location.GeoLocation.station_name) == ustn):
+                    func.upper(geo_location.GeoLocation.station_name) == station.upper()):
                 pt = {'easting': a.easting, 'northing': a.northing,
                       'elevation': a.elevation}
                 X = pt[self.coord[state_args['xgraph']]]
                 Y = pt[self.coord[state_args['ygraph']]]
-                if not testing:
-                    plt.plot(X, Y, color=state_args['marker_color'],
-                             marker=state_args['marker_shape'],
-                             markersize=state_args['marker_size'],
-                             label=a.station_name)
+                if not self.testing:
+                    self.plt.plot(X, Y, color=state_args['marker_color'],
+                                  marker=state_args['marker_shape'],
+                                  markersize=state_args['marker_size'],
+                                  label=a.station_name)
                 if displaying_label:
                     if label_to_show == 'name':
                         labeling = a.station_name
@@ -376,7 +373,7 @@ class Handling:
                         plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
         return state_args['fig_num']
 
-    def plot_station_types(self, query_date, state_args, testing=False):
+    def plot_station_types(self, query_date, station_types, **state_args):
         """
         Plot the various sub-array types
 
@@ -388,8 +385,6 @@ class Handling:
         state_args:  dictionary with state arguments (fig_num, marker_color,
                      marker_shape, marker_size, show_label)
         """
-        if not testing:
-            import matplotlib.pyplot as plt
         from hera_mc import cm_hookup, cm_revisions
         hookup = cm_hookup.Hookup(query_date, self.session)
         hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)

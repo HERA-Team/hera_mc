@@ -21,15 +21,13 @@ if __name__ == '__main__':
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
-    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or all) [HH, HA, HB]",
+    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or 'all') Can use types or prefixes.  [HH, HA, HB]",
                         dest='station_types', default=['HH', 'HA', 'HB'])
     parser.add_argument('--show-state', help="Show only the 'active' stations or 'all' ['all']", dest='show_state',
                         choices=['active', 'all'], default='all')
     parser.add_argument('--show-label', dest='show_label',
                         help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]",
                         choices=['name', 'num', 'ser', 'false'], default='num')
-    parser.add_argument('--fig-num', help="Provide a specific figure number to the plot [default]",
-                        dest='fig_num', default='default')
 
     # database arguments
     parser.add_argument('--update', help="Update station records.  Format station0:col0:val0, [station1:]col1:val1...  [None]",
@@ -72,7 +70,7 @@ if __name__ == '__main__':
                       [-t STATION_TYPES]
                       [--show-state {active,all}]
                       [--show-label {name,num,ser}]
-                      [--fig-num FIG_NUM] [--update UPDATE] [--add-new-geo]
+                      [--update UPDATE] [--add-new-geo]
                       [action]
 
                 positional arguments:
@@ -80,7 +78,7 @@ if __name__ == '__main__':
 
                 optional arguments:
                 -h, --help            show this help message and exit
-                -l LOC, --loc LOC     Location name
+                -p, --position,       position name
                 -g, --graph           Graph station types [False]
                 -v {l,m,h}, --verbosity {l,m,h}
                                     Verbosity level: 'l', 'm', or 'h'. [h].
@@ -91,13 +89,12 @@ if __name__ == '__main__':
                 -y {N,n,E,e,Z,z}, --ygraph {N,n,E,e,Z,z}
                                     Y-axis of graph. [N]
                 -t STATION_TYPES, --station-types STATION_TYPES
-                                    Station types used for input (csv_list or all) [HH]
+                                    Station types used for input (csv_list or all) [HH, HA, HB]
                 --show-state {active,all}
                                     Show only the 'active' stations or 'all' ['all']
                 --show-label {name,num,ser}
                                     Label by station_name (name), ant_num (num) or
                                     serial_num (ser) or false [num]
-                --fig-num FIG_NUM     Provide a specific figure number to the plot [default]
                 --update UPDATE       Update station records. Format station0:col0:val0,
                                     [station1:]col1:val1... [None]
                 --add-new-geo         Flag to enable adding of a new geo_location under
@@ -111,10 +108,8 @@ if __name__ == '__main__':
     args.position = cm_utils.listify(args.position)
     args.station_types = cm_utils.listify(args.station_types)
     args.show_label = args.show_label.lower()
-    if args.show_label == 'false':
+    if args.show_label.lower() == 'false':
         args.show_label = False
-    if args.fig_num.lower() == 'default':
-        args.fig_num = args.xgraph + args.ygraph
     show_fig = False
 
     # package up state to dictionary
@@ -134,7 +129,9 @@ if __name__ == '__main__':
     # Process action.  Actions are:  geo, cofa, corr, since, info
     if args.action == 'geo':
         if args.graph:
-            show_fig = h.plot_station_types(at_date, state_args)
+            show_fig = h.plot_station_types(query_date=at_date, station_types=args.station_types,
+                                            xgraph=args.xgraph.upper(), ygraph=args.ygraph.upper(),
+                                            show_state=args.show_state.lower(), show_label=args.show_label)
         if args.position is not None:
             located = h.get_location(args.position, at_date)
             h.print_loc_info(located, args.verbosity)
