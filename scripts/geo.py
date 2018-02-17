@@ -27,7 +27,6 @@ if __name__ == '__main__':
     parser.add_argument('--show-label', dest='show_label',
                         help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]",
                         choices=['name', 'num', 'ser', 'false'], default='num')
-
     args = parser.parse_args()
     args.action = args.action.lower()[:3]
 
@@ -42,6 +41,9 @@ if __name__ == '__main__':
     xgraph = args.xgraph.upper()
     ygraph = args.ygraph.upper()
     show_state = args.show_state.lower()
+    if args.action == 'sin':
+        cutoff = at_date
+        at_date = cm_utils.get_astropytime('now')
 
     # start session and instances
     db = mc.connect_to_mc_db(args)
@@ -59,16 +61,16 @@ if __name__ == '__main__':
         G.print_loc_info(located)
         if args.graph and len(located) > 0:
             G.plot_stations(args.position, at_date, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
-                            marker_color='g', marker_shape='*', marker_size=14)
+                            marker_color='k', marker_shape='*', marker_size=14)
     elif args.action == 'cof':
         cofa = G.cofa()
         G.print_loc_info(cofa)
         if args.graph:
             G.plot_stations([cofa[0].station_name], at_date, xgraph=xgraph, ygraph=ygraph, show_label='name',
-                            marker_color='g', marker_shape='*', marker_size=14)
+                            marker_color='k', marker_shape='*', marker_size=14)
     elif args.action == 'sin':
-        new_antennas = G.get_ants_installed_since(at_date, state_args['station_types'])
-        print("{} new antennas since {}".format(len(new_antennas), at_date))
+        new_antennas = G.get_ants_installed_since(cutoff, args.station_types)
+        print("{} new antennas since {}".format(len(new_antennas), cutoff))
         if len(new_antennas) > 0:
             s = ''
             for na in new_antennas:

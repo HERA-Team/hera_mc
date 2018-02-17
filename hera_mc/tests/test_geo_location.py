@@ -32,7 +32,7 @@ class TestGeo(TestHERAMC):
         st.prefix = self.test_element_prefix
         self.test_session.add(st)
         self.test_session.commit()
-        gl = geo_location.GeoLocation(testing=True)
+        gl = geo_location.GeoLocation()
         gl.station_name = self.test_element_prefix + '_ELEMENT'
         self.test_element_station_name = gl.station_name
         gl.station_type_name = self.test_element_stn
@@ -44,7 +44,7 @@ class TestGeo(TestHERAMC):
         gl.created_gpstime = 1172530000
         self.test_session.add(gl)
         self.test_session.commit()
-        self.h = geo_handling.Handling(self.test_session)
+        self.h = geo_handling.Handling(self.test_session, testing=True)
         pa1 = part_connect.Parts()
         self.upte = 'TE_ELEMENT'
         self.upterev = 'A'
@@ -138,15 +138,17 @@ class TestGeo(TestHERAMC):
                       'show_state': 'active',
                       'show_label': 'name',
                       'fig_num': 1}
-        self.h.plot_stations(stations_to_plot, query_date, state_args)
-        state_args['show_label'] = 'num'
-        self.h.plot_stations(stations_to_plot, query_date, state_args)
-        state_args['show_label'] = 'ser'
-        self.h.plot_stations(stations_to_plot, query_date, state_args)
-        state_args['show_label'] = 'other_thing'
-        self.h.plot_stations(stations_to_plot, query_date, state_args)
-        state_args['show_label'] = 'name'
-        self.h.plot_station_types(query_date, state_args)
+        self.h.plot_stations(stations_to_plot, at_date, xgraph='E', ygraph='N', show_label='name',
+                             marker_color='k', marker_shape='*', marker_size=14)
+        self.h.plot_stations(stations_to_plot, at_date, xgraph='E', ygraph='N', show_label='num',
+                             marker_color='k', marker_shape='*', marker_size=14)
+        self.h.plot_stations(stations_to_plot, at_date, xgraph='E', ygraph='N', show_label='ser',
+                             marker_color='k', marker_shape='*', marker_size=14)
+        self.h.plot_stations(stations_to_plot, at_date, xgraph='E', ygraph='N', show_label='other_thing',
+                             marker_color='k', marker_shape='*', marker_size=14)
+        self.h.plot_station_types(query_date=at_date, station_types_to_use=['HH'],
+                                  xgraph='E', ygraph='N',
+                                  show_state='active', show_label='name')
 
     def test_is_in_database(self):
         self.assertTrue(self.h.is_in_database(self.test_element_station_name, 'geo_location'))

@@ -107,8 +107,8 @@ class Handling:
         Returns located cofa.
         """
         self.get_station_types(add_stations=True)
-        current_cofa = self.station_types['COFA']['Stations']
-        located = self.get_location(current_cofa, 'now', self.station_types)
+        current_cofa = self.station_types['cofa']['Stations']
+        located = self.get_location(current_cofa, 'now')
         if len(located) > 1:
             s = "{} has multiple cofa values.".format(str(current_cofa))
             warnings.warn(s)
