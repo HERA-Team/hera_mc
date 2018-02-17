@@ -281,7 +281,7 @@ class Handling:
             print('\tcreated:  ', cm_utils.get_time_for_display(a.created_date))
         return True
 
-    def __parse_station_types_to_check(self, sttc, add_stations):
+    def parse_station_types_to_check(self, sttc, add_stations):
         self.get_station_types(add_stations=add_stations)
         if isinstance(sttc, (str, unicode)):
             if sttc.lower() == 'all':
@@ -308,7 +308,7 @@ class Handling:
         station_types_to_check:  list of stations types to limit check
         """
 
-        station_types_to_check = self.__parse_station_types_to_check(station_types_to_check, add_stations=False)
+        station_types_to_check = self.parse_station_types_to_check(station_types_to_check, add_stations=False)
         dt = query_date.gps
         found_stations = []
         for a in self.session.query(geo_location.GeoLocation).filter(
@@ -388,7 +388,7 @@ class Handling:
         hookup = cm_hookup.Hookup(query_date, self.session)
         hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
 
-        station_types_to_use = self.__parse_station_types_to_check(station_types_to_use, add_stations=True)
+        station_types_to_use = self.parse_station_types_to_check(station_types_to_use, add_stations=True)
         query_date = cm_utils.get_astropytime(query_date)
         for st in station_types_to_use:
             active_stations = []

@@ -77,7 +77,7 @@ class Handling:
 
         raise ValueError('Too many open dubitable lists ({}).'.format(len(fnd)))
 
-    def get_all_fully_connected_at_date(self, at_date, station_types_to_check=['HH']):
+    def get_all_fully_connected_at_date(self, at_date, station_types_to_check=['HH', 'HA', 'HB']):
         """
         Returns a list of dictionaries of all of the locations fully connected at_date
         have station_types in station_types_to_check.  The dictonary is defined in
@@ -102,28 +102,19 @@ class Handling:
         Parameters
         -----------
         at_date:  date to check for connections
-        station_types_to_check:  list of station types to check, or 'all' [default ['HH']]
-                                 it can either be the prefix or the "Name" (e.g. 'herahex')
-                                 note that if it is not only ['HH'] it will re-read the database.
+        station_types_to_check:  list of station types to check, or 'all' [default ['HH', 'HA', 'HB']]
+                                 it can either be the prefix or the "Name" (e.g. 'herahexe')
         """
         at_date = cm_utils.get_astropytime(at_date)
         self.H = cm_hookup.Hookup(at_date, self.session)
         self.geo.get_station_types()
-        if type(station_types_to_check) == str:
-            if station_types_to_check.lower() == 'all':
-                station_types_to_check = self.geo.station_types.keys()
-            else:
-                station_types_to_check = [station_types_to_check]
-        if type(station_types_to_check) != list:
-            raise ValueError('Invalid station_type request {}'.format(station_types_to_check))
-        station_types_to_check = [x.lower() for x in station_types_to_check]
+        station_types_to_check = self.geo.parse_station_types_to_check(station_types_to_check, add_stations=True)
         station_conn = []
-        for k, stn_type in self.geo.station_types.iteritems():
-            if k.lower() in station_types_to_check or stn_type['Name'].lower() in station_types_to_check:
-                for stn in stn_type['Stations']:
-                    station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date)
-                    if len(station_dict.keys()) > 0:
-                        station_conn.append(station_dict)
+        for st in station_types_to_check:
+            for stn in self.geo.station_types[st]['Stations']:
+                station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date)
+                if len(station_dict.keys()) > 0:
+                    station_conn.append(station_dict)
         self.H = None  # Reset back in case gets called again outside of this method.
         return station_conn
 
@@ -171,7 +162,7 @@ class Handling:
             stn = cm_hookup.get_parts_from_hookup(stn_name, hud)[k][p]
             corr_name = hud['parts_epoch']['path'][-1]
             corr = cm_hookup.get_parts_from_hookup(corr_name, hud)[k]
-            fnd_list = self.geo.get_location([stn[0]], at_date, station_types=self.geo.station_types)
+            fnd_list = self.geo.get_location([stn[0]], at_date)
             if not len(fnd_list):
                 return {}
             if len(fnd_list) > 1:

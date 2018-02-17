@@ -117,7 +117,7 @@ class TestGeo(TestHERAMC):
 
     def test_station_types(self):
         self.h.get_station_types(add_stations=True)
-        self.assertTrue(self.h.station_types['COFA']['Name'] == 'cofa')
+        self.assertTrue(self.h.station_types['cofa']['Prefix'] == 'COFA')
 
     def test_get_ants_installed_since(self):
         query_date = Time('2017-05-01 01:00:00', scale='utc')
@@ -138,15 +138,15 @@ class TestGeo(TestHERAMC):
                       'show_state': 'active',
                       'show_label': 'name',
                       'fig_num': 1}
-        self.h.plot_stations(stations_to_plot, at_date, xgraph='E', ygraph='N', show_label='name',
+        self.h.plot_stations(stations_to_plot, query_date, xgraph='E', ygraph='N', show_label='name',
                              marker_color='k', marker_shape='*', marker_size=14)
-        self.h.plot_stations(stations_to_plot, at_date, xgraph='E', ygraph='N', show_label='num',
+        self.h.plot_stations(stations_to_plot, query_date, xgraph='E', ygraph='N', show_label='num',
                              marker_color='k', marker_shape='*', marker_size=14)
-        self.h.plot_stations(stations_to_plot, at_date, xgraph='E', ygraph='N', show_label='ser',
+        self.h.plot_stations(stations_to_plot, query_date, xgraph='E', ygraph='N', show_label='ser',
                              marker_color='k', marker_shape='*', marker_size=14)
-        self.h.plot_stations(stations_to_plot, at_date, xgraph='E', ygraph='N', show_label='other_thing',
+        self.h.plot_stations(stations_to_plot, query_date, xgraph='E', ygraph='N', show_label='other_thing',
                              marker_color='k', marker_shape='*', marker_size=14)
-        self.h.plot_station_types(query_date=at_date, station_types_to_use=['HH'],
+        self.h.plot_station_types(query_date=query_date, station_types_to_use=['HH'],
                                   xgraph='E', ygraph='N',
                                   show_state='active', show_label='name')
 
