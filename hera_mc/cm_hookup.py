@@ -560,7 +560,7 @@ class Hookup:
             s += 'Cached hookup has {} keys.\n'.format(len(self.cached_hookup_dict['hookup'].keys()))
             hooked_up = 0
             for k, p in self.cached_hookup_dict['fully_connected'].iteritems():
-                if p['e'] is True or p['n'] is True:
+                if p['e'] or p['n']:
                     hooked_up += 1
             s += "Number hooked up is {}\n".format(hooked_up)
         result = self.session.query(cm_transfer.CMVersion).order_by(cm_transfer.CMVersion.update_time).all()
