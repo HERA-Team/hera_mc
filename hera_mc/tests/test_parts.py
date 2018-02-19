@@ -67,6 +67,12 @@ class TestParts(TestHERAMC):
         else:
             self.assertFalse()
 
+    def test_show_parts(self):
+        part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, 'now', 'Testing', 'library_file')
+        located = self.h.get_part_dossier([self.test_part], self.test_rev, self.start_time, True)
+        self.h.show_parts(located)
+        self.h.show_parts({})
+
     def test_part_info(self):
         part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, 'now', 'Testing', 'library_file')
         located = self.h.get_part_dossier([self.test_part], self.test_rev, self.start_time, True)
