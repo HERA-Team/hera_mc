@@ -62,27 +62,41 @@ if __name__ == '__main__':
     handling = cm_handling.Handling(session)
 
     # Process
+    if action_tag == 'ty':  # types of parts
+        part_type_dict = handling.get_part_types(date_query)
+        handling.show_part_types()
+        sys.exit()
+
+    if action_tag == 'he':  # overlapping revisions
+        from hera_mc import cm_health
+        healthy = cm_health.Connections(session)
+        if args.hpn is None:
+            healthy.check_for_duplicate_connections()
+        else:
+            for hpn in args.hpn:
+                healthy.check_for_existing_connection(hpn)
+            for hpn in args.hpn:
+                cm_health.check_part_for_overlapping_revisions(hpn, session)
+        sys.exit()
+
+    if args.hpn is None:
+        print("Need to supply a part name.")
+        sys.exit()
+
     if action_tag == 'pa':  # part_info
         part_dossier = handling.get_part_dossier(hpn_list=args.hpn, rev=args.revision,
                                                  at_date=date_query, exact_match=args.exact_match)
         handling.show_parts(part_dossier)
-
     elif action_tag == 'co':  # connection_info
         connection_dossier = handling.get_connection_dossier(
             hpn_list=args.hpn, rev=args.revision, port=args.port,
             at_date=date_query, exact_match=args.exact_match)
         already_shown = handling.show_connections(connection_dossier, verbosity=args.verbosity)
         handling.show_other_connections(connection_dossier, already_shown)
-
-    elif action_tag == 'ty':  # types of parts
-        part_type_dict = handling.get_part_types(date_query)
-        handling.show_part_types()
-
     elif action_tag == 're':  # revisions
         for hpn in args.hpn:
             rev_ret = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
             cm_handling.cmrev.show_revisions(rev_ret)
-
     elif action_tag == 'ch':  # check revisions
         for hpn in args.hpn:
             rev_chk = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
@@ -94,14 +108,3 @@ if __name__ == '__main__':
                     print("found as {}:{}    start: {}  end: {}".format(r.hpn, r.rev, start, end))
             else:
                 print("not found.")
-
-    elif action_tag == 'he':  # overlapping revisions
-        from hera_mc import cm_health
-        healthy = cm_health.Connections(session)
-        if args.hpn is None:
-            healthy.check_for_duplicate_connections()
-        else:
-            for hpn in args.hpn:
-                healthy.check_for_existing_connection(hpn)
-            for hpn in args.hpn:
-                cm_health.check_part_for_overlapping_revisions(hpn, session)
