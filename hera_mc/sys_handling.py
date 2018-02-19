@@ -77,7 +77,7 @@ class Handling:
 
         raise ValueError('Too many open dubitable lists ({}).'.format(len(fnd)))
 
-    def get_all_fully_connected_at_date(self, at_date, station_types_to_check=['HH', 'HA', 'HB']):
+    def get_all_fully_connected_at_date(self, at_date, station_types_to_check='default'):
         """
         Returns a list of dictionaries of all of the locations fully connected at_date
         have station_types in station_types_to_check.  The dictonary is defined in
@@ -85,7 +85,7 @@ class Handling:
 
         Each location is returned as one dict in the list. Dict keys are:
             'station_name': name of station (string, e.g. 'HH27')
-            'station_type': type of station (string, e.g. 'HH', 'PI', etc)
+            'station_type': type of station (string, e.g. 'HH', 'PI', etc or type 'herahexe', etc)
             'tile': UTM tile name (string, e.g. '34J'
             'datum': UTM datum (string, e.g. 'WGS84')
             'easting': station UTM easting (float)
@@ -102,13 +102,13 @@ class Handling:
         Parameters
         -----------
         at_date:  date to check for connections
-        station_types_to_check:  list of station types to check, or 'all' [default ['HH', 'HA', 'HB']]
+        station_types_to_check:  list of station types to check, or 'all' ['default']]
                                  it can either be the prefix or the "Name" (e.g. 'herahexe')
         """
         at_date = cm_utils.get_astropytime(at_date)
         self.H = cm_hookup.Hookup(at_date, self.session)
         self.geo.get_station_types()
-        station_types_to_check = self.geo.parse_station_types_to_check(station_types_to_check, add_stations=True)
+        station_types_to_check = self.geo.parse_station_types_to_check(station_types_to_check)
         station_conn = []
         for st in station_types_to_check:
             for stn in self.geo.station_types[st]['Stations']:
@@ -125,7 +125,7 @@ class Handling:
 
         The returned dict keys are:
             'station_name': name of station (string, e.g. 'HH27')
-            'station_type': type of station (string, e.g. 'HH', 'PI', etc)
+            'station_type': type of station (string, e.g. 'HH', 'PI', etc or station type name 'herahexe', etc)
             'tile': UTM tile name (string, e.g. '34J'
             'datum': UTM datum (string, e.g. 'WGS84')
             'easting': station UTM easting (float)
@@ -216,7 +216,7 @@ class Handling:
         cm_h = cm_handling.Handling(session=self.session)
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
-        stations_conn = self.get_all_fully_connected_at_date(at_date='now', station_types_to_check=['HH', 'HA', 'HB'])
+        stations_conn = self.get_all_fully_connected_at_date(at_date='now', station_types_to_check=cm_utils.default_station_prefixes)
         ant_nums = []
         stn_names = []
         stn_types = []
@@ -283,10 +283,12 @@ class Handling:
             pams = cm_hookup.get_parts_from_hookup(pam_name, hud)[k]
         return pams
 
-    def publish_summary(self, hlist=['HH'], rev='A', exact_match=False,
+    def publish_summary(self, hlist='default', rev='A', exact_match=False,
                         hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
                         force_new_hookup_dict=False):
         import os.path
+        if hlist.lower() == 'default':
+            hlist = cm_utils.default_station_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
         H = cm_hookup.Hookup('now', self.session)

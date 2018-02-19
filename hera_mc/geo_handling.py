@@ -92,7 +92,6 @@ class Handling:
         self.testing = testing
 
         self.station_types = None
-        self.__stations_added_to_types = False
 
     def close(self):
         """
@@ -106,7 +105,7 @@ class Handling:
 
         Returns located cofa.
         """
-        self.get_station_types(add_stations=True)
+        self.get_station_types()
         current_cofa = self.station_types['cofa']['Stations']
         located = self.get_location(current_cofa, 'now')
         if len(located) > 1:
@@ -115,39 +114,25 @@ class Handling:
 
         return located
 
-    def get_station_types(self, add_stations=True):
+    def get_station_types(self):
         """
         adds a dictionary of sub-arrays (station_types) to the class
              [station_type_name]{'Prefix', 'Description':'...', 'plot_marker':'...', 'stations':[]}
-
-        return dictionary with station information
-
-        Parameters:
-        -------------
-        add_stations:  if True, add all of the stations to their types
-                       if False, just return station types
         """
-        if self.__stations_added_to_types:
+        if self.station_types is not None:
             return
-        if not add_stations and self.station_types is not None:
-            return
-        station_data = self.session.query(geo_location.StationType).all()
-        stations = {}
-        for sta in station_data:
-            stations[sta.station_type_name.lower()] = {'Prefix': sta.prefix.upper(),
-                                                       'Description': sta.description,
-                                                       'Marker': sta.plot_marker, 'Stations': []}
-        if add_stations:
-            self.__station_added_to_types = True
-            locations = self.session.query(geo_location.GeoLocation).all()
-            for loc in locations:
-                stations[loc.station_type_name]['Stations'].append(loc.station_name)
-                expected_prefix = stations[loc.station_type_name]['Prefix'].upper()
-                actual_prefix = loc.station_name[:len(expected_prefix)].upper()
-                if expected_prefix != actual_prefix:
-                    s = "Prefixes don't match: expected {} but got {} for {}".format(expected_prefix, actual_prefix, loc.station_name)
-                    warnings.warn(s)
-        self.station_types = stations
+        self.station_types = {}
+        for sta in self.session.query(geo_location.StationType):
+            self.station_types[sta.station_type_name.lower()] = {'Prefix': sta.prefix.upper(),
+                                                                 'Description': sta.description,
+                                                                 'Marker': sta.plot_marker, 'Stations': []}
+        for loc in self.session.query(geo_location.GeoLocation):
+            self.station_types[loc.station_type_name]['Stations'].append(loc.station_name)
+            expected_prefix = self.station_types[loc.station_type_name]['Prefix'].upper()
+            actual_prefix = loc.station_name[:len(expected_prefix)].upper()
+            if expected_prefix != actual_prefix:
+                s = "Prefixes don't match: expected {} but got {} for {}".format(expected_prefix, actual_prefix, loc.station_name)
+                warnings.warn(s)
 
     def is_in_database(self, station_name, db_name='geo_location'):
         """
@@ -244,7 +229,7 @@ class Handling:
         to_find_list:  station/antenna names to find (must be a list)
         query_date:  astropy Time for contemporary antenna
         """
-        self.get_station_types(add_stations=False)
+        self.get_station_types()
         locations = []
         for L in to_find_list:
             station_name = False
@@ -281,21 +266,23 @@ class Handling:
             print('\tcreated:  ', cm_utils.get_time_for_display(a.created_date))
         return True
 
-    def parse_station_types_to_check(self, sttc, add_stations):
-        self.get_station_types(add_stations=add_stations)
+    def parse_station_types_to_check(self, sttc):
+        self.get_station_types()
         if isinstance(sttc, (str, unicode)):
             if sttc.lower() == 'all':
                 return self.station_types.keys()
+            elif sttc.lower() == 'default':
+                sttc = cm_utils.default_station_prefixes
             else:
                 sttc = [sttc]
-        sttypes = []
+        sttypes = set()
         for s in sttc:
             if s.lower() in self.station_types.keys():
-                sttypes.append(s.lower())
+                sttypes.add(s.lower())
             else:
-                for k in self.station_types.keys():
-                    if s.upper() in self.station_types[k]['Prefix']:
-                        sttypes.append(k)
+                for k, st in self.station_types.iteritems():
+                    if s.upper() == st['Prefix'][:len(s)].upper():
+                        sttypes.add(k.lower())
         return sttypes
 
     def get_ants_installed_since(self, query_date, station_types_to_check='all'):
@@ -308,7 +295,7 @@ class Handling:
         station_types_to_check:  list of stations types to limit check
         """
 
-        station_types_to_check = self.parse_station_types_to_check(station_types_to_check, add_stations=False)
+        station_types_to_check = self.parse_station_types_to_check(station_types_to_check)
         dt = query_date.gps
         found_stations = []
         for a in self.session.query(geo_location.GeoLocation).filter(
@@ -318,26 +305,24 @@ class Handling:
         return found_stations
 
     def get_antenna_label(self, label_to_show, stn, query_date):
-        labeling = None
         if label_to_show == 'name':
-            labeling = stn.station_name
-        else:
-            try:
-                ant, rev = self.find_antenna_at_station(stn.station_name, query_date)
-            except TypeError:
-                print("{} not found.".format(stn.station_name))
-                return None
-            if label_to_show == 'num':
-                labeling = ant.strip('A')
-            elif label_to_show == 'ser':
-                p = self.session.query(part_connect.Parts).filter(
-                    (part_connect.Parts.hpn == ant) &
-                    (part_connect.Parts.hpn_rev == rev))
-                if p.count() == 1:
-                    labeling = p.first().manufacturer_number.replace('S/N', '')
-                else:
-                    labeling = '-'
-        return labeling
+            return stn.station_name
+        try:
+            ant, rev = self.find_antenna_at_station(stn.station_name, query_date)
+        except TypeError:
+            print("{} not found.".format(stn.station_name))
+            return None
+        if label_to_show == 'num':
+            return ant.strip('A')
+        if label_to_show == 'ser':
+            p = self.session.query(part_connect.Parts).filter(
+                (part_connect.Parts.hpn == ant) &
+                (part_connect.Parts.hpn_rev == rev))
+            if p.count() == 1:
+                return p.first().manufacturer_number.replace('S/N', '')
+            else:
+                return '-'
+        return None
 
     def plot_stations(self, stations_to_plot_list, query_date, **kwargs):
         """
@@ -388,7 +373,7 @@ class Handling:
         hookup = cm_hookup.Hookup(query_date, self.session)
         hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
 
-        station_types_to_use = self.parse_station_types_to_check(station_types_to_use, add_stations=True)
+        station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
         query_date = cm_utils.get_astropytime(query_date)
         for st in station_types_to_use:
             active_stations = []

@@ -116,7 +116,7 @@ class TestGeo(TestHERAMC):
         self.assertTrue(located[0].elevation == 1100.0)
 
     def test_station_types(self):
-        self.h.get_station_types(add_stations=True)
+        self.h.get_station_types()
         self.assertTrue(self.h.station_types['cofa']['Prefix'] == 'COFA')
 
     def test_get_ants_installed_since(self):

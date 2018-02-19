@@ -15,6 +15,8 @@ from astropy.time import TimeDelta
 import datetime
 
 PAST_DATE = '2000-01-01'
+all_hera_zone_prefixes = ['HH', 'HA', 'HB']  # This is for hookup_cache to get all
+default_station_prefixes = ['HH', 'HA', 'HB']  # This is for defaults for sys etc.
 
 
 def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):

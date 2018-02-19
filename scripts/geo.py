@@ -20,8 +20,8 @@ if __name__ == '__main__':
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
-    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or 'all') Can use types or prefixes.  [HH, HA, HB]",
-                        dest='station_types', default=['HH', 'HA', 'HB'])
+    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or 'all') Can use types or prefixes.  [default]",
+                        dest='station_types', default='default')
     parser.add_argument('--show-state', help="Show only the 'active' stations or 'all' ['all']", dest='show_state',
                         choices=['active', 'all'], default='all')
     parser.add_argument('--show-label', dest='show_label',
@@ -31,6 +31,8 @@ if __name__ == '__main__':
     args.action = args.action.lower()[:3]
 
     # interpret args
+    if args.station_types.lower() == 'default':
+        args.station_types == cm_utils.default_station_prefixes
     at_date = cm_utils.get_astropytime(args.date, args.time)
     args.position = cm_utils.listify(args.position)
     args.station_types = cm_utils.listify(args.station_types)

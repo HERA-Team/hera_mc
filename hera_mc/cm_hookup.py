@@ -55,7 +55,7 @@ class Hookup:
     To speed things up, it uses a cache file, but only if the query is for prefixes in
     hookup_list_to_cache and if the cache file is current relative to the cm_version
     """
-    hookup_list_to_cache = ['HH', 'HA', 'HB']
+    hookup_list_to_cache = cm_utils.all_hera_zone_prefixes
     hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache.npy')
 
     def __init__(self, at_date='now', session=None):
