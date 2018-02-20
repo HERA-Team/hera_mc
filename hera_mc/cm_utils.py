@@ -15,6 +15,8 @@ from astropy.time import TimeDelta
 import datetime
 
 PAST_DATE = '2000-01-01'
+all_hera_zone_prefixes = ['HH', 'HA', 'HB']  # This is for hookup_cache to get all
+default_station_prefixes = ['HH', 'HA', 'HB']  # This is for defaults for sys etc.
 
 
 def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
@@ -103,8 +105,8 @@ def add_verbosity_args(parser):
     want to provide multiple arguments related to this general topic.
 
     """
-    parser.add_argument('-v', '--verbosity', help="Verbosity level: 'l', 'm', or 'h'. [h].",
-                        choices=['l', 'm', 'h'], default="h")
+    parser.add_argument('-v', '--verbosity', help="Verbosity level: 'l', 'm', or 'h'. [l].",
+                        choices=['l', 'm', 'h'], default="l")
 
 
 # ##############################################DATE STUFF
@@ -135,11 +137,9 @@ def future_date():
 
 
 def get_stopdate(stop_date):
-    if isinstance(stop_date, Time):
-        return stop_date
     if stop_date is None:
         return future_date()
-    raise ValueError('Unexpected value for "stop_date" argument: %r' % (stop_date,))
+    return get_astropytime(stop_date)
 
 
 def get_time_for_display(display):
@@ -205,7 +205,7 @@ def get_astropytime(_date, _time=0):
         try:
             return_date = Time(_date, scale='utc')
         except ValueError:
-            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D')
+            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(_date))
         if isinstance(_time, (float, int)):
             return return_date + TimeDelta(_time * 3600.0, format='sec')
         if isinstance(_time, str):

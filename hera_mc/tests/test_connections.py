@@ -77,6 +77,7 @@ class TestConnections(TestHERAMC):
         part_connect.update_connection(self.test_session, data, add_new_connection=True)
         located = self.h.get_connection_dossier([u], r, a, 'now', True)
         self.assertTrue(located['connections'][located['connections'].keys()[0]].upstream_part == u)
+        self.h.show_connections(located)
 
     def test_get_specific_connection(self):
         c = part_connect.Connections()
@@ -91,6 +92,33 @@ class TestConnections(TestHERAMC):
         at_date = Time('2017-05-01 01:00:00', scale='utc')
         sc = self.h.get_specific_connection(c, at_date)
         self.assertTrue(len(sc) == 0)
+
+    def test_duplicate_connections(self):
+        from hera_mc import cm_health
+        healthy = cm_health.Connections(self.test_session)
+        # Specific connections
+        duplicates = healthy.check_for_existing_connection(['a', 'b', 'c', 'd', 'e', 'f'], self.query_time)
+        self.assertFalse(duplicates)
+        cnnctn = [self.test_hpn[0], self.test_rev, 'up_and_out', self.test_hpn[1], self.test_rev, 'down_and_in']
+        duplicates = healthy.check_for_existing_connection(cnnctn, self.query_time)
+        self.assertTrue(duplicates)
+        # All connections
+        duplicates = healthy.check_for_duplicate_connections()
+        self.assertTrue(duplicates == 0)
+        # Add test duplicate connection
+        connection = part_connect.Connections()
+        connection.upstream_part = self.test_hpn[0]
+        connection.up_part_rev = self.test_rev
+        connection.downstream_part = self.test_hpn[1]
+        connection.down_part_rev = self.test_rev
+        connection.upstream_output_port = 'up_and_out'
+        connection.downstream_input_port = 'down_and_in'
+        connection.start_gpstime = self.test_time + 10
+        self.test_session.add(connection)
+        self.test_session.commit()
+        healthy.conndict = None
+        duplicates = healthy.check_for_duplicate_connections()
+        self.assertTrue(duplicates == 1)
 
 
 if __name__ == '__main__':

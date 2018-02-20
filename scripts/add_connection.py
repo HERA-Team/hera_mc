@@ -9,7 +9,7 @@ Script to add a general connection to the database.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling
+from hera_mc import mc, cm_utils, part_connect, cm_handling, cm_health
 import sys
 import copy
 
@@ -78,9 +78,9 @@ if __name__ == '__main__':
         go_ahead = False
 
     if go_ahead:
-        print('Adding connection {}:{}:{} <-> {}:{}:{}'
-              .format(args.uppart, args.uprev, args.upport, args.dnpart,
-                      args.dnrev, args.dnport))
+        if args.verbosity == 'h':
+            print('Adding connection {}:{}:{} <-> {}:{}:{}'
+                  .format(args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport))
         # Connect parts
         npc = [[args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport]]
         part_connect.add_new_connections(session, connect, npc, at_date, args.actually_do_it)
