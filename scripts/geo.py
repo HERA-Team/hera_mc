@@ -30,12 +30,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.action = args.action.lower()[:3]
 
+    allowed_string_station_type_args = ['default', 'all']
+
     # interpret args
-    if args.station_types.lower() == 'default':
-        args.station_types == cm_utils.default_station_prefixes
     at_date = cm_utils.get_astropytime(args.date, args.time)
     args.position = cm_utils.listify(args.position)
-    args.station_types = cm_utils.listify(args.station_types)
+    if args.station_types.lower() not in allowed_string_station_type_args:
+        args.station_types = cm_utils.listify(args.station_types)
     args.show_label = args.show_label.lower()
     if args.show_label.lower() == 'false':
         args.show_label = False

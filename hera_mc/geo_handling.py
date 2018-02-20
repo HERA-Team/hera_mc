@@ -374,6 +374,7 @@ class Handling:
         import matplotlib.pyplot as plt
         hookup = cm_hookup.Hookup(query_date, self.session)
         hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
+        fig_num = None
 
         station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
         query_date = cm_utils.get_astropytime(query_date)
