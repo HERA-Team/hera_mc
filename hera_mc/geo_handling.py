@@ -16,7 +16,6 @@ import copy
 import warnings
 from astropy.time import Time, TimeDelta
 from sqlalchemy import func
-import matplotlib.pyplot as plt
 from pyproj import Proj
 
 from hera_mc import mc, part_connect, cm_utils, geo_location
@@ -66,6 +65,7 @@ def show_it_now(fignm):
     -------------
     fignm:  string/int for figure
     """
+    import matplotlib.pyplot as plt
 
     if fignm is not False and fignm is not None:
         plt.figure(fignm)
@@ -334,6 +334,7 @@ class Handling:
         query_date:  date to use to check if active
         kwargs:  arguments for marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
         """
+        import matplotlib.pyplot as plt
 
         query_date = cm_utils.get_astropytime(query_date)
         displaying_label = bool(kwargs['show_label'])
@@ -370,6 +371,7 @@ class Handling:
         kwargs:  marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
         """
         from hera_mc import cm_hookup, cm_revisions
+        import matplotlib.pyplot as plt
         hookup = cm_hookup.Hookup(query_date, self.session)
         hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
 
