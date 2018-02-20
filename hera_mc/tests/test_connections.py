@@ -77,6 +77,7 @@ class TestConnections(TestHERAMC):
         part_connect.update_connection(self.test_session, data, add_new_connection=True)
         located = self.h.get_connection_dossier([u], r, a, 'now', True)
         self.assertTrue(located['connections'][located['connections'].keys()[0]].upstream_part == u)
+        self.h.show_connections(located)
 
     def test_get_specific_connection(self):
         c = part_connect.Connections()
