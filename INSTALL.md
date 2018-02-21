@@ -15,7 +15,7 @@ Clone the following two repositories:
 
 Then install by:
 1. within the hera_mc directory type `python setup.py install`
-2.  in the parent directory of hera_cm_db_updates type `mc_setup_home.py`
+2.  in the hera_cm_db_updates directory type `mc_setup_home.py`
 
 To run hera_mc, you will likely need to install some additional python modules (see Python Prerequisites below.)
 
