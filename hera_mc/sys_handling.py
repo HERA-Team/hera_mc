@@ -287,7 +287,7 @@ class Handling:
                         hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
                         force_new_hookup_dict=False):
         import os.path
-        if hlist.lower() == 'default':
+        if isinstance(hlist, (str, unicode)) and hlist.lower() == 'default':
             hlist = cm_utils.default_station_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
