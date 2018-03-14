@@ -610,7 +610,7 @@ class Hookup:
                                                show_ports, show_revs)
                     table_data.append(td)
         if total_shown == 0:
-            print("None found for {} (show-state is {})".format(self.at_date, show_state))
+            print("None found for {} (show-state is {})".format(cm_utils.get_time_for_display(self.at_date), show_state))
             return
         table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
         if file is None:
