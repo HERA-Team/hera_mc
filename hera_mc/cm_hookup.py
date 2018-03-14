@@ -591,13 +591,13 @@ class Hookup:
         for hukey in numerical_keys:
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
                 use_this_row = False
-                if show_state.lower() == 'all' and hukey in hookup_dict['hookup']:
-                    if len(hookup_dict['hookup'][hukey][pol]):
-                        use_this_row = True
+                if hukey not in hookup_dict['hookup'].keys():
+                    continue
+                if show_state.lower() == 'all' and len(hookup_dict['hookup'][hukey][pol]):
+                    use_this_row = True
                 elif show_state.lower() == 'full':
-                    if hukey in hookup_dict['fully_connected']:
-                        if hookup_dict['fully_connected'][hukey][pol]:
-                            use_this_row = True
+                    if hukey in hookup_dict['fully_connected'].keys() and hookup_dict['fully_connected'][hukey][pol]:
+                        use_this_row = True
                 if use_this_row:
                     total_shown += 1
                     timing = hookup_dict['timing'][hukey][pol]
