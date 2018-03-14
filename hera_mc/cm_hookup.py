@@ -587,14 +587,19 @@ class Hookup:
         headers = self.__make_header_row(hookup_dict['columns'], cols_to_show, show_levels)
         table_data = []
         numerical_keys = cm_utils.put_keys_in_numerical_order(sorted(hookup_dict['hookup'].keys()))
+        total_shown = 0
         for hukey in numerical_keys:
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
                 use_this_row = False
-                if show_state.lower() == 'all' and len(hookup_dict['hookup'][hukey][pol]):
-                    use_this_row = True
-                elif show_state.lower() == 'full' and hookup_dict['fully_connected'][hukey][pol]:
-                    use_this_row = True
+                if show_state.lower() == 'all' and hukey in hookup_dict['hookup']:
+                    if len(hookup_dict['hookup'][hukey][pol]):
+                        use_this_row = True
+                elif show_state.lower() == 'full':
+                    if hukey in hookup_dict['fully_connected']:
+                        if hookup_dict['fully_connected'][hukey][pol]:
+                            use_this_row = True
                 if use_this_row:
+                    total_shown += 1
                     timing = hookup_dict['timing'][hukey][pol]
                     if show_levels:
                         level = hookup_dict['levels'][hukey][pol]
@@ -604,6 +609,9 @@ class Hookup:
                                                headers, timing, level,
                                                show_ports, show_revs)
                     table_data.append(td)
+        if total_shown == 0:
+            print("None found for {} (show-state is {})".format(self.at_date, show_state))
+            return
         table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
         if file is None:
             import sys
