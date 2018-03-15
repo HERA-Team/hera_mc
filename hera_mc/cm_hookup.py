@@ -181,7 +181,7 @@ class Hookup:
         for entry in ['parts_epoch', 'columns']:
             hookup_dict[entry] = copy.copy(self.cached_hookup_dict[entry])
         hpn_list = [x.lower() for x in hpn_list]
-        for k in self.cached_hookup_dict['hookup'].keys():
+        for k in self.cached_hookup_dict['hookup']:
             hpn, rev = cm_utils.split_part_key(k)
             use_this_one = False
             if exact_match:
@@ -425,7 +425,7 @@ class Hookup:
         if len(part_types_found) == 0:
             return [], {}
         is_this_one = False
-        for sp in PC.full_connection_path.keys():
+        for sp in PC.full_connection_path:
             for part_type in part_types_found:
                 if part_type not in PC.full_connection_path[sp]:
                     break
@@ -587,14 +587,17 @@ class Hookup:
         headers = self.__make_header_row(hookup_dict['columns'], cols_to_show, show_levels)
         table_data = []
         numerical_keys = cm_utils.put_keys_in_numerical_order(sorted(hookup_dict['hookup'].keys()))
+        total_shown = 0
         for hukey in numerical_keys:
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
                 use_this_row = False
                 if show_state.lower() == 'all' and len(hookup_dict['hookup'][hukey][pol]):
                     use_this_row = True
-                elif show_state.lower() == 'full' and hookup_dict['fully_connected'][hukey][pol]:
-                    use_this_row = True
+                elif show_state.lower() == 'full':
+                    if hukey in hookup_dict['fully_connected'] and hookup_dict['fully_connected'][hukey][pol]:
+                        use_this_row = True
                 if use_this_row:
+                    total_shown += 1
                     timing = hookup_dict['timing'][hukey][pol]
                     if show_levels:
                         level = hookup_dict['levels'][hukey][pol]
@@ -604,6 +607,9 @@ class Hookup:
                                                headers, timing, level,
                                                show_ports, show_revs)
                     table_data.append(td)
+        if total_shown == 0:
+            print("None found for {} (show-state is {})".format(cm_utils.get_time_for_display(self.at_date), show_state))
+            return
         table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
         if file is None:
             import sys
