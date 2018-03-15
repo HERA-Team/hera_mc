@@ -181,7 +181,7 @@ class Hookup:
         for entry in ['parts_epoch', 'columns']:
             hookup_dict[entry] = copy.copy(self.cached_hookup_dict[entry])
         hpn_list = [x.lower() for x in hpn_list]
-        for k in self.cached_hookup_dict['hookup'].keys():
+        for k in self.cached_hookup_dict['hookup']:
             hpn, rev = cm_utils.split_part_key(k)
             use_this_one = False
             if exact_match:
@@ -425,7 +425,7 @@ class Hookup:
         if len(part_types_found) == 0:
             return [], {}
         is_this_one = False
-        for sp in PC.full_connection_path.keys():
+        for sp in PC.full_connection_path:
             for part_type in part_types_found:
                 if part_type not in PC.full_connection_path[sp]:
                     break
@@ -591,12 +591,10 @@ class Hookup:
         for hukey in numerical_keys:
             for pol in sorted(hookup_dict['hookup'][hukey].keys()):
                 use_this_row = False
-                if hukey not in hookup_dict['hookup'].keys():
-                    continue
                 if show_state.lower() == 'all' and len(hookup_dict['hookup'][hukey][pol]):
                     use_this_row = True
                 elif show_state.lower() == 'full':
-                    if hukey in hookup_dict['fully_connected'].keys() and hookup_dict['fully_connected'][hukey][pol]:
+                    if hukey in hookup_dict['fully_connected'] and hookup_dict['fully_connected'][hukey][pol]:
                         use_this_row = True
                 if use_this_row:
                     total_shown += 1
