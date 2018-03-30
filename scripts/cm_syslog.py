@@ -16,8 +16,8 @@ SYSTEM = 'System'  # word used in part_info as hpn for these comments
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-k', '--keyword', help="Keyword for comments [defaults = write: 'general', --view: 'all']", default=None)
-    parser.add_argument('-c', '--comment', help="Comment on part", default=None)
+    parser.add_argument('-k', '--keyword', help="Keyword for comments [defaults: write-->'general', --view-->'all']", default=None)
+    parser.add_argument('-c', '--comment', help="Test for log entry.", default=None)
     parser.add_argument('-l', '--library_file', help="Library filename/URL", default=None)
     parser.add_argument('-v', '--view', help='View all (or just keyword, if supplied) system comments', action='store_true')
     cm_utils.add_date_time_args(parser)
