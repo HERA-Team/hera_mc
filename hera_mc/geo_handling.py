@@ -310,8 +310,7 @@ class Handling:
         try:
             ant, rev = self.find_antenna_at_station(stn.station_name, query_date)
         except TypeError:
-            print("{} not found.".format(stn.station_name))
-            return None
+            return ''.join([x if x.isdigit() else '' for x in stn.station_name])
         if label_to_show == 'num':
             return ant.strip('A')
         if label_to_show == 'ser':
