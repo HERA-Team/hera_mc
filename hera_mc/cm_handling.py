@@ -154,37 +154,37 @@ class Handling:
                     (func.upper(PC.Parts.hpn) == xhpn.upper()) &
                     (func.upper(PC.Parts.hpn_rev) == this_rev.upper()))
                 part_cnt = part_query.count()
-                if part_cnt == 0:
+                if part_cnt != 1:
+                    if part_cnt:
+                        msg = "Should only be one part/rev for {}:{}.".format(part.hpn, part.hpn_rev)
+                        warnings.warn(msg)
                     continue
-                elif part_cnt == 1:
-                    part = copy.copy(part_query.all()[0])
-                    part.gps2Time()
-                    pr_key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
-                    part_dossier[pr_key] = {'Time': at_date, 'part': part}
-                    if full_version:
-                        part_dossier[pr_key]['part_info'] = []
-                        part_dossier[pr_key]['connections'] = None
-                        part_dossier[pr_key]['geo'] = None
-                        part_dossier[pr_key]['input_ports'] = []
-                        part_dossier[pr_key]['output_ports'] = []
-                        for part_info in self.session.query(PC.PartInfo).filter(
-                                (func.upper(PC.PartInfo.hpn) == part.hpn.upper()) &
-                                (func.upper(PC.PartInfo.hpn_rev) == part.hpn_rev.upper())):
-                            # part_info.gps2Time()
-                            part_dossier[pr_key]['part_info'].append(part_info)
-                        connections = self.get_connection_dossier(
-                            hpn_list=[part.hpn], rev=part.hpn_rev, port='all',
-                            at_date=at_date, exact_match=True)
-                        part_dossier[pr_key]['connections'] = connections
-                        if part.hptype == 'station':
-                            from hera_mc import geo_handling
-                            part_dossier[pr_key]['geo'] = geo_handling.get_location(
-                                [part.hpn], at_date, session=self.session)
-                        part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
-                            self.find_ports(part_dossier[pr_key]['connections'])
-                else:
-                    msg = "Should only be one part/rev for {}:{}.".format(part.hpn, part.hpn_rev)
-                    warnings.warn(msg)
+                part = copy.copy(part_query.all()[0])
+                part.gps2Time()
+                pr_key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
+                part_dossier[pr_key] = {'Time': at_date, 'part': part}
+                if full_version:
+                    part_dossier[pr_key]['part_info'] = []
+                    part_dossier[pr_key]['connections'] = None
+                    part_dossier[pr_key]['geo'] = None
+                    part_dossier[pr_key]['input_ports'] = []
+                    part_dossier[pr_key]['output_ports'] = []
+                    for part_info in self.session.query(PC.PartInfo).filter(
+                            (func.upper(PC.PartInfo.hpn) == part.hpn.upper()) &
+                            (func.upper(PC.PartInfo.hpn_rev) == part.hpn_rev.upper())):
+                        # part_info.gps2Time()
+                        part_dossier[pr_key]['part_info'].append(part_info)
+                    connections = self.get_connection_dossier(
+                        hpn_list=[part.hpn], rev=part.hpn_rev, port='all',
+                        at_date=at_date, exact_match=True)
+                    part_dossier[pr_key]['connections'] = connections
+                    if part.hptype == 'station':
+                        from hera_mc import geo_handling
+                        part_dossier[pr_key]['geo'] = geo_handling.get_location(
+                            [part.hpn], at_date, session=self.session)
+                    part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
+                        self.find_ports(part_dossier[pr_key]['connections'])
+
         return part_dossier
 
     def find_ports(self, connection_dossier):
