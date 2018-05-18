@@ -106,7 +106,7 @@ def add_verbosity_args(parser):
 
     """
     parser.add_argument('-v', '--verbosity', help="Verbosity level: 'l', 'm', or 'h'. [l].",
-                        choices=['l', 'm', 'h'], default="l")
+                        choices=['l', 'm', 'h'], default="m")
 
 
 # ##############################################DATE STUFF
