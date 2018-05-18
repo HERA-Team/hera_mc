@@ -242,14 +242,8 @@ class Handling:
                      cm_utils.get_time_for_display(pdpart.start_date),
                      cm_utils.get_time_for_display(pdpart.stop_date),
                      is_connected]
-            ptsin = ''
-            ptsout = ''
-            for k in part_dossier[hpnr]['input_ports']:
-                ptsin += k + ', '
-            for k in part_dossier[hpnr]['output_ports']:
-                ptsout += k + ', '
-            tdata.append(ptsin.strip().strip(','))
-            tdata.append(ptsout.strip().strip(','))
+            tdata.append(', '.join(part_dossier[hpnr]['input_ports']))
+            tdata.append(', '.join(part_dossier[hpnr]['output_ports']))
             if len(part_dossier[hpnr]['part_info']):
                 comment = ', '.join(pi.comment for pi in part_dossier[hpnr]['part_info'])
             else:
