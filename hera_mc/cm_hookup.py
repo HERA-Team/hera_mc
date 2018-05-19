@@ -270,54 +270,51 @@ class Hookup:
 
     def __get_pols_to_do(self, part, port_query):
         """
-        Given the current part and port_query (which is either 'all', 'e', or 'n')
-        this figures out which pols to do.  Basically, given 'all' and part it
+        - 1 - Signal Path
+        Given the current part and port_query (which is either 'pol', 'e', or 'n')
+        this figures out which pols to do.  Basically, given 'pol' and part it
         figures out whether to return ['e'], ['n'], ['e', 'n']
+
+        - 2 - Physical
+        If the port_query is ':' or '[phys]ical' it returns all physical ports.
+
+        - 3 - Signal path + Physical
+        if the port_query is 'all' is returns ['e', 'n', ':']
 
         Parameter:
         -----------
         part:  current part dossier
         port_query:  the ports that were requested.
         """
-        single_pol_parts_paper = ['RI', 'RO', 'CR']
-        port_query = port_query.lower()
-        if port_query == 'all':  # Need to figure out if return 'e', 'n' or both
-            if part['part'].hpn[:2].upper() in single_pol_parts_paper:
-                pols = [part['part'].hpn[-1].lower()]
-            else:
-                pols = PC.both_pols
-        elif port_query in PC.both_pols:
-            pols = [port_query]
-        else:
-            raise ValueError('Invalid port_query')
-        return pols
+        if port_query == ':' or port_query[:4].lower() == 'phys':
+            return [':']
 
-    def __check_next_port(self, next_part, option_port, pol, lenopt):
-        """
-        This checks that the port is the correct one to follow through as you
-        follow the hookup.
-        """
-        if lenopt == 1:
-            if next_part[:3].upper() == 'PAM' and option_port[0].lower() != pol.lower():
-                return False
-            else:
-                return True
-        if pol.lower() in PC.both_pols:
-            if option_port.lower() in ['a', 'b']:
-                p = next_part[-1].lower()
-            elif option_port[0].lower() in PC.both_pols:
-                p = option_port[0].lower()
-            else:
-                p = pol
-            return p == pol
-        else:
-            raise ValueError("Invalid polarization.")
+        # These are parts that have their polarization as the last letter of the part name
+        # There are none for HERA in the RFoF architecture
+        single_pol_EN_parts = ['RI', 'RO', 'CR']
+        port_groups = ['all', 'pol']
+        port_query = port_query.lower()
+        if port_query in port_groups:
+            if part['part'].hpn[:2].upper() in single_pol_EN_parts:
+                return [part['part'].hpn[-1].lower()]
+            if port_query == 'all':
+                allports = copy.copy(PC.both_pols)
+                allports.append(':')
+                return allports
+            return PC.both_pols
+
+        if port_query in PC.both_pols:
+            return [port_query]
+        raise ValueError('Invalid port_query')
 
     def __follow_hookup_stream(self, part, rev, pol):
         self.upstream = []
         self.downstream = []
-        self.__recursive_go('up', part, rev, pol)
-        self.__recursive_go('down', part, rev, pol)
+        port = pol  # Seed it
+        print("$$$UP  {}".format(pol))
+        self.__recursive_go('up', part, rev, port, pol)
+        print("$$$DOWN  {}".format(pol))
+        self.__recursive_go('down', part, rev, port, pol)
 
         hu = []
         for pn in reversed(self.upstream):
@@ -326,63 +323,91 @@ class Hookup:
             hu.append(pn)
         return hu
 
-    def __recursive_go(self, direction, part, rev, pol):
+    def __recursive_go(self, direction, part, rev, port, pol):
         """
         Find the next connection up the signal chain.
         """
-        conn = self.__get_next_connection(direction, part, rev, pol)
-        if conn is not None:
+        conn = self.__get_next_connection(direction, part, rev, port, pol)
+        # Note that conn is a list, but for now we just pick the first one
+        if len(conn) > 1:  # But I want to remember to address it
+            print("CONN LENGTH = {}".format(len(conn)))
+            print(conn)
+        if conn:
             if direction == 'up':
-                self.upstream.append(conn)
-                part = conn.upstream_part
-                rev = conn.up_part_rev
+                self.upstream.append(conn[0])
+                part = conn[0].upstream_part
+                rev = conn[0].up_part_rev
+                port = conn[0].upstream_output_port
             else:
-                self.downstream.append(conn)
-                part = conn.downstream_part
-                rev = conn.down_part_rev
-            self.__recursive_go(direction, part, rev, pol)
+                self.downstream.append(conn[0])
+                part = conn[0].downstream_part
+                rev = conn[0].down_part_rev
+                port = conn[0].downstream_input_port
+            self.__recursive_go(direction, part, rev, port, pol)
 
-    def __get_next_connection(self, direction, part, rev, pol):
+    def __get_next_connection(self, direction, part, rev, port, pol):
         """
         Get next connected part going the given direction.
         """
+        # Get all of the port options going the right direction
         options = []
-        if direction.lower() == 'up':      # Going upstream
+        portside = {'up': 'out', 'down': 'in'}
+        otherside = {'up': 'down', 'down': 'up'}
+        if direction == 'up':      # Going upstream
             for conn in self.session.query(PC.Connections).filter(
                     (func.upper(PC.Connections.downstream_part) == part.upper()) &
                     (func.upper(PC.Connections.down_part_rev) == rev.upper())):
                 conn.gps2Time()
                 if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
-        elif direction.lower() == 'down':  # Going downstream
+        elif direction == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
                     (func.upper(PC.Connections.upstream_part) == part.upper()) &
                     (func.upper(PC.Connections.up_part_rev) == rev.upper())):
                 conn.gps2Time()
                 if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
-        next_one = None
-        if len(options) == 0:
-            next_one = None
-        elif len(options) == 1:
-            opc = options[0]
-            if direction.lower() == 'up':
-                if self.__check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
-                    next_one = opc
-            else:
-                if self.__check_next_port(opc.downstream_part, opc.downstream_input_port, pol, len(options)):
-                    next_one = opc
-        else:
-            for opc in options:
-                if direction.lower() == 'up':
-                    if self.__check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
-                        next_one = opc
-                        break
-                else:
-                    if self.__check_next_port(opc.downstream_part, opc.downstream_input_port, pol, len(options)):
-                        next_one = opc
-                        break
+        # Now find the correct ones
+        next_one = []
+        for opc in options:
+            this_part = getattr(opc, '{}stream_part'.format(otherside[direction]))
+            this_port = getattr(opc, '{}stream_{}put_port'.format(otherside[direction], portside[otherside[direction]]))
+            next_part = getattr(opc, '{}stream_part'.format(direction))
+            check_port = getattr(opc, '{}stream_{}put_port'.format(direction, portside[direction]))
+            if self.__check_next_port(this_part, this_port, next_part, check_port, pol, len(options)):
+                next_one.append(opc)
         return next_one
+
+    def __check_next_port(self, this_part, this_port, next_part, option_port, pol, lenopt):
+        """
+        This checks that the port is the correct one to follow through as you
+        follow the hookup.
+        """
+        if pol == ':':
+            if option_port[0] == ':':
+                return True
+
+        this = "{} <{}".format(this_part, this_port)
+        next = "{} <{}".format(next_part, option_port)
+        print("$$$   {:20s}    {:20s} ".format(this, next), end='')
+        if lenopt == 1:  # Assume the only option is correct
+            print("11Choose: ", next)
+            return True
+
+        if option_port.lower() in ['a', 'b']:
+            p = next_part[-1].lower()
+            s = "abChoose:  {}".format(next)
+        elif option_port[0].lower() in PC.both_pols:
+            p = option_port[0].lower()
+            s = "00Choose:  {}".format(next)
+        else:
+            p = pol
+            s = "xxChoose:  {}".format(next)
+        if p == pol:
+            print(s)
+        else:
+            print()
+        return p == pol
 
     def __add_hookup_timing_and_flags(self, hookup_dict):
         full_hookup_length = len(hookup_dict['parts_epoch']['path']) - 1
