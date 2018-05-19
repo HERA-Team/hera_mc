@@ -8,10 +8,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-import os
-import socket
 from tabulate import tabulate
-import math
 from astropy.time import Time
 
 from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Text, func
@@ -481,7 +478,7 @@ def get_null_connection():
     no_connect = Connections()
     no_connect.connection(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
                           downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
-                          start_gpstime=nc)
+                          start_gpstime=None, stop_gpstime=None, start_date=None, stop_date=None)
     return no_connect
 
 
