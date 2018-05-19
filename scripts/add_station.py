@@ -45,7 +45,7 @@ class Nodes:
 
     def import_nodes(self, file_name=None):
         if file_name is None:
-            file_name = os.path.join(mc.data_path, 'nodes.dat')
+            file_name = os.path.join(mc.data_path, 'nodes.txt')
         self.node = {}
         self.E = []
         self.N = []
@@ -199,7 +199,7 @@ if __name__ == '__main__':
             ND.import_nodes()
             args.station_type_name = 'node'
             node_num = int(args.station_name[2:])
-            coords = [node_num, ND.node[node_num]['E'], ND.node[node_num]['N'], 0.0]
+            coords = [node_num, ND.node[node_num]['E'], ND.node[node_num]['N'], 1050.0]
 
         if coords:
             args.easting = coords[1]
