@@ -235,8 +235,7 @@ def put_keys_in_numerical_order(keys):
                 break
             except ValueError:
                 continue
-        if n in keylib.keys():
-            dup_key = keylib[n][0] + str(n) + keylib[n][1]
+        if n is None or n in keylib.keys():
             return keys
         keylib[n] = [k[:i], k[colon:]]
     if not len(keylib.keys()):

@@ -35,6 +35,32 @@ region = {'herahexw': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
           'heraringb': [320, 321, 322, 323, 324, 328, 329, 332, 333, 336, 337, 340, 341, 345, 346, 347, 348, 349]}
 
 
+class Nodes:
+    node = {}
+    E = []
+    N = []
+
+    def __init__(self):
+        print('Nodes')
+
+    def import_nodes(self, file_name=None):
+        if file_name is None:
+            file_name = os.path.join(mc.data_path, 'nodes.dat')
+        self.node = {}
+        self.E = []
+        self.N = []
+        with open(file_name, 'r') as fp:
+            for line in fp:
+                node_num = int(line.split(':')[0])
+                node_E = float(line.split(':')[1].split(',')[0])
+                node_N = float(line.split(':')[1].split(',')[1])
+                ants = line.split(':')[2].split(',')
+                ants = [int(x) for x in ants]
+                self.node[node_num] = {'E': node_E, 'N': node_N, 'ants': ants}
+                self.E.append(node_E)
+                self.N.append(node_N)
+
+
 def get_coord_from_file(station_name, coord_filename):
     coords = None
     if station_name is not None:
@@ -124,7 +150,7 @@ def add_entry_to_parts(session, args):
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('station_name', nargs='?', help="Name of station (HH# for hera)",
+    parser.add_argument('station_name', nargs='?', help="Name of station (HH# for hera, ND# for node)",
                         default=None)
     parser.add_argument('-q', '--query', help="Flag to query user for parameters [False]",
                         action='store_true')
@@ -147,7 +173,7 @@ if __name__ == '__main__':
                             const=default_coord_file_name)
     file_group.add_argument('-X', '--dont-use-file', help="Don't use file for coordinates.",
                             dest='from_file', action='store_const', const=False)
-    file_group.add_argument('--from_file', help="Use file to retrieve coordinate "
+    file_group.add_argument('--from_file', help="Use filename to retrieve coordinate "
                             "information.")
     parser.set_defaults(from_file=default_coord_file_name)
 
@@ -160,17 +186,27 @@ if __name__ == '__main__':
         args.query = True
 
     if args.from_file:
-        coords = get_coord_from_file(args.station_name, args.from_file)
+        if args.station_name[0] == 'H':
+            coords = get_coord_from_file(args.station_name, args.from_file)
+            if args.station_type_name.lower() == 'default':
+                ant_int = int(args.station_name[2:])
+                for r, v in region.iteritems():
+                    if ant_int in v:
+                        args.station_type_name = r
+                        break
+        elif args.station_name[0] == 'N':
+            ND = Nodes()
+            ND.import_nodes()
+            args.station_type_name = 'node'
+            node_num = int(args.station_name[2:])
+            coords = [node_num, ND.node[node_num]['E'], ND.node[node_num]['N'], 0.0]
+
         if coords:
             args.easting = coords[1]
             args.northing = coords[2]
             args.elevation = coords[3]
-    if args.station_type_name.lower() == 'default':
-        ant_int = int(args.station_name[2:])
-        for r, v in region.iteritems():
-            if ant_int in v:
-                args.station_type_name = r
-                break
+        else:
+            raise(ValueError)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()

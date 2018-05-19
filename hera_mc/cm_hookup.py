@@ -57,6 +57,7 @@ class Hookup:
     """
     hookup_list_to_cache = cm_utils.all_hera_zone_prefixes
     hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache.npy')
+    DIAGNOSTIC = False
 
     def __init__(self, at_date='now', session=None):
         """
@@ -311,9 +312,11 @@ class Hookup:
         self.upstream = []
         self.downstream = []
         port = pol  # Seed it
-        print("$$$UP  {}".format(pol))
+        if self.DIAGNOSTIC:
+            print("$$$UP  {}".format(pol))
         self.__recursive_go('up', part, rev, port, pol)
-        print("$$$DOWN  {}".format(pol))
+        if self.DIAGNOSTIC:
+            print("$$$DOWN  {}".format(pol))
         self.__recursive_go('down', part, rev, port, pol)
 
         hu = []
@@ -383,30 +386,37 @@ class Hookup:
         This checks that the port is the correct one to follow through as you
         follow the hookup.
         """
-        if pol == ':':
-            if option_port[0] == ':':
-                return True
+        if pol == ':' and option_port[0] == ':':
+            return True
 
-        this = "{} <{}".format(this_part, this_port)
-        next = "{} <{}".format(next_part, option_port)
-        print("$$$   {:20s}    {:20s} ".format(this, next), end='')
+        if self.DIAGNOSTIC:
+            this = "{} <{}".format(this_part, this_port)
+            next = "{} <{}".format(next_part, option_port)
+            print("$$$   {:20s}    {:20s} ".format(this, next), end='')
+
         if lenopt == 1:  # Assume the only option is correct
-            print("11Choose: ", next)
+            if self.DIAGNOSTIC:
+                print("11Choose: ", next)
             return True
 
         if option_port.lower() in ['a', 'b']:
             p = next_part[-1].lower()
-            s = "abChoose:  {}".format(next)
+            if self.DIAGNOSTIC:
+                s = "abChoose:  {}".format(next)
         elif option_port[0].lower() in PC.both_pols:
             p = option_port[0].lower()
-            s = "00Choose:  {}".format(next)
+            if self.DIAGNOSTIC:
+                s = "00Choose:  {}".format(next)
         else:
             p = pol
-            s = "xxChoose:  {}".format(next)
-        if p == pol:
-            print(s)
-        else:
-            print()
+            if self.DIAGNOSTIC:
+                s = "xxChoose:  {}".format(next)
+        if self.DIAGNOSTIC:
+            if p == pol:
+                print(s)
+            else:
+                print()
+
         return p == pol
 
     def __add_hookup_timing_and_flags(self, hookup_dict):
