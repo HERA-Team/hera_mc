@@ -38,15 +38,12 @@ def get_parts_from_hookup(part_name, hookup_dict):
     if part_name not in hookup_dict['columns']:
         return None
     parts = {}
-    part_ind = hookup_dict['columns'].index(part_name)
+    part_ind = hookup_dict['columns'].index(part_name) - 1 if hookup_dict['columns'].index(part_name) > 1 else 0
     for k, h in hookup_dict['hookup'].iteritems():  # iterates over parts
         parts[k] = {}
         for pol, p in h.iteritems():  # iterates over pols
-            pind = part_ind - 1
-            if pind < 0:
-                pind = 0
-            if pind < len(p):
-                parts[k][pol] = (p[pind].upstream_part, p[pind].downstream_part)
+            if part_ind < len(p):
+                parts[k][pol] = (p[part_ind].upstream_part, p[part_ind].downstream_part)
     return parts
 
 
