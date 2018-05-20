@@ -275,18 +275,18 @@ class Hookup:
         figures out whether to return ['e'], ['n'], ['e', 'n']
 
         - 2 - Physical
-        If the port_query is ':' or '[phys]ical' it returns all physical ports.
+        If the port_query is '@' or '[phys]ical' it returns all physical ports.
 
         - 3 - Signal path + Physical
-        if the port_query is 'all' is returns ['e', 'n', ':']
+        if the port_query is 'all' is returns ['e', 'n', '@']
 
         Parameter:
         -----------
         part:  current part dossier
         port_query:  the ports that were requested.
         """
-        if port_query == ':' or port_query[:4].lower() == 'phys':
-            return [':']
+        if port_query == '@' or port_query[:4].lower() == 'phys':
+            return ['@']
 
         # These are parts that have their polarization as the last letter of the part name
         # There are none for HERA in the RFoF architecture
@@ -298,7 +298,7 @@ class Hookup:
                 return [part['part'].hpn[-1].lower()]
             if port_query == 'all':
                 allports = copy.copy(PC.both_pols)
-                allports.append(':')
+                allports.append('@')
                 return allports
             return PC.both_pols
 
@@ -384,7 +384,7 @@ class Hookup:
         This checks that the port is the correct one to follow through as you
         follow the hookup.
         """
-        if pol == ':' and option_port[0] == ':':
+        if pol == '@' and option_port[0] == '@':
             return True
 
         if self.DIAGNOSTIC:
