@@ -270,15 +270,12 @@ class Hookup:
     def __get_pols_to_do(self, part, port_query):
         """
         - 1 - Signal Path
-        Given the current part and port_query (which is either 'pol', 'e', or 'n')
+        Given the current part and port_query (which is either 'pol' (or 'all'), 'e', or 'n')
         this figures out which pols to do.  Basically, given 'pol' and part it
         figures out whether to return ['e'], ['n'], ['e', 'n']
 
         - 2 - Physical
         If the port_query is '@' or '[phys]ical' it returns all physical ports.
-
-        - 3 - Signal path + Physical
-        if the port_query is 'all' is returns ['e', 'n', '@']
 
         Parameter:
         -----------
@@ -296,10 +293,6 @@ class Hookup:
         if port_query in port_groups:
             if part['part'].hpn[:2].upper() in single_pol_EN_parts:
                 return [part['part'].hpn[-1].lower()]
-            if port_query == 'all':
-                allports = copy.copy(PC.both_pols)
-                allports.append('@')
-                return allports
             return PC.both_pols
 
         if port_query in PC.both_pols:
@@ -329,10 +322,6 @@ class Hookup:
         Find the next connection up the signal chain.
         """
         conn = self.__get_next_connection(direction, part, rev, port, pol)
-        # Note that conn is a list, but for now we just pick the first one
-        if len(conn) > 1:  # But I want to remember to address it
-            print("CONN LENGTH = {}".format(len(conn)))
-            print(conn)
         if conn:
             if direction == 'up':
                 self.upstream.append(conn[0])
