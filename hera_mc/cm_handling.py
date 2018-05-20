@@ -169,17 +169,15 @@ class Handling:
                             (func.upper(PC.PartInfo.hpn_rev) == part.hpn_rev.upper())):
                         # part_info.gps2Time()
                         part_dossier[pr_key]['part_info'].append(part_info)
-                    connections = self.get_connection_dossier(
+                    part_dossier[pr_key]['connections'] = self.get_connection_dossier(
                         hpn_list=[part.hpn], rev=part.hpn_rev, port='all',
                         at_date=at_date, exact_match=True)
-                    part_dossier[pr_key]['connections'] = connections
                     if part.hptype == 'station':
                         from hera_mc import geo_handling
                         part_dossier[pr_key]['geo'] = geo_handling.get_location(
                             [part.hpn], at_date, session=self.session)
                     part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
                         self.find_ports(part_dossier[pr_key]['connections'])
-
         return part_dossier
 
     def find_ports(self, connection_dossier):
@@ -193,15 +191,15 @@ class Handling:
         connection_dossier:  dictionary as returned from get_connections.
         """
 
-        input_ports = []
-        output_ports = []
-        for k, c in connection_dossier['connections'].iteritems():
-            if c.downstream_input_port not in input_ports:
-                input_ports.append(c.downstream_input_port)
-            if c.upstream_output_port not in output_ports:
-                output_ports.append(c.upstream_output_port)
-        input_ports.sort()
-        output_ports.sort()
+        input_ports = set()
+        output_ports = set()
+        for k, c in connection_dossier['part:rev'].iteritems():
+            for ck in c['paired']['up']:
+                if ck is not None:
+                    input_ports.add(c['up'][ck].downstream_input_port)
+            for ck in c['paired']['down']:
+                if ck is not None:
+                    output_ports.add(c['down'][ck].upstream_output_port)
         return input_ports, output_ports
 
     def show_parts(self, part_dossier):
@@ -404,20 +402,6 @@ class Handling:
                 table_data.append(tdata)
 
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
-
-    def show_other_connections(self, connection_dossier, already_shown):
-        """
-        Shows the connections that are not active (the ones in connection_dossier
-            but not in already_shown)
-
-        Parameters
-        -----------
-        connection_dossier:  dictionary of connections from get_connections
-        already_shown: list of shown connections from show_connections
-        """
-        for k, v in connection_dossier['connections'].iteritems():
-            if k not in already_shown:
-                print(v, v.start_date, v.stop_date)
 
     def get_part_types(self, at_date):
         """
