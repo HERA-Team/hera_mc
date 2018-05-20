@@ -193,7 +193,7 @@ class Handling:
 
         input_ports = set()
         output_ports = set()
-        for k, c in connection_dossier['part:rev'].iteritems():
+        for k, c in connection_dossier['conn'].iteritems():
             for ck in c['paired']['up']:
                 if ck is not None:
                     input_ports.add(c['up'][ck].downstream_input_port)
@@ -302,14 +302,14 @@ class Handling:
 
         rev_part = self.get_rev_part_dictionary(hpn_list, rev, at_date, exact_match)
 
-        connection_dossier = {'Time': at_date, 'part:rev': {}}
+        connection_dossier = {'Time': at_date, 'conn': {}}
         for xhpn in rev_part.keys():
             if rev_part[xhpn] is None:
                 continue
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
                 prkey = cm_utils.make_part_key(xhpn, this_rev)
-                connection_dossier['part:rev'][prkey] = {'up': {}, 'down': {}, 'paired': {'up': [], 'down': []}}
+                connection_dossier['conn'][prkey] = {'up': {}, 'down': {}, 'paired': {'up': [], 'down': []}}
 
                 # Find where the part is in the upward position, so identify its downward connection
                 for conn in self.session.query(PC.Connections).filter(
@@ -322,7 +322,7 @@ class Handling:
                                                             conn.down_part_rev,
                                                             conn.downstream_input_port,
                                                             conn.start_gpstime)
-                        connection_dossier['part:rev'][prkey]['down'][ckey] = copy.copy(conn)
+                        connection_dossier['conn'][prkey]['down'][ckey] = copy.copy(conn)
 
                 # Find where the part is in the downward position, so identify its upward connection
                 for conn in self.session.query(PC.Connections).filter(
@@ -335,21 +335,21 @@ class Handling:
                                                             conn.up_part_rev,
                                                             conn.upstream_output_port,
                                                             conn.start_gpstime)
-                        connection_dossier['part:rev'][prkey]['up'][ckey] = copy.copy(conn)
+                        connection_dossier['conn'][prkey]['up'][ckey] = copy.copy(conn)
 
                 # Pair upstream/downstream ports for this part
                 port_type = {'up': 'downstream_input_port', 'down': 'upstream_output_port'}
-                for sk in connection_dossier['part:rev'][prkey]['paired']:
+                for sk in connection_dossier['conn'][prkey]['paired']:
                     pkey_tmp = {}
-                    for i, ck in enumerate(connection_dossier['part:rev'][prkey][sk]):
-                        po = getattr(connection_dossier['part:rev'][prkey][sk][ck], port_type[sk])
+                    for i, ck in enumerate(connection_dossier['conn'][prkey][sk]):
+                        po = getattr(connection_dossier['conn'][prkey][sk][ck], port_type[sk])
                         pkey_tmp[po + '{:03d}'.format(i)] = ck
-                    connection_dossier['part:rev'][prkey]['paired'][sk] = [pkey_tmp[x] for x in sorted(pkey_tmp.keys())]
-                pad = len(connection_dossier['part:rev'][prkey]['paired']['down']) - len(connection_dossier['part:rev'][prkey]['paired']['up'])
+                    connection_dossier['conn'][prkey]['paired'][sk] = [pkey_tmp[x] for x in sorted(pkey_tmp.keys())]
+                pad = len(connection_dossier['conn'][prkey]['paired']['down']) - len(connection_dossier['conn'][prkey]['paired']['up'])
                 if pad < 0:
-                    connection_dossier['part:rev'][prkey]['paired']['down'].extend([None] * abs(pad))
+                    connection_dossier['conn'][prkey]['paired']['down'].extend([None] * abs(pad))
                 elif pad > 0:
-                    connection_dossier['part:rev'][prkey]['paired']['up'].extend([None] * abs(pad))
+                    connection_dossier['conn'][prkey]['paired']['up'].extend([None] * abs(pad))
                 return connection_dossier
 
     def show_connections(self, connection_dossier, verbosity='h'):
@@ -370,7 +370,7 @@ class Handling:
         elif verbosity == 'h':
             headers = ['uStart', 'uStop', 'Upstream', '<uOutput:', ':uInput>',
                        'Part', '<dOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop']
-        for k, conn in connection_dossier['part:rev'].iteritems():
+        for k, conn in connection_dossier['conn'].iteritems():
             if len(conn['up']) == 0 and len(conn['down']) == 0:
                 continue
             show_conn_dict = {'Part': k}
