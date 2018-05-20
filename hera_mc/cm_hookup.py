@@ -45,7 +45,8 @@ def get_parts_from_hookup(part_name, hookup_dict):
             pind = part_ind - 1
             if pind < 0:
                 pind = 0
-            parts[k][pol] = (p[pind].upstream_part, p[pind].downstream_part)
+            if pind < len(p):
+                parts[k][pol] = (p[pind].upstream_part, p[pind].downstream_part)
     return parts
 
 

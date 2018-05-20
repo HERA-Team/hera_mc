@@ -38,7 +38,7 @@ class TestSys(TestHERAMC):
         H = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
         H.reset_memory_cache(None)
         self.assertEqual(H.cached_hookup_dict, None)
-        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True, force_new=True)
+        hu = H.get_hookup(['HH23'], 'A', 'pol', exact_match=True, show_levels=True, force_new=True)
         H.reset_memory_cache(hu)
         self.assertEqual(H.cached_hookup_dict['hookup']['HH23:A']['e'][0].upstream_part, 'HH23')
 
@@ -102,7 +102,7 @@ class TestSys(TestHERAMC):
     def test_correlator_levels(self):
         at_date = cm_utils.get_astropytime('2017-07-03')
         H = cm_hookup.Hookup(at_date, self.test_session)
-        hu = H.get_hookup(['HH23'], 'A', 'all', exact_match=True, show_levels=True, force_new=True)
+        hu = H.get_hookup(['HH23'], 'A', 'pol', exact_match=True, show_levels=True, force_new=True)
         hh23level = float(hu['levels']['HH23:A']['e'])
         self.assertEqual(type(hh23level), float)
         # Now get some failures
@@ -131,7 +131,7 @@ class TestSys(TestHERAMC):
         connection.start_gpstime = self.test_time
         self.test_session.add(connection)
         self.test_session.commit()
-        hu = H.get_hookup(['test_part1'], 'Q', 'all', exact_match=True, show_levels=True, force_specific=True)
+        hu = H.get_hookup(['test_part1'], 'Q', 'pol', exact_match=True, show_levels=True, force_specific=True)
         tplevel = hu['levels']['test_part1:Q']['e']
         print(tplevel)
         self.assertEqual(tplevel, '-')
