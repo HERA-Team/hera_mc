@@ -245,7 +245,7 @@ class Hookup:
                 hookup_dict['hookup'][k][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
                 part_types_found = self.__get_part_types_found(hookup_dict['hookup'][k][pol], part_types_found)
         # Add other information in to the hookup_dict
-        hookup_dict['columns'], hookup_dict['parts_epoch'] = self.__get_column_headers(part_types_found)
+        hookup_dict['columns'], hookup_dict['parts_epoch'] = self.__get_epoch_and_column_headers(part_types_found)
         if len(hookup_dict['columns']):
             hookup_dict = self.__add_hookup_timing_and_flags(hookup_dict)
             if show_levels:
@@ -368,8 +368,11 @@ class Hookup:
         This checks that the port is the correct one to follow through as you
         follow the hookup.
         """
-        if pol == '@' and option_port[0] == '@':
-            return True
+        if option_port[0] == '@':
+            if pol == '@':
+                return True
+            else:
+                return False
 
         if lenopt == 1:  # Assume the only option is correct
             return True
@@ -409,12 +412,12 @@ class Hookup:
         hookup_dict['columns'].append('stop')
         return hookup_dict
 
-    def __get_column_headers(self, part_types_found):
+    def __get_epoch_and_column_headers(self, part_types_found):
         """
         The columns in the hookup_dict contain parts in the hookup chain and the column headers are
         the part types contained in that column.  This returns the headers for the retrieved hookup.
 
-        It just checks which era the parts are in (parts_paper or parts_hera) and keeps however many
+        It just checks which epoch the parts are in (parts_paper or parts_hera) and keeps however many
         parts are used.
 
         Parameters:
