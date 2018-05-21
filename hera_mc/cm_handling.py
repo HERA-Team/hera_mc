@@ -23,7 +23,7 @@ from hera_mc import cm_revisions as cmrev
 
 class Handling:
     """
-    Class to allow various manipulations of parts and their properties etc.
+    Class to allow various manipulations of parts, connections and their properties etc.
     """
 
     def __init__(self, session=None):
@@ -380,22 +380,22 @@ class Handling:
                     for h in ['Upstream', 'uStart', 'uStop', '<uOutput:', ':uInput>']:
                         show_conn_dict[h] = ' '
                 else:
-                    connup = conn['up'][u]
-                    show_conn_dict['Upstream'] = cm_utils.make_part_key(connup.upstream_part, connup.up_part_rev)
-                    show_conn_dict['uStart'] = cm_utils.get_time_for_display(connup.start_date)
-                    show_conn_dict['uStop'] = cm_utils.get_time_for_display(connup.stop_date)
-                    show_conn_dict['<uOutput:'] = connup.upstream_output_port
-                    show_conn_dict[':uInput>'] = connup.downstream_input_port
+                    c = conn['up'][u]
+                    show_conn_dict['Upstream'] = cm_utils.make_part_key(c.upstream_part, c.up_part_rev)
+                    show_conn_dict['uStart'] = cm_utils.get_time_for_display(c.start_date)
+                    show_conn_dict['uStop'] = cm_utils.get_time_for_display(c.stop_date)
+                    show_conn_dict['<uOutput:'] = c.upstream_output_port
+                    show_conn_dict[':uInput>'] = c.downstream_input_port
                 if d is None:
                     for h in ['Downstream', 'dStart', 'dStop', '<dOutput:', ':dInput>']:
                         show_conn_dict[h] = ' '
                 else:
-                    conndn = conn['down'][d]
-                    show_conn_dict['Downstream'] = cm_utils.make_part_key(conndn.downstream_part, conndn.down_part_rev)
-                    show_conn_dict['dStart'] = cm_utils.get_time_for_display(conndn.start_date)
-                    show_conn_dict['dStop'] = cm_utils.get_time_for_display(conndn.stop_date)
-                    show_conn_dict['<dOutput:'] = conndn.upstream_output_port
-                    show_conn_dict[':dInput>'] = conndn.downstream_input_port
+                    c = conn['down'][d]
+                    show_conn_dict['Downstream'] = cm_utils.make_part_key(c.downstream_part, c.down_part_rev)
+                    show_conn_dict['dStart'] = cm_utils.get_time_for_display(c.start_date)
+                    show_conn_dict['dStop'] = cm_utils.get_time_for_display(c.stop_date)
+                    show_conn_dict['<dOutput:'] = c.upstream_output_port
+                    show_conn_dict[':dInput>'] = c.downstream_input_port
                 tdata = []
                 for h in headers:
                     tdata.append(show_conn_dict[h])
