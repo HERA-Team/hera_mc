@@ -55,7 +55,6 @@ class Hookup:
     """
     hookup_list_to_cache = cm_utils.all_hera_zone_prefixes
     hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache.npy')
-    DIAGNOSTIC = False
 
     def __init__(self, at_date='now', session=None):
         """
@@ -275,7 +274,7 @@ class Hookup:
         figures out whether to return ['e'], ['n'], ['e', 'n']
 
         - 2 - Physical
-        If the port_query is '@' or '[phys]ical' it returns all physical ports.
+        If the port_query is '@' or '[phys]ical' it returns all physical ports.  Doesn't fully work.
 
         Parameter:
         -----------
@@ -303,11 +302,7 @@ class Hookup:
         self.upstream = []
         self.downstream = []
         port = pol  # Seed it
-        if self.DIAGNOSTIC:
-            print("$$$UP  {}".format(pol))
         self.__recursive_go('up', part, rev, port, pol)
-        if self.DIAGNOSTIC:
-            print("$$$DOWN  {}".format(pol))
         self.__recursive_go('down', part, rev, port, pol)
 
         hu = []
@@ -341,8 +336,6 @@ class Hookup:
         """
         # Get all of the port options going the right direction
         options = []
-        portside = {'up': 'out', 'down': 'in'}
-        otherside = {'up': 'down', 'down': 'up'}
         if direction == 'up':      # Going upstream
             for conn in self.session.query(PC.Connections).filter(
                     (func.upper(PC.Connections.downstream_part) == part.upper()) &
@@ -359,6 +352,8 @@ class Hookup:
                     options.append(copy.copy(conn))
         # Now find the correct ones
         next_one = []
+        portside = {'up': 'out', 'down': 'in'}
+        otherside = {'up': 'down', 'down': 'up'}
         for opc in options:
             this_part = getattr(opc, '{}stream_part'.format(otherside[direction]))
             this_port = getattr(opc, '{}stream_{}put_port'.format(otherside[direction], portside[otherside[direction]]))
@@ -376,33 +371,15 @@ class Hookup:
         if pol == '@' and option_port[0] == '@':
             return True
 
-        if self.DIAGNOSTIC:
-            this = "{} <{}".format(this_part, this_port)
-            next = "{} <{}".format(next_part, option_port)
-            print("$$$   {:20s}    {:20s} ".format(this, next), end='')
-
         if lenopt == 1:  # Assume the only option is correct
-            if self.DIAGNOSTIC:
-                print("11Choose: ", next)
             return True
 
         if option_port.lower() in ['a', 'b']:
             p = next_part[-1].lower()
-            if self.DIAGNOSTIC:
-                s = "abChoose:  {}".format(next)
         elif option_port[0].lower() in PC.both_pols:
             p = option_port[0].lower()
-            if self.DIAGNOSTIC:
-                s = "00Choose:  {}".format(next)
         else:
             p = pol
-            if self.DIAGNOSTIC:
-                s = "xxChoose:  {}".format(next)
-        if self.DIAGNOSTIC:
-            if p == pol:
-                print(s)
-            else:
-                print()
 
         return p == pol
 
