@@ -145,7 +145,7 @@ class Handling:
 
         part_dossier = {}
         # Now get unique part/revs and put into dictionary
-        for xhpn in rev_part.keys():
+        for xhpn in rev_part:
             if len(rev_part[xhpn]) == 0:
                 continue
             for xrev in rev_part[xhpn]:
@@ -153,25 +153,20 @@ class Handling:
                 part_query = self.session.query(PC.Parts).filter(
                     (func.upper(PC.Parts.hpn) == xhpn.upper()) &
                     (func.upper(PC.Parts.hpn_rev) == this_rev.upper()))
-                part_cnt = part_query.count()
                 part = copy.copy(part_query.first())  # There should be only one.
                 part.gps2Time()
                 pr_key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
                 part_dossier[pr_key] = {'Time': at_date, 'part': part}
                 if full_version:
                     part_dossier[pr_key]['part_info'] = []
-                    part_dossier[pr_key]['connections'] = None
-                    part_dossier[pr_key]['geo'] = None
-                    part_dossier[pr_key]['input_ports'] = []
-                    part_dossier[pr_key]['output_ports'] = []
                     for part_info in self.session.query(PC.PartInfo).filter(
                             (func.upper(PC.PartInfo.hpn) == part.hpn.upper()) &
                             (func.upper(PC.PartInfo.hpn_rev) == part.hpn_rev.upper())):
-                        # part_info.gps2Time()
                         part_dossier[pr_key]['part_info'].append(part_info)
                     part_dossier[pr_key]['connections'] = self.get_connection_dossier(
                         hpn_list=[part.hpn], rev=part.hpn_rev, port='all',
                         at_date=at_date, exact_match=True)
+                    part_dossier[pr_key]['geo'] = None
                     if part.hptype == 'station':
                         from hera_mc import geo_handling
                         part_dossier[pr_key]['geo'] = geo_handling.get_location(
@@ -303,8 +298,8 @@ class Handling:
         rev_part = self.get_rev_part_dictionary(hpn_list, rev, at_date, exact_match)
 
         connection_dossier = {'Time': at_date, 'conn': {}}
-        for xhpn in rev_part.keys():
-            if rev_part[xhpn] is None:
+        for xhpn in rev_part:
+            if len(rev_part[xhpn]) == 0:
                 continue
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
@@ -350,7 +345,7 @@ class Handling:
                     connection_dossier['conn'][prkey]['paired']['down'].extend([None] * abs(pad))
                 elif pad > 0:
                     connection_dossier['conn'][prkey]['paired']['up'].extend([None] * abs(pad))
-                return connection_dossier
+        return connection_dossier
 
     def show_connections(self, connection_dossier, verbosity='h'):
         """
