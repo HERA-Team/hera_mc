@@ -586,6 +586,7 @@ class Hookup:
         file:  file to use, None goes to stdout
         output_format:  set to html for the web-page version
         """
+        print("Hookup epoch:  {}".format(hookup_dict['parts_epoch']['epoch']))
         headers = self.__make_header_row(hookup_dict['columns'], cols_to_show, show_levels)
         table_data = []
         numerical_keys = cm_utils.put_keys_in_numerical_order(sorted(hookup_dict['hookup'].keys()))
@@ -633,6 +634,7 @@ class Hookup:
 
     def __make_table_row(self, hup_list, headers, timing, show_level, show_port, show_rev):
         td = ['-'] * len(headers)
+        # Get the first N-1 parts
         dip = ''
         for d in hup_list:
             part_type = self.part_type_cache[d.upstream_part]
@@ -647,6 +649,7 @@ class Hookup:
                     new_row_entry += ' <' + d.upstream_output_port
                 td[headers.index(part_type)] = new_row_entry
                 dip = d.downstream_input_port + '> '
+        # Get the last part in the hookup
         part_type = self.part_type_cache[d.downstream_part]
         if part_type in headers:
             new_row_entry = ''
@@ -656,6 +659,7 @@ class Hookup:
             if show_rev:
                 new_row_entry += ':' + d.down_part_rev
             td[headers.index(part_type)] = new_row_entry
+        # Add timing and levels
         if 'start' in headers:
             td[headers.index('start')] = timing[0]
         if 'stop' in headers:
