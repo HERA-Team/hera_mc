@@ -24,6 +24,9 @@ from sqlalchemy import func
 def get_parts_from_hookup(part_name, hookup_dict):
     """
     Retrieve the value for a part name from a hookup_dict
+    It somewhat confusedly returns the previous upstream part to get the upstream/
+    downstream thing right.
+
     Parameters:
     ------------
     part_name:  string of valid part name in hookup_dict
@@ -42,6 +45,7 @@ def get_parts_from_hookup(part_name, hookup_dict):
     for k, h in hookup_dict['hookup'].iteritems():  # iterates over parts
         parts[k] = {}
         for pol, p in h.iteritems():  # iterates over pols
+            print("----")
             if part_ind < len(p):
                 parts[k][pol] = (p[part_ind].upstream_part, p[part_ind].downstream_part)
     return parts
@@ -268,21 +272,15 @@ class Hookup:
 
     def __get_pols_to_do(self, part, port_query):
         """
-        - 1 - Signal Path
         Given the current part and port_query (which is either 'pol' (or 'all'), 'e', or 'n')
         this figures out which pols to do.  Basically, given 'pol' and part it
         figures out whether to return ['e'], ['n'], ['e', 'n']
 
-        - 2 - Physical
-        If the port_query is '@' or '[phys]ical' it returns all physical ports.  Doesn't fully work.
-
         Parameter:
         -----------
         part:  current part dossier
-        port_query:  the ports that were requested.
+        port_query:  the ports that were requested ('e' or 'n' or 'all')
         """
-        if port_query == '@' or port_query[:4].lower() == 'phys':
-            return ['@']
 
         # These are parts that have their polarization as the last letter of the part name
         # There are none for HERA in the RFoF architecture
@@ -369,10 +367,7 @@ class Hookup:
         follow the hookup.
         """
         if option_port[0] == '@':
-            if pol == '@':
-                return True
-            else:
-                return False
+            return False
 
         if lenopt == 1:  # Assume the only option is correct
             return True

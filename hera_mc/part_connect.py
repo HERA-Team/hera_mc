@@ -22,7 +22,6 @@ no_connection_designator = '-X-'
 full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end', 'cable-feed75', 'cable-post-amp(in)',
                                         'post-amp', 'cable-post-amp(out)', 'cable-receiverator', 'cable-container', 'f-engine'],
                         'parts_hera': ['station', 'antenna', 'feed', 'front-end', 'cable-rfof', 'post-amp', 'snap', 'node'],
-                        'parts_@': ['node', 'pam-chassis', 'post-amp', 'snap', 'power-control-module', 'fem-power-supply'],
                         'parts_test': ['vapor']
                         }
 both_pols = ['e', 'n']
