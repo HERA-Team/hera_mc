@@ -126,7 +126,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--northing', help="Northing of new station", default=None)
     parser.add_argument('-z', '--elevation', help="Elevation of new station", default=None)
     cm_utils.add_date_time_args(parser)
-    parser.add_argument('--station_type_name', help="Station category name [default]", default=None)
+    parser.add_argument('--station_type_name', help="Station category name", default=None)
     parser.add_argument('--datum', help="Datum of UTM [WGS84]", default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]", default='34J')
     cm_utils.add_verbosity_args(parser)
@@ -145,9 +145,9 @@ if __name__ == '__main__':
         args.easting = antenna[args.station_name]['E']
         args.northing = antenna[args.station_name]['N']
         args.elevation = antenna[args.station_name]['elevation']
-        ant_int = int(args.station_name[2:])
+        ant_num = int(args.station_name[2:])
         for r, v in region.iteritems():
-            if ant_int in v:
+            if ant_num in v:
                 args.station_type_name = r
                 break
     elif args.station_name[:2] == 'ND':
