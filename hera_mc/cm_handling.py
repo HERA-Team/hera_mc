@@ -32,6 +32,10 @@ class PartDossierEntry():
     def __init__(self, part_key, at_date):
         self.prkey = part_key
         self.time = at_date
+        self.col_hdr = {'hpn': 'HERA P/N', 'hpn_rev': 'Rev', 'hptype': 'Part Type',
+                        'manufacturer_number': 'Mfg #', 'start_date': 'Start', 'stop_date': 'Stop',
+                        'input_ports': 'Input', 'output_ports': 'Output',
+                        'part_info': 'Info', 'geo': 'Geo'}
 
     def get_part_info(self, session):
         for part_info in session.query(PC.PartInfo).filter(
@@ -56,6 +60,30 @@ class PartDossierEntry():
             for c in cd.down.values():
                 self.output_ports.add(c.upstream_output_port)
 
+    def get_header_titles(self, headers):
+        header_titles = []
+        for h in headers:
+            header_titles.append(self.col_hdr[h])
+        return header_titles
+
+    def table_entry_row(self, columns):
+        tdata = []
+        for c in columns:
+            try:
+                x = getattr(self, c)
+            except AttributeError:
+                x = getattr(self.part, c)
+            if c == 'part_info' and len(x):
+                x = ', '.join(pi.comment for pi in x)
+            elif c == 'geo' and x:
+                x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
+            elif c in ['start_date', 'stop_date']:
+                x = cm_utils.get_time_for_display(x)
+            elif isinstance(x, (list, set)):
+                x = ', '.join(x)
+            tdata.append(x)
+        return tdata
+
 
 class PartConnectionDossierEntry:
     up = {}
@@ -66,6 +94,39 @@ class PartConnectionDossierEntry:
     def __init__(self, part_key, at_date):
         self.prkey = part_key
         self.time = at_date
+        self.col_hdr = {}
+
+    def table_entry_row(self, headers):
+        tdata = []
+        show_conn_dict = {'Part': self.prkey}
+
+        for u, d in zip(self.keys_up, self.keys_down):
+            if u is None:
+                for h in ['Upstream', 'uStart', 'uStop', '<uOutput:', ':uInput>']:
+                    show_conn_dict[h] = ' '
+            else:
+                c = self.up[u]
+                show_conn_dict['Upstream'] = cm_utils.make_part_key(c.upstream_part, c.up_part_rev)
+                show_conn_dict['uStart'] = cm_utils.get_time_for_display(c.start_date)
+                show_conn_dict['uStop'] = cm_utils.get_time_for_display(c.stop_date)
+                show_conn_dict['<uOutput:'] = c.upstream_output_port
+                show_conn_dict[':uInput>'] = c.downstream_input_port
+            if d is None:
+                for h in ['Downstream', 'dStart', 'dStop', '<dOutput:', ':dInput>']:
+                    show_conn_dict[h] = ' '
+            else:
+                c = self.down[d]
+                show_conn_dict['Downstream'] = cm_utils.make_part_key(c.downstream_part, c.down_part_rev)
+                show_conn_dict['dStart'] = cm_utils.get_time_for_display(c.start_date)
+                show_conn_dict['dStop'] = cm_utils.get_time_for_display(c.stop_date)
+                show_conn_dict['<dOutput:'] = c.upstream_output_port
+                show_conn_dict[':dInput>'] = c.downstream_input_port
+            r = []
+            for h in headers:
+                r.append(show_conn_dict[h])
+            tdata.append(r)
+
+        return tdata
 
 
 class Handling:
@@ -228,31 +289,11 @@ class Handling:
             print('Part not found')
             return
         table_data = []
-        headers = ['HERA P/N', 'Rev', 'Part Type', 'Mfg #', 'Start', 'Stop',
-                   'Input', 'Output', 'Info', 'Geo']
+        columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_date', 'stop_date',
+                   'input_ports', 'output_ports', 'part_info', 'geo']
+        headers = part_dossier[part_dossier.keys()[0]].get_header_titles(columns)
         for hpnr in sorted(part_dossier.keys()):
-            pdpart = part_dossier[hpnr].part
-            tdata = [pdpart.hpn,
-                     pdpart.hpn_rev,
-                     pdpart.hptype,
-                     pdpart.manufacturer_number,
-                     cm_utils.get_time_for_display(pdpart.start_date),
-                     cm_utils.get_time_for_display(pdpart.stop_date)]
-            tdata.append(', '.join(part_dossier[hpnr].input_ports))
-            tdata.append(', '.join(part_dossier[hpnr].output_ports))
-            if len(part_dossier[hpnr].part_info):
-                comment = ', '.join(pi.comment for pi in part_dossier[hpnr].part_info)
-            else:
-                comment = None
-            tdata.append(comment)
-            if part_dossier[hpnr].geo is not None:
-                tdata.append("{:.1f}E, {:.1f}N, {:.1f}m"
-                             .format(part_dossier[hpnr].geo.easting,
-                                     part_dossier[hpnr].geo.northing,
-                                     part_dossier[hpnr].geo.elevation))
-            else:
-                tdata.append(None)
-            table_data.append(tdata)
+            table_data.append(part_dossier[hpnr].table_entry_row(columns))
         print('\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
 
     def get_specific_connection(self, c, at_date=None):
@@ -302,8 +343,6 @@ class Handling:
             downstream).
 
         Returns connection_dossier dictionary
-
-
 
         Parameters
         -----------
@@ -388,32 +427,8 @@ class Handling:
         for k, conn in connection_dossier.iteritems():
             if len(conn.up) == 0 and len(conn.down) == 0:
                 continue
-            show_conn_dict = {'Part': k}
-
-            for u, d in zip(conn.keys_up, conn.keys_down):
-                if u is None:
-                    for h in ['Upstream', 'uStart', 'uStop', '<uOutput:', ':uInput>']:
-                        show_conn_dict[h] = ' '
-                else:
-                    c = conn.up[u]
-                    show_conn_dict['Upstream'] = cm_utils.make_part_key(c.upstream_part, c.up_part_rev)
-                    show_conn_dict['uStart'] = cm_utils.get_time_for_display(c.start_date)
-                    show_conn_dict['uStop'] = cm_utils.get_time_for_display(c.stop_date)
-                    show_conn_dict['<uOutput:'] = c.upstream_output_port
-                    show_conn_dict[':uInput>'] = c.downstream_input_port
-                if d is None:
-                    for h in ['Downstream', 'dStart', 'dStop', '<dOutput:', ':dInput>']:
-                        show_conn_dict[h] = ' '
-                else:
-                    c = conn.down[d]
-                    show_conn_dict['Downstream'] = cm_utils.make_part_key(c.downstream_part, c.down_part_rev)
-                    show_conn_dict['dStart'] = cm_utils.get_time_for_display(c.start_date)
-                    show_conn_dict['dStop'] = cm_utils.get_time_for_display(c.stop_date)
-                    show_conn_dict['<dOutput:'] = c.upstream_output_port
-                    show_conn_dict[':dInput>'] = c.downstream_input_port
-                tdata = []
-                for h in headers:
-                    tdata.append(show_conn_dict[h])
+            r = conn.table_entry_row(headers)
+            for tdata in r:
                 table_data.append(tdata)
 
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
