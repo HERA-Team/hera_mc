@@ -94,8 +94,8 @@ class Handling:
             'latitude': station latitude (float)
             'elevation': station elevation (float)
             'antenna_number': antenna number (integer)
-            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4')
-            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4')
+            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4' or 'SNPnnn>e1')
+            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4' or 'SNPnnn>n1')
             'start_date': start of connection in gps seconds (long)
             'stop_date': end of connection in gps seconds (long or None no end time)
 
@@ -154,15 +154,21 @@ class Handling:
         if len(fc) == 1:
             k = fc[0].hukey
             p = fc[0].pkey
+            stn = hud['hookup'][k][p][0].upstream_part
             ant_num = hud['hookup'][k][p][0].downstream_part
             # ant_num here is unicode with an A in front of the number (e.g. u'A22').
             # But we just want an integer, so we strip the A and cast it to int
             ant_num = int(ant_num[1:])
-            stn_name = hud['parts_epoch']['path'][0]
-            stn = cm_hookup.get_parts_from_hookup(stn_name, hud)[k][p]
-            corr_name = hud['parts_epoch']['path'][-1]
-            corr = cm_hookup.get_parts_from_hookup(corr_name, hud)[k]
-            fnd_list = self.geo.get_location([stn[0]], at_date)
+            corr = {}
+            for pen in ['e', 'n']:
+                corhu = hud['hookup'][k][pen]
+                if hud['parts_epoch']['epoch'] == 'parts_paper':
+                    corr[pen] = corhu[-1].downstream_part
+                elif hud['parts_epoch']['epoch'] == 'parts_hera':
+                    corr[pen] = corhu[-2].downstream_part + '>' + corhu[-2].downstream_input_port
+                else:
+                    raise ValueError("No correlator hookup defined.")
+            fnd_list = self.geo.get_location([stn], at_date)
             if not len(fnd_list):
                 return {}
             if len(fnd_list) > 1:
@@ -182,8 +188,8 @@ class Handling:
                             'latitude': fnd.lat,
                             'elevation': fnd.elevation,
                             'antenna_number': ant_num,
-                            'correlator_input_x': str(corr['e'][1]),
-                            'correlator_input_y': str(corr['n'][1]),
+                            'correlator_input_x': str(corr['e']),
+                            'correlator_input_y': str(corr['n']),
                             'start_date': strtd,
                             'stop_date': ended}
         return station_dict

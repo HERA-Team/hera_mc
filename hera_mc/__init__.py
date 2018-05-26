@@ -53,7 +53,7 @@ def MCDeclarativeBase_close(self, other):
                 print('column {col} is an int-like array, values are not equal'.format(col=c))
                 return False
         elif self_c is None and other_c is None:
-            pass # nullable columns, both null
+            pass  # nullable columns, both null
         else:
             if hasattr(self, 'tols') and c.name in self.tols.keys():
                 atol = self.tols[c.name]['atol']

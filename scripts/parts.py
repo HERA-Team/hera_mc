@@ -91,8 +91,7 @@ if __name__ == '__main__':
         connection_dossier = handling.get_connection_dossier(
             hpn_list=args.hpn, rev=args.revision, port=args.port,
             at_date=date_query, exact_match=args.exact_match)
-        already_shown = handling.show_connections(connection_dossier, verbosity=args.verbosity)
-        handling.show_other_connections(connection_dossier, already_shown)
+        handling.show_connections(connection_dossier, verbosity=args.verbosity)
     elif action_tag == 're':  # revisions
         for hpn in args.hpn:
             rev_ret = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)

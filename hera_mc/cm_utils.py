@@ -106,7 +106,7 @@ def add_verbosity_args(parser):
 
     """
     parser.add_argument('-v', '--verbosity', help="Verbosity level: 'l', 'm', or 'h'. [l].",
-                        choices=['l', 'm', 'h'], default="l")
+                        choices=['l', 'm', 'h'], default="m")
 
 
 # ##############################################DATE STUFF
@@ -235,8 +235,7 @@ def put_keys_in_numerical_order(keys):
                 break
             except ValueError:
                 continue
-        if n in keylib.keys():
-            dup_key = keylib[n][0] + str(n) + keylib[n][1]
+        if n is None or n in keylib.keys():
             return keys
         keylib[n] = [k[:i], k[colon:]]
     if not len(keylib.keys()):

@@ -103,7 +103,7 @@ class TestParts(TestHERAMC):
     def test_get_part_types(self):
         at_date = self.now
         a = self.h.get_part_types(at_date)
-        self.assertTrue(a['feed']['input_ports'][0] == 'input')
+        self.assertTrue('terminals' in a['feed']['output_ports'])
 
     def test_check_overlapping(self):
         from hera_mc import cm_health

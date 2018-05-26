@@ -24,6 +24,9 @@ from sqlalchemy import func
 def get_parts_from_hookup(part_name, hookup_dict):
     """
     Retrieve the value for a part name from a hookup_dict
+    It somewhat confusedly returns the previous upstream part to get the upstream/
+    downstream thing right.
+
     Parameters:
     ------------
     part_name:  string of valid part name in hookup_dict
@@ -38,14 +41,13 @@ def get_parts_from_hookup(part_name, hookup_dict):
     if part_name not in hookup_dict['columns']:
         return None
     parts = {}
-    part_ind = hookup_dict['columns'].index(part_name)
+    part_ind = hookup_dict['columns'].index(part_name) - 1 if hookup_dict['columns'].index(part_name) > 1 else 0
     for k, h in hookup_dict['hookup'].iteritems():  # iterates over parts
         parts[k] = {}
         for pol, p in h.iteritems():  # iterates over pols
-            pind = part_ind - 1
-            if pind < 0:
-                pind = 0
-            parts[k][pol] = (p[pind].upstream_part, p[pind].downstream_part)
+            print("----")
+            if part_ind < len(p):
+                parts[k][pol] = (p[part_ind].upstream_part, p[part_ind].downstream_part)
     return parts
 
 
@@ -247,7 +249,7 @@ class Hookup:
                 hookup_dict['hookup'][k][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
                 part_types_found = self.__get_part_types_found(hookup_dict['hookup'][k][pol], part_types_found)
         # Add other information in to the hookup_dict
-        hookup_dict['columns'], hookup_dict['parts_epoch'] = self.__get_column_headers(part_types_found)
+        hookup_dict['columns'], hookup_dict['parts_epoch'] = self.__get_epoch_and_column_headers(part_types_found)
         if len(hookup_dict['columns']):
             hookup_dict = self.__add_hookup_timing_and_flags(hookup_dict)
             if show_levels:
@@ -270,54 +272,36 @@ class Hookup:
 
     def __get_pols_to_do(self, part, port_query):
         """
-        Given the current part and port_query (which is either 'all', 'e', or 'n')
-        this figures out which pols to do.  Basically, given 'all' and part it
+        Given the current part and port_query (which is either 'pol' (or 'all'), 'e', or 'n')
+        this figures out which pols to do.  Basically, given 'pol' and part it
         figures out whether to return ['e'], ['n'], ['e', 'n']
 
         Parameter:
         -----------
         part:  current part dossier
-        port_query:  the ports that were requested.
+        port_query:  the ports that were requested ('e' or 'n' or 'all')
         """
-        single_pol_parts_paper = ['RI', 'RO', 'CR']
-        port_query = port_query.lower()
-        if port_query == 'all':  # Need to figure out if return 'e', 'n' or both
-            if part['part'].hpn[:2].upper() in single_pol_parts_paper:
-                pols = [part['part'].hpn[-1].lower()]
-            else:
-                pols = PC.both_pols
-        elif port_query in PC.both_pols:
-            pols = [port_query]
-        else:
-            raise ValueError('Invalid port_query')
-        return pols
 
-    def __check_next_port(self, next_part, option_port, pol, lenopt):
-        """
-        This checks that the port is the correct one to follow through as you
-        follow the hookup.
-        """
-        if lenopt == 1:
-            if next_part[:3].upper() == 'PAM' and option_port[0].lower() != pol.lower():
-                return False
-            else:
-                return True
-        if pol.lower() in PC.both_pols:
-            if option_port.lower() in ['a', 'b']:
-                p = next_part[-1].lower()
-            elif option_port[0].lower() in PC.both_pols:
-                p = option_port[0].lower()
-            else:
-                p = pol
-            return p == pol
-        else:
-            raise ValueError("Invalid polarization.")
+        # These are parts that have their polarization as the last letter of the part name
+        # There are none for HERA in the RFoF architecture
+        single_pol_EN_parts = ['RI', 'RO', 'CR']
+        port_groups = ['all', 'pol']
+        port_query = port_query.lower()
+        if port_query in port_groups:
+            if part['part'].hpn[:2].upper() in single_pol_EN_parts:
+                return [part['part'].hpn[-1].lower()]
+            return PC.both_pols
+
+        if port_query in PC.both_pols:
+            return [port_query]
+        raise ValueError('Invalid port_query')
 
     def __follow_hookup_stream(self, part, rev, pol):
         self.upstream = []
         self.downstream = []
-        self.__recursive_go('up', part, rev, pol)
-        self.__recursive_go('down', part, rev, pol)
+        port = pol  # Seed it
+        self.__recursive_go('up', part, rev, port, pol)
+        self.__recursive_go('down', part, rev, port, pol)
 
         hu = []
         for pn in reversed(self.upstream):
@@ -326,63 +310,76 @@ class Hookup:
             hu.append(pn)
         return hu
 
-    def __recursive_go(self, direction, part, rev, pol):
+    def __recursive_go(self, direction, part, rev, port, pol):
         """
         Find the next connection up the signal chain.
         """
-        conn = self.__get_next_connection(direction, part, rev, pol)
-        if conn is not None:
+        conn = self.__get_next_connection(direction, part, rev, port, pol)
+        if conn:
             if direction == 'up':
-                self.upstream.append(conn)
-                part = conn.upstream_part
-                rev = conn.up_part_rev
+                self.upstream.append(conn[0])
+                part = conn[0].upstream_part
+                rev = conn[0].up_part_rev
+                port = conn[0].upstream_output_port
             else:
-                self.downstream.append(conn)
-                part = conn.downstream_part
-                rev = conn.down_part_rev
-            self.__recursive_go(direction, part, rev, pol)
+                self.downstream.append(conn[0])
+                part = conn[0].downstream_part
+                rev = conn[0].down_part_rev
+                port = conn[0].downstream_input_port
+            self.__recursive_go(direction, part, rev, port, pol)
 
-    def __get_next_connection(self, direction, part, rev, pol):
+    def __get_next_connection(self, direction, part, rev, port, pol):
         """
         Get next connected part going the given direction.
         """
+        # Get all of the port options going the right direction
         options = []
-        if direction.lower() == 'up':      # Going upstream
+        if direction == 'up':      # Going upstream
             for conn in self.session.query(PC.Connections).filter(
                     (func.upper(PC.Connections.downstream_part) == part.upper()) &
                     (func.upper(PC.Connections.down_part_rev) == rev.upper())):
                 conn.gps2Time()
                 if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
-        elif direction.lower() == 'down':  # Going downstream
+        elif direction == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
                     (func.upper(PC.Connections.upstream_part) == part.upper()) &
                     (func.upper(PC.Connections.up_part_rev) == rev.upper())):
                 conn.gps2Time()
                 if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
-        next_one = None
-        if len(options) == 0:
-            next_one = None
-        elif len(options) == 1:
-            opc = options[0]
-            if direction.lower() == 'up':
-                if self.__check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
-                    next_one = opc
-            else:
-                if self.__check_next_port(opc.downstream_part, opc.downstream_input_port, pol, len(options)):
-                    next_one = opc
-        else:
-            for opc in options:
-                if direction.lower() == 'up':
-                    if self.__check_next_port(opc.upstream_part, opc.upstream_output_port, pol, len(options)):
-                        next_one = opc
-                        break
-                else:
-                    if self.__check_next_port(opc.downstream_part, opc.downstream_input_port, pol, len(options)):
-                        next_one = opc
-                        break
+        # Now find the correct ones
+        next_one = []
+        portside = {'up': 'out', 'down': 'in'}
+        otherside = {'up': 'down', 'down': 'up'}
+        for opc in options:
+            this_part = getattr(opc, '{}stream_part'.format(otherside[direction]))
+            this_port = getattr(opc, '{}stream_{}put_port'.format(otherside[direction], portside[otherside[direction]]))
+            next_part = getattr(opc, '{}stream_part'.format(direction))
+            check_port = getattr(opc, '{}stream_{}put_port'.format(direction, portside[direction]))
+            if self.__check_next_port(this_part, this_port, next_part, check_port, pol, len(options)):
+                next_one.append(opc)
         return next_one
+
+    def __check_next_port(self, this_part, this_port, next_part, option_port, pol, lenopt):
+        """
+        This checks that the port is the correct one to follow through as you
+        follow the hookup.
+        """
+        if option_port[0] == '@':
+            return False
+
+        if lenopt == 1:  # Assume the only option is correct
+            return True
+
+        if option_port.lower() in ['a', 'b']:
+            p = next_part[-1].lower()
+        elif option_port[0].lower() in PC.both_pols:
+            p = option_port[0].lower()
+        else:
+            p = pol
+
+        return p == pol
 
     def __add_hookup_timing_and_flags(self, hookup_dict):
         full_hookup_length = len(hookup_dict['parts_epoch']['path']) - 1
@@ -410,12 +407,12 @@ class Hookup:
         hookup_dict['columns'].append('stop')
         return hookup_dict
 
-    def __get_column_headers(self, part_types_found):
+    def __get_epoch_and_column_headers(self, part_types_found):
         """
         The columns in the hookup_dict contain parts in the hookup chain and the column headers are
         the part types contained in that column.  This returns the headers for the retrieved hookup.
 
-        It just checks which era the parts are in (parts_paper or parts_hera) and keeps however many
+        It just checks which epoch the parts are in (parts_paper or parts_hera) and keeps however many
         parts are used.
 
         Parameters:
@@ -584,6 +581,7 @@ class Hookup:
         file:  file to use, None goes to stdout
         output_format:  set to html for the web-page version
         """
+        print("Hookup epoch:  {}".format(hookup_dict['parts_epoch']['epoch']))
         headers = self.__make_header_row(hookup_dict['columns'], cols_to_show, show_levels)
         table_data = []
         numerical_keys = cm_utils.put_keys_in_numerical_order(sorted(hookup_dict['hookup'].keys()))
@@ -631,6 +629,7 @@ class Hookup:
 
     def __make_table_row(self, hup_list, headers, timing, show_level, show_port, show_rev):
         td = ['-'] * len(headers)
+        # Get the first N-1 parts
         dip = ''
         for d in hup_list:
             part_type = self.part_type_cache[d.upstream_part]
@@ -645,6 +644,7 @@ class Hookup:
                     new_row_entry += ' <' + d.upstream_output_port
                 td[headers.index(part_type)] = new_row_entry
                 dip = d.downstream_input_port + '> '
+        # Get the last part in the hookup
         part_type = self.part_type_cache[d.downstream_part]
         if part_type in headers:
             new_row_entry = ''
@@ -654,6 +654,7 @@ class Hookup:
             if show_rev:
                 new_row_entry += ':' + d.down_part_rev
             td[headers.index(part_type)] = new_row_entry
+        # Add timing and levels
         if 'start' in headers:
             td[headers.index('start')] = timing[0]
         if 'stop' in headers:

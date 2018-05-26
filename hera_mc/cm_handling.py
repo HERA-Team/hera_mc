@@ -23,7 +23,7 @@ from hera_mc import cm_revisions as cmrev
 
 class Handling:
     """
-    Class to allow various manipulations of parts and their properties etc.
+    Class to allow various manipulations of parts, connections and their properties etc.
     """
 
     def __init__(self, session=None):
@@ -125,7 +125,7 @@ class Handling:
         It gets all parts, the receiving module should filter on e.g. date if desired.
 
         Returns part_dossier: a dictionary keyed on the part_number:
-                              {'Time':Time, 'part':CLASS,
+                              {'time':Time, 'part':CLASS,
                               <'part_info':CLASS,
                                'connections':CLASS, 'geo':CLASS,
                                'input_ports':[],'output_ports':[]>}
@@ -145,7 +145,7 @@ class Handling:
 
         part_dossier = {}
         # Now get unique part/revs and put into dictionary
-        for xhpn in rev_part.keys():
+        for xhpn in rev_part:
             if len(rev_part[xhpn]) == 0:
                 continue
             for xrev in rev_part[xhpn]:
@@ -153,38 +153,26 @@ class Handling:
                 part_query = self.session.query(PC.Parts).filter(
                     (func.upper(PC.Parts.hpn) == xhpn.upper()) &
                     (func.upper(PC.Parts.hpn_rev) == this_rev.upper()))
-                part_cnt = part_query.count()
-                if part_cnt == 0:
-                    continue
-                elif part_cnt == 1:
-                    part = copy.copy(part_query.all()[0])
-                    part.gps2Time()
-                    pr_key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
-                    part_dossier[pr_key] = {'Time': at_date, 'part': part}
-                    if full_version:
-                        part_dossier[pr_key]['part_info'] = []
-                        part_dossier[pr_key]['connections'] = None
-                        part_dossier[pr_key]['geo'] = None
-                        part_dossier[pr_key]['input_ports'] = []
-                        part_dossier[pr_key]['output_ports'] = []
-                        for part_info in self.session.query(PC.PartInfo).filter(
-                                (func.upper(PC.PartInfo.hpn) == part.hpn.upper()) &
-                                (func.upper(PC.PartInfo.hpn_rev) == part.hpn_rev.upper())):
-                            # part_info.gps2Time()
-                            part_dossier[pr_key]['part_info'].append(part_info)
-                        connections = self.get_connection_dossier(
-                            hpn_list=[part.hpn], rev=part.hpn_rev, port='all',
-                            at_date=at_date, exact_match=True)
-                        part_dossier[pr_key]['connections'] = connections
-                        if part.hptype == 'station':
-                            from hera_mc import geo_handling
-                            part_dossier[pr_key]['geo'] = geo_handling.get_location(
-                                [part.hpn], at_date, session=self.session)
-                        part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
-                            self.find_ports(part_dossier[pr_key]['connections'])
-                else:
-                    msg = "Should only be one part/rev for {}:{}.".format(part.hpn, part.hpn_rev)
-                    warnings.warn(msg)
+                part = copy.copy(part_query.first())  # There should be only one.
+                part.gps2Time()
+                pr_key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
+                part_dossier[pr_key] = {'time': at_date, 'part': part}
+                if full_version:
+                    part_dossier[pr_key]['part_info'] = []
+                    for part_info in self.session.query(PC.PartInfo).filter(
+                            (func.upper(PC.PartInfo.hpn) == part.hpn.upper()) &
+                            (func.upper(PC.PartInfo.hpn_rev) == part.hpn_rev.upper())):
+                        part_dossier[pr_key]['part_info'].append(part_info)
+                    part_dossier[pr_key]['connections'] = self.get_connection_dossier(
+                        hpn_list=[part.hpn], rev=part.hpn_rev, port='all',
+                        at_date=at_date, exact_match=True)
+                    part_dossier[pr_key]['geo'] = None
+                    if part.hptype == 'station':
+                        from hera_mc import geo_handling
+                        part_dossier[pr_key]['geo'] = geo_handling.get_location(
+                            [part.hpn], at_date, session=self.session)
+                    part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
+                        self.find_ports(part_dossier[pr_key]['connections'])
         return part_dossier
 
     def find_ports(self, connection_dossier):
@@ -198,15 +186,15 @@ class Handling:
         connection_dossier:  dictionary as returned from get_connections.
         """
 
-        input_ports = []
-        output_ports = []
-        for k, c in connection_dossier['connections'].iteritems():
-            if c.downstream_input_port not in input_ports:
-                input_ports.append(c.downstream_input_port)
-            if c.upstream_output_port not in output_ports:
-                output_ports.append(c.upstream_output_port)
-        input_ports.sort()
-        output_ports.sort()
+        input_ports = set()
+        output_ports = set()
+        for k, c in connection_dossier['conn'].iteritems():
+            for ck in c['paired']['up']:
+                if ck is not None:
+                    input_ports.add(c['up'][ck].downstream_input_port)
+            for ck in c['paired']['down']:
+                if ck is not None:
+                    output_ports.add(c['down'][ck].upstream_output_port)
         return input_ports, output_ports
 
     def show_parts(self, part_dossier):
@@ -216,7 +204,6 @@ class Handling:
         Parameters
         -----------
         part_dossier:  input dictionary of parts, generated by self.get_part_dossier
-        verbosity:  'l','m' or 'h'
         """
 
         if len(part_dossier.keys()) == 0:
@@ -224,32 +211,17 @@ class Handling:
             return
         table_data = []
         headers = ['HERA P/N', 'Rev', 'Part Type', 'Mfg #', 'Start', 'Stop',
-                   'Active', 'Input', 'Output', 'Info', 'Geo']
+                   'Input', 'Output', 'Info', 'Geo']
         for hpnr in sorted(part_dossier.keys()):
             pdpart = part_dossier[hpnr]['part']
-            is_active = cm_utils.is_active(part_dossier[hpnr]['Time'],
-                                           pdpart.start_date, pdpart.stop_date)
-            if (is_active and len(part_dossier[hpnr]['connections']) > 0):
-                is_connected = 'Yes'
-            elif is_active:
-                is_connected = 'N/C'
-            else:
-                is_connected = 'No'
             tdata = [pdpart.hpn,
                      pdpart.hpn_rev,
                      pdpart.hptype,
                      pdpart.manufacturer_number,
                      cm_utils.get_time_for_display(pdpart.start_date),
-                     cm_utils.get_time_for_display(pdpart.stop_date),
-                     is_connected]
-            ptsin = ''
-            ptsout = ''
-            for k in part_dossier[hpnr]['input_ports']:
-                ptsin += k + ', '
-            for k in part_dossier[hpnr]['output_ports']:
-                ptsout += k + ', '
-            tdata.append(ptsin.strip().strip(','))
-            tdata.append(ptsout.strip().strip(','))
+                     cm_utils.get_time_for_display(pdpart.stop_date)]
+            tdata.append(', '.join(part_dossier[hpnr]['input_ports']))
+            tdata.append(', '.join(part_dossier[hpnr]['output_ports']))
             if len(part_dossier[hpnr]['part_info']):
                 comment = ', '.join(pi.comment for pi in part_dossier[hpnr]['part_info'])
             else:
@@ -312,6 +284,27 @@ class Handling:
             downstream).
 
         Returns connection_dossier dictionary
+        .... An example return value might look like:
+        {
+          'time': astropytime,
+          'conn': {
+                   'up': {
+                          'upstream_part_key_1': <Connection object>,
+                          'upstream_part_key_2': <Connection object>,
+                          etc
+                         },
+                   'down': {
+                          'downstream_part_key_1': <Connection object>,
+                          'downstream_part_key_2': <Connection object>,
+                          etc
+                         },
+                   'paired': {  # N.B. lists are of equal length - shorter padded with None
+                              'up': [list of upstream keys],
+                              'down': [list of downstream_keys]
+                             }
+                  }
+        }
+
 
         Parameters
         -----------
@@ -325,15 +318,15 @@ class Handling:
 
         rev_part = self.get_rev_part_dictionary(hpn_list, rev, at_date, exact_match)
 
-        connection_dossier = {'ordered-pairs': [], 'Time': at_date,
-                              'connected-to': (hpn_list, rev, port), 'connections': {}}
-        for xhpn in rev_part.keys():
-            if rev_part[xhpn] is None:
+        connection_dossier = {'time': at_date, 'conn': {}}
+        for xhpn in rev_part:
+            if len(rev_part[xhpn]) == 0:
                 continue
             for xrev in rev_part[xhpn]:
-                up_parts = []
-                down_parts = []
                 this_rev = xrev.rev
+                prkey = cm_utils.make_part_key(xhpn, this_rev)
+                curr_conns = {'up': {}, 'down': {}, 'paired': {'up': [], 'down': []}}
+
                 # Find where the part is in the upward position, so identify its downward connection
                 for conn in self.session.query(PC.Connections).filter(
                         (func.upper(PC.Connections.upstream_part) == xhpn.upper()) &
@@ -345,8 +338,8 @@ class Handling:
                                                             conn.down_part_rev,
                                                             conn.downstream_input_port,
                                                             conn.start_gpstime)
-                        connection_dossier['connections'][ckey] = copy.copy(conn)
-                        down_parts.append(ckey)
+                        curr_conns['down'][ckey] = copy.copy(conn)
+
                 # Find where the part is in the downward position, so identify its upward connection
                 for conn in self.session.query(PC.Connections).filter(
                         (func.upper(PC.Connections.downstream_part) == xhpn.upper()) &
@@ -358,144 +351,75 @@ class Handling:
                                                             conn.up_part_rev,
                                                             conn.upstream_output_port,
                                                             conn.start_gpstime)
-                        connection_dossier['connections'][ckey] = copy.copy(conn)
-                        up_parts.append(ckey)
-                if len(up_parts) == 0:
-                    up_parts = [PC.no_connection_designator]
-                if len(down_parts) == 0:
-                    down_parts = [PC.no_connection_designator]
-                up_parts.sort()
-                down_parts.sort()
-                if len(up_parts) > len(down_parts):
-                    down_parts = (down_parts + len(up_parts) * [down_parts[-1]])[:len(up_parts)]
-                elif len(down_parts) > len(up_parts):
-                    up_parts = (up_parts + len(down_parts) * [up_parts[-1]])[:len(down_parts)]
-                connection_dossier['ordered-pairs'].append([up_parts, down_parts])
+                        curr_conns['up'][ckey] = copy.copy(conn)
+
+                # Pair upstream/downstream ports for this part - note that the signal port names have a
+                # convention that allows this somewhat brittle scheme to work for signal path parts.
+                port_type = {'up': 'downstream_input_port', 'down': 'upstream_output_port'}
+                for sk in curr_conns['paired']:
+                    pkey_tmp = {}
+                    for i, ck in enumerate(curr_conns[sk]):
+                        po = getattr(curr_conns[sk][ck], port_type[sk])
+                        pkey_tmp[po + '{:03d}'.format(i)] = ck
+                    curr_conns['paired'][sk] = [pkey_tmp[x] for x in sorted(pkey_tmp.keys())]
+                pad = len(curr_conns['paired']['down']) - len(curr_conns['paired']['up'])
+                if pad < 0:
+                    curr_conns['paired']['down'].extend([None] * abs(pad))
+                elif pad > 0:
+                    curr_conns['paired']['up'].extend([None] * abs(pad))
+                connection_dossier['conn'][prkey] = curr_conns
         return connection_dossier
 
     def show_connections(self, connection_dossier, verbosity='h'):
         """
         Print out active connection information.  Uses tabulate package.
 
-        Returns list of already_shown connections.
-
         Parameters
         -----------
-        connection_dossier:  input dictionary of parts, generated by self.get_connection
+        connection_dossier:  input dictionary of connections, generated by self.get_connection
         verbosity:  'l','m','h' verbosity level
         """
         table_data = []
-        already_shown = []
-        if verbosity == 'm':
-            headers = ['Upstream', '<Output:', ':Input>', 'Part', '<Output:',
-                       ':Input>', 'Downstream']
+        if verbosity == 'l':
+            headers = ['Upstream', 'Part', 'Downstream']
+        elif verbosity == 'm':
+            headers = ['Upstream', '<uOutput:', ':uInput>', 'Part', '<dOutput:',
+                       ':dInput>', 'Downstream']
         elif verbosity == 'h':
-            headers = ['uStart', 'uStop', 'Upstream', '<Output:', ':Input>',
-                       'Part', '<Output:', ':Input>', 'Downstream', 'dStart', 'dStop']
-        for ordered_pairs in connection_dossier['ordered-pairs']:
-            for up, dn in zip(ordered_pairs[0], ordered_pairs[1]):
-                if (PC.no_connection_designator in up and
-                        PC.no_connection_designator in dn):
-                    continue
-                already_shown.append(up)
-                already_shown.append(dn)
-                tdata = range(0, len(headers))
-                # Do upstream
-                if up == PC.no_connection_designator:
-                    connup = PC.get_null_connection()
-                else:
-                    connup = connection_dossier['connections'][up]
-                uup = connup.upstream_part + ':' + connup.up_part_rev
-                if PC.no_connection_designator in uup:
-                    start_date = PC.no_connection_designator
-                    stop_date = PC.no_connection_designator
-                else:
-                    start_date = connup.start_date
-                    stop_date = connup.stop_date
-                udn = connup.downstream_part + ':' + connup.down_part_rev
-                pos = {'uStart': {'h': 0, 'm': -1}, 'uStop': {'h': 1, 'm': -1},
-                       'Upstream': {'h': 2, 'm': 0},
-                       'Output': {'h': 3, 'm': 1}, 'Input': {'h': 4, 'm': 2},
-                       'Part': {'h': 5, 'm': 3}}
-                if pos['uStart'][verbosity] > -1:
-                    del tdata[pos['uStart'][verbosity]]
-                    if start_date != PC.no_connection_designator:
-                        start_date = cm_utils.get_time_for_display(start_date)
-                    tdata.insert(pos['uStart'][verbosity], start_date)
-                if pos['uStop'][verbosity] > -1:
-                    del tdata[pos['uStop'][verbosity]]
-                    if stop_date != PC.no_connection_designator:
-                        stop_date = cm_utils.get_time_for_display(stop_date)
-                    tdata.insert(pos['uStop'][verbosity], stop_date)
-                if pos['Upstream'][verbosity] > -1:
-                    del tdata[pos['Upstream'][verbosity]]
-                    tdata.insert(pos['Upstream'][verbosity], uup)
-                if pos['Output'][verbosity] > -1:
-                    del tdata[pos['Output'][verbosity]]
-                    tdata.insert(pos['Output'][verbosity], connup.upstream_output_port)
-                if pos['Input'][verbosity] > -1:
-                    del tdata[pos['Input'][verbosity]]
-                    tdata.insert(pos['Input'][verbosity], connup.downstream_input_port)
-                if pos['Part'][verbosity] > -1:
-                    del tdata[pos['Part'][verbosity]]
-                    tdata.insert(pos['Part'][verbosity], '[' + udn + ']')
-                # Do downstream
-                if dn == PC.no_connection_designator:
-                    conndn = PC.get_null_connection()
-                else:
-                    conndn = connection_dossier['connections'][dn]
-                dup = conndn.upstream_part + ':' + conndn.up_part_rev
-                ddn = conndn.downstream_part + ':' + conndn.down_part_rev
-                if PC.no_connection_designator in ddn:
-                    start_date = PC.no_connection_designator
-                    stop_date = PC.no_connection_designator
-                else:
-                    start_date = conndn.start_date
-                    stop_date = conndn.stop_date
-                pos = {'Part': {'h': 5, 'm': 3}, 'Output': {'h': 6, 'm': 4},
-                       'Input': {'h': 7, 'm': 5}, 'Downstream': {'h': 8, 'm': 6},
-                       'dStart': {'h': 9, 'm': -1}, 'dStop': {'h': 10, 'm': -1}}
-                if PC.no_connection_designator in udn:
-                    if pos['Part'][verbosity] > -1:
-                        del tdata[pos['Part'][verbosity]]
-                        tdata.insert(pos['Part'][verbosity], '[' + dup + ']')
-                if pos['Output'][verbosity] > -1:
-                    del tdata[pos['Output'][verbosity]]
-                    tdata.insert(pos['Output'][verbosity], conndn.upstream_output_port)
-                if pos['Input'][verbosity] > -1:
-                    del tdata[pos['Input'][verbosity]]
-                    tdata.insert(pos['Input'][verbosity], conndn.downstream_input_port)
-                if pos['Downstream'][verbosity] > -1:
-                    del tdata[pos['Downstream'][verbosity]]
-                    tdata.insert(pos['Downstream'][verbosity], ddn)
-                if pos['dStart'][verbosity] > -1:
-                    del tdata[pos['dStart'][verbosity]]
-                    tdata.insert(pos['dStart'][verbosity], cm_utils.get_time_for_display(start_date))
-                if pos['dStop'][verbosity] > -1:
-                    del tdata[pos['dStop'][verbosity]]
-                    tdata.insert(pos['dStop'][verbosity], cm_utils.get_time_for_display(stop_date))
-                if verbosity == 'h' or verbosity == 'm':
-                    table_data.append(tdata)
-                else:
-                    print("Connections")
-        if verbosity == 'm' or verbosity == 'h':
-            print(tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
-        return already_shown
+            headers = ['uStart', 'uStop', 'Upstream', '<uOutput:', ':uInput>',
+                       'Part', '<dOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop']
+        for k, conn in connection_dossier['conn'].iteritems():
+            if len(conn['up']) == 0 and len(conn['down']) == 0:
+                continue
+            show_conn_dict = {'Part': k}
 
-    def show_other_connections(self, connection_dossier, already_shown):
-        """
-        Shows the connections that are not active (the ones in connection_dossier
-            but not in already_shown)
+            for u, d in zip(conn['paired']['up'], conn['paired']['down']):
+                if u is None:
+                    for h in ['Upstream', 'uStart', 'uStop', '<uOutput:', ':uInput>']:
+                        show_conn_dict[h] = ' '
+                else:
+                    c = conn['up'][u]
+                    show_conn_dict['Upstream'] = cm_utils.make_part_key(c.upstream_part, c.up_part_rev)
+                    show_conn_dict['uStart'] = cm_utils.get_time_for_display(c.start_date)
+                    show_conn_dict['uStop'] = cm_utils.get_time_for_display(c.stop_date)
+                    show_conn_dict['<uOutput:'] = c.upstream_output_port
+                    show_conn_dict[':uInput>'] = c.downstream_input_port
+                if d is None:
+                    for h in ['Downstream', 'dStart', 'dStop', '<dOutput:', ':dInput>']:
+                        show_conn_dict[h] = ' '
+                else:
+                    c = conn['down'][d]
+                    show_conn_dict['Downstream'] = cm_utils.make_part_key(c.downstream_part, c.down_part_rev)
+                    show_conn_dict['dStart'] = cm_utils.get_time_for_display(c.start_date)
+                    show_conn_dict['dStop'] = cm_utils.get_time_for_display(c.stop_date)
+                    show_conn_dict['<dOutput:'] = c.upstream_output_port
+                    show_conn_dict[':dInput>'] = c.downstream_input_port
+                tdata = []
+                for h in headers:
+                    tdata.append(show_conn_dict[h])
+                table_data.append(tdata)
 
-        Parameters
-        -----------
-        connection_dossier:  dictionary of connections from get_connections
-        already_shown: list of shown connections from show_connections
-        """
-
-        for k, v in connection_dossier['connections'].iteritems():
-            if k not in already_shown:
-                print(v, v.start_date, v.stop_date)
+        print(tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
 
     def get_part_types(self, at_date):
         """
@@ -553,18 +477,9 @@ class Handling:
         table_data = []
         for k in self.part_type_dict.keys():
             td = [k, len(self.part_type_dict[k]['part_list'])]
-            pts = ''
-            for a in self.part_type_dict[k]['input_ports']:
-                pts += (a + ', ')
-            td.append(pts.strip().strip(','))
-            pts = ''
-            for b in self.part_type_dict[k]['output_ports']:
-                pts += (b + ', ')
-            td.append(pts.strip().strip(','))
-            revs = ''
-            for r in self.part_type_dict[k]['revisions']:
-                revs += (r + ', ')
-            td.append(revs.strip().strip(','))
+            td.append(', '.join(self.part_type_dict[k]['input_ports']))
+            td.append(', '.join(self.part_type_dict[k]['output_ports']))
+            td.append(self.part_type_dict[k]['revisions'])
             table_data.append(td)
         print('\n', tabulate(table_data, headers=headers, tablefmt='orgtbl'))
         print()

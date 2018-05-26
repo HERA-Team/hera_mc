@@ -8,10 +8,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-import os
-import socket
 from tabulate import tabulate
-import math
 from astropy.time import Time
 
 from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Text, func
@@ -24,8 +21,7 @@ no_connection_designator = '-X-'
 # This lists the fully complete signal paths
 full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end', 'cable-feed75', 'cable-post-amp(in)',
                                         'post-amp', 'cable-post-amp(out)', 'cable-receiverator', 'cable-container', 'f-engine'],
-                        'parts_hera': ['station', 'antenna', 'feed', 'fem', 'cable-feed50', 'cable-node(in)',
-                                       'pam', 'snap'],
+                        'parts_hera': ['station', 'antenna', 'feed', 'front-end', 'cable-rfof', 'post-amp', 'snap', 'node'],
                         'parts_test': ['vapor']
                         }
 both_pols = ['e', 'n']
@@ -38,12 +34,9 @@ class Parts(MCDeclarativeBase):
     Note that ideally install_date would also be a primary key, but that
     screws up ForeignKey in connections
 
-    hpn: HERA part number for each part; intend to QRcode with this string.
-         Part of the primary key.
+    hpn: HERA part number for each part; part of the primary key.
     hpn_rev: A revision letter of sequences of hpn - starts with A. . Part of the primary_key
     hptype: A part-dependent string, i.e. feed, frontend, ...
-        This is also uniquely encoded in the hera part number
-        (see PARTS.md) -- this could be derived from it but this removes that constraint.
     manufacturer_number: A part number/serial number as specified by manufacturer
     start_gpstime: The date when the part was installed (or otherwise assigned by project).
     stop_gpstime: The date when the part was removed (or otherwise de-assigned by project).
@@ -485,7 +478,7 @@ def get_null_connection():
     no_connect = Connections()
     no_connect.connection(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
                           downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
-                          start_gpstime=nc)
+                          start_gpstime=None, stop_gpstime=None, start_date=None, stop_date=None)
     return no_connect
 
 
