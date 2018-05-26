@@ -31,7 +31,7 @@ region = {'herahexw': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
           'heraringb': [320, 321, 322, 323, 324, 328, 329, 332, 333, 336, 337, 340, 341, 345, 346, 347, 348, 349]}
 
 
-def Nodes():
+def read_nodes():
     node_coord_file_name = os.path.join(mc.data_path, 'nodes.txt')
     default_elevation = 1050.0
     nodes = {}
@@ -46,7 +46,7 @@ def Nodes():
     return nodes
 
 
-def Antennas():
+def read_antennas():
     antenna_coord_file_name = os.path.join(mc.data_path, 'HERA_350.txt')
     antennas = {}
     with open(antenna_coord_file_name, 'r') as fp:
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     args.verbosity = args.verbosity.lower()
     args.station_name = args.station_name.upper()
     if args.station_name[:2] in ['HH', 'HA', 'HB']:
-        antenna = Antennas()
+        antenna = read_antennas()
         if args.station_name not in antenna:
             raise ValueError("{} antenna not found.".format(args.station_name))
         args.easting = antenna[args.station_name]['E']
@@ -151,7 +151,7 @@ if __name__ == '__main__':
                 args.station_type_name = r
                 break
     elif args.station_name[:2] == 'ND':
-        node = Nodes()
+        node = read_nodes()
         node_num = int(args.station_name[2:])
         if node_num not in node:
             raise ValueError("{} node not found.".format(args.station_name))

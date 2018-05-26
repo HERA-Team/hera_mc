@@ -125,7 +125,7 @@ class Handling:
         It gets all parts, the receiving module should filter on e.g. date if desired.
 
         Returns part_dossier: a dictionary keyed on the part_number:
-                              {'Time':Time, 'part':CLASS,
+                              {'time':Time, 'part':CLASS,
                               <'part_info':CLASS,
                                'connections':CLASS, 'geo':CLASS,
                                'input_ports':[],'output_ports':[]>}
@@ -156,7 +156,7 @@ class Handling:
                 part = copy.copy(part_query.first())  # There should be only one.
                 part.gps2Time()
                 pr_key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
-                part_dossier[pr_key] = {'Time': at_date, 'part': part}
+                part_dossier[pr_key] = {'time': at_date, 'part': part}
                 if full_version:
                     part_dossier[pr_key]['part_info'] = []
                     for part_info in self.session.query(PC.PartInfo).filter(
@@ -286,7 +286,7 @@ class Handling:
         Returns connection_dossier dictionary
         .... An example return value might look like:
         {
-          'Time': astropytime,
+          'time': astropytime,
           'conn': {
                    'up': {
                           'upstream_part_key_1': <Connection object>,
@@ -318,7 +318,7 @@ class Handling:
 
         rev_part = self.get_rev_part_dictionary(hpn_list, rev, at_date, exact_match)
 
-        connection_dossier = {'Time': at_date, 'conn': {}}
+        connection_dossier = {'time': at_date, 'conn': {}}
         for xhpn in rev_part:
             if len(rev_part[xhpn]) == 0:
                 continue
