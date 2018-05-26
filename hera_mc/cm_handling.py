@@ -22,18 +22,47 @@ from hera_mc import cm_revisions as cmrev
 
 
 class PartDossier():
-    def __init__(self, part_key):
-        print(part_key)
+    part = None  # This is the part_connect.Parts class
+    part_info = []  # This is a list of part_connect.PartInfo class entries
+    connections = None  # This is the PartConnectionDossier class
+    geo = None  # This is the geo_location.GeoLocation class
+    input_ports = set()
+    output_ports = set()
+
+    def __init__(self, part_key, at_date):
+        self.prkey = part_key
+        self.time = at_date
+
+    def get_part_info(self, session):
+        for part_info in session.query(PC.PartInfo).filter(
+                (func.upper(PC.PartInfo.hpn) == self.part.hpn.upper()) &
+                (func.upper(PC.PartInfo.hpn_rev) == self.part.hpn_rev.upper())):
+            self.part_info.append(part_info)
+
+    def get_geo(self, session):
+        if self.part.hptype == 'station':
+            from hera_mc import geo_handling
+            self.geo = geo_handling.get_location([self.part.hpn], self.time, session=session)[0]
+
+    def get_ports(self):
+        """
+        Finds sets of input_ports and output_ports
+        """
+        for k, cd in self.connections.iteritems():
+            for c in cd.up.values():
+                self.input_ports.add(c.downstream_input_port)
+            for c in cd.down.values():
+                self.output_ports.add(c.upstream_output_port)
 
 
-class ConnectionDossier:
+class PartConnectionDossier:
     up = {}
     down = {}
     keys_up = []
     keys_down = []
 
-    def __init__(self, connection_key, at_date):
-        self.prkey = connection_key
+    def __init__(self, part_key, at_date):
+        self.prkey = part_key
         self.time = at_date
 
 
@@ -172,46 +201,17 @@ class Handling:
                 part = copy.copy(part_query.first())  # There should be only one.
                 part.gps2Time()
                 pr_key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
-                part_dossier[pr_key] = {'time': at_date, 'part': part}
+                curr_part = PartDossier(pr_key, at_date)
+                curr_part.part = part
                 if full_version:
-                    part_dossier[pr_key]['part_info'] = []
-                    for part_info in self.session.query(PC.PartInfo).filter(
-                            (func.upper(PC.PartInfo.hpn) == part.hpn.upper()) &
-                            (func.upper(PC.PartInfo.hpn_rev) == part.hpn_rev.upper())):
-                        part_dossier[pr_key]['part_info'].append(part_info)
-                    part_dossier[pr_key]['connections'] = self.get_connection_dossier(
+                    curr_part.get_part_info(self.session)
+                    curr_part.get_geo(self.session)
+                    curr_part.connections = self.get_connection_dossier(
                         hpn_list=[part.hpn], rev=part.hpn_rev, port='all',
                         at_date=at_date, exact_match=True)
-                    part_dossier[pr_key]['geo'] = None
-                    if part.hptype == 'station':
-                        from hera_mc import geo_handling
-                        part_dossier[pr_key]['geo'] = geo_handling.get_location(
-                            [part.hpn], at_date, session=self.session)
-                    part_dossier[pr_key]['input_ports'], part_dossier[pr_key]['output_ports'] = \
-                        self.find_ports(part_dossier[pr_key]['connections'])
+                    curr_part.get_ports()
+                part_dossier[pr_key] = curr_part
         return part_dossier
-
-    def find_ports(self, connection_dossier):
-        """
-        Given a connection_dossier dictionary, it will return all of the ports.
-
-        Returns lists of input_ports and output_ports
-
-        Parameters:
-        ------------
-        connection_dossier:  dictionary as returned from get_connections.
-        """
-
-        input_ports = set()
-        output_ports = set()
-        for k, c in connection_dossier.iteritems():
-            for ck in c.keys_up:
-                if ck is not None:
-                    input_ports.add(c.up[ck].downstream_input_port)
-            for ck in c.keys_down:
-                if ck is not None:
-                    output_ports.add(c.down[ck].upstream_output_port)
-        return input_ports, output_ports
 
     def show_parts(self, part_dossier):
         """
@@ -229,25 +229,25 @@ class Handling:
         headers = ['HERA P/N', 'Rev', 'Part Type', 'Mfg #', 'Start', 'Stop',
                    'Input', 'Output', 'Info', 'Geo']
         for hpnr in sorted(part_dossier.keys()):
-            pdpart = part_dossier[hpnr]['part']
+            pdpart = part_dossier[hpnr].part
             tdata = [pdpart.hpn,
                      pdpart.hpn_rev,
                      pdpart.hptype,
                      pdpart.manufacturer_number,
                      cm_utils.get_time_for_display(pdpart.start_date),
                      cm_utils.get_time_for_display(pdpart.stop_date)]
-            tdata.append(', '.join(part_dossier[hpnr]['input_ports']))
-            tdata.append(', '.join(part_dossier[hpnr]['output_ports']))
-            if len(part_dossier[hpnr]['part_info']):
-                comment = ', '.join(pi.comment for pi in part_dossier[hpnr]['part_info'])
+            tdata.append(', '.join(part_dossier[hpnr].input_ports))
+            tdata.append(', '.join(part_dossier[hpnr].output_ports))
+            if len(part_dossier[hpnr].part_info):
+                comment = ', '.join(pi.comment for pi in part_dossier[hpnr].part_info)
             else:
                 comment = None
             tdata.append(comment)
-            if part_dossier[hpnr]['geo'] is not None:
+            if part_dossier[hpnr].geo is not None:
                 tdata.append("{:.1f}E, {:.1f}N, {:.1f}m"
-                             .format(part_dossier[hpnr]['geo'][0].easting,
-                                     part_dossier[hpnr]['geo'][0].northing,
-                                     part_dossier[hpnr]['geo'][0].elevation))
+                             .format(part_dossier[hpnr].geo.easting,
+                                     part_dossier[hpnr].geo.northing,
+                                     part_dossier[hpnr].geo.elevation))
             else:
                 tdata.append(None)
             table_data.append(tdata)
@@ -322,7 +322,7 @@ class Handling:
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
                 prkey = cm_utils.make_part_key(xhpn, this_rev)
-                curr_conns = ConnectionDossier(prkey, at_date)
+                curr_conns = PartConnectionDossier(prkey, at_date)
 
                 # Find where the part is in the upward position, so identify its downward connection
                 tmp = {}
