@@ -21,6 +21,22 @@ from hera_mc import part_connect as PC
 from hera_mc import cm_revisions as cmrev
 
 
+class PartDossier():
+    def __init__(self, part_key):
+        print(part_key)
+
+
+class ConnectionDossier:
+    up = {}
+    down = {}
+    keys_up = []
+    keys_down = []
+
+    def __init__(self, connection_key, at_date):
+        self.prkey = connection_key
+        self.time = at_date
+
+
 class Handling:
     """
     Class to allow various manipulations of parts, connections and their properties etc.
@@ -188,13 +204,13 @@ class Handling:
 
         input_ports = set()
         output_ports = set()
-        for k, c in connection_dossier['conn'].iteritems():
-            for ck in c['paired']['up']:
+        for k, c in connection_dossier.iteritems():
+            for ck in c.keys_up:
                 if ck is not None:
-                    input_ports.add(c['up'][ck].downstream_input_port)
-            for ck in c['paired']['down']:
+                    input_ports.add(c.up[ck].downstream_input_port)
+            for ck in c.keys_down:
                 if ck is not None:
-                    output_ports.add(c['down'][ck].upstream_output_port)
+                    output_ports.add(c.down[ck].upstream_output_port)
         return input_ports, output_ports
 
     def show_parts(self, part_dossier):
@@ -284,26 +300,7 @@ class Handling:
             downstream).
 
         Returns connection_dossier dictionary
-        .... An example return value might look like:
-        {
-          'time': astropytime,
-          'conn': {
-                   'up': {
-                          'upstream_part_key_1': <Connection object>,
-                          'upstream_part_key_2': <Connection object>,
-                          etc
-                         },
-                   'down': {
-                          'downstream_part_key_1': <Connection object>,
-                          'downstream_part_key_2': <Connection object>,
-                          etc
-                         },
-                   'paired': {  # N.B. lists are of equal length - shorter padded with None
-                              'up': [list of upstream keys],
-                              'down': [list of downstream_keys]
-                             }
-                  }
-        }
+
 
 
         Parameters
@@ -318,32 +315,35 @@ class Handling:
 
         rev_part = self.get_rev_part_dictionary(hpn_list, rev, at_date, exact_match)
 
-        connection_dossier = {'time': at_date, 'conn': {}}
+        connection_dossier = {}
         for xhpn in rev_part:
             if len(rev_part[xhpn]) == 0:
                 continue
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
                 prkey = cm_utils.make_part_key(xhpn, this_rev)
-                curr_conns = {'up': {}, 'down': {}, 'paired': {'up': [], 'down': []}}
+                curr_conns = ConnectionDossier(prkey, at_date)
 
                 # Find where the part is in the upward position, so identify its downward connection
-                for conn in self.session.query(PC.Connections).filter(
+                tmp = {}
+                for i, conn in enumerate(self.session.query(PC.Connections).filter(
                         (func.upper(PC.Connections.upstream_part) == xhpn.upper()) &
-                        (func.upper(PC.Connections.up_part_rev) == this_rev.upper())):
-                    if (port.lower() == 'all' or
-                            conn.upstream_output_port.lower() == port.lower()):
+                        (func.upper(PC.Connections.up_part_rev) == this_rev.upper()))):
+                    if (port.lower() == 'all' or conn.upstream_output_port.lower() == port.lower()):
                         conn.gps2Time()
                         ckey = cm_utils.make_connection_key(conn.downstream_part,
                                                             conn.down_part_rev,
                                                             conn.downstream_input_port,
                                                             conn.start_gpstime)
-                        curr_conns['down'][ckey] = copy.copy(conn)
+                        curr_conns.down[ckey] = copy.copy(conn)
+                        tmp[conn.upstream_output_port + '{:03d}'.format(i)] = ckey
+                curr_conns.keys_down = [tmp[x] for x in sorted(tmp.keys())]
 
                 # Find where the part is in the downward position, so identify its upward connection
-                for conn in self.session.query(PC.Connections).filter(
+                tmp = {}
+                for i, conn in enumerate(self.session.query(PC.Connections).filter(
                         (func.upper(PC.Connections.downstream_part) == xhpn.upper()) &
-                        (func.upper(PC.Connections.down_part_rev) == this_rev.upper())):
+                        (func.upper(PC.Connections.down_part_rev) == this_rev.upper()))):
                     if (port.lower() == 'all' or
                             conn.downstream_input_port.lower() == port.lower()):
                         conn.gps2Time()
@@ -351,23 +351,18 @@ class Handling:
                                                             conn.up_part_rev,
                                                             conn.upstream_output_port,
                                                             conn.start_gpstime)
-                        curr_conns['up'][ckey] = copy.copy(conn)
+                        curr_conns.up[ckey] = copy.copy(conn)
+                        tmp[conn.downstream_input_port + '{:03d}'.format(i)] = ckey
+                curr_conns.keys_up = [tmp[x] for x in sorted(tmp.keys())]
 
-                # Pair upstream/downstream ports for this part - note that the signal port names have a
-                # convention that allows this somewhat brittle scheme to work for signal path parts.
-                port_type = {'up': 'downstream_input_port', 'down': 'upstream_output_port'}
-                for sk in curr_conns['paired']:
-                    pkey_tmp = {}
-                    for i, ck in enumerate(curr_conns[sk]):
-                        po = getattr(curr_conns[sk][ck], port_type[sk])
-                        pkey_tmp[po + '{:03d}'.format(i)] = ck
-                    curr_conns['paired'][sk] = [pkey_tmp[x] for x in sorted(pkey_tmp.keys())]
-                pad = len(curr_conns['paired']['down']) - len(curr_conns['paired']['up'])
+                # Equi-pair upstream/downstream ports for this part - note that the signal port names have a
+                # convention that allows this somewhat brittle scheme to work for signal path parts
+                pad = len(curr_conns.keys_down) - len(curr_conns.keys_up)
                 if pad < 0:
-                    curr_conns['paired']['down'].extend([None] * abs(pad))
+                    curr_conns.keys_down.extend([None] * abs(pad))
                 elif pad > 0:
-                    curr_conns['paired']['up'].extend([None] * abs(pad))
-                connection_dossier['conn'][prkey] = curr_conns
+                    curr_conns.keys_up.extend([None] * abs(pad))
+                connection_dossier[prkey] = curr_conns
         return connection_dossier
 
     def show_connections(self, connection_dossier, verbosity='h'):
@@ -388,17 +383,17 @@ class Handling:
         elif verbosity == 'h':
             headers = ['uStart', 'uStop', 'Upstream', '<uOutput:', ':uInput>',
                        'Part', '<dOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop']
-        for k, conn in connection_dossier['conn'].iteritems():
-            if len(conn['up']) == 0 and len(conn['down']) == 0:
+        for k, conn in connection_dossier.iteritems():
+            if len(conn.up) == 0 and len(conn.down) == 0:
                 continue
             show_conn_dict = {'Part': k}
 
-            for u, d in zip(conn['paired']['up'], conn['paired']['down']):
+            for u, d in zip(conn.keys_up, conn.keys_down):
                 if u is None:
                     for h in ['Upstream', 'uStart', 'uStop', '<uOutput:', ':uInput>']:
                         show_conn_dict[h] = ' '
                 else:
-                    c = conn['up'][u]
+                    c = conn.up[u]
                     show_conn_dict['Upstream'] = cm_utils.make_part_key(c.upstream_part, c.up_part_rev)
                     show_conn_dict['uStart'] = cm_utils.get_time_for_display(c.start_date)
                     show_conn_dict['uStop'] = cm_utils.get_time_for_display(c.stop_date)
@@ -408,7 +403,7 @@ class Handling:
                     for h in ['Downstream', 'dStart', 'dStop', '<dOutput:', ':dInput>']:
                         show_conn_dict[h] = ' '
                 else:
-                    c = conn['down'][d]
+                    c = conn.down[d]
                     show_conn_dict['Downstream'] = cm_utils.make_part_key(c.downstream_part, c.down_part_rev)
                     show_conn_dict['dStart'] = cm_utils.get_time_for_display(c.start_date)
                     show_conn_dict['dStop'] = cm_utils.get_time_for_display(c.stop_date)
