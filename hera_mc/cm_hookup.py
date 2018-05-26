@@ -241,12 +241,12 @@ class Hookup:
         hookup_dict = self.__get_empty_hookup_dict()
         part_types_found = []
         for k, part in parts.iteritems():
-            if not cm_utils.is_active(self.at_date, part['part'].start_date, part['part'].stop_date):
+            if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
                 continue
             hookup_dict['hookup'][k] = {}
             pols_to_do = self.__get_pols_to_do(part, port_query)
             for pol in pols_to_do:
-                hookup_dict['hookup'][k][pol] = self.__follow_hookup_stream(part['part'].hpn, part['part'].hpn_rev, pol)
+                hookup_dict['hookup'][k][pol] = self.__follow_hookup_stream(part.part.hpn, part.part.hpn_rev, pol)
                 part_types_found = self.__get_part_types_found(hookup_dict['hookup'][k][pol], part_types_found)
         # Add other information in to the hookup_dict
         hookup_dict['columns'], hookup_dict['parts_epoch'] = self.__get_epoch_and_column_headers(part_types_found)
@@ -288,8 +288,8 @@ class Hookup:
         port_groups = ['all', 'pol']
         port_query = port_query.lower()
         if port_query in port_groups:
-            if part['part'].hpn[:2].upper() in single_pol_EN_parts:
-                return [part['part'].hpn[-1].lower()]
+            if part.part.hpn[:2].upper() in single_pol_EN_parts:
+                return [part.part.hpn[-1].lower()]
             return PC.both_pols
 
         if port_query in PC.both_pols:

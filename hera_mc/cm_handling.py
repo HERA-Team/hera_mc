@@ -21,7 +21,7 @@ from hera_mc import part_connect as PC
 from hera_mc import cm_revisions as cmrev
 
 
-class PartDossier():
+class PartDossierEntry():
     part = None  # This is the part_connect.Parts class
     part_info = []  # This is a list of part_connect.PartInfo class entries
     connections = None  # This is the PartConnectionDossier class
@@ -42,7 +42,9 @@ class PartDossier():
     def get_geo(self, session):
         if self.part.hptype == 'station':
             from hera_mc import geo_handling
-            self.geo = geo_handling.get_location([self.part.hpn], self.time, session=session)[0]
+            gh = geo_handling.get_location([self.part.hpn], self.time, session=session)
+            if len(gh) == 1:
+                self.geo = gh[0]
 
     def get_ports(self):
         """
@@ -55,7 +57,7 @@ class PartDossier():
                 self.output_ports.add(c.upstream_output_port)
 
 
-class PartConnectionDossier:
+class PartConnectionDossierEntry:
     up = {}
     down = {}
     keys_up = []
@@ -201,7 +203,7 @@ class Handling:
                 part = copy.copy(part_query.first())  # There should be only one.
                 part.gps2Time()
                 pr_key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
-                curr_part = PartDossier(pr_key, at_date)
+                curr_part = PartDossierEntry(pr_key, at_date)
                 curr_part.part = part
                 if full_version:
                     curr_part.get_part_info(self.session)
@@ -322,7 +324,7 @@ class Handling:
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
                 prkey = cm_utils.make_part_key(xhpn, this_rev)
-                curr_conns = PartConnectionDossier(prkey, at_date)
+                curr_conns = PartConnectionDossierEntry(prkey, at_date)
 
                 # Find where the part is in the upward position, so identify its downward connection
                 tmp = {}
@@ -433,8 +435,8 @@ class Handling:
             key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
             if part.hptype not in self.part_type_dict.keys():
                 self.part_type_dict[part.hptype] = {'part_list': [key],
-                                                    'input_ports': [],
-                                                    'output_ports': [],
+                                                    'input_ports': set(),
+                                                    'output_ports': set(),
                                                     'revisions': []}
             else:
                 self.part_type_dict[part.hptype]['part_list'].append(key)
@@ -449,9 +451,9 @@ class Handling:
                     found_revisions.append(rev)
                 if not found_connection:
                     pd = self.get_part_dossier([hpn], [rev], at_date, exact_match=True, full_version=True)
-                    if len(pd[pa]['input_ports']) > 0 or len(pd[pa]['output_ports']) > 0:
-                        input_ports = pd[pa]['input_ports']
-                        output_ports = pd[pa]['output_ports']
+                    if len(pd[pa].input_ports) > 0 or len(pd[pa].output_ports) > 0:
+                        input_ports = pd[pa].input_ports
+                        output_ports = pd[pa].output_ports
                         found_connection = True
             if len(input_ports) == 0:
                 input_ports = [PC.no_connection_designator]
