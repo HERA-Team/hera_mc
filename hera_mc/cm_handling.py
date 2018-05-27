@@ -22,23 +22,37 @@ from hera_mc import cm_revisions as cmrev
 
 
 class PartDossierEntry():
-    part = None  # This is the part_connect.Parts class
-    part_info = []  # This is a list of part_connect.PartInfo class entries
-    connections = None  # This is the PartConnectionDossier class
-    geo = None  # This is the geo_location.GeoLocation class
+    col_hdr = {'hpn': 'HERA P/N', 'hpn_rev': 'Rev', 'hptype': 'Part Type',
+               'manufacturer_number': 'Mfg #', 'start_date': 'Start', 'stop_date': 'Stop',
+               'input_ports': 'Input', 'output_ports': 'Output',
+               'part_info': 'Info', 'geo': 'Geo'}
 
-    def __init__(self, part_key, at_date):
-        self.prkey = part_key
+    def __init__(self, hpn, rev, at_date):
+        self.hpn = hpn.upper()
+        self.rev = rev.upper()
+        self.entry_key = cm_utils.make_part_key(hpn, rev)
         self.time = at_date
-        self.col_hdr = {'hpn': 'HERA P/N', 'hpn_rev': 'Rev', 'hptype': 'Part Type',
-                        'manufacturer_number': 'Mfg #', 'start_date': 'Start', 'stop_date': 'Stop',
-                        'input_ports': 'Input', 'output_ports': 'Output',
-                        'part_info': 'Info', 'geo': 'Geo'}
+        self.part = None  # This is the part_connect.Parts class
+        self.part_info = []  # This is a list of part_connect.PartInfo class entries
+        self.connections = None  # This is the PartConnectionDossierEntry class
+        self.geo = None  # This is the geo_location.GeoLocation class
+
+    def get_entry(self, session, full_version=True):
+        part_query = session.query(PC.Parts).filter(
+            (func.upper(PC.Parts.hpn) == self.hpn) &
+            (func.upper(PC.Parts.hpn_rev) == self.rev))
+        self.part = copy.copy(part_query.first())  # There should be only one.
+        self.part.gps2Time()
+        if full_version:
+            self.get_part_info(session)
+            self.get_geo(session)
+            self.connections = PartConnectionDossierEntry(self.hpn, self.rev, 'all', self.time)
+            self.connections.get_entry(session)
 
     def get_part_info(self, session):
         for part_info in session.query(PC.PartInfo).filter(
-                (func.upper(PC.PartInfo.hpn) == self.part.hpn.upper()) &
-                (func.upper(PC.PartInfo.hpn_rev) == self.part.hpn_rev.upper())):
+                (func.upper(PC.PartInfo.hpn) == self.hpn) &
+                (func.upper(PC.PartInfo.hpn_rev) == self.rev)):
             self.part_info.append(part_info)
 
     def get_geo(self, session):
@@ -77,34 +91,77 @@ class PartDossierEntry():
 
 
 class PartConnectionDossierEntry:
-    up = {}
-    down = {}
-    keys_up = []  # These are ordered/paired keys
-    keys_down = []  # "
-    input_ports = set()
-    output_ports = set()
-
-    def __init__(self, part_key, at_date):
-        self.prkey = part_key
+    def __init__(self, hpn, rev, port, at_date):
+        self.hpn = hpn.upper()
+        self.rev = rev.upper()
+        self.port = port.lower()
+        self.entry_key = cm_utils.make_part_key(hpn, rev)
         self.time = at_date
+        self.up = {}
+        self.down = {}
+        self.keys_up = []  # These are ordered/paired keys
+        self.keys_down = []  # "
+        self.input_ports = set()
+        self.output_ports = set()
 
     def __repr__(self):
         return ("\n\tkeys_up:  {self.keys_up}\n\tkeys_down:  {self.keys_down}\n".format(self=self))
+
+    def get_entry(self, session):
+        """
+        Gets a PartConnectionDossierEntry class object
+        """
+        # Find where the part is in the upward position, so identify its downward connection
+        tmp = {}
+        for i, conn in enumerate(session.query(PC.Connections).filter(
+                (func.upper(PC.Connections.upstream_part) == self.hpn) &
+                (func.upper(PC.Connections.up_part_rev) == self.rev))):
+            if self.port == 'all' or conn.upstream_output_port.lower() == self.port:
+                conn.gps2Time()
+                ckey = cm_utils.make_connection_key(conn.downstream_part,
+                                                    conn.down_part_rev,
+                                                    conn.downstream_input_port,
+                                                    conn.start_gpstime)
+                self.down[ckey] = copy.copy(conn)
+                tmp[conn.upstream_output_port + '{:03d}'.format(i)] = ckey
+        self.keys_down = [tmp[x] for x in sorted(tmp.keys())]
+
+        # Find where the part is in the downward position, so identify its upward connection
+        tmp = {}
+        for i, conn in enumerate(session.query(PC.Connections).filter(
+                (func.upper(PC.Connections.downstream_part) == self.hpn) &
+                (func.upper(PC.Connections.down_part_rev) == self.rev))):
+            if self.port == 'all' or conn.downstream_input_port.lower() == self.port:
+                conn.gps2Time()
+                ckey = cm_utils.make_connection_key(conn.upstream_part,
+                                                    conn.up_part_rev,
+                                                    conn.upstream_output_port,
+                                                    conn.start_gpstime)
+                self.up[ckey] = copy.copy(conn)
+                tmp[conn.downstream_input_port + '{:03d}'.format(i)] = ckey
+        self.keys_up = [tmp[x] for x in sorted(tmp.keys())]
+
+        # Equi-pair upstream/downstream ports for this part - note that the signal port names have a
+        # convention that allows this somewhat brittle scheme to work for signal path parts
+        self.get_ports()
+        pad = len(self.keys_down) - len(self.keys_up)
+        if pad < 0:
+            self.keys_down.extend([None] * abs(pad))
+        elif pad > 0:
+            self.keys_up.extend([None] * abs(pad))
 
     def get_ports(self):
         """
         Finds sets of input_ports and output_ports
         """
         for c in self.up.values():
-            print('\tUPgp', c.upstream_part, c.downstream_part, c.downstream_input_port)
             self.input_ports.add(c.downstream_input_port)
         for c in self.down.values():
-            print('\tDOWNgp', c.upstream_part, c.downstream_part, c.upstream_output_port)
             self.output_ports.add(c.upstream_output_port)
 
     def table_entry_row(self, headers):
         tdata = []
-        show_conn_dict = {'Part': self.prkey}
+        show_conn_dict = {'Part': self.entry_key}
 
         for u, d in zip(self.keys_up, self.keys_down):
             if u is None:
@@ -238,12 +295,7 @@ class Handling:
         characters unless exact_match==True.
         It gets all parts, the receiving module should filter on e.g. date if desired.
 
-        Returns part_dossier: a dictionary keyed on the part_number:
-                              {'time':Time, 'part':CLASS,
-                              <'part_info':CLASS,
-                               'connections':CLASS, 'geo':CLASS,
-                               'input_ports':[],'output_ports':[]>}
-        The parts in <> are only in full_version
+        Returns part_dossier: a dictionary keyed on the part_number containing PartDossierEntry classes
 
         Parameters
         -----------
@@ -264,20 +316,9 @@ class Handling:
                 continue
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
-                part_query = self.session.query(PC.Parts).filter(
-                    (func.upper(PC.Parts.hpn) == xhpn.upper()) &
-                    (func.upper(PC.Parts.hpn_rev) == this_rev.upper()))
-                part = copy.copy(part_query.first())  # There should be only one.
-                part.gps2Time()
-                pr_key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
-                curr_part = PartDossierEntry(pr_key, at_date)
-                curr_part.part = part
-                if full_version:
-                    curr_part.get_part_info(self.session)
-                    curr_part.get_geo(self.session)
-                    curr_part.connections = self.get_part_connection_entry(
-                        part.hpn, part.hpn_rev, port='all', at_date=at_date)
-                part_dossier[pr_key] = curr_part
+                this_part = PartDossierEntry(xhpn, this_rev, at_date)
+                this_part.get_entry(self.session, full_version)
+                part_dossier[this_part.entry_key] = this_part
         return part_dossier
 
     def show_parts(self, part_dossier):
@@ -340,61 +381,13 @@ class Handling:
                 fnd.append(copy.copy(conn))
         return fnd
 
-    def get_part_connection_entry(self, hpn, rev, port, at_date):
-        """
-        Gets a PartConnectionDossierEntry class object
-        """
-        prkey = cm_utils.make_part_key(hpn, rev)
-        pcd_entry = PartConnectionDossierEntry(prkey, at_date)
-
-        # Find where the part is in the upward position, so identify its downward connection
-        tmp = {}
-        for i, conn in enumerate(self.session.query(PC.Connections).filter(
-                (func.upper(PC.Connections.upstream_part) == hpn.upper()) &
-                (func.upper(PC.Connections.up_part_rev) == rev.upper()))):
-            if (port.lower() == 'all' or conn.upstream_output_port.lower() == port.lower()):
-                conn.gps2Time()
-                ckey = cm_utils.make_connection_key(conn.downstream_part,
-                                                    conn.down_part_rev,
-                                                    conn.downstream_input_port,
-                                                    conn.start_gpstime)
-                pcd_entry.down[ckey] = copy.copy(conn)
-                tmp[conn.upstream_output_port + '{:03d}'.format(i)] = ckey
-        pcd_entry.keys_down = [tmp[x] for x in sorted(tmp.keys())]
-
-        # Find where the part is in the downward position, so identify its upward connection
-        tmp = {}
-        for i, conn in enumerate(self.session.query(PC.Connections).filter(
-                (func.upper(PC.Connections.downstream_part) == hpn.upper()) &
-                (func.upper(PC.Connections.down_part_rev) == rev.upper()))):
-            if (port.lower() == 'all' or
-                    conn.downstream_input_port.lower() == port.lower()):
-                conn.gps2Time()
-                ckey = cm_utils.make_connection_key(conn.upstream_part,
-                                                    conn.up_part_rev,
-                                                    conn.upstream_output_port,
-                                                    conn.start_gpstime)
-                pcd_entry.up[ckey] = copy.copy(conn)
-                tmp[conn.downstream_input_port + '{:03d}'.format(i)] = ckey
-        pcd_entry.keys_up = [tmp[x] for x in sorted(tmp.keys())]
-
-        # Equi-pair upstream/downstream ports for this part - note that the signal port names have a
-        # convention that allows this somewhat brittle scheme to work for signal path parts
-        pcd_entry.get_ports()
-        pad = len(pcd_entry.keys_down) - len(pcd_entry.keys_up)
-        if pad < 0:
-            pcd_entry.keys_down.extend([None] * abs(pad))
-        elif pad > 0:
-            pcd_entry.keys_up.extend([None] * abs(pad))
-        return pcd_entry
-
-    def get_connection_dossier(self, hpn_list, rev, port, at_date, exact_match=False):
+    def get_part_connection_dossier(self, hpn_list, rev, port, at_date, exact_match=False):
         """
         Return information on parts connected to hpn
         It should get connections immediately adjacent to one part (upstream and
             downstream).
 
-        Returns connection_dossier dictionary
+        Returns connection_dossier dictionary with PartConnectionDossierEntry classes
 
         Parameters
         -----------
@@ -408,15 +401,16 @@ class Handling:
 
         rev_part = self.get_rev_part_dictionary(hpn_list, rev, at_date, exact_match)
 
-        connection_dossier = {}
+        part_connection_dossier = {}
         for xhpn in rev_part:
             if len(rev_part[xhpn]) == 0:
                 continue
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
-                prkey = cm_utils.make_part_key(xhpn, this_rev)
-                connection_dossier[prkey] = self.get_part_connection_entry(xhpn, this_rev, port, at_date)
-        return connection_dossier
+                this_connect = PartConnectionDossierEntry(xhpn, this_rev, port, at_date)
+                this_connect.get_entry(self.session)
+                part_connection_dossier[this_connect.entry_key] = this_connect
+        return part_connection_dossier
 
     def show_connections(self, connection_dossier, verbosity='h'):
         """
@@ -470,11 +464,11 @@ class Handling:
         for k, v in self.part_type_dict.iteritems():
             hpn, rev = cm_utils.split_part_key(v['part_list'][0])
             pd = self.get_part_dossier([hpn], [rev], at_date, exact_match=True, full_version=True)
-            for kv, pv in pd.iteritems():
-                for ip in pv.input_ports:
+            for pv in pd.values():
+                for ip in pv.connections.input_ports:
                     if ip is not None and ip[0] != '@':
                         v['input_ports'].add(copy.copy(ip))
-                for op in pv.output_ports:
+                for op in pv.connections.output_ports:
                     if op is not None and op[0] != '@':
                         v['output_ports'].add(copy.copy(op))
             for pa in v['part_list']:
@@ -495,7 +489,7 @@ class Handling:
             td = [k, len(self.part_type_dict[k]['part_list'])]
             td.append(', '.join(self.part_type_dict[k]['input_ports']))
             td.append(', '.join(self.part_type_dict[k]['output_ports']))
-            td.append(self.part_type_dict[k]['revisions'])
+            td.append(', '.join(self.part_type_dict[k]['revisions']))
             table_data.append(td)
         print('\n', tabulate(table_data, headers=headers, tablefmt='orgtbl'))
         print()

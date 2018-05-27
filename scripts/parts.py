@@ -88,7 +88,7 @@ if __name__ == '__main__':
                                                  at_date=date_query, exact_match=args.exact_match)
         handling.show_parts(part_dossier)
     elif action_tag == 'co':  # connection_info
-        connection_dossier = handling.get_connection_dossier(
+        connection_dossier = handling.get_part_connection_dossier(
             hpn_list=args.hpn, rev=args.revision, port=args.port,
             at_date=date_query, exact_match=args.exact_match)
         handling.show_connections(connection_dossier, verbosity=args.verbosity)
