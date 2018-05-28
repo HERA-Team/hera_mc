@@ -470,18 +470,13 @@ class Handling:
                 hpn, rev = cm_utils.split_part_key(pa)
                 chk_conn = PartConnectionDossierEntry(hpn, rev, 'all', at_date)
                 chk_conn.get_entry(self.session)
-                for ip in chk_conn.input_ports:
-                    show_it = (port == 'all') or\
-                              (port == 'sig' and ip[0] != '@') or\
-                              (port == 'phy' and ip[0] == '@')
-                    if ip is not None and show_it:
-                        v['input_ports'].add(copy.copy(ip))
-                for op in chk_conn.output_ports:
-                    show_it = (port == 'all') or\
-                              (port == 'sig' and op[0] != '@') or\
-                              (port == 'phy' and op[0] == '@')
-                    if op is not None and show_it:
-                        v['output_ports'].add(copy.copy(op))
+                for iop in ['input_ports', 'output_ports']:
+                    for p in getattr(chk_conn, iop):
+                        show_it = (port == 'all') or\
+                                  (port == 'sig' and p[0] != '@') or\
+                                  (port == 'phy' and p[0] == '@')
+                        if p is not None and show_it:
+                            v[iop].add(copy.copy(p))
                 v['revisions'].add(rev)
 
         return self.part_type_dict
