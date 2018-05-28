@@ -460,10 +460,11 @@ class Handling:
             else:
                 self.part_type_dict[part.hptype]['part_list'].append(key)
         port = port.lower()[:3]
+        chk_conn = PartConnectionDossierEntry('type', 'type', 'type', at_date)
         for k, v in self.part_type_dict.iteritems():
             for pa in v['part_list']:
                 hpn, rev = cm_utils.split_part_key(pa)
-                chk_conn = PartConnectionDossierEntry(hpn, rev, 'all', at_date)
+                chk_conn.__init__(hpn, rev, 'all', at_date)
                 chk_conn.get_entry(self.session)
                 for iop in ['input_ports', 'output_ports']:
                     for p in getattr(chk_conn, iop):
@@ -484,7 +485,7 @@ class Handling:
         headers = ['Part type', '# in dbase', 'Input ports', 'Output ports',
                    'Revisions']
         table_data = []
-        for k in self.part_type_dict.keys():
+        for k in sorted(self.part_type_dict.keys()):
             td = [k, len(self.part_type_dict[k]['part_list'])]
             td.append(', '.join(sorted(self.part_type_dict[k]['input_ports'])))
             td.append(', '.join(sorted(self.part_type_dict[k]['output_ports'])))
