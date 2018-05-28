@@ -454,6 +454,7 @@ class Handling:
             key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
             if part.hptype not in self.part_type_dict.keys():
                 self.part_type_dict[part.hptype] = {'part_list': [key],
+                                                    'connections': 0,
                                                     'input_ports': set(),
                                                     'output_ports': set(),
                                                     'revisions': set()}
@@ -473,6 +474,8 @@ class Handling:
                                   (port == 'phy' and p[0] == '@')
                         if p is not None and show_it:
                             v[iop].add(copy.copy(p))
+                        if p is not None:
+                            v['connections'] += 1
                 v['revisions'].add(rev)
 
         return self.part_type_dict
@@ -482,14 +485,15 @@ class Handling:
         Displays the part_types dictionary
         """
 
-        headers = ['Part type', '# in dbase', 'Input ports', 'Output ports',
+        headers = ['Part type', '# dbase', '# connect', 'Input ports', 'Output ports',
                    'Revisions']
         table_data = []
         for k in sorted(self.part_type_dict.keys()):
-            td = [k, len(self.part_type_dict[k]['part_list'])]
+            td = [k, len(self.part_type_dict[k]['part_list']), self.part_type_dict[k]['connections']]
             td.append(', '.join(sorted(self.part_type_dict[k]['input_ports'])))
             td.append(', '.join(sorted(self.part_type_dict[k]['output_ports'])))
             td.append(', '.join(sorted(self.part_type_dict[k]['revisions'])))
             table_data.append(td)
-        print('\n', tabulate(table_data, headers=headers, tablefmt='orgtbl'))
+        print()
+        print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
         print()
