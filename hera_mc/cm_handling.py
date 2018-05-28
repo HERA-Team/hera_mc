@@ -141,23 +141,18 @@ class PartConnectionDossierEntry:
                 tmp[conn.downstream_input_port + '{:03d}'.format(i)] = ckey
         self.keys_up = [tmp[x] for x in sorted(tmp.keys())]
 
-        # Equi-pair upstream/downstream ports for this part - note that the signal port names have a
-        # convention that allows this somewhat brittle scheme to work for signal path parts
-        self.get_ports()
+        # Pull out ports and make equi-pair upstream/downstream ports for this part -
+        # note that the signal port names have a convention that allows this somewhat
+        # brittle scheme to work for signal path parts
+        for c in self.up.values():
+            self.input_ports.add(c.downstream_input_port)
+        for c in self.down.values():
+            self.output_ports.add(c.upstream_output_port)
         pad = len(self.keys_down) - len(self.keys_up)
         if pad < 0:
             self.keys_down.extend([None] * abs(pad))
         elif pad > 0:
             self.keys_up.extend([None] * abs(pad))
-
-    def get_ports(self):
-        """
-        Finds sets of input_ports and output_ports
-        """
-        for c in self.up.values():
-            self.input_ports.add(c.downstream_input_port)
-        for c in self.down.values():
-            self.output_ports.add(c.upstream_output_port)
 
     def table_entry_row(self, headers):
         tdata = []
