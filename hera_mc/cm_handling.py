@@ -464,7 +464,7 @@ class Handling:
                                                     'revisions': set()}
             else:
                 self.part_type_dict[part.hptype]['part_list'].append(key)
-        port = port.lower()
+        port = port.lower()[:3]
         for k, v in self.part_type_dict.iteritems():
             for pa in v['part_list']:
                 hpn, rev = cm_utils.split_part_key(pa)
@@ -472,14 +472,14 @@ class Handling:
                 chk_conn.get_entry(self.session)
                 for ip in chk_conn.input_ports:
                     show_it = (port == 'all') or\
-                              (port[:3] == 'sig' and ip[0] != '@') or\
-                              (port[:3] == 'phy' and ip[0] == '@')
+                              (port == 'sig' and ip[0] != '@') or\
+                              (port == 'phy' and ip[0] == '@')
                     if ip is not None and show_it:
                         v['input_ports'].add(copy.copy(ip))
                 for op in chk_conn.output_ports:
                     show_it = (port == 'all') or\
-                              (port[:3] == 'sig' and op[0] != '@') or\
-                              (port[:3] == 'phy' and op[0] == '@')
+                              (port == 'sig' and op[0] != '@') or\
+                              (port == 'phy' and op[0] == '@')
                     if op is not None and show_it:
                         v['output_ports'].add(copy.copy(op))
                 v['revisions'].add(rev)
