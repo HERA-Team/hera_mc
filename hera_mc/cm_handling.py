@@ -469,13 +469,13 @@ class Handling:
                 chk_conn.get_entry(self.session)
                 for iop in ['input_ports', 'output_ports']:
                     for p in getattr(chk_conn, iop):
-                        show_it = (port == 'all') or\
-                                  (port == 'sig' and p[0] != '@') or\
-                                  (port == 'phy' and p[0] == '@')
-                        if p is not None and show_it:
-                            v[iop].add(copy.copy(p))
                         if p is not None:
                             v['connections'] += 1
+                            show_it = (port == 'all') or\
+                                      (port == 'sig' and p[0] != '@') or\
+                                      (port == 'phy' and p[0] == '@')
+                            if show_it:
+                                v[iop].add(p)
                 v['revisions'].add(rev)
 
         return self.part_type_dict
