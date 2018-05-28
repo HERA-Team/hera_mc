@@ -75,7 +75,7 @@ class TestConnections(TestHERAMC):
                 [u, r, d, r, a, b, g, 'downstream_input_port', b],
                 [u, r, d, r, a, b, g, 'start_gpstime', g]]
         part_connect.update_connection(self.test_session, data, add_new_connection=True)
-        located = self.h.get_connection_dossier([u], r, a, 'now', True)
+        located = self.h.get_part_connection_dossier([u], r, a, 'now', True)
         prkey = located.keys()[0]
         ckey = located[prkey].keys_down[0]
         self.assertTrue(located[prkey].down[ckey].upstream_part == u)

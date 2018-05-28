@@ -439,7 +439,7 @@ class Handling:
 
         print(tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
 
-    def get_part_types(self, at_date):
+    def get_part_types(self, port, at_date):
         """
         Goes through database and pulls out part types and some other info to
             display in a table.
@@ -448,6 +448,9 @@ class Handling:
 
         Parameters
         -----------
+        port:  if port == '[phy]sical' show only "physical" ports"
+               if port == '[sig]nal' show only "signal" ports
+               if port == 'all' shows all
         at_date:  date for part_types to be shown
         """
 
@@ -461,18 +464,24 @@ class Handling:
                                                     'revisions': set()}
             else:
                 self.part_type_dict[part.hptype]['part_list'].append(key)
+        port = port.lower()
         for k, v in self.part_type_dict.iteritems():
-            hpn, rev = cm_utils.split_part_key(v['part_list'][0])
-            pd = self.get_part_dossier([hpn], [rev], at_date, exact_match=True, full_version=True)
-            for pv in pd.values():
-                for ip in pv.connections.input_ports:
-                    if ip is not None and ip[0] != '@':
-                        v['input_ports'].add(copy.copy(ip))
-                for op in pv.connections.output_ports:
-                    if op is not None and op[0] != '@':
-                        v['output_ports'].add(copy.copy(op))
             for pa in v['part_list']:
                 hpn, rev = cm_utils.split_part_key(pa)
+                chk_conn = PartConnectionDossierEntry(hpn, rev, 'all', at_date)
+                chk_conn.get_entry(self.session)
+                for ip in chk_conn.input_ports:
+                    show_it = (port == 'all') or\
+                              (port[:3] == 'sig' and ip[0] != '@') or\
+                              (port[:3] == 'phy' and ip[0] == '@')
+                    if ip is not None and show_it:
+                        v['input_ports'].add(copy.copy(ip))
+                for op in chk_conn.output_ports:
+                    show_it = (port == 'all') or\
+                              (port[:3] == 'sig' and op[0] != '@') or\
+                              (port[:3] == 'phy' and op[0] == '@')
+                    if op is not None and show_it:
+                        v['output_ports'].add(copy.copy(op))
                 v['revisions'].add(rev)
 
         return self.part_type_dict
@@ -487,9 +496,9 @@ class Handling:
         table_data = []
         for k in self.part_type_dict.keys():
             td = [k, len(self.part_type_dict[k]['part_list'])]
-            td.append(', '.join(self.part_type_dict[k]['input_ports']))
-            td.append(', '.join(self.part_type_dict[k]['output_ports']))
-            td.append(', '.join(self.part_type_dict[k]['revisions']))
+            td.append(', '.join(sorted(self.part_type_dict[k]['input_ports'])))
+            td.append(', '.join(sorted(self.part_type_dict[k]['output_ports'])))
+            td.append(', '.join(sorted(self.part_type_dict[k]['revisions'])))
             table_data.append(td)
         print('\n', tabulate(table_data, headers=headers, tablefmt='orgtbl'))
         print()

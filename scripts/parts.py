@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     # Process
     if action_tag == 'ty':  # types of parts
-        part_type_dict = handling.get_part_types(date_query)
+        part_type_dict = handling.get_part_types(args.port, date_query)
         handling.show_part_types()
         sys.exit()
 
