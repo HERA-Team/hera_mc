@@ -489,7 +489,8 @@ class Handling:
                    'Revisions']
         table_data = []
         for k in sorted(self.part_type_dict.keys()):
-            td = [k, len(self.part_type_dict[k]['part_list']), self.part_type_dict[k]['connections']]
+            td = [k, len(self.part_type_dict[k]['part_list']),
+                  self.part_type_dict[k]['connections']]
             td.append(', '.join(sorted(self.part_type_dict[k]['input_ports'])))
             td.append(', '.join(sorted(self.part_type_dict[k]['output_ports'])))
             td.append(', '.join(sorted(self.part_type_dict[k]['revisions'])))
