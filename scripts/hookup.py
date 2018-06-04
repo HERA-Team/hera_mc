@@ -41,7 +41,7 @@ if __name__ == '__main__':
         if args.hpn is None:
             args.hpn = ['HH']
         args.show_levels = True
-        args.hookup_cols = ['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level']
+        args.hookup_cols = ['station', 'front-end', 'post-amp', 'snap', 'node']
     args.hpn = cm_utils.listify(args.hpn)
     # Start session
     db = mc.connect_to_mc_db(args)
@@ -54,5 +54,5 @@ if __name__ == '__main__':
                                         exact_match=args.exact_match, show_levels=args.show_levels,
                                         force_new=args.force_new, force_specific=args.force_specific,
                                         force_specific_at_date=date_query)
-        hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols, show_levels=args.show_levels,
-                           show_ports=args.show_ports, show_revs=args.show_revs, show_state=args.show_state)
+        hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols, levels=args.show_levels,
+                           ports=args.show_ports, revs=args.show_revs, state=args.show_state)
