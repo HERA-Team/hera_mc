@@ -50,7 +50,7 @@ class TestParts(TestHERAMC):
         part_connect.update_part(self.test_session, data, add_new_part=True)
         located = self.h.get_part_dossier([ntp], 'X', 'now', True)
         if len(located.keys()) == 1:
-            self.assertTrue(located[located.keys()[0]]['part'].hpn == ntp)
+            self.assertTrue(located[located.keys()[0]].part.hpn == ntp)
         else:
             self.assertFalse("Part Number should be unique.")
 
@@ -63,7 +63,7 @@ class TestParts(TestHERAMC):
         part_connect.update_part(self.test_session, data, add_new_part=False)
         located = self.h.get_part_dossier([self.test_part], 'Z', Time('2017-07-01 01:00:00', scale='utc'), True)
         if len(located.keys()) == 1:
-            self.assertTrue(located[located.keys()[0]]['part'].hpn_rev == 'Z')
+            self.assertTrue(located[located.keys()[0]].part.hpn_rev == 'Z')
         else:
             self.assertFalse()
 
@@ -76,7 +76,7 @@ class TestParts(TestHERAMC):
     def test_part_info(self):
         part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, 'now', 'Testing', 'library_file')
         located = self.h.get_part_dossier([self.test_part], self.test_rev, self.start_time, True)
-        self.assertTrue(located[located.keys()[0]]['part_info'][0].comment == 'Testing')
+        self.assertTrue(located[located.keys()[0]].part_info[0].comment == 'Testing')
 
     def test_add_new_parts(self):
         data = [['part_X', 'X', 'station', 'mfg_X']]
@@ -84,7 +84,7 @@ class TestParts(TestHERAMC):
         part_connect.add_new_parts(self.test_session, p, data, Time('2017-07-01 01:00:00', scale='utc'), True)
         located = self.h.get_part_dossier(['part_X'], 'X', Time('2017-07-01 01:00:00'), True)
         if len(located.keys()) == 1:
-            self.assertTrue(located[located.keys()[0]]['part'].hpn == 'part_X')
+            self.assertTrue(located[located.keys()[0]].part.hpn == 'part_X')
         else:
             self.assertFalse()
 
@@ -102,7 +102,7 @@ class TestParts(TestHERAMC):
 
     def test_get_part_types(self):
         at_date = self.now
-        a = self.h.get_part_types(at_date)
+        a = self.h.get_part_types('all', at_date)
         self.assertTrue('terminals' in a['feed']['output_ports'])
 
     def test_check_overlapping(self):
