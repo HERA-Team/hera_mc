@@ -182,23 +182,16 @@ def get_full_revision(hpn, hookup_dict):
         H = cm_hookup.Hookup()
         hookup_dict = H.get_hookup(H.hookup_list_to_cache)
     return_full_keys = []
-    found_this_hpn = False
-    for hukey in hookup_dict['hookup'].keys():
-        hpn_hu, rev_hu = cm_utils.split_part_key(hukey)
+    for k, h in hookup_dict.iteritems():
+        hpn_hu, rev_hu = cm_utils.split_part_key(k)
         if hpn_hu.lower() == hpn.lower():
-            if len(hookup_dict['fully_connected'].keys()):
-                for pkey in hookup_dict['fully_connected'][hukey].keys():
-                    if hookup_dict['fully_connected'][hukey][pkey]:
-                        tsrt = hookup_dict['timing'][hukey][pkey][0]
-                        tend = hookup_dict['timing'][hukey][pkey][1]
-                        return_full_keys.append(Namespace(hpn=hpn, rev=rev_hu,
-                                                          started=tsrt, ended=tend,
-                                                          hukey=hukey, pkey=pkey))
-                        found_this_hpn = True
-                        break
-        if found_this_hpn:
-            break
-
+            for pol, is_connected in h.fully_connected.iteritems():
+                if is_connected:
+                    tsrt = h.timing[pol][0]
+                    tend = h.timing[pol][1]
+                    return_full_keys.append(Namespace(hpn=hpn, rev=rev_hu,
+                                                      started=tsrt, ended=tend,
+                                                      hukey=hukey, pol=pol))
     return return_full_keys
 
 

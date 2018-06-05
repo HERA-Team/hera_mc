@@ -94,8 +94,8 @@ class Handling:
             'latitude': station latitude (float)
             'elevation': station elevation (float)
             'antenna_number': antenna number (integer)
-            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4' or 'SNPnnn>e1')
-            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4' or 'SNPnnn>n1')
+            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4' or 'SNP002>e1')
+            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4' or 'SNP002>n1')
             'start_date': start of connection in gps seconds (long)
             'stop_date': end of connection in gps seconds (long or None no end time)
 
@@ -150,22 +150,26 @@ class Handling:
             H = cm_hookup.Hookup(at_date, self.session)
         hud = H.get_hookup(hpn_list=[stn], exact_match=True)
         station_dict = {}
-        fc = cm_revisions.get_full_revision(stn, hud)
-        if len(fc) == 1:
-            k = fc[0].hukey
-            p = fc[0].pkey
-            stn = hud['hookup'][k][p][0].upstream_part
-            ant_num = hud['hookup'][k][p][0].downstream_part
+        fully_connected = cm_revisions.get_full_revision(stn, hud)
+        fully_connected_keys = set()
+        for fc in fully_connected:
+            if cm_utils.is_active(at_date, fc.started, fc.ended):
+                fully_connected_keys.add(fc.hukey)
+        if len(fully_connected_keys) == 1:
+            k = fully_connected[fully_connected_keys[0]].hukey
+            p = fully_connected[fully_connected_keys[0]].pol
+            current_hookup = hud[k].hookup
+            stn = current_hookup[p][0].upstream_part
+            ant_num = current_hookup[p][0].downstream_part
             # ant_num here is unicode with an A in front of the number (e.g. u'A22').
             # But we just want an integer, so we strip the A and cast it to int
             ant_num = int(ant_num[1:])
             corr = {}
-            for pen in ['e', 'n']:
-                corhu = hud['hookup'][k][pen]
-                if hud['parts_epoch']['epoch'] == 'parts_paper':
-                    corr[pen] = corhu[-1].downstream_part
-                elif hud['parts_epoch']['epoch'] == 'parts_hera':
-                    corr[pen] = corhu[-2].downstream_part + '>' + corhu[-2].downstream_input_port
+            for p in current_hookup:
+                if current_hookup.parts_epoch == 'parts_paper':
+                    corr[p] = current_hookup[k][p][-1].downstream_part
+                elif current_hookup.parts_epoch == 'parts_hera':
+                    corr[p] = current_hookup[k][p][-2].downstream_part + '>' + current_hookup[k][p][-2].downstream_input_port
                 else:
                     raise ValueError("No correlator hookup defined.")
             fnd_list = self.geo.get_location([stn], at_date)
@@ -175,9 +179,6 @@ class Handling:
                 print("More than one part found:  ", str(fnd))
                 print("Setting to first to continue.")
             fnd = fnd_list[0]
-
-            strtd = hud['timing'][k][p][0]
-            ended = hud['timing'][k][p][1]
             station_dict = {'station_name': str(fnd.station_name),
                             'station_type': str(fnd.station_type_name),
                             'tile': str(fnd.tile),
@@ -190,8 +191,8 @@ class Handling:
                             'antenna_number': ant_num,
                             'correlator_input_x': str(corr['e']),
                             'correlator_input_y': str(corr['n']),
-                            'start_date': strtd,
-                            'stop_date': ended}
+                            'start_date': fc[0].started,
+                            'stop_date': fc[0].ended}
         return station_dict
 
     def get_cminfo_correlator(self):
@@ -271,23 +272,21 @@ class Handling:
                 'cofa_lon': cofa_loc.lon,
                 'cofa_alt': cofa_loc.elevation}
 
-    def get_pam_info(self, stn, at_date, pam_name='post-amp'):
+    def get_part_info(self, stn, at_date, part_name='post-amp'):
         """
         input:
             stn: antenna number of format HHi where i is antenna number
             at_date: date at which connection is true, format 'YYYY-M-D' or 'now'
         returns:
-            dict of {pol:(rcvr location,pam #)}
+            dict of {pol:(location, #)}
         """
-        pams = {}
+        parts = {}
         H = cm_hookup.Hookup(at_date, self.session)
         hud = H.get_hookup(hpn_list=[stn], exact_match=True)
         fc = cm_revisions.get_full_revision(stn, hud)
         if len(fc) == 1:
-            k = fc[0].hukey
-            p = fc[0].pkey
-            pams = cm_hookup.get_parts_from_hookup(pam_name, hud)[k]
-        return pams
+            parts = hud[fc[0].hukey].get_parts_from_hookup(part_name)
+        return parts
 
     def publish_summary(self, hlist='default', rev='A', exact_match=False,
                         hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],

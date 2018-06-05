@@ -378,10 +378,11 @@ class Handling:
         station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
         query_date = cm_utils.get_astropytime(query_date)
         for st in station_types_to_use:
-            active_stations = []
+            fully_connected_stations = set()
             for loc in self.station_types[st]['Stations']:
-                if cm_revisions.get_full_revision(loc, hookup_dict):
-                    active_stations.append(loc)
+                for fr in cm_revisions.get_full_revision(loc, hookup_dict):
+                    if cm_utils.is_active(query_date, fr.started, fr.ended):
+                        fully_connected_stations.add(loc)
             kwargs['marker_color'] = self.station_types[st]['Marker'][0]
             kwargs['marker_shape'] = self.station_types[st]['Marker'][1]
             kwargs['marker_size'] = 6

@@ -119,7 +119,7 @@ class HookupDossierEntry:
 
     def get_parts_from_hookup(self, part_name):
         """
-        Retrieve the value for a part name from a hookup_dict
+        Retrieve the value for a part name from a hookup
         It somewhat confusedly returns the previous upstream part to get the upstream/
         downstream thing right.
 
@@ -356,7 +356,6 @@ class Hookup:
                                                exact_match=exact_match,
                                                full_version=False)
         hookup_dict = {}
-        self.all_part_types_found = set()
         for k, part in parts.iteritems():
             if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
                 continue
@@ -381,11 +380,9 @@ class Hookup:
         for c in hookup_connections:
             part_type = self.handling.get_part_type_for(c.upstream_part).lower()
             part_types_found.add(part_type)
-            self.all_part_types_found.add(part_type)
             self.part_type_cache[c.upstream_part] = part_type
         part_type = self.handling.get_part_type_for(c.downstream_part).lower()
         part_types_found.add(part_type)
-        self.all_part_types_found.add(part_type)
         self.part_type_cache[c.downstream_part] = part_type
         return list(part_types_found)
 

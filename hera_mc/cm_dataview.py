@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2017 the HERA Collaboration
+# Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """Allows some different data views of cm database.
