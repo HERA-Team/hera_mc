@@ -63,7 +63,7 @@ class HookupDossierEntry:
 
     def get_epoch_and_column_headers(self, pol, part_types_found):
         """
-        The columns in the hookup_dict contain parts in the hookup chain and the column headers are
+        The columns in the hookup contain parts in the hookup chain and the column headers are
         the part types contained in that column.  This returns the headers for the retrieved hookup.
 
         It just checks which epoch the parts are in (parts_paper or parts_hera) and keeps however many
@@ -120,33 +120,33 @@ class HookupDossierEntry:
     def get_parts_from_hookup(self, part_name):
         """
         Retrieve the value for a part name from a hookup
-        It somewhat confusedly returns the previous upstream part to get the upstream/
-        downstream thing right.
 
         Parameters:
         ------------
         part_name:  string of valid part name in hookup_dict
 
         returns:
-            parts[hpn][pol] = (location, pam number)
+            parts[pol] = part number
             location example: RI4A1E:A
             pam number example: RCVR93:A (for a PAPER RCVR)
             pam number example: PAM75101:B (for a HERA PAM)
         """
         parts = {}
-        go = False
         for pol, names in self.columns.iteritems():
             if part_name not in names:
                 parts[pol] = None
+                continue
+            iend = 2
+            if 'start' in self.columns[pol]:
+                iend += 1
+            if 'stop' in self.columns[pol]:
+                iend += 1
+            part_ind = names.index(part_name)
+            print(part_ind, len(names))
+            if part_ind < len(names) - iend:
+                parts[pol] = self.hookup[pol][part_ind].upstream_part
             else:
-                go = True
-        if not go:
-            return parts
-        print("NOT WORKING YET!!!")
-        for pol, names in self.columns.iteritems():
-            part_ind = names.index(part_name) - 1 if names.index(part_name) > 1 else 0
-            if part_ind < len(p):
-                parts[pol] = (p[part_ind].upstream_part, p[part_ind].downstream_part)
+                parts[pol] = self.hookup[pol][part_ind - 1].downstream_part
         return parts
 
     def table_entry_row(self, pol, headers, part_types, show):

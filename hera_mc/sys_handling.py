@@ -17,15 +17,18 @@ from hera_mc import geo_location, geo_handling
 
 
 class StationInfo:
-    stn_info = ['station_name', 'station_type', 'tile', 'datum', 'easting', 'northing',
-                'lon', 'lat', 'elevation', 'antenna_number', 'correlator_input_x',
-                'correlator_input_y', 'start_date', 'stop_date']
+    stn_info = ['station_name', 'station_type', 'tile', 'datum', 'easting', 'northing', 'lon', 'lat',
+                'elevation', 'antenna_number', 'correlator_input', 'start_date', 'stop_date']
 
     def __init__(self, stn=None):
-        for s in stn_info:
-            setattr(self, s, None)
-        if stn is not None:
-            self.update_stn(stn)
+        if isintance(stn, (str, unicode)) and stn == 'init_arrays':
+            for s in stn_info:
+                setattr(self, s, [])
+        else:
+            for s in stn_info:
+                setattr(self, s, None)
+            if stn is not None:
+                self.update_stn(stn)
 
     def update_stn(self, stn):
         if stn is None:
@@ -36,6 +39,16 @@ class StationInfo:
             except AttributeError:
                 continue
             setattr(self, s, a)
+
+    def update_arrays(self, stn):
+        if stn is None:
+            return
+        for s in stn_info:
+            try:
+                arr = getattr(self, s)
+            except AttributeError:
+                continue
+            arr.append(getattr(stn, s))
 
 
 class Handling:
@@ -115,8 +128,7 @@ class Handling:
             'lat': station latitude (float)
             'elevation': station elevation (float)
             'antenna_number': antenna number (integer)
-            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4' or 'SNP002>e1')
-            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4' or 'SNP002>n1')
+            'correlator_input': correlator input for x (East) pol and y (North) pol (string tuple-pair)
             'start_date': start of connection in gps seconds (long)
             'stop_date': end of connection in gps seconds (long or None no end time)
 
@@ -141,10 +153,9 @@ class Handling:
 
     def get_fully_connected_location_at_date(self, stn, at_date):
         """
-        Returns a dictionary for location stn that is fully connected at_date.  Provides
-        the dictonary used in other methods.
+        Returns StationInfo class
 
-        Returned attributes are:
+        Attributes are:
             'station_name': name of station (string, e.g. 'HH27')
             'station_type': type of station (string, e.g. 'HH', 'PI', etc or type 'herahexe', etc)
             'tile': UTM tile name (string, e.g. '34J'
@@ -155,8 +166,7 @@ class Handling:
             'lat': station latitude (float)
             'elevation': station elevation (float)
             'antenna_number': antenna number (integer)
-            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4' or 'SNP002>e1')
-            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4' or 'SNP002>n1')
+            'correlator_input': correlator input for x (East) pol and y (North) pol (string tuple-pair)
             'start_date': start of connection in gps seconds (long)
             'stop_date': end of connection in gps seconds (long or None no end time)
 
@@ -202,8 +212,7 @@ class Handling:
             fnd = fnd_list[0]
             station_info = StationInfo(fnd)
             station_info.antenna_number = ant_num
-            station_info.correlator_input_x = str(corr['e'])
-            station_info.correlator_input_y = str(corr['n'])
+            station_info.correlator_input = (str(corr['e']), str(corr['n']))
             station_info.start_date = fc[0].started
             station_info.stop_date = fc[0].ended
         return station_info
@@ -237,48 +246,28 @@ class Handling:
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
         stations_conn = self.get_all_fully_connected_at_date(at_date='now', station_types_to_check=cm_utils.default_station_prefixes)
-        ant_nums = []
-        stn_names = []
-        stn_types = []
-        corr_inputs = []
-        tiles = []
-        datums = []
-        eastings = []
-        northings = []
-        longitudes = []
-        latitudes = []
-        elevations = []
+        stn_arrays = StationInfo('init_arrays')
         for stn in stations_conn:
-            ant_nums.append(stn.antenna_number)
-            stn_names.append(stn.station_name)
-            stn_types.append(stn.station_type)
-            corr_inputs.append((stn.correlator_input_x, stn.correlator_input_y))
-            tiles.append(stn.tile)
-            datums.append(stn.datum)
-            eastings.append(stn.easting)
-            northings.append(stn.northing)
-            longitudes.append(stn.lon)
-            latitudes.append(stn.lat)
-            elevations.append(stn.elevation)
+            stn_arrays.update_arrays(stn)
         # latitudes, longitudes output by get_all_fully_connected_at_date are in degrees
         # XYZ_from_LatLonAlt wants radians
-        ecef_positions = uvutils.XYZ_from_LatLonAlt(np.array(latitudes) * np.pi / 180.,
-                                                    np.array(longitudes) * np.pi / 180.,
-                                                    elevations)
+        ecef_positions = uvutils.XYZ_from_LatLonAlt(np.array(stn_arrays.lat) * np.pi / 180.,
+                                                    np.array(stn_arrays.lon) * np.pi / 180.,
+                                                    stn_arrays.elevation)
         rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions.T,
                                                       cofa_loc.lon * np.pi / 180.)
 
-        return {'antenna_numbers': ant_nums,
+        return {'antenna_numbers': stn_arrays.antenna_number,
                 # This is actually station names, not antenna names,
                 # but antenna_names is what it's called in pyuvdata
-                'antenna_names': stn_names,
-                'station_types': stn_types,
+                'antenna_names': stn_arrays.station_name,
+                'station_types': stn_arrays.station_type,
                 # this is a tuple giving the f-engine names for x, y
-                'correlator_inputs': corr_inputs,
-                'antenna_utm_datum_vals': datums,
-                'antenna_utm_tiles': tiles,
-                'antenna_utm_eastings': eastings,
-                'antenna_utm_northings': northings,
+                'correlator_inputs': stn_arrays.correlator_input,
+                'antenna_utm_datum_vals': stn_arrays.datum,
+                'antenna_utm_tiles': stn_arrays.tile,
+                'antenna_utm_eastings': stn_arrays.easting,
+                'antenna_utm_northings': stn_arrays.northing,
                 'antenna_positions': rotecef_positions,
                 'cm_version': cm_version,
                 'cofa_lat': cofa_loc.lat,
