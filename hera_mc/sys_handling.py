@@ -16,6 +16,28 @@ from hera_mc import mc, part_connect, cm_utils, cm_hookup, cm_revisions
 from hera_mc import geo_location, geo_handling
 
 
+class StationInfo:
+    stn_info = ['station_name', 'station_type', 'tile', 'datum', 'easting', 'northing',
+                'lon', 'lat', 'elevation', 'antenna_number', 'correlator_input_x',
+                'correlator_input_y', 'start_date', 'stop_date']
+
+    def __init__(self, stn=None):
+        for s in stn_info:
+            setattr(self, s, None)
+        if stn is not None:
+            self.update_stn(stn)
+
+    def update_stn(self, stn):
+        if stn is None:
+            return
+        for s in stn_info:
+            try:
+                a = getattr(stn, s)
+            except AttributeError:
+                continue
+            setattr(self, s, a)
+
+
 class Handling:
     """
     Class to allow various manipulations of correlator inputs etc
@@ -79,19 +101,18 @@ class Handling:
 
     def get_all_fully_connected_at_date(self, at_date, station_types_to_check='default'):
         """
-        Returns a list of dictionaries of all of the locations fully connected at_date
-        have station_types in station_types_to_check.  The dictonary is defined in
-        get_fully_connected_location_at_date.
+        Returns a list of class StationInfo of all of the locations fully connected at_date
+        have station_types in station_types_to_check.
 
-        Each location is returned as one dict in the list. Dict keys are:
+        Each location is returned class StationInfo.  Attributes are:
             'station_name': name of station (string, e.g. 'HH27')
             'station_type': type of station (string, e.g. 'HH', 'PI', etc or type 'herahexe', etc)
             'tile': UTM tile name (string, e.g. '34J'
             'datum': UTM datum (string, e.g. 'WGS84')
             'easting': station UTM easting (float)
             'northing': station UTM northing (float)
-            'longitude': station longitude (float)
-            'latitude': station latitude (float)
+            'lon': station longitude (float)
+            'lat': station latitude (float)
             'elevation': station elevation (float)
             'antenna_number': antenna number (integer)
             'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4' or 'SNP002>e1')
@@ -112,9 +133,9 @@ class Handling:
         station_conn = []
         for st in station_types_to_check:
             for stn in self.geo.station_types[st]['Stations']:
-                station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date)
-                if len(station_dict.keys()) > 0:
-                    station_conn.append(station_dict)
+                station_info = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date)
+                if station_info.antenna_number is not None:
+                    station_conn.append(station_info)
         self.H = None  # Reset back in case gets called again outside of this method.
         return station_conn
 
@@ -123,19 +144,19 @@ class Handling:
         Returns a dictionary for location stn that is fully connected at_date.  Provides
         the dictonary used in other methods.
 
-        The returned dict keys are:
+        Returned attributes are:
             'station_name': name of station (string, e.g. 'HH27')
-            'station_type': type of station (string, e.g. 'HH', 'PI', etc or station type name 'herahexe', etc)
+            'station_type': type of station (string, e.g. 'HH', 'PI', etc or type 'herahexe', etc)
             'tile': UTM tile name (string, e.g. '34J'
             'datum': UTM datum (string, e.g. 'WGS84')
             'easting': station UTM easting (float)
             'northing': station UTM northing (float)
-            'longitude': station longitude (float)
-            'latitude': station latitude (float)
+            'lon': station longitude (float)
+            'lat': station latitude (float)
             'elevation': station elevation (float)
             'antenna_number': antenna number (integer)
-            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4')
-            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4')
+            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4' or 'SNP002>e1')
+            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4' or 'SNP002>n1')
             'start_date': start of connection in gps seconds (long)
             'stop_date': end of connection in gps seconds (long or None no end time)
 
@@ -179,21 +200,13 @@ class Handling:
                 print("More than one part found:  ", str(fnd))
                 print("Setting to first to continue.")
             fnd = fnd_list[0]
-            station_dict = {'station_name': str(fnd.station_name),
-                            'station_type': str(fnd.station_type_name),
-                            'tile': str(fnd.tile),
-                            'datum': str(fnd.datum),
-                            'easting': fnd.easting,
-                            'northing': fnd.northing,
-                            'longitude': fnd.lon,
-                            'latitude': fnd.lat,
-                            'elevation': fnd.elevation,
-                            'antenna_number': ant_num,
-                            'correlator_input_x': str(corr['e']),
-                            'correlator_input_y': str(corr['n']),
-                            'start_date': fc[0].started,
-                            'stop_date': fc[0].ended}
-        return station_dict
+            station_info = StationInfo(fnd)
+            station_info.antenna_number = ant_num
+            station_info.correlator_input_x = str(corr['e'])
+            station_info.correlator_input_y = str(corr['n'])
+            station_info.start_date = fc[0].started
+            station_info.stop_date = fc[0].ended
+        return station_info
 
     def get_cminfo_correlator(self):
         """
@@ -236,17 +249,17 @@ class Handling:
         latitudes = []
         elevations = []
         for stn in stations_conn:
-            ant_nums.append(stn['antenna_number'])
-            stn_names.append(stn['station_name'])
-            stn_types.append(stn['station_type'])
-            corr_inputs.append((stn['correlator_input_x'], stn['correlator_input_y']))
-            tiles.append(stn['tile'])
-            datums.append(stn['datum'])
-            eastings.append(stn['easting'])
-            northings.append(stn['northing'])
-            longitudes.append(stn['longitude'])
-            latitudes.append(stn['latitude'])
-            elevations.append(stn['elevation'])
+            ant_nums.append(stn.antenna_number)
+            stn_names.append(stn.station_name)
+            stn_types.append(stn.station_type)
+            corr_inputs.append((stn.correlator_input_x, stn.correlator_input_y))
+            tiles.append(stn.tile)
+            datums.append(stn.datum)
+            eastings.append(stn.easting)
+            northings.append(stn.northing)
+            longitudes.append(stn.lon)
+            latitudes.append(stn.lat)
+            elevations.append(stn.elevation)
         # latitudes, longitudes output by get_all_fully_connected_at_date are in degrees
         # XYZ_from_LatLonAlt wants radians
         ecef_positions = uvutils.XYZ_from_LatLonAlt(np.array(latitudes) * np.pi / 180.,

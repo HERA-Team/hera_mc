@@ -142,7 +142,7 @@ class TestSys(TestHERAMC):
         stn = 'HH23'
         hud = H.get_hookup([stn], exact_match=True)
         fc = cm_revisions.get_full_revision(stn, hud)
-        pams = cm_hookup.get_parts_from_hookup('post-amp', hud)
+        pams = hud.get_parts_from_hookup('post-amp')
         self.assertEqual(len(pams.keys()), 1)
         key = pams.keys()[0]
         self.assertEqual(pams[key]['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
@@ -150,7 +150,7 @@ class TestSys(TestHERAMC):
 
     def test_get_pam_info(self):
         h = sys_handling.Handling(self.test_session)
-        pams = h.get_pam_info('HH23', '2017-07-03')
+        pams = h.get_part_info('HH23', '2017-07-03', 'post-amp')
         self.assertEqual(len(pams), 2)
         self.assertEqual(pams['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
         self.assertEqual(pams['e'][1], 'PAM75123')  # the actual pam number (the thing written on the case)
