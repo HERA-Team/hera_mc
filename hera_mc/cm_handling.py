@@ -16,7 +16,7 @@ import warnings
 from astropy.time import Time
 from sqlalchemy import func, desc
 
-from hera_mc import mc, correlator_levels, cm_utils
+from hera_mc import mc, cm_utils
 from hera_mc import part_connect as PC
 from hera_mc import cm_revisions as cmrev
 
