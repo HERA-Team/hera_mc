@@ -21,7 +21,7 @@ class TestGeo(TestHERAMC):
 
     def setUp(self):
         super(TestGeo, self).setUp()
-        self.h = geo_handling.Handling(testing=True)
+        self.h = geo_handling.Handling(self.test_session, testing=True)
 
     def test_cofa(self):
         cofa = self.h.cofa()[0]
@@ -32,8 +32,8 @@ class TestGeo(TestHERAMC):
         self.assertTrue(cofa.isclose(cofa_func))
 
     def test_get_location(self):
-        located = self.h.get_location([self.test_element_station_name], 'now')
-        self.assertTrue(located[0].station_name == self.test_element_station_name)
+        located = self.h.get_location(['HH0'], 'now')
+        self.assertTrue(located[0].station_name == 'HH0')
 
         # test that function works the same as method
         located_func = geo_handling.get_location(['HH0'],
@@ -57,12 +57,12 @@ class TestGeo(TestHERAMC):
                 [nte, 'created_gpstime', 1172530000]]
         geo_location.update(self.test_session, data, add_new_geo=True)
         located = self.h.get_location([nte], 'now')
-        self.assertTrue(located[0].station_type_name == self.test_element_stn)
+        self.assertTrue(located[0].station_type_name == 'herahex')
 
     def test_update_update(self):
-        data = [[self.test_element_station_name, 'elevation', 1100.0]]
+        data = [["HH23", 'elevation', 1100.0]]
         geo_location.update(self.test_session, data, add_new_geo=False)
-        located = self.h.get_location([self.test_element_station_name], 'now')
+        located = self.h.get_location(["HH23"], 'now')
         self.assertTrue(located[0].elevation == 1100.0)
 
     def test_station_types(self):
@@ -91,9 +91,9 @@ class TestGeo(TestHERAMC):
                                   show_state='active', show_label='name')
 
     def test_is_in_database(self):
-        self.assertTrue(self.h.is_in_database(self.test_element_station_name, 'geo_location'))
-        self.assertTrue(self.h.is_in_database(self.upte, 'connections'))
-        self.assertRaises(ValueError, self.h.is_in_database, self.upte, 'wrong_one')
+        self.assertTrue(self.h.is_in_database('HH23', 'geo_location'))
+        self.assertTrue(self.h.is_in_database('HH23', 'connections'))
+        self.assertRaises(ValueError, self.h.is_in_database, 'HH666', 'wrong_one')
 
     def test_find_antenna_station_pair(self):
         ant, rev = self.h.find_antenna_at_station('HH23', 'now')

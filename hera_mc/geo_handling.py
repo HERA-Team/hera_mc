@@ -205,6 +205,7 @@ class Handling:
         query_date = cm_utils.get_astropytime(query_date)
         if type(antenna) == float or type(antenna) == int or antenna[0] != 'A':
             antenna = 'A' + str(antenna).strip('0')
+        print("Antenna ", antenna)
         connected_antenna = self.session.query(part_connect.Connections).filter(
             (func.upper(part_connect.Connections.downstream_part) == antenna.upper()) &
             (query_date.gps >= part_connect.Connections.start_gpstime))
@@ -378,11 +379,10 @@ class Handling:
         station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
         query_date = cm_utils.get_astropytime(query_date)
         for st in station_types_to_use:
-            fully_connected_stations = set()
+            active_stations = []
             for loc in self.station_types[st]['Stations']:
-                for fr in cm_revisions.get_full_revision(loc, hookup_dict):
-                    if cm_utils.is_active(query_date, fr.started, fr.ended):
-                        fully_connected_stations.add(loc)
+                if cm_revisions.get_full_revision(loc, hookup_dict):
+                    active_stations.append(loc)
             kwargs['marker_color'] = self.station_types[st]['Marker'][0]
             kwargs['marker_shape'] = self.station_types[st]['Marker'][1]
             kwargs['marker_size'] = 6

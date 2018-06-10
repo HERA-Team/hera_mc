@@ -38,9 +38,9 @@ class TestSys(TestHERAMC):
         H = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
         H.reset_memory_cache(None)
         self.assertEqual(H.cached_hookup_dict, None)
-        hu = H.get_hookup(['HH23'], 'A', 'pol', exact_match=True, show_levels=True, force_new=True)
+        hu = H.get_hookup(['HH23'], 'A', 'pol', exact_match=True, force_new=True)
         H.reset_memory_cache(hu)
-        self.assertEqual(H.cached_hookup_dict['hookup']['HH23:A']['e'][0].upstream_part, 'HH23')
+        self.assertEqual(H.cached_hookup_dict['HH23:A'].hookup['e'][0].upstream_part, 'HH23')
 
     def test_hookup_cache_file_info(self):
         H = cm_hookup.Hookup(at_date='now', session=self.test_session)
@@ -48,7 +48,6 @@ class TestSys(TestHERAMC):
 
     def test_correlator_info(self):
         corr_dict = self.h.get_cminfo_correlator()
-
         ant_names = corr_dict['antenna_names']
         self.assertEqual(len(ant_names), 1)
 
@@ -60,7 +59,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(len(index), 1)
         index = index[0]
 
-        self.assertEqual(stn_types[index], 'herahex')
+        self.assertEqual(stn_types[index], 'herahexw')
 
         self.assertEqual(corr_inputs[index], ('DF8B2', 'DF8B1'))
 
@@ -99,61 +98,20 @@ class TestSys(TestHERAMC):
         a = self.h.get_dubitable_list(return_full=True)
         self.assertEqual(len(a[2]), 3)
 
-    def test_correlator_levels(self):
-        at_date = cm_utils.get_astropytime('2017-07-03')
-        H = cm_hookup.Hookup(at_date, self.test_session)
-        hu = H.get_hookup(['HH23'], 'A', 'pol', exact_match=True, show_levels=True, force_new=True)
-        hh23level = float(hu['levels']['HH23:A']['e'])
-        self.assertEqual(type(hh23level), float)
-        # Now get some failures
-        self.test_hpn = ['test_part1', 'test_part2']
-        self.test_rev = 'Q'
-        self.test_mfg = 'XYZ'
-        self.test_hptype = 'vapor'
-        self.test_time = Time('2017-07-01 01:00:00', scale='utc').gps
-        self.query_time = Time('2017-08-01 01:00:00', scale='utc')
-        for tp in self.test_hpn:
-            part = part_connect.Parts()
-            part.hpn = tp
-            part.hpn_rev = self.test_rev
-            part.hptype = self.test_hptype
-            part.manufacture_number = self.test_mfg
-            part.start_gpstime = self.test_time
-            self.test_session.add(part)
-            self.test_session.commit()
-        connection = part_connect.Connections()
-        connection.upstream_part = self.test_hpn[0]
-        connection.up_part_rev = self.test_rev
-        connection.downstream_part = self.test_hpn[1]
-        connection.down_part_rev = self.test_rev
-        connection.upstream_output_port = 'up_and_out'
-        connection.downstream_input_port = 'down_and_in'
-        connection.start_gpstime = self.test_time
-        self.test_session.add(connection)
-        self.test_session.commit()
-        hu = H.get_hookup(['test_part1'], 'Q', 'pol', exact_match=True, show_levels=True, force_specific=True)
-        tplevel = hu['levels']['test_part1:Q']['e']
-        print(tplevel)
-        self.assertEqual(tplevel, '-')
-
     def test_get_pam_from_hookup(self):
         at_date = cm_utils.get_astropytime('2017-07-03')
         H = cm_hookup.Hookup(at_date, self.test_session)
         stn = 'HH23'
         hud = H.get_hookup([stn], exact_match=True)
-        fc = cm_revisions.get_full_revision(stn, hud)
-        pams = hud.get_parts_from_hookup('post-amp')
-        self.assertEqual(len(pams.keys()), 1)
-        key = pams.keys()[0]
-        self.assertEqual(pams[key]['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
-        self.assertEqual(pams[key]['e'][1], 'PAM75123')  # the actual pam number (the thing written on the case)
+        pams = hud[hud.keys()[0]].get_part_info('post-amp')
+        self.assertEqual(len(pams), 2)
+        self.assertEqual(pams['e'], 'PAM75123')  # the actual pam number (the thing written on the case)
 
     def test_get_pam_info(self):
         h = sys_handling.Handling(self.test_session)
         pams = h.get_part_info('HH23', '2017-07-03', 'post-amp')
-        self.assertEqual(len(pams), 2)
-        self.assertEqual(pams['e'][0], 'RI1A1E')  # the rcvr cable (which tells us location)
-        self.assertEqual(pams['e'][1], 'PAM75123')  # the actual pam number (the thing written on the case)
+        self.assertEqual(len(pams), 1)
+        self.assertEqual(pams['HH23:A']['e'], 'PAM75123')  # the actual pam number (the thing written on the case)
 
 
 if __name__ == '__main__':

@@ -95,8 +95,10 @@ class HookupDossierEntry:
                     self.columns[pol].append(c)
 
     def add_timing_and_fully_connected(self, pol):
-        print("CMH98: ", self.hookup)
-        full_hookup_length = len(PC.full_connection_path[self.parts_epoch[pol]]) - 1
+        if self.parts_epoch[pol] is not None:
+            full_hookup_length = len(PC.full_connection_path[self.parts_epoch[pol]]) - 1
+        else:
+            full_hookup_length = -1
         latest_start = 0
         earliest_stop = None
         for c in self.hookup[pol]:
@@ -115,10 +117,10 @@ class HookupDossierEntry:
 
     def add_correlator_levels(self, pol):
         print("Correlator levels not yet implemented.")
-        self.columns[pol].append('levels')
+        self.columns[pol].append('level')
         self.level[pol] = 'N/A'
 
-    def get_parts_from_hookup(self, part_name):
+    def get_part_info(self, part_name):
         """
         Retrieve the value for a part name from a hookup
 
@@ -143,7 +145,6 @@ class HookupDossierEntry:
             if 'stop' in self.columns[pol]:
                 iend += 1
             part_ind = names.index(part_name)
-            print(part_ind, len(names))
             if part_ind < len(names) - iend:
                 parts[pol] = self.hookup[pol][part_ind].upstream_part
             else:
@@ -153,7 +154,7 @@ class HookupDossierEntry:
     def table_entry_row(self, pol, headers, part_types, show):
         timing = self.timing[pol]
         if show['levels']:
-            level = self.levels[pol]
+            level = self.level[pol]
         else:
             level = False
         td = ['-'] * len(headers)
@@ -253,7 +254,7 @@ class Hookup:
         if force_new or not cache_file_date_OK:
             self.cached_hookup_dict = self.get_hookup_from_db(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
                                                               port_query='all', at_date=self.at_date,
-                                                              exact_match=False, show_levels=False)
+                                                              exact_match=False, levels=False)
             log_msg = "force_new:  {};  cache_file_date_OK:  {}".format(force_new, cache_file_date_OK)
             self.write_hookup_cache_to_file(log_msg)
         elif self.cached_hookup_dict is None:
@@ -262,7 +263,7 @@ class Hookup:
             else:
                 self.determine_hookup_cache_to_use(force_new=True)
 
-    def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, show_levels=False,
+    def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, levels=False,
                    force_new=False, force_specific=False, force_specific_at_date='now'):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary.
@@ -281,7 +282,7 @@ class Hookup:
         rev:  the revision number or descriptor
         port_query:  a specifiable port name to follow or 'all',  default is 'all'.
         exact_match:  boolean for either exact_match or partial
-        show_levels:  boolean to include correlator levels
+        levels:  boolean to include correlator levels
         force_new:  boolean to force a full database read as opposed to checking file
                     this will also rewrite the cache-file
         force_specific:  boolean to force this to read/write the file to use the supplied values
@@ -307,7 +308,7 @@ class Hookup:
         if force_specific or not requested_list_OK_for_cache:
             return self.get_hookup_from_db(hpn_list=hpn_list, rev=rev, port_query=port_query,
                                            at_date=force_specific_at_date,
-                                           exact_match=exact_match, show_levels=show_levels)
+                                           exact_match=exact_match, levels=levels)
 
         # Check/get the appropriate hookup dict
         # (a) in memory, (b) re-read cache file, or (c) generate new
@@ -329,7 +330,7 @@ class Hookup:
                         break
             if use_this_one:
                 hookup_dict[k] = copy.copy(self.cached_hookup_dict[k])
-            if show_levels:
+            if levels:
                 for pol in hookup_dict[k].hookup:
                     hookup_dict[k].add_correlator_levels(pol)
         return hookup_dict
@@ -346,7 +347,7 @@ class Hookup:
                 return False
         return True
 
-    def get_hookup_from_db(self, hpn_list, rev, port_query, at_date, exact_match=False, show_levels=False):
+    def get_hookup_from_db(self, hpn_list, rev, port_query, at_date, exact_match=False, levels=False):
         """
         This gets called by the get_hookup wrapper if the database is to be read.
         It is the full original method that was used prior to the cache file wrapper stuff.
@@ -370,7 +371,7 @@ class Hookup:
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[pol])
                 hookup_dict[k].get_epoch_and_column_headers(pol, part_types_found)
                 hookup_dict[k].add_timing_and_fully_connected(pol)
-                if show_levels:
+                if levels:
                     hookup_dict[k].add_correlator_levels(pol)
         return hookup_dict
 
@@ -627,7 +628,6 @@ class Hookup:
                     col_list = copy.copy(cols)
         if cols_to_show[0].lower() == 'all':
             return col_list
-        print(cols_to_show)
         headers = []
         cols_to_show = [x.lower() for x in cols_to_show]
         for col in col_list:

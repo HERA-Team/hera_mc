@@ -191,7 +191,7 @@ def get_full_revision(hpn, hookup_dict):
                     tend = h.timing[pol][1]
                     return_full_keys.append(Namespace(hpn=hpn, rev=rev_hu,
                                                       started=tsrt, ended=tend,
-                                                      hukey=hukey, pol=pol))
+                                                      hukey=k, pol=pol))
     return return_full_keys
 
 
