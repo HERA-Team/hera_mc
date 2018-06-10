@@ -95,6 +95,7 @@ class HookupDossierEntry:
                     self.columns[pol].append(c)
 
     def add_timing_and_fully_connected(self, pol):
+        print("CMH98: ", self.hookup)
         full_hookup_length = len(PC.full_connection_path[self.parts_epoch[pol]]) - 1
         latest_start = 0
         earliest_stop = None
