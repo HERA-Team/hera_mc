@@ -54,7 +54,7 @@ class HookupDossierEntry:
         This is the structure of the hookup entry.  All are keyed on polarization
         """
         self.entry_key = entry_key
-        self.hookup = {}  # actual hookup information
+        self.hookup = {}  # actual hookup connection information
         self.fully_connected = {}  # flag if fully connected
         self.parts_epoch = {}  # name of parts_epoch
         self.columns = {}  # list with the actual column headers in hookup
@@ -116,7 +116,7 @@ class HookupDossierEntry:
         self.columns[pol].append('stop')
 
     def add_correlator_levels(self, pol):
-        print("Correlator levels not yet implemented.")
+        print("Correlator levels not yet implemented for new correlator.")
         self.columns[pol].append('level')
         self.level[pol] = 'N/A'
 
@@ -135,15 +135,15 @@ class HookupDossierEntry:
             pam number example: PAM75101:B (for a HERA PAM)
         """
         parts = {}
+        extra_cols = ['start', 'stop', 'level']
         for pol, names in self.columns.iteritems():
             if part_name not in names:
                 parts[pol] = None
                 continue
             iend = 2
-            if 'start' in self.columns[pol]:
-                iend += 1
-            if 'stop' in self.columns[pol]:
-                iend += 1
+            for ec in extra_cols:
+                if ec in self.columns[pol]:
+                    iend += 1
             part_ind = names.index(part_name)
             if part_ind < len(names) - iend:
                 parts[pol] = self.hookup[pol][part_ind].upstream_part

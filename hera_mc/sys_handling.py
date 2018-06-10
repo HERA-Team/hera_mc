@@ -210,7 +210,7 @@ class Handling:
                     raise ValueError("No correlator hookup defined.")
             fnd_list = self.geo.get_location([stn], at_date)
             if not len(fnd_list):
-                return {}
+                return None
             if len(fnd_list) > 1:
                 print("More than one part found:  ", str(fnd))
                 print("Setting to first to continue.")
