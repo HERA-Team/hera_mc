@@ -15,7 +15,7 @@ import os
 import time
 from astropy.time import Time, TimeDelta
 
-from hera_mc import mc, geo_location, correlator_levels, cm_utils, cm_handling, cm_transfer
+from hera_mc import mc, geo_location, cm_utils, cm_handling, cm_transfer
 from hera_mc import part_connect as PC
 import copy
 from sqlalchemy import func

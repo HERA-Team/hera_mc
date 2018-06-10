@@ -38,9 +38,9 @@ class TestSys(TestHERAMC):
         H = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
         H.reset_memory_cache(None)
         self.assertEqual(H.cached_hookup_dict, None)
-        hu = H.get_hookup(['HH23'], 'A', 'pol', exact_match=True, force_new=True)
+        hu = H.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new=True)
         H.reset_memory_cache(hu)
-        self.assertEqual(H.cached_hookup_dict['HH23:A'].hookup['e'][0].upstream_part, 'HH23')
+        self.assertEqual(H.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
 
     def test_hookup_cache_file_info(self):
         H = cm_hookup.Hookup(at_date='now', session=self.test_session)
@@ -112,6 +112,10 @@ class TestSys(TestHERAMC):
         pams = h.get_part_info('HH23', '2017-07-03', 'post-amp')
         self.assertEqual(len(pams), 1)
         self.assertEqual(pams['HH23:A']['e'], 'PAM75123')  # the actual pam number (the thing written on the case)
+
+    def test_system_comments(self):
+        comments = self.h.system_comments()
+        self.assertEqual(comments[0], 'N')
 
 
 if __name__ == '__main__':
