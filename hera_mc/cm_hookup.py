@@ -163,25 +163,14 @@ class HookupDossierEntry:
         for d in self.hookup[pol]:
             part_type = part_types[d.upstream_part]
             if part_type in headers:
-                new_row_entry = ''
-                if show['ports']:
-                    new_row_entry = dip
-                new_row_entry += d.upstream_part
-                if show['revs']:
-                    new_row_entry += ':' + d.up_part_rev
-                if show['ports']:
-                    new_row_entry += ' <' + d.upstream_output_port
+                new_row_entry = build_new_row_entry(
+                    dip, d.upstream_part, d.up_part_rev, d.upstream_output_port, show)
                 td[headers.index(part_type)] = new_row_entry
                 dip = d.downstream_input_port + '> '
         # Get the last part in the hookup
-        part_type = part_types[d.downstream_part]
-        if part_type in headers:
-            new_row_entry = ''
-            if show['ports']:
-                new_row_entry = dip
-            new_row_entry += d.downstream_part
-            if show['revs']:
-                new_row_entry += ':' + d.down_part_rev
+        if part_types[d.downstream_part] in headers:
+            new_row_entry = build_new_row_entry(
+                dip, d.downstream_part, d.down_part_rev, None, show)
             td[headers.index(part_type)] = new_row_entry
         # Add timing and levels
         if 'start' in headers:
@@ -191,6 +180,18 @@ class HookupDossierEntry:
         if level:
             td[headers.index('level')] = level
         return td
+
+
+def build_new_row_entry(dip, part, rev, port, show):
+    new_row_entry = ''
+    if show['ports']:
+        new_row_entry = dip
+    new_row_entry += part
+    if show['revs']:
+        new_row_entry += ':' + rev
+    if port is not None and show['ports']:
+        new_row_entry += ' <' + port
+    return new_row_entry
 
 
 class Hookup:

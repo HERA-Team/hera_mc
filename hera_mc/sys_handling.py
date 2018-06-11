@@ -119,7 +119,7 @@ class Handling:
 
         Each location is returned class StationInfo.  Attributes are:
             'station_name': name of station (string, e.g. 'HH27')
-            'station_type': type of station (string, e.g. 'HH', 'PI', etc or type 'herahexe', etc)
+            'station_type_name': type of station (type 'herahexe', etc)
             'tile': UTM tile name (string, e.g. '34J'
             'datum': UTM datum (string, e.g. 'WGS84')
             'easting': station UTM easting (float)
@@ -157,7 +157,7 @@ class Handling:
 
         Attributes are:
             'station_name': name of station (string, e.g. 'HH27')
-            'station_type': type of station (string, e.g. 'HH', 'PI', etc or type 'herahexe', etc)
+            'station_type_name': type of station (type 'herahexe', etc)
             'tile': UTM tile name (string, e.g. '34J'
             'datum': UTM datum (string, e.g. 'WGS84')
             'easting': station UTM easting (float)
@@ -250,7 +250,8 @@ class Handling:
         cm_h = cm_handling.Handling(session=self.session)
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
-        stations_conn = self.get_all_fully_connected_at_date(at_date='now', station_types_to_check=cm_utils.default_station_prefixes)
+        stations_conn = self.get_all_fully_connected_at_date(
+            at_date='now', station_types_to_check=cm_utils.default_station_prefixes)
         stn_arrays = StationInfo('init_arrays')
         for stn in stations_conn:
             stn_arrays.update_arrays(stn)

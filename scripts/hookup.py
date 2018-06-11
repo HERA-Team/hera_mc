@@ -50,7 +50,7 @@ if __name__ == '__main__':
         print(hookup.hookup_cache_file_info())
     else:
         hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
-                                        exact_match=args.exact_match, levels=args.show_levels,
+                                        exact_match=args.exact_match, levels=args.levels,
                                         force_new=args.force_new, force_specific=args.force_specific,
                                         force_specific_at_date=date_query)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols, levels=args.levels,
