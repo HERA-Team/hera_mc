@@ -16,6 +16,41 @@ from hera_mc import mc, part_connect, cm_utils, cm_hookup, cm_revisions
 from hera_mc import geo_location, geo_handling
 
 
+class StationInfo:
+    stn_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting', 'northing', 'lon', 'lat',
+                'elevation', 'antenna_number', 'correlator_input', 'start_date', 'stop_date']
+
+    def __init__(self, stn=None):
+        if isinstance(stn, (str, unicode)) and stn == 'init_arrays':
+            for s in self.stn_info:
+                setattr(self, s, [])
+        else:
+            for s in self.stn_info:
+                setattr(self, s, None)
+            if stn is not None:
+                self.update_stn(stn)
+
+    def update_stn(self, stn):
+        if stn is None:
+            return
+        for s in self.stn_info:
+            try:
+                a = getattr(stn, s)
+            except AttributeError:
+                continue
+            setattr(self, s, a)
+
+    def update_arrays(self, stn):
+        if stn is None:
+            return
+        for s in self.stn_info:
+            try:
+                arr = getattr(self, s)
+            except AttributeError:
+                continue
+            arr.append(getattr(stn, s))
+
+
 class Handling:
     """
     Class to allow various manipulations of correlator inputs etc
@@ -79,23 +114,21 @@ class Handling:
 
     def get_all_fully_connected_at_date(self, at_date, station_types_to_check='default'):
         """
-        Returns a list of dictionaries of all of the locations fully connected at_date
-        have station_types in station_types_to_check.  The dictonary is defined in
-        get_fully_connected_location_at_date.
+        Returns a list of class StationInfo of all of the locations fully connected at_date
+        have station_types in station_types_to_check.
 
-        Each location is returned as one dict in the list. Dict keys are:
+        Each location is returned class StationInfo.  Attributes are:
             'station_name': name of station (string, e.g. 'HH27')
-            'station_type': type of station (string, e.g. 'HH', 'PI', etc or type 'herahexe', etc)
+            'station_type_name': type of station (type 'herahexe', etc)
             'tile': UTM tile name (string, e.g. '34J'
             'datum': UTM datum (string, e.g. 'WGS84')
             'easting': station UTM easting (float)
             'northing': station UTM northing (float)
-            'longitude': station longitude (float)
-            'latitude': station latitude (float)
+            'lon': station longitude (float)
+            'lat': station latitude (float)
             'elevation': station elevation (float)
             'antenna_number': antenna number (integer)
-            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4' or 'SNPnnn>e1')
-            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4' or 'SNPnnn>n1')
+            'correlator_input': correlator input for x (East) pol and y (North) pol (string tuple-pair)
             'start_date': start of connection in gps seconds (long)
             'stop_date': end of connection in gps seconds (long or None no end time)
 
@@ -112,30 +145,28 @@ class Handling:
         station_conn = []
         for st in station_types_to_check:
             for stn in self.geo.station_types[st]['Stations']:
-                station_dict = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date)
-                if len(station_dict.keys()) > 0:
-                    station_conn.append(station_dict)
+                station_info = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date)
+                if station_info is not None:
+                    station_conn.append(station_info)
         self.H = None  # Reset back in case gets called again outside of this method.
         return station_conn
 
     def get_fully_connected_location_at_date(self, stn, at_date):
         """
-        Returns a dictionary for location stn that is fully connected at_date.  Provides
-        the dictonary used in other methods.
+        Returns StationInfo class
 
-        The returned dict keys are:
+        Attributes are:
             'station_name': name of station (string, e.g. 'HH27')
-            'station_type': type of station (string, e.g. 'HH', 'PI', etc or station type name 'herahexe', etc)
+            'station_type_name': type of station (type 'herahexe', etc)
             'tile': UTM tile name (string, e.g. '34J'
             'datum': UTM datum (string, e.g. 'WGS84')
             'easting': station UTM easting (float)
             'northing': station UTM northing (float)
-            'longitude': station longitude (float)
-            'latitude': station latitude (float)
+            'lon': station longitude (float)
+            'lat': station latitude (float)
             'elevation': station elevation (float)
             'antenna_number': antenna number (integer)
-            'correlator_input_x': correlator input for x (East) pol (string e.g. 'DF7B4')
-            'correlator_input_y': correlator input for y (North) pol (string e.g. 'DF7B4')
+            'correlator_input': correlator input for x (East) pol and y (North) pol (string tuple-pair)
             'start_date': start of connection in gps seconds (long)
             'stop_date': end of connection in gps seconds (long or None no end time)
 
@@ -149,50 +180,47 @@ class Handling:
         else:
             H = cm_hookup.Hookup(at_date, self.session)
         hud = H.get_hookup(hpn_list=[stn], exact_match=True)
-        station_dict = {}
-        fc = cm_revisions.get_full_revision(stn, hud)
-        if len(fc) == 1:
-            k = fc[0].hukey
-            p = fc[0].pkey
-            stn = hud['hookup'][k][p][0].upstream_part
-            ant_num = hud['hookup'][k][p][0].downstream_part
+        station_info = None
+        fully_connected = cm_revisions.get_full_revision(stn, hud)
+        fully_connected_keys = set()
+        fctime = {'start': 0.0, 'end': 1.0E10}
+        for i, fc in enumerate(fully_connected):
+            if cm_utils.is_active(at_date, fc.started, fc.ended):
+                fully_connected_keys.add(fc.hukey)
+                if fc.started > fctime['start']:
+                    fctime['start'] = fc.started
+                if fc.ended < fctime['end']:
+                    fctime['end'] = fc.ended
+        if len(fully_connected_keys) == 1:
+            k = fully_connected_keys.pop()
+            current_hookup = hud[k].hookup
+            p = current_hookup.keys()[0]
+            stn = current_hookup[p][0].upstream_part
+            ant_num = current_hookup[p][0].downstream_part
             # ant_num here is unicode with an A in front of the number (e.g. u'A22').
             # But we just want an integer, so we strip the A and cast it to int
             ant_num = int(ant_num[1:])
             corr = {}
-            for pen in ['e', 'n']:
-                corhu = hud['hookup'][k][pen]
-                if hud['parts_epoch']['epoch'] == 'parts_paper':
-                    corr[pen] = corhu[-1].downstream_part
-                elif hud['parts_epoch']['epoch'] == 'parts_hera':
-                    corr[pen] = corhu[-2].downstream_part + '>' + corhu[-2].downstream_input_port
+            for p, hu in current_hookup.iteritems():
+                if hud[k].parts_epoch[p] == 'parts_paper':
+                    corr[p] = hu[-1].downstream_part
+                elif hud[k].parts_epoch[p] == 'parts_hera':
+                    corr[p] = hu[-2].downstream_part + '>' + hu[-2].downstream_input_port
                 else:
                     raise ValueError("No correlator hookup defined.")
             fnd_list = self.geo.get_location([stn], at_date)
             if not len(fnd_list):
-                return {}
+                return None
             if len(fnd_list) > 1:
                 print("More than one part found:  ", str(fnd))
                 print("Setting to first to continue.")
             fnd = fnd_list[0]
-
-            strtd = hud['timing'][k][p][0]
-            ended = hud['timing'][k][p][1]
-            station_dict = {'station_name': str(fnd.station_name),
-                            'station_type': str(fnd.station_type_name),
-                            'tile': str(fnd.tile),
-                            'datum': str(fnd.datum),
-                            'easting': fnd.easting,
-                            'northing': fnd.northing,
-                            'longitude': fnd.lon,
-                            'latitude': fnd.lat,
-                            'elevation': fnd.elevation,
-                            'antenna_number': ant_num,
-                            'correlator_input_x': str(corr['e']),
-                            'correlator_input_y': str(corr['n']),
-                            'start_date': strtd,
-                            'stop_date': ended}
-        return station_dict
+            station_info = StationInfo(fnd)
+            station_info.antenna_number = ant_num
+            station_info.correlator_input = (str(corr['e']), str(corr['n']))
+            station_info.start_date = fctime['start']
+            station_info.stop_date = fctime['end']
+        return station_info
 
     def get_cminfo_correlator(self):
         """
@@ -222,72 +250,50 @@ class Handling:
         cm_h = cm_handling.Handling(session=self.session)
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
-        stations_conn = self.get_all_fully_connected_at_date(at_date='now', station_types_to_check=cm_utils.default_station_prefixes)
-        ant_nums = []
-        stn_names = []
-        stn_types = []
-        corr_inputs = []
-        tiles = []
-        datums = []
-        eastings = []
-        northings = []
-        longitudes = []
-        latitudes = []
-        elevations = []
+        stations_conn = self.get_all_fully_connected_at_date(
+            at_date='now', station_types_to_check=cm_utils.default_station_prefixes)
+        stn_arrays = StationInfo('init_arrays')
         for stn in stations_conn:
-            ant_nums.append(stn['antenna_number'])
-            stn_names.append(stn['station_name'])
-            stn_types.append(stn['station_type'])
-            corr_inputs.append((stn['correlator_input_x'], stn['correlator_input_y']))
-            tiles.append(stn['tile'])
-            datums.append(stn['datum'])
-            eastings.append(stn['easting'])
-            northings.append(stn['northing'])
-            longitudes.append(stn['longitude'])
-            latitudes.append(stn['latitude'])
-            elevations.append(stn['elevation'])
+            stn_arrays.update_arrays(stn)
         # latitudes, longitudes output by get_all_fully_connected_at_date are in degrees
         # XYZ_from_LatLonAlt wants radians
-        ecef_positions = uvutils.XYZ_from_LatLonAlt(np.array(latitudes) * np.pi / 180.,
-                                                    np.array(longitudes) * np.pi / 180.,
-                                                    elevations)
+        ecef_positions = uvutils.XYZ_from_LatLonAlt(np.array(stn_arrays.lat) * np.pi / 180.,
+                                                    np.array(stn_arrays.lon) * np.pi / 180.,
+                                                    stn_arrays.elevation)
         rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions.T,
                                                       cofa_loc.lon * np.pi / 180.)
 
-        return {'antenna_numbers': ant_nums,
+        return {'antenna_numbers': stn_arrays.antenna_number,
                 # This is actually station names, not antenna names,
                 # but antenna_names is what it's called in pyuvdata
-                'antenna_names': stn_names,
-                'station_types': stn_types,
+                'antenna_names': stn_arrays.station_name,
+                'station_types': stn_arrays.station_type_name,
                 # this is a tuple giving the f-engine names for x, y
-                'correlator_inputs': corr_inputs,
-                'antenna_utm_datum_vals': datums,
-                'antenna_utm_tiles': tiles,
-                'antenna_utm_eastings': eastings,
-                'antenna_utm_northings': northings,
+                'correlator_inputs': stn_arrays.correlator_input,
+                'antenna_utm_datum_vals': stn_arrays.datum,
+                'antenna_utm_tiles': stn_arrays.tile,
+                'antenna_utm_eastings': stn_arrays.easting,
+                'antenna_utm_northings': stn_arrays.northing,
                 'antenna_positions': rotecef_positions,
                 'cm_version': cm_version,
                 'cofa_lat': cofa_loc.lat,
                 'cofa_lon': cofa_loc.lon,
                 'cofa_alt': cofa_loc.elevation}
 
-    def get_pam_info(self, stn, at_date, pam_name='post-amp'):
+    def get_part_info(self, stn, at_date, part_name='post-amp'):
         """
         input:
             stn: antenna number of format HHi where i is antenna number
             at_date: date at which connection is true, format 'YYYY-M-D' or 'now'
         returns:
-            dict of {pol:(rcvr location,pam #)}
+            dict of {pol:(location, #)}
         """
-        pams = {}
+        parts = {}
         H = cm_hookup.Hookup(at_date, self.session)
         hud = H.get_hookup(hpn_list=[stn], exact_match=True)
-        fc = cm_revisions.get_full_revision(stn, hud)
-        if len(fc) == 1:
-            k = fc[0].hukey
-            p = fc[0].pkey
-            pams = cm_hookup.get_parts_from_hookup(pam_name, hud)[k]
-        return pams
+        for k, hu in hud.iteritems():
+            parts[k] = hu.get_part_info(part_name)
+        return parts
 
     def publish_summary(self, hlist='default', rev='A', exact_match=False,
                         hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
@@ -299,12 +305,12 @@ class Handling:
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
         H = cm_hookup.Hookup('now', self.session)
         hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
-                                   exact_match=exact_match, show_levels=True,
+                                   exact_match=exact_match, levels=True,
                                    force_new=force_new_hookup_dict, force_specific=False)
 
         with open(output_file, 'w') as f:
-            H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, show_levels=True, show_ports=False,
-                          show_revs=False, show_state='full', file=f, output_format='html')
+            H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=True, ports=False,
+                          revs=False, state='full', file=f, output_format='html')
         import subprocess
         from hera_mc import cm_transfer
         if cm_transfer.check_if_main():

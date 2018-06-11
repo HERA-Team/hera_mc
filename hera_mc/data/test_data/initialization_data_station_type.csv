@@ -1,6 +1,9 @@
 station_type_name,prefix,description,plot_marker
 container,CR,Container location,k*
 herahex,HH,HERA Hex locations,ro
+herahexw,HH,HERA Hex W locations,ro
+herahexe,HH,HERA Hex E locations,ro
+herahexn,HH,HERA Hex N locations,ro
 heraringa,HA,HERA inner ring,go
 heraringb,HB,HERA outer ring,bo
 node,ND,Node location,r*
