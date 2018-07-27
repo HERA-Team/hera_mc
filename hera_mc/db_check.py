@@ -2,7 +2,7 @@
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 from sqlalchemy import inspect
 from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker

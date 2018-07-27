@@ -8,7 +8,7 @@ Currently this is only to look at the full connections of parts looped over time
 either via db calls or pre-written files.
 """
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 from astropy.time import Time, TimeDelta
 import numpy as np
