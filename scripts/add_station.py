@@ -10,6 +10,7 @@ Script to handle installing a new station into system.
 from __future__ import absolute_import, division, print_function
 
 import os.path
+import six
 from hera_mc import mc, geo_location, cm_utils, part_connect, geo_handling
 
 region = {'herahexw': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
@@ -146,7 +147,7 @@ if __name__ == '__main__':
         args.northing = antenna[args.station_name]['N']
         args.elevation = antenna[args.station_name]['elevation']
         ant_num = int(args.station_name[2:])
-        for r, v in region.iteritems():
+        for r, v in six.iteritems(region):
             if ant_num in v:
                 args.station_type_name = r
                 break

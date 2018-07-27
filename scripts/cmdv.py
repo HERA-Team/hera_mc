@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     from hera_mc import cm_dataview, part_connect, sys_handling
 
-    if isinstance(args.dt, str):
+    if isinstance(args.dt, (six.string_types, six.text_type)):
         args.dt = float(args.dt)
 
     # start session

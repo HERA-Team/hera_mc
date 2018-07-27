@@ -59,7 +59,7 @@ if __name__ == '__main__':
                                            at_date=at_date, exact_match=True)
 
     # Check for part
-    if len(part_check.keys()) > 0:
+    if len(list(part_check.keys())) > 0:
         print("Error:  {} is already in parts database".format(args.hpn))
         print("Stopping this addition.")
     else:
