@@ -37,7 +37,7 @@ before_script:
   - alembic upgrade head
 script:
   - nosetests --with-coverage --cover-package=hera_mc
-  - pycodestyle --ignore=E501,W503
+  - pycodestyle */*.py --ignore=E501,W503
 
 after_success:
     - coveralls
