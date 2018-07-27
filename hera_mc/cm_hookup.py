@@ -14,7 +14,6 @@ import sys
 import numpy as np
 import os
 import six
-# import time
 import copy
 from sqlalchemy import func
 from astropy.time import Time, TimeDelta
