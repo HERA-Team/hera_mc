@@ -7,6 +7,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
+import six
 import numpy as np
 from astropy.time import Time
 from astropy.coordinates import EarthLocation
