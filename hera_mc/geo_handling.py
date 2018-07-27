@@ -66,7 +66,7 @@ def show_it_now(fignm):
     -------------
     fignm:  string/int for figure
     """
-    # import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
 
     if fignm is not False and fignm is not None:
         plt.figure(fignm)

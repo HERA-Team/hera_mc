@@ -158,7 +158,7 @@ class Dataview:
         """
         Plots the fc_map flgs.
         """
-        # import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt
 
         if self.fc_map is None or self.parts_list is None:
             raise RuntimeError("You first need to generate fc_map and parts_list")
