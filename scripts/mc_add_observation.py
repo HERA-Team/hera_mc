@@ -3,10 +3,15 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-import argparse, aipy
+from __future__ import absolute_import, division, print_function
+
+import argparse
+from astropy.time import Time, TimeDelta
+
+import aipy
+
 from hera_mc.observations import Observation
 from hera_mc import mc
-from astropy.time import Time, TimeDelta
 
 a = mc.get_mc_argument_parser()
 a.description = """Read the obsid from a file and create a record in M&C."""

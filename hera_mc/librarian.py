@@ -8,9 +8,12 @@ Librarian tables
 The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
 """
+from __future__ import print_function
+
 from math import floor
 from astropy.time import Time
 from sqlalchemy import Column, ForeignKey, Integer, BigInteger, String, Text, Float
+
 from . import MCDeclarativeBase, DEFAULT_MIN_TOL
 from .server_status import ServerStatus
 

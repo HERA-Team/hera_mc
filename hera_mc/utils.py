@@ -5,9 +5,26 @@
 Common utility fuctions
 
 """
-from astropy.time import Time
-from math import floor
+from __future__ import absolute_import, division, print_function
+
 import collections
+from math import floor
+import six
+from astropy.time import Time
+
+
+if six.PY2:
+    def str_to_bytes(s):
+        return s
+
+    def bytes_to_str(b):
+        return b
+else:
+    def str_to_bytes(s):
+        return s.encode('utf8')
+
+    def bytes_to_str(b):
+        return b.decode('utf8')
 
 
 def calculate_obsid(starttime):

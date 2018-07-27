@@ -1,3 +1,10 @@
+#! /usr/bin/env python
+# -*- mode: python; coding: utf-8 -*-
+# Copyright 2018 the HERA Collaboration
+# Licensed under the 2-clause BSD license.
+
+from __future__ import absolute_import, division, print_function
+
 import os
 from setuptools import setup, find_packages
 PACKAGES = find_packages()

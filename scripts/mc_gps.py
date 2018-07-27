@@ -8,8 +8,10 @@ Prints Time info for given date/time
 
 """
 from __future__ import absolute_import, division, print_function
-from hera_mc import mc, cm_utils
+
 from astropy.time import Time
+
+from hera_mc import mc, cm_utils
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()

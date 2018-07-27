@@ -12,6 +12,7 @@ from __future__ import absolute_import, division, print_function
 import ue9
 import LabJackPython
 from time import time, sleep
+
 from hera_mc import mc
 
 list_of_registers = range(240, 253, 2)
@@ -68,6 +69,7 @@ def aggData(cumList, dev, _list_of_registers, n_per_int):
             else:
                 cumList[i] += tnew / n_per_int
         return cumList
+
 
 # seconds per integration
 sPerInt = 10.

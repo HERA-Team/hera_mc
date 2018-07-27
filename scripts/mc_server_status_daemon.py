@@ -16,7 +16,6 @@ import os
 import socket
 import sys
 import time
-
 from astropy.time import Time
 import netifaces
 import numpy as np

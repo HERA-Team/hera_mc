@@ -3,6 +3,8 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
+from __future__ import absolute_import, division, print_function
+
 import hera_mc.mc as mc
 
 parser = mc.get_mc_argument_parser()

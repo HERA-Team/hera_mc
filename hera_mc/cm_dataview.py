@@ -9,10 +9,11 @@ either via db calls or pre-written files.
 """
 
 from __future__ import absolute_import, print_function
-from hera_mc import mc, cm_utils, cm_revisions, cm_hookup
+
 from astropy.time import Time, TimeDelta
 import numpy as np
-import matplotlib.pyplot as plt
+
+from hera_mc import mc, cm_utils, cm_revisions, cm_hookup
 
 
 class Dataview:
@@ -157,6 +158,8 @@ class Dataview:
         """
         Plots the fc_map flgs.
         """
+        # import matplotlib.pyplot as plt
+
         if self.fc_map is None or self.parts_list is None:
             raise RuntimeError("You first need to generate fc_map and parts_list")
 

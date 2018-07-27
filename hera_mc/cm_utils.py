@@ -7,12 +7,15 @@
 """
 
 from __future__ import print_function
+
 import os.path
 import subprocess
-from hera_mc import mc
+import six
 from astropy.time import Time
 from astropy.time import TimeDelta
 import datetime
+
+from hera_mc import mc
 
 PAST_DATE = '2000-01-01'
 all_hera_zone_prefixes = ['HH', 'HA', 'HB']  # This is for hookup_cache to get all
@@ -36,8 +39,8 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
 def log(msg, **kwargs):
     fp = open(mc.cm_log_file, 'a')
     dt = Time.now()
-    fp.write('-------------------' + str(dt.datetime) + '  ' + msg +
-             '-------------------\n\n')
+    fp.write('-------------------' + str(dt.datetime) + '  ' + msg
+             + '-------------------\n\n')
     for key, value in kwargs.items():
         if key == 'args':
             fp.write('--args\n\t')
@@ -79,7 +82,7 @@ def split_connection_key(key):
 def stringify(X):
     if X is None:
         return None
-    if isinstance(X, str):
+    if isinstance(X, (six.text_type, six.string_types)):
         return X
     if isinstance(X, list):
         return ','.join(X)
@@ -89,7 +92,7 @@ def stringify(X):
 def listify(X):
     if X is None:
         return None
-    if isinstance(X, (str, unicode)) and ',' in X:
+    if isinstance(X, (six.text_type, six.string_types)) and ',' in X:
         return X.split(',')
     if isinstance(X, list):
         return X
@@ -190,7 +193,7 @@ def get_astropytime(_date, _time=0):
         return Time(_date, format='datetime')
     if _date is None or _date is False:
         return None
-    if isinstance(_date, (int, long, float)):
+    if isinstance(_date, (int, six.integer_types)):
         if int(_date) > 1000000000:
             return Time(_date, format='gps')
         raise ValueError('Invalid format:  date as a number should be gps time, not {}.'.format(_date))

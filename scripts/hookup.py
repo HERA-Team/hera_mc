@@ -8,8 +8,9 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import cm_hookup, cm_utils, mc
 import os.path
+
+from hera_mc import cm_hookup, cm_utils, mc
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()

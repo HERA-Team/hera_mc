@@ -23,16 +23,16 @@ def stop_connection(args, h, crev):
     data = []
     args.add_new_connection = False
 
-    EN = ['eb','nb']
+    EN = ['eb', 'nb']
     for p in EN:
-        C7RI = h.get_connections(crev[0],crev[1],p,True)
+        C7RI = h.get_connections(crev[0], crev[1], p, True)
         for ck in C7RI.keys():
             if crev[0] in ck:
                 break
         else:
             ck = None
         if ck is not None:
-            print("Stopping connection <{}:{}<{}|a>{}:{}>".format(crev[0],crev[1],p,C7RI[ck].downstream_part,C7RI[ck].down_part_rev))
+            print("Stopping connection <{}:{}<{}|a>{}:{}>".format(crev[0], crev[1], p, C7RI[ck].downstream_part, C7RI[ck].down_part_rev))
             gps = C7RI[ck].start_gpstime
             stopping = [crev[0], crev[1], C7RI[ck].downstream_part, C7RI[ck].down_part_rev, p, 'a', gps, 'stop_gpstime', current]
             data.append(stopping)
@@ -41,6 +41,7 @@ def stop_connection(args, h, crev):
         part_connect.update_connection(args, data)
     else:
         print(data)
+
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
@@ -65,5 +66,5 @@ if __name__ == '__main__':
     handling = cm_handling.Handling(args)
 
     for i in range(128):
-        crev = ('C7F'+str(i),'A')
-        stop_connection(args,handling,crev)
+        crev = ('C7F' + str(i), 'A')
+        stop_connection(args, handling, crev)

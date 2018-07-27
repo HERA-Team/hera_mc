@@ -107,12 +107,12 @@ if __name__ == '__main__':
         for k, c in bal_conn['connections'].iteritems():
             x = None
             if c.stop_gpstime is None:
-                if (c.downstream_part.upper() == balun.upper() and
-                        c.down_part_rev.upper() == brev.upper()):
+                if (c.downstream_part.upper() == balun.upper()
+                        and c.down_part_rev.upper() == brev.upper()):
                     x = [c.upstream_part, c.up_part_rev, c.upstream_output_port,
                          fem_hpn, args.rev, 'input']
-                elif (c.upstream_part.upper() == balun.upper() and
-                      c.up_part_rev.upper() == brev.upper()):
+                elif (c.upstream_part.upper() == balun.upper()
+                      and c.up_part_rev.upper() == brev.upper()):
                     port_name = c.downstream_input_port.lower()[0]
                     x = [fem_hpn, args.rev, port_name, c.downstream_part,
                          c.down_part_rev, c.downstream_input_port]

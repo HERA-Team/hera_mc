@@ -13,6 +13,7 @@ from __future__ import absolute_import, division, print_function
 from math import floor
 from astropy.time import Time
 from sqlalchemy import Column, Integer, String, Float, BigInteger
+
 from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL
 
 
@@ -118,8 +119,8 @@ def plot_host_status_for_plotly(session):
 
     librarian_hosts_of_interest = [
         'qmaster',
-        #'pot1',
-        #'pot6.karoo.kat.ac.za',
+        # 'pot1',
+        # 'pot6.karoo.kat.ac.za',
         'pot7.still.pvt',
         'pot8.still.pvt',
     ]
@@ -146,31 +147,31 @@ def plot_host_status_for_plotly(session):
         ui_hostname = internal_hostname_to_ui_hostname.get(host, host)
 
         plot_items.append(go.Scatter(
-            x = times,
-            y = loads,
-            name = ui_hostname,
+            x=times,
+            y=loads,
+            name=ui_hostname,
         ))
 
     # Finish plot
 
     layout = go.Layout(
-        showlegend = True,
-        title = 'Host load averages',
-        xaxis = {
+        showlegend=True,
+        title='Host load averages',
+        xaxis={
             'title': 'Date',
         },
-        yaxis = {
+        yaxis={
             'title': '5-minute load average (percent per CPU)',
         },
     )
 
     fig = go.Figure(
-        data = plot_items,
-        layout = layout,
+        data=plot_items,
+        layout=layout,
     )
 
     plotly.plot(
         fig,
-        auto_open = False,
-        filename = 'karoo_host_load_averages',
+        auto_open=False,
+        filename='karoo_host_load_averages',
     )

@@ -8,17 +8,19 @@ This finds and displays part hookups.
 
 """
 from __future__ import absolute_import, division, print_function
+
 from tabulate import tabulate
 import sys
 import numpy as np
 import os
-import time
-from astropy.time import Time, TimeDelta
-
-from hera_mc import mc, geo_location, cm_utils, cm_handling, cm_transfer
-from hera_mc import part_connect as PC
+import six
+# import time
 import copy
 from sqlalchemy import func
+from astropy.time import Time, TimeDelta
+
+from hera_mc import mc, cm_utils, cm_handling, cm_transfer
+from hera_mc import part_connect as PC
 
 
 def get_part_pols(part, port_query):
@@ -136,7 +138,7 @@ class HookupDossierEntry:
         """
         parts = {}
         extra_cols = ['start', 'stop', 'level']
-        for pol, names in self.columns.iteritems():
+        for pol, names in six.iteritems(self.columns):
             if part_name not in names:
                 parts[pol] = None
                 continue
@@ -292,7 +294,7 @@ class Hookup:
         force_specific_at_date:  date for hookup check -- use only if force_specific
         """
         # Take appropriate action if hpn_list is a string
-        if isinstance(hpn_list, (str, unicode)):
+        if isinstance(hpn_list, (six.text_type, six.string_types)):
             if hpn_list.lower() == 'cached':
                 print("Force read of cache file - not guaranteed fresh.")
                 self.read_hookup_cache_from_file()
@@ -359,7 +361,7 @@ class Hookup:
                                                exact_match=exact_match,
                                                full_version=False)
         hookup_dict = {}
-        for k, part in parts.iteritems():
+        for k, part in six.iteritems(parts):
             if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
                 continue
             if k in hookup_dict:
@@ -429,15 +431,15 @@ class Hookup:
         options = []
         if direction == 'up':      # Going upstream
             for conn in self.session.query(PC.Connections).filter(
-                    (func.upper(PC.Connections.downstream_part) == part.upper()) &
-                    (func.upper(PC.Connections.down_part_rev) == rev.upper())):
+                    (func.upper(PC.Connections.downstream_part) == part.upper())
+                    & (func.upper(PC.Connections.down_part_rev) == rev.upper())):
                 conn.gps2Time()
                 if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
         elif direction == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
-                    (func.upper(PC.Connections.upstream_part) == part.upper()) &
-                    (func.upper(PC.Connections.up_part_rev) == rev.upper())):
+                    (func.upper(PC.Connections.upstream_part) == part.upper())
+                    & (func.upper(PC.Connections.up_part_rev) == rev.upper())):
                 conn.gps2Time()
                 if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
@@ -563,7 +565,7 @@ class Hookup:
             s += 'Cached hookup list:  {}\n'.format(self.cached_hookup_list)
             s += 'Cached hookup has {} keys.\n'.format(len(self.cached_hookup_dict.keys()))
             hooked_up = 0
-            for k, hu in self.cached_hookup_dict.iteritems():
+            for k, hu in six.iteritems(self.cached_hookup_dict):
                 for pol in hu.fully_connected:
                     if hu.fully_connected[pol]:
                         hooked_up += 1

@@ -13,7 +13,6 @@ import socket
 import sys
 import copy
 from astropy.time import Time
-
 from sqlalchemy import Column, Float, Integer, String, BigInteger, ForeignKey, func
 
 from . import MCDeclarativeBase, NotNull

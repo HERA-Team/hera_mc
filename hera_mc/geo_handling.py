@@ -14,6 +14,7 @@ import os
 import sys
 import copy
 import warnings
+import six
 from astropy.time import Time, TimeDelta
 from sqlalchemy import func
 from pyproj import Proj
@@ -65,7 +66,7 @@ def show_it_now(fignm):
     -------------
     fignm:  string/int for figure
     """
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
 
     if fignm is not False and fignm is not None:
         plt.figure(fignm)
@@ -176,8 +177,8 @@ class Handling:
 
         query_date = cm_utils.get_astropytime(query_date)
         connected_antenna = self.session.query(part_connect.Connections).filter(
-            (func.upper(part_connect.Connections.upstream_part) == station.upper()) &
-            (query_date.gps >= part_connect.Connections.start_gpstime))
+            (func.upper(part_connect.Connections.upstream_part) == station.upper())
+            & (query_date.gps >= part_connect.Connections.start_gpstime))
         ctr = 0
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
@@ -207,8 +208,8 @@ class Handling:
             antenna = 'A' + str(antenna).strip('0')
         print("Antenna ", antenna)
         connected_antenna = self.session.query(part_connect.Connections).filter(
-            (func.upper(part_connect.Connections.downstream_part) == antenna.upper()) &
-            (query_date.gps >= part_connect.Connections.start_gpstime))
+            (func.upper(part_connect.Connections.downstream_part) == antenna.upper())
+            & (query_date.gps >= part_connect.Connections.start_gpstime))
         ctr = 0
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
@@ -269,7 +270,7 @@ class Handling:
 
     def parse_station_types_to_check(self, sttc):
         self.get_station_types()
-        if isinstance(sttc, (str, unicode)):
+        if isinstance(sttc, (six.text_type, six.string_types)):
             if sttc.lower() == 'all':
                 return self.station_types.keys()
             elif sttc.lower() == 'default':
@@ -281,7 +282,7 @@ class Handling:
             if s.lower() in self.station_types.keys():
                 sttypes.add(s.lower())
             else:
-                for k, st in self.station_types.iteritems():
+                for k, st in six.iteritems(self.station_types):
                     if s.upper() == st['Prefix'][:len(s)].upper():
                         sttypes.add(k.lower())
         return sttypes
@@ -316,8 +317,8 @@ class Handling:
             return ant.strip('A')
         if label_to_show == 'ser':
             p = self.session.query(part_connect.Parts).filter(
-                (part_connect.Parts.hpn == ant) &
-                (part_connect.Parts.hpn_rev == rev))
+                (part_connect.Parts.hpn == ant)
+                & (part_connect.Parts.hpn_rev == rev))
             if p.count() == 1:
                 return p.first().manufacturer_number.replace('S/N', '')
             else:
@@ -334,7 +335,7 @@ class Handling:
         query_date:  date to use to check if active
         kwargs:  arguments for marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
         """
-        import matplotlib.pyplot as plt
+        # import matplotlib.pyplot as plt
 
         query_date = cm_utils.get_astropytime(query_date)
         displaying_label = bool(kwargs['show_label'])
@@ -371,7 +372,7 @@ class Handling:
         kwargs:  marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
         """
         from hera_mc import cm_hookup, cm_revisions
-        import matplotlib.pyplot as plt
+        # import matplotlib.pyplot as plt
         hookup = cm_hookup.Hookup(query_date, self.session)
         hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
         fig_num = None

@@ -5,8 +5,9 @@
 """Testing for `hera_mc.observations`.
 
 """
-import unittest
+from __future__ import absolute_import, division, print_function
 
+import unittest
 import numpy as np
 from math import floor
 from astropy.time import Time, TimeDelta

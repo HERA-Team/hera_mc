@@ -6,12 +6,15 @@
 
 """
 
+from __future__ import absolute_import, division, print_function
+
 import unittest
 import socket
-from hera_mc import mc, cm_transfer
 import warnings
 import sys
 import collections
+
+from hera_mc import mc, cm_transfer
 from hera_mc.utils import get_iterable
 
 test_db = None
@@ -43,8 +46,6 @@ class TestHERAMC(unittest.TestCase):
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
         import astropy
-        #astropy.utils.iers.conf.auto_download = False
-        #astropy.utils.iers.conf.auto_max_download = 1e5
         astropy.utils.iers.conf.auto_max_age = None
 
     def tearDown(self):

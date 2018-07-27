@@ -9,9 +9,10 @@ Script to handle adding a general part.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling
 import sys
 import copy
+
+from hera_mc import mc, cm_utils, part_connect, cm_handling
 
 
 def query_args(args):

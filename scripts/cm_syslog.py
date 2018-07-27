@@ -7,7 +7,7 @@
 Script to handle adding a system-wide comment to the part_info table.
 """
 
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 from hera_mc import mc, cm_utils, part_connect, sys_handling
 

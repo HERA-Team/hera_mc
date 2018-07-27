@@ -8,10 +8,12 @@
 
 from __future__ import absolute_import, print_function
 
-from tabulate import tabulate
-from hera_mc import cm_utils, part_connect
+import six
 import warnings
+from tabulate import tabulate
 from argparse import Namespace
+
+from hera_mc import cm_utils, part_connect
 
 
 class RevisionError(Exception):
@@ -182,10 +184,10 @@ def get_full_revision(hpn, hookup_dict):
         H = cm_hookup.Hookup()
         hookup_dict = H.get_hookup(H.hookup_list_to_cache)
     return_full_keys = []
-    for k, h in hookup_dict.iteritems():
+    for k, h in six.iteritems(hookup_dict):
         hpn_hu, rev_hu = cm_utils.split_part_key(k)
         if hpn_hu.lower() == hpn.lower():
-            for pol, is_connected in h.fully_connected.iteritems():
+            for pol, is_connected in six.iteritems(h.fully_connected):
                 if is_connected:
                     tsrt = h.timing[pol][0]
                     tend = h.timing[pol][1]

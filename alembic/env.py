@@ -1,4 +1,4 @@
-from __future__ import with_statement
+from __future__ import absolute_import, division, print_function, with_statement
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
@@ -25,7 +25,7 @@ config.set_main_option('sqlalchemy.url', db_url)
 fileConfig(config.config_file_name)
 
 # for 'autogenerate' support
-from hera_mc import mc
+from hera_mc import mc  # noqa
 target_metadata = mc.MCDeclarativeBase.metadata
 
 
@@ -75,6 +75,7 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

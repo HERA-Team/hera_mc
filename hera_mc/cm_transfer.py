@@ -11,12 +11,14 @@ from __future__ import absolute_import, division, print_function
 
 import os.path
 from math import floor
+import subprocess
+import six
 from astropy.time import Time
 import pandas as pd
 import csv
 from sqlalchemy import Column, BigInteger, String
-from hera_mc import MCDeclarativeBase, mc, geo_location, part_connect, cm_table_info, cm_utils
-import subprocess
+
+from hera_mc import MCDeclarativeBase, mc, cm_table_info, cm_utils, utils
 
 
 class CMVersion(MCDeclarativeBase):
@@ -49,6 +51,10 @@ class CMVersion(MCDeclarativeBase):
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
         time = int(floor(time.gps))
+
+        # In Python 3, we sometimes get Unicode, sometimes bytes
+        if isinstance(git_hash, six.binary_type):
+            git_hash = utils.bytes_to_str(git_hash)
 
         return cls(update_time=time, git_hash=git_hash)
 
@@ -228,7 +234,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
     for table, data_filename in reversed(use_table):
         cm_utils.log('cm_initialization: ' + data_filename)
         field_row = True  # This is the first row
-        with open(data_filename, 'rb') as csvfile:
+        with open(data_filename, 'rt') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 table_inst = cm_tables[table][0]()

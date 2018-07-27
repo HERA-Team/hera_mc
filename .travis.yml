@@ -36,7 +36,9 @@ before_script:
   - mkdir ~/.hera_mc
   - cp ci/example_config.json ~/.hera_mc/mc_config.json
   - alembic upgrade head
-script: nosetests --with-coverage --cover-package=hera_mc
+script:
+  - nosetests --with-coverage --cover-package=hera_mc
+  - pycodestyle --ignore=E501,W503
 
 after_success:
     - coveralls

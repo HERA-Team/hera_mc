@@ -11,6 +11,7 @@ import unittest
 import os.path
 import subprocess
 import numpy as np
+
 from hera_mc import geo_location, geo_handling, mc, cm_transfer, part_connect
 from hera_mc import cm_hookup
 from hera_mc.tests import TestHERAMC
@@ -29,6 +30,10 @@ class TestGeo(TestHERAMC):
 
         # test that function works the same as method
         cofa_func = geo_handling.cofa(session=self.test_session)[0]
+        print(type(cofa))
+        print(type(cofa_func))
+        print(cofa)
+        print(cofa_func)
         self.assertTrue(cofa.isclose(cofa_func))
 
     def test_get_location(self):

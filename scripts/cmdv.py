@@ -7,9 +7,11 @@
 Methods are in cm_dataview.
 """
 
-from __future__ import print_function
-from hera_mc import mc, cm_utils
+from __future__ import absolute_import, division, print_function
+
 import sys
+
+from hera_mc import mc, cm_utils
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()

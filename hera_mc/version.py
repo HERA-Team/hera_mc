@@ -1,4 +1,6 @@
 """Version definition for hera_mc."""
+from __future__ import absolute_import, division, print_function
+
 from os.path import join as pjoin
 import glob
 
@@ -71,4 +73,4 @@ PACKAGE_DATA = {
     ]
 }
 REQUIRES = ["astropy", "sqlalchemy", "psycopg2", "alembic", "dateutil", "numpy",
-            "tabulate", "matplotlib", "pandas", "psutil", "pyproj"]
+            "tabulate", "pandas", "psutil", "pyproj"]

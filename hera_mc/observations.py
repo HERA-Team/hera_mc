@@ -7,6 +7,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
+import six
 import numpy as np
 from astropy.time import Time
 from astropy.coordinates import EarthLocation
@@ -62,7 +63,7 @@ class Observation(MCDeclarativeBase):
             raise ValueError('starttime must be an astropy Time object')
         if not isinstance(stoptime, Time):
             raise ValueError('starttime must be an astropy Time object')
-        if not isinstance(obsid, (int, long)):
+        if not isinstance(obsid, six.integer_types):
             raise ValueError('obsid must be an integer')
         if abs(float(obsid) - starttime.gps) > 1.5:
             raise ValueError('obsid should be close to the starttime in gps seconds')

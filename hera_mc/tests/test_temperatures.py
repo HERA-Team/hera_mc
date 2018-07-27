@@ -8,10 +8,10 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
-
 from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
+
 from hera_mc import mc, temperatures
 from hera_mc.tests import TestHERAMC
 
