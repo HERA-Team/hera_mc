@@ -21,7 +21,7 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
   - conda install six numpy astropy scipy python-dateutil sqlalchemy psycopg2 pandas
-    matplotlib tabulate psutil pyproj nose pip alembic aipy coveralls pyuvdata
+    matplotlib tabulate psutil pyproj nose pip pycodestyle alembic aipy coveralls pyuvdata
   - conda list
   # - pip install git+https://github.com/HERA-Team/pyuvdata.git
   - pip install git+https://github.com/HERA-Team/hera_qm.git
