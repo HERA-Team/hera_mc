@@ -256,11 +256,14 @@ The correlator tables are not all defined yet, the following are notes about sug
 \begin{outline}[enumerate]
 	\1 correlator on/off?	**this is a control**
 	\1 Bit statistics (overflows, ADC clipping, bit statistics after bit selects)
-	\1 Switch status
+	\1 correlator network stats (dropped packets)
 	\1 Firmware git hash
-	\1 Xengine power status (might be covered in corr\_server\_status)
-	\1 Sbc power status (might be covered in corr\_server\_status)
-	\1 Test mode outputs!
+	\1 Fengine status
+	\1 Xengine status (might be covered in corr\_server\_status)
+	\1 Walsh on/off	**this is a control** (correlator propagates to node)
+	\1 Noise diode	**this is a control** (correlator propagates to node)
+	\1 correlator config (walsh patterns; scaling functions for FFT, bit selection)
+	\1 Test mode outputs (results not control) -- very notional
 		\2 Fengine sync test
 		\2 Xengine test
 		\2 Do at beginning and end of night.
@@ -268,19 +271,18 @@ The correlator tables are not all defined yet, the following are notes about sug
 			\3 Noise diode status
 			\3 Temperature (i2c device)
 			\3 Walsh switching (on/off control. Make sure bit pattern is known and put into data set.)
+	\1 SNAP information: all info reported through the correlator
+		\2 Feed status
+		\2 PAM status
 
-	\1 Node information (Dave, Jack, Zara, Matt Dexter (mdexter@berkeley.edu), Nima) All node info will be reported through the correlator.
+	\1 Node information (from Arduino) (Dave, Jack, Zara, Matt Dexter (mdexter@berkeley.edu), Nima) All node info will be reported through the correlator.
 		\2 SNAP power states
-		\2 SNAP board status
 		\2 Clock status info -- syncing
 		\2 Temperatures (outside + inside, feed?)
-		\2 Power status
+		\2 Power PAM, FEM status (binary)
 		\2 Node \mc software git hash
-		\2 Walsh on/off	**this is a control**
-		\2 Noise diode	**this is a control**
-		\2 Walsh info -- need to know what was actually done
-		\2 Outputs when using noise source
 
+These are done:
 	\1 \mc information the correlator needs to get and write into files
 		\2 Antenna positions
 	\1 New info added to correlator files (recorded in hera\_obs table)
