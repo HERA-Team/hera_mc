@@ -335,7 +335,7 @@ class Handling:
         query_date:  date to use to check if active
         kwargs:  arguments for marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
         """
-        # import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt
 
         query_date = cm_utils.get_astropytime(query_date)
         displaying_label = bool(kwargs['show_label'])
@@ -372,7 +372,7 @@ class Handling:
         kwargs:  marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
         """
         from . import cm_hookup, cm_revisions
-        # import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt
         hookup = cm_hookup.Hookup(query_date, self.session)
         hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
         fig_num = None
