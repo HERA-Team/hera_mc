@@ -37,16 +37,16 @@ class TestSys(TestHERAMC):
 
     def test_other_hookup(self):
         at_date = cm_utils.get_astropytime('2017-07-03')
-        Hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
-        Hookup.reset_memory_cache(None)
-        self.assertEqual(Hookup.cached_hookup_dict, None)
-        hu = Hookup.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new=True)
-        Hookup.reset_memory_cache(hu)
-        self.assertEqual(Hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
+        hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
+        hookup.reset_memory_cache(None)
+        self.assertEqual(hookup.cached_hookup_dict, None)
+        hu = hookup.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new=True)
+        hookup.reset_memory_cache(hu)
+        self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
 
     def test_hookup_cache_file_info(self):
-        Hookup = cm_hookup.Hookup(at_date='now', session=self.test_session)
-        Hookup.hookup_cache_file_info()
+        hookup = cm_hookup.Hookup(at_date='now', session=self.test_session)
+        hookup.hookup_cache_file_info()
 
     def test_correlator_info(self):
         corr_dict = self.sys_h.get_cminfo_correlator()
@@ -128,9 +128,9 @@ class TestSys(TestHERAMC):
 
     def test_get_pam_from_hookup(self):
         at_date = cm_utils.get_astropytime('2017-07-03')
-        Hookup = cm_hookup.Hookup(at_date, self.test_session)
+        hookup = cm_hookup.Hookup(at_date, self.test_session)
         stn = 'HH23'
-        hud = Hookup.get_hookup([stn], exact_match=True)
+        hud = hookup.get_hookup([stn], exact_match=True)
         pams = hud[list(hud.keys())[0]].get_part_info('post-amp')
         self.assertEqual(len(pams), 2)
         self.assertEqual(pams['e'], 'PAM75123')  # the actual pam number (the thing written on the case)
