@@ -14,7 +14,7 @@ from astropy.coordinates import EarthLocation
 from sqlalchemy import Column, BigInteger, Float
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from hera_mc import geo_handling
+from . import geo_handling
 from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_TOL
 
 

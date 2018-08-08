@@ -13,7 +13,7 @@ import warnings
 from tabulate import tabulate
 from argparse import Namespace
 
-from hera_mc import cm_utils, part_connect
+from . import cm_utils, part_connect
 
 
 class RevisionError(Exception):
@@ -179,7 +179,7 @@ def get_full_revision(hpn, hookup_dict):
     hpn:  string of hera part number (must match hookup_dict keys part type)
     hookup_dict:  hookup dictionary to check for full connection
     """
-    from hera_mc import cm_hookup
+    from . import cm_hookup
     if not isinstance(hookup_dict, dict):
         H = cm_hookup.Hookup()
         hookup_dict = H.get_hookup(H.hookup_list_to_cache)

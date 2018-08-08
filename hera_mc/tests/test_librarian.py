@@ -12,10 +12,10 @@ from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
 
-from hera_mc import mc, cm_transfer
-from hera_mc.librarian import LibStatus, LibRAIDStatus, LibRAIDErrors, LibRemoteStatus, LibFiles
-from hera_mc import utils, geo_location
-from hera_mc.tests import TestHERAMC
+from .. import mc, cm_transfer
+from ..librarian import LibStatus, LibRAIDStatus, LibRAIDErrors, LibRemoteStatus, LibFiles
+from .. import utils, geo_location
+from ..tests import TestHERAMC
 
 
 class TestLibrarian(TestHERAMC):

@@ -18,7 +18,7 @@ import pandas as pd
 import csv
 from sqlalchemy import Column, BigInteger, String
 
-from hera_mc import MCDeclarativeBase, mc, cm_table_info, cm_utils, utils
+from . import MCDeclarativeBase, mc, cm_table_info, cm_utils, utils
 
 
 class CMVersion(MCDeclarativeBase):

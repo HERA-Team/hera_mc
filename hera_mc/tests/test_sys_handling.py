@@ -16,9 +16,9 @@ import six
 import numpy as np
 from astropy.time import Time, TimeDelta
 
-from hera_mc import (geo_location, sys_handling, mc, cm_transfer, part_connect,
-                     cm_hookup, cm_utils, cm_revisions, utils)
-from hera_mc.tests import TestHERAMC
+from .. import (geo_location, sys_handling, mc, cm_transfer, part_connect,
+                cm_hookup, cm_utils, cm_revisions, utils)
+from . import TestHERAMC
 
 
 class TestSys(TestHERAMC):

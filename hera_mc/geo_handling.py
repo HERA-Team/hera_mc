@@ -19,7 +19,7 @@ from astropy.time import Time, TimeDelta
 from sqlalchemy import func
 from pyproj import Proj
 
-from hera_mc import mc, part_connect, cm_utils, geo_location
+from . import mc, part_connect, cm_utils, geo_location
 
 
 def cofa(session=None):
@@ -371,7 +371,7 @@ class Handling:
         station_types:  station_types or prefixes to plot
         kwargs:  marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
         """
-        from hera_mc import cm_hookup, cm_revisions
+        from . import cm_hookup, cm_revisions
         # import matplotlib.pyplot as plt
         hookup = cm_hookup.Hookup(query_date, self.session)
         hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)

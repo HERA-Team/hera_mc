@@ -14,8 +14,8 @@ from __future__ import absolute_import, division, print_function
 import unittest
 from astropy.time import Time, TimeDelta
 
-from hera_mc import part_connect, mc, cm_utils, cm_handling, cm_revisions
-from hera_mc.tests import TestHERAMC
+from .. import part_connect, mc, cm_utils, cm_handling, cm_revisions
+from ..tests import TestHERAMC
 
 
 class TestParts(TestHERAMC):
@@ -105,7 +105,7 @@ class TestParts(TestHERAMC):
         self.assertTrue('terminals' in a['feed']['output_ports'])
 
     def test_check_overlapping(self):
-        from hera_mc import cm_health
+        from .. import cm_health
         c = cm_health.check_part_for_overlapping_revisions(self.test_part, self.test_session)
         self.assertTrue(len(c) == 0)
 

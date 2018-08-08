@@ -13,8 +13,8 @@ from astropy.time import Time, TimeDelta
 from sqlalchemy import func, asc
 import numpy as np
 
-from hera_mc import mc, part_connect, cm_utils, cm_hookup, cm_revisions
-from hera_mc import geo_location, geo_handling
+from . import mc, part_connect, cm_utils, cm_hookup, cm_revisions
+from . import geo_location, geo_handling
 
 
 class StationInfo:
@@ -247,7 +247,7 @@ class Handling:
         Note: This method requires pyuvdata
         """
         from pyuvdata import utils as uvutils
-        from hera_mc import cm_handling
+        from . import cm_handling
 
         cm_h = cm_handling.Handling(session=self.session)
         cm_version = cm_h.get_cm_version()
@@ -314,7 +314,7 @@ class Handling:
             H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=True, ports=False,
                           revs=False, state='full', file=f, output_format='html')
         import subprocess
-        from hera_mc import cm_transfer
+        from . import cm_transfer
         if cm_transfer.check_if_main():
             sc_command = 'scp -i ~/.ssh/id_rsa_qmaster {} {}'.format(output_file, location_on_paper1)
             subprocess.call(sc_command, shell=True)

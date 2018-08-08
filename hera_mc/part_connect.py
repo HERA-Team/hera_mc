@@ -15,7 +15,7 @@ from sqlalchemy import (BigInteger, Column, Float, ForeignKey,
                         ForeignKeyConstraint, Integer, String, Text, func)
 
 from . import MCDeclarativeBase, NotNull
-from hera_mc import mc, cm_utils
+from . import mc, cm_utils
 
 no_connection_designator = '-X-'
 # This lists the fully complete signal paths

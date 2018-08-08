@@ -12,10 +12,10 @@ from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
 
-from hera_mc import mc
-from hera_mc.rtp import RTPServerStatus
-from hera_mc.librarian import LibServerStatus
-from hera_mc.tests import TestHERAMC
+from .. import mc
+from ..rtp import RTPServerStatus
+from ..librarian import LibServerStatus
+from ..tests import TestHERAMC
 
 
 class TestServerStatus(TestHERAMC):

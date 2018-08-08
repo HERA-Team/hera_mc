@@ -13,10 +13,10 @@ import numpy as np
 from astropy.time import Time, TimeDelta
 from sqlalchemy.exc import NoForeignKeysError
 
-from hera_mc import mc, cm_transfer
-from hera_mc.rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord
-from hera_mc import utils, geo_location
-from hera_mc.tests import TestHERAMC
+from .. import mc, cm_transfer
+from ..rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord
+from .. import utils, geo_location
+from ..tests import TestHERAMC
 
 
 class TestRTP(TestHERAMC):

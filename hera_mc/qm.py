@@ -16,7 +16,7 @@ from sqlalchemy import (Column, Integer, BigInteger, Float, ForeignKey,
                         String, ForeignKeyConstraint)
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from hera_mc import geo_handling
+from . import geo_handling
 from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_TOL
 
 

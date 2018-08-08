@@ -14,8 +14,8 @@ import warnings
 import sys
 import collections
 
-from hera_mc import mc, cm_transfer
-from hera_mc.utils import get_iterable
+from .. import mc, cm_transfer
+from ..utils import get_iterable
 
 test_db = None
 

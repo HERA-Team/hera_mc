@@ -18,8 +18,8 @@ import copy
 from sqlalchemy import func
 from astropy.time import Time, TimeDelta
 
-from hera_mc import mc, cm_utils, cm_handling, cm_transfer
-from hera_mc import part_connect as PC
+from . import mc, cm_utils, cm_handling, cm_transfer
+from . import part_connect as PC
 
 
 def get_part_pols(part, port_query):

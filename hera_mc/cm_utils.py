@@ -15,7 +15,7 @@ from astropy.time import Time
 from astropy.time import TimeDelta
 import datetime
 
-from hera_mc import mc
+from . import mc
 
 PAST_DATE = '2000-01-01'
 all_hera_zone_prefixes = ['HH', 'HA', 'HB']  # This is for hookup_cache to get all

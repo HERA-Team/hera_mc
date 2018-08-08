@@ -12,9 +12,9 @@ from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
 
-from hera_mc import mc
-from hera_mc.subsystem_error import SubsystemError
-from hera_mc.tests import TestHERAMC
+from .. import mc
+from ..subsystem_error import SubsystemError
+from ..tests import TestHERAMC
 
 
 class TestSubsystemError(TestHERAMC):

@@ -13,10 +13,10 @@ from math import floor
 from astropy.time import Time, TimeDelta
 from astropy.coordinates import EarthLocation
 
-from hera_mc import mc, cm_transfer, geo_handling
-from hera_mc.observations import Observation
-from hera_mc import utils, geo_location
-from hera_mc.tests import TestHERAMC
+from .. import mc, cm_transfer, geo_handling
+from ..observations import Observation
+from .. import utils, geo_location
+from ..tests import TestHERAMC
 
 
 class TestObservation(TestHERAMC):

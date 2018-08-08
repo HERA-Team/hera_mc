@@ -11,8 +11,8 @@ from __future__ import absolute_import, division, print_function
 import unittest
 from astropy.time import Time, TimeDelta
 
-from hera_mc import part_connect, mc, cm_handling, cm_utils
-from hera_mc.tests import TestHERAMC
+from .. import part_connect, mc, cm_handling, cm_utils
+from . import TestHERAMC
 
 
 class TestConnections(TestHERAMC):
@@ -95,7 +95,7 @@ class TestConnections(TestHERAMC):
         self.assertTrue(len(sc) == 0)
 
     def test_duplicate_connections(self):
-        from hera_mc import cm_health
+        from .. import cm_health
         healthy = cm_health.Connections(self.test_session)
         # Specific connections
         duplicates = healthy.check_for_existing_connection(['a', 'b', 'c', 'd', 'e', 'f'], self.query_time)

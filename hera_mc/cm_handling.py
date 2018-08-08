@@ -18,9 +18,9 @@ import six
 from astropy.time import Time
 from sqlalchemy import func, desc
 
-from hera_mc import mc, cm_utils
-from hera_mc import part_connect as PC
-from hera_mc import cm_revisions as cmrev
+from . import mc, cm_utils
+from . import part_connect as PC
+from . import cm_revisions as cmrev
 
 
 class PartDossierEntry():
@@ -59,7 +59,7 @@ class PartDossierEntry():
 
     def get_geo(self, session):
         if self.part.hptype == 'station':
-            from hera_mc import geo_handling
+            from . import geo_handling
             gh = geo_handling.get_location([self.part.hpn], self.time, session=session)
             if len(gh) == 1:
                 self.geo = gh[0]

@@ -13,8 +13,8 @@ from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
 
-from hera_mc import mc, weather
-from hera_mc.tests import TestHERAMC, is_onsite
+from .. import mc, weather
+from . import TestHERAMC, is_onsite
 
 
 def test_reduce_time_vals():

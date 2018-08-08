@@ -7,15 +7,15 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import ForeignKey
 
-from hera_mc.db_check import is_valid_database
-from hera_mc.db_check import check_connection
-from hera_mc import mc
+from ..db_check import is_valid_database
+from ..db_check import check_connection
+from .. import mc
 
 
 def setup_module(self):
     # Quiet log output for the tests
     import logging
-    from hera_mc import logger
+    from .. import logger
     # logger.setLevel(logging.FATAL)
 
 

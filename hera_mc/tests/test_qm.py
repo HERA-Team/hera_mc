@@ -13,12 +13,14 @@ import numpy as np
 from math import floor
 from astropy.time import Time, TimeDelta
 
-from hera_mc import mc, cm_transfer
-from hera_mc.qm import AntMetrics, ArrayMetrics
-from hera_mc import utils, geo_location
-from hera_mc.tests import TestHERAMC, checkWarnings
 from hera_qm.firstcal_metrics import get_firstcal_metrics_dict
 from hera_qm.utils import get_metrics_dict
+
+from .. import mc, cm_transfer
+from ..qm import AntMetrics, ArrayMetrics
+from .. import utils, geo_location
+from ..tests import TestHERAMC, checkWarnings
+
 
 
 class TestQM(TestHERAMC):

@@ -12,9 +12,9 @@ import os.path
 import subprocess
 import numpy as np
 
-from hera_mc import geo_location, geo_handling, mc, cm_transfer, part_connect
-from hera_mc import cm_hookup
-from hera_mc.tests import TestHERAMC
+from .. import geo_location, geo_handling, mc, cm_transfer, part_connect
+from .. import cm_hookup
+from ..tests import TestHERAMC
 from astropy.time import Time
 
 
