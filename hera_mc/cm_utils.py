@@ -193,7 +193,7 @@ def get_astropytime(_date, _time=0):
         return Time(_date, format='datetime')
     if _date is None or _date is False:
         return None
-    if isinstance(_date, (int, six.integer_types)):
+    if isinstance(_date, (six.integer_types, float)):
         if int(_date) > 1000000000:
             return Time(_date, format='gps')
         raise ValueError('Invalid format:  date as a number should be gps time, not {}.'.format(_date))
