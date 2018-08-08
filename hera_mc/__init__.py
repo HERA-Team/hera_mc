@@ -50,7 +50,7 @@ class MCDeclarativeBase(object):
                     print('column {col} is string-like or int-like, values are not '
                           'equal'.format(col=c))
                     return False
-            elif isinstance(self_c, (np.ndarray)) and isinstance(self_c.dtype, six.integer_types):
+            elif isinstance(self_c, np.ndarray) and self_c.dtype.kind == 'i':
                 if not np.all(self_c == other_c):
                     print('column {col} is an int-like array, values are not equal'.format(col=c))
                     return False
