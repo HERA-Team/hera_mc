@@ -40,7 +40,7 @@ from hera_mc import mc
 storcli = '/opt/MegaRAID/storcli/storcli64'
 event_ticker = '/home/obs/.hera_mc/megaraid_last_event_id_%s.txt' % (socket.gethostname(), )
 controller = 0
-num_recent_events = 32 # if more than this many events occur between runs, some won't get logged
+num_recent_events = 32  # if more than this many events occur between runs, some won't get logged
 hostname = socket.gethostname()
 
 show_all_items = [
@@ -69,6 +69,7 @@ _months = {
     'Dec': 12,
 }
 
+
 def parse_storcli_datetime(text):
     """Example input text: "Sat May 20 00:16:57 2017". Returns an Astropy Time
     object. The time reported by storcli is in the system local time (and not,
@@ -82,7 +83,7 @@ def parse_storcli_datetime(text):
     hour, minute, second = [int(s) for s in hhmmss.split(':')]
     local_tz = dateutil.tz.tzlocal()
     t = datetime.datetime(year, month, day, hour, minute, second, tzinfo=local_tz)
-    return Time(t) # auto-converts to UTC timescale
+    return Time(t)  # auto-converts to UTC timescale
 
 
 # Before running anything, make sure we can connect to the DB.

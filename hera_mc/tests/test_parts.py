@@ -12,11 +12,10 @@ record.
 from __future__ import absolute_import, division, print_function
 
 import unittest
-
 from astropy.time import Time, TimeDelta
 
-from hera_mc import part_connect, mc, cm_utils, cm_handling, cm_revisions
-from hera_mc.tests import TestHERAMC
+from .. import part_connect, mc, cm_utils, cm_handling, cm_revisions
+from ..tests import TestHERAMC
 
 
 class TestParts(TestHERAMC):
@@ -49,8 +48,8 @@ class TestParts(TestHERAMC):
                 [ntp, 'X', 'start_gpstime', 1172530000]]
         part_connect.update_part(self.test_session, data, add_new_part=True)
         located = self.h.get_part_dossier([ntp], 'X', 'now', True)
-        if len(located.keys()) == 1:
-            self.assertTrue(located[located.keys()[0]].part.hpn == ntp)
+        if len(list(located.keys())) == 1:
+            self.assertTrue(located[list(located.keys())[0]].part.hpn == ntp)
         else:
             self.assertFalse("Part Number should be unique.")
 
@@ -62,8 +61,8 @@ class TestParts(TestHERAMC):
         data = [[self.test_part, self.test_rev, 'hpn_rev', 'Z']]
         part_connect.update_part(self.test_session, data, add_new_part=False)
         located = self.h.get_part_dossier([self.test_part], 'Z', Time('2017-07-01 01:00:00', scale='utc'), True)
-        if len(located.keys()) == 1:
-            self.assertTrue(located[located.keys()[0]].part.hpn_rev == 'Z')
+        if len(list(located.keys())) == 1:
+            self.assertTrue(located[list(located.keys())[0]].part.hpn_rev == 'Z')
         else:
             self.assertFalse()
 
@@ -76,15 +75,15 @@ class TestParts(TestHERAMC):
     def test_part_info(self):
         part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, 'now', 'Testing', 'library_file')
         located = self.h.get_part_dossier([self.test_part], self.test_rev, self.start_time, True)
-        self.assertTrue(located[located.keys()[0]].part_info[0].comment == 'Testing')
+        self.assertTrue(located[list(located.keys())[0]].part_info[0].comment == 'Testing')
 
     def test_add_new_parts(self):
         data = [['part_X', 'X', 'station', 'mfg_X']]
         p = part_connect.Parts()
         part_connect.add_new_parts(self.test_session, p, data, Time('2017-07-01 01:00:00', scale='utc'), True)
         located = self.h.get_part_dossier(['part_X'], 'X', Time('2017-07-01 01:00:00'), True)
-        if len(located.keys()) == 1:
-            self.assertTrue(located[located.keys()[0]].part.hpn == 'part_X')
+        if len(list(located.keys())) == 1:
+            self.assertTrue(located[list(located.keys())[0]].part.hpn == 'part_X')
         else:
             self.assertFalse()
 
@@ -106,7 +105,7 @@ class TestParts(TestHERAMC):
         self.assertTrue('terminals' in a['feed']['output_ports'])
 
     def test_check_overlapping(self):
-        from hera_mc import cm_health
+        from .. import cm_health
         c = cm_health.check_part_for_overlapping_revisions(self.test_part, self.test_session)
         self.assertTrue(len(c) == 0)
 

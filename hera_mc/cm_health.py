@@ -6,11 +6,12 @@
 
 """
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
+
 import warnings
-from hera_mc import mc, cm_utils
-from hera_mc import part_connect as PC
-from hera_mc import cm_revisions
+from . import mc, cm_utils
+from . import part_connect as PC
+from . import cm_revisions
 
 
 class RevisionError(Exception):

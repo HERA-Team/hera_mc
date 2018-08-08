@@ -12,6 +12,7 @@ from __future__ import absolute_import, division, print_function
 import ue9
 import LabJackPython
 from time import time, sleep
+
 from hera_mc import mc
 
 list_of_registers = range(240, 253, 2)
@@ -69,6 +70,7 @@ def aggData(cumList, dev, _list_of_registers, n_per_int):
                 cumList[i] += tnew / n_per_int
         return cumList
 
+
 # seconds per integration
 sPerInt = 10.
 # minutes per file
@@ -79,7 +81,7 @@ d = ue9.UE9()
 
 while True:
     fileName = '%stemp.%7.5f.txt' % (outDir, getJD())
-    print 'Writing to %s' % fileName
+    print('Writing to %s' % fileName)
     f = open(fileName, 'w')
     file_start_time = time()
     while(time() - file_start_time < mPerFile * 60.):

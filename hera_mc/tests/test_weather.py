@@ -12,8 +12,9 @@ import nose.tools as nt
 from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
-from hera_mc import mc, weather
-from hera_mc.tests import TestHERAMC, is_onsite
+
+from .. import mc, weather
+from . import TestHERAMC, is_onsite
 
 
 def test_reduce_time_vals():
@@ -157,7 +158,6 @@ class TestWeather(TestHERAMC):
 
             self.assertRaises(ValueError, weather.create_from_sensors, t1, t2, variables='foo')
 
-
     def test_dump_weather_table(self):
         # Just make sure it doesn't crash.
         t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -179,6 +179,7 @@ class TestWeather(TestHERAMC):
         os.remove('wind_speed.txt')
         os.remove('wind_direction.txt')
         os.remove('temperature.txt')
+
 
 if __name__ == '__main__':
     unittest.main()

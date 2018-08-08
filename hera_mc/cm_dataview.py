@@ -8,11 +8,12 @@ Currently this is only to look at the full connections of parts looped over time
 either via db calls or pre-written files.
 """
 
-from __future__ import absolute_import, print_function
-from hera_mc import mc, cm_utils, cm_revisions, cm_hookup
+from __future__ import absolute_import, division, print_function
+
 from astropy.time import Time, TimeDelta
 import numpy as np
-import matplotlib.pyplot as plt
+
+from . import mc, cm_utils, cm_revisions, cm_hookup
 
 
 class Dataview:
@@ -89,7 +90,7 @@ class Dataview:
 
         if self.fc_map is None or self.parts_list is None:
             raise RuntimeError("You first need to generate fc_map and parts_list")
-        from hera_mc import cm_hookup
+        from . import cm_hookup
         p0 = self.parts_list[0]
         ndate = len(self.fc_map[p0]['datetime'])
         print("Writing {}".format(filename))
@@ -157,6 +158,8 @@ class Dataview:
         """
         Plots the fc_map flgs.
         """
+        import matplotlib.pyplot as plt
+
         if self.fc_map is None or self.parts_list is None:
             raise RuntimeError("You first need to generate fc_map and parts_list")
 

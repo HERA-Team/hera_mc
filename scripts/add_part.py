@@ -9,9 +9,10 @@ Script to handle adding a general part.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling
 import sys
 import copy
+
+from hera_mc import mc, cm_utils, part_connect, cm_handling
 
 
 def query_args(args):
@@ -58,7 +59,7 @@ if __name__ == '__main__':
                                            at_date=at_date, exact_match=True)
 
     # Check for part
-    if len(part_check.keys()) > 0:
+    if len(list(part_check.keys())) > 0:
         print("Error:  {} is already in parts database".format(args.hpn))
         print("Stopping this addition.")
     else:

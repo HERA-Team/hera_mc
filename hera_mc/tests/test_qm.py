@@ -5,19 +5,22 @@
 """Testing for `hera_mc.qm`.
 
 """
-import unittest
+from __future__ import absolute_import, division, print_function
 
+import unittest
+import os
 import numpy as np
 from math import floor
 from astropy.time import Time, TimeDelta
-import os
 
-from hera_mc import mc, cm_transfer
-from hera_mc.qm import AntMetrics, ArrayMetrics
-from hera_mc import utils, geo_location
-from hera_mc.tests import TestHERAMC, checkWarnings
 from hera_qm.firstcal_metrics import get_firstcal_metrics_dict
 from hera_qm.utils import get_metrics_dict
+
+from .. import mc, cm_transfer
+from ..qm import AntMetrics, ArrayMetrics
+from .. import utils, geo_location
+from ..tests import TestHERAMC, checkWarnings
+
 
 
 class TestQM(TestHERAMC):
@@ -212,8 +215,8 @@ class TestQM(TestHERAMC):
         self.assertEqual(len(r), 3)
         for result in r:
             self.assertTrue(result.metric in firstcal_array_metrics)
-        firstcal_ant_metrics = (set(get_firstcal_metrics_dict().keys()) -
-                                firstcal_array_metrics)
+        firstcal_ant_metrics = (set(get_firstcal_metrics_dict().keys())
+                                - firstcal_array_metrics)
         r = self.test_session.get_ant_metric()
         for result in r:
             self.assertTrue(result.metric in firstcal_ant_metrics)

@@ -1,4 +1,6 @@
 """Version definition for hera_mc."""
+from __future__ import absolute_import, division, print_function
+
 from os.path import join as pjoin
 import glob
 
@@ -70,5 +72,5 @@ PACKAGE_DATA = {
         pjoin('data', 'test_data', '*.tst'),
     ]
 }
-REQUIRES = ["astropy", "sqlalchemy", "psycopg2", "alembic", "dateutil", "numpy",
-            "tabulate", "matplotlib", "pandas", "psutil", "pyproj"]
+REQUIRES = ["six", "numpy", "astropy", "sqlalchemy", "psycopg2", "alembic", "dateutil",
+            "tabulate", "pandas", "psutil", "pyproj"]

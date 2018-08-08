@@ -5,9 +5,12 @@
 """
 Test that default database matches code schema.
 """
+from __future__ import absolute_import, division, print_function
+
 from sqlalchemy.orm import sessionmaker
-from hera_mc import mc, MCDeclarativeBase
-from hera_mc.db_check import is_valid_database
+
+from .. import mc, MCDeclarativeBase
+from ..db_check import is_valid_database
 
 
 def test_default_db_schema():

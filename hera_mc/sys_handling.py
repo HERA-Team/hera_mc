@@ -8,12 +8,13 @@ Methods for handling locating correlator and various system aspects.
 
 from __future__ import absolute_import, division, print_function
 
+import six
 from astropy.time import Time, TimeDelta
 from sqlalchemy import func, asc
 import numpy as np
 
-from hera_mc import mc, part_connect, cm_utils, cm_hookup, cm_revisions
-from hera_mc import geo_location, geo_handling
+from . import mc, part_connect, cm_utils, cm_hookup, cm_revisions
+from . import geo_location, geo_handling
 
 
 class StationInfo:
@@ -21,7 +22,7 @@ class StationInfo:
                 'elevation', 'antenna_number', 'correlator_input', 'start_date', 'stop_date']
 
     def __init__(self, stn=None):
-        if isinstance(stn, (str, unicode)) and stn == 'init_arrays':
+        if isinstance(stn, six.string_types) and stn == 'init_arrays':
             for s in self.stn_info:
                 setattr(self, s, [])
         else:
@@ -189,19 +190,20 @@ class Handling:
                 fully_connected_keys.add(fc.hukey)
                 if fc.started > fctime['start']:
                     fctime['start'] = fc.started
-                if fc.ended < fctime['end']:
-                    fctime['end'] = fc.ended
+                if fc.ended is not None:
+                    if fc.ended < fctime['end']:
+                        fctime['end'] = fc.ended
         if len(fully_connected_keys) == 1:
             k = fully_connected_keys.pop()
             current_hookup = hud[k].hookup
-            p = current_hookup.keys()[0]
+            p = list(current_hookup.keys())[0]
             stn = current_hookup[p][0].upstream_part
             ant_num = current_hookup[p][0].downstream_part
             # ant_num here is unicode with an A in front of the number (e.g. u'A22').
             # But we just want an integer, so we strip the A and cast it to int
             ant_num = int(ant_num[1:])
             corr = {}
-            for p, hu in current_hookup.iteritems():
+            for p, hu in six.iteritems(current_hookup):
                 if hud[k].parts_epoch[p] == 'parts_paper':
                     corr[p] = hu[-1].downstream_part
                 elif hud[k].parts_epoch[p] == 'parts_hera':
@@ -245,7 +247,7 @@ class Handling:
         Note: This method requires pyuvdata
         """
         from pyuvdata import utils as uvutils
-        from hera_mc import cm_handling
+        from . import cm_handling
 
         cm_h = cm_handling.Handling(session=self.session)
         cm_version = cm_h.get_cm_version()
@@ -291,7 +293,7 @@ class Handling:
         parts = {}
         H = cm_hookup.Hookup(at_date, self.session)
         hud = H.get_hookup(hpn_list=[stn], exact_match=True)
-        for k, hu in hud.iteritems():
+        for k, hu in six.iteritems(hud):
             parts[k] = hu.get_part_info(part_name)
         return parts
 
@@ -299,7 +301,7 @@ class Handling:
                         hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
                         force_new_hookup_dict=False):
         import os.path
-        if isinstance(hlist, (str, unicode)) and hlist.lower() == 'default':
+        if isinstance(hlist, six.string_types) and hlist.lower() == 'default':
             hlist = cm_utils.default_station_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
@@ -312,7 +314,7 @@ class Handling:
             H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=True, ports=False,
                           revs=False, state='full', file=f, output_format='html')
         import subprocess
-        from hera_mc import cm_transfer
+        from . import cm_transfer
         if cm_transfer.check_if_main():
             sc_command = 'scp -i ~/.ssh/id_rsa_qmaster {} {}'.format(output_file, location_on_paper1)
             subprocess.call(sc_command, shell=True)
@@ -322,7 +324,7 @@ class Handling:
 
     def system_comments(self, system_kw='System', kword='all'):
         col = {'key': ['Keyword'], 'date': ['Posting'], 'comment': ['Comment  <file/url>']}
-        for k, v in col.iteritems():
+        for k, v in six.iteritems(col):
             col[k].append(len(v[0]))
         found_entries = []
         for x in self.session.query(part_connect.PartInfo).filter((func.upper(part_connect.PartInfo.hpn) == system_kw.upper())):
@@ -331,7 +333,7 @@ class Handling:
                 display_time = cm_utils.get_time_for_display(x.posting_gpstime)
                 sys_comm = {'key': x.hpn_rev, 'date': display_time, 'comment': commlib}
                 found_entries.append(sys_comm)
-                for k, v in sys_comm.iteritems():
+                for k, v in six.iteritems(sys_comm):
                     if len(v) > col[k][1]:
                         col[k][1] = len(v)
         if not len(found_entries):

@@ -7,8 +7,9 @@ from __future__ import absolute_import, division, print_function
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from astropy.time import Time
-from .utils import get_iterable
 import warnings
+
+from .utils import get_iterable
 """
 Primary session object which handles most DB queries.
 

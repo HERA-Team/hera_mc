@@ -11,8 +11,9 @@ import unittest
 import nose.tools as nt
 from math import floor
 from astropy.time import Time, TimeDelta
-from hera_mc import mc, roach
-from hera_mc.tests import TestHERAMC, is_onsite
+
+from .. import mc, roach
+from ..tests import TestHERAMC, is_onsite
 
 
 roach_example_dict = {

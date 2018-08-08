@@ -9,11 +9,10 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
-
 from astropy.time import Time, TimeDelta
 
-from hera_mc import part_connect, mc, cm_handling, cm_utils
-from hera_mc.tests import TestHERAMC
+from .. import part_connect, mc, cm_handling, cm_utils
+from . import TestHERAMC
 
 
 class TestConnections(TestHERAMC):
@@ -76,7 +75,7 @@ class TestConnections(TestHERAMC):
                 [u, r, d, r, a, b, g, 'start_gpstime', g]]
         part_connect.update_connection(self.test_session, data, add_new_connection=True)
         located = self.h.get_part_connection_dossier([u], r, a, 'now', True)
-        prkey = located.keys()[0]
+        prkey = list(located.keys())[0]
         ckey = located[prkey].keys_down[0]
         self.assertTrue(located[prkey].down[ckey].upstream_part == u)
         self.h.show_connections(located)
@@ -96,7 +95,7 @@ class TestConnections(TestHERAMC):
         self.assertTrue(len(sc) == 0)
 
     def test_duplicate_connections(self):
-        from hera_mc import cm_health
+        from .. import cm_health
         healthy = cm_health.Connections(self.test_session)
         # Specific connections
         duplicates = healthy.check_for_existing_connection(['a', 'b', 'c', 'd', 'e', 'f'], self.query_time)

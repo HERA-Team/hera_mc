@@ -1,3 +1,9 @@
+# -*- mode: python; coding: utf-8 -*-
+# Copyright 2018 the HERA Collaboration
+# Licensed under the 2-clause BSD license.
+
+from __future__ import absolute_import, division, print_function
+
 from sqlalchemy import inspect
 from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
 from sqlalchemy.orm import RelationshipProperty
@@ -85,12 +91,12 @@ def is_valid_database(base, session):
                     for column in column_prop.columns:
                         # Assume normal flat column
                         if column.key not in columns:
-                            logger.error("Model %s declares column %s " +
+                            logger.error("Model %s declares column %s "
                                          "which does not exist in database %s",
                                          klass, column.key, engine)
                             errors = True
         else:
-            logger.error("Model %s declares table %s which does not exist " +
+            logger.error("Model %s declares table %s which does not exist "
                          "in database %s", klass, table, engine)
             errors = True
 

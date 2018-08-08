@@ -20,11 +20,9 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda install numpy astropy scipy python-dateutil sqlalchemy psycopg2 pandas matplotlib tabulate psutil pyproj nose pip
-  - conda install -c conda-forge alembic
-  - pip install coveralls
-  - conda install -c conda-forge aipy
-  - pip install git+https://github.com/HERA-Team/pyuvdata.git
+  - conda install six numpy astropy scipy python-dateutil sqlalchemy psycopg2 pandas
+    matplotlib tabulate psutil pyproj nose pip pycodestyle alembic coveralls pyuvdata
+  - conda list
   - pip install git+https://github.com/HERA-Team/hera_qm.git
   - python setup.py install
 services:
@@ -36,7 +34,9 @@ before_script:
   - mkdir ~/.hera_mc
   - cp ci/example_config.json ~/.hera_mc/mc_config.json
   - alembic upgrade head
-script: nosetests --with-coverage --cover-package=hera_mc
+script:
+  - nosetests --with-coverage --cover-package=hera_mc
+  - pycodestyle */*.py --ignore=E501,W503
 
 after_success:
     - coveralls

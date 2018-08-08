@@ -9,9 +9,10 @@ Script to show cm_log_file.  Extremely simplified here - can fancify later.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import cm_utils, mc
 import sys
 import os.path
+
+from hera_mc import cm_utils, mc
 
 
 if __name__ == '__main__':
