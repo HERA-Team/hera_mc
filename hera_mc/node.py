@@ -13,7 +13,7 @@ from sqlalchemy import Column, BigInteger, Integer, Float, String, Boolean
 
 from . import MCDeclarativeBase
 
-node_list = [nodeID for nodeID in range(1, 31)]
+node_list = [node for node in range(1, 31)]
 
 sensor_key_dict = {'top_sensor_temp': 'temp_top', 'middle_sensor_temp': 'temp_mid',
                    'bottom_sensor_temp': 'temp_bot', 'humidity_sensor_temp': 'temp_humid',
@@ -83,7 +83,7 @@ class NodeSensor(MCDeclarativeBase):
 def _get_sensor_dict(node, redisServerHostName=None):
     import nodeControl
 
-    node_controller = nodeControl.NodeControl(nodeID, serverAddress=redisServerHostName)
+    node_controller = nodeControl.NodeControl(node, serverAddress=redisServerHostName)
 
     # Get the sensor data for this node, returned as a dict
     return node_controller.get_sensors()
@@ -193,7 +193,7 @@ class NodePowerStatus(MCDeclarativeBase):
 def _get_power_dict(node, redisServerHostName=None):
     import nodeControl
 
-    node_controller = nodeControl.NodeControl(nodeID, serverAddress=redisServerHostName)
+    node_controller = nodeControl.NodeControl(node, serverAddress=redisServerHostName)
 
     # Get the sensor data for this node, returned as a dict
     return node_controller.get_power_status()
