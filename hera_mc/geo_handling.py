@@ -270,7 +270,7 @@ class Handling:
 
     def parse_station_types_to_check(self, sttc):
         self.get_station_types()
-        if isinstance(sttc, (six.text_type, six.string_types)):
+        if isinstance(sttc, six.string_types):
             if sttc.lower() == 'all':
                 return self.station_types.keys()
             elif sttc.lower() == 'default':

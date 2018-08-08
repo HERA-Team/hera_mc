@@ -80,7 +80,7 @@ class AntMetrics(MCDeclarativeBase):
         pol = pol.lower()
         if pol not in ('x', 'y'):
             raise ValueError('pol must be string "x" or "y".')
-        if not isinstance(metric, (six.string_types, six.text_type)):
+        if not isinstance(metric, six.string_types):
             raise ValueError('metric must be string.')
         if not isinstance(db_time, Time):
             raise ValueError('db_time must be an astropy Time object')
@@ -133,7 +133,7 @@ class ArrayMetrics(MCDeclarativeBase):
 
         if not isinstance(obsid, six.integer_types):
             raise ValueError('obsid must be an integer.')
-        if not isinstance(metric, (six.string_types, six.text_type)):
+        if not isinstance(metric, six.string_types):
             raise ValueError('metric must be string.')
         if not isinstance(db_time, Time):
             raise ValueError('db_time must be an astropy Time object')
@@ -170,9 +170,9 @@ class MetricList(MCDeclarativeBase):
             description of metric
         """
 
-        if not isinstance(metric, (six.string_types, six.text_type)):
+        if not isinstance(metric, six.string_types):
             raise ValueError('metric must be string.')
-        if not isinstance(desc, (six.string_types, six.text_type)):
+        if not isinstance(desc, six.string_types):
             raise ValueError('metric description must be a string.')
 
         return cls(metric=metric, desc=desc)

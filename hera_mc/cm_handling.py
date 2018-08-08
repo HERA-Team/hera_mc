@@ -265,9 +265,9 @@ class Handling:
         at_date:  reference date of dossier [something get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
         """
-        if isinstance(hpn_list, (six.text_type, six.string_types)):
+        if isinstance(hpn_list, six.string_types):
             hpn_list = [hpn_list]
-        if isinstance(rev, (six.text_type, six.string_types)):
+        if isinstance(rev, six.string_types):
             rev_list = len(hpn_list) * [rev]
         else:
             rev_list = rev

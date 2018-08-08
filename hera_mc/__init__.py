@@ -45,7 +45,7 @@ class MCDeclarativeBase(object):
         for c in self_columns:
             self_c = getattr(self, c.name)
             other_c = getattr(other, c.name)
-            if isinstance(self_c, (six.text_type, six.string_types, six.integer_types)):
+            if isinstance(self_c, six.string_types + six.integer_types):
                 if self_c != other_c:
                     print('column {col} is string-like or int-like, values are not '
                           'equal'.format(col=c))

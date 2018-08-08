@@ -82,7 +82,7 @@ def split_connection_key(key):
 def stringify(X):
     if X is None:
         return None
-    if isinstance(X, (six.text_type, six.string_types)):
+    if isinstance(X, six.string_types):
         return X
     if isinstance(X, list):
         return ','.join(X)
@@ -92,7 +92,7 @@ def stringify(X):
 def listify(X):
     if X is None:
         return None
-    if isinstance(X, (six.text_type, six.string_types)) and ',' in X:
+    if isinstance(X, six.string_types) and ',' in X:
         return X.split(',')
     if isinstance(X, list):
         return X

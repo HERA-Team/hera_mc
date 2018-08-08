@@ -293,7 +293,7 @@ class Hookup:
         force_specific_at_date:  date for hookup check -- use only if force_specific
         """
         # Take appropriate action if hpn_list is a string
-        if isinstance(hpn_list, (six.text_type, six.string_types)):
+        if isinstance(hpn_list, six.string_types):
             if hpn_list.lower() == 'cached':
                 print("Force read of cache file - not guaranteed fresh.")
                 self.read_hookup_cache_from_file()

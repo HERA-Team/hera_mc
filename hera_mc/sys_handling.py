@@ -22,7 +22,7 @@ class StationInfo:
                 'elevation', 'antenna_number', 'correlator_input', 'start_date', 'stop_date']
 
     def __init__(self, stn=None):
-        if isinstance(stn, (six.text_type, six.string_types)) and stn == 'init_arrays':
+        if isinstance(stn, six.string_types) and stn == 'init_arrays':
             for s in self.stn_info:
                 setattr(self, s, [])
         else:
@@ -301,7 +301,7 @@ class Handling:
                         hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
                         force_new_hookup_dict=False):
         import os.path
-        if isinstance(hlist, (six.text_type, six.string_types)) and hlist.lower() == 'default':
+        if isinstance(hlist, six.string_types) and hlist.lower() == 'default':
             hlist = cm_utils.default_station_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
