@@ -9,6 +9,7 @@ Methods are in cm_dataview.
 
 from __future__ import absolute_import, division, print_function
 
+import six
 import sys
 
 from hera_mc import mc, cm_utils

@@ -81,7 +81,7 @@ d = ue9.UE9()
 
 while True:
     fileName = '%stemp.%7.5f.txt' % (outDir, getJD())
-    print 'Writing to %s' % fileName
+    print('Writing to %s' % fileName)
     f = open(fileName, 'w')
     file_start_time = time()
     while(time() - file_start_time < mPerFile * 60.):
