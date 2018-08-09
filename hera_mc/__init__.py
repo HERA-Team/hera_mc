@@ -96,4 +96,5 @@ from . import librarian  # noqa
 from . import rtp  # noqa
 from . import qm  # noqa
 from . import weather  # noqa
+from . import node  # noqa
 from . import mc    # noqa keep this last.

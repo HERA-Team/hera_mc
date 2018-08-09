@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 
 from astropy.time import Time
 from math import floor
-from sqlalchemy import Column, BigInteger, Integer, Float, String, Boolean
+from sqlalchemy import Column, BigInteger, Integer, Float, Boolean
 
 from . import MCDeclarativeBase
 
@@ -17,7 +17,7 @@ node_list = [node for node in range(1, 31)]
 
 sensor_key_dict = {'top_sensor_temp': 'temp_top', 'middle_sensor_temp': 'temp_mid',
                    'bottom_sensor_temp': 'temp_bot', 'humidity_sensor_temp': 'temp_humid',
-                   'humidty': 'humid'}
+                   'humidity': 'humid'}
 
 power_status_key_dict = {'snap_relay_powered': 'power_snap_relay', 'snap0_powered': 'power_snap_0',
                          'snap1_powered': 'power_snap_1', 'snap2_powered': 'power_snap_2',
@@ -35,7 +35,7 @@ class NodeSensor(MCDeclarativeBase):
     middle_sensor_temp: temperature of middle sensor reported by node in Celcius
     bottom_sensor_temp: temperature of bottom sensor reported by node in Celcius
     humidity_sensor_temp: temperature of the humidity sensor reported by node in Celcius
-    humidty: humidity measurement reported by node
+    humidity: humidity measurement reported by node
     """
     __tablename__ = 'node_sensor'
     time = Column(BigInteger, primary_key=True)
@@ -44,11 +44,11 @@ class NodeSensor(MCDeclarativeBase):
     middle_sensor_temp = Column(Float)
     bottom_sensor_temp = Column(Float)
     humidity_sensor_temp = Column(Float)
-    humidty = Column(Float)
+    humidity = Column(Float)
 
     @classmethod
     def create(cls, time, node, top_sensor_temp, middle_sensor_temp,
-               bottom_sensor_temp, humidity_sensor_temp, humidty):
+               bottom_sensor_temp, humidity_sensor_temp, humidity):
         """
         Create a new node sensor object.
 
@@ -66,7 +66,7 @@ class NodeSensor(MCDeclarativeBase):
             temperature of bottom sensor reported by node in Celcius
         humidity_sensor_temp: float
             temperature of the humidity sensor reported by node in Celcius
-        humidty: float
+        humidity: float
             humidity measurement reported by node
         """
         if not isinstance(time, Time):
@@ -77,7 +77,7 @@ class NodeSensor(MCDeclarativeBase):
                    middle_sensor_temp=middle_sensor_temp,
                    bottom_sensor_temp=bottom_sensor_temp,
                    humidity_sensor_temp=humidity_sensor_temp,
-                   humidty=humidty)
+                   humidity=humidity)
 
 
 def _get_sensor_dict(node, redisServerHostName=None):
@@ -107,23 +107,31 @@ def create_sensor(sensor_dict=None):
     for node in node_list:
 
         if sensor_dict is None:
-            # All items in this dictionary are strings.
-            sensor_data = _get_sensor_dict(node)
+            try:
+                sensor_data = _get_sensor_dict(node)
+            except(KeyError):
+                # TODO: check that this is the error that gets thrown
+                # This node isn't in the database, skip it
+                continue
         else:
-            sensor_data = sensor_dict[node]
+            if str(node) in list(sensor_dict.keys()):
+                sensor_data = sensor_dict[str(node)]
+            else:
+                continue
 
         time = Time(float(sensor_data['timestamp']), format='unix')
 
+        # All items in this dictionary are strings.
         top_sensor_temp = float(sensor_data[sensor_key_dict['top_sensor_temp']])
         middle_sensor_temp = float(sensor_data[sensor_key_dict['middle_sensor_temp']])
         bottom_sensor_temp = float(sensor_data[sensor_key_dict['bottom_sensor_temp']])
         humidity_sensor_temp = float(sensor_data[sensor_key_dict['humidity_sensor_temp']])
-        humidty = float(sensor_data[sensor_key_dict['humidty']])
+        humidity = float(sensor_data[sensor_key_dict['humidity']])
 
         node_sensor_list.append(NodeSensor.create(time, node, top_sensor_temp,
                                                   middle_sensor_temp,
                                                   bottom_sensor_temp,
-                                                  humidity_sensor_temp, humidty))
+                                                  humidity_sensor_temp, humidity))
 
     return node_sensor_list
 
@@ -217,24 +225,32 @@ def create_power_status(power_dict=None):
     for node in node_list:
 
         if power_dict is None:
-            # All items in this dictionary are strings.
-            power_data = _get_power_dict(node)
+            try:
+                power_data = _get_power_dict(node)
+            except(KeyError):
+                # TODO: check that this is the error that gets thrown
+                # This node isn't in the database, skip it
+                continue
         else:
-            power_data = power_dict[node]
+            if str(node) in list(power_dict.keys()):
+                power_data = power_dict[str(node)]
+            else:
+                continue
 
         time = Time(float(power_data['timestamp']), format='unix')
 
-        snap_relay_powered = bool(power_data[sensor_key_dict['snap_relay_powered']])
-        snap0_powered = bool(power_data[sensor_key_dict['snap0_powered']])
-        snap1_powered = bool(power_data[sensor_key_dict['snap1_powered']])
-        snap2_powered = bool(power_data[sensor_key_dict['snap2_powered']])
-        snap3_powered = bool(power_data[sensor_key_dict['snap3_powered']])
-        pam_powered = bool(power_data[sensor_key_dict['pam_powered']])
-        fem_powered = bool(power_data[sensor_key_dict['fem_powered']])
+        # All items in this dictionary are strings.
+        snap_relay_powered = bool(int(power_data[power_status_key_dict['snap_relay_powered']]))
+        snap0_powered = bool(int(power_data[power_status_key_dict['snap0_powered']]))
+        snap1_powered = bool(int(power_data[power_status_key_dict['snap1_powered']]))
+        snap2_powered = bool(int(power_data[power_status_key_dict['snap2_powered']]))
+        snap3_powered = bool(int(power_data[power_status_key_dict['snap3_powered']]))
+        pam_powered = bool(int(power_data[power_status_key_dict['pam_powered']]))
+        fem_powered = bool(int(power_data[power_status_key_dict['fem_powered']]))
 
         node_power_list.append(NodePowerStatus.create(time, node, snap_relay_powered,
                                                       snap0_powered, snap1_powered,
                                                       snap2_powered, snap3_powered,
                                                       fem_powered, pam_powered))
 
-    return node_sensor_list
+    return node_power_list

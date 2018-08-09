@@ -913,7 +913,7 @@ class MCSession(Session):
             print('{}\t{}'.format(item.astropy_time, item.value), file=files[item.variable])
 
     def add_node_sensor(self, time, node, top_sensor_temp, middle_sensor_temp,
-                        bottom_sensor_temp, humidity_sensor_temp, humidty):
+                        bottom_sensor_temp, humidity_sensor_temp, humidity):
         """
         Add new node sensor data to the M&C database.
 
@@ -931,13 +931,13 @@ class MCSession(Session):
             temperature of bottom sensor reported by node in Celcius
         humidity_sensor_temp: float
             temperature of the humidity sensor reported by node in Celcius
-        humidty: float
+        humidity: float
             humidity measurement reported by node
         """
         from .node import NodeSensor
 
         self.add(NodeSensor.create(time, node, top_sensor_temp, middle_sensor_temp,
-                                   bottom_sensor_temp, humidity_sensor_temp, humidty))
+                                   bottom_sensor_temp, humidity_sensor_temp, humidity))
 
     def add_node_sensor_from_nodecontrol(self):
         """Get and add node sensor information using a nodeControl object.
@@ -1004,7 +1004,7 @@ class MCSession(Session):
                                  stoptime=stoptime, filter_column='node',
                                  filter_value=node)
 
-    def add_node_power_status(self, time, snap_relay_powered, snap0_powered,
+    def add_node_power_status(self, time, node, snap_relay_powered, snap0_powered,
                               snap1_powered, snap2_powered, snap3_powered,
                               fem_powered, pam_powered):
         """
