@@ -141,9 +141,6 @@ class TestNodePowerStatus(TestHERAMC):
         result = self.test_session.get_node_power_status(t1 - TimeDelta(3.0, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
-        print(result.snap0_powered)
-        print(expected.snap0_powered)
-
         self.assertTrue(result.isclose(expected))
 
         snap_relay_powered = bool(int(node_power_example_dict['1']['power_snap_relay']))
