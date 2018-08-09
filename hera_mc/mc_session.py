@@ -1032,7 +1032,7 @@ class MCSession(Session):
 
         Returns:
         --------
-        list of WeatherData objects
+        list of RoachTemperature objects
         """
         from .roach import RoachTemperature
 
