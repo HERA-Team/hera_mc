@@ -53,7 +53,7 @@ class RoachTemperature(MCDeclarativeBase):
         Parameters:
         ------------
         time: astropy time object
-            astropy time object based on a timestamp from the katportal sensor.
+            astropy time object based on a timestamp reported by roach
         roach: string
             roach name
         ambient_temp: float
@@ -79,14 +79,14 @@ class RoachTemperature(MCDeclarativeBase):
 def _get_redis_dict(roach_hostname):
     import redis
 
-    r = redis.Redis(redis_dbname)
+    redis_conn = redis.Redis(redis_dbname)
 
     # Each key stores a hash table of different sensors
     # redis key names have the form "roachsensor:<roachhostname>"
     rkey = "roachsensor:%s" % roach_hostname
 
     # Get the entire hash table for this ROACH's key, returned as a dictionary
-    return r.hgetall(rkey)
+    return redis_conn.hgetall(rkey)
 
 
 def create_from_redis(redis_dict=None):
