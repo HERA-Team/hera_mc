@@ -107,6 +107,36 @@ class MCSession(Session):
 
         return result_list
 
+    def _special_insert(table_object, obj_list):
+        """
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the certain data (especially redis data) densely on qmaster.
+        """
+        if self.bind.dialect.name == 'postgresql':
+            from sqlalchemy import inspect
+            from sqlalchemy.dialects.postgresql import insert
+
+            ies = [c.name for c in inspect(table_object).primary_key]
+            conn = self.connection()
+
+            for obj in obj_list:
+                # This appears to be the most correct way to map each row
+                # object into a dictionary:
+                values = {}
+                for col in inspect(obj).mapper.column_attrs:
+                    values[col.expression.name] = getattr(obj, col.key)
+
+                # The special PostgreSQL insert statement lets us ignore
+                # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
+                stmt = insert(table_object).values(**values).on_conflict_do_nothing(index_elements=ies)
+                conn.execute(stmt)
+        else:
+            # Generic approach:
+            for obj in obj_list:
+                self.add(obj)
+
     def add_obs(self, starttime, stoptime, obsid):
         """
         Add a new observation to the M&C database.
@@ -950,33 +980,11 @@ class MCSession(Session):
         the node sensor data densely on qmaster.
 
         """
-        from .node import create_sensor
+        from .node import create_sensor, NodeSensor
 
         node_sensor_list = create_sensor()
 
-        if self.bind.dialect.name == 'postgresql':
-            from sqlalchemy import inspect
-            from sqlalchemy.dialects.postgresql import insert
-            from .node import NodeSensor
-
-            ies = [c.name for c in inspect(NodeSensor).primary_key]
-            conn = self.connection()
-
-            for obj in node_sensor_list:
-                # This appears to be the most correct way to map each row
-                # object into a dictionary:
-                values = {}
-                for col in inspect(obj).mapper.column_attrs:
-                    values[col.expression.name] = getattr(obj, col.key)
-
-                # The special PostgreSQL insert statement lets us ignore
-                # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
-                stmt = insert(NodeSensor).values(**values).on_conflict_do_nothing(index_elements=ies)
-                conn.execute(stmt)
-        else:
-            # Generic approach:
-            for obj in node_sensor_list:
-                self.add(obj)
+        _special_insert(NodeSensor, node_sensor_list)
 
     def get_node_sensor(self, starttime, stoptime=None, node=None):
         """
@@ -1047,33 +1055,11 @@ class MCSession(Session):
         with ones already in the database. This makes it convenient to sample
         the node power status data densely on qmaster.
         """
-        from .node import create_power_status
+        from .node import create_power_status, NodePowerStatus
 
         node_power_list = create_power_status()
 
-        if self.bind.dialect.name == 'postgresql':
-            from sqlalchemy import inspect
-            from sqlalchemy.dialects.postgresql import insert
-            from .node import NodePowerStatus
-
-            ies = [c.name for c in inspect(NodePowerStatus).primary_key]
-            conn = self.connection()
-
-            for obj in node_power_list:
-                # This appears to be the most correct way to map each row
-                # object into a dictionary:
-                values = {}
-                for col in inspect(obj).mapper.column_attrs:
-                    values[col.expression.name] = getattr(obj, col.key)
-
-                # The special PostgreSQL insert statement lets us ignore
-                # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
-                stmt = insert(NodePowerStatus).values(**values).on_conflict_do_nothing(index_elements=ies)
-                conn.execute(stmt)
-        else:
-            # Generic approach:
-            for obj in node_power_list:
-                self.add(obj)
+        _special_insert(NodePowerStatus, node_power_list)
 
     def get_node_power_status(self, starttime, stoptime=None, node=None):
         """
