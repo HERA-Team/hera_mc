@@ -19,6 +19,7 @@ from . import mc, cm_utils
 
 no_connection_designator = '-X-'
 # This lists the fully complete signal paths
+epoch_checking_order = ['parts_hera', 'parts_paper', 'parts_test']
 full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end',
                                         'cable-feed75', 'cable-post-amp(in)',
                                         'post-amp', 'cable-post-amp(out)',
