@@ -60,12 +60,12 @@ if __name__ == '__main__':
     session = db.sessionmaker()
     connect = part_connect.Connections()
     handling = cm_handling.Handling(session)
-    up_check = handling.get_connection_dossier(hpn_list=[args.uppart], rev=args.uprev,
-                                               port=args.upport, at_date=at_date,
-                                               exact_match=True)
-    dn_check = handling.get_connection_dossier(hpn_list=[args.dnpart], rev=args.dnrev,
-                                               port=args.dnport, at_date=at_date,
-                                               exact_match=True)
+    up_check = handling.get_part_connection_dossier(hpn_list=[args.uppart], rev=args.uprev,
+                                                    port=args.upport, at_date=at_date,
+                                                    exact_match=True)
+    dn_check = handling.get_part_connection_dossier(hpn_list=[args.dnpart], rev=args.dnrev,
+                                                    port=args.dnport, at_date=at_date,
+                                                    exact_match=True)
     # Check for connection
     c = part_connect.Connections()
     c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
