@@ -79,7 +79,7 @@ class HookupDossierEntry:
         if len(part_types_found) == 0:
             return
         is_this_one = False
-        for sp in PC.full_connection_path:
+        for sp in PC.epoch_checking_order:
             for part_type in part_types_found:
                 if part_type not in PC.full_connection_path[sp]:
                     break
@@ -169,7 +169,8 @@ class HookupDossierEntry:
                 td[headers.index(part_type)] = new_row_entry
                 dip = d.downstream_input_port + '> '
         # Get the last part in the hookup
-        if part_types[d.downstream_part] in headers:
+        part_type = part_types[d.downstream_part]
+        if part_type in headers:
             new_row_entry = build_new_row_entry(
                 dip, d.downstream_part, d.down_part_rev, None, show)
             td[headers.index(part_type)] = new_row_entry
