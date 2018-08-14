@@ -171,8 +171,8 @@ def update_part(session=None, data=None, add_new_part=False):
         rev_to_change = dval[0][1]
         # if rev_to_change[:4] == 'LAST':
         #    rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
-        part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn_to_change.upper())
-                                               & (func.upper(Parts.hpn_rev) == rev_to_change.upper()))
+        part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn_to_change.upper()) &
+                                               (func.upper(Parts.hpn_rev) == rev_to_change.upper()))
         num_part = part_rec.count()
         if num_part == 0:
             if add_new_part:
@@ -396,8 +396,8 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
-    part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn.upper())
-                                           & (func.upper(Parts.hpn_rev) == rev.upper()))
+    part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn.upper()) &
+                                           (func.upper(Parts.hpn_rev) == rev.upper()))
     if not part_rec.count():
         print("FYI - {}:{} does not exist in parts database.".format(hpn, rev))
         print("This is not a requirement, but you might want to consider adding it.")
@@ -676,13 +676,13 @@ def update_connection(session=None, data=None, add_new_connection=False):
         if drev_to_change[:4] == 'LAST':
             drev_to_change = cm_revisions.get_last_revision(dncn_to_change, session)[0][0]
         conn_rec = session.query(Connections).filter(
-            (Connections.upstream_part == upcn_to_change)
-            & (Connections.up_part_rev == urev_to_change)
-            & (Connections.downstream_part == dncn_to_change)
-            & (Connections.down_part_rev == drev_to_change)
-            & (Connections.upstream_output_port == boup_to_change)
-            & (Connections.downstream_input_port == aodn_to_change)
-            & (Connections.start_gpstime == strt_to_change))
+            (Connections.upstream_part == upcn_to_change) &
+            (Connections.up_part_rev == urev_to_change) &
+            (Connections.downstream_part == dncn_to_change) &
+            (Connections.down_part_rev == drev_to_change) &
+            (Connections.upstream_output_port == boup_to_change) &
+            (Connections.downstream_input_port == aodn_to_change) &
+            (Connections.start_gpstime == strt_to_change))
         num_conn = conn_rec.count()
         if num_conn == 0:
             if add_new_connection:
