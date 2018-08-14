@@ -9,20 +9,24 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 import os
+import six
 import numpy as np
 from math import floor
 from astropy.time import Time, TimeDelta
 
-from hera_qm.firstcal_metrics import get_firstcal_metrics_dict
-from hera_qm.utils import get_metrics_dict
-
 from .. import mc, cm_transfer
-from ..qm import AntMetrics, ArrayMetrics
 from .. import utils, geo_location
 from ..tests import TestHERAMC, checkWarnings
 
+# Temporary, until hera_qm becomes compatible with Python 3.
+if six.PY2:
+    from hera_qm.firstcal_metrics import get_firstcal_metrics_dict
+    from hera_qm.utils import get_metrics_dict
+
+    from ..qm import AntMetrics, ArrayMetrics
 
 
+@unittest.skipIf(six.PY3, "qm is not yet python 3 compatible")
 class TestQM(TestHERAMC):
 
     def setUp(self):

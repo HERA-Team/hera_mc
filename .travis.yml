@@ -2,6 +2,7 @@ language: python
 python:
   # We don't actually use the Travis Python, but this keeps it organized.
   - "2.7"
+  - "3.6"
 install:
   - sudo apt-get update
   # We do this conditionally because it saves us some downloading if the
@@ -15,15 +16,16 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
-  - conda install -y 'libgfortran =3.0.0'
-  - conda config --remove channels defaults && conda config --add channels conda-forge
+  - conda config --add channels conda-forge
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
   - conda install six numpy astropy scipy python-dateutil sqlalchemy psycopg2 pandas
     matplotlib tabulate psutil pyproj nose pip pycodestyle alembic coveralls pyuvdata
   - conda list
-  - pip install git+https://github.com/HERA-Team/hera_qm.git
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      pip install git+https://github.com/HERA-Team/hera_qm.git;
+    fi
   - python setup.py install
 services:
   - postgresql
