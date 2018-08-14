@@ -121,13 +121,13 @@ class HookupDossierEntry:
         self.columns[pol].append('level')
         self.level[pol] = 'N/A'
 
-    def get_part_info(self, part_name, include_ports=False):
+    def get_part_from_type(self, part_type, include_ports=False):
         """
         Retrieve the value for a part name from a hookup
 
         Parameters:
         ------------
-        part_name:  string of valid part name in hookup_dict
+        part_type:  string of valid part type in hookup_dict
 
         returns:
             parts[pol] = part number
@@ -138,14 +138,14 @@ class HookupDossierEntry:
         parts = {}
         extra_cols = ['start', 'stop', 'level']
         for pol, names in six.iteritems(self.columns):
-            if part_name not in names:
+            if part_type not in names:
                 parts[pol] = None
                 continue
             iend = 1
             for ec in extra_cols:
                 if ec in self.columns[pol]:
                     iend += 1
-            part_ind = names.index(part_name)
+            part_ind = names.index(part_type)
             first_one = (part_ind == 0)
             last_one = (part_ind == len(names) - iend)
             if include_ports:

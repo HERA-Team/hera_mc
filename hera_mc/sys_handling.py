@@ -204,8 +204,8 @@ class Handling:
             ant_num = int(ant_num[1:])
             corr = {}
             for p, hu in six.iteritems(current_hookup):
-                cind = PC.epoch_corr[hud[k].parts_epoch[p]]
-                corr[p] = hu[cind].downstream_part + '>' + hu[cind].downstream_input_port
+                cind = part_connect.epoch_corr[hud[k].parts_epoch[p]]
+                corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
             fnd_list = self.geo.get_location([stn], at_date)
             if not len(fnd_list):
                 return None
@@ -278,19 +278,21 @@ class Handling:
                 'cofa_lon': cofa_loc.lon,
                 'cofa_alt': cofa_loc.elevation}
 
-    def get_part_info(self, stn, at_date, part_name='post-amp', include_ports=False):
+    def get_part_from_type(self, stn, at_date, part_type='post-amp', include_ports=False):
         """
         input:
-            stn: antenna number of format HHi where i is antenna number
+            stn: antenna number of format HHi where i is antenna number (string or list of strings)
             at_date: date at which connection is true, format 'YYYY-M-D' or 'now'
         returns:
             dict of {pol:(location, #)}
         """
         parts = {}
         H = cm_hookup.Hookup(at_date, self.session)
-        hud = H.get_hookup(hpn_list=[stn], exact_match=True)
+        if isinstance(stn, six.string_types):
+            stn = [stn]
+        hud = H.get_hookup(hpn_list=stn, exact_match=True)
         for k, hu in six.iteritems(hud):
-            parts[k] = hu.get_part_info(part_name, include_ports=include_ports)
+            parts[k] = hu.get_part_from_type(part_type, include_ports=include_ports)
         return parts
 
     def publish_summary(self, hlist='default', rev='A', exact_match=False,
