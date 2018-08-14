@@ -121,7 +121,7 @@ class HookupDossierEntry:
         self.columns[pol].append('level')
         self.level[pol] = 'N/A'
 
-    def get_part_info(self, part_name):
+    def get_part_info(self, part_name, include_ports=False):
         """
         Retrieve the value for a part name from a hookup
 
@@ -141,15 +141,29 @@ class HookupDossierEntry:
             if part_name not in names:
                 parts[pol] = None
                 continue
-            iend = 2
+            iend = 1
             for ec in extra_cols:
                 if ec in self.columns[pol]:
                     iend += 1
             part_ind = names.index(part_name)
-            if part_ind < len(names) - iend:
-                parts[pol] = self.hookup[pol][part_ind].upstream_part
+            first_one = (part_ind == 0)
+            last_one = (part_ind == len(names) - iend)
+            if include_ports:
+                if first_one:
+                    parts[pol] = "{}<{}".format(self.hookup[pol][part_ind].upstream_part,
+                                                self.hookup[pol][part_ind].upstream_output_port)
+                elif last_one:
+                    parts[pol] = "{}>{}".format(self.hookup[pol][part_ind - 1].downstream_input_port,
+                                                self.hookup[pol][part_ind - 1].downstream_part)
+                else:
+                    parts[pol] = "{}>{}<{}".format(self.hookup[pol][part_ind - 1].downstream_input_port,
+                                                   self.hookup[pol][part_ind].upstream_part,
+                                                   self.hookup[pol][part_ind].upstream_output_port)
             else:
-                parts[pol] = self.hookup[pol][part_ind - 1].downstream_part
+                if not last_one:
+                    parts[pol] = "{}".format(self.hookup[pol][part_ind].upstream_part)
+                else:
+                    parts[pol] = "{}".format(self.hookup[pol][part_ind - 1].downstream_part)
         return parts
 
     def table_entry_row(self, pol, headers, part_types, show):

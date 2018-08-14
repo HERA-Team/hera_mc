@@ -204,12 +204,8 @@ class Handling:
             ant_num = int(ant_num[1:])
             corr = {}
             for p, hu in six.iteritems(current_hookup):
-                if hud[k].parts_epoch[p] == 'parts_paper':
-                    corr[p] = hu[-1].downstream_part
-                elif hud[k].parts_epoch[p] == 'parts_hera':
-                    corr[p] = hu[-2].downstream_part + '>' + hu[-2].downstream_input_port
-                else:
-                    raise ValueError("No correlator hookup defined.")
+                cind = PC.epoch_corr[hud[k].parts_epoch[p]]
+                corr[p] = hu[cind].downstream_part + '>' + hu[cind].downstream_input_port
             fnd_list = self.geo.get_location([stn], at_date)
             if not len(fnd_list):
                 return None
@@ -282,7 +278,7 @@ class Handling:
                 'cofa_lon': cofa_loc.lon,
                 'cofa_alt': cofa_loc.elevation}
 
-    def get_part_info(self, stn, at_date, part_name='post-amp'):
+    def get_part_info(self, stn, at_date, part_name='post-amp', include_ports=False):
         """
         input:
             stn: antenna number of format HHi where i is antenna number
@@ -294,7 +290,7 @@ class Handling:
         H = cm_hookup.Hookup(at_date, self.session)
         hud = H.get_hookup(hpn_list=[stn], exact_match=True)
         for k, hu in six.iteritems(hud):
-            parts[k] = hu.get_part_info(part_name)
+            parts[k] = hu.get_part_info(part_name, include_ports=include_ports)
         return parts
 
     def publish_summary(self, hlist='default', rev='A', exact_match=False,
