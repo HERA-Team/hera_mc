@@ -135,7 +135,7 @@ class HookupDossierEntry:
             parts:  dictionary keyed on polarization for actual installed part number of
                     specified type within hookup as a string per pol
                     if include_revs part number is e.g. FDV1:A
-                    if include_ports they are included as e.g. 'input<FDV:A>terminals'
+                    if include_ports they are included as e.g. 'input>FDV:A<terminals'
         """
         parts = {}
         extra_cols = ['start', 'stop', 'level']
