@@ -139,7 +139,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.verbosity = args.verbosity.lower()
     args.station_name = args.station_name.upper()
-    if args.station_name[:2] in ['HH', 'HA', 'HB']:
+    if args.station_name.startswith(('HH', 'HA', 'HB')):
         antenna = read_antennas()
         if args.station_name not in antenna:
             raise ValueError("{} antenna not found.".format(args.station_name))
@@ -151,7 +151,7 @@ if __name__ == '__main__':
             if ant_num in v:
                 args.station_type_name = r
                 break
-    elif args.station_name[:2] == 'ND':
+    elif args.station_name.startswith('ND'):
         node = read_nodes()
         node_num = int(args.station_name[2:])
         if node_num not in node:
