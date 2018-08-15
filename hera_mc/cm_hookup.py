@@ -121,19 +121,21 @@ class HookupDossierEntry:
         self.columns[pol].append('level')
         self.level[pol] = 'N/A'
 
-    def get_part_from_type(self, part_type, include_ports=False):
+    def get_part_in_hookup_from_type(self, part_type, include_revs=False, include_ports=False):
         """
         Retrieve the value for a part name from a hookup
 
         Parameters:
         ------------
-        part_type:  string of valid part type in hookup_dict
+        part_type:  string of valid part type in hookup_dict (e.g. 'snap' or 'feed')
+        include_revs:  is set to True, returns revision number
+        include_ports:  if set to True, it returns the associated ports to the part
 
         returns:
-            parts[pol] = part number
-            location example: RI4A1E:A
-            pam number example: RCVR93:A (for a PAPER RCVR)
-            pam number example: PAM75101:B (for a HERA PAM)
+            parts:  dictionary keyed on polarization for actual installed part number of
+                    specified type within hookup as a string per pol
+                    if include_revs part number is e.g. FDV1:A
+                    if include_ports they are included as e.g. 'input<FDV:A>terminals'
         """
         parts = {}
         extra_cols = ['start', 'stop', 'level']
@@ -146,24 +148,33 @@ class HookupDossierEntry:
                 if ec in self.columns[pol]:
                     iend += 1
             part_ind = names.index(part_type)
-            first_one = (part_ind == 0)
-            last_one = (part_ind == len(names) - iend)
-            if include_ports:
-                if first_one:
-                    parts[pol] = "{}<{}".format(self.hookup[pol][part_ind].upstream_part,
-                                                self.hookup[pol][part_ind].upstream_output_port)
-                elif last_one:
-                    parts[pol] = "{}>{}".format(self.hookup[pol][part_ind - 1].downstream_input_port,
-                                                self.hookup[pol][part_ind - 1].downstream_part)
-                else:
-                    parts[pol] = "{}>{}<{}".format(self.hookup[pol][part_ind - 1].downstream_input_port,
-                                                   self.hookup[pol][part_ind].upstream_part,
-                                                   self.hookup[pol][part_ind].upstream_output_port)
+            is_first_one = (part_ind == 0)
+            is_last_one = (part_ind == len(names) - iend)
+            # Get part number
+            if is_last_one:
+                part_number = self.hookup[pol][part_ind - 1].downstream_part
             else:
-                if not last_one:
-                    parts[pol] = "{}".format(self.hookup[pol][part_ind].upstream_part)
+                part_number = self.hookup[pol][part_ind].upstream_part
+            # Get rev
+            rev = ''
+            if include_revs:
+                if is_last_one:
+                    rev = ':' + self.hookup[pol][part_ind - 1].down_part_rev
                 else:
-                    parts[pol] = "{}".format(self.hookup[pol][part_ind - 1].downstream_part)
+                    rev = ':' + self.hookup[pol][part_ind].up_part_rev
+            # Get ports
+            in_port = ''
+            out_port = ''
+            if include_ports:
+                if is_first_one:
+                    out_port = '<' + self.hookup[pol][part_ind].upstream_output_port
+                elif is_last_one:
+                    in_port = self.hookup[pol][part_ind - 1].downstream_input_port + '>'
+                else:
+                    out_port = '<' + self.hookup[pol][part_ind].upstream_output_port
+                    in_port = self.hookup[pol][part_ind - 1].downstream_input_port + '>'
+            # Finish
+            parts[pol] = "{}{}{}{}".format(in_port, part_number, rev, out_port)
         return parts
 
     def table_entry_row(self, pol, headers, part_types, show):

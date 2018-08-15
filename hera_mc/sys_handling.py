@@ -278,7 +278,7 @@ class Handling:
                 'cofa_lon': cofa_loc.lon,
                 'cofa_alt': cofa_loc.elevation}
 
-    def get_part_from_type(self, stn, at_date, part_type='post-amp', include_ports=False):
+    def get_part_at_station_from_type(self, stn, at_date, part_type='post-amp', include_revs=False, include_ports=False):
         """
         input:
             stn: antenna number of format HHi where i is antenna number (string or list of strings)
@@ -292,7 +292,7 @@ class Handling:
             stn = [stn]
         hud = H.get_hookup(hpn_list=stn, exact_match=True)
         for k, hu in six.iteritems(hud):
-            parts[k] = hu.get_part_from_type(part_type, include_ports=include_ports)
+            parts[k] = hu.get_part_in_hookup_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
 
     def publish_summary(self, hlist='default', rev='A', exact_match=False,

@@ -131,13 +131,13 @@ class TestSys(TestHERAMC):
         hookup = cm_hookup.Hookup(at_date, self.test_session)
         stn = 'HH23'
         hud = hookup.get_hookup([stn], exact_match=True)
-        pams = hud[list(hud.keys())[0]].get_part_from_type('post-amp', include_ports=False)
+        pams = hud[list(hud.keys())[0]].get_part_in_hookup_from_type('post-amp', include_ports=False)
         self.assertEqual(len(pams), 2)
         self.assertEqual(pams['e'], 'PAM75123')  # the actual pam number (the thing written on the case)
 
     def test_get_pam_info(self):
         sys_h = sys_handling.Handling(self.test_session)
-        pams = sys_h.get_part_from_type('HH23', '2017-07-03', 'post-amp', include_ports=False)
+        pams = sys_h.get_part_at_station_from_type('HH23', '2017-07-03', 'post-amp', include_ports=False)
         self.assertEqual(len(pams), 1)
         self.assertEqual(pams['HH23:A']['e'], 'PAM75123')  # the actual pam number (the thing written on the case)
 

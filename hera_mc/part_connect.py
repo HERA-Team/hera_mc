@@ -169,9 +169,8 @@ def update_part(session=None, data=None, add_new_part=False):
     for dkey, dval in six.iteritems(data_dict):
         hpn_to_change = dval[0][0]
         rev_to_change = dval[0][1]
-        # if rev_to_change.startswith('LAST'):
-        #    rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
-        part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn_to_change.upper()) & (func.upper(Parts.hpn_rev) == rev_to_change.upper()))
+        part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn_to_change.upper())
+                                               & (func.upper(Parts.hpn_rev) == rev_to_change.upper()))
         num_part = part_rec.count()
         if num_part == 0:
             if add_new_part:
@@ -395,7 +394,8 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
-    part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn.upper()) & (func.upper(Parts.hpn_rev) == rev.upper()))
+    part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn.upper())
+                                           & (func.upper(Parts.hpn_rev) == rev.upper()))
     if not part_rec.count():
         print("FYI - {}:{} does not exist in parts database.".format(hpn, rev))
         print("This is not a requirement, but you might want to consider adding it.")

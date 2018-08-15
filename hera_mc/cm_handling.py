@@ -41,8 +41,7 @@ class PartDossierEntry():
 
     def get_entry(self, session, full_version=True):
         part_query = session.query(PC.Parts).filter(
-            (func.upper(PC.Parts.hpn) == self.hpn)
-            & (func.upper(PC.Parts.hpn_rev) == self.rev))
+            (func.upper(PC.Parts.hpn) == self.hpn) & (func.upper(PC.Parts.hpn_rev) == self.rev))
         self.part = copy.copy(part_query.first())  # There should be only one.
         self.part.gps2Time()
         if full_version:
@@ -53,8 +52,7 @@ class PartDossierEntry():
 
     def get_part_info(self, session):
         for part_info in session.query(PC.PartInfo).filter(
-                (func.upper(PC.PartInfo.hpn) == self.hpn)
-                & (func.upper(PC.PartInfo.hpn_rev) == self.rev)):
+                (func.upper(PC.PartInfo.hpn) == self.hpn) & (func.upper(PC.PartInfo.hpn_rev) == self.rev)):
             self.part_info.append(part_info)
 
     def get_geo(self, session):
