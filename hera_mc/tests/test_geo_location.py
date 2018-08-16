@@ -26,9 +26,9 @@ class TestGeo(TestHERAMC):
 
     def test_cofa(self):
         self.h.get_station_types()
-        station_types = list(self.h.station_types.keys())
+        station_types = [type.lower() for type in self.h.station_types.keys()]
         print(station_types)
-        self.assertTrue('cofa' in station_types.lower())
+        self.assertTrue('cofa' in station_types)
 
         cofa = self.h.cofa()[0]
         print(cofa)
