@@ -15,7 +15,7 @@ from astropy.time import Time, TimeDelta
 from .. import mc, node
 from ..tests import TestHERAMC, is_onsite
 
-node_example_list = [node for node in range(1, 4)]
+node_example_list = [nodeID for nodeID in range(1, 4)]
 
 node_sensor_example_dict = {
     '1': {'temp_top': 30., 'temp_mid': 31.98, 'temp_bot': 41,
