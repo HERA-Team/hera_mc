@@ -114,10 +114,12 @@ class TestNodeSensor(TestHERAMC):
     def test_add_node_sensor_from_nodecontrol(self):
 
         if is_onsite():
+            node_list = node._get_node_list()
+
             self.test_session.add_node_sensor_from_nodecontrol()
             result = self.test_session.get_node_sensor(Time.now() - TimeDelta(120.0, format='sec'),
                                                        stoptime=Time.now() + TimeDelta(120.0, format='sec'))
-            self.assertEqual(len(result), 30)
+            self.assertEqual(len(result), len(node_list))
 
 
 class TestNodePowerStatus(TestHERAMC):
