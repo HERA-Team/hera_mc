@@ -107,7 +107,7 @@ class MCSession(Session):
 
         return result_list
 
-    def _special_insert(table_object, obj_list):
+    def _special_insert(self, table_object, obj_list):
         """
         If the current database is PostgreSQL, this function will use a
         special insertion method that will ignore records that are redundant
