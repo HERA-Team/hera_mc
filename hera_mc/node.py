@@ -13,7 +13,7 @@ from sqlalchemy import Column, BigInteger, Integer, Float, Boolean
 
 from . import MCDeclarativeBase
 
-node_list = [node for node in range(1, 31)]
+defaultServerAddress = 'redishost'
 
 sensor_key_dict = {'top_sensor_temp': 'temp_top', 'middle_sensor_temp': 'temp_mid',
                    'bottom_sensor_temp': 'temp_bot', 'humidity_sensor_temp': 'temp_humid',
@@ -80,21 +80,31 @@ class NodeSensor(MCDeclarativeBase):
                    humidity=humidity)
 
 
-def _get_sensor_dict(node, redisServerHostName=None):
+def _get_node_list(nodeServerAddress=defaultServerAddress):
     import nodeControl
 
-    node_controller = nodeControl.NodeControl(node, serverAddress=redisServerHostName)
+    return nodeControl.get_valid_nodes(serverAddress=nodeServerAddress)
+
+
+def _get_sensor_dict(node, nodeServerAddress=defaultServerAddress):
+    import nodeControl
+
+    node_controller = nodeControl.NodeControl(node, serverAddress=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
     return node_controller.get_sensors()
 
 
-def create_sensor(sensor_dict=None):
+def create_sensor(nodeServerAddress=defaultServerAddress, node_list=None,
+                  sensor_dict=None):
     """
     Return a list of node sensor objects with data from the nodes.
 
     Parameters:
     ------------
+    nodeServerAddress: Address of server where the node redis database can be accessed.
+    node_list: A list of integers specifying which nodes to get data for,
+        primarily for testing purposes. If None, _get_node_list() is called. Default: None.
     sensor_dict: A dict spoofing the return dict from _get_sensor_dict for testing
         purposes. Default: None
 
@@ -103,30 +113,25 @@ def create_sensor(sensor_dict=None):
     A list of NodeSensor objects
     """
 
+    if node_list is None:
+        node_list = _get_node_list(nodeServerAddress=nodeServerAddress)
     node_sensor_list = []
     for node in node_list:
 
         if sensor_dict is None:
-            try:
-                sensor_data = _get_sensor_dict(node)
-            except(KeyError):
-                # TODO: check that this is the error that gets thrown
-                # This node isn't in the database, skip it
-                continue
+            timestamp, sensor_data = _get_sensor_dict(node, nodeServerAddress=nodeServerAddress)
         else:
-            if str(node) in list(sensor_dict.keys()):
-                sensor_data = sensor_dict[str(node)]
-            else:
-                continue
+            sensor_data = sensor_dict[str(node)]
+            timestamp = sensor_data.pop('timestamp')
 
-        time = Time(float(sensor_data['timestamp']), format='unix')
+        time = Time(timestamp, format='datetime', scale='utc')
 
         # All items in this dictionary are strings.
-        top_sensor_temp = float(sensor_data[sensor_key_dict['top_sensor_temp']])
-        middle_sensor_temp = float(sensor_data[sensor_key_dict['middle_sensor_temp']])
-        bottom_sensor_temp = float(sensor_data[sensor_key_dict['bottom_sensor_temp']])
-        humidity_sensor_temp = float(sensor_data[sensor_key_dict['humidity_sensor_temp']])
-        humidity = float(sensor_data[sensor_key_dict['humidity']])
+        top_sensor_temp = sensor_data[sensor_key_dict['top_sensor_temp']]
+        middle_sensor_temp = sensor_data[sensor_key_dict['middle_sensor_temp']]
+        bottom_sensor_temp = sensor_data[sensor_key_dict['bottom_sensor_temp']]
+        humidity_sensor_temp = sensor_data[sensor_key_dict['humidity_sensor_temp']]
+        humidity = sensor_data[sensor_key_dict['humidity']]
 
         node_sensor_list.append(NodeSensor.create(time, node, top_sensor_temp,
                                                   middle_sensor_temp,
@@ -198,55 +203,54 @@ class NodePowerStatus(MCDeclarativeBase):
                    fem_powered=fem_powered, pam_powered=pam_powered)
 
 
-def _get_power_dict(node, redisServerHostName=None):
+def _get_power_dict(node, nodeServerAddress=defaultServerAddress):
     import nodeControl
 
-    node_controller = nodeControl.NodeControl(node, serverAddress=redisServerHostName)
+    node_controller = nodeControl.NodeControl(node, serverAddress=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
     return node_controller.get_power_status()
 
 
-def create_power_status(power_dict=None):
+def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
+                        power_dict=None):
     """
     Return a list of node power status objects with data from the nodes.
 
     Parameters:
     ------------
-    power_dict: A dict spoofing the return dict from _get_power_dict for testing
-        purposes. Default: None
+    nodeServerAddress: Address of server where the node redis database can be accessed.
+    node_list: A list of integers specifying which nodes to get data for,
+        primarily for testing purposes. If None, _get_node_list() is called. Default: None.
+    power_dict: A dict containing info as in the return dict from _get_power_dict()
+        for testing purposes. If None, _get_power_dict() is called. Default: None
 
     Returns:
     -----------
     A list of NodePowerStatus objects
     """
 
+    if node_list is None:
+        node_list = _get_node_list(nodeServerAddress=nodeServerAddress)
     node_power_list = []
     for node in node_list:
 
         if power_dict is None:
-            try:
-                power_data = _get_power_dict(node)
-            except(KeyError):
-                # TODO: check that this is the error that gets thrown
-                # This node isn't in the database, skip it
-                continue
+            timestamp, power_data = _get_power_dict(node, nodeServerAddress=nodeServerAddress)
         else:
-            if str(node) in list(power_dict.keys()):
-                power_data = power_dict[str(node)]
-            else:
-                continue
+            power_data = power_dict[str(node)]
+            timestamp = power_data.pop('timestamp')
 
-        time = Time(float(power_data['timestamp']), format='unix')
+        time = Time(timestamp, format='datetime', scale='utc')
 
         # All items in this dictionary are strings.
-        snap_relay_powered = bool(int(power_data[power_status_key_dict['snap_relay_powered']]))
-        snap0_powered = bool(int(power_data[power_status_key_dict['snap0_powered']]))
-        snap1_powered = bool(int(power_data[power_status_key_dict['snap1_powered']]))
-        snap2_powered = bool(int(power_data[power_status_key_dict['snap2_powered']]))
-        snap3_powered = bool(int(power_data[power_status_key_dict['snap3_powered']]))
-        pam_powered = bool(int(power_data[power_status_key_dict['pam_powered']]))
-        fem_powered = bool(int(power_data[power_status_key_dict['fem_powered']]))
+        snap_relay_powered = power_data[power_status_key_dict['snap_relay_powered']]
+        snap0_powered = power_data[power_status_key_dict['snap0_powered']]
+        snap1_powered = power_data[power_status_key_dict['snap1_powered']]
+        snap2_powered = power_data[power_status_key_dict['snap2_powered']]
+        snap3_powered = power_data[power_status_key_dict['snap3_powered']]
+        pam_powered = power_data[power_status_key_dict['pam_powered']]
+        fem_powered = power_data[power_status_key_dict['fem_powered']]
 
         node_power_list.append(NodePowerStatus.create(time, node, snap_relay_powered,
                                                       snap0_powered, snap1_powered,

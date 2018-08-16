@@ -15,26 +15,30 @@ from astropy.time import Time, TimeDelta
 from .. import mc, node
 from ..tests import TestHERAMC, is_onsite
 
+node_example_list = [node for node in range(1, 4)]
 
 node_sensor_example_dict = {
-    '1': {'temp_top': '30', 'temp_mid': '31.98', 'temp_bot': '41',
-          'temp_humid': '33.89', 'humid': '32.5', 'timestamp': '1512770942.726777'},
-    '2': {'temp_top': '32', 'temp_mid': '32', 'temp_bot': '39.2',
-          'temp_humid': '33', 'humid': '40', 'timestamp': '1512770942.995268'},
-    '3': {'temp_top': '29.1', 'temp_mid': '33.8', 'temp_bot': '41.6',
-          'temp_humid': '34', 'humid': '25.8', 'timestamp': '1512770942.861526'}
+    '1': {'temp_top': 30., 'temp_mid': 31.98, 'temp_bot': 41,
+          'temp_humid': 33.89, 'humid': 32.5,
+          'timestamp': Time(1512770942.726777, format='unix').to_datetime()},
+    '2': {'temp_top': 32., 'temp_mid': 32., 'temp_bot': 39.2,
+          'temp_humid': 33, 'humid': 40.,
+          'timestamp': Time(1512770942.995268, format='unix').to_datetime()},
+    '3': {'temp_top': 29.1, 'temp_mid': 33.8, 'temp_bot': 41.6,
+          'temp_humid': 34., 'humid': 25.8,
+          'timestamp': Time(1512770942.861526, format='unix').to_datetime()}
 }
 
 node_power_example_dict = {
-    '1': {'power_snap_relay': '1', 'power_snap_0': '0', 'power_snap_1': '1',
-          'power_snap_2': '0', 'power_snap_3': '0', 'power_pam': '1', 'power_fem': '1',
-          'timestamp': '1512770942.726777'},
-    '2': {'power_snap_relay': '0', 'power_snap_0': '1', 'power_snap_1': '0',
-          'power_snap_2': '1', 'power_snap_3': '1', 'power_pam': '0', 'power_fem': '0',
-          'timestamp': '1512770942.995268'},
-    '3': {'power_snap_relay': '0', 'power_snap_0': '0', 'power_snap_1': '0',
-          'power_snap_2': '0', 'power_snap_3': '0', 'power_pam': '0', 'power_fem': '0',
-          'timestamp': '1512770942.861526'}
+    '1': {'power_snap_relay': True, 'power_snap_0': False, 'power_snap_1': True,
+          'power_snap_2': False, 'power_snap_3': False, 'power_pam': True, 'power_fem': True,
+          'timestamp': Time(1512770942.726777, format='unix').to_datetime()},
+    '2': {'power_snap_relay': False, 'power_snap_0': True, 'power_snap_1': False,
+          'power_snap_2': True, 'power_snap_3': True, 'power_pam': False, 'power_fem': False,
+          'timestamp': Time(1512770942.995268, format='unix').to_datetime()},
+    '3': {'power_snap_relay': False, 'power_snap_0': False, 'power_snap_1': False,
+          'power_snap_2': False, 'power_snap_3': False, 'power_pam': False, 'power_fem': False,
+          'timestamp': Time(1512770942.861526, format='unix').to_datetime()}
 }
 
 
@@ -85,7 +89,8 @@ class TestNodeSensor(TestHERAMC):
         self.assertEqual(result, [])
 
     def test_create_sensor(self):
-        sensor_obj_list = node.create_sensor(node_sensor_example_dict)
+        sensor_obj_list = node.create_sensor(node_list=node_example_list,
+                                             sensor_dict=node_sensor_example_dict)
 
         for obj in sensor_obj_list:
             self.test_session.add(obj)
@@ -168,8 +173,9 @@ class TestNodePowerStatus(TestHERAMC):
         result = self.test_session.get_node_power_status(t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
-    def test_create_sensor(self):
-        sensor_obj_list = node.create_power_status(node_power_example_dict)
+    def test_create_power_status(self):
+        sensor_obj_list = node.create_power_status(node_list=node_example_list,
+                                                   power_dict=node_power_example_dict)
 
         for obj in sensor_obj_list:
             self.test_session.add(obj)
