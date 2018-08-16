@@ -48,11 +48,11 @@ class TestNodeSensor(TestHERAMC):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
 
-        top_sensor_temp = float(node_sensor_example_dict['1']['temp_top'])
-        middle_sensor_temp = float(node_sensor_example_dict['1']['temp_mid'])
-        bottom_sensor_temp = float(node_sensor_example_dict['1']['temp_bot'])
-        humidity_sensor_temp = float(node_sensor_example_dict['1']['temp_humid'])
-        humidity = float(node_sensor_example_dict['1']['humid'])
+        top_sensor_temp = node_sensor_example_dict['1']['temp_top']
+        middle_sensor_temp = node_sensor_example_dict['1']['temp_mid']
+        bottom_sensor_temp = node_sensor_example_dict['1']['temp_bot']
+        humidity_sensor_temp = node_sensor_example_dict['1']['temp_humid']
+        humidity = node_sensor_example_dict['1']['humid']
         self.test_session.add_node_sensor(t1, 1, top_sensor_temp, middle_sensor_temp,
                                           bottom_sensor_temp, humidity_sensor_temp,
                                           humidity)
@@ -66,11 +66,11 @@ class TestNodeSensor(TestHERAMC):
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        top_sensor_temp = float(node_sensor_example_dict['2']['temp_top'])
-        middle_sensor_temp = float(node_sensor_example_dict['2']['temp_mid'])
-        bottom_sensor_temp = float(node_sensor_example_dict['2']['temp_bot'])
-        humidity_sensor_temp = float(node_sensor_example_dict['2']['temp_humid'])
-        humidity = float(node_sensor_example_dict['2']['humid'])
+        top_sensor_temp = node_sensor_example_dict['2']['temp_top']
+        middle_sensor_temp = node_sensor_example_dict['2']['temp_mid']
+        bottom_sensor_temp = node_sensor_example_dict['2']['temp_bot']
+        humidity_sensor_temp = node_sensor_example_dict['2']['temp_humid']
+        humidity = node_sensor_example_dict['2']['humid']
         self.test_session.add_node_sensor(t1, 2, top_sensor_temp, middle_sensor_temp,
                                           bottom_sensor_temp, humidity_sensor_temp,
                                           humidity)
@@ -126,13 +126,13 @@ class TestNodePowerStatus(TestHERAMC):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
 
-        snap_relay_powered = bool(int(node_power_example_dict['1']['power_snap_relay']))
-        snap0_powered = bool(int(node_power_example_dict['1']['power_snap_0']))
-        snap1_powered = bool(int(node_power_example_dict['1']['power_snap_1']))
-        snap2_powered = bool(int(node_power_example_dict['1']['power_snap_2']))
-        snap3_powered = bool(int(node_power_example_dict['1']['power_snap_3']))
-        pam_powered = bool(int(node_power_example_dict['1']['power_pam']))
-        fem_powered = bool(int(node_power_example_dict['1']['power_fem']))
+        snap_relay_powered = node_power_example_dict['1']['power_snap_relay']
+        snap0_powered = node_power_example_dict['1']['power_snap_0']
+        snap1_powered = node_power_example_dict['1']['power_snap_1']
+        snap2_powered = node_power_example_dict['1']['power_snap_2']
+        snap3_powered = node_power_example_dict['1']['power_snap_3']
+        pam_powered = node_power_example_dict['1']['power_pam']
+        fem_powered = node_power_example_dict['1']['power_fem']
         self.test_session.add_node_power_status(t1, 1, snap_relay_powered,
                                                 snap0_powered, snap1_powered,
                                                 snap2_powered, snap3_powered,
@@ -148,13 +148,13 @@ class TestNodePowerStatus(TestHERAMC):
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        snap_relay_powered = bool(int(node_power_example_dict['1']['power_snap_relay']))
-        snap0_powered = bool(int(node_power_example_dict['1']['power_snap_0']))
-        snap1_powered = bool(int(node_power_example_dict['1']['power_snap_1']))
-        snap2_powered = bool(int(node_power_example_dict['1']['power_snap_2']))
-        snap3_powered = bool(int(node_power_example_dict['1']['power_snap_3']))
-        pam_powered = bool(int(node_power_example_dict['1']['power_pam']))
-        fem_powered = bool(int(node_power_example_dict['1']['power_fem']))
+        snap_relay_powered = node_power_example_dict['1']['power_snap_relay']
+        snap0_powered = node_power_example_dict['1']['power_snap_0']
+        snap1_powered = node_power_example_dict['1']['power_snap_1']
+        snap2_powered = node_power_example_dict['1']['power_snap_2']
+        snap3_powered = node_power_example_dict['1']['power_snap_3']
+        pam_powered = node_power_example_dict['1']['power_pam']
+        fem_powered = node_power_example_dict['1']['power_fem']
         self.test_session.add_node_power_status(t1, 2, snap_relay_powered,
                                                 snap0_powered, snap1_powered,
                                                 snap2_powered, snap3_powered,
@@ -200,10 +200,12 @@ class TestNodePowerStatus(TestHERAMC):
     def test_add_node_power_status_from_nodecontrol(self):
 
         if is_onsite():
+            node_list = node._get_node_list()
+
             self.test_session.add_node_power_status_from_nodecontrol()
             result = self.test_session.get_node_power_status(Time.now() - TimeDelta(120.0, format='sec'),
                                                              stoptime=Time.now() + TimeDelta(120.0, format='sec'))
-            self.assertEqual(len(result), 30)
+            self.assertEqual(len(result), len(node_list))
 
 
 if __name__ == '__main__':
