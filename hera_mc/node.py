@@ -126,12 +126,11 @@ def create_sensor(nodeServerAddress=defaultServerAddress, node_list=None,
 
         time = Time(timestamp, format='datetime', scale='utc')
 
-        # All items in this dictionary are strings.
-        top_sensor_temp = sensor_data[sensor_key_dict['top_sensor_temp']]
-        middle_sensor_temp = sensor_data[sensor_key_dict['middle_sensor_temp']]
-        bottom_sensor_temp = sensor_data[sensor_key_dict['bottom_sensor_temp']]
-        humidity_sensor_temp = sensor_data[sensor_key_dict['humidity_sensor_temp']]
-        humidity = sensor_data[sensor_key_dict['humidity']]
+        top_sensor_temp = sensor_data.get(sensor_key_dict['top_sensor_temp'], None)
+        middle_sensor_temp = sensor_data.get(sensor_key_dict['middle_sensor_temp'], None)
+        bottom_sensor_temp = sensor_data.get(sensor_key_dict['bottom_sensor_temp'], None)
+        humidity_sensor_temp = sensor_data.get(sensor_key_dict['humidity_sensor_temp'], None)
+        humidity = sensor_data.get(sensor_key_dict['humidity'], None)
 
         node_sensor_list.append(NodeSensor.create(time, node, top_sensor_temp,
                                                   middle_sensor_temp,
@@ -244,13 +243,13 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
         time = Time(timestamp, format='datetime', scale='utc')
 
         # All items in this dictionary are strings.
-        snap_relay_powered = power_data[power_status_key_dict['snap_relay_powered']]
-        snap0_powered = power_data[power_status_key_dict['snap0_powered']]
-        snap1_powered = power_data[power_status_key_dict['snap1_powered']]
-        snap2_powered = power_data[power_status_key_dict['snap2_powered']]
-        snap3_powered = power_data[power_status_key_dict['snap3_powered']]
-        pam_powered = power_data[power_status_key_dict['pam_powered']]
-        fem_powered = power_data[power_status_key_dict['fem_powered']]
+        snap_relay_powered = power_data.get(power_status_key_dict['snap_relay_powered'], None)
+        snap0_powered = power_data.get(power_status_key_dict['snap0_powered'], None)
+        snap1_powered = power_data.get(power_status_key_dict['snap1_powered'], None)
+        snap2_powered = power_data.get(power_status_key_dict['snap2_powered'], None)
+        snap3_powered = power_data.get(power_status_key_dict['snap3_powered'], None)
+        pam_powered = power_data.get(power_status_key_dict['pam_powered'], None)
+        fem_powered = power_data.get(power_status_key_dict['fem_powered'], None)
 
         node_power_list.append(NodePowerStatus.create(time, node, snap_relay_powered,
                                                       snap0_powered, snap1_powered,
