@@ -984,7 +984,7 @@ class MCSession(Session):
 
         node_sensor_list = create_sensor()
 
-        _special_insert(NodeSensor, node_sensor_list)
+        self._special_insert(NodeSensor, node_sensor_list)
 
     def get_node_sensor(self, starttime, stoptime=None, node=None):
         """
@@ -1059,7 +1059,7 @@ class MCSession(Session):
 
         node_power_list = create_power_status()
 
-        _special_insert(NodePowerStatus, node_power_list)
+        self._special_insert(NodePowerStatus, node_power_list)
 
     def get_node_power_status(self, starttime, stoptime=None, node=None):
         """
