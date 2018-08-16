@@ -25,11 +25,13 @@ class TestGeo(TestHERAMC):
         self.h = geo_handling.Handling(self.test_session, testing=True)
 
     def test_cofa(self):
-        station_types = self.h.get_station_types()
+        self.h.get_station_types()
+        station_types = list(self.h.station_types.keys())
         print(station_types)
         self.assertTrue('cofa' in station_types.lower())
 
         cofa = self.h.cofa()[0]
+        print(cofa)
 
         # test that function works the same as method
         cofa_func = geo_handling.cofa(session=self.test_session)[0]
