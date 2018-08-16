@@ -29,6 +29,7 @@ full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end
                                        'cable-rfof', 'post-amp', 'snap', 'node'],
                         'parts_test': ['vapor']
                         }
+epoch_corr = {'parts_hera': 5, 'parts_paper': 9}  # index where the correlator is downstream
 both_pols = ['e', 'n']
 
 
@@ -168,8 +169,6 @@ def update_part(session=None, data=None, add_new_part=False):
     for dkey, dval in six.iteritems(data_dict):
         hpn_to_change = dval[0][0]
         rev_to_change = dval[0][1]
-        # if rev_to_change[:4] == 'LAST':
-        #    rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
         part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn_to_change.upper())
                                                & (func.upper(Parts.hpn_rev) == rev_to_change.upper()))
         num_part = part_rec.count()
@@ -670,9 +669,9 @@ def update_connection(session=None, data=None, add_new_connection=False):
         boup_to_change = data_dict[dkey][0][4]
         aodn_to_change = data_dict[dkey][0][5]
         strt_to_change = data_dict[dkey][0][6]
-        if urev_to_change[:4] == 'LAST':
+        if urev_to_change.startswith('LAST'):
             urev_to_change = cm_revisions.get_last_revision(upcn_to_change, session)[0][0]
-        if drev_to_change[:4] == 'LAST':
+        if drev_to_change.startswith('LAST'):
             drev_to_change = cm_revisions.get_last_revision(dncn_to_change, session)[0][0]
         conn_rec = session.query(Connections).filter(
             (Connections.upstream_part == upcn_to_change)
