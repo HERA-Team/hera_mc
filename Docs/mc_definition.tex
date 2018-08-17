@@ -62,7 +62,7 @@ Primary keys are bold, foreign keys are italicized.
 \subsection{Observations}
 \textbf{\large{hera\_obs}}: This is the primary observation definition table.
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
  \hline
  column & type & description \\ [0.5ex]  \hline\hline
  \textbf{obsid} & long integer & start time in floor(GPS) seconds. GPS start adjusted to be within 1 second of LST to lock observations to LST for the night \\ \hline
@@ -76,7 +76,7 @@ Primary keys are bold, foreign keys are italicized.
 \subsection{Common tables}
 \textbf{\large{server\_status}}: Common table structure for server status info. Same columns to be used in subsystem-specific instances of this table.
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
  \textbf{hostname} & string &  name of server \\ \hline
@@ -96,7 +96,7 @@ network\_bandwidth\_mps & float & Network bandwidth in MB/s, 5 min average. Can 
 
 \textbf{\large{subsystem\_errors}}: Subsystem errors/issues
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{id} & long & auto-incrementing error id\\ \hline
@@ -113,7 +113,7 @@ log & text & TBD on format, either a message or a file with the log \\ \hline
 
 \textbf{\large{rtp\_status}}: High level RTP status
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
@@ -126,7 +126,7 @@ restart\_hours\_elapsed & float & hours elapsed since last restart \\\hline
 
 \textbf{\large{rtp\_process\_events}}: RTP Processing events (per obsid)
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{time} & long & event time in floor(gps seconds) \\ \hline
@@ -137,7 +137,7 @@ event & string & one of: queued, started, finished, error  \\\hline
 
 \textbf{\large{rtp\_process\_record}}: RTP record of processed obsids (entry added when processing finished)
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{time} & long & record time in floor(gps seconds)\\ \hline
@@ -168,7 +168,7 @@ avg\_cpu\_load & float & average CPU load, in number of CPUs, for task (e.g., 2.
 
 \textbf{\large{lib\_status}}: High level Librarian status
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds) \\ \hline
@@ -184,7 +184,7 @@ git\_hash & string & git hash of Librarian code  \\\hline
 
 \textbf{\large{lib\_raid\_status}}: RAID controller status
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds) \\ \hline
@@ -196,7 +196,7 @@ info & text & TBD -- various info from megaraid controller, may be several colum
 
 \textbf{\large{lib\_raid\_errors}}: RAID controller errors/issues
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{id} & long & auto-incrementing error id\\ \hline
@@ -209,7 +209,7 @@ log & text & TBD on format, either a message or a file with the log \\\hline
 
 \textbf{\large{lib\_remote\_status}}: Network bandwidth/health to all remote librarians
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
@@ -222,7 +222,7 @@ bandwidth\_mps & float & bandwidth to remote in Mb/s, 15 minute average \\\hline
 
 \textbf{\large{lib\_files}}: File creation log
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{filename} & string & name of file created \\ \hline
@@ -233,9 +233,43 @@ size\_gb & float & file size in gigabytes \\ \hline
 \end{center}
 
 \subsection{Correlator Tables}
+The correlator tables are not all defined yet. Below are the defined tables followed by notes on future plans.
+
 \textbf{\large{hera\_obs}}: The correlator is the code that will write to the observation table.\\
 
 \textbf{\large{corr\_server\_status}}: Correlator version of the server\_status table\\
+
+\textbf{\large{node\_sensor}}: Node temperature and humidity sensor readings
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & long & measurement time in floor(gps seconds)\\ \hline
+\textbf{node} & int & integer identifying the node \\ \hline
+top\_sensor\_temp & float & temperature of top sensor reported by node in degrees C \\\hline
+middle\_sensor\_temp & float & temperature of middle sensor reported by node in degrees C \\\hline
+bottom\_sensor\_temp & float & temperature of bottom sensor reported by node in degrees C \\\hline
+humidity\_sensor\_temp & float & temperature of humidity sensor reported by node in degrees C \\\hline
+humidity & float & percent humidity measurement reported by node\\\hline
+\end{tabular}
+\end{center}
+
+\textbf{\large{node\_power\_status}}: Power status for SNAPs, FEMs and PAMs (monitored by nodes)
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & long & measurement time in floor(gps seconds)\\ \hline
+\textbf{node} & int & integer identifying the node \\ \hline
+snap\_relay\_powered & bool & power status of the snap relay, True = powered \\\hline
+snap0\_powered & bool & power status of the SNAP 0 board, True = powered \\\hline
+snap1\_powered & bool & power status of the SNAP 1 board, True = powered \\\hline
+snap2\_powered & bool & power status of the SNAP 2 board, True = powered \\\hline
+snap3\_powered & bool & power status of the SNAP 3 board, True = powered \\\hline
+fem\_powered & bool & power status of the FEM, True = powered \\\hline
+pam\_powered & bool & power status of the PAM, True = powered \\\hline
+\end{tabular}
+\end{center}
 
 \textbf{\large{roach\_temperature}}: Roach (correlator fpga board) temperatures (deprecated 8/2018)
 \begin{center}
@@ -252,6 +286,8 @@ ppc\_temp & float & ppc temperature reported by the roach in degrees C \\\hline
 \end{tabular}
 \end{center}
 
+
+\subsubsection{Correlator Table plans}
 The correlator tables are not all defined yet, the following are notes about suggestions and plans for correlator tables. Most of the correlator data will be recorded in a Redis database (a rolling log, ephemeral), that info needs to be grabbed and put in \mc tables.
 \begin{outline}[enumerate]
 	\1 correlator on/off?	**this is a control**
@@ -276,18 +312,23 @@ The correlator tables are not all defined yet, the following are notes about sug
 		\2 PAM status
 
 	\1 Node information (from Arduino) (Dave, Jack, Zara, Matt Dexter (mdexter@berkeley.edu), Nima) All node info will be reported through the correlator.
-		\2 SNAP power states
 		\2 Clock status info -- syncing
 		\2 Temperatures (outside + inside, feed?)
-		\2 Power PAM, FEM status (binary)
 		\2 Node \mc software git hash
+\end{outline}
 
+\subsubsection{Correlator interfaces complete:}
 These are done:
+\begin{outline}[enumerate]
 	\1 \mc information the correlator needs to get and write into files
 		\2 Antenna positions
 	\1 New info added to correlator files (recorded in hera\_obs table)
 		\2 obsid
 		\2 duration
+	\1 Node information (from Arduino) (Dave, Jack, Zara, Matt Dexter (mdexter@berkeley.edu), Nima) All node info will be reported through the correlator.
+		\2 SNAP power states
+		\2 Temperatures in nodes
+		\2 Power PAM, FEM status (binary)
 \end{outline}
 
 \subsection{QA Info}
@@ -307,7 +348,7 @@ This will come from many sources. These are some suggestions for the future, thi
 
 \textbf{\large{weather\_data}}: Weather data from KAT sensors
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |} 
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  column & type & description \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline

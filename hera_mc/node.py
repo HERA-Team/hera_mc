@@ -35,7 +35,7 @@ class NodeSensor(MCDeclarativeBase):
     middle_sensor_temp: temperature of middle sensor reported by node in Celcius
     bottom_sensor_temp: temperature of bottom sensor reported by node in Celcius
     humidity_sensor_temp: temperature of the humidity sensor reported by node in Celcius
-    humidity: humidity measurement reported by node
+    humidity: percent humidity measurement reported by node
     """
     __tablename__ = 'node_sensor'
     time = Column(BigInteger, primary_key=True)
