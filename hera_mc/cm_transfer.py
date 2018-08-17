@@ -164,7 +164,7 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     with open(config_path) as f:
         config_data = json.load(f)
 
-    testing_db_url = config_data.get('databases').get(test_db_name)
+    testing_db_url = config_data.get('databases').get(test_db_name).get('url')
     is_test_db = (session_db_url == testing_db_url)
 
     print('hostname', hostname)
