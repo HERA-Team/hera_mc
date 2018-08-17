@@ -19,7 +19,7 @@ import traceback
 
 from hera_mc import mc
 
-MONITORING_INTERVAL = 45  # seconds
+MONITORING_INTERVAL = 60  # seconds
 
 parser = mc.get_mc_argument_parser()
 args = parser.parse_args()
