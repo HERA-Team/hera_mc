@@ -156,7 +156,7 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     hostname = socket.gethostname()
     is_main_host = (hostname == expected_hostname)
 
-    session_db_url = session.bind.engine.url
+    session_db_url = session.bind.engine.url.__to_string__(hide_password=False)
 
     if config_path is None:
         config_path = mc.default_config_file
