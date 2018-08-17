@@ -167,8 +167,12 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     testing_db_url = config_data.get('databases').get(test_db_name)
     is_test_db = (session_db_url == testing_db_url)
 
-    print('hostname, is_main_host', hostname, is_main_host)
-    print('session url, is_test_db', session_db_url, is_test_db)
+    print('hostname', hostname)
+    print('expected_hostname', expected_hostname)
+    print('is_main_host', is_main_host)
+    print('session url', session_db_url)
+    print('testing_db url', testing_db_url)
+    print('is_test_db', is_test_db)
 
     if is_main_host:
         if is_test_db:
