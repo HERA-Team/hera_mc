@@ -12,7 +12,7 @@ from __future__ import absolute_import, division, print_function
 from hera_mc import mc, cm_transfer
 
 parser = mc.get_mc_argument_parser()
-parser.add_argument('--maindb', help="user-generated key to change from main db [False]",
+parser.add_argument('--maindb', help="password to initialize the main site database - admin only",
                     default=False)
 parser.add_argument('--tables', help="name of table for which to initialize or 'all' ['all']",
                     default='all')
