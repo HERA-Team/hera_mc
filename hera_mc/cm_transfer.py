@@ -175,8 +175,6 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     else:
         is_main_db = False
 
-    print('is_main_db', is_main_db)
-
     if is_main_db:
         print('Found main db at hostname {} and DB url {}'.format(hostname, session_db_url))
     return is_main_db
