@@ -48,8 +48,8 @@ def gen_relation_models():
 
         test_relationship_id = Column(ForeignKey("validity_check_test_2.id"))
         test_relationship = relationship(RelationTestModel,
-                                         primaryjoin=test_relationship_id ==
-                                         RelationTestModel.id)
+                                         primaryjoin=test_relationship_id
+                                         == RelationTestModel.id)
 
     return Base, RelationTestModel, RelationTestModel2
 

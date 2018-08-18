@@ -313,7 +313,7 @@ class Handling:
                           revs=False, state='full', file=f, output_format='html')
         import subprocess
         from . import cm_transfer
-        if cm_transfer.check_if_main():
+        if cm_transfer.check_if_main(self.session):
             sc_command = 'scp -i ~/.ssh/id_rsa_qmaster {} {}'.format(output_file, location_on_paper1)
             subprocess.call(sc_command, shell=True)
             return 'OK'
