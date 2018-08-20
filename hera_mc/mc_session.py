@@ -107,7 +107,7 @@ class MCSession(Session):
 
         return result_list
 
-    def _special_insert(self, table_object, obj_list):
+    def _insert_ignoring_duplicates(self, table_object, obj_list):
         """
         If the current database is PostgreSQL, this function will use a
         special insertion method that will ignore records that are redundant
@@ -942,8 +942,8 @@ class MCSession(Session):
         for item in q:
             print('{}\t{}'.format(item.astropy_time, item.value), file=files[item.variable])
 
-    def add_node_sensor(self, time, node, top_sensor_temp, middle_sensor_temp,
-                        bottom_sensor_temp, humidity_sensor_temp, humidity):
+    def add_node_sensor_readings(self, time, node, top_sensor_temp, middle_sensor_temp,
+                                 bottom_sensor_temp, humidity_sensor_temp, humidity):
         """
         Add new node sensor data to the M&C database.
 
@@ -954,25 +954,25 @@ class MCSession(Session):
         node: integer
             node number (integer running from 1 to 30)
         top_sensor_temp: float
-            temperature of top sensor reported by node in Celcius
+            temperature of top sensor reported by node in Celsius
         middle_sensor_temp: float
-            temperature of middle sensor reported by node in Celcius
+            temperature of middle sensor reported by node in Celsius
         bottom_sensor_temp: float
-            temperature of bottom sensor reported by node in Celcius
+            temperature of bottom sensor reported by node in Celsius
         humidity_sensor_temp: float
-            temperature of the humidity sensor reported by node in Celcius
+            temperature of the humidity sensor reported by node in Celsius
         humidity: float
-            humidity measurement reported by node
+            percent humidity measurement reported by node
         """
         from .node import NodeSensor
 
         self.add(NodeSensor.create(time, node, top_sensor_temp, middle_sensor_temp,
                                    bottom_sensor_temp, humidity_sensor_temp, humidity))
 
-    def add_node_sensor_from_nodecontrol(self):
+    def add_node_sensor_readings_from_nodecontrol(self):
         """Get and add node sensor information using a nodeControl object.
         This function connects to the node and gets the latest data using the
-        `create_sensor` function.
+        `create_sensor_readings` function.
 
         If the current database is PostgreSQL, this function will use a
         special insertion method that will ignore records that are redundant
@@ -980,11 +980,11 @@ class MCSession(Session):
         the node sensor data densely on qmaster.
 
         """
-        from .node import create_sensor, NodeSensor
+        from .node import create_sensor_readings, NodeSensor
 
-        node_sensor_list = create_sensor()
+        node_sensor_list = create_sensor_readings()
 
-        self._special_insert(NodeSensor, node_sensor_list)
+        self._insert_ignoring_duplicates(NodeSensor, node_sensor_list)
 
     def get_node_sensor(self, starttime, stoptime=None, node=None):
         """
@@ -1059,7 +1059,7 @@ class MCSession(Session):
 
         node_power_list = create_power_status()
 
-        self._special_insert(NodePowerStatus, node_power_list)
+        self._insert_ignoring_duplicates(NodePowerStatus, node_power_list)
 
     def get_node_power_status(self, starttime, stoptime=None, node=None):
         """

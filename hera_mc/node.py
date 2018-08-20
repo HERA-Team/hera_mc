@@ -31,10 +31,10 @@ class NodeSensor(MCDeclarativeBase):
 
     time: gps time of the node data, floored (BigInteger, part of primary_key).
     node: node number (Integer, part of primary_key)
-    top_sensor_temp: temperature of top sensor reported by node in Celcius
-    middle_sensor_temp: temperature of middle sensor reported by node in Celcius
-    bottom_sensor_temp: temperature of bottom sensor reported by node in Celcius
-    humidity_sensor_temp: temperature of the humidity sensor reported by node in Celcius
+    top_sensor_temp: temperature of top sensor reported by node in Celsius
+    middle_sensor_temp: temperature of middle sensor reported by node in Celsius
+    bottom_sensor_temp: temperature of bottom sensor reported by node in Celsius
+    humidity_sensor_temp: temperature of the humidity sensor reported by node in Celsius
     humidity: percent humidity measurement reported by node
     """
     __tablename__ = 'node_sensor'
@@ -59,15 +59,15 @@ class NodeSensor(MCDeclarativeBase):
         node: integer
             node number (integer running from 1 to 30)
         top_sensor_temp: float
-            temperature of top sensor reported by node in Celcius
+            temperature of top sensor reported by node in Celsius
         middle_sensor_temp: float
-            temperature of middle sensor reported by node in Celcius
+            temperature of middle sensor reported by node in Celsius
         bottom_sensor_temp: float
-            temperature of bottom sensor reported by node in Celcius
+            temperature of bottom sensor reported by node in Celsius
         humidity_sensor_temp: float
-            temperature of the humidity sensor reported by node in Celcius
+            temperature of the humidity sensor reported by node in Celsius
         humidity: float
-            humidity measurement reported by node
+            percent humidity measurement reported by node
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -95,8 +95,8 @@ def _get_sensor_dict(node, nodeServerAddress=defaultServerAddress):
     return node_controller.get_sensors()
 
 
-def create_sensor(nodeServerAddress=defaultServerAddress, node_list=None,
-                  sensor_dict=None):
+def create_sensor_readings(nodeServerAddress=defaultServerAddress, node_list=None,
+                           sensor_dict=None):
     """
     Return a list of node sensor objects with data from the nodes.
 

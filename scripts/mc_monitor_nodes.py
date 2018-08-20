@@ -31,7 +31,7 @@ with db.sessionmaker() as session:
             time.sleep(MONITORING_INTERVAL)
 
             try:
-                session.add_node_sensor_from_nodecontrol()
+                session.add_node_sensor_readings_from_nodecontrol()
             except Exception as e:
                 print('%s -- error adding node sensors' % time.asctime(), file=sys.stderr)
                 traceback.print_exc(file=sys.stderr)
@@ -68,4 +68,5 @@ with db.sessionmaker() as session:
                 traceback.print_exc(file=sys.stderr)
                 continue
     except KeyboardInterrupt:
-        pass
+        print("exiting on SIGINT")
+        sys.exit()
