@@ -89,7 +89,6 @@ from . import autocorrelations  # noqa
 from . import cm_transfer  # noqa
 from . import part_connect  # noqa
 from . import geo_location  # noqa
-from . import temperatures  # noqa
 from . import observations  # noqa
 from . import subsystem_error  # noqa
 from . import server_status  # noqa
@@ -97,5 +96,4 @@ from . import librarian  # noqa
 from . import rtp  # noqa
 from . import qm  # noqa
 from . import weather  # noqa
-from . import roach  # noqa
 from . import mc    # noqa keep this last.
