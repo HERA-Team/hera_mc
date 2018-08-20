@@ -986,7 +986,7 @@ class MCSession(Session):
 
         self._insert_ignoring_duplicates(NodeSensor, node_sensor_list)
 
-    def get_node_sensor(self, starttime, stoptime=None, node=None):
+    def get_node_sensor_readings(self, starttime, stoptime=None, node=None):
         """
         Get node_sensor record(s) from the M&C database.
 

@@ -44,7 +44,7 @@ node_power_example_dict = {
 
 class TestNodeSensor(TestHERAMC):
 
-    def test_add_node_sensor(self):
+    def test_add_node_sensor_readings(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(120.0, format='sec')
 
@@ -53,15 +53,17 @@ class TestNodeSensor(TestHERAMC):
         bottom_sensor_temp = node_sensor_example_dict['1']['temp_bot']
         humidity_sensor_temp = node_sensor_example_dict['1']['temp_humid']
         humidity = node_sensor_example_dict['1']['humid']
-        self.test_session.add_node_sensor(t1, 1, top_sensor_temp, middle_sensor_temp,
-                                          bottom_sensor_temp, humidity_sensor_temp,
-                                          humidity)
+        self.test_session.add_node_sensor_readings(t1, 1, top_sensor_temp,
+                                                   middle_sensor_temp,
+                                                   bottom_sensor_temp,
+                                                   humidity_sensor_temp,
+                                                   humidity)
 
         expected = node.NodeSensor(time=int(floor(t1.gps)), node=1,
                                    top_sensor_temp=30., middle_sensor_temp=31.98,
                                    bottom_sensor_temp=41., humidity_sensor_temp=33.89,
                                    humidity=32.5)
-        result = self.test_session.get_node_sensor(t1 - TimeDelta(3.0, format='sec'))
+        result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
@@ -71,21 +73,23 @@ class TestNodeSensor(TestHERAMC):
         bottom_sensor_temp = node_sensor_example_dict['2']['temp_bot']
         humidity_sensor_temp = node_sensor_example_dict['2']['temp_humid']
         humidity = node_sensor_example_dict['2']['humid']
-        self.test_session.add_node_sensor(t1, 2, top_sensor_temp, middle_sensor_temp,
-                                          bottom_sensor_temp, humidity_sensor_temp,
-                                          humidity)
+        self.test_session.add_node_sensor_readings(t1, 2, top_sensor_temp,
+                                                   middle_sensor_temp,
+                                                   bottom_sensor_temp,
+                                                   humidity_sensor_temp,
+                                                   humidity)
 
-        result = self.test_session.get_node_sensor(t1 - TimeDelta(3.0, format='sec'),
-                                                   node=1)
+        result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'),
+                                                            node=1)
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result = self.test_session.get_node_sensor(t1 - TimeDelta(3.0, format='sec'),
-                                                   stoptime=t1)
+        result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'),
+                                                            stoptime=t1)
         self.assertEqual(len(result), 2)
 
-        result = self.test_session.get_node_sensor(t1 + TimeDelta(200.0, format='sec'))
+        result = self.test_session.get_node_sensor_readings(t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
     def test_create_sensor(self):
@@ -96,8 +100,8 @@ class TestNodeSensor(TestHERAMC):
             self.test_session.add(obj)
 
         t1 = Time(1512770942.726777, format='unix')
-        result = self.test_session.get_node_sensor(t1 - TimeDelta(3.0, format='sec'),
-                                                   node=1)
+        result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'),
+                                                            node=1)
 
         expected = node.NodeSensor(time=int(floor(t1.gps)), node=1,
                                    top_sensor_temp=30., middle_sensor_temp=31.98,
@@ -107,18 +111,19 @@ class TestNodeSensor(TestHERAMC):
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result = self.test_session.get_node_sensor(t1 - TimeDelta(3.0, format='sec'),
-                                                   stoptime=t1 + TimeDelta(5.0, format='sec'))
+        result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'),
+                                                            stoptime=t1 + TimeDelta(5.0, format='sec'))
         self.assertEqual(len(result), 3)
 
-    def test_add_node_sensor_from_nodecontrol(self):
+    def test_add_node_sensor_readings_from_nodecontrol(self):
 
         if is_onsite():
             node_list = node._get_node_list()
 
-            self.test_session.add_node_sensor_from_nodecontrol()
-            result = self.test_session.get_node_sensor(Time.now() - TimeDelta(120.0, format='sec'),
-                                                       stoptime=Time.now() + TimeDelta(120.0, format='sec'))
+            self.test_session.add_node_sensor_readings_from_nodecontrol()
+            result = self.test_session.get_node_sensor_readings(
+                Time.now() - TimeDelta(120.0, format='sec'),
+                stoptime=Time.now() + TimeDelta(120.0, format='sec'))
             self.assertEqual(len(result), len(node_list))
 
 
