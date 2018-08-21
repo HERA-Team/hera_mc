@@ -425,7 +425,8 @@ class Handling:
         elif verbosity == 'h':
             headers = ['uStart', 'uStop', 'Upstream', '<uOutput:', ':uInput>',
                        'Part', '<dOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop']
-        for k, conn in six.iteritems(connection_dossier):
+        for k in sorted(connection_dossier.keys()):
+            conn = connection_dossier[k]
             if len(conn.up) == 0 and len(conn.down) == 0:
                 continue
             r = conn.table_entry_row(headers)
