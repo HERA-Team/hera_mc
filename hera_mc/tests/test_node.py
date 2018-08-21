@@ -92,9 +92,9 @@ class TestNodeSensor(TestHERAMC):
         result = self.test_session.get_node_sensor_readings(t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
-    def test_create_sensor(self):
-        sensor_obj_list = node.create_sensor(node_list=node_example_list,
-                                             sensor_dict=node_sensor_example_dict)
+    def test_create_sensor_readings(self):
+        sensor_obj_list = node.create_sensor_readings(node_list=node_example_list,
+                                                      sensor_dict=node_sensor_example_dict)
 
         for obj in sensor_obj_list:
             self.test_session.add(obj)
