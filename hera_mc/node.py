@@ -243,13 +243,13 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
         time = Time(timestamp, format='datetime', scale='utc')
 
         # All items in this dictionary are strings.
-        snap_relay_powered = power_data.get(power_status_key_dict['snap_relay_powered'], None)
-        snap0_powered = power_data.get(power_status_key_dict['snap0_powered'], None)
-        snap1_powered = power_data.get(power_status_key_dict['snap1_powered'], None)
-        snap2_powered = power_data.get(power_status_key_dict['snap2_powered'], None)
-        snap3_powered = power_data.get(power_status_key_dict['snap3_powered'], None)
-        pam_powered = power_data.get(power_status_key_dict['pam_powered'], None)
-        fem_powered = power_data.get(power_status_key_dict['fem_powered'], None)
+        snap_relay_powered = power_data[power_status_key_dict['snap_relay_powered']]
+        snap0_powered = power_data[power_status_key_dict['snap0_powered']]
+        snap1_powered = power_data[power_status_key_dict['snap1_powered']]
+        snap2_powered = power_data[power_status_key_dict['snap2_powered']]
+        snap3_powered = power_data[power_status_key_dict['snap3_powered']]
+        pam_powered = power_data[power_status_key_dict['pam_powered']]
+        fem_powered = power_data[power_status_key_dict['fem_powered']]
 
         node_power_list.append(NodePowerStatus.create(time, node, snap_relay_powered,
                                                       snap0_powered, snap1_powered,
