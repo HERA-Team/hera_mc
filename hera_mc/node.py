@@ -157,13 +157,13 @@ class NodePowerStatus(MCDeclarativeBase):
     __tablename__ = 'node_power_status'
     time = Column(BigInteger, primary_key=True)
     node = Column(Integer, primary_key=True)
-    snap_relay_powered = Column(Boolean)
-    snap0_powered = Column(Boolean)
-    snap1_powered = Column(Boolean)
-    snap2_powered = Column(Boolean)
-    snap3_powered = Column(Boolean)
-    fem_powered = Column(Boolean)
-    pam_powered = Column(Boolean)
+    snap_relay_powered = Column(Boolean, nullable=False)
+    snap0_powered = Column(Boolean, nullable=False)
+    snap1_powered = Column(Boolean, nullable=False)
+    snap2_powered = Column(Boolean, nullable=False)
+    snap3_powered = Column(Boolean, nullable=False)
+    fem_powered = Column(Boolean, nullable=False)
+    pam_powered = Column(Boolean, nullable=False)
 
     @classmethod
     def create(cls, time, node, snap_relay_powered, snap0_powered, snap1_powered,
