@@ -21,11 +21,11 @@ node_sensor_example_dict = {
     '1': {'temp_top': 30., 'temp_mid': 31.98, 'temp_bot': 41,
           'temp_humid': 33.89, 'humid': 32.5,
           'timestamp': Time(1512770942.726777, format='unix').to_datetime()},
-    '2': {'temp_top': 32., 'temp_mid': 32., 'temp_bot': 39.2,
+    '2': {'temp_top': None, 'temp_mid': None, 'temp_bot': None,
           'temp_humid': 33, 'humid': 40.,
           'timestamp': Time(1512770942.995268, format='unix').to_datetime()},
     '3': {'temp_top': 29.1, 'temp_mid': 33.8, 'temp_bot': 41.6,
-          'temp_humid': 34., 'humid': 25.8,
+          'temp_humid': None, 'humid': None,
           'timestamp': Time(1512770942.861526, format='unix').to_datetime()}
 }
 
