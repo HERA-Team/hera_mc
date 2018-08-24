@@ -24,6 +24,12 @@ power_status_key_dict = {'snap_relay_powered': 'power_snap_relay', 'snap0_powere
                          'snap3_powered': 'power_snap_3', 'pam_powered': 'power_pam',
                          'fem_powered': 'power_fem'}
 
+# key is part to command, value is function name in hera_node_mc
+power_command_part_dict = {'snap_relay': 'power_snap_relay',
+                           'snap0': 'power_snap_0', 'snap1': 'power_snap_1',
+                           'snap2': 'power_snap_2', 'snap3': 'power_snap_3',
+                           'pam': 'power_pam', 'fem': 'power_fem'}
+
 
 class NodeSensor(MCDeclarativeBase):
     """
@@ -142,7 +148,7 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress, node_list=Non
 
 class NodePowerStatus(MCDeclarativeBase):
     """
-    Definition of node status table.
+    Definition of node power status table.
 
     time: gps time of the node data, floored (BigInteger, part of primary_key).
     node: node number (Integer, part of primary_key)
@@ -257,3 +263,47 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
                                                       fem_powered, pam_powered))
 
     return node_power_list
+
+
+class NodePowerCommands(MCDeclarativeBase):
+    """
+    Definition of node power command table.
+
+    time: gps time of the command, floored (BigInteger, part of primary_key).
+    node: node number (Integer, part of primary_key)
+    part: part to be powered on/off
+    command: on/off
+    """
+    __tablename__ = 'node_power_command'
+    time = Column(BigInteger, primary_key=True)
+    node = Column(Integer, primary_key=True)
+    part = Column(String, primary_key=True)
+    command = Column(String, nullable=False)  # XXX should this be part of primary key?
+
+    @classmethod
+    def create(cls, time, node, part, command):
+        """
+        Create a new node power command object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object for time command was sent.
+        node: integer
+            node number (integer running from 1 to 30)
+        part: string
+            one of the keys in power_command_part_dict
+        command: string
+            'on' or 'off'
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        node_time = floor(time.gps)
+
+        if part not in list(power_command_part_dict.keys()):
+            raise ValueError('part must be one of: ' + ' ,'.join(list(power_command_part_dict.keys())))
+
+        if command not in ['on', 'off']:
+            raise ValueError('command must be one of: on, off')
+
+        return cls(time=node_time, node=node, part=part, command=command)

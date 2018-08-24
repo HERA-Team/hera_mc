@@ -1093,6 +1093,66 @@ class MCSession(Session):
                                  stoptime=stoptime, filter_column='node',
                                  filter_value=node)
 
+    def node_power_command(self, node, part, command, nodeServerAddress=None):
+        """
+        Issue a power command (on/off) to a particular node & part.
+
+        Parameters:
+        ------------
+        node: integer
+            node number (integer running from 1 to 30)
+        part: string
+            part name (e.g. fem, snap0), allowed values in node.power_command_part_list
+        command: string
+            'on' or 'off'
+        nodeServerAddress: string
+            address for node server. Defaults to node.defaultServerAddress
+        """
+        import nodeControl
+        from .node import NodePowerCommands, power_command_part_dict, _get_node_list, defaultServerAddress
+
+        if nodeServerAddress is None:
+            nodeServerAddress = defaultServerAddress
+
+        node_list = _get_node_list(nodeServerAddress=nodeServerAddress)
+        if node not in node_list:
+            raise ValueError('node not in list of active nodes: ', node_list)
+
+        command_time = Time.now()
+        # create object first: catch any mistakes
+        command_obj = NodePowerCommands.create(command_time, node, part, command)
+
+        node_controller = nodeControl.NodeControl(node, serverAddress=nodeServerAddress)
+        getattr(node_controller, power_command_part_dict[part])(command)
+
+        self.add(command_obj)
+
+    def get_node_power_command(self, starttime, stoptime=None, node=None):
+        """
+        Get node power command record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        node: integer
+            node number (integer running from 1 to 30)
+
+        Returns:
+        --------
+        list of NodePowerCommand objects
+        """
+        from .node import NodePowerCommand
+
+        return self._time_filter(NodePowerCommand, 'time', starttime,
+                                 stoptime=stoptime, filter_column='node',
+                                 filter_value=node)
+
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
         Add a new antenna metric to the M&C database.
