@@ -45,15 +45,15 @@ class MCSession(Session):
         db_time = Time(db_timestamp)
         return db_time
 
-    def _time_filter(self, table_object, time_column, starttime, stoptime=None,
+    def _time_filter(self, table_class, time_column, starttime, stoptime=None,
                      filter_column=None, filter_value=None):
         '''
         A helper method to fiter entries by time. Used by most get methods
         on this object.
 
         Parameters:
-        table_object: object
-            Table object to query.
+        table_class: class
+            Class specifying a table to query.
 
         time_column: string
             column name holding the time to filter on.
@@ -86,26 +86,62 @@ class MCSession(Session):
 
         if stoptime is not None:
             if filter_value is not None:
-                result_list = self.query(table_object).filter(
-                    getattr(table_object, filter_column) == filter_value,
-                    getattr(table_object, time_column).between(
+                result_list = self.query(table_class).filter(
+                    getattr(table_class, filter_column) == filter_value,
+                    getattr(table_class, time_column).between(
                         starttime.gps, stoptime.gps)).all()
             else:
-                result_list = self.query(table_object).filter(
-                    getattr(table_object, time_column).between(
+                result_list = self.query(table_class).filter(
+                    getattr(table_class, time_column).between(
                         starttime.gps, stoptime.gps)).all()
         else:
             if filter_value is not None:
-                result_list = self.query(table_object).filter(
-                    getattr(table_object, filter_column) == filter_value,
-                    getattr(table_object, time_column) >= starttime.gps).order_by(
-                        getattr(table_object, time_column)).limit(1).all()
+                result_list = self.query(table_class).filter(
+                    getattr(table_class, filter_column) == filter_value,
+                    getattr(table_class, time_column) >= starttime.gps).order_by(
+                        getattr(table_class, time_column)).limit(1).all()
             else:
-                result_list = self.query(table_object).filter(
-                    getattr(table_object, time_column) >= starttime.gps).order_by(
-                        getattr(table_object, time_column)).limit(1).all()
+                result_list = self.query(table_class).filter(
+                    getattr(table_class, time_column) >= starttime.gps).order_by(
+                        getattr(table_class, time_column)).limit(1).all()
 
         return result_list
+
+    def _insert_ignoring_duplicates(self, table_class, obj_list):
+        """
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the certain data (especially redis data) densely on qmaster.
+
+        Parameters:
+        table_class: class
+            Class specifying a table to insert into.
+        obj_list: list of objects
+            list of objects (of class table_class) to insert into the table.
+        """
+        if self.bind.dialect.name == 'postgresql':
+            from sqlalchemy import inspect
+            from sqlalchemy.dialects.postgresql import insert
+
+            ies = [c.name for c in inspect(table_class).primary_key]
+            conn = self.connection()
+
+            for obj in obj_list:
+                # This appears to be the most correct way to map each row
+                # object into a dictionary:
+                values = {}
+                for col in inspect(obj).mapper.column_attrs:
+                    values[col.expression.name] = getattr(obj, col.key)
+
+                # The special PostgreSQL insert statement lets us ignore
+                # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
+                stmt = insert(table_class).values(**values).on_conflict_do_nothing(index_elements=ies)
+                conn.execute(stmt)
+        else:
+            # Generic approach:
+            for obj in obj_list:
+                self.add(obj)
 
     def add_obs(self, starttime, stoptime, obsid):
         """
@@ -911,6 +947,151 @@ class MCSession(Session):
 
         for item in q:
             print('{}\t{}'.format(item.astropy_time, item.value), file=files[item.variable])
+
+    def add_node_sensor_readings(self, time, node, top_sensor_temp, middle_sensor_temp,
+                                 bottom_sensor_temp, humidity_sensor_temp, humidity):
+        """
+        Add new node sensor data to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by node
+        node: integer
+            node number (integer running from 1 to 30)
+        top_sensor_temp: float
+            temperature of top sensor reported by node in Celsius
+        middle_sensor_temp: float
+            temperature of middle sensor reported by node in Celsius
+        bottom_sensor_temp: float
+            temperature of bottom sensor reported by node in Celsius
+        humidity_sensor_temp: float
+            temperature of the humidity sensor reported by node in Celsius
+        humidity: float
+            percent humidity measurement reported by node
+        """
+        from .node import NodeSensor
+
+        self.add(NodeSensor.create(time, node, top_sensor_temp, middle_sensor_temp,
+                                   bottom_sensor_temp, humidity_sensor_temp, humidity))
+
+    def add_node_sensor_readings_from_nodecontrol(self):
+        """Get and add node sensor information using a nodeControl object.
+        This function connects to the node and gets the latest data using the
+        `create_sensor_readings` function.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the node sensor data densely on qmaster.
+
+        """
+        from .node import create_sensor_readings, NodeSensor
+
+        node_sensor_list = create_sensor_readings()
+
+        self._insert_ignoring_duplicates(NodeSensor, node_sensor_list)
+
+    def get_node_sensor_readings(self, starttime, stoptime=None, node=None):
+        """
+        Get node_sensor record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        node: integer
+            node number (integer running from 1 to 30)
+
+        Returns:
+        --------
+        list of NodeSensor objects
+        """
+        from .node import NodeSensor
+
+        return self._time_filter(NodeSensor, 'time', starttime,
+                                 stoptime=stoptime, filter_column='node',
+                                 filter_value=node)
+
+    def add_node_power_status(self, time, node, snap_relay_powered, snap0_powered,
+                              snap1_powered, snap2_powered, snap3_powered,
+                              fem_powered, pam_powered):
+        """
+        Add new node power status data to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by node
+        node: integer
+            node number (integer running from 1 to 30)
+        snap_relay_powered: boolean
+            power status of the snap relay, True=powered
+        snap0_powered: boolean
+            power status of the SNAP 0 board, True=powered
+        snap1_powered: boolean
+            power status of the SNAP 1 board, True=powered
+        snap2_powered: boolean
+            power status of the SNAP 2 board, True=powered
+        snap3_powered: boolean
+            power status of the SNAP 3 board, True=powered
+        fem_powered: boolean
+            power status of the FEM, True=powered
+        pam_powered: boolean
+            power status of the PAM, True=powered
+        """
+        from .node import NodePowerStatus
+
+        self.add(NodePowerStatus.create(time, node, snap_relay_powered, snap0_powered,
+                                        snap1_powered, snap2_powered, snap3_powered,
+                                        fem_powered, pam_powered))
+
+    def add_node_power_status_from_nodecontrol(self):
+        """Get and add node power status information using a nodeControl object.
+        This function connects to the node and gets the latest data using the
+        `create_power_status` function.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the node power status data densely on qmaster.
+        """
+        from .node import create_power_status, NodePowerStatus
+
+        node_power_list = create_power_status()
+
+        self._insert_ignoring_duplicates(NodePowerStatus, node_power_list)
+
+    def get_node_power_status(self, starttime, stoptime=None, node=None):
+        """
+        Get node power status record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        node: integer
+            node number (integer running from 1 to 30)
+
+        Returns:
+        --------
+        list of NodePowerStatus objects
+        """
+        from .node import NodePowerStatus
+
+        return self._time_filter(NodePowerStatus, 'time', starttime,
+                                 stoptime=stoptime, filter_column='node',
+                                 filter_value=node)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
