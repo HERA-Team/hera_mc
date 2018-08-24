@@ -1085,7 +1085,7 @@ class MCSession(Session):
 
         Returns:
         --------
-        list of NodeSensor objects
+        list of NodePowerStatus objects
         """
         from .node import NodePowerStatus
 
