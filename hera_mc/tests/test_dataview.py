@@ -27,7 +27,7 @@ class TestParts(TestHERAMC):
         interval = 1.0
         filename = 'stdout'
         x = dv.ants_by_day(start, stop, interval, filename, station_types_to_check='default', output_date_format='jd')
-        k0 = str(x.keys()[0]).split('.')[0]
+        k0 = str(list(x.keys())[0]).split('.')[0]
         self.assertTrue(k0 == '2457952')
 
 
