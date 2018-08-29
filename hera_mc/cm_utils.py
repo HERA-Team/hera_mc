@@ -174,7 +174,8 @@ def get_astropytime(_date, _time=0):
                 return astropy Time
                     astropy Time:  just gets returned
                     datetime: just gets converted
-                    int, long, float:  interpreted as gps_second
+                    int, long, float:  interpreted as gps_second or julian date
+                                       depending on appropriate range
                     string:  '<' - PAST_DATE
                              '>' - future_date()
                              'now' or 'current'
@@ -182,9 +183,9 @@ def get_astropytime(_date, _time=0):
                 return None:
                     string:  'none' return None
                     None/False:  return None
-    _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string
+    _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string otherwise ignored
                 float, int:  hours in decimal time
-                string:  HH[:MM[:SS]]
+                string:  HH[:MM[:SS]] or hours in decimal time
     """
 
     if isinstance(_date, Time):
@@ -217,7 +218,11 @@ def get_astropytime(_date, _time=0):
             return_date = Time(_date, scale='utc')
         except ValueError:
             raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(_date))
-        if isinstance(_time, (float, six.integer_types)):
+        try:
+            _time = float(_time)
+        except ValueError:
+            pass
+        if isinstance(_time, float):
             return return_date + TimeDelta(_time * 3600.0, format='sec')
         if isinstance(_time, str):
             add_time = 0.0
