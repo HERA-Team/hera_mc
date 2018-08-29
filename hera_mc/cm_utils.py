@@ -217,7 +217,7 @@ def get_astropytime(_date, _time=0):
             return_date = Time(_date, scale='utc')
         except ValueError:
             raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(_date))
-        if isinstance(_time, (float, int)):
+        if isinstance(_time, (float, six.integer_types)):
             return return_date + TimeDelta(_time * 3600.0, format='sec')
         if isinstance(_time, str):
             add_time = 0.0
