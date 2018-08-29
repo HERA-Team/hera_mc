@@ -193,10 +193,16 @@ def get_astropytime(_date, _time=0):
         return Time(_date, format='datetime')
     if _date is None or _date is False:
         return None
-    if isinstance(_date, (six.integer_types, float)):
-        if int(_date) > 1000000000:
+    try:
+        _date = float(_date)
+    except ValueError:
+        pass
+    if isinstance(_date, float):
+        if _date > 1000000000.0:
             return Time(_date, format='gps')
-        raise ValueError('Invalid format:  date as a number should be gps time, not {}.'.format(_date))
+        if _date > 2400000.0 and _date < 2500000.0:
+            return Time(_date, format='jd')
+        raise ValueError('Invalid format:  date as a number should be gps time or julian date, not {}.'.format(_date))
     if isinstance(_date, str):
         if _date == '<':
             return Time(PAST_DATE, scale='utc')
