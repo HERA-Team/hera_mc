@@ -31,6 +31,15 @@ power_command_part_dict = {'snap_relay': 'power_snap_relay',
                            'pam': 'power_pam', 'fem': 'power_fem'}
 
 
+def get_node_list(nodeServerAddress=defaultServerAddress):
+    import nodeControl
+
+    if nodeServerAddress is None:
+        nodeServerAddress = defaultServerAddress
+
+    return nodeControl.get_valid_nodes(serverAddress=nodeServerAddress)
+
+
 class NodeSensor(MCDeclarativeBase):
     """
     Definition of node sensor table.
@@ -84,12 +93,6 @@ class NodeSensor(MCDeclarativeBase):
                    bottom_sensor_temp=bottom_sensor_temp,
                    humidity_sensor_temp=humidity_sensor_temp,
                    humidity=humidity)
-
-
-def _get_node_list(nodeServerAddress=defaultServerAddress):
-    import nodeControl
-
-    return nodeControl.get_valid_nodes(serverAddress=nodeServerAddress)
 
 
 def _get_sensor_dict(node, nodeServerAddress=defaultServerAddress):

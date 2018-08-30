@@ -1115,37 +1115,41 @@ class MCSession(Session):
             if true, just return the list of NodePowerCommand objects, do not
             issue the power commands or log them to the database
         testing: boolean
-            if true, do not use anything that requires connection to nodes
+            if true, do not use anything that requires connection to nodes (implies dry run)
         """
-        from .node import NodePowerCommand, power_command_part_dict, _get_node_list, defaultServerAddress
+        from .node import NodePowerCommand, power_command_part_dict, get_node_list, defaultServerAddress
 
         if nodeServerAddress is None:
             nodeServerAddress = defaultServerAddress
 
         if testing:
             node_list = list(range(1, 31))
+            dryrun = True
         else:
-            node_list = _get_node_list(nodeServerAddress=nodeServerAddress)
+            node_list = get_node_list(nodeServerAddress=nodeServerAddress)
         if node not in node_list:
             raise ValueError('node not in list of active nodes: ', node_list)
 
         if isinstance(part, six.string_types):
             part = [part]
 
-        if part[0] is 'all':
+        if part[0] == 'all':
             part = list(power_command_part_dict.keys())
 
         if 'snap_relay' in part:
-            if command is 'on':
+            if command == 'on':
                 # move snap_relay to the start of the list (it needs to be powered before the snaps)
                 part.remove('snap_relay')
                 part.insert(0, 'snap_relay')
             else:
+                # make sure all snaps are powered down first
+                for partname in list(power_command_part_dict.keys()):
+                    if partname.startswith('snap') and partname not in part:
+                        part.insert(0, partname)
                 # move snap_relay to the end of the list.
-                # XXX should the snaps be all powered down first?
                 part.remove('snap_relay')
                 part.append('snap_relay')
-        elif command is 'on':
+        elif command == 'on':
             # check if any snaps in part. If so, need to check on snap_relay
             for partname in part:
                 if partname.startswith('snap'):

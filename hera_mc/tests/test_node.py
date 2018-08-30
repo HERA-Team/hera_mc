@@ -267,6 +267,20 @@ class TestNodePowerCommand(TestHERAMC):
                                          part='snap0', command='off')
         self.assertTrue(command_list[0].isclose(expected))
 
+        command_list = self.test_session.node_power_command(1, 'snap_relay', 'off',
+                                                            dryrun=True, testing=True)
+        self.assertEqual(len(command_list), 5)
+        command_times = [cmd.time for cmd in command_list]
+        part_list = []
+        for partname in reversed(list(node.power_command_part_dict.keys())):
+            if partname.startswith('snap') and partname is not 'snap_relay':
+                part_list.append(partname)
+        part_list.append('snap_relay')
+        for pi, part in enumerate(part_list):
+            expected = node.NodePowerCommand(time=command_times[pi], node=1,
+                                             part=part, command='off')
+            self.assertTrue(command_list[pi].isclose(expected))
+
         self.assertRaises(ValueError, self.test_session.node_power_command,
                           31, 'fem', 'on', dryrun=True, testing=True)
         self.assertRaises(ValueError, self.test_session.node_power_command,
