@@ -1150,23 +1150,35 @@ class MCSession(Session):
                 part.remove('snap_relay')
                 part.append('snap_relay')
         elif command == 'on':
-            # check if any snaps in part. If so, need to check on snap_relay
+            # check if any snaps in part. If so, need to power snap_relay first
             for partname in part:
                 if partname.startswith('snap'):
-                    # make sure we have most recent power status info
-                    if not testing:
-                        self.add_node_power_status_from_nodecontrol()
-                    # Check if the snap relay is powered, if not add it to part
-                    starttime = Time.now() - TimeDelta(120, format='sec')
-                    stoptime = Time.now() + TimeDelta(60, format='sec')
-                    node_powers = self.get_node_power_status(starttime, stoptime=stoptime, node=node)
-                    if len(node_powers) > 0:
-                        latest_relay_power = node_powers[-1].snap_relay_powered
-                        if latest_relay_power is False:
-                            part.insert(0, 'snap_relay')
-                    else:
-                        part.insert(0, 'snap_relay')
+                    part.insert(0, 'snap_relay')
                     break
+
+        # Check whether parts are already in desired state. If so, omit them from command.
+        # make sure we have most recent power status info
+        if not testing:
+            self.add_node_power_status_from_nodecontrol()
+        # Get recent power status
+        starttime = Time.now() - TimeDelta(120, format='sec')
+        stoptime = Time.now() + TimeDelta(60, format='sec')
+        node_powers = self.get_node_power_status(starttime, stoptime=stoptime, nodeID=nodeID)
+        if len(node_powers) > 0:
+            latest_powers = node_powers[-1]
+            drop_part = []
+            for partname in part:
+                power_status = getattr(latest_powers, partname + '_powered')
+                if command == 'on':
+                    if power_status:
+                        # already on, take it out of the list
+                        drop_part.append(partname)
+                elif command == 'off':
+                    if not power_status:
+                        # already off, take it out of the list
+                        drop_part.append(partname)
+            for partname in drop_part:
+                part.remove(partname)
 
         if dryrun:
             command_list = []

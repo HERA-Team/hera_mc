@@ -275,6 +275,25 @@ class TestNodePowerCommand(TestHERAMC):
                                              part=part, command='on')
             self.assertTrue(command_list[pi].isclose(expected))
 
+        # test that turning off snap_relay also turns off snaps (with no recent status)
+        command_list = self.test_session.node_power_command(1, 'snap_relay', 'off',
+                                                            testing=True)
+        self.assertEqual(len(command_list), 5)
+        command_times = [cmd.time for cmd in command_list]
+        part_list = []
+        for partname in reversed(list(node.power_command_part_dict.keys())):
+            if partname.startswith('snap') and partname is not 'snap_relay':
+                part_list.append(partname)
+        part_list.append('snap_relay')
+        for pi, part in enumerate(part_list):
+            expected = node.NodePowerCommand(time=command_times[pi], node=1,
+                                             part=part, command='off')
+            self.assertTrue(command_list[pi].isclose(expected))
+
+        # test erroneous part name with no recent status
+        self.assertRaises(ValueError, self.test_session.node_power_command,
+                          1, 'foo', 'on', testing=True)
+
         # test that turning a snap on also turns on the relay (with recent status of off)
         t1 = Time.now() - TimeDelta(30, format='sec')
         self.test_session.add_node_power_status(t1, 1, False, False, False,
@@ -301,6 +320,24 @@ class TestNodePowerCommand(TestHERAMC):
                                          part='snap0', command='on')
         self.assertTrue(command_list[0].isclose(expected))
 
+        # test that turning off snap_relay also turns off snaps that are on
+        t1 = Time.now() - TimeDelta(10, format='sec')
+        self.test_session.add_node_power_status(t1, 1, True, True, True,
+                                                False, False, False, False)
+        command_list = self.test_session.node_power_command(1, 'snap_relay', 'off',
+                                                            testing=True)
+        self.assertEqual(len(command_list), 3)
+        command_times = [cmd.time for cmd in command_list]
+        part_list = []
+        for partname in reversed(list(node.power_command_part_dict.keys())):
+            if partname == 'snap0' or partname == 'snap1':
+                part_list.append(partname)
+        part_list.append('snap_relay')
+        for pi, part in enumerate(part_list):
+            expected = node.NodePowerCommand(time=command_times[pi], node=1,
+                                             part=part, command='off')
+            self.assertTrue(command_list[pi].isclose(expected))
+
         # test turning off snap
         command_list = self.test_session.node_power_command(1, 'snap0', 'off',
                                                             testing=True)
@@ -310,24 +347,13 @@ class TestNodePowerCommand(TestHERAMC):
                                          part='snap0', command='off')
         self.assertTrue(command_list[0].isclose(expected))
 
-        command_list = self.test_session.node_power_command(1, 'snap_relay', 'off',
-                                                            testing=True)
-        self.assertEqual(len(command_list), 5)
-        command_times = [cmd.time for cmd in command_list]
-        part_list = []
-        for partname in reversed(list(node.power_command_part_dict.keys())):
-            if partname.startswith('snap') and partname is not 'snap_relay':
-                part_list.append(partname)
-        part_list.append('snap_relay')
-        for pi, part in enumerate(part_list):
-            expected = node.NodePowerCommand(time=command_times[pi], node=1,
-                                             part=part, command='off')
-            self.assertTrue(command_list[pi].isclose(expected))
+        # test erroneous part name with a recent status
+        self.assertRaises(AttributeError, self.test_session.node_power_command,
+                          1, 'foo', 'on', testing=True)
 
+        # test various errors
         self.assertRaises(ValueError, self.test_session.node_power_command,
                           31, 'fem', 'on', testing=True)
-        self.assertRaises(ValueError, self.test_session.node_power_command,
-                          1, 'foo', 'on', testing=True)
         self.assertRaises(ValueError, self.test_session.node_power_command,
                           1, 'fem', 'foo', testing=True)
         self.assertRaises(ValueError, node.NodePowerCommand.create,
