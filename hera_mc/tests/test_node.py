@@ -215,5 +215,67 @@ class TestNodePowerStatus(TestHERAMC):
             self.assertEqual(len(result), len(node_list))
 
 
+class TestNodePowerCommand(TestHERAMC):
+
+    def test_node_power_command(self):
+        command_list = self.test_session.node_power_command(1, 'fem', 'on',
+                                                            dryrun=True, testing=True)
+        command_time = command_list[0].time
+        self.assertTrue(Time.now().gps - command_time < 2.)
+
+        expected = node.NodePowerCommand(time=command_time, node=1,
+                                         part='fem', command='on')
+        self.assertTrue(command_list[0].isclose(expected))
+
+        command_list = self.test_session.node_power_command(1, 'all', 'on',
+                                                            dryrun=True, testing=True)
+        command_times = [cmd.time for cmd in command_list]
+        part_list = list(node.power_command_part_dict.keys())
+        part_list.remove('snap_relay')
+        part_list.insert(0, 'snap_relay')
+        for pi, part in enumerate(part_list):
+            expected = node.NodePowerCommand(time=command_times[pi], node=1,
+                                             part=part, command='on')
+            self.assertTrue(command_list[pi].isclose(expected))
+
+        command_list = self.test_session.node_power_command(1, 'all', 'off',
+                                                            dryrun=True, testing=True)
+        command_times = [cmd.time for cmd in command_list]
+        part_list = list(node.power_command_part_dict.keys())
+        part_list.remove('snap_relay')
+        part_list.append('snap_relay')
+        for pi, part in enumerate(part_list):
+            expected = node.NodePowerCommand(time=command_times[pi], node=1,
+                                             part=part, command='off')
+            self.assertTrue(command_list[pi].isclose(expected))
+
+        command_list = self.test_session.node_power_command(1, 'snap0', 'on',
+                                                            dryrun=True, testing=True)
+        self.assertEqual(len(command_list), 2)
+        command_times = [cmd.time for cmd in command_list]
+        part_list = ['snap_relay', 'snap0']
+        for pi, part in enumerate(part_list):
+            expected = node.NodePowerCommand(time=command_times[pi], node=1,
+                                             part=part, command='on')
+            self.assertTrue(command_list[pi].isclose(expected))
+
+        command_list = self.test_session.node_power_command(1, 'snap0', 'off',
+                                                            dryrun=True, testing=True)
+        self.assertEqual(len(command_list), 1)
+        command_time = command_list[0].time
+        expected = node.NodePowerCommand(time=command_time, node=1,
+                                         part='snap0', command='off')
+        self.assertTrue(command_list[0].isclose(expected))
+
+        self.assertRaises(ValueError, self.test_session.node_power_command,
+                          31, 'fem', 'on', dryrun=True, testing=True)
+        self.assertRaises(ValueError, self.test_session.node_power_command,
+                          1, 'foo', 'on', dryrun=True, testing=True)
+        self.assertRaises(ValueError, self.test_session.node_power_command,
+                          1, 'fem', 'foo', dryrun=True, testing=True)
+        self.assertRaises(ValueError, node.NodePowerCommand.create,
+                          command_time, 1, 'fem', 'on')
+
+
 if __name__ == '__main__':
     unittest.main()

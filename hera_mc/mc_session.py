@@ -6,8 +6,9 @@ from __future__ import absolute_import, division, print_function
 
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
 import warnings
+import six
 
 from .utils import get_iterable
 """
@@ -1093,39 +1094,96 @@ class MCSession(Session):
                                  stoptime=stoptime, filter_column='node',
                                  filter_value=node)
 
-    def node_power_command(self, node, part, command, nodeServerAddress=None):
+    def node_power_command(self, node, part, command, nodeServerAddress=None,
+                           dryrun=False, testing=False):
         """
         Issue a power command (on/off) to a particular node & part.
 
         Parameters:
         ------------
         node: integer
-            node number (integer running from 1 to 30)
-        part: string
-            part name (e.g. fem, snap0), allowed values in node.power_command_part_list
+            node number (integer running from 1 to 30). If the testing keyword is False,
+            specifying a node which is not in the array will give a ValueError
+        part: string or list of strings
+            part name(s) (e.g. fem, snap0) or 'all', allowed values are keys to
+            node.power_command_part_dict
         command: string
             'on' or 'off'
         nodeServerAddress: string
             address for node server. Defaults to node.defaultServerAddress
+        dryrun: boolean
+            if true, just return the list of NodePowerCommand objects, do not
+            issue the power commands or log them to the database
+        testing: boolean
+            if true, do not use anything that requires connection to nodes
         """
-        import nodeControl
-        from .node import NodePowerCommands, power_command_part_dict, _get_node_list, defaultServerAddress
+        from .node import NodePowerCommand, power_command_part_dict, _get_node_list, defaultServerAddress
 
         if nodeServerAddress is None:
             nodeServerAddress = defaultServerAddress
 
-        node_list = _get_node_list(nodeServerAddress=nodeServerAddress)
+        if testing:
+            node_list = list(range(1, 31))
+        else:
+            node_list = _get_node_list(nodeServerAddress=nodeServerAddress)
         if node not in node_list:
             raise ValueError('node not in list of active nodes: ', node_list)
 
-        command_time = Time.now()
-        # create object first: catch any mistakes
-        command_obj = NodePowerCommands.create(command_time, node, part, command)
+        if isinstance(part, six.string_types):
+            part = [part]
 
-        node_controller = nodeControl.NodeControl(node, serverAddress=nodeServerAddress)
-        getattr(node_controller, power_command_part_dict[part])(command)
+        if part[0] is 'all':
+            part = list(power_command_part_dict.keys())
 
-        self.add(command_obj)
+        if 'snap_relay' in part:
+            if command is 'on':
+                # move snap_relay to the start of the list (it needs to be powered before the snaps)
+                part.remove('snap_relay')
+                part.insert(0, 'snap_relay')
+            else:
+                # move snap_relay to the end of the list.
+                # XXX should the snaps be all powered down first?
+                part.remove('snap_relay')
+                part.append('snap_relay')
+        elif command is 'on':
+            # check if any snaps in part. If so, need to check on snap_relay
+            for partname in part:
+                if partname.startswith('snap'):
+                    # make sure we have most recent power status info
+                    if not testing:
+                        self.add_node_power_status_from_nodecontrol()
+                    # Check if the snap relay is powered, if not add it to part
+                    starttime = Time.now() - TimeDelta(120, format='sec')
+                    stoptime = starttime + TimeDelta(60, format='sec')
+                    node_powers = self.get_node_power_status(starttime, stoptime=stoptime, node=node)
+                    if len(node_powers) > 0:
+                        latest_relay_power = node_powers[-1].snap_relay_powered
+                        if latest_relay_power is False:
+                            part.insert(0, 'snap_relay')
+                    else:
+                        part.insert(0, 'snap_relay')
+                    break
+
+        if dryrun:
+            command_list = []
+
+        for partname in part:
+            command_time = Time.now()
+            # create object first: catch any mistakes
+            command_obj = NodePowerCommand.create(command_time, node, partname, command)
+
+            if not dryrun:
+                import nodeControl
+
+                node_controller = nodeControl.NodeControl(node, serverAddress=nodeServerAddress)
+                getattr(node_controller, power_command_part_dict[partname])(command)
+
+                self.add(command_obj)
+            else:
+                command_list.append(command_obj)
+
+        if dryrun:
+            return command_list
 
     def get_node_power_command(self, starttime, stoptime=None, node=None):
         """

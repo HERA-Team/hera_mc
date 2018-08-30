@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 
 from astropy.time import Time
 from math import floor
-from sqlalchemy import Column, BigInteger, Integer, Float, Boolean
+from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String
 
 from . import MCDeclarativeBase
 
@@ -265,20 +265,20 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
     return node_power_list
 
 
-class NodePowerCommands(MCDeclarativeBase):
+class NodePowerCommand(MCDeclarativeBase):
     """
     Definition of node power command table.
 
     time: gps time of the command, floored (BigInteger, part of primary_key).
     node: node number (Integer, part of primary_key)
-    part: part to be powered on/off
+    part: part to be powered on/off (String, part of primary_key)
     command: on/off
     """
     __tablename__ = 'node_power_command'
     time = Column(BigInteger, primary_key=True)
     node = Column(Integer, primary_key=True)
     part = Column(String, primary_key=True)
-    command = Column(String, nullable=False)  # XXX should this be part of primary key?
+    command = Column(String, nullable=False)
 
     @classmethod
     def create(cls, time, node, part, command):
@@ -301,7 +301,8 @@ class NodePowerCommands(MCDeclarativeBase):
         node_time = floor(time.gps)
 
         if part not in list(power_command_part_dict.keys()):
-            raise ValueError('part must be one of: ' + ' ,'.join(list(power_command_part_dict.keys())))
+            raise ValueError('part must be one of: ' + ', '.join(list(power_command_part_dict.keys()))
+                             + '. part is actually {}'.format(part))
 
         if command not in ['on', 'off']:
             raise ValueError('command must be one of: on, off')
