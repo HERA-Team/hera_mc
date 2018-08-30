@@ -1158,7 +1158,7 @@ class MCSession(Session):
                         self.add_node_power_status_from_nodecontrol()
                     # Check if the snap relay is powered, if not add it to part
                     starttime = Time.now() - TimeDelta(120, format='sec')
-                    stoptime = starttime + TimeDelta(60, format='sec')
+                    stoptime = Time.now() + TimeDelta(60, format='sec')
                     node_powers = self.get_node_power_status(starttime, stoptime=stoptime, node=node)
                     if len(node_powers) > 0:
                         latest_relay_power = node_powers[-1].snap_relay_powered

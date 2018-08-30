@@ -218,6 +218,7 @@ class TestNodePowerStatus(TestHERAMC):
 class TestNodePowerCommand(TestHERAMC):
 
     def test_node_power_command(self):
+        # test turning on fem
         command_list = self.test_session.node_power_command(1, 'fem', 'on',
                                                             testing=True)
         command_time = command_list[0].time
@@ -227,6 +228,7 @@ class TestNodePowerCommand(TestHERAMC):
                                          part='fem', command='on')
         self.assertTrue(command_list[0].isclose(expected))
 
+        # test turning on all
         command_list = self.test_session.node_power_command(1, 'all', 'on',
                                                             testing=True)
         command_times = [cmd.time for cmd in command_list]
@@ -250,6 +252,7 @@ class TestNodePowerCommand(TestHERAMC):
             index = result_parts.index(part)
             self.assertTrue(command_list[pi].isclose(result_list[index]))
 
+        # test turning off all
         command_list = self.test_session.node_power_command(1, 'all', 'off',
                                                             testing=True)
         command_times = [cmd.time for cmd in command_list]
@@ -261,6 +264,7 @@ class TestNodePowerCommand(TestHERAMC):
                                              part=part, command='off')
             self.assertTrue(command_list[pi].isclose(expected))
 
+        # test that turning a snap on also turns on the relay (with no recent status)
         command_list = self.test_session.node_power_command(1, 'snap0', 'on',
                                                             testing=True)
         self.assertEqual(len(command_list), 2)
@@ -271,6 +275,33 @@ class TestNodePowerCommand(TestHERAMC):
                                              part=part, command='on')
             self.assertTrue(command_list[pi].isclose(expected))
 
+        # test that turning a snap on also turns on the relay (with recent status of off)
+        t1 = Time.now() - TimeDelta(30, format='sec')
+        self.test_session.add_node_power_status(t1, 1, False, False, False,
+                                                False, False, False, False)
+        command_list = self.test_session.node_power_command(1, 'snap0', 'on',
+                                                            testing=True)
+        self.assertEqual(len(command_list), 2)
+        command_times = [cmd.time for cmd in command_list]
+        part_list = ['snap_relay', 'snap0']
+        for pi, part in enumerate(part_list):
+            expected = node.NodePowerCommand(time=command_times[pi], node=1,
+                                             part=part, command='on')
+            self.assertTrue(command_list[pi].isclose(expected))
+
+        # test that turning a snap doesn't add relay (with recent status of on)
+        t1 = Time.now() - TimeDelta(20, format='sec')
+        self.test_session.add_node_power_status(t1, 1, True, False, False,
+                                                False, False, False, False)
+        command_list = self.test_session.node_power_command(1, 'snap0', 'on',
+                                                            testing=True)
+        self.assertEqual(len(command_list), 1)
+        command_time = command_list[0].time
+        expected = node.NodePowerCommand(time=command_time, node=1,
+                                         part='snap0', command='on')
+        self.assertTrue(command_list[0].isclose(expected))
+
+        # test turning off snap
         command_list = self.test_session.node_power_command(1, 'snap0', 'off',
                                                             testing=True)
         self.assertEqual(len(command_list), 1)
