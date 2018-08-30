@@ -40,8 +40,8 @@ if __name__ == '__main__':
 
     parts_list = cm_utils.listify(args.parts)
 
-    for node in node_list:
-        command_list = session.node_power_command(node, parts_list, args.command,
+    for nodeID in node_list:
+        command_list = session.node_power_command(nodeID, parts_list, args.command,
                                                   nodeServerAddress=args.address,
                                                   dryrun=args.dryrun,
                                                   testing=args.testing)

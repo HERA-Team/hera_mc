@@ -949,7 +949,7 @@ class MCSession(Session):
         for item in q:
             print('{}\t{}'.format(item.astropy_time, item.value), file=files[item.variable])
 
-    def add_node_sensor_readings(self, time, node, top_sensor_temp, middle_sensor_temp,
+    def add_node_sensor_readings(self, time, nodeID, top_sensor_temp, middle_sensor_temp,
                                  bottom_sensor_temp, humidity_sensor_temp, humidity):
         """
         Add new node sensor data to the M&C database.
@@ -958,7 +958,7 @@ class MCSession(Session):
         ------------
         time: astropy time object
             astropy time object based on a timestamp reported by node
-        node: integer
+        nodeID: integer
             node number (integer running from 1 to 30)
         top_sensor_temp: float
             temperature of top sensor reported by node in Celsius
@@ -973,7 +973,7 @@ class MCSession(Session):
         """
         from .node import NodeSensor
 
-        self.add(NodeSensor.create(time, node, top_sensor_temp, middle_sensor_temp,
+        self.add(NodeSensor.create(time, nodeID, top_sensor_temp, middle_sensor_temp,
                                    bottom_sensor_temp, humidity_sensor_temp, humidity))
 
     def add_node_sensor_readings_from_nodecontrol(self):
@@ -993,7 +993,7 @@ class MCSession(Session):
 
         self._insert_ignoring_duplicates(NodeSensor, node_sensor_list)
 
-    def get_node_sensor_readings(self, starttime, stoptime=None, node=None):
+    def get_node_sensor_readings(self, starttime, stoptime=None, nodeID=None):
         """
         Get node_sensor record(s) from the M&C database.
 
@@ -1006,7 +1006,7 @@ class MCSession(Session):
             last time to get records for. If none, only the first record after
             starttime will be returned.
 
-        node: integer
+        nodeID: integer
             node number (integer running from 1 to 30)
 
         Returns:
@@ -1017,9 +1017,9 @@ class MCSession(Session):
 
         return self._time_filter(NodeSensor, 'time', starttime,
                                  stoptime=stoptime, filter_column='node',
-                                 filter_value=node)
+                                 filter_value=nodeID)
 
-    def add_node_power_status(self, time, node, snap_relay_powered, snap0_powered,
+    def add_node_power_status(self, time, nodeID, snap_relay_powered, snap0_powered,
                               snap1_powered, snap2_powered, snap3_powered,
                               fem_powered, pam_powered):
         """
@@ -1029,7 +1029,7 @@ class MCSession(Session):
         ------------
         time: astropy time object
             astropy time object based on a timestamp reported by node
-        node: integer
+        nodeID: integer
             node number (integer running from 1 to 30)
         snap_relay_powered: boolean
             power status of the snap relay, True=powered
@@ -1048,7 +1048,7 @@ class MCSession(Session):
         """
         from .node import NodePowerStatus
 
-        self.add(NodePowerStatus.create(time, node, snap_relay_powered, snap0_powered,
+        self.add(NodePowerStatus.create(time, nodeID, snap_relay_powered, snap0_powered,
                                         snap1_powered, snap2_powered, snap3_powered,
                                         fem_powered, pam_powered))
 
@@ -1068,7 +1068,7 @@ class MCSession(Session):
 
         self._insert_ignoring_duplicates(NodePowerStatus, node_power_list)
 
-    def get_node_power_status(self, starttime, stoptime=None, node=None):
+    def get_node_power_status(self, starttime, stoptime=None, nodeID=None):
         """
         Get node power status record(s) from the M&C database.
 
@@ -1081,7 +1081,7 @@ class MCSession(Session):
             last time to get records for. If none, only the first record after
             starttime will be returned.
 
-        node: integer
+        nodeID: integer
             node number (integer running from 1 to 30)
 
         Returns:
@@ -1092,16 +1092,16 @@ class MCSession(Session):
 
         return self._time_filter(NodePowerStatus, 'time', starttime,
                                  stoptime=stoptime, filter_column='node',
-                                 filter_value=node)
+                                 filter_value=nodeID)
 
-    def node_power_command(self, node, part, command, nodeServerAddress=None,
+    def node_power_command(self, nodeID, part, command, nodeServerAddress=None,
                            dryrun=False, testing=False):
         """
         Issue a power command (on/off) to a particular node & part.
 
         Parameters:
         ------------
-        node: integer
+        nodeID: integer
             node number (integer running from 1 to 30). If the testing keyword is False,
             specifying a node which is not in the array will give a ValueError
         part: string or list of strings
@@ -1127,7 +1127,7 @@ class MCSession(Session):
             dryrun = True
         else:
             node_list = get_node_list(nodeServerAddress=nodeServerAddress)
-        if node not in node_list:
+        if nodeID not in node_list:
             raise ValueError('node not in list of active nodes: ', node_list)
 
         if isinstance(part, six.string_types):
@@ -1174,12 +1174,12 @@ class MCSession(Session):
         for partname in part:
             command_time = Time.now()
             # create object first: catch any mistakes
-            command_obj = NodePowerCommand.create(command_time, node, partname, command)
+            command_obj = NodePowerCommand.create(command_time, nodeID, partname, command)
 
             if not dryrun:
                 import nodeControl
 
-                node_controller = nodeControl.NodeControl(node, serverAddress=nodeServerAddress)
+                node_controller = nodeControl.NodeControl(nodeID, serverAddress=nodeServerAddress)
                 getattr(node_controller, power_command_part_dict[partname])(command)
 
                 self.add(command_obj)
@@ -1189,7 +1189,7 @@ class MCSession(Session):
         if dryrun:
             return command_list
 
-    def get_node_power_command(self, starttime, stoptime=None, node=None):
+    def get_node_power_command(self, starttime, stoptime=None, nodeID=None):
         """
         Get node power command record(s) from the M&C database.
 
@@ -1202,7 +1202,7 @@ class MCSession(Session):
             last time to get records for. If none, only the first record after
             starttime will be returned.
 
-        node: integer
+        nodeID: integer
             node number (integer running from 1 to 30)
 
         Returns:
@@ -1213,7 +1213,7 @@ class MCSession(Session):
 
         return self._time_filter(NodePowerCommand, 'time', starttime,
                                  stoptime=stoptime, filter_column='node',
-                                 filter_value=node)
+                                 filter_value=nodeID)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """

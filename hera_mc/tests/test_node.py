@@ -80,7 +80,7 @@ class TestNodeSensor(TestHERAMC):
                                                    humidity)
 
         result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'),
-                                                            node=1)
+                                                            nodeID=1)
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
@@ -101,7 +101,7 @@ class TestNodeSensor(TestHERAMC):
 
         t1 = Time(1512770942.726777, format='unix')
         result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'),
-                                                            node=1)
+                                                            nodeID=1)
 
         expected = node.NodeSensor(time=int(floor(t1.gps)), node=1,
                                    top_sensor_temp=30., middle_sensor_temp=31.98,
@@ -168,7 +168,7 @@ class TestNodePowerStatus(TestHERAMC):
                                                 fem_powered, pam_powered)
 
         result = self.test_session.get_node_power_status(t1 - TimeDelta(3.0, format='sec'),
-                                                         node=1)
+                                                         nodeID=1)
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
@@ -189,7 +189,7 @@ class TestNodePowerStatus(TestHERAMC):
 
         t1 = Time(1512770942.726777, format='unix')
         result = self.test_session.get_node_power_status(t1 - TimeDelta(3.0, format='sec'),
-                                                         node=1)
+                                                         nodeID=1)
 
         expected = node.NodePowerStatus(time=int(floor(t1.gps)), node=1,
                                         snap_relay_powered=True, snap0_powered=False,
