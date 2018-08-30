@@ -26,31 +26,31 @@ class Dataview:
         else:
             self.session = session
 
-    def ants_by_day(self, start, stop, interval, filename, station_types_to_check='default', output_date_format='jd'):
+    def ants_by_day(self, start, stop, time_step, output=None, station_types_to_check='default', output_date_format='jd'):
         """
         Return dated list of connected stations.
 
         Parameters:
         ------------
-        start:  start astropy.Time
-        stop:  stop astropy.Time
-        interval:  interval in days
-        filename:  filename to write to.  If stdout it will also return a dictionary
-        station_types_to_check:  e.g. HH
+        start:  start (astropy.Time)
+        stop:  stop (astropy.Time)
+        time_step:  time_step in days between start/stop (float or int)
+        output:  Optional filename to write (and shows on screen).  If None, only returns dictionary.
+        station_types_to_check:  e.g. HH, default used hookup cache set (HH, HA, HB currently)
         output_date_format: jd or ymd
         """
-        if filename.lower() == 'stdout':
-            import sys
-            fp = sys.stdout
+        if output is None:
+            fplist = []
             data_ret = {}
         else:
-            fp = open(filename, 'w')
+            import sys
+            fplist = [sys.stdout, open(output, 'w')]
             data_ret = None
         sys_handle = sys_handling.Handling(self.session)
-        interval = TimeDelta(interval * 3600.0 * 24.0, format='sec')
+        time_step = TimeDelta(time_step * 3600.0 * 24.0, format='sec')
         at_date = start
-        while at_date < stop:
-            stn_info_list = sys_handle.get_all_fully_connected_at_date(at_date, station_types_to_check='default')
+        while at_date <= stop:
+            stn_info_list = sys_handle.get_all_fully_connected_at_date(at_date, station_types_to_check=station_types_to_check)
             y = [x.station_name for x in stn_info_list]
             s = ', '.join(y)
             s.strip().strip(',')
@@ -58,9 +58,10 @@ class Dataview:
                 printable_date = at_date.jd
             else:
                 printable_date = cm_utils.get_time_for_display(at_date)
-            print("{}:  {}".format(printable_date, s), file=fp)
+            for fp in fplist:
+                print("{}:  {}".format(printable_date, s), file=fp)
             if data_ret is not None:
                 data_ret[printable_date] = y
-            at_date += interval
+            at_date += time_step
         if data_ret is not None:
             return data_ret

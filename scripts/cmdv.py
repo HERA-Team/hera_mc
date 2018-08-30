@@ -16,8 +16,8 @@ from hera_mc import mc, cm_utils, cm_dataview
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('action', nargs='?', help="Actions are:  ants (only one for now)", default='ants')
-    parser.add_argument('--dt', help="Time interval (in days) of view.  [1]", default=1.0)
-    parser.add_argument('--file', help="Filename to use for output [stdout].  If stdout will return a dictionary", default='stdout')
+    parser.add_argument('--dt', help="Time step (in days) of view.  [1]", default=1.0)
+    parser.add_argument('--file', help="Filename for output (shows progress on screen) [ants.txt].", default='ants.txt')
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--date2', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' or gps or julian [now]", default='now')
     parser.add_argument('--time2', help="UTC hh:mm or float (hours) ignored unless date of YYYY/MM/DD format", default=0.0)
@@ -35,6 +35,9 @@ if __name__ == '__main__':
     session = db.sessionmaker()
     dv = cm_dataview.Dataview(session)
 
-    dv.ants_by_day(date_1, date_2, args.dt, args.file,
+    if args.file is not None:
+        print("Writing {}".format(args.file))
+    dv.ants_by_day(date_1, date_2, args.dt,
+                   output=args.file,
                    station_types_to_check='default',
                    output_date_format=args.output_date_format)
