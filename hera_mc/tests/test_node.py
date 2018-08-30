@@ -218,7 +218,7 @@ class TestNodePowerStatus(TestHERAMC):
 class TestNodePowerCommand(TestHERAMC):
 
     def test_node_power_command(self):
-        # test turning on fem
+        # test things on & off with no recent status
         command_list = self.test_session.node_power_command(1, 'fem', 'on',
                                                             testing=True)
         command_time = command_list[0].time
@@ -264,7 +264,7 @@ class TestNodePowerCommand(TestHERAMC):
                                              part=part, command='off')
             self.assertTrue(command_list[pi].isclose(expected))
 
-        # test that turning a snap on also turns on the relay (with no recent status)
+        # test that turning a snap on also turns on the relay
         command_list = self.test_session.node_power_command(1, 'snap0', 'on',
                                                             testing=True)
         self.assertEqual(len(command_list), 2)
@@ -275,7 +275,7 @@ class TestNodePowerCommand(TestHERAMC):
                                              part=part, command='on')
             self.assertTrue(command_list[pi].isclose(expected))
 
-        # test that turning off snap_relay also turns off snaps (with no recent status)
+        # test that turning off snap_relay also turns off snaps
         command_list = self.test_session.node_power_command(1, 'snap_relay', 'off',
                                                             testing=True)
         self.assertEqual(len(command_list), 5)
@@ -290,10 +290,11 @@ class TestNodePowerCommand(TestHERAMC):
                                              part=part, command='off')
             self.assertTrue(command_list[pi].isclose(expected))
 
-        # test erroneous part name with no recent status
+        # test erroneous part name
         self.assertRaises(ValueError, self.test_session.node_power_command,
                           1, 'foo', 'on', testing=True)
 
+        # Now test with recent statuses
         # test that turning a snap on also turns on the relay (with recent status of off)
         t1 = Time.now() - TimeDelta(30, format='sec')
         self.test_session.add_node_power_status(t1, 1, False, False, False,
@@ -338,7 +339,7 @@ class TestNodePowerCommand(TestHERAMC):
                                              part=part, command='off')
             self.assertTrue(command_list[pi].isclose(expected))
 
-        # test turning off snap
+        # test turning off snap that is on
         command_list = self.test_session.node_power_command(1, 'snap0', 'off',
                                                             testing=True)
         self.assertEqual(len(command_list), 1)
@@ -346,6 +347,11 @@ class TestNodePowerCommand(TestHERAMC):
         expected = node.NodePowerCommand(time=command_time, node=1,
                                          part='snap0', command='off')
         self.assertTrue(command_list[0].isclose(expected))
+
+        # test turning off fem that is off
+        command_list = self.test_session.node_power_command(1, 'fem', 'off',
+                                                            testing=True)
+        self.assertEqual(len(command_list), 0)
 
         # test erroneous part name with a recent status
         self.assertRaises(AttributeError, self.test_session.node_power_command,
