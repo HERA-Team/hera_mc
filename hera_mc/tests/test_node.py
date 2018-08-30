@@ -219,7 +219,7 @@ class TestNodePowerCommand(TestHERAMC):
 
     def test_node_power_command(self):
         command_list = self.test_session.node_power_command(1, 'fem', 'on',
-                                                            dryrun=True, testing=True)
+                                                            testing=True)
         command_time = command_list[0].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
@@ -228,7 +228,7 @@ class TestNodePowerCommand(TestHERAMC):
         self.assertTrue(command_list[0].isclose(expected))
 
         command_list = self.test_session.node_power_command(1, 'all', 'on',
-                                                            dryrun=True, testing=True)
+                                                            testing=True)
         command_times = [cmd.time for cmd in command_list]
         part_list = list(node.power_command_part_dict.keys())
         part_list.remove('snap_relay')
@@ -238,8 +238,20 @@ class TestNodePowerCommand(TestHERAMC):
                                              part=part, command='on')
             self.assertTrue(command_list[pi].isclose(expected))
 
+        # test adding the commands to the database and retrieving them
+        for cmd in command_list:
+            self.test_session.add(cmd)
+        result_list = self.test_session.get_node_power_command(
+            starttime=Time.now() - TimeDelta(10, format='sec'),
+            stoptime=Time.now() + TimeDelta(10, format='sec'))
+        self.assertEqual(len(command_list), len(result_list))
+        result_parts = [cmd.part for cmd in result_list]
+        for pi, part in enumerate(part_list):
+            index = result_parts.index(part)
+            self.assertTrue(command_list[pi].isclose(result_list[index]))
+
         command_list = self.test_session.node_power_command(1, 'all', 'off',
-                                                            dryrun=True, testing=True)
+                                                            testing=True)
         command_times = [cmd.time for cmd in command_list]
         part_list = list(node.power_command_part_dict.keys())
         part_list.remove('snap_relay')
@@ -250,7 +262,7 @@ class TestNodePowerCommand(TestHERAMC):
             self.assertTrue(command_list[pi].isclose(expected))
 
         command_list = self.test_session.node_power_command(1, 'snap0', 'on',
-                                                            dryrun=True, testing=True)
+                                                            testing=True)
         self.assertEqual(len(command_list), 2)
         command_times = [cmd.time for cmd in command_list]
         part_list = ['snap_relay', 'snap0']
@@ -260,7 +272,7 @@ class TestNodePowerCommand(TestHERAMC):
             self.assertTrue(command_list[pi].isclose(expected))
 
         command_list = self.test_session.node_power_command(1, 'snap0', 'off',
-                                                            dryrun=True, testing=True)
+                                                            testing=True)
         self.assertEqual(len(command_list), 1)
         command_time = command_list[0].time
         expected = node.NodePowerCommand(time=command_time, node=1,
@@ -268,7 +280,7 @@ class TestNodePowerCommand(TestHERAMC):
         self.assertTrue(command_list[0].isclose(expected))
 
         command_list = self.test_session.node_power_command(1, 'snap_relay', 'off',
-                                                            dryrun=True, testing=True)
+                                                            testing=True)
         self.assertEqual(len(command_list), 5)
         command_times = [cmd.time for cmd in command_list]
         part_list = []
@@ -282,11 +294,11 @@ class TestNodePowerCommand(TestHERAMC):
             self.assertTrue(command_list[pi].isclose(expected))
 
         self.assertRaises(ValueError, self.test_session.node_power_command,
-                          31, 'fem', 'on', dryrun=True, testing=True)
+                          31, 'fem', 'on', testing=True)
         self.assertRaises(ValueError, self.test_session.node_power_command,
-                          1, 'foo', 'on', dryrun=True, testing=True)
+                          1, 'foo', 'on', testing=True)
         self.assertRaises(ValueError, self.test_session.node_power_command,
-                          1, 'fem', 'foo', dryrun=True, testing=True)
+                          1, 'fem', 'foo', testing=True)
         self.assertRaises(ValueError, node.NodePowerCommand.create,
                           command_time, 1, 'fem', 'on')
 
