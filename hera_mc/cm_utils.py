@@ -174,7 +174,8 @@ def get_astropytime(_date, _time=0):
                 return astropy Time
                     astropy Time:  just gets returned
                     datetime: just gets converted
-                    int, long, float:  interpreted as gps_second
+                    int, long, float:  interpreted as gps_second or julian date
+                                       depending on appropriate range
                     string:  '<' - PAST_DATE
                              '>' - future_date()
                              'now' or 'current'
@@ -182,9 +183,9 @@ def get_astropytime(_date, _time=0):
                 return None:
                     string:  'none' return None
                     None/False:  return None
-    _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string
+    _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string otherwise ignored
                 float, int:  hours in decimal time
-                string:  HH[:MM[:SS]]
+                string:  HH[:MM[:SS]] or hours in decimal time
     """
 
     if isinstance(_date, Time):
@@ -193,10 +194,16 @@ def get_astropytime(_date, _time=0):
         return Time(_date, format='datetime')
     if _date is None or _date is False:
         return None
-    if isinstance(_date, (six.integer_types, float)):
-        if int(_date) > 1000000000:
+    try:
+        _date = float(_date)
+    except ValueError:
+        pass
+    if isinstance(_date, float):
+        if _date > 1000000000.0:
             return Time(_date, format='gps')
-        raise ValueError('Invalid format:  date as a number should be gps time, not {}.'.format(_date))
+        if _date > 2400000.0 and _date < 2500000.0:
+            return Time(_date, format='jd')
+        raise ValueError('Invalid format:  date as a number should be gps time or julian date, not {}.'.format(_date))
     if isinstance(_date, str):
         if _date == '<':
             return Time(PAST_DATE, scale='utc')
@@ -211,7 +218,11 @@ def get_astropytime(_date, _time=0):
             return_date = Time(_date, scale='utc')
         except ValueError:
             raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(_date))
-        if isinstance(_time, (float, int)):
+        try:
+            _time = float(_time)
+        except ValueError:
+            pass
+        if isinstance(_time, float):
             return return_date + TimeDelta(_time * 3600.0, format='sec')
         if isinstance(_time, str):
             add_time = 0.0

@@ -29,6 +29,7 @@ if __name__ == '__main__':
     parser.add_argument('--levels', help="Show power levels if enabled (and able) [False]", action='store_true')
     parser.add_argument('--ports', help="Show ports on hookup.", action='store_true')
     parser.add_argument('--revs', help="Show revs on hookup.", action='store_true')
+    parser.add_argument('--delete-cache-file', dest='delete_cache_file', help="Deletes the local cache file", action='store_true')
     cm_utils.add_date_time_args(parser)
 
     args = parser.parse_args()
@@ -49,6 +50,8 @@ if __name__ == '__main__':
     hookup = cm_hookup.Hookup(date_query, session)
     if args.cache_info:
         print(hookup.hookup_cache_file_info())
+    elif args.delete_cache_file:
+        hookup.delete_cache_file()
     else:
         hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
                                         exact_match=args.exact_match, levels=args.levels,
