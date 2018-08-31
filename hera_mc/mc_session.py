@@ -1132,6 +1132,9 @@ class MCSession(Session):
 
         if isinstance(part, six.string_types):
             part = [part]
+        else:
+            # ensure no duplicates
+            part = list(set(part))
 
         if part[0] == 'all':
             part = list(power_command_part_dict.keys())
@@ -1173,11 +1176,12 @@ class MCSession(Session):
                     if power_status:
                         # already on, take it out of the list
                         drop_part.append(partname)
-                elif command == 'off':
+                else:
                     if not power_status:
                         # already off, take it out of the list
                         drop_part.append(partname)
             for partname in drop_part:
+                # do this after earlier loop so the list doesn't change during iteration
                 part.remove(partname)
 
         if dryrun:

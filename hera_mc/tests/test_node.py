@@ -223,7 +223,15 @@ class TestNodePowerCommand(TestHERAMC):
                                                             testing=True)
         command_time = command_list[0].time
         self.assertTrue(Time.now().gps - command_time < 2.)
+        expected = node.NodePowerCommand(time=command_time, node=1,
+                                         part='fem', command='on')
+        self.assertTrue(command_list[0].isclose(expected))
 
+        # test list with duplicates
+        command_list = self.test_session.node_power_command(1, ['fem', 'fem'], 'on',
+                                                            testing=True)
+        command_time = command_list[0].time
+        self.assertTrue(Time.now().gps - command_time < 2.)
         expected = node.NodePowerCommand(time=command_time, node=1,
                                          part='fem', command='on')
         self.assertTrue(command_list[0].isclose(expected))
@@ -361,7 +369,7 @@ class TestNodePowerCommand(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.node_power_command,
                           31, 'fem', 'on', testing=True)
         self.assertRaises(ValueError, self.test_session.node_power_command,
-                          1, 'fem', 'foo', testing=True)
+                          2, 'fem', 'foo', testing=True)
         self.assertRaises(ValueError, node.NodePowerCommand.create,
                           command_time, 1, 'fem', 'on')
 
