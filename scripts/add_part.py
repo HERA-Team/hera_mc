@@ -11,6 +11,7 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 import copy
+import six
 
 from hera_mc import mc, cm_utils, part_connect, cm_handling
 
@@ -20,13 +21,13 @@ def query_args(args):
     Gets information from user
     """
     if args.hpn is None:
-        args.hpn = raw_input('HERA part number:  ')
+        args.hpn = six.moves.input('HERA part number:  ')
     if args.rev is None:
-        args.rev = raw_input('HERA part revision:  ')
+        args.rev = six.moves.input('HERA part revision:  ')
     if args.hptype is None:
-        args.hptype = raw_input('HERA part type:  ')
+        args.hptype = six.moves.input('HERA part type:  ')
     if args.mfg is None:
-        args.mfg = raw_input('Manufacturers number for part:  ')
+        args.mfg = six.moves.input('Manufacturers number for part:  ')
     args.date = cm_utils.query_default('date', args)
     return args
 

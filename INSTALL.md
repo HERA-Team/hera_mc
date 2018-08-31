@@ -102,7 +102,7 @@ NOTE:  If you are only running sqlite, you don't need to install PostgresSQL to 
 There are many options for installing postgres, several of which are described and
 linked on this page: https://www.postgresql.org/download/macosx/. For the
 instructions below, we are following the installation of the app version, found
-here: https://postgresapp.com/. Follow steps 1 and 2 on that page, and optionally step 3.
+here: https://postgresapp.com/. Follow steps 1, 2 and 3 on that page.
 
 The app will initialize three databases `postgres`, `template1`, and `<username>`, where username
 is your username on your system. You can double click any of these dbs, or use the
@@ -123,6 +123,8 @@ Finally, run the alembic script to upgrade your databases to the current schema.
 This is done from the shell, in the root hera_mc directory (where the .ini file lives).
 
 `$ alembic upgrade head`
+
+You will likely have to install packages as it fails, so keep doing `conda install <pkg>` until it completes successfully.
 
 If desired, populate the configuration management tables by running the `cm_init.py` script.
 
