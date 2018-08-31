@@ -10,6 +10,7 @@ Script to handle adding a system-wide comment to the part_info table.
 from __future__ import absolute_import, division, print_function
 
 from hera_mc import mc, cm_utils, part_connect, sys_handling
+import six
 
 SYSTEM = 'System'  # word used in part_info as hpn for these comments
 
@@ -31,7 +32,7 @@ if __name__ == '__main__':
         if args.keyword is None:
             args.keyword = 'general'
         if args.comment is None:
-            args.comment = raw_input('Comment:  ')
+            args.comment = six.moves.input('Comment:  ')
     at_date = cm_utils.get_astropytime(args.date, args.time)
 
     db = mc.connect_to_mc_db(args)

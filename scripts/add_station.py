@@ -63,15 +63,15 @@ def query_geo_information(args):
     Gets geo_location information from user
     """
     if args.easting is None:
-        args.easting = float(raw_input('Easting:  '))
+        args.easting = float(six.moves.input('Easting:  '))
     if args.northing is None:
-        args.northing = float(raw_input('Northing:  '))
+        args.northing = float(six.moves.input('Northing:  '))
     if args.elevation is None:
-        args.elevation = float(raw_input('Elevation:  '))
+        args.elevation = float(six.moves.input('Elevation:  '))
     args.datum = cm_utils.query_default('datum', args)
     args.tile = cm_utils.query_default('tile', args)
     if args.station_type_name is None:
-        args.station_type_name = raw_input('Station type name: ')
+        args.station_type_name = six.moves.input('Station type name: ')
     args.date = cm_utils.query_default('date', args)
     return args
 

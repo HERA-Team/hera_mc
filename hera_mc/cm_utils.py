@@ -292,7 +292,7 @@ def query_default(a, args):
     vargs = vars(args)
     default = vargs[a]
     s = '%s [%s]:  ' % (a, str(default))
-    v = raw_input(s)
+    v = six.moves.input(s)
     if len(v) == 0:
         v = default
     elif v.lower() == 'none':
@@ -304,7 +304,7 @@ def query_yn(s, default='y'):
     if default:
         s += ' [' + default + ']'
     s += ':  '
-    ans = raw_input(s)
+    ans = six.moves.input(s)
     if len(ans) == 0 and default:
         ans = default.lower()
     elif len(ans) > 0:
