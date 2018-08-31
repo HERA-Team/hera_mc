@@ -34,7 +34,7 @@ class Dataview:
         ------------
         start:  start (astropy.Time)
         stop:  stop (astropy.Time)
-        time_step:  time_step in days between start/stop (float or int)
+        time_step:  desired time_step resolution in days or fractions thereof (float or int)
         output:  Optional filename to write (and shows on screen).  If None, only returns dictionary.
         station_types_to_check:  e.g. HH, default used hookup cache set (HH, HA, HB currently)
         output_date_format: jd or ymd

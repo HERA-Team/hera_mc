@@ -16,7 +16,7 @@ from hera_mc import mc, cm_utils, cm_dataview
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('action', nargs='?', help="Actions are:  ants (only one for now)", default='ants')
-    parser.add_argument('--dt', help="Time step (in days) of view.  [1]", default=1.0)
+    parser.add_argument('--dt', help="Desired time step (in days or fractions thereof) for data output.  [1]", default=1.0)
     parser.add_argument('--file', help="Filename for output (shows progress on screen) [ants.txt].", default='ants.txt')
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--date2', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' or gps or julian [now]", default='now')
