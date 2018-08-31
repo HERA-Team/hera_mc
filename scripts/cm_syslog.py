@@ -10,7 +10,7 @@ Script to handle adding a system-wide comment to the part_info table.
 from __future__ import absolute_import, division, print_function
 
 from hera_mc import mc, cm_utils, part_connect, sys_handling
-import sys
+import six
 
 SYSTEM = 'System'  # word used in part_info as hpn for these comments
 
