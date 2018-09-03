@@ -228,7 +228,10 @@ class Hookup:
     hookup_list_to_cache and if the cache file is current relative to the cm_version
     """
     hookup_list_to_cache = cm_utils.all_hera_zone_prefixes
-    hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache.npy')
+    if six.PY2:
+        hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_2.npy')
+    else:
+        hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_3.npy')
 
     def __init__(self, at_date='now', session=None):
         """
