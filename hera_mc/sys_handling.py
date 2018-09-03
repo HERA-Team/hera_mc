@@ -258,7 +258,7 @@ class Handling:
         ecef_positions = uvutils.XYZ_from_LatLonAlt(np.array(stn_arrays.lat) * np.pi / 180.,
                                                     np.array(stn_arrays.lon) * np.pi / 180.,
                                                     stn_arrays.elevation)
-        rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions.T,
+        rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions,
                                                       cofa_loc.lon * np.pi / 180.)
 
         return {'antenna_numbers': stn_arrays.antenna_number,
