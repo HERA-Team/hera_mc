@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2017 the HERA Collaboration
+# Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """script to control power of node elements (snaps, fem, pam)
@@ -16,8 +16,11 @@ from hera_mc import mc, cm_utils
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.description = """Power on or off node elements (snaps, fem, pam)"""
-    parser.add_argument('nodes', help="list of nodes to command (integers) (comma-separated,no spaces) or 'active'")
-    parser.add_argument('parts', help="list of part to command (comma-separated,no spaces) or 'all'.")
+    parser.add_argument('nodes', help="list of nodes to command "
+                        "(integers, comma-separated, no spaces) or 'active'")
+    parser.add_argument('parts', help="list of parts to command "
+                        "(comma-separated, no spaces) or 'all'."
+                        " Valid part names are: snap_relay, snap0, snap1, snap2, snap3, pam, fem.")
     parser.add_argument('command', help="command: 'on' or 'off'.")
     parser.add_argument('--address', help="address for node server", default=None)
     parser.add_argument('--dryrun', help="just print the list of NodePowerCommand "
