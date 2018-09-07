@@ -22,6 +22,7 @@ install:
   - conda info -a
   - conda install six numpy astropy scipy python-dateutil sqlalchemy psycopg2 pandas
     matplotlib tabulate psutil pyproj nose pip pycodestyle alembic coveralls pyuvdata
+    h5py
   - conda list
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
       pip install git+https://github.com/HERA-Team/hera_qm.git;
