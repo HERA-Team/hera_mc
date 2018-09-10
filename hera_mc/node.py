@@ -13,6 +13,8 @@ from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String
 
 from . import MCDeclarativeBase
 
+# the address of a redis database being used as a clearing house for meta-data
+# and message passing which the node server has access to and watches
 defaultServerAddress = 'redishost'
 
 sensor_key_dict = {'top_sensor_temp': 'temp_top', 'middle_sensor_temp': 'temp_mid',
