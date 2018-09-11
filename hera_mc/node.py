@@ -9,10 +9,12 @@ from __future__ import absolute_import, division, print_function
 
 from astropy.time import Time
 from math import floor
-from sqlalchemy import Column, BigInteger, Integer, Float, Boolean
+from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String
 
 from . import MCDeclarativeBase
 
+# the address of a redis database being used as a clearing house for meta-data
+# and message passing which the node server has access to and watches
 defaultServerAddress = 'redishost'
 
 sensor_key_dict = {'top_sensor_temp': 'temp_top', 'middle_sensor_temp': 'temp_mid',
@@ -23,6 +25,21 @@ power_status_key_dict = {'snap_relay_powered': 'power_snap_relay', 'snap0_powere
                          'snap1_powered': 'power_snap_1', 'snap2_powered': 'power_snap_2',
                          'snap3_powered': 'power_snap_3', 'pam_powered': 'power_pam',
                          'fem_powered': 'power_fem'}
+
+# key is part to command, value is function name in hera_node_mc
+power_command_part_dict = {'snap_relay': 'power_snap_relay',
+                           'snap0': 'power_snap_0', 'snap1': 'power_snap_1',
+                           'snap2': 'power_snap_2', 'snap3': 'power_snap_3',
+                           'pam': 'power_pam', 'fem': 'power_fem'}
+
+
+def get_node_list(nodeServerAddress=defaultServerAddress):
+    import nodeControl
+
+    if nodeServerAddress is None:
+        nodeServerAddress = defaultServerAddress
+
+    return nodeControl.get_valid_nodes(serverAddress=nodeServerAddress)
 
 
 class NodeSensor(MCDeclarativeBase):
@@ -78,12 +95,6 @@ class NodeSensor(MCDeclarativeBase):
                    bottom_sensor_temp=bottom_sensor_temp,
                    humidity_sensor_temp=humidity_sensor_temp,
                    humidity=humidity)
-
-
-def _get_node_list(nodeServerAddress=defaultServerAddress):
-    import nodeControl
-
-    return nodeControl.get_valid_nodes(serverAddress=nodeServerAddress)
 
 
 def _get_sensor_dict(node, nodeServerAddress=defaultServerAddress):
@@ -142,7 +153,7 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress, node_list=Non
 
 class NodePowerStatus(MCDeclarativeBase):
     """
-    Definition of node status table.
+    Definition of node power status table.
 
     time: gps time of the node data, floored (BigInteger, part of primary_key).
     node: node number (Integer, part of primary_key)
@@ -257,3 +268,48 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
                                                       fem_powered, pam_powered))
 
     return node_power_list
+
+
+class NodePowerCommand(MCDeclarativeBase):
+    """
+    Definition of node power command table.
+
+    time: gps time of the command, floored (BigInteger, part of primary_key).
+    node: node number (Integer, part of primary_key)
+    part: part to be powered on/off (String, part of primary_key)
+    command: on/off
+    """
+    __tablename__ = 'node_power_command'
+    time = Column(BigInteger, primary_key=True)
+    node = Column(Integer, primary_key=True)
+    part = Column(String, primary_key=True)
+    command = Column(String, nullable=False)
+
+    @classmethod
+    def create(cls, time, node, part, command):
+        """
+        Create a new node power command object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object for time command was sent.
+        node: integer
+            node number (integer running from 1 to 30)
+        part: string
+            one of the keys in power_command_part_dict
+        command: string
+            'on' or 'off'
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        node_time = floor(time.gps)
+
+        if part not in list(power_command_part_dict.keys()):
+            raise ValueError('part must be one of: ' + ', '.join(list(power_command_part_dict.keys()))
+                             + '. part is actually {}'.format(part))
+
+        if command not in ['on', 'off']:
+            raise ValueError('command must be one of: on, off')
+
+        return cls(time=node_time, node=node, part=part, command=command)

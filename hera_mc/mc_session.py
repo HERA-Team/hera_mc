@@ -6,8 +6,9 @@ from __future__ import absolute_import, division, print_function
 
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
 import warnings
+import six
 
 from .utils import get_iterable
 """
@@ -948,7 +949,7 @@ class MCSession(Session):
         for item in q:
             print('{}\t{}'.format(item.astropy_time, item.value), file=files[item.variable])
 
-    def add_node_sensor_readings(self, time, node, top_sensor_temp, middle_sensor_temp,
+    def add_node_sensor_readings(self, time, nodeID, top_sensor_temp, middle_sensor_temp,
                                  bottom_sensor_temp, humidity_sensor_temp, humidity):
         """
         Add new node sensor data to the M&C database.
@@ -957,7 +958,7 @@ class MCSession(Session):
         ------------
         time: astropy time object
             astropy time object based on a timestamp reported by node
-        node: integer
+        nodeID: integer
             node number (integer running from 1 to 30)
         top_sensor_temp: float
             temperature of top sensor reported by node in Celsius
@@ -972,7 +973,7 @@ class MCSession(Session):
         """
         from .node import NodeSensor
 
-        self.add(NodeSensor.create(time, node, top_sensor_temp, middle_sensor_temp,
+        self.add(NodeSensor.create(time, nodeID, top_sensor_temp, middle_sensor_temp,
                                    bottom_sensor_temp, humidity_sensor_temp, humidity))
 
     def add_node_sensor_readings_from_nodecontrol(self):
@@ -992,7 +993,7 @@ class MCSession(Session):
 
         self._insert_ignoring_duplicates(NodeSensor, node_sensor_list)
 
-    def get_node_sensor_readings(self, starttime, stoptime=None, node=None):
+    def get_node_sensor_readings(self, starttime, stoptime=None, nodeID=None):
         """
         Get node_sensor record(s) from the M&C database.
 
@@ -1005,7 +1006,7 @@ class MCSession(Session):
             last time to get records for. If none, only the first record after
             starttime will be returned.
 
-        node: integer
+        nodeID: integer
             node number (integer running from 1 to 30)
 
         Returns:
@@ -1016,9 +1017,9 @@ class MCSession(Session):
 
         return self._time_filter(NodeSensor, 'time', starttime,
                                  stoptime=stoptime, filter_column='node',
-                                 filter_value=node)
+                                 filter_value=nodeID)
 
-    def add_node_power_status(self, time, node, snap_relay_powered, snap0_powered,
+    def add_node_power_status(self, time, nodeID, snap_relay_powered, snap0_powered,
                               snap1_powered, snap2_powered, snap3_powered,
                               fem_powered, pam_powered):
         """
@@ -1028,7 +1029,7 @@ class MCSession(Session):
         ------------
         time: astropy time object
             astropy time object based on a timestamp reported by node
-        node: integer
+        nodeID: integer
             node number (integer running from 1 to 30)
         snap_relay_powered: boolean
             power status of the snap relay, True=powered
@@ -1047,7 +1048,7 @@ class MCSession(Session):
         """
         from .node import NodePowerStatus
 
-        self.add(NodePowerStatus.create(time, node, snap_relay_powered, snap0_powered,
+        self.add(NodePowerStatus.create(time, nodeID, snap_relay_powered, snap0_powered,
                                         snap1_powered, snap2_powered, snap3_powered,
                                         fem_powered, pam_powered))
 
@@ -1067,7 +1068,7 @@ class MCSession(Session):
 
         self._insert_ignoring_duplicates(NodePowerStatus, node_power_list)
 
-    def get_node_power_status(self, starttime, stoptime=None, node=None):
+    def get_node_power_status(self, starttime, stoptime=None, nodeID=None):
         """
         Get node power status record(s) from the M&C database.
 
@@ -1080,7 +1081,7 @@ class MCSession(Session):
             last time to get records for. If none, only the first record after
             starttime will be returned.
 
-        node: integer
+        nodeID: integer
             node number (integer running from 1 to 30)
 
         Returns:
@@ -1091,7 +1092,144 @@ class MCSession(Session):
 
         return self._time_filter(NodePowerStatus, 'time', starttime,
                                  stoptime=stoptime, filter_column='node',
-                                 filter_value=node)
+                                 filter_value=nodeID)
+
+    def node_power_command(self, nodeID, part, command, nodeServerAddress=None,
+                           dryrun=False, testing=False):
+        """
+        Issue a power command (on/off) to a particular node & part.
+
+        Parameters:
+        ------------
+        nodeID: integer
+            node number (integer running from 1 to 30). If the testing keyword is False,
+            specifying a node which is not in the array will give a ValueError
+        part: string or list of strings
+            part name(s) (e.g. fem, snap0) or 'all', allowed values are keys to
+            node.power_command_part_dict
+        command: string
+            'on' or 'off'
+        nodeServerAddress: string
+            address for node server. Defaults to node.defaultServerAddress
+        dryrun: boolean
+            if true, just return the list of NodePowerCommand objects, do not
+            issue the power commands or log them to the database
+        testing: boolean
+            if true, do not use anything that requires connection to nodes (implies dry run)
+        """
+        from .node import NodePowerCommand, power_command_part_dict, get_node_list, defaultServerAddress
+
+        if nodeServerAddress is None:
+            nodeServerAddress = defaultServerAddress
+
+        if testing:
+            node_list = list(range(1, 31))
+            dryrun = True
+        else:
+            node_list = get_node_list(nodeServerAddress=nodeServerAddress)
+        if nodeID not in node_list:
+            raise ValueError('node not in list of active nodes: ', node_list)
+
+        if isinstance(part, six.string_types):
+            part = [part]
+        else:
+            # ensure no duplicates
+            part = list(set(part))
+
+        if part[0] == 'all':
+            part = list(power_command_part_dict.keys())
+
+        if 'snap_relay' in part:
+            if command == 'on':
+                # move snap_relay to the start of the list (it needs to be powered before the snaps)
+                part.remove('snap_relay')
+                part.insert(0, 'snap_relay')
+            else:
+                # make sure all snaps are powered down first
+                for partname in list(power_command_part_dict.keys()):
+                    if partname.startswith('snap') and partname not in part:
+                        part.insert(0, partname)
+                # move snap_relay to the end of the list.
+                part.remove('snap_relay')
+                part.append('snap_relay')
+        elif command == 'on':
+            # check if any snaps in part. If so, need to power snap_relay first
+            for partname in part:
+                if partname.startswith('snap'):
+                    part.insert(0, 'snap_relay')
+                    break
+
+        # Check whether parts are already in desired state. If so, omit them from command.
+        # make sure we have most recent power status info
+        if not testing:
+            self.add_node_power_status_from_nodecontrol()
+        # Get recent power status
+        starttime = Time.now() - TimeDelta(120, format='sec')
+        stoptime = Time.now() + TimeDelta(60, format='sec')
+        node_powers = self.get_node_power_status(starttime, stoptime=stoptime, nodeID=nodeID)
+        if len(node_powers) > 0:
+            latest_powers = node_powers[-1]
+            drop_part = []
+            for partname in part:
+                power_status = getattr(latest_powers, partname + '_powered')
+                if command == 'on':
+                    if power_status:
+                        # already on, take it out of the list
+                        drop_part.append(partname)
+                else:
+                    if not power_status:
+                        # already off, take it out of the list
+                        drop_part.append(partname)
+            for partname in drop_part:
+                # do this after earlier loop so the list doesn't change during iteration
+                part.remove(partname)
+
+        if dryrun:
+            command_list = []
+
+        for partname in part:
+            command_time = Time.now()
+            # create object first: catch any mistakes
+            command_obj = NodePowerCommand.create(command_time, nodeID, partname, command)
+
+            if not dryrun:
+                import nodeControl
+
+                node_controller = nodeControl.NodeControl(nodeID, serverAddress=nodeServerAddress)
+                getattr(node_controller, power_command_part_dict[partname])(command)
+
+                self.add(command_obj)
+            else:
+                command_list.append(command_obj)
+
+        if dryrun:
+            return command_list
+
+    def get_node_power_command(self, starttime, stoptime=None, nodeID=None):
+        """
+        Get node power command record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        nodeID: integer
+            node number (integer running from 1 to 30)
+
+        Returns:
+        --------
+        list of NodePowerCommand objects
+        """
+        from .node import NodePowerCommand
+
+        return self._time_filter(NodePowerCommand, 'time', starttime,
+                                 stoptime=stoptime, filter_column='node',
+                                 filter_value=nodeID)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
