@@ -115,7 +115,7 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress, node_list=Non
     ------------
     nodeServerAddress: Address of server where the node redis database can be accessed.
     node_list: A list of integers specifying which nodes to get data for,
-        primarily for testing purposes. If None, _get_node_list() is called. Default: None.
+        primarily for testing purposes. If None, get_node_list() is called. Default: None.
     sensor_dict: A dict spoofing the return dict from _get_sensor_dict for testing
         purposes. Default: None
 
@@ -125,7 +125,7 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress, node_list=Non
     """
 
     if node_list is None:
-        node_list = _get_node_list(nodeServerAddress=nodeServerAddress)
+        node_list = get_node_list(nodeServerAddress=nodeServerAddress)
     node_sensor_list = []
     for node in node_list:
 
@@ -231,7 +231,7 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
     ------------
     nodeServerAddress: Address of server where the node redis database can be accessed.
     node_list: A list of integers specifying which nodes to get data for,
-        primarily for testing purposes. If None, _get_node_list() is called. Default: None.
+        primarily for testing purposes. If None, get_node_list() is called. Default: None.
     power_dict: A dict containing info as in the return dict from _get_power_dict()
         for testing purposes. If None, _get_power_dict() is called. Default: None
 
@@ -241,7 +241,7 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
     """
 
     if node_list is None:
-        node_list = _get_node_list(nodeServerAddress=nodeServerAddress)
+        node_list = get_node_list(nodeServerAddress=nodeServerAddress)
     node_power_list = []
     for node in node_list:
 
