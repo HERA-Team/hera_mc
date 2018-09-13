@@ -21,7 +21,7 @@ class TestParts(TestHERAMC):
         super(TestParts, self).setUp()
 
     def test_ant_by_day(self):
-        dv = cm_dataview.Dataview()
+        dv = cm_dataview.Dataview(session=self.test_session)
         start = cm_utils.get_astropytime(1184354550)
         stop = cm_utils.get_astropytime(1184354600)
         interval = 1.0
