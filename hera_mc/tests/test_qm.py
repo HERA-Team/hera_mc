@@ -180,9 +180,9 @@ class TestQM(TestHERAMC):
         r = self.test_session.get_metric_desc()
         results = []
         for result in r:
-            self.assertTrue(result.metric in list(self.metrics_dict.keys()))
+            self.assertTrue(result.metric in self.metrics_dict)
             results.append(result.metric)
-        for metric in list(self.metrics_dict.keys()):
+        for metric in self.metrics_dict.keys():
             self.assertTrue(metric in results)
         metric = list(self.metrics_dict.keys())[0]
         self.test_session.update_metric_desc(metric, 'foo')
