@@ -1171,6 +1171,9 @@ class MCSession(Session):
             latest_powers = node_powers[-1]
             drop_part = []
             for partname in part:
+                if partname not in list(power_command_part_dict.keys()):
+                    raise ValueError('part must be one of: ' + ', '.join(list(power_command_part_dict.keys()))
+                                     + '. part is actually {}'.format(partname))
                 power_status = getattr(latest_powers, partname + '_powered')
                 if command == 'on':
                     if power_status:

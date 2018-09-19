@@ -362,7 +362,7 @@ class TestNodePowerCommand(TestHERAMC):
         self.assertEqual(len(command_list), 0)
 
         # test erroneous part name with a recent status
-        self.assertRaises(AttributeError, self.test_session.node_power_command,
+        self.assertRaises(ValueError, self.test_session.node_power_command,
                           1, 'foo', 'on', testing=True)
 
         # test various errors

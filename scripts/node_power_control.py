@@ -11,7 +11,9 @@ from __future__ import absolute_import, division, print_function
 import sys
 from astropy.time import Time
 
-from hera_mc import mc, cm_utils
+from hera_mc import mc, cm_utils, node
+
+valid_part_names = list(node.power_command_part_dict.keys())
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
@@ -20,7 +22,7 @@ if __name__ == '__main__':
                         "(integers, comma-separated, no spaces) or 'active'")
     parser.add_argument('parts', help="list of parts to command "
                         "(comma-separated, no spaces) or 'all'."
-                        " Valid part names are: snap_relay, snap0, snap1, snap2, snap3, pam, fem.")
+                        " Valid part names are: " + ' ,'.join(valid_part_names) + ".")
     parser.add_argument('command', help="command: 'on' or 'off'.")
     parser.add_argument('--address', help="address for node server", default=None)
     parser.add_argument('--dryrun', help="just print the list of NodePowerCommand "
