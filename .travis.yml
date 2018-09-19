@@ -3,6 +3,9 @@ python:
   # We don't actually use the Travis Python, but this keeps it organized.
   - "2.7"
   - "3.6"
+env:
+  global:
+    - COVERALLS_PARALLEL=true
 install:
   - sudo apt-get update
   # We do this conditionally because it saves us some downloading if the
@@ -41,3 +44,5 @@ script:
 
 after_success:
     - coveralls
+notifications:
+  webhooks: https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN
