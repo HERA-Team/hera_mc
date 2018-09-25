@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in hookup, comma-delimited no-space list. [all]",
                         dest='hookup_cols', default='all')
     parser.add_argument('--levels', help="Show power levels if enabled (and able) [False]", action='store_true')
-    parser.add_argument('--ports', help="Show ports on hookup.", action='store_true')
+    parser.add_argument('--hide-ports', dest='ports', help="Hide ports on hookup.", action='store_false')
     parser.add_argument('--revs', help="Show revs on hookup.", action='store_true')
     parser.add_argument('--delete-cache-file', dest='delete_cache_file', help="Deletes the local cache file", action='store_true')
     cm_utils.add_date_time_args(parser)
