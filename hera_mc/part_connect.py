@@ -57,7 +57,7 @@ class Parts(MCDeclarativeBase):
     stop_gpstime = Column(BigInteger)
 
     def __repr__(self):
-        return ('<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype}>'
+        return ('<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype} :: {self.start_gpstime} - {self.stop_gpstime}>'
                 .format(self=self))
 
     def gps2Time(self):

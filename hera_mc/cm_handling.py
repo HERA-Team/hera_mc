@@ -39,6 +39,9 @@ class PartDossierEntry():
         self.connections = None  # This is the PartConnectionDossierEntry class
         self.geo = None  # This is the geo_location.GeoLocation class
 
+    def __repr__(self):
+        return("{}:{} -- {} -- <{}>".format(self.hpn, self.rev, self.part, self.connections))
+
     def get_entry(self, session, full_version=True):
         part_query = session.query(PC.Parts).filter(
             (func.upper(PC.Parts.hpn) == self.hpn) & (func.upper(PC.Parts.hpn_rev) == self.rev))
@@ -154,35 +157,60 @@ class PartConnectionDossierEntry:
         elif pad > 0:
             self.keys_up.extend([None] * abs(pad))
 
+    def add_filter(self, at_date, rev_type):
+        # Set default to use it
+        for u, d in zip(self.keys_up, self.keys_down):
+            if u is not None:
+                self.up[u].skip_it = False
+            if d is not None:
+                self.down[d].skip_it = False
+        # Now check for skip_it
+        rq = rev_type.upper()[:3]
+        if rq == 'ACT' or rq == 'FUL':
+            if rq == 'FUL':
+                print("For now, FULLY_CONNECTED is handled identically to ACTIVE")
+            for u, d in zip(self.keys_up, self.keys_down):
+                if u is not None:
+                    if not cm_utils.is_active(at_date, self.up[u].start_gpstime, self.up[u].stop_gpstime):
+                        self.up[u].skip_it = True
+                if d is not None:
+                    if not cm_utils.is_active(at_date, self.down[d].start_gpstime, self.down[d].stop_gpstime):
+                        self.down[d].skip_it = True
+
     def table_entry_row(self, headers):
         tdata = []
         show_conn_dict = {'Part': self.entry_key}
 
         for u, d in zip(self.keys_up, self.keys_down):
-            if u is None:
+            if u is None or self.up[u].skip_it:
+                used_up = False
                 for h in ['Upstream', 'uStart', 'uStop', '<uOutput:', ':uInput>']:
                     show_conn_dict[h] = ' '
             else:
+                used_up = True
                 c = self.up[u]
                 show_conn_dict['Upstream'] = cm_utils.make_part_key(c.upstream_part, c.up_part_rev)
                 show_conn_dict['uStart'] = cm_utils.get_time_for_display(c.start_date)
                 show_conn_dict['uStop'] = cm_utils.get_time_for_display(c.stop_date)
                 show_conn_dict['<uOutput:'] = c.upstream_output_port
                 show_conn_dict[':uInput>'] = c.downstream_input_port
-            if d is None:
+            if d is None or self.down[d].skip_it:
+                used_down = False
                 for h in ['Downstream', 'dStart', 'dStop', '<dOutput:', ':dInput>']:
                     show_conn_dict[h] = ' '
             else:
+                used_down = True
                 c = self.down[d]
                 show_conn_dict['Downstream'] = cm_utils.make_part_key(c.downstream_part, c.down_part_rev)
                 show_conn_dict['dStart'] = cm_utils.get_time_for_display(c.start_date)
                 show_conn_dict['dStop'] = cm_utils.get_time_for_display(c.stop_date)
                 show_conn_dict['<dOutput:'] = c.upstream_output_port
                 show_conn_dict[':dInput>'] = c.downstream_input_port
-            r = []
-            for h in headers:
-                r.append(show_conn_dict[h])
-            tdata.append(r)
+            if used_up or used_down:
+                r = []
+                for h in headers:
+                    r.append(show_conn_dict[h])
+                tdata.append(r)
 
         return tdata
 
@@ -250,7 +278,20 @@ class Handling:
             (func.upper(PC.Parts.hpn) == hpn.upper())).first()
         return part_query.hptype
 
-    def get_rev_part_dictionary(self, hpn_list, rev, at_date, exact_match):
+    def listify_hpnrev(self, hpn_list, rev):
+        if isinstance(hpn_list, six.string_types):
+            hpn_list = [hpn_list]
+        if isinstance(rev, six.string_types):
+            rev_list = len(hpn_list) * [rev]
+        elif isinstance(rev, list):
+            rev_list = rev
+        else:
+            raise ValueError("Wrong rev type.")
+        if len(hpn_list) != len(rev_list):
+            raise ValueError("Unmatched hpn and rev lists.")
+        return hpn_list, rev_list
+
+    def get_rev_part_dictionary(self, hpn_list, rev_list, at_date, exact_match):
         """
         This gets the list of hpn that match the rev -- the resulting dictionary
         is used to get the part and connection "dossiers"
@@ -263,15 +304,7 @@ class Handling:
         at_date:  reference date of dossier [something get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
         """
-        if isinstance(hpn_list, six.string_types):
-            hpn_list = [hpn_list]
-        if isinstance(rev, six.string_types):
-            rev_list = len(hpn_list) * [rev]
-        else:
-            rev_list = rev
-        if len(hpn_list) != len(rev_list):
-            print("Unmatched hpn and rev lists.")
-            return {}
+
         at_date = cm_utils.get_astropytime(at_date)
 
         rev_part = {}
@@ -288,21 +321,22 @@ class Handling:
         """
         Return information on a part.  It will return all matching first
         characters unless exact_match==True.
-        It gets all parts, the receiving module should filter on e.g. date if desired.
+        It gets parts as specified under 'rev'
 
         Returns part_dossier: a dictionary keyed on the part_number containing PartDossierEntry classes
 
         Parameters
         -----------
         hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
-        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL')
+        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
               if list, must match length of hpn_list
-        at_date:  reference date of dossier [something get_astropytime can handle]
+        at_date:  reference date of dossier only used for ACTIVE
         exact_match:  boolean to enforce full part number match
         full_version:  flag whether to populate the full_version or truncated version of the dossier
         """
 
-        rev_part = self.get_rev_part_dictionary(hpn_list, rev, at_date, exact_match)
+        hpn_list, rev_list = self.listify_hpnrev(hpn_list, rev)
+        rev_part = self.get_rev_part_dictionary(hpn_list, rev_list, at_date, exact_match)
 
         part_dossier = {}
         # Now get unique part/revs and put into dictionary
@@ -376,7 +410,7 @@ class Handling:
                 fnd.append(copy.copy(conn))
         return fnd
 
-    def get_part_connection_dossier(self, hpn_list, rev, port, at_date, exact_match=False):
+    def get_part_connection_dossier(self, hpn_list, rev, port, at_date=None, exact_match=False):
         """
         Return information on parts connected to hpn
         It should get connections immediately adjacent to one part (upstream and
@@ -387,23 +421,25 @@ class Handling:
         Parameters
         -----------
         hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
-        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL')
+        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
               if list, must match length of hpn_list
         port:  a specifiable port name [string, not a list],  default is 'all'
-        at_date: reference date of dossier [anything get_astropytime can handle]
+        at_date: reference date of dossier, only used if rev==ACTIVE (and for now FULLY_CONNECTED...)
         exact_match:  boolean to enforce full part number match
         """
 
-        rev_part = self.get_rev_part_dictionary(hpn_list, rev, at_date, exact_match)
-
+        hpn_list, rev_list = self.listify_hpnrev(hpn_list, rev)
+        rev_part = self.get_rev_part_dictionary(hpn_list, rev_list, at_date, exact_match)
         part_connection_dossier = {}
-        for xhpn in rev_part:
+        for i, xhpn in enumerate(rev_part):
             if len(rev_part[xhpn]) == 0:
                 continue
+            rq = rev_list[i].upper()[:3]
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
                 this_connect = PartConnectionDossierEntry(xhpn, this_rev, port, at_date)
                 this_connect.get_entry(self.session)
+                this_connect.add_filter(at_date, rq)
                 part_connection_dossier[this_connect.entry_key] = this_connect
         return part_connection_dossier
 

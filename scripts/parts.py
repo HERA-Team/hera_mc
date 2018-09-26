@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, print_function
 
 import os.path
 import sys
+import six
 
 from hera_mc import part_connect, cm_handling, cm_utils, mc
 
@@ -19,7 +20,7 @@ if __name__ == '__main__':
                                                    check_rev, health.  'info' for more.", default='part_info')
     # set values for 'action' to use
     parser.add_argument('-p', '--hpn', help="Part number, csv-list (required). [None]", default=None)
-    parser.add_argument('-r', '--revision', help="Specify revision or last/full/all for hpn.  [all]", default='all')
+    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [active]", default='active')
     parser.add_argument('--port', help="Specify port [all]", default='all')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
@@ -96,7 +97,8 @@ if __name__ == '__main__':
     elif action_tag == 're':  # revisions
         for hpn in args.hpn:
             rev_ret = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
-            cm_handling.cmrev.show_revisions(rev_ret)
+            if hpn.lower() != 'help':
+                cm_handling.cmrev.show_revisions(rev_ret)
     elif action_tag == 'ch':  # check revisions
         for hpn in args.hpn:
             rev_chk = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
