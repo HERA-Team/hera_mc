@@ -158,13 +158,17 @@ class PartConnectionDossierEntry:
             self.keys_up.extend([None] * abs(pad))
 
     def add_filter(self, at_date, rev_type):
-        # Set default to use it
+        """
+        Filter the connection_dossier based on whether the entry is active based on the at_date.
+        This is only if the queried rev_type is for ACTIVE or FULLY_CONNECTED.  Currently they are
+        treated the same.
+        Information on the rev_types may be found in <cm_revisions.get_revisions_of_type>
+        """
         for u, d in zip(self.keys_up, self.keys_down):
             if u is not None:
                 self.up[u].skip_it = False
             if d is not None:
                 self.down[d].skip_it = False
-        # Now check for skip_it
         rq = rev_type.upper()[:3]
         if rq == 'ACT' or rq == 'FUL':  # For now ACTIVE and FULL are handled identically
             for u, d in zip(self.keys_up, self.keys_down):
@@ -181,11 +185,11 @@ class PartConnectionDossierEntry:
 
         for u, d in zip(self.keys_up, self.keys_down):
             if u is None or self.up[u].skip_it:
-                used_up = False
+                use_upward_connection = False
                 for h in ['Upstream', 'uStart', 'uStop', '<uOutput:', ':uInput>']:
                     show_conn_dict[h] = ' '
             else:
-                used_up = True
+                use_upward_connection = True
                 c = self.up[u]
                 show_conn_dict['Upstream'] = cm_utils.make_part_key(c.upstream_part, c.up_part_rev)
                 show_conn_dict['uStart'] = cm_utils.get_time_for_display(c.start_date)
@@ -193,18 +197,18 @@ class PartConnectionDossierEntry:
                 show_conn_dict['<uOutput:'] = c.upstream_output_port
                 show_conn_dict[':uInput>'] = c.downstream_input_port
             if d is None or self.down[d].skip_it:
-                used_down = False
+                use_downward_connection = False
                 for h in ['Downstream', 'dStart', 'dStop', '<dOutput:', ':dInput>']:
                     show_conn_dict[h] = ' '
             else:
-                used_down = True
+                use_downward_connection = True
                 c = self.down[d]
                 show_conn_dict['Downstream'] = cm_utils.make_part_key(c.downstream_part, c.down_part_rev)
                 show_conn_dict['dStart'] = cm_utils.get_time_for_display(c.start_date)
                 show_conn_dict['dStop'] = cm_utils.get_time_for_display(c.stop_date)
                 show_conn_dict['<dOutput:'] = c.upstream_output_port
                 show_conn_dict[':dInput>'] = c.downstream_input_port
-            if used_up or used_down:
+            if use_upward_connection or use_downward_connection:
                 r = []
                 for h in headers:
                     r.append(show_conn_dict[h])
@@ -419,7 +423,7 @@ class Handling:
         Parameters
         -----------
         hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
-        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
+        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULLY_CONNECTED', specific)
               if list, must match length of hpn_list
         port:  a specifiable port name [string, not a list],  default is 'all'
         at_date: reference date of dossier, only used if rev==ACTIVE (and for now FULLY_CONNECTED...)
