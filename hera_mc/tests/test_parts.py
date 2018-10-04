@@ -93,7 +93,7 @@ class TestParts(TestHERAMC):
         self.assertTrue(gh == 'Test-git-hash')
 
     def test_get_revisions_of_type(self):
-        at_date = self.now
+        at_date = None
         rev_types = ['LAST', 'ACTIVE', 'ALL', 'A']
         for rq in rev_types:
             revision = cm_revisions.get_revisions_of_type('HH0', rq, at_date, self.test_session)

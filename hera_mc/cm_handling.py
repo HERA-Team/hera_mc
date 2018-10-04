@@ -166,9 +166,7 @@ class PartConnectionDossierEntry:
                 self.down[d].skip_it = False
         # Now check for skip_it
         rq = rev_type.upper()[:3]
-        if rq == 'ACT' or rq == 'FUL':
-            if rq == 'FUL':
-                print("For now, FULLY_CONNECTED is handled identically to ACTIVE")
+        if rq == 'ACT' or rq == 'FUL':  # For now ACTIVE and FULL are handled identically
             for u, d in zip(self.keys_up, self.keys_down):
                 if u is not None:
                     if not cm_utils.is_active(at_date, self.up[u].start_gpstime, self.up[u].stop_gpstime):
