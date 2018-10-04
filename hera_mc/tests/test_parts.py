@@ -99,6 +99,12 @@ class TestParts(TestHERAMC):
             revision = cm_revisions.get_revisions_of_type('HH0', rq, at_date, self.test_session)
             self.assertTrue(revision[0].rev == 'A')
 
+    def test_listify_hpn(self):
+        testing = [['hpn', 'rev'], [['hpn1', 'hpn2', 'hpn3'], 'rev'], [['hpn1', 'hpn2'], ['rev1', 'rev2']]]
+        for testit in testing:
+            h, r = self.h.listify_hpnrev(testit[0], testit[1])
+            self.assertEqual(len(h), len(r))
+
     def test_get_part_types(self):
         at_date = self.now
         a = self.h.get_part_types('all', at_date)
