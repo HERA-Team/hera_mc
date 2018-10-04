@@ -204,8 +204,11 @@ class Handling:
             ant_num = int(ant_num[1:])
             corr = {}
             for p, hu in six.iteritems(current_hookup):
-                cind = part_connect.epoch_corr[hud[k].parts_epoch[p]]
-                corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
+                cind = part_connect.epoch_corr_huind[hud[k].parts_epoch[p]]
+                try:
+                    corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
+                except IndexError:
+                    corr[p] = 'None'
             fnd_list = self.geo.get_location([stn], at_date)
             if not len(fnd_list):
                 return None
