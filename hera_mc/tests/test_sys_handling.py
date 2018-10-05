@@ -57,6 +57,7 @@ class TestSys(TestHERAMC):
         x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')
         self.sys_h.H = None
         x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')
+        self.assertEqual(x, None)
 
     def test_correlator_info(self):
         corr_dict = self.sys_h.get_cminfo_correlator()
