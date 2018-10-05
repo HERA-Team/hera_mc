@@ -93,6 +93,7 @@ class TestConnections(TestHERAMC):
         self.assertTrue(len(x) == 0)
         x = self.h.get_part_connection_dossier('test_part2', 'active', 'all', at_date=old_time, exact_match=True)
         self.assertTrue(len(x) == 0)
+        print(x)
 
     def test_get_specific_connection(self):
         c = part_connect.Connections()

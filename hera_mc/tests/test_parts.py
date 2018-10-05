@@ -48,6 +48,7 @@ class TestParts(TestHERAMC):
                 [ntp, 'X', 'start_gpstime', 1172530000]]
         part_connect.update_part(self.test_session, data, add_new_part=True)
         located = self.h.get_part_dossier([ntp], 'X', 'now', True)
+        print(located)
         if len(list(located.keys())) == 1:
             self.assertTrue(located[list(located.keys())[0]].part.hpn == ntp)
         else:
@@ -100,6 +101,7 @@ class TestParts(TestHERAMC):
             self.assertTrue(revision[0].rev == 'A')
         revision = cm_revisions.get_revisions_of_type('HH23', 'ACTIVE', 'now', self.test_session)
         cm_revisions.show_revisions(revision)
+        revision = cm_revisions.get_revisions_of_type('help', 'help')
 
     def test_listify_hpn(self):
         testing = [['hpn', 'rev'], [['hpn1', 'hpn2', 'hpn3'], 'rev'], [['hpn1', 'hpn2'], ['rev1', 'rev2']]]
