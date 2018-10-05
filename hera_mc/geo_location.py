@@ -107,7 +107,7 @@ def update(session=None, data=None, add_new_geo=False):
         return False
 
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_mc_db()
         session = db.sessionmaker()
         close_session_when_done = True

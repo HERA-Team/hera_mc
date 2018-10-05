@@ -32,7 +32,7 @@ def check_for_overlap(interval_i, interval_j):
 
 class Connections:
     def __init__(self, session=None):
-        if session is None:
+        if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
         else:

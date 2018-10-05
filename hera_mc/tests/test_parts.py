@@ -93,11 +93,26 @@ class TestParts(TestHERAMC):
         self.assertTrue(gh == 'Test-git-hash')
 
     def test_get_revisions_of_type(self):
-        at_date = self.now
+        at_date = None
         rev_types = ['LAST', 'ACTIVE', 'ALL', 'A']
         for rq in rev_types:
             revision = cm_revisions.get_revisions_of_type('HH0', rq, at_date, self.test_session)
             self.assertTrue(revision[0].rev == 'A')
+        revision = cm_revisions.get_revisions_of_type('HH23', 'ACTIVE', 'now', self.test_session)
+        cm_revisions.show_revisions(revision)
+        self.assertEqual(revision[0].hpn, 'HH23')
+        revision = cm_revisions.get_revisions_of_type('help', 'help')
+        self.assertEqual(revision, None)
+
+    def test_listify_hpn(self):
+        testing = [['hpn', 'rev'], [['hpn1', 'hpn2', 'hpn3'], 'rev'], [['hpn1', 'hpn2'], ['rev1', 'rev2']]]
+        for testit in testing:
+            h, r = self.h.listify_hpnrev(testit[0], testit[1])
+            self.assertEqual(len(h), len(r))
+
+    def test_listify_hpn_error(self):
+        self.assertRaises(ValueError, self.h.listify_hpnrev, ['hpn'], 1)
+        self.assertRaises(ValueError, self.h.listify_hpnrev, ['hpn'], ['A', 'B'])
 
     def test_get_part_types(self):
         at_date = self.now

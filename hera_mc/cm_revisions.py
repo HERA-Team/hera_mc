@@ -34,12 +34,7 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     """
     Returns namespace of revisions (hpn, rev, started, ended, [hukey], [pkey]) of queried type
     where the [hukey], [pkey] are included for fully_connected queries.
-    Allowed types are:
-        [ACT]IVE:  revisions that are not stopped at_date
-        [LAS]T:  the last connected revision (could be active or not)
-        [FUL]LY_CONNECTED:  revision that is part of a fully connected signal path in hookup_dict/session
-        [ALL]:  all revisions
-        particular:  check for a particular revision
+    Allowed types listed below in "help"
 
     Parameters:
     ------------
@@ -48,6 +43,16 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     at_date:  astropy.Time to check for
     session:  db session, or hookup_dict if FULLY_CONNECTED
     """
+    if isinstance(hpn, six.string_types) and hpn.lower() == 'help':
+        print("""
+        Allowed revision types or revisions are (case doesn't matter and only need first 3 letters):
+            [ACT]IVE:  revisions active at_date ('now' as default) -- only one that uses 'at_date'
+            [LAS]T:  the last connected revision (could be active or not)
+            [FUL]LY_CONNECTED:  revision that is part of a fully connected signal path in current or supplied cache
+            [ALL]:  all revisions
+            specific_revision:  check for a specific revision
+        """)
+        return None
 
     rq = rev_type.upper()[:3]
     if rq == 'LAS':  # LAST
@@ -55,9 +60,8 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
 
     if rq == 'ACT':  # ACTIVE
         if at_date is None:
-            raise NoTimeException('ACTIVE')
-        else:
-            return get_active_revision(hpn, at_date, session)
+            at_date = cm_utils.get_astropytime('now')
+        return get_active_revision(hpn, at_date, session)
 
     if rq == 'ALL':  # ALL
         return get_all_revisions(hpn, session)
@@ -65,7 +69,7 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     if rq == 'FUL':  # FULLY_CONNECTED
         return get_full_revision(hpn, session)
 
-    return get_particular_revision(hpn, rev_type, session)
+    return get_specific_revision(hpn, rev_type, session)
 
 
 def get_last_revision(hpn, session=None):
@@ -121,7 +125,7 @@ def get_all_revisions(hpn, session=None):
     return all_rev
 
 
-def get_particular_revision(hpn, rq, session=None):
+def get_specific_revision(hpn, rq, session=None):
     """
     Returns list of a particular revision as Namespace(hpn,rev,started,ended)
 
@@ -168,7 +172,7 @@ def get_active_revision(hpn, at_date, session=None):
     return return_active
 
 
-def get_full_revision(hpn, hookup_dict):
+def get_full_revision(hpn, hookup_dict=None):
     """
     Returns Namespace list of fully connected parts
     If either pol is fully connected, it is returned.

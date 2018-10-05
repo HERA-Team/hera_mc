@@ -80,6 +80,21 @@ class TestConnections(TestHERAMC):
         self.assertTrue(located[prkey].down[ckey].upstream_part == u)
         self.h.show_connections(located)
 
+    def test_get_dossier(self):
+        x = self.h.get_part_connection_dossier('test_part1', 'active', 'all', at_date='now', exact_match=True)
+        y = list(x.keys())[0]
+        self.assertEqual(y, 'test_part1:Q')
+        self.h.show_connections(x)
+        x = self.h.get_part_connection_dossier('test_part2', 'active', 'all', at_date='now', exact_match=True)
+        y = list(x.keys())[0]
+        self.assertEqual(y, 'test_part2:Q')
+        self.h.show_connections(x)
+        old_time = Time('2014-08-01 01:00:00', scale='utc')
+        x = self.h.get_part_connection_dossier('test_part1', 'active', 'all', at_date=old_time, exact_match=True)
+        self.assertTrue(len(x) == 0)
+        x = self.h.get_part_connection_dossier('test_part2', 'active', 'all', at_date=old_time, exact_match=True)
+        self.assertTrue(len(x) == 0)
+
     def test_get_specific_connection(self):
         c = part_connect.Connections()
         c.upstream_part = self.test_hpn[0]

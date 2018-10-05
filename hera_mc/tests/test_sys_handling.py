@@ -35,6 +35,11 @@ class TestSys(TestHERAMC):
         msg = self.sys_h.publish_summary()
         self.assertEqual(msg, 'Not on "main"')
 
+    def test_random_update(self):
+        si = sys_handling.StationInfo()
+        si.update_stn(None)
+        si.update_arrays(None)
+
     def test_other_hookup(self):
         at_date = cm_utils.get_astropytime('2017-07-03')
         hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
@@ -47,6 +52,12 @@ class TestSys(TestHERAMC):
     def test_hookup_cache_file_info(self):
         hookup = cm_hookup.Hookup(at_date='now', session=self.test_session)
         hookup.hookup_cache_file_info()
+
+    def test_some_fully_connected(self):
+        x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')
+        self.sys_h.H = None
+        x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')
+        self.assertEqual(x, None)
 
     def test_correlator_info(self):
         corr_dict = self.sys_h.get_cminfo_correlator()
@@ -143,7 +154,7 @@ class TestSys(TestHERAMC):
 
     def test_system_comments(self):
         comments = self.sys_h.system_comments()
-        self.assertEqual(comments[0], 'N')
+        self.assertEqual(comments[1], 'K')
 
 
 if __name__ == '__main__':
