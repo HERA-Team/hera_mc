@@ -153,7 +153,7 @@ class TestSys(TestHERAMC):
 
     def test_system_comments(self):
         comments = self.sys_h.system_comments()
-        self.assertEqual(comments[1], 'xK')
+        self.assertEqual(comments[1], 'K')
 
 
 if __name__ == '__main__':
