@@ -110,7 +110,8 @@ class TestParts(TestHERAMC):
             self.assertEqual(len(h), len(r))
 
     def test_listify_hpn_error(self):
-        self.assertRaises(ValueError, self.h.listify_hpnrev, ['hpn'], ['xxx'])
+        self.assertRaises(ValueError, self.h.listify_hpnrev, ['hpn'], 1)
+        self.assertRaises(ValueError, self.h.listify_hpnrev, ['hpn'], ['A', 'B'])
 
     def test_get_part_types(self):
         at_date = self.now
