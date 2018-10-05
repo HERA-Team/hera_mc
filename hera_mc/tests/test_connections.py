@@ -88,6 +88,7 @@ class TestConnections(TestHERAMC):
         x = self.h.get_part_connection_dossier('test_part2', 'active', 'all', at_date='now', exact_match=True)
         y = list(x.keys())[0]
         self.assertEqual(y, 'test_part2:Q')
+        self.h.show_connections(x)
         old_time = Time('2014-08-01 01:00:00', scale='utc')
         x = self.h.get_part_connection_dossier('test_part1', 'active', 'all', at_date=old_time, exact_match=True)
         self.assertTrue(len(x) == 0)
