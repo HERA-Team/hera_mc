@@ -72,7 +72,7 @@ def package_db_to_csv(session=None, tables='all'):
     tables: string
         comma-separated list of names of tables to initialize or 'all'. Default is 'all'
     """
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
 
@@ -214,7 +214,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
         Either False or password to change from main db. Default is False
     """
 
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
     if cm_csv_path is None:

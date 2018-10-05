@@ -161,7 +161,7 @@ def update_part(session=None, data=None, add_new_part=False):
         return False
 
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
@@ -274,7 +274,7 @@ def get_part_revisions(hpn, session=None):
 
     uhpn = hpn.upper()
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
@@ -327,7 +327,7 @@ def update_dubitable(session=None, transition_gpstime=None, data=None):
     """
 
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
@@ -390,7 +390,7 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
     Add part information into database.
     """
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
@@ -656,7 +656,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
         return False
 
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True

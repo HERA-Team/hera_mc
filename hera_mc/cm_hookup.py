@@ -238,7 +238,7 @@ class Hookup:
         Hookup traces parts and connections through the signal path (as defined
             by the connections).
         """
-        if session is None:
+        if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
         else:
