@@ -18,6 +18,8 @@ from . import MCDeclarativeBase
 state_dict = {'taking_data': 'is_recording', 'phase_switching': 'phase_switch_is_on',
               'noise_diode': 'noise_diode_is_on'}
 
+tag_list = ['science', 'engineering']
+
 # key is command, value is method name in hera_corr_cm
 correlator_command_dict = {'take_data': 'take_data',
                            'phase_switching_on': 'phase_switch_enable',
@@ -173,7 +175,7 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
                                             'correlator_control_command.command']))
 
     @classmethod
-    def create(cls, time, starttime, duration, acclen, tag=None):
+    def create(cls, time, starttime, duration, acclen, tag):
         """
         Create a new correlator take data arguments object.
 
@@ -189,7 +191,8 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
         acclen: float or int?
             "Accumulation length in spectra." Not sure what this means...
         tag: string
-            Tag which will end up in data files as a header entry
+            Tag which will end up in data files as a header entry.
+            Must be one of the values in tag_list
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -198,6 +201,9 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
         if not isinstance(starttime, Time):
             raise ValueError('starttime must be an astropy Time object')
         starttime_gps = starttime.gps
+
+        if tag not in tag_list:
+            raise ValueError('tag must be one of: ', tag_list)
 
         return cls(time=corr_time, starttime=starttime_gps, duration=duration,
                    acclen=acclen, tag=tag)
