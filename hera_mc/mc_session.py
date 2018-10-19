@@ -1391,6 +1391,181 @@ class MCSession(Session):
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='node', filter_value=nodeID)
 
+    def add_correlator_control_state(self, time, state_type, state):
+        """
+        Add new correlator control state data to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by the correlator
+        state_type: string
+            must be a key in state_dict (e.g. 'taking_data', 'phase_switching', 'noise_diode')
+        state: boolean
+            is the state_type true or false
+        """
+        from .correlator import CorrelatorControlState
+
+        self.add(CorrelatorControlState.create(time, state_type, state))
+
+    def add_correlator_control_state_from_corrcm(self):
+        """Get and add correlator control state information using a HeraCorrCM object.
+        This function connects to the correlator and gets the latest data using the
+        `create_control_state` function.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the node power status data densely on qmaster.
+        """
+        from .correlator import create_control_state, CorrelatorControlState
+
+        corr_state_list = create_power_status()
+
+        self._insert_ignoring_duplicates(CorrelatorControlState, corr_state_list)
+
+    def get_correlator_control_state(self, starttime, stoptime=None, state_type=None):
+        """
+        Get correlator control state record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        state_type: string
+            must be a key in correlator.state_dict (e.g. 'taking_data', 'phase_switching', 'noise_diode')
+
+        Returns:
+        --------
+        list of CorrelatorControlState objects
+        """
+        from .correlator import CorrelatorControlState
+
+        return self._time_filter(CorrelatorControlState, 'time', starttime,
+                                 stoptime=stoptime, filter_column='state_type',
+                                 filter_value=state_type)
+
+    def correlator_control_command(self, command, starttime=None, duration=None,
+                                   acclen=None, tag=None, dryrun=False, testing=False):
+        """
+        Issue a correlator control command.
+
+        Parameters:
+        ------------
+        command: string
+            one of the keys in correlator.correlator_command_dict (e.g. 'take_data',
+            'phase_switching_on', 'phase_switching_off', 'restart')
+        starttime: astropy Time object
+            only applies if command is 'take_data': time to start taking data
+        duration: float
+            only applies if command is 'take_data': number of seconds to take data for
+        acclen: integer
+            only applies if command is 'take_data': "Accumulation length in spectra." Not sure what this means...
+        tag: string
+            only applies if command is 'take_data': Tag which will end up in data files as a header entry
+        dryrun: boolean
+            if true, just return the list of NodePowerCommand objects, do not
+            issue the power commands or log them to the database
+        """
+        from .correlator import CorrelatorControlCommand, CorrelatorTakeDataArguments
+
+        if dryrun:
+            command_list = []
+
+        command_time = Time.now()
+
+        # create object(s) first: catch any mistakes
+        command_obj = CorrelatorControlCommand.create(command_time, command)
+        if command == 'take_data':
+            if starttime is None:
+                raise ValueError('starttime must be specified if command is "take_data"')
+            if duration is None:
+                raise ValueError('duration must be specified if command is "take_data"')
+            if acclen is None:
+                raise ValueError('acclen must be specified if command is "take_data"')
+
+            take_data_args_obj = \
+                CorrelatorTakeDataArguments.create(command_time, starttime,
+                                                   duration, acclen, tag=tag)
+
+        if not dryrun:
+            import hera_corr_cm
+
+            corr_controller = hera_corr_cm.HeraCorrCM()
+            if command == 'take_data':
+                getattr(node_controller, corr.correlator_command_dict[command])(starttime, duration, acclen, tag=tag)
+            else:
+                getattr(node_controller, corr.correlator_command_dict[command])
+
+            self.add(command_obj)
+            if command == 'take_data':
+                self.add(take_data_args_obj)
+        else:
+            command_list.append(command_obj)
+            if command == 'take_data':
+                command_list.append(take_data_args_obj)
+
+        if dryrun:
+            return command_list
+
+    def get_correlator_control_command(self, starttime, stoptime=None, command=None):
+        """
+        Get correlator control command record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after
+
+        stoptime: astropy time object
+            last time to get records for. If none, only the first record after
+            starttime will be returned.
+
+        command: string
+            must be a key in correlator.correlator_command_dict (e.g. 'take_data',
+            'phase_switching_on', 'phase_switching_off', 'restart')
+
+        Returns:
+        --------
+        list of CorrelatorControlCommand objects
+        """
+        from .correlator import CorrelatorControlCommand
+
+        return self._time_filter(CorrelatorControlCommand, 'time', starttime,
+                                 stoptime=stoptime, filter_column='command',
+                                 filter_value=command)
+
+    def get_correlator_take_data_arguments(self, starttime, stoptime=None):
+        """
+        Get correlator take_data arguments record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        starttime: astropy time object
+            time to look for records after. Note that this refers to the time
+            the command was issued, NOT the time the correlator was commanded
+            to start taking data
+
+        stoptime: astropy time object
+            last time to get records for. Note that this refers to the time
+            the command was issued, NOT the time the correlator was commanded
+            to start taking data. If none, only the first record after
+            starttime will be returned.
+
+        Returns:
+        --------
+        list of CorrelatorTakeDataArguments objects
+        """
+        from .correlator import CorrelatorTakeDataArguments
+
+        return self._time_filter(CorrelatorTakeDataArguments, 'time', starttime,
+                                 stoptime=stoptime)
+
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
         Add a new antenna metric to the M&C database.
