@@ -122,6 +122,21 @@ class TestNodeSensor(TestHERAMC):
         result_most_recent = self.test_session.get_node_sensor_readings(most_recent=True)
         self.assertEqual(result_most_recent, result)
 
+    def test_sensor_reading_errors(self):
+        top_sensor_temp = node_sensor_example_dict['1']['temp_top']
+        middle_sensor_temp = node_sensor_example_dict['1']['temp_mid']
+        bottom_sensor_temp = node_sensor_example_dict['1']['temp_bot']
+        humidity_sensor_temp = node_sensor_example_dict['1']['temp_humid']
+        humidity = node_sensor_example_dict['1']['humid']
+        self.assertRaises(ValueError, self.test_session.add_node_sensor_readings,
+                          'foo', 1, top_sensor_temp, middle_sensor_temp,
+                          bottom_sensor_temp, humidity_sensor_temp, humidity)
+
+        self.assertRaises(ValueError, node.NodeSensor, 'foo', node=1,
+                          top_sensor_temp=30., middle_sensor_temp=31.98,
+                          bottom_sensor_temp=41., humidity_sensor_temp=33.89,
+                          humidity=32.5)
+
     def test_add_node_sensor_readings_from_nodecontrol(self):
 
         if is_onsite():
@@ -217,6 +232,23 @@ class TestNodePowerStatus(TestHERAMC):
 
         result_most_recent = self.test_session.get_node_power_status()
         self.assertEqual(result_most_recent, result)
+
+    def test_node_power_status_errors(self):
+        snap_relay_powered = node_power_example_dict['1']['power_snap_relay']
+        snap0_powered = node_power_example_dict['1']['power_snap_0']
+        snap1_powered = node_power_example_dict['1']['power_snap_1']
+        snap2_powered = node_power_example_dict['1']['power_snap_2']
+        snap3_powered = node_power_example_dict['1']['power_snap_3']
+        pam_powered = node_power_example_dict['1']['power_pam']
+        fem_powered = node_power_example_dict['1']['power_fem']
+        self.assertRaises(ValueError, self.test_session.add_node_power_status,
+                          'foo', 1, snap_relay_powered, snap0_powered, snap1_powered,
+                          snap2_powered, snap3_powered, fem_powered, pam_powered)
+
+        self.assertRaises(ValueError, node.NodePowerStatus, time='foo', node=1,
+                          snap_relay_powered=True, snap0_powered=False,
+                          snap1_powered=True, snap2_powered=False,
+                          snap3_powered=False, pam_powered=True, fem_powered=True)
 
     def test_add_node_power_status_from_nodecontrol(self):
 

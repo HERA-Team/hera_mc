@@ -130,6 +130,11 @@ class TestWeather(TestHERAMC):
         for i in range(0, len(result)):
             self.assertTrue(result[i].isclose(expected3[i]))
 
+        result_var_most_recent = self.test_session.get_weather_data(variable='temperature')
+        self.assertEqual(result_var_most_recent[0], result[1])
+
+        self.assertRaises(ValueError, self.test_session.get_weather_data, variable='foo')
+
     def test_add_from_sensor(self):
         t1 = Time('2017-11-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(280.0, format='sec')
@@ -164,6 +169,17 @@ class TestWeather(TestHERAMC):
             self.assertTrue(len(result) <= 3)
 
             self.assertRaises(ValueError, weather.create_from_sensors, t1, t2, variables='foo')
+
+    def test_weather_errors(self):
+        self.assertRaises(ValueError, weather.WeatherData, time='foo', variable='wind_speed',
+                          value=2.548)
+
+        t1 = Time('2017-11-10 01:15:23', scale='utc')
+        self.assertRaises(ValueError, weather.WeatherData, time=t1, variable='foo',
+                          value=2.548)
+
+        self.assertRaises(ValueError, weather.WeatherData, time=t1, variable='wind_speed',
+                          value='foo')
 
     def test_dump_weather_table(self):
         # Just make sure it doesn't crash.

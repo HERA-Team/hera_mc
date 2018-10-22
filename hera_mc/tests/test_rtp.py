@@ -96,6 +96,7 @@ class TestRTP(TestHERAMC):
                           *self.status_values[1:])
 
         self.test_session.add_rtp_status(*self.status_values)
+        self.assertRaises(ValueError, self.test_session.get_rtp_status, most_recent=False)
         self.assertRaises(ValueError, self.test_session.get_rtp_status, starttime='unhappy')
         self.assertRaises(ValueError, self.test_session.get_rtp_status,
                           starttime=self.status_columns['time'], stoptime='unhappy')
