@@ -48,7 +48,7 @@ class MCSession(Session):
         return db_time
 
     def _time_filter(self, table_class, time_column, most_recent=None,
-                     starttime=startime, stoptime=None,
+                     starttime=None, stoptime=None,
                      filter_column=None, filter_value=None):
         '''
         A helper method to fiter entries by time. Used by most get methods
@@ -290,7 +290,7 @@ class MCSession(Session):
                                      network_bandwidth_mbs=network_bandwidth_mbs))
 
     def get_server_status(self, subsystem, most_recent=None,
-                          starttime=starttime, stoptime=None, hostname=None):
+                          starttime=None, stoptime=None, hostname=None):
         """
         Get subsystem server_status record(s) from the M&C database.
 
