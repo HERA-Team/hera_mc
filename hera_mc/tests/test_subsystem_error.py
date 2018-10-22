@@ -84,10 +84,6 @@ class TestSubsystemError(TestHERAMC):
                           'foo', self.subsystem_error_values[2],
                           *self.subsystem_error_values[4:])
 
-        self.assertRaises(ValueError, SubsystemError, 'foo',
-                          self.subsystem_error_values[2],
-                          *self.subsystem_error_values[4:])
-
         self.test_session.add_subsystem_error(self.subsystem_error_values[1],
                                               self.subsystem_error_values[2],
                                               *self.subsystem_error_values[4:])

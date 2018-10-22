@@ -171,15 +171,15 @@ class TestWeather(TestHERAMC):
             self.assertRaises(ValueError, weather.create_from_sensors, t1, t2, variables='foo')
 
     def test_weather_errors(self):
-        self.assertRaises(ValueError, weather.WeatherData, time='foo', variable='wind_speed',
-                          value=2.548)
+        self.assertRaises(ValueError, self.test_session.add_weather_data, 'foo',
+                          'wind_speed', 2.548)
 
         t1 = Time('2017-11-10 01:15:23', scale='utc')
-        self.assertRaises(ValueError, weather.WeatherData, time=t1, variable='foo',
-                          value=2.548)
+        self.assertRaises(ValueError, self.test_session.add_weather_data, t1,
+                          'foo', 2.548)
 
-        self.assertRaises(ValueError, weather.WeatherData, time=t1, variable='wind_speed',
-                          value='foo')
+        self.assertRaises(ValueError, self.test_session.add_weather_data, t1,
+                          'wind_speed', 'foo')
 
     def test_dump_weather_table(self):
         # Just make sure it doesn't crash.

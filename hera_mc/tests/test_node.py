@@ -132,11 +132,6 @@ class TestNodeSensor(TestHERAMC):
                           'foo', 1, top_sensor_temp, middle_sensor_temp,
                           bottom_sensor_temp, humidity_sensor_temp, humidity)
 
-        self.assertRaises(ValueError, node.NodeSensor, 'foo', node=1,
-                          top_sensor_temp=30., middle_sensor_temp=31.98,
-                          bottom_sensor_temp=41., humidity_sensor_temp=33.89,
-                          humidity=32.5)
-
     def test_add_node_sensor_readings_from_nodecontrol(self):
 
         if is_onsite():
@@ -244,11 +239,6 @@ class TestNodePowerStatus(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.add_node_power_status,
                           'foo', 1, snap_relay_powered, snap0_powered, snap1_powered,
                           snap2_powered, snap3_powered, fem_powered, pam_powered)
-
-        self.assertRaises(ValueError, node.NodePowerStatus, time='foo', node=1,
-                          snap_relay_powered=True, snap0_powered=False,
-                          snap1_powered=True, snap2_powered=False,
-                          snap3_powered=False, pam_powered=True, fem_powered=True)
 
     def test_add_node_power_status_from_nodecontrol(self):
 
