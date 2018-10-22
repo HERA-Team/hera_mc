@@ -4,7 +4,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from sqlalchemy import desc
+from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from astropy.time import Time, TimeDelta
@@ -62,7 +62,7 @@ class MCSession(Session):
             column name holding the time to filter on.
 
         most_recent: boolean
-            if True, get most recent record. Defaults to True if starttime is None.
+            if True, get most recent record(s). Defaults to True if starttime is None.
 
         starttime: astropy time object
             Time to look for records after. Ignored if most_recent is True,
@@ -101,25 +101,39 @@ class MCSession(Session):
         if most_recent:
             current_time = Time.now()
             if filter_value is not None:
-                result_list = self.query(table_class).filter(
+                # first get the time of the most recent row
+                first_result = self.query(table_class).filter(
                     getattr(table_class, filter_column) == filter_value,
                     getattr(table_class, time_column) <= current_time.gps).order_by(
                         desc(getattr(table_class, time_column))).limit(1).all()
-            else:
+                most_recent_time = getattr(first_result[0], time_column)
+                # then get all results at that time, ordered by filter column
                 result_list = self.query(table_class).filter(
+                    getattr(table_class, filter_column) == filter_value,
+                    getattr(table_class, time_column) == most_recent_time).order_by(
+                        asc(getattr(table_class, filter_column))).all()
+            else:
+                # first get the time of the most recent row
+                first_result = self.query(table_class).filter(
                     getattr(table_class, time_column) <= current_time.gps).order_by(
                         desc(getattr(table_class, time_column))).limit(1).all()
+                most_recent_time = getattr(first_result[0], time_column)
+                # then get all results at that time
+                result_list = self.query(table_class).filter(
+                    getattr(table_class, time_column) == most_recent_time).all()
         else:
             if stoptime is not None:
                 if filter_value is not None:
                     result_list = self.query(table_class).filter(
                         getattr(table_class, filter_column) == filter_value,
                         getattr(table_class, time_column).between(
-                            starttime.gps, stoptime.gps)).all()
+                            starttime.gps, stoptime.gps)).order_by(
+                                getattr(table_class, time_column)).all()
                 else:
                     result_list = self.query(table_class).filter(
                         getattr(table_class, time_column).between(
-                            starttime.gps, stoptime.gps)).all()
+                            starttime.gps, stoptime.gps)).order_by(
+                                getattr(table_class, time_column)).all()
             else:
                 if filter_value is not None:
                     result_list = self.query(table_class).filter(
@@ -487,7 +501,7 @@ class MCSession(Session):
         from .librarian import LibRAIDStatus
 
         return self._time_filter(LibRAIDStatus, 'time', most_recent=most_recent,
-                                 starttime=start_time, stoptime=stoptime,
+                                 starttime=starttime, stoptime=stoptime,
                                  filter_column='hostname', filter_value=hostname)
 
     def add_lib_raid_error(self, time, hostname, disk, log):
@@ -915,7 +929,8 @@ class MCSession(Session):
                     RTPTaskResourceRecord.obsid == obsid).all()
 
         elif obsid is None:
-            return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
+            return self._time_filter(RTPTaskResourceRecord, 'start_time',
+                                     most_recent=most_recent, starttime=starttime,
                                      stoptime=stoptime, filter_column='task_name',
                                      filter_value=task_name)
         else:
@@ -1280,7 +1295,7 @@ class MCSession(Session):
         # Get recent power status
         starttime = Time.now() - TimeDelta(120, format='sec')
         stoptime = Time.now() + TimeDelta(60, format='sec')
-        node_powers = self.get_node_power_status(starttime, stoptime=stoptime, nodeID=nodeID)
+        node_powers = self.get_node_power_status(starttime=starttime, stoptime=stoptime, nodeID=nodeID)
         if len(node_powers) > 0:
             latest_powers = node_powers[-1]
             drop_part = []
