@@ -93,16 +93,16 @@ class TestWeather(TestHERAMC):
                                         value=wind_directions[0]),
                     weather.WeatherData(time=int(floor(t1.gps)),
                                         variable='temperature', value=temperatures[0])]
-        result = self.test_session.get_weather_data(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_weather_data(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                     variable='wind_speed')
         self.assertEqual(len(result), 1)
         self.assertTrue(result[0].isclose(expected[0]))
 
-        result = self.test_session.get_weather_data(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_weather_data(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                     stoptime=t1)
         self.assertEqual(len(result), 3)
 
-        result = self.test_session.get_weather_data(t1 + TimeDelta(200.0, format='sec'))
+        result = self.test_session.get_weather_data(starttime=t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
         expected2 = expected +\
@@ -112,11 +112,18 @@ class TestWeather(TestHERAMC):
                                  variable='wind_direction', value=wind_directions[1]),
              weather.WeatherData(time=int(floor(t2.gps)),
                                  variable='temperature', value=temperatures[1])]
-        result = self.test_session.get_weather_data(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_weather_data(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                     stoptime=t2 + TimeDelta(1.0, format='sec'))
         self.assertEqual(len(result), len(expected2))
 
-        result = self.test_session.get_weather_data(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_weather_data(starttime=t1 + TimeDelta(3.0, format='sec'),
+                                                    stoptime=t2 + TimeDelta(1.0, format='sec'))
+        self.assertEqual(len(result), 3)
+
+        result_most_recent = self.test_session.get_weather_data()
+        self.assertEqual(result, result_most_recent)
+
+        result = self.test_session.get_weather_data(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                     stoptime=t2 + TimeDelta(1.0, format='sec'),
                                                     variable='temperature')
         expected3 = [expected2[2], expected2[5]]
@@ -137,22 +144,22 @@ class TestWeather(TestHERAMC):
 
         if is_onsite():
             self.test_session.add_weather_data_from_sensors(t1, t2)
-            result = self.test_session.get_weather_data(t1 - TimeDelta(3.0, format='sec'),
+            result = self.test_session.get_weather_data(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                         stoptime=t1)
             self.assertTrue(len(result) <= 7)
-            result = self.test_session.get_weather_data(t1 - TimeDelta(3.0, format='sec'),
+            result = self.test_session.get_weather_data(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                         stoptime=t2)
             self.assertTrue(len(result) > 1)
             self.assertTrue(len(result) <= (5 * 4 + 2 * 28))
 
             self.test_session.add_weather_data_from_sensors(t3, t4, variables='wind_speed')
-            result = self.test_session.get_weather_data(t3 - TimeDelta(3.0, format='sec'),
+            result = self.test_session.get_weather_data(starttime=t3 - TimeDelta(3.0, format='sec'),
                                                         stoptime=t4)
             self.assertTrue(len(result) <= 4)
 
             self.test_session.add_weather_data_from_sensors(t3, t4, variables=['wind_direction',
                                                                                'temperature'])
-            result = self.test_session.get_weather_data(t3 - TimeDelta(3.0, format='sec'),
+            result = self.test_session.get_weather_data(starttime=t3 - TimeDelta(3.0, format='sec'),
                                                         stoptime=t3)
             self.assertTrue(len(result) <= 3)
 

@@ -66,7 +66,7 @@ class TestServerStatus(TestHERAMC):
             self.test_session.add_server_status(sub, self.column_values[0],
                                                 *self.column_values[2:11],
                                                 network_bandwidth_mbs=self.column_values[11])
-            result = self.test_session.get_server_status(sub, self.columns['system_time']
+            result = self.test_session.get_server_status(sub, starttime=self.columns['system_time']
                                                          - TimeDelta(2, format='sec'))
             self.assertEqual(len(result), 1)
             result = result[0]
@@ -83,7 +83,7 @@ class TestServerStatus(TestHERAMC):
 
             self.test_session.add_server_status(sub, 'test_host2', *self.column_values[2:11],
                                                 network_bandwidth_mbs=self.column_values[11])
-            result_host = self.test_session.get_server_status(sub, self.columns['system_time']
+            result_host = self.test_session.get_server_status(sub, starttime=self.columns['system_time']
                                                               - TimeDelta(2, format='sec'),
                                                               hostname=self.columns['hostname'],
                                                               stoptime=self.columns['system_time']
@@ -92,14 +92,14 @@ class TestServerStatus(TestHERAMC):
             result_host = result_host[0]
             self.assertTrue(result_host.isclose(expected))
 
-            result_mult = self.test_session.get_server_status(sub, self.columns['system_time']
+            result_mult = self.test_session.get_server_status(sub, starttime=self.columns['system_time']
                                                               - TimeDelta(2, format='sec'),
                                                               stoptime=self.columns['system_time']
                                                               + TimeDelta(2 * 60, format='sec'))
 
             self.assertEqual(len(result_mult), 2)
 
-            result2 = self.test_session.get_server_status(sub, self.columns['system_time']
+            result2 = self.test_session.get_server_status(sub, starttime=self.columns['system_time']
                                                           - TimeDelta(2, format='sec'),
                                                           hostname='test_host2')[0]
             # mc_times will be different, so won't match. set them equal so that we can test the rest
@@ -116,9 +116,11 @@ class TestServerStatus(TestHERAMC):
             self.test_session.add_server_status(sub, self.column_values[0],
                                                 *self.column_values[2:11],
                                                 network_bandwidth_mbs=self.column_values[11])
-            self.assertRaises(ValueError, self.test_session.get_server_status, sub, 'test_host')
             self.assertRaises(ValueError, self.test_session.get_server_status,
-                              sub, self.columns['system_time'], stoptime='test_host')
+                              sub, starttime='test_host')
+            self.assertRaises(ValueError, self.test_session.get_server_status,
+                              sub, starttime=self.columns['system_time'],
+                              stoptime='test_host')
 
             if sub == 'rtp':
                 self.assertRaises(ValueError, RTPServerStatus.create, 'foo',
@@ -132,8 +134,8 @@ class TestServerStatus(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.add_server_status, 'foo',
                           self.column_values[0], *self.column_values[2:11],
                           network_bandwidth_mbs=self.column_values[11])
-        self.assertRaises(ValueError, self.test_session.get_server_status, 'foo',
-                          self.column_values[1])
+        self.assertRaises(ValueError, self.test_session.get_server_status,
+                          'foo', starttime=self.column_values[1])
 
 
 if __name__ == '__main__':

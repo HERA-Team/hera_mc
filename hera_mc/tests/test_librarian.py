@@ -23,7 +23,7 @@ class TestLibrarian(TestHERAMC):
     def setUp(self):
         super(TestLibrarian, self).setUp()
 
-        time = Time.now()
+        time = Time.now() - TimeDelta(6 * 60, format='sec')
         self.status_names = ['time', 'num_files', 'data_volume_gb',
                              'free_space_gb', 'upload_min_elapsed',
                              'num_processes', 'git_version', 'git_hash']
@@ -62,11 +62,17 @@ class TestLibrarian(TestHERAMC):
         exp_columns['time'] = int(floor(exp_columns['time'].gps))
         expected = LibStatus(**exp_columns)
 
-        result = self.test_session.get_lib_status(self.status_columns['time']
+        # test with starttime
+        result = self.test_session.get_lib_status(starttime=self.status_columns['time']
                                                   - TimeDelta(2, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
+        self.assertTrue(result.isclose(expected))
 
+        # test with most_recent
+        result = self.test_session.get_lib_status()
+        self.assertEqual(len(result), 1)
+        result = result[0]
         self.assertTrue(result.isclose(expected))
 
         new_status_time = self.status_columns['time'] + TimeDelta(5 * 60, format='sec')
@@ -78,25 +84,30 @@ class TestLibrarian(TestHERAMC):
                                          self.status_columns['git_version'],
                                          self.status_columns['git_hash'])
 
-        result_mult = self.test_session.get_lib_status(self.status_columns['time']
+        result_mult = self.test_session.get_lib_status(starttime=self.status_columns['time']
                                                        - TimeDelta(2, format='sec'),
                                                        stoptime=new_status_time)
         self.assertEqual(len(result_mult), 2)
 
-        result2 = self.test_session.get_lib_status(new_status_time
+        result2 = self.test_session.get_lib_status(starttime=new_status_time
                                                    - TimeDelta(2, format='sec'))
         self.assertEqual(len(result2), 1)
         result2 = result2[0]
         self.assertFalse(result2.isclose(expected))
+
+        # test most_recent matches 2nd status
+        result2_most_recent = self.test_session.get_lib_status(most_recent=True)
+        result2_most_recent = result2_most_recent[0]
+        self.assertTrue(result2.isclose(result2_most_recent))
 
     def test_errors_lib_status(self):
         self.assertRaises(ValueError, self.test_session.add_lib_status, 'foo',
                           *self.status_values[1:])
 
         self.test_session.add_lib_status(*self.status_values)
-        self.assertRaises(ValueError, self.test_session.get_lib_status, 'unhappy')
+        self.assertRaises(ValueError, self.test_session.get_lib_status, starttime='unhappy')
         self.assertRaises(ValueError, self.test_session.get_lib_status,
-                          self.status_columns['time'], stoptime='unhappy')
+                          starttime=self.status_columns['time'], stoptime='unhappy')
 
     def test_add_raid_status(self):
         exp_columns = self.raid_status_columns.copy()
@@ -105,7 +116,7 @@ class TestLibrarian(TestHERAMC):
 
         self.test_session.add_lib_raid_status(*self.raid_status_values)
 
-        result = self.test_session.get_lib_raid_status(self.raid_status_columns['time']
+        result = self.test_session.get_lib_raid_status(starttime=self.raid_status_columns['time']
                                                        - TimeDelta(2 * 60, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
@@ -114,7 +125,7 @@ class TestLibrarian(TestHERAMC):
 
         self.test_session.add_lib_raid_status(self.raid_status_values[0], 'raid_2',
                                               *self.raid_status_values[2:])
-        result_host = self.test_session.get_lib_raid_status(self.raid_status_columns['time']
+        result_host = self.test_session.get_lib_raid_status(starttime=self.raid_status_columns['time']
                                                             - TimeDelta(2, format='sec'),
                                                             hostname=self.raid_status_columns['hostname'],
                                                             stoptime=self.raid_status_columns['time']
@@ -123,14 +134,14 @@ class TestLibrarian(TestHERAMC):
         result_host = result_host[0]
         self.assertTrue(result_host.isclose(expected))
 
-        result_mult = self.test_session.get_lib_raid_status(self.raid_status_columns['time']
+        result_mult = self.test_session.get_lib_raid_status(starttime=self.raid_status_columns['time']
                                                             - TimeDelta(2, format='sec'),
                                                             stoptime=self.raid_status_columns['time']
                                                             + TimeDelta(2 * 60, format='sec'))
 
         self.assertEqual(len(result_mult), 2)
 
-        result2 = self.test_session.get_lib_raid_status(self.raid_status_columns['time']
+        result2 = self.test_session.get_lib_raid_status(starttime=self.raid_status_columns['time']
                                                         - TimeDelta(2, format='sec'),
                                                         hostname='raid_2')
         self.assertEqual(len(result2), 1)
@@ -138,14 +149,18 @@ class TestLibrarian(TestHERAMC):
 
         self.assertFalse(result2.isclose(expected))
 
+        result2_most_recent = self.test_session.get_lib_raid_status(hostname='raid_2')
+        result2_most_recent = result2_most_recent[0]
+        self.assertEqual(result2, result2_most_recent)
+
     def test_errors_lib_raid_status(self):
         self.assertRaises(ValueError, self.test_session.add_lib_raid_status,
                           'foo', *self.raid_status_values[1:])
 
         self.test_session.add_lib_raid_status(*self.raid_status_values)
-        self.assertRaises(ValueError, self.test_session.get_lib_raid_status, 'foo')
+        self.assertRaises(ValueError, self.test_session.get_lib_raid_status, starttime='foo')
         self.assertRaises(ValueError, self.test_session.get_lib_raid_status,
-                          self.raid_status_columns['time'], stoptime='foo')
+                          starttime=self.raid_status_columns['time'], stoptime='foo')
 
     def test_add_raid_error(self):
         exp_columns = self.raid_error_columns.copy()
@@ -154,7 +169,7 @@ class TestLibrarian(TestHERAMC):
 
         self.test_session.add_lib_raid_error(*self.raid_error_values[1:])
 
-        result = self.test_session.get_lib_raid_error(self.raid_error_columns['time']
+        result = self.test_session.get_lib_raid_error(starttime=self.raid_error_columns['time']
                                                       - TimeDelta(2 * 60, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
@@ -163,7 +178,7 @@ class TestLibrarian(TestHERAMC):
 
         self.test_session.add_lib_raid_error(self.raid_error_values[1], 'raid_2',
                                              *self.raid_error_values[3:])
-        result_host = self.test_session.get_lib_raid_error(self.raid_error_columns['time']
+        result_host = self.test_session.get_lib_raid_error(starttime=self.raid_error_columns['time']
                                                            - TimeDelta(2, format='sec'),
                                                            hostname=self.raid_error_columns['hostname'],
                                                            stoptime=self.raid_error_columns['time']
@@ -172,7 +187,7 @@ class TestLibrarian(TestHERAMC):
         result_host = result_host[0]
         self.assertTrue(result_host.isclose(expected))
 
-        result_mult = self.test_session.get_lib_raid_error(self.raid_error_columns['time']
+        result_mult = self.test_session.get_lib_raid_error(starttime=self.raid_error_columns['time']
                                                            - TimeDelta(2, format='sec'),
                                                            stoptime=self.raid_error_columns['time']
                                                            + TimeDelta(2 * 60, format='sec'))
@@ -181,7 +196,7 @@ class TestLibrarian(TestHERAMC):
         ids = [res.id for res in result_mult]
         self.assertEqual(ids, [1, 2])
 
-        result2 = self.test_session.get_lib_raid_error(self.raid_error_columns['time']
+        result2 = self.test_session.get_lib_raid_error(starttime=self.raid_error_columns['time']
                                                        - TimeDelta(2, format='sec'),
                                                        hostname='raid_2')[0]
 
@@ -192,9 +207,9 @@ class TestLibrarian(TestHERAMC):
                           'foo', *self.raid_error_values[2:])
 
         self.test_session.add_lib_raid_error(*self.raid_error_values[1:])
-        self.assertRaises(ValueError, self.test_session.get_lib_raid_error, 'foo')
+        self.assertRaises(ValueError, self.test_session.get_lib_raid_error, starttime='foo')
         self.assertRaises(ValueError, self.test_session.get_lib_raid_error,
-                          self.raid_error_columns['time'], stoptime='foo')
+                          starttime=self.raid_error_columns['time'], stoptime='foo')
 
     def test_add_remote_status(self):
         exp_columns = self.remote_status_columns.copy()
@@ -203,7 +218,7 @@ class TestLibrarian(TestHERAMC):
 
         self.test_session.add_lib_remote_status(*self.remote_status_values)
 
-        result = self.test_session.get_lib_remote_status(self.remote_status_columns['time']
+        result = self.test_session.get_lib_remote_status(starttime=self.remote_status_columns['time']
                                                          - TimeDelta(2 * 60, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
@@ -213,7 +228,7 @@ class TestLibrarian(TestHERAMC):
         self.test_session.add_lib_remote_status(self.remote_status_values[0], 'penn',
                                                 *self.remote_status_values[2:])
         result_remote = self.test_session.get_lib_remote_status(
-            self.remote_status_columns['time'] - TimeDelta(2, format='sec'),
+            starttime=self.remote_status_columns['time'] - TimeDelta(2, format='sec'),
             remote_name=self.remote_status_columns['remote_name'],
             stoptime=self.remote_status_columns['time'] + TimeDelta(2 * 60, format='sec'))
 
@@ -222,12 +237,15 @@ class TestLibrarian(TestHERAMC):
         self.assertTrue(result_remote.isclose(expected))
 
         result_mult = self.test_session.get_lib_remote_status(
-            self.remote_status_columns['time'] - TimeDelta(2, format='sec'),
+            starttime=self.remote_status_columns['time'] - TimeDelta(2, format='sec'),
             stoptime=self.remote_status_columns['time'] + TimeDelta(2 * 60, format='sec'))
 
         self.assertEqual(len(result_mult), 2)
 
-        result2 = self.test_session.get_lib_remote_status(self.remote_status_columns['time']
+        result_mult_most_recent = self.test_session.get_lib_remote_status()
+        self.assertEqual(result_mult, result_mult_most_recent)
+
+        result2 = self.test_session.get_lib_remote_status(starttime=self.remote_status_columns['time']
                                                           - TimeDelta(2, format='sec'),
                                                           remote_name='penn')
         self.assertEqual(len(result2), 1)
@@ -240,9 +258,9 @@ class TestLibrarian(TestHERAMC):
                           'foo', *self.remote_status_values[1:])
 
         self.test_session.add_lib_remote_status(*self.remote_status_values)
-        self.assertRaises(ValueError, self.test_session.get_lib_remote_status, 'foo')
+        self.assertRaises(ValueError, self.test_session.get_lib_remote_status, starttime='foo')
         self.assertRaises(ValueError, self.test_session.get_lib_remote_status,
-                          self.remote_status_columns['time'], stoptime='foo')
+                          starttime=self.remote_status_columns['time'], stoptime='foo')
 
     def test_add_lib_file(self):
         # raise error if try to add process event with unmatched obsid

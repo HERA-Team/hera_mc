@@ -65,8 +65,11 @@ class TestObservation(TestHERAMC):
         t4 = t2 + TimeDelta(10 * 60., format='sec')
         self.test_session.add_obs(t3, t4, utils.calculate_obsid(t3))
 
-        result_mult = self.test_session.get_obs_by_time(t1, stoptime=t4)
+        result_mult = self.test_session.get_obs_by_time(starttime=t1, stoptime=t4)
         self.assertEqual(len(result_mult), 2)
+
+        result_most_recent = self.test_session.get_obs_by_time(most_recent=True)
+        self.assertEqual(result_most_recent[0], result_mult[1])
 
         result_orig = self.test_session.get_obs(obsid=obsid)
         self.assertEqual(len(result_orig), 1)
