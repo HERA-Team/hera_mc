@@ -7,12 +7,14 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from astropy.time import Time
+import six
 from math import floor
-from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String
+from astropy.time import Time
+from sqlalchemy import Column, BigInteger, Integer, Boolean, String, ForeignKeyConstraint
 
 from . import MCDeclarativeBase
 
+DefaultRedisAddress = "redishost"
 
 # key is state type, value is method name in hera_corr_cm
 state_dict = {'taking_data': 'is_recording', 'phase_switching': 'phase_switch_is_on',
@@ -67,7 +69,7 @@ class CorrelatorControlState(MCDeclarativeBase):
         return cls(time=corr_time, state_type=state_type, state=state)
 
 
-def _get_control_state(correlator_redis_address=default_redis_address):
+def _get_control_state(correlator_redis_address=DefaultRedisAddress):
     """
     Loops through the state types in state_dict and gets the latest state and associated timestamp for each one.
 
@@ -76,7 +78,7 @@ def _get_control_state(correlator_redis_address=default_redis_address):
     """
     import hera_corr_cm
 
-    corr_cm = hera_corr_cm.HeraCorrCM(node, serverAddress=nodeServerAddress)
+    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     corr_state_dict = {}
     for key, value in enumerate(state_dict):
@@ -87,7 +89,7 @@ def _get_control_state(correlator_redis_address=default_redis_address):
     return corr_state_dict
 
 
-def create_control_state(correlator_redis_address=default_redis_address, corr_state_dict=None):
+def create_control_state(correlator_redis_address=DefaultRedisAddress, corr_state_dict=None):
     """
     Return a list of correlator control state objects with data from the correlator.
 
@@ -103,10 +105,10 @@ def create_control_state(correlator_redis_address=default_redis_address, corr_st
     """
 
     if corr_state_dict is None:
-        corr_state_dict = _get_power_dict(node, nodeServerAddress=nodeServerAddress)
+        corr_state_dict = _get_control_state(correlator_redis_address=correlator_redis_address)
 
     corr_state_list = []
-    for state_type, dict in corr_state_dict:
+    for state_type, dict in six.iteritems(corr_state_dict):
         time = Time(dict['timestamp'], format='datetime', scale='utc')
         state = dict['state']
 
@@ -157,22 +159,23 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
     Records the arguments passed to the correlator `take_data` command.
 
     time: gps time of the take_data command, floored (BigInteger, part of primary_key).
-    starttime: gps time to start taking data
+    starttime: gps time to start taking data, floored (BigInteger)
     duration: Duration to take data for in seconds. After this time, the
-        correlator will stop recording. float or int?
+        correlator will stop recording.
     acclen: "Accumulation length in spectra." Not sure what this means...
     tag: Tag which will end up in data files as a header entry
     """
     __tablename__ = 'correlator_take_data_arguments'
     time = Column(BigInteger, primary_key=True)
-    starttime = Column(Float)
-    duration = Column(Float)
-    acclen = Column(Float)
+    command = Column(String, primary_key=True)
+    starttime = Column(BigInteger)
+    duration = Column(Integer)
+    acclen = Column(Integer)
     tag = Column(String, nullable=True)
 
-    __table_args__ = (ForeignKeyConstraint(['time', 'take_data'],
+    __table_args__ = (ForeignKeyConstraint(['time', 'command'],
                                            ['correlator_control_command.time',
-                                            'correlator_control_command.command']))
+                                            'correlator_control_command.command']), {})
 
     @classmethod
     def create(cls, time, starttime, duration, acclen, tag):
@@ -183,12 +186,12 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
         ------------
         time: astropy time object
             astropy time object for time the take_data command was sent.
-        starttime: float
+        starttime: astropy time object
             astropy time object for time to start taking data
-        duration: float or int?
+        duration: integer
             Duration to take data for in seconds. After this time, the
             correlator will stop recording.
-        acclen: float or int?
+        acclen: integer
             "Accumulation length in spectra." Not sure what this means...
         tag: string
             Tag which will end up in data files as a header entry.
@@ -200,10 +203,10 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
 
         if not isinstance(starttime, Time):
             raise ValueError('starttime must be an astropy Time object')
-        starttime_gps = starttime.gps
+        starttime_gps = floor(starttime.gps)
 
         if tag not in tag_list:
             raise ValueError('tag must be one of: ', tag_list)
 
-        return cls(time=corr_time, starttime=starttime_gps, duration=duration,
-                   acclen=acclen, tag=tag)
+        return cls(time=corr_time, command='take_data', starttime=starttime_gps,
+                   duration=duration, acclen=acclen, tag=tag)

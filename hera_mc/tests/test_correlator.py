@@ -18,9 +18,9 @@ from ..tests import TestHERAMC, is_onsite
 
 
 corr_command_example_dict = {
-    'taking_data': {'state': True, 'timestamp': Time(1512770942.726777, format='unix').to_datetime()},
-    'phase_switching': {'state': False, 'timestamp': Time(1512770942.995268, format='unix').to_datetime()},
-    'noise_diode': {'state': True, 'timestamp': Time(1512770942.861526, format='unix').to_datetime()},
+    'taking_data': {'state': True, 'timestamp': Time(1512770942, format='unix').to_datetime()},
+    'phase_switching': {'state': False, 'timestamp': Time(1512770944, format='unix').to_datetime()},
+    'noise_diode': {'state': True, 'timestamp': Time(1512770946, format='unix').to_datetime()},
 }
 
 
@@ -70,8 +70,7 @@ class TestCorrelatorCommandState(TestHERAMC):
             self.test_session.add(obj)
 
         t1 = Time(1512770942.726777, format='unix')
-        result = self.test_session.get_correlator_control_state(t1 - TimeDelta(3.0, format='sec'),
-                                                                nodeID=1)
+        result = self.test_session.get_correlator_control_state(t1 - TimeDelta(3.0, format='sec'))
 
         expected = corr.CorrelatorControlState(time=int(floor(t1.gps)),
                                                state_type='taking_data', state=True)

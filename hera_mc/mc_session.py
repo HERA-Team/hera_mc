@@ -1462,15 +1462,17 @@ class MCSession(Session):
             'phase_switching_on', 'phase_switching_off', 'restart')
         starttime: astropy Time object
             only applies if command is 'take_data': time to start taking data
-        duration: float
+        duration: integer
             only applies if command is 'take_data': number of seconds to take data for
         acclen: integer
-            only applies if command is 'take_data': "Accumulation length in spectra." Not sure what this means...
+            only applies if command is 'take_data': "Accumulation length in spectra."
+            Not sure what this means...
         tag: string
-            only applies if command is 'take_data': Tag which will end up in data files as a header entry
+            only applies if command is 'take_data': Tag which will end up in data
+            files as a header entry, must be from correlator.tag_list (e.g. 'science', 'engineering')
         dryrun: boolean
-            if true, just return the list of NodePowerCommand objects, do not
-            issue the power commands or log them to the database
+            if true, just return the list of CorrelatorControlCommand objects, do not
+            issue the commands or log them to the database
         """
         from .correlator import CorrelatorControlCommand, CorrelatorTakeDataArguments
 
@@ -1488,10 +1490,12 @@ class MCSession(Session):
                 raise ValueError('duration must be specified if command is "take_data"')
             if acclen is None:
                 raise ValueError('acclen must be specified if command is "take_data"')
+            if tag is None:
+                raise ValueError('tag must be specified if command is "take_data"')
 
             take_data_args_obj = \
                 CorrelatorTakeDataArguments.create(command_time, starttime,
-                                                   duration, acclen, tag=tag)
+                                                   duration, acclen, tag)
 
         if not dryrun:
             import hera_corr_cm
