@@ -86,6 +86,9 @@ class MCSession(Session):
         if starttime is None and most_recent is None:
             most_recent = True
 
+        if not isinstance(most_recent, (type(None), bool)):
+            raise TypeError('most_recent must be None or a boolean')
+
         if not most_recent:
             if starttime is None:
                 raise ValueError('starttime must be specified if most_recent is False')

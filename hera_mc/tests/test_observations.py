@@ -84,6 +84,8 @@ class TestObservation(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.add_obs, t1, t2, 'foo')
         self.assertRaises(ValueError, utils.calculate_obsid, 'foo')
         self.assertRaises(ValueError, self.test_session.add_obs, t1, t2, utils.calculate_obsid(t1) + 2)
+        self.assertRaises(TypeError, self.test_session.get_obs_by_time, most_recent=t1)
+        self.assertRaises(TypeError, self.test_session.get_obs_by_time, t1)
 
 
 if __name__ == '__main__':
