@@ -23,12 +23,18 @@ state_dict = {'taking_data': 'is_recording', 'phase_switching': 'phase_switch_is
 tag_list = ['science', 'engineering']
 
 # key is command, value is method name in hera_corr_cm
-correlator_command_dict = {'take_data': 'take_data',
-                           'phase_switching_on': 'phase_switch_enable',
-                           'phase_switching_off': 'phase_switch_disable',
-                           'noise_diode_on': 'noise_diode_enable',
-                           'noise_diode_off': 'noise_diode_disable',
-                           'restart': 'restart'}
+command_dict = {'take_data': 'take_data',
+                'phase_switching_on': 'phase_switch_enable',
+                'phase_switching_off': 'phase_switch_disable',
+                'noise_diode_on': 'noise_diode_enable',
+                'noise_diode_off': 'noise_diode_disable',
+                'restart': 'restart'}
+
+command_state_map = {'take_data': {'state_type': 'taking_data'},
+                     'phase_switching_on': {'state_type': 'phase_switching', 'state': True},
+                     'phase_switching_off': {'state_type': 'phase_switching', 'state': False},
+                     'noise_diode_on': {'state_type': 'noise_diode', 'state': True},
+                     'noise_diode_off': {'state_type': 'noise_diode', 'state': False}}
 
 
 class CorrelatorControlState(MCDeclarativeBase):
@@ -122,7 +128,7 @@ class CorrelatorControlCommand(MCDeclarativeBase):
     Definition of correlator control command table.
 
     time: gps time of the command, floored (BigInteger, part of primary_key).
-    command: control command, one of the keys in correlator_command_dict (String, part of primary_key)
+    command: control command, one of the keys in command_dict (String, part of primary_key)
     """
     __tablename__ = 'correlator_control_command'
     time = Column(BigInteger, primary_key=True)
@@ -138,15 +144,15 @@ class CorrelatorControlCommand(MCDeclarativeBase):
         time: astropy time object
             astropy time object for time command was sent.
         command: string
-            one of the keys in correlator_command_dict (e.g. 'take_data',
+            one of the keys in command_dict (e.g. 'take_data',
             'phase_switching_on', 'phase_switching_off', 'restart')
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
         corr_time = floor(time.gps)
 
-        if command not in list(correlator_command_dict.keys()):
-            raise ValueError('command must be one of: ' + ', '.join(list(correlator_command_dict.keys()))
+        if command not in list(command_dict.keys()):
+            raise ValueError('command must be one of: ' + ', '.join(list(command_dict.keys()))
                              + '. command is actually {}'.format(command))
 
         return cls(time=corr_time, command=command)

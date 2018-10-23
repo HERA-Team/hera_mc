@@ -1420,7 +1420,7 @@ class MCSession(Session):
         """
         from .correlator import create_control_state, CorrelatorControlState
 
-        corr_state_list = create_power_status()
+        corr_state_list = create_control_state()
 
         self._insert_ignoring_duplicates(CorrelatorControlState, corr_state_list)
 
@@ -1458,7 +1458,7 @@ class MCSession(Session):
         Parameters:
         ------------
         command: string
-            one of the keys in correlator.correlator_command_dict (e.g. 'take_data',
+            one of the keys in correlator.command_dict (e.g. 'take_data',
             'phase_switching_on', 'phase_switching_off', 'restart')
         starttime: astropy Time object
             only applies if command is 'take_data': time to start taking data
@@ -1481,6 +1481,34 @@ class MCSession(Session):
 
         command_time = Time.now()
 
+        # Check state of controls
+        # make sure we have most recent state info
+        if not testing:
+            self.add_correlator_control_state_from_corrcm()
+
+        # Get most recent control state
+        starttime = Time.now() - TimeDelta(120, format='sec')
+        stoptime = Time.now() + TimeDelta(60, format='sec')
+        if command in corr.command_state_map.keys():
+            state_type = corr.command_state_map[command]['state_type']
+            # TODO make this use most_recent when available
+            control_state = self.get_correlator_control_state(starttime,
+                                                              stoptime=stoptime,
+                                                              state_type=state_type)
+        if command == 'take_data':
+            # TODO add proper control logic after talking to Jack
+            if control_state.state:
+                raise RunTimeError('correlator is already taking data')
+        elif command in corr.command_state_map.keys():
+            if len(control_state) > 0:
+                if control_state.state == corr.command_state_map[command]['state']:
+                    # Already in desired state. Return
+                    print('Correlator is already in the desired state.')
+                    if dryrun:
+                        return []
+                    else:
+                        return
+
         # create object(s) first: catch any mistakes
         command_obj = CorrelatorControlCommand.create(command_time, command)
         if command == 'take_data':
@@ -1502,9 +1530,9 @@ class MCSession(Session):
 
             corr_controller = hera_corr_cm.HeraCorrCM()
             if command == 'take_data':
-                getattr(node_controller, corr.correlator_command_dict[command])(starttime, duration, acclen, tag=tag)
+                getattr(node_controller, corr.command_dict[command])(starttime, duration, acclen, tag=tag)
             else:
-                getattr(node_controller, corr.correlator_command_dict[command])
+                getattr(node_controller, corr.command_dict[command])
 
             self.add(command_obj)
             if command == 'take_data':
@@ -1531,7 +1559,7 @@ class MCSession(Session):
             starttime will be returned.
 
         command: string
-            must be a key in correlator.correlator_command_dict (e.g. 'take_data',
+            must be a key in correlator.command_dict (e.g. 'take_data',
             'phase_switching_on', 'phase_switching_off', 'restart')
 
         Returns:
