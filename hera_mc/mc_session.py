@@ -101,52 +101,39 @@ class MCSession(Session):
                 raise ValueError('stoptime must be an astropy time object. '
                                  'value was: {t}'.format(t=stoptime))
 
+        time_attr = getattr(table_class, time_column)
+        if filter_value is not None:
+            filter_attr = getattr(table_class, filter_column)
+
+        query = self.query(table_class)
+        if filter_value is not None:
+            query = query.filter(filter_attr == filter_value)
+
         if most_recent:
             current_time = Time.now()
+
+            # first get the time of the most recent row
+            first_query = query.filter(time_attr <= current_time.gps).order_by(desc(time_attr)).limit(1)
+            first_result = first_query.all()
+            most_recent_time = getattr(first_result[0], time_column)
+
+            # then get all results at that time
+            query = query.filter(time_attr == most_recent_time)
             if filter_value is not None:
-                # first get the time of the most recent row
-                first_result = self.query(table_class).filter(
-                    getattr(table_class, filter_column) == filter_value,
-                    getattr(table_class, time_column) <= current_time.gps).order_by(
-                        desc(getattr(table_class, time_column))).limit(1).all()
-                most_recent_time = getattr(first_result[0], time_column)
-                # then get all results at that time, ordered by filter column
-                result_list = self.query(table_class).filter(
-                    getattr(table_class, filter_column) == filter_value,
-                    getattr(table_class, time_column) == most_recent_time).order_by(
-                        asc(getattr(table_class, filter_column))).all()
-            else:
-                # first get the time of the most recent row
-                first_result = self.query(table_class).filter(
-                    getattr(table_class, time_column) <= current_time.gps).order_by(
-                        desc(getattr(table_class, time_column))).limit(1).all()
-                most_recent_time = getattr(first_result[0], time_column)
-                # then get all results at that time
-                result_list = self.query(table_class).filter(
-                    getattr(table_class, time_column) == most_recent_time).all()
+                query = query.order_by(asc(filter_attr))
+            result_list = query.all()
+
         else:
             if stoptime is not None:
-                if filter_value is not None:
-                    result_list = self.query(table_class).filter(
-                        getattr(table_class, filter_column) == filter_value,
-                        getattr(table_class, time_column).between(
-                            starttime.gps, stoptime.gps)).order_by(
-                                getattr(table_class, time_column)).all()
-                else:
-                    result_list = self.query(table_class).filter(
-                        getattr(table_class, time_column).between(
-                            starttime.gps, stoptime.gps)).order_by(
-                                getattr(table_class, time_column)).all()
+                query = query.filter(time_attr.between(starttime.gps, stoptime.gps))
             else:
-                if filter_value is not None:
-                    result_list = self.query(table_class).filter(
-                        getattr(table_class, filter_column) == filter_value,
-                        getattr(table_class, time_column) >= starttime.gps).order_by(
-                            getattr(table_class, time_column)).limit(1).all()
-                else:
-                    result_list = self.query(table_class).filter(
-                        getattr(table_class, time_column) >= starttime.gps).order_by(
-                            getattr(table_class, time_column)).limit(1).all()
+                query = query.filter(time_attr >= starttime.gps)
+
+            query = query.order_by(time_attr)
+            if stoptime is None:
+                query = query.limit(1)
+
+            result_list = query.all()
 
         return result_list
 
