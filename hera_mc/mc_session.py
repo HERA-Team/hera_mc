@@ -1424,18 +1424,24 @@ class MCSession(Session):
 
         self._insert_ignoring_duplicates(CorrelatorControlState, corr_state_list)
 
-    def get_correlator_control_state(self, starttime, stoptime=None, state_type=None):
+    def get_correlator_control_state(self, most_recent=None, starttime=None,
+                                     stoptime=None, state_type=None):
         """
         Get correlator control state record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         state_type: string
             must be a key in correlator.state_dict (e.g. 'taking_data', 'phase_switching', 'noise_diode')
@@ -1446,9 +1452,9 @@ class MCSession(Session):
         """
         from .correlator import CorrelatorControlState
 
-        return self._time_filter(CorrelatorControlState, 'time', starttime,
-                                 stoptime=stoptime, filter_column='state_type',
-                                 filter_value=state_type)
+        return self._time_filter(CorrelatorControlState, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='state_type', filter_value=state_type)
 
     def correlator_control_command(self, command, starttime=None, duration=None,
                                    acclen=None, tag=None, dryrun=False, testing=False):
@@ -1487,13 +1493,9 @@ class MCSession(Session):
             self.add_correlator_control_state_from_corrcm()
 
         # Get most recent control state
-        starttime = Time.now() - TimeDelta(120, format='sec')
-        stoptime = Time.now() + TimeDelta(60, format='sec')
         if command in corr.command_state_map.keys():
             state_type = corr.command_state_map[command]['state_type']
-            # TODO make this use most_recent when available
-            control_state = self.get_correlator_control_state(starttime,
-                                                              stoptime=stoptime,
+            control_state = self.get_correlator_control_state(most_recent=True,
                                                               state_type=state_type)
         if command == 'take_data':
             # TODO add proper control logic after talking to Jack
@@ -1545,18 +1547,24 @@ class MCSession(Session):
         if dryrun:
             return command_list
 
-    def get_correlator_control_command(self, starttime, stoptime=None, command=None):
+    def get_correlator_control_command(self, most_recent=None, starttime=None,
+                                       stoptime=None, command=None):
         """
         Get correlator control command record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         command: string
             must be a key in correlator.command_dict (e.g. 'take_data',
@@ -1568,26 +1576,32 @@ class MCSession(Session):
         """
         from .correlator import CorrelatorControlCommand
 
-        return self._time_filter(CorrelatorControlCommand, 'time', starttime,
-                                 stoptime=stoptime, filter_column='command',
-                                 filter_value=command)
+        return self._time_filter(CorrelatorControlCommand, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='command', filter_value=command)
 
-    def get_correlator_take_data_arguments(self, starttime, stoptime=None):
+    def get_correlator_take_data_arguments(self, most_recent=None, starttime=None,
+                                           stoptime=None):
         """
         Get correlator take_data arguments record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after. Note that this refers to the time
+            Time to look for records after. Note that this refers to the time
             the command was issued, NOT the time the correlator was commanded
-            to start taking data
+            to start taking data. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. Note that this refers to the time
-            the command was issued, NOT the time the correlator was commanded
-            to start taking data. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            Note that this refers to the time the command was issued, NOT the
+            time the correlator was commanded to start taking data.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         Returns:
         --------
@@ -1595,7 +1609,8 @@ class MCSession(Session):
         """
         from .correlator import CorrelatorTakeDataArguments
 
-        return self._time_filter(CorrelatorTakeDataArguments, 'time', starttime,
+        return self._time_filter(CorrelatorTakeDataArguments, 'time',
+                                 most_recent=most_recent, starttime=starttime,
                                  stoptime=stoptime)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):

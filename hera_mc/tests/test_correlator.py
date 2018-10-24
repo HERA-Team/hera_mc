@@ -34,43 +34,56 @@ class TestCorrelatorCommandState(TestHERAMC):
 
         expected = corr.CorrelatorControlState(time=int(floor(t1.gps)),
                                                state_type='taking_data', state=True)
-        result = self.test_session.get_correlator_control_state(t1 - TimeDelta(3.0, format='sec'))
+        result = self.test_session.get_correlator_control_state(starttime=t1 - TimeDelta(3.0, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
         self.test_session.add_correlator_control_state(t1, 'phase_switching', False)
 
-        result = self.test_session.get_correlator_control_state(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_correlator_control_state(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                                 state_type='taking_data')
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
+        result_most_recent = self.test_session.get_correlator_control_state(state_type='taking_data')
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
         expected = corr.CorrelatorControlState(time=int(floor(t1.gps)),
                                                state_type='phase_switching', state=False)
 
-        result = self.test_session.get_correlator_control_state(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_correlator_control_state(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                                 state_type='phase_switching')
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result = self.test_session.get_correlator_control_state(t1 - TimeDelta(3.0, format='sec'),
+        result_most_recent = self.test_session.get_correlator_control_state(state_type='phase_switching')
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        result = self.test_session.get_correlator_control_state(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                                 stoptime=t1)
         self.assertEqual(len(result), 2)
 
-        result = self.test_session.get_correlator_control_state(t1 + TimeDelta(200.0, format='sec'))
+        result_most_recent = self.test_session.get_correlator_control_state()
+        self.assertEqual(len(result), 2)
+
+        result = self.test_session.get_correlator_control_state(starttime=t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
-    def test_create_power_status(self):
+    def test_create_control_state(self):
         corr_state_obj_list = corr.create_control_state(corr_state_dict=corr_command_example_dict)
 
         for obj in corr_state_obj_list:
             self.test_session.add(obj)
 
         t1 = Time(1512770942.726777, format='unix')
-        result = self.test_session.get_correlator_control_state(t1 - TimeDelta(3.0, format='sec'))
+        result = self.test_session.get_correlator_control_state(starttime=t1 - TimeDelta(3.0, format='sec'))
 
         expected = corr.CorrelatorControlState(time=int(floor(t1.gps)),
                                                state_type='taking_data', state=True)
@@ -78,7 +91,16 @@ class TestCorrelatorCommandState(TestHERAMC):
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result = self.test_session.get_correlator_control_state(t1 - TimeDelta(3.0, format='sec'),
+        result_most_recent = self.test_session.get_correlator_control_state(state_type='taking_data')
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        result_most_recent = self.test_session.get_correlator_control_state()
+        self.assertEqual(len(result_most_recent), 1)
+        self.assertEqual(result_most_recent[0].state_type, 'noise_diode')
+
+        result = self.test_session.get_correlator_control_state(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                                 stoptime=t1 + TimeDelta(5.0, format='sec'))
         self.assertEqual(len(result), 3)
 
@@ -86,9 +108,12 @@ class TestCorrelatorCommandState(TestHERAMC):
 
         if is_onsite():
             self.test_session.add_correlator_control_state_from_corrcm()
-            result = self.test_session.get_correlator_control_state(Time.now() - TimeDelta(120.0, format='sec'),
-                                                                    stoptime=Time.now() + TimeDelta(120.0, format='sec'))
-            self.assertEqual(len(result), len(node_list))
+            result = self.test_session.get_correlator_control_state(state_type='taking_data', most_recent=True)
+            self.assertEqual(len(result), 1)
+            result = self.test_session.get_correlator_control_state(state_type='phase_switching', most_recent=True)
+            self.assertEqual(len(result), 1)
+            result = self.test_session.get_correlator_control_state(state_type='noise_diode', most_recent=True)
+            self.assertEqual(len(result), 1)
 
 
 if __name__ == '__main__':
