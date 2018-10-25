@@ -124,11 +124,13 @@ class MCSession(Session):
             # first get the time of the most recent row
             first_query = query.filter(time_attr <= current_time.gps).order_by(desc(time_attr)).limit(1)
             first_result = first_query.all()
-            most_recent_time = getattr(first_result[0], time_column)
-
-            # then get all results at that time
-            query = query.filter(time_attr == most_recent_time)
-            if filter_value is not None:
+            if len(first_result) < 1:
+                result_list = first_result
+            else:
+                most_recent_time = getattr(first_result[0], time_column)
+                # then get all results at that time
+                query = query.filter(time_attr == most_recent_time)
+                if filter_value is not None:
                 query = query.order_by(asc(filter_attr))
 
         else:
