@@ -131,7 +131,7 @@ class MCSession(Session):
                 # then get all results at that time
                 query = query.filter(time_attr == most_recent_time)
                 if filter_value is not None:
-                query = query.order_by(asc(filter_attr))
+                    query = query.order_by(asc(filter_attr))
 
         else:
             if stoptime is not None:
@@ -1481,8 +1481,13 @@ class MCSession(Session):
         dryrun: boolean
             if true, just return the list of CorrelatorControlCommand objects, do not
             issue the commands or log them to the database
+        testing: boolean
+            if true, do not use anything that requires connection to correlator (implies dry run)
         """
-        from .correlator import CorrelatorControlCommand, CorrelatorTakeDataArguments
+        from . import correlator as corr
+
+        if testing:
+            dryrun = True
 
         if dryrun:
             command_list = []
@@ -1501,11 +1506,12 @@ class MCSession(Session):
                                                               state_type=state_type)
         if command == 'take_data':
             # TODO add proper control logic after talking to Jack
-            if control_state.state:
-                raise RunTimeError('correlator is already taking data')
+            if len(control_state) > 0:
+                if control_state[0].state:
+                    raise RuntimeError('correlator is already taking data')
         elif command in corr.command_state_map.keys():
             if len(control_state) > 0:
-                if control_state.state == corr.command_state_map[command]['state']:
+                if control_state[0].state == corr.command_state_map[command]['state']:
                     # Already in desired state. Return
                     print('Correlator is already in the desired state.')
                     if dryrun:
@@ -1514,7 +1520,7 @@ class MCSession(Session):
                         return
 
         # create object(s) first: catch any mistakes
-        command_obj = CorrelatorControlCommand.create(command_time, command)
+        command_obj = corr.CorrelatorControlCommand.create(command_time, command)
         if command == 'take_data':
             if starttime is None:
                 raise ValueError('starttime must be specified if command is "take_data"')
@@ -1526,8 +1532,17 @@ class MCSession(Session):
                 raise ValueError('tag must be specified if command is "take_data"')
 
             take_data_args_obj = \
-                CorrelatorTakeDataArguments.create(command_time, starttime,
-                                                   duration, acclen, tag)
+                corr.CorrelatorTakeDataArguments.create(command_time, starttime,
+                                                        duration, acclen, tag)
+        else:
+            if starttime is not None:
+                raise ValueError('starttime cannot be specified if command is not "take_data"')
+            if duration is not None:
+                raise ValueError('duration cannot be specified if command is not "take_data"')
+            if acclen is not None:
+                raise ValueError('acclen cannot be specified if command is not "take_data"')
+            if tag is not None:
+                raise ValueError('tag cannot be specified if command is not "take_data"')
 
         if not dryrun:
             import hera_corr_cm

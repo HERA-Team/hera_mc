@@ -116,5 +116,124 @@ class TestCorrelatorCommandState(TestHERAMC):
             self.assertEqual(len(result), 1)
 
 
+class TestCorrelatorControlCommand(TestHERAMC):
+
+    def test_control_command_no_recent_status(self):
+        # test things on & off with no recent status
+        commands_to_test = list(corr.command_dict.keys())
+        commands_to_test.remove('take_data')
+        for command in commands_to_test:
+            command_list = self.test_session.correlator_control_command(
+                command, testing=True)
+
+            self.assertEqual(len(command_list), 1)
+            command_time = command_list[0].time
+            self.assertTrue(Time.now().gps - command_time < 2.)
+
+            expected = corr.CorrelatorControlCommand(time=command_time, command=command)
+            self.assertTrue(command_list[0].isclose(expected))
+
+            # test adding the command(s) to the database and retrieving them
+            for cmd in command_list:
+                self.test_session.add(cmd)
+            result_list = self.test_session.get_correlator_control_command(
+                starttime=Time.now() - TimeDelta(10, format='sec'),
+                stoptime=Time.now() + TimeDelta(10, format='sec'), command=command)
+            self.assertEqual(len(result_list), 1)
+            self.assertTrue(command_list[0].isclose(result_list[0]))
+
+    def test_take_data_command_no_recent_status(self):
+        # test take_data command with no recent status
+        command_list = self.test_session.correlator_control_command(
+            'take_data', starttime=Time.now() + TimeDelta(10, format='sec'),
+            duration=100, acclen=2, tag='engineering', testing=True)
+
+        self.assertEqual(len(command_list), 2)
+        command_time = command_list[0].time
+        self.assertTrue(Time.now().gps - command_time < 2.)
+
+        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
+        self.assertTrue(command_list[0].isclose(expected_comm))
+
+        expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
+                                                         command='take_data',
+                                                         starttime=command_time + 10,
+                                                         duration=100,
+                                                         acclen=2, tag='engineering')
+        self.assertTrue(command_list[1].isclose(expected_args))
+
+    def test_control_command_with_recent_status(self):
+        # test things on & off with a recent status
+        commands_to_test = list(corr.command_dict.keys())
+        commands_to_test.remove('take_data')
+        commands_to_test.remove('restart')
+        for command in commands_to_test:
+            state_type = corr.command_state_map[command]['state_type']
+            state = corr.command_state_map[command]['state']
+
+            if state is True:
+                tdelta = 60
+            else:
+                tdelta = 30
+            t1 = Time.now() - TimeDelta(tdelta + 60, format='sec')
+            self.test_session.add_correlator_control_state(t1, state_type, state)
+
+            command_list = self.test_session.correlator_control_command(
+                command, testing=True)
+            self.assertEqual(len(command_list), 0)
+
+            t2 = Time.now() - TimeDelta(tdelta, format='sec')
+            self.test_session.add_correlator_control_state(t2, state_type, not(state))
+
+            command_list = self.test_session.correlator_control_command(
+                command, testing=True)
+
+            self.assertEqual(len(command_list), 1)
+            command_time = command_list[0].time
+            self.assertTrue(Time.now().gps - command_time < 2.)
+
+            expected = corr.CorrelatorControlCommand(time=command_time, command=command)
+            self.assertTrue(command_list[0].isclose(expected))
+
+    def test_take_data_command_with_recent_status(self):
+        # test take_data command with recent status
+        t1 = Time.now() - TimeDelta(60, format='sec')
+        self.test_session.add_correlator_control_state(t1, 'taking_data', True)
+
+        self.assertRaises(RuntimeError, self.test_session.correlator_control_command,
+                          'take_data', starttime=Time.now() + TimeDelta(10, format='sec'),
+                          duration=100, acclen=2, tag='engineering', testing=True)
+
+    def test_control_command_errors(self):
+        # test bad command
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'foo', testing=True)
+
+        # test not setting required values for 'take_data'
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'take_data', starttime=Time.now() + TimeDelta(10, format='sec'),
+                          duration=100, acclen=2, testing=True)
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'take_data', starttime=Time.now() + TimeDelta(10, format='sec'),
+                          duration=100, tag='engineering', testing=True)
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'take_data', starttime=Time.now() + TimeDelta(10, format='sec'),
+                          acclen=2, tag='engineering', testing=True)
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'take_data', duration=100, acclen=2, tag='engineering',
+                          testing=True)
+
+        # test setting values for 'take_data' with other commands
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'noise_diode_on', starttime=Time.now() + TimeDelta(10, format='sec'),
+                          testing=True)
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'phase_switching_off', duration=100, testing=True)
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'restart', acclen=2, testing=True)
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'noise_diode_off', tag='engineering', testing=True)
+
+
 if __name__ == '__main__':
     unittest.main()
