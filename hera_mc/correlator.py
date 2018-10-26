@@ -10,7 +10,7 @@ from __future__ import absolute_import, division, print_function
 import six
 from math import floor
 from astropy.time import Time
-from sqlalchemy import Column, BigInteger, Integer, Boolean, String, ForeignKeyConstraint
+from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String, ForeignKeyConstraint
 
 from . import MCDeclarativeBase
 
@@ -158,6 +158,20 @@ class CorrelatorControlCommand(MCDeclarativeBase):
         return cls(time=corr_time, command=command)
 
 
+def _get_integration_time(acclen_spectra, correlator_redis_address=DefaultRedisAddress):
+    """
+    gets the integration time in seconds for a given acclen in spectra
+
+    """
+    import hera_corr_cm
+
+    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+
+    # TODO: call actual function that Jack will make to convert acclen_spectra to
+    # integration time in seconds (this is dummy code for now)
+    return corr_cm.get_integration_time(acclen_spectra)
+
+
 class CorrelatorTakeDataArguments(MCDeclarativeBase):
     """
     Definition of correlator take_data arguments table.
@@ -165,26 +179,34 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
     Records the arguments passed to the correlator `take_data` command.
 
     time: gps time of the take_data command, floored (BigInteger, part of primary_key).
-    starttime: gps time to start taking data, floored (BigInteger)
+    starttime_sec: gps time to start taking data, floored (BigInteger)
+    starttime_ms: milliseconds to add to starttime_sec to set correlator start time.
     duration: Duration to take data for in seconds. After this time, the
         correlator will stop recording.
-    acclen: "Accumulation length in spectra." Not sure what this means...
+    acclen_spectra: Accumulation length in spectra.
+    integration_time: Accumulation length in seconds, converted from acclen_spectra.
+        The conversion is non-trivial and depends on the correlator settings.
     tag: Tag which will end up in data files as a header entry
     """
     __tablename__ = 'correlator_take_data_arguments'
     time = Column(BigInteger, primary_key=True)
     command = Column(String, primary_key=True)
-    starttime = Column(BigInteger)
-    duration = Column(Integer)
-    acclen = Column(Integer)
-    tag = Column(String, nullable=True)
+    starttime_sec = Column(BigInteger)
+    starttime_ms = Column(Integer)
+    duration = Column(Float)
+    acclen_spectra = Column(Integer)
+    integration_time = Column(Float)
+    tag = Column(String)
 
+    # TODO: this Foreign key arrangement requires an unneccesary column on this
+    # object (command) because this table only has rows when command='take_data'
+    # Is there a way to specify the constraint without this dummy column?
     __table_args__ = (ForeignKeyConstraint(['time', 'command'],
                                            ['correlator_control_command.time',
                                             'correlator_control_command.command']), {})
 
     @classmethod
-    def create(cls, time, starttime, duration, acclen, tag):
+    def create(cls, time, starttime, duration, acclen_spectra, integration_time, tag):
         """
         Create a new correlator take data arguments object.
 
@@ -194,11 +216,13 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
             astropy time object for time the take_data command was sent.
         starttime: astropy time object
             astropy time object for time to start taking data
-        duration: integer
+        duration: float
             Duration to take data for in seconds. After this time, the
             correlator will stop recording.
-        acclen: integer
-            "Accumulation length in spectra." Not sure what this means...
+        acclen_spectra: integer
+            Accumulation length in spectra.
+        integration_time: float
+            Integration time in seconds, converted from acclen_spectra
         tag: string
             Tag which will end up in data files as a header entry.
             Must be one of the values in tag_list
@@ -209,10 +233,17 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
 
         if not isinstance(starttime, Time):
             raise ValueError('starttime must be an astropy Time object')
-        starttime_gps = floor(starttime.gps)
+        starttime_gps = starttime.gps
+        starttime_sec = floor(starttime_gps)
+
+        # TODO: check on what the resolution should be here
+        # 1ms or more?
+        starttime_ms = floor((starttime_gps - starttime_sec) * 1000.)
 
         if tag not in tag_list:
             raise ValueError('tag must be one of: ', tag_list)
 
-        return cls(time=corr_time, command='take_data', starttime=starttime_gps,
-                   duration=duration, acclen=acclen, tag=tag)
+        return cls(time=corr_time, command='take_data', starttime_sec=starttime_sec,
+                   starttime_ms=starttime_ms, duration=duration,
+                   acclen_spectra=acclen_spectra, integration_time=integration_time,
+                   tag=tag)

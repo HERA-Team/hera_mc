@@ -1459,7 +1459,8 @@ class MCSession(Session):
                                  filter_column='state_type', filter_value=state_type)
 
     def correlator_control_command(self, command, starttime=None, duration=None,
-                                   acclen=None, tag=None, dryrun=False, testing=False):
+                                   acclen_spectra=None, tag=None, dryrun=False,
+                                   testing=False):
         """
         Issue a correlator control command.
 
@@ -1472,9 +1473,8 @@ class MCSession(Session):
             only applies if command is 'take_data': time to start taking data
         duration: integer
             only applies if command is 'take_data': number of seconds to take data for
-        acclen: integer
-            only applies if command is 'take_data': "Accumulation length in spectra."
-            Not sure what this means...
+        acclen_spectra: integer
+            only applies if command is 'take_data': Accumulation length in spectra.
         tag: string
             only applies if command is 'take_data': Tag which will end up in data
             files as a header entry, must be from correlator.tag_list (e.g. 'science', 'engineering')
@@ -1499,13 +1499,18 @@ class MCSession(Session):
         if not testing:
             self.add_correlator_control_state_from_corrcm()
 
-        # Get most recent control state
+        # Get most recent relevant control state
         if command in corr.command_state_map.keys():
             state_type = corr.command_state_map[command]['state_type']
             control_state = self.get_correlator_control_state(most_recent=True,
                                                               state_type=state_type)
         if command == 'take_data':
-            # TODO add proper control logic after talking to Jack
+            # TODO add proper control logic:
+            # Jack will make a function to return the next start time.
+            # use that to determine if the correlator will be taking data
+            # Note: correlator can only store one future starttime,
+            # if a new command is issued it will overwrite the starttime in the correlator.
+            # need to have appropriate warnings/errors with override options
             if len(control_state) > 0:
                 if control_state[0].state:
                     raise RuntimeError('correlator is already taking data')
@@ -1513,6 +1518,7 @@ class MCSession(Session):
             if len(control_state) > 0:
                 if control_state[0].state == corr.command_state_map[command]['state']:
                     # Already in desired state. Return
+                    # TODO: should this be a warning or just a print statement?
                     print('Correlator is already in the desired state.')
                     if dryrun:
                         return []
@@ -1526,21 +1532,28 @@ class MCSession(Session):
                 raise ValueError('starttime must be specified if command is "take_data"')
             if duration is None:
                 raise ValueError('duration must be specified if command is "take_data"')
-            if acclen is None:
-                raise ValueError('acclen must be specified if command is "take_data"')
+            if acclen_spectra is None:
+                raise ValueError('acclen_spectra must be specified if command is "take_data"')
             if tag is None:
                 raise ValueError('tag must be specified if command is "take_data"')
 
+            if not testing:
+                integration_time = corr._get_integration_time(acclen_spectra)
+            else:
+                # TODO: make this sensible...
+                integration_time = acclen_spectra * 200e6 / 8192
+
             take_data_args_obj = \
                 corr.CorrelatorTakeDataArguments.create(command_time, starttime,
-                                                        duration, acclen, tag)
+                                                        duration, acclen_spectra,
+                                                        integration_time, tag)
         else:
             if starttime is not None:
                 raise ValueError('starttime cannot be specified if command is not "take_data"')
             if duration is not None:
                 raise ValueError('duration cannot be specified if command is not "take_data"')
-            if acclen is not None:
-                raise ValueError('acclen cannot be specified if command is not "take_data"')
+            if acclen_spectra is not None:
+                raise ValueError('acclen_spectra cannot be specified if command is not "take_data"')
             if tag is not None:
                 raise ValueError('tag cannot be specified if command is not "take_data"')
 
