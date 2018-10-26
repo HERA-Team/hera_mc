@@ -94,7 +94,7 @@ def package_db_to_csv(session=None, tables='all'):
         table_data.to_csv(data_filename, index=False)
 
 
-def pack_n_go(session, cm_csv_path):
+def pack_n_go(session, cm_csv_path):  # pragma: no cover
     """
     This module will move the csv files to the distribution directory, commit them
     and put the new commit hash into the database
