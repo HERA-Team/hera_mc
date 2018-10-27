@@ -1472,7 +1472,7 @@ class MCSession(Session):
         starttime: astropy Time object
             only applies if command is 'take_data': time to start taking data
         duration: integer
-            only applies if command is 'take_data': number of seconds to take data for
+            only applies if command is 'take_data': Length of time to take data for, in seconds
         acclen_spectra: integer
             only applies if command is 'take_data': Accumulation length in spectra.
         tag: string

@@ -101,7 +101,8 @@ def create_control_state(correlator_redis_address=DefaultRedisAddress, corr_stat
 
     Parameters:
     ------------
-    correlator_redis_address: Address where the correlator redis database can be accessed
+    correlator_redis_address: Address where the correlator redis database can be accessed.
+        Only used if corr_state_dict is None.
     corr_state_dict: A dict containing info as in the return dict from _get_control_state()
         for testing purposes. If None, _get_control_state() is called. Default: None
 
