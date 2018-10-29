@@ -29,6 +29,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    args.verbosity = cm_utils.parse_verbosity(args.verbosity)
+
     date_query = cm_utils.get_astropytime(args.date, args.time)
 
     if args.action[:2].lower() == 'in':

@@ -63,7 +63,7 @@ class TestNodeSensor(TestHERAMC):
                                    top_sensor_temp=30., middle_sensor_temp=31.98,
                                    bottom_sensor_temp=41., humidity_sensor_temp=33.89,
                                    humidity=32.5)
-        result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'))
+        result = self.test_session.get_node_sensor_readings(starttime=t1 - TimeDelta(3.0, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
@@ -79,17 +79,21 @@ class TestNodeSensor(TestHERAMC):
                                                    humidity_sensor_temp,
                                                    humidity)
 
-        result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_node_sensor_readings(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                             nodeID=1)
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_node_sensor_readings(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                             stoptime=t1)
         self.assertEqual(len(result), 2)
 
-        result = self.test_session.get_node_sensor_readings(t1 + TimeDelta(200.0, format='sec'))
+        result_most_recent = self.test_session.get_node_sensor_readings()
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result_most_recent, result)
+
+        result = self.test_session.get_node_sensor_readings(starttime=t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
     def test_create_sensor_readings(self):
@@ -100,7 +104,7 @@ class TestNodeSensor(TestHERAMC):
             self.test_session.add(obj)
 
         t1 = Time(1512770942.726777, format='unix')
-        result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_node_sensor_readings(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                             nodeID=1)
 
         expected = node.NodeSensor(time=int(floor(t1.gps)), node=1,
@@ -111,9 +115,22 @@ class TestNodeSensor(TestHERAMC):
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result = self.test_session.get_node_sensor_readings(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_node_sensor_readings(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                             stoptime=t1 + TimeDelta(5.0, format='sec'))
         self.assertEqual(len(result), 3)
+
+        result_most_recent = self.test_session.get_node_sensor_readings(most_recent=True)
+        self.assertEqual(result_most_recent, result)
+
+    def test_sensor_reading_errors(self):
+        top_sensor_temp = node_sensor_example_dict['1']['temp_top']
+        middle_sensor_temp = node_sensor_example_dict['1']['temp_mid']
+        bottom_sensor_temp = node_sensor_example_dict['1']['temp_bot']
+        humidity_sensor_temp = node_sensor_example_dict['1']['temp_humid']
+        humidity = node_sensor_example_dict['1']['humid']
+        self.assertRaises(ValueError, self.test_session.add_node_sensor_readings,
+                          'foo', 1, top_sensor_temp, middle_sensor_temp,
+                          bottom_sensor_temp, humidity_sensor_temp, humidity)
 
     def test_add_node_sensor_readings_from_nodecontrol(self):
 
@@ -122,7 +139,7 @@ class TestNodeSensor(TestHERAMC):
 
             self.test_session.add_node_sensor_readings_from_nodecontrol()
             result = self.test_session.get_node_sensor_readings(
-                Time.now() - TimeDelta(120.0, format='sec'),
+                starttime=Time.now() - TimeDelta(120.0, format='sec'),
                 stoptime=Time.now() + TimeDelta(120.0, format='sec'))
             self.assertEqual(len(result), len(node_list))
 
@@ -150,34 +167,38 @@ class TestNodePowerStatus(TestHERAMC):
                                         snap1_powered=True, snap2_powered=False,
                                         snap3_powered=False, pam_powered=True,
                                         fem_powered=True)
-        result = self.test_session.get_node_power_status(t1 - TimeDelta(3.0, format='sec'))
+        result = self.test_session.get_node_power_status(starttime=t1 - TimeDelta(3.0, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        snap_relay_powered = node_power_example_dict['1']['power_snap_relay']
-        snap0_powered = node_power_example_dict['1']['power_snap_0']
-        snap1_powered = node_power_example_dict['1']['power_snap_1']
-        snap2_powered = node_power_example_dict['1']['power_snap_2']
-        snap3_powered = node_power_example_dict['1']['power_snap_3']
-        pam_powered = node_power_example_dict['1']['power_pam']
-        fem_powered = node_power_example_dict['1']['power_fem']
+        snap_relay_powered = node_power_example_dict['2']['power_snap_relay']
+        snap0_powered = node_power_example_dict['2']['power_snap_0']
+        snap1_powered = node_power_example_dict['2']['power_snap_1']
+        snap2_powered = node_power_example_dict['2']['power_snap_2']
+        snap3_powered = node_power_example_dict['2']['power_snap_3']
+        pam_powered = node_power_example_dict['2']['power_pam']
+        fem_powered = node_power_example_dict['2']['power_fem']
         self.test_session.add_node_power_status(t1, 2, snap_relay_powered,
                                                 snap0_powered, snap1_powered,
                                                 snap2_powered, snap3_powered,
                                                 fem_powered, pam_powered)
 
-        result = self.test_session.get_node_power_status(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_node_power_status(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                          nodeID=1)
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result = self.test_session.get_node_power_status(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_node_power_status(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                          stoptime=t1)
         self.assertEqual(len(result), 2)
 
-        result = self.test_session.get_node_power_status(t1 + TimeDelta(200.0, format='sec'))
+        result_most_recent = self.test_session.get_node_power_status()
+        self.assertEqual(len(result_most_recent), 2)
+        self.assertEqual(result_most_recent, result)
+
+        result = self.test_session.get_node_power_status(starttime=t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
     def test_create_power_status(self):
@@ -188,7 +209,7 @@ class TestNodePowerStatus(TestHERAMC):
             self.test_session.add(obj)
 
         t1 = Time(1512770942.726777, format='unix')
-        result = self.test_session.get_node_power_status(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_node_power_status(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                          nodeID=1)
 
         expected = node.NodePowerStatus(time=int(floor(t1.gps)), node=1,
@@ -200,9 +221,24 @@ class TestNodePowerStatus(TestHERAMC):
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result = self.test_session.get_node_power_status(t1 - TimeDelta(3.0, format='sec'),
+        result = self.test_session.get_node_power_status(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                          stoptime=t1 + TimeDelta(5.0, format='sec'))
         self.assertEqual(len(result), 3)
+
+        result_most_recent = self.test_session.get_node_power_status()
+        self.assertEqual(result_most_recent, result)
+
+    def test_node_power_status_errors(self):
+        snap_relay_powered = node_power_example_dict['1']['power_snap_relay']
+        snap0_powered = node_power_example_dict['1']['power_snap_0']
+        snap1_powered = node_power_example_dict['1']['power_snap_1']
+        snap2_powered = node_power_example_dict['1']['power_snap_2']
+        snap3_powered = node_power_example_dict['1']['power_snap_3']
+        pam_powered = node_power_example_dict['1']['power_pam']
+        fem_powered = node_power_example_dict['1']['power_fem']
+        self.assertRaises(ValueError, self.test_session.add_node_power_status,
+                          'foo', 1, snap_relay_powered, snap0_powered, snap1_powered,
+                          snap2_powered, snap3_powered, fem_powered, pam_powered)
 
     def test_add_node_power_status_from_nodecontrol(self):
 
@@ -210,7 +246,7 @@ class TestNodePowerStatus(TestHERAMC):
             node_list = node.get_node_list()
 
             self.test_session.add_node_power_status_from_nodecontrol()
-            result = self.test_session.get_node_power_status(Time.now() - TimeDelta(120.0, format='sec'),
+            result = self.test_session.get_node_power_status(starttime=Time.now() - TimeDelta(120.0, format='sec'),
                                                              stoptime=Time.now() + TimeDelta(120.0, format='sec'))
             self.assertEqual(len(result), len(node_list))
 
