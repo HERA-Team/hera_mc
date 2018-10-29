@@ -44,6 +44,7 @@ if __name__ == '__main__':
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
+    args.verbosity = cm_utils.parse_verbosity(args.verbosity)
 
     if args.hpn is None or args.rev is None or args.hptype is None or args.mfg is None:
         args = query_args(args)
@@ -65,7 +66,7 @@ if __name__ == '__main__':
         print("Stopping this addition.")
     else:
         # Add new part
-        if args.verbosity == 'h':
+        if args.verbosity > 1:
             print("Adding new part {}:{}".format(args.hpn, args.rev))
         new_part_add = [(args.hpn, args.rev, args.hptype, args.mfg)]
         part_connect.add_new_parts(session, part, new_part_add, at_date, args.actually_do_it)

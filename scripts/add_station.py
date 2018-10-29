@@ -130,14 +130,12 @@ if __name__ == '__main__':
     parser.add_argument('--station_type_name', help="Station category name", default=None)
     parser.add_argument('--datum', help="Datum of UTM [WGS84]", default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]", default='34J')
-    cm_utils.add_verbosity_args(parser)
     parser.add_argument('--add_new_geo', help="Flag to allow update to add a new "
                         "record.  [True]", action='store_false')
     parser.add_argument('--add_new_part', help="Flag to allow update to add a new "
                         "record.  [True]", action='store_false')
 
     args = parser.parse_args()
-    args.verbosity = args.verbosity.lower()
     args.station_name = args.station_name.upper()
     if args.station_name.startswith(('HH', 'HA', 'HB')):
         antenna = read_antennas()
