@@ -308,6 +308,8 @@ class Handling:
         """
 
         at_date = cm_utils.get_astropytime(at_date)
+        if isinstance(rev_list, six.string_types):
+            rev_list = [rev_list] * len(hpn_list)
 
         rev_part = {}
         for i, xhpn in enumerate(hpn_list):
@@ -436,12 +438,11 @@ class Handling:
         for i, xhpn in enumerate(rev_part):
             if len(rev_part[xhpn]) == 0:
                 continue
-            rq = rev_list[i].upper()[:3]
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
                 this_connect = PartConnectionDossierEntry(xhpn, this_rev, port, at_date)
                 this_connect.get_entry(self.session)
-                this_connect.add_filter(at_date, rq)
+                this_connect.add_filter(at_date, xrev.rev_query)
                 part_connection_dossier[this_connect.entry_key] = this_connect
         return part_connection_dossier
 

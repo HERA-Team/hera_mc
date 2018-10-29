@@ -32,7 +32,9 @@ class NoTimeError(Exception):
 
 def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     """
-    Returns namespace of revisions (hpn, rev, started, ended, [hukey], [pkey]) of queried type
+    Returns namespace of revisions
+        (hpn, rev, rev_query, started, ended, [hukey], [pkey])
+    of rev_query
     where the [hukey], [pkey] are included for fully_connected queries.
     Allowed types listed below in "help"
 
@@ -82,6 +84,7 @@ def get_last_revision(hpn, session=None):
     session:  db session
     """
 
+    rq = 'LAS'
     revisions = part_connect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
@@ -91,7 +94,7 @@ def get_last_revision(hpn, session=None):
         end_date = revisions[rev]['ended']
         if end_date is None:
             latest_end = cm_utils.get_astropytime('>')
-            no_end.append(Namespace(hpn=hpn, rev=rev, started=revisions[rev]['started'],
+            no_end.append(Namespace(hpn=hpn, rev=rev, rev_query=rq, started=revisions[rev]['started'],
                                     ended=revisions[rev]['ended']))
         elif end_date > latest_end:
             latest_rev = rev
@@ -99,7 +102,7 @@ def get_last_revision(hpn, session=None):
     if len(no_end) > 0:
         return no_end
     else:
-        return [Namespace(hpn=hpn, rev=latest_rev, started=revisions[latest_rev]['started'],
+        return [Namespace(hpn=hpn, rev=latest_rev, rev_query=rq, started=revisions[latest_rev]['started'],
                           ended=revisions[latest_rev]['ended'])]
 
 
@@ -113,6 +116,7 @@ def get_all_revisions(hpn, session=None):
     session:  db session
     """
 
+    rq = 'ALL'
     revisions = part_connect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
@@ -121,7 +125,7 @@ def get_all_revisions(hpn, session=None):
     for rev in sort_rev:
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
-        all_rev.append(Namespace(hpn=hpn, rev=rev, started=started, ended=ended))
+        all_rev.append(Namespace(hpn=hpn, rev=rev, rev_query=rq, started=started, ended=ended))
     return all_rev
 
 
@@ -144,7 +148,7 @@ def get_specific_revision(hpn, rq, session=None):
         if rq.upper() == rev.upper():
             start_date = revisions[rev]['started']
             end_date = revisions[rev]['ended']
-            this_rev = [Namespace(hpn=hpn, rev=rev, started=start_date, ended=end_date)]
+            this_rev = [Namespace(hpn=hpn, rev=rev, rev_query=rq, started=start_date, ended=end_date)]
     return this_rev
 
 
@@ -159,6 +163,7 @@ def get_active_revision(hpn, at_date, session=None):
     session:  db session
     """
 
+    rq = 'ACT'
     revisions = part_connect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
@@ -167,7 +172,7 @@ def get_active_revision(hpn, at_date, session=None):
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
         if cm_utils.is_active(at_date, started, ended):
-            return_active.append(Namespace(hpn=hpn, rev=rev, started=started, ended=ended))
+            return_active.append(Namespace(hpn=hpn, rev=rev, rev_query=rq, started=started, ended=ended))
 
     return return_active
 
@@ -183,6 +188,7 @@ def get_full_revision(hpn, hookup_dict=None):
     hpn:  string of hera part number (must match hookup_dict keys part type)
     hookup_dict:  hookup dictionary to check for full connection
     """
+    rq = 'FUL'
     from . import cm_hookup
     if not isinstance(hookup_dict, dict):
         H = cm_hookup.Hookup()
@@ -195,7 +201,7 @@ def get_full_revision(hpn, hookup_dict=None):
                 if is_connected:
                     tsrt = h.timing[pol][0]
                     tend = h.timing[pol][1]
-                    return_full_keys.append(Namespace(hpn=hpn, rev=rev_hu,
+                    return_full_keys.append(Namespace(hpn=hpn, rev=rev_hu, rev_query=rq,
                                                       started=tsrt, ended=tend,
                                                       hukey=k, pol=pol))
     return return_full_keys
