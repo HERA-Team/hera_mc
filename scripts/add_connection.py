@@ -51,7 +51,7 @@ if __name__ == '__main__':
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
-
+    args.verbosity = cm_utils.parse_verbosity(args.verbosity)
     args = query_args(args)
 
     # Pre-process some args
@@ -80,7 +80,7 @@ if __name__ == '__main__':
         go_ahead = False
 
     if go_ahead:
-        if args.verbosity == 'h':
+        if args.verbosity > 1:
             print('Adding connection {}:{}:{} <-> {}:{}:{}'
                   .format(args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport))
         # Connect parts

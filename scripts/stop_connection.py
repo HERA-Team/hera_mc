@@ -9,8 +9,6 @@ Script to add a general connection to the database.
 
 from __future__ import absolute_import, division, print_function
 
-import sys
-import copy
 import six
 
 from hera_mc import mc, cm_utils, part_connect, cm_handling
@@ -49,7 +47,6 @@ if __name__ == '__main__':
                         "opposed to printing out what it would do.",
                         action='store_true')
     cm_utils.add_date_time_args(parser)
-    cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
 
     args = query_args(args)

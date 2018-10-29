@@ -100,16 +100,25 @@ def listify(X):
 
 
 def add_verbosity_args(parser):
-    """Add a standardized "--verbosity" argument to an ArgParser object. Supported
-    values are "l", "m", and "h", which presumably stand for "low", "medium",
-    and "high".
-
-    The function name is plural because it's conceivable that in the future we might
-    want to provide multiple arguments related to this general topic.
-
+    """Add a standardized "--verbosity" argument to an ArgParser object.
+    Returns the number of 'v's (-v=1 [low], -vv=2 [medium], -vvv=3 [high]) or the supplied integer.
+    Defaults to 1
+    Parsed by 'parse_verbosity' function
     """
-    parser.add_argument('-v', '--verbosity', help="Verbosity level: 'l', 'm', or 'h'. [l].",
-                        choices=['l', 'm', 'h'], default="m")
+    parser.add_argument('-v', '--verbosity', help="Verbosity level -v -vv -vvv. [-v].",
+                        nargs='?', default=1)
+
+
+def parse_verbosity(vargs):
+    try:
+        return int(vargs)
+    except (ValueError, TypeError):
+        pass
+    if vargs is None:
+        return 1
+    if vargs.count('v'):
+        return vargs.count('v') + 1
+    raise ValueError("Invalid argument to verbosity.")
 
 
 # ##############################################DATE STUFF
