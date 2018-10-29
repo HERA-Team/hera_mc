@@ -110,7 +110,6 @@ def add_verbosity_args(parser):
 
 
 def parse_verbosity(vargs):
-    print(vargs)
     try:
         return int(vargs)
     except (ValueError, TypeError):
