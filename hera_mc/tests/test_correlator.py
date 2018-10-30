@@ -113,16 +113,19 @@ class TestCorrelatorCommandState(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.add_correlator_control_state,
                           t1, 'foo', True)
 
+    @unittest.skipIf(not is_onsite(), 'This test only works on site')
     def test_add_corr_command_state_from_corrcm(self):
 
-        if is_onsite():
-            self.test_session.add_correlator_control_state_from_corrcm()
-            result = self.test_session.get_correlator_control_state(state_type='taking_data', most_recent=True)
-            self.assertEqual(len(result), 1)
-            result = self.test_session.get_correlator_control_state(state_type='phase_switching', most_recent=True)
-            self.assertEqual(len(result), 1)
-            result = self.test_session.get_correlator_control_state(state_type='noise_diode', most_recent=True)
-            self.assertEqual(len(result), 1)
+        self.test_session.add_correlator_control_state_from_corrcm()
+        result = self.test_session.get_correlator_control_state(
+            state_type='taking_data', most_recent=True)
+        self.assertEqual(len(result), 1)
+        result = self.test_session.get_correlator_control_state(
+            state_type='phase_switching', most_recent=True)
+        self.assertEqual(len(result), 1)
+        result = self.test_session.get_correlator_control_state(
+            state_type='noise_diode', most_recent=True)
+        self.assertEqual(len(result), 1)
 
 
 class TestCorrelatorControlCommand(TestHERAMC):
@@ -336,6 +339,17 @@ class TestCorrelatorControlCommand(TestHERAMC):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
         self.assertRaises(ValueError, corr.CorrelatorTakeDataArguments.create,
                           'foo', t1, 100, 2, 2 * ((2.0 * 16384) / 500e6), 'engineering')
+
+    @unittest.skipIf(not is_onsite(), 'This test only works on site')
+    def test_get_integration_time(self):
+
+        int_time_in = 10  # seconds
+        n_spectra = int_time * 500e6 / ((2.0 * 16384))
+        int_time = corr._get_integration_time(n_spectra)
+
+    @unittest.skipIf(not is_onsite(), 'This test only works on site')
+    def test_get_next_start_time(self):
+        next_starttime = corr._get_next_start_time()
 
 
 if __name__ == '__main__':
