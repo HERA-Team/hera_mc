@@ -301,22 +301,22 @@ class Handling:
             raise ValueError("Unmatched hpn and rev lists.")
         return hpn_list, rev_list
 
-    def get_rev_part_dictionary(self, hpn_list, rev_list, at_date, exact_match):
+    def get_rev_part_dictionary(self, hpn, rev, at_date, exact_match):
         """
         This gets the list of hpn that match the rev -- the resulting dictionary
         is used to get the part and connection "dossiers"
 
         Parameters
         -----------
-        hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
+        hpn:  the input hera part number [string or list-of-strings] (whole or first part thereof)
         rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL')
-              if list, must match length of hpn_list
+              if list must match length of hpn
         at_date:  reference date of dossier [something get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
         """
 
         at_date = cm_utils.get_astropytime(at_date)
-
+        hpn_list, rev_list = self.listify_hpnrev(hpn, rev)
         rev_part = {}
         for i, xhpn in enumerate(hpn_list):
             if not exact_match and xhpn[-1] != '%':
@@ -327,7 +327,7 @@ class Handling:
                                                                  session=self.session)
         return rev_part
 
-    def get_part_dossier(self, hpn_list, rev, at_date, exact_match=False, full_version=True):
+    def get_part_dossier(self, hpn, rev, at_date, exact_match=False, full_version=True):
         """
         Return information on a part.  It will return all matching first
         characters unless exact_match==True.
@@ -337,16 +337,15 @@ class Handling:
 
         Parameters
         -----------
-        hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
+        hpn:  the input hera part number [string or list-of-strings] (whole or first part thereof)
         rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
-              if list, must match length of hpn_list
+              if list, must match length of hpn
         at_date:  reference date of dossier only used for ACTIVE
         exact_match:  boolean to enforce full part number match
         full_version:  flag whether to populate the full_version or truncated version of the dossier
         """
 
-        hpn_list, rev_list = self.listify_hpnrev(hpn_list, rev)
-        rev_part = self.get_rev_part_dictionary(hpn_list, rev_list, at_date, exact_match)
+        rev_part = self.get_rev_part_dictionary(hpn, rev, at_date, exact_match)
 
         part_dossier = {}
         # Now get unique part/revs and put into dictionary
@@ -420,7 +419,7 @@ class Handling:
                 fnd.append(copy.copy(conn))
         return fnd
 
-    def get_part_connection_dossier(self, hpn_list, rev, port, at_date=None, exact_match=False):
+    def get_part_connection_dossier(self, hpn, rev, port, at_date=None, exact_match=False):
         """
         Return information on parts connected to hpn
         It should get connections immediately adjacent to one part (upstream and
@@ -430,16 +429,15 @@ class Handling:
 
         Parameters
         -----------
-        hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
+        hpn:  the input hera part number [string or list-of-strings] (whole or first part thereof)
         rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
-              if list, must match length of hpn_list
+              if list, must match length of hpn
         port:  a specifiable port name [string, not a list],  default is 'all'
         at_date: reference date of dossier, only used if rev==ACTIVE (and for now FULL...)
         exact_match:  boolean to enforce full part number match
         """
 
-        hpn_list, rev_list = self.listify_hpnrev(hpn_list, rev)
-        rev_part = self.get_rev_part_dictionary(hpn_list, rev_list, at_date, exact_match)
+        rev_part = self.get_rev_part_dictionary(hpn, rev, at_date, exact_match)
         part_connection_dossier = {}
         for i, xhpn in enumerate(rev_part):
             if len(rev_part[xhpn]) == 0:

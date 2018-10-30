@@ -384,7 +384,7 @@ class Hookup:
         It is the full original method that was used prior to the cache file wrapper stuff.
         """
         # Get all the appropriate parts
-        parts = self.handling.get_part_dossier(hpn_list=hpn_list, rev=rev,
+        parts = self.handling.get_part_dossier(hpn=hpn_list, rev=rev,
                                                at_date=at_date,
                                                exact_match=exact_match,
                                                full_version=False)
