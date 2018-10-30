@@ -1354,7 +1354,7 @@ class MCSession(Session):
             # create object first: catch any mistakes
             command_obj = NodePowerCommand.create(command_time, nodeID, partname, command)
 
-            if not dryrun:
+            if not dryrun:  # pragma: no cover
                 import nodeControl
 
                 node_controller = nodeControl.NodeControl(nodeID, serverAddress=nodeServerAddress)
@@ -1641,7 +1641,7 @@ class MCSession(Session):
                     print('Correlator is already in the desired state.')
                     if dryrun:
                         return []
-                    else:
+                    else:  # pragma: no cover
                         return
 
         # create object(s) first: catch any mistakes
@@ -1676,7 +1676,7 @@ class MCSession(Session):
             if tag is not None:
                 raise ValueError('tag cannot be specified if command is not "take_data"')
 
-        if not dryrun:
+        if not dryrun:  # pragma: no cover
             import hera_corr_cm
 
             corr_controller = hera_corr_cm.HeraCorrCM()
