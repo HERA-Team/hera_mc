@@ -23,18 +23,27 @@ state_dict = {'taking_data': 'is_recording', 'phase_switching': 'phase_switch_is
 tag_list = ['science', 'engineering']
 
 # key is command, value is method name in hera_corr_cm
-command_dict = {'take_data': 'take_data',
+command_dict = {'take_data': 'take_data', 'stop_taking_data': 'stop_taking_data',
                 'phase_switching_on': 'phase_switch_enable',
                 'phase_switching_off': 'phase_switch_disable',
                 'noise_diode_on': 'noise_diode_enable',
                 'noise_diode_off': 'noise_diode_disable',
                 'restart': 'restart'}
 
-command_state_map = {'take_data': {'state_type': 'taking_data'},
-                     'phase_switching_on': {'state_type': 'phase_switching', 'state': True},
-                     'phase_switching_off': {'state_type': 'phase_switching', 'state': False},
-                     'noise_diode_on': {'state_type': 'noise_diode', 'state': True},
-                     'noise_diode_off': {'state_type': 'noise_diode', 'state': False}}
+command_state_map = {'take_data': {'allowed_when_recording': False},
+                     'stop_taking_data': {'state_type': 'taking_data', 'state': False,
+                                          'allowed_when_recording': True},
+                     'phase_switching_on': {'state_type': 'phase_switching',
+                                            'state': True,
+                                            'allowed_when_recording': False},
+                     'phase_switching_off': {'state_type': 'phase_switching',
+                                             'state': False,
+                                             'allowed_when_recording': False},
+                     'noise_diode_on': {'state_type': 'noise_diode', 'state': True,
+                                        'allowed_when_recording': False},
+                     'noise_diode_off': {'state_type': 'noise_diode', 'state': False,
+                                         'allowed_when_recording': False},
+                     'restart': {'allowed_when_recording': False}}
 
 
 class CorrelatorControlState(MCDeclarativeBase):
@@ -168,9 +177,23 @@ def _get_integration_time(acclen_spectra, correlator_redis_address=DefaultRedisA
 
     corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
-    # TODO: call actual function that Jack will make to convert acclen_spectra to
-    # integration time in seconds (this is dummy code for now)
-    return corr_cm.get_integration_time(acclen_spectra)
+    return corr_cm.n_spectra_to_secs(acclen_spectra)
+
+
+def _get_next_start_time(correlator_redis_address=DefaultRedisAddress):
+    """
+    gets the next start time from the correlator, in gps seconds
+
+    """
+    import hera_corr_cm
+
+    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+
+    starttime_unix_timestamp = corr_cm.next_start_time()
+    if starttime_unix_timestamp == 0.0:
+        return None
+
+    return Time(starttime_unix_timestamp, format=unix).gps
 
 
 class CorrelatorTakeDataArguments(MCDeclarativeBase):

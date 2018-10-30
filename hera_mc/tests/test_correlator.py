@@ -8,13 +8,14 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
+import time
 import nose.tools as nt
 from math import floor
 from astropy.time import Time, TimeDelta
 
 from hera_mc import mc
 import hera_mc.correlator as corr
-from ..tests import TestHERAMC, is_onsite
+from ..tests import TestHERAMC, is_onsite, checkWarnings
 
 
 corr_command_example_dict = {
@@ -104,6 +105,14 @@ class TestCorrelatorCommandState(TestHERAMC):
                                                                 stoptime=t1 + TimeDelta(5.0, format='sec'))
         self.assertEqual(len(result), 3)
 
+    def test_control_state_errors(self):
+        self.assertRaises(ValueError, self.test_session.add_correlator_control_state,
+                          'foo', 'taking_data', True)
+
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        self.assertRaises(ValueError, self.test_session.add_correlator_control_state,
+                          t1, 'foo', True)
+
     def test_add_corr_command_state_from_corrcm(self):
 
         if is_onsite():
@@ -148,8 +157,8 @@ class TestCorrelatorControlCommand(TestHERAMC):
         starttime_ms_offset = floor((starttime.gps - floor(starttime.gps)) * 1000)
 
         command_list = self.test_session.correlator_control_command(
-            'take_data', starttime=starttime,
-            duration=100, acclen_spectra=2, tag='engineering', testing=True)
+            'take_data', starttime=starttime, duration=100, acclen_spectra=2,
+            tag='engineering', testing=True)
 
         self.assertEqual(len(command_list), 2)
         command_time = command_list[0].time
@@ -158,7 +167,7 @@ class TestCorrelatorControlCommand(TestHERAMC):
         expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
         self.assertTrue(command_list[0].isclose(expected_comm))
 
-        int_time = 2 * 200e6 / 8192
+        int_time = 2 * ((2.0 * 16384) / 500e6)
         expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
                                                          command='take_data',
                                                          starttime_sec=command_time + 10,
@@ -178,18 +187,14 @@ class TestCorrelatorControlCommand(TestHERAMC):
             state_type = corr.command_state_map[command]['state_type']
             state = corr.command_state_map[command]['state']
 
-            if state is True:
-                tdelta = 60
-            else:
-                tdelta = 30
-            t1 = Time.now() - TimeDelta(tdelta + 60, format='sec')
+            t1 = Time.now() - TimeDelta(30 + 60, format='sec')
             self.test_session.add_correlator_control_state(t1, state_type, state)
 
             command_list = self.test_session.correlator_control_command(
                 command, testing=True)
             self.assertEqual(len(command_list), 0)
 
-            t2 = Time.now() - TimeDelta(tdelta, format='sec')
+            t2 = Time.now() - TimeDelta(30, format='sec')
             self.test_session.add_correlator_control_state(t2, state_type, not(state))
 
             command_list = self.test_session.correlator_control_command(
@@ -202,6 +207,12 @@ class TestCorrelatorControlCommand(TestHERAMC):
             expected = corr.CorrelatorControlCommand(time=command_time, command=command)
             self.assertTrue(command_list[0].isclose(expected))
 
+            self.test_session.rollback()
+
+            result = self.test_session.get_correlator_control_state(most_recent=True,
+                                                                    state_type=state_type)
+            self.assertEqual(len(result), 0)
+
     def test_take_data_command_with_recent_status(self):
         # test take_data command with recent status
         t1 = Time.now() - TimeDelta(60, format='sec')
@@ -211,28 +222,95 @@ class TestCorrelatorControlCommand(TestHERAMC):
                           'take_data', starttime=Time.now() + TimeDelta(10, format='sec'),
                           duration=100, acclen_spectra=2, tag='engineering', testing=True)
 
+        t2 = Time.now() - TimeDelta(30, format='sec')
+        self.test_session.add_correlator_control_state(t2, 'taking_data', False)
+
+        t3 = Time.now() + TimeDelta(10, format='sec')
+        control_command_objs = self.test_session.correlator_control_command(
+            'take_data', starttime=t3, duration=100, acclen_spectra=2,
+            tag='engineering', testing=True)
+        for obj in control_command_objs:
+            self.test_session.add(obj)
+            self.test_session.commit()
+
+        time.sleep(1)
+
+        starttime = Time.now() + TimeDelta(10, format='sec')
+        self.assertRaises(RuntimeError, self.test_session.correlator_control_command,
+                          'take_data', starttime=starttime + TimeDelta(30, format='sec'),
+                          duration=100, acclen_spectra=2, tag='engineering', testing=True)
+
+        starttime_ms_offset = floor((starttime.gps - floor(starttime.gps)) * 1000)
+
+        command_list = checkWarnings(self.test_session.correlator_control_command,
+                                     ['take_data'],
+                                     {'starttime': starttime, 'duration': 100,
+                                      'acclen_spectra': 2, 'tag': 'engineering',
+                                      'testing': True, 'overwrite_take_data': True},
+                                     message='Correlator was commanded to take data')
+
+        command_time = command_list[0].time
+        self.assertTrue(Time.now().gps - command_time < 2.)
+
+        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
+        self.assertTrue(command_list[0].isclose(expected_comm))
+
+        int_time = 2 * ((2.0 * 16384) / 500e6)
+        expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
+                                                         command='take_data',
+                                                         starttime_sec=command_time + 10,
+                                                         starttime_ms=starttime_ms_offset,
+                                                         duration=100,
+                                                         acclen_spectra=2,
+                                                         integration_time=int_time,
+                                                         tag='engineering')
+        self.assertTrue(command_list[1].isclose(expected_args))
+
+        for obj in command_list:
+            self.test_session.add(obj)
+            self.test_session.commit()
+
+        result_args = self.test_session.get_correlator_take_data_arguments(most_recent=True,
+                                                                           use_command_time=True)
+        self.assertEqual(len(result_args), 1)
+        self.assertTrue(result_args[0].isclose(expected_args))
+
+        result_args = self.test_session.get_correlator_take_data_arguments(starttime=Time.now())
+        self.assertEqual(len(result_args), 1)
+        self.assertFalse(result_args[0].isclose(expected_args))
+
     def test_control_command_errors(self):
         # test bad command
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'foo', testing=True)
 
         # test not setting required values for 'take_data'
+        starttime = Time.now() + TimeDelta(10, format='sec')
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
-                          'take_data', starttime=Time.now() + TimeDelta(10, format='sec'),
-                          duration=100, acclen_spectra=2, testing=True)
+                          'take_data', starttime=starttime, duration=100,
+                          acclen_spectra=2, testing=True)
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
-                          'take_data', starttime=Time.now() + TimeDelta(10, format='sec'),
-                          duration=100, tag='engineering', testing=True)
+                          'take_data', starttime=starttime, duration=100,
+                          tag='engineering', testing=True)
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
-                          'take_data', starttime=Time.now() + TimeDelta(10, format='sec'),
-                          acclen_spectra=2, tag='engineering', testing=True)
+                          'take_data', starttime=starttime, acclen_spectra=2,
+                          tag='engineering', testing=True)
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'take_data', duration=100, acclen_spectra=2, tag='engineering',
                           testing=True)
 
+        # test bad values for 'take_data'
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'take_data', starttime='foo', duration=100,
+                          acclen_spectra=2, tag='engineering', testing=True)
+
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'take_data', starttime=starttime, duration=100,
+                          acclen_spectra=2, tag='foo', testing=True)
+
         # test setting values for 'take_data' with other commands
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
-                          'noise_diode_on', starttime=Time.now() + TimeDelta(10, format='sec'),
+                          'noise_diode_on', starttime=starttime,
                           testing=True)
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'phase_switching_off', duration=100, testing=True)
@@ -240,6 +318,24 @@ class TestCorrelatorControlCommand(TestHERAMC):
                           'restart', acclen_spectra=2, testing=True)
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'noise_diode_off', tag='engineering', testing=True)
+
+        # test bad commands while taking data
+        t1 = Time.now() - TimeDelta(60, format='sec')
+        self.test_session.add_correlator_control_state(t1, 'taking_data', True)
+
+        commands_to_test = list(corr.command_dict.keys())
+        commands_to_test.remove('stop_taking_data')
+        commands_to_test.remove('take_data')
+        for command in commands_to_test:
+                self.assertRaises(RuntimeError, self.test_session.correlator_control_command,
+                                  command, testing=True)
+
+        self.assertRaises(ValueError, corr.CorrelatorControlCommand.create,
+                          'foo', 'take_data')
+
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        self.assertRaises(ValueError, corr.CorrelatorTakeDataArguments.create,
+                          'foo', t1, 100, 2, 2 * ((2.0 * 16384) / 500e6), 'engineering')
 
 
 if __name__ == '__main__':
