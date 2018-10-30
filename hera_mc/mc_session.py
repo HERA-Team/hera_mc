@@ -1681,12 +1681,27 @@ class MCSession(Session):
 
             corr_controller = hera_corr_cm.HeraCorrCM()
             if command == 'take_data':
-                getattr(node_controller, corr.command_dict[command])(starttime, duration, acclen, tag=tag)
+                # the correlator starttime can be different from the commanded
+                # time by as much as 134 ms
+                # the call to hera_corr_cm returns the actual start time (in unix format)
+                starttime_used_unix = \
+                    getattr(node_controller, corr.command_dict[command])(starttime, duration, acclen, tag=tag)
+                starttime_used = Time(starttime_used_unix, format='unix')
+
+                starttime_diff_sec = starttime.gps - starttime_used.gps
+                if np.abs(starttime_diff_sec) > .1:
+                    warnings.warn('Time difference between commanded and accepted '
+                                  'start time is: {tdiff} sec'.format(tdiff=starttime_diff_sec))
             else:
                 getattr(node_controller, corr.command_dict[command])
 
             self.add(command_obj)
             if command == 'take_data':
+                # update the starttime with the actual starttime of the correlator
+                take_data_args_obj = \
+                    corr.CorrelatorTakeDataArguments.create(command_time, starttime_used,
+                                                            duration, acclen_spectra,
+                                                            integration_time, tag)
                 self.add(take_data_args_obj)
         else:
             command_list.append(command_obj)
