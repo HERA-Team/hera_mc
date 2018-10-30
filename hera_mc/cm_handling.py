@@ -160,7 +160,7 @@ class PartConnectionDossierEntry:
     def add_filter(self, at_date, rev_type):
         """
         Filter the connection_dossier based on whether the entry is active based on the at_date.
-        This is only if the queried rev_type is for ACTIVE or FULLY_CONNECTED.  Currently they are
+        This is only if the queried rev_type is for ACTIVE or FULL.  Currently they are
         treated the same.
         Information on the rev_types may be found in <cm_revisions.get_revisions_of_type>
         """
@@ -169,8 +169,8 @@ class PartConnectionDossierEntry:
                 self.up[u].skip_it = False
             if d is not None:
                 self.down[d].skip_it = False
-        rq = rev_type.upper()[:3]
-        if rq == 'ACT' or rq == 'FUL':  # For now ACTIVE and FULL are handled identically
+        rq = rev_type.upper()
+        if rq.startswith('ACTIVE') or rq.startswith('FULL'):  # For now ACTIVE and FULL are handled identically
             for u, d in zip(self.keys_up, self.keys_down):
                 if u is not None:
                     if not cm_utils.is_active(at_date, self.up[u].start_gpstime, self.up[u].stop_gpstime):
@@ -280,9 +280,17 @@ class Handling:
             (func.upper(PC.Parts.hpn) == hpn.upper())).first()
         return part_query.hptype
 
-    def listify_hpnrev(self, hpn_list, rev):
-        if isinstance(hpn_list, six.string_types):
-            hpn_list = [hpn_list]
+    def listify_hpnrev(self, hpn, rev):
+        """
+        Makes sure that the hpn and revision requests are both lists and that they are
+        equal in length.  This is needed to handle the revision "categories"
+        """
+        if isinstance(hpn, list):
+            hpn_list = hpn
+        elif isinstance(hpn, six.string_types):
+            hpn_list = [hpn]
+        else:
+            raise ValueError("Wrong hpn type.")
         if isinstance(rev, six.string_types):
             rev_list = len(hpn_list) * [rev]
         elif isinstance(rev, list):
@@ -308,8 +316,6 @@ class Handling:
         """
 
         at_date = cm_utils.get_astropytime(at_date)
-        if isinstance(rev_list, six.string_types):
-            rev_list = [rev_list] * len(hpn_list)
 
         rev_part = {}
         for i, xhpn in enumerate(hpn_list):
@@ -425,10 +431,10 @@ class Handling:
         Parameters
         -----------
         hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
-        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULLY_CONNECTED', specific)
+        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
               if list, must match length of hpn_list
         port:  a specifiable port name [string, not a list],  default is 'all'
-        at_date: reference date of dossier, only used if rev==ACTIVE (and for now FULLY_CONNECTED...)
+        at_date: reference date of dossier, only used if rev==ACTIVE (and for now FULL...)
         exact_match:  boolean to enforce full part number match
         """
 
