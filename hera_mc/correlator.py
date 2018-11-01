@@ -99,7 +99,7 @@ def _get_control_state(correlator_redis_address=DefaultRedisAddress):
     for key, value in enumerate(state_dict):
         # call each state query method and add to corr_state_dict
         timestamp, state = getattr(corr_cm, value)
-        corr_state_dict[key]: {'timestamp': timestamp, 'state': state}
+        corr_state_dict[key] = {'timestamp': timestamp, 'state': state}
 
     return corr_state_dict
 
