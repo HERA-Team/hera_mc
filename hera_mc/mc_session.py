@@ -1637,7 +1637,6 @@ class MCSession(Session):
             if len(control_state) > 0:
                 if control_state[0].state == corr.command_state_map[command]['state']:
                     # Already in desired state. Return
-                    # TODO: should this be a warning or just a print statement?
                     print('Correlator is already in the desired state.')
                     if dryrun:
                         return []

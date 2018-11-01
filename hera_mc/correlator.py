@@ -222,9 +222,8 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
     integration_time = Column(Float, nullable=False)
     tag = Column(String, nullable=False)
 
-    # TODO: this Foreign key arrangement requires an unneccesary column on this
-    # object (command) because this table only has rows when command='take_data'
-    # Is there a way to specify the constraint without this dummy column?
+    # the command column isn't really needed to define the table (it's always 'take_data'),
+    # but it's required for the Foreign key to work properly
     __table_args__ = (ForeignKeyConstraint(['time', 'command'],
                                            ['correlator_control_command.time',
                                             'correlator_control_command.command']), {})
@@ -260,8 +259,6 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
         starttime_gps = starttime.gps
         starttime_sec = floor(starttime_gps)
 
-        # TODO: check on what the resolution should be here
-        # 1ms or more?
         starttime_ms = floor((starttime_gps - starttime_sec) * 1000.)
 
         if tag not in tag_list:
