@@ -97,4 +97,5 @@ from . import rtp  # noqa
 from . import qm  # noqa
 from . import weather  # noqa
 from . import node  # noqa
+from . import correlator  # noqa
 from . import mc    # noqa keep this last.

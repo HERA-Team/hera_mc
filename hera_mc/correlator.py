@@ -215,12 +215,12 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
     __tablename__ = 'correlator_take_data_arguments'
     time = Column(BigInteger, primary_key=True)
     command = Column(String, primary_key=True)
-    starttime_sec = Column(BigInteger)
-    starttime_ms = Column(Integer)
-    duration = Column(Float)
-    acclen_spectra = Column(Integer)
-    integration_time = Column(Float)
-    tag = Column(String)
+    starttime_sec = Column(BigInteger, nullable=False)
+    starttime_ms = Column(Integer, nullable=False)
+    duration = Column(Float, nullable=False)
+    acclen_spectra = Column(Integer, nullable=False)
+    integration_time = Column(Float, nullable=False)
+    tag = Column(String, nullable=False)
 
     # TODO: this Foreign key arrangement requires an unneccesary column on this
     # object (command) because this table only has rows when command='take_data'
