@@ -102,7 +102,6 @@ class TestParts(TestHERAMC):
             self.assertTrue(len(revision) == 0)
         revision = cm_revisions.get_revisions_of_type('TEST_FEED', 'LAST', 'now', self.test_session)
         self.assertEqual(revision[0].rev, 'Z')
-        self.assertRaises(cm_revisions.RevisionError, cm_revisions.get_revisions_of_type, 'OVER_FEED', 'LAST', 'now', self.test_session)
         revision = cm_revisions.get_revisions_of_type(None, 'ACTIVE', 'now', self.test_session)
         cm_revisions.show_revisions(revision)
         revision = cm_revisions.get_revisions_of_type('HH23', 'ACTIVE', 'now', self.test_session)
