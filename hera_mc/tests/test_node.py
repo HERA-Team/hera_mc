@@ -7,6 +7,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
+import os
 import unittest
 import nose.tools as nt
 from math import floor
@@ -14,6 +15,7 @@ from astropy.time import Time, TimeDelta
 
 from .. import mc, node
 from ..tests import TestHERAMC, is_onsite
+from hera_mc.data import DATA_PATH
 
 node_example_list = [nodeID for nodeID in range(1, 4)]
 
@@ -92,6 +94,17 @@ class TestNodeSensor(TestHERAMC):
         result_most_recent = self.test_session.get_node_sensor_readings()
         self.assertEqual(len(result), 2)
         self.assertEqual(result_most_recent, result)
+
+        filename = os.path.join(DATA_PATH, 'test_node_sensor_file.csv')
+        self.test_session.get_node_sensor_readings(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                   stoptime=t1, write_to_file=True,
+                                                   filename=filename)
+        os.remove(filename)
+
+        self.test_session.get_node_sensor_readings(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                   stoptime=t1, write_to_file=True)
+        default_filename = 'node_sensor.csv'
+        os.remove(default_filename)
 
         result = self.test_session.get_node_sensor_readings(starttime=t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
