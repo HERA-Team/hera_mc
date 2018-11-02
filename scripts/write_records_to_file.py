@@ -32,7 +32,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    variables = cm_utils.listify(args.variables)
     if args.last_period:
         from astropy.time import TimeDelta
         stop_time = Time.now()
