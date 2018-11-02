@@ -43,7 +43,11 @@ if __name__ == '__main__':
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
 
-    method_kwargs = {'starttime': start_time, 'stoptime': stop_time,
-                     valid_tables[args.table]['filter_column']: args.filter_value,
-                     'write_to_file': True, 'filename': args.filename}
-    getattr(session, valid_tables[args.table]['method'])(**method_kwargs)
+    session.get_node_sensor_readings(starttime=start_time, stoptime=stop_time,
+                                     nodeID=args.filter_value, write_to_file=True,
+                                     filename=args.filename)
+
+    # method_kwargs = {'starttime': start_time, 'stoptime': stop_time,
+    #                  valid_tables[args.table]['filter_column']: args.filter_value,
+    #                  'write_to_file': True, 'filename': args.filename}
+    # getattr(session, valid_tables[args.table]['method'])(**method_kwargs)
