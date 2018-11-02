@@ -101,6 +101,11 @@ class TestNodeSensor(TestHERAMC):
                                                    filename=filename)
         os.remove(filename)
 
+        self.test_session.get_node_sensor_readings(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                   stoptime=t1, write_to_file=True)
+        default_filename = 'node_sensor.csv'
+        os.remove(default_filename)
+
         result = self.test_session.get_node_sensor_readings(starttime=t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
