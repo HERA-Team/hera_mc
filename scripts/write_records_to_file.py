@@ -9,7 +9,7 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
 
 from hera_mc import mc, cm_utils
 
@@ -33,7 +33,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.last_period:
-        from astropy.time import TimeDelta
         stop_time = Time.now()
         start_time = stop_time - TimeDelta(float(args.last_period) / (60.0 * 24.0), format='jd')
     else:

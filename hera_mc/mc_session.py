@@ -146,15 +146,15 @@ class MCSession(Session):
                 table_name = getattr(table_class, '__tablename__')
                 filename = table_name + '.csv'
 
-            column_names = [col_dict['name'] for col_dict in query.column_descriptions]
+            column_names = [col.name for col in (getattr(getattr(table_class, '__table__'), '_columns'))]
             with open(filename, 'w') as the_file:
                 # write header
-                the_file.write(','.join(column_names))
+                the_file.write(', '.join(column_names) + '\n')
 
                 # write rows
                 for item in query:
                     item_vals = [str(getattr(item, col)) for col in column_names]
-                    the_file.write(','.join(item_vals))
+                    the_file.write(', '.join(item_vals) + '\n')
 
         else:
             return query.all()
