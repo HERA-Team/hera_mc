@@ -88,12 +88,12 @@ if __name__ == '__main__':
         sys.exit()
 
     if action_tag == 'pa':  # part_info
-        part_dossier = handling.get_part_dossier(hpn_list=args.hpn, rev=args.revision,
+        part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision,
                                                  at_date=date_query, exact_match=args.exact_match)
         handling.show_parts(part_dossier)
     elif action_tag == 'co':  # connection_info
         connection_dossier = handling.get_part_connection_dossier(
-            hpn_list=args.hpn, rev=args.revision, port=args.port,
+            hpn=args.hpn, rev=args.revision, port=args.port,
             at_date=date_query, exact_match=args.exact_match)
         handling.show_connections(connection_dossier, verbosity=args.verbosity)
     elif action_tag == 're':  # revisions

@@ -14,13 +14,6 @@ from . import part_connect as PC
 from . import cm_revisions
 
 
-class RevisionError(Exception):
-    def __init__(self, hpn):
-        # Call the base class constructor with the parameters it needs
-        message = "Multiple revisions found on {}".format(hpn)
-        super(RevisionError, self).__init__(message)
-
-
 def check_for_overlap(interval_i, interval_j):
     if interval_j[0] <= interval_i[0]:
         if interval_j[1] > interval_i[0]:

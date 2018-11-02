@@ -160,7 +160,7 @@ class PartConnectionDossierEntry:
     def add_filter(self, at_date, rev_type):
         """
         Filter the connection_dossier based on whether the entry is active based on the at_date.
-        This is only if the queried rev_type is for ACTIVE or FULLY_CONNECTED.  Currently they are
+        This is only if the queried rev_type is for ACTIVE or FULL.  Currently they are
         treated the same.
         Information on the rev_types may be found in <cm_revisions.get_revisions_of_type>
         """
@@ -169,8 +169,8 @@ class PartConnectionDossierEntry:
                 self.up[u].skip_it = False
             if d is not None:
                 self.down[d].skip_it = False
-        rq = rev_type.upper()[:3]
-        if rq == 'ACT' or rq == 'FUL':  # For now ACTIVE and FULL are handled identically
+        rq = rev_type.upper()
+        if rq.startswith('ACTIVE') or rq.startswith('FULL'):  # For now ACTIVE and FULL are handled identically
             for u, d in zip(self.keys_up, self.keys_down):
                 if u is not None:
                     if not cm_utils.is_active(at_date, self.up[u].start_gpstime, self.up[u].stop_gpstime):
@@ -280,9 +280,17 @@ class Handling:
             (func.upper(PC.Parts.hpn) == hpn.upper())).first()
         return part_query.hptype
 
-    def listify_hpnrev(self, hpn_list, rev):
-        if isinstance(hpn_list, six.string_types):
-            hpn_list = [hpn_list]
+    def listify_hpnrev(self, hpn, rev):
+        """
+        Makes sure that the hpn and revision requests are both lists and that they are
+        equal in length.  This is needed to handle the revision "categories"
+        """
+        if isinstance(hpn, list):
+            hpn_list = hpn
+        elif isinstance(hpn, six.string_types):
+            hpn_list = [hpn]
+        else:
+            raise ValueError("Wrong hpn type.")
         if isinstance(rev, six.string_types):
             rev_list = len(hpn_list) * [rev]
         elif isinstance(rev, list):
@@ -293,22 +301,22 @@ class Handling:
             raise ValueError("Unmatched hpn and rev lists.")
         return hpn_list, rev_list
 
-    def get_rev_part_dictionary(self, hpn_list, rev_list, at_date, exact_match):
+    def get_rev_part_dictionary(self, hpn, rev, at_date, exact_match):
         """
         This gets the list of hpn that match the rev -- the resulting dictionary
         is used to get the part and connection "dossiers"
 
         Parameters
         -----------
-        hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
+        hpn:  the input hera part number [string or list-of-strings] (whole or first part thereof)
         rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL')
-              if list, must match length of hpn_list
+              if list must match length of hpn
         at_date:  reference date of dossier [something get_astropytime can handle]
         exact_match:  boolean to enforce full part number match
         """
 
         at_date = cm_utils.get_astropytime(at_date)
-
+        hpn_list, rev_list = self.listify_hpnrev(hpn, rev)
         rev_part = {}
         for i, xhpn in enumerate(hpn_list):
             if not exact_match and xhpn[-1] != '%':
@@ -319,7 +327,7 @@ class Handling:
                                                                  session=self.session)
         return rev_part
 
-    def get_part_dossier(self, hpn_list, rev, at_date, exact_match=False, full_version=True):
+    def get_part_dossier(self, hpn, rev, at_date, exact_match=False, full_version=True):
         """
         Return information on a part.  It will return all matching first
         characters unless exact_match==True.
@@ -329,16 +337,15 @@ class Handling:
 
         Parameters
         -----------
-        hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
+        hpn:  the input hera part number [string or list-of-strings] (whole or first part thereof)
         rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
-              if list, must match length of hpn_list
+              if list, must match length of hpn
         at_date:  reference date of dossier only used for ACTIVE
         exact_match:  boolean to enforce full part number match
         full_version:  flag whether to populate the full_version or truncated version of the dossier
         """
 
-        hpn_list, rev_list = self.listify_hpnrev(hpn_list, rev)
-        rev_part = self.get_rev_part_dictionary(hpn_list, rev_list, at_date, exact_match)
+        rev_part = self.get_rev_part_dictionary(hpn, rev, at_date, exact_match)
 
         part_dossier = {}
         # Now get unique part/revs and put into dictionary
@@ -412,7 +419,7 @@ class Handling:
                 fnd.append(copy.copy(conn))
         return fnd
 
-    def get_part_connection_dossier(self, hpn_list, rev, port, at_date=None, exact_match=False):
+    def get_part_connection_dossier(self, hpn, rev, port, at_date=None, exact_match=False):
         """
         Return information on parts connected to hpn
         It should get connections immediately adjacent to one part (upstream and
@@ -422,26 +429,24 @@ class Handling:
 
         Parameters
         -----------
-        hpn_list:  the input hera part number [list of strings] (whole or first part thereof)
-        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULLY_CONNECTED', specific)
-              if list, must match length of hpn_list
+        hpn:  the input hera part number [string or list-of-strings] (whole or first part thereof)
+        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
+              if list, must match length of hpn
         port:  a specifiable port name [string, not a list],  default is 'all'
-        at_date: reference date of dossier, only used if rev==ACTIVE (and for now FULLY_CONNECTED...)
+        at_date: reference date of dossier, only used if rev==ACTIVE (and for now FULL...)
         exact_match:  boolean to enforce full part number match
         """
 
-        hpn_list, rev_list = self.listify_hpnrev(hpn_list, rev)
-        rev_part = self.get_rev_part_dictionary(hpn_list, rev_list, at_date, exact_match)
+        rev_part = self.get_rev_part_dictionary(hpn, rev, at_date, exact_match)
         part_connection_dossier = {}
         for i, xhpn in enumerate(rev_part):
             if len(rev_part[xhpn]) == 0:
                 continue
-            rq = rev_list[i].upper()[:3]
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
                 this_connect = PartConnectionDossierEntry(xhpn, this_rev, port, at_date)
                 this_connect.get_entry(self.session)
-                this_connect.add_filter(at_date, rq)
+                this_connect.add_filter(at_date, xrev.rev_query)
                 part_connection_dossier[this_connect.entry_key] = this_connect
         return part_connection_dossier
 

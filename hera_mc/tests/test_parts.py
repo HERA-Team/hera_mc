@@ -98,6 +98,12 @@ class TestParts(TestHERAMC):
         for rq in rev_types:
             revision = cm_revisions.get_revisions_of_type('HH0', rq, at_date, self.test_session)
             self.assertTrue(revision[0].rev == 'A')
+            revision = cm_revisions.get_revisions_of_type(None, rq, at_date, self.test_session)
+            self.assertTrue(len(revision) == 0)
+        revision = cm_revisions.get_revisions_of_type('TEST_FEED', 'LAST', 'now', self.test_session)
+        self.assertEqual(revision[0].rev, 'Z')
+        revision = cm_revisions.get_revisions_of_type(None, 'ACTIVE', 'now', self.test_session)
+        cm_revisions.show_revisions(revision)
         revision = cm_revisions.get_revisions_of_type('HH23', 'ACTIVE', 'now', self.test_session)
         cm_revisions.show_revisions(revision)
         self.assertEqual(revision[0].hpn, 'HH23')
@@ -113,6 +119,7 @@ class TestParts(TestHERAMC):
     def test_listify_hpn_error(self):
         self.assertRaises(ValueError, self.h.listify_hpnrev, ['hpn'], 1)
         self.assertRaises(ValueError, self.h.listify_hpnrev, ['hpn'], ['A', 'B'])
+        self.assertRaises(ValueError, self.h.listify_hpnrev, 1, 1)
 
     def test_get_part_types(self):
         at_date = self.now
