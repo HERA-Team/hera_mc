@@ -9,19 +9,25 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
+import six
 from astropy.time import Time, TimeDelta
 
 from hera_mc import mc, cm_utils
 
 valid_tables = {'node_sensors': {'method': 'get_node_sensor_readings',
-                                 'filter_column': 'nodeID'}}
+                                 'filter_column': 'nodeID',
+                                 'arg_name': 'node'}}
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.description = """Write M&C records to a CSV file"""
     parser.add_argument('table', help="table to get info from")
-    parser.add_argument('--filter_value', help="value to filter on, corresponds to "
-                        "'filter_column' the desired table", default=None)
+
+    for table, table_dict in six.iteritems(valid_tables):
+        arg_name = table_dict['arg_name']
+        parser.add_argument('--' + arg_name, help="only include the specified " + arg_name,
+                            default=None)
+
     parser.add_argument('--filename', help="filename to save data to")
     parser.add_argument('--start-date', dest='start_date', help="Start date YYYY/MM/DD", default=None)
     parser.add_argument('--start-time', dest='start_time', help="Start time in HH:MM", default='17:00')
@@ -43,6 +49,6 @@ if __name__ == '__main__':
     session = db.sessionmaker()
 
     method_kwargs = {'starttime': start_time, 'stoptime': stop_time,
-                     valid_tables[args.table]['filter_column']: args.filter_value,
+                     valid_tables[args.table]['filter_column']: getattr(args, valid_tables[args.table]['arg_name']),
                      'write_to_file': True, 'filename': args.filename}
     getattr(session, valid_tables[args.table]['method'])(**method_kwargs)
