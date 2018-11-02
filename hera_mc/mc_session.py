@@ -49,7 +49,8 @@ class MCSession(Session):
 
     def _time_filter(self, table_class, time_column, most_recent=None,
                      starttime=None, stoptime=None,
-                     filter_column=None, filter_value=None):
+                     filter_column=None, filter_value=None,
+                     write_to_file=False, filename=None):
         '''
         A helper method to fiter entries by time. Used by most get methods
         on this object.
@@ -79,9 +80,17 @@ class MCSession(Session):
         filter_value: type coresponding to filter_column, usually a string
             value to require that the filter_column is equal to
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
-        list of objects that match the filtering
+        if write_to_file is False: list of objects that match the filtering
         '''
         if starttime is None and most_recent is None:
             most_recent = True
@@ -121,7 +130,6 @@ class MCSession(Session):
             query = query.filter(time_attr == most_recent_time)
             if filter_value is not None:
                 query = query.order_by(asc(filter_attr))
-            result_list = query.all()
 
         else:
             if stoptime is not None:
@@ -133,9 +141,23 @@ class MCSession(Session):
             if stoptime is None:
                 query = query.limit(1)
 
-            result_list = query.all()
+        if write_to_file:
+            if filename is None:
+                table_name = getattr(table_class, '__tablename__')
+                filename = table_name + '.csv'
 
-        return result_list
+            column_names = [col_dict['name'] for col_dict in query.column_descriptions]
+            with open(filename, 'w') as the_file:
+                # write header
+                the_file.write(','.join(column_names))
+
+                # write rows
+                for item in query:
+                    item_vals = [string(getattr(item, col)) for col in column_names]
+                    the_file.write(','.join(item_vals))
+
+        else:
+            return query.all()
 
     def _insert_ignoring_duplicates(self, table_class, obj_list):
         """
@@ -1102,7 +1124,9 @@ class MCSession(Session):
 
         self._insert_ignoring_duplicates(NodeSensor, node_sensor_list)
 
-    def get_node_sensor_readings(self, most_recent=None, starttime=None, stoptime=None, nodeID=None):
+    def get_node_sensor_readings(self, most_recent=None, starttime=None,
+                                 stoptime=None, nodeID=None, write_to_file=False,
+                                 filename=None):
         """
         Get node_sensor record(s) from the M&C database.
 
@@ -1123,15 +1147,24 @@ class MCSession(Session):
         nodeID: integer
             node number (integer running from 1 to 30)
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
-        list of NodeSensor objects
+        if write_to_file is False: list of NodeSensor objects
         """
         from .node import NodeSensor
 
         return self._time_filter(NodeSensor, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='node', filter_value=nodeID)
+                                 filter_column='node', filter_value=nodeID,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_node_power_status(self, time, nodeID, snap_relay_powered, snap0_powered,
                               snap1_powered, snap2_powered, snap3_powered,
