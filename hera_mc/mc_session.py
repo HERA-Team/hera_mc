@@ -153,7 +153,7 @@ class MCSession(Session):
 
                 # write rows
                 for item in query:
-                    item_vals = [string(getattr(item, col)) for col in column_names]
+                    item_vals = [str(getattr(item, col)) for col in column_names]
                     the_file.write(','.join(item_vals))
 
         else:
