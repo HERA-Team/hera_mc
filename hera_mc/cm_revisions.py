@@ -23,13 +23,6 @@ class RevisionError(Exception):
         super(RevisionError, self).__init__(message)
 
 
-class NoTimeError(Exception):
-    def __init__(self, RevType):
-        # Call the base class constructor with the parameters it needs
-        message = "To find {} revisions you must supply an astropy.Time".format(RevType)
-        super(NoTimeError, self).__init__(message)
-
-
 def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     """
     Returns namespace of revisions
@@ -76,7 +69,7 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
 
 def get_last_revision(hpn, session=None):
     """
-    Returns list of latest revisions as Namespace(hpn,rev,started,ended)
+    Returns list of latest revisions as Namespace(hpn,rev,erv_query,started,ended)
 
     Parameters:
     -------------
@@ -88,21 +81,22 @@ def get_last_revision(hpn, session=None):
     if len(revisions.keys()) == 0:
         return []
     latest_end = cm_utils.get_astropytime('<')
-    no_end = []
+    noend_rev = []
     for rev in revisions.keys():
         end_date = revisions[rev]['ended']
         if end_date is None:
+            noend_rev.append(rev)
             latest_end = cm_utils.get_astropytime('>')
-            no_end.append(Namespace(hpn=hpn, rev=rev, rev_query='LAST', started=revisions[rev]['started'],
-                                    ended=revisions[rev]['ended']))
         elif end_date > latest_end:
             latest_rev = rev
             latest_end = end_date
-    if len(no_end) > 0:
-        return no_end
-    else:
-        return [Namespace(hpn=hpn, rev=latest_rev, rev_query='LAST', started=revisions[latest_rev]['started'],
-                          ended=revisions[latest_rev]['ended'])]
+    if len(noend_rev) == 1:
+        latest_rev = noend_rev[0]
+    elif len(noend_rev) > 1:
+        raise RevisionError(hpn)
+
+    return [Namespace(hpn=hpn, rev=latest_rev, rev_query='LAST', started=revisions[latest_rev]['started'],
+                      ended=revisions[latest_rev]['ended'])]
 
 
 def get_all_revisions(hpn, session=None):
