@@ -1,20 +1,17 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """
-Script to handle installing a new station into system.  All parameters are part of args.
-The flag -q will force a query.
+Script to handle installing a new station into system.
 """
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, geo_location, cm_utils, part_connect, geo_handling
-import sys
 import os.path
-
-default_coord_file_name = os.path.join(mc.data_path, 'HERA_350.txt')
+import six
+from hera_mc import mc, geo_location, cm_utils, part_connect, geo_handling
 
 region = {'herahexw': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
                        23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
@@ -35,45 +32,46 @@ region = {'herahexw': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
           'heraringb': [320, 321, 322, 323, 324, 328, 329, 332, 333, 336, 337, 340, 341, 345, 346, 347, 348, 349]}
 
 
-def get_coord_from_file(station_name, coord_filename):
-    coords = None
-    if station_name is not None:
-        fp = open(coord_filename, 'r')
+def read_nodes():
+    node_coord_file_name = os.path.join(mc.data_path, 'nodes.txt')
+    default_elevation = 1050.0
+    nodes = {}
+    with open(node_coord_file_name, 'r') as fp:
+        for line in fp:
+            node_num = int(line.split(':')[0])
+            node_E = float(line.split(':')[1].split(',')[0])
+            node_N = float(line.split(':')[1].split(',')[1])
+            ants = line.split(':')[2].split(',')
+            ants = [int(x) for x in ants]
+            nodes[node_num] = {'E': node_E, 'N': node_N, 'elevation': default_elevation, 'ants': ants}
+    return nodes
+
+
+def read_antennas():
+    antenna_coord_file_name = os.path.join(mc.data_path, 'HERA_350.txt')
+    antennas = {}
+    with open(antenna_coord_file_name, 'r') as fp:
         for line in fp:
             data = line.split()
-            if data[0].upper() == station_name:
-                coords = [data[0], float(data[1]), float(
-                    data[2]), float(data[3])]
-                break
-        fp.close()
-    return coords
+            coords = [data[0], float(data[1]), float(data[2]), float(data[3])]
+            antennas[coords[0]] = {'E': coords[1], 'N': coords[2], 'elevation': coords[3]}
+    return antennas
 
 
 def query_geo_information(args):
     """
     Gets geo_location information from user
     """
-    if args.station_name is None:
-        args.station_name = raw_input('Station name:  ').upper()
-    if not args.from_file:
-        args.from_file = cm_utils.query_yn(
-            'Do you want to get coords from default file?', 'y')
-    if args.from_file:
-        coords = get_coord_from_file(args.station_name, args.from_file)
-        if coords:
-            args.easting = coords[1]
-            args.northing = coords[2]
-            args.elevation = coords[3]
-        else:
-            print(args.station_name, ' not found in coords file.')
-            sys.exit()
-    else:
-        args.easting = float(raw_input('Easting:  '))
-        args.northing = float(raw_input('Northing:  '))
-        args.elevation = float(raw_input('Elevation:  '))
-        args.datum = cm_utils.query_default('datum', args)
-        args.tile = cm_utils.query_default('tile', args)
-    args.station_type_name = cm_utils.query_default('station_type_name', args)
+    if args.easting is None:
+        args.easting = float(six.moves.input('Easting:  '))
+    if args.northing is None:
+        args.northing = float(six.moves.input('Northing:  '))
+    if args.elevation is None:
+        args.elevation = float(six.moves.input('Elevation:  '))
+    args.datum = cm_utils.query_default('datum', args)
+    args.tile = cm_utils.query_default('tile', args)
+    if args.station_type_name is None:
+        args.station_type_name = six.moves.input('Station type name: ')
     args.date = cm_utils.query_default('date', args)
     return args
 
@@ -124,59 +122,47 @@ def add_entry_to_parts(session, args):
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('station_name', nargs='?', help="Name of station (HH# for hera)",
-                        default=None)
-    parser.add_argument('-q', '--query', help="Flag to query user for parameters [False]",
-                        action='store_true')
-    parser.add_argument('-e', '--easting', help="Easting of new station", default=None)
+    parser.add_argument('station_name', help="Name of station (HH# for hera, ND# for node).")
+    parser.add_argument('-e', '--easting', help="Easting of new station.", default=None)
     parser.add_argument('-n', '--northing', help="Northing of new station", default=None)
     parser.add_argument('-z', '--elevation', help="Elevation of new station", default=None)
     cm_utils.add_date_time_args(parser)
-    parser.add_argument('--station_type_name', help="Station category name [default]",
-                        default='default')
+    parser.add_argument('--station_type_name', help="Station category name", default=None)
     parser.add_argument('--datum', help="Datum of UTM [WGS84]", default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]", default='34J')
-    cm_utils.add_verbosity_args(parser)
     parser.add_argument('--add_new_geo', help="Flag to allow update to add a new "
                         "record.  [True]", action='store_false')
     parser.add_argument('--add_new_part', help="Flag to allow update to add a new "
                         "record.  [True]", action='store_false')
-    file_group = parser.add_mutually_exclusive_group()
-    file_group.add_argument('-f', '--use-file', help="Use default coordinate file",
-                            dest='from_file', action='store_const',
-                            const=default_coord_file_name)
-    file_group.add_argument('-X', '--dont-use-file', help="Don't use file for coordinates.",
-                            dest='from_file', action='store_const', const=False)
-    file_group.add_argument('--from_file', help="Use file to retrieve coordinate "
-                            "information.")
-    parser.set_defaults(from_file=default_coord_file_name)
 
     args = parser.parse_args()
-    args.verbosity = args.verbosity.lower()
-    if args.station_name:
-        args.station_name = args.station_name.upper()
-
-    if len(sys.argv) == 1:
-        args.query = True
-
-    if args.from_file:
-        coords = get_coord_from_file(args.station_name, args.from_file)
-        if coords:
-            args.easting = coords[1]
-            args.northing = coords[2]
-            args.elevation = coords[3]
-    if args.station_type_name.lower() == 'default':
-        ant_int = int(args.station_name[2:])
-        for r, v in region.iteritems():
-            if ant_int in v:
+    args.station_name = args.station_name.upper()
+    if args.station_name.startswith(('HH', 'HA', 'HB')):
+        antenna = read_antennas()
+        if args.station_name not in antenna:
+            raise ValueError("{} antenna not found.".format(args.station_name))
+        args.easting = antenna[args.station_name]['E']
+        args.northing = antenna[args.station_name]['N']
+        args.elevation = antenna[args.station_name]['elevation']
+        ant_num = int(args.station_name[2:])
+        for r, v in six.iteritems(region):
+            if ant_num in v:
                 args.station_type_name = r
                 break
+    elif args.station_name.startswith('ND'):
+        node = read_nodes()
+        node_num = int(args.station_name[2:])
+        if node_num not in node:
+            raise ValueError("{} node not found.".format(args.station_name))
+        args.easting = node[node_num]['E']
+        args.northing = node[node_num]['N']
+        args.elevation = node[node_num]['elevation']
+        args.station_type_name = 'node'
+    else:
+        args = query_geo_information(args)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
-
-    if args.query:
-        args = query_geo_information(args)
 
     if entry_OK_to_add(session, args.station_name):
         cm_utils.log('add_station', args=args)

@@ -37,7 +37,7 @@ weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_mean_wind_speed',
                                           'description': "Wind direction angle (report period: 10s)"},
                        'temperature': {'sensor_name': 'anc_weather_temperature',
                                        'units': 'deg Celsius',
-                                       'reduction': 'decimate', 'period': 6,
+                                       'reduction': 'decimate', 'period': 30,
                                        'description': "Air temperature (report period: 10s)"},
                        'humidity': {'sensor_name': 'anc_weather_humidity',
                                     'units': 'percent',
@@ -129,6 +129,7 @@ class WeatherData(MCDeclarativeBase):
     @property
     def astropy_time(self):
         return Time(self.time, format='gps')
+
 
 @tornado.gen.coroutine
 def _helper_create_from_sensors(starttime, stoptime, variables=None):

@@ -9,11 +9,10 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
-
 from astropy.time import Time, TimeDelta
 
-from hera_mc import part_connect, mc, cm_handling, cm_utils
-from hera_mc.tests import TestHERAMC
+from .. import part_connect, mc, cm_handling, cm_utils
+from . import TestHERAMC
 
 
 class TestConnections(TestHERAMC):
@@ -75,9 +74,26 @@ class TestConnections(TestHERAMC):
                 [u, r, d, r, a, b, g, 'downstream_input_port', b],
                 [u, r, d, r, a, b, g, 'start_gpstime', g]]
         part_connect.update_connection(self.test_session, data, add_new_connection=True)
-        located = self.h.get_connection_dossier([u], r, a, 'now', True)
-        self.assertTrue(located['connections'][located['connections'].keys()[0]].upstream_part == u)
+        located = self.h.get_part_connection_dossier([u], r, a, 'now', True)
+        prkey = list(located.keys())[0]
+        ckey = located[prkey].keys_down[0]
+        self.assertTrue(located[prkey].down[ckey].upstream_part == u)
         self.h.show_connections(located)
+
+    def test_get_dossier(self):
+        x = self.h.get_part_connection_dossier('test_part1', 'active', 'all', at_date='now', exact_match=True)
+        y = list(x.keys())[0]
+        self.assertEqual(y, 'test_part1:Q')
+        self.h.show_connections(x)
+        x = self.h.get_part_connection_dossier('test_part2', 'active', 'all', at_date='now', exact_match=True)
+        y = list(x.keys())[0]
+        self.assertEqual(y, 'test_part2:Q')
+        self.h.show_connections(x)
+        old_time = Time('2014-08-01 01:00:00', scale='utc')
+        x = self.h.get_part_connection_dossier('test_part1', 'active', 'all', at_date=old_time, exact_match=True)
+        self.assertTrue(len(x) == 0)
+        x = self.h.get_part_connection_dossier('test_part2', 'active', 'all', at_date=old_time, exact_match=True)
+        self.assertTrue(len(x) == 0)
 
     def test_get_specific_connection(self):
         c = part_connect.Connections()
@@ -94,7 +110,7 @@ class TestConnections(TestHERAMC):
         self.assertTrue(len(sc) == 0)
 
     def test_duplicate_connections(self):
-        from hera_mc import cm_health
+        from .. import cm_health
         healthy = cm_health.Connections(self.test_session)
         # Specific connections
         duplicates = healthy.check_for_existing_connection(['a', 'b', 'c', 'd', 'e', 'f'], self.query_time)

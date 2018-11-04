@@ -5,19 +5,23 @@
 """Testing for `hera_mc.qm`.
 
 """
-import unittest
+from __future__ import absolute_import, division, print_function
 
+import unittest
+import os
+import six
 import numpy as np
 from math import floor
 from astropy.time import Time, TimeDelta
-import os
 
-from hera_mc import mc, cm_transfer
-from hera_mc.qm import AntMetrics, ArrayMetrics
-from hera_mc import utils, geo_location
-from hera_mc.tests import TestHERAMC, checkWarnings
+from .. import mc, cm_transfer
+from .. import utils, geo_location
+from ..tests import TestHERAMC, checkWarnings
+
 from hera_qm.firstcal_metrics import get_firstcal_metrics_dict
 from hera_qm.utils import get_metrics_dict
+
+from ..qm import AntMetrics, ArrayMetrics
 
 
 class TestQM(TestHERAMC):
@@ -176,11 +180,11 @@ class TestQM(TestHERAMC):
         r = self.test_session.get_metric_desc()
         results = []
         for result in r:
-            self.assertTrue(result.metric in self.metrics_dict.keys())
+            self.assertTrue(result.metric in self.metrics_dict)
             results.append(result.metric)
         for metric in self.metrics_dict.keys():
             self.assertTrue(metric in results)
-        metric = self.metrics_dict.keys()[0]
+        metric = list(self.metrics_dict.keys())[0]
         self.test_session.update_metric_desc(metric, 'foo')
         self.test_session.commit()
         # Doing it again will update rather than insert.
@@ -212,8 +216,8 @@ class TestQM(TestHERAMC):
         self.assertEqual(len(r), 3)
         for result in r:
             self.assertTrue(result.metric in firstcal_array_metrics)
-        firstcal_ant_metrics = (set(get_firstcal_metrics_dict().keys()) -
-                                firstcal_array_metrics)
+        firstcal_ant_metrics = (set(get_firstcal_metrics_dict().keys())
+                                - firstcal_array_metrics)
         r = self.test_session.get_ant_metric()
         for result in r:
             self.assertTrue(result.metric in firstcal_ant_metrics)

@@ -6,18 +6,12 @@
 
 """
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
+
 import warnings
-from hera_mc import mc, cm_utils
-from hera_mc import part_connect as PC
-from hera_mc import cm_revisions
-
-
-class RevisionError(Exception):
-    def __init__(self, hpn):
-        # Call the base class constructor with the parameters it needs
-        message = "Multiple revisions found on {}".format(hpn)
-        super(RevisionError, self).__init__(message)
+from . import mc, cm_utils
+from . import part_connect as PC
+from . import cm_revisions
 
 
 def check_for_overlap(interval_i, interval_j):
@@ -31,7 +25,7 @@ def check_for_overlap(interval_i, interval_j):
 
 class Connections:
     def __init__(self, session=None):
-        if session is None:
+        if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
         else:

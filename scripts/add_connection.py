@@ -9,9 +9,11 @@ Script to add a general connection to the database.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling, cm_health
 import sys
 import copy
+import six
+
+from hera_mc import mc, cm_utils, part_connect, cm_handling, cm_health
 
 
 def query_args(args):
@@ -19,17 +21,17 @@ def query_args(args):
     Gets information from user
     """
     if args.uppart is None:
-        args.uppart = raw_input('Upstream part number:  ')
+        args.uppart = six.moves.input('Upstream part number:  ')
     if args.uprev is None:
-        args.uprev = raw_input('Upstream part revision:  ')
+        args.uprev = six.moves.input('Upstream part revision:  ')
     if args.upport is None:
-        args.upport = raw_input('Upstream output port:  ')
+        args.upport = six.moves.input('Upstream output port:  ')
     if args.dnpart is None:
-        args.dnpart = raw_input('Downstream part number:  ')
+        args.dnpart = six.moves.input('Downstream part number:  ')
     if args.dnrev is None:
-        args.dnrev = raw_input('Downstream part revision:  ')
+        args.dnrev = six.moves.input('Downstream part revision:  ')
     if args.dnport is None:
-        args.dnport = raw_input('Downstream input port:  ')
+        args.dnport = six.moves.input('Downstream input port:  ')
     if args.date == 'now':  # note that 'now' is the current default.
         args.date = cm_utils.query_default('date', args)
     return args
@@ -49,7 +51,7 @@ if __name__ == '__main__':
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
-
+    args.verbosity = cm_utils.parse_verbosity(args.verbosity)
     args = query_args(args)
 
     # Pre-process some args
@@ -59,12 +61,12 @@ if __name__ == '__main__':
     session = db.sessionmaker()
     connect = part_connect.Connections()
     handling = cm_handling.Handling(session)
-    up_check = handling.get_connection_dossier(hpn_list=[args.uppart], rev=args.uprev,
-                                               port=args.upport, at_date=at_date,
-                                               exact_match=True)
-    dn_check = handling.get_connection_dossier(hpn_list=[args.dnpart], rev=args.dnrev,
-                                               port=args.dnport, at_date=at_date,
-                                               exact_match=True)
+    up_check = handling.get_part_connection_dossier(hpn=[args.uppart], rev=args.uprev,
+                                                    port=args.upport, at_date=at_date,
+                                                    exact_match=True)
+    dn_check = handling.get_part_connection_dossier(hpn=[args.dnpart], rev=args.dnrev,
+                                                    port=args.dnport, at_date=at_date,
+                                                    exact_match=True)
     # Check for connection
     c = part_connect.Connections()
     c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
@@ -78,7 +80,7 @@ if __name__ == '__main__':
         go_ahead = False
 
     if go_ahead:
-        if args.verbosity == 'h':
+        if args.verbosity > 1:
             print('Adding connection {}:{}:{} <-> {}:{}:{}'
                   .format(args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport))
         # Connect parts

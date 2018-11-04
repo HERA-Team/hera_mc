@@ -5,16 +5,18 @@
 """Testing for `hera_mc.rtp`.
 
 """
+from __future__ import absolute_import, division, print_function
+
 import unittest
 from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
 from sqlalchemy.exc import NoForeignKeysError
 
-from hera_mc import mc, cm_transfer
-from hera_mc.rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord
-from hera_mc import utils, geo_location
-from hera_mc.tests import TestHERAMC
+from .. import mc, cm_transfer
+from ..rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord
+from .. import utils, geo_location
+from ..tests import TestHERAMC
 
 
 class TestRTP(TestHERAMC):
@@ -22,7 +24,7 @@ class TestRTP(TestHERAMC):
     def setUp(self):
         super(TestRTP, self).setUp()
 
-        time = Time.now()
+        time = Time.now() - TimeDelta(30 * 60, format='sec')
         obsid = utils.calculate_obsid(time)
         self.observation_names = ['starttime', 'stoptime', 'obsid']
         self.observation_values = [time, time + TimeDelta(10 * 60, format='sec'),
@@ -58,8 +60,8 @@ class TestRTP(TestHERAMC):
         exp_columns['time'] = int(floor(exp_columns['time'].gps))
         expected = RTPStatus(**exp_columns)
 
-        result = self.test_session.get_rtp_status(self.status_columns['time'] -
-                                                  TimeDelta(2, format='sec'))
+        result = self.test_session.get_rtp_status(starttime=self.status_columns['time']
+                                                  - TimeDelta(2, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
 
@@ -73,25 +75,31 @@ class TestRTP(TestHERAMC):
                                          self.status_columns['num_processes'],
                                          self.status_columns['restart_hours_elapsed'] + 5. / 60.)
 
-        result_mult = self.test_session.get_rtp_status(self.status_columns['time'] -
-                                                       TimeDelta(2, format='sec'),
+        result_mult = self.test_session.get_rtp_status(starttime=self.status_columns['time']
+                                                       - TimeDelta(2, format='sec'),
                                                        stoptime=new_status_time)
         self.assertEqual(len(result_mult), 2)
 
-        result2 = self.test_session.get_rtp_status(new_status_time -
-                                                   TimeDelta(2, format='sec'))
+        result2 = self.test_session.get_rtp_status(starttime=new_status_time
+                                                   - TimeDelta(2, format='sec'))
         self.assertEqual(len(result2), 1)
         result2 = result2[0]
         self.assertFalse(result2.isclose(expected))
+
+        result_most_recent = self.test_session.get_rtp_status()
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result2.isclose(result_most_recent))
 
     def test_errors_rtp_status(self):
         self.assertRaises(ValueError, self.test_session.add_rtp_status, 'foo',
                           *self.status_values[1:])
 
         self.test_session.add_rtp_status(*self.status_values)
-        self.assertRaises(ValueError, self.test_session.get_rtp_status, 'unhappy')
+        self.assertRaises(ValueError, self.test_session.get_rtp_status, most_recent=False)
+        self.assertRaises(ValueError, self.test_session.get_rtp_status, starttime='unhappy')
         self.assertRaises(ValueError, self.test_session.get_rtp_status,
-                          self.status_columns['time'], stoptime='unhappy')
+                          starttime=self.status_columns['time'], stoptime='unhappy')
 
     def test_add_rtp_process_event(self):
         # raise error if try to add process event with unmatched obsid
@@ -109,12 +117,12 @@ class TestRTP(TestHERAMC):
         exp_columns['time'] = int(floor(exp_columns['time'].gps))
         expected = RTPProcessEvent(**exp_columns)
 
-        result = self.test_session.get_rtp_process_event(self.event_columns['time'] -
-                                                         TimeDelta(2, format='sec'))
+        result = self.test_session.get_rtp_process_event(starttime=self.event_columns['time']
+                                                         - TimeDelta(2, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
-        result_obsid = self.test_session.get_rtp_process_event(self.event_columns['time'] -
-                                                               TimeDelta(2, format='sec'),
+        result_obsid = self.test_session.get_rtp_process_event(starttime=self.event_columns['time']
+                                                               - TimeDelta(2, format='sec'),
                                                                obsid=self.event_columns['obsid'])
         self.assertEqual(len(result_obsid), 1)
         result_obsid = result_obsid[0]
@@ -131,8 +139,8 @@ class TestRTP(TestHERAMC):
         self.test_session.add_rtp_process_event(new_obsid_time,
                                                 new_obsid,
                                                 self.event_columns['event'])
-        result_obsid = self.test_session.get_rtp_process_event(self.event_columns['time'] -
-                                                               TimeDelta(2, format='sec'),
+        result_obsid = self.test_session.get_rtp_process_event(starttime=self.event_columns['time']
+                                                               - TimeDelta(2, format='sec'),
                                                                obsid=self.event_columns['obsid'])
         self.assertEqual(len(result_obsid), 1)
         result_obsid = result_obsid[0]
@@ -144,19 +152,27 @@ class TestRTP(TestHERAMC):
                                                 self.event_columns['obsid'],
                                                 new_event)
 
-        result_mult = self.test_session.get_rtp_process_event(self.event_columns['time'] -
-                                                              TimeDelta(2, format='sec'),
+        result_mult = self.test_session.get_rtp_process_event(starttime=self.event_columns['time']
+                                                              - TimeDelta(2, format='sec'),
                                                               stoptime=new_event_time)
         self.assertEqual(len(result_mult), 3)
 
-        result_mult_obsid = self.test_session.get_rtp_process_event(self.event_columns['time'] -
-                                                                    TimeDelta(2, format='sec'),
+        result_most_recent = self.test_session.get_rtp_process_event()
+        self.assertEqual(len(result_most_recent), 1)
+        self.assertEqual(result_most_recent[0], result_mult[2])
+
+        result_mult_obsid = self.test_session.get_rtp_process_event(starttime=self.event_columns['time']
+                                                                    - TimeDelta(2, format='sec'),
                                                                     stoptime=new_event_time,
                                                                     obsid=self.event_columns['obsid'])
         self.assertEqual(len(result_mult_obsid), 2)
 
-        result_new_obsid = self.test_session.get_rtp_process_event(self.event_columns['time'] -
-                                                                   TimeDelta(2, format='sec'),
+        result_obsid_most_recent = self.test_session.get_rtp_process_event(obsid=self.event_columns['obsid'])
+        self.assertEqual(len(result_most_recent), 1)
+        self.assertEqual(result_obsid_most_recent[0], result_mult_obsid[1])
+
+        result_new_obsid = self.test_session.get_rtp_process_event(starttime=self.event_columns['time']
+                                                                   - TimeDelta(2, format='sec'),
                                                                    obsid=new_obsid)
         self.assertEqual(len(result_new_obsid), 1)
         result_new_obsid = result_new_obsid[0]
@@ -171,9 +187,9 @@ class TestRTP(TestHERAMC):
                           *self.event_values[1:])
 
         self.test_session.add_rtp_process_event(*self.event_values)
-        self.assertRaises(ValueError, self.test_session.get_rtp_process_event, 'foo')
+        self.assertRaises(ValueError, self.test_session.get_rtp_process_event, starttime='foo')
         self.assertRaises(ValueError, self.test_session.get_rtp_process_event,
-                          self.event_columns['time'], stoptime='bar')
+                          starttime=self.event_columns['time'], stoptime='bar')
 
         # raise error if pass value not in enum
         # self.assertRaises(ValueError, self.test_session.add_rtp_process_event,
@@ -188,12 +204,12 @@ class TestRTP(TestHERAMC):
         self.test_session.add_rtp_process_event(*self.event_values)
         self.test_session.add_rtp_status(*self.status_values)
 
-        status_result = self.test_session.get_rtp_status(self.status_columns['time'] -
-                                                         TimeDelta(2, format='sec'))
+        status_result = self.test_session.get_rtp_status(starttime=self.status_columns['time']
+                                                         - TimeDelta(2, format='sec'))
         self.assertEqual(len(status_result), 1)
         status_result = status_result[0]
-        event_result = self.test_session.get_rtp_process_event(self.event_columns['time'] -
-                                                               TimeDelta(2, format='sec'))
+        event_result = self.test_session.get_rtp_process_event(starttime=self.event_columns['time']
+                                                               - TimeDelta(2, format='sec'))
         self.assertFalse(status_result.isclose(event_result))
 
     def test_add_rtp_process_record(self):
@@ -212,14 +228,14 @@ class TestRTP(TestHERAMC):
         exp_columns['time'] = int(floor(exp_columns['time'].gps))
         expected = RTPProcessRecord(**exp_columns)
 
-        result = self.test_session.get_rtp_process_record(self.record_columns['time'] -
-                                                          TimeDelta(2, format='sec'))
+        result = self.test_session.get_rtp_process_record(starttime=self.record_columns['time']
+                                                          - TimeDelta(2, format='sec'))
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result_obsid = self.test_session.get_rtp_process_record(self.record_columns['time'] -
-                                                                TimeDelta(2, format='sec'),
+        result_obsid = self.test_session.get_rtp_process_record(starttime=self.record_columns['time']
+                                                                - TimeDelta(2, format='sec'),
                                                                 obsid=self.record_columns['obsid'])
         self.assertEqual(len(result_obsid), 1)
         result_obsid = result_obsid[0]
@@ -236,8 +252,8 @@ class TestRTP(TestHERAMC):
         self.test_session.add_rtp_process_record(new_obsid_time,
                                                  new_obsid,
                                                  *self.record_values[2:11])
-        result_obsid = self.test_session.get_rtp_process_record(self.record_columns['time'] -
-                                                                TimeDelta(2, format='sec'),
+        result_obsid = self.test_session.get_rtp_process_record(starttime=self.record_columns['time']
+                                                                - TimeDelta(2, format='sec'),
                                                                 obsid=self.record_columns['obsid'])
         self.assertEqual(len(result_obsid), 1)
         result_obsid = result_obsid[0]
@@ -249,19 +265,27 @@ class TestRTP(TestHERAMC):
                                                  self.record_columns['obsid'],
                                                  new_pipeline, *self.record_values[3:11])
 
-        result_mult = self.test_session.get_rtp_process_record(self.record_columns['time'] -
-                                                               TimeDelta(2, format='sec'),
+        result_mult = self.test_session.get_rtp_process_record(starttime=self.record_columns['time']
+                                                               - TimeDelta(2, format='sec'),
                                                                stoptime=new_record_time)
         self.assertEqual(len(result_mult), 3)
 
-        result_mult_obsid = self.test_session.get_rtp_process_record(self.record_columns['time'] -
-                                                                     TimeDelta(2, format='sec'),
+        result_most_recent = self.test_session.get_rtp_process_record()
+        self.assertEqual(len(result_most_recent), 1)
+        self.assertEqual(result_most_recent[0], result_mult[2])
+
+        result_mult_obsid = self.test_session.get_rtp_process_record(starttime=self.record_columns['time']
+                                                                     - TimeDelta(2, format='sec'),
                                                                      stoptime=new_record_time,
                                                                      obsid=self.record_columns['obsid'])
         self.assertEqual(len(result_mult_obsid), 2)
 
-        result_new_obsid = self.test_session.get_rtp_process_record(self.record_columns['time'] -
-                                                                    TimeDelta(2, format='sec'),
+        result_obsid_most_recent = self.test_session.get_rtp_process_record(obsid=self.record_columns['obsid'])
+        self.assertEqual(len(result_obsid_most_recent), 1)
+        self.assertEqual(result_obsid_most_recent[0], result_mult_obsid[1])
+
+        result_new_obsid = self.test_session.get_rtp_process_record(starttime=self.record_columns['time']
+                                                                    - TimeDelta(2, format='sec'),
                                                                     obsid=new_obsid)
         self.assertEqual(len(result_new_obsid), 1)
         result_new_obsid = result_new_obsid[0]
@@ -278,9 +302,9 @@ class TestRTP(TestHERAMC):
                           *fake_vals)
 
         self.test_session.add_rtp_process_record(*self.record_values)
-        self.assertRaises(ValueError, self.test_session.get_rtp_process_record, 'foo')
+        self.assertRaises(ValueError, self.test_session.get_rtp_process_record, starttime='foo')
         self.assertRaises(ValueError, self.test_session.get_rtp_process_record,
-                          self.record_columns['time'], stoptime='bar')
+                          starttime=self.record_columns['time'], stoptime='bar')
 
     def test_add_rtp_task_resource_record(self):
         self.test_session.add_obs(*self.observation_values)
@@ -320,9 +344,18 @@ class TestRTP(TestHERAMC):
             stoptime=self.task_resource_columns['start_time'] + TimeDelta(2 * 60, format='sec'))
         self.assertEqual(len(result), 2)
 
+        result_most_recent = self.test_session.get_rtp_task_resource_record()
+        self.assertEqual(len(result_most_recent), 1)
+        self.assertEqual(result[1], result_most_recent[0])
+
         result = self.test_session.get_rtp_task_resource_record(
             obsid=self.task_resource_columns['obsid'])
         self.assertEqual(len(result), 2)
+
+        result_obsid_most_recent = self.test_session.get_rtp_task_resource_record(
+            obsid=self.task_resource_columns['obsid'])
+        self.assertEqual(len(result_obsid_most_recent), 2)
+        self.assertEqual(result, result_obsid_most_recent)
 
         result = self.test_session.get_rtp_task_resource_record(
             starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
@@ -331,6 +364,11 @@ class TestRTP(TestHERAMC):
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
+
+        result_task_most_recent = self.test_session.get_rtp_task_resource_record(
+            task_name=self.task_resource_columns['task_name'])
+        self.assertEqual(len(result_task_most_recent), 1)
+        self.assertTrue(result_task_most_recent[0].isclose(expected))
 
         new_task_time = self.task_resource_columns['start_time'] + TimeDelta(3 * 60, format='sec')
 
@@ -351,6 +389,11 @@ class TestRTP(TestHERAMC):
             task_name=self.task_resource_columns['task_name'],
             stoptime=self.task_resource_columns['start_time'] + TimeDelta(5 * 60, format='sec'))
         self.assertEqual(len(result), 2)
+
+        result_task_most_recent = self.test_session.get_rtp_task_resource_record(
+            task_name=self.task_resource_columns['task_name'])
+        self.assertEqual(len(result_task_most_recent), 1)
+        self.assertTrue(result_task_most_recent[0].isclose(result[1]))
 
         result = self.test_session.get_rtp_task_resource_record(
             starttime=self.task_resource_columns['start_time'] - TimeDelta(2, format='sec'),
@@ -400,12 +443,12 @@ class TestRTP(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.add_rtp_task_resource_record, *fake_vals2)
 
         self.test_session.add_rtp_task_resource_record(*self.task_resource_values)
-        self.assertRaises(ValueError, self.test_session.get_rtp_process_record, 1, 2)
 
         self.assertRaises(ValueError, self.test_session.get_rtp_task_resource_record,
-                          task_name=self.task_resource_columns['task_name'])
+                          task_name=self.task_resource_columns['task_name'], most_recent=False)
 
-        self.assertRaises(ValueError, self.test_session.get_rtp_task_resource_record)
+        self.assertRaises(ValueError, self.test_session.get_rtp_task_resource_record,
+                          most_recent=False)
 
 
 if __name__ == '__main__':

@@ -6,13 +6,16 @@
 
 """
 
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
+
 import os.path
 import subprocess
-from hera_mc import mc
+import six
 from astropy.time import Time
 from astropy.time import TimeDelta
 import datetime
+
+from . import mc
 
 PAST_DATE = '2000-01-01'
 all_hera_zone_prefixes = ['HH', 'HA', 'HB']  # This is for hookup_cache to get all
@@ -36,8 +39,8 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
 def log(msg, **kwargs):
     fp = open(mc.cm_log_file, 'a')
     dt = Time.now()
-    fp.write('-------------------' + str(dt.datetime) + '  ' + msg +
-             '-------------------\n\n')
+    fp.write('-------------------' + str(dt.datetime) + '  ' + msg
+             + '-------------------\n\n')
     for key, value in kwargs.items():
         if key == 'args':
             fp.write('--args\n\t')
@@ -79,7 +82,7 @@ def split_connection_key(key):
 def stringify(X):
     if X is None:
         return None
-    if isinstance(X, str):
+    if isinstance(X, six.string_types):
         return X
     if isinstance(X, list):
         return ','.join(X)
@@ -89,7 +92,7 @@ def stringify(X):
 def listify(X):
     if X is None:
         return None
-    if isinstance(X, (str, unicode)) and ',' in X:
+    if isinstance(X, six.string_types) and ',' in X:
         return X.split(',')
     if isinstance(X, list):
         return X
@@ -97,16 +100,25 @@ def listify(X):
 
 
 def add_verbosity_args(parser):
-    """Add a standardized "--verbosity" argument to an ArgParser object. Supported
-    values are "l", "m", and "h", which presumably stand for "low", "medium",
-    and "high".
-
-    The function name is plural because it's conceivable that in the future we might
-    want to provide multiple arguments related to this general topic.
-
+    """Add a standardized "--verbosity" argument to an ArgParser object.
+    Returns the number of 'v's (-v=1 [low], -vv=2 [medium], -vvv=3 [high]) or the supplied integer.
+    Defaults to 1
+    Parsed by 'parse_verbosity' function
     """
-    parser.add_argument('-v', '--verbosity', help="Verbosity level: 'l', 'm', or 'h'. [l].",
-                        choices=['l', 'm', 'h'], default="l")
+    parser.add_argument('-v', '--verbosity', help="Verbosity level -v -vv -vvv. [-v].",
+                        nargs='?', default=1)
+
+
+def parse_verbosity(vargs):
+    try:
+        return int(vargs)
+    except (ValueError, TypeError):
+        pass
+    if vargs is None:
+        return 1
+    if vargs.count('v'):
+        return vargs.count('v') + 1
+    raise ValueError("Invalid argument to verbosity.")
 
 
 # ##############################################DATE STUFF
@@ -124,6 +136,8 @@ def add_date_time_args(parser):
 
 
 def is_active(at_date, start_date, stop_date):
+    at_date = get_astropytime(at_date)
+    start_date = get_astropytime(start_date)
     stop_date = get_stopdate(stop_date)
     return at_date >= start_date and at_date <= stop_date
 
@@ -169,7 +183,8 @@ def get_astropytime(_date, _time=0):
                 return astropy Time
                     astropy Time:  just gets returned
                     datetime: just gets converted
-                    int, long, float:  interpreted as gps_second
+                    int, long, float:  interpreted as gps_second or julian date
+                                       depending on appropriate range
                     string:  '<' - PAST_DATE
                              '>' - future_date()
                              'now' or 'current'
@@ -177,9 +192,9 @@ def get_astropytime(_date, _time=0):
                 return None:
                     string:  'none' return None
                     None/False:  return None
-    _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string
+    _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string otherwise ignored
                 float, int:  hours in decimal time
-                string:  HH[:MM[:SS]]
+                string:  HH[:MM[:SS]] or hours in decimal time
     """
 
     if isinstance(_date, Time):
@@ -188,10 +203,16 @@ def get_astropytime(_date, _time=0):
         return Time(_date, format='datetime')
     if _date is None or _date is False:
         return None
-    if isinstance(_date, (int, long, float)):
-        if int(_date) > 1000000000:
+    try:
+        _date = float(_date)
+    except ValueError:
+        pass
+    if isinstance(_date, float):
+        if _date > 1000000000.0:
             return Time(_date, format='gps')
-        raise ValueError('Invalid format:  date as a number should be gps time, not {}.'.format(_date))
+        if _date > 2400000.0 and _date < 2500000.0:
+            return Time(_date, format='jd')
+        raise ValueError('Invalid format:  date as a number should be gps time or julian date, not {}.'.format(_date))
     if isinstance(_date, str):
         if _date == '<':
             return Time(PAST_DATE, scale='utc')
@@ -206,7 +227,11 @@ def get_astropytime(_date, _time=0):
             return_date = Time(_date, scale='utc')
         except ValueError:
             raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(_date))
-        if isinstance(_time, (float, int)):
+        try:
+            _time = float(_time)
+        except ValueError:
+            pass
+        if isinstance(_time, float):
             return return_date + TimeDelta(_time * 3600.0, format='sec')
         if isinstance(_time, str):
             add_time = 0.0
@@ -235,8 +260,7 @@ def put_keys_in_numerical_order(keys):
                 break
             except ValueError:
                 continue
-        if n in keylib.keys():
-            dup_key = keylib[n][0] + str(n) + keylib[n][1]
+        if n is None or n in keylib.keys():
             return keys
         keylib[n] = [k[:i], k[colon:]]
     if not len(keylib.keys()):
@@ -277,7 +301,7 @@ def query_default(a, args):
     vargs = vars(args)
     default = vargs[a]
     s = '%s [%s]:  ' % (a, str(default))
-    v = raw_input(s)
+    v = six.moves.input(s)
     if len(v) == 0:
         v = default
     elif v.lower() == 'none':
@@ -289,7 +313,7 @@ def query_yn(s, default='y'):
     if default:
         s += ' [' + default + ']'
     s += ':  '
-    ans = raw_input(s)
+    ans = six.moves.input(s)
     if len(ans) == 0 and default:
         ans = default.lower()
     elif len(ans) > 0:

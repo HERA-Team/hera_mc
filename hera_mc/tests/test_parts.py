@@ -12,11 +12,10 @@ record.
 from __future__ import absolute_import, division, print_function
 
 import unittest
-
 from astropy.time import Time, TimeDelta
 
-from hera_mc import part_connect, mc, cm_utils, cm_handling, cm_revisions
-from hera_mc.tests import TestHERAMC
+from .. import part_connect, mc, cm_utils, cm_handling, cm_revisions
+from ..tests import TestHERAMC
 
 
 class TestParts(TestHERAMC):
@@ -49,8 +48,8 @@ class TestParts(TestHERAMC):
                 [ntp, 'X', 'start_gpstime', 1172530000]]
         part_connect.update_part(self.test_session, data, add_new_part=True)
         located = self.h.get_part_dossier([ntp], 'X', 'now', True)
-        if len(located.keys()) == 1:
-            self.assertTrue(located[located.keys()[0]]['part'].hpn == ntp)
+        if len(list(located.keys())) == 1:
+            self.assertTrue(located[list(located.keys())[0]].part.hpn == ntp)
         else:
             self.assertFalse("Part Number should be unique.")
 
@@ -62,8 +61,8 @@ class TestParts(TestHERAMC):
         data = [[self.test_part, self.test_rev, 'hpn_rev', 'Z']]
         part_connect.update_part(self.test_session, data, add_new_part=False)
         located = self.h.get_part_dossier([self.test_part], 'Z', Time('2017-07-01 01:00:00', scale='utc'), True)
-        if len(located.keys()) == 1:
-            self.assertTrue(located[located.keys()[0]]['part'].hpn_rev == 'Z')
+        if len(list(located.keys())) == 1:
+            self.assertTrue(located[list(located.keys())[0]].part.hpn_rev == 'Z')
         else:
             self.assertFalse()
 
@@ -76,15 +75,15 @@ class TestParts(TestHERAMC):
     def test_part_info(self):
         part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, 'now', 'Testing', 'library_file')
         located = self.h.get_part_dossier([self.test_part], self.test_rev, self.start_time, True)
-        self.assertTrue(located[located.keys()[0]]['part_info'][0].comment == 'Testing')
+        self.assertTrue(located[list(located.keys())[0]].part_info[0].comment == 'Testing')
 
     def test_add_new_parts(self):
         data = [['part_X', 'X', 'station', 'mfg_X']]
         p = part_connect.Parts()
         part_connect.add_new_parts(self.test_session, p, data, Time('2017-07-01 01:00:00', scale='utc'), True)
         located = self.h.get_part_dossier(['part_X'], 'X', Time('2017-07-01 01:00:00'), True)
-        if len(located.keys()) == 1:
-            self.assertTrue(located[located.keys()[0]]['part'].hpn == 'part_X')
+        if len(list(located.keys())) == 1:
+            self.assertTrue(located[list(located.keys())[0]].part.hpn == 'part_X')
         else:
             self.assertFalse()
 
@@ -94,19 +93,41 @@ class TestParts(TestHERAMC):
         self.assertTrue(gh == 'Test-git-hash')
 
     def test_get_revisions_of_type(self):
-        at_date = self.now
+        at_date = None
         rev_types = ['LAST', 'ACTIVE', 'ALL', 'A']
         for rq in rev_types:
             revision = cm_revisions.get_revisions_of_type('HH0', rq, at_date, self.test_session)
             self.assertTrue(revision[0].rev == 'A')
+            revision = cm_revisions.get_revisions_of_type(None, rq, at_date, self.test_session)
+            self.assertTrue(len(revision) == 0)
+        revision = cm_revisions.get_revisions_of_type('TEST_FEED', 'LAST', 'now', self.test_session)
+        self.assertEqual(revision[0].rev, 'Z')
+        revision = cm_revisions.get_revisions_of_type(None, 'ACTIVE', 'now', self.test_session)
+        cm_revisions.show_revisions(revision)
+        revision = cm_revisions.get_revisions_of_type('HH23', 'ACTIVE', 'now', self.test_session)
+        cm_revisions.show_revisions(revision)
+        self.assertEqual(revision[0].hpn, 'HH23')
+        revision = cm_revisions.get_revisions_of_type('help', 'help')
+        self.assertEqual(revision, None)
+
+    def test_listify_hpn(self):
+        testing = [['hpn', 'rev'], [['hpn1', 'hpn2', 'hpn3'], 'rev'], [['hpn1', 'hpn2'], ['rev1', 'rev2']]]
+        for testit in testing:
+            h, r = self.h.listify_hpnrev(testit[0], testit[1])
+            self.assertEqual(len(h), len(r))
+
+    def test_listify_hpn_error(self):
+        self.assertRaises(ValueError, self.h.listify_hpnrev, ['hpn'], 1)
+        self.assertRaises(ValueError, self.h.listify_hpnrev, ['hpn'], ['A', 'B'])
+        self.assertRaises(ValueError, self.h.listify_hpnrev, 1, 1)
 
     def test_get_part_types(self):
         at_date = self.now
-        a = self.h.get_part_types(at_date)
-        self.assertTrue(a['feed']['input_ports'][0] == 'input')
+        a = self.h.get_part_types('all', at_date)
+        self.assertTrue('terminals' in a['feed']['output_ports'])
 
     def test_check_overlapping(self):
-        from hera_mc import cm_health
+        from .. import cm_health
         c = cm_health.check_part_for_overlapping_revisions(self.test_part, self.test_session)
         self.assertTrue(len(c) == 0)
 

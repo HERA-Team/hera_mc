@@ -8,9 +8,11 @@
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import part_connect, cm_handling, cm_utils, mc
 import os.path
 import sys
+import six
+
+from hera_mc import part_connect, cm_handling, cm_utils, mc
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
@@ -18,7 +20,7 @@ if __name__ == '__main__':
                                                    check_rev, health.  'info' for more.", default='part_info')
     # set values for 'action' to use
     parser.add_argument('-p', '--hpn', help="Part number, csv-list (required). [None]", default=None)
-    parser.add_argument('-r', '--revision', help="Specify revision or last/full/all for hpn.  [all]", default='all')
+    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [active]", default='active')
     parser.add_argument('--port', help="Specify port [all]", default='all')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
@@ -26,6 +28,8 @@ if __name__ == '__main__':
     cm_utils.add_date_time_args(parser)
 
     args = parser.parse_args()
+
+    args.verbosity = cm_utils.parse_verbosity(args.verbosity)
 
     date_query = cm_utils.get_astropytime(args.date, args.time)
 
@@ -63,7 +67,7 @@ if __name__ == '__main__':
 
     # Process
     if action_tag == 'ty':  # types of parts
-        part_type_dict = handling.get_part_types(date_query)
+        part_type_dict = handling.get_part_types(args.port, date_query)
         handling.show_part_types()
         sys.exit()
 
@@ -84,19 +88,19 @@ if __name__ == '__main__':
         sys.exit()
 
     if action_tag == 'pa':  # part_info
-        part_dossier = handling.get_part_dossier(hpn_list=args.hpn, rev=args.revision,
+        part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision,
                                                  at_date=date_query, exact_match=args.exact_match)
         handling.show_parts(part_dossier)
     elif action_tag == 'co':  # connection_info
-        connection_dossier = handling.get_connection_dossier(
-            hpn_list=args.hpn, rev=args.revision, port=args.port,
+        connection_dossier = handling.get_part_connection_dossier(
+            hpn=args.hpn, rev=args.revision, port=args.port,
             at_date=date_query, exact_match=args.exact_match)
-        already_shown = handling.show_connections(connection_dossier, verbosity=args.verbosity)
-        handling.show_other_connections(connection_dossier, already_shown)
+        handling.show_connections(connection_dossier, verbosity=args.verbosity)
     elif action_tag == 're':  # revisions
         for hpn in args.hpn:
             rev_ret = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
-            cm_handling.cmrev.show_revisions(rev_ret)
+            if hpn.lower() != 'help':
+                cm_handling.cmrev.show_revisions(rev_ret)
     elif action_tag == 'ch':  # check revisions
         for hpn in args.hpn:
             rev_chk = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)

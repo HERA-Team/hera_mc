@@ -13,11 +13,10 @@ import socket
 import sys
 import copy
 from astropy.time import Time
-
 from sqlalchemy import Column, Float, Integer, String, BigInteger, ForeignKey, func
 
 from . import MCDeclarativeBase, NotNull
-from hera_mc import mc, part_connect, cm_utils
+from . import mc, part_connect, cm_utils
 
 
 class StationType(MCDeclarativeBase):
@@ -108,7 +107,7 @@ def update(session=None, data=None, add_new_geo=False):
         return False
 
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_mc_db()
         session = db.sessionmaker()
         close_session_when_done = True

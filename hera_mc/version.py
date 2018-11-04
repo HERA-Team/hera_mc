@@ -1,4 +1,6 @@
 """Version definition for hera_mc."""
+from __future__ import absolute_import, division, print_function
+
 from os.path import join as pjoin
 import glob
 
@@ -65,10 +67,10 @@ SCRIPTS = [p for p in glob.glob('scripts/*') if not p.endswith('~')]
 PACKAGE_DATA = {
     'hera_mc': [
         pjoin('data', '*.csv'),
-        pjoin('data', 'HERA_350.txt'),
+        pjoin('data', '*.txt'),
         pjoin('data', 'finals.all'),
         pjoin('data', 'test_data', '*.tst'),
     ]
 }
-REQUIRES = ["astropy", "sqlalchemy", "psycopg2", "alembic", "dateutil", "numpy",
-            "tabulate", "matplotlib", "pandas", "psutil", "pyproj"]
+REQUIRES = ["six", "numpy", "astropy", "sqlalchemy", "psycopg2", "alembic", "dateutil",
+            "tabulate", "pandas", "psutil", "pyproj"]

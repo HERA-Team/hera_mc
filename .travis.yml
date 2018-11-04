@@ -2,6 +2,10 @@ language: python
 python:
   # We don't actually use the Travis Python, but this keeps it organized.
   - "2.7"
+  - "3.6"
+env:
+  global:
+    - COVERALLS_PARALLEL=true
 install:
   - sudo apt-get update
   # We do this conditionally because it saves us some downloading if the
@@ -15,17 +19,15 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
-  - conda install -y 'libgfortran =3.0.0'
-  - conda config --remove channels defaults && conda config --add channels conda-forge
+  - conda config --add channels conda-forge
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda install numpy astropy scipy python-dateutil sqlalchemy psycopg2 pandas matplotlib tabulate psutil pyproj nose pip
-  - conda install -c conda-forge alembic
-  - pip install coveralls
-  - conda install -c conda-forge aipy
-  - pip install git+https://github.com/HERA-Team/pyuvdata.git
-  - pip install git+https://github.com/HERA-Team/hera_qm.git
+  - conda install six 'numpy <1.15.3' astropy scipy python-dateutil sqlalchemy psycopg2 pandas
+    matplotlib tabulate psutil pyproj nose pip pycodestyle alembic coveralls pyuvdata
+    h5py
+  - conda list
+  - pip install git+https://github.com/HERA-Team/hera_qm.git;
   - python setup.py install
 services:
   - postgresql
@@ -36,7 +38,11 @@ before_script:
   - mkdir ~/.hera_mc
   - cp ci/example_config.json ~/.hera_mc/mc_config.json
   - alembic upgrade head
-script: nosetests --with-coverage --cover-package=hera_mc
+script:
+  - nosetests --with-coverage --cover-package=hera_mc
+  - pycodestyle . --ignore=E501,W503 --exclude=alembic
 
 after_success:
     - coveralls
+notifications:
+  webhooks: https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN

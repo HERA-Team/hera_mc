@@ -8,26 +8,28 @@
 
 from __future__ import absolute_import, division, print_function
 
-import os
-import socket
+import six
 from tabulate import tabulate
-import math
 from astropy.time import Time
-
-from sqlalchemy import BigInteger, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Text, func
+from sqlalchemy import (BigInteger, Column, Float, ForeignKey,
+                        ForeignKeyConstraint, Integer, String, Text, func)
 
 from . import MCDeclarativeBase, NotNull
-
-from hera_mc import mc, cm_utils
+from . import mc, cm_utils
 
 no_connection_designator = '-X-'
 # This lists the fully complete signal paths
-full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end', 'cable-feed75', 'cable-post-amp(in)',
-                                        'post-amp', 'cable-post-amp(out)', 'cable-receiverator', 'cable-container', 'f-engine'],
-                        'parts_hera': ['station', 'antenna', 'feed', 'fem', 'cable-feed50', 'cable-node(in)',
-                                       'pam', 'snap'],
+epoch_checking_order = ['parts_hera', 'parts_paper', 'parts_test']
+full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end',
+                                        'cable-feed75', 'cable-post-amp(in)',
+                                        'post-amp', 'cable-post-amp(out)',
+                                        'cable-receiverator', 'cable-container',
+                                        'f-engine'],
+                        'parts_hera': ['station', 'antenna', 'feed', 'front-end',
+                                       'cable-rfof', 'post-amp', 'snap', 'node'],
                         'parts_test': ['vapor']
                         }
+epoch_corr_huind = {'parts_hera': 5, 'parts_paper': 9}  # index where the correlator is downstream
 both_pols = ['e', 'n']
 
 
@@ -38,12 +40,9 @@ class Parts(MCDeclarativeBase):
     Note that ideally install_date would also be a primary key, but that
     screws up ForeignKey in connections
 
-    hpn: HERA part number for each part; intend to QRcode with this string.
-         Part of the primary key.
+    hpn: HERA part number for each part; part of the primary key.
     hpn_rev: A revision letter of sequences of hpn - starts with A. . Part of the primary_key
     hptype: A part-dependent string, i.e. feed, frontend, ...
-        This is also uniquely encoded in the hera part number
-        (see PARTS.md) -- this could be derived from it but this removes that constraint.
     manufacturer_number: A part number/serial number as specified by manufacturer
     start_gpstime: The date when the part was installed (or otherwise assigned by project).
     stop_gpstime: The date when the part was removed (or otherwise de-assigned by project).
@@ -58,7 +57,7 @@ class Parts(MCDeclarativeBase):
     stop_gpstime = Column(BigInteger)
 
     def __repr__(self):
-        return ('<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype}>'
+        return ('<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype} :: {self.start_gpstime} - {self.stop_gpstime}>'
                 .format(self=self))
 
     def gps2Time(self):
@@ -162,18 +161,16 @@ def update_part(session=None, data=None, add_new_part=False):
         return False
 
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
-    for dkey, dval in data_dict.iteritems():
+    for dkey, dval in six.iteritems(data_dict):
         hpn_to_change = dval[0][0]
         rev_to_change = dval[0][1]
-        # if rev_to_change[:4] == 'LAST':
-        #    rev_to_change = cm_revisions.get_last_revision(hpn_to_change, session)[0][0]
-        part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn_to_change.upper()) &
-                                               (func.upper(Parts.hpn_rev) == rev_to_change.upper()))
+        part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn_to_change.upper())
+                                               & (func.upper(Parts.hpn_rev) == rev_to_change.upper()))
         num_part = part_rec.count()
         if num_part == 0:
             if add_new_part:
@@ -277,7 +274,7 @@ def get_part_revisions(hpn, session=None):
 
     uhpn = hpn.upper()
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
@@ -330,12 +327,12 @@ def update_dubitable(session=None, transition_gpstime=None, data=None):
     """
 
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
-    last_one = session.query(Dubitable).filter(Dubitable.stop_gpstime == None)
+    last_one = session.query(Dubitable).filter(Dubitable.stop_gpstime is None)
     if last_one.count() == 1:  # Stop the previous valid list.
         old_dubi = last_one.first()
         old_dubi.stop_gpstime = transition_gpstime
@@ -393,12 +390,12 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
     Add part information into database.
     """
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
-    part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn.upper()) &
-                                           (func.upper(Parts.hpn_rev) == rev.upper()))
+    part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn.upper())
+                                           & (func.upper(Parts.hpn_rev) == rev.upper()))
     if not part_rec.count():
         print("FYI - {}:{} does not exist in parts database.".format(hpn, rev))
         print("This is not a requirement, but you might want to consider adding it.")
@@ -485,7 +482,7 @@ def get_null_connection():
     no_connect = Connections()
     no_connect.connection(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
                           downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
-                          start_gpstime=nc)
+                          start_gpstime=None, stop_gpstime=None, start_date=None, stop_date=None)
     return no_connect
 
 
@@ -509,7 +506,7 @@ def stop_existing_connections_to_part(session, h, conn_list, at_date, actually_d
     data = []
 
     for conn in conn_list:
-        CD = h.get_connection_dossier([conn[0]], conn[1], conn[2], at_date, True)
+        CD = h.get_part_connection_dossier([conn[0]], conn[1], conn[2], at_date, True)
         ck = get_connection_key(CD, conn)
         if ck is None:
             print('There are no connections to stop')
@@ -543,7 +540,7 @@ def get_connection_key(c, p):
     p = [p[0].upper(), p[1].upper(), p[2].upper()]
     ctr = 0
     return_key = None
-    for ckey, cval in c['connections'].iteritems():
+    for ckey, cval in six.iteritems(c['connections']):
         ca = (cval.upstream_part.upper(), cval.downstream_part.upper())
         cr = (cval.up_part_rev.upper(), cval.down_part_rev.upper())
         co = (cval.upstream_output_port.upper(), cval.downstream_input_port.upper())
@@ -589,7 +586,8 @@ def stop_connections(session, conn_list, at_date, actually_do_it):
 
 def add_new_connections(session, c, conn_list, at_date, actually_do_it):
     """
-    This uses a connection object to send data to the update_connection method to make a new connection
+    This uses a connection object to send data to the update_connection method
+    to make a new connection
 
     Parameters:
     -------------
@@ -658,7 +656,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
         return False
 
     close_session_when_done = False
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
@@ -671,18 +669,18 @@ def update_connection(session=None, data=None, add_new_connection=False):
         boup_to_change = data_dict[dkey][0][4]
         aodn_to_change = data_dict[dkey][0][5]
         strt_to_change = data_dict[dkey][0][6]
-        if urev_to_change[:4] == 'LAST':
+        if urev_to_change.startswith('LAST'):
             urev_to_change = cm_revisions.get_last_revision(upcn_to_change, session)[0][0]
-        if drev_to_change[:4] == 'LAST':
+        if drev_to_change.startswith('LAST'):
             drev_to_change = cm_revisions.get_last_revision(dncn_to_change, session)[0][0]
         conn_rec = session.query(Connections).filter(
-            (Connections.upstream_part == upcn_to_change) &
-            (Connections.up_part_rev == urev_to_change) &
-            (Connections.downstream_part == dncn_to_change) &
-            (Connections.down_part_rev == drev_to_change) &
-            (Connections.upstream_output_port == boup_to_change) &
-            (Connections.downstream_input_port == aodn_to_change) &
-            (Connections.start_gpstime == strt_to_change))
+            (Connections.upstream_part == upcn_to_change)
+            & (Connections.up_part_rev == urev_to_change)
+            & (Connections.downstream_part == dncn_to_change)
+            & (Connections.down_part_rev == drev_to_change)
+            & (Connections.upstream_output_port == boup_to_change)
+            & (Connections.downstream_input_port == aodn_to_change)
+            & (Connections.start_gpstime == strt_to_change))
         num_conn = conn_rec.count()
         if num_conn == 0:
             if add_new_connection:

@@ -4,11 +4,14 @@
 
 from __future__ import absolute_import, division, print_function
 
+from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
-from astropy.time import Time
-from .utils import get_iterable
+from astropy.time import Time, TimeDelta
 import warnings
+import six
+
+from .utils import get_iterable
 """
 Primary session object which handles most DB queries.
 
@@ -44,25 +47,32 @@ class MCSession(Session):
         db_time = Time(db_timestamp)
         return db_time
 
-    def _time_filter(self, table_object, time_column, starttime, stoptime=None,
-                     filter_column=None, filter_value=None):
+    def _time_filter(self, table_class, time_column, most_recent=None,
+                     starttime=None, stoptime=None,
+                     filter_column=None, filter_value=None,
+                     write_to_file=False, filename=None):
         '''
         A helper method to fiter entries by time. Used by most get methods
         on this object.
 
         Parameters:
-        table_object: object
-            Table object to query.
+        table_class: class
+            Class specifying a table to query.
 
         time_column: string
             column name holding the time to filter on.
 
+        most_recent: boolean
+            if True, get most recent record(s). Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         filter_column: string
             column name to use as an additional filter (often a part of the primary key)
@@ -70,41 +80,120 @@ class MCSession(Session):
         filter_value: type coresponding to filter_column, usually a string
             value to require that the filter_column is equal to
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
-        list of objects that match the filtering
+        if write_to_file is False: list of objects that match the filtering
         '''
-        if not isinstance(starttime, Time):
-            raise ValueError('starttime must be an astropy time object. '
-                             'value was: {t}'.format(t=starttime))
+        if starttime is None and most_recent is None:
+            most_recent = True
+
+        if not isinstance(most_recent, (type(None), bool)):
+            raise TypeError('most_recent must be None or a boolean')
+
+        if not most_recent:
+            if starttime is None:
+                raise ValueError('starttime must be specified if most_recent is False')
+            if not isinstance(starttime, Time):
+                raise ValueError('starttime must be an astropy time object. '
+                                 'value was: {t}'.format(t=starttime))
 
         if stoptime is not None:
             if not isinstance(stoptime, Time):
                 raise ValueError('stoptime must be an astropy time object. '
                                  'value was: {t}'.format(t=stoptime))
 
-        if stoptime is not None:
-            if filter_value is not None:
-                result_list = self.query(table_object).filter(
-                    getattr(table_object, filter_column) == filter_value,
-                    getattr(table_object, time_column).between(
-                        starttime.gps, stoptime.gps)).all()
-            else:
-                result_list = self.query(table_object).filter(
-                    getattr(table_object, time_column).between(
-                        starttime.gps, stoptime.gps)).all()
-        else:
-            if filter_value is not None:
-                result_list = self.query(table_object).filter(
-                    getattr(table_object, filter_column) == filter_value,
-                    getattr(table_object, time_column) >= starttime.gps).order_by(
-                        getattr(table_object, time_column)).limit(1).all()
-            else:
-                result_list = self.query(table_object).filter(
-                    getattr(table_object, time_column) >= starttime.gps).order_by(
-                        getattr(table_object, time_column)).limit(1).all()
+        time_attr = getattr(table_class, time_column)
+        if filter_value is not None:
+            filter_attr = getattr(table_class, filter_column)
 
-        return result_list
+        query = self.query(table_class)
+        if filter_value is not None:
+            query = query.filter(filter_attr == filter_value)
+
+        if most_recent:
+            current_time = Time.now()
+
+            # first get the time of the most recent row
+            first_query = query.filter(time_attr <= current_time.gps).order_by(desc(time_attr)).limit(1)
+            first_result = first_query.all()
+            most_recent_time = getattr(first_result[0], time_column)
+
+            # then get all results at that time
+            query = query.filter(time_attr == most_recent_time)
+            if filter_value is not None:
+                query = query.order_by(asc(filter_attr))
+
+        else:
+            if stoptime is not None:
+                query = query.filter(time_attr.between(starttime.gps, stoptime.gps))
+            else:
+                query = query.filter(time_attr >= starttime.gps)
+
+            query = query.order_by(time_attr)
+            if stoptime is None:
+                query = query.limit(1)
+
+        if write_to_file:
+            if filename is None:
+                table_name = getattr(table_class, '__tablename__')
+                filename = table_name + '.csv'
+
+            column_names = [col.name for col in (getattr(getattr(table_class, '__table__'), '_columns'))]
+            with open(filename, 'w') as the_file:
+                # write header
+                the_file.write(', '.join(column_names) + '\n')
+
+                # write rows
+                for item in query:
+                    item_vals = [str(getattr(item, col)) for col in column_names]
+                    the_file.write(', '.join(item_vals) + '\n')
+
+        else:
+            return query.all()
+
+    def _insert_ignoring_duplicates(self, table_class, obj_list):
+        """
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the certain data (especially redis data) densely on qmaster.
+
+        Parameters:
+        table_class: class
+            Class specifying a table to insert into.
+        obj_list: list of objects
+            list of objects (of class table_class) to insert into the table.
+        """
+        if self.bind.dialect.name == 'postgresql':
+            from sqlalchemy import inspect
+            from sqlalchemy.dialects.postgresql import insert
+
+            ies = [c.name for c in inspect(table_class).primary_key]
+            conn = self.connection()
+
+            for obj in obj_list:
+                # This appears to be the most correct way to map each row
+                # object into a dictionary:
+                values = {}
+                for col in inspect(obj).mapper.column_attrs:
+                    values[col.expression.name] = getattr(obj, col.key)
+
+                # The special PostgreSQL insert statement lets us ignore
+                # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
+                stmt = insert(table_class).values(**values).on_conflict_do_nothing(index_elements=ies)
+                conn.execute(stmt)
+        else:
+            # Generic approach:
+            for obj in obj_list:
+                self.add(obj)
 
     def add_obs(self, starttime, stoptime, obsid):
         """
@@ -151,18 +240,24 @@ class MCSession(Session):
 
         return obs_list
 
-    def get_obs_by_time(self, starttime, stoptime=None):
+    def get_obs_by_time(self, most_recent=None, starttime=None,
+                        stoptime=None):
         """
         Get observation(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         Returns:
         --------
@@ -170,7 +265,8 @@ class MCSession(Session):
         """
         from .observations import Observation
 
-        return self._time_filter(Observation, 'obsid', starttime, stoptime=stoptime)
+        return self._time_filter(Observation, 'obsid', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime)
 
     def add_server_status(self, subsystem, hostname, ip_address, system_time, num_cores,
                           cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
@@ -219,7 +315,8 @@ class MCSession(Session):
                                      memory_size_gb, disk_space_pct, disk_size_gb,
                                      network_bandwidth_mbs=network_bandwidth_mbs))
 
-    def get_server_status(self, subsystem, starttime, stoptime=None, hostname=None):
+    def get_server_status(self, subsystem, most_recent=None,
+                          starttime=None, stoptime=None, hostname=None):
         """
         Get subsystem server_status record(s) from the M&C database.
 
@@ -228,12 +325,17 @@ class MCSession(Session):
         subsystem: string
             name of subsystem. Must be one of ['rtp', 'lib']
 
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         hostname: string
             hostname to get records for. If none, all hostnames will be included.
@@ -249,9 +351,9 @@ class MCSession(Session):
         else:
             raise ValueError('subsystem must be one of: ["rtp", "lib"]')
 
-        return self._time_filter(ServerStatus, 'mc_time', starttime,
-                                 stoptime=stoptime, filter_column='hostname',
-                                 filter_value=hostname)
+        return self._time_filter(ServerStatus, 'mc_time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='hostname', filter_value=hostname)
 
     def add_subsystem_error(self, time, subsystem, severity, log):
         """
@@ -274,21 +376,24 @@ class MCSession(Session):
 
         self.add(SubsystemError.create(db_time, time, subsystem, severity, log))
 
-    def get_subsystem_error(self, starttime, stoptime=None, subsystem=None):
+    def get_subsystem_error(self, most_recent=None, starttime=None,
+                            stoptime=None, subsystem=None):
         """
         Get subsystem server_status record(s) from the M&C database.
 
         Parameters:
         ------------
-        subsystem: string
-            name of subsystem. Must be one of ['rtp', 'lib']
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
 
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         subsystem: string
             subsystem to get records for. If none, all subsystems will be included.
@@ -299,9 +404,9 @@ class MCSession(Session):
         """
         from .subsystem_error import SubsystemError
 
-        return self._time_filter(SubsystemError, 'time', starttime,
-                                 stoptime=stoptime, filter_column='subsystem',
-                                 filter_value=subsystem)
+        return self._time_filter(SubsystemError, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='subsystem', filter_value=subsystem)
 
     def add_lib_status(self, time, num_files, data_volume_gb, free_space_gb,
                        upload_min_elapsed, num_processes, git_version, git_hash):
@@ -333,18 +438,23 @@ class MCSession(Session):
                                   free_space_gb, upload_min_elapsed,
                                   num_processes, git_version, git_hash))
 
-    def get_lib_status(self, starttime, stoptime=None):
+    def get_lib_status(self, most_recent=None, starttime=None, stoptime=None):
         """
         Get lib_status record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         Returns:
         --------
@@ -352,8 +462,8 @@ class MCSession(Session):
         """
         from .librarian import LibStatus
 
-        return self._time_filter(LibStatus, 'time', starttime,
-                                 stoptime=stoptime)
+        return self._time_filter(LibStatus, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime)
 
     def add_lib_raid_status(self, time, hostname, num_disks, info):
         """
@@ -374,18 +484,24 @@ class MCSession(Session):
 
         self.add(LibRAIDStatus.create(time, hostname, num_disks, info))
 
-    def get_lib_raid_status(self, starttime, stoptime=None, hostname=None):
+    def get_lib_raid_status(self, most_recent=None, starttime=None, stoptime=None,
+                            hostname=None):
         """
         Get lib_raid_status record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         hostname: string
             RAID hostname to get records for. If none, all hostnames will be included.
@@ -396,9 +512,9 @@ class MCSession(Session):
         """
         from .librarian import LibRAIDStatus
 
-        return self._time_filter(LibRAIDStatus, 'time', starttime,
-                                 stoptime=stoptime, filter_column='hostname',
-                                 filter_value=hostname)
+        return self._time_filter(LibRAIDStatus, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='hostname', filter_value=hostname)
 
     def add_lib_raid_error(self, time, hostname, disk, log):
         """
@@ -419,18 +535,24 @@ class MCSession(Session):
 
         self.add(LibRAIDErrors.create(time, hostname, disk, log))
 
-    def get_lib_raid_error(self, starttime, stoptime=None, hostname=None):
+    def get_lib_raid_error(self, most_recent=None, starttime=None, stoptime=None,
+                           hostname=None):
         """
         Get lib_raid_error record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         hostname: string
             RAID hostname to get records for. If none, all hostnames will be included.
@@ -441,9 +563,9 @@ class MCSession(Session):
         """
         from .librarian import LibRAIDErrors
 
-        return self._time_filter(LibRAIDErrors, 'time', starttime,
-                                 stoptime=stoptime, filter_column='hostname',
-                                 filter_value=hostname)
+        return self._time_filter(LibRAIDErrors, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='hostname', filter_value=hostname)
 
     def add_lib_remote_status(self, time, remote_name, ping_time,
                               num_file_uploads, bandwidth_mbs):
@@ -468,18 +590,24 @@ class MCSession(Session):
         self.add(LibRemoteStatus.create(time, remote_name, ping_time,
                                         num_file_uploads, bandwidth_mbs))
 
-    def get_lib_remote_status(self, starttime, stoptime=None, remote_name=None):
+    def get_lib_remote_status(self, most_recent=None, starttime=None,
+                              stoptime=None, remote_name=None):
         """
         Get lib_remote_status record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         remote_name: string
             Name of remote librarian to get records for. If none, all
@@ -491,9 +619,9 @@ class MCSession(Session):
         """
         from .librarian import LibRemoteStatus
 
-        return self._time_filter(LibRemoteStatus, 'time', starttime,
-                                 stoptime=stoptime, filter_column='remote_name',
-                                 filter_value=remote_name)
+        return self._time_filter(LibRemoteStatus, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='remote_name', filter_value=remote_name)
 
     def add_lib_file(self, filename, obsid, time, size_gb):
         """
@@ -514,28 +642,32 @@ class MCSession(Session):
 
         self.add(LibFiles.create(filename, obsid, time, size_gb))
 
-    def get_lib_files(self, filename=None, obsid=None, starttime=None, stoptime=None):
+    def get_lib_files(self, filename=None, obsid=None, most_recent=None,
+                      starttime=None, stoptime=None):
         """
         Get lib_files record(s) from the M&C database.
+
+        If filename is provided, all other optional keywords are ignored.
 
         Parameters:
         ------------
         filename: string
-            filename to get records for. If none, obsid, starttime and stoptime
-            will be used.
+            filename to get records for.
 
         obsid: long
-            obsid to get records for. If starttime and filename are none,
-            all files for this obsid will be returned. If none, all obsid will
-            be included.
+            obsid to get records for. If starttime and most_recent are both None,
+            all files for this obsid will be returned.
+
+        most_recent: boolean
+            if True, get most recent record.
 
         starttime: astropy time object
-            time to look for records after. If starttime, filename and obsid
-            are all none, all records will be returned
+            Time to look for records after. Ignored if most_recent is True.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         Returns:
         --------
@@ -547,10 +679,10 @@ class MCSession(Session):
             file_list = self.query(LibFiles).filter(
                 LibFiles.filename == filename).all()
         else:
-            if starttime is not None:
-                file_list = self._time_filter(LibFiles, 'time', starttime,
-                                              stoptime=stoptime, filter_column='obsid',
-                                              filter_value=obsid)
+            if most_recent is not None or starttime is not None:
+                file_list = self._time_filter(LibFiles, 'time', most_recent=most_recent,
+                                              starttime=starttime, stoptime=stoptime,
+                                              filter_column='obsid', filter_value=obsid)
             else:
                 if obsid is not None:
                     file_list = self.query(LibFiles).filter(
@@ -583,18 +715,23 @@ class MCSession(Session):
         self.add(RTPStatus.create(time, status, event_min_elapsed, num_processes,
                                   restart_hours_elapsed))
 
-    def get_rtp_status(self, starttime, stoptime=None):
+    def get_rtp_status(self, most_recent=None, starttime=None, stoptime=None):
         """
         Get rtp_status record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         Returns:
         --------
@@ -602,8 +739,8 @@ class MCSession(Session):
         """
         from .rtp import RTPStatus
 
-        return self._time_filter(RTPStatus, 'time', starttime,
-                                 stoptime=stoptime)
+        return self._time_filter(RTPStatus, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime)
 
     def add_rtp_process_event(self, time, obsid, event):
         """
@@ -622,18 +759,24 @@ class MCSession(Session):
 
         self.add(RTPProcessEvent.create(time, obsid, event))
 
-    def get_rtp_process_event(self, starttime, stoptime=None, obsid=None):
+    def get_rtp_process_event(self, most_recent=None, starttime=None,
+                              stoptime=None, obsid=None):
         """
         Get rtp_process_event record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         obsid: long
             obsid to get records for. If none, all obsid will be included.
@@ -644,9 +787,9 @@ class MCSession(Session):
         """
         from .rtp import RTPProcessEvent
 
-        return self._time_filter(RTPProcessEvent, 'time', starttime,
-                                 stoptime=stoptime, filter_column='obsid',
-                                 filter_value=obsid)
+        return self._time_filter(RTPProcessEvent, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='obsid', filter_value=obsid)
 
     def add_rtp_process_record(self, time, obsid, pipeline_list, rtp_git_version,
                                rtp_git_hash, hera_qm_git_version, hera_qm_git_hash,
@@ -688,18 +831,24 @@ class MCSession(Session):
                                          hera_cal_git_version, hera_cal_git_hash,
                                          pyuvdata_git_version, pyuvdata_git_hash))
 
-    def get_rtp_process_record(self, starttime, stoptime=None, obsid=None):
+    def get_rtp_process_record(self, most_recent=None, starttime=None,
+                               stoptime=None, obsid=None):
         """
         Get rtp_process_record record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         obsid: long
             obsid to get records for. If none, all obsid will be included.
@@ -710,9 +859,9 @@ class MCSession(Session):
         """
         from .rtp import RTPProcessRecord
 
-        return self._time_filter(RTPProcessRecord, 'time', starttime,
-                                 stoptime=stoptime, filter_column='obsid',
-                                 filter_value=obsid)
+        return self._time_filter(RTPProcessRecord, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='obsid', filter_value=obsid)
 
     def add_rtp_task_resource_record(self, obsid, task_name, start_time, stop_time,
                                      max_memory=None, avg_cpu_load=None):
@@ -739,24 +888,34 @@ class MCSession(Session):
         self.add(RTPTaskResourceRecord.create(obsid, task_name, start_time, stop_time,
                                               max_memory, avg_cpu_load))
 
-    def get_rtp_task_resource_record(self, starttime=None, stoptime=None, obsid=None,
-                                     task_name=None):
+    def get_rtp_task_resource_record(self, most_recent=None, starttime=None,
+                                     stoptime=None, obsid=None, task_name=None):
         """
         Get rtp_task_resource_record from the M&C database.
 
+        If both obsid and task_name are set, all other keywords are ignored.
+        If no keywords are set, defaults to getting the most recent record.
+        At least one of obsid, starttime or most_recent must be specified.
+
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime,
+            obsid and task_name are all None.
+
         starttime: astropy time object
-            time to look for records after; applies to start_time column.
-            Ignored if both obsid and task_name are not None
+            Time to look for records after; applies to start_time column.
+            Ignored if both obsid and task_name are set or if most_recent is True.
+
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
-            Ignored if both obsid and task_name are not None
+            last time to get records for, only used if starttime is used.
+            If none, only the first record after starttime will be returned.
+
         obsid: long
-            obsid to get records for. If none, all obsid will be included
+            obsid to get records for. If none, all obsids will be included.
+
         task_name: string
-            task_name to get records for. If none, all tasks will be included
+            task_name to get records for. If none, all tasks will be included.
 
         Returns:
         -----------
@@ -765,62 +924,31 @@ class MCSession(Session):
         """
         from .rtp import RTPTaskResourceRecord
 
+        if obsid is None and starttime is None:
+            if most_recent is None:
+                most_recent = True
+            elif most_recent is False:
+                raise ValueError('At least one of obsid, starttime or most_recent must be specified.')
+
         if task_name is None:
-            if starttime is not None:
-                return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
+            if most_recent is True or starttime is not None:
+                return self._time_filter(RTPTaskResourceRecord, 'start_time',
+                                         most_recent=most_recent, starttime=starttime,
                                          stoptime=stoptime, filter_column='obsid',
                                          filter_value=obsid)
             elif obsid is not None:
                 return self.query(RTPTaskResourceRecord).filter(
                     RTPTaskResourceRecord.obsid == obsid).all()
-            else:
-                raise ValueError('Starttime or obsid must be specified')
+
         elif obsid is None:
-            if starttime is None:
-                raise ValueError('Starttime or obsid must be specified')
-            return self._time_filter(RTPTaskResourceRecord, 'start_time', starttime,
+            return self._time_filter(RTPTaskResourceRecord, 'start_time',
+                                     most_recent=most_recent, starttime=starttime,
                                      stoptime=stoptime, filter_column='task_name',
                                      filter_value=task_name)
         else:
             return self.query(RTPTaskResourceRecord).filter(
                 RTPTaskResourceRecord.obsid == obsid,
                 RTPTaskResourceRecord.task_name == task_name).all()
-
-    def add_paper_temps(self, read_time, temp_list):
-        """
-        Add a new PaperTemperatures record to the M&C database.
-
-        This list is usually parsed from the text file on tmon.
-
-        Parameters:
-        ------------
-        read_time: float or astropy time object
-            if float: jd time of temperature read
-
-        temp_list: List of temperatures. See temperatures.py for details.
-        """
-        from .temperatures import PaperTemperatures
-
-        self.add(PaperTemperatures.new_from_text_row(read_time, temp_list))
-
-    def get_paper_temps(self, starttime, stoptime=None):
-        """
-        get sets of temperature records.
-
-        Parameters:
-        ------------
-        starttime: astropy time object
-            time to look for records after
-
-        stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
-
-        """
-        from .temperatures import PaperTemperatures
-
-        return self._time_filter(PaperTemperatures, 'time', starttime,
-                                 stoptime=stoptime)
 
     def add_weather_data(self, time, variable, value):
         """
@@ -869,18 +997,23 @@ class MCSession(Session):
         for obj in weather_data_list:
             self.add(obj)
 
-    def get_weather_data(self, starttime, stoptime=None, variable=None):
+    def get_weather_data(self, most_recent=None, starttime=None, stoptime=None, variable=None):
         """
         Get weather_data record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         variable: string
             Name of variable to get records for, must be a key in weather.weather_sensor_dict.
@@ -895,9 +1028,9 @@ class MCSession(Session):
             if variable not in weather_sensor_dict.keys():
                 raise ValueError('variable must be a key in weather_sensor_dict.')
 
-        return self._time_filter(WeatherData, 'time', starttime,
-                                 stoptime=stoptime, filter_column='variable',
-                                 filter_value=variable)
+        return self._time_filter(WeatherData, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='variable', filter_value=variable)
 
     def write_weather_files(self, start_time, stop_time, variables=None):
         """Dump the weather data to text files in the current directory, to aid in
@@ -947,97 +1080,316 @@ class MCSession(Session):
         for item in q:
             print('{}\t{}'.format(item.astropy_time, item.value), file=files[item.variable])
 
-    def add_roach_temperature(self, time, roach, ambient_temp, inlet_temp,
-                              outlet_temp, fpga_temp, ppc_temp):
+    def add_node_sensor_readings(self, time, nodeID, top_sensor_temp, middle_sensor_temp,
+                                 bottom_sensor_temp, humidity_sensor_temp, humidity):
         """
-        Add new roach (fpga correlator board) temperature to the M&C database.
+        Add new node sensor data to the M&C database.
 
         Parameters:
         ------------
         time: astropy time object
-            astropy time object based on a timestamp from the katportal sensor.
-        roach: string
-            roach name
-        ambient_temp: float
-            ambient temperature reported by roach for this time in Celcius
-        inlet_temp: float
-            inlet temperature reported by roach for this time in Celcius
-        outlet_temp: float
-            outlet temperature reported by roach for this time in Celcius
-        fpga_temp: float
-            fpga temperature reported by roach for this time in Celcius
-        ppc_temp: float
-            ppc temperature reported by roach for this time in Celcius
+            astropy time object based on a timestamp reported by node
+        nodeID: integer
+            node number (integer running from 1 to 30)
+        top_sensor_temp: float
+            temperature of top sensor reported by node in Celsius
+        middle_sensor_temp: float
+            temperature of middle sensor reported by node in Celsius
+        bottom_sensor_temp: float
+            temperature of bottom sensor reported by node in Celsius
+        humidity_sensor_temp: float
+            temperature of the humidity sensor reported by node in Celsius
+        humidity: float
+            percent humidity measurement reported by node
         """
-        from .roach import RoachTemperature
+        from .node import NodeSensor
 
-        self.add(RoachTemperature.create(time, roach, ambient_temp, inlet_temp,
-                                         outlet_temp, fpga_temp, ppc_temp))
+        self.add(NodeSensor.create(time, nodeID, top_sensor_temp, middle_sensor_temp,
+                                   bottom_sensor_temp, humidity_sensor_temp, humidity))
 
-    def add_roach_temperature_from_redis(self):
-        """Read and add ROACH (FPGA correlator board) temperatures from the Redis
-        database. This function connects to the Redis database and grabs the
-        latest data using the `create_from_redis` function.
+    def add_node_sensor_readings_from_nodecontrol(self):
+        """Get and add node sensor information using a nodeControl object.
+        This function connects to the node and gets the latest data using the
+        `create_sensor_readings` function.
 
         If the current database is PostgreSQL, this function will use a
         special insertion method that will ignore records that are redundant
         with ones already in the database. This makes it convenient to sample
-        the ROACH/Redis data densely on qmaster.
+        the node sensor data densely on qmaster.
 
         """
-        from .roach import create_from_redis
+        from .node import create_sensor_readings, NodeSensor
 
-        roach_temperature_list = create_from_redis()
+        node_sensor_list = create_sensor_readings()
 
-        if self.bind.dialect.name == 'postgresql':
-            from sqlalchemy import inspect
-            from sqlalchemy.dialects.postgresql import insert
-            from .roach import RoachTemperature
+        self._insert_ignoring_duplicates(NodeSensor, node_sensor_list)
 
-            ies = [c.name for c in inspect(RoachTemperature).primary_key]
-            conn = self.connection()
-
-            for obj in roach_temperature_list:
-                # This appears to be the most correct way to map each row
-                # object into a dictionary:
-                values = {}
-                for col in inspect(obj).mapper.column_attrs:
-                    values[col.expression.name] = getattr(obj, col.key)
-
-                # The special PostgreSQL insert statement lets us ignore
-                # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
-                stmt = insert(RoachTemperature).values(**values).on_conflict_do_nothing(index_elements=ies)
-                conn.execute(stmt)
-        else:
-            # Generic approach:
-            for obj in roach_temperature_list:
-                self.add(obj)
-
-    def get_roach_temperature(self, starttime, stoptime=None, roach=None):
+    def get_node_sensor_readings(self, most_recent=None, starttime=None,
+                                 stoptime=None, nodeID=None, write_to_file=False,
+                                 filename=None):
         """
-        Get roach_temperature record(s) from the M&C database.
+        Get node_sensor record(s) from the M&C database.
 
         Parameters:
         ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
         starttime: astropy time object
-            time to look for records after
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
 
         stoptime: astropy time object
-            last time to get records for. If none, only the first record after
-            starttime will be returned.
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
-        roach: string
-            Roach name to get records for. If none, all roaches will be included.
+        nodeID: integer
+            node number (integer running from 1 to 30)
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
 
         Returns:
         --------
-        list of WeatherData objects
+        if write_to_file is False: list of NodeSensor objects
         """
-        from .roach import RoachTemperature
+        from .node import NodeSensor
 
-        return self._time_filter(RoachTemperature, 'time', starttime,
-                                 stoptime=stoptime, filter_column='roach',
-                                 filter_value=roach)
+        return self._time_filter(NodeSensor, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='node', filter_value=nodeID,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def add_node_power_status(self, time, nodeID, snap_relay_powered, snap0_powered,
+                              snap1_powered, snap2_powered, snap3_powered,
+                              fem_powered, pam_powered):
+        """
+        Add new node power status data to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by node
+        nodeID: integer
+            node number (integer running from 1 to 30)
+        snap_relay_powered: boolean
+            power status of the snap relay, True=powered
+        snap0_powered: boolean
+            power status of the SNAP 0 board, True=powered
+        snap1_powered: boolean
+            power status of the SNAP 1 board, True=powered
+        snap2_powered: boolean
+            power status of the SNAP 2 board, True=powered
+        snap3_powered: boolean
+            power status of the SNAP 3 board, True=powered
+        fem_powered: boolean
+            power status of the FEM, True=powered
+        pam_powered: boolean
+            power status of the PAM, True=powered
+        """
+        from .node import NodePowerStatus
+
+        self.add(NodePowerStatus.create(time, nodeID, snap_relay_powered, snap0_powered,
+                                        snap1_powered, snap2_powered, snap3_powered,
+                                        fem_powered, pam_powered))
+
+    def add_node_power_status_from_nodecontrol(self):
+        """Get and add node power status information using a nodeControl object.
+        This function connects to the node and gets the latest data using the
+        `create_power_status` function.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the node power status data densely on qmaster.
+        """
+        from .node import create_power_status, NodePowerStatus
+
+        node_power_list = create_power_status()
+
+        self._insert_ignoring_duplicates(NodePowerStatus, node_power_list)
+
+    def get_node_power_status(self, most_recent=None, starttime=None, stoptime=None, nodeID=None):
+        """
+        Get node power status record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        nodeID: integer
+            node number (integer running from 1 to 30)
+
+        Returns:
+        --------
+        list of NodePowerStatus objects
+        """
+        from .node import NodePowerStatus
+
+        return self._time_filter(NodePowerStatus, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='node', filter_value=nodeID)
+
+    def node_power_command(self, nodeID, part, command, nodeServerAddress=None,
+                           dryrun=False, testing=False):
+        """
+        Issue a power command (on/off) to a particular node & part.
+
+        Parameters:
+        ------------
+        nodeID: integer
+            node number (integer running from 1 to 30). If the testing keyword is False,
+            specifying a node which is not in the array will give a ValueError
+        part: string or list of strings
+            part name(s) (e.g. fem, snap0) or 'all', allowed values are keys to
+            node.power_command_part_dict
+        command: string
+            'on' or 'off'
+        nodeServerAddress: string
+            address for node server. Defaults to node.defaultServerAddress
+        dryrun: boolean
+            if true, just return the list of NodePowerCommand objects, do not
+            issue the power commands or log them to the database
+        testing: boolean
+            if true, do not use anything that requires connection to nodes (implies dry run)
+        """
+        from .node import NodePowerCommand, power_command_part_dict, get_node_list, defaultServerAddress
+
+        if nodeServerAddress is None:
+            nodeServerAddress = defaultServerAddress
+
+        if testing:
+            node_list = list(range(1, 31))
+            dryrun = True
+        else:
+            node_list = get_node_list(nodeServerAddress=nodeServerAddress)
+        if nodeID not in node_list:
+            raise ValueError('node not in list of active nodes: ', node_list)
+
+        if isinstance(part, six.string_types):
+            part = [part]
+        else:
+            # ensure no duplicates
+            part = list(set(part))
+
+        if part[0] == 'all':
+            part = list(power_command_part_dict.keys())
+
+        if 'snap_relay' in part:
+            if command == 'on':
+                # move snap_relay to the start of the list (it needs to be powered before the snaps)
+                part.remove('snap_relay')
+                part.insert(0, 'snap_relay')
+            else:
+                # make sure all snaps are powered down first
+                for partname in list(power_command_part_dict.keys()):
+                    if partname.startswith('snap') and partname not in part:
+                        part.insert(0, partname)
+                # move snap_relay to the end of the list.
+                part.remove('snap_relay')
+                part.append('snap_relay')
+        elif command == 'on':
+            # check if any snaps in part. If so, need to power snap_relay first
+            for partname in part:
+                if partname.startswith('snap'):
+                    part.insert(0, 'snap_relay')
+                    break
+
+        # Check whether parts are already in desired state. If so, omit them from command.
+        # make sure we have most recent power status info
+        if not testing:
+            self.add_node_power_status_from_nodecontrol()
+        # Get recent power status
+        starttime = Time.now() - TimeDelta(120, format='sec')
+        stoptime = Time.now() + TimeDelta(60, format='sec')
+        node_powers = self.get_node_power_status(starttime=starttime, stoptime=stoptime, nodeID=nodeID)
+        if len(node_powers) > 0:
+            latest_powers = node_powers[-1]
+            drop_part = []
+            for partname in part:
+                if partname not in list(power_command_part_dict.keys()):
+                    raise ValueError('part must be one of: ' + ', '.join(list(power_command_part_dict.keys()))
+                                     + '. part is actually {}'.format(partname))
+                power_status = getattr(latest_powers, partname + '_powered')
+                if command == 'on':
+                    if power_status:
+                        # already on, take it out of the list
+                        drop_part.append(partname)
+                else:
+                    if not power_status:
+                        # already off, take it out of the list
+                        drop_part.append(partname)
+            for partname in drop_part:
+                # do this after earlier loop so the list doesn't change during iteration
+                part.remove(partname)
+
+        if dryrun:
+            command_list = []
+
+        for partname in part:
+            command_time = Time.now()
+            # create object first: catch any mistakes
+            command_obj = NodePowerCommand.create(command_time, nodeID, partname, command)
+
+            if not dryrun:
+                import nodeControl
+
+                node_controller = nodeControl.NodeControl(nodeID, serverAddress=nodeServerAddress)
+                getattr(node_controller, power_command_part_dict[partname])(command)
+
+                self.add(command_obj)
+            else:
+                command_list.append(command_obj)
+
+        if dryrun:
+            return command_list
+
+    def get_node_power_command(self, most_recent=None, starttime=None, stoptime=None, nodeID=None):
+        """
+        Get node power command record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        nodeID: integer
+            node number (integer running from 1 to 30)
+
+        Returns:
+        --------
+        list of NodePowerCommand objects
+        """
+        from .node import NodePowerCommand
+
+        return self._time_filter(NodePowerCommand, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='node', filter_value=nodeID)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """

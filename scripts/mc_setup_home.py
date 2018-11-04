@@ -6,8 +6,10 @@
 """
 Script to setup the mc_config file.
 """
+from __future__ import absolute_import, division, print_function
 
 import os
+import sys
 
 logname = os.getenv('LOGNAME')
 mc_config_path = os.path.expanduser('~/.hera_mc')
@@ -19,7 +21,12 @@ else:
     print("Creating {}".format(mc_config_path))
     os.mkdir(mc_config_path)
 
-assumed_hera_cm_db_updates_location = os.path.join(os.getcwd(), 'hera_cm_db_updates')
+cwd = os.getcwd()
+h, t = os.path.split(cwd)
+if t != 'hera_cm_db_updates':
+    print('You need to be in the hera_cm_db_updates directory to run this.')
+    sys.exit()
+assumed_hera_cm_db_updates_location = cwd
 mc_config = """{{
     "default_db_name": "hera_mc_sqlite",
     "databases": {{

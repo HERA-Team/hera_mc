@@ -15,12 +15,8 @@ import os
 import sys
 from abc import ABCMeta
 from six import add_metaclass
-from sqlalchemy import Column, ForeignKey, BigInteger, String, Float
-from sqlalchemy import create_engine
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
-from sqlalchemy import update
+from sqlalchemy import create_engine, update
 from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
 
 from . import MCDeclarativeBase

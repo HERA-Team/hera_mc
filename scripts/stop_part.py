@@ -15,9 +15,11 @@ use the date.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect
 import sys
 import copy
+import six
+
+from hera_mc import mc, cm_utils, part_connect
 
 
 def query_args(args):
@@ -25,9 +27,9 @@ def query_args(args):
     Gets information from user
     """
     if args.part is None:
-        args.part = raw_input("Part number:  ")
+        args.part = six.moves.input("Part number:  ")
     if args.rev is None:
-        args.rev = raw_input("Revision:  ")
+        args.rev = six.moves.input("Revision:  ")
     if args.date == 'now':
         args.date = cm_utils.query_default('date', args)
     return args

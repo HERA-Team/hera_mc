@@ -5,17 +5,18 @@
 """Testing for `hera_mc.observations`.
 
 """
-import unittest
+from __future__ import absolute_import, division, print_function
 
+import unittest
 import numpy as np
 from math import floor
 from astropy.time import Time, TimeDelta
 from astropy.coordinates import EarthLocation
 
-from hera_mc import mc, cm_transfer, geo_handling
-from hera_mc.observations import Observation
-from hera_mc import utils, geo_location
-from hera_mc.tests import TestHERAMC
+from .. import mc, cm_transfer, geo_handling
+from ..observations import Observation
+from .. import utils, geo_location
+from ..tests import TestHERAMC
 
 
 class TestObservation(TestHERAMC):
@@ -64,8 +65,11 @@ class TestObservation(TestHERAMC):
         t4 = t2 + TimeDelta(10 * 60., format='sec')
         self.test_session.add_obs(t3, t4, utils.calculate_obsid(t3))
 
-        result_mult = self.test_session.get_obs_by_time(t1, stoptime=t4)
+        result_mult = self.test_session.get_obs_by_time(starttime=t1, stoptime=t4)
         self.assertEqual(len(result_mult), 2)
+
+        result_most_recent = self.test_session.get_obs_by_time(most_recent=True)
+        self.assertEqual(result_most_recent[0], result_mult[1])
 
         result_orig = self.test_session.get_obs(obsid=obsid)
         self.assertEqual(len(result_orig), 1)
@@ -80,6 +84,8 @@ class TestObservation(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.add_obs, t1, t2, 'foo')
         self.assertRaises(ValueError, utils.calculate_obsid, 'foo')
         self.assertRaises(ValueError, self.test_session.add_obs, t1, t2, utils.calculate_obsid(t1) + 2)
+        self.assertRaises(TypeError, self.test_session.get_obs_by_time, most_recent=t1)
+        self.assertRaises(TypeError, self.test_session.get_obs_by_time, t1)
 
 
 if __name__ == '__main__':

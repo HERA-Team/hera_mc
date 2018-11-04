@@ -9,9 +9,11 @@ Script to handle adding a general part.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling
 import sys
 import copy
+import six
+
+from hera_mc import mc, cm_utils, part_connect, cm_handling
 
 
 def query_args(args):
@@ -19,13 +21,13 @@ def query_args(args):
     Gets information from user
     """
     if args.hpn is None:
-        args.hpn = raw_input('HERA part number:  ')
+        args.hpn = six.moves.input('HERA part number:  ')
     if args.rev is None:
-        args.rev = raw_input('HERA part revision:  ')
+        args.rev = six.moves.input('HERA part revision:  ')
     if args.hptype is None:
-        args.hptype = raw_input('HERA part type:  ')
+        args.hptype = six.moves.input('HERA part type:  ')
     if args.mfg is None:
-        args.mfg = raw_input('Manufacturers number for part:  ')
+        args.mfg = six.moves.input('Manufacturers number for part:  ')
     args.date = cm_utils.query_default('date', args)
     return args
 
@@ -42,6 +44,7 @@ if __name__ == '__main__':
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
+    args.verbosity = cm_utils.parse_verbosity(args.verbosity)
 
     if args.hpn is None or args.rev is None or args.hptype is None or args.mfg is None:
         args = query_args(args)
@@ -54,16 +57,16 @@ if __name__ == '__main__':
     connect = part_connect.Connections()
     part = part_connect.Parts()
     handling = cm_handling.Handling(session)
-    part_check = handling.get_part_dossier(hpn_list=[args.hpn], rev=args.rev,
+    part_check = handling.get_part_dossier(hpn=[args.hpn], rev=args.rev,
                                            at_date=at_date, exact_match=True)
 
     # Check for part
-    if len(part_check.keys()) > 0:
+    if len(list(part_check.keys())) > 0:
         print("Error:  {} is already in parts database".format(args.hpn))
         print("Stopping this addition.")
     else:
         # Add new part
-        if args.verbosity == 'h':
+        if args.verbosity > 1:
             print("Adding new part {}:{}".format(args.hpn, args.rev))
         new_part_add = [(args.hpn, args.rev, args.hptype, args.mfg)]
         part_connect.add_new_parts(session, part, new_part_add, at_date, args.actually_do_it)

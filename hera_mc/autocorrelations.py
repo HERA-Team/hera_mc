@@ -12,10 +12,9 @@ from __future__ import absolute_import, division, print_function
 
 from argparse import Namespace
 import datetime
-
 import numpy as np
-
-from sqlalchemy import BigInteger, Column, DateTime, Float, Integer, SmallInteger, String
+from sqlalchemy import (BigInteger, Column, DateTime, Float, Integer,
+                        SmallInteger, String)
 
 from . import MCDeclarativeBase, NotNull
 

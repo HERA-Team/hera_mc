@@ -11,12 +11,14 @@ from __future__ import absolute_import, division, print_function
 
 import os.path
 from math import floor
+import subprocess
+import six
 from astropy.time import Time
 import pandas as pd
 import csv
 from sqlalchemy import Column, BigInteger, String
-from hera_mc import MCDeclarativeBase, mc, geo_location, part_connect, cm_table_info, cm_utils
-import subprocess
+
+from . import MCDeclarativeBase, mc, cm_table_info, cm_utils, utils
 
 
 class CMVersion(MCDeclarativeBase):
@@ -50,6 +52,10 @@ class CMVersion(MCDeclarativeBase):
             raise ValueError('time must be an astropy Time object')
         time = int(floor(time.gps))
 
+        # In Python 3, we sometimes get Unicode, sometimes bytes
+        if isinstance(git_hash, six.binary_type):
+            git_hash = utils.bytes_to_str(git_hash)
+
         return cls(update_time=time, git_hash=git_hash)
 
 
@@ -66,7 +72,7 @@ def package_db_to_csv(session=None, tables='all'):
     tables: string
         comma-separated list of names of tables to initialize or 'all'. Default is 'all'
     """
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
 
@@ -142,21 +148,43 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False):
     return success
 
 
-def check_if_main(expected_hostname='qmaster'):
+def check_if_main(session, config_path=None, expected_hostname='qmaster',
+                  test_db_name='testing'):
     # the 'hostname' call on qmaster returns the following value:
     import socket
+    import json
     hostname = socket.gethostname()
-    is_main = (hostname == expected_hostname)
-    if is_main:
-        print('Found main db at hostname {}'.format(hostname))
-    return is_main
+    is_main_host = (hostname == expected_hostname)
+
+    session_db_url = session.bind.engine.url.__to_string__(hide_password=False)
+
+    if config_path is None:
+        config_path = mc.default_config_file
+
+    with open(config_path) as f:
+        config_data = json.load(f)
+
+    testing_db_url = config_data.get('databases').get(test_db_name).get('url')
+    is_test_db = (session_db_url == testing_db_url)
+
+    if is_main_host:
+        if is_test_db:
+            is_main_db = False
+        else:
+            is_main_db = True
+    else:
+        is_main_db = False
+
+    if is_main_db:
+        print('Found main db at hostname {} and DB url {}'.format(hostname, session_db_url))
+    return is_main_db
 
 
-def db_validation(maindb_pw):
+def db_validation(maindb_pw, session):
     """
     Check if you are working on the main db and if so if you have the right password
     """
-    is_maindb = check_if_main()
+    is_maindb = check_if_main(session)
 
     if not is_maindb:
         return True
@@ -186,15 +214,15 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
         Either False or password to change from main db. Default is False
     """
 
-    if not db_validation(maindb):
-        print("cm_init not allowed.")
-        return False
-
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
     if cm_csv_path is None:
         cm_csv_path = mc.get_cm_csv_path(None)
+
+    if not db_validation(maindb, session):
+        print("cm_init not allowed.")
+        return False
 
     cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path)
 
@@ -228,7 +256,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
     for table, data_filename in reversed(use_table):
         cm_utils.log('cm_initialization: ' + data_filename)
         field_row = True  # This is the first row
-        with open(data_filename, 'rb') as csvfile:
+        with open(data_filename, 'rt') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 table_inst = cm_tables[table][0]()
