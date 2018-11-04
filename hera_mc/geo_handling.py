@@ -239,11 +239,14 @@ class Handling:
                 antenna_number = int(L)
                 station_name = self.find_station_of_antenna(antenna_number, query_date)
             except ValueError:
+                print(L)
                 station_name = L
             if station_name:
                 for a in self.session.query(geo_location.GeoLocation).filter(
                         func.upper(geo_location.GeoLocation.station_name) == station_name.upper()):
                     a.gps2Time()
+                    if a.created_date > query_date:
+                        continue  # skip antennas which don't exist yet
                     a.desc = self.station_types[a.station_type_name]['Description']
                     hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                     a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
