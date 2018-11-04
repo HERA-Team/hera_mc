@@ -239,7 +239,6 @@ class Handling:
                 antenna_number = int(L)
                 station_name = self.find_station_of_antenna(antenna_number, query_date)
             except ValueError:
-                print(L)
                 station_name = L
             if station_name:
                 for a in self.session.query(geo_location.GeoLocation).filter(
