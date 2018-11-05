@@ -80,7 +80,7 @@ class Handling:
 
     coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
 
-    def __init__(self, session=None, testing=False):
+    def __init__(self, session=None):
         """
         session: session on current database. If session is None, a new session
                  on the default database is created and used.
@@ -90,7 +90,6 @@ class Handling:
             self.session = db.sessionmaker()
         else:
             self.session = session
-        self.testing = testing
 
         self.station_types = None
 
@@ -343,19 +342,17 @@ class Handling:
             label_to_show = kwargs['show_label'].lower()
         locations = self.get_location(stations_to_plot_list, query_date)
         fig_label = kwargs['xgraph'] + kwargs['ygraph']
-        if not self.testing:
-            plt.figure(fig_label)
+        plt.figure(fig_label)
         for a in locations:
             pt = {'easting': a.easting, 'northing': a.northing,
                   'elevation': a.elevation}
             X = pt[self.coord[kwargs['xgraph']]]
             Y = pt[self.coord[kwargs['ygraph']]]
-            if not self.testing:
-                plt.plot(X, Y, color=kwargs['marker_color'], label=a.station_name,
-                         marker=kwargs['marker_shape'], markersize=kwargs['marker_size'])
+            plt.plot(X, Y, color=kwargs['marker_color'], label=a.station_name,
+                     marker=kwargs['marker_shape'], markersize=kwargs['marker_size'])
             if displaying_label:
                 labeling = self.get_antenna_label(label_to_show, a, query_date)
-                if labeling and not self.testing:
+                if labeling:
                     plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
         return fig_label
 
@@ -393,8 +390,7 @@ class Handling:
                 kwargs['marker_shape'] = 'o'
                 kwargs['marker_size'] = 7
                 self.plot_stations(active_stations, query_date, **kwargs)
-        if not self.testing:
-            if kwargs['xgraph'].upper() != 'Z' and kwargs['ygraph'].upper() != 'Z':
-                plt.axis('equal')
-            plt.plot(xaxis=kwargs['xgraph'], yaxis=kwargs['ygraph'])
+        if kwargs['xgraph'].upper() != 'Z' and kwargs['ygraph'].upper() != 'Z':
+            plt.axis('equal')
+        plt.plot(xaxis=kwargs['xgraph'], yaxis=kwargs['ygraph'])
         return fig_num

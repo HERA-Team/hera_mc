@@ -22,7 +22,7 @@ class TestGeo(TestHERAMC):
 
     def setUp(self):
         super(TestGeo, self).setUp()
-        self.h = geo_handling.Handling(self.test_session, testing=True)
+        self.h = geo_handling.Handling(self.test_session)
 
     def test_cofa(self):
         self.h.get_station_types()
