@@ -124,8 +124,6 @@ class MCSession(Session):
             if most_recent:
                 current_time = Time.now()
                 # get most recent row
-                temp_query = query.filter(time_attr <= current_time.gps).order_by(desc(time_attr))
-
                 first_query = query.filter(time_attr <= current_time.gps).order_by(desc(time_attr)).limit(1)
             else:
                 # get first row after starttime
@@ -134,7 +132,7 @@ class MCSession(Session):
             # get the time of the first row
             first_result = first_query.all()
             if len(first_result) < 1:
-                result_list = first_result
+                query = first_query
             else:
                 first_time = getattr(first_result[0], time_column)
                 # then get all results at that time
