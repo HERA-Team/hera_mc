@@ -52,7 +52,7 @@ class CorrelatorControlState(MCDeclarativeBase):
 
     time: gps time of the control state, floored (BigInteger, part of primary_key).
     state_type: type of control state, one of the keys in state_dict (String, part of primary_key)
-    state: boolean indicating whether the state_type is true or false
+    state: boolean indicating whether the state_type is true or false (Boolean)
     """
     __tablename__ = 'correlator_control_state'
     time = Column(BigInteger, primary_key=True)
@@ -204,13 +204,13 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
 
     time: gps time of the take_data command, floored (BigInteger, part of primary_key).
     starttime_sec: gps time to start taking data, floored (BigInteger)
-    starttime_ms: milliseconds to add to starttime_sec to set correlator start time.
+    starttime_ms: milliseconds to add to starttime_sec to set correlator start time. (Integer)
     duration: Duration to take data for in seconds. After this time, the
-        correlator will stop recording.
-    acclen_spectra: Accumulation length in spectra.
+        correlator will stop recording. (Float)
+    acclen_spectra: Accumulation length in spectra. (Integer)
     integration_time: Accumulation length in seconds, converted from acclen_spectra.
-        The conversion is non-trivial and depends on the correlator settings.
-    tag: Tag which will end up in data files as a header entry
+        The conversion is non-trivial and depends on the correlator settings. (Float)
+    tag: Tag which will end up in data files as a header entry (String)
     """
     __tablename__ = 'correlator_take_data_arguments'
     time = Column(BigInteger, primary_key=True)
