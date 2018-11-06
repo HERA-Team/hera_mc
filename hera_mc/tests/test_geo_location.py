@@ -99,6 +99,8 @@ class TestGeo(TestHERAMC):
         self.assertEqual(ant, None)
         stn = self.h.find_station_of_antenna('A23', 'now')
         self.assertTrue(stn == 'HH23')
+        stn = self.h.find_station_of_antenna(23, 'now')
+        self.assertTrue(stn == 'HH23')
 
 
 if __name__ == '__main__':
