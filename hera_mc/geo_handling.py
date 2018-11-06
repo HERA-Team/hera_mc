@@ -230,8 +230,8 @@ class Handling:
         self.query_date = cm_utils.get_astropytime(query_date)
         for station_name in to_find_list:
             for a in self.session.query(geo_location.GeoLocation).filter(
-                    (func.upper(geo_location.GeoLocation.station_name) == station_name.upper()) &
-                    (geo_location.GeoLocation.created_gpstime < self.query_date.gps)):
+                    (func.upper(geo_location.GeoLocation.station_name) == station_name.upper())
+                    & (geo_location.GeoLocation.created_gpstime < self.query_date.gps)):
                 a.gps2Time()
                 a.desc = self.station_types[a.station_type_name]['Description']
                 hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
