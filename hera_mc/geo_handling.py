@@ -18,7 +18,6 @@ import six
 from astropy.time import Time, TimeDelta
 from sqlalchemy import func
 from pyproj import Proj
-import matplotlib.pyplot as plt
 
 from . import mc, part_connect, cm_utils, geo_location
 
@@ -59,7 +58,7 @@ def get_location(location_names, query_date='now', session=None):
     return located
 
 
-def show_it_now(fignm):
+def show_it_now(fignm):  # pragma: no cover
     """
     Used in scripts to actually make plot (as opposed to within python). Seems to be needed...
 
@@ -67,8 +66,8 @@ def show_it_now(fignm):
     -------------
     fignm:  string/int for figure
     """
-
-    if fignm is not False and fignm is not None:  # pragma: no cover
+    import matplotlib.pyplot as plt
+    if fignm is not False and fignm is not None:
         plt.figure(fignm)
         plt.show()
 
@@ -80,7 +79,7 @@ class Handling:
 
     coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
 
-    def __init__(self, session=None):
+    def __init__(self, session=None, testing=False):
         """
         session: session on current database. If session is None, a new session
                  on the default database is created and used.
@@ -92,6 +91,8 @@ class Handling:
             self.session = session
 
         self.get_station_types()
+        self.axes_set = False
+        self.testing = testing
 
     def close(self):
         """
@@ -312,7 +313,7 @@ class Handling:
                 return '-'
         return None
 
-    def plot_stations(self, locations, **kwargs):
+    def plot_stations(self, locations, **kwargs):  # pragma: no cover
         """
         Plot a list of stations.
 
@@ -325,6 +326,9 @@ class Handling:
         if displaying_label:
             label_to_show = kwargs['show_label'].lower()
         fig_label = kwargs['xgraph'] + kwargs['ygraph']
+        if self.testing:
+            return None
+        import matplotlib.pyplot as plt
         plt.figure(fig_label)
         for a in locations:
             pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
@@ -336,6 +340,11 @@ class Handling:
                 labeling = self.get_antenna_label(label_to_show, a, self.query_date)
                 if labeling:
                     plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
+        if not self.axes_set:
+            self.axes_set = True
+            if kwargs['xgraph'].upper() != 'Z' and kwargs['ygraph'].upper() != 'Z':
+                plt.axis('equal')
+            plt.plot(xaxis=kwargs['xgraph'], yaxis=kwargs['ygraph'])
         return fig_label
 
     def get_active_stations(self, query_date, station_types_to_use):
@@ -364,6 +373,7 @@ class Handling:
         kwargs:  marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
         """
         fig_num = None
+        self.axes_set = False
         station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
         for st in station_types_to_use:
             kwargs['marker_color'] = self.station_types[st]['Marker'][0]
@@ -371,7 +381,4 @@ class Handling:
             kwargs['marker_size'] = 6
             stations_to_plot = self.get_location(self.station_types[st]['Stations'], query_date)
             fig_num = self.plot_stations(stations_to_plot, **kwargs)
-        if kwargs['xgraph'].upper() != 'Z' and kwargs['ygraph'].upper() != 'Z':
-            plt.axis('equal')
-        plt.plot(xaxis=kwargs['xgraph'], yaxis=kwargs['ygraph'])
         return fig_num
