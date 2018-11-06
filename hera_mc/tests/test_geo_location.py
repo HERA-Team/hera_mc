@@ -82,6 +82,12 @@ class TestGeo(TestHERAMC):
         self.h.print_loc_info(None)
         self.h.print_loc_info(stations)
 
+    def test_parse_station_types(self):
+        st = self.h.parse_station_types_to_check('all')
+        self.assertTrue('container' in st)
+        st = self.h.parse_station_types_to_check('hh')
+        self.assertTrue('herahexe' in st)
+
     def test_get_active_stations(self):
         active = self.h.get_active_stations('now', ['HH'])
         self.assertEqual(active[0].station_name, 'HH0')

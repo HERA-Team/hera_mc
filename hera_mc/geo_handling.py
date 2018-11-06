@@ -259,7 +259,7 @@ class Handling:
         self.get_station_types()
         if isinstance(sttc, six.string_types):
             if sttc.lower() == 'all':
-                return self.station_types.keys()
+                return list(self.station_types.keys())
             elif sttc.lower() == 'default':
                 sttc = cm_utils.default_station_prefixes
             else:
@@ -272,7 +272,7 @@ class Handling:
                 for k, st in six.iteritems(self.station_types):
                     if s.upper() == st['Prefix'][:len(s)].upper():
                         sttypes.add(k.lower())
-        return sttypes
+        return list(sttypes)
 
     def get_ants_installed_since(self, query_date, station_types_to_check='all'):
         """
