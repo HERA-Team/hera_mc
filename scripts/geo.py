@@ -14,10 +14,10 @@ from hera_mc import mc, geo_handling, cm_utils, part_connect
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('action', nargs='?', help="Actions are:  g[eo], c[ofa], s[ince]", default='geo')
+    parser.add_argument('action', nargs='?', help="Actions are:  a[ctive], g[eo], c[ofa], s[ince]", default='active')
     parser.add_argument('-p', '--position', help="Position (i.e. station) name", default=None)
     parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
-    parser.add_argument('--hide-bg', dest = 'background', help="Don't plot the background stations", action='store_false')
+    parser.add_argument('--hide-bg', dest='background', help="Hide background of station-types", action='store_false')
     cm_utils.add_date_time_args(parser)
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
@@ -25,8 +25,8 @@ if __name__ == '__main__':
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
     parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or 'all') Can use types or prefixes.  [default]",
                         dest='station_types', default='default')
-    parser.add_argument('--show-state', help="Show only the 'active' stations or 'all' ['all']", dest='show_state',
-                        choices=['active', 'all'], default='all')
+    parser.add_argument('--show-state', help="Show 'connected' or 'all' ['all']", dest='show_state',
+                        choices=['connected', 'all'], default='all')
     parser.add_argument('--show-label', dest='show_label',
                         help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]",
                         choices=['name', 'num', 'ser', 'false'], default='num')
@@ -56,18 +56,24 @@ if __name__ == '__main__':
     session = db.sessionmaker()
     G = geo_handling.Handling(session)
 
-    # If args.graph is set, you will always have this "background"
+    # If args.graph is set apply background if desired
     if args.graph and args.background:
         show_fig = G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
                                         xgraph=xgraph, ygraph=ygraph,
                                         show_state=show_state, show_label=args.show_label)
-    # Process action.  Actions are:  geo, cofa, since
-    if args.action.startswith('g') and args.position is not None:
+    # Process action.  Actions are:  active, geo, cofa, since
+    if args.action.startswith('a'):
+        located = G.get_active_stations(at_date, station_types_to_use=args.station_types)
+        G.print_loc_info(located)
+        if args.graph and len(located) > 0:
+            show_fig = G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
+                                       marker_color='k', marker_shape='*', marker_size=14)
+    elif args.action.startswith('g') and args.position is not None:
         located = G.get_location(args.position, at_date)
         G.print_loc_info(located)
         if args.graph and len(located) > 0:
-            G.plot_stations(args.position, at_date, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
-                            marker_color='k', marker_shape='*', marker_size=14)
+            show_fig = G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
+                                       marker_color='k', marker_shape='*', marker_size=14)
     elif args.action.startswith('c'):
         cofa = G.cofa()
         G.print_loc_info(cofa)

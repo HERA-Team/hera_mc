@@ -35,20 +35,6 @@ class TestGeo(TestHERAMC):
         cofa_func = geo_handling.cofa(session=self.test_session)[0]
         self.assertTrue(cofa.isclose(cofa_func))
 
-    def test_get_location(self):
-        located = self.h.get_location(['HH0'], 'now')
-        self.assertTrue(located[0].station_name == 'HH0')
-
-        # test that function works the same as method
-        located_func = geo_handling.get_location(['HH0'],
-                                                 'now', session=self.test_session)
-        for loc_i in range(len(located)):
-            self.assertTrue(located[loc_i].isclose(located_func[loc_i]))
-        rlf = self.h.print_loc_info(located_func)
-        self.assertTrue(rlf)
-        rlf = self.h.print_loc_info(None)
-        self.assertFalse(rlf)
-
     def test_update_new(self):
         nte = 'HH_new_test_element'
         data = [[nte, 'station_name', nte],
@@ -76,32 +62,41 @@ class TestGeo(TestHERAMC):
     def test_get_ants_installed_since(self):
         query_date = Time('2017-05-01 01:00:00', scale='utc')
         ants_in = self.h.get_ants_installed_since(query_date, station_types_to_check=['HH'])
-        print(ants_in)
         self.assertTrue(len(ants_in) == 3)
 
     def test_plotting(self):
         stations_to_plot = ['HH0']
         query_date = Time('2017-08-25 01:00:00', scale='utc')
-        self.h.plot_stations(stations_to_plot, query_date, xgraph='E', ygraph='N', show_label='name',
+        stations = self.h.get_location(stations_to_plot, query_date)
+        self.h.plot_stations(stations, xgraph='E', ygraph='N', show_label='name',
                              marker_color='k', marker_shape='*', marker_size=14)
-        self.h.plot_stations(stations_to_plot, query_date, xgraph='E', ygraph='N', show_label='num',
+        self.h.plot_stations(stations, xgraph='E', ygraph='N', show_label='num',
                              marker_color='k', marker_shape='*', marker_size=14)
-        self.h.plot_stations(stations_to_plot, query_date, xgraph='E', ygraph='N', show_label='ser',
+        self.h.plot_stations(stations, xgraph='E', ygraph='N', show_label='ser',
                              marker_color='k', marker_shape='*', marker_size=14)
-        self.h.plot_stations(stations_to_plot, query_date, xgraph='E', ygraph='N', show_label='other_thing',
+        self.h.plot_stations(stations, xgraph='E', ygraph='N', show_label='other_thing',
                              marker_color='k', marker_shape='*', marker_size=14)
         self.h.plot_station_types(query_date=query_date, station_types_to_use=['HH'],
                                   xgraph='E', ygraph='N',
                                   show_state='active', show_label='name')
+        self.h.print_loc_info(None)
+        self.h.print_loc_info(stations)
+
+    def test_get_active_stations(self):
+        active = self.h.get_active_stations('now', ['HH'])
+        self.assertEqual(active[0].station_name, 'HH0')
 
     def test_is_in_database(self):
         self.assertTrue(self.h.is_in_database('HH23', 'geo_location'))
         self.assertTrue(self.h.is_in_database('HH23', 'connections'))
+        self.assertFalse(self.h.is_in_database('BB0', 'geo_location'))
         self.assertRaises(ValueError, self.h.is_in_database, 'HH666', 'wrong_one')
 
     def test_find_antenna_station_pair(self):
         ant, rev = self.h.find_antenna_at_station('HH23', 'now')
         self.assertTrue(ant == 'A23')
+        ant, rev = self.h.find_antenna_at_station('BB23', 'now')
+        self.assertEqual(ant, None)
         stn = self.h.find_station_of_antenna('A23', 'now')
         self.assertTrue(stn == 'HH23')
 
