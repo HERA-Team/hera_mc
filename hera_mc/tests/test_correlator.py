@@ -160,8 +160,34 @@ class TestCorrelatorControlCommand(TestHERAMC):
         starttime_ms_offset = floor((starttime.gps - floor(starttime.gps)) * 1000)
 
         command_list = self.test_session.correlator_control_command(
-            'take_data', starttime=starttime, duration=100, acclen_spectra=2,
-            tag='engineering', testing=True)
+            'take_data', starttime=starttime, duration=100, tag='engineering',
+            testing=True)
+
+        self.assertEqual(len(command_list), 2)
+        command_time = command_list[0].time
+        self.assertTrue(Time.now().gps - command_time < 2.)
+
+        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
+        self.assertTrue(command_list[0].isclose(expected_comm))
+
+        int_time = 2 * ((2.0 * 16384) / 500e6)
+        expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
+                                                         command='take_data',
+                                                         starttime_sec=command_time + 10,
+                                                         starttime_ms=starttime_ms_offset,
+                                                         duration=100,
+                                                         acclen_spectra=corr.DEFAULT_ACCLEN_SPECTRA,
+                                                         integration_time=int_time,
+                                                         tag='engineering')
+        self.assertTrue(command_list[1].isclose(expected_args))
+
+        # check warning with non-standard acclen_spectra
+        command_list = checkWarnings(self.test_session.correlator_control_command,
+                                     ['take_data'],
+                                     {'starttime': starttime, 'duration': 100,
+                                      'acclen_spectra': 2, 'tag': 'engineering',
+                                      'testing': True, 'overwrite_take_data': True},
+                                     message='Using a non-standard acclen_spectra')
 
         self.assertEqual(len(command_list), 2)
         command_time = command_list[0].time
@@ -223,15 +249,14 @@ class TestCorrelatorControlCommand(TestHERAMC):
 
         self.assertRaises(RuntimeError, self.test_session.correlator_control_command,
                           'take_data', starttime=Time.now() + TimeDelta(10, format='sec'),
-                          duration=100, acclen_spectra=2, tag='engineering', testing=True)
+                          duration=100, tag='engineering', testing=True)
 
         t2 = Time.now() - TimeDelta(30, format='sec')
         self.test_session.add_correlator_control_state(t2, 'taking_data', False)
 
         t3 = Time.now() + TimeDelta(10, format='sec')
         control_command_objs = self.test_session.correlator_control_command(
-            'take_data', starttime=t3, duration=100, acclen_spectra=2,
-            tag='engineering', testing=True)
+            'take_data', starttime=t3, duration=100, tag='engineering', testing=True)
         for obj in control_command_objs:
             self.test_session.add(obj)
             self.test_session.commit()
@@ -241,15 +266,15 @@ class TestCorrelatorControlCommand(TestHERAMC):
         starttime = Time.now() + TimeDelta(10, format='sec')
         self.assertRaises(RuntimeError, self.test_session.correlator_control_command,
                           'take_data', starttime=starttime + TimeDelta(30, format='sec'),
-                          duration=100, acclen_spectra=2, tag='engineering', testing=True)
+                          duration=100, tag='engineering', testing=True)
 
         starttime_ms_offset = floor((starttime.gps - floor(starttime.gps)) * 1000)
 
         command_list = checkWarnings(self.test_session.correlator_control_command,
                                      ['take_data'],
                                      {'starttime': starttime, 'duration': 100,
-                                      'acclen_spectra': 2, 'tag': 'engineering',
-                                      'testing': True, 'overwrite_take_data': True},
+                                      'tag': 'engineering', 'testing': True,
+                                      'overwrite_take_data': True},
                                      message='Correlator was commanded to take data')
 
         command_time = command_list[0].time
@@ -264,7 +289,7 @@ class TestCorrelatorControlCommand(TestHERAMC):
                                                          starttime_sec=command_time + 10,
                                                          starttime_ms=starttime_ms_offset,
                                                          duration=100,
-                                                         acclen_spectra=2,
+                                                         acclen_spectra=corr.DEFAULT_ACCLEN_SPECTRA,
                                                          integration_time=int_time,
                                                          tag='engineering')
         self.assertTrue(command_list[1].isclose(expected_args))
@@ -291,25 +316,21 @@ class TestCorrelatorControlCommand(TestHERAMC):
         starttime = Time.now() + TimeDelta(10, format='sec')
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'take_data', starttime=starttime, duration=100,
-                          acclen_spectra=2, testing=True)
-        self.assertRaises(ValueError, self.test_session.correlator_control_command,
-                          'take_data', starttime=starttime, duration=100,
-                          tag='engineering', testing=True)
-        self.assertRaises(ValueError, self.test_session.correlator_control_command,
-                          'take_data', starttime=starttime, acclen_spectra=2,
-                          tag='engineering', testing=True)
-        self.assertRaises(ValueError, self.test_session.correlator_control_command,
-                          'take_data', duration=100, acclen_spectra=2, tag='engineering',
                           testing=True)
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'take_data', starttime=starttime, tag='engineering',
+                          testing=True)
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'take_data', duration=100, tag='engineering', testing=True)
 
         # test bad values for 'take_data'
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'take_data', starttime='foo', duration=100,
-                          acclen_spectra=2, tag='engineering', testing=True)
+                          tag='engineering', testing=True)
 
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'take_data', starttime=starttime, duration=100,
-                          acclen_spectra=2, tag='foo', testing=True)
+                          tag='foo', testing=True)
 
         # test setting values for 'take_data' with other commands
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
@@ -318,7 +339,8 @@ class TestCorrelatorControlCommand(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'phase_switching_off', duration=100, testing=True)
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
-                          'restart', acclen_spectra=2, testing=True)
+                          'restart', acclen_spectra=corr.DEFAULT_ACCLEN_SPECTRA,
+                          testing=True)
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'noise_diode_off', tag='engineering', testing=True)
 

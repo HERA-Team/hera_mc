@@ -14,7 +14,10 @@ from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String, Fore
 
 from . import MCDeclarativeBase
 
-DefaultRedisAddress = "redishost"
+# default acclen -- corresponds to just under 10 seconds
+DEFAULT_ACCLEN_SPECTRA = 147456
+
+DEFAULT_REDIS_ADDRESS = "redishost"
 
 # key is state type, value is method name in hera_corr_cm
 state_dict = {'taking_data': 'is_recording', 'phase_switching': 'phase_switch_is_on',
@@ -84,7 +87,7 @@ class CorrelatorControlState(MCDeclarativeBase):
         return cls(time=corr_time, state_type=state_type, state=state)
 
 
-def _get_control_state(correlator_redis_address=DefaultRedisAddress):
+def _get_control_state(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
     Loops through the state types in state_dict and gets the latest state and associated timestamp for each one.
 
@@ -104,7 +107,7 @@ def _get_control_state(correlator_redis_address=DefaultRedisAddress):
     return corr_state_dict
 
 
-def create_control_state(correlator_redis_address=DefaultRedisAddress, corr_state_dict=None):
+def create_control_state(correlator_redis_address=DEFAULT_REDIS_ADDRESS, corr_state_dict=None):
     """
     Return a list of correlator control state objects with data from the correlator.
 
@@ -168,7 +171,7 @@ class CorrelatorControlCommand(MCDeclarativeBase):
         return cls(time=corr_time, command=command)
 
 
-def _get_integration_time(acclen_spectra, correlator_redis_address=DefaultRedisAddress):
+def _get_integration_time(acclen_spectra, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
     gets the integration time in seconds for a given acclen in spectra
 
@@ -180,7 +183,7 @@ def _get_integration_time(acclen_spectra, correlator_redis_address=DefaultRedisA
     return corr_cm.n_spectra_to_secs(acclen_spectra)
 
 
-def _get_next_start_time(correlator_redis_address=DefaultRedisAddress):
+def _get_next_start_time(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
     gets the next start time from the correlator, in gps seconds
 

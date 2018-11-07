@@ -1556,6 +1556,7 @@ class MCSession(Session):
             only applies if command is 'take_data': Length of time to take data for, in seconds
         acclen_spectra: integer
             only applies if command is 'take_data': Accumulation length in spectra.
+            Default is correlator.DEFAULT_ACCLEN_SPECTRA
         tag: string
             only applies if command is 'take_data': Tag which will end up in data
             files as a header entry, must be from correlator.tag_list (e.g. 'science', 'engineering')
@@ -1649,7 +1650,10 @@ class MCSession(Session):
             if duration is None:
                 raise ValueError('duration must be specified if command is "take_data"')
             if acclen_spectra is None:
-                raise ValueError('acclen_spectra must be specified if command is "take_data"')
+                acclen_spectra = corr.DEFAULT_ACCLEN_SPECTRA
+            else:
+                if acclen_spectra != corr.DEFAULT_ACCLEN_SPECTRA:
+                    warnings.warn('Using a non-standard acclen_spectra!')
             if tag is None:
                 raise ValueError('tag must be specified if command is "take_data"')
 
