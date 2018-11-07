@@ -13,7 +13,6 @@ import subprocess
 import numpy as np
 
 from .. import geo_location, geo_handling, mc, cm_transfer, part_connect
-from .. import cm_hookup
 from ..tests import TestHERAMC
 from astropy.time import Time
 
@@ -81,6 +80,17 @@ class TestGeo(TestHERAMC):
                                   show_state='active', show_label='name')
         self.h.print_loc_info(None)
         self.h.print_loc_info(stations)
+
+    def test_antenna_label(self):
+        stations_to_plot = ['HH0']
+        query_date = Time('2017-08-25 01:00:00', scale='utc')
+        stations = self.h.get_location(stations_to_plot, query_date)
+        x = self.h.get_antenna_label('name', stations[0], query_date)
+        self.assertEqual(x, 'HH0')
+        x = self.h.get_antenna_label('num', stations[0], query_date)
+        self.assertEqual(x, '0')
+        x = self.h.get_antenna_label('ser', stations[0], query_date)
+        self.assertEqual(x, 'H3')
 
     def test_parse_station_types(self):
         st = self.h.parse_station_types_to_check('all')

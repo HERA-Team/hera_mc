@@ -297,10 +297,9 @@ class Handling:
     def get_antenna_label(self, label_to_show, stn, query_date):
         if label_to_show == 'name':
             return stn.station_name
-        try:
-            ant, rev = self.find_antenna_at_station(stn.station_name, query_date)
-        except TypeError:
-            return ''.join([x if x.isdigit() else '' for x in stn.station_name])
+        ant, rev = self.find_antenna_at_station(stn.station_name, query_date)
+        if ant is None:
+            return None
         if label_to_show == 'num':
             return ant.strip('A')
         if label_to_show == 'ser':
