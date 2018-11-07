@@ -16,23 +16,11 @@ from argparse import Namespace
 from . import cm_utils, part_connect
 
 
-class RevisionError(Exception):
-    def __init__(self, hpn):
-        # Call the base class constructor with the parameters it needs
-        message = "Multiple revisions found on {}".format(hpn)
-        super(RevisionError, self).__init__(message)
-
-
-class NoTimeError(Exception):
-    def __init__(self, RevType):
-        # Call the base class constructor with the parameters it needs
-        message = "To find {} revisions you must supply an astropy.Time".format(RevType)
-        super(NoTimeError, self).__init__(message)
-
-
 def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     """
-    Returns namespace of revisions (hpn, rev, started, ended, [hukey], [pkey]) of queried type
+    Returns namespace of revisions
+        (hpn, rev, rev_query, started, ended, [hukey], [pkey])
+    of rev_query
     where the [hukey], [pkey] are included for fully_connected queries.
     Allowed types listed below in "help"
 
@@ -41,32 +29,32 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     hpn:  string for hera part number
     rev_type:  string for revision type
     at_date:  astropy.Time to check for
-    session:  db session, or hookup_dict if FULLY_CONNECTED
+    session:  db session, or hookup_dict if FULL
     """
     if isinstance(hpn, six.string_types) and hpn.lower() == 'help':
         print("""
         Allowed revision types or revisions are (case doesn't matter and only need first 3 letters):
-            [ACT]IVE:  revisions active at_date ('now' as default) -- only one that uses 'at_date'
-            [LAS]T:  the last connected revision (could be active or not)
-            [FUL]LY_CONNECTED:  revision that is part of a fully connected signal path in current or supplied cache
-            [ALL]:  all revisions
+            ACTIVE:  revisions active at_date ('now' as default) -- only one that uses 'at_date'
+            LAST:  the last connected revision (could be active or not)
+            FULL:  revision that is part of a fully connected signal path in current or supplied cache
+            ALL:  all revisions
             specific_revision:  check for a specific revision
         """)
         return None
 
-    rq = rev_type.upper()[:3]
-    if rq == 'LAS':  # LAST
+    rq = rev_type.upper()
+    if rq.startswith('LAST'):
         return get_last_revision(hpn, session)
 
-    if rq == 'ACT':  # ACTIVE
+    if rq.startswith('ACTIVE'):
         if at_date is None:
             at_date = cm_utils.get_astropytime('now')
         return get_active_revision(hpn, at_date, session)
 
-    if rq == 'ALL':  # ALL
+    if rq.startswith('ALL'):
         return get_all_revisions(hpn, session)
 
-    if rq == 'FUL':  # FULLY_CONNECTED
+    if rq.startswith('FULL'):
         return get_full_revision(hpn, session)
 
     return get_specific_revision(hpn, rev_type, session)
@@ -74,7 +62,7 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
 
 def get_last_revision(hpn, session=None):
     """
-    Returns list of latest revisions as Namespace(hpn,rev,started,ended)
+    Returns list of latest revisions as Namespace(hpn,rev,erv_query,started,ended)
 
     Parameters:
     -------------
@@ -86,21 +74,25 @@ def get_last_revision(hpn, session=None):
     if len(revisions.keys()) == 0:
         return []
     latest_end = cm_utils.get_astropytime('<')
-    no_end = []
+    noend_rev = []
+    latest_rev = []
     for rev in revisions.keys():
         end_date = revisions[rev]['ended']
         if end_date is None:
+            noend_rev.append(rev)
             latest_end = cm_utils.get_astropytime('>')
-            no_end.append(Namespace(hpn=hpn, rev=rev, started=revisions[rev]['started'],
-                                    ended=revisions[rev]['ended']))
         elif end_date > latest_end:
-            latest_rev = rev
+            latest_rev = [rev]
             latest_end = end_date
-    if len(no_end) > 0:
-        return no_end
-    else:
-        return [Namespace(hpn=hpn, rev=latest_rev, started=revisions[latest_rev]['started'],
-                          ended=revisions[latest_rev]['ended'])]
+    if len(noend_rev):
+        latest_rev = noend_rev
+
+    last_rev = []
+    for rev in latest_rev:
+        started = revisions[rev]['started']
+        ended = revisions[rev]['ended']
+        last_rev.append(Namespace(hpn=hpn, rev=rev, rev_query='LAST', started=started, ended=ended))
+    return last_rev
 
 
 def get_all_revisions(hpn, session=None):
@@ -121,7 +113,7 @@ def get_all_revisions(hpn, session=None):
     for rev in sort_rev:
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
-        all_rev.append(Namespace(hpn=hpn, rev=rev, started=started, ended=ended))
+        all_rev.append(Namespace(hpn=hpn, rev=rev, rev_query='ALL', started=started, ended=ended))
     return all_rev
 
 
@@ -144,7 +136,7 @@ def get_specific_revision(hpn, rq, session=None):
         if rq.upper() == rev.upper():
             start_date = revisions[rev]['started']
             end_date = revisions[rev]['ended']
-            this_rev = [Namespace(hpn=hpn, rev=rev, started=start_date, ended=end_date)]
+            this_rev = [Namespace(hpn=hpn, rev=rev, rev_query=rq, started=start_date, ended=end_date)]
     return this_rev
 
 
@@ -167,7 +159,7 @@ def get_active_revision(hpn, at_date, session=None):
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
         if cm_utils.is_active(at_date, started, ended):
-            return_active.append(Namespace(hpn=hpn, rev=rev, started=started, ended=ended))
+            return_active.append(Namespace(hpn=hpn, rev=rev, rev_query='ACTIVE', started=started, ended=ended))
 
     return return_active
 
@@ -195,7 +187,7 @@ def get_full_revision(hpn, hookup_dict=None):
                 if is_connected:
                     tsrt = h.timing[pol][0]
                     tend = h.timing[pol][1]
-                    return_full_keys.append(Namespace(hpn=hpn, rev=rev_hu,
+                    return_full_keys.append(Namespace(hpn=hpn, rev=rev_hu, rev_query='FULL',
                                                       started=tsrt, ended=tend,
                                                       hukey=k, pol=pol))
     return return_full_keys

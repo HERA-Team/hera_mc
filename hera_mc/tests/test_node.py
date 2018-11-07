@@ -7,6 +7,7 @@
 """
 from __future__ import absolute_import, division, print_function
 
+import os
 import unittest
 import nose.tools as nt
 from math import floor
@@ -14,6 +15,7 @@ from astropy.time import Time, TimeDelta
 
 from .. import mc, node
 from ..tests import TestHERAMC, is_onsite
+from hera_mc.data import DATA_PATH
 
 node_example_list = [nodeID for nodeID in range(1, 4)]
 
@@ -93,6 +95,17 @@ class TestNodeSensor(TestHERAMC):
         self.assertEqual(len(result), 2)
         self.assertEqual(result_most_recent, result)
 
+        filename = os.path.join(DATA_PATH, 'test_node_sensor_file.csv')
+        self.test_session.get_node_sensor_readings(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                   stoptime=t1, write_to_file=True,
+                                                   filename=filename)
+        os.remove(filename)
+
+        self.test_session.get_node_sensor_readings(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                   stoptime=t1, write_to_file=True)
+        default_filename = 'node_sensor.csv'
+        os.remove(default_filename)
+
         result = self.test_session.get_node_sensor_readings(starttime=t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
@@ -132,16 +145,16 @@ class TestNodeSensor(TestHERAMC):
                           'foo', 1, top_sensor_temp, middle_sensor_temp,
                           bottom_sensor_temp, humidity_sensor_temp, humidity)
 
+    @unittest.skipIf(not is_onsite(), 'This test only works on site')
     def test_add_node_sensor_readings_from_nodecontrol(self):
 
-        if is_onsite():
-            node_list = node.get_node_list()
+        node_list = node.get_node_list()
 
-            self.test_session.add_node_sensor_readings_from_nodecontrol()
-            result = self.test_session.get_node_sensor_readings(
-                starttime=Time.now() - TimeDelta(120.0, format='sec'),
-                stoptime=Time.now() + TimeDelta(120.0, format='sec'))
-            self.assertEqual(len(result), len(node_list))
+        self.test_session.add_node_sensor_readings_from_nodecontrol()
+        result = self.test_session.get_node_sensor_readings(
+            starttime=Time.now() - TimeDelta(120.0, format='sec'),
+            stoptime=Time.now() + TimeDelta(120.0, format='sec'))
+        self.assertEqual(len(result), len(node_list))
 
 
 class TestNodePowerStatus(TestHERAMC):
@@ -240,15 +253,15 @@ class TestNodePowerStatus(TestHERAMC):
                           'foo', 1, snap_relay_powered, snap0_powered, snap1_powered,
                           snap2_powered, snap3_powered, fem_powered, pam_powered)
 
+    @unittest.skipIf(not is_onsite(), 'This test only works on site')
     def test_add_node_power_status_from_nodecontrol(self):
 
-        if is_onsite():
-            node_list = node.get_node_list()
+        node_list = node.get_node_list()
 
-            self.test_session.add_node_power_status_from_nodecontrol()
-            result = self.test_session.get_node_power_status(starttime=Time.now() - TimeDelta(120.0, format='sec'),
-                                                             stoptime=Time.now() + TimeDelta(120.0, format='sec'))
-            self.assertEqual(len(result), len(node_list))
+        self.test_session.add_node_power_status_from_nodecontrol()
+        result = self.test_session.get_node_power_status(starttime=Time.now() - TimeDelta(120.0, format='sec'),
+                                                         stoptime=Time.now() + TimeDelta(120.0, format='sec'))
+        self.assertEqual(len(result), len(node_list))
 
 
 class TestNodePowerCommand(TestHERAMC):
