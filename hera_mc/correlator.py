@@ -14,7 +14,7 @@ from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String, Fore
 
 from . import MCDeclarativeBase
 
-# default acclen -- corresponds to just under 10 seconds
+# default acclen -- corresponds to a bit under 10 seconds (~9.66 seconds)
 DEFAULT_ACCLEN_SPECTRA = 147456
 
 DEFAULT_REDIS_ADDRESS = "redishost"

@@ -170,7 +170,7 @@ class TestCorrelatorControlCommand(TestHERAMC):
         expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
         self.assertTrue(command_list[0].isclose(expected_comm))
 
-        int_time = 2 * ((2.0 * 16384) / 500e6)
+        int_time = corr.DEFAULT_ACCLEN_SPECTRA * ((2.0 * 16384) / 500e6)
         expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
                                                          command='take_data',
                                                          starttime_sec=command_time + 10,
@@ -283,7 +283,7 @@ class TestCorrelatorControlCommand(TestHERAMC):
         expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
         self.assertTrue(command_list[0].isclose(expected_comm))
 
-        int_time = 2 * ((2.0 * 16384) / 500e6)
+        int_time = corr.DEFAULT_ACCLEN_SPECTRA * ((2.0 * 16384) / 500e6)
         expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
                                                          command='take_data',
                                                          starttime_sec=command_time + 10,
@@ -365,8 +365,7 @@ class TestCorrelatorControlCommand(TestHERAMC):
     @unittest.skipIf(not is_onsite(), 'This test only works on site')
     def test_get_integration_time(self):
 
-        int_time_in = 10  # seconds
-        n_spectra = int_time * 500e6 / ((2.0 * 16384))
+        n_spectra = 147456
         int_time = corr._get_integration_time(n_spectra)
 
     @unittest.skipIf(not is_onsite(), 'This test only works on site')
