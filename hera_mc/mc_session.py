@@ -1002,7 +1002,8 @@ class MCSession(Session):
         for obj in weather_data_list:
             self.add(obj)
 
-    def get_weather_data(self, most_recent=None, starttime=None, stoptime=None, variable=None):
+    def get_weather_data(self, most_recent=None, starttime=None, stoptime=None,
+                         variable=None, write_to_file=False, filename=None):
         """
         Get weather_data record(s) from the M&C database.
 
@@ -1024,9 +1025,17 @@ class MCSession(Session):
             Name of variable to get records for, must be a key in weather.weather_sensor_dict.
             If none, all variables will be included.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
-        list of WeatherData objects
+        if write_to_file is False: list of WeatherData objects
         """
         from .weather import weather_sensor_dict, WeatherData
         if variable is not None:
@@ -1035,55 +1044,8 @@ class MCSession(Session):
 
         return self._time_filter(WeatherData, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='variable', filter_value=variable)
-
-    def write_weather_files(self, start_time, stop_time, variables=None):
-        """Dump the weather data to text files in the current directory, to aid in
-        diagnostics.
-
-        Parameters:
-        ------------
-        start_time: astropy time object or None
-            time to start getting history.
-        stop_time: astropy time object or None
-            time to stop getting history.
-        variables: string or None
-            A comma-separated list of names of variables to get data for, as
-            named in the Python variable
-            `hera_mc.weather.weather_sensor_dict`. If None, data for all
-            variables will be written.
-
-        """
-        # Avoid _time_filter since it loads every row into an in-memory list, which
-        # could get huge.
-
-        from .cm_utils import listify
-        from .weather import WeatherData, weather_sensor_dict
-
-        if variables is None:
-            variables = list(weather_sensor_dict.keys())
-        else:
-            variables = listify(variables)
-
-            for v in variables:
-                if v not in weather_sensor_dict:
-                    raise ValueError('unknown weather variable name %r' % v)
-
-        q = self.query(WeatherData).filter(WeatherData.variable.in_(variables))
-
-        if start_time is not None:
-            if stop_time is not None:
-                q = q.filter(WeatherData.time.between(start_time.gps, stop_time.gps))
-            else:
-                q = q.filter(WeatherData.time >= start_time.gps)
-        elif stop_time is not None:
-            q = q.filter(WeatherData.time <= stop_time.gps)
-
-        q = q.order_by(WeatherData.time)
-        files = dict((v, open(v + '.txt', 'wt')) for v in variables)
-
-        for item in q:
-            print('{}\t{}'.format(item.astropy_time, item.value), file=files[item.variable])
+                                 filter_column='variable', filter_value=variable,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_node_sensor_readings(self, time, nodeID, top_sensor_temp, middle_sensor_temp,
                                  bottom_sensor_temp, humidity_sensor_temp, humidity):

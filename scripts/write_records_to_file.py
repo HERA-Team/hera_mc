@@ -16,7 +16,10 @@ from hera_mc import mc, cm_utils
 
 valid_tables = {'node_sensors': {'method': 'get_node_sensor_readings',
                                  'filter_column': 'nodeID',
-                                 'arg_name': 'node'}}
+                                 'arg_name': 'node'},
+                'weather_data': {'method': 'get_weather_data',
+                                 'filter_column': 'variable',
+                                 'arg_name': 'variable'}}
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
