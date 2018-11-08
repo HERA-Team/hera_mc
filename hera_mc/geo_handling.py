@@ -10,8 +10,6 @@ Bottom part is the class that does the work.
 
 from __future__ import absolute_import, division, print_function
 
-import os
-import sys
 import copy
 import warnings
 import six
@@ -93,6 +91,7 @@ class Handling:
         self.get_station_types()
         self.axes_set = False
         self.testing = testing
+        self.fp_out = None
 
     def close(self):
         """
@@ -131,6 +130,14 @@ class Handling:
             if expected_prefix != actual_prefix:  # pragma: no cover
                 s = "Prefixes don't match: expected {} but got {} for {}".format(expected_prefix, actual_prefix, loc.station_name)
                 warnings.warn(s)
+
+    def start_file(self, fnmame):
+        import os
+        if os.exists(fname):
+            print("{} exists so appending to it".format(fname))
+        else:
+            print("Writing to new {}".format(fname))
+        self.fp_out = open(fname, 'a')
 
     def is_in_database(self, station_name, db_name='geo_location'):
         """
@@ -227,6 +234,7 @@ class Handling:
         to_find_list:  station names to find (must be a list)
         query_date:  astropy Time for contemporary antenna
         """
+
         locations = []
         self.query_date = cm_utils.get_astropytime(query_date)
         for station_name in to_find_list:
@@ -238,6 +246,9 @@ class Handling:
                 hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                 a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
                 locations.append(copy.copy(a))
+                if self.fp_out.closed not None:
+                    self.fp_out.write('{} {} {} {} {}\n'.format(station_name, a.easting, a.northing, a.lon, a.lat))
+
         return locations
 
     def print_loc_info(self, loc_list):
@@ -345,6 +356,12 @@ class Handling:
                 plt.axis('equal')
             plt.plot(xaxis=kwargs['xgraph'], yaxis=kwargs['ygraph'])
         return fig_label
+
+    def plot_all_stations(self):
+        import os.path
+        import numpy
+        p = numpy.loadtxt(os.path.join(mc.data_path, "HERA_350.txt"), usecols=(1, 2))
+        plt.plot(p[:, 0], p[:, 1], 'o')
 
     def get_active_stations(self, query_date, station_types_to_use):
         from . import cm_hookup, cm_revisions

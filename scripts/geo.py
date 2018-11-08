@@ -17,7 +17,8 @@ if __name__ == '__main__':
     parser.add_argument('action', nargs='?', help="Actions are:  a[ctive], g[eo], c[ofa], s[ince]", default='active')
     parser.add_argument('-p', '--position', help="Position (i.e. station) name", default=None)
     parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
-    parser.add_argument('--hide-bg', dest='background', help="Hide background of station-types", action='store_false')
+    parser.add_argument('-b', '--bg-type', dest='background', help="Set background type [installed]", choices=['none', 'installed',
+                        'all'], default='installed')
     cm_utils.add_date_time_args(parser)
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
@@ -57,10 +58,14 @@ if __name__ == '__main__':
     G = geo_handling.Handling(session)
 
     # If args.graph is set apply background if desired
-    if args.graph and args.background:
-        show_fig = G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
-                                        xgraph=xgraph, ygraph=ygraph,
-                                        show_state=show_state, show_label=args.show_label)
+    if args.graph:
+        if args.background == 'installed':
+            show_fig = G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
+                                            xgraph=xgraph, ygraph=ygraph,
+                                            show_state=show_state, show_label=args.show_label)
+        elif args.background = 'all':
+            G.plot_all_stations()
+
     # Process action.  Actions are:  active, geo, cofa, since
     if args.action.startswith('a'):
         located = G.get_active_stations(at_date, station_types_to_use=args.station_types)
