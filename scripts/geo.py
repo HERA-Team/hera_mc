@@ -17,8 +17,8 @@ if __name__ == '__main__':
     parser.add_argument('action', nargs='?', help="Actions are:  a[ctive], [p]osition, c[ofa], s[ince]", default='active')
     parser.add_argument('-p', '--position', help="Position (i.e. station) name for action==position", default=None)
     parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
-    parser.add_argument('-b', '--background', dest='background', help="Set background type [installed]", choices=['none', 'installed',
-                        'all'], default='installed')
+    parser.add_argument('-b', '--background', dest='background', help="Set background type [layers]", choices=['none', 'installed',
+                        'layers', 'all'], default='layers')
     parser.add_argument('-f', '--file', help="Name of file if wish to write out antennas positions", default=None)
     cm_utils.add_date_time_args(parser)
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]",
@@ -61,12 +61,12 @@ if __name__ == '__main__':
         G.start_file(args.file)
     # If args.graph is set apply background if desired
     if args.graph:
-        if args.background == 'installed':
+        if args.background == 'all' or args.background == 'layers':
+            G.plot_all_stations()
+        if args.background == 'installed' or args.background == 'layers':
             G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
                                  xgraph=xgraph, ygraph=ygraph,
                                  show_state=show_state, show_label=args.show_label)
-        elif args.background == 'all':
-            G.plot_all_stations()
 
     # Process action.  Actions are:  active, geo, cofa, since
     if args.action.startswith('a'):
