@@ -14,11 +14,12 @@ from hera_mc import mc, geo_handling, cm_utils, part_connect
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('action', nargs='?', help="Actions are:  a[ctive], g[eo], c[ofa], s[ince]", default='active')
-    parser.add_argument('-p', '--position', help="Position (i.e. station) name", default=None)
+    parser.add_argument('action', nargs='?', help="Actions are:  a[ctive], [p]osition, c[ofa], s[ince]", default='active')
+    parser.add_argument('-p', '--position', help="Position (i.e. station) name for action==position", default=None)
     parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
-    parser.add_argument('-b', '--bg-type', dest='background', help="Set background type [installed]", choices=['none', 'installed',
+    parser.add_argument('-b', '--background', dest='background', help="Set background type [installed]", choices=['none', 'installed',
                         'all'], default='installed')
+    parser.add_argument('-f', '--file', help="Name of file if wish to write out antennas positions", default=None)
     cm_utils.add_date_time_args(parser)
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
@@ -44,7 +45,6 @@ if __name__ == '__main__':
     args.show_label = args.show_label.lower()
     if args.show_label.lower() == 'false':
         args.show_label = False
-    show_fig = False
     xgraph = args.xgraph.upper()
     ygraph = args.ygraph.upper()
     show_state = args.show_state.lower()
@@ -57,13 +57,15 @@ if __name__ == '__main__':
     session = db.sessionmaker()
     G = geo_handling.Handling(session)
 
+    if args.file is not None:
+        G.start_file(args.file)
     # If args.graph is set apply background if desired
     if args.graph:
         if args.background == 'installed':
-            show_fig = G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
-                                            xgraph=xgraph, ygraph=ygraph,
-                                            show_state=show_state, show_label=args.show_label)
-        elif args.background = 'all':
+            G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
+                                 xgraph=xgraph, ygraph=ygraph,
+                                 show_state=show_state, show_label=args.show_label)
+        elif args.background == 'all':
             G.plot_all_stations()
 
     # Process action.  Actions are:  active, geo, cofa, since
@@ -71,14 +73,14 @@ if __name__ == '__main__':
         located = G.get_active_stations(at_date, station_types_to_use=args.station_types)
         G.print_loc_info(located)
         if args.graph and len(located) > 0:
-            show_fig = G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
-                                       marker_color='k', marker_shape='*', marker_size=14)
-    elif args.action.startswith('g') and args.position is not None:
+            G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
+                            marker_color='k', marker_shape='*', marker_size=14)
+    elif args.action.startswith('p') and args.position is not None:
         located = G.get_location(args.position, at_date)
         G.print_loc_info(located)
         if args.graph and len(located) > 0:
-            show_fig = G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
-                                       marker_color='k', marker_shape='*', marker_size=14)
+            G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
+                            marker_color='k', marker_shape='*', marker_size=14)
     elif args.action.startswith('c'):
         cofa = G.cofa()
         G.print_loc_info(cofa)
@@ -98,6 +100,6 @@ if __name__ == '__main__':
                 G.plot_stations(new_antennas, at_date, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
                                 marker_color='b', marker_shape='*', marker_size=14)
 
-    if show_fig:
-        geo_handling.show_it_now(show_fig)
+    if args.graph:
+        geo_handling.show_it_now()
     G.close()

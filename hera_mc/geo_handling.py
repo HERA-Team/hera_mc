@@ -56,7 +56,7 @@ def get_location(location_names, query_date='now', session=None):
     return located
 
 
-def show_it_now(fignm):  # pragma: no cover
+def show_it_now(fignm=None):  # pragma: no cover
     """
     Used in scripts to actually make plot (as opposed to within python). Seems to be needed...
 
@@ -65,9 +65,9 @@ def show_it_now(fignm):  # pragma: no cover
     fignm:  string/int for figure
     """
     import matplotlib.pyplot as plt
-    if fignm is not False and fignm is not None:
+    if fignm is not None:
         plt.figure(fignm)
-        plt.show()
+    plt.show()
 
 
 class Handling:
@@ -131,9 +131,9 @@ class Handling:
                 s = "Prefixes don't match: expected {} but got {} for {}".format(expected_prefix, actual_prefix, loc.station_name)
                 warnings.warn(s)
 
-    def start_file(self, fnmame):
-        import os
-        if os.exists(fname):
+    def start_file(self, fname):
+        import os.path as op
+        if op.isfile(fname):
             print("{} exists so appending to it".format(fname))
         else:
             print("Writing to new {}".format(fname))
@@ -246,7 +246,7 @@ class Handling:
                 hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                 a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
                 locations.append(copy.copy(a))
-                if self.fp_out.closed not None:
+                if self.fp_out is not None:
                     self.fp_out.write('{} {} {} {} {}\n'.format(station_name, a.easting, a.northing, a.lon, a.lat))
 
         return locations
@@ -339,7 +339,6 @@ class Handling:
         if self.testing:
             return None
         import matplotlib.pyplot as plt
-        plt.figure(fig_label)
         for a in locations:
             pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
             X = pt[self.coord[kwargs['xgraph']]]
@@ -355,13 +354,18 @@ class Handling:
             if kwargs['xgraph'].upper() != 'Z' and kwargs['ygraph'].upper() != 'Z':
                 plt.axis('equal')
             plt.plot(xaxis=kwargs['xgraph'], yaxis=kwargs['ygraph'])
-        return fig_label
+        plt.title(fig_label)
+        return len(locations)
 
     def plot_all_stations(self):
+        if self.testing:
+            return None
         import os.path
         import numpy
-        p = numpy.loadtxt(os.path.join(mc.data_path, "HERA_350.txt"), usecols=(1, 2))
-        plt.plot(p[:, 0], p[:, 1], 'o')
+        import matplotlib.pyplot as plt
+        p = numpy.loadtxt(os.path.join(mc.data_path, "HERA_350.txt"), usecols=(1, 2, 3))
+        plt.plot(p[:, 0], p[:, 1], marker='o', color='0.8', linestyle='none')
+        return len(p[:, 0])
 
     def get_active_stations(self, query_date, station_types_to_use):
         from . import cm_hookup, cm_revisions
@@ -388,13 +392,15 @@ class Handling:
         station_types:  station_types or prefixes to plot
         kwargs:  marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
         """
-        fig_num = None
         self.axes_set = False
         station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
+        total_plotted = 0
         for st in station_types_to_use:
             kwargs['marker_color'] = self.station_types[st]['Marker'][0]
             kwargs['marker_shape'] = self.station_types[st]['Marker'][1]
             kwargs['marker_size'] = 6
             stations_to_plot = self.get_location(self.station_types[st]['Stations'], query_date)
-            fig_num = self.plot_stations(stations_to_plot, **kwargs)
-        return fig_num
+            n = self.plot_stations(stations_to_plot, **kwargs)
+            if n is not None:
+                total_plotted += n
+        return total_plotted
