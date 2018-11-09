@@ -339,7 +339,7 @@ class Handling:
             label_to_show = kwargs['show_label'].lower()
         fig_label = kwargs['xgraph'] + kwargs['ygraph']
         if self.testing:
-            return None
+            return 0
         import matplotlib.pyplot as plt
         for a in locations:
             pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
