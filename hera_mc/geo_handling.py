@@ -133,11 +133,13 @@ class Handling:
 
     def start_file(self, fname):
         import os.path as op
-        if op.isfile(fname):
+        if op.isfile(fname):  # pragma: no cover
             print("{} exists so appending to it".format(fname))
         else:
             print("Writing to new {}".format(fname))
-        self.fp_out = open(fname, 'a')
+        if self.testing:
+            return
+        self.fp_out = open(fname, 'a')  # pragma: no cover
 
     def is_in_database(self, station_name, db_name='geo_location'):
         """
@@ -246,7 +248,7 @@ class Handling:
                 hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                 a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
                 locations.append(copy.copy(a))
-                if self.fp_out is not None:
+                if self.fp_out is not None and not self.testing:
                     self.fp_out.write('{} {} {} {} {}\n'.format(station_name, a.easting, a.northing, a.lon, a.lat))
 
         return locations
@@ -357,9 +359,7 @@ class Handling:
         plt.title(fig_label)
         return len(locations)
 
-    def plot_all_stations(self):
-        if self.testing:
-            return None
+    def plot_all_stations(self):  # pragma: no cover
         import os.path
         import numpy
         import matplotlib.pyplot as plt

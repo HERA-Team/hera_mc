@@ -54,6 +54,9 @@ class TestGeo(TestHERAMC):
         located = self.h.get_location(["HH23"], 'now')
         self.assertTrue(located[0].elevation == 1100.0)
 
+    def test_random(self):
+        self.h.start_file('test')
+
     def test_station_types(self):
         self.h.get_station_types()
         self.assertTrue(self.h.station_types['cofa']['Prefix'] == 'COFA')
