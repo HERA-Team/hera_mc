@@ -14,7 +14,7 @@ from hera_mc import mc, geo_handling, cm_utils, part_connect
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('action', nargs='?', help="Actions are:  a[ctive], [p]osition, c[ofa], s[ince]", default='active')
+    parser.add_argument('fg_action', nargs='?', help="Actions for foreground:  a[ctive], p[osition], c[ofa], s[ince], n[one]", default='active')
     parser.add_argument('-p', '--position', help="Position (i.e. station) name for action==position", default=None)
     parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
     parser.add_argument('-b', '--background', dest='background', help="Set background type [layers]", choices=['none', 'installed',
@@ -28,10 +28,10 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or 'all') Can use types or prefixes.  [default]",
                         dest='station_types', default='default')
     parser.add_argument('--show-label', dest='show_label',
-                        help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]",
-                        choices=['name', 'num', 'ser', 'false'], default='num')
+                        help="Label by station_name (name), ant_num (num) serial_num (ser) or none (none) [num]",
+                        choices=['name', 'num', 'ser', 'none'], default='num')
     args = parser.parse_args()
-    args.action = args.action.lower()
+    args.fg_action = args.fg_action.lower()
 
     allowed_string_station_type_args = ['default', 'all']
 
@@ -41,11 +41,11 @@ if __name__ == '__main__':
     if args.station_types.lower() not in allowed_string_station_type_args:
         args.station_types = cm_utils.listify(args.station_types)
     args.show_label = args.show_label.lower()
-    if args.show_label.lower() == 'false':
+    if args.show_label.lower() == 'false' or args.show_label == 'none':
         args.show_label = False
     xgraph = args.xgraph.upper()
     ygraph = args.ygraph.upper()
-    if args.action.startswith('s'):
+    if args.fg_action.startswith('s'):
         cutoff = at_date
         at_date = cm_utils.get_astropytime('now')
 
@@ -64,36 +64,36 @@ if __name__ == '__main__':
             G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
                                  xgraph=xgraph, ygraph=ygraph, show_label=args.show_label)
 
-    # Process action.  Actions are:  active, geo, cofa, since
-    if args.action.startswith('a'):
+    # Process action.  Actions are:  active, position, cofa, since
+    if args.fg_action.startswith('a'):
         located = G.get_active_stations(at_date, station_types_to_use=args.station_types)
         G.print_loc_info(located)
         if args.graph and len(located) > 0:
             G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
                             marker_color='k', marker_shape='*', marker_size=14)
-    elif args.action.startswith('p') and args.position is not None:
+    elif args.fg_action.startswith('p') and args.position is not None:
         located = G.get_location(args.position, at_date)
         G.print_loc_info(located)
         if args.graph and len(located) > 0:
             G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
                             marker_color='k', marker_shape='*', marker_size=14)
-    elif args.action.startswith('c'):
+    elif args.fg_action.startswith('c'):
         cofa = G.cofa()
         G.print_loc_info(cofa)
         if args.graph:
-            G.plot_stations([cofa[0].station_name], at_date, xgraph=xgraph, ygraph=ygraph, show_label='name',
+            G.plot_stations(cofa, xgraph=xgraph, ygraph=ygraph, show_label='name',
                             marker_color='k', marker_shape='*', marker_size=14)
-    elif args.action.startswith('s'):
+    elif args.fg_action.startswith('s'):
         new_antennas = G.get_ants_installed_since(cutoff, args.station_types)
         print("{} new antennas since {}".format(len(new_antennas), cutoff))
         if len(new_antennas) > 0:
             s = ''
             for na in new_antennas:
-                s += na + ', '
+                s += na.station_name + ', '
             s = s.strip().strip(',') + '\n'
             print(s)
             if args.graph:
-                G.plot_stations(new_antennas, at_date, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
+                G.plot_stations(new_antennas, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
                                 marker_color='b', marker_shape='*', marker_size=14)
 
     if args.graph:
