@@ -61,7 +61,7 @@ if __name__ == '__main__':
         show_fig = G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
                                         xgraph=xgraph, ygraph=ygraph,
                                         show_state=show_state, show_label=args.show_label)
-    # Process action.  Actions are:  active, geo, cofa, since
+    # Process action.  Actions are:  active, position, cofa, since
     if args.action.startswith('a'):
         located = G.get_active_stations(at_date, station_types_to_use=args.station_types)
         G.print_loc_info(located)
