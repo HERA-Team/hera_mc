@@ -27,8 +27,6 @@ if __name__ == '__main__':
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
     parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or 'all') Can use types or prefixes.  [default]",
                         dest='station_types', default='default')
-    parser.add_argument('--show-state', help="Show 'connected' or 'all' ['all']", dest='show_state',
-                        choices=['connected', 'all'], default='all')
     parser.add_argument('--show-label', dest='show_label',
                         help="Label by station_name (name), ant_num (num) or serial_num (ser) or false [num]",
                         choices=['name', 'num', 'ser', 'false'], default='num')
@@ -47,7 +45,6 @@ if __name__ == '__main__':
         args.show_label = False
     xgraph = args.xgraph.upper()
     ygraph = args.ygraph.upper()
-    show_state = args.show_state.lower()
     if args.action.startswith('s'):
         cutoff = at_date
         at_date = cm_utils.get_astropytime('now')
@@ -65,8 +62,7 @@ if __name__ == '__main__':
             G.plot_all_stations()
         if args.background == 'installed' or args.background == 'layers':
             G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
-                                 xgraph=xgraph, ygraph=ygraph,
-                                 show_state=show_state, show_label=args.show_label)
+                                 xgraph=xgraph, ygraph=ygraph, show_label=args.show_label)
 
     # Process action.  Actions are:  active, geo, cofa, since
     if args.action.startswith('a'):
