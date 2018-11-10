@@ -92,6 +92,7 @@ class Handling:
         self.axes_set = False
         self.fp_out = None
         self.graph = False
+        self.station_types_plotted = False
 
     def close(self):
         """
@@ -397,6 +398,9 @@ class Handling:
         station_types:  station_types or prefixes to plot
         kwargs:  marker_color, marker_shape, marker_size, label, xgraph, ygraph
         """
+        if self.station_types_plotted:
+            return
+        self.station_types_plotted = True
         self.axes_set = False
         station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
         total_plotted = 0

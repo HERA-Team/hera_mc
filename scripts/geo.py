@@ -14,9 +14,8 @@ from hera_mc import mc, geo_handling, cm_utils, part_connect
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('fg_action', nargs='?', default='active',
-                        help="Actions for foreground listing:  a[ctive], i[nstalled], p[osition], c[ofa], s[ince], n[one] (active)")
-    parser.add_argument('-p', '--position', help="Position (i.e. station) name for action==position", default=None)
+    parser.add_argument('fg_action', nargs='*', default=['active'],
+                        help="Actions for foreground listing:  a[ctive], i[nstalled], p[osition] <S>, c[ofa], s[ince], n[one] (active)")
     parser.add_argument('-b', '--background', help="Set background type (layers)",
                         choices=['none', 'installed', 'layers', 'all'], default='layers')
     parser.add_argument('-g', '--graph', help="Graph (plot) station types (False)", action='store_true')
@@ -31,17 +30,14 @@ if __name__ == '__main__':
     parser.add_argument('--label', choices=['name', 'num', 'ser', 'none'], default='num',
                         help="Label by station_name (name), ant_num (num) serial_num (ser) or none (none) (num)")
     args = parser.parse_args()
-    args.fg_action = args.fg_action.lower()
+    if len(args.fg_action) > 1:
+        position = cm_utils.listify(args.fg_action[1])
+    args.fg_action = args.fg_action[0].lower()
     args.background = args.background.lower()
     args.station_types = args.station_types.lower()
     args.label = args.label.lower()
-
-    allowed_string_station_type_args = ['default', 'all']
-
-    # interpret args
     at_date = cm_utils.get_astropytime(args.date, args.time)
-    args.position = cm_utils.listify(args.position)
-    if args.station_types not in allowed_string_station_type_args:
+    if args.station_types not in ['default', 'all']:
         args.station_types = cm_utils.listify(args.station_types)
     if args.label == 'false' or args.label == 'none':
         args.label = False
@@ -76,8 +72,8 @@ if __name__ == '__main__':
     elif args.fg_action.startswith('i'):
         G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
                              xgraph=xgraph, ygraph=ygraph, label=args.label)
-    elif args.fg_action.startswith('p') and args.position is not None:
-        located = G.get_location(args.position, at_date)
+    elif args.fg_action.startswith('p'):
+        located = G.get_location(position, at_date)
         G.print_loc_info(located)
         G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, label=args.label,
                         marker_color='k', marker_shape='*', marker_size=14)
