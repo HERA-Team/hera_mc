@@ -13,7 +13,6 @@ from __future__ import absolute_import, division, print_function
 import copy
 import warnings
 import six
-from astropy.time import Time, TimeDelta
 from sqlalchemy import func
 from pyproj import Proj
 
@@ -89,9 +88,10 @@ class Handling:
             self.session = session
 
         self.get_station_types()
-        self.axes_set = False
         self.testing = testing
+        self.axes_set = False
         self.fp_out = None
+        self.graph = False
 
     def close(self):
         """
@@ -130,6 +130,9 @@ class Handling:
             if expected_prefix != actual_prefix:  # pragma: no cover
                 s = "Prefixes don't match: expected {} but got {} for {}".format(expected_prefix, actual_prefix, loc.station_name)
                 warnings.warn(s)
+
+    def set_graph(self, graph_it):
+        self.graph = graph_it
 
     def start_file(self, fname):
         import os.path as op
@@ -249,8 +252,7 @@ class Handling:
                 a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
                 locations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:
-                    self.fp_out.write('{} {} {} {} {}\n'.format(station_name, a.easting, a.northing, a.lon, a.lat))
-
+                    self.fp_out.write('{:6} {:.2f} {:.2f} {:.4f} {:.4f}\n'.format(station_name, a.easting, a.northing, a.lon, a.lat))
         return locations
 
     def print_loc_info(self, loc_list):
@@ -297,7 +299,6 @@ class Handling:
         query_date:  date to limit check for installation
         station_types_to_check:  list of stations types to limit check
         """
-
         station_types_to_check = self.parse_station_types_to_check(station_types_to_check)
         dt = query_date.gps
         found_stations = []
@@ -305,6 +306,8 @@ class Handling:
                 geo_location.GeoLocation.created_gpstime >= dt):
             if a.station_type_name.lower() in station_types_to_check:
                 found_stations.append(a)
+                if self.fp_out is not None and not self.testing:
+                    self.fp_out.write('{:6} {:.2f} {:.2f} {:.4f} {:.4f}\n'.format(station_name, a.easting, a.northing, a.lon, a.lat))
         return found_stations
 
     def get_antenna_label(self, label_to_show, stn, query_date):
@@ -332,14 +335,14 @@ class Handling:
         Parameters:
         ------------
         stations_to_plot_list:  list containing station_names (note:  NOT antenna_numbers)
-        kwargs:  arguments for marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
+        kwargs:  arguments for marker_color, marker_shape, marker_size, label, xgraph, ygraph
         """
-        displaying_label = bool(kwargs['show_label'])
+        if not len(locations) or not self.graph or self.testing:
+            return
+        displaying_label = bool(kwargs['label'])
         if displaying_label:
-            label_to_show = kwargs['show_label'].lower()
+            label_to_show = kwargs['label'].lower()
         fig_label = kwargs['xgraph'] + kwargs['ygraph']
-        if self.testing:
-            return 0
         import matplotlib.pyplot as plt
         for a in locations:
             pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
@@ -357,9 +360,11 @@ class Handling:
                 plt.axis('equal')
             plt.plot(xaxis=kwargs['xgraph'], yaxis=kwargs['ygraph'])
         plt.title(fig_label)
-        return len(locations)
+        return
 
     def plot_all_stations(self):  # pragma: no cover
+        if not self.graph:
+            return
         import os.path
         import numpy
         import matplotlib.pyplot as plt
@@ -390,7 +395,7 @@ class Handling:
         ------------
         query_date:  date to use.
         station_types:  station_types or prefixes to plot
-        kwargs:  marker_color, marker_shape, marker_size, show_label, xgraph, ygraph
+        kwargs:  marker_color, marker_shape, marker_size, label, xgraph, ygraph
         """
         self.axes_set = False
         station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
@@ -400,7 +405,4 @@ class Handling:
             kwargs['marker_shape'] = self.station_types[st]['Marker'][1]
             kwargs['marker_size'] = 6
             stations_to_plot = self.get_location(self.station_types[st]['Stations'], query_date)
-            n = self.plot_stations(stations_to_plot, **kwargs)
-            if n is not None:
-                total_plotted += n
-        return total_plotted
+            self.plot_stations(stations_to_plot, **kwargs)

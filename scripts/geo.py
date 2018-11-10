@@ -14,35 +14,37 @@ from hera_mc import mc, geo_handling, cm_utils, part_connect
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('fg_action', nargs='?', help="Actions for foreground:  a[ctive], p[osition], c[ofa], s[ince], n[one]", default='active')
+    parser.add_argument('fg_action', nargs='?', default='active',
+                        help="Actions for foreground listing:  a[ctive], i[nstalled], p[osition], c[ofa], s[ince], n[one] (active)")
     parser.add_argument('-p', '--position', help="Position (i.e. station) name for action==position", default=None)
-    parser.add_argument('-g', '--graph', help="Graph station types [False]", action='store_true')
-    parser.add_argument('-b', '--background', dest='background', help="Set background type [layers]", choices=['none', 'installed',
-                        'layers', 'all'], default='layers')
-    parser.add_argument('-f', '--file', help="Name of file if wish to write out antennas positions", default=None)
+    parser.add_argument('-b', '--background', help="Set background type (layers)",
+                        choices=['none', 'installed', 'layers', 'all'], default='layers')
+    parser.add_argument('-g', '--graph', help="Graph (plot) station types (False)", action='store_true')
+    parser.add_argument('-f', '--file', help="Name of file to write out 'foreground' antennas positions", default=None)
     cm_utils.add_date_time_args(parser)
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
-    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or 'all') Can use types or prefixes.  [default]",
+    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or 'all') Can use types or prefixes.  (default)",
                         dest='station_types', default='default')
-    parser.add_argument('--show-label', dest='show_label',
-                        help="Label by station_name (name), ant_num (num) serial_num (ser) or none (none) [num]",
-                        choices=['name', 'num', 'ser', 'none'], default='num')
+    parser.add_argument('--label', choices=['name', 'num', 'ser', 'none'], default='num',
+                        help="Label by station_name (name), ant_num (num) serial_num (ser) or none (none) (num)")
     args = parser.parse_args()
     args.fg_action = args.fg_action.lower()
+    args.background = args.background.lower()
+    args.station_types = args.station_types.lower()
+    args.label = args.label.lower()
 
     allowed_string_station_type_args = ['default', 'all']
 
     # interpret args
     at_date = cm_utils.get_astropytime(args.date, args.time)
     args.position = cm_utils.listify(args.position)
-    if args.station_types.lower() not in allowed_string_station_type_args:
+    if args.station_types not in allowed_string_station_type_args:
         args.station_types = cm_utils.listify(args.station_types)
-    args.show_label = args.show_label.lower()
-    if args.show_label.lower() == 'false' or args.show_label == 'none':
-        args.show_label = False
+    if args.label == 'false' or args.label == 'none':
+        args.label = False
     xgraph = args.xgraph.upper()
     ygraph = args.ygraph.upper()
     if args.fg_action.startswith('s'):
@@ -54,47 +56,46 @@ if __name__ == '__main__':
     session = db.sessionmaker()
     G = geo_handling.Handling(session)
 
-    if args.file is not None:
-        G.start_file(args.file)
-    # If args.graph is set apply background if desired
+    # If args.graph is set, apply background
     if args.graph:
+        G.set_graph(True)
         if args.background == 'all' or args.background == 'layers':
             G.plot_all_stations()
         if args.background == 'installed' or args.background == 'layers':
             G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
-                                 xgraph=xgraph, ygraph=ygraph, show_label=args.show_label)
+                                 xgraph=xgraph, ygraph=ygraph, label=args.label)
 
-    # Process action.  Actions are:  active, position, cofa, since
+    # Process foreground action.
+    if args.file is not None:
+        G.start_file(args.file)
+
     if args.fg_action.startswith('a'):
         located = G.get_active_stations(at_date, station_types_to_use=args.station_types)
-        G.print_loc_info(located)
-        if args.graph and len(located) > 0:
-            G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
-                            marker_color='k', marker_shape='*', marker_size=14)
+        G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, label=args.label,
+                        marker_color='k', marker_shape='*', marker_size=14)
+    elif args.fg_action.startswith('i'):
+        G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
+                             xgraph=xgraph, ygraph=ygraph, label=args.label)
     elif args.fg_action.startswith('p') and args.position is not None:
         located = G.get_location(args.position, at_date)
         G.print_loc_info(located)
-        if args.graph and len(located) > 0:
-            G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
-                            marker_color='k', marker_shape='*', marker_size=14)
+        G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, label=args.label,
+                        marker_color='k', marker_shape='*', marker_size=14)
     elif args.fg_action.startswith('c'):
         cofa = G.cofa()
         G.print_loc_info(cofa)
-        if args.graph:
-            G.plot_stations(cofa, xgraph=xgraph, ygraph=ygraph, show_label='name',
-                            marker_color='k', marker_shape='*', marker_size=14)
+        G.plot_stations(cofa, xgraph=xgraph, ygraph=ygraph, label='name',
+                        marker_color='k', marker_shape='*', marker_size=14)
     elif args.fg_action.startswith('s'):
         new_antennas = G.get_ants_installed_since(cutoff, args.station_types)
+        G.plot_stations(new_antennas, xgraph=xgraph, ygraph=ygraph, label=args.label,
+                        marker_color='b', marker_shape='*', marker_size=14)
         print("{} new antennas since {}".format(len(new_antennas), cutoff))
-        if len(new_antennas) > 0:
-            s = ''
-            for na in new_antennas:
-                s += na.station_name + ', '
-            s = s.strip().strip(',') + '\n'
-            print(s)
-            if args.graph:
-                G.plot_stations(new_antennas, xgraph=xgraph, ygraph=ygraph, show_label=args.show_label,
-                                marker_color='b', marker_shape='*', marker_size=14)
+        s = ''
+        for na in new_antennas:
+            s += na.station_name + ', '
+        s = s.strip().strip(',') + '\n'
+        print(s)
 
     if args.graph:
         geo_handling.show_it_now()
