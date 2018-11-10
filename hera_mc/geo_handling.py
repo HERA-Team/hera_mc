@@ -122,9 +122,9 @@ class Handling:
         for sta in self.session.query(geo_location.StationType):
             self.station_types[sta.station_type_name.lower()] = {'Prefix': sta.prefix.upper(),
                                                                  'Description': sta.description,
-                                                                 'Marker': sta.plot_marker, 'Stations': []}
+                                                                 'Marker': sta.plot_marker, 'Stations': set()}
         for loc in self.session.query(geo_location.GeoLocation):
-            self.station_types[loc.station_type_name]['Stations'].append(loc.station_name)
+            self.station_types[loc.station_type_name]['Stations'].add(loc.station_name)
             expected_prefix = self.station_types[loc.station_type_name]['Prefix'].upper()
             actual_prefix = loc.station_name[:len(expected_prefix)].upper()
             if expected_prefix != actual_prefix:  # pragma: no cover
