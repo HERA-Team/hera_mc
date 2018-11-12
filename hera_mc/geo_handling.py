@@ -343,7 +343,7 @@ class Handling:
         displaying_label = bool(kwargs['label'])
         if displaying_label:
             label_to_show = kwargs['label'].lower()
-        fig_label = kwargs['xgraph'] + kwargs['ygraph']
+        fig_label = "{} vs {} Antenna Positions".format(kwargs['xgraph'], kwargs['ygraph'])
         import matplotlib.pyplot as plt
         for a in locations:
             pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
@@ -359,8 +359,9 @@ class Handling:
             self.axes_set = True
             if kwargs['xgraph'].upper() != 'Z' and kwargs['ygraph'].upper() != 'Z':
                 plt.axis('equal')
-            plt.plot(xaxis=kwargs['xgraph'], yaxis=kwargs['ygraph'])
-        plt.title(fig_label)
+            plt.xlabel(kwargs['xgraph'] + ' [m]')
+            plt.ylabel(kwargs['ygraph'] + ' [m]')
+            plt.title(fig_label)
         return
 
     def plot_all_stations(self):  # pragma: no cover

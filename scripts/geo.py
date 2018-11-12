@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('fg_action', nargs='*', default=['active'],
                         help="Actions for foreground listing:  a[ctive], i[nstalled], p[osition] <S>, c[ofa], s[ince], n[one] (active)")
     parser.add_argument('-b', '--background', help="Set background type (layers)",
-                        choices=['none', 'installed', 'layers', 'all'], default='layers')
+                        choices=['none', 'installed', 'layers', 'all'], default='installed')
     parser.add_argument('-g', '--graph', help="Graph (plot) station types (False)", action='store_true')
     parser.add_argument('-f', '--file', help="Name of file to write out 'foreground' antenna positions", default=None)
     cm_utils.add_date_time_args(parser)
