@@ -222,11 +222,12 @@ class Handling:
             & (query_date.gps >= part_connect.Connections.start_gpstime))
         ctr = 0
         for conn in connected_antenna:
+            print(conn)
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
                 antenna_connected = copy.copy(conn)
                 ctr += 1
         if ctr == 0:
-            antenna_connected = None
+            return None
         elif ctr > 1:
             raise ValueError('More than one active connection between station and antenna')
         return antenna_connected.upstream_part
@@ -252,7 +253,7 @@ class Handling:
                 hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
                 a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
                 locations.append(copy.copy(a))
-                if self.fp_out is not None and not self.testing:
+                if self.fp_out is not None and not self.testing:  # pragma: no cover
                     self.fp_out.write('{:6} {:.2f} {:.2f} {:.4f} {:.4f}\n'.format(station_name, a.easting, a.northing, a.lon, a.lat))
         return locations
 
