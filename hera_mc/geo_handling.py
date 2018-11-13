@@ -222,7 +222,6 @@ class Handling:
             & (query_date.gps >= part_connect.Connections.start_gpstime))
         ctr = 0
         for conn in connected_antenna:
-            print(conn)
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
                 antenna_connected = copy.copy(conn)
                 ctr += 1
