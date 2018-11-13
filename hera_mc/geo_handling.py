@@ -408,6 +408,6 @@ class Handling:
         for st in station_types_to_use:
             kwargs['marker_color'] = self.station_types[st]['Marker'][0]
             kwargs['marker_shape'] = self.station_types[st]['Marker'][1]
-            kwargs['marker_size'] = 6
+            kwargs['marker_size'] = 5
             stations_to_plot = self.get_location(self.station_types[st]['Stations'], query_date)
             self.plot_stations(stations_to_plot, **kwargs)

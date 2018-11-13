@@ -62,13 +62,14 @@ if __name__ == '__main__':
                                  xgraph=xgraph, ygraph=ygraph, label=args.label)
 
     # Process foreground action.
+    fg_markersize = 10
     if args.file is not None:
         G.start_file(args.file)
 
     if args.fg_action.startswith('a'):
         located = G.get_active_stations(at_date, station_types_to_use=args.station_types)
         G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, label=args.label,
-                        marker_color='k', marker_shape='*', marker_size=14)
+                        marker_color='k', marker_shape='*', marker_size=fg_markersize)
     elif args.fg_action.startswith('i'):
         G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
                              xgraph=xgraph, ygraph=ygraph, label=args.label)
@@ -76,16 +77,16 @@ if __name__ == '__main__':
         located = G.get_location(position, at_date)
         G.print_loc_info(located)
         G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, label=args.label,
-                        marker_color='k', marker_shape='*', marker_size=14)
+                        marker_color='k', marker_shape='*', marker_size=fg_markersize)
     elif args.fg_action.startswith('c'):
         cofa = G.cofa()
         G.print_loc_info(cofa)
         G.plot_stations(cofa, xgraph=xgraph, ygraph=ygraph, label='name',
-                        marker_color='k', marker_shape='*', marker_size=14)
+                        marker_color='k', marker_shape='*', marker_size=fg_markersize)
     elif args.fg_action.startswith('s'):
         new_antennas = G.get_ants_installed_since(cutoff, args.station_types)
         G.plot_stations(new_antennas, xgraph=xgraph, ygraph=ygraph, label=args.label,
-                        marker_color='b', marker_shape='*', marker_size=14)
+                        marker_color='b', marker_shape='*', marker_size=fg_markersize)
         print("{} new antennas since {}".format(len(new_antennas), cutoff))
         s = ''
         for na in new_antennas:
