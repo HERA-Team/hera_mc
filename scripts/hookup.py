@@ -15,17 +15,17 @@ from hera_mc import cm_hookup, cm_utils, mc
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-p', '--hpn', help="Part number, csv-list or default. (default)", default='default')
-    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [LAST]", default='LAST')
-    parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
+    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  (LAST)", default='LAST')
+    parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char.",
                         dest='exact_match', action='store_true')
     parser.add_argument('-f', '--force-new', dest='force_new', help="Force it to write a new hookup file.", action='store_true')
     parser.add_argument('-c', '--cache-info', help="Shows information about the hookup cache file.", dest='cache_info', action='store_true')
     parser.add_argument('--force-specific', dest='force_specific', help="Force db use", action='store_true')
-    parser.add_argument('--port', help="Define desired port(s) for hookup. [all]", dest='port', default='all')
-    parser.add_argument('--state', help="Show 'full' or 'all' hookups [full]", default='full')
-    parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in hookup, comma-delimited no-space list. [all]",
+    parser.add_argument('--port', help="Define desired port(s) for hookup. (all)", dest='port', default='all')
+    parser.add_argument('--state', help="Show 'full' or 'all' hookups (full)", default='full')
+    parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in hookup, comma-delimited no-space list. (all])",
                         dest='hookup_cols', default='all')
-    parser.add_argument('--levels', help="Show power levels if enabled (and able) [False]", action='store_true')
+    parser.add_argument('--levels', help="Show power levels if enabled (and able)", action='store_true')
     parser.add_argument('--hide-ports', dest='ports', help="Hide ports on hookup.", action='store_false')
     parser.add_argument('--revs', help="Show revs on hookup.", action='store_true')
     parser.add_argument('--delete-cache-file', dest='delete_cache_file', help="Deletes the local cache file", action='store_true')
