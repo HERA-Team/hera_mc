@@ -87,11 +87,14 @@ def package_db_to_csv(session=None, tables='all'):
     print("Writing packaged files to current directory.")
     print("--> If packing from qmaster, be sure to use 'cm_pack.py --go' to copy, commit and log the change.")
     print("    Note:  this works via the hera_cm_db_updates repo.")
+    files_written = []
     for table in tables_to_write:
         data_filename = data_prefix + table + '.csv'
         table_data = pd.read_sql_table(table, session.get_bind())
         print("\tPackaging:  " + data_filename)
         table_data.to_csv(data_filename, index=False)
+        files_written.append(data_filename)
+    return files_written
 
 
 def pack_n_go(session, cm_csv_path):  # pragma: no cover
@@ -138,7 +141,7 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False):  # pragma:
     """
 
     print("This will erase and rewrite the configuration management tables.")
-    you_are_sure = cm_utils.query_yn("Are you sure you want to do this? ", 'n')
+    you_are_sure = six.moves.input("Are you sure you want to do this (y/n)? ")
     if you_are_sure:
         success = _initialization(session=session, cm_csv_path=None,
                                   tables=tables, maindb=maindb)

@@ -8,7 +8,7 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
-import os.path
+import os
 import subprocess
 
 from .. import cm_transfer
@@ -22,8 +22,10 @@ class TestTransfer(TestHERAMC):
         super(TestTransfer, self).setUp()
 
     def test_db_to_csv(self):
-        cm_transfer.package_db_to_csv(tables='all')
-        cm_transfer.package_db_to_csv(tables='parts')
+        files_written = cm_transfer.package_db_to_csv(tables='parts')
+        files_written = cm_transfer.package_db_to_csv(tables='all')
+        for fw in files_written:
+            os.remove(fw)
 
     def test_main_validation(self):
         valid = cm_transfer.db_validation(None, 'testing_not_main')

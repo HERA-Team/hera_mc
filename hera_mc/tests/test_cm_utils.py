@@ -27,6 +27,19 @@ class TestUtils(TestHERAMC):
         a = Namespace(test=True, val=0)
         cm_utils.log('nosetests', args=a)
 
+    def test_various(self):
+        a, b, c, d = cm_utils.split_connection_key('a:b:c:d')
+        self.assertEqual(c[0], 'c')
+        args = argparse.Namespace(a='def_test', unittesting='')
+        x = cm_utils.query_default(a, args)
+        self.assertEqual(x, 'def_test')
+        args = argparse.Namespace(a='def_test', unittesting='none')
+        x = cm_utils.query_default(a, args)
+        self.assertEqual(x, None)
+        args = argparse.Namespace(a='def_test', unittesting='unittest')
+        x = cm_utils.query_default(a, args)
+        self.assertEqual(x, 'unittest')
+
     def test_stringify_listify(self):
         x = cm_utils.stringify(None)
         self.assertTrue(x is None)
@@ -86,7 +99,6 @@ class TestUtils(TestHERAMC):
         x = cm_utils.put_keys_in_numerical_order(['HH1', 'HH0:A'])
         self.assertEqual(x[0], 'HH0:A')
 
-        print(x)
 
 if __name__ == '__main__':
     unittest.main()
