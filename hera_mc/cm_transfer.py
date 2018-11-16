@@ -48,7 +48,7 @@ class CMVersion(MCDeclarativeBase):
         git_hash: String
             git hash of cm repository
         """
-        if not isinstance(time, Time):
+        if not isinstance(time, Time):  # pragma: no cover
             raise ValueError('time must be an astropy Time object')
         time = int(floor(time.gps))
 
@@ -120,7 +120,7 @@ def pack_n_go(session, cm_csv_path):  # pragma: no cover
     session.commit()
 
 
-def initialize_db_from_csv(session=None, tables='all', maindb=False):
+def initialize_db_from_csv(session=None, tables='all', maindb=False):  # pragma: no cover
     """
     This entry module provides a double-check entry point to read the csv files and
        repopulate the configuration management database.  It destroys all current entries,
@@ -149,10 +149,16 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False):
 
 
 def check_if_main(session, config_path=None, expected_hostname='qmaster',
-                  test_db_name='testing'):
+                  test_db_name='testing'):  # pragma: no cover
     # the 'hostname' call on qmaster returns the following value:
     import socket
     import json
+
+    if isinstance(session, six.string_types) and session == 'testing_not_main':
+        return False
+    if isinstance(session, six.string_types) and session == 'testing_main':
+        return True
+
     hostname = socket.gethostname()
     is_main_host = (hostname == expected_hostname)
 

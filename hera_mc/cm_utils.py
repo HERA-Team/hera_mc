@@ -28,7 +28,7 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
     """
     if cm_csv_path is None:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_path)
-        if cm_csv_path is None:
+        if cm_csv_path is None:  # pragma: no cover
             raise ValueError('No cm_csv_path defined in mc_config file.')
 
     git_hash = subprocess.check_output(['git', '-C', cm_csv_path, 'rev-parse', 'HEAD'],
@@ -234,15 +234,14 @@ def get_astropytime(_date, _time=0):
         if isinstance(_time, float):
             return return_date + TimeDelta(_time * 3600.0, format='sec')
         if isinstance(_time, str):
+            if ':' not in _time:
+                raise ValueError('Invalid format:  time should be H[:M[:S]] (ints or floats)')
             add_time = 0.0
             for i, d in enumerate(_time.split(':')):
                 if i > 2:
                     raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'.format(_time))
                 add_time += (float(d)) * 3600.0 / (60.0**i)
             return return_date + TimeDelta(add_time, format='sec')
-        raise ValueError('Invalid format:  time should be H[:M[:S]] (ints or floats)')
-
-    raise TypeError("Not supported:  type {}".format(type(_date)))
 
 
 def put_keys_in_numerical_order(keys):
@@ -270,31 +269,6 @@ def put_keys_in_numerical_order(keys):
         kre = keylib[n][0] + str(n) + keylib[n][1]
         keyordered.append(kre)
     return keyordered
-
-
-def get_date_from_pair(d1, d2, ret='earliest'):
-    """
-    Returns either the earliest or latest of two dates.  This handles either ordering
-    and when either or both are None.
-    """
-    if d1 is None and d2 is None:
-        return None
-    if ret == 'earliest':
-        if d1 is None:
-            return d2
-        elif d2 is None:
-            return d1
-        else:
-            return d1 if d1 < d2 else d2
-    elif ret == 'latest':
-        if d1 is None:
-            return d1
-        elif d2 is None:
-            return d2
-        else:
-            return d1 if d1 > d2 else d2
-    else:
-        raise ValueError("Must supply earliest/latest.")
 
 
 def query_default(a, args):
