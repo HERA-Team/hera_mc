@@ -235,7 +235,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
 
     cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path)
 
-    if tables != 'all':
+    if tables != 'all':  # pragma: no cover
         print("You may encounter foreign_key issues by not using 'all' tables.")
         print("If it doesn't complain though you should be ok.")
 
@@ -243,7 +243,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
     cm_tables = cm_table_info.cm_tables
     if tables == 'all':
         tables_to_read_unordered = cm_tables.keys()
-    else:
+    else:  # pragma: no cover
         tables_to_read_unordered = tables.split(',')
     tables_to_read = cm_table_info.order_the_tables(tables_to_read_unordered)
     data_prefix = cm_table_info.data_prefix

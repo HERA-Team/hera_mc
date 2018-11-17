@@ -40,7 +40,6 @@ class TestTransfer(TestHERAMC):
     def test_initialization(self):
         t = cm_transfer._initialization(session='testing_main', cm_csv_path=None)
         self.assertFalse(t)
-        cm_transfer._initialization(session=self.test_session, tables='', maindb=False)
 
 
 if __name__ == '__main__':
