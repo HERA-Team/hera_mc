@@ -18,10 +18,6 @@ from ..tests import TestHERAMC
 
 class TestUtils(TestHERAMC):
 
-    def test_get_cm_repo_git_hash(self):
-        gh = cm_utils.get_cm_repo_git_hash()
-        self.assertTrue(isinstance(gh, bytes))
-
     def test_log(self):
         from argparse import Namespace
         a = Namespace(test=True, val=0)
