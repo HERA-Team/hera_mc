@@ -22,7 +22,7 @@ class TestTransfer(TestHERAMC):
         super(TestTransfer, self).setUp()
 
     def test_classTime(self):
-        self.assertRaises(ValueError, cm_transfer.CMVersion.create(), time=None, git_hash=None)
+        self.assertRaises(ValueError, cm_transfer.CMVersion.create, None, None)
 
     def test_db_to_csv(self):
         files_written = cm_transfer.package_db_to_csv(tables='parts')
