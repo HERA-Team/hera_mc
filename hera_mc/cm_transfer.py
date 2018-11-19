@@ -48,7 +48,7 @@ class CMVersion(MCDeclarativeBase):
         git_hash: String
             git hash of cm repository
         """
-        if not isinstance(time, Time):  # pragma: no cover
+        if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
         time = int(floor(time.gps))
 
