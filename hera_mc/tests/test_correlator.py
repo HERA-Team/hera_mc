@@ -157,6 +157,7 @@ class TestCorrelatorControlCommand(TestHERAMC):
     def test_take_data_command_no_recent_status(self):
         # test take_data command with no recent status
         starttime = Time.now() + TimeDelta(10, format='sec')
+        starttime_sec = floor(starttime.gps)
         starttime_ms_offset = floor((starttime.gps - floor(starttime.gps)) * 1000)
 
         command_list = self.test_session.correlator_control_command(
@@ -173,7 +174,7 @@ class TestCorrelatorControlCommand(TestHERAMC):
         int_time = corr.DEFAULT_ACCLEN_SPECTRA * ((2.0 * 16384) / 500e6)
         expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
                                                          command='take_data',
-                                                         starttime_sec=command_time + 10,
+                                                         starttime_sec=starttime_sec,
                                                          starttime_ms=starttime_ms_offset,
                                                          duration=100,
                                                          acclen_spectra=corr.DEFAULT_ACCLEN_SPECTRA,
