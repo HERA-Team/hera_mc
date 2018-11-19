@@ -152,7 +152,7 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False):  # pragma:
 
 
 def check_if_main(session, config_path=None, expected_hostname='qmaster',
-                  test_db_name='testing'):  # pragma: no cover
+                  test_db_name='testing'):
     # the 'hostname' call on qmaster returns the following value:
     import socket
     import json
@@ -176,7 +176,7 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     testing_db_url = config_data.get('databases').get(test_db_name).get('url')
     is_test_db = (session_db_url == testing_db_url)
 
-    if is_main_host:
+    if is_main_host:  # pragma: no cover
         if is_test_db:
             is_main_db = False
         else:
@@ -184,7 +184,7 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     else:
         is_main_db = False
 
-    if is_main_db:
+    if is_main_db:  # pragma: no cover
         print('Found main db at hostname {} and DB url {}'.format(hostname, session_db_url))
     return is_main_db
 
