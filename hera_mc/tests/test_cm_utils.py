@@ -11,9 +11,12 @@ import unittest
 import six
 import argparse
 import sys
+import subprocess
+import os
 
-from .. import cm_utils
-from ..tests import TestHERAMC
+import hera_mc
+from hera_mc import cm_utils, mc
+from hera_mc.tests import TestHERAMC
 
 
 class TestUtils(TestHERAMC):
@@ -94,6 +97,18 @@ class TestUtils(TestHERAMC):
     def test_put_keys_in_numerical_order(self):
         x = cm_utils.put_keys_in_numerical_order(['HH1', 'HH0:A'])
         self.assertEqual(x[0], 'HH0:A')
+
+    def test_get_cm_repo_git_hash(self):
+        cm_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=mc.test_data_path)
+
+        git_hash = subprocess.check_output(['git', '-C', '.', 'rev-parse', 'HEAD'],
+                                           stderr=subprocess.STDOUT).strip()
+
+        self.assertEqual(cm_hash, git_hash)
+
+        example_config_path = os.path.join(os.path.dirname(hera_mc.__path__[0]), 'ci', 'example_config.json')
+        self.assertRaises(ValueError, cm_utils.get_cm_repo_git_hash,
+                          mc_config_path=example_config_path)
 
 
 if __name__ == '__main__':
