@@ -28,7 +28,7 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):  # pragma: no c
     """
     if cm_csv_path is None:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_path)
-        if cm_csv_path is None:  # pragma: no cover
+        if cm_csv_path is None:
             raise ValueError('No cm_csv_path defined in mc_config file.')
 
     git_hash = subprocess.check_output(['git', '-C', cm_csv_path, 'rev-parse', 'HEAD'],
