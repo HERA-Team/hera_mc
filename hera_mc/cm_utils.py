@@ -234,91 +234,56 @@ def get_astropytime(_date, _time=0):
         if isinstance(_time, float):
             return return_date + TimeDelta(_time * 3600.0, format='sec')
         if isinstance(_time, str):
+            if ':' not in _time:
+                raise ValueError('Invalid format:  time should be H[:M[:S]] (ints or floats)')
             add_time = 0.0
             for i, d in enumerate(_time.split(':')):
                 if i > 2:
                     raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'.format(_time))
                 add_time += (float(d)) * 3600.0 / (60.0**i)
             return return_date + TimeDelta(add_time, format='sec')
-        raise ValueError('Invalid format:  time should be H[:M[:S]] (ints or floats)')
-
-    raise TypeError("Not supported:  type {}".format(type(_date)))
 
 
 def put_keys_in_numerical_order(keys):
     """
-    Takes a list of hookup keys in the format of prefix+number:revision and puts them in number order.
+    Takes a list of hookup keys in the format of prefix[+number]:revision and puts them in number order.
+    If no number supplied, it uses 0. If no revision supplied, it uses 'A'.
     Returns the ordered list of keys
     """
     keylib = {}
-    n = None
     for k in keys:
-        colon = k.find(':')
-        for i in range(len(k)):
+        c = k
+        if ':' not in k:
+            c = k + ':A'
+        colon = c.find(':')
+        for i in range(len(c)):
             try:
-                n = int(k[i:colon])
+                n = int(c[i:colon])
                 break
             except ValueError:
+                n = 0
                 continue
-        if n is None or n in keylib.keys():
-            return keys
-        keylib[n] = [k[:i], k[colon:]]
-    if not len(keylib.keys()):
-        return keys
+        prefix = c[:i]
+        rev = c[colon + 1:]
+        dkey = (n, prefix, rev)
+        keylib[dkey] = k
+
     keyordered = []
-    for n in sorted(keylib.keys()):
-        kre = keylib[n][0] + str(n) + keylib[n][1]
-        keyordered.append(kre)
+    for k in sorted(keylib.keys()):
+        keyordered.append(keylib[k])
     return keyordered
-
-
-def get_date_from_pair(d1, d2, ret='earliest'):
-    """
-    Returns either the earliest or latest of two dates.  This handles either ordering
-    and when either or both are None.
-    """
-    if d1 is None and d2 is None:
-        return None
-    if ret == 'earliest':
-        if d1 is None:
-            return d2
-        elif d2 is None:
-            return d1
-        else:
-            return d1 if d1 < d2 else d2
-    elif ret == 'latest':
-        if d1 is None:
-            return d1
-        elif d2 is None:
-            return d2
-        else:
-            return d1 if d1 > d2 else d2
-    else:
-        raise ValueError("Must supply earliest/latest.")
 
 
 def query_default(a, args):
     vargs = vars(args)
     default = vargs[a]
-    s = '%s [%s]:  ' % (a, str(default))
-    v = six.moves.input(s)
+    if 'unittesting' in vargs.keys():
+        v = vargs['unittesting']
+    else:  # pragma: no cover
+        s = '{} [{}]:  '.format(a, str(default))
+        v = six.moves.input(s)
     if len(v) == 0:
         v = default
     elif v.lower() == 'none':
         v = None
     return v
-
-
-def query_yn(s, default='y'):
-    if default:
-        s += ' [' + default + ']'
-    s += ':  '
-    ans = six.moves.input(s)
-    if len(ans) == 0 and default:
-        ans = default.lower()
-    elif len(ans) > 0:
-        ans = ans.lower()
-    else:
-        print('No answer provided.')
-        ans = query_yn(s)
-    return ans[0] == 'y'

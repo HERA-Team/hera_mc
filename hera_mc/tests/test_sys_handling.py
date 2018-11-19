@@ -107,27 +107,6 @@ class TestSys(TestHERAMC):
         self.assertEqual(cofa.lon, corr_dict['cofa_lon'])
         self.assertEqual(cofa.elevation, corr_dict['cofa_alt'])
 
-    def test_cm_utils(self):
-        import datetime
-        a, b, c, d = cm_utils.split_connection_key('a:b:c:d')
-        self.assertEqual(c[0], 'c')
-        a = cm_utils.listify(None)
-        self.assertEqual(a, None)
-        a = cm_utils.listify([1, 2, 3])
-        self.assertEqual(a[0], 1)
-        a = cm_utils.stringify(None)
-        self.assertEqual(a, None)
-        a = cm_utils.stringify('a')
-        self.assertEqual(a[0], 'a')
-        a = cm_utils.get_astropytime(datetime.datetime.now())
-        a = cm_utils.get_astropytime('2018-01-01', '12:00')
-        a = cm_utils.get_date_from_pair(None, None)
-        self.assertEqual(a, None)
-        a = cm_utils.get_date_from_pair(1, 2)
-        self.assertEqual(a, 1)
-        a = cm_utils.get_date_from_pair(1, 2, 'latest')
-        self.assertEqual(a, 2)
-
     def test_dubitable(self):
         at_date = cm_utils.get_astropytime('2017-01-01')
         part_connect.update_dubitable(self.test_session, at_date.gps, ['1', '2', '3'])
