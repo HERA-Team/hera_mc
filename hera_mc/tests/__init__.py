@@ -41,7 +41,7 @@ def teardown_package():
 class TestHERAMC(unittest.TestCase):
 
     def setUp(self):
-        self.test_db = mc.connect_to_mc_testing_db()
+        self.test_db = test_db
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
         self.test_session = mc.MCSession(bind=self.test_conn)
@@ -49,7 +49,14 @@ class TestHERAMC(unittest.TestCase):
         astropy.utils.iers.conf.auto_max_age = None
 
     def tearDown(self):
+        self.test_session.close()
+
+        # rollback - everything that happened with the
+        # Session above (including calls to commit())
+        # is rolled back.
         self.test_trans.rollback()
+
+        # return connection to the Engine
         self.test_conn.close()
 
 
