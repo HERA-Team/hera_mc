@@ -1794,7 +1794,7 @@ class MCSession(Session):
         if config_state_dict is None:
             config_state_dict = _get_config()
 
-        time = Time(config_state_dict['timestamp'], format='datetime', scale='utc')
+        time = Time(config_state_dict['timestamp'], format='unix')
         config = config_state_dict['config']
         config_hash = config_state_dict['hash']
 
