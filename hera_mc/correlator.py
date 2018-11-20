@@ -97,6 +97,7 @@ def _get_control_state(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     import hera_corr_cm
 
     corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+    print(corr_cm)
 
     corr_state_dict = {}
     for key, value in enumerate(state_dict):
