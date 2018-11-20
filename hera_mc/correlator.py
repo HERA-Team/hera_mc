@@ -101,7 +101,7 @@ def _get_control_state(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     corr_state_dict = {}
     for key, value in six.iteritems(state_dict):
         # call each state query method and add to corr_state_dict
-        timestamp, state = getattr(corr_cm, value)
+        timestamp, state = getattr(corr_cm, value)()
         corr_state_dict[key] = {'timestamp': timestamp, 'state': state}
 
     return corr_state_dict
