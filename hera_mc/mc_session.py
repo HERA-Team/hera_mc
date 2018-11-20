@@ -398,6 +398,82 @@ class MCSession(Session):
                                  filter_column='hostname', filter_value=hostname,
                                  write_to_file=write_to_file, filename=filename)
 
+    def get_rtp_server_status(self, most_recent=None, starttime=None, stoptime=None,
+                              hostname=None, write_to_file=False, filename=None):
+        """
+        Get rtp_server_status record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        hostname: string
+            hostname to get records for. If none, all hostnames will be included.
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of RTPServerStatus objects
+        """
+        return self.get_server_status('rtp', most_recent=None,
+                                      starttime=None, stoptime=None, hostname=None,
+                                      write_to_file=False, filename=None)
+
+    def get_librarian_server_status(self, most_recent=None, starttime=None, stoptime=None,
+                                    hostname=None, write_to_file=False, filename=None):
+        """
+        Get librarian_server_status record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        hostname: string
+            hostname to get records for. If none, all hostnames will be included.
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of LibServerStatus objects
+        """
+        return self.get_server_status('lib', most_recent=None,
+                                      starttime=None, stoptime=None, hostname=None,
+                                      write_to_file=False, filename=None)
+
     def add_subsystem_error(self, time, subsystem, severity, log):
         """
         Add a new subsystem subsystem_error to the M&C database.
