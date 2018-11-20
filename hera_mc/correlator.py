@@ -97,10 +97,9 @@ def _get_control_state(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     import hera_corr_cm
 
     corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
-    print(corr_cm)
 
     corr_state_dict = {}
-    for key, value in enumerate(state_dict):
+    for key, value in six.iteritems(state_dict):
         # call each state query method and add to corr_state_dict
         timestamp, state = getattr(corr_cm, value)
         corr_state_dict[key] = {'timestamp': timestamp, 'state': state}
