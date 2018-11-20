@@ -50,8 +50,7 @@ class MCSession(Session):
 
     def _write_query_to_file(self, query, table_class, filename=None):
         '''
-        A helper method to fiter entries by time. Used by most get methods
-        on this object.
+        A helper method to write out query results to a file.
 
         Parameters:
         table_class: class
