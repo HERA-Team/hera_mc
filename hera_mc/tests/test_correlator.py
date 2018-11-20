@@ -152,6 +152,7 @@ class TestCorrelatorCommandState(TestHERAMC):
             corr_state_dict=not_taking_data_state_dict, testing=True)
         for obj in corr_state_obj_list:
             self.test_session.add(obj)
+        self.test_session.commit()
 
         corr_state_obj_list = self.test_session.add_correlator_control_state_from_corrcm(
             corr_state_dict=corr_state_dict_nonetime, testing=True)
