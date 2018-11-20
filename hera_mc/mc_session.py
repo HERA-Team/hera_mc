@@ -1413,21 +1413,67 @@ class MCSession(Session):
 
         self.add(CorrelatorControlState.create(time, state_type, state))
 
-    def add_correlator_control_state_from_corrcm(self):
+    def add_correlator_control_state_from_corrcm(self, corr_state_dict=None,
+                                                 testing=False):
         """Get and add correlator control state information using a HeraCorrCM object.
+
         This function connects to the correlator and gets the latest data using the
-        `create_control_state` function.
+        `_get_control_state` function. For testing purposes, it can
+        optionally accept an input dict instead of connecting to the correlator.
 
         If the current database is PostgreSQL, this function will use a
         special insertion method that will ignore records that are redundant
         with ones already in the database. This makes it convenient to sample
-        the node power status data densely on qmaster.
+        the data frequently on qmaster.
+
+        Parameters:
+        ------------
+        corr_state_dict: dict
+            A dict containing info as in the return dict from _get_control_state() for
+            testing purposes. If None, _get_control_state() is called. Default: None
+        testing: boolean
+            If true, don't add a record of it to the database and return the list of
+            CorrelatorControlState objects. Default False.
+         Returns:
+        --------
+        Optionally returns the CorrelatorConfig (if testing is True)
+
         """
-        from .correlator import create_control_state, CorrelatorControlState
+        from .correlator import _get_control_state, CorrelatorControlState
 
-        corr_state_list = create_control_state()
+        if corr_state_dict is None:
+            corr_state_dict = _get_control_state()
 
-        self._insert_ignoring_duplicates(CorrelatorControlState, corr_state_list)
+        corr_state_list = []
+        for state_type, dict in six.iteritems(corr_state_dict):
+            unix_timestamp = dict['timestamp']
+            state = dict['state']
+            if unix_timestamp is not None:
+                time = Time(unix_timestamp, format='unix')
+            else:
+                # None should only happen for `taking_data` = False and it indicates
+                # that the correlator shut down badly. Get the most recent state
+                # information. If it is True, set it to False with the current time,
+                # if it's false use the existing time.
+                if state_type == 'taking_data' and state is False:
+                    most_recent_state = self.get_correlator_control_state(
+                        most_recent=True, state_type=state_type)
+                    if len(most_recent_state) == 0:
+                        time = Time.now()
+                    elif most_recent_state[0].state is True:
+                        time = Time.now()
+                    else:
+                        time = Time(most_recent_state[0].time, format='gps')
+                else:
+                    raise ValueError('got None timestamp for {type} = {state}'.format(
+                        type=state_type, state=state))
+
+            corr_state_list.append(CorrelatorControlState.create(time, state_type, state))
+
+        if testing:
+            return corr_state_list
+        else:
+            self._insert_ignoring_duplicates(CorrelatorControlState, corr_state_list)
 
     def get_correlator_control_state(self, most_recent=None, starttime=None,
                                      stoptime=None, state_type=None):

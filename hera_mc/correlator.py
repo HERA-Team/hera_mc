@@ -101,39 +101,10 @@ def _get_control_state(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     corr_state_dict = {}
     for key, value in six.iteritems(state_dict):
         # call each state query method and add to corr_state_dict
-        timestamp, state = getattr(corr_cm, value)()
+        state, timestamp = getattr(corr_cm, value)()
         corr_state_dict[key] = {'timestamp': timestamp, 'state': state}
 
     return corr_state_dict
-
-
-def create_control_state(correlator_redis_address=DEFAULT_REDIS_ADDRESS, corr_state_dict=None):
-    """
-    Return a list of correlator control state objects with data from the correlator.
-
-    Parameters:
-    ------------
-    correlator_redis_address: Address where the correlator redis database can be accessed.
-        Only used if corr_state_dict is None.
-    corr_state_dict: A dict containing info as in the return dict from _get_control_state()
-        for testing purposes. If None, _get_control_state() is called. Default: None
-
-    Returns:
-    -----------
-    A list of CorrelatorControlState objects
-    """
-
-    if corr_state_dict is None:
-        corr_state_dict = _get_control_state(correlator_redis_address=correlator_redis_address)
-
-    corr_state_list = []
-    for state_type, dict in six.iteritems(corr_state_dict):
-        time = Time(dict['timestamp'], format='datetime', scale='utc')
-        state = dict['state']
-
-        corr_state_list.append(CorrelatorControlState.create(time, state_type, state))
-
-    return corr_state_list
 
 
 class CorrelatorControlCommand(MCDeclarativeBase):
