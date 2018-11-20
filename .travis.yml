@@ -30,7 +30,7 @@ install:
   - pip install git+https://github.com/HERA-Team/hera_qm.git;
   - python setup.py install
 services:
-  - postgresql
+  - postgresql: "9.5"
 before_script:
   - psql -c 'create database hera_mc_test;' -U postgres
   - psql -c 'create database hera_mc;' -U postgres
