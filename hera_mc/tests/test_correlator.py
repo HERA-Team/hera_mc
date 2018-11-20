@@ -8,14 +8,17 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
+import os
 import time
+import yaml
 import nose.tools as nt
 from math import floor
 from astropy.time import Time, TimeDelta
 
 from hera_mc import mc
 import hera_mc.correlator as corr
-from ..tests import TestHERAMC, is_onsite, checkWarnings
+from hera_mc.tests import TestHERAMC, is_onsite, checkWarnings
+from hera_mc.data import DATA_PATH
 
 
 corr_command_example_dict = {
@@ -24,6 +27,128 @@ corr_command_example_dict = {
     'noise_diode': {'state': True, 'timestamp': Time(1512770946, format='unix')},
 }
 corr_state_dict_nonetime = {'taking_data': {'state': False, 'timestamp': None}}
+
+config_file = os.path.join(DATA_PATH, 'hera_feng_config_protonode.yaml')
+config = yaml.load(config_file)
+
+corr_config_example_dict = {'timestamp': Time(1512770942, format='unix').to_datetime(),
+                            'hash': 'testhash', 'config': config}
+
+
+class TestCorrelatorConfig(TestHERAMC):
+
+    def test_add_corr_config(self):
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        t2 = t1 + TimeDelta(120.0, format='sec')
+
+        config_hash = 'testhash'
+
+        self.test_session.add_correlator_config(t1, config_hash, config_file)
+
+        expected = corr.CorrelatorConfig(time=int(floor(t1.gps)),
+                                         config_hash=config_hash,
+                                         config_file=config_file)
+        result = self.test_session.get_correlator_config(starttime=t1 - TimeDelta(3.0, format='sec'))
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        config_hash2 = 'testhash2'
+        self.test_session.add_correlator_config(t1, config_hash2, config_file)
+
+        result = self.test_session.get_correlator_config(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                         config_hash=config_hash)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_correlator_config(config_hash=config_hash)
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        expected = corr.CorrelatorConfig(time=int(floor(t1.gps)),
+                                         config_hash=config_hash2,
+                                         config_file=config_file)
+
+        result = self.test_session.get_correlator_config(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                         config_hash=config_hash2)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_correlator_config(config_hash=config_hash2)
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        result = self.test_session.get_correlator_config(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                         stoptime=t1)
+        self.assertEqual(len(result), 2)
+
+        result_most_recent = self.test_session.get_correlator_config()
+        self.assertEqual(len(result), 2)
+
+        result = self.test_session.get_correlator_config(starttime=t1 + TimeDelta(200.0, format='sec'))
+        self.assertEqual(result, [])
+
+    def test_add_correlator_config_from_corrcm(self):
+        corr_state_obj = self.test_session.add_correlator_config_from_corrcm(
+            config_state_dict=corr_config_example_dict, testing=True)
+
+        self.test_session.add(corr_state_obj)
+
+        t1 = Time(1512770942.726777, format='unix')
+        result = self.test_session.get_correlator_config(starttime=t1 - TimeDelta(3.0, format='sec'))
+
+        config_filename = 'correlator_config_' + str(int(floor(t1.gps))) + '.yaml'
+        expected = corr.CorrelatorConfig(time=int(floor(t1.gps)),
+                                         config_hash='testhash',
+                                         config_file=config_filename)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+    def test_add_correlator_config_from_corrcm_match_prior(self):
+        # test behavior when matching config exists at an earlier time
+        t1 = Time(1512770942.726777, format='unix')
+        t0 = t1 - TimeDelta(30, format='sec')
+        config_hash = 'testhash'
+        config_filename = 'correlator_config_' + str(int(floor(t1.gps))) + '.yaml'
+        self.test_session.add_correlator_config(t0, config_hash, config_filename)
+
+        corr_state_obj = self.test_session.add_correlator_config_from_corrcm(
+            config_state_dict=corr_config_example_dict, testing=True)
+
+        expected = corr.CorrelatorConfig(time=int(floor(t1.gps)),
+                                         config_hash='testhash',
+                                         config_file=config_filename)
+
+        self.assertTrue(corr_state_obj.isclose(expected))
+
+    def test_add_correlator_config_from_corrcm_duplicate(self):
+        # test behavior when duplicate config exists
+        t1 = Time(1512770942.726777, format='unix')
+        config_hash = 'testhash'
+        config_filename = 'correlator_config_' + str(int(floor(t1.gps))) + '.yaml'
+        self.test_session.add_correlator_config(t1, config_hash, config_filename)
+
+        corr_state_obj = self.test_session.add_correlator_config_from_corrcm(
+            config_state_dict=corr_config_example_dict, testing=True)
+
+        print(corr_state_obj)
+
+        self.assertTrue(corr_state_obj is None)
+
+    def test_config_errors(self):
+        self.assertRaises(ValueError, self.test_session.add_correlator_config,
+                          'foo', 'testhash', config_file)
+
+    @unittest.skipIf(not is_onsite(), 'This test only works on site')
+    def test_add_correlator_config_from_corrcm_onsite(self):
+
+        result = self.test_session.add_correlator_config_from_corrcm(testing=True)
+        self.assertTrue(result is not None)
 
 
 class TestCorrelatorCommandState(TestHERAMC):

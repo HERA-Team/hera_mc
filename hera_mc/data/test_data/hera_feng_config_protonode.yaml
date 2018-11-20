@@ -1,0 +1,174 @@
+#
+# For each fengine, specify the host ip address (host_ip), destination port (dest_port),
+# the antenna numbers it is processing (ants).
+#
+# The following booleans can also be set-
+# if it needs to be initialized (init),
+# if you want to set noise (noise),
+# or test vector (tvg) input and if you want it to
+# send data over ethernet (eth).
+#
+# If a specific boolean task needs to be implemented on all fengines, you can
+# set it as a global parameter.
+#
+# NB: If fengine antennas are not specified, they will be alloted according the order in
+# which they are presented here.
+
+# You can set the following global parameters for all fengines
+# or enable them for only some fengines. The global parameters
+# overrride the individual fengine settings.
+
+# You can sync the fengines using an external PPS signal
+# or manually using a software register.
+# Choices: 'pps', 'manual', False (default: 'pps')
+sync: 'pps'
+
+# The test vector generator can operate in multiple modes:
+# 'const_ants' : Writes a different constant value
+#                to all channels of an antenna (both pols).
+# 'const_pols' : Write a different constant value
+#                to both pols of an antenna.
+# 'ramp'       : Write the same ramp to all pols.
+# 'ramp_pols'  : Write a different ramp to each pol.
+# False        : Do not set the test vector (default)
+tvg: False
+
+# Turn on the noise generator for testing
+noise: False
+
+initialize: False
+
+# Disable transmission for all fengines
+eth: False
+
+# Specify a full path to an F-Engine fpg files
+fpgfile: '/home/hera/src/hera_corr_f/snap_fengine/outputs/snap_fengine_2018-10-27_1850.fpg'
+
+# Destination port for SNAP data
+dest_port: 8511
+
+fengines:
+#    heraNode1Snap0:
+#        phase_switch_index: 0
+    heraNode1Snap1:
+        phase_switch_index: 0
+    heraNode1Snap2:
+        phase_switch_index: 0
+
+# Data is sent assuming a total of 32 Xengines and
+# a maximum of 48 channels per Xengine. If all the
+# 32 Xengines are not defined, the corresponding channels
+# are not sent anywhere.
+xengines:
+    0:
+        even:
+           ip: "10.80.40.197"
+           mac: 0x02020a5028c5
+        odd:
+           ip: "10.80.40.206"
+           mac: 0x02020a5028ce
+    1:
+        even:
+           ip: "10.80.40.229"
+           mac: 0x02020a5028e5
+        odd:
+           ip: "10.80.40.238"
+           mac: 0x02020a5028ee
+    2:
+        even:
+           ip: "10.80.40.198"
+           mac: 0x02020a5028c6
+        odd:
+           ip: "10.80.40.207"
+           mac: 0x02020a5028cf
+    3:
+        even:
+           ip: "10.80.40.230"
+           mac: 0x02020a5028e6
+        odd:
+           ip: "10.80.40.239"
+           mac: 0x02020a5028ef
+    4:
+        even:
+           ip: "10.80.40.199"
+           mac: 0x02020a5028c7
+        odd:
+           ip: "10.80.40.208"
+           mac: 0x02020a5028d0
+    5:
+        even:
+           ip: "10.80.40.231"
+           mac: 0x02020a5028e7
+        odd:
+           ip: "10.80.40.240"
+           mac: 0x02020a5028f0
+    6:
+        even:
+           ip: "10.80.40.200"
+           mac: 0x02020a5028c8
+        odd:
+           ip: "10.80.40.209"
+           mac: 0x02020a5028d1
+    7:
+        even:
+           ip: "10.80.40.232"
+           mac: 0x02020a5028e8
+        odd:
+           ip: "10.80.40.241"
+           mac: 0x02020a5028f1
+    8:
+        even:
+           ip: "10.80.40.201"
+           mac: 0x02020a5028c9
+        odd:
+           ip: "10.80.40.210"
+           mac: 0x02020a5028d2
+    9:
+        even:
+           ip: "10.80.40.233"
+           mac: 0x02020a5028e9
+        odd:
+           ip: "10.80.40.242"
+           mac: 0x02020a5028f2
+    10:
+        even:
+           ip: "10.80.40.202"
+           mac: 0x02020a5028ca
+        odd:
+           ip: "10.80.40.211"
+           mac: 0x02020a5028d3
+    11:
+        even:
+           ip: "10.80.40.234"
+           mac: 0x02020a5028ea
+        odd:
+           ip: "10.80.40.243"
+           mac: 0x02020a5028f3
+    12:
+        even:
+           ip: "10.80.40.203"
+           mac: 0x02020a5028cb
+        odd:
+           ip: "10.80.40.212"
+           mac: 0x02020a5028d4
+    13:
+        even:
+           ip: "10.80.40.235"
+           mac: 0x02020a5028eb
+        odd:
+           ip: "10.80.40.244"
+           mac: 0x02020a5028f4
+    14:
+        even:
+           ip: "10.80.40.204"
+           mac: 0x02020a5028cc
+        odd:
+           ip: "10.80.40.213"
+           mac: 0x02020a5028d5
+    15:
+        even:
+           ip: "10.80.40.236"
+           mac: 0x02020a5028ec
+        odd:
+           ip: "10.80.40.245"
+           mac: 0x02020a5028f5

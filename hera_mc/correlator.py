@@ -49,6 +49,55 @@ command_state_map = {'take_data': {'allowed_when_recording': False},
                      'restart': {'allowed_when_recording': False}}
 
 
+class CorrelatorConfig(MCDeclarativeBase):
+    """
+    Definition of correlator config table.
+
+    time: gps time that the config started, floored (BigInteger, primary_key).
+    config_hash: unique hash for the config (String)
+    config_file: Name of the config file in the Librarian (String)
+    """
+    __tablename__ = 'correlator_config'
+    time = Column(BigInteger, primary_key=True)
+    config_hash = Column(String, primary_key=True)
+    config_file = Column(String, nullable=False)
+
+    @classmethod
+    def create(cls, time, config_hash, config_file):
+        """
+        Create a new correlator config object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by the correlator
+        config_hash: string
+            unique hash of the config
+        config_file: string
+            name of the config file in the Librarian
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        corr_time = floor(time.gps)
+
+        return cls(time=corr_time, config_hash=config_hash, config_file=config_file)
+
+
+def _get_config(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+    """
+    Gets the latest config and associated timestamp from the correlator.
+
+    Returns a dict with keys 'timestamp' and 'config' (a yaml processed string)
+    """
+    import hera_corr_cm
+
+    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+
+    timestamp, hash, config = corr_cm.get_config()
+
+    return {'timestamp': timestamp, 'hash': hash, 'config': config}
+
+
 class CorrelatorControlState(MCDeclarativeBase):
     """
     Definition of correlator control state table.
