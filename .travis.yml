@@ -29,8 +29,10 @@ install:
   - conda list
   - pip install git+https://github.com/HERA-Team/hera_qm.git;
   - python setup.py install
+addons:
+    postgresql: "9.5"
 services:
-  - postgresql: "9.5"
+    - postgresql
 before_script:
   - psql -c 'create database hera_mc_test;' -U postgres
   - psql -c 'create database hera_mc;' -U postgres
