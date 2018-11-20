@@ -93,7 +93,7 @@ def _get_config(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
 
     corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
-    timestamp, hash, config = corr_cm.get_config()
+    timestamp, config, hash = corr_cm.get_config()
 
     return {'timestamp': timestamp, 'hash': hash, 'config': config}
 
