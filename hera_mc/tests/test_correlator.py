@@ -31,7 +31,7 @@ corr_state_dict_nonetime = {'taking_data': {'state': False, 'timestamp': None}}
 config_file = os.path.join(DATA_PATH, 'hera_feng_config_protonode.yaml')
 config = yaml.load(config_file)
 
-corr_config_example_dict = {'timestamp': Time(1512770942, format='unix').to_datetime(),
+corr_config_example_dict = {'timestamp': Time(1512770942, format='unix'),
                             'hash': 'testhash', 'config': config}
 
 
