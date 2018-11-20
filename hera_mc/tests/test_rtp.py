@@ -8,6 +8,7 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
+import os
 from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
@@ -17,6 +18,7 @@ from .. import mc, cm_transfer
 from ..rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord
 from .. import utils, geo_location
 from ..tests import TestHERAMC
+from hera_mc.data import DATA_PATH
 
 
 class TestRTP(TestHERAMC):
@@ -403,6 +405,12 @@ class TestRTP(TestHERAMC):
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
+
+        filename = os.path.join(DATA_PATH, 'test_rtp_task_record_file.csv')
+        self.test_session.get_rtp_task_resource_record(obsid=self.task_resource_columns['obsid'],
+                                                       task_name=self.task_resource_columns['task_name'],
+                                                       write_to_file=True, filename=filename)
+        os.remove(filename)
 
         # test computed column
         elapsed = result.elapsed

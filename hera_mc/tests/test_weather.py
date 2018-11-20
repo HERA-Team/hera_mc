@@ -8,6 +8,7 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
+import os
 import nose.tools as nt
 from math import floor
 import numpy as np
@@ -198,9 +199,11 @@ class TestWeather(TestHERAMC):
         self.test_session.add_weather_data(t2, 'wind_speed', wind_speeds[1])
         self.test_session.add_weather_data(t2, 'wind_direction', wind_directions[1])
         self.test_session.add_weather_data(t2, 'temperature', temperatures[1])
-        self.test_session.write_weather_files(t1, t2, variables='wind_speed,wind_direction,temperature')
+        for var in ['wind_speed', 'wind_direction', 'temperature']:
+            filename = var + '.txt'
+            self.test_session.get_weather_data(starttime=t1, stoptime=t2, variable=var,
+                                               write_to_file=True, filename=filename)
 
-        import os
         os.remove('wind_speed.txt')
         os.remove('wind_direction.txt')
         os.remove('temperature.txt')
