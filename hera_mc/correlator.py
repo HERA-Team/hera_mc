@@ -196,7 +196,7 @@ def _get_next_start_time(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     if starttime_unix_timestamp == 0.0:
         return None
 
-    return Time(starttime_unix_timestamp, format=unix).gps
+    return Time(starttime_unix_timestamp, format='unix').gps
 
 
 class CorrelatorTakeDataArguments(MCDeclarativeBase):
