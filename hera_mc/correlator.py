@@ -99,9 +99,9 @@ def _get_control_state(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     corr_state_dict = {}
-    for key, value in enumerate(state_dict):
+    for key, value in six.iteritems(state_dict):
         # call each state query method and add to corr_state_dict
-        timestamp, state = getattr(corr_cm, value)
+        timestamp, state = getattr(corr_cm, value)()
         corr_state_dict[key] = {'timestamp': timestamp, 'state': state}
 
     return corr_state_dict
@@ -196,7 +196,7 @@ def _get_next_start_time(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     if starttime_unix_timestamp == 0.0:
         return None
 
-    return Time(starttime_unix_timestamp, format=unix).gps
+    return Time(starttime_unix_timestamp, format='unix').gps
 
 
 class CorrelatorTakeDataArguments(MCDeclarativeBase):
