@@ -223,7 +223,7 @@ class MCSession(Session):
                 # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
                 stmt = insert(table_class).values(**values).on_conflict_do_nothing(index_elements=ies)
                 conn.execute(stmt)
-        else:
+        else:  # pragma: no cover
             # Generic approach:
             for obj in obj_list:
                 self.add(obj)
