@@ -166,9 +166,9 @@ class CorrelatorConfigStatus(MCDeclarativeBase):
 
 def _get_config(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
-    Gets the latest config and associated timestamp from the correlator.
+    Gets the latest config, hash and associated timestamp from the correlator.
 
-    Returns a dict with keys 'timestamp' and 'config' (a yaml processed string)
+    Returns a dict with keys 'timestamp', 'hash' and 'config' (a yaml processed string)
     """
     import hera_corr_cm
 
@@ -324,7 +324,7 @@ class CorrelatorConfigCommand(MCDeclarativeBase):
 
     time: gps time that the config command was sent, floored (BigInteger, part of primary_key).
     command: always equal to 'update_config' (String, part of primary_key).
-    config_hash: unique hash for the config file (String)
+    config_hash: unique hash for the config (String, foreign key into correlator_config_file)
     """
     __tablename__ = 'correlator_config_command'
     time = Column(BigInteger, primary_key=True)
