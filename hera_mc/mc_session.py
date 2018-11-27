@@ -1749,6 +1749,117 @@ class MCSession(Session):
                                  filter_column='node', filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
 
+    def add_correlator_control_state(self, time, state_type, state):
+        """
+        Add new correlator control state data to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by the correlator
+        state_type: string
+            must be a key in state_dict (e.g. 'taking_data', 'phase_switching', 'noise_diode')
+        state: boolean
+            is the state_type true or false
+        """
+        from .correlator import CorrelatorControlState
+
+        self.add(CorrelatorControlState.create(time, state_type, state))
+
+    def add_correlator_control_state_from_corrcm(self, corr_state_dict=None,
+                                                 testing=False):
+        """Get and add correlator control state information using a HeraCorrCM object.
+
+        This function connects to the correlator and gets the latest data using the
+        `_get_control_state` function. For testing purposes, it can
+        optionally accept an input dict instead of connecting to the correlator.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the data frequently on qmaster.
+
+        Parameters:
+        ------------
+        corr_state_dict: dict
+            A dict containing info as in the return dict from _get_control_state() for
+            testing purposes. If None, _get_control_state() is called. Default: None
+        testing: boolean
+            If true, don't add a record of it to the database and return the list of
+            CorrelatorControlState objects. Default False.
+         Returns:
+        --------
+        Optionally returns the CorrelatorConfig (if testing is True)
+
+        """
+        from .correlator import _get_control_state, CorrelatorControlState
+
+        if corr_state_dict is None:
+            corr_state_dict = _get_control_state()
+
+        corr_state_list = []
+        for state_type, dict in six.iteritems(corr_state_dict):
+            unix_timestamp = dict['timestamp']
+            state = dict['state']
+            if unix_timestamp is not None:
+                time = Time(unix_timestamp, format='unix')
+            else:
+                # None should only happen for `taking_data` = False and it indicates
+                # that the correlator shut down badly. Get the most recent state
+                # information. If it is True, set it to False with the current time,
+                # if it's false use the existing time.
+                if state_type == 'taking_data' and state is False:
+                    most_recent_state = self.get_correlator_control_state(
+                        most_recent=True, state_type=state_type)
+                    if len(most_recent_state) == 0:
+                        time = Time.now()
+                    elif most_recent_state[0].state is True:
+                        time = Time.now()
+                    else:
+                        time = Time(most_recent_state[0].time, format='gps')
+                else:
+                    raise ValueError('got None timestamp for {type} = {state}'.format(
+                        type=state_type, state=state))
+
+            corr_state_list.append(CorrelatorControlState.create(time, state_type, state))
+
+        if testing:
+            return corr_state_list
+        else:
+            self._insert_ignoring_duplicates(CorrelatorControlState, corr_state_list)
+
+    def get_correlator_control_state(self, most_recent=None, starttime=None,
+                                     stoptime=None, state_type=None):
+        """
+        Get correlator control state record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        state_type: string
+            must be a key in correlator.state_dict (e.g. 'taking_data', 'phase_switching', 'noise_diode')
+
+        Returns:
+        --------
+        list of CorrelatorControlState objects
+        """
+        from .correlator import CorrelatorControlState
+
+        return self._time_filter(CorrelatorControlState, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='state_type', filter_value=state_type)
+
     def add_correlator_config_file(self, config_hash, config_file):
         """
         Add new correlator config file to the M&C database.
@@ -1937,6 +2048,7 @@ class MCSession(Session):
         if testing:
             return config_obj_list
 
+<<<<<<< HEAD
     def get_correlator_config_command(self, most_recent=None, starttime=None,
                                       config_hash=None, stoptime=None, state_type=None):
         """
@@ -2178,6 +2290,8 @@ class MCSession(Session):
                                  filter_column='state_type', filter_value=state_type,
                                  write_to_file=write_to_file, filename=filename)
 
+=======
+>>>>>>> better integrate update_config command with other commands
     def get_correlator_control_command(self, most_recent=None, starttime=None,
                                        stoptime=None, command=None,
                                        write_to_file=False, filename=None):
@@ -2289,9 +2403,41 @@ class MCSession(Session):
                                  stoptime=stoptime, write_to_file=write_to_file,
                                  filename=filename)
 
+    def get_correlator_config_command(self, most_recent=None, starttime=None,
+                                      config_hash=None, stoptime=None, state_type=None):
+        """
+        Get correlator config command record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        config_hash: string
+            unique hash for config file
+
+        Returns:
+        --------
+        list of CorrelatorConfigCommand objects
+        """
+        from .correlator import CorrelatorConfigCommand
+
+        return self._time_filter(CorrelatorConfigCommand, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='config_hash', filter_value=config_hash)
+
     def correlator_control_command(self, command, starttime=None, duration=None,
                                    acclen_spectra=None, tag=None,
-                                   overwrite_take_data=False,
+                                   overwrite_take_data=False, config_file=None,
                                    dryrun=False, testing=False):
         """
         Issue a correlator control command.
@@ -2314,6 +2460,8 @@ class MCSession(Session):
         overwrite_take_data: boolean
             only applies if command is 'take_data': If there is already a take data starttime
             in the future, overwrite it with this command.
+        config_file: string file name
+            only applies if command is 'update_config': config file to command the correlator to use
         dryrun: boolean
             if true, just return the list of CorrelatorControlCommand objects, do not
             issue the commands or log them to the database
@@ -2330,10 +2478,15 @@ class MCSession(Session):
 
         command_time = Time.now()
 
-        # Check state of controls
-        # make sure we have most recent state info
         if not testing:
-            self.add_correlator_control_state_from_corrcm()
+            if command == 'update_config':
+                # Check the current config
+                # make sure we have most recent config
+                self.add_correlator_config_from_corrcm()
+            else:
+                # Check state of controls
+                # make sure we have most recent state info
+                self.add_correlator_control_state_from_corrcm()
 
         # Get most recent relevant control state
         control_state = []
@@ -2408,6 +2561,9 @@ class MCSession(Session):
             if tag is None:
                 raise ValueError('tag must be specified if command is "take_data"')
 
+            if config_file is not None:
+                raise ValueError('config_file cannot be specified if command is not "update_config"')
+
             if not testing:
                 integration_time = corr._get_integration_time(acclen_spectra)
             else:
@@ -2418,6 +2574,56 @@ class MCSession(Session):
                 corr.CorrelatorTakeDataArguments.create(command_time, starttime,
                                                         duration, acclen_spectra,
                                                         integration_time, tag)
+        elif command == 'update_config':
+            import hashlib
+
+            if config_file is None:
+                raise ValueError('config_file must be specified if command is "update_config"')
+
+            # construct the file hash in the same way as the correlator does
+            with open(config_file, 'r') as fh:
+                config_string = fh.read().encode('utf-8')
+                config_hash = hashlib.md5(config_string).hexdigest()
+
+            # Get most recent config
+            current_config_status = self.get_correlator_config_status(most_recent=True)
+            if len(current_config_status) > 0:
+                different_hash = config_hash != current_config_status[0].config_hash
+            else:
+                different_hash = True
+
+            if different_hash:
+                # now check to see if a file with this hash (so identical) already exists
+                same_config_file = self.get_correlator_config_file(config_hash=config_hash)
+
+                if len(same_config_file) == 0:
+                    # This is a new config
+                    # TODO: how should we name it? use existing name? or gps second?
+                    librarian_filename = config_file
+                    # librarian_filename = 'correlator_config_' + str(int(floor(time.gps))) + '.yaml'
+                    config_file_obj = corr.CorrelatorConfigFile.create(config_hash,
+                                                                       librarian_filename)
+
+                    if not dryrun:  # pragma: no cover
+                        # This config is new.
+                        # save it to the Librarian
+                        self._add_config_file_to_librarian(yaml.load(config_file),
+                                                           config_hash, librarian_filename)
+
+                        # add it to the config file table
+                        self.add(config_file_obj)
+                    else:
+                        command_list.append(config_file_obj)
+
+                # make the config command object
+                config_command_obj = corr.CorrelatorConfigCommand.create(command_time, config_hash)
+            else:
+                # config is unchanged. Return
+                print('Correlator already has the desired config.')
+                if dryrun:
+                    return []
+                else:  # pragma: no cover
+                    return
         else:
             if starttime is not None:
                 raise ValueError('starttime cannot be specified if command is not "take_data"')
@@ -2427,6 +2633,8 @@ class MCSession(Session):
                 raise ValueError('acclen_spectra cannot be specified if command is not "take_data"')
             if tag is not None:
                 raise ValueError('tag cannot be specified if command is not "take_data"')
+            if config_file is not None:
+                raise ValueError('config_file cannot be specified if command is not "update_config"')
 
         if not dryrun:  # pragma: no cover
             import hera_corr_cm
@@ -2437,15 +2645,17 @@ class MCSession(Session):
                 # time by as much as 134 ms
                 # the call to hera_corr_cm returns the actual start time (in unix format)
                 starttime_used_unix = \
-                    getattr(node_controller, corr.command_dict[command])(starttime, duration, acclen, tag=tag)
+                    getattr(corr_controller, corr.command_dict[command])(starttime, duration, acclen, tag=tag)
                 starttime_used = Time(starttime_used_unix, format='unix')
 
                 starttime_diff_sec = starttime.gps - starttime_used.gps
                 if np.abs(starttime_diff_sec) > .1:
                     warnings.warn('Time difference between commanded and accepted '
                                   'start time is: {tdiff} sec'.format(tdiff=starttime_diff_sec))
+            elif command == 'update_config':
+                getattr(corr_controller, corr.command_dict[command])(config_file)
             else:
-                getattr(node_controller, corr.command_dict[command])
+                getattr(corr_controller, corr.command_dict[command])
 
             self.add(command_obj)
             if command == 'take_data':
@@ -2455,10 +2665,15 @@ class MCSession(Session):
                                                             duration, acclen_spectra,
                                                             integration_time, tag)
                 self.add(take_data_args_obj)
+            elif command == 'update_config':
+                    self.add(config_command_obj)
+
         else:
             command_list.append(command_obj)
             if command == 'take_data':
                 command_list.append(take_data_args_obj)
+            elif command == 'update_config':
+                command_list.append(config_command_obj)
 
         if dryrun:
             return command_list

@@ -41,6 +41,13 @@ if __name__ == '__main__':
                         "ignored otherwise. Accumulation length in spectra. "
                         "Defaults to a value that produces ~10s integration time."
                         "Integer", default=None)
+    parser.add_argument('--overwrite_take_data', help="only used if command is 'take_data', "
+                        "ignored otherwise.  If there is already a take data starttime "
+                        "in the future, overwrite it with this command."
+                        "Boolean", default=False)
+    parser.add_argument('--config_file', help="only used if command is 'update_config', "
+                        "ignored otherwise. config file to command the correlator to use."
+                        "String", default=None)
     parser.add_argument('--dryrun', help="just print the list of CorrelatorControlCommand "
                         "objects, do not issue the power commands or log them "
                         "to the database' [False]", action='store_true')
@@ -61,6 +68,8 @@ if __name__ == '__main__':
                                                       duration=args.duration,
                                                       acclen_spectra=args.acclen_spectra,
                                                       tag=args.tag,
+                                                      overwrite_take_data=args.overwrite_take_data,
+                                                      config_file=args.config_file,
                                                       dryrun=args.dryrun,
                                                       testing=args.testing)
     if args.testing or args.dryrun:

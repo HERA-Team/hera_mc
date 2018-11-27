@@ -31,7 +31,7 @@ command_dict = {'take_data': 'take_data', 'stop_taking_data': 'stop_taking_data'
                 'phase_switching_off': 'phase_switch_disable',
                 'noise_diode_on': 'noise_diode_enable',
                 'noise_diode_off': 'noise_diode_disable',
-                'restart': 'restart'}
+                'update_config': 'update_config', 'restart': 'restart'}
 
 command_state_map = {'take_data': {'allowed_when_recording': False},
                      'stop_taking_data': {'state_type': 'taking_data', 'state': False,
@@ -46,7 +46,66 @@ command_state_map = {'take_data': {'allowed_when_recording': False},
                                         'allowed_when_recording': False},
                      'noise_diode_off': {'state_type': 'noise_diode', 'state': False,
                                          'allowed_when_recording': False},
+                     'update_config': {'allowed_when_recording': True},
                      'restart': {'allowed_when_recording': False}}
+
+
+class CorrelatorControlState(MCDeclarativeBase):
+    """
+    Definition of correlator control state table.
+
+    time: gps time of the control state, floored (BigInteger, part of primary_key).
+    state_type: type of control state, one of the keys in state_dict (String, part of primary_key)
+    state: boolean indicating whether the state_type is true or false (Boolean)
+    """
+    __tablename__ = 'correlator_control_state'
+    time = Column(BigInteger, primary_key=True)
+    state_type = Column(String, primary_key=True)
+    state = Column(Boolean, nullable=False)
+
+    @classmethod
+    def create(cls, time, state_type, state):
+        """
+        Create a new correlator control state object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by the correlator
+        state_type: string
+            must be a key in state_dict (e.g. 'taking_data', 'phase_switching', 'noise_diode')
+        state: boolean
+            is the state_type true or false
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        corr_time = floor(time.gps)
+
+        if state_type not in list(state_dict.keys()):
+            raise ValueError('state_type must be one of: ' + ', '.join(list(state_dict.keys()))
+                             + '. state_type is actually {}'.format(state_type))
+
+        return cls(time=corr_time, state_type=state_type, state=state)
+
+
+def _get_control_state(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+    """
+    Loops through the state types in state_dict and gets the latest state and associated timestamp for each one.
+
+    Returns a 2-level dict, top level key is a key from the state_dict,
+    second level keys are 'timestamp' and 'state' (a boolean)
+    """
+    import hera_corr_cm
+
+    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+
+    corr_state_dict = {}
+    for key, value in six.iteritems(state_dict):
+        # call each state query method and add to corr_state_dict
+        state, timestamp = getattr(corr_cm, value)()
+        corr_state_dict[key] = {'timestamp': timestamp, 'state': state}
+
+    return corr_state_dict
 
 
 class CorrelatorConfigFile(MCDeclarativeBase):
@@ -120,95 +179,6 @@ def _get_config(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     return {'timestamp': timestamp, 'hash': hash, 'config': config}
 
 
-class CorrelatorConfigCommand(MCDeclarativeBase):
-    """
-    Definition of correlator_config_command table, to track when the correlator
-    is given a new config setting.
-
-    time: gps time that the config command was sent, floored (BigInteger, primary_key).
-    config_hash: unique hash for the config file (String)
-    """
-    __tablename__ = 'correlator_config_command'
-    time = Column(BigInteger, primary_key=True)
-    config_hash = Column(String, ForeignKey("correlator_config_file.config_hash"), nullable=False)
-
-    @classmethod
-    def create(cls, time, config_hash):
-        """
-        Create a new correlator config command object.
-
-        Parameters:
-        ------------
-        time: astropy time object
-            astropy time object based on a timestamp reported by the correlator
-        config_hash: string
-            unique hash of the config, foreign key into correlator_config_file table
-        """
-        if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
-        command_time = floor(time.gps)
-
-        return cls(time=command_time, config_hash=config_hash)
-
-
-class CorrelatorControlState(MCDeclarativeBase):
-    """
-    Definition of correlator control state table.
-
-    time: gps time of the control state, floored (BigInteger, part of primary_key).
-    state_type: type of control state, one of the keys in state_dict (String, part of primary_key)
-    state: boolean indicating whether the state_type is true or false (Boolean)
-    """
-    __tablename__ = 'correlator_control_state'
-    time = Column(BigInteger, primary_key=True)
-    state_type = Column(String, primary_key=True)
-    state = Column(Boolean, nullable=False)
-
-    @classmethod
-    def create(cls, time, state_type, state):
-        """
-        Create a new correlator control state object.
-
-        Parameters:
-        ------------
-        time: astropy time object
-            astropy time object based on a timestamp reported by the correlator
-        state_type: string
-            must be a key in state_dict (e.g. 'taking_data', 'phase_switching', 'noise_diode')
-        state: boolean
-            is the state_type true or false
-        """
-        if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
-        corr_time = floor(time.gps)
-
-        if state_type not in list(state_dict.keys()):
-            raise ValueError('state_type must be one of: ' + ', '.join(list(state_dict.keys()))
-                             + '. state_type is actually {}'.format(state_type))
-
-        return cls(time=corr_time, state_type=state_type, state=state)
-
-
-def _get_control_state(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
-    """
-    Loops through the state types in state_dict and gets the latest state and associated timestamp for each one.
-
-    Returns a 2-level dict, top level key is a key from the state_dict,
-    second level keys are 'timestamp' and 'state' (a boolean)
-    """
-    import hera_corr_cm
-
-    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
-
-    corr_state_dict = {}
-    for key, value in six.iteritems(state_dict):
-        # call each state query method and add to corr_state_dict
-        state, timestamp = getattr(corr_cm, value)()
-        corr_state_dict[key] = {'timestamp': timestamp, 'state': state}
-
-    return corr_state_dict
-
-
 class CorrelatorControlCommand(MCDeclarativeBase):
     """
     Definition of correlator control command table.
@@ -279,6 +249,7 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
     Records the arguments passed to the correlator `take_data` command.
 
     time: gps time of the take_data command, floored (BigInteger, part of primary_key).
+    command: always equal to 'take_data' (String, part of primary_key).
     starttime_sec: gps time to start taking data, floored (BigInteger)
     starttime_ms: milliseconds to add to starttime_sec to set correlator start time. (Integer)
     duration: Duration to take data for in seconds. After this time, the
@@ -344,3 +315,42 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
                    starttime_ms=starttime_ms, duration=duration,
                    acclen_spectra=acclen_spectra, integration_time=integration_time,
                    tag=tag)
+
+
+class CorrelatorConfigCommand(MCDeclarativeBase):
+    """
+    Definition of correlator_config_command table, to track when the correlator
+    is given a new config setting.
+
+    time: gps time that the config command was sent, floored (BigInteger, part of primary_key).
+    command: always equal to 'update_config' (String, part of primary_key).
+    config_hash: unique hash for the config file (String)
+    """
+    __tablename__ = 'correlator_config_command'
+    time = Column(BigInteger, primary_key=True)
+    command = Column(String, primary_key=True)
+    config_hash = Column(String, ForeignKey("correlator_config_file.config_hash"), nullable=False)
+
+    # the command column isn't really needed to define the table (it's always 'update_config'),
+    # but it's required for the Foreign key to work properly
+    __table_args__ = (ForeignKeyConstraint(['time', 'command'],
+                                           ['correlator_control_command.time',
+                                            'correlator_control_command.command']), {})
+
+    @classmethod
+    def create(cls, time, config_hash):
+        """
+        Create a new correlator config command object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by the correlator
+        config_hash: string
+            unique hash of the config, foreign key into correlator_config_file table
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        command_time = floor(time.gps)
+
+        return cls(time=command_time, command='update_config', config_hash=config_hash)

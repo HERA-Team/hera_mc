@@ -24,9 +24,11 @@ def upgrade():
                     )
     op.create_table('correlator_config_command',
                     sa.Column('time', sa.BigInteger(), nullable=False),
+                    sa.Column('command', sa.String(), nullable=False),
                     sa.Column('config_hash', sa.String(), nullable=False),
                     sa.ForeignKeyConstraint(['config_hash'], ['correlator_config_file.config_hash'], ),
-                    sa.PrimaryKeyConstraint('time')
+                    sa.ForeignKeyConstraint(['time', 'command'], ['correlator_control_command.time', 'correlator_control_command.command'], ),
+                    sa.PrimaryKeyConstraint('time', 'command')
                     )
     op.create_table('correlator_config_status',
                     sa.Column('time', sa.BigInteger(), nullable=False),
