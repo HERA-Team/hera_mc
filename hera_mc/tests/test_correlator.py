@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, print_function
 import unittest
 import os
 import time
+import hashlib
 import yaml
 import nose.tools as nt
 from math import floor
@@ -28,14 +29,25 @@ corr_command_example_dict = {
 }
 corr_state_dict_nonetime = {'taking_data': {'state': False, 'timestamp': None}}
 
-config_file = os.path.join(DATA_PATH, 'hera_feng_config_protonode.yaml')
+config_file = os.path.join(DATA_PATH, 'test_data', 'hera_feng_config_protonode.yaml')
 config = yaml.load(config_file)
 
 corr_config_example_dict = {'timestamp': Time(1512770942, format='unix'),
                             'hash': 'testhash', 'config': config}
 
 
-class TestCorrelatorConfig(TestHERAMC):
+def test_py3_hashing():
+    # make sure I get the same answer as with python 2.7 & no explicit encoding (like the correlator)
+    py27_hash = '05d017e94be761f70a5aecf00331c24d'
+
+    with open(config_file, 'r') as fh:
+        config_string = fh.read().encode('utf-8')
+        config_hash = hashlib.md5(config_string).hexdigest()
+
+    nt.assert_equal(py27_hash, config_hash)
+
+
+class TestCorrelatorConfigStatus(TestHERAMC):
 
     def test_add_corr_config(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -43,71 +55,99 @@ class TestCorrelatorConfig(TestHERAMC):
 
         config_hash = 'testhash'
 
-        self.test_session.add_correlator_config(t1, config_hash, config_file)
+        self.test_session.add_correlator_config_file(config_hash, config_file)
+        self.test_session.commit()
+        self.test_session.add_correlator_config_status(t1, config_hash)
+        self.test_session.commit()
 
-        expected = corr.CorrelatorConfig(time=int(floor(t1.gps)),
-                                         config_hash=config_hash,
-                                         config_file=config_file)
-        result = self.test_session.get_correlator_config(starttime=t1 - TimeDelta(3.0, format='sec'))
-        self.assertEqual(len(result), 1)
-        result = result[0]
-        self.assertTrue(result.isclose(expected))
+        file_expected = corr.CorrelatorConfigFile(config_hash=config_hash,
+                                                  filename=config_file)
+        status_expected = corr.CorrelatorConfigStatus(time=int(floor(t1.gps)),
+                                                      config_hash=config_hash)
+
+        file_result = self.test_session.get_correlator_config_file(config_hash)
+        self.assertEqual(len(file_result), 1)
+        file_result = file_result[0]
+        self.assertTrue(file_result.isclose(file_expected))
+
+        status_result = self.test_session.get_correlator_config_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'))
+        self.assertEqual(len(status_result), 1)
+        status_result = status_result[0]
+        self.assertTrue(status_result.isclose(status_expected))
 
         config_hash2 = 'testhash2'
-        self.test_session.add_correlator_config(t1, config_hash2, config_file)
+        self.test_session.add_correlator_config_file(config_hash2, config_file)
+        self.test_session.commit()
+        self.test_session.add_correlator_config_status(t2, config_hash2)
+        self.test_session.commit()
 
-        result = self.test_session.get_correlator_config(starttime=t1 - TimeDelta(3.0, format='sec'),
-                                                         config_hash=config_hash)
+        result = self.test_session.get_correlator_config_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'), config_hash=config_hash)
         self.assertEqual(len(result), 1)
         result = result[0]
-        self.assertTrue(result.isclose(expected))
+        self.assertTrue(result.isclose(status_expected))
 
-        result_most_recent = self.test_session.get_correlator_config(config_hash=config_hash)
+        result_most_recent = self.test_session.get_correlator_config_status(config_hash=config_hash)
         self.assertEqual(len(result_most_recent), 1)
         result_most_recent = result_most_recent[0]
-        self.assertTrue(result_most_recent.isclose(expected))
+        self.assertTrue(result_most_recent.isclose(status_expected))
 
-        expected = corr.CorrelatorConfig(time=int(floor(t1.gps)),
-                                         config_hash=config_hash2,
-                                         config_file=config_file)
+        status_expected = corr.CorrelatorConfigStatus(time=int(floor(t2.gps)),
+                                                      config_hash=config_hash2)
 
-        result = self.test_session.get_correlator_config(starttime=t1 - TimeDelta(3.0, format='sec'),
-                                                         config_hash=config_hash2)
+        result = self.test_session.get_correlator_config_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'), config_hash=config_hash2)
         self.assertEqual(len(result), 1)
         result = result[0]
-        self.assertTrue(result.isclose(expected))
+        self.assertTrue(result.isclose(status_expected))
 
-        result_most_recent = self.test_session.get_correlator_config(config_hash=config_hash2)
+        result_most_recent = self.test_session.get_correlator_config_status(
+            config_hash=config_hash2)
         self.assertEqual(len(result_most_recent), 1)
         result_most_recent = result_most_recent[0]
-        self.assertTrue(result_most_recent.isclose(expected))
+        self.assertTrue(result_most_recent.isclose(status_expected))
 
-        result = self.test_session.get_correlator_config(starttime=t1 - TimeDelta(3.0, format='sec'),
-                                                         stoptime=t1)
+        result = self.test_session.get_correlator_config_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'), stoptime=t2)
         self.assertEqual(len(result), 2)
 
-        result_most_recent = self.test_session.get_correlator_config()
-        self.assertEqual(len(result), 2)
+        result_most_recent = self.test_session.get_correlator_config_status()
+        self.assertEqual(len(result_most_recent), 1)
 
-        result = self.test_session.get_correlator_config(starttime=t1 + TimeDelta(200.0, format='sec'))
+        result = self.test_session.get_correlator_config_status(
+            starttime=t1 + TimeDelta(200.0, format='sec'))
         self.assertEqual(result, [])
 
     def test_add_correlator_config_from_corrcm(self):
-        corr_state_obj = self.test_session.add_correlator_config_from_corrcm(
+        corr_config_list = self.test_session.add_correlator_config_from_corrcm(
             config_state_dict=corr_config_example_dict, testing=True)
 
-        self.test_session.add(corr_state_obj)
+        for obj in corr_config_list:
+            self.test_session.add(obj)
+            self.test_session.commit()
 
         t1 = Time(1512770942.726777, format='unix')
-        result = self.test_session.get_correlator_config(starttime=t1 - TimeDelta(3.0, format='sec'))
+        status_result = self.test_session.get_correlator_config_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'))
+        self.assertEqual(len(status_result), 1)
+        file_result = self.test_session.get_correlator_config_file(
+            status_result[0].config_hash)
 
         config_filename = 'correlator_config_' + str(int(floor(t1.gps))) + '.yaml'
-        expected = corr.CorrelatorConfig(time=int(floor(t1.gps)),
-                                         config_hash='testhash',
-                                         config_file=config_filename)
-        self.assertEqual(len(result), 1)
-        result = result[0]
-        self.assertTrue(result.isclose(expected))
+
+        file_expected = corr.CorrelatorConfigFile(config_hash='testhash',
+                                                  filename=config_filename)
+        status_expected = corr.CorrelatorConfigStatus(time=int(floor(t1.gps)),
+                                                      config_hash='testhash')
+
+        self.assertEqual(len(file_result), 1)
+        file_result = file_result[0]
+        self.assertTrue(file_result.isclose(file_expected))
+
+        self.assertEqual(len(status_result), 1)
+        status_result = status_result[0]
+        self.assertTrue(status_result.isclose(status_expected))
 
     def test_add_correlator_config_from_corrcm_match_prior(self):
         # test behavior when matching config exists at an earlier time
@@ -115,40 +155,209 @@ class TestCorrelatorConfig(TestHERAMC):
         t0 = t1 - TimeDelta(30, format='sec')
         config_hash = 'testhash'
         config_filename = 'correlator_config_' + str(int(floor(t1.gps))) + '.yaml'
-        self.test_session.add_correlator_config(t0, config_hash, config_filename)
+        self.test_session.add_correlator_config_file(config_hash, config_filename)
+        self.test_session.commit()
+        self.test_session.add_correlator_config_status(t0, config_hash)
+        self.test_session.commit()
 
-        corr_state_obj = self.test_session.add_correlator_config_from_corrcm(
+        corr_config_list = self.test_session.add_correlator_config_from_corrcm(
             config_state_dict=corr_config_example_dict, testing=True)
 
-        expected = corr.CorrelatorConfig(time=int(floor(t1.gps)),
-                                         config_hash='testhash',
-                                         config_file=config_filename)
+        status_expected = corr.CorrelatorConfigStatus(time=int(floor(t1.gps)),
+                                                      config_hash='testhash')
 
-        self.assertTrue(corr_state_obj.isclose(expected))
+        self.assertTrue(corr_config_list[0].isclose(status_expected))
 
     def test_add_correlator_config_from_corrcm_duplicate(self):
         # test behavior when duplicate config exists
         t1 = Time(1512770942.726777, format='unix')
         config_hash = 'testhash'
         config_filename = 'correlator_config_' + str(int(floor(t1.gps))) + '.yaml'
-        self.test_session.add_correlator_config(t1, config_hash, config_filename)
+        self.test_session.add_correlator_config_file(config_hash, config_filename)
+        self.test_session.commit()
+        self.test_session.add_correlator_config_status(t1, config_hash)
+        self.test_session.commit()
 
-        corr_state_obj = self.test_session.add_correlator_config_from_corrcm(
+        corr_config_list = self.test_session.add_correlator_config_from_corrcm(
             config_state_dict=corr_config_example_dict, testing=True)
 
-        print(corr_state_obj)
-
-        self.assertTrue(corr_state_obj is None)
+        self.assertEqual(len(corr_config_list), 0)
 
     def test_config_errors(self):
-        self.assertRaises(ValueError, self.test_session.add_correlator_config,
-                          'foo', 'testhash', config_file)
+        self.assertRaises(ValueError, self.test_session.add_correlator_config_status,
+                          'foo', 'testhash')
 
     @unittest.skipIf(not is_onsite(), 'This test only works on site')
     def test_add_correlator_config_from_corrcm_onsite(self):
 
         result = self.test_session.add_correlator_config_from_corrcm(testing=True)
-        self.assertTrue(result is not None)
+        self.assertTrue(len(result) > 0)
+
+
+class TestCorrelatorConfigCommand(TestHERAMC):
+
+    def test_corr_config_command_no_recent_config(self):
+        # test commanding a config with no recent config status
+        t1 = Time.now()
+
+        with open(config_file, 'r') as fh:
+            config_string = fh.read().encode('utf-8')
+            config_hash = hashlib.md5(config_string).hexdigest()
+
+        config_obj_list = self.test_session.correlator_config_command(config_file,
+                                                                      testing=True)
+        self.assertEqual(len(config_obj_list), 2)
+
+        # test adding the config obj(s) to the database and retrieving them
+        for obj in config_obj_list:
+            self.test_session.add(obj)
+            self.test_session.commit()
+
+        file_expected = corr.CorrelatorConfigFile(config_hash=config_hash,
+                                                  filename=config_file)
+        status_expected = corr.CorrelatorConfigCommand(time=int(floor(t1.gps)),
+                                                       config_hash=config_hash)
+
+        file_result = self.test_session.get_correlator_config_file(config_hash)
+        self.assertEqual(len(file_result), 1)
+        file_result = file_result[0]
+        self.assertTrue(file_result.isclose(file_expected))
+
+        status_result = self.test_session.get_correlator_config_command(
+            starttime=t1 - TimeDelta(3.0, format='sec'))
+        self.assertEqual(len(status_result), 1)
+        status_result = status_result[0]
+        self.assertTrue(status_result.isclose(status_expected))
+
+    def test_corr_config_command_with_recent_config(self):
+        # test commanding a config with a recent (different) config status
+        corr_config_list = self.test_session.add_correlator_config_from_corrcm(
+            config_state_dict=corr_config_example_dict, testing=True)
+
+        for obj in corr_config_list:
+            self.test_session.add(obj)
+            self.test_session.commit()
+
+        t1 = Time.now()
+
+        with open(config_file, 'r') as fh:
+            config_string = fh.read().encode('utf-8')
+            config_hash = hashlib.md5(config_string).hexdigest()
+
+        config_obj_list = self.test_session.correlator_config_command(config_file,
+                                                                      testing=True)
+        self.assertEqual(len(config_obj_list), 2)
+
+        # test adding the config obj(s) to the database and retrieving them
+        for obj in config_obj_list:
+            self.test_session.add(obj)
+            self.test_session.commit()
+
+        file_expected = corr.CorrelatorConfigFile(config_hash=config_hash,
+                                                  filename=config_file)
+        status_expected = corr.CorrelatorConfigCommand(time=int(floor(t1.gps)),
+                                                       config_hash=config_hash)
+
+        file_result = self.test_session.get_correlator_config_file(config_hash)
+        self.assertEqual(len(file_result), 1)
+        file_result = file_result[0]
+        self.assertTrue(file_result.isclose(file_expected))
+
+        status_result = self.test_session.get_correlator_config_command(
+            starttime=t1 - TimeDelta(3.0, format='sec'))
+        self.assertEqual(len(status_result), 1)
+        status_result = status_result[0]
+        self.assertTrue(status_result.isclose(status_expected))
+
+    def test_corr_config_command_with_recent_config_match_prior(self):
+        # test commanding a config with a recent (different) config status but a matching prior one
+        t1 = Time.now()
+        t0 = Time(1512760942, format='unix')
+
+        with open(config_file, 'r') as fh:
+            config_string = fh.read().encode('utf-8')
+            config_hash = hashlib.md5(config_string).hexdigest()
+
+        # put in a previous matching config
+        matching_corr_config_dict = {'timestamp': t0, 'hash': config_hash,
+                                     'config': config}
+        corr_config_list = self.test_session.add_correlator_config_from_corrcm(
+            config_state_dict=matching_corr_config_dict, testing=True)
+
+        for obj in corr_config_list:
+            self.test_session.add(obj)
+            self.test_session.commit()
+
+        config_filename = 'correlator_config_' + str(int(floor(t0.gps))) + '.yaml'
+        file_expected = corr.CorrelatorConfigFile(config_hash=config_hash,
+                                                  filename=config_filename)
+
+        file_result = self.test_session.get_correlator_config_file(config_hash)
+        self.assertEqual(len(file_result), 1)
+        file_result = file_result[0]
+        self.assertTrue(file_result.isclose(file_expected))
+
+        # make more recent one that doesn't match
+        corr_config_list = self.test_session.add_correlator_config_from_corrcm(
+            config_state_dict=corr_config_example_dict, testing=True)
+
+        for obj in corr_config_list:
+            self.test_session.add(obj)
+            self.test_session.commit()
+
+        config_obj_list = self.test_session.correlator_config_command(config_file,
+                                                                      testing=True)
+        self.assertEqual(len(config_obj_list), 1)
+
+        # test adding the config obj(s) to the database and retrieving them
+        for obj in config_obj_list:
+            self.test_session.add(obj)
+            self.test_session.commit()
+
+        status_expected = corr.CorrelatorConfigCommand(time=int(floor(t1.gps)),
+                                                       config_hash=config_hash)
+
+        status_result = self.test_session.get_correlator_config_command(
+            starttime=t1 - TimeDelta(3.0, format='sec'))
+        self.assertEqual(len(status_result), 1)
+        status_result = status_result[0]
+        self.assertTrue(status_result.isclose(status_expected))
+
+    def test_corr_config_command_same_recent_config(self):
+        # test commanding a config with the same recent config status
+        t1 = Time.now()
+        t0 = Time(1512760942, format='unix')
+
+        with open(config_file, 'r') as fh:
+            config_string = fh.read().encode('utf-8')
+            config_hash = hashlib.md5(config_string).hexdigest()
+
+        # put in a previous matching config
+        matching_corr_config_dict = {'timestamp': t0, 'hash': config_hash,
+                                     'config': config}
+        corr_config_list = self.test_session.add_correlator_config_from_corrcm(
+            config_state_dict=matching_corr_config_dict, testing=True)
+
+        for obj in corr_config_list:
+            self.test_session.add(obj)
+            self.test_session.commit()
+
+        config_filename = 'correlator_config_' + str(int(floor(t0.gps))) + '.yaml'
+        file_expected = corr.CorrelatorConfigFile(config_hash=config_hash,
+                                                  filename=config_filename)
+
+        file_result = self.test_session.get_correlator_config_file(config_hash)
+        self.assertEqual(len(file_result), 1)
+        file_result = file_result[0]
+        self.assertTrue(file_result.isclose(file_expected))
+
+        config_obj_list = self.test_session.correlator_config_command(config_file,
+                                                                      testing=True)
+        self.assertEqual(len(config_obj_list), 0)
+
+    def test_config_command_errors(self):
+        self.assertRaises(ValueError, corr.CorrelatorConfigCommand.create,
+                          'foo', 'testhash')
 
 
 class TestCorrelatorCommandState(TestHERAMC):

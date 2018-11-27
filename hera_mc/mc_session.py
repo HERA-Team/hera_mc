@@ -1749,9 +1749,43 @@ class MCSession(Session):
                                  filter_column='node', filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_correlator_config(self, time, config_hash, config_file):
+    def add_correlator_config_file(self, config_hash, config_file):
         """
-        Add new correlator config to the M&C database.
+        Add new correlator config file to the M&C database.
+
+        Parameters:
+        ------------
+        config_hash: string
+            unique hash of the config
+        config_file: string
+            name of the config file in the Librarian
+        """
+        from .correlator import CorrelatorConfigFile
+
+        self.add(CorrelatorConfigFile.create(config_hash, config_file))
+
+    def get_correlator_config_file(self, config_hash):
+        """
+        Get a correlator config file record from the M&C database.
+
+        Parameters:
+        ------------
+        config_hash: string
+            unique hash for config file
+
+        Returns:
+        --------
+        list of CorrelatorConfigFile objects
+        """
+        from .correlator import CorrelatorConfigFile
+
+        query = self.query(CorrelatorConfigFile).filter(CorrelatorConfigFile.config_hash == config_hash)
+
+        return query.all()
+
+    def add_correlator_config_status(self, time, config_hash):
+        """
+        Add new correlator config status to the M&C database.
 
         Parameters:
         ------------
@@ -1759,91 +1793,15 @@ class MCSession(Session):
             astropy time object based on a timestamp reported by the correlator
         config_hash: string
             unique hash of the config
-        config_file: string
-            name of the config file in the Librarian
         """
-        from .correlator import CorrelatorConfig
+        from .correlator import CorrelatorConfigStatus
 
-        self.add(CorrelatorConfig.create(time, config_hash, config_file))
+        self.add(CorrelatorConfigStatus.create(time, config_hash))
 
-    def add_correlator_config_from_corrcm(self, config_state_dict=None,
-                                          testing=False):
-        """Get and add correlator config information using a HeraCorrCM object.
-
-        This function connects to the correlator and gets the latest config using
-        the `corr._get_config` function. If it is a new config file, it connects
-        to the Librarian to upload the config file. For testing purposes, it can
-        optionally accept an input dict instead of connecting to the correlator.
-
-
-        Parameters:
-        ------------
-        config_state_dict: dict
-            A dict containing info as in the return dict from _get_config() for
-            testing purposes. If None, _get_config() is called. Default: None
-        testing: boolean
-            If true, don't add config file to the Librarian or add a record of
-            it to the database and return the CorrelatorConfig object. Default False.
-
-        Returns:
-        --------
-        Optionally returns the CorrelatorConfig (if testing is True)
+    def get_correlator_config_status(self, most_recent=None, starttime=None,
+                                     config_hash=None, stoptime=None, state_type=None):
         """
-        from .correlator import _get_config, CorrelatorConfig
-
-        if config_state_dict is None:
-            config_state_dict = _get_config()
-
-        time = Time(config_state_dict['timestamp'], format='unix')
-        config = config_state_dict['config']
-        config_hash = config_state_dict['hash']
-
-        # first check to see if a file with this hash (so identical) already exists
-        same_config = self.get_correlator_config(most_recent=True, config_hash=config_hash)
-        if len(same_config) == 0:
-            config_filename = 'correlator_config_' + str(int(floor(time.gps))) + '.yaml'
-            config_obj = CorrelatorConfig.create(time, config_hash, config_filename)
-
-            if not testing:  # pragma: no cover
-                # This config is new. Need to save it to the Librarian
-                import yaml
-                from hera_librarian import LibrarianClient
-
-                # write config out to a file
-                lib_store_path = 'correlator_yaml/' + config_filename
-                with open(config_filename, 'w') as outfile:
-                    yaml.dump(config, outfile, default_flow_style=False)
-
-                # add config file to librarian
-                lib_client = LibrarianClient('local-maint')
-
-                lib_client.upload_file(config_filename, lib_store_path, 'infer',
-                                       deletion_policy='disallowed', null_obsid=True)
-
-                # delete the file
-                # TODO: check with Peter that this is ok...
-                os.remove(config_filename)
-
-                self.add(config_obj)
-            else:
-                return config_obj
-        else:
-            if same_config[0].time != floor(time.gps):
-                # time is different, so need a new row
-                config_filename = same_config[0].config_file
-                config_obj = CorrelatorConfig.create(time, config_hash, config_filename)
-
-                if not testing:  # pragma: no cover
-                    self.add(config_obj)
-                else:
-                    return config_obj
-            elif testing:
-                return None
-
-    def get_correlator_config(self, most_recent=None, starttime=None,
-                              config_hash=None, stoptime=None, state_type=None):
-        """
-        Get correlator config record(s) from the M&C database.
+        Get correlator config status record(s) from the M&C database.
 
         Parameters:
         ------------
@@ -1864,13 +1822,232 @@ class MCSession(Session):
 
         Returns:
         --------
-        list of CorrelatorConfig objects
+        list of CorrelatorConfigStatus objects
         """
-        from .correlator import CorrelatorConfig
+        from .correlator import CorrelatorConfigStatus
 
-        return self._time_filter(CorrelatorConfig, 'time', most_recent=most_recent,
+        return self._time_filter(CorrelatorConfigStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='config_hash', filter_value=config_hash)
+
+    def _add_config_file_to_librarian(self, config, config_hash,
+                                      librarian_filename):  # pragma: no cover
+        """
+        Helper function to save a new config file in the Librarian
+
+        Parameters:
+        -----------
+        config: string
+            decoded yaml string (i.e. result of yaml.load(config_file))
+        config_hash: string
+            unique hash of the config
+        librarian_filename: string
+            name of the file in the librarian
+        """
+        import yaml
+        from hera_librarian import LibrarianClient
+
+        # write config out to a file
+        lib_store_path = 'correlator_yaml/' + librarian_filename
+        with open(librarian_filename, 'w') as outfile:
+            yaml.dump(config, outfile, default_flow_style=False)
+
+        # add config file to librarian
+        lib_client = LibrarianClient('local-maint')
+
+        lib_client.upload_file(config_filename, lib_store_path, 'infer',
+                               deletion_policy='disallowed', null_obsid=True)
+
+        # delete the file
+        # TODO: check with Peter that this is ok...
+        os.remove(librarian_filename)
+
+    def add_correlator_config_from_corrcm(self, config_state_dict=None,
+                                          testing=False):
+        """Get and add correlator config information using a HeraCorrCM object.
+
+        This function connects to the correlator and gets the latest config using
+        the `corr._get_config` function. If it is a new config file, it connects
+        to the Librarian to upload the config file. For testing purposes, it can
+        optionally accept an input dict instead of connecting to the correlator.
+
+
+        Parameters:
+        ------------
+        config_state_dict: dict
+            A dict containing info as in the return dict from _get_config() for
+            testing purposes. If None, _get_config() is called. Default: None
+        testing: boolean
+            If true, don't add config file to the Librarian or add a record of
+            it to the database and return the CorrelatorConfigFile and
+            CorrelatorConfigStatus objects. Default False.
+
+        Returns:
+        --------
+        Optionally returns list of CorrelatorConfigFile and CorrelatorConfigStatus objects (if testing is True)
+        """
+        from .correlator import _get_config, CorrelatorConfigFile, CorrelatorConfigStatus
+
+        if config_state_dict is None:
+            config_state_dict = _get_config()
+
+        time = Time(config_state_dict['timestamp'], format='unix')
+        config = config_state_dict['config']
+        config_hash = config_state_dict['hash']
+
+        config_obj_list = []
+        # first check to see if a status with this hash (so identical) already exists
+        same_config_status = self.get_correlator_config_status(most_recent=True, config_hash=config_hash)
+        if len(same_config_status) == 0:
+            # now check to see if a file with this hash (so identical) already exists
+            same_config_file = self.get_correlator_config_file(config_hash=config_hash)
+
+            if len(same_config_file) == 0:
+                librarian_filename = 'correlator_config_' + str(int(floor(time.gps))) + '.yaml'
+                config_file_obj = CorrelatorConfigFile.create(config_hash,
+                                                              librarian_filename)
+
+                if not testing:  # pragma: no cover
+                    # This config is new.
+                    # save it to the Librarian
+                    self._add_config_file_to_librarian(config, config_hash,
+                                                       librarian_filename)
+
+                    # add it to the config file table
+                    self.add(config_file_obj)
+                else:
+                    config_obj_list.append(config_file_obj)
+
+            # make the config status object
+            config_status_obj = CorrelatorConfigStatus.create(time, config_hash)
+            if not testing:  # pragma: no cover
+                self.add(config_status_obj)
+            else:
+                config_obj_list.append(config_status_obj)
+        else:
+            if same_config_status[0].time != floor(time.gps):
+                # time is different, so need a new row
+                config_status_obj = CorrelatorConfigStatus.create(time, config_hash)
+
+                if not testing:  # pragma: no cover
+                    self.add(config_status_obj)
+                else:
+                    config_obj_list.append(config_status_obj)
+
+        if testing:
+            return config_obj_list
+
+    def get_correlator_config_command(self, most_recent=None, starttime=None,
+                                      config_hash=None, stoptime=None, state_type=None):
+        """
+        Get correlator config command record(s) from the M&C database.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        config_hash: string
+            unique hash for config file
+
+        Returns:
+        --------
+        list of CorrelatorConfigCommand objects
+        """
+        from .correlator import CorrelatorConfigCommand
+
+        return self._time_filter(CorrelatorConfigCommand, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='config_hash', filter_value=config_hash)
+
+    def correlator_config_command(self, config_file, dry_run=True, testing=True):
+        """
+        Issue a command to the correlator to change to config
+
+        Parameters:
+        -----------
+        config_file: string file name
+            config file to command the correlator to use
+        dryrun: boolean
+            if true, just return the list of CorrelatorConfigCommand objects, do not
+            issue the commands or log them to the database
+        testing: boolean
+            if true, do not use anything that requires connection to correlator (implies dry run)
+        """
+        import hashlib
+        from . import correlator as corr
+
+        if testing:
+            dryrun = True
+
+        if dryrun:
+            command_list = []
+
+        command_time = Time.now()
+
+        # construct the file hash in the same way as the correlator does
+        with open(config_file, 'r') as fh:
+            config_string = fh.read().encode('utf-8')
+            config_hash = hashlib.md5(config_string).hexdigest()
+
+        # Check the current config
+        # make sure we have most recent config
+        if not testing:
+            self.add_correlator_config_from_corrcm()
+
+        # Get most recent config
+        current_config_status = self.get_correlator_config_status(most_recent=True)
+        if len(current_config_status) > 0:
+            different_hash = config_hash != current_config_status[0].config_hash
+        else:
+            different_hash = True
+
+        if different_hash:
+            # now check to see if a file with this hash (so identical) already exists
+            same_config_file = self.get_correlator_config_file(config_hash=config_hash)
+
+            if len(same_config_file) == 0:
+                # This is a new config
+                # TODO: how should we name it? use existing name? or gps second?
+                librarian_filename = config_file
+                # librarian_filename = 'correlator_config_' + str(int(floor(time.gps))) + '.yaml'
+                config_file_obj = corr.CorrelatorConfigFile.create(config_hash,
+                                                                   librarian_filename)
+
+                if not dryrun:  # pragma: no cover
+                    # This config is new.
+                    # save it to the Librarian
+                    self._add_config_file_to_librarian(yaml.load(config_file),
+                                                       config_hash, librarian_filename)
+
+                    # add it to the config file table
+                    self.add(config_file_obj)
+                else:
+                    command_list.append(config_file_obj)
+
+            # make the config command object
+            config_command_obj = corr.CorrelatorConfigCommand.create(command_time, config_hash)
+            if not dryrun:  # pragma: no cover
+                import hera_corr_cm
+
+                corr_controller = hera_corr_cm.HeraCorrCM()
+                corr_controller.update_config(config_file)
+
+                self.add(config_command_obj)
+            else:
+                command_list.append(config_command_obj)
+
+        if dryrun:
+            return command_list
 
     def add_correlator_control_state(self, time, state_type, state):
         """

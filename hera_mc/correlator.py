@@ -10,7 +10,7 @@ from __future__ import absolute_import, division, print_function
 import six
 from math import floor
 from astropy.time import Time
-from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String, ForeignKeyConstraint
+from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String, ForeignKey, ForeignKeyConstraint
 
 from . import MCDeclarativeBase
 
@@ -49,38 +49,60 @@ command_state_map = {'take_data': {'allowed_when_recording': False},
                      'restart': {'allowed_when_recording': False}}
 
 
-class CorrelatorConfig(MCDeclarativeBase):
+class CorrelatorConfigFile(MCDeclarativeBase):
+    """
+    Definition of correlator_config_file table.
+
+    hash: unique hash for the config (String, primary_key)
+    filename: Name of the config file in the Librarian (String)
+    """
+    __tablename__ = 'correlator_config_file'
+    config_hash = Column(String, primary_key=True)
+    filename = Column(String, nullable=False)
+
+    @classmethod
+    def create(cls, config_hash, filename):
+        """
+        Create a new correlator config file object.
+
+        Parameters:
+        ------------
+        config_hash: string
+            unique hash of the config
+        filename: string
+            name of the config file in the Librarian
+        """
+        return cls(config_hash=config_hash, filename=filename)
+
+
+class CorrelatorConfigStatus(MCDeclarativeBase):
     """
     Definition of correlator config table.
 
     time: gps time that the config started, floored (BigInteger, primary_key).
-    config_hash: unique hash for the config (String)
-    config_file: Name of the config file in the Librarian (String)
+    config_hash: unique hash for the config (String, foreign key into correlator_config_file)
     """
-    __tablename__ = 'correlator_config'
+    __tablename__ = 'correlator_config_status'
     time = Column(BigInteger, primary_key=True)
-    config_hash = Column(String, primary_key=True)
-    config_file = Column(String, nullable=False)
+    config_hash = Column(String, ForeignKey("correlator_config_file.config_hash"), nullable=False)
 
     @classmethod
-    def create(cls, time, config_hash, config_file):
+    def create(cls, time, config_hash):
         """
-        Create a new correlator config object.
+        Create a new correlator config status object.
 
         Parameters:
         ------------
         time: astropy time object
             astropy time object based on a timestamp reported by the correlator
         config_hash: string
-            unique hash of the config
-        config_file: string
-            name of the config file in the Librarian
+            unique hash of the config, foreign key into correlator_config_file table
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
         corr_time = floor(time.gps)
 
-        return cls(time=corr_time, config_hash=config_hash, config_file=config_file)
+        return cls(time=corr_time, config_hash=config_hash)
 
 
 def _get_config(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
@@ -96,6 +118,37 @@ def _get_config(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     timestamp, config, hash = corr_cm.get_config()
 
     return {'timestamp': timestamp, 'hash': hash, 'config': config}
+
+
+class CorrelatorConfigCommand(MCDeclarativeBase):
+    """
+    Definition of correlator_config_command table, to track when the correlator
+    is given a new config setting.
+
+    time: gps time that the config command was sent, floored (BigInteger, primary_key).
+    config_hash: unique hash for the config file (String)
+    """
+    __tablename__ = 'correlator_config_command'
+    time = Column(BigInteger, primary_key=True)
+    config_hash = Column(String, ForeignKey("correlator_config_file.config_hash"), nullable=False)
+
+    @classmethod
+    def create(cls, time, config_hash):
+        """
+        Create a new correlator config command object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by the correlator
+        config_hash: string
+            unique hash of the config, foreign key into correlator_config_file table
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        command_time = floor(time.gps)
+
+        return cls(time=command_time, config_hash=config_hash)
 
 
 class CorrelatorControlState(MCDeclarativeBase):
