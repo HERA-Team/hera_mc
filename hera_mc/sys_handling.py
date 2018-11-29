@@ -307,7 +307,9 @@ class Handling:
     def publish_summary(self, hlist='default', rev='ACTIVE', exact_match=False,
                         hookup_cols='all', force_new_hookup_dict=True):
         import os.path
-        if isinstance(hlist, six.string_types) and hlist.lower() == 'default':
+        if isinstance(hlist, six.string_types):
+            hlist = [hlist]
+        if hlist[0].lower() == 'default':
             hlist = cm_utils.default_station_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         H = cm_hookup.Hookup('now', self.session)

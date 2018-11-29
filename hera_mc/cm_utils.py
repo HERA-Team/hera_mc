@@ -282,7 +282,9 @@ def html_table(headers, table):
     for tr in table:
         s += '<tr>'
         for d in tr:
-            s += '<td>{}</td>'.format(d)
+            f = d.replace('<', '&lt ')
+            f = f.replace('>', '&gt ')
+            s += '<td>{}</td>'.format(f)
         s += '</tr>\n'
     s += '</table>'
     return s
