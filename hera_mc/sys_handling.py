@@ -321,8 +321,8 @@ class Handling:
         from . import cm_transfer
         if cm_transfer.check_if_main(self.session):
             import subprocess
-            location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
-            sc_command = 'scp -i ~/.ssh/id_rsa_qmaster {} {}'.format(output_file, location_on_paper1)
+            location_on_web = 'hera.today:/var/www/html/hookup.html'
+            sc_command = 'scp {} {}'.format(output_file, location_on_web)
             subprocess.call(sc_command, shell=True)
             return 'OK'
         else:
