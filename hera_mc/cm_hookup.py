@@ -192,7 +192,7 @@ class HookupDossierEntry:
                 new_row_entry = build_new_row_entry(
                     dip, d.upstream_part, d.up_part_rev, d.upstream_output_port, show)
                 td[headers.index(part_type)] = new_row_entry
-                dip = d.downstream_input_port + '> '
+            dip = d.downstream_input_port + '> '
         # Get the last part in the hookup
         part_type = part_types[d.downstream_part]
         if part_type in headers:
