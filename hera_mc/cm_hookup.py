@@ -642,13 +642,15 @@ class Hookup:
         if total_shown == 0:
             print("None found for {} (show-state is {})".format(cm_utils.get_time_for_display(self.at_date), state))
             return
-        table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
         if file is None:
             import sys
             file = sys.stdout
         if output_format == 'html':
             dtime = cm_utils.get_time_for_display('now') + '\n'
+            table = cm_utils.html_table(headers, table_data)
             table = '<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime + '\t\t</pre>\n\t</body>\n</html>\n'
+        else:
+            table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
         print(table, file=file)
 
     def make_header_row(self, hookup_dict, cols_to_show):
@@ -657,6 +659,8 @@ class Hookup:
             for cols in h.columns.values():
                 if len(cols) > len(col_list):
                     col_list = copy.copy(cols)
+        if isinstance(cols_to_show, six.string_types):
+            cols_to_show = [cols_to_show]
         if cols_to_show[0].lower() == 'all':
             return col_list
         headers = []

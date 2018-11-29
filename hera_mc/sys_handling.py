@@ -304,25 +304,24 @@ class Handling:
             parts[k] = hu.get_part_in_hookup_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
 
-    def publish_summary(self, hlist='default', rev='A', exact_match=False,
-                        hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
-                        force_new_hookup_dict=False):
+    def publish_summary(self, hlist='default', rev='ACTIVE', exact_match=False,
+                        hookup_cols='all', force_new_hookup_dict=True):
         import os.path
         if isinstance(hlist, six.string_types) and hlist.lower() == 'default':
             hlist = cm_utils.default_station_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
-        location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
         H = cm_hookup.Hookup('now', self.session)
         hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
-                                   exact_match=exact_match, levels=True,
+                                   exact_match=exact_match, levels=False,
                                    force_new=force_new_hookup_dict, force_specific=False)
-
         with open(output_file, 'w') as f:
-            H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=True, ports=False,
-                          revs=False, state='full', file=f, output_format='html')
-        import subprocess
+            H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=False, ports=True,
+                          revs=True, state='full', file=f, output_format='html')
+
         from . import cm_transfer
         if cm_transfer.check_if_main(self.session):
+            import subprocess
+            location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
             sc_command = 'scp -i ~/.ssh/id_rsa_qmaster {} {}'.format(output_file, location_on_paper1)
             subprocess.call(sc_command, shell=True)
             return 'OK'
