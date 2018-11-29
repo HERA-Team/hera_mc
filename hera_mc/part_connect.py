@@ -29,7 +29,7 @@ full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end
                                        'cable-rfof', 'post-amp', 'snap', 'node'],
                         'parts_test': ['vapor']
                         }
-epoch_corr_huind = {'parts_hera': 5, 'parts_paper': 9}  # index where the correlator is downstream
+epoch_corr_huind = {'parts_hera': 5, 'parts_paper': 9, 'parts_rfi': 3}  # index where the correlator is downstream
 both_pols = ['e', 'n']
 
 

@@ -19,7 +19,7 @@ from . import geo_location, geo_handling
 
 class StationInfo:
     stn_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting', 'northing', 'lon', 'lat',
-                'elevation', 'antenna_number', 'correlator_input', 'start_date', 'stop_date']
+                'elevation', 'antenna_number', 'correlator_input', 'start_date', 'stop_date', 'epoch']
 
     def __init__(self, stn=None):
         if isinstance(stn, six.string_types) and stn == 'init_arrays':
@@ -203,8 +203,10 @@ class Handling:
             # But we just want an integer, so we strip the A and cast it to int
             ant_num = int(ant_num[1:])
             corr = {}
+            pe = {}
             for p, hu in six.iteritems(current_hookup):
-                cind = part_connect.epoch_corr_huind[hud[k].parts_epoch[p]]
+                pe[p] = hud[k].parts_epoch[p]
+                cind = part_connect.epoch_corr_huind[pe[p]]
                 try:
                     corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
                 except IndexError:
@@ -219,6 +221,9 @@ class Handling:
             station_info = StationInfo(fnd)
             station_info.antenna_number = ant_num
             station_info.correlator_input = (str(corr['e']), str(corr['n']))
+            station_info.epoch = 'e:{}, n:{}'.format(pe['e'], pe['n'])
+            if pe['e'] == pe['n']:
+                station_info.epoch = str(pe['e'])
             station_info.start_date = fctime['start']
             station_info.stop_date = fctime['end']
         return station_info
@@ -269,6 +274,7 @@ class Handling:
                 # but antenna_names is what it's called in pyuvdata
                 'antenna_names': stn_arrays.station_name,
                 'station_types': stn_arrays.station_type_name,
+                'epoch': stn_arrays.epoch,
                 # this is a tuple giving the f-engine names for x, y
                 'correlator_inputs': stn_arrays.correlator_input,
                 'antenna_utm_datum_vals': stn_arrays.datum,

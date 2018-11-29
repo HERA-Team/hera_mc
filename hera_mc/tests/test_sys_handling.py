@@ -96,7 +96,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(corr_dict['cm_version'], mc_git_hash)
 
         expected_keys = ['antenna_numbers', 'antenna_names', 'station_types',
-                         'correlator_inputs', 'antenna_utm_datum_vals',
+                         'correlator_inputs', 'antenna_utm_datum_vals', 'epoch',
                          'antenna_utm_tiles', 'antenna_utm_eastings',
                          'antenna_utm_northings', 'antenna_positions',
                          'cm_version', 'cofa_lat', 'cofa_lon', 'cofa_alt']
