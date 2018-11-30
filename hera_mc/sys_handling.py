@@ -47,7 +47,7 @@ class StationInfo:
         for s in self.stn_info:
             try:
                 arr = getattr(self, s)
-            except AttributeError:
+            except AttributeError:  # pragma: no cover
                 continue
             arr.append(getattr(stn, s))
 
@@ -70,7 +70,7 @@ class Handling:
         self.geo = geo_handling.Handling(self.session)
         self.H = None
 
-    def close(self):
+    def close(self):  # pragma: no cover
         """
         Close the session
         """
@@ -209,12 +209,12 @@ class Handling:
                 cind = part_connect.epoch_corr_huind[pe[p]]
                 try:
                     corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
-                except IndexError:
+                except IndexError:  # pragma: no cover
                     corr[p] = 'None'
             fnd_list = self.geo.get_location([stn], at_date)
             if not len(fnd_list):
                 return None
-            if len(fnd_list) > 1:
+            if len(fnd_list) > 1:  # pragma: no cover
                 print("More than one part found:  ", str(fnd))
                 print("Setting to first to continue.")
             fnd = fnd_list[0]
@@ -321,7 +321,7 @@ class Handling:
                           revs=True, state='full', file=f, output_format='html')
 
         from . import cm_transfer
-        if cm_transfer.check_if_main(self.session):
+        if cm_transfer.check_if_main(self.session):  # pragma: no cover
             import subprocess
             location_on_web = 'hera.today:/var/www/html/hookup.html'
             sc_command = 'scp {} {}'.format(output_file, location_on_web)
@@ -344,7 +344,7 @@ class Handling:
                 for k, v in six.iteritems(sys_comm):
                     if len(v) > col[k][1]:
                         col[k][1] = len(v)
-        if not len(found_entries):
+        if not len(found_entries):  # pragma: no cover
             return 'None'
         rows = ["\n{:{tkw}s} | {:{pt}s} | {}".format(col['key'][0], col['date'][0], col['comment'][0], tkw=col['key'][1], pt=col['date'][1])]
         rows.append("{}+{}+{}".format((col['key'][1] + 1) * '-', (col['date'][1] + 2) * '-', (col['comment'][1] + 1) * '-'))

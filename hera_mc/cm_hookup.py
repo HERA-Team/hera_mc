@@ -200,6 +200,7 @@ class HookupDossierEntry:
                 dip, d.downstream_part, d.down_part_rev, None, show)
             td[headers.index(part_type)] = new_row_entry
         # Add timing and levels
+        print("CMH203: ", headers)
         if 'start' in headers:
             td[headers.index('start')] = timing[0]
         if 'stop' in headers:
@@ -540,7 +541,7 @@ class Hookup:
         # Get the relevant dates (checking the cache_file/cm_version up front)
         try:
             stats = os.stat(self.hookup_cache_file)
-        except OSError as e:
+        except OSError as e:  # pragma: no cover
             if e.errno == 2:
                 cm_utils.log('__hookup_cache_file_date_OK:  no cache file found.')
                 return False  # File does not exist
@@ -581,7 +582,7 @@ class Hookup:
         return False
 
     def hookup_cache_file_info(self):
-        if not os.path.exists(self.hookup_cache_file):
+        if not os.path.exists(self.hookup_cache_file):  # pragma: no cover
             s = "{} does not exist.\n".format(self.hookup_cache_file)
         else:
             self.read_hookup_cache_from_file()
