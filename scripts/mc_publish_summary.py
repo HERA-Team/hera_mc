@@ -3,7 +3,7 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""This publishes a webpage on paper1 (leveraging the rails stuff) that includes power levels.
+"""This publishes a webpage on hera-today.
 If not on qmaster, it just writes the html file.
 
 """
@@ -12,15 +12,15 @@ from __future__ import absolute_import, division, print_function
 from hera_mc import mc, cm_utils, sys_handling
 
 if __name__ == '__main__':
-    default_hookup_cols = ['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level']
+    default_hookup_cols = ['station', 'feed', 'front-end', 'post-amp', 'snap', 'node']
     parser = mc.get_mc_argument_parser()
     # set values for 'action' to use
-    parser.add_argument('-p', '--hpn', help="Part number, csv-list (required). HH", default='HH')
-    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [A]", default='A')
+    parser.add_argument('-p', '--hpn', help="Part number, csv-list or [default]", default='default')
+    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [ACTIVE]", default='ACTIVE')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
-    parser.add_argument('-f', '--force-new', dest='force_new', help="Force it to write a new hookup file.", action='store_true')
-    parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in mapr, comma-delimited no-space list.",
+    parser.add_argument('-f', '--use_cache', dest='force_new', help="Force it to write a new hookup cache.", action='store_false')
+    parser.add_argument('--hookup-cols', help="Specify a subset of parts to show comma-delimited no-space list.",
                         dest='hookup_cols', default=default_hookup_cols)
 
     args = parser.parse_args()

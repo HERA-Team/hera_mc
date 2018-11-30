@@ -47,7 +47,7 @@ class StationInfo:
         for s in self.stn_info:
             try:
                 arr = getattr(self, s)
-            except AttributeError:
+            except AttributeError:  # pragma: no cover
                 continue
             arr.append(getattr(stn, s))
 
@@ -70,7 +70,7 @@ class Handling:
         self.geo = geo_handling.Handling(self.session)
         self.H = None
 
-    def close(self):
+    def close(self):  # pragma: no cover
         """
         Close the session
         """
@@ -209,12 +209,12 @@ class Handling:
                 cind = part_connect.epoch_corr_huind[pe[p]]
                 try:
                     corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
-                except IndexError:
+                except IndexError:  # pragma: no cover
                     corr[p] = 'None'
             fnd_list = self.geo.get_location([stn], at_date)
             if not len(fnd_list):
                 return None
-            if len(fnd_list) > 1:
+            if len(fnd_list) > 1:  # pragma: no cover
                 print("More than one part found:  ", str(fnd))
                 print("Setting to first to continue.")
             fnd = fnd_list[0]
@@ -304,26 +304,27 @@ class Handling:
             parts[k] = hu.get_part_in_hookup_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
 
-    def publish_summary(self, hlist='default', rev='A', exact_match=False,
-                        hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
-                        force_new_hookup_dict=False):
+    def publish_summary(self, hlist='default', rev='ACTIVE', exact_match=False,
+                        hookup_cols='all', force_new_hookup_dict=True):
         import os.path
-        if isinstance(hlist, six.string_types) and hlist.lower() == 'default':
+        if isinstance(hlist, six.string_types):
+            hlist = [hlist]
+        if hlist[0].lower() == 'default':
             hlist = cm_utils.default_station_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
-        location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
         H = cm_hookup.Hookup('now', self.session)
         hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
-                                   exact_match=exact_match, levels=True,
+                                   exact_match=exact_match, levels=False,
                                    force_new=force_new_hookup_dict, force_specific=False)
-
         with open(output_file, 'w') as f:
-            H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=True, ports=False,
-                          revs=False, state='full', file=f, output_format='html')
-        import subprocess
+            H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=False, ports=True,
+                          revs=True, state='full', file=f, output_format='html')
+
         from . import cm_transfer
-        if cm_transfer.check_if_main(self.session):
-            sc_command = 'scp -i ~/.ssh/id_rsa_qmaster {} {}'.format(output_file, location_on_paper1)
+        if cm_transfer.check_if_main(self.session):  # pragma: no cover
+            import subprocess
+            location_on_web = 'hera.today:/var/www/html/hookup.html'
+            sc_command = 'scp {} {}'.format(output_file, location_on_web)
             subprocess.call(sc_command, shell=True)
             return 'OK'
         else:
@@ -343,7 +344,7 @@ class Handling:
                 for k, v in six.iteritems(sys_comm):
                     if len(v) > col[k][1]:
                         col[k][1] = len(v)
-        if not len(found_entries):
+        if not len(found_entries):  # pragma: no cover
             return 'None'
         rows = ["\n{:{tkw}s} | {:{pt}s} | {}".format(col['key'][0], col['date'][0], col['comment'][0], tkw=col['key'][1], pt=col['date'][1])]
         rows.append("{}+{}+{}".format((col['key'][1] + 1) * '-', (col['date'][1] + 2) * '-', (col['comment'][1] + 1) * '-'))

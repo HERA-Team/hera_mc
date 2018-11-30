@@ -192,7 +192,7 @@ class HookupDossierEntry:
                 new_row_entry = build_new_row_entry(
                     dip, d.upstream_part, d.up_part_rev, d.upstream_output_port, show)
                 td[headers.index(part_type)] = new_row_entry
-                dip = d.downstream_input_port + '> '
+            dip = d.downstream_input_port + '> '
         # Get the last part in the hookup
         part_type = part_types[d.downstream_part]
         if part_type in headers:
@@ -540,7 +540,7 @@ class Hookup:
         # Get the relevant dates (checking the cache_file/cm_version up front)
         try:
             stats = os.stat(self.hookup_cache_file)
-        except OSError as e:
+        except OSError as e:  # pragma: no cover
             if e.errno == 2:
                 cm_utils.log('__hookup_cache_file_date_OK:  no cache file found.')
                 return False  # File does not exist
@@ -581,7 +581,7 @@ class Hookup:
         return False
 
     def hookup_cache_file_info(self):
-        if not os.path.exists(self.hookup_cache_file):
+        if not os.path.exists(self.hookup_cache_file):  # pragma: no cover
             s = "{} does not exist.\n".format(self.hookup_cache_file)
         else:
             self.read_hookup_cache_from_file()
@@ -642,13 +642,15 @@ class Hookup:
         if total_shown == 0:
             print("None found for {} (show-state is {})".format(cm_utils.get_time_for_display(self.at_date), state))
             return
-        table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
         if file is None:
             import sys
             file = sys.stdout
         if output_format == 'html':
             dtime = cm_utils.get_time_for_display('now') + '\n'
+            table = cm_utils.html_table(headers, table_data)
             table = '<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime + '\t\t</pre>\n\t</body>\n</html>\n'
+        else:
+            table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
         print(table, file=file)
 
     def make_header_row(self, hookup_dict, cols_to_show):
@@ -657,6 +659,8 @@ class Hookup:
             for cols in h.columns.values():
                 if len(cols) > len(col_list):
                     col_list = copy.copy(cols)
+        if isinstance(cols_to_show, six.string_types):
+            cols_to_show = [cols_to_show]
         if cols_to_show[0].lower() == 'all':
             return col_list
         headers = []

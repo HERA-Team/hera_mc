@@ -45,9 +45,12 @@ class TestSys(TestHERAMC):
         hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
         hookup.reset_memory_cache(None)
         self.assertEqual(hookup.cached_hookup_dict, None)
-        hu = hookup.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new=True)
+        hu = hookup.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new=True, levels=True)
+        hookup.show_hookup(hu, cols_to_show=['station', 'level'], levels=True, revs=True, ports=True)
         hookup.reset_memory_cache(hu)
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
+        hu = hookup.get_hookup('cached', 'H', 'pol', force_new=False)
+        hu = hookup.get_hookup('A23,A23', 'H', 'pol', force_new=False)
 
     def test_hookup_cache_file_info(self):
         hookup = cm_hookup.Hookup(at_date='now', session=self.test_session)
@@ -121,9 +124,9 @@ class TestSys(TestHERAMC):
         hookup = cm_hookup.Hookup(at_date, self.test_session)
         stn = 'HH23'
         hud = hookup.get_hookup([stn], exact_match=True)
-        pams = hud[list(hud.keys())[0]].get_part_in_hookup_from_type('post-amp', include_ports=False)
+        pams = hud[list(hud.keys())[0]].get_part_in_hookup_from_type('post-amp', include_ports=True, include_revs=True)
         self.assertEqual(len(pams), 2)
-        self.assertEqual(pams['e'], 'PAM75123')  # the actual pam number (the thing written on the case)
+        self.assertEqual(pams['e'], 'ea>PAM75123:B<eb')  # the actual pam number (the thing written on the case)
 
     def test_get_pam_info(self):
         sys_h = sys_handling.Handling(self.test_session)

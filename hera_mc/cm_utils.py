@@ -274,6 +274,22 @@ def put_keys_in_numerical_order(keys):
     return keyordered
 
 
+def html_table(headers, table):
+    s = '<table border="1">\n<tr>'
+    for h in headers:
+        s += '<th>{}</th>'.format(h)
+    s += '</tr>\n'
+    for tr in table:
+        s += '<tr>'
+        for d in tr:
+            f = str(d).replace('<', '&lt ')
+            f = f.replace('>', '&gt ')
+            s += '<td>{}</td>'.format(f)
+        s += '</tr>\n'
+    s += '</table>'
+    return s
+
+
 def query_default(a, args):
     vargs = vars(args)
     default = vargs[a]
