@@ -200,7 +200,6 @@ class HookupDossierEntry:
                 dip, d.downstream_part, d.down_part_rev, None, show)
             td[headers.index(part_type)] = new_row_entry
         # Add timing and levels
-        print("CMH203: ", headers)
         if 'start' in headers:
             td[headers.index('start')] = timing[0]
         if 'stop' in headers:
