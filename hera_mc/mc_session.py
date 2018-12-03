@@ -1966,11 +1966,10 @@ class MCSession(Session):
         # add config file to librarian
         lib_client = LibrarianClient('local-maint')
 
-        lib_client.upload_file(config_filename, lib_store_path, 'infer',
+        lib_client.upload_file(librarian_filename, lib_store_path, 'infer',
                                deletion_policy='disallowed', null_obsid=True)
 
         # delete the file
-        # TODO: check with Peter that this is ok...
         os.remove(librarian_filename)
 
     def add_correlator_config_from_corrcm(self, config_state_dict=None,
@@ -2461,7 +2460,9 @@ class MCSession(Session):
             only applies if command is 'take_data': If there is already a take data starttime
             in the future, overwrite it with this command.
         config_file: string file name
-            only applies if command is 'update_config': config file to command the correlator to use
+            only applies if command is 'update_config': full path to the config file
+                to command the correlator to use. Must exist in a location the
+                correlator can access (this name is passed directly to the correlator).
         dryrun: boolean
             if true, just return the list of CorrelatorControlCommand objects, do not
             issue the commands or log them to the database
@@ -2598,9 +2599,9 @@ class MCSession(Session):
 
                 if len(same_config_file) == 0:
                     # This is a new config
-                    # TODO: how should we name it? use existing name? or gps second?
+                    # Name it using the existing name. Adding it to the Librarian
+                    # will fail if a file with that name already exists in the Librarian.
                     librarian_filename = config_file
-                    # librarian_filename = 'correlator_config_' + str(int(floor(time.gps))) + '.yaml'
                     config_file_obj = corr.CorrelatorConfigFile.create(config_hash,
                                                                        librarian_filename)
 
