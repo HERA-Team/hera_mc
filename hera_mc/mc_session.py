@@ -2459,7 +2459,7 @@ class MCSession(Session):
         overwrite_take_data: boolean
             only applies if command is 'take_data': If there is already a take data starttime
             in the future, overwrite it with this command.
-        config_file: string file name
+        config_file: string
             only applies if command is 'update_config': full path to the config file
                 to command the correlator to use. Must exist in a location the
                 correlator can access (this name is passed directly to the correlator).
