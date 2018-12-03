@@ -87,6 +87,14 @@ class MCSession(Session):
         A helper method to fiter entries by time. Used by most get methods
         on this object.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         table_class: class
             Class specifying a table to query.
@@ -268,6 +276,12 @@ class MCSession(Session):
         """
         Get observation(s) from the M&C database.
 
+        Default behavior is to return the most recent record. If starttime
+        is set but stoptime is not, this method will return the first record
+        after the starttime. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         ------------
         most_recent: boolean
@@ -353,6 +367,14 @@ class MCSession(Session):
         """
         Get subsystem server_status record(s) from the M&C database.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         ------------
         subsystem: string
@@ -402,6 +424,14 @@ class MCSession(Session):
         """
         Get rtp_server_status record(s) from the M&C database.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         ------------
         most_recent: boolean
@@ -439,6 +469,14 @@ class MCSession(Session):
                                     hostname=None, write_to_file=False, filename=None):
         """
         Get librarian_server_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -499,6 +537,14 @@ class MCSession(Session):
                             write_to_file=False, filename=None):
         """
         Get subsystem server_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -571,6 +617,12 @@ class MCSession(Session):
         """
         Get lib_status record(s) from the M&C database.
 
+        Default behavior is to return the most recent record. If starttime
+        is set but stoptime is not, this method will return the first record
+        after the starttime. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         ------------
         most_recent: boolean
@@ -626,6 +678,14 @@ class MCSession(Session):
                             hostname=None, write_to_file=False, filename=None):
         """
         Get lib_raid_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -686,6 +746,14 @@ class MCSession(Session):
                            hostname=None, write_to_file=False, filename=None):
         """
         Get lib_raid_error record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -752,6 +820,14 @@ class MCSession(Session):
         """
         Get lib_remote_status record(s) from the M&C database.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         ------------
         most_recent: boolean
@@ -815,6 +891,14 @@ class MCSession(Session):
         Get lib_files record(s) from the M&C database.
 
         If filename is provided, all other optional keywords are ignored.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -899,6 +983,12 @@ class MCSession(Session):
         """
         Get rtp_status record(s) from the M&C database.
 
+        Default behavior is to return the most recent record. If starttime
+        is set but stoptime is not, this method will return the first record
+        after the starttime. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         ------------
         most_recent: boolean
@@ -953,6 +1043,14 @@ class MCSession(Session):
                               write_to_file=False, filename=None):
         """
         Get rtp_process_event record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -1036,6 +1134,14 @@ class MCSession(Session):
         """
         Get rtp_process_record record(s) from the M&C database.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         ------------
         most_recent: boolean
@@ -1104,7 +1210,15 @@ class MCSession(Session):
         Get rtp_task_resource_record from the M&C database.
 
         If both obsid and task_name are set, all other keywords are ignored.
-        If no keywords are set, defaults to getting the most recent record.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         At least one of obsid, starttime or most_recent must be specified.
 
         Parameters:
@@ -1229,6 +1343,14 @@ class MCSession(Session):
         """
         Get weather_data record(s) from the M&C database.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         ------------
         most_recent: boolean
@@ -1319,6 +1441,14 @@ class MCSession(Session):
         """
         Get node_sensor record(s) from the M&C database.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         ------------
         most_recent: boolean
@@ -1408,6 +1538,14 @@ class MCSession(Session):
                               nodeID=None, write_to_file=False, filename=None):
         """
         Get node power status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -1565,6 +1703,14 @@ class MCSession(Session):
         """
         Get node power command record(s) from the M&C database.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         ------------
         most_recent: boolean
@@ -1686,6 +1832,14 @@ class MCSession(Session):
         """
         Get correlator control state record(s) from the M&C database.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         Parameters:
         ------------
         most_recent: boolean
@@ -1727,6 +1881,14 @@ class MCSession(Session):
                                        write_to_file=False, filename=None):
         """
         Get correlator control command record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -1771,6 +1933,12 @@ class MCSession(Session):
                                            filename=None):
         """
         Get correlator take_data arguments record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s). If starttime
+        is set but stoptime is not, this method will return the first record
+        after the starttime. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
