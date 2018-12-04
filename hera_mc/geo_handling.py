@@ -384,6 +384,9 @@ class Handling:
             for loc in self.station_types[st]['Stations']:
                 if cm_revisions.get_full_revision(loc, hookup_dict):
                     active_stations.append(loc)
+        if len(active_stations):
+            print("{}.....".format(12 * '.'))
+            print("{:12s}  {:3d}".format('active', len(active_stations)))
         return self.get_location(active_stations, query_date)
 
     def plot_station_types(self, query_date, station_types_to_use, **kwargs):
@@ -404,9 +407,14 @@ class Handling:
         self.axes_set = False
         station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
         total_plotted = 0
-        for st in station_types_to_use:
+        for st in sorted(station_types_to_use):
             kwargs['marker_color'] = self.station_types[st]['Marker'][0]
             kwargs['marker_shape'] = self.station_types[st]['Marker'][1]
             kwargs['marker_size'] = 5
             stations_to_plot = self.get_location(self.station_types[st]['Stations'], query_date)
             self.plot_stations(stations_to_plot, **kwargs)
+            if len(stations_to_plot):
+                print("{:12s}  {:3d}".format(st, len(stations_to_plot)))
+                total_plotted += len(stations_to_plot)
+        print("{:12s}  ---".format(' '))
+        print("{:12s}  {:3d}".format('Total', total_plotted))
