@@ -1766,6 +1766,56 @@ class MCSession(Session):
 
         self.add(CorrelatorControlState.create(time, state_type, state))
 
+    def get_correlator_control_state(self, most_recent=None, starttime=None,
+                                     stoptime=None, state_type=None,
+                                     write_to_file=False, filename=None):
+        """
+        Get correlator control state record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        state_type: string
+            must be a key in correlator.state_dict (e.g. 'taking_data', 'phase_switching', 'noise_diode')
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of CorrelatorControlState objects
+        """
+        from .correlator import CorrelatorControlState
+
+        return self._time_filter(CorrelatorControlState, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='state_type', filter_value=state_type,
+                                 write_to_file=write_to_file, filename=filename)
+
     def add_correlator_control_state_from_corrcm(self, corr_state_dict=None,
                                                  testing=False):
         """Get and add correlator control state information using a HeraCorrCM object.
@@ -1787,7 +1837,8 @@ class MCSession(Session):
         testing: boolean
             If true, don't add a record of it to the database and return the list of
             CorrelatorControlState objects. Default False.
-         Returns:
+
+        Returns:
         --------
         Optionally returns the CorrelatorConfig (if testing is True)
 
@@ -1827,38 +1878,6 @@ class MCSession(Session):
             return corr_state_list
         else:
             self._insert_ignoring_duplicates(CorrelatorControlState, corr_state_list)
-
-    def get_correlator_control_state(self, most_recent=None, starttime=None,
-                                     stoptime=None, state_type=None):
-        """
-        Get correlator control state record(s) from the M&C database.
-
-        Parameters:
-        ------------
-        most_recent: boolean
-            if True, get most recent record. Defaults to True if starttime is None.
-
-        starttime: astropy time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
-
-        stoptime: astropy time object
-            Last time to get records for, only used if starttime is not None.
-            If none, only the first record after starttime will be returned.
-            Ignored if most_recent is True.
-
-        state_type: string
-            must be a key in correlator.state_dict (e.g. 'taking_data', 'phase_switching', 'noise_diode')
-
-        Returns:
-        --------
-        list of CorrelatorControlState objects
-        """
-        from .correlator import CorrelatorControlState
-
-        return self._time_filter(CorrelatorControlState, 'time', most_recent=most_recent,
-                                 starttime=starttime, stoptime=stoptime,
-                                 filter_column='state_type', filter_value=state_type)
 
     def add_correlator_config_file(self, config_hash, config_file):
         """
@@ -1910,9 +1929,18 @@ class MCSession(Session):
         self.add(CorrelatorConfigStatus.create(time, config_hash))
 
     def get_correlator_config_status(self, most_recent=None, starttime=None,
-                                     config_hash=None, stoptime=None, state_type=None):
+                                     config_hash=None, stoptime=None, state_type=None,
+                                     write_to_file=False, filename=None):
         """
         Get correlator config status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -1931,6 +1959,14 @@ class MCSession(Session):
         config_hash: string
             unique hash for config file
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of CorrelatorConfigStatus objects
@@ -1939,7 +1975,8 @@ class MCSession(Session):
 
         return self._time_filter(CorrelatorConfigStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='config_hash', filter_value=config_hash)
+                                 filter_column='config_hash', filter_value=config_hash,
+                                 write_to_file=write_to_file, filename=filename)
 
     def _add_config_file_to_librarian(self, config, config_hash,
                                       librarian_filename):  # pragma: no cover
@@ -2105,7 +2142,7 @@ class MCSession(Session):
         """
         Get correlator take_data arguments record(s) from the M&C database.
 
-        Default behavior is to return the most recent record(s). If starttime
+        Default behavior is to return the most recent record. If starttime
         is set but stoptime is not, this method will return the first record
         after the starttime. If you want a range of times you need
         to set both startime and stoptime. If most_recent is set, startime and
@@ -2159,9 +2196,18 @@ class MCSession(Session):
                                  filename=filename)
 
     def get_correlator_config_command(self, most_recent=None, starttime=None,
-                                      config_hash=None, stoptime=None, state_type=None):
+                                      config_hash=None, stoptime=None, state_type=None,
+                                      write_to_file=False, filename=None):
         """
         Get correlator config command record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -2180,6 +2226,14 @@ class MCSession(Session):
         config_hash: string
             unique hash for config file
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of CorrelatorConfigCommand objects
@@ -2188,7 +2242,8 @@ class MCSession(Session):
 
         return self._time_filter(CorrelatorConfigCommand, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='config_hash', filter_value=config_hash)
+                                 filter_column='config_hash', filter_value=config_hash,
+                                 write_to_file=write_to_file, filename=filename)
 
     def correlator_control_command(self, command, starttime=None, duration=None,
                                    acclen_spectra=None, tag=None,
