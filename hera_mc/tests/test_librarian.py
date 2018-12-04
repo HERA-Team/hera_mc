@@ -8,6 +8,7 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
+import os
 from math import floor
 import numpy as np
 from astropy.time import Time, TimeDelta
@@ -16,6 +17,7 @@ from .. import mc, cm_transfer
 from ..librarian import LibStatus, LibRAIDStatus, LibRAIDErrors, LibRemoteStatus, LibFiles
 from .. import utils, geo_location
 from ..tests import TestHERAMC
+from hera_mc.data import DATA_PATH
 
 
 class TestLibrarian(TestHERAMC):
@@ -299,6 +301,11 @@ class TestLibrarian(TestHERAMC):
         self.test_session.add_lib_file(new_file, self.file_values[1], new_file_time, 1.4)
         result_obsid = self.test_session.get_lib_files(obsid=self.file_columns['obsid'])
         self.assertEqual(len(result_obsid), 2)
+
+        filename = os.path.join(DATA_PATH, 'test_lib_file_record_file.csv')
+        self.test_session.get_lib_files(obsid=self.file_columns['obsid'],
+                                        write_to_file=True, write_filename=filename)
+        os.remove(filename)
 
         result_all = self.test_session.get_lib_files()
         self.assertEqual(len(result_obsid), len(result_all))

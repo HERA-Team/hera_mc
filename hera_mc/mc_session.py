@@ -48,6 +48,37 @@ class MCSession(Session):
         db_time = Time(db_timestamp)
         return db_time
 
+    def _write_query_to_file(self, query, table_class, filename=None):
+        '''
+        A helper method to write out query results to a file.
+
+        Parameters:
+        table_class: class
+            Class specifying a table to query.
+
+        query: query object
+            query to write results of to filename
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        '''
+        if filename is None:
+            table_name = getattr(table_class, '__tablename__')
+            filename = table_name + '.csv'
+
+        column_names = [col.name for col in (getattr(getattr(table_class, '__table__'), '_columns'))]
+        with open(filename, 'w') as the_file:
+            # write header
+            the_file.write(', '.join(column_names) + '\n')
+
+            # write rows
+            for item in query:
+                item_vals = [str(getattr(item, col)) for col in column_names]
+                the_file.write(', '.join(item_vals) + '\n')
+
     def _time_filter(self, table_class, time_column, most_recent=None,
                      starttime=None, stoptime=None,
                      filter_column=None, filter_value=None,
@@ -55,6 +86,14 @@ class MCSession(Session):
         '''
         A helper method to fiter entries by time. Used by most get methods
         on this object.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         table_class: class
@@ -147,20 +186,7 @@ class MCSession(Session):
                 query = query.order_by(asc(filter_attr))
 
         if write_to_file:
-            if filename is None:
-                table_name = getattr(table_class, '__tablename__')
-                filename = table_name + '.csv'
-
-            column_names = [col.name for col in (getattr(getattr(table_class, '__table__'), '_columns'))]
-            with open(filename, 'w') as the_file:
-                # write header
-                the_file.write(', '.join(column_names) + '\n')
-
-                # write rows
-                for item in query:
-                    item_vals = [str(getattr(item, col)) for col in column_names]
-                    the_file.write(', '.join(item_vals) + '\n')
-
+            self._write_query_to_file(query, table_class, filename=filename)
         else:
             return query.all()
 
@@ -246,9 +272,15 @@ class MCSession(Session):
         return obs_list
 
     def get_obs_by_time(self, most_recent=None, starttime=None,
-                        stoptime=None):
+                        stoptime=None, write_to_file=False, filename=None):
         """
         Get observation(s) from the M&C database.
+
+        Default behavior is to return the most recent record. If starttime
+        is set but stoptime is not, this method will return the first record
+        after the starttime. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -264,6 +296,14 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of Observation objects
@@ -271,7 +311,8 @@ class MCSession(Session):
         from .observations import Observation
 
         return self._time_filter(Observation, 'obsid', most_recent=most_recent,
-                                 starttime=starttime, stoptime=stoptime)
+                                 starttime=starttime, stoptime=stoptime,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_server_status(self, subsystem, hostname, ip_address, system_time, num_cores,
                           cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
@@ -321,9 +362,18 @@ class MCSession(Session):
                                      network_bandwidth_mbs=network_bandwidth_mbs))
 
     def get_server_status(self, subsystem, most_recent=None,
-                          starttime=None, stoptime=None, hostname=None):
+                          starttime=None, stoptime=None, hostname=None,
+                          write_to_file=False, filename=None):
         """
         Get subsystem server_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -345,6 +395,14 @@ class MCSession(Session):
         hostname: string
             hostname to get records for. If none, all hostnames will be included.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of ServerStatus objects
@@ -358,7 +416,100 @@ class MCSession(Session):
 
         return self._time_filter(ServerStatus, 'mc_time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='hostname', filter_value=hostname)
+                                 filter_column='hostname', filter_value=hostname,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def get_rtp_server_status(self, most_recent=None, starttime=None, stoptime=None,
+                              hostname=None, write_to_file=False, filename=None):
+        """
+        Get rtp_server_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        hostname: string
+            hostname to get records for. If none, all hostnames will be included.
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of RTPServerStatus objects
+        """
+        return self.get_server_status('rtp', most_recent=None,
+                                      starttime=None, stoptime=None, hostname=None,
+                                      write_to_file=False, filename=None)
+
+    def get_librarian_server_status(self, most_recent=None, starttime=None, stoptime=None,
+                                    hostname=None, write_to_file=False, filename=None):
+        """
+        Get librarian_server_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        hostname: string
+            hostname to get records for. If none, all hostnames will be included.
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of LibServerStatus objects
+        """
+        return self.get_server_status('lib', most_recent=None,
+                                      starttime=None, stoptime=None, hostname=None,
+                                      write_to_file=False, filename=None)
 
     def add_subsystem_error(self, time, subsystem, severity, log):
         """
@@ -382,9 +533,18 @@ class MCSession(Session):
         self.add(SubsystemError.create(db_time, time, subsystem, severity, log))
 
     def get_subsystem_error(self, most_recent=None, starttime=None,
-                            stoptime=None, subsystem=None):
+                            stoptime=None, subsystem=None,
+                            write_to_file=False, filename=None):
         """
         Get subsystem server_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -403,6 +563,14 @@ class MCSession(Session):
         subsystem: string
             subsystem to get records for. If none, all subsystems will be included.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of SubsystemError objects
@@ -411,7 +579,8 @@ class MCSession(Session):
 
         return self._time_filter(SubsystemError, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='subsystem', filter_value=subsystem)
+                                 filter_column='subsystem', filter_value=subsystem,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_lib_status(self, time, num_files, data_volume_gb, free_space_gb,
                        upload_min_elapsed, num_processes, git_version, git_hash):
@@ -443,9 +612,16 @@ class MCSession(Session):
                                   free_space_gb, upload_min_elapsed,
                                   num_processes, git_version, git_hash))
 
-    def get_lib_status(self, most_recent=None, starttime=None, stoptime=None):
+    def get_lib_status(self, most_recent=None, starttime=None, stoptime=None,
+                       write_to_file=False, filename=None):
         """
         Get lib_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record. If starttime
+        is set but stoptime is not, this method will return the first record
+        after the starttime. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -461,6 +637,14 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of LibStatus objects
@@ -468,7 +652,8 @@ class MCSession(Session):
         from .librarian import LibStatus
 
         return self._time_filter(LibStatus, 'time', most_recent=most_recent,
-                                 starttime=starttime, stoptime=stoptime)
+                                 starttime=starttime, stoptime=stoptime,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_lib_raid_status(self, time, hostname, num_disks, info):
         """
@@ -490,9 +675,17 @@ class MCSession(Session):
         self.add(LibRAIDStatus.create(time, hostname, num_disks, info))
 
     def get_lib_raid_status(self, most_recent=None, starttime=None, stoptime=None,
-                            hostname=None):
+                            hostname=None, write_to_file=False, filename=None):
         """
         Get lib_raid_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -511,6 +704,14 @@ class MCSession(Session):
         hostname: string
             RAID hostname to get records for. If none, all hostnames will be included.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of LibRAIDStatus objects
@@ -519,7 +720,8 @@ class MCSession(Session):
 
         return self._time_filter(LibRAIDStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='hostname', filter_value=hostname)
+                                 filter_column='hostname', filter_value=hostname,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_lib_raid_error(self, time, hostname, disk, log):
         """
@@ -541,9 +743,17 @@ class MCSession(Session):
         self.add(LibRAIDErrors.create(time, hostname, disk, log))
 
     def get_lib_raid_error(self, most_recent=None, starttime=None, stoptime=None,
-                           hostname=None):
+                           hostname=None, write_to_file=False, filename=None):
         """
         Get lib_raid_error record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -562,6 +772,14 @@ class MCSession(Session):
         hostname: string
             RAID hostname to get records for. If none, all hostnames will be included.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of LibRAIDErrors objects
@@ -570,7 +788,8 @@ class MCSession(Session):
 
         return self._time_filter(LibRAIDErrors, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='hostname', filter_value=hostname)
+                                 filter_column='hostname', filter_value=hostname,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_lib_remote_status(self, time, remote_name, ping_time,
                               num_file_uploads, bandwidth_mbs):
@@ -596,9 +815,18 @@ class MCSession(Session):
                                         num_file_uploads, bandwidth_mbs))
 
     def get_lib_remote_status(self, most_recent=None, starttime=None,
-                              stoptime=None, remote_name=None):
+                              stoptime=None, remote_name=None,
+                              write_to_file=False, filename=None):
         """
         Get lib_remote_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -618,6 +846,14 @@ class MCSession(Session):
             Name of remote librarian to get records for. If none, all
             remote_names will be included.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of LibRemoteStatus objects
@@ -626,7 +862,8 @@ class MCSession(Session):
 
         return self._time_filter(LibRemoteStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='remote_name', filter_value=remote_name)
+                                 filter_column='remote_name', filter_value=remote_name,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_lib_file(self, filename, obsid, time, size_gb):
         """
@@ -648,11 +885,20 @@ class MCSession(Session):
         self.add(LibFiles.create(filename, obsid, time, size_gb))
 
     def get_lib_files(self, filename=None, obsid=None, most_recent=None,
-                      starttime=None, stoptime=None):
+                      starttime=None, stoptime=None, write_to_file=False,
+                      write_filename=None):
         """
         Get lib_files record(s) from the M&C database.
 
         If filename is provided, all other optional keywords are ignored.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -674,6 +920,14 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        write_filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of LibFiles objects
@@ -681,21 +935,25 @@ class MCSession(Session):
         from .librarian import LibFiles
 
         if filename is not None:
-            file_list = self.query(LibFiles).filter(
-                LibFiles.filename == filename).all()
+            query = self.query(LibFiles).filter(
+                LibFiles.filename == filename)
         else:
             if most_recent is not None or starttime is not None:
-                file_list = self._time_filter(LibFiles, 'time', most_recent=most_recent,
-                                              starttime=starttime, stoptime=stoptime,
-                                              filter_column='obsid', filter_value=obsid)
+                return self._time_filter(LibFiles, 'time', most_recent=most_recent,
+                                         starttime=starttime, stoptime=stoptime,
+                                         filter_column='obsid', filter_value=obsid,
+                                         write_to_file=write_to_file, filename=write_filename)
             else:
                 if obsid is not None:
-                    file_list = self.query(LibFiles).filter(
-                        LibFiles.obsid == obsid).all()
+                    query = self.query(LibFiles).filter(
+                        LibFiles.obsid == obsid)
                 else:
-                    file_list = self.query(LibFiles).all()
+                    query = self.query(LibFiles)
 
-        return file_list
+        if write_to_file:
+            self._write_query_to_file(query, LibFiles, filename=write_filename)
+        else:
+            return query.all()
 
     def add_rtp_status(self, time, status, event_min_elapsed, num_processes,
                        restart_hours_elapsed):
@@ -720,9 +978,16 @@ class MCSession(Session):
         self.add(RTPStatus.create(time, status, event_min_elapsed, num_processes,
                                   restart_hours_elapsed))
 
-    def get_rtp_status(self, most_recent=None, starttime=None, stoptime=None):
+    def get_rtp_status(self, most_recent=None, starttime=None, stoptime=None,
+                       write_to_file=False, filename=None):
         """
         Get rtp_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record. If starttime
+        is set but stoptime is not, this method will return the first record
+        after the starttime. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -738,6 +1003,14 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of RTPStatus objects
@@ -745,7 +1018,8 @@ class MCSession(Session):
         from .rtp import RTPStatus
 
         return self._time_filter(RTPStatus, 'time', most_recent=most_recent,
-                                 starttime=starttime, stoptime=stoptime)
+                                 starttime=starttime, stoptime=stoptime,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_rtp_process_event(self, time, obsid, event):
         """
@@ -765,9 +1039,18 @@ class MCSession(Session):
         self.add(RTPProcessEvent.create(time, obsid, event))
 
     def get_rtp_process_event(self, most_recent=None, starttime=None,
-                              stoptime=None, obsid=None):
+                              stoptime=None, obsid=None,
+                              write_to_file=False, filename=None):
         """
         Get rtp_process_event record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -786,6 +1069,14 @@ class MCSession(Session):
         obsid: long
             obsid to get records for. If none, all obsid will be included.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of RTPProcessEvent objects
@@ -794,7 +1085,8 @@ class MCSession(Session):
 
         return self._time_filter(RTPProcessEvent, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='obsid', filter_value=obsid)
+                                 filter_column='obsid', filter_value=obsid,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_rtp_process_record(self, time, obsid, pipeline_list, rtp_git_version,
                                rtp_git_hash, hera_qm_git_version, hera_qm_git_hash,
@@ -837,9 +1129,18 @@ class MCSession(Session):
                                          pyuvdata_git_version, pyuvdata_git_hash))
 
     def get_rtp_process_record(self, most_recent=None, starttime=None,
-                               stoptime=None, obsid=None):
+                               stoptime=None, obsid=None, write_to_file=False,
+                               filename=None):
         """
         Get rtp_process_record record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -858,6 +1159,14 @@ class MCSession(Session):
         obsid: long
             obsid to get records for. If none, all obsid will be included.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of RTPProcessEvent objects
@@ -866,7 +1175,8 @@ class MCSession(Session):
 
         return self._time_filter(RTPProcessRecord, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='obsid', filter_value=obsid)
+                                 filter_column='obsid', filter_value=obsid,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_rtp_task_resource_record(self, obsid, task_name, start_time, stop_time,
                                      max_memory=None, avg_cpu_load=None):
@@ -894,12 +1204,21 @@ class MCSession(Session):
                                               max_memory, avg_cpu_load))
 
     def get_rtp_task_resource_record(self, most_recent=None, starttime=None,
-                                     stoptime=None, obsid=None, task_name=None):
+                                     stoptime=None, obsid=None, task_name=None,
+                                     write_to_file=False, filename=None):
         """
         Get rtp_task_resource_record from the M&C database.
 
         If both obsid and task_name are set, all other keywords are ignored.
-        If no keywords are set, defaults to getting the most recent record.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
         At least one of obsid, starttime or most_recent must be specified.
 
         Parameters:
@@ -922,6 +1241,14 @@ class MCSession(Session):
         task_name: string
             task_name to get records for. If none, all tasks will be included.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         -----------
         list of RTPTaskResourceRecord objects
@@ -933,14 +1260,16 @@ class MCSession(Session):
             if most_recent is None:
                 most_recent = True
             elif most_recent is False:
-                raise ValueError('At least one of obsid, starttime or most_recent must be specified.')
+                raise ValueError('At least one of obsid, starttime or '
+                                 'most_recent must be specified.')
 
         if task_name is None:
             if most_recent is True or starttime is not None:
                 return self._time_filter(RTPTaskResourceRecord, 'start_time',
                                          most_recent=most_recent, starttime=starttime,
                                          stoptime=stoptime, filter_column='obsid',
-                                         filter_value=obsid)
+                                         filter_value=obsid,
+                                         write_to_file=write_to_file, filename=filename)
             elif obsid is not None:
                 return self.query(RTPTaskResourceRecord).filter(
                     RTPTaskResourceRecord.obsid == obsid).all()
@@ -949,11 +1278,18 @@ class MCSession(Session):
             return self._time_filter(RTPTaskResourceRecord, 'start_time',
                                      most_recent=most_recent, starttime=starttime,
                                      stoptime=stoptime, filter_column='task_name',
-                                     filter_value=task_name)
+                                     filter_value=task_name,
+                                     write_to_file=write_to_file, filename=filename)
         else:
-            return self.query(RTPTaskResourceRecord).filter(
+            query = self.query(RTPTaskResourceRecord).filter(
                 RTPTaskResourceRecord.obsid == obsid,
-                RTPTaskResourceRecord.task_name == task_name).all()
+                RTPTaskResourceRecord.task_name == task_name)
+
+            if write_to_file:
+                self._write_query_to_file(query, RTPTaskResourceRecord, filename=filename)
+
+            else:
+                return query.all()
 
     def add_weather_data(self, time, variable, value):
         """
@@ -1002,9 +1338,18 @@ class MCSession(Session):
         for obj in weather_data_list:
             self.add(obj)
 
-    def get_weather_data(self, most_recent=None, starttime=None, stoptime=None, variable=None):
+    def get_weather_data(self, most_recent=None, starttime=None, stoptime=None,
+                         variable=None, write_to_file=False, filename=None):
         """
         Get weather_data record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -1024,9 +1369,17 @@ class MCSession(Session):
             Name of variable to get records for, must be a key in weather.weather_sensor_dict.
             If none, all variables will be included.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
-        list of WeatherData objects
+        if write_to_file is False: list of WeatherData objects
         """
         from .weather import weather_sensor_dict, WeatherData
         if variable is not None:
@@ -1035,55 +1388,8 @@ class MCSession(Session):
 
         return self._time_filter(WeatherData, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='variable', filter_value=variable)
-
-    def write_weather_files(self, start_time, stop_time, variables=None):
-        """Dump the weather data to text files in the current directory, to aid in
-        diagnostics.
-
-        Parameters:
-        ------------
-        start_time: astropy time object or None
-            time to start getting history.
-        stop_time: astropy time object or None
-            time to stop getting history.
-        variables: string or None
-            A comma-separated list of names of variables to get data for, as
-            named in the Python variable
-            `hera_mc.weather.weather_sensor_dict`. If None, data for all
-            variables will be written.
-
-        """
-        # Avoid _time_filter since it loads every row into an in-memory list, which
-        # could get huge.
-
-        from .cm_utils import listify
-        from .weather import WeatherData, weather_sensor_dict
-
-        if variables is None:
-            variables = list(weather_sensor_dict.keys())
-        else:
-            variables = listify(variables)
-
-            for v in variables:
-                if v not in weather_sensor_dict:
-                    raise ValueError('unknown weather variable name %r' % v)
-
-        q = self.query(WeatherData).filter(WeatherData.variable.in_(variables))
-
-        if start_time is not None:
-            if stop_time is not None:
-                q = q.filter(WeatherData.time.between(start_time.gps, stop_time.gps))
-            else:
-                q = q.filter(WeatherData.time >= start_time.gps)
-        elif stop_time is not None:
-            q = q.filter(WeatherData.time <= stop_time.gps)
-
-        q = q.order_by(WeatherData.time)
-        files = dict((v, open(v + '.txt', 'wt')) for v in variables)
-
-        for item in q:
-            print('{}\t{}'.format(item.astropy_time, item.value), file=files[item.variable])
+                                 filter_column='variable', filter_value=variable,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_node_sensor_readings(self, time, nodeID, top_sensor_temp, middle_sensor_temp,
                                  bottom_sensor_temp, humidity_sensor_temp, humidity):
@@ -1134,6 +1440,14 @@ class MCSession(Session):
                                  filename=None):
         """
         Get node_sensor record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -1220,9 +1534,18 @@ class MCSession(Session):
 
         self._insert_ignoring_duplicates(NodePowerStatus, node_power_list)
 
-    def get_node_power_status(self, most_recent=None, starttime=None, stoptime=None, nodeID=None):
+    def get_node_power_status(self, most_recent=None, starttime=None, stoptime=None,
+                              nodeID=None, write_to_file=False, filename=None):
         """
         Get node power status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -1241,6 +1564,14 @@ class MCSession(Session):
         nodeID: integer
             node number (integer running from 1 to 30)
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of NodePowerStatus objects
@@ -1249,7 +1580,8 @@ class MCSession(Session):
 
         return self._time_filter(NodePowerStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='node', filter_value=nodeID)
+                                 filter_column='node', filter_value=nodeID,
+                                 write_to_file=write_to_file, filename=filename)
 
     def node_power_command(self, nodeID, part, command, nodeServerAddress=None,
                            dryrun=False, testing=False):
@@ -1365,9 +1697,19 @@ class MCSession(Session):
         if dryrun:
             return command_list
 
-    def get_node_power_command(self, most_recent=None, starttime=None, stoptime=None, nodeID=None):
+    def get_node_power_command(self, most_recent=None, starttime=None,
+                               stoptime=None, nodeID=None,
+                               write_to_file=False, filename=None):
         """
         Get node power command record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -1386,6 +1728,14 @@ class MCSession(Session):
         nodeID: integer
             node number (integer running from 1 to 30)
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of NodePowerCommand objects
@@ -1394,7 +1744,8 @@ class MCSession(Session):
 
         return self._time_filter(NodePowerCommand, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='node', filter_value=nodeID)
+                                 filter_column='node', filter_value=nodeID,
+                                 write_to_file=write_to_file, filename=filename)
 
     def add_correlator_control_state(self, time, state_type, state):
         """
@@ -1476,9 +1827,18 @@ class MCSession(Session):
             self._insert_ignoring_duplicates(CorrelatorControlState, corr_state_list)
 
     def get_correlator_control_state(self, most_recent=None, starttime=None,
-                                     stoptime=None, state_type=None):
+                                     stoptime=None, state_type=None,
+                                     write_to_file=False, filename=None):
         """
         Get correlator control state record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -1497,6 +1857,14 @@ class MCSession(Session):
         state_type: string
             must be a key in correlator.state_dict (e.g. 'taking_data', 'phase_switching', 'noise_diode')
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of CorrelatorControlState objects
@@ -1505,12 +1873,22 @@ class MCSession(Session):
 
         return self._time_filter(CorrelatorControlState, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='state_type', filter_value=state_type)
+                                 filter_column='state_type', filter_value=state_type,
+                                 write_to_file=write_to_file, filename=filename)
 
     def get_correlator_control_command(self, most_recent=None, starttime=None,
-                                       stoptime=None, command=None):
+                                       stoptime=None, command=None,
+                                       write_to_file=False, filename=None):
         """
         Get correlator control command record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -1530,6 +1908,14 @@ class MCSession(Session):
             must be a key in correlator.command_dict (e.g. 'take_data',
             'phase_switching_on', 'phase_switching_off', 'restart')
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of CorrelatorControlCommand objects
@@ -1538,13 +1924,21 @@ class MCSession(Session):
 
         return self._time_filter(CorrelatorControlCommand, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='command', filter_value=command)
+                                 filter_column='command', filter_value=command,
+                                 write_to_file=write_to_file, filename=filename)
 
     def get_correlator_take_data_arguments(self, use_command_time=False,
                                            most_recent=None, starttime=None,
-                                           stoptime=None):
+                                           stoptime=None, write_to_file=False,
+                                           filename=None):
         """
         Get correlator take_data arguments record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s). If starttime
+        is set but stoptime is not, this method will return the first record
+        after the starttime. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
 
         Parameters:
         ------------
@@ -1569,6 +1963,14 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
 
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
         Returns:
         --------
         list of CorrelatorTakeDataArguments objects
@@ -1582,7 +1984,8 @@ class MCSession(Session):
 
         return self._time_filter(CorrelatorTakeDataArguments, time_column,
                                  most_recent=most_recent, starttime=starttime,
-                                 stoptime=stoptime)
+                                 stoptime=stoptime, write_to_file=write_to_file,
+                                 filename=filename)
 
     def correlator_control_command(self, command, starttime=None, duration=None,
                                    acclen_spectra=None, tag=None,
