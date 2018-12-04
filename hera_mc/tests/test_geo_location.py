@@ -57,6 +57,26 @@ class TestGeo(TestHERAMC):
     def test_random(self):
         self.h.start_file('test')
 
+    def test_geo_location(self):
+        g = geo_location.GeoLocation()
+        g.geo(station_name='TestSetAttr')
+        self.assertEqual(g.station_name, 'TESTSETATTR')
+        print(g)
+        s = geo_location.StationType()
+        print(s)
+        rv = geo_location.update()
+        self.assertFalse(rv)
+        rv = geo_location.update(session=self.test_session, data='HH0:Tile')
+        self.assertFalse(rv)
+        rv = geo_location.update(session=self.test_session, data='HH0:Tile:34J,Elevation:0.0,Northing')
+        self.assertTrue(rv)
+        rv = geo_location.update(session=self.test_session, data='HHX:Tile:34J')
+        self.assertTrue(rv)
+        rv = geo_location.update(session=self.test_session, data='HH0:Tile:34J', add_new_geo=True)
+        self.assertTrue(rv)
+        rv = geo_location.update(session=self.test_session, data='HH0:NotThere:34J')
+        self.assertTrue(rv)
+
     def test_station_types(self):
         self.h.get_station_types()
         self.assertTrue(self.h.station_types['cofa']['Prefix'] == 'COFA')
