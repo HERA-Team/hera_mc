@@ -319,8 +319,7 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
 
 class CorrelatorConfigCommand(MCDeclarativeBase):
     """
-    Definition of correlator_config_command table, to track when the correlator
-    is given a new config setting.
+    Definition of correlator_config_command table, to track correlator config changes.
 
     time: gps time that the config command was sent, floored (BigInteger, part of primary_key).
     command: always equal to 'update_config' (String, part of primary_key).
