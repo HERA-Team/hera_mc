@@ -128,7 +128,7 @@ def update(session=None, data=None, add_new_geo=False):
             else:
                 gr = geo_rec.first()
                 make_update = True
-        else:
+        else:  # pragma: no cover
             print("Error:  more than one of ", station_name,
                   " exists (which should not happen).")
         if make_update:
@@ -141,7 +141,7 @@ def update(session=None, data=None, add_new_geo=False):
             session.add(gr)
             session.commit()
     cm_utils.log('geo_location update', data_dict=data_dict)
-    if close_session_when_done:
+    if close_session_when_done:  # pragma: no cover
         session.close()
 
     return True
