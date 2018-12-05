@@ -57,9 +57,10 @@ if __name__ == '__main__':
         G.set_graph(True)
         if args.background == 'all' or args.background == 'layers':
             G.plot_all_stations()
-        if args.background == 'installed' or args.background == 'layers':
-            G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
-                                 xgraph=xgraph, ygraph=ygraph, label=args.label)
+        if not args.fg_action.startswith('i'):
+            if args.background == 'installed' or args.background == 'layers':
+                G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
+                                     xgraph=xgraph, ygraph=ygraph, label=args.label)
 
     # Process foreground action.
     fg_markersize = 10
