@@ -101,8 +101,15 @@ class TestGeo(TestHERAMC):
         self.h.plot_station_types(query_date=query_date, station_types_to_use=['HH'],
                                   xgraph='E', ygraph='N',
                                   show_state='active', show_label='name')
+        self.h.plot_station_types(query_date=query_date, station_types_to_use=['HH'],
+                                  xgraph='E', ygraph='N',
+                                  show_state='active', show_label='name')
         self.h.print_loc_info(None)
         self.h.print_loc_info(stations)
+        self.h.plot_all_stations()
+        self.h.set_graph('testit')
+        self.assertEqual(self.h.graph, 'testit')
+        self.h.plot_all_stations()
 
     def test_antenna_label(self):
         stations_to_plot = ['HH0']

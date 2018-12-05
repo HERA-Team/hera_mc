@@ -363,14 +363,15 @@ class Handling:
             plt.title(fig_label)
         return
 
-    def plot_all_stations(self):  # pragma: no cover
+    def plot_all_stations(self):
         if not self.graph:
             return
         import os.path
         import numpy
         import matplotlib.pyplot as plt
         p = numpy.loadtxt(os.path.join(mc.data_path, "HERA_350.txt"), usecols=(1, 2, 3))
-        plt.plot(p[:, 0], p[:, 1], marker='o', color='0.8', linestyle='none')
+        if not self.testing:  # pragma: no cover
+            plt.plot(p[:, 0], p[:, 1], marker='o', color='0.8', linestyle='none')
         return len(p[:, 0])
 
     def get_active_stations(self, query_date, station_types_to_use):
