@@ -29,7 +29,7 @@ corr_command_example_dict = {
 }
 corr_state_dict_nonetime = {'taking_data': {'state': False, 'timestamp': None}}
 
-config_file = os.path.join(DATA_PATH, 'test_data', 'hera_feng_config_protonode.yaml')
+config_file = os.path.join(DATA_PATH, 'test_data', 'hera_feng_config_example.yaml')
 config = yaml.load(config_file)
 
 corr_config_example_dict = {'timestamp': Time(1512770942, format='unix'),
@@ -38,7 +38,7 @@ corr_config_example_dict = {'timestamp': Time(1512770942, format='unix'),
 
 def test_py3_hashing():
     # make sure I get the same answer as with python 2.7 & no explicit encoding (like the correlator)
-    py27_hash = '05d017e94be761f70a5aecf00331c24d'
+    py27_hash = '3b03414da0abe738aae071cccb911377'
 
     with open(config_file, 'r') as fh:
         config_string = fh.read().encode('utf-8')
