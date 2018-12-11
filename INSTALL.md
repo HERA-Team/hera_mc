@@ -14,7 +14,7 @@ Clone the following two repositories:
 * https://github.com/HERA-Team/hera_cm_db_updates
 
 Then install by:
-1. within the hera_mc directory type `python setup.py install`
+1. within the hera_mc directory type `python setup.py install` or `pip install .`
 2.  in the hera_cm_db_updates directory type `mc_setup_home.py`
 
 To run hera_mc, you will likely need to install some additional python modules (see Python Prerequisites below.)
@@ -42,7 +42,7 @@ Install PostgreSQL:
 We run PostgreSQL in production and, while SQLAlchemy abstracts between
 different database backends as best it can, it is very desirable that you run
 PostgreSQL in your test environment as well. Use Google to learn how to do
-this, or follow the OS-X-specific notes below.
+this, or follow the OS-X-specific notes below (recommended).
 
 _____________________________________
 Configure hera_mc to talk to the db:
@@ -99,15 +99,21 @@ type `cm_init.py`
 
 NOTE:  If you are only running sqlite, you don't need to install PostgresSQL to use the cm stuff.
 
-There are many options for installing postgres, several of which are described and
-linked on this page: https://www.postgresql.org/download/macosx/. For the
-instructions below, we are following the installation of the app version, found
-here: https://postgresapp.com/. Follow steps 1, 2 and 3 on that page.
+Installing postgresql has three primary steps:  (1) install postgres itself, (2) install an interface to it, and (3) setup
+project databases.  Below are directions for the recommended method to install on macosx.
+
+1. postgres
+Follow directions on https://www.postgresql.org/download/macosx/.  Just install postgres and command line tools.
+
+2. interface
+The recommended program and simple directions are found here: 
+here: https://postgresapp.com/.
 
 The app will initialize three databases `postgres`, `template1`, and `<username>`, where username
 is your username on your system. You can double click any of these dbs, or use the
 command `psql` in the terminal to get a psql prompt. From there create the hera user:
 
+3. setup HERA
 `<username>=# CREATE ROLE hera;`
 
 Next create the two databases hera_mc will use:
