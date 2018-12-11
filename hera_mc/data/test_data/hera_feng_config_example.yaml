@@ -1,72 +1,52 @@
-#
-# For each fengine, specify the host ip address (host_ip), destination port (dest_port),
-# the antenna numbers it is processing (ants).
-#
-# The following booleans can also be set-
-# if it needs to be initialized (init),
-# if you want to set noise (noise),
-# or test vector (tvg) input and if you want it to
-# send data over ethernet (eth).
-#
-# If a specific boolean task needs to be implemented on all fengines, you can
-# set it as a global parameter.
-#
-# NB: If fengine antennas are not specified, they will be alloted according the order in
-# which they are presented here.
+# Specify a full path to an F-Engine fpg file with which SNAP boards will be programmed
+fpgfile: '/home/hera/src/hera_corr_f/snap_fengine/outputs/snap_fengine_2018-11-13_1236.fpg'
 
-# You can set the following global parameters for all fengines
-# or enable them for only some fengines. The global parameters
-# overrride the individual fengine settings.
-
-# You can sync the fengines using an external PPS signal
-# or manually using a software register.
-# Choices: 'pps', 'manual', False (default: 'pps')
-sync: 'pps'
-
-# The test vector generator can operate in multiple modes:
-# 'const_ants' : Writes a different constant value
-#                to all channels of an antenna (both pols).
-# 'const_pols' : Write a different constant value
-#                to both pols of an antenna.
-# 'ramp'       : Write the same ramp to all pols.
-# 'ramp_pols'  : Write a different ramp to each pol.
-# False        : Do not set the test vector (default)
-tvg: False
-
-# Turn on the noise generator for testing
-noise: False
-
-initialize: False
-
-# Disable transmission for all fengines
-eth: False
-
-# Specify a full path to an F-Engine fpg files
-fpgfile: '/home/hera/src/hera_corr_f/snap_fengine/outputs/snap_fengine_2018-10-27_1850.fpg'
-
-# Destination port for SNAP data
+# The UDP port where F-Engine data is sent. This should match what the X-Engines are expecting.
 dest_port: 8511
 
+# The F-Engines in a design.
+# Keys should be resolvable hostnames
 fengines:
-#    heraNode1Snap0:
-#        phase_switch_index: 0
-    heraNode1Snap1:
+    my-fengine-hostname1:
+        # Which walsh pattern should this SNAP board use.
+        # Currently unimplemented. Maybe should be a per-pol array
         phase_switch_index: 0
-    heraNode1Snap2:
+        # Correlator-style antenna indices
+        # This should be a three-element list, unique among the system.
+        # NB, as currently implemented, the three elements should be consecutive,
+        # with the first a multiple of 3.
+        ants: [0, 1, 2]
+    my-fengine-hostname2:
+        # Which walsh pattern should this SNAP board use.
+        # Currently unimplemented. Maybe should be a per-pol array
         phase_switch_index: 0
+        # Correlator-style antenna indices
+        # This should be a three-element list, unique among the system.
+        # NB, as currently implemented, the three elements should be consecutive,
+        # with the first a multiple of 3.
+        ants: [3, 4, 5]
 
-# Data is sent assuming a total of 32 Xengines and
-# a maximum of 48 channels per Xengine. If all the
-# 32 Xengines are not defined, the corresponding channels
-# are not sent anywhere.
+# The X-Engines in a design.
+# The maximum number of X-Engines is 16.
+# Each X-engine accepts 384 channels.
+# Only channels defined here will be sent out by F-Engines. Other
+# channels are not sent anywhere.
 xengines:
+    # Zero-indexed X-engine number
     0:
+        # IP/MAC address where even and odd time-sample pairs are sent
+        # The correlator design assumes these are two interfaces on the same physical X-box
         even:
            ip: "10.80.40.197"
            mac: 0x02020a5028c5
         odd:
            ip: "10.80.40.206"
            mac: 0x02020a5028ce
+        # Channels to send to this X-Engine.
+        # [A,B] implies channels np.arange(A,B) will be sent.
+        # Should be 384 channels. YMMV with other configurations, which may be useful for
+        # throughput testing but are otherwise invalid.
+        chan_range: [1536, 1920]
     1:
         even:
            ip: "10.80.40.229"
@@ -74,6 +54,7 @@ xengines:
         odd:
            ip: "10.80.40.238"
            mac: 0x02020a5028ee
+        chan_range: [1920, 2304]
     2:
         even:
            ip: "10.80.40.198"
@@ -81,6 +62,7 @@ xengines:
         odd:
            ip: "10.80.40.207"
            mac: 0x02020a5028cf
+        chan_range: [2304, 2688]
     3:
         even:
            ip: "10.80.40.230"
@@ -88,6 +70,7 @@ xengines:
         odd:
            ip: "10.80.40.239"
            mac: 0x02020a5028ef
+        chan_range: [2688, 3072]
     4:
         even:
            ip: "10.80.40.199"
@@ -95,6 +78,7 @@ xengines:
         odd:
            ip: "10.80.40.208"
            mac: 0x02020a5028d0
+        chan_range: [3072, 3456]
     5:
         even:
            ip: "10.80.40.231"
@@ -102,6 +86,7 @@ xengines:
         odd:
            ip: "10.80.40.240"
            mac: 0x02020a5028f0
+        chan_range: [3456, 3840]
     6:
         even:
            ip: "10.80.40.200"
@@ -109,6 +94,7 @@ xengines:
         odd:
            ip: "10.80.40.209"
            mac: 0x02020a5028d1
+        chan_range: [3840, 4224]
     7:
         even:
            ip: "10.80.40.232"
@@ -116,6 +102,7 @@ xengines:
         odd:
            ip: "10.80.40.241"
            mac: 0x02020a5028f1
+        chan_range: [4224, 4608]
     8:
         even:
            ip: "10.80.40.201"
@@ -123,6 +110,7 @@ xengines:
         odd:
            ip: "10.80.40.210"
            mac: 0x02020a5028d2
+        chan_range: [4608, 4992]
     9:
         even:
            ip: "10.80.40.233"
@@ -130,6 +118,7 @@ xengines:
         odd:
            ip: "10.80.40.242"
            mac: 0x02020a5028f2
+        chan_range: [4992, 5376]
     10:
         even:
            ip: "10.80.40.202"
@@ -137,6 +126,7 @@ xengines:
         odd:
            ip: "10.80.40.211"
            mac: 0x02020a5028d3
+        chan_range: [5376, 5760]
     11:
         even:
            ip: "10.80.40.234"
@@ -144,6 +134,7 @@ xengines:
         odd:
            ip: "10.80.40.243"
            mac: 0x02020a5028f3
+        chan_range: [5760, 6144]
     12:
         even:
            ip: "10.80.40.203"
@@ -151,6 +142,7 @@ xengines:
         odd:
            ip: "10.80.40.212"
            mac: 0x02020a5028d4
+        chan_range: [6144, 6528]
     13:
         even:
            ip: "10.80.40.235"
@@ -158,6 +150,7 @@ xengines:
         odd:
            ip: "10.80.40.244"
            mac: 0x02020a5028f4
+        chan_range: [6528, 6912]
     14:
         even:
            ip: "10.80.40.204"
@@ -165,6 +158,7 @@ xengines:
         odd:
            ip: "10.80.40.213"
            mac: 0x02020a5028d5
+        chan_range: [6912, 7296]
     15:
         even:
            ip: "10.80.40.236"
@@ -172,3 +166,4 @@ xengines:
         odd:
            ip: "10.80.40.245"
            mac: 0x02020a5028f5
+        chan_range: [7296, 7680]
