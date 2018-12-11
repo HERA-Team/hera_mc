@@ -68,6 +68,8 @@ def query_geo_information(args):
         args.northing = float(six.moves.input('Northing:  '))
     if args.elevation is None:
         args.elevation = float(six.moves.input('Elevation:  '))
+    if args.sernum is None:
+        args.sernum = six.moves.input('Serial number:  ')
     args.datum = cm_utils.query_default('datum', args)
     args.tile = cm_utils.query_default('tile', args)
     if args.station_type_name is None:
@@ -115,19 +117,20 @@ def add_entry_to_parts(session, args):
     data = [[hpn, rev, 'hpn', hpn],
             [hpn, rev, 'hpn_rev', rev],
             [hpn, rev, 'hptype', 'station'],
-            [hpn, rev, 'manufacturer_number', hpn],
+            [hpn, rev, 'manufacturer_number', args.sernum],
             [hpn, rev, 'start_gpstime', dt.gps]]
     part_connect.update_part(session, data, args.add_new_part)
 
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('station_name', help="Name of station (HH# for hera, ND# for node).")
+    parser.add_argument('station_name', help="Name of station (HH/A/B# for hera, ND# for node).")
     parser.add_argument('-e', '--easting', help="Easting of new station.", default=None)
     parser.add_argument('-n', '--northing', help="Northing of new station", default=None)
     parser.add_argument('-z', '--elevation', help="Elevation of new station", default=None)
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--station_type_name', help="Station category name", default=None)
+    parser.add_argumnet('--sernum', help="Serial number of station.", default=None)
     parser.add_argument('--datum', help="Datum of UTM [WGS84]", default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]", default='34J')
     parser.add_argument('--add_new_geo', help="Flag to allow update to add a new "
@@ -149,6 +152,8 @@ if __name__ == '__main__':
             if ant_num in v:
                 args.station_type_name = r
                 break
+        if args.sernum is None:
+            args.sernum = args.station_name
     elif args.station_name.startswith('ND'):
         node = read_nodes()
         node_num = int(args.station_name[2:])
@@ -158,6 +163,8 @@ if __name__ == '__main__':
         args.northing = node[node_num]['N']
         args.elevation = node[node_num]['elevation']
         args.station_type_name = 'node'
+        if args.sernum is None:
+            args.sernum = args.station_name
     else:
         args = query_geo_information(args)
 
