@@ -102,18 +102,17 @@ NOTE:  If you are only running sqlite, you don't need to install PostgresSQL to 
 Installing postgresql has three primary steps:  (1) install postgres itself, (2) install an interface to it, and (3) setup
 project databases.  Below are directions for the recommended method to install on macosx.
 
-1. postgres
-Follow directions on https://www.postgresql.org/download/macosx/.  Just install postgres and command line tools.
+1. postgres:
+Follow directions on https://www.postgresql.org/download/macosx/.  Just install postgres and command line tools (ie. not pgadmin)
 
-2. interface
-The recommended program and simple directions are found here: 
-here: https://postgresapp.com/.
+2. interface:
+The recommended program and simple directions are found here:  https://postgresapp.com/.
 
+3. databases:
 The app will initialize three databases `postgres`, `template1`, and `<username>`, where username
-is your username on your system. You can double click any of these dbs, or use the
+is your username on your system. Use the
 command `psql` in the terminal to get a psql prompt. From there create the hera user:
 
-3. setup HERA
 `<username>=# CREATE ROLE hera;`
 
 Next create the two databases hera_mc will use:
