@@ -23,6 +23,11 @@ class TestGeo(TestHERAMC):
         super(TestGeo, self).setUp()
         self.h = geo_handling.Handling(self.test_session, testing=True)
 
+    def tearDown(self):
+        from .. import cm_hookup
+        hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
+        hookup.delete_cache_file()
+
     def test_cofa(self):
         self.h.get_station_types()
         station_types = [type.lower() for type in self.h.station_types.keys()]
