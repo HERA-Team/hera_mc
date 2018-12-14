@@ -32,13 +32,13 @@ setup_args = {
     'include_package_data': True,
     'requires': ["six", "numpy", "astropy", "sqlalchemy", "psycopg2", "alembic", "dateutil",
                  "tabulate", "pandas", "psutil", "pyproj"],
-    'classifiers' = ["Development Status :: 4 - Beta",
-                     "Environment :: Console",
-                     "Intended Audience :: Science/Research",
-                     "License :: OSI Approved :: MIT License",
-                     "Operating System :: OS Independent",
-                     "Programming Language :: Python",
-                     "Topic :: Scientific/Engineering"]
+    'classifiers': ["Development Status :: 4 - Beta",
+                    "Environment :: Console",
+                    "Intended Audience :: Science/Research",
+                    "License :: OSI Approved :: MIT License",
+                    "Operating System :: OS Independent",
+                    "Programming Language :: Python",
+                    "Topic :: Scientific/Engineering"]
 }
 
 if __name__ == '__main__':
