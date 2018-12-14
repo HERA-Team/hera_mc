@@ -6,6 +6,9 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import glob
+import io
+import json
 from setuptools import setup
 
 from hera_mc import version
