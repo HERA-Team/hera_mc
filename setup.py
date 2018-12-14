@@ -31,7 +31,7 @@ setup_args = {
     'scripts': glob.glob('scripts/*'),
     'include_package_data': True,
     'requires': ["six", "numpy", "astropy", "sqlalchemy", "psycopg2", "alembic", "dateutil",
-                 "tabulate", "pandas", "psutil", "pyproj"]
+                 "tabulate", "pandas", "psutil", "pyproj"],
     'classifiers' = ["Development Status :: 4 - Beta",
                      "Environment :: Console",
                      "Intended Audience :: Science/Research",
