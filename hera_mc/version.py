@@ -1,76 +1,101 @@
-"""Version definition for hera_mc."""
+#! /usr/bin/env python
+# -*- mode: python; coding: utf-8 -*-
+# Copyright 2018 the HERA Collaboration
+# Licensed under the 2-clause BSD license.
+
 from __future__ import absolute_import, division, print_function
 
-from os.path import join as pjoin
-import glob
+import os
+import six
+import subprocess
+import json
 
-# Format expected by setup.py and doc/source/conf.py: string of form "X.Y.Z"
-_version_major = 0
-_version_minor = 1
-_version_micro = ''  # use '' for first of series, number for 1 and above
-_version_extra = 'dev'
-# _version_extra = ''  # Uncomment this for full releases
+hera_mc_dir = os.path.dirname(os.path.realpath(__file__))
 
-# Construct full version string from these.
-_ver = [_version_major, _version_minor]
-if _version_micro:
-    _ver.append(_version_micro)
-if _version_extra:
-    _ver.append(_version_extra)
 
-__version__ = '.'.join(map(str, _ver))
+def _get_git_output(args, capture_stderr=False):
+    """Get output from Git, ensuring that it is of the ``str`` type,
+    not bytes."""
 
-CLASSIFIERS = ["Development Status :: 3 - Alpha",
-               "Environment :: Console",
-               "Intended Audience :: Science/Research",
-               "License :: OSI Approved :: MIT License",
-               "Operating System :: OS Independent",
-               "Programming Language :: Python",
-               "Topic :: Scientific/Engineering"]
+    argv = ['git', '-C', hera_mc_dir] + args
 
-# Description should be a one-liner:
-description = "hera_mc: HERA monitor and control"
-# Long description will go up on the pypi page
-long_description = """
-hera_mc
-========
-hera_mc
-To get started using these components in your own software, please go to the
-repository README_.
-License
-=======
-``hera_mc`` is licensed under the terms of the BSD license. See the file
-"LICENSE" for information on the history of this software, terms & conditions
-for usage, and a DISCLAIMER OF ALL WARRANTIES.
-All trademarks referenced herein are property of their respective holders.
-Copyright (c) 2015--, HERA-Team.
-"""
+    if capture_stderr:
+        data = subprocess.check_output(argv, stderr=subprocess.STDOUT)
+    else:
+        data = subprocess.check_output(argv)
 
-NAME = "hera_mc"
-MAINTAINER = "HERA Team"
-MAINTAINER_EMAIL = "hera-sw@lists.berkeley.edu"
-DESCRIPTION = description
-LONG_DESCRIPTION = long_description
-URL = "https://github.com/HERA-Team/hera_mc"
-DOWNLOAD_URL = ""
-LICENSE = "BSD"
-AUTHOR = "HERA Team"
-AUTHOR_EMAIL = "hera-sw@lists.berkeley.edu"
-PLATFORMS = "OS Independent"
-MAJOR = _version_major
-MINOR = _version_minor
-MICRO = _version_micro
-VERSION = __version__
-PACKAGES = ['hera_mc',
-            'hera_mc.tests']
-SCRIPTS = [p for p in glob.glob('scripts/*') if not p.endswith('~')]
-PACKAGE_DATA = {
-    'hera_mc': [
-        pjoin('data', '*.csv'),
-        pjoin('data', '*.txt'),
-        pjoin('data', 'finals.all'),
-        pjoin('data', 'test_data', '*.tst'),
-    ]
-}
-REQUIRES = ["six", "numpy", "astropy", "sqlalchemy", "psycopg2", "alembic", "dateutil",
-            "tabulate", "pandas", "psutil", "pyproj"]
+    data = data.strip()
+
+    if six.PY2:
+        return data
+    return data.decode('utf8')
+
+
+def _get_gitinfo_file(git_file=None):
+    """Get saved info from GIT_INFO file that was created when installing package"""
+    if git_file is None:
+        git_file = os.path.join(hera_mc_dir, 'GIT_INFO')
+
+    with open(git_file) as data_file:
+        data = [_unicode_to_str(x) for x in json.loads(data_file.read().strip())]
+        git_origin = data[0]
+        git_hash = data[1]
+        git_description = data[2]
+        git_branch = data[3]
+
+    return {'git_origin': git_origin, 'git_hash': git_hash,
+            'git_description': git_description, 'git_branch': git_branch}
+
+
+def _unicode_to_str(u):
+    if six.PY2:
+        return u.encode('utf8')
+    return u
+
+
+def construct_version_info():
+
+    version_file = os.path.join(hera_mc_dir, 'VERSION')
+    with open(version_file) as f:
+        version = f.read().strip()
+
+    git_origin = ''
+    git_hash = ''
+    git_description = ''
+    git_branch = ''
+
+    version_info = {'version': version, 'git_origin': '', 'git_hash': '',
+                    'git_description': '', 'git_branch': ''}
+
+    try:
+        version_info['git_origin'] = _get_git_output(['config', '--get', 'remote.origin.url'], capture_stderr=True)
+        version_info['git_hash'] = _get_git_output(['rev-parse', 'HEAD'], capture_stderr=True)
+        version_info['git_description'] = _get_git_output(['describe', '--dirty', '--tag', '--always'])
+        version_info['git_branch'] = _get_git_output(['rev-parse', '--abbrev-ref', 'HEAD'], capture_stderr=True)
+    except subprocess.CalledProcessError:  # pragma: no cover
+        try:
+            # Check if a GIT_INFO file was created when installing package
+            version_info.update(_get_gitinfo_file())
+        except (IOError, OSError):
+            pass
+
+    return version_info
+
+
+version_info = construct_version_info()
+version = version_info['version']
+git_origin = version_info['git_origin']
+git_hash = version_info['git_hash']
+git_description = version_info['git_description']
+git_branch = version_info['git_branch']
+
+
+def main():
+    print('Version = {0}'.format(version))
+    print('git origin = {0}'.format(git_origin))
+    print('git branch = {0}'.format(git_branch))
+    print('git description = {0}'.format(git_description))
+
+
+if __name__ == '__main__':  # pragma: no cover
+    main()
