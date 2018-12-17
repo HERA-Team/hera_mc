@@ -1,26 +1,26 @@
 HERA M&C Installation
 =====================
 
-Installation of the Python code is just done with a standard
-```
-python setup.py install
-```
+HERA M&C requires `hera_mc` and postgreSQL.  Note:  if you are only using it to view configuration management, you may instead use SQLITE.
 
-# Begin simplified cm-only user installation
-*If you are using hera_mc to view configuration, just follow the instructions in this short section*
+Installation steps are:
+
+1. Install hera_mc
+2. Setup database configuration file
+3. Install postgreSQL (if not using SQLITE)
+
+# Install hera_mc
+--------------------
 
 Clone the following two repositories:
 * https://github.com/HERA-Team/hera_mc
 * https://github.com/HERA-Team/hera_cm_db_updates
 
 Then install by:
-1. within the hera_mc directory type `python setup.py install` or `pip install .`
-2.  in the hera_cm_db_updates directory type `mc_setup_home.py`
+1. within the hera_mc directory type `python setup.py install` (or `pip install .`)
+2. in the hera_cm_db_updates directory type `mc_setup_home.py`
 
 To run hera_mc, you will likely need to install some additional python modules (see Python Prerequisites below.)
-
-To test if it works, try `geo.py -g`
-
 
 Python Prerequisites
 --------------
@@ -35,21 +35,11 @@ Python Prerequisites
 - psutil
 - pyproj
 
-Database setup
---------------
 
-Install PostgreSQL:
-We run PostgreSQL in production and, while SQLAlchemy abstracts between
-different database backends as best it can, it is very desirable that you run
-PostgreSQL in your test environment as well. Use Google to learn how to do
-this, or follow the OS-X-specific notes below (recommended).
-
-_____________________________________
-Configure hera_mc to talk to the db:
-
-After setting up the database (see below), you need to fill in the configuration file
-`~/.hera_mc/mc_config.json`, which tells the M&C system how to talk to the
-database. An example file is:
+# Set up database configuration file
+------------------------------------
+A configuration file `~/.hera_mc/mc_config.json` is needed to tell M&C how to talk to the database.  It should look like the example below,
+making sure to change the `<<<Path-to-repo>>>` to be the full path to where hera_cm_db_updates is located.
 
 ```
 {
@@ -78,26 +68,18 @@ separate databases named `hera_mc` and `hera_mc_test` for "production"
 deployment and testing. You must have a database named "testing", in "testing"
 mode, for the M&C test suite to work.
 
-Note that there is now an sqlite option.  To use it on your machine make the
-second line in mc_config.json:
+If using the SQLITE version for viewing CM make the second line in mc_config.json:
 ```
 "default_db_name": "hera_mc_sqlite",
 ```
+If using SQLITE, you don't need to install PostgreSQL
 
-_____________________________________
-Create the database schema by running `alembic upgrade head`
-If desired, populate the configuration management tables by running the `cm_init.py` script.
-
-Note the other line:  "cm_csv_path":.../hera_cm_db_updates, which is the full path to where you
-have installed the local configuration management csv files, which are contained in the repo
-hera_cm_db_updates.
-
-To update your local database, (after you pull hera_cm_db_updates and add line to mc_config.json),
-type `cm_init.py`
-
-### Basic OS X PostgreSQL installation
-
-NOTE:  If you are only running sqlite, you don't need to install PostgresSQL to use the cm stuff.
+# Install PostgreSQL
+--------------------
+We run PostgreSQL in production and, while SQLAlchemy abstracts between
+different database backends as best it can, it is very desirable that you run
+PostgreSQL in your test environment as well. Use Google to learn how to do
+this, or follow the OS-X-specific notes below (recommended).
 
 Installing postgresql has three primary steps:  (1) install postgres itself, (2) install an interface to it, and (3) setup
 project databases.  Below are directions for the recommended method to install on macosx.
@@ -132,6 +114,14 @@ This is done from the shell, in the root hera_mc directory (where the .ini file 
 You will likely have to install packages as it fails, so keep doing `conda install <pkg>` until it completes successfully.
 
 If desired, populate the configuration management tables by running the `cm_init.py` script.
+
+If there is already an instance of the postgres server running, you may need to kill it:  `sudo pkill -u postgres`
+
+Create the database schema by running `alembic upgrade head`
+If desired, populate the configuration management tables by running the `cm_init.py` script.
+
+To update your local database, (after you pull hera_cm_db_updates and add line to mc_config.json),
+type `cm_init.py`
 
 ### Installing on Mac OS X with homebrew (not particularly recommended)
 
