@@ -9,7 +9,8 @@ Installation steps are:
 2. Setup database configuration file
 3. Install postgreSQL (if not using SQLITE)
 
-1. Install hera_mc
+
+[1.] Install hera_mc
 ---
 
 Clone the following two repositories:
@@ -36,7 +37,7 @@ Python Prerequisites
 - pyproj
 
 
-2. Set up database configuration file
+[2.] Set up database configuration file
 ---
 A configuration file `~/.hera_mc/mc_config.json` is needed to tell M&C how to talk to the database.  It should look like the example below,
 making sure to change the `<<<Path-to-repo>>>` to be the full path to where hera_cm_db_updates is located.
@@ -74,7 +75,7 @@ If using the SQLITE version for viewing CM make the second line in mc_config.jso
 ```
 If using SQLITE, you don't need to install PostgreSQL
 
-3. Install PostgreSQL
+[3.] Install PostgreSQL
 ---
 We run PostgreSQL in production and, while SQLAlchemy abstracts between
 different database backends as best it can, it is very desirable that you run
