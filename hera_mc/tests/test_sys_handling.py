@@ -27,9 +27,9 @@ class TestSys(TestHERAMC):
         super(TestSys, self).setUp()
         self.sys_h = sys_handling.Handling(self.test_session)
 
-    def tearDown(self):
-        hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
-        hookup.delete_cache_file()
+    # def tearDown(self):
+    #     hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
+    #     hookup.delete_cache_file()
 
     def test_ever_fully_connected(self):
         now_list = self.sys_h.get_all_fully_connected_at_date(at_date='now')
