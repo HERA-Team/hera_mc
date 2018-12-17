@@ -5,9 +5,9 @@ HERA M&C requires `hera_mc` and postgreSQL.  Note:  if you are only using it to 
 
 Installation steps are:
 
-- [1.] Install hera_mc
-- [2.] Setup database configuration file
-- [3.] Install postgreSQL (if not using SQLITE)
+* [1.] Install hera_mc
+* [2.] Setup database configuration file
+* [3.] Install postgreSQL (if not using SQLITE)
 
 
 [1.] Install hera_mc
