@@ -118,11 +118,6 @@ If desired, populate the configuration management tables by running the `cm_init
 
 If there is already an instance of the postgres server running, you may need to kill it:  `sudo pkill -u postgres`
 
-Create the database schema by running `alembic upgrade head`
-If desired, populate the configuration management tables by running the `cm_init.py` script.
-
-To update your local database, (after you pull hera_cm_db_updates and add line to mc_config.json),
-type `cm_init.py`
 
 ### Installing on Mac OS X with homebrew (not particularly recommended)
 
