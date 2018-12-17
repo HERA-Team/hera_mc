@@ -1,7 +1,8 @@
 HERA M&C Installation
 =====================
 
-HERA M&C requires `hera_mc` and postgreSQL.  Note:  if you are only using it to view configuration management, you may instead use SQLITE.
+HERA M&C requires `hera_mc` and `postgreSQL`.  
+(Note:  if you are only using it to view configuration management, you may instead use SQLITE and skip step [3.] below).
 
 Installation steps are:
 
@@ -73,16 +74,15 @@ If using the SQLITE version for viewing CM make the second line in mc_config.jso
 ```
 "default_db_name": "hera_mc_sqlite",
 ```
-If using SQLITE, you don't need to install PostgreSQL
+If using SQLITE, you don't need to install PostgreSQL and may stop here.
 
 [3.] Install PostgreSQL
 ---
 We run PostgreSQL in production and, while SQLAlchemy abstracts between
 different database backends as best it can, it is very desirable that you run
-PostgreSQL in your test environment as well. Use Google to learn how to do
-this, or follow the OS-X-specific notes below (recommended).
+PostgreSQL in your test environment as well.
 
-Installing postgresql has three primary steps:  (1) install postgres itself, (2) install an interface to it, and (3) setup
+Installing postgresql has three primary steps:  (1) install postgreSQL itself, (2) install an interface to it, and (3) setup
 project databases.  Below are directions for the recommended method to install on macosx.
 
 1. postgres:
@@ -90,6 +90,7 @@ Follow directions on https://www.postgresql.org/download/macosx/.  Just install 
 
 2. interface:
 The recommended program and simple directions are found here:  https://postgresapp.com/.
+(Note that step 3 below may differ if you install a different interface than used here.)
 
 3. databases:
 The app will initialize three databases `postgres`, `template1`, and `<username>`, where username
