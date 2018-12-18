@@ -29,8 +29,11 @@ Python Prerequisites
  sqlalchemy |  psycopg2 | alembic | dateutil
  -----------|-----------|---------|---------
  numpy      | astropy   | tabulate| pandas
+  -----------|-----------|---------|---------
  psutil     | pyproj    | six     | pyuvdata
+  -----------|-----------|---------|---------
  h5py       |           |         |
+  -----------|-----------|---------|---------
 
 
 [2.] Set up database configuration file
