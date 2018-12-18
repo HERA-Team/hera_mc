@@ -37,10 +37,6 @@ class TestParts(TestHERAMC):
         self.test_session.add(part)
         self.test_session.commit()
 
-    # def tearDown(self):
-    #     hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
-    #     hookup.delete_cache_file()
-
     def test_update_new(self):
         ntp = 'new_test_part'
         data = [[ntp, 'X', 'hpn', ntp],

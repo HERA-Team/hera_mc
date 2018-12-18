@@ -36,6 +36,7 @@ Python Prerequisites
 - pandas
 - psutil
 - pyproj
+- pyyaml
 
 
 [2.] Set up database configuration file
