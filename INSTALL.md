@@ -36,7 +36,9 @@ Python Prerequisites
 - pandas
 - psutil
 - pyproj
-- pyyaml
+- six
+- pyuvdata
+- h5py
 
 
 [2.] Set up database configuration file
