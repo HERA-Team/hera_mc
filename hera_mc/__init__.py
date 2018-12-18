@@ -85,8 +85,6 @@ def NotNull(kind, **kwargs):
 
 
 from . import version  # noqa
-__version__ = version.version
-
 from . import autocorrelations  # noqa
 from . import cm_transfer  # noqa
 from . import part_connect  # noqa
@@ -101,3 +99,5 @@ from . import weather  # noqa
 from . import node  # noqa
 from . import correlator  # noqa
 from . import mc    # noqa keep this last.
+
+__version__ = version.version
