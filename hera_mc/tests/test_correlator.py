@@ -362,7 +362,10 @@ class TestCorrelatorConfigStatus(TestHERAMC):
     def test_add_correlator_config_from_corrcm_onsite(self):
 
         result = self.test_session.add_correlator_config_from_corrcm(testing=True)
+        print(result)
+
         self.assertTrue(len(result) > 0)
+        self.assertEqual(result[0].__class__, corr.CorrelatorConfigStatus)
 
 
 class TestCorrelatorControlCommand(TestHERAMC):
