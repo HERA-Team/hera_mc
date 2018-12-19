@@ -6,33 +6,45 @@
 from __future__ import absolute_import, division, print_function
 
 import os
-from setuptools import setup, find_packages
-PACKAGES = find_packages()
+import glob
+import io
+import json
+from setuptools import setup
 
-# Get version and release info, which is all stored in shablona/version.py
-ver_file = os.path.join('hera_mc', 'version.py')
-with open(ver_file) as f:
-    exec(f.read())
+from hera_mc import version
 
 
-setup_args = dict(name=NAME,
-                  maintainer=MAINTAINER,
-                  maintainer_email=MAINTAINER_EMAIL,
-                  description=DESCRIPTION,
-                  long_description=LONG_DESCRIPTION,
-                  url=URL,
-                  download_url=DOWNLOAD_URL,
-                  license=LICENSE,
-                  classifiers=CLASSIFIERS,
-                  author=AUTHOR,
-                  author_email=AUTHOR_EMAIL,
-                  platforms=PLATFORMS,
-                  version=VERSION,
-                  packages=PACKAGES,
-                  package_data=PACKAGE_DATA,
-                  scripts=SCRIPTS,
-                  requires=REQUIRES)
+data = [version.git_origin, version.git_hash, version.git_description, version.git_branch]
+with open(os.path.join('hera_mc', 'GIT_INFO'), 'w') as outfile:
+    json.dump(data, outfile)
 
+with io.open('README.md', 'r', encoding='utf-8') as readme_file:
+    readme = readme_file.read()
+
+setup_args = {
+    'name': "hera_mc",
+    'description': "hera_mc: HERA monitor and control",
+    'long_description': readme,
+    'url': "https://github.com/HERA-Team/hera_mc",
+    'license': "BSD",
+    'author': "HERA Team",
+    'author_email': "hera-sw@lists.berkeley.edu",
+    'version': version.version,
+    'packages': ['hera_mc', 'hera_mc.tests'],
+    'scripts': glob.glob('scripts/*'),
+    'include_package_data': True,
+    'install_requires': ["six", "numpy", "astropy", "sqlalchemy", "psycopg2",
+                         "alembic", "python-dateutil", "tabulate", "pandas", "psutil",
+                         "pyproj"],
+    'tests_require': ["pyyaml"],
+    'classifiers': ["Development Status :: 4 - Beta",
+                    "Environment :: Console",
+                    "Intended Audience :: Science/Research",
+                    "License :: OSI Approved :: MIT License",
+                    "Operating System :: OS Independent",
+                    "Programming Language :: Python",
+                    "Topic :: Scientific/Engineering"]
+}
 
 if __name__ == '__main__':
     setup(**setup_args)
