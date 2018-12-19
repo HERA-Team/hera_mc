@@ -59,6 +59,11 @@ class TestHERAMC(unittest.TestCase):
         # return connection to the Engine
         self.test_conn.close()
 
+        # delete the hookup cache file
+        from .. import cm_hookup
+        hookup = cm_hookup.Hookup(session=self.test_session)
+        hookup.delete_cache_file()
+
 
 # Functions that are useful for testing:
 def clearWarnings():

@@ -130,7 +130,7 @@ if __name__ == '__main__':
     parser.add_argument('-z', '--elevation', help="Elevation of new station", default=None)
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--station_type_name', help="Station category name", default=None)
-    parser.add_argumnet('--sernum', help="Serial number of station.", default=None)
+    parser.add_argument('--sernum', help="Serial number of station.", default=None)
     parser.add_argument('--datum', help="Datum of UTM [WGS84]", default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]", default='34J')
     parser.add_argument('--add_new_geo', help="Flag to allow update to add a new "
