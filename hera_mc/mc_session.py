@@ -2063,6 +2063,7 @@ class MCSession(Session):
 
                     # add it to the config file table
                     self.add(config_file_obj)
+                    self.commit()
                 else:
                     config_obj_list.append(config_file_obj)
 
@@ -2070,6 +2071,7 @@ class MCSession(Session):
             config_status_obj = CorrelatorConfigStatus.create(time, config_hash)
             if not testing:  # pragma: no cover
                 self.add(config_status_obj)
+                self.commit()
             else:
                 config_obj_list.append(config_status_obj)
         else:
@@ -2079,6 +2081,7 @@ class MCSession(Session):
 
                 if not testing:  # pragma: no cover
                     self.add(config_status_obj)
+                    self.commit()
                 else:
                     config_obj_list.append(config_status_obj)
 
