@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+import os
 import numpy as np
 import warnings
 import six
@@ -2062,6 +2063,7 @@ class MCSession(Session):
 
                     # add it to the config file table
                     self.add(config_file_obj)
+                    self.commit()
                 else:
                     config_obj_list.append(config_file_obj)
 
@@ -2069,6 +2071,7 @@ class MCSession(Session):
             config_status_obj = CorrelatorConfigStatus.create(time, config_hash)
             if not testing:  # pragma: no cover
                 self.add(config_status_obj)
+                self.commit()
             else:
                 config_obj_list.append(config_status_obj)
         else:
@@ -2078,6 +2081,7 @@ class MCSession(Session):
 
                 if not testing:  # pragma: no cover
                     self.add(config_status_obj)
+                    self.commit()
                 else:
                     config_obj_list.append(config_status_obj)
 
@@ -2424,6 +2428,7 @@ class MCSession(Session):
 
                         # add it to the config file table
                         self.add(config_file_obj)
+                        self.commit()
                     else:
                         command_list.append(config_file_obj)
 
@@ -2470,6 +2475,7 @@ class MCSession(Session):
                 getattr(corr_controller, corr.command_dict[command])
 
             self.add(command_obj)
+            self.commit()
             if command == 'take_data':
                 # update the starttime with the actual starttime of the correlator
                 take_data_args_obj = \
@@ -2477,8 +2483,10 @@ class MCSession(Session):
                                                             duration, acclen_spectra,
                                                             integration_time, tag)
                 self.add(take_data_args_obj)
+                self.commit()
             elif command == 'update_config':
                     self.add(config_command_obj)
+                    self.commit()
 
         else:
             command_list.append(command_obj)
