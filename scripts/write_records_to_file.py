@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     list_of_filter_args = []
     for table, table_dict in six.iteritems(valid_tables):
-        if arg_name in table_dict:
+        if 'arg_name' in table_dict:
             arg_name = table_dict['arg_name']
             if arg_name not in list_of_filter_args:
                 list_of_filter_args.append(arg_name)
