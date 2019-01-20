@@ -64,7 +64,7 @@ if __name__ == '__main__':
                              scale=args.scale)
 
     command_list = session.correlator_control_command(args.command,
-                                                      starttime=starttime_obj
+                                                      starttime=starttime_obj,
                                                       duration=args.duration,
                                                       acclen_spectra=args.acclen_spectra,
                                                       tag=args.tag,
