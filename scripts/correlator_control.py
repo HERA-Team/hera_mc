@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.description = """Send correlator control commands"""
     parser.add_argument('command', help="correlator control command. One of: "
-                        + valid_commands)
+                        + ', '.join(valid_commands))
     parser.add_argument('--address', help="address for correlator redis", default=None)
     parser.add_argument('--starttime', help="required if command is 'take_data', "
                         "ignored otherwise. Time to start taking data. "
@@ -60,8 +60,10 @@ if __name__ == '__main__':
     session = db.sessionmaker()
 
     if args.starttime is not None:
-        starttime_obj = Time(starttime, format=args.starttime_format,
-                             scale=args.scale)
+        starttime_obj = Time(args.starttime, format=args.starttime_format,
+                             scale=args.starttime_scale)
+    else:
+        starttime_obj = None
 
     command_list = session.correlator_control_command(args.command,
                                                       starttime=starttime_obj,
