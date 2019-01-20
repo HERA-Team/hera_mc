@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     if args.starttime is not None:
         starttime_obj = Time(args.starttime, format=args.starttime_format,
-                             scale=args.scale)
+                             scale=args.starttime_scale)
     else:
         starttime_obj = None
 
