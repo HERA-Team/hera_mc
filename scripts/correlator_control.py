@@ -60,7 +60,7 @@ if __name__ == '__main__':
     session = db.sessionmaker()
 
     if args.starttime is not None:
-        starttime_obj = Time(starttime, format=args.starttime_format,
+        starttime_obj = Time(args.starttime, format=args.starttime_format,
                              scale=args.scale)
     else:
         starttime_obj = None
