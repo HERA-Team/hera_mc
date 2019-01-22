@@ -14,7 +14,7 @@ from astropy.time import Time, TimeDelta
 from astropy.coordinates import EarthLocation
 
 from .. import mc, cm_transfer, geo_handling
-from ..observations import Observation
+from ..observations import Observation, HeraObsView
 from .. import utils, geo_location
 from ..tests import TestHERAMC
 
@@ -75,6 +75,18 @@ class TestObservation(TestHERAMC):
         self.assertEqual(len(result_orig), 1)
         result_orig = result_orig[0]
         self.assertTrue(result_orig.isclose(expected))
+
+    def test_obs_view(self):
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        t2 = t1 + TimeDelta(120.0, format='sec')
+
+        self.test_session.add_obs(t1, t2, utils.calculate_obsid(t1))
+
+        view_result = self.test_session.query(HeraObsView).all()
+        view_result = view_result[0]
+
+        self.assertTrue(np.abs(t1.unix - view_result.starttime_unix) < 5)
+        self.assertTrue(np.abs(t2.unix - view_result.stoptime_unix) < 5)
 
     def test_error_obs(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')

@@ -15,7 +15,7 @@ from sqlalchemy import Column, BigInteger, Float
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from . import geo_handling
-from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_TOL
+from . import MCDeclarativeBase, mc_view, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_TOL
 
 
 class Observation(MCDeclarativeBase):
@@ -76,3 +76,8 @@ class Observation(MCDeclarativeBase):
         return cls(obsid=obsid, starttime=starttime.gps, stoptime=stoptime.gps,
                    jd_start=starttime.jd,
                    lst_start_hr=starttime.sidereal_time('apparent').hour)
+
+
+class HeraObsView(MCDeclarativeBase):
+    view = True
+    __table__ = mc_view(Observation, ['starttime', 'stoptime'], 'hera_obs_view')

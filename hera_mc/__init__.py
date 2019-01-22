@@ -12,7 +12,10 @@ import six
 # variables.
 
 from sqlalchemy.ext.declarative import declarative_base
-
+from sqlalchemy.schema import DDLElement
+from sqlalchemy.sql import table, label
+from sqlalchemy.ext import compiler
+from sqlalchemy import select
 
 # define some default tolerances for various units
 DEFAULT_DAY_TOL = {'atol': 1e-3 / (3600. * 24.), 'rtol': 0}  # ms
@@ -20,13 +23,16 @@ DEFAULT_HOUR_TOL = {'atol': 1e-3 / (3600), 'rtol': 0}  # ms
 DEFAULT_MIN_TOL = {'atol': 1e-3 / (3600), 'rtol': 0}  # ms
 DEFAULT_GPS_TOL = {'atol': 1e-3, 'rtol': 0}  # ms
 
+# approximate gps to linux conversion to use in views for grafana
+GPS_TO_UNIX_SEC = 315964782
+
 
 class MCDeclarativeBase(object):
     def __repr__(self):
         columns = self.__table__.columns.keys()
         rep_str = '<' + self.__class__.__name__ + '('
         for c in columns:
-            rep_str += str(getattr(self, c)) + ', '
+            rep_str += c + ': ' + str(getattr(self, c)) + ', '
         rep_str = rep_str[0:-2]
         rep_str += ')>'
         return rep_str
@@ -71,6 +77,61 @@ class MCDeclarativeBase(object):
 
 
 MCDeclarativeBase = declarative_base(cls=MCDeclarativeBase)
+
+
+class CreateView(DDLElement):
+    def __init__(self, name, selectable):
+        self.name = name
+        self.selectable = selectable
+
+
+class DropView(DDLElement):
+    def __init__(self, name):
+        self.name = name
+
+
+@compiler.compiles(CreateView)
+def compile(element, compiler, **kw):
+    return "CREATE VIEW %s AS %s" % (
+        element.name,
+        compiler.sql_compiler.process(element.selectable, literal_binds=True))
+
+
+@compiler.compiles(DropView)
+def compile(element, compiler, **kw):
+    return "DROP VIEW %s" % (element.name)
+
+
+def view(name, metadata, selectable):
+    t = table(name)
+
+    for c in selectable.c:
+        c._make_proxy(t)
+
+    CreateView(name, selectable).execute_at('after-create', metadata)
+    DropView(name).execute_at('before-drop', metadata)
+    return t
+
+
+def gps_to_unix(gps_second):
+    return gps_second + GPS_TO_UNIX_SEC
+
+
+def mc_view(table_obj, gps_column_list, view_name):
+    columns = list(table_obj.__table__.columns)
+
+    column_names = [column.key for column in columns]
+    for gps_col in gps_column_list:
+        assert gps_col in column_names
+
+    view_attributes = [getattr(table_obj, name) for name in column_names]
+    label_obj_list = []
+    for gps_col in gps_column_list:
+        col_index = np.where(np.array(column_names) == gps_col)[0][0]
+        label_obj_list.append(label(gps_col + '_unix', gps_to_unix(columns[col_index])))
+
+    return view(view_name, MCDeclarativeBase.metadata, select(view_attributes + label_obj_list))
+
 
 import logging  # noqa
 logging.basicConfig(level=logging.WARNING)

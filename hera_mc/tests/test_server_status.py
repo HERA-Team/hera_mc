@@ -46,9 +46,13 @@ class TestServerStatus(TestHERAMC):
                 servstat = LibServerStatus(**exp_columns)
                 class_name = 'LibServerStatus'
 
-        rep_string = ('<' + class_name + '(test_host, ' + str(exp_columns['mc_time'])
-                      + ', 0.0.0.0, ' + str(exp_columns['mc_system_timediff'])
-                      + ', 16, 20.5, 31.4, 43.2, 32.0, 46.8, 510.4, 10.4)>')
+        rep_string = ('<' + class_name + '(hostname: test_host, mc_time: '
+                      + str(exp_columns['mc_time'])
+                      + ', ip_address: 0.0.0.0, mc_system_timediff: '
+                      + str(exp_columns['mc_system_timediff'])
+                      + ', num_cores: 16, cpu_load_pct: 20.5, uptime_days: 31.4, '
+                      'memory_used_pct: 43.2, memory_size_gb: 32.0, '
+                      'disk_space_pct: 46.8, disk_size_gb: 510.4, network_bandwidth_mbs: 10.4)>')
         self.assertEqual(str(servstat), rep_string)
 
     def test_add_server_status(self):

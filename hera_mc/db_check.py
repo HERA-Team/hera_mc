@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function
 from sqlalchemy import inspect
 from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
 from sqlalchemy.orm import RelationshipProperty
+from sqlalchemy.sql import table as sql_table
 
 from . import logger
 
@@ -70,6 +71,9 @@ def is_valid_database(base, session):
 
         if isinstance(klass, _ModuleMarker):
             # Not a model
+            continue
+
+        if not hasattr(klass, '__tablename__') and klass.view is True:
             continue
 
         table = klass.__tablename__
