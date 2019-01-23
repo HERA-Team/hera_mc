@@ -7,7 +7,6 @@ from __future__ import absolute_import, division, print_function
 from sqlalchemy import inspect
 from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
 from sqlalchemy.orm import RelationshipProperty
-from sqlalchemy.sql import table as sql_table
 
 from . import logger
 
