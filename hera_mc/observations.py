@@ -79,5 +79,6 @@ class Observation(MCDeclarativeBase):
 
 
 class HeraObsView(MCDeclarativeBase):
-    view = True
+    view_base_table = 'hera_obs'
     __table__ = mc_view(Observation, ['starttime', 'stoptime'], 'hera_obs_view')
+    __tablename__ = 'hera_obs_view'

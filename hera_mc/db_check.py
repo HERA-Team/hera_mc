@@ -72,7 +72,7 @@ def is_valid_database(base, session):
             # Not a model
             continue
 
-        if not hasattr(klass, '__tablename__') and klass.view is True:
+        if hasattr(klass, 'view_base_table'):
             continue
 
         table = klass.__tablename__
