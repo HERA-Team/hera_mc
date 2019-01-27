@@ -82,7 +82,7 @@ class PartDossierEntry():
                 except AttributeError:
                     x = getattr(self.connections, c)
             if c == 'part_info' and len(x):
-                x = ', '.join(pi.comment for pi in x)
+                x = '\n'.join(pi.comment for pi in x)
             elif c == 'geo' and x:
                 x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
             elif c in ['start_date', 'stop_date']:
