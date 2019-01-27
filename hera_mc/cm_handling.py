@@ -54,9 +54,12 @@ class PartDossierEntry():
             self.connections.get_entry(session)
 
     def get_part_info(self, session):
+        pi_dict = {}
         for part_info in session.query(PC.PartInfo).filter(
                 (func.upper(PC.PartInfo.hpn) == self.hpn) & (func.upper(PC.PartInfo.hpn_rev) == self.rev)):
-            self.part_info.append(part_info)
+            pi_dict[part_info.posting_gpstime] = part_info
+        for x in sorted(pi_dict.keys()):
+            self.part_info.append(part_dict[x])
 
     def get_geo(self, session):
         if self.part.hptype == 'station':
