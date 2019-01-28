@@ -54,9 +54,12 @@ class PartDossierEntry():
             self.connections.get_entry(session)
 
     def get_part_info(self, session):
+        pi_dict = {}
         for part_info in session.query(PC.PartInfo).filter(
                 (func.upper(PC.PartInfo.hpn) == self.hpn) & (func.upper(PC.PartInfo.hpn_rev) == self.rev)):
-            self.part_info.append(part_info)
+            pi_dict[part_info.posting_gpstime] = part_info
+        for x in sorted(pi_dict.keys()):
+            self.part_info.append(pi_dict[x])
 
     def get_geo(self, session):
         if self.part.hptype == 'station':
@@ -82,7 +85,7 @@ class PartDossierEntry():
                 except AttributeError:
                     x = getattr(self.connections, c)
             if c == 'part_info' and len(x):
-                x = ', '.join(pi.comment for pi in x)
+                x = '\n'.join(pi.comment for pi in x)
             elif c == 'geo' and x:
                 x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
             elif c in ['start_date', 'stop_date']:

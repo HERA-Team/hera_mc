@@ -299,7 +299,11 @@ def query_default(a, args):
         s = '{} [{}]:  '.format(a, str(default))
         v = six.moves.input(s)
     if len(v) == 0:
-        v = default
-    elif v.lower() == 'none':
-        v = None
+        return default
+    if v.lower() == 'none':
+        return None
+    if v.lower() == 'false':
+        return False
+    if v.lower() == 'true':
+        return True
     return v
