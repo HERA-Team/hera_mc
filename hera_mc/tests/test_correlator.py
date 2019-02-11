@@ -599,8 +599,8 @@ class TestCorrelatorControlCommand(TestHERAMC):
         commands_to_test.remove('take_data')
         commands_to_test.remove('update_config')
         for command in commands_to_test:
-                self.assertRaises(RuntimeError, self.test_session.correlator_control_command,
-                                  command, testing=True)
+            self.assertRaises(RuntimeError, self.test_session.correlator_control_command,
+                              command, testing=True)
 
         self.assertRaises(ValueError, corr.CorrelatorControlCommand.create,
                           'foo', 'take_data')
