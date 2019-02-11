@@ -2306,10 +2306,11 @@ class MCSession(Session):
 
         # Get most recent relevant control state
         control_state = []
-        if command in corr.command_state_map.keys() and 'state_type' in corr.command_state_map[command]:
-                state_type = corr.command_state_map[command]['state_type']
-                control_state = self.get_correlator_control_state(most_recent=True,
-                                                                  state_type=state_type)
+        if (command in corr.command_state_map.keys()
+                and 'state_type' in corr.command_state_map[command]):
+            state_type = corr.command_state_map[command]['state_type']
+            control_state = self.get_correlator_control_state(most_recent=True,
+                                                              state_type=state_type)
 
         # Check if the correlator is taking data
         taking_data_states = self.get_correlator_control_state(most_recent=True,
@@ -2485,8 +2486,8 @@ class MCSession(Session):
                 self.add(take_data_args_obj)
                 self.commit()
             elif command == 'update_config':
-                    self.add(config_command_obj)
-                    self.commit()
+                self.add(config_command_obj)
+                self.commit()
 
         else:
             command_list.append(command_obj)

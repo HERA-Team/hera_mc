@@ -19,7 +19,7 @@ def check_for_overlap(interval_i, interval_j):
         if interval_j[1] > interval_i[0]:
             return True
     elif interval_j[0] <= interval_i[1]:
-            return True
+        return True
     return False
 
 
