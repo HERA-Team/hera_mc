@@ -89,6 +89,8 @@ class TestObservation(TestHERAMC):
         self.assertTrue(np.abs(t2.unix - view_result.stoptime_unix) < 5)
 
     def test_obs_view_automap(self):
+        # just tests that a call to the view on the default DB doesn't error
+        # -- makes sure the alembic revision worked
         default_db = mc.connect_to_mc_db(None)
         engine = default_db.engine
         conn = engine.connect()
@@ -96,7 +98,7 @@ class TestObservation(TestHERAMC):
 
         Session = sessionmaker(bind=engine)
         session = Session()
-        view_result = session.query(HeraObsView).all()
+        view_result = session.query(HeraObsView).order_by(desc('obsid')).limit(1)
 
     def test_error_obs(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
