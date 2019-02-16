@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, print_function
 import unittest
 import numpy as np
 from math import floor
+from sqlalchemy import desc
 from sqlalchemy.orm import sessionmaker
 from astropy.time import Time, TimeDelta
 from astropy.coordinates import EarthLocation
