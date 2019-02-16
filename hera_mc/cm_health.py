@@ -14,11 +14,19 @@ from . import part_connect as PC
 from . import cm_revisions
 
 
-def check_for_overlap(interval_i, interval_j):
-    if interval_j[0] <= interval_i[0]:
-        if interval_j[1] > interval_i[0]:
+def check_for_overlap(intervals):
+    noends = []
+    xxx = [x for x in intervals[0] + intervals[1] if x is not None]
+    for i, ival in enumerate(intervals):
+        if ival[1] is None:
+            noends.append(i)
+    for i in noends:
+        intervals[i][1] = max(xxx) + 100
+
+    if intervals[1][0] <= intervals[0][0]:
+        if intervals[1][1] > intervals[0][0]:
             return True
-    elif interval_j[0] <= interval_i[1]:
+    elif intervals[1][0] <= intervals[0][1]:
         return True
     return False
 
@@ -42,7 +50,7 @@ class Connections:
             So all entries will have at least one pair.
         multiple - set - {key1, ...}
             Set of connections keys with more than one pair, so there is
-            the potential for conflicting times.
+            the potential ensure_conndict conflicting times.
         num_connections:
             Integer of the total number of connections in database.
         """
@@ -59,39 +67,37 @@ class Connections:
             k = ':'.join(connection)
             if k in self.conndict.keys():
                 self.multiples.add(k)  # only add to multiples if there is more than one.
-            self.conndict.setdefault(k, []).append([cm_utils.get_astropytime(conn.start_gpstime),
-                                                    cm_utils.get_stopdate(conn.stop_gpstime)])
+            self.conndict.setdefault(k, []).append(conn)
 
     def check_for_duplicate_connections(self):
         """
         Checks all of the self.multiple keys to see if any of them overlap in time.
         If they do, it is a conflicting duplicate connection.
-        Writes a class variable:
-        duplicates - list - [[key, i, j], ...]
-            List which keeps triplets of duplication information as the key and the
-            indices of the conflicting times.
 
         Returns the number of duplicates found.
         """
         self.ensure_conndict()
-        if len(self.multiples) == 0:
-            print("No duplications found.")
-            return 0
         self.duplicates = []
         for k in self.multiples:
             for i in range(len(self.conndict[k])):
                 for j in range(i):
-                    if check_for_overlap(self.conndict[k][i], self.conndict[k][j]):
+                    intervals = [[self.conndict[k][i].start_gpstime, self.conndict[k][i].stop_gpstime],
+                                 [self.conndict[k][j].start_gpstime, self.conndict[k][j].stop_gpstime]]
+                    if check_for_overlap(intervals):
                         self.duplicates.append([k, i, j])
         if len(self.duplicates):
-            print('{} duplications found.'.format(len(self.duplicates)))
-            for d in self.duplicates:
-                i = self.conndict[d[0]][d[1]]
-                j = self.conndict[d[0]][d[2]]
-                print('\t{} <1>{}-{}  <2>{}-{}'.format(k, i[0], i[1], j[0], j[1]))
+            s = 's'
+            if len(self.duplicates) == 1:
+                s = ''
+            print('{} duplicate{} found.'.format(len(self.duplicates), s))
+            for dup in self.duplicates:
+                dc = self.conndict[dup[0]]
+                i0 = [dc[dup[1]].start_gpstime, dc[dup[1]].stop_gpstime]
+                i1 = [dc[dup[2]].start_gpstime, dc[dup[2]].stop_gpstime]
+                print('\t{}  --->  {} {}'.format(dc[0], i0, i1))
         else:
             print('No duplications found.')
-        print('Out of {} connections checked.'.format(self.num_connections))
+        print('{} connections checked.'.format(self.num_connections))
         return len(self.duplicates)
 
     def check_for_existing_connection(self, connection, at_date='now'):
@@ -110,9 +116,11 @@ class Connections:
         self.ensure_conndict()
         if k not in self.conndict.keys():
             return False
-        for t in self.conndict[k]:
-            if cm_utils.is_active(at_date, t[0], t[1]):
-                print('Connection {} is already made for {}  ({} - {})'.format(k, at_date, t[0], t[1]))
+        for conn in self.conndict[k]:
+            t0 = conn.start_gpstime
+            t1 = conn.stop_gpstime
+            if cm_utils.is_active(at_date, t0, t1):
+                print('Connection {} is already made for {}  ({} - {})'.format(k, at_date, t0, t1))
                 return True
         return False
 
@@ -133,9 +141,9 @@ def check_part_for_overlapping_revisions(hpn, session=None):
     revisions = cm_revisions.get_all_revisions(hpn, session)
     for i in range(len(revisions)):
         for j in range(i):
-            interval_i = [revisions[i].started, cm_utils.get_stopdate(revisions[i].ended)]
-            interval_j = [revisions[j].started, cm_utils.get_stopdate(revisions[j].ended)]
-            if check_for_overlap(interval_i, interval_j):
+            intervals = [[revisions[i].started, cm_utils.get_stopdate(revisions[i].ended)],
+                         [revisions[j].started, cm_utils.get_stopdate(revisions[j].ended)]]
+            if check_for_overlap(intervals):
                 overlap.append([revisions[i], revisions[j]])
 
     if len(overlap) > 0:
