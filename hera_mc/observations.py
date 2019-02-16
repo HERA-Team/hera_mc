@@ -14,7 +14,6 @@ from astropy.coordinates import EarthLocation
 from sqlalchemy import Column, BigInteger, Float
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from . import geo_handling
 from . import MCDeclarativeBase, mc_view, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_TOL
 
 
@@ -78,7 +77,5 @@ class Observation(MCDeclarativeBase):
                    lst_start_hr=starttime.sidereal_time('apparent').hour)
 
 
-class HeraObsView(MCDeclarativeBase):
-    view_base_table = 'hera_obs'
-    __table__ = mc_view(Observation, ['starttime', 'stoptime'], 'hera_obs_view')
-    __tablename__ = 'hera_obs_view'
+HeraObsView = type('HeraObsView', (MCDeclarativeBase,),
+                   mc_view(Observation, ['starttime', 'stoptime']))

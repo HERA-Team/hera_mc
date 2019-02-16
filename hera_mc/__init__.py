@@ -11,6 +11,7 @@ import six
 # Before we can do anything else, we need to initialize some core, shared
 # variables.
 
+from alembic.operations import Operations, MigrateOperation
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import DDLElement
 from sqlalchemy.sql import table, label
@@ -79,6 +80,7 @@ class MCDeclarativeBase(object):
 MCDeclarativeBase = declarative_base(cls=MCDeclarativeBase)
 
 
+# create SQLAlchemy based objects for views
 class CreateView(DDLElement):
     def __init__(self, name, selectable):
         self.name = name
@@ -90,11 +92,22 @@ class DropView(DDLElement):
         self.name = name
 
 
+# This is used to generate the actual sqltext for Alembic
+class ViewSQLText(DDLElement):
+    def __init__(self, selectable):
+        self.selectable = selectable
+
+
 @compiler.compiles(CreateView)
 def compile(element, compiler, **kw):
     return "CREATE VIEW %s AS %s" % (
         element.name,
         compiler.sql_compiler.process(element.selectable, literal_binds=True))
+
+
+@compiler.compiles(ViewSQLText)
+def compile(element, compiler, **kw):
+    return compiler.sql_compiler.process(element.selectable, literal_binds=True)
 
 
 @compiler.compiles(DropView)
@@ -117,20 +130,99 @@ def gps_to_unix(gps_second):
     return gps_second + GPS_TO_UNIX_SEC
 
 
-def mc_view(table_obj, gps_column_list, view_name):
-    columns = list(table_obj.__table__.columns)
+# This function returns a dict with the attributes needed to make a new View object:
+#   e.g. MyView = type('MyView', (MCDeclarativeBase,), mc_view(base_table_obj, ['time']))
+# It would be nice to make this a base object that a new view object can inherit from
+# but this is pretty close and I can't figure out how to do any better.
+# !!! All new views need to be added to the Alembic version by hand -- they are not picked up in the autogeneration!!!
+def mc_view(base_table_obj, gps_column_list):
+    columns = list(base_table_obj.__table__.columns)
 
     column_names = [column.key for column in columns]
     for gps_col in gps_column_list:
         assert gps_col in column_names
 
-    view_attributes = [getattr(table_obj, name) for name in column_names]
+    view_attributes = [getattr(base_table_obj, name) for name in column_names]
     label_obj_list = []
     for gps_col in gps_column_list:
         col_index = np.where(np.array(column_names) == gps_col)[0][0]
         label_obj_list.append(label(gps_col + '_unix', gps_to_unix(columns[col_index])))
 
-    return view(view_name, MCDeclarativeBase.metadata, select(view_attributes + label_obj_list))
+    selectable = select(view_attributes + label_obj_list)
+    view_name = base_table_obj.__tablename__ + '_view'
+
+    return {'view_base_table': base_table_obj.__tablename__,
+            '__tablename__': view_name,
+            'sqltext': ViewSQLText(selectable),
+            '__table__': view(view_name, MCDeclarativeBase.metadata, selectable)}
+
+
+# create Alembic-based classes to handle views properly,
+# based on: https://alembic.sqlalchemy.org/en/latest/cookbook.html
+# not including the saved procedure part now, if needed can be added later
+class ReversibleOp(MigrateOperation):
+    def __init__(self, target):
+        self.target = target
+
+    @classmethod
+    def invoke_for_target(cls, operations, target):
+        op = cls(target)
+        return operations.invoke(op)
+
+    def reverse(self):
+        raise NotImplementedError()
+
+    @classmethod
+    def _get_object_from_version(cls, operations, ident):
+        version, objname = ident.split(".")
+
+        module = operations.get_context().script.get_revision(version).module
+        obj = getattr(module, objname)
+        return obj
+
+    @classmethod
+    def replace(cls, operations, target, replaces=None, replace_with=None):
+
+        if replaces:
+            old_obj = cls._get_object_from_version(operations, replaces)
+            drop_old = cls(old_obj).reverse()
+            create_new = cls(target)
+        elif replace_with:
+            old_obj = cls._get_object_from_version(operations, replace_with)
+            drop_old = cls(target).reverse()
+            create_new = cls(old_obj)
+        else:
+            raise TypeError("replaces or replace_with is required")
+
+        operations.invoke(drop_old)
+        operations.invoke(create_new)
+
+
+@Operations.register_operation("create_view", "invoke_for_target")
+@Operations.register_operation("replace_view", "replace")
+class CreateViewOp(ReversibleOp):
+    def reverse(self):
+        return DropViewOp(self.target)
+
+
+@Operations.register_operation("drop_view", "invoke_for_target")
+class DropViewOp(ReversibleOp):
+    def reverse(self):
+        return CreateViewOp(self.view)
+
+# This assumes that View object have these attributes: __tablename__ & sqltext
+@Operations.implementation_for(CreateViewOp)
+def create_view(operations, operation):
+
+    operations.execute("CREATE VIEW %s AS %s" % (
+        operation.target.__tablename__,
+        operation.target.sqltext
+    ))
+
+
+@Operations.implementation_for(DropViewOp)
+def drop_view(operations, operation):
+    operations.execute("DROP VIEW %s" % operation.target.__tablename__)
 
 
 import logging  # noqa
