@@ -127,6 +127,17 @@ class TestParts(TestHERAMC):
         from .. import cm_health
         c = cm_health.check_part_for_overlapping_revisions(self.test_part, self.test_session)
         self.assertTrue(len(c) == 0)
+        # Add a test part
+        part = part_connect.Parts()
+        part.hpn = self.test_part
+        part.hpn_rev = 'B'
+        part.hptype = self.test_hptype
+        part.manufacture_number = 'XYZ'
+        part.start_gpstime = self.start_time.gps
+        self.test_session.add(part)
+        self.test_session.commit()
+        c = cm_health.check_part_for_overlapping_revisions(self.test_part, self.test_session)
+        self.assertTrue(len(c) == 1)
 
     def test_datetime(self):
         dt = cm_utils.get_astropytime('2017-01-01', 0.0)

@@ -15,6 +15,11 @@ from . import cm_revisions
 
 
 def check_for_overlap(intervals):
+    """
+    intervals:  gps_time intervals to test for overlap
+                format [[span_1_low, span_1_high], [span_2_low, span_2_high]]
+                if the high values are None, they get set to the max value + 100 sec
+    """
     noends = []
     xxx = [x for x in intervals[0] + intervals[1] if x is not None]
     for i, ival in enumerate(intervals):
@@ -42,15 +47,14 @@ class Connections:
 
     def ensure_conndict(self):
         """
-        If not already set, writes the class variables:
-        conndict - dictionary - conndict[k] = [[start, stop], []...]
+        If self.conndict is not None, writes the class variables:
+        conndict - dictionary - conndict[k] = [conn_1, conn_2...]
             Dictionary of connections keyed as:
             upstream_part:rev:output_port:downstream_part:rev:input_port
-            with the items being the start/stop times of that connection.
-            So all entries will have at least one pair.
+            with the items being connection classes.
         multiple - set - {key1, ...}
-            Set of connections keys with more than one pair, so there is
-            the potential ensure_conndict conflicting times.
+            Set of conndict keys with more than one pair, so there is
+            the potential of conflicting times.
         num_connections:
             Integer of the total number of connections in database.
         """
@@ -69,12 +73,13 @@ class Connections:
                 self.multiples.add(k)  # only add to multiples if there is more than one.
             self.conndict.setdefault(k, []).append(conn)
 
-    def check_for_duplicate_connections(self):
+    def check_for_duplicate_connections(self, display_results=False):
         """
         Checks all of the self.multiple keys to see if any of them overlap in time.
         If they do, it is a conflicting duplicate connection.
+        if display_results is True, it will print the results.
 
-        Returns the number of duplicates found.
+        Returns the duplicated connections.
         """
         self.ensure_conndict()
         self.duplicates = []
@@ -84,23 +89,25 @@ class Connections:
                     intervals = [[self.conndict[k][i].start_gpstime, self.conndict[k][i].stop_gpstime],
                                  [self.conndict[k][j].start_gpstime, self.conndict[k][j].stop_gpstime]]
                     if check_for_overlap(intervals):
-                        self.duplicates.append([k, i, j])
+                        self.duplicates.append([self.conndict[k][i], self.conndict[k][j]])
         if len(self.duplicates):
             s = 's'
             if len(self.duplicates) == 1:
                 s = ''
-            print('{} duplicate{} found.'.format(len(self.duplicates), s))
+            if display_results:
+                print('{} duplicate{} found.'.format(len(self.duplicates), s))
             for dup in self.duplicates:
-                dc = self.conndict[dup[0]]
-                i0 = [dc[dup[1]].start_gpstime, dc[dup[1]].stop_gpstime]
-                i1 = [dc[dup[2]].start_gpstime, dc[dup[2]].stop_gpstime]
-                print('\t{}  --->  {} {}'.format(dc[0], i0, i1))
-        else:
+                i0 = [dup[0].start_gpstime, dup[0].stop_gpstime]
+                i1 = [dup[1].start_gpstime, dup[1].stop_gpstime]
+                if display_results:
+                    print('\t{}  --->  {} {}'.format(dup[0], i0, i1))
+        elif display_results:
             print('No duplications found.')
-        print('{} connections checked.'.format(self.num_connections))
-        return len(self.duplicates)
+        if display_results:
+            print('{} connections checked.'.format(self.num_connections))
+        return self.duplicates
 
-    def check_for_existing_connection(self, connection, at_date='now'):
+    def check_for_existing_connection(self, connection, at_date='now', display_results=False):
         """
         Checks whether the provided connection is already set up for the at_date provided.
 
@@ -120,7 +127,8 @@ class Connections:
             t0 = conn.start_gpstime
             t1 = conn.stop_gpstime
             if cm_utils.is_active(at_date, t0, t1):
-                print('Connection {} is already made for {}  ({} - {})'.format(k, at_date, t0, t1))
+                if display_results:
+                    print('Connection {} is already made for {}  ({} - {})'.format(k, at_date, t0, t1))
                 return True
         return False
 
