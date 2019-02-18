@@ -11,7 +11,7 @@ from __future__ import absolute_import, division, print_function
 import unittest
 from astropy.time import Time, TimeDelta
 
-from .. import part_connect, mc, cm_handling, cm_utils
+from .. import part_connect, mc, cm_handling, cm_utils, cm_health
 from . import TestHERAMC
 
 
@@ -109,20 +109,36 @@ class TestConnections(TestHERAMC):
         sc = self.h.get_specific_connection(c, at_date)
         self.assertTrue(len(sc) == 0)
 
+    def test_check_for_overlap(self):
+        x = cm_health.check_for_overlap([[1, 2], [3, 4]])
+        self.assertFalse(x)
+        x = cm_health.check_for_overlap([[3, 4], [1, 2]])
+        self.assertFalse(x)
+        x = cm_health.check_for_overlap([[1, 10], [2, 8]])
+        self.assertTrue(x)
+        x = cm_health.check_for_overlap([[2, 8], [1, 10]])
+        self.assertTrue(x)
+        x = cm_health.check_for_overlap([[1, 5], [3, 8]])
+        self.assertTrue(x)
+        x = cm_health.check_for_overlap([[3, 8], [1, 5]])
+        self.assertTrue(x)
+
     def test_duplicate_connections(self):
-        from .. import cm_health
+        connection = part_connect.Connections()
         healthy = cm_health.Connections(self.test_session)
         # Specific connections
         duplicates = healthy.check_for_existing_connection(['a', 'b', 'c', 'd', 'e', 'f'], self.query_time)
         self.assertFalse(duplicates)
         cnnctn = [self.test_hpn[0], self.test_rev, 'up_and_out', self.test_hpn[1], self.test_rev, 'down_and_in']
-        duplicates = healthy.check_for_existing_connection(cnnctn, self.query_time)
+        duplicates = healthy.check_for_existing_connection(cnnctn, self.query_time, display_results=True)
         self.assertTrue(duplicates)
-        # All connections
-        duplicates = healthy.check_for_duplicate_connections()
-        self.assertTrue(duplicates == 0)
+        # Add test connection
+        duplicates = healthy.check_for_existing_connection(cnnctn, Time('2015-07-01 01:00:00', scale='utc').gps, display_results=True)
+        self.assertFalse(duplicates)
+        # Duplicated connections
+        duplicates = healthy.check_for_duplicate_connections(display_results=True)
+        self.assertTrue(len(duplicates) == 0)
         # Add test duplicate connection
-        connection = part_connect.Connections()
         connection.upstream_part = self.test_hpn[0]
         connection.up_part_rev = self.test_rev
         connection.downstream_part = self.test_hpn[1]
@@ -133,8 +149,8 @@ class TestConnections(TestHERAMC):
         self.test_session.add(connection)
         self.test_session.commit()
         healthy.conndict = None
-        duplicates = healthy.check_for_duplicate_connections()
-        self.assertTrue(duplicates == 1)
+        duplicates = healthy.check_for_duplicate_connections(display_results=True)
+        self.assertTrue(len(duplicates) == 1)
 
 
 if __name__ == '__main__':
