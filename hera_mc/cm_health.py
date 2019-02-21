@@ -14,26 +14,16 @@ from . import part_connect as PC
 from . import cm_revisions
 
 
-def check_for_overlap(intervals):
+def check_for_overlap(interval):
     """
     intervals:  gps_time intervals to test for overlap
                 format [[span_1_low, span_1_high], [span_2_low, span_2_high]]
                 if the high values are None, they get set to the max value + 100 sec
     """
-    noends = []
-    xxx = [x for x in intervals[0] + intervals[1] if x is not None]
-    for i, ival in enumerate(intervals):
-        if ival[1] is None:
-            noends.append(i)
-    for i in noends:
-        intervals[i][1] = max(xxx) + 100
-
-    if intervals[1][0] <= intervals[0][0]:
-        if intervals[1][1] > intervals[0][0]:
-            return True
-    elif intervals[1][0] <= intervals[0][1]:
-        return True
-    return False
+    maxx = max([x for x in interval[0] + interval[1] if x is not None]) + 100
+    for i, ival in enumerate(interval):
+        interval[i] = [x if x is not None else maxx for x in ival]
+    return interval[0][1] > interval[1][0] and interval[1][1] > interval[0][0]
 
 
 class Connections:
