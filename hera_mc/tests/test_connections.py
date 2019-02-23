@@ -122,6 +122,10 @@ class TestConnections(TestHERAMC):
         self.assertTrue(x)
         x = cm_health.check_for_overlap([[3, 8], [1, 5]])
         self.assertTrue(x)
+        x = cm_health.check_for_overlap([[1, 8], [8, 10]])
+        self.assertFalse(x)
+        x = cm_health.check_for_overlap([[8, 10], [1, 8]])
+        self.assertFalse(x)
 
     def test_duplicate_connections(self):
         connection = part_connect.Connections()
