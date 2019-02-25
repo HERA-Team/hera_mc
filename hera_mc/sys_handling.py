@@ -104,14 +104,10 @@ class Handling:
             if return_full:
                 start = Time(fnd[0].start_gpstime, format='gps')
                 stop = fnd[0].stop_gpstime
-                if stop is not None:
-                    stop = Time(stop, format='gps')
                 alist = cm_utils.listify(fnd[0].ant_list)
                 return (start, stop, alist)
             else:
                 return str(fnd[0].ant_list)
-
-        raise ValueError('Too many open dubitable lists ({}).'.format(len(fnd)))
 
     def get_all_fully_connected_at_date(self, at_date, station_types_to_check='default'):
         """
@@ -212,20 +208,16 @@ class Handling:
                 except IndexError:  # pragma: no cover
                     corr[p] = 'None'
             fnd_list = self.geo.get_location([stn], at_date)
-            if not len(fnd_list):
-                return None
-            if len(fnd_list) > 1:  # pragma: no cover
-                print("More than one part found:  ", str(fnd))
-                print("Setting to first to continue.")
-            fnd = fnd_list[0]
-            station_info = StationInfo(fnd)
-            station_info.antenna_number = ant_num
-            station_info.correlator_input = (str(corr['e']), str(corr['n']))
-            station_info.epoch = 'e:{}, n:{}'.format(pe['e'], pe['n'])
-            if pe['e'] == pe['n']:
-                station_info.epoch = str(pe['e'])
-            station_info.start_date = fctime['start']
-            station_info.stop_date = fctime['end']
+            if len(fnd_list) == 1:
+                fnd = fnd_list[0]
+                station_info = StationInfo(fnd)
+                station_info.antenna_number = ant_num
+                station_info.correlator_input = (str(corr['e']), str(corr['n']))
+                station_info.epoch = 'e:{}, n:{}'.format(pe['e'], pe['n'])
+                if pe['e'] == pe['n']:
+                    station_info.epoch = str(pe['e'])
+                    station_info.start_date = fctime['start']
+                station_info.stop_date = fctime['end']
         return station_info
 
     def get_cminfo_correlator(self):

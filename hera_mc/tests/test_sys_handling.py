@@ -58,8 +58,6 @@ class TestSys(TestHERAMC):
 
     def test_some_fully_connected(self):
         x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')
-        self.sys_h.H = None
-        x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')
         self.assertEqual(x, None)
 
     def test_correlator_info(self):
@@ -111,6 +109,8 @@ class TestSys(TestHERAMC):
         self.assertEqual(cofa.elevation, corr_dict['cofa_alt'])
 
     def test_dubitable(self):
+        dubitable_ants = self.sys_h.get_dubitable_list()
+        self.assertTrue(dubitable_ants is None)
         at_date = cm_utils.get_astropytime('2017-01-01')
         part_connect.update_dubitable(self.test_session, at_date.gps, ['1', '2', '3'])
         dubitable_ants = self.sys_h.get_dubitable_list()
