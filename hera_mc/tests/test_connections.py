@@ -79,6 +79,8 @@ class TestConnections(TestHERAMC):
         ckey = located[prkey].keys_down[0]
         self.assertTrue(located[prkey].down[ckey].upstream_part == u)
         self.h.show_connections(located)
+        self.h.show_connections(located, verbosity=1)
+        self.h.show_connections(located, verbosity=2)
 
     def test_get_dossier(self):
         x = self.h.get_part_connection_dossier('test_part1', 'active', 'all', at_date='now', exact_match=True)
@@ -131,6 +133,8 @@ class TestConnections(TestHERAMC):
         x = self.h.get_physical_connections()
         y = list(x.keys())
         self.assertTrue('SNPA000222:A' in y)
+        x = self.h.get_physical_connections('2016/01/01')
+        self.assertFalse(len(x))
 
     def test_duplicate_connections(self):
         connection = part_connect.Connections()

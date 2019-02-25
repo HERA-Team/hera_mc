@@ -39,7 +39,7 @@ class PartDossierEntry():
         self.connections = None  # This is the PartConnectionDossierEntry class
         self.geo = None  # This is the geo_location.GeoLocation class
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return("{}:{} -- {} -- <{}>".format(self.hpn, self.rev, self.part, self.connections))
 
     def get_entry(self, session, full_version=True):
@@ -110,7 +110,7 @@ class PartConnectionDossierEntry:
         self.input_ports = set()
         self.output_ports = set()
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return ("\n\tkeys_up:  {self.keys_up}\n\tkeys_down:  {self.keys_down}\n".format(self=self))
 
     def make_entry_from_connection(self, conn):
@@ -246,7 +246,7 @@ class Handling:
         else:
             self.session = session
 
-    def close(self):
+    def close(self):  # pragma: no cover
         self.session.close()
 
     def add_cm_version(self, time, git_hash):
