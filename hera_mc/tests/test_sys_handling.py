@@ -51,6 +51,8 @@ class TestSys(TestHERAMC):
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
         hu = hookup.get_hookup('cached', 'H', 'pol', force_new=False)
         hu = hookup.get_hookup('A23,A23', 'H', 'pol', force_new=False)
+        hookup.cached_hookup_dict = None
+        hookup.determine_hookup_cache_to_use()
 
     def test_hookup_cache_file_info(self):
         hookup = cm_hookup.Hookup(at_date='now', session=self.test_session)
