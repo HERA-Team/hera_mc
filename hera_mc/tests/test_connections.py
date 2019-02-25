@@ -127,6 +127,11 @@ class TestConnections(TestHERAMC):
         x = cm_health.check_for_overlap([[8, 10], [1, 8]])
         self.assertFalse(x)
 
+    def test_physical_connections(self):
+        x = self.h.get_physical_connections()
+        y = list(x.keys())
+        self.assertTrue('SNPA000222:A' in y)
+
     def test_duplicate_connections(self):
         connection = part_connect.Connections()
         healthy = cm_health.Connections(self.test_session)
