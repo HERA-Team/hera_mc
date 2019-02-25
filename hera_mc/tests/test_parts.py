@@ -45,6 +45,8 @@ class TestParts(TestHERAMC):
                 [ntp, 'X', 'start_gpstime', 1172530000]]
         part_connect.update_part(self.test_session, data, add_new_part=True)
         located = self.h.get_part_dossier([ntp], 'X', 'now', True)
+        prkey = list(located.keys())[0]
+        print(located[prkey])
         if len(list(located.keys())) == 1:
             self.assertTrue(located[list(located.keys())[0]].part.hpn == ntp)
         else:

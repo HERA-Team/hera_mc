@@ -76,6 +76,7 @@ class TestConnections(TestHERAMC):
         part_connect.update_connection(self.test_session, data, add_new_connection=True)
         located = self.h.get_part_connection_dossier([u], r, a, 'now', True)
         prkey = list(located.keys())[0]
+        print(located[prkey])
         ckey = located[prkey].keys_down[0]
         self.assertTrue(located[prkey].down[ckey].upstream_part == u)
         self.h.show_connections(located)
@@ -96,6 +97,9 @@ class TestConnections(TestHERAMC):
         self.assertTrue(len(x) == 0)
         x = self.h.get_part_connection_dossier('test_part2', 'active', 'all', at_date=old_time, exact_match=True)
         self.assertTrue(len(x) == 0)
+        z = {}
+        z['tst'] = cm_handling.PartConnectionDossierEntry('test_part1', 'active', 'all', at_date='now')
+        self.h.show_connections(z)
 
     def test_get_specific_connection(self):
         c = part_connect.Connections()
@@ -107,6 +111,26 @@ class TestConnections(TestHERAMC):
         c.downstream_input_port = 'down_and_in'
         sc = self.h.get_specific_connection(c)
         self.assertTrue(len(sc) == 1)
+
+        c.up_part_rev = 'S'
+        sc = self.h.get_specific_connection(c)
+        self.assertTrue(len(sc) == 0)
+
+        c.up_part_rev = self.test_rev
+        c.down_part_rev = 'S'
+        sc = self.h.get_specific_connection(c)
+        self.assertTrue(len(sc) == 0)
+
+        c.down_part_rev = self.test_rev
+        c.upstream_output_port = 'guk'
+        sc = self.h.get_specific_connection(c)
+        self.assertTrue(len(sc) == 0)
+
+        c.upstream_output_port = 'up_and_out'
+        c.downstream_input_port = 'guk'
+        sc = self.h.get_specific_connection(c)
+        self.assertTrue(len(sc) == 0)
+
         at_date = Time('2017-05-01 01:00:00', scale='utc')
         sc = self.h.get_specific_connection(c, at_date)
         self.assertTrue(len(sc) == 0)

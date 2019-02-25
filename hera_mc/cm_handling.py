@@ -39,7 +39,7 @@ class PartDossierEntry():
         self.connections = None  # This is the PartConnectionDossierEntry class
         self.geo = None  # This is the geo_location.GeoLocation class
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         return("{}:{} -- {} -- <{}>".format(self.hpn, self.rev, self.part, self.connections))
 
     def get_entry(self, session, full_version=True):
@@ -110,7 +110,7 @@ class PartConnectionDossierEntry:
         self.input_ports = set()
         self.output_ports = set()
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         return ("\n\tkeys_up:  {self.keys_up}\n\tkeys_down:  {self.keys_down}\n".format(self=self))
 
     def make_entry_from_connection(self, conn):
@@ -394,7 +394,8 @@ class Handling:
 
     def get_physical_connections(self, at_date=None):
         """
-        Finds and returns a list of "physical (@)" connections.
+        Finds and returns a list of "physical" connections.  Physical in this case means
+        non-hookup connections that we wish to track.  The leading character of their ports are '@'.
         If at_date is of type Time, it will only return connections valid at that time.  Otherwise
         it ignores at_date (i.e. it will return any such connection over all time.)
 
