@@ -114,10 +114,10 @@ class PartConnectionDossierEntry:
         return ("\n\tkeys_up:  {self.keys_up}\n\tkeys_down:  {self.keys_down}\n".format(self=self))
 
     def make_entry_from_connection(self, conn):
-        self.keys_up = [None]
+        self.keys_up = [self.entry_key]
         self.keys_down = [self.entry_key]
         self.up[self.entry_key] = copy.copy(conn)
-        self.up[self.entry_key].skip_it = True
+        self.up[self.entry_key].skip_it = False
         self.down[self.entry_key] = copy.copy(conn)
         self.down[self.entry_key].skip_it = False
         self.input_ports.add(conn.downstream_input_port)

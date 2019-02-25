@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     if action_tag == 'ph':  # physical port connections
         ppc = handling.get_physical_connections(date_query)
-        handling.show_connections(ppc, headers=['Part', '<dOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop'])
+        handling.show_connections(ppc, headers=['Upstream', '<uOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop'])
         sys.exit()
 
     if action_tag == 'he':  # overlapping revisions
