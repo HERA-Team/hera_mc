@@ -10,9 +10,25 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 from astropy.time import Time, TimeDelta
+from contextlib import contextmanager
+import six
+import sys
 
 from .. import part_connect, mc, cm_utils, cm_handling, cm_revisions
 from ..tests import TestHERAMC
+
+
+# define a context manager for checking stdout
+# from https://stackoverflow.com/questions/4219717/how-to-assert-output-with-nosetest-unittest-in-python
+@contextmanager
+def captured_output():
+    new_out, new_err = six.StringIO(), six.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    try:
+        sys.stdout, sys.stderr = new_out, new_err
+        yield sys.stdout, sys.stderr
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
 
 
 class TestParts(TestHERAMC):
@@ -46,7 +62,7 @@ class TestParts(TestHERAMC):
         part_connect.update_part(self.test_session, data, add_new_part=True)
         located = self.h.get_part_dossier([ntp], 'X', 'now', True)
         prkey = list(located.keys())[0]
-        print(located[prkey])
+        self.assertTrue(str(located[prkey]).startswith('NEW_TEST_PART:X'))
         if len(list(located.keys())) == 1:
             self.assertTrue(located[list(located.keys())[0]].part.hpn == ntp)
         else:
@@ -68,8 +84,12 @@ class TestParts(TestHERAMC):
     def test_show_parts(self):
         part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, 'now', 'Testing', 'library_file')
         located = self.h.get_part_dossier([self.test_part], self.test_rev, self.start_time, True)
-        self.h.show_parts(located)
-        self.h.show_parts({})
+        with captured_output() as (out, err):
+            self.h.show_parts(located)
+        self.assertTrue('TEST_PART  | Q     | antenna     |         | 2017-07-01 01:00:37' in out.getvalue().strip())
+        with captured_output() as (out, err):
+            self.h.show_parts({})
+        self.assertTrue('Part not found' in out.getvalue().strip())
 
     def test_part_info(self):
         part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, 'now', 'Testing', 'library_file')
@@ -102,9 +122,13 @@ class TestParts(TestHERAMC):
         revision = cm_revisions.get_revisions_of_type('TEST_FEED', 'LAST', 'now', self.test_session)
         self.assertEqual(revision[0].rev, 'Z')
         revision = cm_revisions.get_revisions_of_type(None, 'ACTIVE', 'now', self.test_session)
-        cm_revisions.show_revisions(revision)
+        with captured_output() as (out, err):
+            cm_revisions.show_revisions(revision)
+        self.assertTrue('No revisions found' in out.getvalue().strip())
         revision = cm_revisions.get_revisions_of_type('HH23', 'ACTIVE', 'now', self.test_session)
-        cm_revisions.show_revisions(revision)
+        with captured_output() as (out, err):
+            cm_revisions.show_revisions(revision)
+        self.assertTrue('1096509616.0' in out.getvalue().strip())
         self.assertEqual(revision[0].hpn, 'HH23')
         revision = cm_revisions.get_revisions_of_type('help', 'help')
         self.assertEqual(revision, None)

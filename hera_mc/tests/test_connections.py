@@ -10,9 +10,25 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 from astropy.time import Time, TimeDelta
+from contextlib import contextmanager
+import six
+import sys
 
 from .. import part_connect, mc, cm_handling, cm_utils, cm_health
 from . import TestHERAMC
+
+
+# define a context manager for checking stdout
+# from https://stackoverflow.com/questions/4219717/how-to-assert-output-with-nosetest-unittest-in-python
+@contextmanager
+def captured_output():
+    new_out, new_err = six.StringIO(), six.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    try:
+        sys.stdout, sys.stderr = new_out, new_err
+        yield sys.stdout, sys.stderr
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
 
 
 class TestConnections(TestHERAMC):
@@ -76,22 +92,33 @@ class TestConnections(TestHERAMC):
         part_connect.update_connection(self.test_session, data, add_new_connection=True)
         located = self.h.get_part_connection_dossier([u], r, a, 'now', True)
         prkey = list(located.keys())[0]
-        print(located[prkey])
+        self.assertTrue(str(located[prkey]).startswith('NEW_TEST_PART_UP:A'))
         ckey = located[prkey].keys_down[0]
         self.assertTrue(located[prkey].down[ckey].upstream_part == u)
-        self.h.show_connections(located)
-        self.h.show_connections(located, verbosity=1)
-        self.h.show_connections(located, verbosity=2)
+        with captured_output() as (out, err):
+            self.h.show_connections(located)
+        self.assertTrue('new_test_part_up:A | up_and_out  | down_and_in | new_test_part_down:A' in out.getvalue().strip())
+        with captured_output() as (out, err):
+            self.h.show_connections(located, verbosity=1)
+        self.assertTrue('new_test_part_up:A | new_test_part_down:A' in out.getvalue().strip())
+        with captured_output() as (out, err):
+            self.h.show_connections(located, verbosity=2)
+        print(out.getvalue().strip())
+        self.assertTrue('new_test_part_up:A | up_and_out  | down_and_in | new_test_part_down:A' in out.getvalue().strip())
 
     def test_get_dossier(self):
         x = self.h.get_part_connection_dossier('test_part1', 'active', 'all', at_date='now', exact_match=True)
         y = list(x.keys())[0]
         self.assertEqual(y, 'test_part1:Q')
-        self.h.show_connections(x)
+        with captured_output() as (out, err):
+            self.h.show_connections(x)
+        self.assertTrue('test_part1:Q | up_and_out  | down_and_in | test_part2:Q' in out.getvalue().strip())
         x = self.h.get_part_connection_dossier('test_part2', 'active', 'all', at_date='now', exact_match=True)
         y = list(x.keys())[0]
         self.assertEqual(y, 'test_part2:Q')
-        self.h.show_connections(x)
+        with captured_output() as (out, err):
+            self.h.show_connections(x)
+        self.assertTrue('test_part1:Q | up_and_out  | down_and_in | test_part2:Q' in out.getvalue().strip())
         old_time = Time('2014-08-01 01:00:00', scale='utc')
         x = self.h.get_part_connection_dossier('test_part1', 'active', 'all', at_date=old_time, exact_match=True)
         self.assertTrue(len(x) == 0)
@@ -99,7 +126,9 @@ class TestConnections(TestHERAMC):
         self.assertTrue(len(x) == 0)
         z = {}
         z['tst'] = cm_handling.PartConnectionDossierEntry('test_part1', 'active', 'all', at_date='now')
-        self.h.show_connections(z)
+        with captured_output() as (out, err):
+            self.h.show_connections(z)
+        self.assertTrue('Q' not in out.getvalue().strip())
 
     def test_get_specific_connection(self):
         c = part_connect.Connections()

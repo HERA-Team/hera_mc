@@ -111,7 +111,7 @@ class PartConnectionDossierEntry:
         self.output_ports = set()
 
     def __repr__(self):
-        return ("\n\tkeys_up:  {self.keys_up}\n\tkeys_down:  {self.keys_down}\n".format(self=self))
+        return ("{self.hpn}:{self.rev}\n\tkeys_up:  {self.keys_up}\n\tkeys_down:  {self.keys_down}\n".format(self=self))
 
     def make_entry_from_connection(self, conn):
         self.keys_up = [self.entry_key]
@@ -394,8 +394,11 @@ class Handling:
 
     def get_physical_connections(self, at_date=None):
         """
-        Finds and returns a list of "physical" connections.  Physical in this case means
-        non-hookup connections that we wish to track.  The leading character of their ports are '@'.
+        Finds and returns a list of "physical" connections, as opposed to "hookup" connections.
+            In this context "hookup" refers to all signal path connections that uniquely determine
+            the path from station to correlator input.
+            "Physical" refers to other connections that we wish to track, such as power or rack location.
+            The leading character of physical ports is '@'.
         If at_date is of type Time, it will only return connections valid at that time.  Otherwise
         it ignores at_date (i.e. it will return any such connection over all time.)
 
