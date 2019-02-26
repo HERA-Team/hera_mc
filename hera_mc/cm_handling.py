@@ -111,7 +111,17 @@ class PartConnectionDossierEntry:
         self.output_ports = set()
 
     def __repr__(self):
-        return ("\n\tkeys_up:  {self.keys_up}\n\tkeys_down:  {self.keys_down}\n".format(self=self))
+        return ("{self.hpn}:{self.rev}\n\tkeys_up:  {self.keys_up}\n\tkeys_down:  {self.keys_down}\n".format(self=self))
+
+    def make_entry_from_connection(self, conn):
+        self.keys_up = [self.entry_key]
+        self.keys_down = [self.entry_key]
+        self.up[self.entry_key] = copy.copy(conn)
+        self.up[self.entry_key].skip_it = False
+        self.down[self.entry_key] = copy.copy(conn)
+        self.down[self.entry_key].skip_it = False
+        self.input_ports.add(conn.downstream_input_port)
+        self.output_ports.add(conn.upstream_output_port)
 
     def get_entry(self, session):
         """
@@ -236,7 +246,7 @@ class Handling:
         else:
             self.session = session
 
-    def close(self):
+    def close(self):  # pragma: no cover
         self.session.close()
 
     def add_cm_version(self, time, git_hash):
@@ -382,6 +392,38 @@ class Handling:
             table_data.append(part_dossier[hpnr].table_entry_row(columns))
         print('\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
 
+    def get_physical_connections(self, at_date=None):
+        """
+        Finds and returns a list of "physical" connections, as opposed to "hookup" connections.
+            In this context "hookup" refers to all signal path connections that uniquely determine
+            the path from station to correlator input.
+            "Physical" refers to other connections that we wish to track, such as power or rack location.
+            The leading character of physical ports is '@'.
+        If at_date is of type Time, it will only return connections valid at that time.  Otherwise
+        it ignores at_date (i.e. it will return any such connection over all time.)
+
+        Returns a list of connections (class)
+
+        Parameters:
+        ------------
+        at_date:  Astropy Time to check epoch.  If None is ignored.
+        """
+        if not isinstance(at_date, Time):
+            at_date = cm_utils.get_astropytime(at_date)
+        part_connection_dossier = {}
+        for conn in self.session.query(PC.Connections).filter(
+                (PC.Connections.upstream_output_port.ilike('@%'))
+                | (PC.Connections.downstream_input_port.ilike('@%'))):
+            conn.gps2Time()
+            include_this_one = True
+            if isinstance(at_date, Time) and not cm_utils.is_active(at_date, conn.start_date, conn.stop_date):
+                include_this_one = False
+            if include_this_one:
+                this_connect = PartConnectionDossierEntry(conn.upstream_part, conn.up_part_rev, conn.upstream_output_port, at_date)
+                this_connect.make_entry_from_connection(conn)
+                part_connection_dossier[this_connect.entry_key] = this_connect
+        return part_connection_dossier
+
     def get_specific_connection(self, c, at_date=None):
         """
         Finds and returns a list of connections matching the supplied components of the query.
@@ -453,7 +495,7 @@ class Handling:
                 part_connection_dossier[this_connect.entry_key] = this_connect
         return part_connection_dossier
 
-    def show_connections(self, connection_dossier, verbosity=3):
+    def show_connections(self, connection_dossier, headers=None, verbosity=3):
         """
         Print out active connection information.  Uses tabulate package.
 
@@ -463,14 +505,15 @@ class Handling:
         verbosity:  integer 1, 2, 3 for low, medium, high
         """
         table_data = []
-        if verbosity == 1:
-            headers = ['Upstream', 'Part', 'Downstream']
-        elif verbosity == 2:
-            headers = ['Upstream', '<uOutput:', ':uInput>', 'Part', '<dOutput:',
-                       ':dInput>', 'Downstream']
-        elif verbosity > 2:
-            headers = ['uStart', 'uStop', 'Upstream', '<uOutput:', ':uInput>',
-                       'Part', '<dOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop']
+        if headers is None:
+            if verbosity == 1:
+                headers = ['Upstream', 'Part', 'Downstream']
+            elif verbosity == 2:
+                headers = ['Upstream', '<uOutput:', ':uInput>', 'Part', '<dOutput:',
+                           ':dInput>', 'Downstream']
+            elif verbosity > 2:
+                headers = ['uStart', 'uStop', 'Upstream', '<uOutput:', ':uInput>',
+                           'Part', '<dOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop']
         for k in sorted(connection_dossier.keys()):
             conn = connection_dossier[k]
             if len(conn.up) == 0 and len(conn.down) == 0:

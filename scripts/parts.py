@@ -17,7 +17,7 @@ from hera_mc import part_connect, cm_handling, cm_utils, mc
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('action', nargs='?', help="Actions are:  info, types, part_info, conn_info, rev_info, \
-                                                   check_rev, health.  'info' for more.", default='part_info')
+                                                   physical, check_rev, health.  'info' for more.", default='part_info')
     # set values for 'action' to use
     parser.add_argument('-p', '--hpn', help="Part number, csv-list (required). [None]", default=None)
     parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [active]", default='active')
@@ -42,6 +42,11 @@ if __name__ == '__main__':
             conn_info:  provide a summary of connections to given part/rev/port
             rev_info:  provide a summary of revisions of given part/rev
             types:  provide a summary of part types
+            physical:  shows the "physical" connections, which are those _not_ needed
+                       to uniquely track antenna-to-correlator but that we still want to
+                       track though, e.g. power, rack location, ...
+                       (Use 'hookup.py' to look at the connections that see the
+                       station-correlator hookup)
             check_rev:  checks whether a given part/rev exists
             health:  runs various "health" checks
 
@@ -69,6 +74,11 @@ if __name__ == '__main__':
     if action_tag == 'ty':  # types of parts
         part_type_dict = handling.get_part_types(args.port, date_query)
         handling.show_part_types()
+        sys.exit()
+
+    if action_tag == 'ph':  # physical port connections
+        ppc = handling.get_physical_connections(date_query)
+        handling.show_connections(ppc, headers=['Upstream', '<uOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop'])
         sys.exit()
 
     if action_tag == 'he':  # overlapping revisions

@@ -48,6 +48,13 @@ class TestTransfer(TestHERAMC):
         result = cm_transfer.check_if_main(self.test_session)
         self.assertFalse(result)
 
+    def test_cm_table_info(self):
+        from hera_mc import cm_table_info
+        ot = ','.join(cm_table_info.order_the_tables(None))
+        self.assertTrue(ot == 'part_info,connections,parts,geo_location,station_type,dubitable')
+        ot = ','.join(cm_table_info.order_the_tables(['notthere', 'parts']))
+        self.assertTrue(ot == 'parts')
+
 
 if __name__ == '__main__':
     unittest.main()
