@@ -148,7 +148,9 @@ class TestParts(TestHERAMC):
         at_date = self.now
         a = self.h.get_part_types('all', at_date)
         self.assertTrue('terminals' in a['feed']['output_ports'])
-        self.h.show_part_types()
+        with captured_output() as (out, err):
+            self.h.show_part_types()
+        self.assertTrue('A, B, Q, R, Z' in out.getvalue().strip())
 
     def test_check_overlapping(self):
         from .. import cm_health

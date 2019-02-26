@@ -13,12 +13,26 @@ import unittest
 import os.path
 import subprocess
 import six
+import sys
 import numpy as np
 from astropy.time import Time, TimeDelta
-
+from contextlib import contextmanager
 from .. import (geo_location, sys_handling, mc, cm_transfer, part_connect,
                 cm_hookup, cm_utils, cm_revisions, utils)
 from . import TestHERAMC
+
+
+# define a context manager for checking stdout
+# from https://stackoverflow.com/questions/4219717/how-to-assert-output-with-nosetest-unittest-in-python
+@contextmanager
+def captured_output():
+    new_out, new_err = six.StringIO(), six.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    try:
+        sys.stdout, sys.stderr = new_out, new_err
+        yield sys.stdout, sys.stderr
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
 
 
 class TestSys(TestHERAMC):
@@ -46,13 +60,21 @@ class TestSys(TestHERAMC):
         hookup.reset_memory_cache(None)
         self.assertEqual(hookup.cached_hookup_dict, None)
         hu = hookup.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new=True, levels=True)
-        hookup.show_hookup(hu, cols_to_show=['station', 'level'], levels=True, revs=True, ports=True)
+        with captured_output() as (out, err):
+            hookup.show_hookup(hu, cols_to_show=['station', 'level'], levels=True, revs=True, ports=True)
+        self.assertTrue('HH23:A <ground' in out.getvalue().strip())
         hookup.reset_memory_cache(hu)
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
         hu = hookup.get_hookup('cached', 'H', 'pol', force_new=False)
+        with captured_output() as (out, err):
+            hookup.show_hookup(hu)
+        self.assertTrue('1096484416' in out.getvalue().strip())
         hu = hookup.get_hookup('A23,A23', 'H', 'pol', force_new=False)
         hookup.cached_hookup_dict = None
         hookup.determine_hookup_cache_to_use()
+        with captured_output() as (out, err):
+            hookup.show_hookup(hu)
+        self.assertTrue('1096484416' in out.getvalue().strip())
 
     def test_hookup_cache_file_info(self):
         hookup = cm_hookup.Hookup(at_date='now', session=self.test_session)

@@ -103,7 +103,6 @@ class TestConnections(TestHERAMC):
         self.assertTrue('new_test_part_up:A | new_test_part_down:A' in out.getvalue().strip())
         with captured_output() as (out, err):
             self.h.show_connections(located, verbosity=2)
-        print(out.getvalue().strip())
         self.assertTrue('new_test_part_up:A | up_and_out  | down_and_in | new_test_part_down:A' in out.getvalue().strip())
 
     def test_get_dossier(self):

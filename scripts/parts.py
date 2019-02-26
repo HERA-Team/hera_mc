@@ -42,7 +42,11 @@ if __name__ == '__main__':
             conn_info:  provide a summary of connections to given part/rev/port
             rev_info:  provide a summary of revisions of given part/rev
             types:  provide a summary of part types
-            physical:  shows the "physical" (@) port connections
+            physical:  shows the "physical" connections, which are those _not_ needed
+                       to uniquely track antenna-to-correlator but that we still want to
+                       track though, e.g. power, rack location, ...
+                       (Use 'hookup.py' to look at the connections that see the
+                       station-correlator hookup)
             check_rev:  checks whether a given part/rev exists
             health:  runs various "health" checks
 
