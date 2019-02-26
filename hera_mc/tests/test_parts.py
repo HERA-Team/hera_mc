@@ -88,6 +88,9 @@ class TestParts(TestHERAMC):
             self.h.show_parts(located)
         self.assertTrue('TEST_PART  | Q     | antenna     |         | 2017-07-01 01:00:37' in out.getvalue().strip())
         with captured_output() as (out, err):
+            self.h.show_parts(located, notes_only=True)
+        self.assertTrue('library_file' in out.getvalue().strip())
+        with captured_output() as (out, err):
             self.h.show_parts({})
         self.assertTrue('Part not found' in out.getvalue().strip())
 

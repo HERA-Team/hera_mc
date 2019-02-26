@@ -58,7 +58,7 @@ class PartDossierEntry():
         for part_info in session.query(PC.PartInfo).filter(
                 (func.upper(PC.PartInfo.hpn) == self.hpn) & (func.upper(PC.PartInfo.hpn_rev) == self.rev)):
             pi_dict[part_info.posting_gpstime] = part_info
-        for x in sorted(pi_dict.keys()):
+        for x in sorted(pi_dict.keys(), reverse=True):
             self.part_info.append(pi_dict[x])
 
     def get_geo(self, session):
@@ -76,13 +76,14 @@ class PartDossierEntry():
 
     def table_entry_row(self, columns):
         tdata = []
-        if 'lib_file' in columns:  # This is a notes only display
+        if 'lib_file' in columns:  # notes only version
             for i, pi in enumerate(self.part_info):
                 if not i:
                     x = [self.hpn, self.rev]
                 else:
                     x = ['', '']
-                tdata.append(x + [pi.comment, pi.library_file, cm_utils.get_time_for_display(pi.posting_gpstime)])
+                tdata.append(x + [pi.comment, cm_utils.get_time_for_display(pi.posting_gpstime),
+                             pi.library_file])
         else:
             for c in columns:
                 try:
@@ -395,7 +396,7 @@ class Handling:
             return
         table_data = []
         if notes_only:
-            columns = ['hpn', 'hpn_rev', 'part_info', 'lib_file', 'post_date']
+            columns = ['hpn', 'hpn_rev', 'part_info', 'post_date', 'lib_file']
         else:
             columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_date', 'stop_date',
                        'input_ports', 'output_ports', 'part_info', 'geo']
