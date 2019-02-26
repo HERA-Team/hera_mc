@@ -27,7 +27,7 @@ class PartDossierEntry():
     col_hdr = {'hpn': 'HERA P/N', 'hpn_rev': 'Rev', 'hptype': 'Part Type',
                'manufacturer_number': 'Mfg #', 'start_date': 'Start', 'stop_date': 'Stop',
                'input_ports': 'Input', 'output_ports': 'Output',
-               'part_info': 'Info', 'geo': 'Geo'}
+               'part_info': 'Note', 'geo': 'Geo', 'post_date': 'Date', 'lib_file': 'File'}
 
     def __init__(self, hpn, rev, at_date):
         self.hpn = hpn.upper()
@@ -76,23 +76,32 @@ class PartDossierEntry():
 
     def table_entry_row(self, columns):
         tdata = []
-        for c in columns:
-            try:
-                x = getattr(self, c)
-            except AttributeError:
+        if 'lib_file' in columns:  # This is a notes only display
+            for i, pi in enumerate(self.part_info):
+                if not i:
+                    x = [self.hpn, self.rev]
+                else:
+                    x = ['', '']
+                tdata.append(x + [pi.comment, pi.library_file, cm_utils.get_time_for_display(pi.posting_gpstime)])
+        else:
+            for c in columns:
                 try:
-                    x = getattr(self.part, c)
+                    x = getattr(self, c)
                 except AttributeError:
-                    x = getattr(self.connections, c)
-            if c == 'part_info' and len(x):
-                x = '\n'.join(pi.comment for pi in x)
-            elif c == 'geo' and x:
-                x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
-            elif c in ['start_date', 'stop_date']:
-                x = cm_utils.get_time_for_display(x)
-            elif isinstance(x, (list, set)):
-                x = ', '.join(x)
-            tdata.append(x)
+                    try:
+                        x = getattr(self.part, c)
+                    except AttributeError:
+                        x = getattr(self.connections, c)
+                if c == 'part_info' and len(x):
+                    x = '\n'.join(pi.comment for pi in x)
+                elif c == 'geo' and x:
+                    x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
+                elif c in ['start_date', 'stop_date']:
+                    x = cm_utils.get_time_for_display(x)
+                elif isinstance(x, (list, set)):
+                    x = ', '.join(x)
+                tdata.append(x)
+            tdata = [tdata]
         return tdata
 
 
@@ -372,7 +381,7 @@ class Handling:
                 part_dossier[this_part.entry_key] = this_part
         return part_dossier
 
-    def show_parts(self, part_dossier):
+    def show_parts(self, part_dossier, notes_only=False):
         """
         Print out part information.  Uses tabulate package.
 
@@ -385,11 +394,16 @@ class Handling:
             print('Part not found')
             return
         table_data = []
-        columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_date', 'stop_date',
-                   'input_ports', 'output_ports', 'part_info', 'geo']
+        if notes_only:
+            columns = ['hpn', 'hpn_rev', 'part_info', 'lib_file', 'post_date']
+        else:
+            columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_date', 'stop_date',
+                       'input_ports', 'output_ports', 'part_info', 'geo']
         headers = part_dossier[list(part_dossier.keys())[0]].get_header_titles(columns)
         for hpnr in sorted(list(part_dossier.keys())):
-            table_data.append(part_dossier[hpnr].table_entry_row(columns))
+            new_rows = part_dossier[hpnr].table_entry_row(columns)
+            for nr in new_rows:
+                table_data.append(nr)
         print('\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
 
     def get_physical_connections(self, at_date=None):

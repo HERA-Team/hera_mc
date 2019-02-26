@@ -10,8 +10,19 @@
 \begin{document}
 
 \author{David DeBoer}
-\title{Array Configuration Management Database - Epoch 2}
+\title{Array Configuration Management Database}
 \maketitle
+
+\noindent
+{\bf Executive Summary}
+
+\noindent
+The primary scripts to view configuration management (see Sec. \ref{sec:scripts}) data are:
+\begin{itemize}
+\item parts.py:
+\item hookup.py:
+\item geo.py:
+\end{itemize}
 
 \section{Introduction}
 The HERA array/part configuration management database is a set of five tables within the larger hera\_mc database, which is maintained on-site in the Karoo.  The tables are detailed in the Appendix, 
@@ -51,7 +62,7 @@ Parts are hooked together via connections of their ports.   The signal chain hoo
 \end{itemize}
 
 \begin{figure}[H]
-\includegraphics[width=0.8\textwidth]{hookup_epoch2.pdf}
+\includegraphics[width=0.8\textwidth]{hookup.pdf}
 \centering
 \caption{Block diagram of hookup.  Filled boxes are cables, blue objects are in the receiverator and green objects are in the container.
 The line labels indicate the port names/connections.}
@@ -76,7 +87,8 @@ This section provides a high-level overview of the python configuration manageme
 \end{tabular}
 
 \section{Scripts}
-This section provides a high-level overview of the high-level scripts:  geo.py, parts.py, cmdv.py.  Note that info you type {\tt info} after them, it presents information on them.  The structure is 
+\label{sec:scripts}
+This section provides a high-level overview of the high-level scripts:  geo.py and parts.py.  Note that info you type {\tt info} after them, it presents information on them.  The structure is 
 
 {\tt geo.py {\it action} --arguments}
 
@@ -109,26 +121,6 @@ Has various printing options for part information (part info, connections, hooku
 \end{itemize}
 
 {\tt parts.py -p ri5} will provide a table of all hookups to receiverator 5.  {\tt parts.py -p ri5 --hookup-cols "station,cable-post-amp(in),f-engine"}  will just show those columns.
-
-\subsection{cmdv.py}
-Has various plotting/printing options for correlator and general information.  Available actions are (note you need the first 2 letters only):
-
-\begin{itemize}
-\item {\tt corr} [default]:  Provides information on the correlator hookups for the supplied --date/--time.
-\item {\tt fc-view}:  fully-connected view of part --parts(-p) between date and date2.
-\item {\tt file-view}:  plot the supplied fc-view files
-\item {\tt info}:  provides information on the script.
-\end{itemize}
-
-{\tt cmdv.py} will provide all of the current station-correlator pairings
-
-\section{Use Cases}
-Three use cases are identified:
-\begin{enumerate}\setlength\itemsep{-.3em}
-	\item In-the-field
-	\item Remote user
-	\item Bulk database
-\end{enumerate}
 
 \subsection{In-the-field updates}
 This is the ``operational'' mode, where inputs to the on-site database are done via scripts (command-line and/or web), which update the database directly.  These scripts will be documented under the repository software.

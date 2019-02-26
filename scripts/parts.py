@@ -24,6 +24,8 @@ if __name__ == '__main__':
     parser.add_argument('--port', help="Specify port [all]", default='all')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
+    parser.add_argument('--notes', help="(For action=part_info):  Displays part notes with posting dates and not other info",
+                        action='store_true')
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
 
@@ -52,11 +54,12 @@ if __name__ == '__main__':
 
         Args needing values (or defaulted):
             -p/--hpn:  part name (required)
-            -r/--revision:  revision (particular/last/active/full/all) [ALL]
+            -r/--revision:  revision (particular/last/active/full/all) [Active]
             --port:  port name [ALL]
 
         Args that are flags
             -e/--exact-match:  match part number exactly, or specify first characters [False]
+            --notes:  (For action=part_info)  Displays part notes with posting dates and not other info
         """
         )
         sys.exit()
@@ -100,7 +103,7 @@ if __name__ == '__main__':
     if action_tag == 'pa':  # part_info
         part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision,
                                                  at_date=date_query, exact_match=args.exact_match)
-        handling.show_parts(part_dossier)
+        handling.show_parts(part_dossier, args.notes)
     elif action_tag == 'co':  # connection_info
         connection_dossier = handling.get_part_connection_dossier(
             hpn=args.hpn, rev=args.revision, port=args.port,
