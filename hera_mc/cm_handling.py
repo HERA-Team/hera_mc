@@ -27,7 +27,7 @@ class PartDossierEntry():
     col_hdr = {'hpn': 'HERA P/N', 'hpn_rev': 'Rev', 'hptype': 'Part Type',
                'manufacturer_number': 'Mfg #', 'start_date': 'Start', 'stop_date': 'Stop',
                'input_ports': 'Input', 'output_ports': 'Output',
-               'part_info': 'Info', 'geo': 'Geo'}
+               'part_info': 'Note', 'geo': 'Geo', 'post_date': 'Date', 'lib_file': 'File'}
 
     def __init__(self, hpn, rev, at_date):
         self.hpn = hpn.upper()
@@ -48,8 +48,8 @@ class PartDossierEntry():
         self.part = copy.copy(part_query.first())  # There should be only one.
         self.part.gps2Time()
         if full_version:
-            self.get_part_info(session)
-            self.get_geo(session)
+            self.get_part_info(session=session)
+            self.get_geo(session=session)
             self.connections = PartConnectionDossierEntry(self.hpn, self.rev, 'all', self.time)
             self.connections.get_entry(session)
 
@@ -58,7 +58,7 @@ class PartDossierEntry():
         for part_info in session.query(PC.PartInfo).filter(
                 (func.upper(PC.PartInfo.hpn) == self.hpn) & (func.upper(PC.PartInfo.hpn_rev) == self.rev)):
             pi_dict[part_info.posting_gpstime] = part_info
-        for x in sorted(pi_dict.keys()):
+        for x in sorted(pi_dict.keys(), reverse=True):
             self.part_info.append(pi_dict[x])
 
     def get_geo(self, session):
@@ -76,23 +76,33 @@ class PartDossierEntry():
 
     def table_entry_row(self, columns):
         tdata = []
-        for c in columns:
-            try:
-                x = getattr(self, c)
-            except AttributeError:
+        if 'lib_file' in columns:  # notes only version
+            for i, pi in enumerate(self.part_info):
+                if not i:
+                    x = [self.hpn, self.rev]
+                else:
+                    x = ['', '']
+                tdata.append(x + [pi.comment, cm_utils.get_time_for_display(pi.posting_gpstime),
+                             pi.library_file])
+        else:
+            for c in columns:
                 try:
-                    x = getattr(self.part, c)
+                    x = getattr(self, c)
                 except AttributeError:
-                    x = getattr(self.connections, c)
-            if c == 'part_info' and len(x):
-                x = '\n'.join(pi.comment for pi in x)
-            elif c == 'geo' and x:
-                x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
-            elif c in ['start_date', 'stop_date']:
-                x = cm_utils.get_time_for_display(x)
-            elif isinstance(x, (list, set)):
-                x = ', '.join(x)
-            tdata.append(x)
+                    try:
+                        x = getattr(self.part, c)
+                    except AttributeError:
+                        x = getattr(self.connections, c)
+                if c == 'part_info' and len(x):
+                    x = '\n'.join(pi.comment for pi in x)
+                elif c == 'geo' and x:
+                    x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
+                elif c in ['start_date', 'stop_date']:
+                    x = cm_utils.get_time_for_display(x)
+                elif isinstance(x, (list, set)):
+                    x = ', '.join(x)
+                tdata.append(x)
+            tdata = [tdata]
         return tdata
 
 
@@ -329,7 +339,7 @@ class Handling:
         """
 
         at_date = cm_utils.get_astropytime(at_date)
-        hpn_list, rev_list = self.listify_hpnrev(hpn, rev)
+        hpn_list, rev_list = self.listify_hpnrev(hpn=hpn, rev=rev)
         rev_part = {}
         for i, xhpn in enumerate(hpn_list):
             if not exact_match and xhpn[-1] != '%':
@@ -358,7 +368,7 @@ class Handling:
         full_version:  flag whether to populate the full_version or truncated version of the dossier
         """
 
-        rev_part = self.get_rev_part_dictionary(hpn, rev, at_date, exact_match)
+        rev_part = self.get_rev_part_dictionary(hpn=hpn, rev=rev, at_date=at_date, exact_match=exact_match)
 
         part_dossier = {}
         # Now get unique part/revs and put into dictionary
@@ -367,12 +377,12 @@ class Handling:
                 continue
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
-                this_part = PartDossierEntry(xhpn, this_rev, at_date)
-                this_part.get_entry(self.session, full_version)
+                this_part = PartDossierEntry(hpn=xhpn, rev=this_rev, at_date=at_date)
+                this_part.get_entry(session=self.session, full_version=full_version)
                 part_dossier[this_part.entry_key] = this_part
         return part_dossier
 
-    def show_parts(self, part_dossier):
+    def show_parts(self, part_dossier, notes_only=False):
         """
         Print out part information.  Uses tabulate package.
 
@@ -385,11 +395,16 @@ class Handling:
             print('Part not found')
             return
         table_data = []
-        columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_date', 'stop_date',
-                   'input_ports', 'output_ports', 'part_info', 'geo']
+        if notes_only:
+            columns = ['hpn', 'hpn_rev', 'part_info', 'post_date', 'lib_file']
+        else:
+            columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_date', 'stop_date',
+                       'input_ports', 'output_ports', 'part_info', 'geo']
         headers = part_dossier[list(part_dossier.keys())[0]].get_header_titles(columns)
         for hpnr in sorted(list(part_dossier.keys())):
-            table_data.append(part_dossier[hpnr].table_entry_row(columns))
+            new_rows = part_dossier[hpnr].table_entry_row(columns)
+            for nr in new_rows:
+                table_data.append(nr)
         print('\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
 
     def get_physical_connections(self, at_date=None):
