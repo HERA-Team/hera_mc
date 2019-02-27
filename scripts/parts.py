@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser.add_argument('action', nargs='?', help="Actions are:  info, types, part_info, conn_info, rev_info, \
                                                    physical, check_rev, health.  'info' for more.", default='part_info')
     # set values for 'action' to use
-    parser.add_argument('-p', '--hpn', help="Part number, csv-list (required). [None]", default=None)
+    parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv-list. [None]", default=None)
     parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [active]", default='active')
     parser.add_argument('--port', help="Specify port [all]", default='all')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     if args.action[:2].lower() == 'in':
         print(
             """
-        Available actions are (only need first two letters) [hookup]:
+        Available actions are (only need first two letters):
             info:  this information
             part_info:  provide a summary of given part/rev
             conn_info:  provide a summary of connections to given part/rev/port
@@ -53,7 +53,7 @@ if __name__ == '__main__':
             health:  runs various "health" checks
 
         Args needing values (or defaulted):
-            -p/--hpn:  part name (required)
+            -p/--hpn:  part name
             -r/--revision:  revision (particular/last/active/full/all) [Active]
             --port:  port name [ALL]
 
