@@ -30,8 +30,12 @@ class PartDossierEntry():
                'part_info': 'Note', 'geo': 'Geo', 'post_date': 'Date', 'lib_file': 'File'}
 
     def __init__(self, hpn, rev, at_date):
-        self.hpn = hpn.upper()
-        self.rev = rev.upper()
+        if isinstance(hpn, six.string_types):
+            hpn = hpn.upper()
+        if isinstance(rev, six.string_types):
+            rev = rev.upper()
+        self.hpn = hpn
+        self.rev = rev
         self.entry_key = cm_utils.make_part_key(hpn, rev)
         self.time = at_date
         self.part = None  # This is the part_connect.Parts class
@@ -55,9 +59,13 @@ class PartDossierEntry():
 
     def get_part_info(self, session):
         pi_dict = {}
-        for part_info in session.query(PC.PartInfo).filter(
-                (func.upper(PC.PartInfo.hpn) == self.hpn) & (func.upper(PC.PartInfo.hpn_rev) == self.rev)):
-            pi_dict[part_info.posting_gpstime] = part_info
+        if self.hpn is None:
+            for part_info in session.query(PC.PartInfo):
+                pi_dict[part_info.posting_gpstime] = part_info
+        else:
+            for part_info in session.query(PC.PartInfo).filter(
+                    (func.upper(PC.PartInfo.hpn) == self.hpn) & (func.upper(PC.PartInfo.hpn_rev) == self.rev)):
+                pi_dict[part_info.posting_gpstime] = part_info
         for x in sorted(pi_dict.keys(), reverse=True):
             self.part_info.append(pi_dict[x])
 
@@ -82,6 +90,10 @@ class PartDossierEntry():
                     x = [self.hpn, self.rev]
                 else:
                     x = ['', '']
+                if self.hpn is None:
+                    x = []
+                    hr = '{}:{}'.format(pi.hpn, pi.hpn_rev)
+                    pi.comment = "{:10s} > {}".format(hr, pi.comment)
                 tdata.append(x + [pi.comment, cm_utils.get_time_for_display(pi.posting_gpstime),
                              pi.library_file])
         else:
@@ -363,23 +375,27 @@ class Handling:
         hpn:  the input hera part number [string or list-of-strings] (whole or first part thereof)
         rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
               if list, must match length of hpn
-        at_date:  reference date of dossier only used for ACTIVE
+        at_date:  reference date of dossier
         exact_match:  boolean to enforce full part number match
         full_version:  flag whether to populate the full_version or truncated version of the dossier
         """
 
-        rev_part = self.get_rev_part_dictionary(hpn=hpn, rev=rev, at_date=at_date, exact_match=exact_match)
-
         part_dossier = {}
-        # Now get unique part/revs and put into dictionary
-        for xhpn in rev_part:
-            if len(rev_part[xhpn]) == 0:
-                continue
-            for xrev in rev_part[xhpn]:
-                this_rev = xrev.rev
-                this_part = PartDossierEntry(hpn=xhpn, rev=this_rev, at_date=at_date)
-                this_part.get_entry(session=self.session, full_version=full_version)
-                part_dossier[this_part.entry_key] = this_part
+        if hpn is None:
+            allinfo = PartDossierEntry(hpn=None, rev=None, at_date=at_date)
+            allinfo.get_part_info(session=self.session)
+            part_dossier[allinfo.entry_key] = allinfo
+        else:
+            rev_part = self.get_rev_part_dictionary(hpn=hpn, rev=rev, at_date=at_date, exact_match=exact_match)
+            # Now get unique part/revs and put into dictionary
+            for xhpn in rev_part:
+                if len(rev_part[xhpn]) == 0:
+                    continue
+                for xrev in rev_part[xhpn]:
+                    this_rev = xrev.rev
+                    this_part = PartDossierEntry(hpn=xhpn, rev=this_rev, at_date=at_date)
+                    this_part.get_entry(session=self.session, full_version=full_version)
+                    part_dossier[this_part.entry_key] = this_part
         return part_dossier
 
     def show_parts(self, part_dossier, notes_only=False):
@@ -398,7 +414,10 @@ class Handling:
             return
         table_data = []
         if notes_only:
-            columns = ['hpn', 'hpn_rev', 'part_info', 'post_date', 'lib_file']
+            if list(part_dossier.keys())[-1] == 'Sys':
+                columns = ['part_info', 'post_date', 'lib_file']
+            else:
+                columns = ['hpn', 'hpn_rev', 'part_info', 'post_date', 'lib_file']
         else:
             columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_date', 'stop_date',
                        'input_ports', 'output_ports', 'part_info', 'geo']

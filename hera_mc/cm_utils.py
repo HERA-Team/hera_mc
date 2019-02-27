@@ -63,6 +63,8 @@ def log(msg, **kwargs):
 
 # #######################################Key stuff
 def make_part_key(hpn, rev):
+    if hpn is None:
+        return('Sys')
     return ":".join([hpn, rev]).strip()
 
 

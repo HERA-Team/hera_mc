@@ -28,12 +28,16 @@ if __name__ == '__main__':
                         action='store_true')
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
+    parser.add_argument('--date2', help="(For notes_only) Cut-off date for notes [now]", default='now')
+    parser.add_argument('--time2', help="(For notes_only) Cut-off time for notes", default=0.0)
 
     args = parser.parse_args()
 
     args.verbosity = cm_utils.parse_verbosity(args.verbosity)
 
     date_query = cm_utils.get_astropytime(args.date, args.time)
+    if args.notes:
+        date_query = [date_query, cm_utils.get_astropytime(args.date2, args.time2)]
 
     if args.action[:2].lower() == 'in':
         print(
@@ -96,7 +100,7 @@ if __name__ == '__main__':
                 cm_health.check_part_for_overlapping_revisions(hpn, session)
         sys.exit()
 
-    if args.hpn is None:
+    if args.hpn is None and not (action_tag == 'pa' and args.notes):
         print("Need to supply a part name.")
         sys.exit()
 
