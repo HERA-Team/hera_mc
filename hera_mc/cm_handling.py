@@ -93,11 +93,9 @@ class PartDossierEntry():
                         x = getattr(self.part, c)
                     except AttributeError:
                         x = getattr(self.connections, c)
-                print("CMH96:  ", c, x)
                 if c == 'part_info' and len(x):
                     x = '\n'.join(pi.comment for pi in x)
                 elif c == 'geo' and x:
-                    print("CMH100:  ", x)
                     x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
                 elif c in ['start_date', 'stop_date']:
                     x = cm_utils.get_time_for_display(x)
