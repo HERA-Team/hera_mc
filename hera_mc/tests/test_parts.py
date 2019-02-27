@@ -93,6 +93,14 @@ class TestParts(TestHERAMC):
         with captured_output() as (out, err):
             self.h.show_parts({})
         self.assertTrue('Part not found' in out.getvalue().strip())
+        located = self.h.get_part_dossier(['A0'], ['H'], 'now', True)
+        with captured_output() as (out, err):
+            self.h.show_parts(located, notes_only=True)
+        self.assertTrue('Comment 2' in out.getvalue().strip())
+        located = self.h.get_part_dossier(['HH0'], ['A'], 'now', True)
+        with captured_output() as (out, err):
+            self.h.show_parts(located)
+        self.assertTrue('540901.6E, 6601070.7N, 1052.6m' in out.getvalue().strip())
 
     def test_part_info(self):
         part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, 'now', 'Testing', 'library_file')

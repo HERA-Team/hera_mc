@@ -48,8 +48,8 @@ class PartDossierEntry():
         self.part = copy.copy(part_query.first())  # There should be only one.
         self.part.gps2Time()
         if full_version:
-            self.get_part_info(session)
-            self.get_geo(session)
+            self.get_part_info(session=session)
+            self.get_geo(session=session)
             self.connections = PartConnectionDossierEntry(self.hpn, self.rev, 'all', self.time)
             self.connections.get_entry(session)
 
@@ -93,9 +93,11 @@ class PartDossierEntry():
                         x = getattr(self.part, c)
                     except AttributeError:
                         x = getattr(self.connections, c)
+                print("CMH96:  ", c, x)
                 if c == 'part_info' and len(x):
                     x = '\n'.join(pi.comment for pi in x)
                 elif c == 'geo' and x:
+                    print("CMH100:  ", x)
                     x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
                 elif c in ['start_date', 'stop_date']:
                     x = cm_utils.get_time_for_display(x)
@@ -339,7 +341,7 @@ class Handling:
         """
 
         at_date = cm_utils.get_astropytime(at_date)
-        hpn_list, rev_list = self.listify_hpnrev(hpn, rev)
+        hpn_list, rev_list = self.listify_hpnrev(hpn=hpn, rev=rev)
         rev_part = {}
         for i, xhpn in enumerate(hpn_list):
             if not exact_match and xhpn[-1] != '%':
@@ -368,7 +370,7 @@ class Handling:
         full_version:  flag whether to populate the full_version or truncated version of the dossier
         """
 
-        rev_part = self.get_rev_part_dictionary(hpn, rev, at_date, exact_match)
+        rev_part = self.get_rev_part_dictionary(hpn=hpn, rev=rev, at_date=at_date, exact_match=exact_match)
 
         part_dossier = {}
         # Now get unique part/revs and put into dictionary
@@ -377,8 +379,8 @@ class Handling:
                 continue
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
-                this_part = PartDossierEntry(xhpn, this_rev, at_date)
-                this_part.get_entry(self.session, full_version)
+                this_part = PartDossierEntry(hpn=xhpn, rev=this_rev, at_date=at_date)
+                this_part.get_entry(session=self.session, full_version=full_version)
                 part_dossier[this_part.entry_key] = this_part
         return part_dossier
 
