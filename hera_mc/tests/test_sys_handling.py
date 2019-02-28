@@ -13,12 +13,26 @@ import unittest
 import os.path
 import subprocess
 import six
+import sys
 import numpy as np
 from astropy.time import Time, TimeDelta
-
+from contextlib import contextmanager
 from .. import (geo_location, sys_handling, mc, cm_transfer, part_connect,
                 cm_hookup, cm_utils, cm_revisions, utils)
 from . import TestHERAMC
+
+
+# define a context manager for checking stdout
+# from https://stackoverflow.com/questions/4219717/how-to-assert-output-with-nosetest-unittest-in-python
+@contextmanager
+def captured_output():
+    new_out, new_err = six.StringIO(), six.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    try:
+        sys.stdout, sys.stderr = new_out, new_err
+        yield sys.stdout, sys.stderr
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
 
 
 class TestSys(TestHERAMC):
@@ -45,17 +59,28 @@ class TestSys(TestHERAMC):
         hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
         hookup.reset_memory_cache(None)
         self.assertEqual(hookup.cached_hookup_dict, None)
-        hu = hookup.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new=True)
+        hu = hookup.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new=True, levels=True)
+        with captured_output() as (out, err):
+            hookup.show_hookup(hu, cols_to_show=['station', 'level'], levels=True, revs=True, ports=True)
+        self.assertTrue('HH23:A <ground' in out.getvalue().strip())
         hookup.reset_memory_cache(hu)
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
+        hu = hookup.get_hookup('cached', 'H', 'pol', force_new=False)
+        with captured_output() as (out, err):
+            hookup.show_hookup(hu)
+        self.assertTrue('1096484416' in out.getvalue().strip())
+        hu = hookup.get_hookup('A23,A23', 'H', 'pol', force_new=False)
+        hookup.cached_hookup_dict = None
+        hookup.determine_hookup_cache_to_use()
+        with captured_output() as (out, err):
+            hookup.show_hookup(hu)
+        self.assertTrue('1096484416' in out.getvalue().strip())
 
     def test_hookup_cache_file_info(self):
         hookup = cm_hookup.Hookup(at_date='now', session=self.test_session)
         hookup.hookup_cache_file_info()
 
     def test_some_fully_connected(self):
-        x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')
-        self.sys_h.H = None
         x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')
         self.assertEqual(x, None)
 
@@ -96,7 +121,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(corr_dict['cm_version'], mc_git_hash)
 
         expected_keys = ['antenna_numbers', 'antenna_names', 'station_types',
-                         'correlator_inputs', 'antenna_utm_datum_vals',
+                         'correlator_inputs', 'antenna_utm_datum_vals', 'epoch',
                          'antenna_utm_tiles', 'antenna_utm_eastings',
                          'antenna_utm_northings', 'antenna_positions',
                          'cm_version', 'cofa_lat', 'cofa_lon', 'cofa_alt']
@@ -107,28 +132,9 @@ class TestSys(TestHERAMC):
         self.assertEqual(cofa.lon, corr_dict['cofa_lon'])
         self.assertEqual(cofa.elevation, corr_dict['cofa_alt'])
 
-    def test_cm_utils(self):
-        import datetime
-        a, b, c, d = cm_utils.split_connection_key('a:b:c:d')
-        self.assertEqual(c[0], 'c')
-        a = cm_utils.listify(None)
-        self.assertEqual(a, None)
-        a = cm_utils.listify([1, 2, 3])
-        self.assertEqual(a[0], 1)
-        a = cm_utils.stringify(None)
-        self.assertEqual(a, None)
-        a = cm_utils.stringify('a')
-        self.assertEqual(a[0], 'a')
-        a = cm_utils.get_astropytime(datetime.datetime.now())
-        a = cm_utils.get_astropytime('2018-01-01', '12:00')
-        a = cm_utils.get_date_from_pair(None, None)
-        self.assertEqual(a, None)
-        a = cm_utils.get_date_from_pair(1, 2)
-        self.assertEqual(a, 1)
-        a = cm_utils.get_date_from_pair(1, 2, 'latest')
-        self.assertEqual(a, 2)
-
     def test_dubitable(self):
+        dubitable_ants = self.sys_h.get_dubitable_list()
+        self.assertTrue(dubitable_ants is None)
         at_date = cm_utils.get_astropytime('2017-01-01')
         part_connect.update_dubitable(self.test_session, at_date.gps, ['1', '2', '3'])
         dubitable_ants = self.sys_h.get_dubitable_list()
@@ -142,9 +148,9 @@ class TestSys(TestHERAMC):
         hookup = cm_hookup.Hookup(at_date, self.test_session)
         stn = 'HH23'
         hud = hookup.get_hookup([stn], exact_match=True)
-        pams = hud[list(hud.keys())[0]].get_part_in_hookup_from_type('post-amp', include_ports=False)
+        pams = hud[list(hud.keys())[0]].get_part_in_hookup_from_type('post-amp', include_ports=True, include_revs=True)
         self.assertEqual(len(pams), 2)
-        self.assertEqual(pams['e'], 'PAM75123')  # the actual pam number (the thing written on the case)
+        self.assertEqual(pams['e'], 'ea>PAM75123:B<eb')  # the actual pam number (the thing written on the case)
 
     def test_get_pam_info(self):
         sys_h = sys_handling.Handling(self.test_session)

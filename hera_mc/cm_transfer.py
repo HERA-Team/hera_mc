@@ -87,14 +87,17 @@ def package_db_to_csv(session=None, tables='all'):
     print("Writing packaged files to current directory.")
     print("--> If packing from qmaster, be sure to use 'cm_pack.py --go' to copy, commit and log the change.")
     print("    Note:  this works via the hera_cm_db_updates repo.")
+    files_written = []
     for table in tables_to_write:
         data_filename = data_prefix + table + '.csv'
         table_data = pd.read_sql_table(table, session.get_bind())
         print("\tPackaging:  " + data_filename)
         table_data.to_csv(data_filename, index=False)
+        files_written.append(data_filename)
+    return files_written
 
 
-def pack_n_go(session, cm_csv_path):
+def pack_n_go(session, cm_csv_path):  # pragma: no cover
     """
     This module will move the csv files to the distribution directory, commit them
     and put the new commit hash into the database
@@ -120,7 +123,7 @@ def pack_n_go(session, cm_csv_path):
     session.commit()
 
 
-def initialize_db_from_csv(session=None, tables='all', maindb=False):
+def initialize_db_from_csv(session=None, tables='all', maindb=False):  # pragma: no cover
     """
     This entry module provides a double-check entry point to read the csv files and
        repopulate the configuration management database.  It destroys all current entries,
@@ -138,7 +141,7 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False):
     """
 
     print("This will erase and rewrite the configuration management tables.")
-    you_are_sure = cm_utils.query_yn("Are you sure you want to do this? ", 'n')
+    you_are_sure = six.moves.input("Are you sure you want to do this (y/n)? ")
     if you_are_sure:
         success = _initialization(session=session, cm_csv_path=None,
                                   tables=tables, maindb=maindb)
@@ -153,6 +156,12 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     # the 'hostname' call on qmaster returns the following value:
     import socket
     import json
+
+    if isinstance(session, six.string_types) and session == 'testing_not_main':
+        return False
+    if isinstance(session, six.string_types) and session == 'testing_main':
+        return True
+
     hostname = socket.gethostname()
     is_main_host = (hostname == expected_hostname)
 
@@ -167,7 +176,7 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     testing_db_url = config_data.get('databases').get(test_db_name).get('url')
     is_test_db = (session_db_url == testing_db_url)
 
-    if is_main_host:
+    if is_main_host:  # pragma: no cover
         if is_test_db:
             is_main_db = False
         else:
@@ -175,7 +184,7 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     else:
         is_main_db = False
 
-    if is_main_db:
+    if is_main_db:  # pragma: no cover
         print('Found main db at hostname {} and DB url {}'.format(hostname, session_db_url))
     return is_main_db
 
@@ -226,7 +235,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
 
     cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path)
 
-    if tables != 'all':
+    if tables != 'all':  # pragma: no cover
         print("You may encounter foreign_key issues by not using 'all' tables.")
         print("If it doesn't complain though you should be ok.")
 
@@ -234,7 +243,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
     cm_tables = cm_table_info.cm_tables
     if tables == 'all':
         tables_to_read_unordered = cm_tables.keys()
-    else:
+    else:  # pragma: no cover
         tables_to_read_unordered = tables.split(',')
     tables_to_read = cm_table_info.order_the_tables(tables_to_read_unordered)
     data_prefix = cm_table_info.data_prefix

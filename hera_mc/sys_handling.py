@@ -19,7 +19,7 @@ from . import geo_location, geo_handling
 
 class StationInfo:
     stn_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting', 'northing', 'lon', 'lat',
-                'elevation', 'antenna_number', 'correlator_input', 'start_date', 'stop_date']
+                'elevation', 'antenna_number', 'correlator_input', 'start_date', 'stop_date', 'epoch']
 
     def __init__(self, stn=None):
         if isinstance(stn, six.string_types) and stn == 'init_arrays':
@@ -47,7 +47,7 @@ class StationInfo:
         for s in self.stn_info:
             try:
                 arr = getattr(self, s)
-            except AttributeError:
+            except AttributeError:  # pragma: no cover
                 continue
             arr.append(getattr(stn, s))
 
@@ -70,7 +70,7 @@ class Handling:
         self.geo = geo_handling.Handling(self.session)
         self.H = None
 
-    def close(self):
+    def close(self):  # pragma: no cover
         """
         Close the session
         """
@@ -104,14 +104,10 @@ class Handling:
             if return_full:
                 start = Time(fnd[0].start_gpstime, format='gps')
                 stop = fnd[0].stop_gpstime
-                if stop is not None:
-                    stop = Time(stop, format='gps')
                 alist = cm_utils.listify(fnd[0].ant_list)
                 return (start, stop, alist)
             else:
                 return str(fnd[0].ant_list)
-
-        raise ValueError('Too many open dubitable lists ({}).'.format(len(fnd)))
 
     def get_all_fully_connected_at_date(self, at_date, station_types_to_check='default'):
         """
@@ -203,24 +199,25 @@ class Handling:
             # But we just want an integer, so we strip the A and cast it to int
             ant_num = int(ant_num[1:])
             corr = {}
+            pe = {}
             for p, hu in six.iteritems(current_hookup):
-                cind = part_connect.epoch_corr_huind[hud[k].parts_epoch[p]]
+                pe[p] = hud[k].parts_epoch[p]
+                cind = part_connect.epoch_corr_huind[pe[p]]
                 try:
                     corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
-                except IndexError:
+                except IndexError:  # pragma: no cover
                     corr[p] = 'None'
             fnd_list = self.geo.get_location([stn], at_date)
-            if not len(fnd_list):
-                return None
-            if len(fnd_list) > 1:
-                print("More than one part found:  ", str(fnd))
-                print("Setting to first to continue.")
-            fnd = fnd_list[0]
-            station_info = StationInfo(fnd)
-            station_info.antenna_number = ant_num
-            station_info.correlator_input = (str(corr['e']), str(corr['n']))
-            station_info.start_date = fctime['start']
-            station_info.stop_date = fctime['end']
+            if len(fnd_list) == 1:
+                fnd = fnd_list[0]
+                station_info = StationInfo(fnd)
+                station_info.antenna_number = ant_num
+                station_info.correlator_input = (str(corr['e']), str(corr['n']))
+                station_info.epoch = 'e:{}, n:{}'.format(pe['e'], pe['n'])
+                if pe['e'] == pe['n']:
+                    station_info.epoch = str(pe['e'])
+                    station_info.start_date = fctime['start']
+                station_info.stop_date = fctime['end']
         return station_info
 
     def get_cminfo_correlator(self):
@@ -269,6 +266,7 @@ class Handling:
                 # but antenna_names is what it's called in pyuvdata
                 'antenna_names': stn_arrays.station_name,
                 'station_types': stn_arrays.station_type_name,
+                'epoch': stn_arrays.epoch,
                 # this is a tuple giving the f-engine names for x, y
                 'correlator_inputs': stn_arrays.correlator_input,
                 'antenna_utm_datum_vals': stn_arrays.datum,
@@ -298,26 +296,27 @@ class Handling:
             parts[k] = hu.get_part_in_hookup_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
 
-    def publish_summary(self, hlist='default', rev='A', exact_match=False,
-                        hookup_cols=['station', 'front-end', 'cable-post-amp(in)', 'post-amp', 'cable-container', 'f-engine', 'level'],
-                        force_new_hookup_dict=False):
+    def publish_summary(self, hlist='default', rev='ACTIVE', exact_match=False,
+                        hookup_cols='all', force_new_hookup_dict=True):
         import os.path
-        if isinstance(hlist, six.string_types) and hlist.lower() == 'default':
+        if isinstance(hlist, six.string_types):
+            hlist = [hlist]
+        if hlist[0].lower() == 'default':
             hlist = cm_utils.default_station_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
-        location_on_paper1 = 'paper1:/home/davidm/local/src/rails-paper/public'
         H = cm_hookup.Hookup('now', self.session)
         hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
-                                   exact_match=exact_match, levels=True,
+                                   exact_match=exact_match, levels=False,
                                    force_new=force_new_hookup_dict, force_specific=False)
-
         with open(output_file, 'w') as f:
-            H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=True, ports=False,
-                          revs=False, state='full', file=f, output_format='html')
-        import subprocess
+            H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=False, ports=True,
+                          revs=True, state='full', file=f, output_format='html')
+
         from . import cm_transfer
-        if cm_transfer.check_if_main(self.session):
-            sc_command = 'scp -i ~/.ssh/id_rsa_qmaster {} {}'.format(output_file, location_on_paper1)
+        if cm_transfer.check_if_main(self.session):  # pragma: no cover
+            import subprocess
+            location_on_web = 'hera.today:/var/www/html/hookup.html'
+            sc_command = 'scp {} {}'.format(output_file, location_on_web)
             subprocess.call(sc_command, shell=True)
             return 'OK'
         else:
@@ -337,7 +336,7 @@ class Handling:
                 for k, v in six.iteritems(sys_comm):
                     if len(v) > col[k][1]:
                         col[k][1] = len(v)
-        if not len(found_entries):
+        if not len(found_entries):  # pragma: no cover
             return 'None'
         rows = ["\n{:{tkw}s} | {:{pt}s} | {}".format(col['key'][0], col['date'][0], col['comment'][0], tkw=col['key'][1], pt=col['date'][1])]
         rows.append("{}+{}+{}".format((col['key'][1] + 1) * '-', (col['date'][1] + 2) * '-', (col['comment'][1] + 1) * '-'))

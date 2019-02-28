@@ -10,9 +10,25 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 from astropy.time import Time, TimeDelta
+from contextlib import contextmanager
+import six
+import sys
 
-from .. import part_connect, mc, cm_handling, cm_utils
+from .. import part_connect, mc, cm_handling, cm_utils, cm_health
 from . import TestHERAMC
+
+
+# define a context manager for checking stdout
+# from https://stackoverflow.com/questions/4219717/how-to-assert-output-with-nosetest-unittest-in-python
+@contextmanager
+def captured_output():
+    new_out, new_err = six.StringIO(), six.StringIO()
+    old_out, old_err = sys.stdout, sys.stderr
+    try:
+        sys.stdout, sys.stderr = new_out, new_err
+        yield sys.stdout, sys.stderr
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
 
 
 class TestConnections(TestHERAMC):
@@ -76,24 +92,42 @@ class TestConnections(TestHERAMC):
         part_connect.update_connection(self.test_session, data, add_new_connection=True)
         located = self.h.get_part_connection_dossier([u], r, a, 'now', True)
         prkey = list(located.keys())[0]
+        self.assertTrue(str(located[prkey]).startswith('NEW_TEST_PART_UP:A'))
         ckey = located[prkey].keys_down[0]
         self.assertTrue(located[prkey].down[ckey].upstream_part == u)
-        self.h.show_connections(located)
+        with captured_output() as (out, err):
+            self.h.show_connections(located)
+        self.assertTrue('new_test_part_up:A | up_and_out  | down_and_in | new_test_part_down:A' in out.getvalue().strip())
+        with captured_output() as (out, err):
+            self.h.show_connections(located, verbosity=1)
+        self.assertTrue('new_test_part_up:A | new_test_part_down:A' in out.getvalue().strip())
+        with captured_output() as (out, err):
+            self.h.show_connections(located, verbosity=2)
+        self.assertTrue('new_test_part_up:A | up_and_out  | down_and_in | new_test_part_down:A' in out.getvalue().strip())
 
     def test_get_dossier(self):
         x = self.h.get_part_connection_dossier('test_part1', 'active', 'all', at_date='now', exact_match=True)
         y = list(x.keys())[0]
         self.assertEqual(y, 'test_part1:Q')
-        self.h.show_connections(x)
+        with captured_output() as (out, err):
+            self.h.show_connections(x)
+        self.assertTrue('test_part1:Q | up_and_out  | down_and_in | test_part2:Q' in out.getvalue().strip())
         x = self.h.get_part_connection_dossier('test_part2', 'active', 'all', at_date='now', exact_match=True)
         y = list(x.keys())[0]
         self.assertEqual(y, 'test_part2:Q')
-        self.h.show_connections(x)
+        with captured_output() as (out, err):
+            self.h.show_connections(x)
+        self.assertTrue('test_part1:Q | up_and_out  | down_and_in | test_part2:Q' in out.getvalue().strip())
         old_time = Time('2014-08-01 01:00:00', scale='utc')
         x = self.h.get_part_connection_dossier('test_part1', 'active', 'all', at_date=old_time, exact_match=True)
         self.assertTrue(len(x) == 0)
         x = self.h.get_part_connection_dossier('test_part2', 'active', 'all', at_date=old_time, exact_match=True)
         self.assertTrue(len(x) == 0)
+        z = {}
+        z['tst'] = cm_handling.PartConnectionDossierEntry('test_part1', 'active', 'all', at_date='now')
+        with captured_output() as (out, err):
+            self.h.show_connections(z)
+        self.assertTrue('Q' not in out.getvalue().strip())
 
     def test_get_specific_connection(self):
         c = part_connect.Connections()
@@ -105,24 +139,71 @@ class TestConnections(TestHERAMC):
         c.downstream_input_port = 'down_and_in'
         sc = self.h.get_specific_connection(c)
         self.assertTrue(len(sc) == 1)
+
+        c.up_part_rev = 'S'
+        sc = self.h.get_specific_connection(c)
+        self.assertTrue(len(sc) == 0)
+
+        c.up_part_rev = self.test_rev
+        c.down_part_rev = 'S'
+        sc = self.h.get_specific_connection(c)
+        self.assertTrue(len(sc) == 0)
+
+        c.down_part_rev = self.test_rev
+        c.upstream_output_port = 'guk'
+        sc = self.h.get_specific_connection(c)
+        self.assertTrue(len(sc) == 0)
+
+        c.upstream_output_port = 'up_and_out'
+        c.downstream_input_port = 'guk'
+        sc = self.h.get_specific_connection(c)
+        self.assertTrue(len(sc) == 0)
+
         at_date = Time('2017-05-01 01:00:00', scale='utc')
         sc = self.h.get_specific_connection(c, at_date)
         self.assertTrue(len(sc) == 0)
 
+    def test_check_for_overlap(self):
+        x = cm_health.check_for_overlap([[1, 2], [3, 4]])
+        self.assertFalse(x)
+        x = cm_health.check_for_overlap([[3, 4], [1, 2]])
+        self.assertFalse(x)
+        x = cm_health.check_for_overlap([[1, 10], [2, 8]])
+        self.assertTrue(x)
+        x = cm_health.check_for_overlap([[2, 8], [1, 10]])
+        self.assertTrue(x)
+        x = cm_health.check_for_overlap([[1, 5], [3, 8]])
+        self.assertTrue(x)
+        x = cm_health.check_for_overlap([[3, 8], [1, 5]])
+        self.assertTrue(x)
+        x = cm_health.check_for_overlap([[1, 8], [8, 10]])
+        self.assertFalse(x)
+        x = cm_health.check_for_overlap([[8, 10], [1, 8]])
+        self.assertFalse(x)
+
+    def test_physical_connections(self):
+        x = self.h.get_physical_connections()
+        y = list(x.keys())
+        self.assertTrue('SNPA000222:A' in y)
+        x = self.h.get_physical_connections('2016/01/01')
+        self.assertFalse(len(x))
+
     def test_duplicate_connections(self):
-        from .. import cm_health
+        connection = part_connect.Connections()
         healthy = cm_health.Connections(self.test_session)
         # Specific connections
         duplicates = healthy.check_for_existing_connection(['a', 'b', 'c', 'd', 'e', 'f'], self.query_time)
         self.assertFalse(duplicates)
         cnnctn = [self.test_hpn[0], self.test_rev, 'up_and_out', self.test_hpn[1], self.test_rev, 'down_and_in']
-        duplicates = healthy.check_for_existing_connection(cnnctn, self.query_time)
+        duplicates = healthy.check_for_existing_connection(cnnctn, self.query_time, display_results=True)
         self.assertTrue(duplicates)
-        # All connections
-        duplicates = healthy.check_for_duplicate_connections()
-        self.assertTrue(duplicates == 0)
+        # Add test connection
+        duplicates = healthy.check_for_existing_connection(cnnctn, Time('2015-07-01 01:00:00', scale='utc').gps, display_results=True)
+        self.assertFalse(duplicates)
+        # Duplicated connections
+        duplicates = healthy.check_for_duplicate_connections(display_results=True)
+        self.assertTrue(len(duplicates) == 0)
         # Add test duplicate connection
-        connection = part_connect.Connections()
         connection.upstream_part = self.test_hpn[0]
         connection.up_part_rev = self.test_rev
         connection.downstream_part = self.test_hpn[1]
@@ -133,8 +214,8 @@ class TestConnections(TestHERAMC):
         self.test_session.add(connection)
         self.test_session.commit()
         healthy.conndict = None
-        duplicates = healthy.check_for_duplicate_connections()
-        self.assertTrue(duplicates == 1)
+        duplicates = healthy.check_for_duplicate_connections(display_results=True)
+        self.assertTrue(len(duplicates) == 1)
 
 
 if __name__ == '__main__':

@@ -71,6 +71,15 @@ class TestServerStatus(TestHERAMC):
             self.assertEqual(len(result), 1)
             result = result[0]
 
+            if sub == 'rtp':
+                result = self.test_session.get_rtp_server_status(
+                    sub, starttime=self.columns['system_time'] - TimeDelta(2, format='sec'))
+            else:
+                result = self.test_session.get_librarian_server_status(
+                    sub, starttime=self.columns['system_time'] - TimeDelta(2, format='sec'))
+            self.assertEqual(len(result), 1)
+            result = result[0]
+
             # mc_system_timediff may not be identical. Check that they are close
             # and set them equal so the rest of the object can be tested
             mc_system_timediff_diff = (abs(result.mc_system_timediff

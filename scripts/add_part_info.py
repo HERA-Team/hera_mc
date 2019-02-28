@@ -19,14 +19,12 @@ def query_args(args):
     """
     if args.hpn is None:
         args.hpn = six.moves.input('HERA part number:  ')
-    if args.rev is None:
-        args.rev = six.moves.input('HERA part revision:  ')
+    args.rev = cm_utils.query_default('rev', args)
     if args.comment is None:
         args.comment = six.moves.input('Comment:  ')
     if args.library_file is None:
-        args.library_file = cm_utils.query_default('library_file', args)
-    if args.date == 'now':  # Note that 'now' is the current default.
-        args.date = cm_utils.query_default('date', args)
+        args.library_file = six.moves.input('Library_file:  ')
+    args.date = cm_utils.query_default('date', args)
     return args
 
 
@@ -36,10 +34,12 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--rev', help="Revision of part", default='last')
     parser.add_argument('-c', '--comment', help="Comment on part", default=None)
     parser.add_argument('-l', '--library_file', help="Library filename", default=None)
+    parser.add_argument('-q', '--query', help="Set flag if wished to be queried", action='store_true')
     cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
-    args = query_args(args)
+    if args.query:
+        args = query_args(args)
 
     # Pre-process some args
     at_date = cm_utils.get_astropytime(args.date, args.time)

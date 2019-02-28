@@ -8,6 +8,7 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
+import os
 import nose.tools as nt
 from math import floor
 import numpy as np
@@ -135,40 +136,34 @@ class TestWeather(TestHERAMC):
 
         self.assertRaises(ValueError, self.test_session.get_weather_data, variable='foo')
 
+    @unittest.skipIf(not is_onsite(), 'This test only works on site')
     def test_add_from_sensor(self):
         t1 = Time('2017-11-10 01:15:23', scale='utc')
         t2 = t1 + TimeDelta(280.0, format='sec')
         t3 = t2 + TimeDelta(300.0, format='sec')
         t4 = t3 + TimeDelta(280.0, format='sec')
 
-        self.assertRaises(ValueError, self.test_session.add_weather_data_from_sensors,
-                          starttime=t1, stoptime=t2, variables='foo')
+        self.test_session.add_weather_data_from_sensors(t1, t2)
+        result = self.test_session.get_weather_data(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                    stoptime=t1)
+        self.assertTrue(len(result) <= 7)
+        result = self.test_session.get_weather_data(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                    stoptime=t2)
+        self.assertTrue(len(result) > 1)
+        self.assertTrue(len(result) <= (5 * 4 + 2 * 28))
 
-        self.assertRaises(ValueError, self.test_session.add_weather_data_from_sensors,
-                          starttime=t1, stoptime=t2, variables=['foo', 'bar'])
+        self.test_session.add_weather_data_from_sensors(t3, t4, variables='wind_speed')
+        result = self.test_session.get_weather_data(starttime=t3 - TimeDelta(3.0, format='sec'),
+                                                    stoptime=t4)
+        self.assertTrue(len(result) <= 4)
 
-        if is_onsite():
-            self.test_session.add_weather_data_from_sensors(t1, t2)
-            result = self.test_session.get_weather_data(starttime=t1 - TimeDelta(3.0, format='sec'),
-                                                        stoptime=t1)
-            self.assertTrue(len(result) <= 7)
-            result = self.test_session.get_weather_data(starttime=t1 - TimeDelta(3.0, format='sec'),
-                                                        stoptime=t2)
-            self.assertTrue(len(result) > 1)
-            self.assertTrue(len(result) <= (5 * 4 + 2 * 28))
+        self.test_session.add_weather_data_from_sensors(t3, t4, variables=['wind_direction',
+                                                                           'temperature'])
+        result = self.test_session.get_weather_data(starttime=t3 - TimeDelta(3.0, format='sec'),
+                                                    stoptime=t3)
+        self.assertTrue(len(result) <= 3)
 
-            self.test_session.add_weather_data_from_sensors(t3, t4, variables='wind_speed')
-            result = self.test_session.get_weather_data(starttime=t3 - TimeDelta(3.0, format='sec'),
-                                                        stoptime=t4)
-            self.assertTrue(len(result) <= 4)
-
-            self.test_session.add_weather_data_from_sensors(t3, t4, variables=['wind_direction',
-                                                                               'temperature'])
-            result = self.test_session.get_weather_data(starttime=t3 - TimeDelta(3.0, format='sec'),
-                                                        stoptime=t3)
-            self.assertTrue(len(result) <= 3)
-
-            self.assertRaises(ValueError, weather.create_from_sensors, t1, t2, variables='foo')
+        self.assertRaises(ValueError, weather.create_from_sensors, t1, t2, variables='foo')
 
     def test_weather_errors(self):
         self.assertRaises(ValueError, self.test_session.add_weather_data, 'foo',
@@ -180,6 +175,14 @@ class TestWeather(TestHERAMC):
 
         self.assertRaises(ValueError, self.test_session.add_weather_data, t1,
                           'wind_speed', 'foo')
+
+        t2 = t1 + TimeDelta(280.0, format='sec')
+
+        self.assertRaises(ValueError, self.test_session.add_weather_data_from_sensors,
+                          starttime=t1, stoptime=t2, variables='foo')
+
+        self.assertRaises(ValueError, self.test_session.add_weather_data_from_sensors,
+                          starttime=t1, stoptime=t2, variables=['foo', 'bar'])
 
     def test_dump_weather_table(self):
         # Just make sure it doesn't crash.
@@ -196,9 +199,11 @@ class TestWeather(TestHERAMC):
         self.test_session.add_weather_data(t2, 'wind_speed', wind_speeds[1])
         self.test_session.add_weather_data(t2, 'wind_direction', wind_directions[1])
         self.test_session.add_weather_data(t2, 'temperature', temperatures[1])
-        self.test_session.write_weather_files(t1, t2, variables='wind_speed,wind_direction,temperature')
+        for var in ['wind_speed', 'wind_direction', 'temperature']:
+            filename = var + '.txt'
+            self.test_session.get_weather_data(starttime=t1, stoptime=t2, variable=var,
+                                               write_to_file=True, filename=filename)
 
-        import os
         os.remove('wind_speed.txt')
         os.remove('wind_direction.txt')
         os.remove('temperature.txt')

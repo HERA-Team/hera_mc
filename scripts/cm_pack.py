@@ -20,7 +20,7 @@ parser.add_argument('--cm_csv_path', help="Available if you want to redirect 'go
                     default=None)
 args = parser.parse_args()
 
-cm_transfer.package_db_to_csv(tables=args.tables)
+files_written = cm_transfer.package_db_to_csv(tables=args.tables)
 
 if args.go:
     db = mc.connect_to_mc_db(args)

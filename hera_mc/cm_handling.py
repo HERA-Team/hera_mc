@@ -27,7 +27,7 @@ class PartDossierEntry():
     col_hdr = {'hpn': 'HERA P/N', 'hpn_rev': 'Rev', 'hptype': 'Part Type',
                'manufacturer_number': 'Mfg #', 'start_date': 'Start', 'stop_date': 'Stop',
                'input_ports': 'Input', 'output_ports': 'Output',
-               'part_info': 'Info', 'geo': 'Geo'}
+               'part_info': 'Note', 'geo': 'Geo', 'post_date': 'Date', 'lib_file': 'File'}
 
     def __init__(self, hpn, rev, at_date):
         self.hpn = hpn.upper()
@@ -48,15 +48,18 @@ class PartDossierEntry():
         self.part = copy.copy(part_query.first())  # There should be only one.
         self.part.gps2Time()
         if full_version:
-            self.get_part_info(session)
-            self.get_geo(session)
+            self.get_part_info(session=session)
+            self.get_geo(session=session)
             self.connections = PartConnectionDossierEntry(self.hpn, self.rev, 'all', self.time)
             self.connections.get_entry(session)
 
     def get_part_info(self, session):
+        pi_dict = {}
         for part_info in session.query(PC.PartInfo).filter(
                 (func.upper(PC.PartInfo.hpn) == self.hpn) & (func.upper(PC.PartInfo.hpn_rev) == self.rev)):
-            self.part_info.append(part_info)
+            pi_dict[part_info.posting_gpstime] = part_info
+        for x in sorted(pi_dict.keys(), reverse=True):
+            self.part_info.append(pi_dict[x])
 
     def get_geo(self, session):
         if self.part.hptype == 'station':
@@ -73,23 +76,33 @@ class PartDossierEntry():
 
     def table_entry_row(self, columns):
         tdata = []
-        for c in columns:
-            try:
-                x = getattr(self, c)
-            except AttributeError:
+        if 'lib_file' in columns:  # notes only version
+            for i, pi in enumerate(self.part_info):
+                if not i:
+                    x = [self.hpn, self.rev]
+                else:
+                    x = ['', '']
+                tdata.append(x + [pi.comment, cm_utils.get_time_for_display(pi.posting_gpstime),
+                             pi.library_file])
+        else:
+            for c in columns:
                 try:
-                    x = getattr(self.part, c)
+                    x = getattr(self, c)
                 except AttributeError:
-                    x = getattr(self.connections, c)
-            if c == 'part_info' and len(x):
-                x = ', '.join(pi.comment for pi in x)
-            elif c == 'geo' and x:
-                x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
-            elif c in ['start_date', 'stop_date']:
-                x = cm_utils.get_time_for_display(x)
-            elif isinstance(x, (list, set)):
-                x = ', '.join(x)
-            tdata.append(x)
+                    try:
+                        x = getattr(self.part, c)
+                    except AttributeError:
+                        x = getattr(self.connections, c)
+                if c == 'part_info' and len(x):
+                    x = '\n'.join(pi.comment for pi in x)
+                elif c == 'geo' and x:
+                    x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
+                elif c in ['start_date', 'stop_date']:
+                    x = cm_utils.get_time_for_display(x)
+                elif isinstance(x, (list, set)):
+                    x = ', '.join(x)
+                tdata.append(x)
+            tdata = [tdata]
         return tdata
 
 
@@ -108,7 +121,17 @@ class PartConnectionDossierEntry:
         self.output_ports = set()
 
     def __repr__(self):
-        return ("\n\tkeys_up:  {self.keys_up}\n\tkeys_down:  {self.keys_down}\n".format(self=self))
+        return ("{self.hpn}:{self.rev}\n\tkeys_up:  {self.keys_up}\n\tkeys_down:  {self.keys_down}\n".format(self=self))
+
+    def make_entry_from_connection(self, conn):
+        self.keys_up = [self.entry_key]
+        self.keys_down = [self.entry_key]
+        self.up[self.entry_key] = copy.copy(conn)
+        self.up[self.entry_key].skip_it = False
+        self.down[self.entry_key] = copy.copy(conn)
+        self.down[self.entry_key].skip_it = False
+        self.input_ports.add(conn.downstream_input_port)
+        self.output_ports.add(conn.upstream_output_port)
 
     def get_entry(self, session):
         """
@@ -233,7 +256,7 @@ class Handling:
         else:
             self.session = session
 
-    def close(self):
+    def close(self):  # pragma: no cover
         self.session.close()
 
     def add_cm_version(self, time, git_hash):
@@ -316,7 +339,7 @@ class Handling:
         """
 
         at_date = cm_utils.get_astropytime(at_date)
-        hpn_list, rev_list = self.listify_hpnrev(hpn, rev)
+        hpn_list, rev_list = self.listify_hpnrev(hpn=hpn, rev=rev)
         rev_part = {}
         for i, xhpn in enumerate(hpn_list):
             if not exact_match and xhpn[-1] != '%':
@@ -345,7 +368,7 @@ class Handling:
         full_version:  flag whether to populate the full_version or truncated version of the dossier
         """
 
-        rev_part = self.get_rev_part_dictionary(hpn, rev, at_date, exact_match)
+        rev_part = self.get_rev_part_dictionary(hpn=hpn, rev=rev, at_date=at_date, exact_match=exact_match)
 
         part_dossier = {}
         # Now get unique part/revs and put into dictionary
@@ -354,30 +377,69 @@ class Handling:
                 continue
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
-                this_part = PartDossierEntry(xhpn, this_rev, at_date)
-                this_part.get_entry(self.session, full_version)
+                this_part = PartDossierEntry(hpn=xhpn, rev=this_rev, at_date=at_date)
+                this_part.get_entry(session=self.session, full_version=full_version)
                 part_dossier[this_part.entry_key] = this_part
         return part_dossier
 
-    def show_parts(self, part_dossier):
+    def show_parts(self, part_dossier, notes_only=False):
         """
         Print out part information.  Uses tabulate package.
 
         Parameters
         -----------
         part_dossier:  input dictionary of parts, generated by self.get_part_dossier
+        notes_only:  flag to print out only the notes of a part as opposed to the standard table.
+                     This also includes the note post date and library file (if in database)
         """
 
         if len(list(part_dossier.keys())) == 0:
             print('Part not found')
             return
         table_data = []
-        columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_date', 'stop_date',
-                   'input_ports', 'output_ports', 'part_info', 'geo']
+        if notes_only:
+            columns = ['hpn', 'hpn_rev', 'part_info', 'post_date', 'lib_file']
+        else:
+            columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_date', 'stop_date',
+                       'input_ports', 'output_ports', 'part_info', 'geo']
         headers = part_dossier[list(part_dossier.keys())[0]].get_header_titles(columns)
         for hpnr in sorted(list(part_dossier.keys())):
-            table_data.append(part_dossier[hpnr].table_entry_row(columns))
+            new_rows = part_dossier[hpnr].table_entry_row(columns)
+            for nr in new_rows:
+                table_data.append(nr)
         print('\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n')
+
+    def get_physical_connections(self, at_date=None):
+        """
+        Finds and returns a list of "physical" connections, as opposed to "hookup" connections.
+            In this context "hookup" refers to all signal path connections that uniquely determine
+            the path from station to correlator input.
+            "Physical" refers to other connections that we wish to track, such as power or rack location.
+            The leading character of physical ports is '@'.
+        If at_date is of type Time, it will only return connections valid at that time.  Otherwise
+        it ignores at_date (i.e. it will return any such connection over all time.)
+
+        Returns a list of connections (class)
+
+        Parameters:
+        ------------
+        at_date:  Astropy Time to check epoch.  If None is ignored.
+        """
+        if not isinstance(at_date, Time):
+            at_date = cm_utils.get_astropytime(at_date)
+        part_connection_dossier = {}
+        for conn in self.session.query(PC.Connections).filter(
+                (PC.Connections.upstream_output_port.ilike('@%'))
+                | (PC.Connections.downstream_input_port.ilike('@%'))):
+            conn.gps2Time()
+            include_this_one = True
+            if isinstance(at_date, Time) and not cm_utils.is_active(at_date, conn.start_date, conn.stop_date):
+                include_this_one = False
+            if include_this_one:
+                this_connect = PartConnectionDossierEntry(conn.upstream_part, conn.up_part_rev, conn.upstream_output_port, at_date)
+                this_connect.make_entry_from_connection(conn)
+                part_connection_dossier[this_connect.entry_key] = this_connect
+        return part_connection_dossier
 
     def get_specific_connection(self, c, at_date=None):
         """
@@ -450,7 +512,7 @@ class Handling:
                 part_connection_dossier[this_connect.entry_key] = this_connect
         return part_connection_dossier
 
-    def show_connections(self, connection_dossier, verbosity=3):
+    def show_connections(self, connection_dossier, headers=None, verbosity=3):
         """
         Print out active connection information.  Uses tabulate package.
 
@@ -460,14 +522,15 @@ class Handling:
         verbosity:  integer 1, 2, 3 for low, medium, high
         """
         table_data = []
-        if verbosity == 1:
-            headers = ['Upstream', 'Part', 'Downstream']
-        elif verbosity == 2:
-            headers = ['Upstream', '<uOutput:', ':uInput>', 'Part', '<dOutput:',
-                       ':dInput>', 'Downstream']
-        elif verbosity > 2:
-            headers = ['uStart', 'uStop', 'Upstream', '<uOutput:', ':uInput>',
-                       'Part', '<dOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop']
+        if headers is None:
+            if verbosity == 1:
+                headers = ['Upstream', 'Part', 'Downstream']
+            elif verbosity == 2:
+                headers = ['Upstream', '<uOutput:', ':uInput>', 'Part', '<dOutput:',
+                           ':dInput>', 'Downstream']
+            elif verbosity > 2:
+                headers = ['uStart', 'uStop', 'Upstream', '<uOutput:', ':uInput>',
+                           'Part', '<dOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop']
         for k in sorted(connection_dossier.keys()):
             conn = connection_dossier[k]
             if len(conn.up) == 0 and len(conn.down) == 0:
