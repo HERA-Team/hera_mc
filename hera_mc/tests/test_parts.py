@@ -86,7 +86,9 @@ class TestParts(TestHERAMC):
         located = self.h.get_part_dossier(hpn=None, rev=None, at_date='now', sort_notes_by='part', exact_match=True)
         self.assertTrue(list(located.keys())[0] == '__Sys__')
         located = self.h.get_part_dossier(hpn=None, rev=None, at_date='now', sort_notes_by='post', exact_match=True)
-        self.assertTrue(list(located.keys())[0] == '__Sys__')
+        with captured_output() as (out, err):
+            self.h.show_parts(located, notes_only=True)
+        self.assertTrue('System:A' in out.getvalue().strip())
 
     def test_show_parts(self):
         part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, self.start_time, 'Testing', 'library_file')
