@@ -30,8 +30,8 @@ if __name__ == '__main__':
                         ('part') or posting time ('post') [part]", default='part')
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
-    parser.add_argument('--date0', help="<For part_info notes> Early cut-off date for notes [<]", default='<')
-    parser.add_argument('--time0', help="<For part_info notes> Early cut-off time for notes", default=0.0)
+    parser.add_argument('--notes_start_date', help="<For part_info notes> start_date for notes [<]", default='<')
+    parser.add_argument('--notes_start_time', help="<For part_info notes> start_time for notes", default=0.0)
 
     args = parser.parse_args()
 
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     action_tag = args.action[:2].lower()
     args.hpn = cm_utils.listify(args.hpn)
     date_query = cm_utils.get_astropytime(args.date, args.time)
-    notes_early = cm_utils.get_astropytime(args.date0, args.time0)
+    notes_start_date = cm_utils.get_astropytime(args.notes_start_date, args.notes_start_time)
 
     if action_tag == 'in':
         print(
@@ -64,8 +64,8 @@ if __name__ == '__main__':
             --port:  port name [ALL]
             --date:  query date [now]
             --time:  query time
-            --date0:  "early" date for notes display [<]
-            --time0:  "early" time for notes display
+            --notes_start_date:  start date for notes display [<]
+            --notes_stop_time:  start time for notes display
             --sort_notes_by:  for the full notes listing (i.e. where hpn=None), you may sort by
                               the part number ('part') or by the posting time ('post')
 
@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
     if action_tag == 'pa':  # part_info
         part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
-                                                 notes_early=notes_early, sort_notes_by='part',
+                                                 notes_start_date=notes_start_date, sort_notes_by='part',
                                                  exact_match=args.exact_match, full_version=True)
         handling.show_parts(part_dossier, args.notes)
     elif action_tag == 'co':  # connection_info

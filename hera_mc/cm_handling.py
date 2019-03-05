@@ -29,7 +29,7 @@ class PartDossierEntry():
                'input_ports': 'Input', 'output_ports': 'Output',
                'part_info': 'Note', 'geo': 'Geo', 'post_date': 'Date', 'lib_file': 'File'}
 
-    def __init__(self, hpn, rev, at_date, early, sort_notes_by='part'):
+    def __init__(self, hpn, rev, at_date, notes_start_date, sort_notes_by='part'):
         if isinstance(hpn, six.string_types):
             hpn = hpn.upper()
         if isinstance(rev, six.string_types):
@@ -37,8 +37,8 @@ class PartDossierEntry():
         self.hpn = hpn
         self.rev = rev
         self.entry_key = cm_utils.make_part_key(hpn, rev)
-        self.time = at_date
-        self.early = early
+        self.at_date = at_date
+        self.notes_start_date = notes_start_date
         self.sort_notes_by = sort_notes_by
         self.part = None  # This is the part_connect.Parts class
         self.part_info = []  # This is a list of part_connect.PartInfo class entries
@@ -73,13 +73,13 @@ class PartDossierEntry():
                     (func.upper(PC.PartInfo.hpn) == self.hpn) & (func.upper(PC.PartInfo.hpn_rev) == self.rev)):
                 pi_dict[part_info.posting_gpstime] = part_info
         for x in sorted(pi_dict.keys(), reverse=True):
-            if cm_utils.is_active(pi_dict[x].posting_gpstime, self.early, self.time):
+            if cm_utils.is_active(pi_dict[x].posting_gpstime, self.notes_start_date, self.at_date):
                 self.part_info.append(pi_dict[x])
 
     def get_geo(self, session):
         if self.part.hptype == 'station':
             from . import geo_handling
-            gh = geo_handling.get_location([self.part.hpn], self.time, session=session)
+            gh = geo_handling.get_location([self.part.hpn], self.at_date, session=session)
             if len(gh) == 1:
                 self.geo = gh[0]
 
@@ -368,7 +368,7 @@ class Handling:
                                                                  session=self.session)
         return rev_part
 
-    def get_part_dossier(self, hpn, rev, at_date, notes_early='<', sort_notes_by='part',
+    def get_part_dossier(self, hpn, rev, at_date, notes_start_date='<', sort_notes_by='part',
                          exact_match=False, full_version=True):
         """
         Return information on a part.  It will return all matching first
@@ -382,8 +382,8 @@ class Handling:
         hpn:  the input hera part number [string or list-of-strings] (whole or first part thereof)
         rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
               if list, must match length of hpn
-        at_date:  reference date of dossier (and late date for displaying notes)
-        notes_early:  early cut-off date for displaying notes
+        at_date:  reference date of dossier (and stop_date for displaying notes)
+        notes_start_date:  start_date for displaying notes
         sort_notes_by:  for all notes (hpn=None) can sort by 'part' or 'post' ['part']
         exact_match:  boolean to enforce full part number match
         full_version:  flag whether to populate the full_version or truncated version of the dossier
@@ -391,7 +391,7 @@ class Handling:
 
         part_dossier = {}
         if hpn is None:
-            allinfo = PartDossierEntry(hpn=None, rev=None, at_date=at_date, early=notes_early,
+            allinfo = PartDossierEntry(hpn=None, rev=None, at_date=at_date, notes_start_date=notes_start_date,
                                        sort_notes_by=sort_notes_by)
             allinfo.get_part_info(session=self.session)
             part_dossier[allinfo.entry_key] = allinfo
@@ -403,7 +403,7 @@ class Handling:
                     continue
                 for xrev in rev_part[xhpn]:
                     this_rev = xrev.rev
-                    this_part = PartDossierEntry(hpn=xhpn, rev=this_rev, at_date=at_date, early=notes_early)
+                    this_part = PartDossierEntry(hpn=xhpn, rev=this_rev, at_date=at_date, notes_start_date=notes_start_date)
                     this_part.get_entry(session=self.session, full_version=full_version)
                     part_dossier[this_part.entry_key] = this_part
         return part_dossier
