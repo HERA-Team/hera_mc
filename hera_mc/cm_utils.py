@@ -62,7 +62,12 @@ def log(msg, **kwargs):
 
 
 # #######################################Key stuff
+system_wide_key = '__Sys__'
+
+
 def make_part_key(hpn, rev):
+    if hpn is None:
+        return(system_wide_key)
     return ":".join([hpn, rev]).strip()
 
 

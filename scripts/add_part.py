@@ -58,7 +58,7 @@ if __name__ == '__main__':
     part = part_connect.Parts()
     handling = cm_handling.Handling(session)
     part_check = handling.get_part_dossier(hpn=[args.hpn], rev=args.rev,
-                                           at_date=at_date, exact_match=True)
+                                           at_date=at_date, exact_match=True, full_version=False)
 
     # Check for part
     if len(list(part_check.keys())) > 0:

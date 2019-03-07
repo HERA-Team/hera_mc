@@ -124,7 +124,7 @@ class TestConnections(TestHERAMC):
         x = self.h.get_part_connection_dossier('test_part2', 'active', 'all', at_date=old_time, exact_match=True)
         self.assertTrue(len(x) == 0)
         z = {}
-        z['tst'] = cm_handling.PartConnectionDossierEntry('test_part1', 'active', 'all', at_date='now')
+        z['tst'] = cm_handling.PartConnectionDossierEntry('test_part1', 'active', 'all')
         with captured_output() as (out, err):
             self.h.show_connections(z)
         self.assertTrue('Q' not in out.getvalue().strip())
