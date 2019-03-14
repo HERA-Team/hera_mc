@@ -136,7 +136,7 @@ class CorrelatorConfigFile(MCDeclarativeBase):
 
 class CorrelatorConfigStatus(MCDeclarativeBase):
     """
-    Definition of correlator config table.
+    Definition of correlator config status table.
 
     time: gps time that the config started, floored (BigInteger, primary_key).
     config_hash: unique hash for the config (String, foreign key into correlator_config_file)

@@ -5,6 +5,8 @@
 \usepackage[letterpaper,margin=1in]{geometry}
 \usepackage{hyperref}
 
+\usepackage{etoc}
+
 \usepackage{outlines}
 \usepackage{enumitem}
 \setenumerate[1]{label=\arabic*.}
@@ -14,6 +16,15 @@
 
 \newcommand{\mc}{M\&C}
 
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={MC Definition},
+    bookmarks=true,
+    pdfpagemode=FullScreen,
+}
 
 \begin{document}
 
@@ -28,7 +39,10 @@ the Karoo Astronomy Reserve.  This note summarizes Monitor and Control (\mc) sub
 
 Monitor and Control provides a common place for logging of metadata and messages. The \mc\ system is built around a database with a well documented table schema and a software layer to provide a simple developer framework. It will also include various online daemons for monitoring things, and both a front end web-based user interface and a command-line interface to support analysis code.
 
+The organization of this document is as follows: requirements are laid out in section \ref{sec:reqs}, the design specifications are in section \ref{sec:specs}, the database tables are detailed in section \ref{sec:tables} and future plans are sketched out in section \ref{sec:future}.
+
 \section{Requirements}
+\label{sec:reqs}
 \begin{outline}[enumerate]
 	\1 Ability to fully reconstruct the historical state of the system.
 	\1 All interactions between subsystems must go through or be logged by \mc.
@@ -36,10 +50,11 @@ Monitor and Control provides a common place for logging of metadata and messages
 		\2 Subsystems in an interaction are responsible for logging communications to \mc.
 	\1 Operational metadata (e.g. temperatures, correlator bit occupancies) must be logged to \mc.
 	\1 High availability (\mc\ must not limit uptime of telescope).
-	\1 \mc is a provider of information about observations to end-users and must be available to them
+	\1 \mc\ is a provider of information about observations to end-users and must be available to them
 \end{outline}
 
 \section{Design Specification}
+\label{sec:specs}
 \begin{outline}[enumerate]
 	\1 SQL database
 		\2 DB Design principle: every logical sub group has a group of tables.  One adds tables to do more things. E.g. different versions of subsystems add new tables. Operations reference which tables they use.
@@ -56,11 +71,22 @@ Monitor and Control provides a common place for logging of metadata and messages
 		\2 Backup machine available on site
 \end{outline}
 
+
+% --------------------------- Table Definitions ------------------------------------------------------
+\newpage
+
 \section{Table Definitions}
+\label{sec:tables}
 Primary keys are bold, foreign keys are italicized.
+\vspace{5mm}
+\etocsettocstyle{}{}
+\localtableofcontents
+\newpage
 
 \subsection{Observations}
-\textbf{\large{hera\_obs}}: This is the primary observation definition table.
+\subsubsection{hera\_obs}
+This is the primary observation definition table. It is written to by the correlator.
+
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
  \hline
@@ -74,7 +100,9 @@ Primary keys are bold, foreign keys are italicized.
 \end{center}
 
 \subsection{Common tables}
-\textbf{\large{server\_status}}: Common table structure for server status info. Same columns to be used in subsystem-specific instances of this table.
+\subsubsection{server\_status (template)}
+\label{sec:server_status}
+Common table structure for server status info. \textbf{Note: There is no table named server\_status. This is the structure used for several subsystem tables named \textless subsystem\textgreater\_server\_status}.
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -94,7 +122,8 @@ network\_bandwidth\_mps & float & Network bandwidth in MB/s, 5 min average. Can 
 \end{tabular}
 \end{center}
 
-\textbf{\large{subsystem\_errors}}: Subsystem errors/issues
+\subsubsection{subsystem\_errors}
+Subsystem errors/issues
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -108,10 +137,16 @@ log & text & TBD on format, either a message or a file with the log \\ \hline
 \end{tabular}
 \end{center}
 
-\subsection{RTP Tables}
-\textbf{\large{rtp\_server\_status}}: RTP version of the server\_status table\\
 
-\textbf{\large{rtp\_status}}: High level RTP status
+
+% --------------------------- RTP ------------------------------------------------------
+
+\subsection{RTP Tables}
+\subsubsection{rtp\_server\_status}
+RTP version of the server\_status table, see \ref{sec:server_status}.
+
+\subsubsection{rtp\_status}
+High level RTP status
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -124,7 +159,8 @@ restart\_hours\_elapsed & float & hours elapsed since last restart \\\hline
 \end{tabular}
 \end{center}
 
-\textbf{\large{rtp\_process\_events}}: RTP Processing events (per obsid)
+\subsubsection{rtp\_process\_events}
+RTP Processing events (per obsid)
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -135,7 +171,8 @@ event & string & one of: queued, started, finished, error  \\\hline
 \end{tabular}
 \end{center}
 
-\textbf{\large{rtp\_process\_record}}: RTP record of processed obsids (entry added when processing finished)
+\subsubsection{rtp\_process\_record}
+RTP record of processed obsids (entry added when processing finished)
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -148,7 +185,8 @@ git\_hash & string & git hash of RTP code  \\\hline
 \end{tabular}
 \end{center}
 
-\textbf{\large{rtp\_task\_resource\_record}}: RTP record of start and stop times for a task (e.g., omnical) for an obsid, as well as CPU and memory used (if available)
+\subsubsection{rtp\_task\_resource\_record}
+RTP record of start and stop times for a task (e.g., omnical) for an obsid, as well as CPU and memory used (if available)
 \begin{center}
   \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -163,10 +201,15 @@ avg\_cpu\_load & float & average CPU load, in number of CPUs, for task (e.g., 2.
 \end{center}
 
 
-\subsection{Librarian Tables}
-\textbf{\large{lib\_server\_status}}: Librarian version of the server\_status table\\
 
-\textbf{\large{lib\_status}}: High level Librarian status
+% --------------------------- Librarian ------------------------------------------------------
+
+\subsection{Librarian Tables}
+\subsubsection{lib\_server\_status}
+Librarian version of the server\_status table, see \ref{sec:server_status}.
+
+\subsubsection{lib\_status}
+High level Librarian status
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -182,7 +225,8 @@ git\_hash & string & git hash of Librarian code  \\\hline
 \end{tabular}
 \end{center}
 
-\textbf{\large{lib\_raid\_status}}: RAID controller status
+\subsubsection{lib\_raid\_status}
+RAID controller status
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -194,7 +238,8 @@ info & text & TBD -- various info from megaraid controller, may be several colum
 \end{tabular}
 \end{center}
 
-\textbf{\large{lib\_raid\_errors}}: RAID controller errors/issues
+\subsubsection{lib\_raid\_errors}
+RAID controller errors/issues
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -207,7 +252,8 @@ log & text & TBD on format, either a message or a file with the log \\\hline
 \end{tabular}
 \end{center}
 
-\textbf{\large{lib\_remote\_status}}: Network bandwidth/health to all remote librarians
+\subsubsection{lib\_remote\_status}
+Network bandwidth/health to all remote librarians
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -220,7 +266,8 @@ bandwidth\_mps & float & bandwidth to remote in Mb/s, 15 minute average \\\hline
 \end{tabular}
 \end{center}
 
-\textbf{\large{lib\_files}}: File creation log
+\subsubsection{lib\_files}
+File creation log
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -232,14 +279,92 @@ size\_gb & float & file size in gigabytes \\ \hline
 \end{tabular}
 \end{center}
 
+
+
+% --------------------------- Correlator ------------------------------------------------------
+
 \subsection{Correlator Tables}
-The correlator tables are not all defined yet. Below are the defined tables followed by notes on future plans.
+The correlator tables are not all defined yet. Notes on future plans are in section \ref{sec:corr_future}.
 
-\textbf{\large{hera\_obs}}: The correlator is the code that will write to the observation table.\\
 
-\textbf{\large{corr\_server\_status}}: Correlator version of the server\_status table\\
+\subsubsection{correlator\_config\_file}
+List of correlator config files, which specify detailed correlator settings. All files in this table are in the Librarian.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{config\_hash} & string & unique hash for the config\\ \hline
+filename & string & name of the config file in the Librarian \\\hline
+\end{tabular}
+\end{center}
 
-\textbf{\large{node\_sensor}}: Node temperature and humidity sensor readings
+\subsubsection{correlator\_config\_status}
+Config status of the correlator, i.e. which config file is being used by the correlator.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & long & time of the config status in floor(gps seconds)\\ \hline
+\textit{config\_hash} & string & hash for the config in use, foreign key into correlator\_config\_file table.\\ \hline
+\end{tabular}
+\end{center}
+
+
+\subsubsection{correlator\_control\_state}
+State of control knobs in correlator.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & long & time of the control state in floor(gps seconds)\\ \hline
+\textbf{state\_type} & string & type of control state, one of: `taking\_data', `phase\_switching',  `noise\_diode'.  \\ \hline
+state & boolean & indicator of whether the state\_type is true or false \\\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{correlator\_control\_command}
+Commands issued to the correlator. If the command is `take\_data' or `update\_config', there will be a matching row in the `correlator\_take\_data\_arguments' table or the `correlator\_config\_command' table respectively with the values of the parameters in those commands.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & long & time the command was sent in floor(gps seconds)\\ \hline
+\textbf{command} & string & command sent, one of: `take\_data', `stop\_taking\_data',  `phase\_switching\_on',  `phase\_switching\_off',  `noise\_diode\_on',  `noise\_diode\_off',  `update\_config'.  \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{correlator\_take\_data\_arguments}
+Records the arguments passed to the correlator `take\_data` command.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{\textit{time}} & long & time the command was sent in floor(gps seconds), foreign key into correlator\_control\_command table\\ \hline
+\textbf{\textit{command}} & string & command sent, always `take\_data', foreign key into correlator\_control\_command table.  \\ \hline
+starttime\_sec & long & time to start taking data in floor(gps seconds) \\\hline
+starttime\_ms & integer & milliseconds to add to starttime\_sec to set correlator start time\\\hline
+duration & float & duration to take data for in seconds. After this time, the correlator will stop recording\\\hline
+acclen\_spectra & integer & accumulation length in spectra\\\hline
+integration\_time & float & accumulation length in seconds, converted from acclen\_spectra (the conversion is non-trivial and depends on the correlator settings)\\\hline
+tag & string & tag which will end up in data files as a header entry, one of: `engineering', `science'.\\\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{correlator\_config\_command}
+Records the config passed to the correlator `update\_config` command.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{\textit{time}} & long & time the command was sent in floor(gps seconds), foreign key into correlator\_control\_command table\\ \hline
+\textbf{\textit{command}} & string & command sent, always `update\_config', foreign key into correlator\_control\_command table.  \\ \hline
+\textit{config\_hash} & string & hash for the config to use, foreign key into correlator\_config\_file table.\\ \hline
+\end{tabular}
+\end{center}
+
+
+\subsubsection{node\_sensor}
+Node temperature and humidity sensor readings
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -254,7 +379,8 @@ humidity & float & percent humidity measurement reported by node\\\hline
 \end{tabular}
 \end{center}
 
-\textbf{\large{node\_power\_status}}: Power status for SNAPs, FEMs and PAMs (monitored by nodes)
+\subsubsection{node\_power\_status}
+Power status for SNAPs, FEMs and PAMs (monitored by nodes)
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -271,7 +397,22 @@ pam\_powered & bool & power status of the PAM, True = powered \\\hline
 \end{tabular}
 \end{center}
 
-\textbf{\large{roach\_temperature}}: Roach (correlator fpga board) temperatures (deprecated 8/2018)
+\subsubsection{node\_power\_command}
+Commands issued to change the power status for SNAPs, FEMs and PAMs (via the nodes).
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & long & time the command was sent in floor(gps seconds)\\ \hline
+\textbf{node} & int & integer identifying the node commanded \\ \hline
+\textbf{part} & string & part commanded, one of" `snap\_relay', `snap0', `snap1', `snap2', `snap3', `pam', `fem'. \\ \hline
+command & string & command sent, `on' or `off'. \\\hline
+\end{tabular}
+\end{center}
+
+
+\subsubsection{roach\_temperature (deprecated)}
+Roach (correlator fpga board) temperatures (deprecated 8/2018)
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -287,8 +428,83 @@ ppc\_temp & float & ppc temperature reported by the roach in degrees C \\\hline
 \end{center}
 
 
-\subsubsection{Correlator Table plans}
+% --------------------------- QA ------------------------------------------------------
+
+\subsection{QA Info}
+The QA tables are not all defined yet. Notes on future plans are in section \ref{sec:qa_future}.
+
+\subsubsection{metric\_list}
+List of metrics used in antenna or array metrics.
+
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{metric} & string & name of metric \\ \hline
+desc & string & description of metric \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{ant\_metrics}
+Antenna metrics, by polarization and obsid.
+
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{\textit{obsid}} & long integer & observation identifier, foreign key into hera\_obs table. \\ \hline
+\textbf{ant} & integer & antenna number ($\geq$ 0) \\ \hline
+\textbf{pol} & string & polarization, `x' or `y' \\ \hline
+\textbf{\textit{metric}} & string & name of metric, foreign key into metric\_list table. \\ \hline
+mc\_time & long integer & time report received by \mc\ in floor(gps seconds) \\ \hline
+val & double & value of metric \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{array\_metrics}
+Array metrics, by obsid.
+
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{\textit{obsid}} & long integer & observation identifier, foreign key into hera\_obs table. \\ \hline
+\textbf{\textit{metric}} & string & name of metric, foreign key into metric\_list table. \\ \hline
+mc\_time & long integer & time report received by \mc\ in floor(gps seconds) \\ \hline
+val & double & value of metric \\ \hline
+\end{tabular}
+\end{center}
+
+
+% --------------------------- Site Info ------------------------------------------------------
+
+\subsection{Site Info}
+The Site Info tables are not all defined yet.. Notes on future plans are in section \ref{sec:site_future}.
+
+\subsubsection{weather\_data}
+Weather data from KAT sensors
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex]  \hline\hline
+\textbf{time} & long & status time in floor(gps seconds)\\ \hline
+\textbf{variable} & string & name of weather variable (e.g. wind\_speed,  wind\_direction, temperature) \\ \hline
+value & float & value of the variable at this time \\\hline
+\end{tabular}
+\end{center}
+
+
+
+% --------------------------- Future Plans ------------------------------------------------------
+
+\section{Future Plans}
+\label{sec:future}
+\subsection{Correlator Table plans}
+\label{sec:corr_future}
 The correlator tables are not all defined yet, the following are notes about suggestions and plans for correlator tables. Most of the correlator data will be recorded in a Redis database (a rolling log, ephemeral), that info needs to be grabbed and put in \mc tables.
+
+\textbf{corr\_server\_status}: Correlator version of the server\_status table, see \ref{sec:server_status}, not yet implemented.
+
 \begin{outline}[enumerate]
 	\1 correlator on/off?	**this is a control**
 	\1 Bit statistics (overflows, ADC clipping, bit statistics after bit selects)
@@ -331,37 +547,30 @@ These are done:
 		\2 Power PAM, FEM status (binary)
 \end{outline}
 
-\subsection{QA Info}
-This will come from many sources. These are some suggestions for the future, things we might like to see.
+\subsection{QA Future Plans}
+\label{sec:qa_future}
+
+These are some suggestions for the future, things we might like to see.
 
 \begin{outline}[enumerate]
 	\1 RTP/online systems
-		\2 RFI statistics/info
-		\2 Calibration statistics
+		\2 RFI statistics/info (this might be in ant\_metrics and array\_metrics now)
+		\2 Calibration statistics (this might be in ant\_metrics and array\_metrics now)
 		\2 LST repeatability
 		\2 TBD other things that come up
 	\1 Offline codes (Major work on how to implement this!! Not on the critical path):
 		\2 TBD from offline analysis codes
 \end{outline}
 
-\subsection{Site Info}
-
-\textbf{\large{weather\_data}}: Weather data from KAT sensors
-\begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
-\hline
- column & type & description \\ [0.5ex]  \hline\hline
-\textbf{time} & long & status time in floor(gps seconds)\\ \hline
-\textbf{variable} & string & name of weather variable (e.g. wind\_speed,  wind\_direction, temperature) \\ \hline
-value & float & value of the variable at this time \\\hline
-\end{tabular}
-\end{center}
-
+\subsection{Site Info Future Plans}
+\label{sec:site_future}
 The following are suggestions for the future, things we might like to see.
 \begin{outline}[enumerate]
 	\1 site power
 	\1 network status
 \end{outline}
+
+
 
 \subsection{Other Future Ideas}
 \begin{outline}[enumerate]
