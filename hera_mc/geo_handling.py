@@ -14,7 +14,7 @@ import copy
 import warnings
 import six
 from sqlalchemy import func
-from pyproj import Proj
+import cartopy.crs as ccrs
 
 from . import mc, part_connect, cm_utils, geo_location
 
@@ -75,6 +75,8 @@ class Handling:
     """
 
     coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
+    hera_zone = [34, 'J']
+    lat_corr = {'J': 10000000}
 
     def __init__(self, session=None, testing=False):
         """
@@ -240,6 +242,9 @@ class Handling:
         query_date:  astropy Time for contemporary antenna
         """
 
+        latlon_p = ccrs.Geodetic()
+        utm_p = ccrs.UTM(self.hera_zone[0])
+        lat_corr = self.lat_corr[self.hera_zone[1]]
         locations = []
         self.query_date = cm_utils.get_astropytime(query_date)
         for station_name in to_find_list:
@@ -248,8 +253,7 @@ class Handling:
                     & (geo_location.GeoLocation.created_gpstime < self.query_date.gps)):
                 a.gps2Time()
                 a.desc = self.station_types[a.station_type_name]['Description']
-                hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
-                a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
+                a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
                 locations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:  # pragma: no cover
                     self.fp_out.write('{:6} {:.2f} {:.2f} {:.4f} {:.4f}\n'.format(station_name, a.easting, a.northing, a.lon, a.lat))
