@@ -37,12 +37,18 @@ HERA is an international experiment to detect and characterize the Epoch of
 Reionization (EOR).  The telescope is located at the South African SKA site in
 the Karoo Astronomy Reserve.  This note summarizes Monitor and Control (\mc) subsystem for HERA.
 
-Monitor and Control provides a common place for logging of metadata and messages. The \mc\ system is built around a database with a well documented table schema and a software layer to provide a simple developer framework. It will also include various online daemons for monitoring things, and both a front end web-based user interface and a command-line interface to support analysis code.
+Monitor and Control has two main tasks: configuration management and real time metadata logging. Configuration management involves tracking all the physical parts of the telescope and how they are all connected. Real time metadata logging tracks the performance, settings and communications of the subsystems.
 
-The organization of this document is as follows: requirements are laid out in section \ref{sec:reqs}, the design specifications are in section \ref{sec:specs}, the database tables are detailed in section \ref{sec:tables} and future plans are sketched out in section \ref{sec:future}.
+The \mc\ system is built around a database with a well documented table schema and a python software layer to provide a simple developer framework. It also includes various online daemons for monitoring things, and both a front end web-based user interface and a command-line interface to support analysis code.
 
-\section{Requirements}
+The organization of this document is as follows: the high-level \mc\ requirements and the design specifications are in laid out in section \ref{sec:reqs}, the configuration management is described in section \ref{sec:config}, the database tables are detailed in section \ref{sec:tables} and future plans are sketched out in section \ref{sec:future}.
+
+\section{Requirements and Specifications}
 \label{sec:reqs}
+
+\subsection{Requirements}
+These were developed and established in early 2016 in discussions among the subsystem leads.
+
 \begin{outline}[enumerate]
 	\1 Ability to fully reconstruct the historical state of the system.
 	\1 All interactions between subsystems must go through or be logged by \mc.
@@ -53,8 +59,9 @@ The organization of this document is as follows: requirements are laid out in se
 	\1 \mc\ is a provider of information about observations to end-users and must be available to them
 \end{outline}
 
-\section{Design Specification}
-\label{sec:specs}
+\subsection{Design Specification}
+These were developed and established in 2016 based on the requirements.
+
 \begin{outline}[enumerate]
 	\1 SQL database
 		\2 DB Design principle: every logical sub group has a group of tables.  One adds tables to do more things. E.g. different versions of subsystems add new tables. Operations reference which tables they use.
@@ -72,16 +79,170 @@ The organization of this document is as follows: requirements are laid out in se
 \end{outline}
 
 
+
+% --------------------------- Configuration Management ------------------------------------------------------
+
+\section{Configuration Management}
+\label{sec:config}
+
+The HERA array/part configuration management database is a set of five tables within the larger hera\_mc database, which is maintained on-site in the Karoo.  The tables are detailed in the Appendix, 
+but they are: 
+
+\begin{center}
+\begin{tabular}{l l l}
+         {\bf psql table} & {\bf in python file}  &  {\bf with class name} \\
+	geo\_location 	& hera\_mc/geo\_location.py & GeoLocation \\
+	station\_type 	& hera\_mc/geo\_location.py & StationType \\
+	parts 	& hera\_mc/part\_connect.py & Parts \\
+	part\_info 	         & hera\_mc/part\_connect.py & PartInfo \\
+	connections 	& hera\_mc/part\_connect.py & Connections \\
+	cm\_version      & hera\_mc/ & \\
+	dubitable          & hera\_mc & \\
+\end{tabular}
+\end{center}
+
+Software is contained in the repository https://github.com/HERA-Team/hera\_mc.
+
+The databases are structured primarily around {\em parts} and {\em connections}.  {\em Parts} are meant to be single items that, in theory at least, are a thing than can be replaced as a unit.  
+{\em Connections} define {\em ports} on a given parts and connect two ports together.  Parts are all upper case and ports are all lower case.
+
+All parts and connections are timed in that they have a start and stop time of operation.  If stop is {\tt None}, then it is active (it is given a date in the relatively far future).  There are currently two special parts (one at each end of the signal chain) that are ``geo\_located'' parts and have entries in the geo\_location table: {\bf station} and {\bf node}.
+
+Parts are hooked together via connections of their ports.   The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}.
+\begin{itemize}\setlength\itemsep{-.3em}
+	\item {\bf Station}: geo\_located position.  See prefixes in table station\_type ({\em e.g.} {\tt HH} for herahex)
+	\item {\bf Antenna}:  This is also the correlator number which now matches station number.  {\tt{\bf A}\{\#\}}
+	\item {\bf Feed}:  element feed (Vivaldi).  {\tt {\bf FDV}\{\#\}}
+	\item {\bf FEM}:  front-end module. {\tt {\bf FEM}\{\#\}}
+	\item {\bf Cable-RFoF}:  cable RF-over-fiber FEM-to-PAM.  Number matches station/antenna. {\tt {\bf CRF}\{\#\}}
+	\item {\bf PAM}:  post-amp module in node. {\tt {\bf PAM}\{\#\}}
+	\item {\bf SNAP}:  digitizer/channelizer in node. {\tt {\bf SNP}\{\#\}}
+	\item {\bf Node}: field-deployed node as a part {\tt {\bf N}\{\#\}}
+	\item {\bf Node}:  geo\_located position for node as a station {\tt {\bf ND}\{\#\}}
+\end{itemize}
+
+\begin{figure}[H]
+\includegraphics[width=0.8\textwidth]{hookup.pdf}
+\centering
+\caption{Block diagram of hookup.  Filled boxes are cables, blue objects are in the receiverator and green objects are in the container.
+The line labels indicate the port names/connections.}
+\label{fig:hookup}
+\end{figure}
+
+\subsection{Package Modules}
+This section provides a high-level overview of the python configuration management package modules within hera\_mc that are called from scripts or used in interactive sessions.
+\vspace{0.5cm}
+
+\begin{tabular}{l p{12cm}}
+{\bf geo\_location.py} & Defines {\tt station\_type} and {\tt geo\_location}.  Provides update utility for {\tt geo\_location}.  Contains {\tt is\_in\_geo\_location} and {\tt is\_in\_connections}. \\ \hline
+{\bf geo\_handling.py} & Contains myriad defs that handle various geo functionalities.\\ \hline
+{\bf part\_connect.py} & Defines {\tt parts\_paper}, {\tt part\_info}, and {\tt connections}.  Provides update utilities for {\tt parts\_paper} and {\tt connections}. Contains {\tt \_\_get\_part\_revisions}. \\ \hline
+{\bf cm\_table\_info.py} & Has mapping and order of tables and classes for initialization. \\ \hline
+{\bf cm\_handling.py} & Defines the {\tt Handling} class to handle various configuration management functionalities.\\ \hline
+{\bf cm\_transfer.py} & Contains myriad defs that help package and initialize the cm tables.\\ \hline
+{\bf cm\_part\_revisions.py} & Contains myriad defs that deal with finding revision numbers etc.\\ \hline
+{\bf cm\_hookup.py} & Defines the {\tt Hookup} class to help determine and show the full part hookup.\\ \hline
+{\bf cm\_dataview.py} & Contains various methods to display cm information.\\ \hline
+{\bf cm\_utils.py} & Contains various defs called by other modules.\\
+\end{tabular}
+
+\subsection{Scripts}
+\label{sec:scripts}
+This section provides a high-level overview of the high-level scripts:  geo.py and parts.py.  Note that info you type {\tt info} after them, it presents information on them.  The structure is 
+
+{\tt geo.py {\it action} --arguments}
+
+\noindent {\tt {\it action} } is optional with a default.
+
+\subsubsection{geo.py}
+Has various plotting/printing options for station information.  Available actions are (note you need the first 3 letters only):
+
+\begin{itemize}
+\item {\tt geo} [default]:  plots and/or lists ({\tt -g}) antenna locations.  Plots have the "background" behind them.
+\item {\tt cofa}:  plots and/or lists the position of the center of the array.
+\item {\tt since}:  plots and/or lists the antennas built since the provided date.
+\item {\tt info}:  provides information on the script.
+\end{itemize}
+
+{\tt geo.py -g -l HH67} will show the "background" (selectable via --station-types or -t) of active (selectable via --show-state) antennas with HH67 highlighted.  It will provide an overview printout as well.
+
+\subsubsection{parts.py}
+Has various printing options for part information (part info, connections, hookup, types, etc).  Available actions are (note you only need the first 2 letters only):
+
+\begin{itemize}
+\item {\tt hookup} [default]:  lists hookup info for parts (as a csv list with no spaces) after -p
+\item {\tt part\_info}:   provides a summary of given part(s)
+\item {\tt conn\_info}:   provides a summary table of parts connected to given part(s)
+\item {\tt rev\_info}:  provides a summary of revisions to given part(s)
+\item {\tt types}:  prints a summary table of part types
+\item {\tt check\_rev}:  checks whether a given revision of a part exists
+\item {\tt overlap\_check}:  checks that the given part doesn't have overlapping revisions.
+\item {\tt info}:   provides information on the script
+\end{itemize}
+
+{\tt parts.py -p ri5} will provide a table of all hookups to receiverator 5.  {\tt parts.py -p ri5 --hookup-cols "station,cable-post-amp(in),f-engine"}  will just show those columns.
+
+\subsection{Use Cases}
+	Three use cases are identified:
+	\begin{enumerate}\setlength\itemsep{-.3em}
+		\item In-the-field
+		\item Remote user
+		\item Bulk database
+	\end{enumerate}
+
+\subsubsection{In-the-field updates}
+This is the ``operational'' mode, where inputs to the on-site database are done via scripts (command-line and/or web), which update the database directly.  These scripts will be documented under the repository software.
+
+\subsubsection{Remote user}
+Remote use is the case when a remote user initializes and uses the tables outside of the main database.  This assumes that postgresql etc is configured on the remote computer.  Note that this mode supports both offline use (essentially steps 3-5 below, which are in bold) and development (probably all steps).  The process is as follows: 
+\begin{enumerate}\setlength\itemsep{-.3em}
+	\item Generate ascii files of the tables in the main database (in the Karoo) {\tt (cm\_pack.py [--tables table1,table2,...)}
+	\item Push to GitHub
+	\item {\bf Pull down to remote computer}
+	\item {\bf Install ({\tt python setup.py install})}
+	\item {\bf Initialize the updated ones ({\tt cm\_init.py})}
+	\item If you are developing, make a base version before you start ({\tt cm\_pack.py --base})
+\end{enumerate}
+
+Note that generally you should leave off the {\tt --tables} option, since you should use all the tables so as to not break foreign keys (it is left there for ``expert'' users).  Steps 3-5 are bolded, since if you just want to pull down the latest and use it assuming things are up-to-date they are all that are needed (i.e., leave the ``packaging to the experts'').
+
+This has another option of {\tt --base}, so that you can set up a base copy to which you can revert if need be by including {\tt --base} on both commands (step 6).
+	
+\subsubsection{Main database updates}
+This is effectively the opposite of the remote user case, bringing an updated set of table(s) back into the main database.  The process is as follows:
+\begin{enumerate}\setlength\itemsep{-.3em}
+	\item  Generate ascii files of the desired tables from the remote database: 
+		({\tt cm\_pack.py --maindb \$key [--tables table1,table2,...]})
+	\item Push to GitHub
+	\item Pull down to site computer
+	\item Install
+	\item Update existing tables  ({\tt cm\_init.py --maindb \$key [--tables table1,table2,]})
+\end{enumerate}
+
+Note that {\tt \$key} is a user supplied string to just make sure you meant to do the main database update.  It can be anything, you
+just need to remember it when you reload it on the main database computer qmaster.
+As per above, you should generally leave off the {\tt --tables} option so as to do them all.  
+
+
+
 % --------------------------- Table Definitions ------------------------------------------------------
 \newpage
 
 \section{Table Definitions}
 \label{sec:tables}
-Primary keys are bold, foreign keys are italicized.
+
 \vspace{5mm}
 \etocsettocstyle{}{}
 \localtableofcontents
 \newpage
+
+The formatting of the tables is as follows: 
+\begin{itemize}\setlength\itemsep{-.3em}
+	\item {\bf Bold font} = primary key
+	\item {\em Italics} = foreign\_key.
+	\item * = NotNull entries
+\end{itemize}
+
 
 \subsection{Observations}
 \subsubsection{hera\_obs}
@@ -90,7 +251,7 @@ This is the primary observation definition table. It is written to by the correl
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
  \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
  \textbf{obsid} & long integer & start time in floor(GPS) seconds. GPS start adjusted to be within 1 second of LST to lock observations to LST for the night \\ \hline
  starttime & double & start time in gps seconds. The start time to full accuracy of the beginning of integration of first visibility \\\hline
  stoptime & double & stop time in gps seconds. The stop time to full accuracy of the end of integration of last visibility \\\hline
@@ -106,7 +267,7 @@ Common table structure for server status info. \textbf{Note: There is no table n
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
  \textbf{hostname} & string &  name of server \\ \hline
  \textbf{mc\_time} & long & time report received by \mc\ in floor(gps seconds) \\ \hline
  ip\_address & string & IP address of server (how should we handle multiples?) \\\hline
@@ -127,7 +288,7 @@ Subsystem errors/issues
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{id} & long & auto-incrementing error id\\ \hline
 time & long & error report time in floor(gps seconds)\\ \hline
 subsystem & string & name subsystem with error (e.g. `librarian', `rtp')\\ \hline
@@ -150,7 +311,7 @@ High level RTP status
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
 status & string & status string, options TBD (might become an enum) \\\hline
 event\_min\_elapsed & float & minutes elapsed since last event \\\hline
@@ -164,7 +325,7 @@ RTP Processing events (per obsid)
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & event time in floor(gps seconds) \\ \hline
 \textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
 event & string & one of: queued, started, finished, error  \\\hline
@@ -176,7 +337,7 @@ RTP record of processed obsids (entry added when processing finished)
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & record time in floor(gps seconds)\\ \hline
 \textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
 pipeline\_list & text & concatenated list of tasks  \\\hline
@@ -213,7 +374,7 @@ High level Librarian status
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds) \\ \hline
 num\_files & long & total number of files in librarian  \\\hline
 data\_volume\_gb & float & total data volume in gigabytes  \\\hline
@@ -230,7 +391,7 @@ RAID controller status
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds) \\ \hline
 \textbf{hostname} & string & name of RAID server \\ \hline
 num\_disks & int & number of disks in RAID server  \\\hline
@@ -243,7 +404,7 @@ RAID controller errors/issues
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{id} & long & auto-incrementing error id\\ \hline
 time & long & error report time in floor(gps seconds)\\ \hline
 hostname & string & name of RAID server with error \\ \hline
@@ -257,7 +418,7 @@ Network bandwidth/health to all remote librarians
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
 \textbf{remote\_name} & string & name of remote librarian \\ \hline
 ping\_time & float & ping time in seconds \\\hline
@@ -271,7 +432,7 @@ File creation log
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{filename} & string & name of file created \\ \hline
 \textit{obsid} & long integer & observation identifier, foreign key into hera\_obs table. Can be null. \\ \hline
 time & long & file creation time in floor(gps seconds)\\ \hline
@@ -292,7 +453,7 @@ List of correlator config files, which specify detailed correlator settings. All
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{config\_hash} & string & unique hash for the config\\ \hline
 filename & string & name of the config file in the Librarian \\\hline
 \end{tabular}
@@ -303,7 +464,7 @@ Config status of the correlator, i.e. which config file is being used by the cor
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & time of the config status in floor(gps seconds)\\ \hline
 \textit{config\_hash} & string & hash for the config in use, foreign key into correlator\_config\_file table.\\ \hline
 \end{tabular}
@@ -315,7 +476,7 @@ State of control knobs in correlator.
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & time of the control state in floor(gps seconds)\\ \hline
 \textbf{state\_type} & string & type of control state, one of: `taking\_data', `phase\_switching',  `noise\_diode'.  \\ \hline
 state & boolean & indicator of whether the state\_type is true or false \\\hline
@@ -327,7 +488,7 @@ Commands issued to the correlator. If the command is `take\_data' or `update\_co
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & time the command was sent in floor(gps seconds)\\ \hline
 \textbf{command} & string & command sent, one of: `take\_data', `stop\_taking\_data',  `phase\_switching\_on',  `phase\_switching\_off',  `noise\_diode\_on',  `noise\_diode\_off',  `update\_config'.  \\ \hline
 \end{tabular}
@@ -338,7 +499,7 @@ Records the arguments passed to the correlator `take\_data` command.
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{\textit{time}} & long & time the command was sent in floor(gps seconds), foreign key into correlator\_control\_command table\\ \hline
 \textbf{\textit{command}} & string & command sent, always `take\_data', foreign key into correlator\_control\_command table.  \\ \hline
 starttime\_sec & long & time to start taking data in floor(gps seconds) \\\hline
@@ -355,7 +516,7 @@ Records the config passed to the correlator `update\_config` command.
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{\textit{time}} & long & time the command was sent in floor(gps seconds), foreign key into correlator\_control\_command table\\ \hline
 \textbf{\textit{command}} & string & command sent, always `update\_config', foreign key into correlator\_control\_command table.  \\ \hline
 \textit{config\_hash} & string & hash for the config to use, foreign key into correlator\_config\_file table.\\ \hline
@@ -368,7 +529,7 @@ Node temperature and humidity sensor readings
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & measurement time in floor(gps seconds)\\ \hline
 \textbf{node} & int & integer identifying the node \\ \hline
 top\_sensor\_temp & float & temperature of top sensor reported by node in degrees C \\\hline
@@ -384,7 +545,7 @@ Power status for SNAPs, FEMs and PAMs (monitored by nodes)
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & measurement time in floor(gps seconds)\\ \hline
 \textbf{node} & int & integer identifying the node \\ \hline
 snap\_relay\_powered & bool & power status of the snap relay, True = powered \\\hline
@@ -402,7 +563,7 @@ Commands issued to change the power status for SNAPs, FEMs and PAMs (via the nod
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & time the command was sent in floor(gps seconds)\\ \hline
 \textbf{node} & int & integer identifying the node commanded \\ \hline
 \textbf{part} & string & part commanded, one of" `snap\_relay', `snap0', `snap1', `snap2', `snap3', `pam', `fem'. \\ \hline
@@ -416,7 +577,7 @@ Roach (correlator fpga board) temperatures (deprecated 8/2018)
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & measurement time in floor(gps seconds)\\ \hline
 \textbf{roach} & string & name of roach (correlator fpga board) \\ \hline
 ambient\_temp & float & ambient temperature reported by the roach in degrees C \\\hline
@@ -430,7 +591,7 @@ ppc\_temp & float & ppc temperature reported by the roach in degrees C \\\hline
 
 % --------------------------- QA ------------------------------------------------------
 
-\subsection{QA Info}
+\subsection{QA Info Tables}
 The QA tables are not all defined yet. Notes on future plans are in section \ref{sec:qa_future}.
 
 \subsubsection{metric\_list}
@@ -439,7 +600,7 @@ List of metrics used in antenna or array metrics.
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{metric} & string & name of metric \\ \hline
 desc & string & description of metric \\ \hline
 \end{tabular}
@@ -451,7 +612,7 @@ Antenna metrics, by polarization and obsid.
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{\textit{obsid}} & long integer & observation identifier, foreign key into hera\_obs table. \\ \hline
 \textbf{ant} & integer & antenna number ($\geq$ 0) \\ \hline
 \textbf{pol} & string & polarization, `x' or `y' \\ \hline
@@ -467,7 +628,7 @@ Array metrics, by obsid.
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{\textit{obsid}} & long integer & observation identifier, foreign key into hera\_obs table. \\ \hline
 \textbf{\textit{metric}} & string & name of metric, foreign key into metric\_list table. \\ \hline
 mc\_time & long integer & time report received by \mc\ in floor(gps seconds) \\ \hline
@@ -478,7 +639,7 @@ val & double & value of metric \\ \hline
 
 % --------------------------- Site Info ------------------------------------------------------
 
-\subsection{Site Info}
+\subsection{Site Info Tables}
 The Site Info tables are not all defined yet.. Notes on future plans are in section \ref{sec:site_future}.
 
 \subsubsection{weather\_data}
@@ -486,7 +647,7 @@ Weather data from KAT sensors
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
- column & type & description \\ [0.5ex]  \hline\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
 \textbf{variable} & string & name of weather variable (e.g. wind\_speed,  wind\_direction, temperature) \\ \hline
 value & float & value of the variable at this time \\\hline
@@ -494,6 +655,83 @@ value & float & value of the variable at this time \\\hline
 \end{center}
 
 
+% --------------------------- Configuration Management Tables ------------------------------------------------------
+
+\subsection{Configuration Management Tables}
+As described in section  \ref{sec:config}, there are five tables in the configuration management section of the database:  (1) geo\_location, (2) station\_meta,
+(3) parts\_paper, (4) part\_info, (5) connections.  The following tables summarize them with the following key:  
+
+\subsubsection{geo\_location :: geo\_location.GeoLocation}
+\begin{center}
+\begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+{\bf station\_name}*  & character varying(64) & Name of position - never changes \\ \hline
+{\em station\_type\_name}* & character varying(64) & Type of station \\ \hline
+datum & character varying(64) & UTM datum \\ \hline
+tile & character varying(64) & UTM tile \\ \hline
+northing & double precision & UTM coordinate \\ \hline
+easting & double precision & UTM coordinate \\ \hline
+elevation & double precision & Elevation \\ \hline
+created\_gpstime* & BigInt & GPS second of creation. \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{geo\_location :: station\_type.StationType}
+\begin{center}
+\begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+{\bf \em station\_type\_name}* &  character varying(64) &  Station type name \\ \hline
+prefix* & character varying(64) & 1-2 letter prefix for part station\_name \\ \hline
+description & character varying(64) &  Short description \\ \hline
+plot\_marker & character varying(64) & Type of matplotlib marker \\ \hline
+\end{tabular}
+\end{center}
+
+
+\subsubsection{part\_connect :: parts\_paper.Parts}
+\begin{center}
+\begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+{\bf Column} & {\bf Type} & {\bf Description} \\ \hline
+{\bf \em hpn}* & character varying(64) & HERA part number \\ \hline
+{\bf \em hpn\_rev}* & character varying(32) & HPN revision letter (A-Z) \\ \hline
+hptype*  &  character varying(64) & HPN part type category \\ \hline
+manufacturer\_number & character varying(64) & Unique serial number for each part \\ \hline
+start\_gpstime* & BigInt & GPS second when part/rev is activated. \\ \hline
+stop\_gpstime & BigInt & GPS second when part/rev is de-activated \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{part\_connect :: part\_info.PartInfo}
+\begin{center}
+\begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+{\bf Column} & {\bf Type} & {\bf Description} \\ \hline
+{\bf \em hpn}* & character varying(64) & HERA part number \\ \hline
+{\bf \em hpn\_rev}* & character varying(32) & HPN revision letter (A-Z) \\ \hline
+posting\_gpstime* & BigInt & GPS second information was posted \\ \hline
+comment* &  character varying(1024) & Comment \\ \hline
+library\_file & character varying(256) &  Librarian filename (how to get it there?) \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{part\_connect :: connections.Connection}
+\begin{center}
+\begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+{\bf Column} & {\bf Type} & {\bf Description} \\ \hline
+{\bf \em upstream\_part}* &  character varying(64) & Hera part number of upstream connection \\ \hline
+{\bf \em up\_part\_rev}* & character varying(32) & Hera part revision of upstream connection \\ \hline
+{\bf upstream\_output\_port}* & character varying(64) & Output port on upstream part \\ \hline
+{\bf \em downstream\_part}* & character varying(64) & Hera part number of downstream connection \\ \hline
+{\bf \em down\_part\_rev}* & character varying(32) & Hera part revision of downstream connection \\ \hline
+{\bf downstream\_input\_port}* & character varying(64) & Input port on downstream part \\ \hline
+{\bf \em start\_gpstime}* & BigInt & GPS second when connection started \\ \hline
+stop\_gpstime & BigInt & GPS second when connection ended \\ \hline
+\end{tabular}
+\end{center}
 
 % --------------------------- Future Plans ------------------------------------------------------
 
