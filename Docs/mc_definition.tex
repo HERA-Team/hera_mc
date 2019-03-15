@@ -156,21 +156,16 @@ This section provides a high-level overview of the python configuration manageme
 
 \subsection{Scripts}
 \label{sec:scripts}
-This section provides a high-level overview of the high-level scripts:  geo.py,  parts.py and hookup.py.  Note that info you type {\tt info} after them, it presents information on them.  The structure is 
-
-{\tt geo.py {\it action} --arguments}
-
-\noindent {\tt {\it action} } is optional with a default.
+This section provides a high-level overview of the high-level scripts:  geo.py,  parts.py and hookup.py.
 
 \subsubsection{geo.py}
-Has various plotting/printing options for station information.  Available actions are (note you need the first 3 letters only):
 
-\begin{itemize}
-\item {\tt geo} [default]:  plots and/or lists ({\tt -g}) antenna locations.  Plots have the "background" behind them.
-\item {\tt cofa}:  plots and/or lists the position of the center of the array.
-\item {\tt since}:  plots and/or lists the antennas built since the provided date.
-\item {\tt info}:  provides information on the script.
-\end{itemize}
+{\tt geo.py fg_action --arguments}
+
+Has various plotting/printing options for station information.  {{\tt fg_action} is the "foreground action", that is the locations that will get printed and shown on top if plotting.
+Available foregrounds are (note you need the first letter only):  a[ctive], i[nstalled], p[osition] <csv-list>, c[ofa], s[ince], n[one].
+
+Arguments are:  
 
 {\tt geo.py -g -l HH67} will show the "background" (selectable via --station-types or -t) of active (selectable via --show-state) antennas with HH67 highlighted.  It will provide an overview printout as well.
 

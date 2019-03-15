@@ -15,7 +15,7 @@ from hera_mc import mc, geo_handling, cm_utils, part_connect
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('fg_action', nargs='*', default=['active'],
-                        help="Actions for foreground listing:  a[ctive], i[nstalled], p[osition] <S>, c[ofa], s[ince], n[one] (active)")
+                        help="Actions for foreground listing:  a[ctive], i[nstalled], p[osition] <csv-list>, c[ofa], s[ince], n[one] (active)")
     parser.add_argument('-b', '--background', help="Set background type (layers)",
                         choices=['none', 'installed', 'layers', 'all'], default='installed')
     parser.add_argument('-g', '--graph', help="Graph (plot) station types (False)", action='store_true')
@@ -25,7 +25,7 @@ if __name__ == '__main__':
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
-    parser.add_argument('-t', '--station-types', help="Station types used for input (csv_list or 'all') Can use types or prefixes.  (default)",
+    parser.add_argument('-t', '--station-types', help="Station types searched (csv_list or 'all') Can use types or prefixes.  (default)",
                         dest='station_types', default='default')
     parser.add_argument('--label', choices=['name', 'num', 'ser', 'none'], default='num',
                         help="Label by station_name (name), ant_num (num) serial_num (ser) or none (none) (num)")
