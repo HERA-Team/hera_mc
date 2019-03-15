@@ -41,6 +41,8 @@ Monitor and Control has two main tasks: configuration management and real time m
 
 The \mc\ system is built around a database with a well documented table schema and a python software layer to provide a simple developer framework. It also includes various online daemons for monitoring things, and both a front end web-based user interface and a command-line interface to support analysis code.
 
+Software is contained in the repository https://github.com/HERA-Team/hera\_mc.
+
 The organization of this document is as follows: the high-level \mc\ requirements and the design specifications are in laid out in section \ref{sec:reqs}, the configuration management is described in section \ref{sec:config}, the database tables are detailed in section \ref{sec:tables} and future plans are sketched out in section \ref{sec:future}.
 
 \section{Requirements and Specifications}
@@ -70,7 +72,7 @@ These were developed and established in 2016 based on the requirements.
 		\2 Transactions must be used to ensure DB integrity.
 		\2 Must be mirrored in some fashion to observer locations.
 	\1 At least one SW interface layer will be provided.
-		\2 It�s not required to interact with \mc.
+		\2 It's not required to interact with \mc.
 		\2 Must support relational db (i.e. multiple column primary and foreign keys) and transactions.
 	\1 Hardware
 		\2 LOM capabilities
@@ -96,19 +98,21 @@ but they are:
 	parts 	& hera\_mc/part\_connect.py & Parts \\
 	part\_info 	         & hera\_mc/part\_connect.py & PartInfo \\
 	connections 	& hera\_mc/part\_connect.py & Connections \\
-	cm\_version      & hera\_mc/ & \\
-	dubitable          & hera\_mc & \\
+	cm\_version      & hera\_mc/cm\_transfer.py & CMVersion\\
+	dubitable          & hera\_mc/part\_connect.py & Dubitable\\
 \end{tabular}
 \end{center}
 
-Software is contained in the repository https://github.com/HERA-Team/hera\_mc.
-
-The databases are structured primarily around {\em parts} and {\em connections}.  {\em Parts} are meant to be single items that, in theory at least, are a thing than can be replaced as a unit.  
-{\em Connections} define {\em ports} on a given parts and connect two ports together.  Parts are all upper case and ports are all lower case.
+The databases are structured primarily around {\em parts} and {\em connections}.  {\em Parts} are meant to be single items that, in theory at least, are a thing that can be replaced as a unit.  
+{\em Connections} define {\em ports} on a given part and connect two ports together.  By convention, HERA part numbers ({\tt hpn}) are all upper case and ports are all lower case.
 
 All parts and connections are timed in that they have a start and stop time of operation.  If stop is {\tt None}, then it is active (it is given a date in the relatively far future).  There are currently two special parts (one at each end of the signal chain) that are ``geo\_located'' parts and have entries in the geo\_location table: {\bf station} and {\bf node}.
 
-Parts are hooked together via connections of their ports.   The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}.
+Parts are hooked together via connections of their ports, as defined in the connection table.   There are two types of connections:  (1) "hookup" connections and (2) "physical" connections, discussed below.
+
+\subsection{Signal Chain Hookup Connections}
+Hookup connections are those that uniquely map the signal chain from the antenna to the node, including the specific correlator input.  These connections are defined in the file {\tt part\_connect} as the {\tt full\_connection\_path}.  These are the connections used to generate the correlator hookup.
+The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}, shown as the ports that aren't preceded by a pair of colons (::).  The list below describes the hookup connections.
 \begin{itemize}\setlength\itemsep{-.3em}
 	\item {\bf Station}: geo\_located position.  See prefixes in table station\_type ({\em e.g.} {\tt HH} for herahex)
 	\item {\bf Antenna}:  This is also the correlator number which now matches station number.  {\tt{\bf A}\{\#\}}
@@ -124,10 +128,12 @@ Parts are hooked together via connections of their ports.   The signal chain hoo
 \begin{figure}[H]
 \includegraphics[width=0.8\textwidth]{hookup.pdf}
 \centering
-\caption{Block diagram of hookup.  Filled boxes are cables, blue objects are in the receiverator and green objects are in the container.
-The line labels indicate the port names/connections.}
+\caption{Block diagram of hookup.  The line labels indicate the port names/connections.}
 \label{fig:hookup}
 \end{figure}
+
+\subsection{Physical Connections}
+Possibly not the most aptly named "physical" connections are other connections that we wish to track for various operational reasons (e.g. tracing a problem to a single PAM chassis etc).  Unlike for hookup connections, these are not defined anywhere and new ones may be included as needs arises.  They are shown in Fig. \ref{fig:hookup} as ports preceded by two colons (::).
 
 \subsection{Package Modules}
 This section provides a high-level overview of the python configuration management package modules within hera\_mc that are called from scripts or used in interactive sessions.
@@ -139,16 +145,18 @@ This section provides a high-level overview of the python configuration manageme
 {\bf part\_connect.py} & Defines {\tt parts\_paper}, {\tt part\_info}, and {\tt connections}.  Provides update utilities for {\tt parts\_paper} and {\tt connections}. Contains {\tt \_\_get\_part\_revisions}. \\ \hline
 {\bf cm\_table\_info.py} & Has mapping and order of tables and classes for initialization. \\ \hline
 {\bf cm\_handling.py} & Defines the {\tt Handling} class to handle various configuration management functionalities.\\ \hline
+{\bf cm\_health.py} & Contains modules that check for various cm errors or warnings \\ \\hline
 {\bf cm\_transfer.py} & Contains myriad defs that help package and initialize the cm tables.\\ \hline
 {\bf cm\_part\_revisions.py} & Contains myriad defs that deal with finding revision numbers etc.\\ \hline
 {\bf cm\_hookup.py} & Defines the {\tt Hookup} class to help determine and show the full part hookup.\\ \hline
 {\bf cm\_dataview.py} & Contains various methods to display cm information.\\ \hline
-{\bf cm\_utils.py} & Contains various defs called by other modules.\\
+{\bf cm\_utils.py} & Contains various defs called by other modules.\\ \hline
+{\bf sys\_handling.py} & Various system-wide modules.
 \end{tabular}
 
 \subsection{Scripts}
 \label{sec:scripts}
-This section provides a high-level overview of the high-level scripts:  geo.py and parts.py.  Note that info you type {\tt info} after them, it presents information on them.  The structure is 
+This section provides a high-level overview of the high-level scripts:  geo.py,  parts.py and hookup.py.  Note that info you type {\tt info} after them, it presents information on them.  The structure is 
 
 {\tt geo.py {\it action} --arguments}
 
