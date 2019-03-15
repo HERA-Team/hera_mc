@@ -158,16 +158,29 @@ This section provides a high-level overview of the python configuration manageme
 \label{sec:scripts}
 This section provides a high-level overview of the high-level scripts:  geo.py,  parts.py and hookup.py.
 
-\subsubsection{geo.py}
+\subsubsection{geo.py:  {\tt geo.py fg\_action --arguments}}
 
-{\tt geo.py fg_action --arguments}
+Has various plotting/printing options for station information.  {{\tt fg\_action} is the "foreground action", that is the locations that will get printed and shown on top if plotting.
+Available foregrounds are (note you need the first letter only):  
+\begin{itemize}
+\item {\tt a[ctive]}:  those antennas that are shown as fully hooked up through the correlator
+\item {\tt i[nstalled]}:  those antennas whose structure is installed
+\item {\tt p[osition] <csv-list>}:  specified antennas in csv-list (e.g. HH1,HH4)
+\item {\tt c[ofa]}:  the center-of-the-array
+\item {\tt s[ince]}:  antennas installed since date/time supplied in arguments
+\item {\tt n[one]}:  no foreground, will just show the background (or nothing if not plotting)
+\end{itemize}
 
-Has various plotting/printing options for station information.  {{\tt fg_action} is the "foreground action", that is the locations that will get printed and shown on top if plotting.
-Available foregrounds are (note you need the first letter only):  a[ctive], i[nstalled], p[osition] <csv-list>, c[ofa], s[ince], n[one].
-
-Arguments are:  
-
-{\tt geo.py -g -l HH67} will show the "background" (selectable via --station-types or -t) of active (selectable via --show-state) antennas with HH67 highlighted.  It will provide an overview printout as well.
+Arguments are: 
+\begin{itemize}
+\item {\tt -b, --background}:  antenna types as background - none, installed, layers, all (note:  layers=all+station-types+foreground)
+\item {\tt -g, --graph}:  show the graph
+\item {\tt -f, --file}: if included, will write out foreground to that filename
+\item {\tt --date, --time}:  date/time to use for foreground
+\item {\tt -x, -y}:  specifiy x and y axes to use (n, e, z)
+\item {\tt -t, --station-types}:  station-types to use in foreground retrieval
+\item {\tt --label}:  what to use as label for plot.
+\end{itemize}
 
 \subsubsection{parts.py}
 Has various printing options for part information (part info, connections, hookup, types, etc).  Available actions are (note you only need the first 2 letters only):
