@@ -156,13 +156,13 @@ This section provides a high-level overview of the python configuration manageme
 
 \subsection{Scripts}
 \label{sec:scripts}
-This section provides a high-level overview of the high-level scripts:  geo.py,  parts.py and hookup.py.
+This section provides a high-level overview of the high-level scripts:  {\tt geo.py},  {\tt parts.py} and {\tt hookup.py}.
 
-\subsubsection{geo.py:  {\tt geo.py fg\_action --arguments}}
+\subsubsection{Geographical Information:  {\tt geo.py fg\_action --arguments}}
 
 Has various plotting/printing options for station information.  {{\tt fg\_action} is the "foreground action", that is the locations that will get printed and shown on top if plotting.
 Available foregrounds are (note you need the first letter only):  
-\begin{itemize}
+\begin{itemize}\setlength\itemsep{-.3em}
 \item {\tt a[ctive]}:  those antennas that are shown as fully hooked up through the correlator
 \item {\tt i[nstalled]}:  those antennas whose structure is installed
 \item {\tt p[osition] <csv-list>}:  specified antennas in csv-list (e.g. HH1,HH4)
@@ -172,7 +172,7 @@ Available foregrounds are (note you need the first letter only):
 \end{itemize}
 
 Arguments are: 
-\begin{itemize}
+\begin{itemize}\setlength\itemsep{-.3em}
 \item {\tt -b, --background}:  antenna types as background - none, installed, layers, all (note:  layers=all+station-types+foreground)
 \item {\tt -g, --graph}:  show the graph
 \item {\tt -f, --file}: if included, will write out foreground to that filename
@@ -182,64 +182,51 @@ Arguments are:
 \item {\tt --label}:  what to use as label for plot.
 \end{itemize}
 
-\subsubsection{parts.py}
-Has various printing options for part information (part info, connections, hookup, types, etc).  Available actions are (note you only need the first 2 letters only):
-
-\begin{itemize}
-\item {\tt hookup} [default]:  lists hookup info for parts (as a csv list with no spaces) after -p
+\subsubsection{Part/Connection Information: {\tt parts.py action --arguments}}
+Has various printing options for part information (part info, connections, hookup, types, etc). {\tt parts.py info} will print out some helpful script info. Available actions are (note you only need the first 2 letters only):
+\begin{itemize}\setlength\itemsep{-.3em}
+\item {\tt info}:   provides information on the script
 \item {\tt part\_info}:   provides a summary of given part(s)
 \item {\tt conn\_info}:   provides a summary table of parts connected to given part(s)
 \item {\tt rev\_info}:  provides a summary of revisions to given part(s)
 \item {\tt types}:  prints a summary table of part types
 \item {\tt check\_rev}:  checks whether a given revision of a part exists
 \item {\tt overlap\_check}:  checks that the given part doesn't have overlapping revisions.
-\item {\tt info}:   provides information on the script
 \end{itemize}
 
-{\tt parts.py -p ri5} will provide a table of all hookups to receiverator 5.  {\tt parts.py -p ri5 --hookup-cols "station,cable-post-amp(in),f-engine"}  will just show those columns.
+Arguments are:
+\begin{itemize}\setlength\itemsep{-.3em}
+\item {\tt -p, --hpn}:  hera part number (hpn), a csv-list of them, or partial hpn
+\item {\tt -r, --revision}: part revision - can be active, last, all or specific (defaults to active)
+\item {\tt --port}: a specific port to find, or all
+\item {\tt -e, --exact-match}: forces an exact match to the hpn (so 'HH1' doesn't return all teens and hundreds
+\item {\tt --notes}: will display part notes as opposed to the part table (only for action=part\_info)
+\item {\tt --sort\_notes\_by}:  if {\tt --notes}, specifies how they are sorted on display, either by part or posting time (post)
+\item {\tt -v, --verbosity}:  how much to show, -v, -vv, -vvv
+\item {\tt --date, --time}:  date/time to use for active parts/connections etc
+\item {\tt --notes\_start\_date, --notes\_start\_time}:  date/time to use for filtering {\tt --notes}
+\end{itemize}
 
-\subsection{Use Cases}
-	Three use cases are identified:
-	\begin{enumerate}\setlength\itemsep{-.3em}
-		\item In-the-field
-		\item Remote user
-		\item Bulk database
-	\end{enumerate}
+\subsubsection{Cascaded Connection Information:  {\tt hookup.py --arguments}}
+Displays the signal chain hookup information.
 
-\subsubsection{In-the-field updates}
-This is the ``operational'' mode, where inputs to the on-site database are done via scripts (command-line and/or web), which update the database directly.  These scripts will be documented under the repository software.
-
-\subsubsection{Remote user}
-Remote use is the case when a remote user initializes and uses the tables outside of the main database.  This assumes that postgresql etc is configured on the remote computer.  Note that this mode supports both offline use (essentially steps 3-5 below, which are in bold) and development (probably all steps).  The process is as follows: 
-\begin{enumerate}\setlength\itemsep{-.3em}
-	\item Generate ascii files of the tables in the main database (in the Karoo) {\tt (cm\_pack.py [--tables table1,table2,...)}
-	\item Push to GitHub
-	\item {\bf Pull down to remote computer}
-	\item {\bf Install ({\tt python setup.py install})}
-	\item {\bf Initialize the updated ones ({\tt cm\_init.py})}
-	\item If you are developing, make a base version before you start ({\tt cm\_pack.py --base})
-\end{enumerate}
-
-Note that generally you should leave off the {\tt --tables} option, since you should use all the tables so as to not break foreign keys (it is left there for ``expert'' users).  Steps 3-5 are bolded, since if you just want to pull down the latest and use it assuming things are up-to-date they are all that are needed (i.e., leave the ``packaging to the experts'').
-
-This has another option of {\tt --base}, so that you can set up a base copy to which you can revert if need be by including {\tt --base} on both commands (step 6).
-	
-\subsubsection{Main database updates}
-This is effectively the opposite of the remote user case, bringing an updated set of table(s) back into the main database.  The process is as follows:
-\begin{enumerate}\setlength\itemsep{-.3em}
-	\item  Generate ascii files of the desired tables from the remote database: 
-		({\tt cm\_pack.py --maindb \$key [--tables table1,table2,...]})
-	\item Push to GitHub
-	\item Pull down to site computer
-	\item Install
-	\item Update existing tables  ({\tt cm\_init.py --maindb \$key [--tables table1,table2,]})
-\end{enumerate}
-
-Note that {\tt \$key} is a user supplied string to just make sure you meant to do the main database update.  It can be anything, you
-just need to remember it when you reload it on the main database computer qmaster.
-As per above, you should generally leave off the {\tt --tables} option so as to do them all.  
-
-
+Arguments are:
+\begin{itemize}\setlength\itemsep{-.3em}
+\item {\tt -p, --hpn}:  hera part number (hpn), a csv-list of them, or partial hpn
+\item {\tt -r, --revision}: part revision - can be active, last, all or specific (defaults to active)
+\item {\tt --port}: a specific port to find, or all
+\item {\tt -e, --exact-match}: forces an exact match to the hpn (so 'HH1' doesn't return all teens and hundreds
+\item {\tt --date, --time}:  date/time to use for active connections
+\item {\tt -f, --force-new}:  forces a new hookup cache file to be written for search
+\item {\tt -c, --cache-info}:  display information about the cache file
+\item {\tt --force-specific}:  subtly different than force new, based on the searched for keys
+\item {\tt --state}:  hookup state to show:  full or all
+\item {\tt --hookup-cols}:  specify which columns to print out
+\item {\tt --levels}:  show correlator levels (currently not functional)
+\item {\tt --hide-ports}:  don't show the ports in hookup table
+\item {\tt --revs}:  show the revs in the hookup table
+\item {\tt delete-cache-file}:  deletes the local cache file
+\end{itemize}
 
 % --------------------------- Table Definitions ------------------------------------------------------
 \newpage
