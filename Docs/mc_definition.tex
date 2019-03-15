@@ -145,7 +145,7 @@ This section provides a high-level overview of the python configuration manageme
 {\bf part\_connect.py} & Defines {\tt parts\_paper}, {\tt part\_info}, and {\tt connections}.  Provides update utilities for {\tt parts\_paper} and {\tt connections}. Contains {\tt \_\_get\_part\_revisions}. \\ \hline
 {\bf cm\_table\_info.py} & Has mapping and order of tables and classes for initialization. \\ \hline
 {\bf cm\_handling.py} & Defines the {\tt Handling} class to handle various configuration management functionalities.\\ \hline
-{\bf cm\_health.py} & Contains modules that check for various cm errors or warnings \\ \\hline
+{\bf cm\_health.py} & Contains modules that check for various cm errors or warnings \\ \hline
 {\bf cm\_transfer.py} & Contains myriad defs that help package and initialize the cm tables.\\ \hline
 {\bf cm\_part\_revisions.py} & Contains myriad defs that deal with finding revision numbers etc.\\ \hline
 {\bf cm\_hookup.py} & Defines the {\tt Hookup} class to help determine and show the full part hookup.\\ \hline
@@ -664,7 +664,7 @@ value & float & value of the variable at this time \\\hline
 As described in section  \ref{sec:config}, there are five tables in the configuration management section of the database:  (1) geo\_location, (2) station\_meta,
 (3) parts\_paper, (4) part\_info, (5) connections.  The following tables summarize them with the following key:  
 
-\subsubsection{geo\_location :: geo\_location.GeoLocation}
+\subsubsection{geo\_location}
 \begin{center}
 \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -680,7 +680,7 @@ created\_gpstime* & BigInt & GPS second of creation. \\ \hline
 \end{tabular}
 \end{center}
 
-\subsubsection{geo\_location :: station\_type.StationType}
+\subsubsection{station\_type}
 \begin{center}
 \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -693,7 +693,7 @@ plot\_marker & character varying(64) & Type of matplotlib marker \\ \hline
 \end{center}
 
 
-\subsubsection{part\_connect :: parts\_paper.Parts}
+\subsubsection{parts}
 \begin{center}
 \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -707,7 +707,7 @@ stop\_gpstime & BigInt & GPS second when part/rev is de-activated \\ \hline
 \end{tabular}
 \end{center}
 
-\subsubsection{part\_connect :: part\_info.PartInfo}
+\subsubsection{part\_info}
 \begin{center}
 \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -720,7 +720,7 @@ library\_file & character varying(256) &  Librarian filename (how to get it ther
 \end{tabular}
 \end{center}
 
-\subsubsection{part\_connect :: connections.Connection}
+\subsubsection{connections}
 \begin{center}
 \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
@@ -733,6 +733,27 @@ library\_file & character varying(256) &  Librarian filename (how to get it ther
 {\bf downstream\_input\_port}* & character varying(64) & Input port on downstream part \\ \hline
 {\bf \em start\_gpstime}* & BigInt & GPS second when connection started \\ \hline
 stop\_gpstime & BigInt & GPS second when connection ended \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{dubitable}
+\begin{center}
+\begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+{\bf Column} & {\bf Type} & {\bf Description} \\ \hline
+{\bf start\_gpstime}* & BigInt & GPS second when antenna list is valid \\ \hline
+stop\_gpstime & BigInt & GPS second when connection ended \\ \hline
+ant\_list* & text & list of antennas that are not commissioned (aka dubitable) \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{cm\_version}
+\begin{center}
+\begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+{\bf Column} & {\bf Type} & {\bf Description} \\ \hline
+{\bf update\_time}* & BigInt & GPS second when version set \\ \hline
+git\_hash* & character varying(64) & git hash number for version \\ \hline
 \end{tabular}
 \end{center}
 
