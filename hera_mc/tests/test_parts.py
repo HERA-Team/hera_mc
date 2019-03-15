@@ -14,8 +14,8 @@ from contextlib import contextmanager
 import six
 import sys
 
-from .. import part_connect, mc, cm_utils, cm_handling, cm_revisions
-from ..tests import TestHERAMC
+from hera_mc import part_connect, mc, cm_utils, cm_handling, cm_revisions
+from hera_mc.tests import TestHERAMC, checkWarnings
 
 
 # define a context manager for checking stdout
@@ -186,7 +186,8 @@ class TestParts(TestHERAMC):
         part.start_gpstime = self.start_time.gps
         self.test_session.add(part)
         self.test_session.commit()
-        c = cm_health.check_part_for_overlapping_revisions(self.test_part, self.test_session)
+        c = checkWarnings(cm_health.check_part_for_overlapping_revisions, [self.test_part, self.test_session],
+                          message='Q and B are overlapping revisions of part test_part')
         self.assertTrue(len(c) == 1)
 
     def test_datetime(self):
