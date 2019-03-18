@@ -1998,17 +1998,18 @@ class MCSession(Session):
 
         # write config out to a file
         lib_store_path = 'correlator_yaml/' + librarian_filename
-        with open(librarian_filename, 'w') as outfile:
+        librarian_filename_full = os.path.join('/tmp', librarian_filename)
+        with open(librarian_filename_full, 'w') as outfile:
             yaml.dump(config, outfile, default_flow_style=False)
 
         # add config file to librarian
         lib_client = LibrarianClient('local-maint')
 
-        lib_client.upload_file(librarian_filename, lib_store_path, 'infer',
+        lib_client.upload_file(librarian_filename_full, lib_store_path, 'infer',
                                deletion_policy='disallowed', null_obsid=True)
 
         # delete the file
-        os.remove(librarian_filename)
+        os.remove(librarian_filename_full)
 
     def add_correlator_config_from_corrcm(self, config_state_dict=None,
                                           testing=False):
