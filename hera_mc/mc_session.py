@@ -1841,7 +1841,7 @@ class MCSession(Session):
 
         Returns:
         --------
-        Optionally returns the CorrelatorConfig (if testing is True)
+        Optionally returns the list of CorrelatorControlState objects (if testing is True)
 
         """
         from .correlator import _get_control_state, CorrelatorControlState
@@ -2498,6 +2498,149 @@ class MCSession(Session):
 
         if dryrun:
             return command_list
+
+    def add_snap_status(self, time, hostname, serial_number, pmb_alert, pps_count,
+                        fpga_temp, uptime_cycles, last_programmed_time):
+        """
+        Add new snap status data to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by the correlator
+        hostname: string
+            snap hostname
+        serial_number: string
+            Serial number of the SNAP board
+        pmb_alert: boolean
+            True if SNAP PSU controllers have issued an alert. False otherwise.
+        pps_count: integer
+            Number of PPS pulses received since last programming cycle
+        fpga_temp: float
+            Reported FPGA temperature in degrees Celsius
+        uptime_cycles: integer
+            Multiples of 500e6 ADC clocks since last programming cycle
+        last_programmed_time: astropy time object
+            astropy time object based on the last time this FPGA was programmed
+        """
+        from .correlator import SNAPStatus
+
+        # get node & snap number from config management
+        node, snap =
+
+        self.add(SNAPStatus.create(time, hostname, node, snap, serial_number,
+                                   pmb_alert, pps_count, fpga_temp, uptime_cycles,
+                                   last_programmed_time))
+
+    def get_correlator_control_state(self, most_recent=None, starttime=None,
+                                     stoptime=None, node=None,
+                                     write_to_file=False, filename=None):
+        """
+        Get snap status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        node: integer
+            node number
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of SNAPStatus objects
+        """
+        from .correlator import SNAPStatus
+
+        return self._time_filter(SNAPStatus, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='state_type', filter_value=node,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def add_snap_status_from_corrcm(self, snap_status_dict=None, testing=False):
+        """Get and add snap status information using a HeraCorrCM object.
+
+        This function connects to the correlator and gets the latest data using the
+        `_get_snap_status` function. For testing purposes, it can
+        optionally accept an input dict instead of connecting to the correlator.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the data frequently on qmaster.
+
+        Parameters:
+        ------------
+        snap_status_dict: dict
+            A dict containing info as in the return dict from _get_snap_status() for
+            testing purposes. If None, _get_snap_status() is called. Default: None
+        testing: boolean
+            If true, don't add a record of it to the database and return the list of
+            SNAPStatus objects. Default False.
+
+        Returns:
+        --------
+        Optionally returns the list of SNAPStatus objects (if testing is True)
+
+        """
+        from .correlator import _get_snap_status, SNAPStatus
+
+        if snap_status_dict is None:
+            snap_status_dict = _get_snap_status()
+
+        snap_status_list = []
+        for hostname, dict in six.iteritems(snap_status_dict):
+            time = Time(dict['timestamp'], format='unix')
+            serial_number = dict['serial']
+            pmb_alert = dict['pmb_alert']
+            pps_count = dict['pps_count']
+            fpga_temp = dict['temp']
+            uptime_cycles = dict['uptime']
+            last_programmed_time = dict['last_programmed']
+
+            # get node & snap number from config management
+            node, snap =
+
+            snap_status_list.append(SNAPStatus.create(time, hostname, node, snap,
+                                                      serial_number, pmb_alert,
+                                                      pps_count, fpga_temp,
+                                                      uptime_cycles,
+                                                      last_programmed_time))
+
+        if testing:
+            return corr_state_list
+        else:
+            self._insert_ignoring_duplicates(CorrelatorControlState, corr_state_list)
+
+
+
+
+
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """

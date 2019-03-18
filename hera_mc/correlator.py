@@ -2,8 +2,11 @@
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Correlator M&C interface
+"""
+Correlator M&C interface
 
+Anything tracked in the correlator redis database and accessed via hera_corr_cm.
+Includes many SNAP-related things.
 """
 from __future__ import absolute_import, division, print_function
 
@@ -353,3 +356,86 @@ class CorrelatorConfigCommand(MCDeclarativeBase):
         command_time = floor(time.gps)
 
         return cls(time=command_time, command='update_config', config_hash=config_hash)
+
+
+class SNAPStatus(MCDeclarativeBase):
+    """
+    Definition of SNAP status table.
+
+    time: gps time of the snap status data, floored (BigInteger, part of primary_key).
+    node: node number (Integer, part of primary_key)
+    snap: snap number (Integer, part of primary_key)
+    hostname: snap hostname (String)
+    serial_number: Serial number of the SNAP board (String)
+    pmb_alert: True if SNAP PSU controllers have issued an alert. False otherwise. (Boolean)
+    pps_count: Number of PPS pulses received since last programming cycle (BigInteger)
+    fpga_temp: Reported FPGA temperature in degrees Celsius (Float)
+    uptime_cycles: Multiples of 500e6 ADC clocks since last programming cycle
+    last_programmed_time: Last time this FPGA was programmed in floored gps seconds
+    """
+    __tablename__ = 'snap_status'
+    time = Column(BigInteger, primary_key=True)
+    hostname = Column(String, primary_key=True)
+    node = Column(Integer)
+    snap = Column(Integer)
+    serial_number = Column(String)
+    pmb_alert = Column(Boolean)
+    pps_count = Column(BigInteger)
+    fpga_temp = Column(Float)
+    uptime_cycles = Column(BigInteger)
+    last_programmed_time = Column(BigInteger)
+
+    @classmethod
+    def create(cls, time, hostname, node, snap, serial_number, pmb_alert, pps_count,
+               fpga_temp, uptime_cycles, last_programmed_time):
+        """
+        Create a new SNAP status object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by node
+        hostname: string
+            snap hostname
+        node: integer
+            node number
+        snap: integer
+            snap slot number
+        serial_number: string
+            Serial number of the SNAP board
+        pmb_alert: boolean
+            True if SNAP PSU controllers have issued an alert. False otherwise.
+        pps_count: integer
+            Number of PPS pulses received since last programming cycle
+        fpga_temp: float
+            Reported FPGA temperature in degrees Celsius
+        uptime_cycles: integer
+            Multiples of 500e6 ADC clocks since last programming cycle
+        last_programmed_time: astropy time object
+            astropy time object based on the last time this FPGA was programmed
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        snap_time = floor(time.gps)
+
+        if not isinstance(last_programmed_time, Time):
+            raise ValueError('last_programmed_time must be an astropy Time object')
+        last_programmed_time_gps = floor(last_programmed_time.gps)
+
+        return cls(time=snap_time, hostname=hostname, node=node, snap=snap,
+                   serial_number=serial_number, pmb_alert=pmb_alert,
+                   pps_count=pps_count, fpga_temp=fpga_temp,
+                   uptime_cycles=uptime_cycles,
+                   last_programmed_time=last_programmed_time_gps)
+
+
+def _get_snap_status(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+    """
+    gets the snap status dict from the correlator
+
+    """
+    import hera_corr_cm
+
+    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+
+    return corr_cm.get_f_status()
