@@ -184,7 +184,7 @@ class TestConnections(TestHERAMC):
     def test_physical_connections(self):
         x = self.h.get_physical_connections()
         y = list(x.keys())
-        self.assertTrue('SNPA000222:A' in y)
+        self.assertTrue('PAM75999:A' in y)
         x = self.h.get_physical_connections('2016/01/01')
         self.assertFalse(len(x))
 
