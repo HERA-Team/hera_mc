@@ -108,7 +108,7 @@ def get_mc_argument_parser():
     return p
 
 
-def get_cm_csv_path(mc_config_file=None):
+def get_cm_csv_path(mc_config_file=None, testing=False):
     """
     Returns the full path to csv files read from the mc config file
 
@@ -125,6 +125,8 @@ def get_cm_csv_path(mc_config_file=None):
     with open(mc_config_file) as f:
         config_data = json.load(f)
 
+    if testing:
+        return test_data_path
     return config_data.get('cm_csv_path')
 
 
