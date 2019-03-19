@@ -16,6 +16,8 @@ from sqlalchemy.sql.expression import func
 from astropy.time import Time, TimeDelta
 
 from .utils import get_iterable
+from hera_mc import cm_handling, cm_utils
+
 """
 Primary session object which handles most DB queries.
 
@@ -2499,7 +2501,48 @@ class MCSession(Session):
         if dryrun:
             return command_list
 
-    def add_snap_status(self, time, hostname, serial_number, pmb_alert, pps_count,
+    def _get_node_snap_from_serial(self, snap_serial):
+
+        cmh = cm_handling.Handling(self)
+        conn_dossier = cmh.get_part_connection_dossier(snap_serial, rev='active',
+                                                       port='all', at_date='now')
+
+        if len(conn_dossier.keys()) == 0:
+            warnings.warn('No active dossiers returned for snap serial '
+                          '{snn}. Setting node and snap numbers to None'.format(snn=snap_serial))
+            return None, None
+
+        if len(conn_dossier.keys()) > 1:
+            warnings.warn('Multiple active dossiers returned for snap serial '
+                          '{snn}. Setting node and snap numbers to None'.format(snn=snap_serial))
+            return None, None
+
+        snap_num_rev = list(conn_dossier.keys())[0]
+        node_conn = [conn for conn in conn_dossier[snap_num_rev].keys_down if conn is not None]
+        if len(node_conn) > 1:
+            warnings.warn('Multiple downstream (i.e. node) connections returned for snap serial '
+                          '{snn}. Setting node and snap numbers to None'.format(snn=snap_serial))
+            return None, None
+        node_conn = node_conn[0]
+
+        node_conn_tuple = cm_utils.split_connection_key(node_conn)
+        node_part = node_conn_tuple[0]
+        snap_port = node_conn_tuple[2]
+        try:
+            assert node_part.startswith('N')
+            node_num = int(node_part[1:])
+        except(ValueError, AssertionError):
+            node_num = None
+
+        try:
+            assert snap_port.startswith('loc')
+            snap_loc_num = int(snap_port[3:])
+        except(ValueError, AssertionError):
+            snap_loc_num = None
+
+        return node_num, snap_loc_num
+
+    def add_snap_status(self, time, hostname, serial_number, psu_alert, pps_count,
                         fpga_temp, uptime_cycles, last_programmed_time):
         """
         Add new snap status data to the M&C database.
@@ -2512,7 +2555,7 @@ class MCSession(Session):
             snap hostname
         serial_number: string
             Serial number of the SNAP board
-        pmb_alert: boolean
+        psu_alert: boolean
             True if SNAP PSU controllers have issued an alert. False otherwise.
         pps_count: integer
             Number of PPS pulses received since last programming cycle
@@ -2526,15 +2569,14 @@ class MCSession(Session):
         from .correlator import SNAPStatus
 
         # get node & snap number from config management
-        node, snap =
+        node, snap_loc_num = self._get_node_snap_from_serial(serial_number)
 
-        self.add(SNAPStatus.create(time, hostname, node, snap, serial_number,
-                                   pmb_alert, pps_count, fpga_temp, uptime_cycles,
+        self.add(SNAPStatus.create(time, hostname, node, snap_loc_num, serial_number,
+                                   psu_alert, pps_count, fpga_temp, uptime_cycles,
                                    last_programmed_time))
 
-    def get_correlator_control_state(self, most_recent=None, starttime=None,
-                                     stoptime=None, node=None,
-                                     write_to_file=False, filename=None):
+    def get_snap_status(self, most_recent=None, starttime=None, stoptime=None,
+                        node=None, write_to_file=False, filename=None):
         """
         Get snap status record(s) from the M&C database.
 
@@ -2579,7 +2621,7 @@ class MCSession(Session):
 
         return self._time_filter(SNAPStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='state_type', filter_value=node,
+                                 filter_column='node', filter_value=node,
                                  write_to_file=write_to_file, filename=filename)
 
     def add_snap_status_from_corrcm(self, snap_status_dict=None, testing=False):
@@ -2615,32 +2657,32 @@ class MCSession(Session):
 
         snap_status_list = []
         for hostname, dict in six.iteritems(snap_status_dict):
-            time = Time(dict['timestamp'], format='unix')
+            time = Time(dict['timestamp'], format='datetime')
             serial_number = dict['serial']
-            pmb_alert = dict['pmb_alert']
+            psu_alert = dict['pmb_alert']
             pps_count = dict['pps_count']
             fpga_temp = dict['temp']
             uptime_cycles = dict['uptime']
-            last_programmed_time = dict['last_programmed']
+
+            last_programmed_datetime = dict['last_programmed']
+            if last_programmed_datetime is not None:
+                last_programmed_time = Time(last_programmed_datetime, format='datetime')
+            else:
+                last_programmed_time = None
 
             # get node & snap number from config management
-            node, snap =
+            node, snap_loc_num = self._get_node_snap_from_serial(serial_number)
 
-            snap_status_list.append(SNAPStatus.create(time, hostname, node, snap,
-                                                      serial_number, pmb_alert,
+            snap_status_list.append(SNAPStatus.create(time, hostname, node, snap_loc_num,
+                                                      serial_number, psu_alert,
                                                       pps_count, fpga_temp,
                                                       uptime_cycles,
                                                       last_programmed_time))
 
         if testing:
-            return corr_state_list
+            return snap_status_list
         else:
-            self._insert_ignoring_duplicates(CorrelatorControlState, corr_state_list)
-
-
-
-
-
+            self._insert_ignoring_duplicates(SNAPStatus, snap_status_list)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """

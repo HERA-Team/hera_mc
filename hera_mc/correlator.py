@@ -363,11 +363,11 @@ class SNAPStatus(MCDeclarativeBase):
     Definition of SNAP status table.
 
     time: gps time of the snap status data, floored (BigInteger, part of primary_key).
-    node: node number (Integer, part of primary_key)
-    snap: snap number (Integer, part of primary_key)
-    hostname: snap hostname (String)
+    hostname: snap hostname (String, part of primary_key)
+    node: node number (Integer)
+    snap_loc_num: snap location number (Integer)
     serial_number: Serial number of the SNAP board (String)
-    pmb_alert: True if SNAP PSU controllers have issued an alert. False otherwise. (Boolean)
+    psu_alert: True if SNAP PSU controllers have issued an alert. False otherwise. (Boolean)
     pps_count: Number of PPS pulses received since last programming cycle (BigInteger)
     fpga_temp: Reported FPGA temperature in degrees Celsius (Float)
     uptime_cycles: Multiples of 500e6 ADC clocks since last programming cycle
@@ -377,16 +377,16 @@ class SNAPStatus(MCDeclarativeBase):
     time = Column(BigInteger, primary_key=True)
     hostname = Column(String, primary_key=True)
     node = Column(Integer)
-    snap = Column(Integer)
+    snap_loc_num = Column(Integer)
     serial_number = Column(String)
-    pmb_alert = Column(Boolean)
+    psu_alert = Column(Boolean)
     pps_count = Column(BigInteger)
     fpga_temp = Column(Float)
     uptime_cycles = Column(BigInteger)
     last_programmed_time = Column(BigInteger)
 
     @classmethod
-    def create(cls, time, hostname, node, snap, serial_number, pmb_alert, pps_count,
+    def create(cls, time, hostname, node, snap_loc_num, serial_number, psu_alert, pps_count,
                fpga_temp, uptime_cycles, last_programmed_time):
         """
         Create a new SNAP status object.
@@ -399,11 +399,11 @@ class SNAPStatus(MCDeclarativeBase):
             snap hostname
         node: integer
             node number
-        snap: integer
-            snap slot number
+        snap_loc_num: integer
+            snap location number
         serial_number: string
             Serial number of the SNAP board
-        pmb_alert: boolean
+        psu_alert: boolean
             True if SNAP PSU controllers have issued an alert. False otherwise.
         pps_count: integer
             Number of PPS pulses received since last programming cycle
@@ -418,12 +418,15 @@ class SNAPStatus(MCDeclarativeBase):
             raise ValueError('time must be an astropy Time object')
         snap_time = floor(time.gps)
 
-        if not isinstance(last_programmed_time, Time):
-            raise ValueError('last_programmed_time must be an astropy Time object')
-        last_programmed_time_gps = floor(last_programmed_time.gps)
+        if last_programmed_time is not None:
+            if not isinstance(last_programmed_time, Time):
+                raise ValueError('last_programmed_time must be an astropy Time object')
+            last_programmed_time_gps = floor(last_programmed_time.gps)
+        else:
+            last_programmed_time_gps = None
 
-        return cls(time=snap_time, hostname=hostname, node=node, snap=snap,
-                   serial_number=serial_number, pmb_alert=pmb_alert,
+        return cls(time=snap_time, hostname=hostname, node=node, snap_loc_num=snap_loc_num,
+                   serial_number=serial_number, psu_alert=psu_alert,
                    pps_count=pps_count, fpga_temp=fpga_temp,
                    uptime_cycles=uptime_cycles,
                    last_programmed_time=last_programmed_time_gps)
@@ -433,6 +436,20 @@ def _get_snap_status(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
     gets the snap status dict from the correlator
 
+    from hera_corr_cm docstring:
+        Returns a dictionary of snap status flags. Keys of returned dictionaries are
+        snap hostnames. Values of this dictionary are status key/val pairs.
+
+        These keys are:
+            pmb_alert (bool) : True if SNAP PSU controllers have issued an alert. False otherwise.
+            pps_count (int)  : Number of PPS pulses received since last programming cycle
+            serial (str)     : Serial number of this SNAP board
+            temp (float)     : Reported FPGA temperature (degrees C)
+            uptime (int)     : Multiples of 500e6 ADC clocks since last programming cycle
+            last_programmed (datetime) : Last time this FPGA was programmed
+            timestamp (datetime) : Asynchronous timestamp that these status entries were gathered
+
+            Unknown values return the string "None"
     """
     import hera_corr_cm
 

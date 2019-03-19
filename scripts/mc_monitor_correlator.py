@@ -32,14 +32,6 @@ with db.sessionmaker() as session:
                 print('%s -- error adding correlator control state' % time.asctime(), file=sys.stderr)
                 traceback.print_exc(file=sys.stderr)
                 continue
-
-            try:
-                session.add_correlator_config_from_corrcm()
-            except Exception as e:
-                print('%s -- error adding correlator config' % time.asctime(), file=sys.stderr)
-                traceback.print_exc(file=sys.stderr)
-                continue
-
             try:
                 session.commit()
             except sqlalchemy.exc.SQLAlchemyError as e:
@@ -49,6 +41,43 @@ with db.sessionmaker() as session:
                 continue
             except Exception as e:
                 print('%s -- error committing new correlator control state' % time.asctime(), file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                continue
+
+            try:
+                session.add_correlator_config_from_corrcm()
+            except Exception as e:
+                print('%s -- error adding correlator config' % time.asctime(), file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                continue
+            try:
+                session.commit()
+            except sqlalchemy.exc.SQLAlchemyError as e:
+                print('%s -- SQL error committing new correlator config' % time.asctime(), file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                session.rollback()
+                continue
+            except Exception as e:
+                print('%s -- error committing new correlator config' % time.asctime(), file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                continue
+
+            try:
+                session.add_snap_status_from_corrcm()
+            except Exception as e:
+                print('%s -- error adding snap status' % time.asctime(), file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                continue
+
+            try:
+                session.commit()
+            except sqlalchemy.exc.SQLAlchemyError as e:
+                print('%s -- SQL error committing new snap status' % time.asctime(), file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                session.rollback()
+                continue
+            except Exception as e:
+                print('%s -- error committing new snap status' % time.asctime(), file=sys.stderr)
                 traceback.print_exc(file=sys.stderr)
                 continue
 
