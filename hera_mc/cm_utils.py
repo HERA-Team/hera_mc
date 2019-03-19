@@ -22,11 +22,11 @@ all_hera_zone_prefixes = ['HH', 'HA', 'HB']  # This is for hookup_cache to get a
 default_station_prefixes = ['HH', 'HA', 'HB']  # This is for defaults for sys etc.
 
 
-def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
+def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
     """
     Get the current cm_version for recording with antenna locations.
     """
-    if cm_csv_path is None:
+    if cm_csv_path is None or testing:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_path)
         if cm_csv_path is None:
             raise ValueError('No cm_csv_path defined in mc_config file.')

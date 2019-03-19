@@ -123,7 +123,7 @@ def pack_n_go(session, cm_csv_path):  # pragma: no cover
     session.commit()
 
 
-def initialize_db_from_csv(session=None, tables='all', maindb=False):  # pragma: no cover
+def initialize_db_from_csv(session=None, tables='all', maindb=False, testing=False):  # pragma: no cover
     """
     This entry module provides a double-check entry point to read the csv files and
        repopulate the configuration management database.  It destroys all current entries,
@@ -144,7 +144,7 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False):  # pragma:
     you_are_sure = six.moves.input("Are you sure you want to do this (y/n)? ")
     if you_are_sure:
         success = _initialization(session=session, cm_csv_path=None,
-                                  tables=tables, maindb=maindb)
+                                  tables=tables, maindb=maindb, testing=testing)
     else:
         print("Exit with no rewrite.")
         success = False
@@ -208,7 +208,7 @@ def db_validation(maindb_pw, session):
     return allowed
 
 
-def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
+def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, testing=False):
     """
     Internal initialization method, should be called via initialize_db_from_csv
 
@@ -227,13 +227,13 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False):
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
     if cm_csv_path is None:
-        cm_csv_path = mc.get_cm_csv_path(None)
+        cm_csv_path = mc.get_cm_csv_path(mc_config_file=None, testing=testing)
 
     if not db_validation(maindb, session):
         print("cm_init not allowed.")
         return False
 
-    cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path)
+    cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path, testing=testing)
 
     if tables != 'all':  # pragma: no cover
         print("You may encounter foreign_key issues by not using 'all' tables.")
