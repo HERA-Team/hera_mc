@@ -44,7 +44,6 @@ class TestTransfer(TestHERAMC):
         t = cm_transfer._initialization(session='testing_main', cm_csv_path=None)
         self.assertFalse(t)
         t = mc.get_cm_csv_path(testing=True)
-        print(t)
         self.assertTrue('test_data' in t)
 
     def test_check_if_main(self):
