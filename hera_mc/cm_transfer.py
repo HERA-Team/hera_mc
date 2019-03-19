@@ -233,7 +233,7 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, 
         print("cm_init not allowed.")
         return False
 
-    cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path)
+    cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path, testing=testing)
 
     if tables != 'all':  # pragma: no cover
         print("You may encounter foreign_key issues by not using 'all' tables.")
