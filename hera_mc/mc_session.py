@@ -16,7 +16,6 @@ from sqlalchemy.sql.expression import func
 from astropy.time import Time, TimeDelta
 
 from .utils import get_iterable
-from hera_mc import cm_handling, cm_utils
 
 """
 Primary session object which handles most DB queries.
@@ -2502,6 +2501,7 @@ class MCSession(Session):
             return command_list
 
     def _get_node_snap_from_serial(self, snap_serial):
+        from hera_mc import cm_handling, cm_utils
 
         cmh = cm_handling.Handling(self)
         conn_dossier = cmh.get_part_connection_dossier(snap_serial, rev='active',
