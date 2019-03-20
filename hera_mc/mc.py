@@ -20,6 +20,7 @@ from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import sessionmaker, Session
 
 from . import MCDeclarativeBase
+from .mc_session import MCSession
 
 data_path = op.join(op.dirname(__file__), 'data')
 test_data_path = op.join(data_path, 'test_data')
@@ -36,8 +37,6 @@ class DB(object):
     subclasses.
 
     """
-    from .mc_session import MCSession
-
     engine = None
     sessionmaker = sessionmaker(class_=MCSession)
     sqlalchemy_base = None

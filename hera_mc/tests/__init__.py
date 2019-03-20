@@ -15,7 +15,6 @@ import sys
 import collections
 
 from hera_mc import mc, cm_transfer
-from hera_mc.mc_session import MCSession
 from hera_mc.utils import get_iterable
 
 test_db = None
@@ -45,7 +44,7 @@ class TestHERAMC(unittest.TestCase):
         self.test_db = test_db
         self.test_conn = self.test_db.engine.connect()
         self.test_trans = self.test_conn.begin()
-        self.test_session = MCSession(bind=self.test_conn)
+        self.test_session = mc.MCSession(bind=self.test_conn)
         import astropy
         astropy.utils.iers.conf.auto_max_age = None
 
