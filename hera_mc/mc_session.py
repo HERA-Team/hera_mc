@@ -2500,8 +2500,10 @@ class MCSession(Session):
         if dryrun:
             return command_list
 
-    def _get_node_snap_from_serial(self, snap_serial, session=self):
+    def _get_node_snap_from_serial(self, snap_serial, session=None):
         from hera_mc import cm_handling, cm_utils
+        if session is None:
+            session = self
 
         cmh = cm_handling.Handling(session)
         conn_dossier = cmh.get_part_connection_dossier(snap_serial, rev='active',
@@ -2625,7 +2627,7 @@ class MCSession(Session):
                                  write_to_file=write_to_file, filename=filename)
 
     def add_snap_status_from_corrcm(self, snap_status_dict=None, testing=False,
-                                    cm_session=self):
+                                    cm_session=None):
         """Get and add snap status information using a HeraCorrCM object.
 
         This function connects to the correlator and gets the latest data using the
