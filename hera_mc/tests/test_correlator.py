@@ -9,7 +9,6 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 import os
-import six
 import time
 import datetime
 import hashlib
@@ -1014,34 +1013,9 @@ class TestSNAPStatus(TestHERAMC):
         real_db = mc.connect_to_mc_db(None)
         real_session = real_db.sessionmaker()
 
-        snap_status_list = []
-        for hostname, dict in six.iteritems(snap_status_dict):
-            time = Time(dict['timestamp'], format='datetime')
-            serial_number = dict['serial']
-            psu_alert = dict['pmb_alert']
-            pps_count = dict['pps_count']
-            fpga_temp = dict['temp']
-            uptime_cycles = dict['uptime']
-
-            last_programmed_datetime = dict['last_programmed']
-            if last_programmed_datetime is not None:
-                last_programmed_time = Time(last_programmed_datetime, format='datetime')
-            else:
-                last_programmed_time = None
-
-            # get node & snap location number from the real (not test) config management
-            node, snap_loc_num = real_session._get_node_snap_from_serial(serial_number)
-
-            snap_status_list.append(SNAPStatus.create(time, hostname, node, snap_loc_num,
-                                                      serial_number, psu_alert,
-                                                      pps_count, fpga_temp,
-                                                      uptime_cycles,
-                                                      last_programmed_time))
-
-        # insert status objects into test db
-        self.test_session._insert_ignoring_duplicates(corr.SNAPStatus, snap_status_list)
+        self.test_session.add_snap_status_from_corrcm(cm_session=real_session)
         result = self.test_session.get_snap_status(most_recent=True)
-        self.assertEqual(len(result), len(snap_status_list))
+        self.assertTrue(len(result) >= 1)
 
 
 if __name__ == '__main__':

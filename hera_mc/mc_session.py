@@ -2500,10 +2500,10 @@ class MCSession(Session):
         if dryrun:
             return command_list
 
-    def _get_node_snap_from_serial(self, snap_serial):
+    def _get_node_snap_from_serial(self, snap_serial, session=self):
         from hera_mc import cm_handling, cm_utils
 
-        cmh = cm_handling.Handling(self)
+        cmh = cm_handling.Handling(session)
         conn_dossier = cmh.get_part_connection_dossier(snap_serial, rev='active',
                                                        port='all', at_date='now')
 
@@ -2624,12 +2624,14 @@ class MCSession(Session):
                                  filter_column='node', filter_value=node,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_snap_status_from_corrcm(self, snap_status_dict=None, testing=False):
+    def add_snap_status_from_corrcm(self, snap_status_dict=None, testing=False,
+                                    cm_session=self):
         """Get and add snap status information using a HeraCorrCM object.
 
         This function connects to the correlator and gets the latest data using the
         `_get_snap_status` function. For testing purposes, it can
         optionally accept an input dict instead of connecting to the correlator.
+        It can use a different session for the cm info (this is useful for testing onsite).
 
         If the current database is PostgreSQL, this function will use a
         special insertion method that will ignore records that are redundant
@@ -2671,7 +2673,8 @@ class MCSession(Session):
                 last_programmed_time = None
 
             # get node & snap location number from config management
-            node, snap_loc_num = self._get_node_snap_from_serial(serial_number)
+            node, snap_loc_num = self._get_node_snap_from_serial(serial_number,
+                                                                 session=cm_session)
 
             snap_status_list.append(SNAPStatus.create(time, hostname, node, snap_loc_num,
                                                       serial_number, psu_alert,
