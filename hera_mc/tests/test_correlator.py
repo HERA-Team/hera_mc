@@ -979,11 +979,38 @@ class TestSNAPStatus(TestHERAMC):
         self.assertTrue(node is None)
         self.assertTrue(snap_loc_num is None)
 
+        # test multiple snap location numbers
         node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
                                            ['SNPC000017'],
-                                           message='Multiple downstream (i.e. node) connections')
+                                           message='Multiple snap location numbers returned')
+        self.assertEqual(node, 0)
+        self.assertTrue(snap_loc_num is None)
+
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['SNPC000018'],
+                                           message='Multiple node connections returned')
         self.assertTrue(node is None)
         self.assertTrue(snap_loc_num is None)
+
+        # test multiple node numbers
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['SNPC000018'],
+                                           message='Multiple node connections returned')
+        self.assertTrue(node is None)
+        self.assertTrue(snap_loc_num is None)
+
+        # test multiple node revisions
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['SNPC000019'],
+                                           message='Multiple node connections returned')
+        self.assertTrue(node is None)
+        self.assertTrue(snap_loc_num is None)
+
+        # test multiple times
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['SNPC000020'], nwarnings=0)
+        self.assertEqual(node, 4)
+        self.assertEqual(snap_loc_num, 3)
 
         node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
                                            ['SNPB000005'],

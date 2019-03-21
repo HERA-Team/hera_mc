@@ -2521,26 +2521,42 @@ class MCSession(Session):
 
         snap_num_rev = list(conn_dossier.keys())[0]
         node_conn = [conn for conn in conn_dossier[snap_num_rev].keys_down if conn is not None]
-        if len(node_conn) > 1:
-            warnings.warn('Multiple downstream (i.e. node) connections returned for snap serial '
-                          '{snn}. Setting node and snap location numbers to None'.format(snn=snap_serial))
-            return None, None
-        node_conn = node_conn[0]
 
-        node_conn_tuple = cm_utils.split_connection_key(node_conn)
-        node_part = node_conn_tuple[0]
-        snap_port = node_conn_tuple[2]
+        node_part = set()
+        node_rev = set()
+        snap_loc = set()
+        for conn in node_conn:
+            conn_tuple = cm_utils.split_connection_key(conn)
+            node_part.add(conn_tuple[0])
+            node_rev.add(conn_tuple[1])
+            snap_loc.add(conn_tuple[2])
+
+        node_part = list(node_part)
+        node_rev = list(node_rev)
+        snap_loc = list(snap_loc)
+        if len(node_part) > 1 or len(node_rev) > 1:
+            warnings.warn('Multiple node connections returned for snap serial '
+                          '{snn}. Setting node and snap location number to None'.format(snn=snap_serial))
+            return None, None
+
+        node_part = node_part[0]
         try:
             assert node_part.startswith('N')
             node_num = int(node_part[1:])
         except(ValueError, AssertionError):
             node_num = None
 
-        try:
-            assert snap_port.startswith('loc')
-            snap_loc_num = int(snap_port[3:])
-        except(ValueError, AssertionError):
+        if len(snap_loc) > 1:
+            warnings.warn('Multiple snap location numbers returned for snap serial '
+                          '{snn}. Setting snap location number to None'.format(snn=snap_serial))
             snap_loc_num = None
+        else:
+            snap_loc = snap_loc[0]
+            try:
+                assert snap_loc.startswith('loc')
+                snap_loc_num = int(snap_loc[3:])
+            except(ValueError, AssertionError):
+                snap_loc_num = None
 
         return node_num, snap_loc_num
 
