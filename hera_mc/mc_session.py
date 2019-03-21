@@ -2509,19 +2509,19 @@ class MCSession(Session):
 
         if len(conn_dossier.keys()) == 0:
             warnings.warn('No active dossiers returned for snap serial '
-                          '{snn}. Setting node and snap numbers to None'.format(snn=snap_serial))
+                          '{snn}. Setting node and snap location numbers to None'.format(snn=snap_serial))
             return None, None
 
         if len(conn_dossier.keys()) > 1:
             warnings.warn('Multiple active dossiers returned for snap serial '
-                          '{snn}. Setting node and snap numbers to None'.format(snn=snap_serial))
+                          '{snn}. Setting node and snap location numbers to None'.format(snn=snap_serial))
             return None, None
 
         snap_num_rev = list(conn_dossier.keys())[0]
         node_conn = [conn for conn in conn_dossier[snap_num_rev].keys_down if conn is not None]
         if len(node_conn) > 1:
             warnings.warn('Multiple downstream (i.e. node) connections returned for snap serial '
-                          '{snn}. Setting node and snap numbers to None'.format(snn=snap_serial))
+                          '{snn}. Setting node and snap location numbers to None'.format(snn=snap_serial))
             return None, None
         node_conn = node_conn[0]
 
@@ -2568,7 +2568,7 @@ class MCSession(Session):
         """
         from .correlator import SNAPStatus
 
-        # get node & snap number from config management
+        # get node & snap location number from config management
         node, snap_loc_num = self._get_node_snap_from_serial(serial_number)
 
         self.add(SNAPStatus.create(time, hostname, node, snap_loc_num, serial_number,
@@ -2670,7 +2670,7 @@ class MCSession(Session):
             else:
                 last_programmed_time = None
 
-            # get node & snap number from config management
+            # get node & snap location number from config management
             node, snap_loc_num = self._get_node_snap_from_serial(serial_number)
 
             snap_status_list.append(SNAPStatus.create(time, hostname, node, snap_loc_num,
