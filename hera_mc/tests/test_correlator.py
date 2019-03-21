@@ -1006,9 +1006,41 @@ class TestSNAPStatus(TestHERAMC):
     @unittest.skipIf(not is_onsite(), 'This test only works on site')
     def test_site_add_snap_status_from_corrcm(self):
 
-        self.test_session.add_snap_status_from_corrcm()
+        # get the snap status dict from the correlator redis
+        snap_status_dict = corr._get_snap_status()
+
+        # use the real (not test) database to get the node & snap location number
+        real_db = mc.connect_to_mc_db(None)
+        real_session = real_db.sessionmaker()
+
+        snap_status_list = []
+        for hostname, dict in six.iteritems(snap_status_dict):
+            time = Time(dict['timestamp'], format='datetime')
+            serial_number = dict['serial']
+            psu_alert = dict['pmb_alert']
+            pps_count = dict['pps_count']
+            fpga_temp = dict['temp']
+            uptime_cycles = dict['uptime']
+
+            last_programmed_datetime = dict['last_programmed']
+            if last_programmed_datetime is not None:
+                last_programmed_time = Time(last_programmed_datetime, format='datetime')
+            else:
+                last_programmed_time = None
+
+            # get node & snap location number from the real (not test) config management
+            node, snap_loc_num = real_session._get_node_snap_from_serial(serial_number)
+
+            snap_status_list.append(SNAPStatus.create(time, hostname, node, snap_loc_num,
+                                                      serial_number, psu_alert,
+                                                      pps_count, fpga_temp,
+                                                      uptime_cycles,
+                                                      last_programmed_time))
+
+        # insert status objects into test db
+        self.test_session._insert_ignoring_duplicates(corr.SNAPStatus, snap_status_list)
         result = self.test_session.get_snap_status(most_recent=True)
-        self.assertTrue(len(result) >= 1)
+        self.assertEqual(len(result), len(snap_status_list))
 
 
 if __name__ == '__main__':
