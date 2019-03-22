@@ -879,12 +879,12 @@ class TestSNAPStatus(TestHERAMC):
                                           595699, t_prog)
 
         result = self.test_session.get_snap_status(starttime=t1 - TimeDelta(3.0, format='sec'),
-                                                   node=23)
+                                                   nodeID=23)
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result_most_recent = self.test_session.get_snap_status(node=23)
+        result_most_recent = self.test_session.get_snap_status(nodeID=23)
         self.assertEqual(len(result_most_recent), 1)
         result_most_recent = result_most_recent[0]
         self.assertTrue(result_most_recent.isclose(expected))
@@ -897,12 +897,12 @@ class TestSNAPStatus(TestHERAMC):
                                    last_programmed_time=int(floor(t_prog.gps)))
 
         result = self.test_session.get_snap_status(starttime=t1 - TimeDelta(3.0, format='sec'),
-                                                   node=4)
+                                                   nodeID=4)
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result_most_recent = self.test_session.get_snap_status(node=4)
+        result_most_recent = self.test_session.get_snap_status(nodeID=4)
         self.assertEqual(len(result_most_recent), 1)
         result_most_recent = result_most_recent[0]
         self.assertTrue(result_most_recent.isclose(expected))
@@ -927,7 +927,7 @@ class TestSNAPStatus(TestHERAMC):
         t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format='datetime')
         t_prog = Time(datetime.datetime(2016, 1, 10, 23, 16, 3), format='datetime')
         result = self.test_session.get_snap_status(
-            starttime=t1 - TimeDelta(3.0, format='sec'), node=23)
+            starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=23)
 
         expected = corr.SNAPStatus(time=int(floor(t1.gps)),
                                    hostname='heraNode23Snap1',
@@ -939,13 +939,13 @@ class TestSNAPStatus(TestHERAMC):
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
-        result_most_recent = self.test_session.get_snap_status(node=23)
+        result_most_recent = self.test_session.get_snap_status(nodeID=23)
         self.assertEqual(len(result_most_recent), 1)
         result_most_recent = result_most_recent[0]
         self.assertTrue(result_most_recent.isclose(expected))
 
         result = self.test_session.get_snap_status(
-            starttime=t1 - TimeDelta(3.0, format='sec'), node=4)
+            starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=4)
 
         expected = corr.SNAPStatus(time=int(floor(t1.gps)),
                                    hostname='heraNode4Snap0',
