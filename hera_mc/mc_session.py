@@ -2664,6 +2664,9 @@ class MCSession(Session):
         testing: boolean
             If true, don't add a record of it to the database and return the list of
             SNAPStatus objects. Default False.
+        cm_session:
+            Session object to use for the CM queries. Defaults to self, but can
+            be set to another session instance (useful for testing).
 
         Returns:
         --------
