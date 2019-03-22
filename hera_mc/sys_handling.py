@@ -201,8 +201,8 @@ class Handling:
             corr = {}
             pe = {}
             for p, hu in six.iteritems(current_hookup):
-                pe[p] = hud[k].parts_epoch[p]
-                cind = part_connect.epoch_corr_huind[pe[p]]
+                pe[p] = hud[k].hookup_type[p]
+                cind = part_connect.sysdef.corr_index[pe[p]]
                 try:
                     corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
                 except IndexError:  # pragma: no cover

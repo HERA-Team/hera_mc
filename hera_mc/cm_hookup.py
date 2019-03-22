@@ -42,9 +42,9 @@ def get_part_pols(part, port_query):
     if port_query in port_groups:
         if part.part.hpn[:2].upper() in single_pol_EN_parts:
             return [part.part.hpn[-1].lower()]
-        return PC.both_pols
+        return PC.sysdef.both_pols
 
-    if port_query in PC.both_pols:
+    if port_query in PC.sysdef.both_pols:
         return [port_query]
     raise ValueError('Invalid port_query')
 
@@ -57,47 +57,47 @@ class HookupDossierEntry:
         self.entry_key = entry_key
         self.hookup = {}  # actual hookup connection information
         self.fully_connected = {}  # flag if fully connected
-        self.parts_epoch = {}  # name of parts_epoch
+        self.hookup_type = {}  # name of hookup_type
         self.columns = {}  # list with the actual column headers in hookup
         self.timing = {}  # aggregate hookup start and stop
         self.level = {}  # correlator level
 
-    def get_epoch_and_column_headers(self, pol, part_types_found):
+    def get_hookup_type_and_column_headers(self, pol, part_types_found):
         """
         The columns in the hookup contain parts in the hookup chain and the column headers are
         the part types contained in that column.  This returns the headers for the retrieved hookup.
 
-        It just checks which epoch the parts are in (parts_paper or parts_hera) and keeps however many
+        It just checks which hookup_type the parts are in (parts_paper or parts_hera) and keeps however many
         parts are used.
 
         Parameters:
         -------------
         part_types_found:  list of the part types that were found
         """
-        self.parts_epoch[pol] = None
+        self.hookup_type[pol] = None
         self.columns[pol] = []
         if len(part_types_found) == 0:
             return
         is_this_one = False
-        for sp in PC.epoch_checking_order:
+        for sp in PC.sysdef.checking_order:
             for part_type in part_types_found:
-                if part_type not in PC.full_connection_path[sp]:
+                if part_type not in PC.sysdef.full_connection_path[sp]:
                     break
             else:
                 is_this_one = sp
                 break
         if not is_this_one:
-            print('Parts did not conform to any parts epoch')
+            print('Parts did not conform to any hookup_type')
             return
         else:
-            self.parts_epoch[pol] = is_this_one
-            for c in PC.full_connection_path[is_this_one]:
+            self.hookup_type[pol] = is_this_one
+            for c in PC.sysdef.full_connection_path[is_this_one]:
                 if c in part_types_found:
                     self.columns[pol].append(c)
 
     def add_timing_and_fully_connected(self, pol):
-        if self.parts_epoch[pol] is not None:
-            full_hookup_length = len(PC.full_connection_path[self.parts_epoch[pol]]) - 1
+        if self.hookup_type[pol] is not None:
+            full_hookup_length = len(PC.sysdef.full_connection_path[self.hookup_type[pol]]) - 1
         else:
             full_hookup_length = -1
         latest_start = 0
@@ -303,7 +303,7 @@ class Hookup:
         Returns hookup dossier entry, a dictionary with the following entries:
         This only gets the contemporary hookups (unlike parts and connections,
             which get all.)  That is, only hookups valid at_date are returned.
-            They are therefore only within one parts_epoch
+            They are therefore only within one hookup_type
 
         Parameters
         -----------
@@ -400,7 +400,7 @@ class Hookup:
             for pol in pols_to_do:
                 hookup_dict[k].hookup[pol] = self._follow_hookup_stream(part.part.hpn, part.part.hpn_rev, pol)
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[pol])
-                hookup_dict[k].get_epoch_and_column_headers(pol, part_types_found)
+                hookup_dict[k].get_hookup_type_and_column_headers(pol, part_types_found)
                 hookup_dict[k].add_timing_and_fully_connected(pol)
                 if levels:
                     hookup_dict[k].add_correlator_levels(pol)
@@ -497,7 +497,7 @@ class Hookup:
 
         if option_port.lower() in ['a', 'b']:
             p = next_part[-1].lower()
-        elif option_port[0].lower() in PC.both_pols:
+        elif option_port[0].lower() in PC.sysdef.both_pols:
             p = option_port[0].lower()
         else:
             p = pol

@@ -1,0 +1,15 @@
+{
+  "checking_order": ["parts_hera", "parts_rfi", "parts_paper", "parts_test"],
+  "full_connection_path": {"parts_paper": ["station", "antenna", "feed", "front-end",
+                                           "cable-feed75", "cable-post-amp(in)",
+                                           "post-amp", "cable-post-amp(out)",
+                                           "cable-receiverator", "cable-container",
+                                           "f-engine"],
+                           "parts_hera": ["station", "antenna", "feed", "front-end",
+                                         "cable-rfof", "post-amp", "snap", "node"],
+                           "parts_rfi": ["station", "antenna", "feed", "temp-cable", "snap", "node"],
+                           "parts_test": ["vapor"]
+                         },
+  "corr_index": {"parts_hera": 5, "parts_paper": 9, "parts_rfi": 3},
+  "both_pols": ["e", "n"]
+}
