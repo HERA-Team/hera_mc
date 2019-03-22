@@ -44,13 +44,22 @@ snap_status_example_dict = {
                         'temp': 57.984954833984375,
                         'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
                         'uptime': 595686},
-    'heraNode4Snap0': {'last_programmed': None,
+    'heraNode4Snap0': {'last_programmed': datetime.datetime(2016, 1, 10, 23, 16, 3),
                        'pmb_alert': False,
                        'pps_count': 595699,
                        'serial': 'SNPA000224',
                        'temp': 59.323028564453125,
                        'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
                        'uptime': 595699}}
+
+snap_status_none_example_dict = {
+    'heraNode23Snap1': {'last_programmed': 'None',
+                        'pmb_alert': 'None',
+                        'pps_count': 'None',
+                        'serial': 'None',
+                        'temp': 'None',
+                        'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
+                        'uptime': 'None'}}
 
 
 def test_py3_hashing():
@@ -952,13 +961,34 @@ class TestSNAPStatus(TestHERAMC):
                                    serial_number='SNPA000224', node=4, snap_loc_num=0,
                                    psu_alert=False, pps_count=595699,
                                    fpga_temp=59.323028564453125, uptime_cycles=595699,
-                                   last_programmed_time=None)
+                                   last_programmed_time=int(floor(t_prog.gps)))
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
 
         result_most_recent = self.test_session.get_snap_status()
         self.assertEqual(len(result_most_recent), 2)
+
+    def test_add_snap_status_from_corrcm_with_nones(self):
+        snap_status_obj_list = self.test_session.add_snap_status_from_corrcm(
+            snap_status_dict=snap_status_none_example_dict, testing=True)
+
+        for obj in snap_status_obj_list:
+            self.test_session.add(obj)
+
+        t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format='datetime')
+        result = self.test_session.get_snap_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'))
+
+        expected = corr.SNAPStatus(time=int(floor(t1.gps)),
+                                   hostname='heraNode23Snap1',
+                                   serial_number=None, node=None, snap_loc_num=None,
+                                   psu_alert=None, pps_count=None,
+                                   fpga_temp=None, uptime_cycles=None,
+                                   last_programmed_time=None)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
 
     def test_snap_status_errors(self):
         t1 = Time('2016-01-10 01:15:23', scale='utc')

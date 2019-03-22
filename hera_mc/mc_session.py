@@ -2679,23 +2679,34 @@ class MCSession(Session):
             snap_status_dict = _get_snap_status()
 
         snap_status_list = []
-        for hostname, dict in six.iteritems(snap_status_dict):
-            time = Time(dict['timestamp'], format='datetime')
-            serial_number = dict['serial']
-            psu_alert = dict['pmb_alert']
-            pps_count = dict['pps_count']
-            fpga_temp = dict['temp']
-            uptime_cycles = dict['uptime']
+        for hostname, snap_dict in six.iteritems(snap_status_dict):
+            time = Time(snap_dict['timestamp'], format='datetime')
 
-            last_programmed_datetime = dict['last_programmed']
+            # any entry other than timestamp can be the string 'None'
+            # need to convert those to a None type
+            for key, val in six.iteritems(snap_dict):
+                if val == 'None':
+                    snap_dict[key] = None
+
+            serial_number = snap_dict['serial']
+            psu_alert = snap_dict['pmb_alert']
+            pps_count = snap_dict['pps_count']
+            fpga_temp = snap_dict['temp']
+            uptime_cycles = snap_dict['uptime']
+
+            last_programmed_datetime = snap_dict['last_programmed']
             if last_programmed_datetime is not None:
                 last_programmed_time = Time(last_programmed_datetime, format='datetime')
             else:
                 last_programmed_time = None
 
             # get nodeID & snap location number from config management
-            nodeID, snap_loc_num = self._get_node_snap_from_serial(serial_number,
-                                                                   session=cm_session)
+            if serial_number is not None:
+                nodeID, snap_loc_num = self._get_node_snap_from_serial(serial_number,
+                                                                       session=cm_session)
+            else:
+                nodeID = None
+                snap_loc_num = None
 
             snap_status_list.append(SNAPStatus.create(time, hostname, nodeID, snap_loc_num,
                                                       serial_number, psu_alert,
