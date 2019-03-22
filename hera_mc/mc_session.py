@@ -2542,9 +2542,9 @@ class MCSession(Session):
         node_part = node_part[0]
         try:
             assert node_part.startswith('N')
-            node_num = int(node_part[1:])
+            nodeID = int(node_part[1:])
         except(ValueError, AssertionError):
-            node_num = None
+            nodeID = None
 
         if len(snap_loc) > 1:
             warnings.warn('Multiple snap location numbers returned for snap serial '
@@ -2558,7 +2558,7 @@ class MCSession(Session):
             except(ValueError, AssertionError):
                 snap_loc_num = None
 
-        return node_num, snap_loc_num
+        return nodeID, snap_loc_num
 
     def add_snap_status(self, time, hostname, serial_number, psu_alert, pps_count,
                         fpga_temp, uptime_cycles, last_programmed_time):
@@ -2587,14 +2587,14 @@ class MCSession(Session):
         from .correlator import SNAPStatus
 
         # get node & snap location number from config management
-        node, snap_loc_num = self._get_node_snap_from_serial(serial_number)
+        nodeID, snap_loc_num = self._get_node_snap_from_serial(serial_number)
 
-        self.add(SNAPStatus.create(time, hostname, node, snap_loc_num, serial_number,
+        self.add(SNAPStatus.create(time, hostname, nodeID, snap_loc_num, serial_number,
                                    psu_alert, pps_count, fpga_temp, uptime_cycles,
                                    last_programmed_time))
 
     def get_snap_status(self, most_recent=None, starttime=None, stoptime=None,
-                        node=None, write_to_file=False, filename=None):
+                        nodeID=None, write_to_file=False, filename=None):
         """
         Get snap status record(s) from the M&C database.
 
@@ -2620,8 +2620,8 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
 
-        node: integer
-            node number
+        nodeID: integer
+            node number (integer running from 1 to 30)
 
         write_to_file: boolean
             Option to write records to a CSV file
@@ -2639,7 +2639,7 @@ class MCSession(Session):
 
         return self._time_filter(SNAPStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
-                                 filter_column='node', filter_value=node,
+                                 filter_column='node', filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
 
     def add_snap_status_from_corrcm(self, snap_status_dict=None, testing=False,
@@ -2690,11 +2690,11 @@ class MCSession(Session):
             else:
                 last_programmed_time = None
 
-            # get node & snap location number from config management
-            node, snap_loc_num = self._get_node_snap_from_serial(serial_number,
-                                                                 session=cm_session)
+            # get nodeID & snap location number from config management
+            nodeID, snap_loc_num = self._get_node_snap_from_serial(serial_number,
+                                                                   session=cm_session)
 
-            snap_status_list.append(SNAPStatus.create(time, hostname, node, snap_loc_num,
+            snap_status_list.append(SNAPStatus.create(time, hostname, nodeID, snap_loc_num,
                                                       serial_number, psu_alert,
                                                       pps_count, fpga_temp,
                                                       uptime_cycles,
