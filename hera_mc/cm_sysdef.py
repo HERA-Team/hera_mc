@@ -115,7 +115,7 @@ def next_connection(options, rg):
         if this_port.lower() == rg.port.lower():
             return opc
         if len(rg.port) > 1 and rg.port[1].isdigit():
-                continue
+            continue
         all_pols_lo = [x.lower() for x in all_pols]
         p = None
         if next_port.lower() in ['a', 'b']:  # This or part of the PAPER legacy
