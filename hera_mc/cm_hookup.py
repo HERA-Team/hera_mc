@@ -416,7 +416,7 @@ class Hookup:
         if next_conn:
             for nc in next_conn:
                 lll = len(self.upstream) * '  '
-                print("{}CMH418:  {:5s} {:12s}   {}".format(lll,direction,part,nc))
+                #print("{}CMH418:  {:5s} {:12s}   {}".format(lll,direction,part,nc))
                 if direction == 'up':
                     self.upstream.append(nc)
                     part = nc.upstream_part
@@ -429,7 +429,7 @@ class Hookup:
                     port = nc.downstream_input_port
                 self._recursive_go(direction, part, rev, port, pol)
                 #putting 'break' below makes it act as before
-                #break
+                break
 
     def _get_next_connections(self, direction, part, rev, port, pol):
         """
