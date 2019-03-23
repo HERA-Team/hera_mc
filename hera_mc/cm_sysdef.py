@@ -3,7 +3,9 @@
 # Licensed under the 2-clause BSD license.
 
 """
-This module defines all of the system parameters for hookup.
+This module defines all of the system parameters for hookup.  It tries to
+contain all of the ad hoc messy part of walking through a signal chain to
+this one file.
 """
 
 from __future__ import absolute_import, division, print_function
