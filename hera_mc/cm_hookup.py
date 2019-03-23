@@ -240,7 +240,7 @@ class Hookup:
     def determine_hookup_cache_to_use(self, force_new_cache=False):
         """
         Determines action regarding using an existing cache file or writing and using a new one.
-        If force_new is set, it automatically writes/uses a new one.  If the cache file is out of
+        If force_new_cache is set, it automatically writes/uses a new one.  If the cache file is out of
         date it writes/uses a new one.  Otherwise it uses the existing one (rereading from the
         cache file if not one in memory.)
 
@@ -260,19 +260,19 @@ class Hookup:
             self.cached_hookup_dict = self.get_hookup_from_db(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
                                                               port_query='all', at_date=self.at_date,
                                                               exact_match=False, levels=False)
-            log_msg = "force_new:  {};  cache_file_date_OK:  {}".format(force_new, cache_file_date_OK)
+            log_msg = "force_new_cache:  {};  cache_file_date_OK:  {}".format(force_new_cache, cache_file_date_OK)
             self.write_hookup_cache_to_file(log_msg)
         elif self.cached_hookup_dict is None:
             if os.path.exists(self.hookup_cache_file):
                 self.read_hookup_cache_from_file()
             else:
-                self.determine_hookup_cache_to_use(force_new=True)
+                self.determine_hookup_cache_to_use(force_new_cache=True)
 
     def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, levels=False,
                    force_new_cache=False, force_specific=False, force_specific_at_date='now'):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary.
-        Unless force_new is True, it will check a local hookup file and return that if current
+        Unless force_new_cache is True, it will check a local hookup file and return that if current
         otherwise it will go through the full database to get hookup.
         Returns hookup dossier entry, a dictionary with the following entries:
         This only gets the contemporary hookups (unlike parts and connections,
@@ -483,7 +483,7 @@ class Hookup:
                 self.cached_hookup_dict = np.load(f).item()
                 self.part_type_cache = np.load(f).item()
         else:
-            self.determine_hookup_cache_to_use(force_new=True)
+            self.determine_hookup_cache_to_use(force_new_cache=True)
             self.read_hookup_cache_from_file()
 
     def hookup_cache_file_date_OK(self, contemporaneous_minutes=15.0):

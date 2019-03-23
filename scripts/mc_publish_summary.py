@@ -18,8 +18,8 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--hpn', help="Part number, csv-list or [default]", default='default')
     parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [ACTIVE]", default='ACTIVE')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
-                        dest='exact_match', action='store_true')
-    parser.add_argument('-f', '--use_cache', dest='force_new', help="Force it to write a new hookup cache.", action='store_false')
+                        dest='exact_m atch', action='store_true')
+    parser.add_argument('-f', '--force-new-cache', dest='force_new_cache', help="Force it to write a new hookup cache.", action='store_false')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show comma-delimited no-space list.",
                         dest='hookup_cols', default=default_hookup_cols)
 
@@ -35,4 +35,4 @@ if __name__ == '__main__':
 
     system = sys_handling.Handling(session)
     system.publish_summary(args.hpn, rev=args.revision, exact_match=args.exact_match, hookup_cols=args.hookup_cols,
-                           force_new_hookup_dict=args.force_new)
+                           force_new_hookup_dict=args.force_new_cache)

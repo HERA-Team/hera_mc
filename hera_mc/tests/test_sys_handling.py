@@ -59,17 +59,17 @@ class TestSys(TestHERAMC):
         hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
         hookup.reset_memory_cache(None)
         self.assertEqual(hookup.cached_hookup_dict, None)
-        hu = hookup.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new=True, levels=True)
+        hu = hookup.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new_cache=True, levels=True)
         with captured_output() as (out, err):
             hookup.show_hookup(hu, cols_to_show=['station', 'level'], levels=True, revs=True, ports=True)
         self.assertTrue('HH23:A <ground' in out.getvalue().strip())
         hookup.reset_memory_cache(hu)
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
-        hu = hookup.get_hookup('cached', 'H', 'pol', force_new=False)
+        hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False)
         with captured_output() as (out, err):
             hookup.show_hookup(hu)
         self.assertTrue('1096484416' in out.getvalue().strip())
-        hu = hookup.get_hookup('A23,A23', 'H', 'pol', force_new=False)
+        hu = hookup.get_hookup('A23,A23', 'H', 'pol', force_new_cache=False)
         hookup.cached_hookup_dict = None
         hookup.determine_hookup_cache_to_use()
         with captured_output() as (out, err):
