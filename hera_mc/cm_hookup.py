@@ -18,9 +18,8 @@ import copy
 from sqlalchemy import func
 from astropy.time import Time, TimeDelta
 
-from . import mc, cm_utils, cm_handling, cm_transfer
+from . import mc, cm_utils, cm_handling, cm_transfer, cm_sysdef
 from . import part_connect as PC
-from . import cm_sysdef
 
 
 class HookupDossierEntry:
