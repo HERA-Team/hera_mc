@@ -38,6 +38,7 @@ class PartDossierEntry():
         self.rev = rev
         self.entry_key = cm_utils.make_part_key(hpn, rev)
         self.at_date = at_date
+        self.part_type = None
         self.notes_start_date = notes_start_date
         self.sort_notes_by = sort_notes_by
         self.part = None  # This is the part_connect.Parts class
@@ -405,6 +406,7 @@ class Handling:
                     this_rev = xrev.rev
                     this_part = PartDossierEntry(hpn=xhpn, rev=this_rev, at_date=at_date, notes_start_date=notes_start_date)
                     this_part.get_entry(session=self.session, full_version=full_version)
+                    this_part.part_type = self.get_part_type_for(xhpn)
                     part_dossier[this_part.entry_key] = this_part
         return part_dossier
 

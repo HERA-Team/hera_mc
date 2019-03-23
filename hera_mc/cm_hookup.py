@@ -15,6 +15,7 @@ import numpy as np
 import os
 import six
 import copy
+from argparse import Namespace
 from sqlalchemy import func
 from astropy.time import Time, TimeDelta
 
@@ -209,7 +210,7 @@ class Hookup:
     def __init__(self, at_date='now', session=None):
         """
         Hookup traces parts and connections through the signal path (as defined
-            by the connections).
+        by the connections).
         """
         if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
@@ -268,7 +269,7 @@ class Hookup:
                 self.determine_hookup_cache_to_use(force_new_cache=True)
 
     def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, levels=False,
-                   force_new_cache=False, force_specific=False, force_specific_at_date='now'):
+                   force_new_cache=False, force_db=False, force_db_at_date='now'):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary.
         Unless force_new_cache is True, it will check a local hookup file and return that if current
@@ -280,19 +281,19 @@ class Hookup:
 
         Parameters
         -----------
-        hpn_list:  list/string of input hera part number(s) (whole or first part thereof)
-                   if string == 'cached' it returns the current dict that would be used
-                   if there are any non-hookup-cached items in list, it defaults to force_specific
+        hpn_list:  - list/string of input hera part number(s) (whole or first part thereof)
+                   - if string == 'cached' it returns the current dict that would be used
+                   - if there are any non-hookup-cached items in list, it defaults to force_db
         rev:  the revision number or descriptor
         port_query:  a specifiable port name to follow or 'all',  default is 'all'.
         exact_match:  boolean for either exact_match or partial
-        levels:  boolean to include correlator levels
+        levels:  boolean to include correlator levels (Currently not working.)
         force_new_cache:  boolean to force a full database read as opposed to checking file
                           this will also rewrite the cache-file
-        force_specific:  boolean to force this to read/write the file to use the supplied values
-                         Setting this makes get_hookup provide specific hookups (mimicking the
-                         action before the cache file option was instituted)
-        force_specific_at_date:  date for hookup check -- use only if force_specific
+        force_db:  boolean to force this to read/write the file to use the supplied values
+                   Setting this makes get_hookup provide specific hookups (mimicking the
+                   action before the cache file option was instituted)
+        force_db_at_date:  date for hookup check -- use only if force_db
         """
         # Take appropriate action if hpn_list is a string
         if isinstance(hpn_list, six.string_types):
@@ -303,15 +304,15 @@ class Hookup:
             else:
                 hpn_list = cm_utils.listify(hpn_list)
 
-        # Check if force_specific return either requested or needed
+        # Check if force_db return either requested or needed
         requested_list_OK_for_cache = self.double_check_request_for_cache_keys(hpn_list)
         if not requested_list_OK_for_cache:
             s = "Hookup request list does not match cache file - using database."
             d = {'hpn_list (request)': hpn_list, 'hookup_list_to_cache': self.hookup_list_to_cache}
             cm_utils.log(s, params=d)
-        if force_specific or not requested_list_OK_for_cache:
+        if force_db or not requested_list_OK_for_cache:
             return self.get_hookup_from_db(hpn_list=hpn_list, rev=rev, port_query=port_query,
-                                           at_date=force_specific_at_date,
+                                           at_date=force_db_at_date,
                                            exact_match=exact_match, levels=levels)
 
         # Check/get the appropriate hookup dict
@@ -360,7 +361,7 @@ class Hookup:
         parts = self.handling.get_part_dossier(hpn=hpn_list, rev=rev,
                                                at_date=at_date,
                                                exact_match=exact_match,
-                                               full_version=False)
+                                               full_version=True)
         hookup_dict = {}
         for k, part in six.iteritems(parts):
             if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
@@ -368,16 +369,20 @@ class Hookup:
             if k in hookup_dict:
                 print("{} already found -- seem to have a duplicate active part.".format(k))
                 continue
+            port_pol_designators = cm_sysdef.get_port_pols_to_do(part, port_query)
+            if port_pol_designators is None:
+                continue
             hookup_dict[k] = HookupDossierEntry(k)
-            pols_to_do = cm_sysdef.get_part_pols(part, port_query)
-            for pol in pols_to_do:
-                print("CMH375++++++++++++++:  {}  {}  {}".format(part.part.hpn,part.part.hpn_rev,pol))
-                hookup_dict[k].hookup[pol] = self._follow_hookup_stream(part.part.hpn, part.part.hpn_rev, pol)
-                part_types_found = self.get_part_types_found(hookup_dict[k].hookup[pol])
-                hookup_dict[k].get_hookup_type_and_column_headers(pol, part_types_found)
-                hookup_dict[k].add_timing_and_fully_connected(pol)
+            if part.part_type in cm_sysdef.redirect_part_types:
+                cm_sysdef.handle_redirect_part_types(part)
+                continue
+            for port_pol in port_pol_designators:
+                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part.part.hpn, part.part.hpn_rev, port_pol)
+                part_types_found = self.get_part_types_found(hookup_dict[k].hookup[port_pol])
+                hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
+                hookup_dict[k].add_timing_and_fully_connected(port_pol)
                 if levels:
-                    hookup_dict[k].add_correlator_levels(pol)
+                    hookup_dict[k].add_correlator_levels(port_pol)
         return hookup_dict
 
     def get_part_types_found(self, hookup_connections):
@@ -393,12 +398,17 @@ class Hookup:
         self.part_type_cache[c.downstream_part] = part_type
         return list(part_types_found)
 
-    def _follow_hookup_stream(self, part, rev, pol):
+    def _follow_hookup_stream(self, part, rev, port_pol):
         self.upstream = []
         self.downstream = []
-        port = pol  # Seed it
-        self._recursive_go('up', part, rev, port, pol)
-        self._recursive_go('down', part, rev, port, pol)
+        port = port_pol  # Seed it
+        pol = port_pol[0]
+        starting = Namespace(part=part, rev=rev, port=port, pol=pol)
+        current = copy.copy(starting)
+        current.direction = 'up'
+        self._recursive_go(current)
+        starting.direction = 'down'
+        self._recursive_go(starting)
 
         hu = []
         for pn in reversed(self.upstream):
@@ -407,61 +417,46 @@ class Hookup:
             hu.append(pn)
         return hu
 
-    def _recursive_go(self, direction, part, rev, port, pol):
+    def _recursive_go(self, rg):
         """
         Find the next connection up the signal chain.
         """
-        next_conn = self._get_next_connections(direction, part, rev, port, pol)
-        if next_conn:
-            for nc in next_conn:
-                lll = len(self.upstream) * '  '
-                #print("{}CMH418:  {:5s} {:12s}   {}".format(lll,direction,part,nc))
-                if direction == 'up':
-                    self.upstream.append(nc)
-                    part = nc.upstream_part
-                    rev = nc.up_part_rev
-                    port = nc.upstream_output_port
-                else:
-                    self.downstream.append(nc)
-                    part = nc.downstream_part
-                    rev = nc.down_part_rev
-                    port = nc.downstream_input_port
-                self._recursive_go(direction, part, rev, port, pol)
-                #putting 'break' below makes it act as before
-                break
+        next_conn = self._get_next_connection(rg)
+        if next_conn is not None:
+            lll = len(self.upstream) * '  '
+            if rg.direction == 'up':
+                self.upstream.append(next_conn)
+                rg.part = next_conn.upstream_part
+                rg.rev = next_conn.up_part_rev
+                rg.port = next_conn.upstream_output_port
+            else:
+                self.downstream.append(next_conn)
+                rg.part = next_conn.downstream_part
+                rg.rev = next_conn.down_part_rev
+                rg.port = next_conn.downstream_input_port
+            self._recursive_go(rg)
 
-    def _get_next_connections(self, direction, part, rev, port, pol):
+    def _get_next_connection(self, rg):
         """
         Get next connected part going the given direction.
         """
         # Get all of the port options going the right direction
         options = []
-        if direction == 'up':      # Going upstream
+        if rg.direction == 'up':      # Going upstream
             for conn in self.session.query(PC.Connections).filter(
-                    (func.upper(PC.Connections.downstream_part) == part.upper())
-                    & (func.upper(PC.Connections.down_part_rev) == rev.upper())):
+                    (func.upper(PC.Connections.downstream_part) == rg.part.upper())
+                    & (func.upper(PC.Connections.down_part_rev) == rg.rev.upper())):
                 conn.gps2Time()
                 if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
-        elif direction == 'down':  # Going downstream
+        elif rg.direction == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
-                    (func.upper(PC.Connections.upstream_part) == part.upper())
-                    & (func.upper(PC.Connections.up_part_rev) == rev.upper())):
+                    (func.upper(PC.Connections.upstream_part) == rg.part.upper())
+                    & (func.upper(PC.Connections.up_part_rev) == rg.rev.upper())):
                 conn.gps2Time()
                 if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
-        # Now find the correct ones
-        next_one = []
-        portside = {'up': 'out', 'down': 'in'}
-        otherside = {'up': 'down', 'down': 'up'}
-        for opc in options:
-            this_part = getattr(opc, '{}stream_part'.format(otherside[direction]))
-            this_port = getattr(opc, '{}stream_{}put_port'.format(otherside[direction], portside[otherside[direction]]))
-            next_part = getattr(opc, '{}stream_part'.format(direction))
-            check_port = getattr(opc, '{}stream_{}put_port'.format(direction, portside[direction]))
-            if cm_sysdef.check_next_port(this_part, this_port, next_part, check_port, pol, len(options)):
-                next_one.append(opc)
-        return next_one
+        return cm_sysdef.next_connection(options, rg)
 
     def write_hookup_cache_to_file(self, log_msg):
         with open(self.hookup_cache_file, 'wb') as f:
