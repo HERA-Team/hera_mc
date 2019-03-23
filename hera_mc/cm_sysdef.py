@@ -29,7 +29,8 @@ redirect_part_types = ['node']
 
 def handle_redirect_part_types(part):
     print("Redirected parts require that you determine the set of parts externally and re-run.")
-    print("For this part type:  'parts.py conn -p {}'".format(part.hpn))
+    print("\t\tFor this part type:  'parts.py conn -p {}'".format(part.hpn))
+    print("\t\tThen re-run hookup with a csv list of parts.")
 
 
 def get_port_pols_to_do(part, port_query):

@@ -403,12 +403,12 @@ class Hookup:
         self.downstream = []
         port = port_pol  # Seed it
         pol = port_pol[0]
-        starting = Namespace(part=part, rev=rev, port=port, pol=pol)
+        starting = Namespace(direction='up', part=part, rev=rev, port=port, pol=pol)
         current = copy.copy(starting)
-        current.direction = 'up'
         self._recursive_go(current)
-        starting.direction = 'down'
-        self._recursive_go(starting)
+        current = copy.copy(starting)
+        current.direction = 'down'
+        self._recursive_go(current)
 
         hu = []
         for pn in reversed(self.upstream):
