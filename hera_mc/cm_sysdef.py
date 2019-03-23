@@ -59,8 +59,8 @@ def get_port_pols_to_do(part, port_query):
     # These are parts that have their polarization as the last letter of the part name
     # This is only for legacy PAPER parts.
     legacy_single_pol_EN_parts = ['RI', 'RO', 'CR']
-    if part.part.hpn[:2].upper() in legacy_single_pol_EN_parts:
-        en_part_pol = part.part.hpn[-1].lower()
+    if part.hpn[:2].upper() in legacy_single_pol_EN_parts:
+        en_part_pol = part.hpn[-1].lower()
         if port_query == 'all' or en_part_pol == port_query.lower():
             return [en_part_pol]
         else:
