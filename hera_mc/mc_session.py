@@ -2720,6 +2720,128 @@ class MCSession(Session):
         else:
             self._insert_ignoring_duplicates(SNAPStatus, snap_status_list)
 
+    def add_antenna_status(self, time, antenna_number, antenna_feed_pol,
+                           snap_hostname, snap_channel_number, adc_mean, adc_rms,
+                           adc_power, pam_atten, pam_power, eq_coeffs):
+        """
+        Add new antenna status data to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by the correlator
+        antenna_number: integer
+            antenna number
+        antenna_feed_pol: string
+            Feed polarization, either 'e' or 'n'
+        snap_hostname: string
+            hostname of snap the antenna is connected to
+        snap_channel_number: integer
+            The SNAP ADC channel number (0-7) to which this antenna is connected
+        adc_mean: float
+            Mean ADC value, in ADC units
+        adc_rms: float
+            RMS ADC value, in ADC units
+        adc_power: float
+            Mean ADC power, in ADC units squared
+        pam_atten: integer
+            PAM attenuation setting for this antenna, in dB
+        pam_power: astropy time object
+            PAM power sensor reading for this antenna, in dBm
+        eq_coeffs: list(float)
+            Digital EQ coefficients for this antenna, list of floats
+        """
+        from .correlator import AntennaStatus
+
+        self.add(AntennaStatus.create(time, antenna_number, antenna_feed_pol,
+                                      snap_hostname, snap_channel_number, adc_mean,
+                                      adc_rms, adc_power, pam_atten, pam_power,
+                                      eq_coeffs))
+
+    def get_antenna_status(self, most_recent=None, starttime=None, stoptime=None,
+                           antenna_number=None, write_to_file=False, filename=None):
+        """
+        Get antenna status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        antenna_number: integer
+            antenna number
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of AntennaStatus objects
+        """
+        from .correlator import AntennaStatus
+
+        return self._time_filter(AntennaStatus, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='antenna_number', filter_value=antenna_number,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def add_antenna_status_from_corrcm(self, ant_status_dict=None, testing=False):
+        """Get and add antenna status information using a HeraCorrCM object.
+
+        This function connects to the correlator and gets the latest data using the
+        `create_antenna_status` function. For testing purposes, it can
+        optionally accept an input dict instead of connecting to the correlator.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the data frequently on qmaster.
+
+        Parameters:
+        ------------
+        ant_status_dict: dict
+            A dict containing info as in the return dict from corr._get_ant_status() for
+            testing purposes. If None, _get_ant_status() is called. Default: None
+        testing: boolean
+            If true, don't add a record of it to the database and return the list of
+            AntennaStatus objects. Default False.
+
+        Returns:
+        --------
+        Optionally returns the list of AntennaStatus objects (if testing is True)
+
+        """
+        from .correlator import create_antenna_status, AntennaStatus
+
+        antenna_status_list = create_antenna_status(ant_status_dict=ant_status_dict)
+
+        if testing:
+            return antenna_status_list
+        else:
+            self._insert_ignoring_duplicates(AntennaStatus, antenna_status_list)
+
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
         Add a new antenna metric to the M&C database.

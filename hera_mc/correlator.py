@@ -456,3 +456,162 @@ def _get_snap_status(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     return corr_cm.get_f_status()
+
+
+class AntennaStatus(MCDeclarativeBase):
+    """
+    Definition of antenna status table (based on SNAP info).
+
+    time: gps time of the snap status data, floored (BigInteger, part of primary_key).
+    antenna_number: antenna number (Integer, part of primary_key)
+    antenna_feed_pol: Feed polarization, either 'e' or 'n' (String, part of primary_key)
+    snap_hostname: snap hostname (String)
+    snap_channel_number: The SNAP ADC channel number (0-7) to which this antenna is connected (Integer)
+    adc_mean: Mean ADC value, in ADC units (Float)
+    adc_rms: RMS ADC value, in ADC units (Float)
+    adc_power: Mean ADC power, in ADC units squared (Float)
+    pam_atten: PAM attenuation setting for this antenna, in dB. (Integer)
+    pam_power: PAM power sensor reading for this antenna, in dBm (Float)
+    eq_coeffs: Digital EQ coefficients for this antenna, list of floats stored as a string (String)
+    """
+    __tablename__ = 'antenna_status'
+    time = Column(BigInteger, primary_key=True)
+    antenna_number = Column(Integer, primary_key=True)
+    antenna_feed_pol = Column(String, primary_key=True)
+    snap_hostname = Column(String)
+    snap_channel_number = Column(Integer)
+    adc_mean = Column(Float)
+    adc_rms = Column(Float)
+    adc_power = Column(Float)
+    pam_atten = Column(Integer)
+    pam_power = Column(Float)
+    eq_coeffs = Column(String)
+
+    @classmethod
+    def create(cls, time, antenna_number, antenna_feed_pol, snap_hostname,
+               snap_channel_number, adc_mean, adc_rms, adc_power, pam_atten,
+               pam_power, eq_coeffs):
+        """
+        Create a new SNAP status object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by node
+        antenna_number: integer
+            antenna number
+        antenna_feed_pol: string
+            Feed polarization, either 'e' or 'n'
+        snap_hostname: string
+            hostname of snap the antenna is connected to
+        snap_channel_number: integer
+            The SNAP ADC channel number (0-7) to which this antenna is connected
+        adc_mean: float
+            Mean ADC value, in ADC units
+        adc_rms: float
+            RMS ADC value, in ADC units
+        adc_power: float
+            Mean ADC power, in ADC units squared
+        pam_atten: integer
+            PAM attenuation setting for this antenna, in dB
+        pam_power: astropy time object
+            PAM power sensor reading for this antenna, in dBm
+        eq_coeffs: list(float)
+            Digital EQ coefficients for this antenna, list of floats
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        snap_time = floor(time.gps)
+
+        if antenna_feed_pol not in ['e', 'n']:
+            raise ValueError('antenna_feed_pol must be "e" or "n".')
+
+        if eq_coeffs is not None:
+            eq_coeffs_str = [str(val) for val in eq_coeffs]
+            eq_coeffs_string = '[' + ','.join(eq_coeffs_str) + ']'
+        else:
+            eq_coeffs_string = None
+
+        return cls(time=snap_time, antenna_number=antenna_number,
+                   antenna_feed_pol=antenna_feed_pol, snap_hostname=snap_hostname,
+                   snap_channel_number=snap_channel_number, adc_mean=adc_mean,
+                   adc_rms=adc_rms, adc_power=adc_power, pam_atten=pam_atten,
+                   pam_power=pam_power, eq_coeffs=eq_coeffs_string)
+
+
+def _get_ant_status(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+    """
+    gets the antenna status dict from the correlator
+
+    from hera_corr_cm docstring:
+        Returns a dictionary of antenna status flags. Keys of returned dictionaries are
+        of the form "<antenna number>:"<e|n>". Values of this dictionary are status key/val pairs.
+
+        These keys are:
+            adc_mean (float)  : Mean ADC value (in ADC units)
+            adc_rms (float)   : RMS ADC value (in ADC units)
+            adc_power (float) : Mean ADC power (in ADC units squared)
+            f_host (str)      : The hostname of the SNAP board to which this antenna is connected
+            host_ant_id (int) : The SNAP ADC channel number (0-7) to which this antenna is connected
+            pam_atten (int)   : PAM attenuation setting for this antenna (dB)
+            pam_power (float) : PAM power sensor reading for this antenna (dBm)
+            eq_coeffs (list of floats) : Digital EQ coefficients for this antenna
+            timestamp (datetime) : Asynchronous timestamp that these status entries were gathered
+
+            Unknown values return the string "None"
+    """
+    import hera_corr_cm
+
+    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+
+    return corr_cm.get_ant_status()
+
+
+def create_antenna_status(correlator_redis_address=DEFAULT_REDIS_ADDRESS,
+                          ant_status_dict=None):
+    """
+    Return a list of antenna status objects with data from the correlator.
+
+    Parameters:
+    ------------
+    correlator_redis_address: Address of server where the correlator redis database can be accessed.
+    ant_status_dict: A dict spoofing the return dict from _get_ant_status for testing
+        purposes. Default: None
+
+    Returns:
+    -----------
+    A list of NodeSensor objects
+    """
+
+    if ant_status_dict is None:
+        ant_status_dict = _get_ant_status(correlator_redis_address=correlator_redis_address)
+
+    ant_status_list = []
+    for antkey, ant_dict in six.iteritems(ant_status_dict):
+        antenna_number, antenna_feed_pol = tuple(antkey.split(':'))
+        antenna_number = int(antenna_number)
+
+        time = Time(ant_dict['timestamp'], format='datetime')
+
+        # any entry other than timestamp can be the string 'None'
+        # need to convert those to a None type
+        for key, val in six.iteritems(ant_dict):
+            if val == 'None':
+                ant_dict[key] = None
+
+        snap_hostname = ant_dict['f_host']
+        snap_channel_number = ant_dict['host_ant_id']
+        adc_mean = ant_dict['adc_mean']
+        adc_rms = ant_dict['adc_rms']
+        adc_power = ant_dict['adc_power']
+        pam_atten = ant_dict['pam_atten']
+        pam_power = ant_dict['pam_power']
+        eq_coeffs = ant_dict['eq_coeffs']
+
+        ant_status_list.append(
+            AntennaStatus.create(time, antenna_number, antenna_feed_pol,
+                                 snap_hostname, snap_channel_number, adc_mean,
+                                 adc_rms, adc_power, pam_atten, pam_power,
+                                 eq_coeffs))
+
+    return ant_status_list
