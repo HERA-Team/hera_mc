@@ -265,7 +265,7 @@ class Hookup:
         elif self.cached_hookup_dict is None:
             if os.path.exists(self.hookup_cache_file):
                 self.read_hookup_cache_from_file()
-            else:
+            else:  # pragma: no cover
                 self.determine_hookup_cache_to_use(force_new_cache=True)
 
     def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, levels=False,
@@ -365,9 +365,6 @@ class Hookup:
         hookup_dict = {}
         for k, part in six.iteritems(parts):
             if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
-                continue
-            if k in hookup_dict:
-                print("{} already found -- seem to have a duplicate active part.".format(k))
                 continue
             port_pol_designators = cm_sysdef.get_port_pols_to_do(part, port_query)
             if port_pol_designators is None:
@@ -512,7 +509,7 @@ class Hookup:
         if os.path.exists(self.hookup_cache_file):
             with open(self.hookup_cache_file, 'rb') as f:
                 cached_at_date = Time(np.load(f).item())
-        else:
+        else:  # pragma: no cover
             return False
 
         # If the cached and query dates are after the last hash time it's ok
