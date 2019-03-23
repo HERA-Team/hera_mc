@@ -13,7 +13,8 @@ from tabulate import tabulate
 from argparse import Namespace
 from astropy.time import Time
 from sqlalchemy import (BigInteger, Column, Float, ForeignKey,
-                        ForeignKeyConstraint, Integer, String, Text, func)
+                        ForeignKeyConstraint, Integer, String,
+                        Text, func)
 
 from . import MCDeclarativeBase, NotNull
 from . import mc, cm_utils

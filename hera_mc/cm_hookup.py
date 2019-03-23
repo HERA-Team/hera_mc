@@ -20,33 +20,7 @@ from astropy.time import Time, TimeDelta
 
 from . import mc, cm_utils, cm_handling, cm_transfer
 from . import part_connect as PC
-
-
-def get_part_pols(part, port_query):
-    """
-    Given the current part and port_query (which is either 'pol' (or 'all'), 'e', or 'n')
-    this figures out which pols to do.  Basically, given 'pol' and part it
-    figures out whether to return ['e'], ['n'], ['e', 'n']
-
-    Parameter:
-    -----------
-    part:  current part dossier
-    port_query:  the ports that were requested ('e' or 'n' or 'all')
-    """
-
-    # These are parts that have their polarization as the last letter of the part name
-    # There are none for HERA in the RFoF architecture
-    single_pol_EN_parts = ['RI', 'RO', 'CR']
-    port_groups = ['all', 'pol']
-    port_query = port_query.lower()
-    if port_query in port_groups:
-        if part.part.hpn[:2].upper() in single_pol_EN_parts:
-            return [part.part.hpn[-1].lower()]
-        return PC.sysdef.both_pols
-
-    if port_query in PC.sysdef.both_pols:
-        return [port_query]
-    raise ValueError('Invalid port_query')
+from . import cm_sysdef
 
 
 class HookupDossierEntry:
@@ -263,7 +237,7 @@ class Hookup:
         if os.path.exists(self.hookup_cache_file):
             os.remove(self.hookup_cache_file)
 
-    def determine_hookup_cache_to_use(self, force_new=False):
+    def determine_hookup_cache_to_use(self, force_new_cache=False):
         """
         Determines action regarding using an existing cache file or writing and using a new one.
         If force_new is set, it automatically writes/uses a new one.  If the cache file is out of
@@ -276,13 +250,13 @@ class Hookup:
 
         Parameters
         -----------
-        force_new:  boolean to force a new read as opposed to using cache file,
-                    if the existing file is valid.  If the existing cache file is out-of-date
-                    relative to the cm_version it will also generate/write a new one.
+        force_new_cache:  boolean to force a new read as opposed to using cache file,
+                          if the existing file is valid.  If the existing cache file is out-of-date
+                          relative to the cm_version it will also generate/write a new one.
 
         """
         cache_file_date_OK = self.hookup_cache_file_date_OK()
-        if force_new or not cache_file_date_OK:
+        if force_new_cache or not cache_file_date_OK:
             self.cached_hookup_dict = self.get_hookup_from_db(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
                                                               port_query='all', at_date=self.at_date,
                                                               exact_match=False, levels=False)
@@ -295,7 +269,7 @@ class Hookup:
                 self.determine_hookup_cache_to_use(force_new=True)
 
     def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, levels=False,
-                   force_new=False, force_specific=False, force_specific_at_date='now'):
+                   force_new_cache=False, force_specific=False, force_specific_at_date='now'):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary.
         Unless force_new is True, it will check a local hookup file and return that if current
@@ -314,8 +288,8 @@ class Hookup:
         port_query:  a specifiable port name to follow or 'all',  default is 'all'.
         exact_match:  boolean for either exact_match or partial
         levels:  boolean to include correlator levels
-        force_new:  boolean to force a full database read as opposed to checking file
-                    this will also rewrite the cache-file
+        force_new_cache:  boolean to force a full database read as opposed to checking file
+                          this will also rewrite the cache-file
         force_specific:  boolean to force this to read/write the file to use the supplied values
                          Setting this makes get_hookup provide specific hookups (mimicking the
                          action before the cache file option was instituted)
@@ -343,7 +317,7 @@ class Hookup:
 
         # Check/get the appropriate hookup dict
         # (a) in memory, (b) re-read cache file, or (c) generate new
-        self.determine_hookup_cache_to_use(force_new=force_new)
+        self.determine_hookup_cache_to_use(force_new_cache=force_new_cache)
 
         # Now build up the returned hookup_dict
         hookup_dict = {}
@@ -396,8 +370,9 @@ class Hookup:
                 print("{} already found -- seem to have a duplicate active part.".format(k))
                 continue
             hookup_dict[k] = HookupDossierEntry(k)
-            pols_to_do = get_part_pols(part, port_query)
+            pols_to_do = cm_sysdef.get_part_pols(part, port_query)
             for pol in pols_to_do:
+                print("CMH375++++++++++++++:  {}  {}  {}".format(part.part.hpn,part.part.hpn_rev,pol))
                 hookup_dict[k].hookup[pol] = self._follow_hookup_stream(part.part.hpn, part.part.hpn_rev, pol)
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[pol])
                 hookup_dict[k].get_hookup_type_and_column_headers(pol, part_types_found)
@@ -437,21 +412,26 @@ class Hookup:
         """
         Find the next connection up the signal chain.
         """
-        conn = self._get_next_connection(direction, part, rev, port, pol)
-        if conn:
-            if direction == 'up':
-                self.upstream.append(conn[0])
-                part = conn[0].upstream_part
-                rev = conn[0].up_part_rev
-                port = conn[0].upstream_output_port
-            else:
-                self.downstream.append(conn[0])
-                part = conn[0].downstream_part
-                rev = conn[0].down_part_rev
-                port = conn[0].downstream_input_port
-            self._recursive_go(direction, part, rev, port, pol)
+        next_conn = self._get_next_connections(direction, part, rev, port, pol)
+        if next_conn:
+            for nc in next_conn:
+                lll = len(self.upstream) * '  '
+                print("{}CMH418:  {:5s} {:12s}   {}".format(lll,direction,part,nc))
+                if direction == 'up':
+                    self.upstream.append(nc)
+                    part = nc.upstream_part
+                    rev = nc.up_part_rev
+                    port = nc.upstream_output_port
+                else:
+                    self.downstream.append(nc)
+                    part = nc.downstream_part
+                    rev = nc.down_part_rev
+                    port = nc.downstream_input_port
+                self._recursive_go(direction, part, rev, port, pol)
+                #putting 'break' below makes it act as before
+                #break
 
-    def _get_next_connection(self, direction, part, rev, port, pol):
+    def _get_next_connections(self, direction, part, rev, port, pol):
         """
         Get next connected part going the given direction.
         """
@@ -480,29 +460,9 @@ class Hookup:
             this_port = getattr(opc, '{}stream_{}put_port'.format(otherside[direction], portside[otherside[direction]]))
             next_part = getattr(opc, '{}stream_part'.format(direction))
             check_port = getattr(opc, '{}stream_{}put_port'.format(direction, portside[direction]))
-            if self._check_next_port(this_part, this_port, next_part, check_port, pol, len(options)):
+            if cm_sysdef.check_next_port(this_part, this_port, next_part, check_port, pol, len(options)):
                 next_one.append(opc)
         return next_one
-
-    def _check_next_port(self, this_part, this_port, next_part, option_port, pol, lenopt):
-        """
-        This checks that the port is the correct one to follow through as you
-        follow the hookup.
-        """
-        if option_port[0] == '@':
-            return False
-
-        if lenopt == 1:  # Assume the only option is correct
-            return True
-
-        if option_port.lower() in ['a', 'b']:
-            p = next_part[-1].lower()
-        elif option_port[0].lower() in PC.sysdef.both_pols:
-            p = option_port[0].lower()
-        else:
-            p = pol
-
-        return p == pol
 
     def write_hookup_cache_to_file(self, log_msg):
         with open(self.hookup_cache_file, 'wb') as f:
