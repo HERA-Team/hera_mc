@@ -52,9 +52,9 @@ class HookupDossierEntry:
         if len(part_types_found) == 0:
             return
         is_this_one = False
-        for sp in PC.sysdef.checking_order:
+        for sp in cm_sysdef.checking_order:
             for part_type in part_types_found:
-                if part_type not in PC.sysdef.full_connection_path[sp]:
+                if part_type not in cm_sysdef.full_connection_path[sp]:
                     break
             else:
                 is_this_one = sp
@@ -64,13 +64,13 @@ class HookupDossierEntry:
             return
         else:
             self.hookup_type[pol] = is_this_one
-            for c in PC.sysdef.full_connection_path[is_this_one]:
+            for c in cm_sysdef.full_connection_path[is_this_one]:
                 if c in part_types_found:
                     self.columns[pol].append(c)
 
     def add_timing_and_fully_connected(self, pol):
         if self.hookup_type[pol] is not None:
-            full_hookup_length = len(PC.sysdef.full_connection_path[self.hookup_type[pol]]) - 1
+            full_hookup_length = len(cm_sysdef.full_connection_path[self.hookup_type[pol]]) - 1
         else:
             full_hookup_length = -1
         latest_start = 0

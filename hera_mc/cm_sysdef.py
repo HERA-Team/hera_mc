@@ -1,6 +1,17 @@
-from . import part_connect as PC
-
-# This file and sysdef.json in the data directory define the telescope system for hookups
+checking_order = ["parts_hera", "parts_rfi", "parts_paper", "parts_test"]
+full_connection_path = {"parts_paper": ["station", "antenna", "feed", "front-end",
+                                        "cable-feed75", "cable-post-amp(in)",
+                                        "post-amp", "cable-post-amp(out)",
+                                        "cable-receiverator", "cable-container",
+                                        "f-engine"],
+                        "parts_hera": ["station", "antenna", "feed", "front-end",
+                                       "cable-rfof", "post-amp", "snap", "node"],
+                        "parts_rfi": ["station", "antenna", "feed", "temp-cable",
+                                      "snap", "node"],
+                        "parts_test": ["vapor"]
+                        }
+corr_index = {"parts_hera": 5, "parts_paper": 9, "parts_rfi": 3},
+all_pols = ["e", "n"]
 
 
 def get_part_pols(part, port_query):
@@ -23,9 +34,9 @@ def get_part_pols(part, port_query):
     if port_query in port_groups:
         if part.part.hpn[:2].upper() in single_pol_EN_parts:
             return [part.part.hpn[-1].lower()]
-        return PC.sysdef.both_pols
+        return all_pols
 
-    if port_query in PC.sysdef.both_pols:
+    if port_query in all_pols:
         return [port_query]
     raise ValueError('Invalid port_query')
 
@@ -43,7 +54,7 @@ def check_next_port(this_part, this_port, next_part, option_port, pol, lenopt):
 
     if option_port.lower() in ['a', 'b']:
         p = next_part[-1].lower()
-    elif option_port[0].lower() in PC.sysdef.both_pols:
+    elif option_port[0].lower() in all_pols:
         p = option_port[0].lower()
     else:
         p = pol

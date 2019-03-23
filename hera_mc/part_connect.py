@@ -20,13 +20,6 @@ from . import MCDeclarativeBase, NotNull
 from . import mc, cm_utils
 
 no_connection_designator = '-X-'
-# This lists the fully complete signal paths
-import json
-with open(mc.op.join(mc.data_path, 'sysdef.json')) as fp:
-    sysdef_dict = json.load(fp)
-sysdef = Namespace()
-for k in sysdef_dict.keys():
-    setattr(sysdef, k, sysdef_dict[k])
 
 
 class Parts(MCDeclarativeBase):

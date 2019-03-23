@@ -13,7 +13,7 @@ from astropy.time import Time, TimeDelta
 from sqlalchemy import func, asc
 import numpy as np
 
-from . import mc, part_connect, cm_utils, cm_hookup, cm_revisions
+from . import mc, part_connect, cm_utils, cm_hookup, cm_revisions, cm_sysdef
 from . import geo_location, geo_handling
 
 
@@ -202,7 +202,7 @@ class Handling:
             pe = {}
             for p, hu in six.iteritems(current_hookup):
                 pe[p] = hud[k].hookup_type[p]
-                cind = part_connect.sysdef.corr_index[pe[p]]
+                cind = cm_sysdef.corr_index[pe[p]]
                 try:
                     corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
                 except IndexError:  # pragma: no cover
