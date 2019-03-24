@@ -66,7 +66,7 @@ class TestSys(TestHERAMC):
         self.assertTrue('HH23:A <ground' in out.getvalue().strip())
         hookup.reset_memory_cache(hu)
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
-        hu = hookup.get_hookup('cached', 'H', 'all', force_new_cache=False, levels=True)
+        hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False, levels=True)
         with captured_output() as (out, err):
             hookup.show_hookup(hu)
         self.assertTrue('1096484416' in out.getvalue().strip())
