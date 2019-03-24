@@ -60,17 +60,17 @@ class TestSys(TestHERAMC):
         hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
         hookup.reset_memory_cache(None)
         self.assertEqual(hookup.cached_hookup_dict, None)
-        hu = hookup.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new_cache=True, levels=True)
+        hu = hookup.get_hookup(['A23'], 'H', 'all', exact_match=True, force_new_cache=True, levels=True)
         with captured_output() as (out, err):
             hookup.show_hookup(hu, cols_to_show=['station', 'level'], state='all', levels=True, revs=True, ports=True)
         self.assertTrue('HH23:A <ground' in out.getvalue().strip())
         hookup.reset_memory_cache(hu)
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
-        hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False, levels=True)
+        hu = hookup.get_hookup('cached', 'H', 'all', force_new_cache=False, levels=True)
         with captured_output() as (out, err):
             hookup.show_hookup(hu)
         self.assertTrue('1096484416' in out.getvalue().strip())
-        hu = hookup.get_hookup('A23,A23', 'H', 'pol', force_new_cache=False, levels=True)
+        hu = hookup.get_hookup('A23,A23', 'H', 'all', force_new_cache=False, levels=True)
         hookup.cached_hookup_dict = None
         hookup.determine_hookup_cache_to_use()
         with captured_output() as (out, err):
@@ -79,6 +79,10 @@ class TestSys(TestHERAMC):
         with captured_output() as (out, err):
             hookup.show_hookup({}, cols_to_show=['station', 'level'], state='all', levels=True, revs=True, ports=True)
         self.assertTrue('None found' in out.getvalue().strip())
+        hufc = hookup.get_hookup_from_db(['HH'], 'active', '_x', at_date='now')
+        self.assertEqual(len(hufc.keys()), 0)
+        hufc = hookup.get_hookup_from_db(['N23'], 'active', 'e', at_date='now')
+        self.assertEqual(len(hufc.keys()), 0)
 
     def test_hookup_dossier(self):
         hude = cm_hookup.HookupDossierEntry('testing:key')
@@ -125,7 +129,6 @@ class TestSys(TestHERAMC):
         rg.port = 'rug'
         op[0].downstream_input_port = 'rug'
         xxx = cm_sysdef.next_connection(op, rg)
-        print(xxx)
         self.assertEqual(xxx.upstream_part, 'apart')
 
     def test_hookup_cache_file_info(self):

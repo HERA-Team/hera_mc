@@ -364,15 +364,15 @@ class Hookup:
                                                full_version=True)
         hookup_dict = {}
         for k, part in six.iteritems(parts):
+            if part.part_type in cm_sysdef.redirect_part_types:
+                cm_sysdef.handle_redirect_part_types(part)
+                continue
             if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
                 continue
             port_pol_designators = cm_sysdef.get_port_pols_to_do(part, port_query)
             if port_pol_designators is None:
                 continue
             hookup_dict[k] = HookupDossierEntry(k)
-            if part.part_type in cm_sysdef.redirect_part_types:
-                cm_sysdef.handle_redirect_part_types(part)
-                continue
             for port_pol in port_pol_designators:
                 hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part.part.hpn, part.part.hpn_rev, port_pol)
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[port_pol])
