@@ -507,11 +507,14 @@ class AntennaStatus(MCDeclarativeBase):
         snap_channel_number: integer
             The SNAP ADC channel number (0-7) to which this antenna is connected
         adc_mean: float
-            Mean ADC value, in ADC units
+            Mean ADC value, in ADC units, meaning raw ADC values interpreted as
+            signed integers between -128 and +127.
         adc_rms: float
-            RMS ADC value, in ADC units
+            RMS ADC value, in ADC units, meaning raw ADC values interpreted as
+            signed integers between -128 and +127.
         adc_power: float
-            Mean ADC power, in ADC units squared
+            Mean ADC power, in ADC units squared, meaning raw ADC values
+            interpreted as signed integers between -128 and +127 and then squared.
         pam_atten: integer
             PAM attenuation setting for this antenna, in dB
         pam_power: astropy time object
