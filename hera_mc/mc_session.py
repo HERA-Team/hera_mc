@@ -2574,7 +2574,7 @@ class MCSession(Session):
         serial_number: string
             Serial number of the SNAP board
         psu_alert: boolean
-            True if SNAP PSU controllers have issued an alert. False otherwise.
+            True if SNAP PSU (aka PMB) controllers have issued an alert. False otherwise.
         pps_count: integer
             Number of PPS pulses received since last programming cycle
         fpga_temp: float

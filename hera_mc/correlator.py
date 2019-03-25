@@ -367,7 +367,7 @@ class SNAPStatus(MCDeclarativeBase):
     node: node number (Integer)
     snap_loc_num: snap location number (Integer)
     serial_number: Serial number of the SNAP board (String)
-    psu_alert: True if SNAP PSU controllers have issued an alert. False otherwise. (Boolean)
+    psu_alert: True if SNAP PSU (aka PMB) controllers have issued an alert. False otherwise. (Boolean)
     pps_count: Number of PPS pulses received since last programming cycle (BigInteger)
     fpga_temp: Reported FPGA temperature in degrees Celsius (Float)
     uptime_cycles: Multiples of 500e6 ADC clocks since last programming cycle
@@ -404,7 +404,7 @@ class SNAPStatus(MCDeclarativeBase):
         serial_number: string
             Serial number of the SNAP board
         psu_alert: boolean
-            True if SNAP PSU controllers have issued an alert. False otherwise.
+            True if SNAP PSU (aka PMB) controllers have issued an alert. False otherwise.
         pps_count: integer
             Number of PPS pulses received since last programming cycle
         fpga_temp: float
