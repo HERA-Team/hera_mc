@@ -14,6 +14,7 @@ import datetime
 import hashlib
 import yaml
 import nose.tools as nt
+import numpy as np
 from math import floor
 from astropy.time import Time, TimeDelta
 
@@ -60,6 +61,37 @@ snap_status_none_example_dict = {
                         'temp': 'None',
                         'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
                         'uptime': 'None'}}
+
+ant_status_example_dict = {
+    '4:e': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
+            'f_host': 'heraNode23Snap1',
+            'host_ant_id': 3,
+            'adc_mean': -0.5308380126953125,
+            'adc_rms': 3.0134560488579285,
+            'adc_power': 9.080917358398438,
+            'pam_atten': 0,
+            'pam_power': -13.349140985640002,
+            'eq_coeffs': (np.zeros((1024)) + 56.921875).tolist()},
+    '31:n': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
+             'f_host': 'heraNode4Snap3',
+             'host_ant_id': 7,
+             'adc_mean': -0.4805450439453125,
+             'adc_rms': 16.495319974304454,
+             'adc_power': 272.0955810546875,
+             'pam_atten': 0,
+             'pam_power': -32.03119784856,
+             'eq_coeffs': (np.zeros((1024)) + 73.46875).tolist()}}
+
+ant_status_nones_example_dict = {
+    '4:e': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
+            'f_host': 'None',
+            'host_ant_id': 'None',
+            'adc_mean': 'None',
+            'adc_rms': 'None',
+            'adc_power': 'None',
+            'pam_atten': 'None',
+            'pam_power': 'None',
+            'eq_coeffs': 'None'}}
 
 
 def test_py3_hashing():
@@ -1072,6 +1104,179 @@ class TestSNAPStatus(TestHERAMC):
 
         self.test_session.add_snap_status_from_corrcm(cm_session=real_session)
         result = self.test_session.get_snap_status(most_recent=True)
+        self.assertTrue(len(result) >= 1)
+
+
+class TestAntennaStatus(TestHERAMC):
+
+    def test_add_antenna_status(self):
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        t2 = t1 + TimeDelta(120.0, format='sec')
+
+        t_prog = Time('2016-01-05 20:00:00', scale='utc')
+        eq_coeffs = (np.zeros((5)) + 56.921875).tolist()
+        self.test_session.add_antenna_status(t1, 4, 'e', 'heraNode23Snap1', 3,
+                                             -0.5308380126953125, 3.0134560488579285,
+                                             9.080917358398438, 0, -13.349140985640002,
+                                             eq_coeffs)
+
+        eq_coeffs_string = '[56.921875,56.921875,56.921875,56.921875,56.921875]'
+        expected = corr.AntennaStatus(time=int(floor(t1.gps)), antenna_number=4,
+                                      antenna_feed_pol='e',
+                                      snap_hostname='heraNode23Snap1',
+                                      snap_channel_number=3,
+                                      adc_mean=-0.5308380126953125,
+                                      adc_rms=3.0134560488579285,
+                                      adc_power=9.080917358398438, pam_atten=0,
+                                      pam_power=-13.349140985640002,
+                                      eq_coeffs=eq_coeffs_string)
+
+        result = self.test_session.get_antenna_status(starttime=t1 - TimeDelta(3.0, format='sec'))
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        eq_coeffs = (np.zeros((5)) + 73.46875).tolist()
+        self.test_session.add_antenna_status(t2, 31, 'n', 'heraNode4Snap3', 7,
+                                             -0.4805450439453125, 16.495319974304454,
+                                             272.0955810546875, 0, -32.03119784856,
+                                             eq_coeffs)
+
+        result = self.test_session.get_antenna_status(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                      antenna_number=4)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_antenna_status(antenna_number=4)
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        eq_coeffs_string = '[73.46875,73.46875,73.46875,73.46875,73.46875]'
+        expected = corr.AntennaStatus(time=int(floor(t2.gps)), antenna_number=31,
+                                      antenna_feed_pol='n',
+                                      snap_hostname='heraNode4Snap3',
+                                      snap_channel_number=7,
+                                      adc_mean=-0.4805450439453125,
+                                      adc_rms=16.495319974304454,
+                                      adc_power=272.0955810546875, pam_atten=0,
+                                      pam_power=-32.03119784856,
+                                      eq_coeffs=eq_coeffs_string)
+
+        result = self.test_session.get_antenna_status(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                      antenna_number=31)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_antenna_status(antenna_number=31)
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        result = self.test_session.get_antenna_status(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                      stoptime=t1)
+        self.assertEqual(len(result), 1)
+
+        result_most_recent = self.test_session.get_antenna_status()
+        self.assertEqual(len(result), 1)
+
+        result = self.test_session.get_antenna_status(starttime=t1 + TimeDelta(200.0, format='sec'))
+        self.assertEqual(result, [])
+
+    def test_add_antenna_status_from_corrcm(self):
+        ant_status_obj_list = self.test_session.add_antenna_status_from_corrcm(
+            ant_status_dict=ant_status_example_dict, testing=True)
+
+        for obj in ant_status_obj_list:
+            self.test_session.add(obj)
+
+        t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format='datetime')
+        result = self.test_session.get_antenna_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'), antenna_number=4)
+
+        eq_coeffs_str = [str(val) for val in (np.zeros((1024)) + 56.921875).tolist()]
+        eq_coeffs_string = '[' + ','.join(eq_coeffs_str) + ']'
+        expected = corr.AntennaStatus(time=int(floor(t1.gps)), antenna_number=4,
+                                      antenna_feed_pol='e',
+                                      snap_hostname='heraNode23Snap1',
+                                      snap_channel_number=3,
+                                      adc_mean=-0.5308380126953125,
+                                      adc_rms=3.0134560488579285,
+                                      adc_power=9.080917358398438, pam_atten=0,
+                                      pam_power=-13.349140985640002,
+                                      eq_coeffs=eq_coeffs_string)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_antenna_status(antenna_number=4)
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        result = self.test_session.get_antenna_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'), antenna_number=31)
+
+        eq_coeffs_str = [str(val) for val in (np.zeros((1024)) + 73.46875).tolist()]
+        eq_coeffs_string = '[' + ','.join(eq_coeffs_str) + ']'
+        expected = corr.AntennaStatus(time=int(floor(t1.gps)), antenna_number=31,
+                                      antenna_feed_pol='n',
+                                      snap_hostname='heraNode4Snap3',
+                                      snap_channel_number=7,
+                                      adc_mean=-0.4805450439453125,
+                                      adc_rms=16.495319974304454,
+                                      adc_power=272.0955810546875, pam_atten=0,
+                                      pam_power=-32.03119784856,
+                                      eq_coeffs=eq_coeffs_string)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_antenna_status()
+        self.assertEqual(len(result_most_recent), 2)
+
+    def test_add_antenna_status_from_corrcm_with_nones(self):
+        ant_status_obj_list = self.test_session.add_antenna_status_from_corrcm(
+            ant_status_dict=ant_status_nones_example_dict, testing=True)
+
+        for obj in ant_status_obj_list:
+            self.test_session.add(obj)
+
+        t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format='datetime')
+        result = self.test_session.get_antenna_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'))
+
+        expected = corr.AntennaStatus(time=int(floor(t1.gps)), antenna_number=4,
+                                      antenna_feed_pol='e',
+                                      snap_hostname=None, snap_channel_number=None,
+                                      adc_mean=None, adc_rms=None,
+                                      adc_power=None, pam_atten=None,
+                                      pam_power=None, eq_coeffs=None)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+    def test_snap_status_errors(self):
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+
+        eq_coeffs = (np.zeros((5)) + 56.921875).tolist()
+        self.assertRaises(ValueError, self.test_session.add_antenna_status,
+                          'foo', 4, 'e', 'heraNode23Snap1', 3, -0.5308380126953125,
+                          3.0134560488579285, 9.080917358398438, 0,
+                          -13.349140985640002, eq_coeffs)
+
+        self.assertRaises(ValueError, self.test_session.add_antenna_status,
+                          t1, 4, 'x', 'heraNode23Snap1', 3, -0.5308380126953125,
+                          3.0134560488579285, 9.080917358398438, 0,
+                          -13.349140985640002, eq_coeffs)
+
+    @unittest.skipIf(not is_onsite(), 'This test only works on site')
+    def test_site_add_antenna_status_from_corrcm(self):
+
+        self.test_session.add_antenna_status_from_corrcm()
+        result = self.test_session.get_antenna_status(most_recent=True)
         self.assertTrue(len(result) >= 1)
 
 
