@@ -10,6 +10,7 @@ from __future__ import absolute_import, division, print_function
 import unittest
 import os
 import time
+import datetime
 import hashlib
 import yaml
 import nose.tools as nt
@@ -34,6 +35,31 @@ config = yaml.load(config_file)
 
 corr_config_example_dict = {'timestamp': Time(1512770942, format='unix'),
                             'hash': 'testhash', 'config': config}
+
+snap_status_example_dict = {
+    'heraNode23Snap1': {'last_programmed': datetime.datetime(2016, 1, 10, 23, 16, 3),
+                        'pmb_alert': False,
+                        'pps_count': 595687,
+                        'serial': 'SNPA000222',
+                        'temp': 57.984954833984375,
+                        'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
+                        'uptime': 595686},
+    'heraNode4Snap0': {'last_programmed': datetime.datetime(2016, 1, 10, 23, 16, 3),
+                       'pmb_alert': False,
+                       'pps_count': 595699,
+                       'serial': 'SNPA000224',
+                       'temp': 59.323028564453125,
+                       'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
+                       'uptime': 595699}}
+
+snap_status_none_example_dict = {
+    'heraNode23Snap1': {'last_programmed': 'None',
+                        'pmb_alert': 'None',
+                        'pps_count': 'None',
+                        'serial': 'None',
+                        'temp': 'None',
+                        'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
+                        'uptime': 'None'}}
 
 
 def test_py3_hashing():
@@ -833,6 +859,220 @@ class TestCorrelatorConfigCommand(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'take_data', starttime=starttime, duration=100,
                           tag='engineering', config_file=config_file, testing=True)
+
+
+class TestSNAPStatus(TestHERAMC):
+
+    def test_add_snap_status(self):
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        t2 = t1 + TimeDelta(120.0, format='sec')
+
+        t_prog = Time('2016-01-05 20:00:00', scale='utc')
+        self.test_session.add_snap_status(t1, 'heraNode23Snap1', 'SNPA000222',
+                                          False, 595687, 57.984954833984375,
+                                          595686, t_prog)
+
+        expected = corr.SNAPStatus(time=int(floor(t1.gps)),
+                                   hostname='heraNode23Snap1',
+                                   serial_number='SNPA000222', node=23, snap_loc_num=1,
+                                   psu_alert=False, pps_count=595687,
+                                   fpga_temp=57.984954833984375, uptime_cycles=595686,
+                                   last_programmed_time=int(floor(t_prog.gps)))
+        result = self.test_session.get_snap_status(starttime=t1 - TimeDelta(3.0, format='sec'))
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        self.test_session.add_snap_status(t1, 'heraNode4Snap0', 'SNPA000224',
+                                          True, 595699, 59.323028564453125,
+                                          595699, t_prog)
+
+        result = self.test_session.get_snap_status(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                   nodeID=23)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_snap_status(nodeID=23)
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        expected = corr.SNAPStatus(time=int(floor(t1.gps)),
+                                   hostname='heraNode4Snap0',
+                                   serial_number='SNPA000224', node=4, snap_loc_num=0,
+                                   psu_alert=True, pps_count=595699,
+                                   fpga_temp=59.323028564453125, uptime_cycles=595699,
+                                   last_programmed_time=int(floor(t_prog.gps)))
+
+        result = self.test_session.get_snap_status(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                   nodeID=4)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_snap_status(nodeID=4)
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        result = self.test_session.get_snap_status(starttime=t1 - TimeDelta(3.0, format='sec'),
+                                                   stoptime=t1)
+        self.assertEqual(len(result), 2)
+
+        result_most_recent = self.test_session.get_snap_status()
+        self.assertEqual(len(result), 2)
+
+        result = self.test_session.get_snap_status(starttime=t1 + TimeDelta(200.0, format='sec'))
+        self.assertEqual(result, [])
+
+    def test_add_snap_status_from_corrcm(self):
+        snap_status_obj_list = self.test_session.add_snap_status_from_corrcm(
+            snap_status_dict=snap_status_example_dict, testing=True)
+
+        for obj in snap_status_obj_list:
+            self.test_session.add(obj)
+
+        t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format='datetime')
+        t_prog = Time(datetime.datetime(2016, 1, 10, 23, 16, 3), format='datetime')
+        result = self.test_session.get_snap_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=23)
+
+        expected = corr.SNAPStatus(time=int(floor(t1.gps)),
+                                   hostname='heraNode23Snap1',
+                                   serial_number='SNPA000222', node=23, snap_loc_num=1,
+                                   psu_alert=False, pps_count=595687,
+                                   fpga_temp=57.984954833984375, uptime_cycles=595686,
+                                   last_programmed_time=int(floor(t_prog.gps)))
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_snap_status(nodeID=23)
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        result = self.test_session.get_snap_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=4)
+
+        expected = corr.SNAPStatus(time=int(floor(t1.gps)),
+                                   hostname='heraNode4Snap0',
+                                   serial_number='SNPA000224', node=4, snap_loc_num=0,
+                                   psu_alert=False, pps_count=595699,
+                                   fpga_temp=59.323028564453125, uptime_cycles=595699,
+                                   last_programmed_time=int(floor(t_prog.gps)))
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_snap_status()
+        self.assertEqual(len(result_most_recent), 2)
+
+    def test_add_snap_status_from_corrcm_with_nones(self):
+        snap_status_obj_list = self.test_session.add_snap_status_from_corrcm(
+            snap_status_dict=snap_status_none_example_dict, testing=True)
+
+        for obj in snap_status_obj_list:
+            self.test_session.add(obj)
+
+        t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format='datetime')
+        result = self.test_session.get_snap_status(
+            starttime=t1 - TimeDelta(3.0, format='sec'))
+
+        expected = corr.SNAPStatus(time=int(floor(t1.gps)),
+                                   hostname='heraNode23Snap1',
+                                   serial_number=None, node=None, snap_loc_num=None,
+                                   psu_alert=None, pps_count=None,
+                                   fpga_temp=None, uptime_cycles=None,
+                                   last_programmed_time=None)
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+    def test_snap_status_errors(self):
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+
+        self.assertRaises(ValueError, self.test_session.add_snap_status,
+                          'foo', 'heraNode23Snap1', 'SNPA000222', False,
+                          595687, 57.984954833984375, 595686, t1)
+
+        self.assertRaises(ValueError, self.test_session.add_snap_status,
+                          t1, 'heraNode23Snap1', 'SNPA000222', False, 595687,
+                          57.984954833984375, 595686, 'foo')
+
+    def test_get_node_snap_from_serial_errors(self):
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['foo'],
+                                           message='No active dossiers')
+
+        self.assertTrue(node is None)
+        self.assertTrue(snap_loc_num is None)
+
+        # test multiple snap location numbers
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['SNPC000017'],
+                                           message='Multiple snap location numbers returned')
+        self.assertEqual(node, 0)
+        self.assertTrue(snap_loc_num is None)
+
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['SNPC000018'],
+                                           message='Multiple node connections returned')
+        self.assertTrue(node is None)
+        self.assertTrue(snap_loc_num is None)
+
+        # test multiple node numbers
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['SNPC000018'],
+                                           message='Multiple node connections returned')
+        self.assertTrue(node is None)
+        self.assertTrue(snap_loc_num is None)
+
+        # test multiple node revisions
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['SNPC000019'],
+                                           message='Multiple node connections returned')
+        self.assertTrue(node is None)
+        self.assertTrue(snap_loc_num is None)
+
+        # test multiple times
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['SNPC000020'], nwarnings=0)
+        self.assertEqual(node, 4)
+        self.assertEqual(snap_loc_num, 3)
+
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['SNPB000005'],
+                                           message='Multiple active dossiers returned')
+        self.assertTrue(node is None)
+        self.assertTrue(snap_loc_num is None)
+
+        node, snap_loc_num = self.test_session._get_node_snap_from_serial('SNPA000312')
+        self.assertTrue(snap_loc_num is None)
+
+        node, snap_loc_num = self.test_session._get_node_snap_from_serial('SNPA000313')
+        self.assertTrue(snap_loc_num is None)
+
+        node, snap_loc_num = self.test_session._get_node_snap_from_serial('SNPA000314')
+        self.assertTrue(node is None)
+
+        node, snap_loc_num = self.test_session._get_node_snap_from_serial('SNPA000315')
+        self.assertTrue(node is None)
+
+    @unittest.skipIf(not is_onsite(), 'This test only works on site')
+    def test_site_add_snap_status_from_corrcm(self):
+
+        # get the snap status dict from the correlator redis
+        snap_status_dict = corr._get_snap_status()
+
+        # use the real (not test) database to get the node & snap location number
+        real_db = mc.connect_to_mc_db(None)
+        real_session = real_db.sessionmaker()
+
+        self.test_session.add_snap_status_from_corrcm(cm_session=real_session)
+        result = self.test_session.get_snap_status(most_recent=True)
+        self.assertTrue(len(result) >= 1)
 
 
 if __name__ == '__main__':
