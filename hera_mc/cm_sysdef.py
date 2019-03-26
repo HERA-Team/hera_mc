@@ -104,12 +104,12 @@ def next_connection(options, rg):
 
     port = {'up': 'out', 'down': 'in'}
     this = {'up': 'down', 'down': 'up'}
-    that = {'up': 'up', 'down': 'down'}
+    next = {'up': 'up', 'down': 'down'}
     for opc in options:
         this_part = getattr(opc, '{}stream_part'.format(this[rg.direction]))
         this_port = getattr(opc, '{}stream_{}put_port'.format(this[rg.direction], port[this[rg.direction]]))
-        next_part = getattr(opc, '{}stream_part'.format(that[rg.direction]))
-        next_port = getattr(opc, '{}stream_{}put_port'.format(that[rg.direction], port[that[rg.direction]]))
+        next_part = getattr(opc, '{}stream_part'.format(next[rg.direction]))
+        next_port = getattr(opc, '{}stream_{}put_port'.format(next[rg.direction], port[next[rg.direction]]))
         if next_port[0] == '@':
             continue
         if len(options) == 1:  # Assume the only option is correct

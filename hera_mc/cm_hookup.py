@@ -272,12 +272,14 @@ class Hookup:
                    force_new_cache=False, force_db=False, force_db_at_date='now'):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary.
-        Unless force_new_cache is True, it will check a local hookup file and return that if current
-        otherwise it will go through the full database to get hookup.
-        Returns hookup dossier entry, a dictionary with the following entries:
-        This only gets the contemporary hookups (unlike parts and connections,
-            which get all.)  That is, only hookups valid at_date are returned.
-            They are therefore only within one hookup_type
+        The data may come from one of two sources:
+        (1) if the (a) part list is consistent with the keys, (b) date is current, and (c) revision
+            hash is current with a local cache file, data from the cache file will be used.
+        (2) if those conditions are not met, or the flags 'force_new_cache' or 'force_db' are True,
+            it will use the database.
+
+        This only gets the contemporary hookups (unlike parts and connections which get all), unless the
+        force_db flag is True and the force_db_at_date is set.
 
         Parameters
         -----------
@@ -285,14 +287,13 @@ class Hookup:
                    - if string == 'cached' it returns the current dict that would be used
                    - if there are any non-hookup-cached items in list, it defaults to force_db
         rev:  the revision number or descriptor
-        port_query:  a specifiable port name to follow or 'all',  default is 'all'.
+        port_query:  a specifiable port name to follow, or 'all',  default is 'all'.
         exact_match:  boolean for either exact_match or partial
         levels:  boolean to include correlator levels (Currently not working.)
-        force_new_cache:  boolean to force a full database read as opposed to checking file
-                          this will also rewrite the cache-file
-        force_db:  boolean to force this to read/write the file to use the supplied values
-                   Setting this makes get_hookup provide specific hookups (mimicking the
-                   action before the cache file option was instituted)
+        force_new_cache:  boolean to force a full database read as opposed to the cache file.
+                          This will also rewrite the cache file in the process
+        force_db:  boolean to force use of the database, rather than the cache file.  This is primarily
+                   needed to force a search if the date is not the current date (see date below)
         force_db_at_date:  date for hookup check -- use only if force_db
         """
         # Take appropriate action if hpn_list is a string
@@ -354,8 +355,8 @@ class Hookup:
 
     def get_hookup_from_db(self, hpn_list, rev, port_query, at_date, exact_match=False, levels=False):
         """
-        This gets called by the get_hookup wrapper if the database is to be read.
-        It is the full original method that was used prior to the cache file wrapper stuff.
+        This gets called by the get_hookup wrapper if the database needs to be read (for instance, to generate
+        a cache file, or search for parts different than those keyed on in the cache file.)
         """
         # Get all the appropriate parts
         parts = self.handling.get_part_dossier(hpn=hpn_list, rev=rev,
@@ -402,10 +403,10 @@ class Hookup:
         pol = port_pol[0]
         starting = Namespace(direction='up', part=part, rev=rev, port=port, pol=pol)
         current = copy.copy(starting)
-        self._recursive_go(current)
+        self._recursive_connect(current)
         current = copy.copy(starting)
         current.direction = 'down'
-        self._recursive_go(current)
+        self._recursive_connect(current)
 
         hu = []
         for pn in reversed(self.upstream):
@@ -414,7 +415,7 @@ class Hookup:
             hu.append(pn)
         return hu
 
-    def _recursive_go(self, rg):
+    def _recursive_connect(self, rg):
         """
         Find the next connection up the signal chain.
         """
@@ -431,7 +432,7 @@ class Hookup:
                 rg.part = next_conn.downstream_part
                 rg.rev = next_conn.down_part_rev
                 rg.port = next_conn.downstream_input_port
-            self._recursive_go(rg)
+            self._recursive_connect(rg)
 
     def _get_next_connection(self, rg):
         """
