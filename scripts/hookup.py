@@ -50,9 +50,12 @@ if __name__ == '__main__':
     elif args.delete_cache_file:
         hookup.delete_cache_file()
     else:
+        if args.force_db:
+            force_db_at_date = date_query
+        else:
+            force_db_at_date = None
         hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
                                         exact_match=args.exact_match, levels=args.levels,
-                                        force_new_cache=args.force_new_cache, force_db=args.force_db,
-                                        force_db_at_date=date_query)
+                                        force_new_cache=args.force_new_cache, force_db_at_date=force_db_at_date)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols, levels=args.levels,
                            ports=args.ports, revs=args.revs, state=args.state)

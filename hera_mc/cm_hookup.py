@@ -269,32 +269,30 @@ class Hookup:
                 self.determine_hookup_cache_to_use(force_new_cache=True)
 
     def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, levels=False,
-                   force_new_cache=False, force_db=False, force_db_at_date='now'):
+                   force_new_cache=False, force_db_at_date=None):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary.
         The data may come from one of two sources:
         (1) if the (a) part list is consistent with the keys, (b) date is current, and (c) revision
             hash is current with a local cache file, data from the cache file will be used.
-        (2) if those conditions are not met, or the flags 'force_new_cache' or 'force_db' are True,
-            it will use the database.
+        (2) if those conditions are not met, or the flag 'force_new_cache' is True, or 'force_db_at_date'
+            is not None, it will use the database.
 
-        This only gets the contemporary hookups (unlike parts and connections which get all), unless the
-        force_db flag is True and the force_db_at_date is set.
+        This only gets the contemporary hookups (unlike parts and connections which get all), unless
+        force_db_at_date is set.
 
         Parameters
         -----------
         hpn_list:  - list/string of input hera part number(s) (whole or first part thereof)
                    - if string == 'cached' it returns the current dict that would be used
-                   - if there are any non-hookup-cached items in list, it defaults to force_db
+                   - if there are any non-hookup-cached items in list, it reads the database
         rev:  the revision number or descriptor
         port_query:  a specifiable port name to follow, or 'all',  default is 'all'.
         exact_match:  boolean for either exact_match or partial
         levels:  boolean to include correlator levels (Currently not working.)
         force_new_cache:  boolean to force a full database read as opposed to the cache file.
                           This will also rewrite the cache file in the process
-        force_db:  boolean to force use of the database, rather than the cache file.  This is primarily
-                   needed to force a search if the date is not the current date (see date below)
-        force_db_at_date:  date for hookup check -- use only if force_db
+        force_db_at_date:  if not None, this will force the database to be read for the date supplied here.
         """
         # Take appropriate action if hpn_list is a string
         if isinstance(hpn_list, six.string_types):
@@ -306,15 +304,20 @@ class Hookup:
                 hpn_list = cm_utils.listify(hpn_list)
 
         # Check if force_db return either requested or needed
+        force_db = False
         requested_list_OK_for_cache = self.double_check_request_for_cache_keys(hpn_list)
         if not requested_list_OK_for_cache:
             s = "Hookup request list does not match cache file - using database."
             d = {'hpn_list (request)': hpn_list, 'hookup_list_to_cache': self.hookup_list_to_cache}
             cm_utils.log(s, params=d)
-        if force_db or not requested_list_OK_for_cache:
+            force_db = True
+            at_date = 'now'
+        if force_db_at_date is not None:
+            force_db = True
+            at_date = force_db_at_date
+        if force_db:
             return self.get_hookup_from_db(hpn_list=hpn_list, rev=rev, port_query=port_query,
-                                           at_date=force_db_at_date,
-                                           exact_match=exact_match, levels=levels)
+                                           at_date=at_date, exact_match=exact_match, levels=levels)
 
         # Check/get the appropriate hookup dict
         # (a) in memory, (b) re-read cache file, or (c) generate new
