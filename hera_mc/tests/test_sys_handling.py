@@ -64,13 +64,17 @@ class TestSys(TestHERAMC):
         with captured_output() as (out, err):
             hookup.show_hookup(hu, cols_to_show=['station', 'level'], state='all', levels=True, revs=True, ports=True)
         self.assertTrue('HH23:A <ground' in out.getvalue().strip())
+        hu = hookup.get_hookup(['A23'], 'H', 'all', exact_match=True, force_db_at_date='now')
+        self.assertTrue('A23:H' in hu.keys())
         hookup.reset_memory_cache(hu)
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
         hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False, levels=True)
         with captured_output() as (out, err):
             hookup.show_hookup(hu)
         self.assertTrue('1096484416' in out.getvalue().strip())
-        hu = hookup.get_hookup('A23,A23', 'H', 'all', force_new_cache=False, levels=True)
+        with captured_output() as (out, err):
+            hu = hookup.get_hookup('A23,A23', 'H', 'all', force_new_cache=False, levels=True)
+        self.assertTrue('Correlator' in out.getvalue().strip())
         hookup.cached_hookup_dict = None
         hookup.determine_hookup_cache_to_use()
         with captured_output() as (out, err):
