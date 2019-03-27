@@ -307,9 +307,6 @@ class Hookup:
         force_db = False
         requested_list_OK_for_cache = self.double_check_request_for_cache_keys(hpn_list)
         if not requested_list_OK_for_cache:
-            s = "Hookup request list does not match cache file - using database."
-            d = {'hpn_list (request)': hpn_list, 'hookup_list_to_cache': self.hookup_list_to_cache}
-            cm_utils.log(s, params=d)
             force_db = True
             at_date = 'now'
         if force_db_at_date is not None:
