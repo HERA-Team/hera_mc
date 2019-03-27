@@ -307,7 +307,7 @@ class Handling:
         H = cm_hookup.Hookup('now', self.session)
         hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
                                    exact_match=exact_match, levels=False,
-                                   force_new_cache=force_new_hookup_dict, force_db=False)
+                                   force_new_cache=force_new_hookup_dict, force_db_at_date=None)
         with open(output_file, 'w') as f:
             H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=False, ports=True,
                           revs=True, state='full', file=f, output_format='html')
