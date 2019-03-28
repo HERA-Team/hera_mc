@@ -16,9 +16,10 @@ import six
 import sys
 import numpy as np
 from astropy.time import Time, TimeDelta
+from argparse import Namespace
 from contextlib import contextmanager
 from .. import (geo_location, sys_handling, mc, cm_transfer, part_connect,
-                cm_hookup, cm_utils, cm_revisions, utils)
+                cm_hookup, cm_utils, cm_revisions, utils, cm_sysdef)
 from . import TestHERAMC
 
 
@@ -59,26 +60,86 @@ class TestSys(TestHERAMC):
         hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
         hookup.reset_memory_cache(None)
         self.assertEqual(hookup.cached_hookup_dict, None)
-        hu = hookup.get_hookup(['A23'], 'H', 'pol', exact_match=True, force_new=True, levels=True)
+        hu = hookup.get_hookup(['A23'], 'H', 'all', exact_match=True, force_new_cache=True, levels=True)
         with captured_output() as (out, err):
-            hookup.show_hookup(hu, cols_to_show=['station', 'level'], levels=True, revs=True, ports=True)
+            hookup.show_hookup(hu, cols_to_show=['station', 'level'], state='all', levels=True, revs=True, ports=True)
         self.assertTrue('HH23:A <ground' in out.getvalue().strip())
+        hu = hookup.get_hookup(['A23'], 'H', 'all', exact_match=True, force_db_at_date='now')
+        self.assertTrue('A23:H' in hu.keys())
         hookup.reset_memory_cache(hu)
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
-        hu = hookup.get_hookup('cached', 'H', 'pol', force_new=False)
+        hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False, levels=True)
         with captured_output() as (out, err):
             hookup.show_hookup(hu)
         self.assertTrue('1096484416' in out.getvalue().strip())
-        hu = hookup.get_hookup('A23,A23', 'H', 'pol', force_new=False)
+        with captured_output() as (out, err):
+            hu = hookup.get_hookup('A23,A23', 'H', 'all', force_new_cache=False, levels=True)
+        self.assertTrue('Correlator' in out.getvalue().strip())
         hookup.cached_hookup_dict = None
         hookup.determine_hookup_cache_to_use()
         with captured_output() as (out, err):
             hookup.show_hookup(hu)
         self.assertTrue('1096484416' in out.getvalue().strip())
+        with captured_output() as (out, err):
+            hookup.show_hookup({}, cols_to_show=['station', 'level'], state='all', levels=True, revs=True, ports=True)
+        self.assertTrue('None found' in out.getvalue().strip())
+        hufc = hookup.get_hookup_from_db(['HH'], 'active', '_x', at_date='now')
+        self.assertEqual(len(hufc.keys()), 0)
+        hufc = hookup.get_hookup_from_db(['N23'], 'active', 'e', at_date='now')
+        self.assertEqual(len(hufc.keys()), 0)
+
+    def test_hookup_dossier(self):
+        hude = cm_hookup.HookupDossierEntry('testing:key')
+        with captured_output() as (out, err):
+            hude.get_hookup_type_and_column_headers('x', 'rusty_scissors')
+        self.assertTrue('Parts did not conform to any hookup_type' in out.getvalue().strip())
+        hude.get_part_in_hookup_from_type('rusty_scissors', include_revs=True, include_ports=True)
+        hude.columns = {'x': 'y', 'hu': 'b', 'm': 'l'}
+        hude.hookup['hu'] = []
+        hude.hookup['hu'].append(Namespace(downstream_part='shoe', down_part_rev='testing',
+                                 downstream_input_port='nail', upstream_output_port='screw'))
+        xret = hude.get_part_in_hookup_from_type('b', include_revs=True, include_ports=True)
+        self.assertEqual(xret['hu'], 'shoe:testing<screw')
+
+    def test_sysdef(self):
+        part = Namespace(hpn='rusty_scissors')
+        part.connections = Namespace(input_ports=['e', '@loc', 'n'], output_ports=[])
+        with captured_output() as (out, err):
+            cm_sysdef.handle_redirect_part_types(part)
+        self.assertTrue('rusty_scissors' in out.getvalue().strip())
+        with captured_output() as (out, err):
+            xxx = cm_sysdef.get_port_pols_to_do(part, port_query='nail')
+        self.assertTrue('Invalid port query' in out.getvalue().strip())
+        part.hpn = 'RI123ZE'
+        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='e')
+        self.assertEqual(len(xxx), 1)
+        part.hpn = 'RI123Z'
+        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='e')
+        self.assertEqual(xxx, None)
+        part.hpn = 'doorknob'
+        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='pol')
+        self.assertTrue('e' in xxx)
+        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='e')
+        self.assertTrue('e' in xxx)
+        part.connections.input_ports = ['@loc1', 'top', 'bottom']
+        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='e')
+        self.assertTrue('e' in xxx)
+        rg = Namespace(direction='up', part='apart', rev='A', port='e1', pol='e')
+        op = [Namespace(upstream_part='apart', upstream_output_port='eb', downstream_part='bpart', downstream_input_port='e1')]
+        op.append(Namespace(upstream_part='aprt', upstream_output_port='eb', downstream_part='bprt', downstream_input_port='ea'))
+        rg.port = 'e4'
+        xxx = cm_sysdef.next_connection(op, rg)
+        self.assertEqual(xxx, None)
+        rg.port = 'rug'
+        op[0].downstream_input_port = 'rug'
+        xxx = cm_sysdef.next_connection(op, rg)
+        self.assertEqual(xxx.upstream_part, 'apart')
 
     def test_hookup_cache_file_info(self):
         hookup = cm_hookup.Hookup(at_date='now', session=self.test_session)
         hookup.hookup_cache_file_info()
+        hookup.reset_memory_cache(None)
+        hookup.determine_hookup_cache_to_use()
 
     def test_some_fully_connected(self):
         x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')

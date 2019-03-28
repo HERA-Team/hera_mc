@@ -12,26 +12,13 @@ import six
 from tabulate import tabulate
 from astropy.time import Time
 from sqlalchemy import (BigInteger, Column, Float, ForeignKey,
-                        ForeignKeyConstraint, Integer, String, Text, func)
+                        ForeignKeyConstraint, Integer, String,
+                        Text, func)
 
 from . import MCDeclarativeBase, NotNull
 from . import mc, cm_utils
 
 no_connection_designator = '-X-'
-# This lists the fully complete signal paths
-epoch_checking_order = ['parts_hera', 'parts_rfi', 'parts_paper', 'parts_test']
-full_connection_path = {'parts_paper': ['station', 'antenna', 'feed', 'front-end',
-                                        'cable-feed75', 'cable-post-amp(in)',
-                                        'post-amp', 'cable-post-amp(out)',
-                                        'cable-receiverator', 'cable-container',
-                                        'f-engine'],
-                        'parts_hera': ['station', 'antenna', 'feed', 'front-end',
-                                       'cable-rfof', 'post-amp', 'snap', 'node'],
-                        'parts_rfi': ['station', 'antenna', 'feed', 'temp-cable', 'snap', 'node'],
-                        'parts_test': ['vapor']
-                        }
-epoch_corr_huind = {'parts_hera': 5, 'parts_paper': 9, 'parts_rfi': 3}  # index where the correlator is downstream
-both_pols = ['e', 'n']
 
 
 class Parts(MCDeclarativeBase):

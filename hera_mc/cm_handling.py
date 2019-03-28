@@ -30,14 +30,34 @@ class PartDossierEntry():
                'part_info': 'Note', 'geo': 'Geo', 'post_date': 'Date', 'lib_file': 'File'}
 
     def __init__(self, hpn, rev, at_date, notes_start_date, sort_notes_by='part'):
+        """
+        This class holds all of the information on a given part:rev, including connections
+        (contained in the included PartConnectionDossierEntry(s)), part_info, and, if applicable,
+        geo_location.
+
+        It contains the modules to format the dossier for use in the parts display matrix.
+
+        It is only/primarily used within confines of cm (called by 'get_part_dossier' in the
+        Handling class below).
+
+        Parameters:
+        ------------
+        hpn:  hera part number - for a single part, not list.  Note only looks for exact matches.
+        rev: hera revision - this is for a specific revision, not a class of revisions.
+        at_date:  date after which the part is active.  If inactive, the part will still be included,
+                  but things like notes, geo etc may exclude on that basis.
+        notes_start_date:  start date on which to filter notes.  The stop date is at_date above.
+        sort_notes_by:  can sort notes display by 'part' or 'time'
+        """
         if isinstance(hpn, six.string_types):
             hpn = hpn.upper()
+        self.hpn = hpn
         if isinstance(rev, six.string_types):
             rev = rev.upper()
-        self.hpn = hpn
         self.rev = rev
-        self.entry_key = cm_utils.make_part_key(hpn, rev)
+        self.entry_key = cm_utils.make_part_key(self.hpn, self.rev)
         self.at_date = at_date
+        self.part_type = None
         self.notes_start_date = notes_start_date
         self.sort_notes_by = sort_notes_by
         self.part = None  # This is the part_connect.Parts class
@@ -126,7 +146,25 @@ class PartDossierEntry():
 
 
 class PartConnectionDossierEntry:
-    def __init__(self, hpn, rev, port):
+    def __init__(self, hpn, rev, port='all'):
+        """
+        This class holds connections to a specific part.  It only includes immediately
+        upstream and downstream of that part (use 'hookup' for cascaded parts.)  This
+        class gets incorporated into the PartDossier, but can also be used separately.
+        It does not filter by time -- the receiving module can do that if desired.
+        This class does include a module to filter on time that can be called with an at_date.
+
+        It contains the modules to format the dossier for use in the connection display matrix.
+
+        It is only/primarily used within confines of cm (called by 'get_part_connection_dossier'
+        in the Handling class below).
+
+        Parameters:
+        ------------
+        hpn: hera part number - for a single part, not list.  Note only looks for exact matches.
+        rev: hera revision - this is for a specific revision, not a class of revisions.
+        port: connection port - this is either for a specific port name or may use 'all' (default)
+        """
         self.hpn = hpn.upper()
         self.rev = rev.upper()
         self.port = port.lower()
@@ -405,6 +443,7 @@ class Handling:
                     this_rev = xrev.rev
                     this_part = PartDossierEntry(hpn=xhpn, rev=this_rev, at_date=at_date, notes_start_date=notes_start_date)
                     this_part.get_entry(session=self.session, full_version=full_version)
+                    this_part.part_type = self.get_part_type_for(xhpn)
                     part_dossier[this_part.entry_key] = this_part
         return part_dossier
 
