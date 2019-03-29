@@ -309,7 +309,7 @@ class Hookup:
         # Check if force_db return either requested or needed
         force_db = False
         requested_list_OK_for_cache = self.double_check_request_for_cache_keys(hpn_list)
-        if not requested_list_OK_for_cache or force_hookup_type is not None:
+        if not requested_list_OK_for_cache or hookup_type is not None:
             force_db = True
             at_date = 'now'
         if force_db_at_date is not None:
@@ -369,19 +369,18 @@ class Hookup:
                                                full_version=True)
         hookup_dict = {}
         for k, part in six.iteritems(parts):
-            if part.part_type in cm_sysdef.redirect_part_types:
+            hookup_type = cm_sysdef.find_hookup_type(part_type=part.part_type, hookup_type=hookup_type)
+            if part.part_type in cm_sysdef.redirect_part_types[hookup_type]:
                 cm_sysdef.handle_redirect_part_types(part)
                 continue
             if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
                 continue
-            port_pol_designators, hookup_type = cm_sysdef.setup(part_type=part.part_type,
-                                                                port_query=port_query,
-                                                                hookup_type=hookup_type)
+            port_pol_designators = cm_sysdef.setup(part=part, port_query=port_query, hookup_type=hookup_type)
             if port_pol_designators is None:
                 continue
             hookup_dict[k] = HookupDossierEntry(k)
             for port_pol in port_pol_designators:
-                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part.part.hpn, part.part.hpn_rev, port_pol)
+                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part.hpn, part.rev, port_pol)
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[port_pol])
                 hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
                 hookup_dict[k].add_timing_and_fully_connected(port_pol)
