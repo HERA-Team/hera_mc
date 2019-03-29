@@ -133,6 +133,7 @@ def setup(part, port_query='all', hookup_type=None):
 
     # These are for single pol parts that have their polarization as the last letter of the part name
     # This is only for parts_paper parts at this time.
+    # Not a good idea going forward.
     if part.part_type in single_pol_labeled_parts[this_hookup_type]:
         en_part_pol = part.hpn[-1].lower()
         if port_query == 'all' or en_part_pol == port_query:
@@ -141,10 +142,12 @@ def setup(part, port_query='all', hookup_type=None):
             return None
 
     # Sort out all of the ports into 'pol_catalog' and add up all of the "polarized" ports
+    # It also makes a version of consolidated port_def ports
+    # This is currently over-elaborate, but trying to improve then will slim back down
     pol_catalog = {}
     consolidated_ports = {'up': [], 'down': []}
     for dir in ['up', 'down']:
-        pol_catalog[dir] = {'e': [], 'n': [], 'o': []}
+        pol_catalog[dir] = {'e': [], 'n': [], 'a': [], 'o': []}
         for _c in port_def[this_hookup_type][part.part_type][dir]:
             consolidated_ports[dir] += _c
     connected_ports = {'up': part.connections.input_ports, 'down': part.connections.output_ports}
@@ -156,23 +159,20 @@ def setup(part, port_query='all', hookup_type=None):
                 continue
             cp_poldes = 'o' if cp[0] not in all_pols_lo else cp[0]
             if cp_poldes in all_pols_lo:
+                pol_catalog[dir]['a'].append(cp)  # p = e + n
                 tot_polarized_ports += 1
             pol_catalog[dir][cp_poldes].append(cp)
+    print("CHSD165:  ", pol_catalog)
 
-    if tot_polarized_ports == 0:
+    if tot_polarized_ports == 0:  # The part handles both polarizations
         if port_query == 'all':
             return all_pols_lo
         else:
             return port_query
 
-    if port_query == 'all':
-        allports = []
-        for p in all_pols_lo:
-            for x in pol_cat[p]:
-                allports.append(x)
-        return allports
-
-    return pol_cat[port_query]
+    up = pol_catalog['up'][port_query[0]]
+    dn = pol_catalog['down'][port_query[0]]
+    return up if len(up) > len(dn) else dn
 
 
 def next_connection(options, rg):
