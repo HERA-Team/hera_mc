@@ -9,23 +9,58 @@ this one file.
 """
 
 from __future__ import absolute_import, division, print_function
-from . import cm_utils
+import six
 
+port_def = {}
+port_def['parts_hera'] = {
+    'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
+    'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
+    'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
+    'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
+    'cable-rfof': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 4},
+    'post-amp': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 5},
+    'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 6},
+    'node': {'up': [['loc1', 'loc2', 'loc3', 'loc4']], 'down': [[None]], 'position': 7}
+}
+port_def['parts_paper'] = {
+    'station': {'position': 0},
+    'antenna': {'position': 1},
+    'feed': {'position': 2},
+    'front-end': {'position': 3},
+    'cable-feed75': {'position': 4},
+    'cable-post-amp(in)': {'position': 5},
+    'post-amp': {'position': 6},
+    'cable-post-amp(out)': {'position': 7},
+    'cable-receiverator': {'position': 8},
+    'cable-container': {'position': 9},
+    'f-engine': {'position': 10}
+}
+port_def['parts_rfi'] = {
+    'station': {'position': 0},
+    'antenna': {'position': 1},
+    'feed': {'position': 2},
+    'temp-cable': {'position': 3},
+    'snap': {'position': 4},
+    'node': {'position': 5}
+}
+port_def['parts_test'] = {
+    'vapor': {'position': 0}
+}
 
-checking_order = ["parts_hera", "parts_rfi", "parts_paper", "parts_test"]
-full_connection_path = {"parts_paper": ["station", "antenna", "feed", "front-end",
-                                        "cable-feed75", "cable-post-amp(in)",
-                                        "post-amp", "cable-post-amp(out)",
-                                        "cable-receiverator", "cable-container",
-                                        "f-engine"],
-                        "parts_hera": ["station", "antenna", "feed", "front-end",
-                                       "cable-rfof", "post-amp", "snap", "node"],
-                        "parts_rfi": ["station", "antenna", "feed", "temp-cable",
-                                      "snap", "node"],
-                        "parts_test": ["vapor"]
-                        }
-corr_index = {"parts_hera": 5, "parts_paper": 9, "parts_rfi": 3}
-all_pols = ["e", "n"]
+full_connection_path = {}
+for _x in port_def.keys():
+    ordered_path = {}
+    for k, v in six.iteritems(port_def[_x]):
+        ordered_path[v['position']] = k
+    sorted_keys = sorted(list(ordered_path.keys()))
+    full_connection_path[_x] = []
+    for k in sorted_keys:
+        full_connection_path[_x].append(ordered_path[k])
+
+checking_order = ['parts_hera', 'parts_rfi', 'parts_paper', 'parts_test']
+
+corr_index = {'parts_hera': 6, 'parts_paper': 10, 'parts_rfi': 4}
+all_pols = ['e', 'n']
 redirect_part_types = ['node']
 
 

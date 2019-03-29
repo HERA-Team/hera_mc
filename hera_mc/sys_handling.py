@@ -202,7 +202,7 @@ class Handling:
             pe = {}
             for p, hu in six.iteritems(current_hookup):
                 pe[p] = hud[k].hookup_type[p]
-                cind = cm_sysdef.corr_index[pe[p]]
+                cind = cm_sysdef.corr_index[pe[p]] - 1  # The '- 1' makes it the downstream_part
                 try:
                     corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
                 except IndexError:  # pragma: no cover
