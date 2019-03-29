@@ -6,6 +6,10 @@
 This module defines all of the system parameters for hookup.  It tries to
 contain all of the ad hoc messy part of walking through a signal chain to
 this one file.
+
+The two-part "meta" assumption is that:
+    a) polarized ports start with one of the polarization characters ('e' or 'n')
+    b) non polarized ports don't start with either character.
 """
 
 from __future__ import absolute_import, division, print_function
@@ -66,6 +70,7 @@ single_pol_labeled_parts = sys_init(checking_order, [])
 corr_index['parts_hera'] = 6
 corr_index['parts_paper'] = 10
 corr_index['parts_rfi'] = 4
+# polarizations should be one character
 all_pols['parts_hera'] = ['e', 'n']
 all_pols['parts_paper'] = ['e', 'n']
 all_pols['parts_rfi'] = ['e', 'n']
@@ -106,7 +111,7 @@ def setup(part, port_query='all', hookup_type=None):
     """
     Given the current part and port_query (which is either 'all', 'e', or 'n')
     this figures out which pols to do.  Basically, given the part and query it
-    figures out whether to return ['e'], ['n'], or ['e', 'n']
+    figures out whether to return ['e*'], ['n*'], or ['e*', 'n*']
 
     Parameter:
     -----------
@@ -135,20 +140,24 @@ def setup(part, port_query='all', hookup_type=None):
         else:
             return None
 
-    pol_cat = {'other': []}
-    for p in all_pols_lo:
-        pol_cat[p] = []
-    nport = {'in': len(part.connections.input_ports), 'out': len(part.connections.output_ports)}
-    check_ports = part.connections.input_ports if nport['in'] > nport['out'] else part.connections.output_ports
+    # Sort out all of the ports into 'pol_catalog' and add up all of the "polarized" ports
+    pol_catalog = {}
+    consolidated_ports = {'up': [], 'down': []}
+    for dir in ['up', 'down']:
+        pol_catalog[dir] = {'e': [], 'n': [], 'o': []}
+        for _c in port_def[this_hookup_type][part.part_type][dir]:
+            consolidated_ports[dir] += _c
+    connected_ports = {'up': part.connections.input_ports, 'down': part.connections.output_ports}
     tot_polarized_ports = 0
-    for p in check_ports:
-        if p[0] == '@':
-            continue
-        if p[0].lower() in all_pols_lo:
-            pol_cat[p[0]].append(p.lower())
-            tot_polarized_ports += 1
-        else:
-            pol_cat['other'].append(p.lower())
+    for dir in ['up', 'down']:
+        for cp in connected_ports[dir]:
+            cp = cp.lower()
+            if cp not in consolidated_ports[dir]:
+                continue
+            cp_poldes = 'o' if cp[0] not in all_pols_lo else cp[0]
+            if cp_poldes in all_pols_lo:
+                tot_polarized_ports += 1
+            pol_catalog[dir][cp_poldes].append(cp)
 
     if tot_polarized_ports == 0:
         if port_query == 'all':
