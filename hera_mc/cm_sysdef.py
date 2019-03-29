@@ -23,28 +23,28 @@ port_def['parts_hera'] = {
     'node': {'up': [['loc1', 'loc2', 'loc3', 'loc4']], 'down': [[None]], 'position': 7}
 }
 port_def['parts_paper'] = {
-    'station': {'position': 0},
-    'antenna': {'position': 1},
-    'feed': {'position': 2},
-    'front-end': {'position': 3},
-    'cable-feed75': {'position': 4},
-    'cable-post-amp(in)': {'position': 5},
-    'post-amp': {'position': 6},
-    'cable-post-amp(out)': {'position': 7},
-    'cable-receiverator': {'position': 8},
-    'cable-container': {'position': 9},
-    'f-engine': {'position': 10}
+    'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
+    'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
+    'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
+    'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
+    'cable-feed75': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 4},
+    'cable-post-amp(in)': {'up': [['a']], 'down': [['b']], 'position': 5},
+    'post-amp': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 6},
+    'cable-post-amp(out)': {'up': [['a']], 'down': [['b']], 'position': 7},
+    'cable-receiverator': {'up': [['a']], 'down': [['b']], 'position': 8},
+    'cable-container': {'up': [['a']], 'down': [['b']], 'position': 9},
+    'f-engine': {'up': [['input']], 'down': [[None]]'position': 10}
 }
 port_def['parts_rfi'] = {
-    'station': {'position': 0},
-    'antenna': {'position': 1},
-    'feed': {'position': 2},
-    'temp-cable': {'position': 3},
-    'snap': {'position': 4},
-    'node': {'position': 5}
+    'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
+    'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
+    'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
+    'temp-cable': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 3},
+    'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 4},
+    'node': {'up': [['loc1', 'loc2', 'loc3', 'loc4']], 'down': [[None]], 'position': 5}
 }
 port_def['parts_test'] = {
-    'vapor': {'position': 0}
+    'vapor': {'up': [[None]], 'down': [[None]], 'position': 0}
 }
 
 full_connection_path = {}
@@ -58,7 +58,6 @@ for _x in port_def.keys():
         full_connection_path[_x].append(ordered_path[k])
 
 checking_order = ['parts_hera', 'parts_rfi', 'parts_paper', 'parts_test']
-
 corr_index = {'parts_hera': 6, 'parts_paper': 10, 'parts_rfi': 4}
 all_pols = ['e', 'n']
 redirect_part_types = ['node']
@@ -70,7 +69,17 @@ def handle_redirect_part_types(part):
     print("\t\tThen re-run hookup with a csv list of parts.")
 
 
-def get_port_pols_to_do(part, port_query):
+def find_hookup_type(part_type, hookup_type):
+    if hookup_type in port_def.keys():
+        return hookup_type
+    if hookup_type is None:
+        for hookup_type in checking_order:
+            if part_type in port_def[hookup_type].keys():
+                return hookup_type
+    raise ValueError("hookup_type {} is not found.".format(hookup_type))
+
+
+def setup(part_type, port_query='all', hookup_type=None):
     """
     Given the current part and port_query (which is either 'all', 'e', or 'n')
     this figures out which pols to do.  Basically, given 'pol' and part it
@@ -80,16 +89,17 @@ def get_port_pols_to_do(part, port_query):
     -----------
     part:  current part dossier
     port_query:  the ports that were requested ('e' or 'n' or 'all')
+    hookup_type:  if not None, will use specified hookup_type
+                  otherwise it will look through in order
     """
 
     all_pols_lo = [x.lower() for x in all_pols]
     port_query = port_query.lower()
-    if port_query.startswith('pol'):  # This is a legacy
-        port_query = 'all'
     port_check_list = all_pols_lo + ['all']
     if port_query not in port_check_list:
-        print("Invalid port query {}.  Should be in {}".format(port_query, port_check_list))
-        return None
+        raise ValueError("Invalid port query {}.  Should be in {}".format(port_query, port_check_list))
+
+    hookup_type = find_hookup_type(part_type=part_type, hookup_type=hookup_type)
 
     # These are parts that have their polarization as the last letter of the part name
     # This is only for legacy PAPER parts.
@@ -97,9 +107,9 @@ def get_port_pols_to_do(part, port_query):
     if part.hpn[:2].upper() in legacy_single_pol_EN_parts:
         en_part_pol = part.hpn[-1].lower()
         if port_query == 'all' or en_part_pol == port_query.lower():
-            return [en_part_pol]
+            return [en_part_pol], 'parts_paper'
         else:
-            return None
+            return None, None
 
     pol_cat = {'other': []}
     for p in all_pols_lo:
@@ -118,18 +128,18 @@ def get_port_pols_to_do(part, port_query):
 
     if tot_polarized_ports == 0:
         if port_query == 'all':
-            return all_pols_lo
+            return all_pols_lo, hookup_type
         else:
-            return port_query
+            return port_query, hookup_type
 
     if port_query == 'all':
         allports = []
         for p in all_pols_lo:
             for x in pol_cat[p]:
                 allports.append(x)
-        return allports
+        return allports, hookup_type
 
-    return pol_cat[port_query]
+    return pol_cat[port_query], hookup_type
 
 
 def next_connection(options, rg):

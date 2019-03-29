@@ -21,7 +21,8 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--force-new-cache', dest='force_new_cache', help="Force it to write a new hookup cache file.", action='store_true')
     parser.add_argument('-c', '--cache-info', help="Shows information about the hookup cache file.", dest='cache_info', action='store_true')
     parser.add_argument('--force-db', dest='force_db', help="Force db use (but doesn't rewrite cache)", action='store_true')
-    parser.add_argument('--port', help="Define desired port(s) for hookup. (all)", dest='port', default='all')
+    parser.add_argument('--hookup-type', dest='hookup_type', help="Force use of specified hookup type.", default=None)
+    parser.add_argument('--port', help="Define desired port(s) for hookup. (e, n, all)", dest='port', default='all')
     parser.add_argument('--state', help="Show 'full' or 'all' hookups (full)", default='full')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in hookup, comma-delimited no-space list. (all])",
                         dest='hookup_cols', default='all')
@@ -56,6 +57,7 @@ if __name__ == '__main__':
             force_db_at_date = None
         hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
                                         exact_match=args.exact_match, levels=args.levels,
-                                        force_new_cache=args.force_new_cache, force_db_at_date=force_db_at_date)
+                                        force_new_cache=args.force_new_cache, force_db_at_date=force_db_at_date,
+                                        hookup_type=args.hookup_type)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols, levels=args.levels,
                            ports=args.ports, revs=args.revs, state=args.state)

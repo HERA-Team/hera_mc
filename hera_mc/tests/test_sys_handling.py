@@ -117,7 +117,7 @@ class TestSys(TestHERAMC):
         xxx = cm_sysdef.get_port_pols_to_do(part, port_query='e')
         self.assertEqual(xxx, None)
         part.hpn = 'doorknob'
-        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='pol')
+        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='all')
         self.assertTrue('e' in xxx)
         xxx = cm_sysdef.get_port_pols_to_do(part, port_query='e')
         self.assertTrue('e' in xxx)

@@ -41,7 +41,7 @@ class HookupDossierEntry:
         The columns in the hookup contain parts in the hookup chain and the column headers are
         the part types contained in that column.  This returns the headers for the retrieved hookup.
 
-        It just checks which hookup_type the parts are in (parts_paper or parts_hera) and keeps however many
+        It just checks which hookup_type the parts are in and keeps however many
         parts are used.
 
         Parameters:
@@ -269,7 +269,7 @@ class Hookup:
                 self.determine_hookup_cache_to_use(force_new_cache=True)
 
     def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, levels=False,
-                   force_new_cache=False, force_db_at_date=None):
+                   force_new_cache=False, force_db_at_date=None, hookup_type=None):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary.
         The data may come from one of two sources:
@@ -287,12 +287,15 @@ class Hookup:
                    - if string == 'cached' it returns the current dict that would be used
                    - if there are any non-hookup-cached items in list, it reads the database
         rev:  the revision number or descriptor
-        port_query:  a specifiable port name to follow, or 'all',  default is 'all'.
+        port_query:  a port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
         exact_match:  boolean for either exact_match or partial
         levels:  boolean to include correlator levels (Currently not working.)
         force_new_cache:  boolean to force a full database read as opposed to the cache file.
                           This will also rewrite the cache file in the process
-        force_db_at_date:  if not None, this will force the database to be read for the date supplied here.
+        force_db_at_date:  if not None, this will force the database to be read for the date supplied here
+        hookup_type:  if not None, this will force the database to use the specified hookup_type
+                            at force_db_at_date
+                            if None, it will check them in order for specified part using 'now'
         """
         # Take appropriate action if hpn_list is a string
         if isinstance(hpn_list, six.string_types):
@@ -306,7 +309,7 @@ class Hookup:
         # Check if force_db return either requested or needed
         force_db = False
         requested_list_OK_for_cache = self.double_check_request_for_cache_keys(hpn_list)
-        if not requested_list_OK_for_cache:
+        if not requested_list_OK_for_cache or force_hookup_type is not None:
             force_db = True
             at_date = 'now'
         if force_db_at_date is not None:
@@ -314,7 +317,8 @@ class Hookup:
             at_date = force_db_at_date
         if force_db:
             return self.get_hookup_from_db(hpn_list=hpn_list, rev=rev, port_query=port_query,
-                                           at_date=at_date, exact_match=exact_match, levels=levels)
+                                           at_date=at_date, exact_match=exact_match, levels=levels,
+                                           hookup_type=hookup_type)
 
         # Check/get the appropriate hookup dict
         # (a) in memory, (b) re-read cache file, or (c) generate new
@@ -353,7 +357,7 @@ class Hookup:
                 return False
         return True
 
-    def get_hookup_from_db(self, hpn_list, rev, port_query, at_date, exact_match=False, levels=False):
+    def get_hookup_from_db(self, hpn_list, rev, port_query, at_date, exact_match=False, levels=False, hookup_type=None):
         """
         This gets called by the get_hookup wrapper if the database needs to be read (for instance, to generate
         a cache file, or search for parts different than those keyed on in the cache file.)
@@ -370,7 +374,9 @@ class Hookup:
                 continue
             if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
                 continue
-            port_pol_designators = cm_sysdef.get_port_pols_to_do(part, port_query)
+            port_pol_designators, hookup_type = cm_sysdef.setup(part_type=part.part_type,
+                                                                port_query=port_query,
+                                                                hookup_type=hookup_type)
             if port_pol_designators is None:
                 continue
             hookup_dict[k] = HookupDossierEntry(k)
