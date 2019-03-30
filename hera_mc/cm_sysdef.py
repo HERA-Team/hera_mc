@@ -177,6 +177,7 @@ def next_connection(options, current):
     port = {'up': 'out', 'down': 'in'}
     this = {'up': 'down', 'down': 'up'}
     next = {'up': 'up', 'down': 'down'}
+    print("CMSD180:\n\t{}\n\t{}".format(current, options))
     for opc in options:
         this_part = getattr(opc, '{}stream_part'.format(this[current.direction]))
         this_port = getattr(opc, '{}stream_{}put_port'.format(this[current.direction], port[this[current.direction]]))
@@ -186,13 +187,14 @@ def next_connection(options, current):
             continue
         if len(options) == 1:  # Assume the only option is correct
             return opc
-        if this_port.lower() == current.port.lower():
+        if this_port.lower() == current.port.lower():  # matches exactly, so good
             return opc
+        # Need to fix below here with new "better" scheme so need to use part-type etc/etc/etc
         if len(current.port) > 1 and current.port[1].isdigit():
             continue
         all_pols_lo = [x.lower() for x in all_pols[this_hookup_type]]
         p = None
-        if next_port.lower() in ['a', 'b']:  # This or part of the PAPER legacy
+        if next_port.lower() in ['a', 'b']:  # This is part of the PAPER legacy
             p = next_part[-1].lower()
         elif next_port[0].lower() in all_pols_lo:
             p = next_port[0].lower()
