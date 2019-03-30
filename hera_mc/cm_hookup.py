@@ -420,46 +420,46 @@ class Hookup:
             hu.append(pn)
         return hu
 
-    def _recursive_connect(self, rg):
+    def _recursive_connect(self, current):
         """
         Find the next connection up the signal chain.
         """
-        next_conn = self._get_next_connection(rg)
+        next_conn = self._get_next_connection(current)
         if next_conn is not None:
             lll = len(self.upstream) * '  '
-            if rg.direction == 'up':
+            if current.direction == 'up':
                 self.upstream.append(next_conn)
-                rg.part = next_conn.upstream_part
-                rg.rev = next_conn.up_part_rev
-                rg.port = next_conn.upstream_output_port
+                current.part = next_conn.upstream_part
+                current.rev = next_conn.up_part_rev
+                current.port = next_conn.upstream_output_port
             else:
                 self.downstream.append(next_conn)
-                rg.part = next_conn.downstream_part
-                rg.rev = next_conn.down_part_rev
-                rg.port = next_conn.downstream_input_port
-            self._recursive_connect(rg)
+                current.part = next_conn.downstream_part
+                current.rev = next_conn.down_part_rev
+                current.port = next_conn.downstream_input_port
+            self._recursive_connect(current)
 
-    def _get_next_connection(self, rg):
+    def _get_next_connection(self, current):
         """
         Get next connected part going the given direction.
         """
         # Get all of the port options going the right direction
         options = []
-        if rg.direction == 'up':      # Going upstream
+        if current.direction == 'up':      # Going upstream
             for conn in self.session.query(PC.Connections).filter(
-                    (func.upper(PC.Connections.downstream_part) == rg.part.upper())
-                    & (func.upper(PC.Connections.down_part_rev) == rg.rev.upper())):
+                    (func.upper(PC.Connections.downstream_part) == current.part.upper())
+                    & (func.upper(PC.Connections.down_part_rev) == current.rev.upper())):
                 conn.gps2Time()
                 if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
-        elif rg.direction == 'down':  # Going downstream
+        elif current.direction == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
-                    (func.upper(PC.Connections.upstream_part) == rg.part.upper())
-                    & (func.upper(PC.Connections.up_part_rev) == rg.rev.upper())):
+                    (func.upper(PC.Connections.upstream_part) == current.part.upper())
+                    & (func.upper(PC.Connections.up_part_rev) == current.rev.upper())):
                 conn.gps2Time()
                 if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     options.append(copy.copy(conn))
-        return cm_sysdef.next_connection(options, rg)
+        return cm_sysdef.next_connection(options, current)
 
     def write_hookup_cache_to_file(self, log_msg):
         with open(self.hookup_cache_file, 'wb') as f:

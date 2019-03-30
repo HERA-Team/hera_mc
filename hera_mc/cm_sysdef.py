@@ -121,7 +121,7 @@ def setup(part, port_query='all', hookup_type=None):
                   otherwise it will look through in order
     """
     if hookup_type is None:
-        raise ValueError("Need hookup_type.")
+        hookup_type = find_hookup_type(part.part_type, None)
     global this_hookup_type
     this_hookup_type = hookup_type
 
@@ -141,9 +141,10 @@ def setup(part, port_query='all', hookup_type=None):
         else:
             return None
 
-    # Sort out all of the ports into 'pol_catalog' and add up all of the "polarized" ports
+    # Sort out all of the ports into 'pol_catalog'
     # It also makes a version of consolidated port_def ports
     # This is currently over-elaborate, but trying to improve then will slim back down
+    # Could aggregate ports in port_def, but may want to get rid of the starting 'e', 'n' requirement
     pol_catalog = {}
     consolidated_ports = {'up': [], 'down': []}
     for dir in ['up', 'down']:
@@ -151,7 +152,6 @@ def setup(part, port_query='all', hookup_type=None):
         for _c in port_def[this_hookup_type][part.part_type][dir]:
             consolidated_ports[dir] += _c
     connected_ports = {'up': part.connections.input_ports, 'down': part.connections.output_ports}
-    tot_polarized_ports = 0
     for dir in ['up', 'down']:
         for cp in connected_ports[dir]:
             cp = cp.lower()
@@ -160,22 +160,16 @@ def setup(part, port_query='all', hookup_type=None):
             cp_poldes = 'o' if cp[0] not in all_pols_lo else cp[0]
             if cp_poldes in all_pols_lo:
                 pol_catalog[dir]['a'].append(cp)  # p = e + n
-                tot_polarized_ports += 1
             pol_catalog[dir][cp_poldes].append(cp)
-    print("CHSD165:  ", pol_catalog)
-
-    if tot_polarized_ports == 0:  # The part handles both polarizations
-        if port_query == 'all':
-            return all_pols_lo
-        else:
-            return port_query
-
     up = pol_catalog['up'][port_query[0]]
     dn = pol_catalog['down'][port_query[0]]
+
+    if (len(up) + len(dn)) == 0:  # The part handles both polarizations
+        return all_pols_lo if port_query == 'all' else port_query
     return up if len(up) > len(dn) else dn
 
 
-def next_connection(options, rg):
+def next_connection(options, current):
     """
     This checks the options and returns the next part.
     """
@@ -184,17 +178,17 @@ def next_connection(options, rg):
     this = {'up': 'down', 'down': 'up'}
     next = {'up': 'up', 'down': 'down'}
     for opc in options:
-        this_part = getattr(opc, '{}stream_part'.format(this[rg.direction]))
-        this_port = getattr(opc, '{}stream_{}put_port'.format(this[rg.direction], port[this[rg.direction]]))
-        next_part = getattr(opc, '{}stream_part'.format(next[rg.direction]))
-        next_port = getattr(opc, '{}stream_{}put_port'.format(next[rg.direction], port[next[rg.direction]]))
+        this_part = getattr(opc, '{}stream_part'.format(this[current.direction]))
+        this_port = getattr(opc, '{}stream_{}put_port'.format(this[current.direction], port[this[current.direction]]))
+        next_part = getattr(opc, '{}stream_part'.format(next[current.direction]))
+        next_port = getattr(opc, '{}stream_{}put_port'.format(next[current.direction], port[next[current.direction]]))
         if next_port[0] == '@':
             continue
         if len(options) == 1:  # Assume the only option is correct
             return opc
-        if this_port.lower() == rg.port.lower():
+        if this_port.lower() == current.port.lower():
             return opc
-        if len(rg.port) > 1 and rg.port[1].isdigit():
+        if len(current.port) > 1 and current.port[1].isdigit():
             continue
         all_pols_lo = [x.lower() for x in all_pols[this_hookup_type]]
         p = None
@@ -202,5 +196,5 @@ def next_connection(options, rg):
             p = next_part[-1].lower()
         elif next_port[0].lower() in all_pols_lo:
             p = next_port[0].lower()
-        if p == rg.pol:
+        if p == current.pol:
             return opc
