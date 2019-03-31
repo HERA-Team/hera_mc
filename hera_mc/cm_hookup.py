@@ -362,9 +362,11 @@ class Hookup:
         This gets called by the get_hookup wrapper if the database needs to be read (for instance, to generate
         a cache file, or search for parts different than those keyed on in the cache file.)
         """
+        # Reset at_date
+        self.at_date = at_date
         # Get all the appropriate parts
         parts = self.handling.get_part_dossier(hpn=hpn_list, rev=rev,
-                                               at_date=at_date,
+                                               at_date=self.at_date,
                                                exact_match=exact_match,
                                                full_version=True)
         hookup_dict = {}
@@ -445,21 +447,33 @@ class Hookup:
         """
         # Get all of the port options going the right direction
         options = []
+        next = []
+        tpk = cm_utils.make_part_key(current.part, current.rev)
+        this = self.handling.get_part_dossier(hpn=current.part, rev=current.rev, at_date=self.at_date,
+                                              exact_match=True, full_version=False)[tpk]
         if current.direction == 'up':      # Going upstream
             for conn in self.session.query(PC.Connections).filter(
                     (func.upper(PC.Connections.downstream_part) == current.part.upper())
                     & (func.upper(PC.Connections.down_part_rev) == current.rev.upper())):
                 conn.gps2Time()
-                if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
-                    options.append(copy.copy(conn))
+                if not cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
+                    continue
+                options.append(copy.copy(conn))
+                npk = cm_utils.make_part_key(conn.upstream_part, conn.up_part_rev)
+                next.append(self.handling.get_part_dossier(hpn=conn.upstream_part, rev=conn.up_part_rev, at_date=self.at_date,
+                                                           exact_match=True, full_version=False)[npk])
         elif current.direction == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
                     (func.upper(PC.Connections.upstream_part) == current.part.upper())
                     & (func.upper(PC.Connections.up_part_rev) == current.rev.upper())):
                 conn.gps2Time()
-                if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
-                    options.append(copy.copy(conn))
-        return cm_sysdef.next_connection(options, current)
+                if not cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
+                    continue
+                options.append(copy.copy(conn))
+                npk = cm_utils.make_part_key(conn.downstream_part, conn.down_part_rev)
+                next.append(self.handling.get_part_dossier(hpn=conn.downstream_part, rev=conn.down_part_rev, at_date=self.at_date,
+                                                           exact_match=True, full_version=False)[npk])
+        return cm_sysdef.next_connection(options, current, this, next)
 
     def write_hookup_cache_to_file(self, log_msg):
         with open(self.hookup_cache_file, 'wb') as f:

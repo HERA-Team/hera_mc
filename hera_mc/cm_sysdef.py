@@ -14,6 +14,7 @@ The two-part "meta" assumption is that:
 
 from __future__ import absolute_import, division, print_function
 import six
+from argparse import Namespace
 
 port_def = {}
 port_def['parts_hera'] = {
@@ -50,6 +51,8 @@ port_def['parts_rfi'] = {
 port_def['parts_test'] = {
     'vapor': {'up': [[None]], 'down': [[None]], 'position': 0}
 }
+pind = {}
+this_hookup_type = None
 
 
 def sys_init(husys, v0):
@@ -77,8 +80,6 @@ all_pols['parts_rfi'] = ['e', 'n']
 redirect_part_types['parts_hera'] = ['node']
 single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
 
-
-this_hookup_type = None
 
 full_connection_path = {}
 for _x in port_def.keys():
@@ -122,8 +123,10 @@ def setup(part, port_query='all', hookup_type=None):
     """
     if hookup_type is None:
         hookup_type = find_hookup_type(part.part_type, None)
-    global this_hookup_type
+    global this_hookup_type, all_pols, pind
     this_hookup_type = hookup_type
+    for i, _p in enumerate([x.lower() for x in all_pols[this_hookup_type]]):
+        pind[_p] = i
 
     all_pols_lo = [x.lower() for x in all_pols[this_hookup_type]]
     port_query = port_query.lower()
@@ -132,19 +135,16 @@ def setup(part, port_query='all', hookup_type=None):
         raise ValueError("Invalid port query {}.  Should be in {}".format(port_query, port_check_list))
 
     # These are for single pol parts that have their polarization as the last letter of the part name
-    # This is only for parts_paper parts at this time.
-    # Not a good idea going forward.
+    # This is only for parts_paper parts at this time.  Not a good idea going forward.
     if part.part_type in single_pol_labeled_parts[this_hookup_type]:
         en_part_pol = part.hpn[-1].lower()
         if port_query == 'all' or en_part_pol == port_query:
-            return [en_part_pol], 'parts_paper'
+            return [en_part_pol]
         else:
             return None
 
     # Sort out all of the ports into 'pol_catalog'
     # It also makes a version of consolidated port_def ports
-    # This is currently over-elaborate, but trying to improve then will slim back down
-    # Could aggregate ports in port_def, but may want to get rid of the starting 'e', 'n' requirement
     pol_catalog = {}
     consolidated_ports = {'up': [], 'down': []}
     for dir in ['up', 'down']:
@@ -169,34 +169,51 @@ def setup(part, port_query='all', hookup_type=None):
     return up if len(up) > len(dn) else dn
 
 
-def next_connection(options, current):
+# Various dictionaries needed for next_connection below
+_D = Namespace(port={'up': 'out', 'down': 'in'},
+               this={'up': 'down', 'down': 'up'},
+               next={'up': 'up', 'down': 'down'},
+               arrow={'up': -1, 'down': 1})
+
+
+def next_connection(connection_options, current, A, B):
     """
-    This checks the options and returns the next part.
+    This checks the options and returns the next connection.
     """
-    global this_hookup_type
-    port = {'up': 'out', 'down': 'in'}
-    this = {'up': 'down', 'down': 'up'}
-    next = {'up': 'up', 'down': 'down'}
-    print("CMSD180:\n\t{}\n\t{}".format(current, options))
-    for opc in options:
-        this_part = getattr(opc, '{}stream_part'.format(this[current.direction]))
-        this_port = getattr(opc, '{}stream_{}put_port'.format(this[current.direction], port[this[current.direction]]))
-        next_part = getattr(opc, '{}stream_part'.format(next[current.direction]))
-        next_port = getattr(opc, '{}stream_{}put_port'.format(next[current.direction], port[next[current.direction]]))
+    global this_hookup_type, _D, pind
+
+    # This rather messily sets up the parameters to check for the next part/port
+    # Also checks for "None and one" to return.
+    this_part_type_info = port_def[this_hookup_type][A.part_type]
+    next_part_position = this_part_type_info['position'] + _D.arrow[current.direction]
+    if next_part_position < 0 or next_part_position > len(full_connection_path[this_hookup_type]) - 1:
+        return None
+    next_part_type = full_connection_path[this_hookup_type][next_part_position]
+    next_part_type_info = port_def[this_hookup_type][next_part_type]
+    if len(next_part_type_info[_D.this[current.direction]]) == 2:
+        allowed_next_ports = next_part_type_info[_D.this[current.direction]][pind[current.pol]]
+    options = []
+    # prefix is defined to handle the single_pol_labeled_parts
+    prefix_this = A.hpn[-1].lower() if A.part_type in single_pol_labeled_parts[this_hookup_type] else ''
+    for i, opc in enumerate(connection_options):
+        if B[i].part_type != next_part_type:
+            continue
+        prefix_next = B[i].hpn[-1].lower() if next_part_type in single_pol_labeled_parts[this_hookup_type] else ''
+        if len(connection_options) == 1 or len(next_part_type_info[_D.this[current.direction]]) == 1:
+            return opc
+        this_port = prefix_this + getattr(opc, '{}stream_{}put_port'.format(_D.this[current.direction], _D.port[_D.this[current.direction]]))
+        next_port = prefix_next + getattr(opc, '{}stream_{}put_port'.format(_D.next[current.direction], _D.port[_D.next[current.direction]]))
         if next_port[0] == '@':
             continue
-        if len(options) == 1:  # Assume the only option is correct
-            return opc
-        if this_port.lower() == current.port.lower():  # matches exactly, so good
-            return opc
-        # Need to fix below here with new "better" scheme so need to use part-type etc/etc/etc
-        if len(current.port) > 1 and current.port[1].isdigit():
-            continue
-        all_pols_lo = [x.lower() for x in all_pols[this_hookup_type]]
-        p = None
-        if next_port.lower() in ['a', 'b']:  # This is part of the PAPER legacy
-            p = next_part[-1].lower()
-        elif next_port[0].lower() in all_pols_lo:
-            p = next_port[0].lower()
-        if p == current.pol:
-            return opc
+        opt = Namespace(this=this_port, next=next_port, option=opc)
+        options.append(opt)
+
+    # This runs through the Namespace to find the actual part/port
+    #    First pass is to check for the specific port-sets that pass
+    for opt in options:
+        if current.port == opt.this and opt.next in allowed_next_ports:
+            return opt.option
+    #    Second pass checks for matching the leading polarization character.
+    for opt in options:
+        if current.pol[0] == opt.this[0] and opt.next in allowed_next_ports:
+            return opt.option
