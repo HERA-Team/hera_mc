@@ -92,10 +92,19 @@ for _x in port_def.keys():
         full_connection_path[_x].append(ordered_path[k])
 
 
-def handle_redirect_part_types(part):
-    print("{} parts requires that you determine connections externally.".format(part.part_type))
-    print("\t\tFor this part type:  'parts.py conn -p {}'".format(part.hpn))
-    print("\t\tThen re-run hookup with a csv list of appropriate parts.")
+def handle_redirect_part_types(part, port_query):
+    from hera_mc import cm_handling, cm_utils
+    rptc = cm_handling.Handling()
+    conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port=port_query, at_date='now', exact_match=True)
+    if part.part_type == 'node':
+        for _k in conn.keys():
+            if _k.startswith('N'):
+                break
+        hpn_list = []
+        for _x in conn[_k].keys_up:
+            if _x.startswith('SNP'):
+                hpn_list.append(cm_utils.split_connection_key(_x)[0])
+    return hpn_list
 
 
 def find_hookup_type(part_type, hookup_type):
@@ -182,7 +191,7 @@ def next_connection(connection_options, current, A, B):
     """
     global this_hookup_type, _D, pind
 
-    # This rather messily sets up the parameters to check for the next part/port
+    # This sets up the parameters to check for the next part/port
     # Also checks for "None and one" to return.
     this_part_type_info = port_def[this_hookup_type][A.part_type]
     next_part_position = this_part_type_info['position'] + _D.arrow[current.direction]
@@ -205,8 +214,7 @@ def next_connection(connection_options, current, A, B):
         next_port = prefix_next + getattr(opc, '{}stream_{}put_port'.format(_D.next[current.direction], _D.port[_D.next[current.direction]]))
         if next_port[0] == '@':
             continue
-        opt = Namespace(this=this_port, next=next_port, option=opc)
-        options.append(opt)
+        options.append(Namespace(this=this_port, next=next_port, option=opc))
 
     # This runs through the Namespace to find the actual part/port
     #    First pass is to check for the specific port-sets that pass
