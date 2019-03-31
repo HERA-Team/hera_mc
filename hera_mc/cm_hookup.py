@@ -372,6 +372,8 @@ class Hookup:
         hookup_dict = {}
         for k, part in six.iteritems(parts):
             hookup_type = cm_sysdef.find_hookup_type(part_type=part.part_type, hookup_type=hookup_type)
+            if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
+                continue
             if part.part_type in cm_sysdef.redirect_part_types[hookup_type]:
                 redirect_parts = cm_sysdef.handle_redirect_part_types(part, port_query)
                 redirect_hookup_dict = self.get_hookup_from_db(hpn_list=redirect_parts, rev=rev, port_query=port_query,
@@ -379,8 +381,7 @@ class Hookup:
                                                                hookup_type=hookup_type)
                 for rhdk, vhd in six.iteritems(redirect_hookup_dict):
                     hookup_dict[rhdk] = vhd
-                continue
-            if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
+                redirect_hookup_dict = None
                 continue
             port_pol_designators = cm_sysdef.setup(part=part, port_query=port_query, hookup_type=hookup_type)
             if port_pol_designators is None:

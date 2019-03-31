@@ -94,19 +94,22 @@ for _x in port_def.keys():
 
 def handle_redirect_part_types(part, port_query):
     """
-    This handles the "special cases by feeding a new part list back to hookup."
+    This handles the "special cases" by feeding a new part list back to hookup.
     """
-    from hera_mc import cm_handling, cm_utils
-    rptc = cm_handling.Handling()
-    conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port=port_query, at_date='now', exact_match=True)
     if part.part_type.lower() == 'node':
+        from hera_mc import cm_handling, cm_utils
+        rptc = cm_handling.Handling()
+        conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port=port_query, at_date='now', exact_match=True)
+        redirect_list = []
         for _k in conn.keys():
-            if _k.upper().startswith('N'):
-                break
+            _pk = cm_utils.split_part_key(_k)[0]
+            if _pk.upper() == part.hpn.upper():
+                redirect_list.append(_k)
         hpn_list = []
-        for _x in conn[_k].keys_up:
-            if _x.upper().startswith('SNP'):
-                hpn_list.append(cm_utils.split_connection_key(_x)[0])
+        for _r in redirect_list:
+            for _x in conn[_k].keys_up:
+                if _x.upper().startswith('SNP'):
+                    hpn_list.append(cm_utils.split_connection_key(_x)[0])
     return hpn_list
 
 
