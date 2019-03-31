@@ -371,9 +371,9 @@ class Hookup:
                                                full_version=True)
         hookup_dict = {}
         for k, part in six.iteritems(parts):
-            hookup_type = cm_sysdef.find_hookup_type(part_type=part.part_type, hookup_type=hookup_type)
             if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
                 continue
+            hookup_type = cm_sysdef.find_hookup_type(part_type=part.part_type, hookup_type=hookup_type)
             if part.part_type in cm_sysdef.redirect_part_types[hookup_type]:
                 redirect_parts = cm_sysdef.handle_redirect_part_types(part, port_query)
                 redirect_hookup_dict = self.get_hookup_from_db(hpn_list=redirect_parts, rev=rev, port_query=port_query,
@@ -417,9 +417,8 @@ class Hookup:
         starting = Namespace(direction='up', part=part, rev=rev, port=port, pol=pol)
         current = copy.copy(starting)
         self._recursive_connect(current)
-        current = copy.copy(starting)
-        current.direction = 'down'
-        self._recursive_connect(current)
+        starting.direction = 'down'
+        self._recursive_connect(starting)
 
         hu = []
         for pn in reversed(self.upstream):
@@ -434,7 +433,6 @@ class Hookup:
         """
         next_conn = self._get_next_connection(current)
         if next_conn is not None:
-            lll = len(self.upstream) * '  '
             if current.direction == 'up':
                 self.upstream.append(next_conn)
                 current.part = next_conn.upstream_part
@@ -452,11 +450,11 @@ class Hookup:
         Get next connected part going the given direction.
         """
         # Get all of the port options going the right direction
-        options = []
-        next = []
         tpk = cm_utils.make_part_key(current.part, current.rev)
         this = self.handling.get_part_dossier(hpn=current.part, rev=current.rev, at_date=self.at_date,
                                               exact_match=True, full_version=False)[tpk]
+        options = []
+        next = []
         if current.direction == 'up':      # Going upstream
             for conn in self.session.query(PC.Connections).filter(
                     (func.upper(PC.Connections.downstream_part) == current.part.upper())
