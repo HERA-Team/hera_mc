@@ -16,7 +16,7 @@ from argparse import Namespace
 from . import cm_utils, part_connect
 
 
-def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
+def get_revisions_of_type(hpn, rev_type, at_date=None, session=None, hookup_type=None):
     """
     Returns namespace of revisions
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
@@ -30,6 +30,7 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     rev_type:  string for revision type
     at_date:  astropy.Time to check for
     session:  db session, or hookup_dict if FULL
+    hookup_type:  hookup_type to use
     """
     if isinstance(hpn, six.string_types) and hpn.lower() == 'help':
         print("""
@@ -55,7 +56,7 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
         return get_all_revisions(hpn, session)
 
     if rq.startswith('FULL'):
-        return get_full_revision(hpn, session)
+        return get_full_revision(hpn, session, hookup_type=hookup_type)
 
     return get_specific_revision(hpn, rev_type, session)
 
@@ -164,7 +165,7 @@ def get_active_revision(hpn, at_date, session=None):
     return return_active
 
 
-def get_full_revision(hpn, hookup_dict=None):
+def get_full_revision(hpn, hookup_dict=None, hookup_type=None):
     """
     Returns Namespace list of fully connected parts
     If either pol is fully connected, it is returned.
@@ -178,7 +179,7 @@ def get_full_revision(hpn, hookup_dict=None):
     from . import cm_hookup
     if not isinstance(hookup_dict, dict):
         H = cm_hookup.Hookup()
-        hookup_dict = H.get_hookup(H.hookup_list_to_cache)
+        hookup_dict = H.get_hookup(H.hookup_list_to_cache, hookup_type=hookup_type)
     return_full_keys = []
     for k, h in six.iteritems(hookup_dict):
         hpn_hu, rev_hu = cm_utils.split_part_key(k)

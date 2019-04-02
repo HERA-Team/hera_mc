@@ -96,6 +96,7 @@ def handle_redirect_part_types(part, port_query):
     """
     This handles the "special cases" by feeding a new part list back to hookup.
     """
+    hpn_list = []
     if part.part_type.lower() == 'node':
         from hera_mc import cm_handling, cm_utils
         rptc = cm_handling.Handling()
@@ -105,7 +106,6 @@ def handle_redirect_part_types(part, port_query):
             _pk = cm_utils.split_part_key(_k)[0]
             if _pk.upper() == part.hpn.upper():
                 redirect_list.append(_k)
-        hpn_list = []
         for _r in redirect_list:
             for _x in conn[_k].keys_up:
                 if _x.upper().startswith('SNP'):
@@ -199,14 +199,14 @@ def next_connection(connection_options, current, A, B):
 
     # This sets up the parameters to check for the next part/port
     # Also checks for "None and one" to return.
-    this_part_type_info = port_def[this_hookup_type][A.part_type]
-    next_part_position = this_part_type_info['position'] + _D.arrow[current.direction]
+    this_part_info = port_def[this_hookup_type][A.part_type]
+    next_part_position = this_part_info['position'] + _D.arrow[current.direction]
     if next_part_position < 0 or next_part_position > len(full_connection_path[this_hookup_type]) - 1:
         return None
     next_part_type = full_connection_path[this_hookup_type][next_part_position]
-    next_part_type_info = port_def[this_hookup_type][next_part_type]
-    if len(next_part_type_info[_D.this[current.direction]]) == 2:
-        allowed_next_ports = next_part_type_info[_D.this[current.direction]][pind[current.pol]]
+    next_part_info = port_def[this_hookup_type][next_part_type]
+    if len(next_part_info[_D.this[current.direction]]) == 2:
+        allowed_next_ports = next_part_info[_D.this[current.direction]][pind[current.pol]]
     options = []
     # prefix is defined to handle the single_pol_labeled_parts
     prefix_this = A.hpn[-1].lower() if A.part_type in single_pol_labeled_parts[this_hookup_type] else ''
@@ -214,7 +214,7 @@ def next_connection(connection_options, current, A, B):
         if B[i].part_type != next_part_type:
             continue
         prefix_next = B[i].hpn[-1].lower() if next_part_type in single_pol_labeled_parts[this_hookup_type] else ''
-        if len(connection_options) == 1 or len(next_part_type_info[_D.this[current.direction]]) == 1:
+        if len(connection_options) == 1 or len(next_part_info[_D.this[current.direction]]) == 1:
             return opc
         this_port = prefix_this + getattr(opc, '{}stream_{}put_port'.format(_D.this[current.direction], _D.port[_D.this[current.direction]]))
         next_port = prefix_next + getattr(opc, '{}stream_{}put_port'.format(_D.next[current.direction], _D.port[_D.next[current.direction]]))

@@ -43,7 +43,7 @@ class TestSys(TestHERAMC):
         self.sys_h = sys_handling.Handling(self.test_session)
 
     def test_ever_fully_connected(self):
-        now_list = self.sys_h.get_all_fully_connected_at_date(at_date='now')
+        now_list = self.sys_h.get_all_fully_connected_at_date(at_date='now', hookup_type='parts_paper')
         self.assertEqual(len(now_list), 1)
 
     def test_publish_summary(self):
@@ -102,27 +102,26 @@ class TestSys(TestHERAMC):
         self.assertEqual(xret['hu'], 'shoe:testing<screw')
 
     def test_sysdef(self):
-        part = Namespace(hpn='rusty_scissors')
+        part = Namespace(hpn='rusty_scissors', rev='A', part_type='node')
         part.connections = Namespace(input_ports=['e', '@loc', 'n'], output_ports=[])
+        hl = cm_sysdef.handle_redirect_part_types(part, 'e')
+        self.assertTrue(len(hl) == 0)
         with captured_output() as (out, err):
-            cm_sysdef.handle_redirect_part_types(part)
-        self.assertTrue('rusty_scissors' in out.getvalue().strip())
-        with captured_output() as (out, err):
-            xxx = cm_sysdef.get_port_pols_to_do(part, port_query='nail')
+            xxx = cm_sysdef.setup(part, port_query='e')
         self.assertTrue('Invalid port query' in out.getvalue().strip())
         part.hpn = 'RI123ZE'
-        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='e')
+        xxx = cm_sysdef.setup(part, port_query='e')
         self.assertEqual(len(xxx), 1)
         part.hpn = 'RI123Z'
-        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='e')
+        xxx = cm_sysdef.setup(part, port_query='e')
         self.assertEqual(xxx, None)
         part.hpn = 'doorknob'
-        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='all')
+        xxx = cm_sysdef.setup(part, port_query='all')
         self.assertTrue('e' in xxx)
-        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='e')
+        xxx = cm_sysdef.setup(part, port_query='e')
         self.assertTrue('e' in xxx)
         part.connections.input_ports = ['@loc1', 'top', 'bottom']
-        xxx = cm_sysdef.get_port_pols_to_do(part, port_query='e')
+        xxx = cm_sysdef.setup(part, port_query='e')
         self.assertTrue('e' in xxx)
         rg = Namespace(direction='up', part='apart', rev='A', port='e1', pol='e')
         op = [Namespace(upstream_part='apart', upstream_output_port='eb', downstream_part='bpart', downstream_input_port='e1')]
@@ -146,7 +145,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(x, None)
 
     def test_correlator_info(self):
-        corr_dict = self.sys_h.get_cminfo_correlator()
+        corr_dict = self.sys_h.get_cminfo_correlator(hookup_type='parts_paper')
         ant_names = corr_dict['antenna_names']
         self.assertEqual(len(ant_names), 1)
 
@@ -208,14 +207,14 @@ class TestSys(TestHERAMC):
         at_date = cm_utils.get_astropytime('2017-07-03')
         hookup = cm_hookup.Hookup(at_date, self.test_session)
         stn = 'HH23'
-        hud = hookup.get_hookup([stn], exact_match=True)
+        hud = hookup.get_hookup([stn], exact_match=True, hookup_type='parts_paper')
         pams = hud[list(hud.keys())[0]].get_part_in_hookup_from_type('post-amp', include_ports=True, include_revs=True)
         self.assertEqual(len(pams), 2)
         self.assertEqual(pams['e'], 'ea>PAM75123:B<eb')  # the actual pam number (the thing written on the case)
 
     def test_get_pam_info(self):
         sys_h = sys_handling.Handling(self.test_session)
-        pams = sys_h.get_part_at_station_from_type('HH23', '2017-07-03', 'post-amp', include_ports=False)
+        pams = sys_h.get_part_at_station_from_type('HH23', '2017-07-03', 'post-amp', include_ports=False, hookup_type='parts_paper')
         self.assertEqual(len(pams), 1)
         self.assertEqual(pams['HH23:A']['e'], 'PAM75123')  # the actual pam number (the thing written on the case)
 

@@ -109,7 +109,7 @@ class Handling:
             else:
                 return str(fnd[0].ant_list)
 
-    def get_all_fully_connected_at_date(self, at_date, station_types_to_check='default'):
+    def get_all_fully_connected_at_date(self, at_date, station_types_to_check='default', hookup_type=None):
         """
         Returns a list of class StationInfo of all of the locations fully connected at_date
         have station_types in station_types_to_check.
@@ -142,13 +142,13 @@ class Handling:
         station_conn = []
         for st in station_types_to_check:
             for stn in self.geo.station_types[st]['Stations']:
-                station_info = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date)
+                station_info = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date, hookup_type=hookup_type)
                 if station_info is not None:
                     station_conn.append(station_info)
         self.H = None  # Reset back in case gets called again outside of this method.
         return station_conn
 
-    def get_fully_connected_location_at_date(self, stn, at_date):
+    def get_fully_connected_location_at_date(self, stn, at_date, hookup_type=None):
         """
         Returns StationInfo class
 
@@ -171,14 +171,15 @@ class Handling:
         -----------
         stn:  is the station information to check
         at_date:  date to check for connections, must be an astropy.Time
+        hookup_type:  type of hookup to use
         """
         if self.H is not None:
             H = self.H
         else:
             H = cm_hookup.Hookup(at_date, self.session)
-        hud = H.get_hookup(hpn_list=[stn], exact_match=True)
+        hud = H.get_hookup(hpn_list=[stn], exact_match=True, hookup_type=hookup_type)
         station_info = None
-        fully_connected = cm_revisions.get_full_revision(stn, hud)
+        fully_connected = cm_revisions.get_full_revision(stn, hud, hookup_type=hookup_type)
         fully_connected_keys = set()
         fctime = {'start': 0.0, 'end': 1.0E10}
         for i, fc in enumerate(fully_connected):
@@ -220,7 +221,7 @@ class Handling:
                 station_info.stop_date = fctime['end']
         return station_info
 
-    def get_cminfo_correlator(self):
+    def get_cminfo_correlator(self, hookup_type=None):
         """
         Returns a dict with info needed by the correlator.
 
@@ -240,6 +241,10 @@ class Handling:
                 (list of 3-element vectors of floats)
             'cm_version': CM git hash (string)
 
+        Parameters:
+        ------------
+        hookup_type:  type of hookup to use
+
         Note: This method requires pyuvdata
         """
         from pyuvdata import utils as uvutils
@@ -249,7 +254,7 @@ class Handling:
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
         stations_conn = self.get_all_fully_connected_at_date(
-            at_date='now', station_types_to_check=cm_utils.default_station_prefixes)
+            at_date='now', station_types_to_check=cm_utils.default_station_prefixes, hookup_type=hookup_type)
         stn_arrays = StationInfo('init_arrays')
         for stn in stations_conn:
             stn_arrays.update_arrays(stn)
@@ -279,11 +284,16 @@ class Handling:
                 'cofa_lon': cofa_loc.lon,
                 'cofa_alt': cofa_loc.elevation}
 
-    def get_part_at_station_from_type(self, stn, at_date, part_type='post-amp', include_revs=False, include_ports=False):
+    def get_part_at_station_from_type(self, stn, at_date, part_type='post-amp', include_revs=False,
+                                      include_ports=False, hookup_type=None):
         """
         input:
             stn: antenna number of format HHi where i is antenna number (string or list of strings)
             at_date: date at which connection is true, format 'YYYY-M-D' or 'now'
+            part_type:  part type to look for
+            include_revs:  Flag whether to include all revisions
+            include_ports:  Flag whether to include ports
+            hookup_type:  type of hookup to use
         returns:
             dict of {pol:(location, #)}
         """
@@ -291,7 +301,7 @@ class Handling:
         H = cm_hookup.Hookup(at_date, self.session)
         if isinstance(stn, six.string_types):
             stn = [stn]
-        hud = H.get_hookup(hpn_list=stn, exact_match=True)
+        hud = H.get_hookup(hpn_list=stn, exact_match=True, hookup_type=hookup_type)
         for k, hu in six.iteritems(hud):
             parts[k] = hu.get_part_in_hookup_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
@@ -307,7 +317,8 @@ class Handling:
         H = cm_hookup.Hookup('now', self.session)
         hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
                                    exact_match=exact_match, levels=False,
-                                   force_new_cache=force_new_hookup_dict, force_db_at_date=None)
+                                   force_new_cache=force_new_hookup_dict, force_db_at_date=None,
+                                   hookup_type=None)
         with open(output_file, 'w') as f:
             H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=False, ports=True,
                           revs=True, state='full', file=f, output_format='html')

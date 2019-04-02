@@ -129,7 +129,7 @@ class TestGeo(TestHERAMC):
         self.assertTrue('herahexe' in st)
 
     def test_get_active_stations(self):
-        active = self.h.get_active_stations('now', ['HH'])
+        active = self.h.get_active_stations('now', ['HH'], hookup_type='parts_paper')
         self.assertEqual(active[0].station_name, 'HH0')
 
     def test_is_in_database(self):
