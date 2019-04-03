@@ -526,6 +526,46 @@ Records the config passed to the correlator `update\_config` command.
 \end{tabular}
 \end{center}
 
+\subsubsection{snap\_status}
+SNAP status information (reported via the correlator redis DB).
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{time} & long & status time in floor(gps seconds)\\ \hline
+\textbf{hostname} & string & SNAP hostname \\ \hline
+serial\_number & string & SNAP serial number \\ \hline
+node & int & node number (derived from config. management tables using SNAP serial number) \\ \hline
+snap\_loc\_num & int & snap location number within the node (derived from config. management tables using SNAP serial number) \\ \hline
+psu\_alert & bool & true if SNAP PSU (aka PMB) controllers have issued an alert, false otherwise. \\ \hline
+pps\_count & long & number of PPS pulses received since last programming cycle \\\hline
+fpga\_temp & float & reported temperature of FPGA  in degrees C \\\hline
+uptime\_cycles & long & multiples of $500\cdot 10^6$ ADC clocks since last programming cycle \\\hline
+last\_programmed\_time & long & last time this FPGA was programmed in floor(gps seconds)\\\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{antenna\_status}
+Antenna status information from the SNAP (reported via the correlator redis DB).
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{time} & long & status time in floor(gps seconds)\\ \hline
+\textbf{antenna\_number} & int & antenna number \\ \hline
+snap\_hostname & string & SNAP hostname \\ \hline
+snap\_channel\_number & int & SNAP ADC channel number (0-7) to which this antenna is connected. \\ \hline
+adc\_mean & float & mean ADC value, in ADC units (raw ADC integer values between -128 and +127). Typically $\sim$ -0.5. \\ \hline
+adc\_rms & float & RMS ADC value, in ADC units (raw ADC integer values between -128 and +127).  Should be $\sim$ 10-20. \\ \hline
+adc\_power & float & mean ADC power, in ADC units squared (raw ADC integer values between -128 and +127, squared). Since mean should be close to zero, this should just be $\text{adc\_rms}^2$. \\ \hline
+pam\_atten & int & PAM attenuation setting for this antenna, in dB \\ \hline
+pam\_power & int & PAM power sensor reading for this antenna, in dBm \\ \hline
+psu\_alert & bool & true if SNAP PSU (aka PMB) controllers have issued an alert, false otherwise. \\ \hline
+eq\_coeffs & string & digital EQ coefficients for this antenna, used for keeping the bit occupancy in the
+            correct range. list of floats (one per freq. channel) represented as a string. Note this these are
+            not divided out anywhere in the DSP chain (!). \\\hline
+\end{tabular}
+\end{center}
 
 \subsubsection{node\_sensor}
 Node temperature and humidity sensor readings

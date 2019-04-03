@@ -508,19 +508,22 @@ class AntennaStatus(MCDeclarativeBase):
             The SNAP ADC channel number (0-7) to which this antenna is connected
         adc_mean: float
             Mean ADC value, in ADC units, meaning raw ADC values interpreted as
-            signed integers between -128 and +127.
+            signed integers between -128 and +127. Typically ~ -0.5.
         adc_rms: float
             RMS ADC value, in ADC units, meaning raw ADC values interpreted as
-            signed integers between -128 and +127.
+            signed integers between -128 and +127.  Should be ~ 10-20.
         adc_power: float
             Mean ADC power, in ADC units squared, meaning raw ADC values
             interpreted as signed integers between -128 and +127 and then squared.
+            Since mean should be close to zero, this should just be adc_rms^2.
         pam_atten: integer
             PAM attenuation setting for this antenna, in dB
-        pam_power: astropy time object
+        pam_power: float
             PAM power sensor reading for this antenna, in dBm
         eq_coeffs: list(float)
-            Digital EQ coefficients for this antenna, list of floats
+            Digital EQ coefficients, used for keeping the bit occupancy in the
+            correct range, for this antenna, list of floats. Note this these are
+            not divided out anywhere in the DSP chain (!).
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
