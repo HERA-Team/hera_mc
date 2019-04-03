@@ -9,6 +9,7 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 import os
+import copy
 import time
 import datetime
 import hashlib
@@ -32,7 +33,8 @@ corr_command_example_dict = {
 corr_state_dict_nonetime = {'taking_data': {'state': False, 'timestamp': None}}
 
 config_file = os.path.join(DATA_PATH, 'test_data', 'hera_feng_config_example.yaml')
-config = yaml.load(config_file)
+with open(config_file, 'r') as stream:
+    config = yaml.load(stream)
 
 corr_config_example_dict = {'time': Time(1512770942, format='unix'),
                             'hash': 'testhash', 'config': config}
@@ -1053,6 +1055,7 @@ class TestSNAPConfigVersion(TestHERAMC):
 class TestCorrelatorSNAPVersions(TestHERAMC):
 
     def test_add_corr_snap_versions_from_corrcm(self):
+        # use testing to prevent call to hera_librarian to save new config file
         corr_snap_version_obj_list = self.test_session.add_corr_snap_versions_from_corrcm(
             corr_snap_version_dict=corr_snap_version_example_dict, testing=True)
 
@@ -1121,6 +1124,50 @@ class TestCorrelatorSNAPVersions(TestHERAMC):
         self.assertEqual(len(result_most_recent), 1)
         result_most_recent = result_most_recent[0]
         self.assertTrue(result_most_recent.isclose(expected))
+
+        # test that a new hera_corr_cm timestamp with the same version doesn't make a new row
+        new_dict = copy.deepcopy(corr_snap_version_example_dict)
+        new_dict['hera_corr_cm']['timestamp'] = (
+            datetime.datetime(2019, 4, 2, 19, 8, 17, 644984))
+
+        corr_snap_version_obj_list = self.test_session.add_corr_snap_versions_from_corrcm(
+            corr_snap_version_dict=new_dict)
+
+        t4 = Time(datetime.datetime(2019, 4, 2, 19, 7, 17), format='datetime')
+        t5 = Time(datetime.datetime(2019, 4, 2, 19, 8, 17), format='datetime')
+
+        expected = corr.CorrelatorSoftwareVersions(time=int(floor(t4.gps)),
+                                                   package='hera_corr_cm',
+                                                   version='0.0.1-11a573c9')
+
+        result = self.test_session.get_correlator_software_versions(
+            starttime=t4 - TimeDelta(3.0, format='sec'),
+            stoptime=t5 + TimeDelta(10.0, format='sec'),
+            package='hera_corr_cm')
+
+        self.assertEqual(len(result), 1)
+        self.assertTrue(result[0].isclose(expected))
+
+        # test that a new hera_corr_cm timestamp with a new version makes a new row
+        new_dict = copy.deepcopy(corr_snap_version_example_dict)
+        new_dict['hera_corr_cm']['timestamp'] = (
+            datetime.datetime(2019, 4, 2, 19, 8, 17, 644984))
+        new_dict['hera_corr_cm']['version'] = '0.0.1-b43b2b72'
+
+        corr_snap_version_obj_list = self.test_session.add_corr_snap_versions_from_corrcm(
+            corr_snap_version_dict=new_dict)
+
+        expected = corr.CorrelatorSoftwareVersions(time=int(floor(t5.gps)),
+                                                   package='hera_corr_cm',
+                                                   version='0.0.1-b43b2b72')
+
+        result = self.test_session.get_correlator_software_versions(
+            starttime=t4 - TimeDelta(3.0, format='sec'),
+            stoptime=t5 + TimeDelta(10.0, format='sec'),
+            package='hera_corr_cm')
+
+        self.assertEqual(len(result), 2)
+        self.assertTrue(result[1].isclose(expected))
 
     @unittest.skipIf(not is_onsite(), 'This test only works on site')
     def test_add_corr_command_state_from_corrcm(self):
@@ -1204,11 +1251,8 @@ class TestSNAPStatus(TestHERAMC):
         self.assertEqual(result, [])
 
     def test_add_snap_status_from_corrcm(self):
-        snap_status_obj_list = self.test_session.add_snap_status_from_corrcm(
-            snap_status_dict=snap_status_example_dict, testing=True)
-
-        for obj in snap_status_obj_list:
-            self.test_session.add(obj)
+        self.test_session.add_snap_status_from_corrcm(
+            snap_status_dict=snap_status_example_dict)
 
         t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format='datetime')
         t_prog = Time(datetime.datetime(2016, 1, 10, 23, 16, 3), format='datetime')
@@ -1483,11 +1527,8 @@ class TestAntennaStatus(TestHERAMC):
         self.assertEqual(len(result_most_recent), 2)
 
     def test_add_antenna_status_from_corrcm_with_nones(self):
-        ant_status_obj_list = self.test_session.add_antenna_status_from_corrcm(
-            ant_status_dict=ant_status_nones_example_dict, testing=True)
-
-        for obj in ant_status_obj_list:
-            self.test_session.add(obj)
+        self.test_session.add_antenna_status_from_corrcm(
+            ant_status_dict=ant_status_nones_example_dict)
 
         t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format='datetime')
         result = self.test_session.get_antenna_status(

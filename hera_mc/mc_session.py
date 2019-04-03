@@ -2426,8 +2426,10 @@ class MCSession(Session):
                     if not dryrun:  # pragma: no cover
                         # This config is new.
                         # save it to the Librarian
-                        self._add_config_file_to_librarian(yaml.load(config_file),
-                                                           config_hash, librarian_filename)
+                        with open(config_file, 'r') as stream:
+                            config = yaml.load(stream)
+                        self._add_config_file_to_librarian(config, config_hash,
+                                                           librarian_filename)
 
                         # add it to the config file table
                         self.add(config_file_obj)
@@ -2508,11 +2510,12 @@ class MCSession(Session):
         Parameters:
         ------------
         time: astropy time object
-            astropy time object based on a timestamp reported by the correlator
+            astropy time object based on the version report timestamp
         package: string
-            name of the correlator software module
+            name of the correlator software module or <package>:<script> for
+                daemonized processes(e.g. 'hera_corr_cm', 'udpSender:hera_node_keep_alive.py')
         version: string
-            version string for this package
+            version string for this package or script
         """
         from .correlator import CorrelatorSoftwareVersions
 
@@ -2580,7 +2583,7 @@ class MCSession(Session):
         version: string
             version string for the hera_corr_f package
         init_args: string
-            arguments passed to the inialization script at runtime
+            arguments passed to the initialization script at runtime
         config_hash: string
             unique hash of the config, foreign key into correlator_config_file table
         """
@@ -2633,11 +2636,12 @@ class MCSession(Session):
                                  starttime=starttime, stoptime=stoptime,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_corr_snap_versions_from_corrcm(self, corr_snap_version_dict=None, testing=False):
-        """Get and add correlator software versions and snap configuration and version information using a HeraCorrCM object.
+    def add_corr_snap_versions_from_corrcm(self, corr_snap_version_dict=None,
+                                           testing=False):
+        """Get and add correlator and snap configuration and version information using a HeraCorrCM object.
 
         This function connects to the correlator and gets the latest data using the
-        `create_corr_snap_versions` function. For testing purposes, it can
+        `_get_corr_versions` function. For testing purposes, it can
         optionally accept an input dict instead of connecting to the correlator.
 
         If the current database is PostgreSQL, this function will use a
@@ -2659,11 +2663,47 @@ class MCSession(Session):
         Optionally returns the list of AntennaStatus objects (if testing is True)
 
         """
-        from .correlator import (create_corr_snap_versions, CorrelatorSoftwareVersions,
+        from .correlator import (_get_corr_versions, CorrelatorSoftwareVersions,
                                  SNAPConfigVersion)
 
-        corr_version_list, snap_version_list, snap_config_dict = \
-            create_corr_snap_versions(corr_snap_version_dict=corr_snap_version_dict)
+        if corr_snap_version_dict is None:
+            corr_snap_version_dict = _get_corr_versions()
+
+        corr_version_list = []
+        snap_version_list = []
+        for package, version_dict in six.iteritems(corr_snap_version_dict):
+            time = Time(version_dict['timestamp'], format='datetime')
+            version = version_dict['version']
+
+            if package == 'hera_corr_cm':
+                # we get a new timestamp every time we call hera_corr_cm.
+                # Don't make a new row unless it's a new version.
+                # First, get most recent version in table
+                last_hera_corr_cm_entry = self.get_correlator_software_versions(
+                    package='hera_corr_cm')
+                if len(last_hera_corr_cm_entry) == 0:
+                    last_version = ''
+                else:
+                    last_version = last_hera_corr_cm_entry[0].version
+                if last_version != version:
+                    # this is a new version, make a new object
+                    corr_version_list.append(
+                        CorrelatorSoftwareVersions.create(time, package, version))
+            elif package != 'snap':
+                corr_version_list.append(
+                    CorrelatorSoftwareVersions.create(time, package, version))
+            else:
+                init_args = version_dict['init_args']
+                config_hash = version_dict['config_md5']
+                snap_version_list.append(SNAPConfigVersion.create(time, version,
+                                                                  init_args,
+                                                                  config_hash))
+
+                config_time = Time(version_dict['config_timestamp'],
+                                   format='datetime')
+                config = version_dict['config']
+                snap_config_dict = {'time': config_time, 'hash': config_hash,
+                                    'config': config}
 
         # make sure this config is in the correlator config status table
         # (really should be, but this will add it if it was somehow missed)

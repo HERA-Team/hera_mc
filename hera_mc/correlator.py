@@ -364,8 +364,10 @@ class CorrelatorSoftwareVersions(MCDeclarativeBase):
     Definition of correlator software versions table.
 
     time: gps time of the version report, floored (BigInteger, part of primary_key).
-    package: name of the correlator software module e.g. "hera_corr_f" (String, part of primary_key)
-    version: version string for this package (String)
+    package: name of the correlator software module or <package>:<script> for
+        daemonized processes e.g. 'hera_corr_cm', 'udpSender:hera_node_keep_alive.py'
+        (String, part of primary_key)
+    version: version string for this package or script (String)
     """
     __tablename__ = 'correlator_software_versions'
     time = Column(BigInteger, primary_key=True)
@@ -380,11 +382,12 @@ class CorrelatorSoftwareVersions(MCDeclarativeBase):
         Parameters:
         ------------
         time: astropy time object
-            astropy time object based on a timestamp reported by the correlator
+            astropy time object based on the version report timestamp
         package: string
-            name of the correlator software module (e.g. "hera_corr_f")
+            name of the correlator software module or <package>:<script> for
+                daemonized processes(e.g. 'hera_corr_cm', 'udpSender:hera_node_keep_alive.py')
         version: string
-            version string for this package
+            version string for this package or script
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -400,7 +403,7 @@ class SNAPConfigVersion(MCDeclarativeBase):
     init_time: gps time when the SNAPs were last initialized with the
         `hera_snap_feng_init.py` script, floored (BigInteger, part of primary_key).
     version: version string for the hera_corr_f package (String)
-    init_args: arguments passed to the inialization script at runtime (String)
+    init_args: arguments passed to the initialization script at runtime (String)
     config_hash: unique hash for the config (String, foreign key into correlator_config_file)
     """
     __tablename__ = 'snap_config_version'
@@ -423,7 +426,7 @@ class SNAPConfigVersion(MCDeclarativeBase):
         version: string
             version string for the hera_corr_f package
         init_args: string
-            arguments passed to the inialization script at runtime
+            arguments passed to the initialization script at runtime
         config_hash: string
             unique hash of the config, foreign key into correlator_config_file table
         """
@@ -441,7 +444,8 @@ def _get_corr_versions(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
 
     from hera_corr_cm docstring:
         Returns the version of various software modules in dictionary form.
-        Keys of this dictionary are software packages, e.g. "hera_corr_f".
+        Keys of this dictionary are software packages, e.g. "hera_corr_cm", or of the form
+        <package>:<script> for daemonized processes, e.g. "udpSender:hera_node_receiver.py".
         The values of this dictionary are themselves dicts, with keys:
             "version" : A version string for this package
             "timestamp" : A datetime object indicating when this version was last reported to redis
@@ -451,7 +455,7 @@ def _get_corr_versions(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
         `hera_snap_feng_init.py` script. For the "snap" dictionary keys are:
             "version" : version string for the hera_corr_f package.
             "init_args" : arguments passed to the inialization script at runtime
-            "config" : Configuration file used at initialization time
+            "config" : Configuration structure used at initialization time
             "config_timestamp" : datetime instance indicating when this file was updated in redis
             "config_md5" : MD5 hash of this config file
             "timestamp" : datetime object indicating when the initialization script was called.
@@ -461,55 +465,6 @@ def _get_corr_versions(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     return corr_cm.get_version()
-
-
-def create_corr_snap_versions(correlator_redis_address=DEFAULT_REDIS_ADDRESS,
-                              corr_snap_version_dict=None):
-    """
-    Return a list of CorrelatorSoftwareVersions and SNAPConfigVersion objects with data from the correlator.
-
-    Parameters:
-    ------------
-    correlator_redis_address: Address of server where the correlator redis
-        database can be accessed.
-    corr_snap_version_dict: A dict spoofing the return dict from _get_corr_versions
-        for testing purposes. Default: None
-
-    Returns:
-    -----------
-    A list of CorrelatorSoftwareVersions objects
-    A list of SNAPConfigVersion objects
-    A dict formatted like what comes from _get_config
-    """
-
-    if corr_snap_version_dict is None:
-        corr_snap_version_dict = _get_corr_versions(
-            correlator_redis_address=correlator_redis_address)
-
-    corr_version_list = []
-    snap_version_list = []
-    for package, version_dict in six.iteritems(corr_snap_version_dict):
-        time = Time(version_dict['timestamp'], format='datetime')
-        version = version_dict['version']
-
-        if package != 'snap':
-            corr_version_list.append(CorrelatorSoftwareVersions.create(time,
-                                                                       package,
-                                                                       version))
-        else:
-            init_args = version_dict['init_args']
-            config_hash = version_dict['config_md5']
-            snap_version_list.append(SNAPConfigVersion.create(time, version,
-                                                              init_args,
-                                                              config_hash))
-
-            config_time = Time(version_dict['config_timestamp'],
-                               format='datetime')
-            config = version_dict['config']
-            snap_config_dict = {'time': config_time, 'hash': config_hash,
-                                'config': config}
-
-    return corr_version_list, snap_version_list, snap_config_dict
 
 
 class SNAPStatus(MCDeclarativeBase):
