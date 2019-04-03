@@ -1931,7 +1931,7 @@ class MCSession(Session):
         self.add(CorrelatorConfigStatus.create(time, config_hash))
 
     def get_correlator_config_status(self, most_recent=None, starttime=None,
-                                     config_hash=None, stoptime=None, state_type=None,
+                                     config_hash=None, stoptime=None,
                                      write_to_file=False, filename=None):
         """
         Get correlator config status record(s) from the M&C database.
@@ -2041,7 +2041,7 @@ class MCSession(Session):
         if config_state_dict is None:
             config_state_dict = _get_config()
 
-        time = Time(config_state_dict['timestamp'], format='unix')
+        time = config_state_dict['time']
         config = config_state_dict['config']
         config_hash = config_state_dict['hash']
 
@@ -2500,6 +2500,181 @@ class MCSession(Session):
 
         if dryrun:
             return command_list
+
+    def add_correlator_software_versions(self, time, package, version):
+        """
+        Add new correlator software versions to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by the correlator
+        package: string
+            name of the correlator software module
+        version: string
+            version string for this package
+        """
+        from .correlator import CorrelatorSoftwareVersions
+
+        self.add(CorrelatorSoftwareVersions.create(time, package, version))
+
+    def get_correlator_software_versions(self, most_recent=None, starttime=None,
+                                         stoptime=None, package=None,
+                                         write_to_file=False, filename=None):
+        """
+        Get correlator software versions record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        package: string
+            name of the correlator software module (e.g. "hera_corr_f")
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of CorrelatorSoftwareVersions objects
+        """
+        from .correlator import CorrelatorSoftwareVersions
+
+        return self._time_filter(CorrelatorSoftwareVersions, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='package', filter_value=package,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def add_snap_config_version(self, init_time, version, init_args, config_hash):
+        """
+        Add new SNAP configuration and version to the M&C database.
+
+        Parameters:
+        ------------
+        init_time: astropy time object
+            astropy time object for when the SNAPs were last initialized with the
+                `hera_snap_feng_init.py` script
+        version: string
+            version string for the hera_corr_f package
+        init_args: string
+            arguments passed to the inialization script at runtime
+        config_hash: string
+            unique hash of the config, foreign key into correlator_config_file table
+        """
+        from .correlator import SNAPConfigVersion
+
+        self.add(SNAPConfigVersion.create(init_time, version, init_args, config_hash))
+
+    def get_snap_config_version(self, most_recent=None, starttime=None, stoptime=None,
+                                write_to_file=False, filename=None):
+        """
+        Get SNAP configuration and version record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of SNAPConfigVersion objects
+        """
+        from .correlator import SNAPConfigVersion
+
+        return self._time_filter(SNAPConfigVersion, 'init_time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def add_corr_snap_versions_from_corrcm(self, corr_snap_version_dict=None, testing=False):
+        """Get and add correlator software versions and snap configuration and version information using a HeraCorrCM object.
+
+        This function connects to the correlator and gets the latest data using the
+        `create_corr_snap_versions` function. For testing purposes, it can
+        optionally accept an input dict instead of connecting to the correlator.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the data frequently on qmaster.
+
+        Parameters:
+        ------------
+        corr_snap_version_dict: dict
+            A dict containing info as in the return dict from corr._get_corr_versions() for
+            testing purposes. If None, _get_corr_versions() is called. Default: None
+        testing: boolean
+            If true, don't add a record of it to the database and return the list of
+            AntennaStatus objects. Default False.
+
+        Returns:
+        --------
+        Optionally returns the list of AntennaStatus objects (if testing is True)
+
+        """
+        from .correlator import (create_corr_snap_versions, CorrelatorSoftwareVersions,
+                                 SNAPConfigVersion)
+
+        corr_version_list, snap_version_list, snap_config_dict = \
+            create_corr_snap_versions(corr_snap_version_dict=corr_snap_version_dict)
+
+        # make sure this config is in the correlator config status table
+        # (really should be, but this will add it if it was somehow missed)
+        config_obj_list = self.add_correlator_config_from_corrcm(config_state_dict=snap_config_dict,
+                                                                 testing=testing)
+
+        if testing:
+            return corr_version_list + config_obj_list + snap_version_list
+        else:
+            self._insert_ignoring_duplicates(CorrelatorSoftwareVersions, corr_version_list)
+            self._insert_ignoring_duplicates(SNAPConfigVersion, snap_version_list)
 
     def _get_node_snap_from_serial(self, snap_serial, session=None):
         from hera_mc import cm_handling, cm_utils
