@@ -918,6 +918,8 @@ class TestCorrelatorConfigCommand(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'take_data', starttime=starttime, duration=100,
                           tag='engineering', config_file=config_file, testing=True)
+
+
 class TestCorrelatorSoftwareVersions(TestHERAMC):
 
     def test_add_correlator_software_versions(self):
