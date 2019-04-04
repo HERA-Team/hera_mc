@@ -465,7 +465,10 @@ class TestCorrelatorControlCommand(TestHERAMC):
             command_time = command_list[0].time
             self.assertTrue(Time.now().gps - command_time < 2.)
 
-            expected = corr.CorrelatorControlCommand(time=command_time, command=command)
+            command_time_obj = Time(command_time, format='gps')
+            expected = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                            command)
+
             self.assertTrue(command_list[0].isclose(expected))
 
             # test adding the command(s) to the database and retrieving them
@@ -491,18 +494,17 @@ class TestCorrelatorControlCommand(TestHERAMC):
         command_time = command_list[0].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'take_data')
+
         self.assertTrue(command_list[0].isclose(expected_comm))
 
         int_time = corr.DEFAULT_ACCLEN_SPECTRA * ((2.0 * 16384) / 500e6)
-        expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
-                                                         command='take_data',
-                                                         starttime_sec=starttime_sec,
-                                                         starttime_ms=starttime_ms_offset,
-                                                         duration=100,
-                                                         acclen_spectra=corr.DEFAULT_ACCLEN_SPECTRA,
-                                                         integration_time=int_time,
-                                                         tag='engineering')
+        expected_args = corr.CorrelatorTakeDataArguments.create(
+            command_time_obj, starttime, 100, corr.DEFAULT_ACCLEN_SPECTRA,
+            int_time, 'engineering')
+
         self.assertTrue(command_list[1].isclose(expected_args))
 
         # check warning with non-standard acclen_spectra
@@ -517,18 +519,16 @@ class TestCorrelatorControlCommand(TestHERAMC):
         command_time = command_list[0].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'take_data')
         self.assertTrue(command_list[0].isclose(expected_comm))
 
         int_time = 2 * ((2.0 * 16384) / 500e6)
-        expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
-                                                         command='take_data',
-                                                         starttime_sec=starttime_sec,
-                                                         starttime_ms=starttime_ms_offset,
-                                                         duration=100,
-                                                         acclen_spectra=2,
-                                                         integration_time=int_time,
-                                                         tag='engineering')
+        expected_args = corr.CorrelatorTakeDataArguments.create(
+            command_time_obj, starttime, 100, 2,
+            int_time, 'engineering')
+
         self.assertTrue(command_list[1].isclose(expected_args))
 
     def test_control_command_with_recent_status(self):
@@ -558,7 +558,9 @@ class TestCorrelatorControlCommand(TestHERAMC):
             command_time = command_list[0].time
             self.assertTrue(Time.now().gps - command_time < 2.)
 
-            expected = corr.CorrelatorControlCommand(time=command_time, command=command)
+            command_time_obj = Time(command_time, format='gps')
+            expected = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                            command)
             self.assertTrue(command_list[0].isclose(expected))
 
             self.test_session.rollback()
@@ -605,18 +607,15 @@ class TestCorrelatorControlCommand(TestHERAMC):
         command_time = command_list[0].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'take_data')
         self.assertTrue(command_list[0].isclose(expected_comm))
 
         int_time = corr.DEFAULT_ACCLEN_SPECTRA * ((2.0 * 16384) / 500e6)
-        expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
-                                                         command='take_data',
-                                                         starttime_sec=command_time + 10,
-                                                         starttime_ms=starttime_ms_offset,
-                                                         duration=100,
-                                                         acclen_spectra=corr.DEFAULT_ACCLEN_SPECTRA,
-                                                         integration_time=int_time,
-                                                         tag='engineering')
+        expected_args = corr.CorrelatorTakeDataArguments.create(
+            command_time_obj, starttime, 100, corr.DEFAULT_ACCLEN_SPECTRA,
+            int_time, 'engineering')
         self.assertTrue(command_list[1].isclose(expected_args))
 
         for obj in command_list:
@@ -731,12 +730,14 @@ class TestCorrelatorConfigCommand(TestHERAMC):
         command_time = command_list[1].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='update_config')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'update_config')
+
         self.assertTrue(command_list[1].isclose(expected_comm))
 
-        config_comm_expected = corr.CorrelatorConfigCommand(time=command_time,
-                                                            command='update_config',
-                                                            config_hash=config_hash)
+        config_comm_expected = corr.CorrelatorConfigCommand.create(command_time_obj,
+                                                                   config_hash)
 
         self.assertTrue(command_list[2].isclose(config_comm_expected))
 
@@ -783,13 +784,15 @@ class TestCorrelatorConfigCommand(TestHERAMC):
         command_time = command_list[1].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='update_config')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'update_config')
+
         self.assertTrue(command_list[1].isclose(expected_comm))
 
         self.assertTrue(Time.now().gps - command_time < 2.)
-        config_comm_expected = corr.CorrelatorConfigCommand(time=command_time,
-                                                            command='update_config',
-                                                            config_hash=config_hash)
+        config_comm_expected = corr.CorrelatorConfigCommand.create(command_time_obj,
+                                                                   config_hash)
 
         self.assertTrue(command_list[2].isclose(config_comm_expected))
 
@@ -848,12 +851,14 @@ class TestCorrelatorConfigCommand(TestHERAMC):
         command_time = command_list[0].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='update_config')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'update_config')
+
         self.assertTrue(command_list[0].isclose(expected_comm))
 
-        config_comm_expected = corr.CorrelatorConfigCommand(time=command_time,
-                                                            command='update_config',
-                                                            config_hash=config_hash)
+        config_comm_expected = corr.CorrelatorConfigCommand.create(command_time_obj,
+                                                                   config_hash)
 
         self.assertTrue(command_list[1].isclose(config_comm_expected))
 
