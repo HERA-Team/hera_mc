@@ -218,9 +218,7 @@ class TestCorrelatorCommandState(TestHERAMC):
 
     def test_add_correlator_control_state_from_corrcm_nonetime_noprior(self):
         corr_state_obj_list = self.test_session.add_correlator_control_state_from_corrcm(
-            corr_state_dict=corr_state_dict_nonetime, testing=True)
-        for obj in corr_state_obj_list:
-            self.test_session.add(obj)
+            corr_state_dict=corr_state_dict_nonetime)
 
         result = self.test_session.get_correlator_control_state(most_recent=True)
         res_time = result[0].time
@@ -234,14 +232,10 @@ class TestCorrelatorCommandState(TestHERAMC):
 
     def test_add_correlator_control_state_from_corrcm_nonetime_priortrue(self):
         corr_state_obj_list = self.test_session.add_correlator_control_state_from_corrcm(
-            corr_state_dict=corr_command_example_dict, testing=True)
-        for obj in corr_state_obj_list:
-            self.test_session.add(obj)
+            corr_state_dict=corr_command_example_dict)
 
         corr_state_obj_list = self.test_session.add_correlator_control_state_from_corrcm(
-            corr_state_dict=corr_state_dict_nonetime, testing=True)
-        for obj in corr_state_obj_list:
-            self.test_session.add(obj)
+            corr_state_dict=corr_state_dict_nonetime)
 
         result = self.test_session.get_correlator_control_state(most_recent=True)
         res_time = result[0].time
@@ -257,9 +251,7 @@ class TestCorrelatorCommandState(TestHERAMC):
         not_taking_data_state_dict = {'taking_data': {'state': False,
                                                       'timestamp': Time(1512770942, format='unix')}}
         corr_state_obj_list = self.test_session.add_correlator_control_state_from_corrcm(
-            corr_state_dict=not_taking_data_state_dict, testing=True)
-        for obj in corr_state_obj_list:
-            self.test_session.add(obj)
+            corr_state_dict=not_taking_data_state_dict)
 
         corr_state_obj_list = self.test_session.add_correlator_control_state_from_corrcm(
             corr_state_dict=corr_state_dict_nonetime, testing=True)
