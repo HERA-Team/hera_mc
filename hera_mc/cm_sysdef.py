@@ -25,7 +25,7 @@ port_def['parts_hera'] = {
     'cable-rfof': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 4},
     'post-amp': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 5},
     'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 6},
-    'node': {'up': [['loc1', 'loc2', 'loc3', 'loc4']], 'down': [[None]], 'position': 7}
+    'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 7}
 }
 port_def['parts_paper'] = {
     'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
@@ -46,7 +46,7 @@ port_def['parts_rfi'] = {
     'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
     'temp-cable': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 3},
     'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 4},
-    'node': {'up': [['loc1', 'loc2', 'loc3', 'loc4']], 'down': [[None]], 'position': 5}
+    'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 5}
 }
 port_def['parts_test'] = {
     'vapor': {'up': [[None]], 'down': [[None]], 'position': 0}
@@ -197,14 +197,20 @@ def next_connection(connection_options, current, A, B):
     """
     global this_hookup_type, _D, pind
 
+    DEBUG_ON = False
+    if DEBUG_ON:
+        print("CMSD200:  Current = {}".format(current))
     # This sets up the parameters to check for the next part/port
     # Also checks for "None and one" to return.
     this_part_info = port_def[this_hookup_type][A.part_type]
     next_part_position = this_part_info['position'] + _D.arrow[current.direction]
     if next_part_position < 0 or next_part_position > len(full_connection_path[this_hookup_type]) - 1:
+        if DEBUG_ON:
+            print("    RETURN  NONE")
         return None
     next_part_type = full_connection_path[this_hookup_type][next_part_position]
     next_part_info = port_def[this_hookup_type][next_part_type]
+    allowed_next_ports = next_part_info[_D.this[current.direction]][0]
     if len(next_part_info[_D.this[current.direction]]) == 2:
         allowed_next_ports = next_part_info[_D.this[current.direction]][pind[current.pol]]
     options = []
@@ -214,20 +220,38 @@ def next_connection(connection_options, current, A, B):
         if B[i].part_type != next_part_type:
             continue
         prefix_next = B[i].hpn[-1].lower() if next_part_type in single_pol_labeled_parts[this_hookup_type] else ''
-        if len(connection_options) == 1 or len(next_part_info[_D.this[current.direction]]) == 1:
-            return opc
         this_port = prefix_this + getattr(opc, '{}stream_{}put_port'.format(_D.this[current.direction], _D.port[_D.this[current.direction]]))
         next_port = prefix_next + getattr(opc, '{}stream_{}put_port'.format(_D.next[current.direction], _D.port[_D.next[current.direction]]))
         if next_port[0] == '@':
             continue
-        options.append(Namespace(this=this_port, next=next_port, option=opc))
+        if len(connection_options) == 1 and next_port in allowed_next_ports:
+            if DEBUG_ON:
+                print("    RETURN  ONE", connection_options[0])
+            return opc
+        this = Namespace(part=A.hpn, port=this_port, type=A.part_type, prefix=prefix_this)
+        next = Namespace(part=B[i].hpn, port=next_port, type=B[i].part_type, prefix=prefix_next)
+        options.append(Namespace(this=this, next=next, option=opc, pol=current.pol))
 
+    if DEBUG_ON:
+        print("\tOPTIONS:  allowed_next_ports={}".format(allowed_next_ports))
+        for i, opt in enumerate(options):  # PRINT ONLY
+            print("\tOPT{}   {}:{}[{}]  -->  {}:{}[{}]".format(i, opt.this.part, opt.this.port, opt.this.prefix,
+                                                               opt.next.part, opt.next.port, opt.next.prefix))
     # This runs through the Namespace to find the actual part/port
     #    First pass is to check for the specific port-sets that pass
     for opt in options:
-        if current.port == opt.this and opt.next in allowed_next_ports:
+        check_next_port = opt.next.port.strip(opt.next.prefix)
+        if current.port == opt.this.port and check_next_port in allowed_next_ports:
+            if DEBUG_ON:
+                print("    RETURN  FULL:  opt.this.port={},  opt.next.port={}".format(opt.this.port, opt.next.port))
             return opt.option
     #    Second pass checks for matching the leading polarization character.
     for opt in options:
-        if current.pol[0] == opt.this[0] and opt.next in allowed_next_ports:
+        check_next_port = opt.next.port.strip(opt.next.prefix)
+        if current.pol[0] == opt.this.port[0] and check_next_port in allowed_next_ports:
+            if DEBUG_ON:
+                print("    RETURN  ZERO:  opt.this.port={},  opt.next.port={}".format(opt.this.port, opt.next.port))
             return opt.option
+
+    if DEBUG_ON:
+        print("---FELL OFF BOTTOM---")
