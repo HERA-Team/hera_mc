@@ -70,6 +70,27 @@ with db.sessionmaker() as session:
                 continue
 
             try:
+                session.add_corr_snap_versions_from_corrcm()
+            except Exception as e:
+                print('{t} -- error adding correlator and snap version and '
+                      'config information'.format(t=time.asctime()), file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                continue
+            try:
+                session.commit()
+            except sqlalchemy.exc.SQLAlchemyError as e:
+                print('{t} -- SQL error committing new correlator and snap version and '
+                      'config information'.format(t=time.asctime()), file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                session.rollback()
+                continue
+            except Exception as e:
+                print('{t} -- error committing new correlator and snap version and '
+                      'config information'.format(t=time.asctime()), file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                continue
+
+            try:
                 session.commit()
             except sqlalchemy.exc.SQLAlchemyError as e:
                 print('{t} -- SQL error committing new snap status'.format(t=time.asctime()), file=sys.stderr)

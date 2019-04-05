@@ -178,8 +178,9 @@ def _get_config(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     timestamp, config, hash = corr_cm.get_config()
+    time = Time(config_state_dict['timestamp'], format='unix')
 
-    return {'timestamp': timestamp, 'hash': hash, 'config': config}
+    return {'time': time, 'hash': hash, 'config': config}
 
 
 class CorrelatorControlCommand(MCDeclarativeBase):
@@ -356,6 +357,114 @@ class CorrelatorConfigCommand(MCDeclarativeBase):
         command_time = floor(time.gps)
 
         return cls(time=command_time, command='update_config', config_hash=config_hash)
+
+
+class CorrelatorSoftwareVersions(MCDeclarativeBase):
+    """
+    Definition of correlator software versions table.
+
+    time: gps time of the version report, floored (BigInteger, part of primary_key).
+    package: name of the correlator software module or <package>:<script> for
+        daemonized processes e.g. 'hera_corr_cm', 'udpSender:hera_node_keep_alive.py'
+        (String, part of primary_key)
+    version: version string for this package or script (String)
+    """
+    __tablename__ = 'correlator_software_versions'
+    time = Column(BigInteger, primary_key=True)
+    package = Column(String, primary_key=True)
+    version = Column(String, nullable=False)
+
+    @classmethod
+    def create(cls, time, package, version):
+        """
+        Create a new correlator software versions object.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on the version report timestamp
+        package: string
+            name of the correlator software module or <package>:<script> for
+                daemonized processes(e.g. 'hera_corr_cm', 'udpSender:hera_node_keep_alive.py')
+        version: string
+            version string for this package or script
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        corr_time = floor(time.gps)
+
+        return cls(time=corr_time, package=package, version=version)
+
+
+class SNAPConfigVersion(MCDeclarativeBase):
+    """
+    Definition of SNAP configuration and version table.
+
+    init_time: gps time when the SNAPs were last initialized with the
+        `hera_snap_feng_init.py` script, floored (BigInteger, part of primary_key).
+    version: version string for the hera_corr_f package (String)
+    init_args: arguments passed to the initialization script at runtime (String)
+    config_hash: unique hash for the config (String, foreign key into correlator_config_file)
+    """
+    __tablename__ = 'snap_config_version'
+    init_time = Column(BigInteger, primary_key=True)
+    version = Column(String, nullable=False)
+    init_args = Column(String, nullable=False)
+    config_hash = Column(String, ForeignKey("correlator_config_file.config_hash"),
+                         nullable=False)
+
+    @classmethod
+    def create(cls, init_time, version, init_args, config_hash):
+        """
+        Create a new SNAP configuration and version object.
+
+        Parameters:
+        ------------
+        init_time: astropy time object
+            astropy time object for when the SNAPs were last initialized with the
+                `hera_snap_feng_init.py` script
+        version: string
+            version string for the hera_corr_f package
+        init_args: string
+            arguments passed to the initialization script at runtime
+        config_hash: string
+            unique hash of the config, foreign key into correlator_config_file table
+        """
+        if not isinstance(init_time, Time):
+            raise ValueError('init_time must be an astropy Time object')
+        init_time_gps = floor(init_time.gps)
+
+        return cls(init_time=init_time_gps, version=version, init_args=init_args,
+                   config_hash=config_hash)
+
+
+def _get_corr_versions(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+    """
+    gets the versions dict from the correlator
+
+    from hera_corr_cm docstring:
+        Returns the version of various software modules in dictionary form.
+        Keys of this dictionary are software packages, e.g. "hera_corr_cm", or of the form
+        <package>:<script> for daemonized processes, e.g. "udpSender:hera_node_receiver.py".
+        The values of this dictionary are themselves dicts, with keys:
+            "version" : A version string for this package
+            "timestamp" : A datetime object indicating when this version was last reported to redis
+
+        There is one special key, "snap", in the top-level of the returned dictionary. This stores
+        software and configuration states at the time the SNAPs were last initialized with the
+        `hera_snap_feng_init.py` script. For the "snap" dictionary keys are:
+            "version" : version string for the hera_corr_f package.
+            "init_args" : arguments passed to the inialization script at runtime
+            "config" : Configuration structure used at initialization time
+            "config_timestamp" : datetime instance indicating when this file was updated in redis
+            "config_md5" : MD5 hash of this config file
+            "timestamp" : datetime object indicating when the initialization script was called.
+    """
+    import hera_corr_cm
+
+    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+
+    return corr_cm.get_version()
 
 
 class SNAPStatus(MCDeclarativeBase):

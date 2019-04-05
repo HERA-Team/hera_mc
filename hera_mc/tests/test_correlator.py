@@ -9,6 +9,7 @@ from __future__ import absolute_import, division, print_function
 
 import unittest
 import os
+import copy
 import time
 import datetime
 import hashlib
@@ -32,10 +33,38 @@ corr_command_example_dict = {
 corr_state_dict_nonetime = {'taking_data': {'state': False, 'timestamp': None}}
 
 config_file = os.path.join(DATA_PATH, 'test_data', 'hera_feng_config_example.yaml')
-config = yaml.load(config_file)
+with open(config_file, 'r') as stream:
+    config = yaml.load(stream)
 
-corr_config_example_dict = {'timestamp': Time(1512770942, format='unix'),
+corr_config_example_dict = {'time': Time(1512770942, format='unix'),
                             'hash': 'testhash', 'config': config}
+
+init_args = ("Namespace(config_file=None, eth=True, initialize=True, "
+             + "mansync=False, noise=False, program=False, "
+             + "redishost='redishost', sync=True, tvg=False)")
+
+corr_snap_version_example_dict = {
+    'udpSender:hera_node_keep_alive.py': {
+        'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 17, 438357),
+        'version': '0.0.1-1eaa49ea'},
+    'hera_corr_f:hera_snap_redis_monitor.py': {
+        'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 14, 317679),
+        'version': '0.0.1-3c7fdaf6'},
+    'udpSender:hera_node_cmd_check.py': {
+        'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 17, 631614),
+        'version': '0.0.1-1eaa49ea'},
+    'udpSender:hera_node_receiver.py': {
+        'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 16, 555086),
+        'version': '0.0.1-1eaa49ea'},
+    'hera_corr_cm': {
+        'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 17, 644984),
+        'version': '0.0.1-11a573c9'},
+    'snap': {'config': config,
+             'config_md5': 'testhash',
+             'config_timestamp': datetime.datetime(2019, 2, 18, 5, 41, 29, 376363),
+             'init_args': init_args,
+             'timestamp': datetime.datetime(2019, 3, 27, 8, 28, 25, 806626),
+             'version': '0.0.1-3c7fdaf6'}}
 
 snap_status_example_dict = {
     'heraNode23Snap1': {'last_programmed': datetime.datetime(2016, 1, 10, 23, 16, 3),
@@ -189,9 +218,7 @@ class TestCorrelatorCommandState(TestHERAMC):
 
     def test_add_correlator_control_state_from_corrcm_nonetime_noprior(self):
         corr_state_obj_list = self.test_session.add_correlator_control_state_from_corrcm(
-            corr_state_dict=corr_state_dict_nonetime, testing=True)
-        for obj in corr_state_obj_list:
-            self.test_session.add(obj)
+            corr_state_dict=corr_state_dict_nonetime)
 
         result = self.test_session.get_correlator_control_state(most_recent=True)
         res_time = result[0].time
@@ -205,14 +232,10 @@ class TestCorrelatorCommandState(TestHERAMC):
 
     def test_add_correlator_control_state_from_corrcm_nonetime_priortrue(self):
         corr_state_obj_list = self.test_session.add_correlator_control_state_from_corrcm(
-            corr_state_dict=corr_command_example_dict, testing=True)
-        for obj in corr_state_obj_list:
-            self.test_session.add(obj)
+            corr_state_dict=corr_command_example_dict)
 
         corr_state_obj_list = self.test_session.add_correlator_control_state_from_corrcm(
-            corr_state_dict=corr_state_dict_nonetime, testing=True)
-        for obj in corr_state_obj_list:
-            self.test_session.add(obj)
+            corr_state_dict=corr_state_dict_nonetime)
 
         result = self.test_session.get_correlator_control_state(most_recent=True)
         res_time = result[0].time
@@ -228,9 +251,7 @@ class TestCorrelatorCommandState(TestHERAMC):
         not_taking_data_state_dict = {'taking_data': {'state': False,
                                                       'timestamp': Time(1512770942, format='unix')}}
         corr_state_obj_list = self.test_session.add_correlator_control_state_from_corrcm(
-            corr_state_dict=not_taking_data_state_dict, testing=True)
-        for obj in corr_state_obj_list:
-            self.test_session.add(obj)
+            corr_state_dict=not_taking_data_state_dict)
 
         corr_state_obj_list = self.test_session.add_correlator_control_state_from_corrcm(
             corr_state_dict=corr_state_dict_nonetime, testing=True)
@@ -444,7 +465,10 @@ class TestCorrelatorControlCommand(TestHERAMC):
             command_time = command_list[0].time
             self.assertTrue(Time.now().gps - command_time < 2.)
 
-            expected = corr.CorrelatorControlCommand(time=command_time, command=command)
+            command_time_obj = Time(command_time, format='gps')
+            expected = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                            command)
+
             self.assertTrue(command_list[0].isclose(expected))
 
             # test adding the command(s) to the database and retrieving them
@@ -470,18 +494,17 @@ class TestCorrelatorControlCommand(TestHERAMC):
         command_time = command_list[0].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'take_data')
+
         self.assertTrue(command_list[0].isclose(expected_comm))
 
         int_time = corr.DEFAULT_ACCLEN_SPECTRA * ((2.0 * 16384) / 500e6)
-        expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
-                                                         command='take_data',
-                                                         starttime_sec=starttime_sec,
-                                                         starttime_ms=starttime_ms_offset,
-                                                         duration=100,
-                                                         acclen_spectra=corr.DEFAULT_ACCLEN_SPECTRA,
-                                                         integration_time=int_time,
-                                                         tag='engineering')
+        expected_args = corr.CorrelatorTakeDataArguments.create(
+            command_time_obj, starttime, 100, corr.DEFAULT_ACCLEN_SPECTRA,
+            int_time, 'engineering')
+
         self.assertTrue(command_list[1].isclose(expected_args))
 
         # check warning with non-standard acclen_spectra
@@ -496,18 +519,16 @@ class TestCorrelatorControlCommand(TestHERAMC):
         command_time = command_list[0].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'take_data')
         self.assertTrue(command_list[0].isclose(expected_comm))
 
         int_time = 2 * ((2.0 * 16384) / 500e6)
-        expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
-                                                         command='take_data',
-                                                         starttime_sec=starttime_sec,
-                                                         starttime_ms=starttime_ms_offset,
-                                                         duration=100,
-                                                         acclen_spectra=2,
-                                                         integration_time=int_time,
-                                                         tag='engineering')
+        expected_args = corr.CorrelatorTakeDataArguments.create(
+            command_time_obj, starttime, 100, 2,
+            int_time, 'engineering')
+
         self.assertTrue(command_list[1].isclose(expected_args))
 
     def test_control_command_with_recent_status(self):
@@ -537,7 +558,9 @@ class TestCorrelatorControlCommand(TestHERAMC):
             command_time = command_list[0].time
             self.assertTrue(Time.now().gps - command_time < 2.)
 
-            expected = corr.CorrelatorControlCommand(time=command_time, command=command)
+            command_time_obj = Time(command_time, format='gps')
+            expected = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                            command)
             self.assertTrue(command_list[0].isclose(expected))
 
             self.test_session.rollback()
@@ -584,18 +607,15 @@ class TestCorrelatorControlCommand(TestHERAMC):
         command_time = command_list[0].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='take_data')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'take_data')
         self.assertTrue(command_list[0].isclose(expected_comm))
 
         int_time = corr.DEFAULT_ACCLEN_SPECTRA * ((2.0 * 16384) / 500e6)
-        expected_args = corr.CorrelatorTakeDataArguments(time=command_time,
-                                                         command='take_data',
-                                                         starttime_sec=command_time + 10,
-                                                         starttime_ms=starttime_ms_offset,
-                                                         duration=100,
-                                                         acclen_spectra=corr.DEFAULT_ACCLEN_SPECTRA,
-                                                         integration_time=int_time,
-                                                         tag='engineering')
+        expected_args = corr.CorrelatorTakeDataArguments.create(
+            command_time_obj, starttime, 100, corr.DEFAULT_ACCLEN_SPECTRA,
+            int_time, 'engineering')
         self.assertTrue(command_list[1].isclose(expected_args))
 
         for obj in command_list:
@@ -710,12 +730,14 @@ class TestCorrelatorConfigCommand(TestHERAMC):
         command_time = command_list[1].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='update_config')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'update_config')
+
         self.assertTrue(command_list[1].isclose(expected_comm))
 
-        config_comm_expected = corr.CorrelatorConfigCommand(time=command_time,
-                                                            command='update_config',
-                                                            config_hash=config_hash)
+        config_comm_expected = corr.CorrelatorConfigCommand.create(command_time_obj,
+                                                                   config_hash)
 
         self.assertTrue(command_list[2].isclose(config_comm_expected))
 
@@ -762,13 +784,15 @@ class TestCorrelatorConfigCommand(TestHERAMC):
         command_time = command_list[1].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='update_config')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'update_config')
+
         self.assertTrue(command_list[1].isclose(expected_comm))
 
         self.assertTrue(Time.now().gps - command_time < 2.)
-        config_comm_expected = corr.CorrelatorConfigCommand(time=command_time,
-                                                            command='update_config',
-                                                            config_hash=config_hash)
+        config_comm_expected = corr.CorrelatorConfigCommand.create(command_time_obj,
+                                                                   config_hash)
 
         self.assertTrue(command_list[2].isclose(config_comm_expected))
 
@@ -788,7 +812,7 @@ class TestCorrelatorConfigCommand(TestHERAMC):
             config_hash = hashlib.md5(config_string).hexdigest()
 
         # put in a previous matching config
-        matching_corr_config_dict = {'timestamp': t0, 'hash': config_hash,
+        matching_corr_config_dict = {'time': t0, 'hash': config_hash,
                                      'config': config}
         corr_config_list = self.test_session.add_correlator_config_from_corrcm(
             config_state_dict=matching_corr_config_dict, testing=True)
@@ -827,12 +851,14 @@ class TestCorrelatorConfigCommand(TestHERAMC):
         command_time = command_list[0].time
         self.assertTrue(Time.now().gps - command_time < 2.)
 
-        expected_comm = corr.CorrelatorControlCommand(time=command_time, command='update_config')
+        command_time_obj = Time(command_time, format='gps')
+        expected_comm = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                             'update_config')
+
         self.assertTrue(command_list[0].isclose(expected_comm))
 
-        config_comm_expected = corr.CorrelatorConfigCommand(time=command_time,
-                                                            command='update_config',
-                                                            config_hash=config_hash)
+        config_comm_expected = corr.CorrelatorConfigCommand.create(command_time_obj,
+                                                                   config_hash)
 
         self.assertTrue(command_list[1].isclose(config_comm_expected))
 
@@ -852,7 +878,7 @@ class TestCorrelatorConfigCommand(TestHERAMC):
             config_hash = hashlib.md5(config_string).hexdigest()
 
         # put in a previous matching config
-        matching_corr_config_dict = {'timestamp': t0, 'hash': config_hash,
+        matching_corr_config_dict = {'time': t0, 'hash': config_hash,
                                      'config': config}
         corr_config_list = self.test_session.add_correlator_config_from_corrcm(
             config_state_dict=matching_corr_config_dict, testing=True)
@@ -891,6 +917,269 @@ class TestCorrelatorConfigCommand(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'take_data', starttime=starttime, duration=100,
                           tag='engineering', config_file=config_file, testing=True)
+
+
+class TestCorrelatorSoftwareVersions(TestHERAMC):
+
+    def test_add_correlator_software_versions(self):
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        t2 = t1 + TimeDelta(120.0, format='sec')
+
+        self.test_session.add_correlator_software_versions(t1, 'hera_corr_f',
+                                                           '0.0.1-3c7fdaf6')
+
+        expected = corr.CorrelatorSoftwareVersions(time=int(floor(t1.gps)),
+                                                   package='hera_corr_f',
+                                                   version='0.0.1-3c7fdaf6')
+        result = self.test_session.get_correlator_software_versions(
+            starttime=t1 - TimeDelta(3.0, format='sec'))
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        self.test_session.add_correlator_software_versions(t1, 'hera_corr_cm',
+                                                           '0.0.1-11a573c9')
+
+        result = self.test_session.get_correlator_software_versions(
+            starttime=t1 - TimeDelta(3.0, format='sec'), package='hera_corr_f')
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_correlator_software_versions(
+            package='hera_corr_f')
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        expected = corr.CorrelatorSoftwareVersions(time=int(floor(t1.gps)),
+                                                   package='hera_corr_cm',
+                                                   version='0.0.1-11a573c9')
+
+        result = self.test_session.get_correlator_software_versions(
+            starttime=t1 - TimeDelta(3.0, format='sec'),
+            package='hera_corr_cm')
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_correlator_software_versions(
+            package='hera_corr_cm')
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        result = self.test_session.get_correlator_software_versions(
+            starttime=t1 - TimeDelta(3.0, format='sec'), stoptime=t1)
+        self.assertEqual(len(result), 2)
+
+        result_most_recent = self.test_session.get_correlator_software_versions()
+        self.assertEqual(len(result), 2)
+
+        result = self.test_session.get_correlator_software_versions(
+            starttime=t1 + TimeDelta(200.0, format='sec'))
+        self.assertEqual(result, [])
+
+    def test_software_version_errors(self):
+        self.assertRaises(ValueError,
+                          self.test_session.add_correlator_software_versions,
+                          'foo', 'hera_corr_cm', '0.0.1-11a573c9')
+
+
+class TestSNAPConfigVersion(TestHERAMC):
+
+    def test_add_snap_config_version(self):
+        t1 = Time('2016-01-10 01:15:23', scale='utc')
+        t2 = t1 + TimeDelta(120.0, format='sec')
+
+        self.test_session.add_correlator_config_file('testhash', config_file)
+        self.test_session.commit()
+        self.test_session.add_correlator_config_status(t1, 'testhash')
+        self.test_session.commit()
+
+        self.test_session.add_snap_config_version(t1, '0.0.1-3c7fdaf6',
+                                                  init_args, 'testhash')
+
+        expected = corr.SNAPConfigVersion(init_time=int(floor(t1.gps)),
+                                          version='0.0.1-3c7fdaf6',
+                                          init_args=init_args,
+                                          config_hash='testhash')
+
+        result = self.test_session.get_snap_config_version(
+            starttime=t1 - TimeDelta(3.0, format='sec'))
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        self.test_session.add_correlator_config_file('testhash2', config_file)
+        self.test_session.commit()
+        self.test_session.add_correlator_config_status(t2, 'testhash2')
+        self.test_session.commit()
+
+        self.test_session.add_snap_config_version(t2, '0.0.1-11a573c9',
+                                                  init_args, 'testhash2')
+
+        expected = corr.SNAPConfigVersion(init_time=int(floor(t2.gps)),
+                                          version='0.0.1-11a573c9',
+                                          init_args=init_args,
+                                          config_hash='testhash2')
+
+        result = self.test_session.get_snap_config_version(
+            starttime=t2 - TimeDelta(3.0, format='sec'))
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_snap_config_version()
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        result = self.test_session.get_snap_config_version(
+            starttime=t1 - TimeDelta(3.0, format='sec'), stoptime=t2)
+        self.assertEqual(len(result), 2)
+
+        result = self.test_session.get_snap_config_version(
+            starttime=t1 + TimeDelta(200.0, format='sec'))
+        self.assertEqual(result, [])
+
+    def test_software_version_errors(self):
+        self.assertRaises(ValueError,
+                          self.test_session.add_snap_config_version,
+                          'foo', '0.0.1-3c7fdaf6', init_args, 'testhash')
+
+
+class TestCorrelatorSNAPVersions(TestHERAMC):
+
+    def test_add_corr_snap_versions_from_corrcm(self):
+        # use testing to prevent call to hera_librarian to save new config file
+        corr_snap_version_obj_list = self.test_session.add_corr_snap_versions_from_corrcm(
+            corr_snap_version_dict=corr_snap_version_example_dict, testing=True)
+
+        for obj in corr_snap_version_obj_list:
+            self.test_session.add(obj)
+            self.test_session.commit()
+
+        t1 = Time(datetime.datetime(2019, 4, 2, 19, 7, 14), format='datetime')
+        result = self.test_session.get_correlator_software_versions(
+            starttime=t1 - TimeDelta(3.0, format='sec'))
+
+        expected = corr.CorrelatorSoftwareVersions(time=int(floor(t1.gps)),
+                                                   package='hera_corr_f:hera_snap_redis_monitor.py',
+                                                   version='0.0.1-3c7fdaf6')
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_correlator_software_versions(
+            package='hera_corr_f:hera_snap_redis_monitor.py')
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        result_most_recent = self.test_session.get_correlator_software_versions()
+        self.assertEqual(len(result_most_recent), 3)
+        most_recent_packages = sorted([res.package for res in result_most_recent])
+        expected_recent_packages = sorted(['udpSender:hera_node_keep_alive.py',
+                                           'udpSender:hera_node_cmd_check.py',
+                                           'hera_corr_cm'])
+        self.assertEqual(most_recent_packages, expected_recent_packages)
+
+        result = self.test_session.get_correlator_software_versions(
+            starttime=t1 - TimeDelta(3.0, format='sec'),
+            stoptime=t1 + TimeDelta(10.0, format='sec'))
+        self.assertEqual(len(result), 5)
+
+        t2 = Time(datetime.datetime(2019, 3, 27, 8, 28, 25), format='datetime')
+        result = self.test_session.get_snap_config_version(
+            starttime=t2 - TimeDelta(3.0, format='sec'))
+
+        expected = corr.SNAPConfigVersion(init_time=int(floor(t2.gps)),
+                                          version='0.0.1-3c7fdaf6',
+                                          init_args=init_args,
+                                          config_hash='testhash')
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_snap_config_version()
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        t3 = Time(datetime.datetime(2019, 2, 18, 5, 41, 29), format='datetime')
+        result = self.test_session.get_correlator_config_status(
+            starttime=t3 - TimeDelta(3.0, format='sec'))
+
+        expected = corr.CorrelatorConfigStatus(time=int(floor(t3.gps)),
+                                               config_hash='testhash')
+        self.assertEqual(len(result), 1)
+        result = result[0]
+        self.assertTrue(result.isclose(expected))
+
+        result_most_recent = self.test_session.get_correlator_config_status()
+        self.assertEqual(len(result_most_recent), 1)
+        result_most_recent = result_most_recent[0]
+        self.assertTrue(result_most_recent.isclose(expected))
+
+        # test that a new hera_corr_cm timestamp with the same version doesn't make a new row
+        new_dict = copy.deepcopy(corr_snap_version_example_dict)
+        new_dict['hera_corr_cm']['timestamp'] = (
+            datetime.datetime(2019, 4, 2, 19, 8, 17, 644984))
+
+        corr_snap_version_obj_list = self.test_session.add_corr_snap_versions_from_corrcm(
+            corr_snap_version_dict=new_dict)
+
+        t4 = Time(datetime.datetime(2019, 4, 2, 19, 7, 17), format='datetime')
+        t5 = Time(datetime.datetime(2019, 4, 2, 19, 8, 17), format='datetime')
+
+        expected = corr.CorrelatorSoftwareVersions(time=int(floor(t4.gps)),
+                                                   package='hera_corr_cm',
+                                                   version='0.0.1-11a573c9')
+
+        result = self.test_session.get_correlator_software_versions(
+            starttime=t4 - TimeDelta(3.0, format='sec'),
+            stoptime=t5 + TimeDelta(10.0, format='sec'),
+            package='hera_corr_cm')
+
+        self.assertEqual(len(result), 1)
+        self.assertTrue(result[0].isclose(expected))
+
+        # test that a new hera_corr_cm timestamp with a new version makes a new row
+        new_dict = copy.deepcopy(corr_snap_version_example_dict)
+        new_dict['hera_corr_cm']['timestamp'] = (
+            datetime.datetime(2019, 4, 2, 19, 8, 17, 644984))
+        new_dict['hera_corr_cm']['version'] = '0.0.1-b43b2b72'
+
+        corr_snap_version_obj_list = self.test_session.add_corr_snap_versions_from_corrcm(
+            corr_snap_version_dict=new_dict)
+
+        expected = corr.CorrelatorSoftwareVersions(time=int(floor(t5.gps)),
+                                                   package='hera_corr_cm',
+                                                   version='0.0.1-b43b2b72')
+
+        result = self.test_session.get_correlator_software_versions(
+            starttime=t4 - TimeDelta(3.0, format='sec'),
+            stoptime=t5 + TimeDelta(10.0, format='sec'),
+            package='hera_corr_cm')
+
+        self.assertEqual(len(result), 2)
+        self.assertTrue(result[1].isclose(expected))
+
+    @unittest.skipIf(not is_onsite(), 'This test only works on site')
+    def test_add_corr_command_state_from_corrcm(self):
+
+        self.test_session.add_corr_snap_versions_from_corrcm()
+
+        result = self.test_session.get_correlator_software_versions(
+            package='hera_corr_cm', most_recent=True)
+        self.assertEqual(len(result), 1)
+
+        result = self.test_session.get_correlator_software_versions()
+        self.assertTrue(len(result) >= 1)
+
+        result = self.test_session.get_snap_config_version()
+        self.assertEqual(len(result), 1)
 
 
 class TestSNAPStatus(TestHERAMC):
@@ -959,11 +1248,8 @@ class TestSNAPStatus(TestHERAMC):
         self.assertEqual(result, [])
 
     def test_add_snap_status_from_corrcm(self):
-        snap_status_obj_list = self.test_session.add_snap_status_from_corrcm(
-            snap_status_dict=snap_status_example_dict, testing=True)
-
-        for obj in snap_status_obj_list:
-            self.test_session.add(obj)
+        self.test_session.add_snap_status_from_corrcm(
+            snap_status_dict=snap_status_example_dict)
 
         t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format='datetime')
         t_prog = Time(datetime.datetime(2016, 1, 10, 23, 16, 3), format='datetime')
@@ -1238,11 +1524,8 @@ class TestAntennaStatus(TestHERAMC):
         self.assertEqual(len(result_most_recent), 2)
 
     def test_add_antenna_status_from_corrcm_with_nones(self):
-        ant_status_obj_list = self.test_session.add_antenna_status_from_corrcm(
-            ant_status_dict=ant_status_nones_example_dict, testing=True)
-
-        for obj in ant_status_obj_list:
-            self.test_session.add(obj)
+        self.test_session.add_antenna_status_from_corrcm(
+            ant_status_dict=ant_status_nones_example_dict)
 
         t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format='datetime')
         result = self.test_session.get_antenna_status(

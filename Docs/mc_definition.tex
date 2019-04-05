@@ -526,6 +526,31 @@ Records the config passed to the correlator `update\_config` command.
 \end{tabular}
 \end{center}
 
+\subsubsection{correlator\_software\_versions}
+Software version numbers for correlator software packages and scripts.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{time} & long & time of the version report in floor(gps seconds)\\ \hline
+\textbf{package} & string & name of the correlator software module or $\langle$package$\rangle$:$\langle$script$\rangle$ for daemonized processes (e.g. `hera\_corr\_cm', `udpSender:hera\_node\_keep\_alive.py').  \\ \hline
+version & string & version string for this package or script \\\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{snap\_config\_version}
+SNAP initialization configuration and software versions.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{init\_time} & long & time when the SNAPs were last initialized with the `hera\_snap\_feng\_init.py' script in floor(gps seconds)\\ \hline
+version & string & version string for the hera\_corr\_f package \\\hline
+init\_args & string & arguments passed to the initialization script at runtime \\\hline
+config\_hash & string & unique hash for the config, foreign key into correlator\_config\_file table \\\hline
+\end{tabular}
+\end{center}
+
 \subsubsection{snap\_status}
 SNAP status information (reported via the correlator redis DB).
 \begin{center}
