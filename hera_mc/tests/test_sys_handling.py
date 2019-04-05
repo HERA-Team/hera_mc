@@ -103,7 +103,7 @@ class TestSys(TestHERAMC):
 
     def test_sysdef(self):
         part = Namespace(hpn='N0', rev='A', part_type='node')
-        part.connections = Namespace(input_ports=['loc', '@mars'], output_ports=[])
+        part.connections = Namespace(input_ports=['loc1', '@mars'], output_ports=[])
         hl = cm_sysdef.handle_redirect_part_types(part, 'e')
         self.assertTrue(len(hl) == 0)
         part.hpn = 'RI123ZE'
