@@ -19,7 +19,7 @@ from astropy.time import Time, TimeDelta
 from argparse import Namespace
 from contextlib import contextmanager
 from .. import (geo_location, sys_handling, mc, cm_transfer, part_connect,
-                cm_hookup, cm_utils, cm_revisions, utils, cm_sysdef)
+                cm_hookup, cm_utils, utils, cm_sysdef)
 from . import TestHERAMC
 
 
@@ -60,28 +60,25 @@ class TestSys(TestHERAMC):
         hookup = cm_hookup.Hookup(session=self.test_session)
         hookup.reset_memory_cache(None)
         self.assertEqual(hookup.cached_hookup_dict, None)
-        hu = hookup.get_hookup(['A23'], 'H', 'all', at_date=at_date, exact_match=True, force_new_cache=True, levels=True, hookup_type='parts_paper')
+        hu = hookup.get_hookup(['A23'], 'H', 'all', at_date=at_date, exact_match=True, force_new_cache=True, hookup_type='parts_paper')
         with captured_output() as (out, err):
-            hookup.show_hookup(hu, cols_to_show=['station', 'level'], state='all', levels=True, revs=True, ports=True)
+            hookup.show_hookup(hu, cols_to_show=['station'], state='all', revs=True, ports=True)
         self.assertTrue('HH23:A <ground' in out.getvalue().strip())
         hu = hookup.get_hookup(['A23'], 'H', 'all', at_date=at_date, exact_match=True, force_db=True, hookup_type='parts_paper')
         self.assertTrue('A23:H' in hu.keys())
         hookup.reset_memory_cache(hu)
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
-        hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False, levels=True, hookup_type='parts_paper')
+        hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False, hookup_type='parts_paper')
         with captured_output() as (out, err):
             hookup.show_hookup(hu, state='all')
         self.assertTrue('1096484416' in out.getvalue().strip())
-        with captured_output() as (out, err):
-            hu = hookup.get_hookup('A23,A23', 'H', 'all', force_new_cache=False, levels=True, hookup_type='parts_paper')
-        self.assertTrue('Correlator' in out.getvalue().strip())
         hookup.cached_hookup_dict = None
         hookup._determine_hookup_cache_to_use()
         with captured_output() as (out, err):
-            hookup.show_hookup(hu)
-        self.assertTrue('None' in out.getvalue().strip())
+            hookup.show_hookup(hu, output_format='html')
+        self.assertTrue('DF8B2' in out.getvalue().strip())
         with captured_output() as (out, err):
-            hookup.show_hookup({}, cols_to_show=['station', 'level'], state='all', levels=True, revs=True, ports=True)
+            hookup.show_hookup({}, cols_to_show=['station'], state='all', revs=True, ports=True)
         self.assertTrue('None found' in out.getvalue().strip())
         hufc = hookup.get_hookup_from_db(['HH'], 'active', 'e', at_date='now')
         self.assertEqual(len(hufc.keys()), 5)

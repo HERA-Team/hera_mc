@@ -179,7 +179,7 @@ class Handling:
             H = cm_hookup.Hookup(self.session)
         hud = H.get_hookup(hpn_list=[stn], at_date=at_date, exact_match=True, hookup_type=hookup_type)
         station_info = None
-        fully_connected = cm_revisions.get_full_revision(stn, hud, hookup_type=hookup_type)
+        fully_connected = cm_revisions.get_full_revision(stn, hud)
         fully_connected_keys = set()
         fctime = {'start': 0.0, 'end': 1.0E10}
         for i, fc in enumerate(fully_connected):
@@ -315,12 +315,10 @@ class Handling:
             hlist = cm_utils.default_station_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         H = cm_hookup.Hookup(self.session)
-        hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all', at_date='now',
-                                   exact_match=exact_match, levels=False,
-                                   force_new_cache=force_new_hookup_dict, force_db=False,
-                                   hookup_type=None)
+        hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all', at_date='now', exact_match=exact_match,
+                                   force_new_cache=force_new_hookup_dict, force_db=False, hookup_type=None)
         with open(output_file, 'w') as f:
-            H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=False, ports=True,
+            H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, ports=True,
                           revs=True, state='full', file=f, output_format='html')
 
         from . import cm_transfer

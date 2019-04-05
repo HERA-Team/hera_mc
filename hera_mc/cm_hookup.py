@@ -34,7 +34,6 @@ class HookupDossierEntry:
         self.hookup_type = {}  # name of hookup_type
         self.columns = {}  # list with the actual column headers in hookup
         self.timing = {}  # aggregate hookup start and stop
-        self.level = {}  # correlator level
 
     def get_hookup_type_and_column_headers(self, pol, part_types_found):
         """
@@ -90,11 +89,6 @@ class HookupDossierEntry:
         self.columns[pol].append('start')
         self.columns[pol].append('stop')
 
-    def add_correlator_levels(self, pol):
-        print("Correlator levels not yet implemented for new correlator.")
-        self.columns[pol].append('level')
-        self.level[pol] = 'N/A'
-
     def get_part_in_hookup_from_type(self, part_type, include_revs=False, include_ports=False):
         """
         Retrieve the part name for a given part_type from a hookup
@@ -112,7 +106,7 @@ class HookupDossierEntry:
                     if include_ports they are included as e.g. 'input>FDV:A<terminals'
         """
         parts = {}
-        extra_cols = ['start', 'stop', 'level']
+        extra_cols = ['start', 'stop']
         for pol, names in six.iteritems(self.columns):
             if part_type not in names:
                 parts[pol] = None
@@ -153,10 +147,6 @@ class HookupDossierEntry:
 
     def table_entry_row(self, pol, headers, part_types, show):
         timing = self.timing[pol]
-        if show['levels']:
-            level = self.level[pol]
-        else:
-            level = False
         td = ['-'] * len(headers)
         # Get the first N-1 parts
         dip = ''
@@ -173,13 +163,11 @@ class HookupDossierEntry:
             new_row_entry = build_new_row_entry(
                 dip, d.downstream_part, d.down_part_rev, None, show)
             td[headers.index(part_type)] = new_row_entry
-        # Add timing and levels
+        # Add timing
         if 'start' in headers:
             td[headers.index('start')] = timing[0]
         if 'stop' in headers:
             td[headers.index('stop')] = timing[1]
-        if level:
-            td[headers.index('level')] = level
         return td
 
 
@@ -210,7 +198,7 @@ class Hookup:
     def __init__(self, session=None):
         """
         Hookup traces parts and connections through the signal path (as defined
-        by the connections).
+        by the connections in cm_sysdef).
         """
         if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
@@ -258,7 +246,7 @@ class Hookup:
         if force_new_cache or not cache_file_OK:
             self.cached_hookup_dict = self.get_hookup_from_db(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
                                                               port_query='all', at_date=self.at_date,
-                                                              exact_match=False, levels=False, hookup_type=self.hookup_type)
+                                                              exact_match=False, hookup_type=self.hookup_type)
             log_msg = "force_new_cache:  {};  cache_file_OK:  {}".format(force_new_cache, cache_file_OK)
             self.write_hookup_cache_to_file(log_msg)
         elif self.cached_hookup_dict is None:
@@ -268,7 +256,7 @@ class Hookup:
                 self._determine_hookup_cache_to_use(force_new_cache=True)
 
     def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', at_date='now', exact_match=False,
-                   levels=False, force_new_cache=False, force_db=False, hookup_type=None):
+                   force_new_cache=False, force_db=False, hookup_type=None):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary.
         The data may come from one of two sources:
@@ -289,7 +277,6 @@ class Hookup:
         port_query:  a port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
         at_date:  date for query
         exact_match:  boolean for either exact_match or partial
-        levels:  boolean to include correlator levels (Currently not working.)
         force_new_cache:  boolean to force a full database read as opposed to the cache file.
                           This will also rewrite the cache file in the process
         force_db:  flag to force the database to be read
@@ -314,7 +301,7 @@ class Hookup:
         requested_list_OK_for_cache = self._double_check_request_for_cache_keys(hpn_list)
         if force_db or not requested_list_OK_for_cache:
             return self.get_hookup_from_db(hpn_list=hpn_list, rev=rev, port_query=port_query, at_date=at_date,
-                                           exact_match=exact_match, levels=levels, hookup_type=hookup_type)
+                                           exact_match=exact_match, hookup_type=hookup_type)
 
         # Check/get the appropriate hookup dict
         # (a) in memory, (b) re-read cache file, or (c) generate new
@@ -336,9 +323,6 @@ class Hookup:
                         break
             if use_this_one:
                 hookup_dict[k] = copy.copy(self.cached_hookup_dict[k])
-            if levels:
-                for pol in hookup_dict[k].hookup:
-                    hookup_dict[k].add_correlator_levels(pol)
         return hookup_dict
 
     def _double_check_request_for_cache_keys(self, hpn_list):
@@ -353,7 +337,7 @@ class Hookup:
                 return False
         return True
 
-    def get_hookup_from_db(self, hpn_list, rev, port_query, at_date, exact_match=False, levels=False, hookup_type=None):
+    def get_hookup_from_db(self, hpn_list, rev, port_query, at_date, exact_match=False, hookup_type=None):
         """
         This gets called by the get_hookup wrapper if the database needs to be read (for instance, to generate
         a cache file, or search for parts different than those keyed on in the cache file.)
@@ -376,8 +360,7 @@ class Hookup:
             if part.part_type in cm_sysdef.redirect_part_types[hookup_type]:
                 redirect_parts = cm_sysdef.handle_redirect_part_types(part, port_query)
                 redirect_hookup_dict = self.get_hookup_from_db(hpn_list=redirect_parts, rev=rev, port_query=port_query,
-                                                               at_date=self.at_date, exact_match=True, levels=levels,
-                                                               hookup_type=hookup_type)
+                                                               at_date=self.at_date, exact_match=True, hookup_type=hookup_type)
                 for rhdk, vhd in six.iteritems(redirect_hookup_dict):
                     hookup_dict[rhdk] = vhd
                 redirect_hookup_dict = None
@@ -392,8 +375,6 @@ class Hookup:
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[port_pol])
                 hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
                 hookup_dict[k].add_timing_and_fully_connected(port_pol)
-                if levels:
-                    hookup_dict[k].add_correlator_levels(port_pol)
         return hookup_dict
 
     def get_part_types_found(self, hookup_connections):
@@ -589,7 +570,7 @@ class Hookup:
         s += '\nCM Version latest cm_hash_time:  {}\n'.format(cm_utils.get_time_for_display(cm_hash_time))
         return s
 
-    def show_hookup(self, hookup_dict, cols_to_show='all', state='full', levels=False, ports=False, revs=False,
+    def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
                     file=None, output_format='ascii'):
         """
         Print out the hookup table -- uses tabulate package.
@@ -598,7 +579,6 @@ class Hookup:
         -----------
         hookup_dict:  generated in self.get_hookup
         cols_to_show:  list of columns to include in hookup listing
-        levels:  boolean to either show the correlator levels or not
         ports:  boolean to include ports or not
         revs:  boolean to include revisions letter or not
         state:  show the full hookups only, or all
@@ -606,7 +586,7 @@ class Hookup:
         output_format:  set to html for the web-page version, or ascii
 
         """
-        show = {'levels': levels, 'ports': ports, 'revs': revs}
+        show = {'ports': ports, 'revs': revs}
         headers = self.make_header_row(hookup_dict, cols_to_show)
         table_data = []
         numerical_keys = cm_utils.put_keys_in_numerical_order(sorted(hookup_dict.keys()))
