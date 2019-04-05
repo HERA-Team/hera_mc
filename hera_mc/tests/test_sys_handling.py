@@ -57,34 +57,34 @@ class TestSys(TestHERAMC):
 
     def test_other_hookup(self):
         at_date = cm_utils.get_astropytime('2017-07-03')
-        hookup = cm_hookup.Hookup(at_date=at_date, session=self.test_session)
+        hookup = cm_hookup.Hookup(session=self.test_session)
         hookup.reset_memory_cache(None)
         self.assertEqual(hookup.cached_hookup_dict, None)
-        hu = hookup.get_hookup(['A23'], 'H', 'all', exact_match=True, force_new_cache=True, levels=True)
+        hu = hookup.get_hookup(['A23'], 'H', 'all', at_date=at_date, exact_match=True, force_new_cache=True, levels=True, hookup_type='parts_paper')
         with captured_output() as (out, err):
             hookup.show_hookup(hu, cols_to_show=['station', 'level'], state='all', levels=True, revs=True, ports=True)
         self.assertTrue('HH23:A <ground' in out.getvalue().strip())
-        hu = hookup.get_hookup(['A23'], 'H', 'all', exact_match=True, force_db_at_date='now')
+        hu = hookup.get_hookup(['A23'], 'H', 'all', at_date=at_date, exact_match=True, force_db=True, hookup_type='parts_paper')
         self.assertTrue('A23:H' in hu.keys())
         hookup.reset_memory_cache(hu)
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
-        hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False, levels=True)
+        hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False, levels=True, hookup_type='parts_paper')
         with captured_output() as (out, err):
-            hookup.show_hookup(hu)
+            hookup.show_hookup(hu, state='all')
         self.assertTrue('1096484416' in out.getvalue().strip())
         with captured_output() as (out, err):
-            hu = hookup.get_hookup('A23,A23', 'H', 'all', force_new_cache=False, levels=True)
+            hu = hookup.get_hookup('A23,A23', 'H', 'all', force_new_cache=False, levels=True, hookup_type='parts_paper')
         self.assertTrue('Correlator' in out.getvalue().strip())
         hookup.cached_hookup_dict = None
-        hookup.determine_hookup_cache_to_use()
+        hookup._determine_hookup_cache_to_use()
         with captured_output() as (out, err):
             hookup.show_hookup(hu)
-        self.assertTrue('1096484416' in out.getvalue().strip())
+        self.assertTrue('None' in out.getvalue().strip())
         with captured_output() as (out, err):
             hookup.show_hookup({}, cols_to_show=['station', 'level'], state='all', levels=True, revs=True, ports=True)
         self.assertTrue('None found' in out.getvalue().strip())
-        hufc = hookup.get_hookup_from_db(['HH'], 'active', '_x', at_date='now')
-        self.assertEqual(len(hufc.keys()), 0)
+        hufc = hookup.get_hookup_from_db(['HH'], 'active', 'e', at_date='now')
+        self.assertEqual(len(hufc.keys()), 5)
         hufc = hookup.get_hookup_from_db(['N23'], 'active', 'e', at_date='now')
         self.assertEqual(len(hufc.keys()), 0)
 
@@ -106,39 +106,40 @@ class TestSys(TestHERAMC):
         part.connections = Namespace(input_ports=['e', '@loc', 'n'], output_ports=[])
         hl = cm_sysdef.handle_redirect_part_types(part, 'e')
         self.assertTrue(len(hl) == 0)
-        with captured_output() as (out, err):
-            xxx = cm_sysdef.setup(part, port_query='e')
-        self.assertTrue('Invalid port query' in out.getvalue().strip())
         part.hpn = 'RI123ZE'
         xxx = cm_sysdef.setup(part, port_query='e')
-        self.assertEqual(len(xxx), 1)
+        self.assertEqual(len(xxx), 2)
         part.hpn = 'RI123Z'
         xxx = cm_sysdef.setup(part, port_query='e')
-        self.assertEqual(xxx, None)
+        self.assertEqual(xxx[0], 'e')
         part.hpn = 'doorknob'
         xxx = cm_sysdef.setup(part, port_query='all')
-        self.assertTrue('e' in xxx)
+        self.assertTrue('e' in xxx[0])
         xxx = cm_sysdef.setup(part, port_query='e')
-        self.assertTrue('e' in xxx)
+        self.assertTrue('e' in xxx[0])
         part.connections.input_ports = ['@loc1', 'top', 'bottom']
         xxx = cm_sysdef.setup(part, port_query='e')
-        self.assertTrue('e' in xxx)
+        self.assertTrue('e' in xxx[0])
         rg = Namespace(direction='up', part='apart', rev='A', port='e1', pol='e')
         op = [Namespace(upstream_part='apart', upstream_output_port='eb', downstream_part='bpart', downstream_input_port='e1')]
         op.append(Namespace(upstream_part='aprt', upstream_output_port='eb', downstream_part='bprt', downstream_input_port='ea'))
         rg.port = 'e4'
-        xxx = cm_sysdef.next_connection(op, rg)
+        A = Namespace(hpn='apart', part_type='front-end')
+        B = [Namespace(hpn='apart', part_type='cable-rfof'), Namespace(hpn='bpart', part_type='cable-rfof')]
+        xxx = cm_sysdef.next_connection(op, rg, A, B)
         self.assertEqual(xxx, None)
         rg.port = 'rug'
         op[0].downstream_input_port = 'rug'
-        xxx = cm_sysdef.next_connection(op, rg)
-        self.assertEqual(xxx.upstream_part, 'apart')
+        xxx = cm_sysdef.next_connection(op, rg, A, B)
+        self.assertEqual(xxx, None)
 
     def test_hookup_cache_file_info(self):
-        hookup = cm_hookup.Hookup(at_date='now', session=self.test_session)
+        hookup = cm_hookup.Hookup(session=self.test_session)
         hookup.hookup_cache_file_info()
         hookup.reset_memory_cache(None)
-        hookup.determine_hookup_cache_to_use()
+        hookup.at_date = cm_utils.get_astropytime('2017-07-03')
+        hookup.hookup_type = None
+        hookup._determine_hookup_cache_to_use()
 
     def test_some_fully_connected(self):
         x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')
@@ -204,10 +205,8 @@ class TestSys(TestHERAMC):
         self.assertEqual(len(dubitable_ants[2]), 3)
 
     def test_get_pam_from_hookup(self):
-        at_date = cm_utils.get_astropytime('2017-07-03')
-        hookup = cm_hookup.Hookup(at_date, self.test_session)
-        stn = 'HH23'
-        hud = hookup.get_hookup([stn], exact_match=True, hookup_type='parts_paper')
+        hookup = cm_hookup.Hookup(self.test_session)
+        hud = hookup.get_hookup(['HH23'], at_date='2017-07-03', exact_match=True, hookup_type='parts_paper')
         pams = hud[list(hud.keys())[0]].get_part_in_hookup_from_type('post-amp', include_ports=True, include_revs=True)
         self.assertEqual(len(pams), 2)
         self.assertEqual(pams['e'], 'ea>PAM75123:B<eb')  # the actual pam number (the thing written on the case)

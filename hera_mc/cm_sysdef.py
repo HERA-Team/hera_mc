@@ -154,9 +154,9 @@ def setup(part, port_query='all', hookup_type=None):
     if part.part_type in single_pol_labeled_parts[this_hookup_type]:
         en_part_pol = part.hpn[-1].lower()
         if port_query == 'all' or en_part_pol == port_query:
-            return [en_part_pol]
+            return [en_part_pol], this_hookup_type
         else:
-            return None
+            return None, None
 
     # Sort out all of the ports into 'pol_catalog'
     # It also makes a version of consolidated port_def ports
@@ -180,8 +180,8 @@ def setup(part, port_query='all', hookup_type=None):
     dn = pol_catalog['down'][port_query[0]]
 
     if (len(up) + len(dn)) == 0:  # The part handles both polarizations
-        return all_pols_lo if port_query == 'all' else port_query
-    return up if len(up) > len(dn) else dn
+        return all_pols_lo if port_query == 'all' else port_query, this_hookup_type
+    return up if len(up) > len(dn) else dn, this_hookup_type
 
 
 # Various dictionaries needed for next_connection below

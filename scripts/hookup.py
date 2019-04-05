@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    date_query = cm_utils.get_astropytime(args.date, args.time)
+    at_date = cm_utils.get_astropytime(args.date, args.time)
 
     # Pre-process the args
     args.hookup_cols = cm_utils.listify(args.hookup_cols)
@@ -45,19 +45,15 @@ if __name__ == '__main__':
     # Start session
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
-    hookup = cm_hookup.Hookup(date_query, session)
+    hookup = cm_hookup.Hookup(session)
     if args.cache_info:
         print(hookup.hookup_cache_file_info())
     elif args.delete_cache_file:
         hookup.delete_cache_file()
     else:
-        if args.force_db:
-            force_db_at_date = date_query
-        else:
-            force_db_at_date = None
         hookup_dict = hookup.get_hookup(hpn_list=args.hpn, rev=args.revision, port_query=args.port,
-                                        exact_match=args.exact_match, levels=args.levels,
-                                        force_new_cache=args.force_new_cache, force_db_at_date=force_db_at_date,
+                                        at_date=at_date, exact_match=args.exact_match, levels=args.levels,
+                                        force_new_cache=args.force_new_cache, force_db=args.force_db,
                                         hookup_type=args.hookup_type)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols, levels=args.levels,
                            ports=args.ports, revs=args.revs, state=args.state)

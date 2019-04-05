@@ -136,7 +136,7 @@ class Handling:
                                  it can either be the prefix or the "Name" (e.g. 'herahexe')
         """
         at_date = cm_utils.get_astropytime(at_date)
-        self.H = cm_hookup.Hookup(at_date, self.session)
+        self.H = cm_hookup.Hookup(self.session)
         self.geo.get_station_types()
         station_types_to_check = self.geo.parse_station_types_to_check(station_types_to_check)
         station_conn = []
@@ -176,8 +176,8 @@ class Handling:
         if self.H is not None:
             H = self.H
         else:
-            H = cm_hookup.Hookup(at_date, self.session)
-        hud = H.get_hookup(hpn_list=[stn], exact_match=True, hookup_type=hookup_type)
+            H = cm_hookup.Hookup(self.session)
+        hud = H.get_hookup(hpn_list=[stn], at_date=at_date, exact_match=True, hookup_type=hookup_type)
         station_info = None
         fully_connected = cm_revisions.get_full_revision(stn, hud, hookup_type=hookup_type)
         fully_connected_keys = set()
@@ -298,10 +298,10 @@ class Handling:
             dict of {pol:(location, #)}
         """
         parts = {}
-        H = cm_hookup.Hookup(at_date, self.session)
+        H = cm_hookup.Hookup(self.session)
         if isinstance(stn, six.string_types):
             stn = [stn]
-        hud = H.get_hookup(hpn_list=stn, exact_match=True, hookup_type=hookup_type)
+        hud = H.get_hookup(hpn_list=stn, at_date=at_date, exact_match=True, hookup_type=hookup_type)
         for k, hu in six.iteritems(hud):
             parts[k] = hu.get_part_in_hookup_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
@@ -314,10 +314,10 @@ class Handling:
         if hlist[0].lower() == 'default':
             hlist = cm_utils.default_station_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
-        H = cm_hookup.Hookup('now', self.session)
-        hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all',
+        H = cm_hookup.Hookup(self.session)
+        hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all', at_date='now',
                                    exact_match=exact_match, levels=False,
-                                   force_new_cache=force_new_hookup_dict, force_db_at_date=None,
+                                   force_new_cache=force_new_hookup_dict, force_db=False,
                                    hookup_type=None)
         with open(output_file, 'w') as f:
             H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, levels=False, ports=True,
