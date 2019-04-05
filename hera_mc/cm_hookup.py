@@ -541,6 +541,8 @@ class Hookup:
         else:  # pragma: no cover
             return False
 
+        if self.hookup_type is None:
+            self.hookup_type = cached_hookup_type
         if self.hookup_type != cached_hookup_type:
             return False
 
