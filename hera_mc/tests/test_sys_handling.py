@@ -102,8 +102,8 @@ class TestSys(TestHERAMC):
         self.assertEqual(xret['hu'], 'shoe:testing<screw')
 
     def test_sysdef(self):
-        part = Namespace(hpn='rusty_scissors', rev='A', part_type='node')
-        part.connections = Namespace(input_ports=['e', '@loc', 'n'], output_ports=[])
+        part = Namespace(hpn='N0', rev='A', part_type='node')
+        part.connections = Namespace(input_ports=['loc', '@mars'], output_ports=[])
         hl = cm_sysdef.handle_redirect_part_types(part, 'e')
         self.assertTrue(len(hl) == 0)
         part.hpn = 'RI123ZE'

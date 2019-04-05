@@ -107,7 +107,7 @@ def handle_redirect_part_types(part, port_query):
             if _pk.upper() == part.hpn.upper():
                 redirect_list.append(_k)
         for _r in redirect_list:
-            for _x in conn[_k].keys_up:
+            for _x in conn[_r].keys_up:
                 if _x.upper().startswith('SNP'):
                     hpn_list.append(cm_utils.split_connection_key(_x)[0])
     return hpn_list
