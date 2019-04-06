@@ -224,36 +224,30 @@ class Hookup:
         if os.path.exists(self.hookup_cache_file):
             os.remove(self.hookup_cache_file)
 
-    def _determine_hookup_cache_to_use(self, force_new_cache=False):
+    def _hookup_cache_to_use(self, force_new_cache=False):
         """
-        Determines action regarding using an existing cache file or writing and using a new one.
-        If force_new_cache is set, it automatically writes/uses a new one.  If the cache file is out of
-        date it writes/uses a new one.  Otherwise it uses the existing one (rereading from the
-        cache file if not one in memory.)
-
-        This assumes that if a hookup_dict is read in, it corresponds to the cache_file.
+        Confirms/sets the cached_hookup_dict to use.  If force_new_cache is set, it automatically
+        writes/uses a new one.  If the cache file is out of date it writes/uses a new one.  Otherwise
+        it uses the existing one (rereading from the cache file if not one in memory.)
 
         If the cache file is up-to-date and is in memory, this does nothing.
 
         Parameters
         -----------
-        force_new_cache:  boolean to force a new read as opposed to using cache file,
-                          if the existing file is valid.  If the existing cache file is out-of-date
-                          relative to the cm_version it will also generate/write a new one.
+        force_new_cache:  force a new cache hookup to be set and written to disc.
 
         """
-        cache_file_OK = self._hookup_cache_file_OK()
-        if force_new_cache or not cache_file_OK:
+        if force_new_cache or not self._hookup_cache_file_OK():
             self.cached_hookup_dict = self.get_hookup_from_db(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
                                                               port_query='all', at_date=self.at_date,
                                                               exact_match=False, hookup_type=self.hookup_type)
-            log_msg = "force_new_cache:  {};  cache_file_OK:  {}".format(force_new_cache, cache_file_OK)
+            log_msg = "force_new_cache:  {}".format(force_new_cache)
             self.write_hookup_cache_to_file(log_msg)
         elif self.cached_hookup_dict is None:
             if os.path.exists(self.hookup_cache_file):
                 self.read_hookup_cache_from_file()
             else:  # pragma: no cover
-                self._determine_hookup_cache_to_use(force_new_cache=True)
+                self._hookup_cache_to_use(force_new_cache=True)
 
     def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', at_date='now', exact_match=False,
                    force_new_cache=False, force_db=False, hookup_type=None):
@@ -262,16 +256,13 @@ class Hookup:
         The data may come from one of two sources:
         (1) if the (a) part list is consistent with the keys, (b) date is current, and (c) revision
             hash is current with a local cache file, data from the cache file will be used.
-        (2) if those conditions are not met, or the flag 'force_new_cache' is True, or 'force_db_at_date'
-            is not None, it will use the database.
-
-        This only gets the contemporary hookups (unlike parts and connections which get all), unless
-        force_db_at_date is set.
+        (2) if those conditions are not met, or the flag 'force_new_cache' is True, or 'force_db'
+            is True, it will use the database.
 
         Parameters
         -----------
         hpn_list:  - list/string of input hera part number(s) (whole or first part thereof)
-                   - if string == 'cached' it returns the current dict that would be used
+                   - if string == 'cache' it returns the current dict that would be used
                    - if there are any non-hookup-cached items in list, it reads the database
         rev:  the revision number or descriptor
         port_query:  a port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
@@ -279,10 +270,9 @@ class Hookup:
         exact_match:  boolean for either exact_match or partial
         force_new_cache:  boolean to force a full database read as opposed to the cache file.
                           This will also rewrite the cache file in the process
-        force_db:  flag to force the database to be read
+        force_db:  flag to force the database to be read, not touching the cache file
         hookup_type:  if not None, this will force the database to use the specified hookup_type
-                            at force_db_at_date
-                            if None, it will check them in order for specified part using 'now'
+                            if None, it will check them in order
         """
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
@@ -290,22 +280,21 @@ class Hookup:
 
         # Take appropriate action if hpn_list is a string
         if isinstance(hpn_list, six.string_types):
-            if hpn_list.lower() == 'cached':
+            if hpn_list.lower().startswith('cache'):
                 print("Force read of cache file - not guaranteed fresh.")
                 self.read_hookup_cache_from_file()
                 return self.cached_hookup_dict
             else:
                 hpn_list = cm_utils.listify(hpn_list)
 
-        # Check if force_db return either requested or needed
-        requested_list_OK_for_cache = self._double_check_request_for_cache_keys(hpn_list)
-        if force_db or not requested_list_OK_for_cache:
+        # Check if force_db either requested or needed
+        if force_db or not self._requested_list_OK_for_cache(hpn_list):
             return self.get_hookup_from_db(hpn_list=hpn_list, rev=rev, port_query=port_query, at_date=at_date,
                                            exact_match=exact_match, hookup_type=hookup_type)
 
         # Check/get the appropriate hookup dict
         # (a) in memory, (b) re-read cache file, or (c) generate new
-        self._determine_hookup_cache_to_use(force_new_cache=force_new_cache)
+        self._hookup_cache_to_use(force_new_cache=force_new_cache)
 
         # Now build up the returned hookup_dict
         hookup_dict = {}
@@ -325,7 +314,7 @@ class Hookup:
                 hookup_dict[k] = copy.copy(self.cached_hookup_dict[k])
         return hookup_dict
 
-    def _double_check_request_for_cache_keys(self, hpn_list):
+    def _requested_list_OK_for_cache(self, hpn_list):
         """
         Checks that all hookup requests match the cached keys.
         """
@@ -481,7 +470,7 @@ class Hookup:
                 self.cached_hookup_dict = np.load(f).item()
                 self.part_type_cache = np.load(f).item()
         else:
-            self._determine_hookup_cache_to_use(force_new_cache=True)
+            self._hookup_cache_to_use(force_new_cache=True)
             self.read_hookup_cache_from_file()
         self.hookup_type = self.cached_hookup_type
 

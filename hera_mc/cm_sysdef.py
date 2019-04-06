@@ -63,6 +63,7 @@ def sys_init(husys, v0):
 
 
 checking_order = ['parts_hera', 'parts_rfi', 'parts_paper', 'parts_test']
+
 # Initialize the dictionaries
 corr_index = sys_init(checking_order, None)
 all_pols = sys_init(checking_order, [])
@@ -158,8 +159,7 @@ def setup(part, port_query='all', hookup_type=None):
         else:
             return None, None
 
-    # Sort out all of the ports into 'pol_catalog'
-    # It also makes a version of consolidated port_def ports
+    # Sort out all of the ports into a 'pol_catalog'.  Also makes a version of consolidated port_def ports
     pol_catalog = {}
     consolidated_ports = {'up': [], 'down': []}
     for dir in ['up', 'down']:
@@ -180,8 +180,11 @@ def setup(part, port_query='all', hookup_type=None):
     dn = pol_catalog['down'][port_query[0]]
 
     if (len(up) + len(dn)) == 0:  # The part handles both polarizations
-        return all_pols_lo if port_query == 'all' else port_query, this_hookup_type
-    return up if len(up) > len(dn) else dn, this_hookup_type
+        pol_to_use = all_pols_lo if port_query == 'all' else port_query
+    else:
+        pol_to_use = up if len(up) > len(dn) else dn
+
+    return pol_to_use, this_hookup_type
 
 
 # Various dictionaries needed for next_connection below

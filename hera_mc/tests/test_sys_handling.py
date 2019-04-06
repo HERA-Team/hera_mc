@@ -64,7 +64,7 @@ class TestSys(TestHERAMC):
         with captured_output() as (out, err):
             hookup.show_hookup(hu, cols_to_show=['station'], state='all', revs=True, ports=True)
         self.assertTrue('HH23:A <ground' in out.getvalue().strip())
-        hu = hookup.get_hookup(['A23'], 'H', 'all', at_date=at_date, exact_match=True, force_db=True, hookup_type='parts_paper')
+        hu = hookup.get_hookup('A23,A24', 'H', 'all', at_date=at_date, exact_match=True, force_db=True, hookup_type='parts_paper')
         self.assertTrue('A23:H' in hu.keys())
         hookup.reset_memory_cache(hu)
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
@@ -73,7 +73,7 @@ class TestSys(TestHERAMC):
             hookup.show_hookup(hu, state='all')
         self.assertTrue('1096484416' in out.getvalue().strip())
         hookup.cached_hookup_dict = None
-        hookup._determine_hookup_cache_to_use()
+        hookup._hookup_cache_to_use()
         with captured_output() as (out, err):
             hookup.show_hookup(hu, output_format='html')
         self.assertTrue('DF8B2' in out.getvalue().strip())
@@ -107,9 +107,13 @@ class TestSys(TestHERAMC):
         xxx = cm_sysdef.setup(part, port_query='e')
         self.assertEqual(len(xxx), 2)
         part.hpn = 'RI123Z'
-        xxx = cm_sysdef.setup(part, port_query='e')
-        self.assertEqual(xxx[0], 'e')
+        part.part_type = 'cable-post-amp(in)'
+        xxx = cm_sysdef.setup(part, port_query='e', hookup_type='parts_paper')
+        self.assertEqual(xxx[0], None)
+        xxx = cm_sysdef.setup(part, port_query='all', hookup_type='parts_paper')
+        self.assertEqual(xxx[1], 'parts_paper')
         part.hpn = 'doorknob'
+        part.part_type = 'node'
         xxx = cm_sysdef.setup(part, port_query='all')
         self.assertTrue('e' in xxx[0])
         xxx = cm_sysdef.setup(part, port_query='e')
@@ -136,7 +140,7 @@ class TestSys(TestHERAMC):
         hookup.reset_memory_cache(None)
         hookup.at_date = cm_utils.get_astropytime('2017-07-03')
         hookup.hookup_type = None
-        hookup._determine_hookup_cache_to_use()
+        hookup._hookup_cache_to_use()
 
     def test_some_fully_connected(self):
         x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')
