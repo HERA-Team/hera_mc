@@ -1,4 +1,15 @@
 upstream_part,up_part_rev,downstream_part,down_part_rev,upstream_output_port,downstream_input_port,start_gpstime,stop_gpstime
+HH701,A,A701,H,ground,ground,1234695618,
+A701,H,FDV708,A,focus,input,1234695618,
+FDV708,A,FEM717,A,terminals,input,1234695618,
+FEM717,A,CRF701,A,e,ea,1234695618,
+FEM717,A,CRF701,A,n,na,1234695618,
+CRF701,A,PAM723,A,eb,ea,1234695618,
+CRF701,A,PAM723,A,nb,na,1234695618,
+PAM723,A,SNPZ000038,A,eb,e10,1234695618,1235695618
+PAM723,A,SNPZ000038,A,nb,n8,1234695618,
+SNPZ000038,A,N701,A,rack,loc1,1234695618,
+N701,A,ND701,A,@ground,@ground,1234695618,
 A0,H,FDA80,B,focus,input,1184354547,
 A0,P,FDP0,A,focus,input,1096484416,1180310418
 C7F0,A,RI8A3E,A,eb,a,1096484416,

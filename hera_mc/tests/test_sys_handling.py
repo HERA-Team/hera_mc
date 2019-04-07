@@ -81,7 +81,7 @@ class TestSys(TestHERAMC):
             hookup.show_hookup({}, cols_to_show=['station'], state='all', revs=True, ports=True)
         self.assertTrue('None found' in out.getvalue().strip())
         hufc = hookup.get_hookup_from_db(['HH'], 'active', 'e', at_date='now')
-        self.assertEqual(len(hufc.keys()), 5)
+        self.assertEqual(len(hufc.keys()), 6)
         hufc = hookup.get_hookup_from_db(['N23'], 'active', 'e', at_date='now')
         self.assertEqual(len(hufc.keys()), 0)
 
@@ -90,6 +90,9 @@ class TestSys(TestHERAMC):
         with captured_output() as (out, err):
             hude.get_hookup_type_and_column_headers('x', 'rusty_scissors')
         self.assertTrue('Parts did not conform to any hookup_type' in out.getvalue().strip())
+        with captured_output() as (out, err):
+            print(hude)
+        self.assertTrue('<testing:key:' in out.getvalue().strip())
         hude.get_part_in_hookup_from_type('rusty_scissors', include_revs=True, include_ports=True)
         hude.columns = {'x': 'y', 'hu': 'b', 'm': 'l'}
         hude.hookup['hu'] = []
@@ -143,8 +146,8 @@ class TestSys(TestHERAMC):
         hookup._hookup_cache_to_use()
 
     def test_some_fully_connected(self):
-        x = self.sys_h.get_fully_connected_location_at_date('HH98', 'now')
-        self.assertEqual(x, None)
+        x = self.sys_h.get_fully_connected_location_at_date('HH701', '2019/02/21')
+        self.assertEqual(x.antenna_number, 701)
 
     def test_correlator_info(self):
         corr_dict = self.sys_h.get_cminfo_correlator(hookup_type='parts_paper')

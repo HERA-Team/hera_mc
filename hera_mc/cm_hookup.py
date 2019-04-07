@@ -35,6 +35,13 @@ class HookupDossierEntry:
         self.columns = {}  # list with the actual column headers in hookup
         self.timing = {}  # aggregate hookup start and stop
 
+    def __repr__(self):
+        s = "<{}:  {}>\n".format(self.entry_key, self.hookup_type)
+        s += "{}\n".format(self.hookup)
+        s += "{}\n".format(self.fully_connected)
+        s += "{}\n".format(self.timing)
+        return s
+
     def get_hookup_type_and_column_headers(self, pol, part_types_found):
         """
         The columns in the hookup contain parts in the hookup chain and the column headers are
@@ -190,7 +197,7 @@ class Hookup:
     hookup_list_to_cache and if the cache file is current relative to the cm_version
     """
     hookup_list_to_cache = cm_utils.all_hera_zone_prefixes
-    if six.PY2:
+    if six.PY2:  # pragma: no cover
         hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_2.npy')
     else:
         hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_3.npy')
@@ -499,7 +506,7 @@ class Hookup:
         cm_hash_time = Time(result[-1].update_time, format='gps')
         file_mod_time = Time(stats.st_mtime, format='unix')
         # If CMVersion changed since file was written, don't know so fail...
-        if file_mod_time < cm_hash_time:
+        if file_mod_time < cm_hash_time:  # pragma: no cover
             log_dict = {'file_mod_time': cm_utils.get_time_for_display(file_mod_time),
                         'cm_hash_time': cm_utils.get_time_for_display(cm_hash_time)}
             cm_utils.log('__hookup_cache_file_date_OK:  out of date.', log_dict=log_dict)
