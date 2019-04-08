@@ -86,6 +86,12 @@ class TestSys(TestHERAMC):
         self.assertEqual(len(hufc.keys()), 1)
         hufc = hookup.get_hookup_from_db(['SNPZ'], 'active', 'all', at_date='2019/02/21')
         self.assertEqual(len(hufc.keys()), 1)
+        hufc = hookup.get_hookup_from_db(['SNPZ'], 'active', 'e', at_date='2019/04/01')
+        self.assertEqual(len(hufc.keys()), 1)
+        hufc = hookup.get_hookup_from_db(['PAM723'], 'A', 'all', at_date='2017/12/31')
+        self.assertEqual(len(hufc.keys()), 0)
+        hufc = hookup.get_hookup_from_db(['RO1A1E'], 'A', 'n', at_date='now')
+        self.assertEqual(len(hufc.keys()), 0)
 
     def test_hookup_dossier(self):
         hude = cm_hookup.HookupDossierEntry('testing:key')
