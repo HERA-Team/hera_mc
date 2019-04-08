@@ -530,9 +530,6 @@ class Hookup:
         if abs(cached_at_date - self.at_date) < TimeDelta(60.0 * contemporaneous_minutes, format='sec'):
             return True
 
-        # Otherwise, not OK
-        return False
-
     def hookup_cache_file_info(self):
         if not os.path.exists(self.hookup_cache_file):  # pragma: no cover
             s = "{} does not exist.\n".format(self.hookup_cache_file)
