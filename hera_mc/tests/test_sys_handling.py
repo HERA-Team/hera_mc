@@ -106,6 +106,10 @@ class TestSys(TestHERAMC):
         part.connections = Namespace(input_ports=['loc0', '@mars'], output_ports=[])
         hl = cm_sysdef.handle_redirect_part_types(part, 'now', self.test_session)
         self.assertTrue(len(hl) == 3)
+        part.connections = Namespace(input_ports=['e', '@mars'], output_ports=[])
+        a, b = cm_sysdef.setup(part, 'e', 'parts_hera')
+        print('tsh:  ', a, b)
+        #self.assertTrue(0, 1)
         part.hpn = 'RI123ZE'
         xxx = cm_sysdef.setup(part, port_query='e')
         self.assertEqual(len(xxx), 2)
@@ -136,6 +140,9 @@ class TestSys(TestHERAMC):
         op[0].downstream_input_port = 'rug'
         xxx = cm_sysdef.next_connection(op, rg, A, B)
         self.assertEqual(xxx, None)
+        self.assertRaises(ValueError, cm_sysdef.find_hookup_type, 'dull_knife', 'parts_not')
+        part = Namespace(part_type='nope')
+        self.assertRaises(ValueError, cm_sysdef.setup, part, port_query='nope', hookup_type='parts_hera')
 
     def test_hookup_cache_file_info(self):
         hookup = cm_hookup.Hookup(session=self.test_session)

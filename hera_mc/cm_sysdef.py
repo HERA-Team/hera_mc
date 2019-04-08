@@ -159,19 +159,14 @@ def setup(part, port_query='all', hookup_type=None):
         else:
             return None, None
 
-    # Sort out all of the ports into a 'pol_catalog'.  Also makes a version of consolidated port_def ports
+    # Sort out all of the ports into a 'pol_catalog'.
     pol_catalog = {}
-    consolidated_ports = {'up': [], 'down': []}
     for dir in ['up', 'down']:
         pol_catalog[dir] = {'e': [], 'n': [], 'a': [], 'o': []}
-        for _c in port_def[this_hookup_type][part.part_type][dir]:
-            consolidated_ports[dir] += _c
     connected_ports = {'up': part.connections.input_ports, 'down': part.connections.output_ports}
     for dir in ['up', 'down']:
         for cp in connected_ports[dir]:
             cp = cp.lower()
-            if cp not in consolidated_ports[dir]:
-                continue
             cp_poldes = 'o' if cp[0] not in all_pols_lo else cp[0]
             if cp_poldes in all_pols_lo:
                 pol_catalog[dir]['a'].append(cp)  # p = e + n
@@ -183,7 +178,6 @@ def setup(part, port_query='all', hookup_type=None):
         pol_to_use = all_pols_lo if port_query == 'all' else port_query
     else:
         pol_to_use = up if len(up) > len(dn) else dn
-
     return pol_to_use, this_hookup_type
 
 
