@@ -71,15 +71,18 @@ redirect_part_types = sys_init(checking_order, [])
 single_pol_labeled_parts = sys_init(checking_order, [])
 
 # Redefine dictionary as needed
+#    Define which component corresponds to the correlator input.
 corr_index['parts_hera'] = 6
 corr_index['parts_paper'] = 10
 corr_index['parts_rfi'] = 4
-# polarizations should be one character
+#    Define polarization designations (should be one character)
 all_pols['parts_hera'] = ['e', 'n']
 all_pols['parts_paper'] = ['e', 'n']
 all_pols['parts_rfi'] = ['e', 'n']
+#    Define "special" parts for systems.  These require additional checking/processing
 redirect_part_types['parts_hera'] = ['node']
 single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
+
 
 # This generates the full_connection_path dictionary from port_def
 full_connection_path = {}

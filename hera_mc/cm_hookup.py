@@ -278,8 +278,10 @@ class Hookup:
         force_new_cache:  boolean to force a full database read as opposed to the cache file.
                           This will also rewrite the cache file in the process
         force_db:  flag to force the database to be read, not touching the cache file
-        hookup_type:  if not None, this will force the database to use the specified hookup_type
-                            if None, it will check them in order
+        hookup_type:  type of hookup to use (current observing system is 'parts_hera').
+                      If 'None' it will determine which system it thinks it is based on
+                      the part-type.  The order in which it checks is specified in cm_sysdef.
+                      Only change if you know you want a different system (like 'parts_paper').
         """
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date

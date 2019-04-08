@@ -134,6 +134,10 @@ class Handling:
         at_date:  date to check for connections
         station_types_to_check:  list of station types to check, or 'all' ['default']]
                                  it can either be the prefix or the "Name" (e.g. 'herahexe')
+        hookup_type:  type of hookup to use (current observing system is 'parts_hera').
+                      If 'None' it will determine which system it thinks it is based on
+                      the part-type.  The order in which it checks is specified in cm_sysdef.
+                      Only change if you know you want a different system (like 'parts_paper').
         """
         at_date = cm_utils.get_astropytime(at_date)
         self.H = cm_hookup.Hookup(self.session)
@@ -171,7 +175,10 @@ class Handling:
         -----------
         stn:  is the station information to check
         at_date:  date to check for connections, must be an astropy.Time
-        hookup_type:  type of hookup to use
+        hookup_type:  type of hookup to use (current observing system is 'parts_hera').
+                      If 'None' it will determine which system it thinks it is based on
+                      the part-type.  The order in which it checks is specified in cm_sysdef.
+                      Only change if you know you want a different system (like 'parts_paper').
         """
         if self.H is not None:
             H = self.H
@@ -296,7 +303,10 @@ class Handling:
             part_type:  part type to look for
             include_revs:  Flag whether to include all revisions
             include_ports:  Flag whether to include ports
-            hookup_type:  type of hookup to use
+            hookup_type:  type of hookup to use (current observing system is 'parts_hera').
+                          If 'None' it will determine which system it thinks it is based on
+                          the part-type.  The order in which it checks is specified in cm_sysdef.
+                          Only change if you know you want a different system (like 'parts_paper').
         returns:
             dict of {pol:(location, #)}
         """
