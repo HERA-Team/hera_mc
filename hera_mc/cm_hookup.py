@@ -354,7 +354,7 @@ class Hookup:
                 continue
             hookup_type = cm_sysdef.find_hookup_type(part_type=part.part_type, hookup_type=hookup_type)
             if part.part_type in cm_sysdef.redirect_part_types[hookup_type]:
-                redirect_parts = cm_sysdef.handle_redirect_part_types(part, port_query)
+                redirect_parts = cm_sysdef.handle_redirect_part_types(part, at_date=at_date, session=self.session)
                 redirect_hookup_dict = self.get_hookup_from_db(hpn_list=redirect_parts, rev=rev, port_query=port_query,
                                                                at_date=self.at_date, exact_match=True, hookup_type=hookup_type)
                 for rhdk, vhd in six.iteritems(redirect_hookup_dict):

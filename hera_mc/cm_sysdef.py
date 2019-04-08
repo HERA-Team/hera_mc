@@ -93,15 +93,15 @@ for _x in port_def.keys():
         full_connection_path[_x].append(ordered_path[k])
 
 
-def handle_redirect_part_types(part, port_query):
+def handle_redirect_part_types(part, at_date='now', session=None):
     """
     This handles the "special cases" by feeding a new part list back to hookup.
     """
     hpn_list = []
     if part.part_type.lower() == 'node':
         from hera_mc import cm_handling, cm_utils
-        rptc = cm_handling.Handling()
-        conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port=port_query, at_date='now', exact_match=True)
+        rptc = cm_handling.Handling(session)
+        conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port='all', at_date=at_date, exact_match=True)
         redirect_list = []
         for _k in conn.keys():
             _pk = cm_utils.split_part_key(_k)[0]
