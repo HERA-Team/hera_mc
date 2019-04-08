@@ -361,8 +361,7 @@ class Hookup:
                     hookup_dict[rhdk] = vhd
                 redirect_hookup_dict = None
                 continue
-            port_pol_designators, hookup_type = cm_sysdef.setup(part=part, port_query=port_query, hookup_type=hookup_type)
-            self.hookup_type = hookup_type
+            port_pol_designators, self.hookup_type = cm_sysdef.setup(part=part, port_query=port_query, hookup_type=hookup_type)
             if port_pol_designators is None:
                 continue
             hookup_dict[k] = HookupDossierEntry(k)
@@ -532,14 +531,6 @@ class Hookup:
             return True
 
         # Otherwise, not OK
-        _A = cached_at_date > cm_hash_time
-        _B = self.at_date > cm_hash_time
-        _C = abs(cached_at_date - self.at_date) < TimeDelta(60.0 * contemporaneous_minutes, format='sec')
-        log_dict = {'cached_at_date': cm_utils.get_time_for_display(cached_at_date),
-                    'at_date': cm_utils.get_time_for_display(self.at_date),
-                    'cm_hash_time': cm_utils.get_time_for_display(cm_hash_time),
-                    '_A': _A, '_B': _B, '_C': _C}
-        cm_utils.log('__hookup_cache_file_OK:  timing incorrect.', log_dict=log_dict)
         return False
 
     def hookup_cache_file_info(self):

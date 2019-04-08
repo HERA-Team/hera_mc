@@ -84,6 +84,9 @@ class TestSys(TestHERAMC):
         self.assertEqual(len(hufc.keys()), 6)
         hufc = hookup.get_hookup_from_db(['N23'], 'active', 'e', at_date='now')
         self.assertEqual(len(hufc.keys()), 1)
+        hufc = hookup.get_hookup_from_db(['SNPZ'], 'active', 'all', at_date='2019/02/21')
+        print(hufc)
+        self.assertEqual(len(hufc.keys()), 2)
 
     def test_hookup_dossier(self):
         hude = cm_hookup.HookupDossierEntry('testing:key')
@@ -106,10 +109,6 @@ class TestSys(TestHERAMC):
         part.connections = Namespace(input_ports=['loc0', '@mars'], output_ports=[])
         hl = cm_sysdef.handle_redirect_part_types(part, 'now', self.test_session)
         self.assertTrue(len(hl) == 3)
-        part.connections = Namespace(input_ports=['e', '@mars'], output_ports=[])
-        a, b = cm_sysdef.setup(part, 'e', 'parts_hera')
-        print('tsh:  ', a, b)
-        # self.assertTrue(0, 1)
         part.hpn = 'RI123ZE'
         xxx = cm_sysdef.setup(part, port_query='e')
         self.assertEqual(len(xxx), 2)
