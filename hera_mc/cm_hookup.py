@@ -197,7 +197,7 @@ class Hookup:
     hookup_list_to_cache and if the cache file is current relative to the cm_version
     """
     hookup_list_to_cache = cm_utils.all_hera_zone_prefixes
-    if six.PY2:  # pragma: no cover
+    if six.PY2:
         hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_2.npy')
     else:
         hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_3.npy')

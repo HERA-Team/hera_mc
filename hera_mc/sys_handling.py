@@ -243,7 +243,10 @@ class Handling:
 
         Parameters:
         ------------
-        hookup_type:  type of hookup to use
+        hookup_type:  type of hookup to use (current observing system is 'parts_hera').
+                      If 'None' it will determine which system it thinks it is based on
+                      the part-type.  The order in which it checks is specified in cm_sysdef.
+                      Only change if you know you want a different system (like 'parts_paper').
 
         Note: This method requires pyuvdata
         """
