@@ -109,7 +109,7 @@ class TestSys(TestHERAMC):
         part.connections = Namespace(input_ports=['e', '@mars'], output_ports=[])
         a, b = cm_sysdef.setup(part, 'e', 'parts_hera')
         print('tsh:  ', a, b)
-        #self.assertTrue(0, 1)
+        # self.assertTrue(0, 1)
         part.hpn = 'RI123ZE'
         xxx = cm_sysdef.setup(part, port_query='e')
         self.assertEqual(len(xxx), 2)

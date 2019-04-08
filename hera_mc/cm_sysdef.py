@@ -81,7 +81,7 @@ all_pols['parts_rfi'] = ['e', 'n']
 redirect_part_types['parts_hera'] = ['node']
 single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
 
-
+# This generates the full_connection_path dictionary from port_def
 full_connection_path = {}
 for _x in port_def.keys():
     ordered_path = {}
