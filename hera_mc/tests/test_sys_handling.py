@@ -163,27 +163,27 @@ class TestSys(TestHERAMC):
         self.assertEqual(x.antenna_number, 701)
 
     def test_correlator_info(self):
-        corr_dict = self.sys_h.get_cminfo_correlator(hookup_type='parts_paper')
+        corr_dict = self.sys_h.get_cminfo_correlator(hookup_type='parts_hera')
         ant_names = corr_dict['antenna_names']
-        self.assertEqual(len(ant_names), 1)
+        self.assertEqual(len(ant_names), 4)
 
         corr_inputs = corr_dict['correlator_inputs']
 
         stn_types = corr_dict['station_types']
 
-        index = np.where(np.array(ant_names) == 'HH0')[0]
+        index = np.where(np.array(ant_names) == 'HH703')[0]
         self.assertEqual(len(index), 1)
         index = index[0]
 
-        self.assertEqual(stn_types[index], 'herahexw')
+        self.assertEqual(stn_types[index], 'herahexn')
 
-        self.assertEqual(corr_inputs[index], ('input>DF8B2', 'input>DF8B1'))
+        self.assertEqual(corr_inputs[index], ('e6>SNPZ000042', 'n4>SNPZ000042'))
 
         self.assertEqual([int(name.split('HH')[1]) for name in ant_names],
                          corr_dict['antenna_numbers'])
 
         self.assertEqual(set(corr_dict['antenna_numbers']),
-                         set([0]))
+                         set([701, 703, 704, 705]))
 
         self.assertTrue(corr_dict['cm_version'] is not None)
 
