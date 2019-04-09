@@ -81,20 +81,21 @@ class TestSys(TestHERAMC):
             hookup.show_hookup({}, cols_to_show=['station'], state='all', revs=True, ports=True)
         self.assertTrue('None found' in out.getvalue().strip())
         hufc = hookup.get_hookup_from_db(['HH'], 'active', 'e', at_date='now')
-        self.assertEqual(len(hufc.keys()), 6)
+        self.assertEqual(len(hufc.keys()), 9)
         hufc = hookup.get_hookup_from_db(['N23'], 'active', 'e', at_date='now')
         self.assertEqual(len(hufc.keys()), 1)
         hufc = hookup.get_hookup_from_db(['SNPZ'], 'active', 'all', at_date='2019/02/21')
-        self.assertEqual(len(hufc.keys()), 1)
+        self.assertEqual(len(hufc.keys()), 4)
         hufc = hookup.get_hookup_from_db(['SNPZ'], 'active', 'e', at_date='2019/04/01')
-        self.assertEqual(len(hufc.keys()), 1)
+        self.assertEqual(len(hufc.keys()), 4)
         hufc = hookup.get_hookup_from_db(['PAM723'], 'A', 'all', at_date='2017/12/31')
         self.assertEqual(len(hufc.keys()), 0)
         hufc = hookup.get_hookup_from_db(['RO1A1E'], 'A', 'n', at_date='now')
         self.assertEqual(len(hufc.keys()), 0)
 
     def test_hookup_dossier(self):
-        hude = cm_hookup.HookupDossierEntry('testing:key')
+        sysdef = cm_sysdef.Sysdef()
+        hude = cm_hookup.HookupDossierEntry('testing:key', sysdef)
         with captured_output() as (out, err):
             hude.get_hookup_type_and_column_headers('x', 'rusty_scissors')
         self.assertTrue('Parts did not conform to any hookup_type' in out.getvalue().strip())
@@ -110,43 +111,44 @@ class TestSys(TestHERAMC):
         self.assertEqual(xret['hu'], 'shoe:testing<screw')
 
     def test_sysdef(self):
+        sysdef = cm_sysdef.Sysdef()
         part = Namespace(hpn='N0', rev='A', part_type='node')
         part.connections = Namespace(input_ports=['loc0', '@mars'], output_ports=[])
-        hl = cm_sysdef.handle_redirect_part_types(part, 'now', self.test_session)
+        hl = sysdef.handle_redirect_part_types(part, 'now', self.test_session)
         self.assertTrue(len(hl) == 3)
         part.hpn = 'RI123ZE'
-        xxx = cm_sysdef.setup(part, port_query='e')
-        self.assertEqual(len(xxx), 2)
+        sysdef.setup(part, port_query='e')
+        self.assertEqual(sysdef.pol, 'e')
         part.hpn = 'RI123Z'
         part.part_type = 'cable-post-amp(in)'
-        xxx = cm_sysdef.setup(part, port_query='e', hookup_type='parts_paper')
-        self.assertEqual(xxx[0], None)
-        xxx = cm_sysdef.setup(part, port_query='all', hookup_type='parts_paper')
-        self.assertEqual(xxx[1], 'parts_paper')
+        sysdef.setup(part, port_query='e', hookup_type='parts_paper')
+        self.assertEqual(sysdef.pol, None)
+        sysdef.setup(part, port_query='all', hookup_type='parts_paper')
+        self.assertEqual(sysdef.this_hookup_type, 'parts_paper')
         part.hpn = 'doorknob'
         part.part_type = 'node'
-        xxx = cm_sysdef.setup(part, port_query='all')
-        self.assertTrue('e' in xxx[0])
-        xxx = cm_sysdef.setup(part, port_query='e')
-        self.assertTrue('e' in xxx[0])
+        sysdef.setup(part, port_query='all')
+        self.assertTrue('e' in sysdef.pol)
+        sysdef.setup(part, port_query='e')
+        self.assertTrue('e' in sysdef.pol)
         part.connections.input_ports = ['@loc1', 'top', 'bottom']
-        xxx = cm_sysdef.setup(part, port_query='e')
-        self.assertTrue('e' in xxx[0])
+        sysdef.setup(part, port_query='e')
+        self.assertTrue('e' in sysdef.pol)
         rg = Namespace(direction='up', part='apart', rev='A', port='e1', pol='e')
         op = [Namespace(upstream_part='apart', upstream_output_port='eb', downstream_part='bpart', downstream_input_port='e1')]
         op.append(Namespace(upstream_part='aprt', upstream_output_port='eb', downstream_part='bprt', downstream_input_port='ea'))
         rg.port = 'e4'
         A = Namespace(hpn='apart', part_type='front-end')
         B = [Namespace(hpn='apart', part_type='cable-rfof'), Namespace(hpn='bpart', part_type='cable-rfof')]
-        xxx = cm_sysdef.next_connection(op, rg, A, B)
+        xxx = sysdef.next_connection(op, rg, A, B)
         self.assertEqual(xxx, None)
         rg.port = 'rug'
         op[0].downstream_input_port = 'rug'
-        xxx = cm_sysdef.next_connection(op, rg, A, B)
+        xxx = sysdef.next_connection(op, rg, A, B)
         self.assertEqual(xxx, None)
-        self.assertRaises(ValueError, cm_sysdef.find_hookup_type, 'dull_knife', 'parts_not')
+        self.assertRaises(ValueError, sysdef.find_hookup_type, 'dull_knife', 'parts_not')
         part = Namespace(part_type='nope')
-        self.assertRaises(ValueError, cm_sysdef.setup, part, port_query='nope', hookup_type='parts_hera')
+        self.assertRaises(ValueError, sysdef.setup, part, port_query='nope', hookup_type='parts_hera')
 
     def test_hookup_cache_file_info(self):
         hookup = cm_hookup.Hookup(session=self.test_session)
@@ -161,27 +163,27 @@ class TestSys(TestHERAMC):
         self.assertEqual(x.antenna_number, 701)
 
     def test_correlator_info(self):
-        corr_dict = self.sys_h.get_cminfo_correlator(hookup_type='parts_paper')
+        corr_dict = self.sys_h.get_cminfo_correlator(hookup_type='parts_hera')
         ant_names = corr_dict['antenna_names']
-        self.assertEqual(len(ant_names), 1)
+        self.assertEqual(len(ant_names), 4)
 
         corr_inputs = corr_dict['correlator_inputs']
 
         stn_types = corr_dict['station_types']
 
-        index = np.where(np.array(ant_names) == 'HH0')[0]
+        index = np.where(np.array(ant_names) == 'HH703')[0]
         self.assertEqual(len(index), 1)
         index = index[0]
 
-        self.assertEqual(stn_types[index], 'herahexw')
+        self.assertEqual(stn_types[index], 'herahexn')
 
-        self.assertEqual(corr_inputs[index], ('input>DF8B2', 'input>DF8B1'))
+        self.assertEqual(corr_inputs[index], ('e6>SNPZ000042', 'n4>SNPZ000042'))
 
         self.assertEqual([int(name.split('HH')[1]) for name in ant_names],
                          corr_dict['antenna_numbers'])
 
         self.assertEqual(set(corr_dict['antenna_numbers']),
-                         set([0]))
+                         set([701, 703, 704, 705]))
 
         self.assertTrue(corr_dict['cm_version'] is not None)
 

@@ -24,7 +24,7 @@ from . import part_connect as PC
 
 
 class HookupDossierEntry:
-    def __init__(self, entry_key):
+    def __init__(self, entry_key, sysdef):
         """
         This is the structure of the hookup entry.  All are keyed on polarization
         """
@@ -34,6 +34,7 @@ class HookupDossierEntry:
         self.hookup_type = {}  # name of hookup_type
         self.columns = {}  # list with the actual column headers in hookup
         self.timing = {}  # aggregate hookup start and stop
+        self.sysdef = sysdef
 
     def __repr__(self):
         s = "<{}:  {}>\n".format(self.entry_key, self.hookup_type)
@@ -59,9 +60,9 @@ class HookupDossierEntry:
         if len(part_types_found) == 0:
             return
         is_this_one = False
-        for sp in cm_sysdef.checking_order:
+        for sp in self.sysdef.checking_order:
             for part_type in part_types_found:
-                if part_type not in cm_sysdef.full_connection_path[sp]:
+                if part_type not in self.sysdef.full_connection_path[sp]:
                     break
             else:
                 is_this_one = sp
@@ -71,13 +72,13 @@ class HookupDossierEntry:
             return
         else:
             self.hookup_type[pol] = is_this_one
-            for c in cm_sysdef.full_connection_path[is_this_one]:
+            for c in self.sysdef.full_connection_path[is_this_one]:
                 if c in part_types_found:
                     self.columns[pol].append(c)
 
     def add_timing_and_fully_connected(self, pol):
         if self.hookup_type[pol] is not None:
-            full_hookup_length = len(cm_sysdef.full_connection_path[self.hookup_type[pol]]) - 1
+            full_hookup_length = len(self.sysdef.full_connection_path[self.hookup_type[pol]]) - 1
         else:
             full_hookup_length = -1
         latest_start = 0
@@ -215,6 +216,7 @@ class Hookup:
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
         self.cached_hookup_dict = None
+        self.sysdef = cm_sysdef.Sysdef()
 
     def reset_memory_cache(self, hookup=None):
         """
@@ -354,20 +356,21 @@ class Hookup:
         for k, part in six.iteritems(parts):
             if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
                 continue
-            hookup_type = cm_sysdef.find_hookup_type(part_type=part.part_type, hookup_type=hookup_type)
-            if part.part_type in cm_sysdef.redirect_part_types[hookup_type]:
-                redirect_parts = cm_sysdef.handle_redirect_part_types(part, at_date=at_date, session=self.session)
+            hookup_type = self.sysdef.find_hookup_type(part_type=part.part_type, hookup_type=hookup_type)
+            if part.part_type in self.sysdef.redirect_part_types[hookup_type]:
+                redirect_parts = self.sysdef.handle_redirect_part_types(part, at_date=at_date, session=self.session)
                 redirect_hookup_dict = self.get_hookup_from_db(hpn_list=redirect_parts, rev=rev, port_query=port_query,
                                                                at_date=self.at_date, exact_match=True, hookup_type=hookup_type)
                 for rhdk, vhd in six.iteritems(redirect_hookup_dict):
                     hookup_dict[rhdk] = vhd
                 redirect_hookup_dict = None
                 continue
-            port_pol_designators, self.hookup_type = cm_sysdef.setup(part=part, port_query=port_query, hookup_type=hookup_type)
-            if port_pol_designators is None:
+            self.sysdef.setup(part=part, port_query=port_query, hookup_type=hookup_type)
+            self.hookup_type = self.sysdef.this_hookup_type
+            if self.sysdef.pol is None:
                 continue
-            hookup_dict[k] = HookupDossierEntry(k)
-            for port_pol in port_pol_designators:
+            hookup_dict[k] = HookupDossierEntry(k, self.sysdef)
+            for port_pol in self.sysdef.pol:
                 hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part.hpn, part.rev, port_pol)
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[port_pol])
                 hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
@@ -455,7 +458,7 @@ class Hookup:
                 npk = cm_utils.make_part_key(conn.downstream_part, conn.down_part_rev)
                 next.append(self.handling.get_part_dossier(hpn=conn.downstream_part, rev=conn.down_part_rev, at_date=self.at_date,
                                                            exact_match=True, full_version=False)[npk])
-        return cm_sysdef.next_connection(options, current, this, next)
+        return self.sysdef.next_connection(options, current, this, next)
 
     def write_hookup_cache_to_file(self, log_msg):
         with open(self.hookup_cache_file, 'wb') as f:

@@ -16,222 +16,217 @@ from __future__ import absolute_import, division, print_function
 import six
 from argparse import Namespace
 
-port_def = {}
-port_def['parts_hera'] = {
-    'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
-    'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
-    'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
-    'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
-    'cable-rfof': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 4},
-    'post-amp': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 5},
-    'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 6},
-    'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 7}
-}
-port_def['parts_paper'] = {
-    'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
-    'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
-    'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
-    'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
-    'cable-feed75': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 4},
-    'cable-post-amp(in)': {'up': [['a']], 'down': [['b']], 'position': 5},
-    'post-amp': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 6},
-    'cable-post-amp(out)': {'up': [['a']], 'down': [['b']], 'position': 7},
-    'cable-receiverator': {'up': [['a']], 'down': [['b']], 'position': 8},
-    'cable-container': {'up': [['a']], 'down': [['b']], 'position': 9},
-    'f-engine': {'up': [['input']], 'down': [[None]], 'position': 10}
-}
-port_def['parts_rfi'] = {
-    'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
-    'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
-    'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
-    'temp-cable': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 3},
-    'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 4},
-    'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 5}
-}
-port_def['parts_test'] = {
-    'vapor': {'up': [[None]], 'down': [[None]], 'position': 0}
-}
-pind = {}
-this_hookup_type = None
 
+class Sysdef:
+    port_def = {}
+    port_def['parts_hera'] = {
+        'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
+        'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
+        'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
+        'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
+        'cable-rfof': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 4},
+        'post-amp': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 5},
+        'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 6},
+        'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 7}
+    }
+    port_def['parts_paper'] = {
+        'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
+        'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
+        'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
+        'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
+        'cable-feed75': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 4},
+        'cable-post-amp(in)': {'up': [['a']], 'down': [['b']], 'position': 5},
+        'post-amp': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 6},
+        'cable-post-amp(out)': {'up': [['a']], 'down': [['b']], 'position': 7},
+        'cable-receiverator': {'up': [['a']], 'down': [['b']], 'position': 8},
+        'cable-container': {'up': [['a']], 'down': [['b']], 'position': 9},
+        'f-engine': {'up': [['input']], 'down': [[None]], 'position': 10}
+    }
+    port_def['parts_rfi'] = {
+        'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
+        'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
+        'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
+        'temp-cable': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 3},
+        'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 4},
+        'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 5}
+    }
+    port_def['parts_test'] = {
+        'vapor': {'up': [[None]], 'down': [[None]], 'position': 0}
+    }
+    checking_order = ['parts_hera', 'parts_rfi', 'parts_paper', 'parts_test']
 
-def sys_init(husys, v0):
-    y = {}
-    for x in husys:
-        y[x] = v0
-    return y
+    # Various dictionaries needed for next_connection below
+    _D = Namespace(port={'up': 'out', 'down': 'in'},
+                   this={'up': 'down', 'down': 'up'},
+                   next={'up': 'up', 'down': 'down'},
+                   arrow={'up': -1, 'down': 1})
 
+    def __init__(self):
+        self.pind = {}
+        self.this_hookup_type = None
 
-checking_order = ['parts_hera', 'parts_rfi', 'parts_paper', 'parts_test']
+        # Initialize the dictionaries
+        self.corr_index = self.dict_init(None)
+        self.all_pols = self.dict_init([])
+        self.redirect_part_types = self.dict_init([])
+        self.single_pol_labeled_parts = self.dict_init([])
 
-# Initialize the dictionaries
-corr_index = sys_init(checking_order, None)
-all_pols = sys_init(checking_order, [])
-redirect_part_types = sys_init(checking_order, [])
-single_pol_labeled_parts = sys_init(checking_order, [])
+        # Redefine dictionary as needed
+        #    Define which component corresponds to the correlator input.
+        self.corr_index['parts_hera'] = 6
+        self.corr_index['parts_paper'] = 10
+        self.corr_index['parts_rfi'] = 4
+        #    Define polarization designations (should be one character)
+        self.all_pols['parts_hera'] = ['e', 'n']
+        self.all_pols['parts_paper'] = ['e', 'n']
+        self.all_pols['parts_rfi'] = ['e', 'n']
+        #    Define "special" parts for systems.  These require additional checking/processing
+        self.redirect_part_types['parts_hera'] = ['node']
+        self.single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
 
-# Redefine dictionary as needed
-#    Define which component corresponds to the correlator input.
-corr_index['parts_hera'] = 6
-corr_index['parts_paper'] = 10
-corr_index['parts_rfi'] = 4
-#    Define polarization designations (should be one character)
-all_pols['parts_hera'] = ['e', 'n']
-all_pols['parts_paper'] = ['e', 'n']
-all_pols['parts_rfi'] = ['e', 'n']
-#    Define "special" parts for systems.  These require additional checking/processing
-redirect_part_types['parts_hera'] = ['node']
-single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
+        # This generates the full_connection_path dictionary from port_def
+        self.full_connection_path = {}
+        for _x in self.port_def.keys():
+            ordered_path = {}
+            for k, v in six.iteritems(self.port_def[_x]):
+                ordered_path[v['position']] = k
+            sorted_keys = sorted(list(ordered_path.keys()))
+            self.full_connection_path[_x] = []
+            for k in sorted_keys:
+                self.full_connection_path[_x].append(ordered_path[k])
 
+    def dict_init(self, v0):
+        y = {}
+        for x in self.checking_order:
+            y[x] = v0
+        return y
 
-# This generates the full_connection_path dictionary from port_def
-full_connection_path = {}
-for _x in port_def.keys():
-    ordered_path = {}
-    for k, v in six.iteritems(port_def[_x]):
-        ordered_path[v['position']] = k
-    sorted_keys = sorted(list(ordered_path.keys()))
-    full_connection_path[_x] = []
-    for k in sorted_keys:
-        full_connection_path[_x].append(ordered_path[k])
+    def handle_redirect_part_types(self, part, at_date='now', session=None):
+        """
+        This handles the "special cases" by feeding a new part list back to hookup.
+        """
+        hpn_list = []
+        if part.part_type.lower() == 'node':
+            from hera_mc import cm_handling, cm_utils
+            rptc = cm_handling.Handling(session)
+            conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port='all', at_date=at_date, exact_match=True)
+            redirect_list = []
+            for _k in conn.keys():
+                _pk = cm_utils.split_part_key(_k)[0]
+                if _pk.upper() == part.hpn.upper():
+                    redirect_list.append(_k)
+            for _r in redirect_list:
+                for _x in conn[_r].keys_up:
+                    if _x.upper().startswith('SNP'):
+                        hpn_list.append(cm_utils.split_connection_key(_x)[0])
+        return hpn_list
 
+    def find_hookup_type(self, part_type, hookup_type):
+        if hookup_type in self.port_def.keys():
+            return hookup_type
+        if hookup_type is None:
+            for hookup_type in self.checking_order:
+                if part_type in self.port_def[hookup_type].keys():
+                    return hookup_type
+        raise ValueError("hookup_type {} is not found.".format(hookup_type))
 
-def handle_redirect_part_types(part, at_date='now', session=None):
-    """
-    This handles the "special cases" by feeding a new part list back to hookup.
-    """
-    hpn_list = []
-    if part.part_type.lower() == 'node':
-        from hera_mc import cm_handling, cm_utils
-        rptc = cm_handling.Handling(session)
-        conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port='all', at_date=at_date, exact_match=True)
-        redirect_list = []
-        for _k in conn.keys():
-            _pk = cm_utils.split_part_key(_k)[0]
-            if _pk.upper() == part.hpn.upper():
-                redirect_list.append(_k)
-        for _r in redirect_list:
-            for _x in conn[_r].keys_up:
-                if _x.upper().startswith('SNP'):
-                    hpn_list.append(cm_utils.split_connection_key(_x)[0])
-    return hpn_list
+    def setup(self, part, port_query='all', hookup_type=None):
+        """
+        Given the current part and port_query (which is either 'all', 'e', or 'n')
+        this figures out which pols to do.  Basically, given the part and query it
+        figures out whether to return ['e*'], ['n*'], or ['e*', 'n*']
 
+        Parameter:
+        -----------
+        part:  current part dossier
+        port_query:  the ports that were requested ('e' or 'n' or 'all')
+        hookup_type:  if not None, will use specified hookup_type
+                      otherwise it will look through in order
+        """
+        self.this_hookup_type = hookup_type
+        if hookup_type is None:
+            self.this_hookup_type = self.find_hookup_type(part.part_type, None)
+        for i, _p in enumerate([x.lower() for x in self.all_pols[self.this_hookup_type]]):
+            self.pind[_p] = i
 
-def find_hookup_type(part_type, hookup_type):
-    if hookup_type in port_def.keys():
-        return hookup_type
-    if hookup_type is None:
-        for hookup_type in checking_order:
-            if part_type in port_def[hookup_type].keys():
-                return hookup_type
-    raise ValueError("hookup_type {} is not found.".format(hookup_type))
+        all_pols_lo = [x.lower() for x in self.all_pols[self.this_hookup_type]]
+        port_query = port_query.lower()
+        port_check_list = all_pols_lo + ['all']
+        if port_query not in port_check_list:
+            raise ValueError("Invalid port query {}.  Should be in {}".format(port_query, port_check_list))
 
+        # These are for single pol parts that have their polarization as the last letter of the part name
+        # This is only for parts_paper parts at this time.  Not a good idea going forward.
+        if part.part_type in self.single_pol_labeled_parts[self.this_hookup_type]:
+            en_part_pol = part.hpn[-1].lower()
+            if port_query == 'all' or en_part_pol == port_query:
+                self.pol = [en_part_pol]
+            else:
+                self.pol = None
+            return
 
-def setup(part, port_query='all', hookup_type=None):
-    """
-    Given the current part and port_query (which is either 'all', 'e', or 'n')
-    this figures out which pols to do.  Basically, given the part and query it
-    figures out whether to return ['e*'], ['n*'], or ['e*', 'n*']
+        # Sort out all of the ports into a 'pol_catalog'.
+        pol_catalog = {}
+        for dir in ['up', 'down']:
+            pol_catalog[dir] = {'e': [], 'n': [], 'a': [], 'o': []}
+        connected_ports = {'up': part.connections.input_ports, 'down': part.connections.output_ports}
+        for dir in ['up', 'down']:
+            for cp in connected_ports[dir]:
+                cp = cp.lower()
+                cp_poldes = 'o' if cp[0] not in all_pols_lo else cp[0]
+                if cp_poldes in all_pols_lo:
+                    pol_catalog[dir]['a'].append(cp)  # p = e + n
+                pol_catalog[dir][cp_poldes].append(cp)
+        up = pol_catalog['up'][port_query[0]]
+        dn = pol_catalog['down'][port_query[0]]
 
-    Parameter:
-    -----------
-    part:  current part dossier
-    port_query:  the ports that were requested ('e' or 'n' or 'all')
-    hookup_type:  if not None, will use specified hookup_type
-                  otherwise it will look through in order
-    """
-    if hookup_type is None:
-        hookup_type = find_hookup_type(part.part_type, None)
-    global this_hookup_type, all_pols, pind
-    this_hookup_type = hookup_type
-    for i, _p in enumerate([x.lower() for x in all_pols[this_hookup_type]]):
-        pind[_p] = i
-
-    all_pols_lo = [x.lower() for x in all_pols[this_hookup_type]]
-    port_query = port_query.lower()
-    port_check_list = all_pols_lo + ['all']
-    if port_query not in port_check_list:
-        raise ValueError("Invalid port query {}.  Should be in {}".format(port_query, port_check_list))
-
-    # These are for single pol parts that have their polarization as the last letter of the part name
-    # This is only for parts_paper parts at this time.  Not a good idea going forward.
-    if part.part_type in single_pol_labeled_parts[this_hookup_type]:
-        en_part_pol = part.hpn[-1].lower()
-        if port_query == 'all' or en_part_pol == port_query:
-            return [en_part_pol], this_hookup_type
+        if (len(up) + len(dn)) == 0:  # The part handles both polarizations
+            self.pol = all_pols_lo if port_query == 'all' else port_query
         else:
-            return None, None
+            self.pol = up if len(up) > len(dn) else dn
 
-    # Sort out all of the ports into a 'pol_catalog'.
-    pol_catalog = {}
-    for dir in ['up', 'down']:
-        pol_catalog[dir] = {'e': [], 'n': [], 'a': [], 'o': []}
-    connected_ports = {'up': part.connections.input_ports, 'down': part.connections.output_ports}
-    for dir in ['up', 'down']:
-        for cp in connected_ports[dir]:
-            cp = cp.lower()
-            cp_poldes = 'o' if cp[0] not in all_pols_lo else cp[0]
-            if cp_poldes in all_pols_lo:
-                pol_catalog[dir]['a'].append(cp)  # p = e + n
-            pol_catalog[dir][cp_poldes].append(cp)
-    up = pol_catalog['up'][port_query[0]]
-    dn = pol_catalog['down'][port_query[0]]
+    def next_connection(self, connection_options, current, A, B):
+        """
+        This checks the options and returns the next connection.
+        """
 
-    if (len(up) + len(dn)) == 0:  # The part handles both polarizations
-        pol_to_use = all_pols_lo if port_query == 'all' else port_query
-    else:
-        pol_to_use = up if len(up) > len(dn) else dn
-    return pol_to_use, this_hookup_type
+        # This sets up the parameters to check for the next part/port
+        this_part_info = self.port_def[self.this_hookup_type][A.part_type]
+        next_part_position = this_part_info['position'] + self._D.arrow[current.direction]
+        if next_part_position < 0 or next_part_position > len(self.full_connection_path[self.this_hookup_type]) - 1:
+            return None
+        next_part_type = self.full_connection_path[self.this_hookup_type][next_part_position]
+        next_part_info = self.port_def[self.this_hookup_type][next_part_type]
+        allowed_next_ports = next_part_info[self._D.this[current.direction]][0]
+        if len(next_part_info[self._D.this[current.direction]]) == 2:
+            allowed_next_ports = next_part_info[self._D.this[current.direction]][self.pind[current.pol]]
+        options = []
+        # prefix is defined to handle the single_pol_labeled_parts
+        prefix_this = A.hpn[-1].lower() if A.part_type in self.single_pol_labeled_parts[self.this_hookup_type] else ''
+        for i, opc in enumerate(connection_options):
+            if B[i].part_type != next_part_type:
+                continue
+            prefix_next = B[i].hpn[-1].lower() if next_part_type in self.single_pol_labeled_parts[self.this_hookup_type] else ''
+            this_port = prefix_this
+            this_port += getattr(opc, '{}stream_{}put_port'.format(self._D.this[current.direction], self._D.port[self._D.this[current.direction]]))
+            next_port = prefix_next
+            next_port += getattr(opc, '{}stream_{}put_port'.format(self._D.next[current.direction], self._D.port[self._D.next[current.direction]]))
+            if next_port[0] == '@':
+                continue
+            if len(connection_options) == 1 and next_port in allowed_next_ports:
+                return opc
+            this = Namespace(part=A.hpn, port=this_port, type=A.part_type, prefix=prefix_this)
+            next = Namespace(part=B[i].hpn, port=next_port, type=B[i].part_type, prefix=prefix_next)
+            options.append(Namespace(this=this, next=next, option=opc, pol=current.pol))
 
-
-# Various dictionaries needed for next_connection below
-_D = Namespace(port={'up': 'out', 'down': 'in'},
-               this={'up': 'down', 'down': 'up'},
-               next={'up': 'up', 'down': 'down'},
-               arrow={'up': -1, 'down': 1})
-
-
-def next_connection(connection_options, current, A, B):
-    """
-    This checks the options and returns the next connection.
-    """
-    global this_hookup_type, _D, pind
-
-    # This sets up the parameters to check for the next part/port
-    this_part_info = port_def[this_hookup_type][A.part_type]
-    next_part_position = this_part_info['position'] + _D.arrow[current.direction]
-    if next_part_position < 0 or next_part_position > len(full_connection_path[this_hookup_type]) - 1:
-        return None
-    next_part_type = full_connection_path[this_hookup_type][next_part_position]
-    next_part_info = port_def[this_hookup_type][next_part_type]
-    allowed_next_ports = next_part_info[_D.this[current.direction]][0]
-    if len(next_part_info[_D.this[current.direction]]) == 2:
-        allowed_next_ports = next_part_info[_D.this[current.direction]][pind[current.pol]]
-    options = []
-    # prefix is defined to handle the single_pol_labeled_parts
-    prefix_this = A.hpn[-1].lower() if A.part_type in single_pol_labeled_parts[this_hookup_type] else ''
-    for i, opc in enumerate(connection_options):
-        if B[i].part_type != next_part_type:
-            continue
-        prefix_next = B[i].hpn[-1].lower() if next_part_type in single_pol_labeled_parts[this_hookup_type] else ''
-        this_port = prefix_this + getattr(opc, '{}stream_{}put_port'.format(_D.this[current.direction], _D.port[_D.this[current.direction]]))
-        next_port = prefix_next + getattr(opc, '{}stream_{}put_port'.format(_D.next[current.direction], _D.port[_D.next[current.direction]]))
-        if next_port[0] == '@':
-            continue
-        if len(connection_options) == 1 and next_port in allowed_next_ports:
-            return opc
-        this = Namespace(part=A.hpn, port=this_port, type=A.part_type, prefix=prefix_this)
-        next = Namespace(part=B[i].hpn, port=next_port, type=B[i].part_type, prefix=prefix_next)
-        options.append(Namespace(this=this, next=next, option=opc, pol=current.pol))
-
-    # This runs through the Namespace to find the actual part/port
-    #    First pass is to check for the specific port-sets that pass
-    for opt in options:
-        check_next_port = opt.next.port.strip(opt.next.prefix)
-        if current.port == opt.this.port and check_next_port in allowed_next_ports:
-            return opt.option
-    #    Second pass checks for matching the leading polarization character.
-    for opt in options:
-        check_next_port = opt.next.port.strip(opt.next.prefix)
-        if current.pol[0] == opt.this.port[0] and check_next_port in allowed_next_ports:
-            return opt.option
+        # This runs through the Namespace to find the actual part/port
+        #    First pass is to check for the specific port-sets that pass
+        for opt in options:
+            check_next_port = opt.next.port.strip(opt.next.prefix)
+            if current.port == opt.this.port and check_next_port in allowed_next_ports:
+                return opt.option
+        #    Second pass checks for matching the leading polarization character.
+        for opt in options:
+            check_next_port = opt.next.port.strip(opt.next.prefix)
+            if current.pol[0] == opt.this.port[0] and check_next_port in allowed_next_ports:
+                return opt.option
