@@ -91,7 +91,7 @@ class TestSys(TestHERAMC):
         hufc = hookup.get_hookup_from_db(['PAM723'], 'A', 'all', at_date='2017/12/31')
         self.assertEqual(len(hufc.keys()), 0)
         hufc = hookup.get_hookup_from_db(['RO1A1E'], 'A', 'n', at_date='now')
-        self.assertEqual(len(hufc.keys()), 1)
+        self.assertEqual(len(hufc.keys()), 0)
 
     def test_hookup_dossier(self):
         sysdef = cm_sysdef.Sysdef()
@@ -122,7 +122,7 @@ class TestSys(TestHERAMC):
         part.hpn = 'RI123Z'
         part.part_type = 'cable-post-amp(in)'
         sysdef.setup(part, port_query='e', hookup_type='parts_paper')
-        self.assertEqual(sysdef.pol, 'e')
+        self.assertEqual(sysdef.pol, None)
         sysdef.setup(part, port_query='all', hookup_type='parts_paper')
         self.assertEqual(sysdef.this_hookup_type, 'parts_paper')
         part.hpn = 'doorknob'

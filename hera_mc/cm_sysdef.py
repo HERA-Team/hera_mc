@@ -162,6 +162,7 @@ class Sysdef:
                 self.pol = [en_part_pol]
             else:
                 self.pol = None
+            return
 
         # Sort out all of the ports into a 'pol_catalog'.
         pol_catalog = {}
