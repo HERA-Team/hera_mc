@@ -53,6 +53,8 @@ class Sysdef:
     port_def['parts_test'] = {
         'vapor': {'up': [[None]], 'down': [[None]], 'position': 0}
     }
+    checking_order = ['parts_hera', 'parts_rfi', 'parts_paper', 'parts_test']
+
     # Various dictionaries needed for next_connection below
     _D = Namespace(port={'up': 'out', 'down': 'in'},
                    this={'up': 'down', 'down': 'up'},
@@ -62,7 +64,6 @@ class Sysdef:
     def __init__(self):
         self.pind = {}
         self.this_hookup_type = None
-        self.checking_order = ['parts_hera', 'parts_rfi', 'parts_paper', 'parts_test']
 
         # Initialize the dictionaries
         self.corr_index = self.dict_init(None)
