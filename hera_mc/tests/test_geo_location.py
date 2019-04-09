@@ -84,7 +84,7 @@ class TestGeo(TestHERAMC):
     def test_get_ants_installed_since(self):
         query_date = Time('2017-05-01 01:00:00', scale='utc')
         ants_in = self.h.get_ants_installed_since(query_date, station_types_to_check=['HH'])
-        self.assertTrue(len(ants_in) == 4)
+        self.assertEqual(len(ants_in), 6)
 
     def test_plotting(self):
         stations_to_plot = ['HH0']
