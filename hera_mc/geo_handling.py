@@ -378,11 +378,11 @@ class Handling:
             plt.plot(p[:, 0], p[:, 1], marker='o', color='0.8', linestyle='none')
         return len(p[:, 0])
 
-    def get_active_stations(self, query_date, station_types_to_use):
+    def get_active_stations(self, query_date, station_types_to_use, hookup_type=None):
         from . import cm_hookup, cm_revisions
         query_date = cm_utils.get_astropytime(query_date)
-        hookup = cm_hookup.Hookup(query_date, self.session)
-        hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
+        hookup = cm_hookup.Hookup(self.session)
+        hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache, at_date=query_date, hookup_type=hookup_type)
         self.station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
         active_stations = []
         for st in self.station_types_to_use:

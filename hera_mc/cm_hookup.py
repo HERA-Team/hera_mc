@@ -34,14 +34,20 @@ class HookupDossierEntry:
         self.hookup_type = {}  # name of hookup_type
         self.columns = {}  # list with the actual column headers in hookup
         self.timing = {}  # aggregate hookup start and stop
-        self.level = {}  # correlator level
+
+    def __repr__(self):
+        s = "<{}:  {}>\n".format(self.entry_key, self.hookup_type)
+        s += "{}\n".format(self.hookup)
+        s += "{}\n".format(self.fully_connected)
+        s += "{}\n".format(self.timing)
+        return s
 
     def get_hookup_type_and_column_headers(self, pol, part_types_found):
         """
         The columns in the hookup contain parts in the hookup chain and the column headers are
         the part types contained in that column.  This returns the headers for the retrieved hookup.
 
-        It just checks which hookup_type the parts are in (parts_paper or parts_hera) and keeps however many
+        It just checks which hookup_type the parts are in and keeps however many
         parts are used.
 
         Parameters:
@@ -90,11 +96,6 @@ class HookupDossierEntry:
         self.columns[pol].append('start')
         self.columns[pol].append('stop')
 
-    def add_correlator_levels(self, pol):
-        print("Correlator levels not yet implemented for new correlator.")
-        self.columns[pol].append('level')
-        self.level[pol] = 'N/A'
-
     def get_part_in_hookup_from_type(self, part_type, include_revs=False, include_ports=False):
         """
         Retrieve the part name for a given part_type from a hookup
@@ -112,7 +113,7 @@ class HookupDossierEntry:
                     if include_ports they are included as e.g. 'input>FDV:A<terminals'
         """
         parts = {}
-        extra_cols = ['start', 'stop', 'level']
+        extra_cols = ['start', 'stop']
         for pol, names in six.iteritems(self.columns):
             if part_type not in names:
                 parts[pol] = None
@@ -153,10 +154,6 @@ class HookupDossierEntry:
 
     def table_entry_row(self, pol, headers, part_types, show):
         timing = self.timing[pol]
-        if show['levels']:
-            level = self.level[pol]
-        else:
-            level = False
         td = ['-'] * len(headers)
         # Get the first N-1 parts
         dip = ''
@@ -173,13 +170,11 @@ class HookupDossierEntry:
             new_row_entry = build_new_row_entry(
                 dip, d.downstream_part, d.down_part_rev, None, show)
             td[headers.index(part_type)] = new_row_entry
-        # Add timing and levels
+        # Add timing
         if 'start' in headers:
             td[headers.index('start')] = timing[0]
         if 'stop' in headers:
             td[headers.index('stop')] = timing[1]
-        if level:
-            td[headers.index('level')] = level
         return td
 
 
@@ -207,17 +202,16 @@ class Hookup:
     else:
         hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_3.npy')
 
-    def __init__(self, at_date='now', session=None):
+    def __init__(self, session=None):
         """
         Hookup traces parts and connections through the signal path (as defined
-        by the connections).
+        by the connections in cm_sysdef).
         """
         if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
         else:
             self.session = session
-        self.at_date = cm_utils.get_astropytime(at_date)
         self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
         self.cached_hookup_dict = None
@@ -237,88 +231,79 @@ class Hookup:
         if os.path.exists(self.hookup_cache_file):
             os.remove(self.hookup_cache_file)
 
-    def determine_hookup_cache_to_use(self, force_new_cache=False):
+    def _hookup_cache_to_use(self, force_new_cache=False):
         """
-        Determines action regarding using an existing cache file or writing and using a new one.
-        If force_new_cache is set, it automatically writes/uses a new one.  If the cache file is out of
-        date it writes/uses a new one.  Otherwise it uses the existing one (rereading from the
-        cache file if not one in memory.)
-
-        This assumes that if a hookup_dict is read in, it corresponds to the cache_file.
+        Confirms/sets the cached_hookup_dict to use.  If force_new_cache is set, it automatically
+        writes/uses a new one.  If the cache file is out of date it writes/uses a new one.  Otherwise
+        it uses the existing one (rereading from the cache file if not one in memory.)
 
         If the cache file is up-to-date and is in memory, this does nothing.
 
         Parameters
         -----------
-        force_new_cache:  boolean to force a new read as opposed to using cache file,
-                          if the existing file is valid.  If the existing cache file is out-of-date
-                          relative to the cm_version it will also generate/write a new one.
+        force_new_cache:  force a new cache hookup to be set and written to disc.
 
         """
-        cache_file_date_OK = self.hookup_cache_file_date_OK()
-        if force_new_cache or not cache_file_date_OK:
+        if force_new_cache or not self._hookup_cache_file_OK():
             self.cached_hookup_dict = self.get_hookup_from_db(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
                                                               port_query='all', at_date=self.at_date,
-                                                              exact_match=False, levels=False)
-            log_msg = "force_new_cache:  {};  cache_file_date_OK:  {}".format(force_new_cache, cache_file_date_OK)
+                                                              exact_match=False, hookup_type=self.hookup_type)
+            log_msg = "force_new_cache:  {}".format(force_new_cache)
             self.write_hookup_cache_to_file(log_msg)
         elif self.cached_hookup_dict is None:
             if os.path.exists(self.hookup_cache_file):
                 self.read_hookup_cache_from_file()
             else:  # pragma: no cover
-                self.determine_hookup_cache_to_use(force_new_cache=True)
+                self._hookup_cache_to_use(force_new_cache=True)
 
-    def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', exact_match=False, levels=False,
-                   force_new_cache=False, force_db_at_date=None):
+    def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', at_date='now', exact_match=False,
+                   force_new_cache=False, force_db=False, hookup_type=None):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary.
         The data may come from one of two sources:
         (1) if the (a) part list is consistent with the keys, (b) date is current, and (c) revision
             hash is current with a local cache file, data from the cache file will be used.
-        (2) if those conditions are not met, or the flag 'force_new_cache' is True, or 'force_db_at_date'
-            is not None, it will use the database.
-
-        This only gets the contemporary hookups (unlike parts and connections which get all), unless
-        force_db_at_date is set.
+        (2) if those conditions are not met, or the flag 'force_new_cache' is True, or 'force_db'
+            is True, it will use the database.
 
         Parameters
         -----------
         hpn_list:  - list/string of input hera part number(s) (whole or first part thereof)
-                   - if string == 'cached' it returns the current dict that would be used
+                   - if string == 'cache' it returns the current dict that would be used
                    - if there are any non-hookup-cached items in list, it reads the database
         rev:  the revision number or descriptor
-        port_query:  a specifiable port name to follow, or 'all',  default is 'all'.
+        port_query:  a port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
+        at_date:  date for query
         exact_match:  boolean for either exact_match or partial
-        levels:  boolean to include correlator levels (Currently not working.)
         force_new_cache:  boolean to force a full database read as opposed to the cache file.
                           This will also rewrite the cache file in the process
-        force_db_at_date:  if not None, this will force the database to be read for the date supplied here.
+        force_db:  flag to force the database to be read, not touching the cache file
+        hookup_type:  type of hookup to use (current observing system is 'parts_hera').
+                      If 'None' it will determine which system it thinks it is based on
+                      the part-type.  The order in which it checks is specified in cm_sysdef.
+                      Only change if you know you want a different system (like 'parts_paper').
         """
+        at_date = cm_utils.get_astropytime(at_date)
+        self.at_date = at_date
+        self.hookup_type = hookup_type
+
         # Take appropriate action if hpn_list is a string
         if isinstance(hpn_list, six.string_types):
-            if hpn_list.lower() == 'cached':
+            if hpn_list.lower().startswith('cache'):
                 print("Force read of cache file - not guaranteed fresh.")
                 self.read_hookup_cache_from_file()
                 return self.cached_hookup_dict
             else:
                 hpn_list = cm_utils.listify(hpn_list)
 
-        # Check if force_db return either requested or needed
-        force_db = False
-        requested_list_OK_for_cache = self.double_check_request_for_cache_keys(hpn_list)
-        if not requested_list_OK_for_cache:
-            force_db = True
-            at_date = 'now'
-        if force_db_at_date is not None:
-            force_db = True
-            at_date = force_db_at_date
-        if force_db:
-            return self.get_hookup_from_db(hpn_list=hpn_list, rev=rev, port_query=port_query,
-                                           at_date=at_date, exact_match=exact_match, levels=levels)
+        # Check if force_db either requested or needed
+        if force_db or not self._requested_list_OK_for_cache(hpn_list):
+            return self.get_hookup_from_db(hpn_list=hpn_list, rev=rev, port_query=port_query, at_date=at_date,
+                                           exact_match=exact_match, hookup_type=hookup_type)
 
         # Check/get the appropriate hookup dict
         # (a) in memory, (b) re-read cache file, or (c) generate new
-        self.determine_hookup_cache_to_use(force_new_cache=force_new_cache)
+        self._hookup_cache_to_use(force_new_cache=force_new_cache)
 
         # Now build up the returned hookup_dict
         hookup_dict = {}
@@ -336,12 +321,9 @@ class Hookup:
                         break
             if use_this_one:
                 hookup_dict[k] = copy.copy(self.cached_hookup_dict[k])
-            if levels:
-                for pol in hookup_dict[k].hookup:
-                    hookup_dict[k].add_correlator_levels(pol)
         return hookup_dict
 
-    def double_check_request_for_cache_keys(self, hpn_list):
+    def _requested_list_OK_for_cache(self, hpn_list):
         """
         Checks that all hookup requests match the cached keys.
         """
@@ -353,34 +335,43 @@ class Hookup:
                 return False
         return True
 
-    def get_hookup_from_db(self, hpn_list, rev, port_query, at_date, exact_match=False, levels=False):
+    def get_hookup_from_db(self, hpn_list, rev, port_query, at_date, exact_match=False, hookup_type=None):
         """
         This gets called by the get_hookup wrapper if the database needs to be read (for instance, to generate
         a cache file, or search for parts different than those keyed on in the cache file.)
         """
+        # Reset at_date
+        at_date = cm_utils.get_astropytime(at_date)
+        self.at_date = at_date
+        self.hookup_type = hookup_type
+
         # Get all the appropriate parts
         parts = self.handling.get_part_dossier(hpn=hpn_list, rev=rev,
-                                               at_date=at_date,
+                                               at_date=self.at_date,
                                                exact_match=exact_match,
                                                full_version=True)
         hookup_dict = {}
         for k, part in six.iteritems(parts):
-            if part.part_type in cm_sysdef.redirect_part_types:
-                cm_sysdef.handle_redirect_part_types(part)
-                continue
             if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
                 continue
-            port_pol_designators = cm_sysdef.get_port_pols_to_do(part, port_query)
+            hookup_type = cm_sysdef.find_hookup_type(part_type=part.part_type, hookup_type=hookup_type)
+            if part.part_type in cm_sysdef.redirect_part_types[hookup_type]:
+                redirect_parts = cm_sysdef.handle_redirect_part_types(part, at_date=at_date, session=self.session)
+                redirect_hookup_dict = self.get_hookup_from_db(hpn_list=redirect_parts, rev=rev, port_query=port_query,
+                                                               at_date=self.at_date, exact_match=True, hookup_type=hookup_type)
+                for rhdk, vhd in six.iteritems(redirect_hookup_dict):
+                    hookup_dict[rhdk] = vhd
+                redirect_hookup_dict = None
+                continue
+            port_pol_designators, self.hookup_type = cm_sysdef.setup(part=part, port_query=port_query, hookup_type=hookup_type)
             if port_pol_designators is None:
                 continue
             hookup_dict[k] = HookupDossierEntry(k)
             for port_pol in port_pol_designators:
-                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part.part.hpn, part.part.hpn_rev, port_pol)
+                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part.hpn, part.rev, port_pol)
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[port_pol])
                 hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
                 hookup_dict[k].add_timing_and_fully_connected(port_pol)
-                if levels:
-                    hookup_dict[k].add_correlator_levels(port_pol)
         return hookup_dict
 
     def get_part_types_found(self, hookup_connections):
@@ -404,9 +395,8 @@ class Hookup:
         starting = Namespace(direction='up', part=part, rev=rev, port=port, pol=pol)
         current = copy.copy(starting)
         self._recursive_connect(current)
-        current = copy.copy(starting)
-        current.direction = 'down'
-        self._recursive_connect(current)
+        starting.direction = 'down'
+        self._recursive_connect(starting)
 
         hu = []
         for pn in reversed(self.upstream):
@@ -415,50 +405,62 @@ class Hookup:
             hu.append(pn)
         return hu
 
-    def _recursive_connect(self, rg):
+    def _recursive_connect(self, current):
         """
         Find the next connection up the signal chain.
         """
-        next_conn = self._get_next_connection(rg)
+        next_conn = self._get_next_connection(current)
         if next_conn is not None:
-            lll = len(self.upstream) * '  '
-            if rg.direction == 'up':
+            if current.direction == 'up':
                 self.upstream.append(next_conn)
-                rg.part = next_conn.upstream_part
-                rg.rev = next_conn.up_part_rev
-                rg.port = next_conn.upstream_output_port
+                current.part = next_conn.upstream_part
+                current.rev = next_conn.up_part_rev
+                current.port = next_conn.upstream_output_port
             else:
                 self.downstream.append(next_conn)
-                rg.part = next_conn.downstream_part
-                rg.rev = next_conn.down_part_rev
-                rg.port = next_conn.downstream_input_port
-            self._recursive_connect(rg)
+                current.part = next_conn.downstream_part
+                current.rev = next_conn.down_part_rev
+                current.port = next_conn.downstream_input_port
+            self._recursive_connect(current)
 
-    def _get_next_connection(self, rg):
+    def _get_next_connection(self, current):
         """
         Get next connected part going the given direction.
         """
         # Get all of the port options going the right direction
+        tpk = cm_utils.make_part_key(current.part, current.rev)
+        this = self.handling.get_part_dossier(hpn=current.part, rev=current.rev, at_date=self.at_date,
+                                              exact_match=True, full_version=False)[tpk]
         options = []
-        if rg.direction == 'up':      # Going upstream
+        next = []
+        if current.direction == 'up':      # Going upstream
             for conn in self.session.query(PC.Connections).filter(
-                    (func.upper(PC.Connections.downstream_part) == rg.part.upper())
-                    & (func.upper(PC.Connections.down_part_rev) == rg.rev.upper())):
+                    (func.upper(PC.Connections.downstream_part) == current.part.upper())
+                    & (func.upper(PC.Connections.down_part_rev) == current.rev.upper())):
                 conn.gps2Time()
-                if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
-                    options.append(copy.copy(conn))
-        elif rg.direction == 'down':  # Going downstream
+                if not cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
+                    continue
+                options.append(copy.copy(conn))
+                npk = cm_utils.make_part_key(conn.upstream_part, conn.up_part_rev)
+                next.append(self.handling.get_part_dossier(hpn=conn.upstream_part, rev=conn.up_part_rev, at_date=self.at_date,
+                                                           exact_match=True, full_version=False)[npk])
+        elif current.direction == 'down':  # Going downstream
             for conn in self.session.query(PC.Connections).filter(
-                    (func.upper(PC.Connections.upstream_part) == rg.part.upper())
-                    & (func.upper(PC.Connections.up_part_rev) == rg.rev.upper())):
+                    (func.upper(PC.Connections.upstream_part) == current.part.upper())
+                    & (func.upper(PC.Connections.up_part_rev) == current.rev.upper())):
                 conn.gps2Time()
-                if cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
-                    options.append(copy.copy(conn))
-        return cm_sysdef.next_connection(options, rg)
+                if not cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
+                    continue
+                options.append(copy.copy(conn))
+                npk = cm_utils.make_part_key(conn.downstream_part, conn.down_part_rev)
+                next.append(self.handling.get_part_dossier(hpn=conn.downstream_part, rev=conn.down_part_rev, at_date=self.at_date,
+                                                           exact_match=True, full_version=False)[npk])
+        return cm_sysdef.next_connection(options, current, this, next)
 
     def write_hookup_cache_to_file(self, log_msg):
         with open(self.hookup_cache_file, 'wb') as f:
             np.save(f, self.at_date)
+            np.save(f, self.hookup_type)
             np.save(f, cm_utils.stringify(self.hookup_list_to_cache))
             np.save(f, self.cached_hookup_dict)
             np.save(f, self.part_type_cache)
@@ -471,16 +473,19 @@ class Hookup:
         if os.path.exists(self.hookup_cache_file):
             with open(self.hookup_cache_file, 'rb') as f:
                 self.cached_at_date = Time(np.load(f).item())
+                self.cached_hookup_type = np.load(f).item()
                 self.cached_hookup_list = cm_utils.listify(np.load(f).item())
                 self.cached_hookup_dict = np.load(f).item()
                 self.part_type_cache = np.load(f).item()
         else:
-            self.determine_hookup_cache_to_use(force_new_cache=True)
+            self._hookup_cache_to_use(force_new_cache=True)
             self.read_hookup_cache_from_file()
+        self.hookup_type = self.cached_hookup_type
 
-    def hookup_cache_file_date_OK(self, contemporaneous_minutes=15.0):
+    def _hookup_cache_file_OK(self, contemporaneous_minutes=15.0):
         """
         This determines if the cache file is up-to-date relative to the cm database.
+        and if hookup_type is correct
         There are 4 relevant dates:
             cm_hash_time:  last time the database was updated per CMVersion
             file_mod_time:  when the cache file was last changed (ie written)
@@ -502,7 +507,7 @@ class Hookup:
         cm_hash_time = Time(result[-1].update_time, format='gps')
         file_mod_time = Time(stats.st_mtime, format='unix')
         # If CMVersion changed since file was written, don't know so fail...
-        if file_mod_time < cm_hash_time:
+        if file_mod_time < cm_hash_time:  # pragma: no cover
             log_dict = {'file_mod_time': cm_utils.get_time_for_display(file_mod_time),
                         'cm_hash_time': cm_utils.get_time_for_display(cm_hash_time)}
             cm_utils.log('__hookup_cache_file_date_OK:  out of date.', log_dict=log_dict)
@@ -510,7 +515,13 @@ class Hookup:
         if os.path.exists(self.hookup_cache_file):
             with open(self.hookup_cache_file, 'rb') as f:
                 cached_at_date = Time(np.load(f).item())
+                cached_hookup_type = np.load(f).item()
         else:  # pragma: no cover
+            return False
+
+        if self.hookup_type is None:
+            self.hookup_type = cached_hookup_type
+        if self.hookup_type != cached_hookup_type:  # pragma: no cover
             return False
 
         # If the cached and query dates are after the last hash time it's ok
@@ -521,23 +532,13 @@ class Hookup:
         if abs(cached_at_date - self.at_date) < TimeDelta(60.0 * contemporaneous_minutes, format='sec'):
             return True
 
-        # Otherwise, not OK
-        _A = cached_at_date > cm_hash_time
-        _B = self.at_date > cm_hash_time
-        _C = abs(cached_at_date - self.at_date) < TimeDelta(60.0 * contemporaneous_minutes, format='sec')
-        log_dict = {'cached_at_date': cm_utils.get_time_for_display(cached_at_date),
-                    'at_date': cm_utils.get_time_for_display(self.at_date),
-                    'cm_hash_time': cm_utils.get_time_for_display(cm_hash_time),
-                    '_A': _A, '_B': _B, '_C': _C}
-        cm_utils.log('__hookup_cache_file_OK:  timing incorrect.', log_dict=log_dict)
-        return False
-
     def hookup_cache_file_info(self):
         if not os.path.exists(self.hookup_cache_file):  # pragma: no cover
             s = "{} does not exist.\n".format(self.hookup_cache_file)
         else:
             self.read_hookup_cache_from_file()
             s = 'Cache file:  {}\n'.format(self.hookup_cache_file)
+            s += 'Cache hookup type:  {}\n'.format(self.cached_hookup_type)
             s += 'Cached_at_date:  {}\n'.format(cm_utils.get_time_for_display(self.cached_at_date))
             stats = os.stat(self.hookup_cache_file)
             file_mod_time = Time(stats.st_mtime, format='unix')
@@ -555,7 +556,7 @@ class Hookup:
         s += '\nCM Version latest cm_hash_time:  {}\n'.format(cm_utils.get_time_for_display(cm_hash_time))
         return s
 
-    def show_hookup(self, hookup_dict, cols_to_show='all', state='full', levels=False, ports=False, revs=False,
+    def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
                     file=None, output_format='ascii'):
         """
         Print out the hookup table -- uses tabulate package.
@@ -564,7 +565,6 @@ class Hookup:
         -----------
         hookup_dict:  generated in self.get_hookup
         cols_to_show:  list of columns to include in hookup listing
-        levels:  boolean to either show the correlator levels or not
         ports:  boolean to include ports or not
         revs:  boolean to include revisions letter or not
         state:  show the full hookups only, or all
@@ -572,7 +572,7 @@ class Hookup:
         output_format:  set to html for the web-page version, or ascii
 
         """
-        show = {'levels': levels, 'ports': ports, 'revs': revs}
+        show = {'ports': ports, 'revs': revs}
         headers = self.make_header_row(hookup_dict, cols_to_show)
         table_data = []
         numerical_keys = cm_utils.put_keys_in_numerical_order(sorted(hookup_dict.keys()))

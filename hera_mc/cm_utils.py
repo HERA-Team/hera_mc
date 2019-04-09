@@ -141,9 +141,9 @@ def add_date_time_args(parser):
 
 
 def is_active(at_date, start_date, stop_date):
-    at_date = get_astropytime(at_date)
-    start_date = get_astropytime(start_date)
-    stop_date = get_stopdate(stop_date)
+    at_date = get_astropytime(at_date).gps
+    start_date = get_astropytime(start_date).gps
+    stop_date = get_stopdate(stop_date).gps
     return at_date >= start_date and at_date <= stop_date
 
 
