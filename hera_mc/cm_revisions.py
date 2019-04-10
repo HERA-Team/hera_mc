@@ -15,7 +15,7 @@ import warnings
 from tabulate import tabulate
 from argparse import Namespace
 
-from . import cm_utils, part_connect
+from . import cm_utils, cm_partconn
 
 
 def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
@@ -67,7 +67,7 @@ def get_last_revision(hpn, session=None):
     session:  db session
     """
 
-    revisions = part_connect.get_part_revisions(hpn, session)
+    revisions = cm_partconn.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
     latest_end = cm_utils.get_astropytime('<')
@@ -102,7 +102,7 @@ def get_all_revisions(hpn, session=None):
     session:  db session
     """
 
-    revisions = part_connect.get_part_revisions(hpn, session)
+    revisions = cm_partconn.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
     sort_rev = sorted(revisions.keys())
@@ -125,7 +125,7 @@ def get_specific_revision(hpn, rq, session=None):
     session:  db session
     """
 
-    revisions = part_connect.get_part_revisions(hpn, session)
+    revisions = cm_partconn.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
     this_rev = []
@@ -148,7 +148,7 @@ def get_active_revision(hpn, at_date, session=None):
     session:  db session
     """
 
-    revisions = part_connect.get_part_revisions(hpn, session)
+    revisions = cm_partconn.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
     return_active = []

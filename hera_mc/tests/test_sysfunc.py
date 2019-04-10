@@ -18,7 +18,7 @@ import numpy as np
 from astropy.time import Time, TimeDelta
 from argparse import Namespace
 from contextlib import contextmanager
-from .. import (geo_location, cm_sysfunc, mc, cm_transfer, part_connect,
+from .. import (geo_location, cm_sysfunc, mc, cm_transfer, cm_partconn,
                 cm_hookup, cm_utils, utils, cm_sysdef)
 from . import TestHERAMC
 
@@ -214,7 +214,7 @@ class TestSys(TestHERAMC):
         dubitable_ants = self.sys_h.get_dubitable_list()
         self.assertTrue(dubitable_ants is None)
         at_date = cm_utils.get_astropytime('2017-01-01')
-        part_connect.update_dubitable(self.test_session, at_date.gps, ['1', '2', '3'])
+        cm_partconn.update_dubitable(self.test_session, at_date.gps, ['1', '2', '3'])
         dubitable_ants = self.sys_h.get_dubitable_list()
         dubitable_ants_list = dubitable_ants.split(",")
         self.assertEqual(len(dubitable_ants_list), 3)

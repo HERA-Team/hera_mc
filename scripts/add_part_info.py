@@ -9,7 +9,7 @@ Script to handle adding a comment to the part_info table.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, cm_revisions
+from hera_mc import mc, cm_utils, cm_partconn, cm_revisions
 import six
 
 
@@ -54,4 +54,4 @@ if __name__ == '__main__':
 
     # Check for part
     print("Adding info for part {}:{}".format(args.hpn, args.rev))
-    part_connect.add_part_info(session, args.hpn, args.rev, at_date, args.comment, args.library_file)
+    cm_partconn.add_part_info(session, args.hpn, args.rev, at_date, args.comment, args.library_file)

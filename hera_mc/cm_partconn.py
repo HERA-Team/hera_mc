@@ -184,7 +184,7 @@ def update_part(session=None, data=None, add_new_part=False):
                     continue
             session.add(part)
             session.commit()
-    cm_utils.log('part_connect part update', data_dict=data_dict)
+    cm_utils.log('cm_partconn part update', data_dict=data_dict)
     if close_session_when_done:
         session.close()
 
@@ -334,7 +334,7 @@ def update_dubitable(session=None, transition_gpstime=None, data=None):
     session.add(new_dubi)
     session.commit()
     data_dict = {'start_gpstime': [transition_gpstime], 'ant_list:len': [len(data)]}
-    cm_utils.log('part_connect dubitable update', data_dict=data_dict)
+    cm_utils.log('cm_partconn dubitable update', data_dict=data_dict)
 
     if close_session_when_done:
         session.close()
@@ -702,7 +702,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
                     continue
             session.add(connection)
             session.commit()
-    cm_utils.log('part_connect connection update', data_dict=data_dict)
+    cm_utils.log('cm_partconn connection update', data_dict=data_dict)
     if close_session_when_done:
         session.close()
 

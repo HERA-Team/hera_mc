@@ -13,7 +13,7 @@ from astropy.time import Time, TimeDelta
 from sqlalchemy import func, asc
 import numpy as np
 
-from . import mc, part_connect, cm_utils, cm_hookup, cm_revisions, cm_sysdef
+from . import mc, cm_partconn, cm_utils, cm_hookup, cm_revisions, cm_sysdef
 from . import geo_location, geo_handling
 
 
@@ -94,7 +94,7 @@ class Handling:
 
         at_date = cm_utils.get_astropytime(date)
         fnd = []
-        for dubi in self.session.query(part_connect.Dubitable):
+        for dubi in self.session.query(cm_partconn.Dubitable):
             start_time = cm_utils.get_astropytime(dubi.start_gpstime)
             stop_time = cm_utils.get_astropytime(dubi.stop_gpstime)
             if cm_utils.is_active(at_date, start_time, stop_time):
@@ -350,7 +350,7 @@ class Handling:
         for k, v in six.iteritems(col):
             col[k].append(len(v[0]))
         found_entries = []
-        for x in self.session.query(part_connect.PartInfo).filter((func.upper(part_connect.PartInfo.hpn) == system_kw.upper())):
+        for x in self.session.query(cm_partconn.PartInfo).filter((func.upper(cm_partconn.PartInfo.hpn) == system_kw.upper())):
             if kword.lower() == 'all' or x.hpn_rev.lower() == kword.lower():
                 commlib = '{}  <{}>'.format(x.comment, x.library_file)
                 display_time = cm_utils.get_time_for_display(x.posting_gpstime)

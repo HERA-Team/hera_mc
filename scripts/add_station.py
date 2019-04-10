@@ -11,7 +11,7 @@ from __future__ import absolute_import, division, print_function
 
 import os.path
 import six
-from hera_mc import mc, geo_location, cm_utils, part_connect, geo_handling
+from hera_mc import mc, geo_location, cm_utils, cm_partconn, geo_handling
 
 region = {'herahexw': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
                        23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
@@ -119,7 +119,7 @@ def add_entry_to_parts(session, args):
             [hpn, rev, 'hptype', 'station'],
             [hpn, rev, 'manufacturer_number', args.sernum],
             [hpn, rev, 'start_gpstime', dt.gps]]
-    part_connect.update_part(session, data, args.add_new_part)
+    cm_partconn.update_part(session, data, args.add_new_part)
 
 
 if __name__ == '__main__':
