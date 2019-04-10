@@ -146,7 +146,7 @@ class PartDossierEntry():
 
 
 class PartConnectionDossierEntry:
-    def __init__(self, hpn, rev, port='all'):
+    def __init__(self, hpn, rev, port='all', at_date=None):
         """
         This class holds connections to a specific part.  It only includes immediately
         upstream and downstream of that part (use 'hookup' for cascaded parts.)  This
@@ -169,6 +169,7 @@ class PartConnectionDossierEntry:
         self.rev = rev.upper()
         self.port = port.lower()
         self.entry_key = cm_utils.make_part_key(hpn, rev)
+        self.at_date = at_date
         self.up = {}
         self.down = {}
         self.keys_up = []  # These are ordered/paired keys
@@ -200,12 +201,13 @@ class PartConnectionDossierEntry:
                 & (func.upper(PC.Connections.up_part_rev) == self.rev))):
             if self.port == 'all' or conn.upstream_output_port.lower() == self.port:
                 conn.gps2Time()
-                ckey = cm_utils.make_connection_key(conn.downstream_part,
-                                                    conn.down_part_rev,
-                                                    conn.downstream_input_port,
-                                                    conn.start_gpstime)
-                self.down[ckey] = copy.copy(conn)
-                tmp[conn.upstream_output_port + '{:03d}'.format(i)] = ckey
+                if cm_utils.is_active(self.at_date, conn.start_gpstime, conn.stop_gpstime):
+                    ckey = cm_utils.make_connection_key(conn.downstream_part,
+                                                        conn.down_part_rev,
+                                                        conn.downstream_input_port,
+                                                        conn.start_gpstime)
+                    self.down[ckey] = copy.copy(conn)
+                    tmp[conn.upstream_output_port + '{:03d}'.format(i)] = ckey
         self.keys_down = [tmp[x] for x in sorted(tmp.keys())]
 
         # Find where the part is in the downward position, so identify its upward connection
@@ -215,12 +217,13 @@ class PartConnectionDossierEntry:
                 & (func.upper(PC.Connections.down_part_rev) == self.rev))):
             if self.port == 'all' or conn.downstream_input_port.lower() == self.port:
                 conn.gps2Time()
-                ckey = cm_utils.make_connection_key(conn.upstream_part,
-                                                    conn.up_part_rev,
-                                                    conn.upstream_output_port,
-                                                    conn.start_gpstime)
-                self.up[ckey] = copy.copy(conn)
-                tmp[conn.downstream_input_port + '{:03d}'.format(i)] = ckey
+                if cm_utils.is_active(self.at_date, conn.start_gpstime, conn.stop_gpstime):
+                    ckey = cm_utils.make_connection_key(conn.upstream_part,
+                                                        conn.up_part_rev,
+                                                        conn.upstream_output_port,
+                                                        conn.start_gpstime)
+                    self.up[ckey] = copy.copy(conn)
+                    tmp[conn.downstream_input_port + '{:03d}'.format(i)] = ckey
         self.keys_up = [tmp[x] for x in sorted(tmp.keys())]
 
         # Pull out ports and make equi-pair upstream/downstream ports for this part -
@@ -568,6 +571,7 @@ class Handling:
         exact_match:  boolean to enforce full part number match
         """
 
+        at_date = cm_utils.get_astropytime(at_date)
         rev_part = self.get_rev_part_dictionary(hpn, rev, at_date, exact_match)
         part_connection_dossier = {}
         for i, xhpn in enumerate(rev_part):
@@ -575,7 +579,7 @@ class Handling:
                 continue
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
-                this_connect = PartConnectionDossierEntry(xhpn, this_rev, port)
+                this_connect = PartConnectionDossierEntry(xhpn, this_rev, port, at_date)
                 this_connect.get_entry(self.session)
                 this_connect.add_filter(at_date, xrev.rev_query)
                 part_connection_dossier[this_connect.entry_key] = this_connect
