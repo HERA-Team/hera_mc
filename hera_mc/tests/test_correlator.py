@@ -1360,6 +1360,12 @@ class TestSNAPStatus(TestHERAMC):
         self.assertEqual(node, 4)
         self.assertEqual(snap_loc_num, 3)
 
+        # test multiple times with change in location
+        node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
+                                           ['SNPC000021'], nwarnings=0)
+        self.assertEqual(node, 5)
+        self.assertEqual(snap_loc_num, 0)
+
         node, snap_loc_num = checkWarnings(self.test_session._get_node_snap_from_serial,
                                            ['SNPB000005'],
                                            message='Multiple active dossiers returned')
