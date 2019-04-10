@@ -184,9 +184,7 @@ class PartConnectionDossierEntry:
         self.keys_up = [self.entry_key]
         self.keys_down = [self.entry_key]
         self.up[self.entry_key] = copy.copy(conn)
-        self.up[self.entry_key].skip_it = False
         self.down[self.entry_key] = copy.copy(conn)
-        self.down[self.entry_key].skip_it = False
         self.input_ports.add(conn.downstream_input_port)
         self.output_ports.add(conn.upstream_output_port)
 
@@ -239,34 +237,12 @@ class PartConnectionDossierEntry:
         elif pad > 0:
             self.keys_up.extend([None] * abs(pad))
 
-    def add_filter(self, at_date, rev_type):
-        """
-        Filter the connection_dossier based on whether the entry is active based on the at_date.
-        This is only if the queried rev_type is for ACTIVE or FULL.  Currently they are
-        treated the same.
-        Information on the rev_types may be found in <cm_revisions.get_revisions_of_type>
-        """
-        for u, d in zip(self.keys_up, self.keys_down):
-            if u is not None:
-                self.up[u].skip_it = False
-            if d is not None:
-                self.down[d].skip_it = False
-        rq = rev_type.upper()
-        if rq.startswith('ACTIVE') or rq.startswith('FULL'):  # For now ACTIVE and FULL are handled identically
-            for u, d in zip(self.keys_up, self.keys_down):
-                if u is not None:
-                    if not cm_utils.is_active(at_date, self.up[u].start_gpstime, self.up[u].stop_gpstime):
-                        self.up[u].skip_it = True
-                if d is not None:
-                    if not cm_utils.is_active(at_date, self.down[d].start_gpstime, self.down[d].stop_gpstime):
-                        self.down[d].skip_it = True
-
     def table_entry_row(self, headers):
         tdata = []
         show_conn_dict = {'Part': self.entry_key}
 
         for u, d in zip(self.keys_up, self.keys_down):
-            if u is None or self.up[u].skip_it:
+            if u is None:
                 use_upward_connection = False
                 for h in ['Upstream', 'uStart', 'uStop', '<uOutput:', ':uInput>']:
                     show_conn_dict[h] = ' '
@@ -278,7 +254,7 @@ class PartConnectionDossierEntry:
                 show_conn_dict['uStop'] = cm_utils.get_time_for_display(c.stop_date)
                 show_conn_dict['<uOutput:'] = c.upstream_output_port
                 show_conn_dict[':uInput>'] = c.downstream_input_port
-            if d is None or self.down[d].skip_it:
+            if d is None:
                 use_downward_connection = False
                 for h in ['Downstream', 'dStart', 'dStop', '<dOutput:', ':dInput>']:
                     show_conn_dict[h] = ' '
@@ -581,7 +557,6 @@ class Handling:
                 this_rev = xrev.rev
                 this_connect = PartConnectionDossierEntry(xhpn, this_rev, port, at_date)
                 this_connect.get_entry(self.session)
-                this_connect.add_filter(at_date, xrev.rev_query)
                 part_connection_dossier[this_connect.entry_key] = this_connect
         return part_connection_dossier
 
