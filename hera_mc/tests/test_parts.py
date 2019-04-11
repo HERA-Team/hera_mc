@@ -113,7 +113,7 @@ class TestParts(TestHERAMC):
 
     def test_part_info(self):
         cm_partconnect.add_part_info(self.test_session, self.test_part, self.test_rev, Time('2017-07-01 01:00:00'),
-                                  'Testing', 'library_file')
+                                     'Testing', 'library_file')
         located = self.h.get_part_dossier(hpn=[self.test_part], rev=self.test_rev, at_date='now', exact_match=True)
         self.assertTrue(located[list(located.keys())[0]].part_info[0].comment == 'Testing')
 
