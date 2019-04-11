@@ -279,6 +279,50 @@ def get_part_revisions(hpn, session=None):
     return revisions
 
 
+class AntennaStatus(MCDeclarativeBase):
+    """
+    Table for a priori antenna information.
+
+    antenna:  antenna designation, e.g. HH123
+    start_gpstime: start time for antenna status
+    stop_gpstime:  stop time for antenna status (can be None)
+    status:  enum of status - 'passed_checks', 'needs_checking', 'known_bad', 'not_connected'
+    """
+
+    __tablename__ = 'antenna_status'
+
+    antenna = Column(Text, primary_key=True)
+    start_gpstime = Column(BigInteger, primary_key=True)
+    stop_gpstime = Column(BigInteger)
+    status = Column(Text, nullable=False)
+
+    def __repr__(self):
+        return('<>')
+
+
+def update_ant_status(antenna, status, start_gpstime, stop_gpstime=None, session=None):
+    status_enum = ['passed_checks', 'needs_checking', 'known_bad', 'not_connected']
+    if status not in status_enum:
+        raise ValueError("Antenna status must be in {}".format(status_enum))
+
+    close_session_when_done = False
+    if session is None:  # pragma: no cover
+        db = mc.connect_to_mc_db(None)
+        session = db.sessionmaker()
+        close_session_when_done = True
+
+    new_antstat = AntennaStatus()
+    new_antstat.antenna = antenna
+    new_antstat.status = status
+    new_antstat.start_gpstime = start_gpstime
+    new_antstat.stop_gpstime = stop_gpstime
+    session.add(new_antstat)
+    session.commit()
+
+    if close_session_when_done:
+        session.close()
+
+
 class Dubitable(MCDeclarativeBase):
     """
     A table to track the dubitable antennas.
@@ -334,7 +378,7 @@ def update_dubitable(session=None, transition_gpstime=None, data=None):
     session.add(new_dubi)
     session.commit()
     data_dict = {'start_gpstime': [transition_gpstime], 'ant_list:len': [len(data)]}
-    cm_utils.log('cm_partconn dubitable update', data_dict=data_dict)
+    cm_utils.log('cm_partconnect dubitable update', data_dict=data_dict)
 
     if close_session_when_done:
         session.close()
