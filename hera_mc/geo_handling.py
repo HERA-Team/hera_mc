@@ -16,7 +16,7 @@ import six
 from sqlalchemy import func
 import cartopy.crs as ccrs
 
-from . import mc, cm_partconn, cm_utils, geo_location
+from . import mc, cm_partconnect, cm_utils, geo_location
 
 
 def cofa(session=None):
@@ -162,8 +162,8 @@ class Handling:
             station = self.session.query(geo_location.GeoLocation).filter(
                 func.upper(geo_location.GeoLocation.station_name) == station_name.upper())
         elif db_name == 'connections':
-            station = self.session.query(cm_partconn.Connections).filter(
-                func.upper(cm_partconn.Connections.upstream_part) == station_name.upper())
+            station = self.session.query(cm_partconnect.Connections).filter(
+                func.upper(cm_partconnect.Connections.upstream_part) == station_name.upper())
         else:
             raise ValueError('db not found.')
         if station.count() > 0:
@@ -188,9 +188,9 @@ class Handling:
         """
 
         query_date = cm_utils.get_astropytime(query_date)
-        connected_antenna = self.session.query(cm_partconn.Connections).filter(
-            (func.upper(cm_partconn.Connections.upstream_part) == station.upper())
-            & (query_date.gps >= cm_partconn.Connections.start_gpstime))
+        connected_antenna = self.session.query(cm_partconnect.Connections).filter(
+            (func.upper(cm_partconnect.Connections.upstream_part) == station.upper())
+            & (query_date.gps >= cm_partconnect.Connections.start_gpstime))
         ctr = 0
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
@@ -218,9 +218,9 @@ class Handling:
         query_date = cm_utils.get_astropytime(query_date)
         if type(antenna) == float or type(antenna) == int or antenna[0] != 'A':
             antenna = 'A' + str(antenna).strip('0')
-        connected_antenna = self.session.query(cm_partconn.Connections).filter(
-            (func.upper(cm_partconn.Connections.downstream_part) == antenna.upper())
-            & (query_date.gps >= cm_partconn.Connections.start_gpstime))
+        connected_antenna = self.session.query(cm_partconnect.Connections).filter(
+            (func.upper(cm_partconnect.Connections.downstream_part) == antenna.upper())
+            & (query_date.gps >= cm_partconnect.Connections.start_gpstime))
         ctr = 0
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
@@ -323,9 +323,9 @@ class Handling:
         if label_to_show == 'num':
             return ant.strip('A')
         if label_to_show == 'ser':
-            p = self.session.query(cm_partconn.Parts).filter(
-                (cm_partconn.Parts.hpn == ant)
-                & (cm_partconn.Parts.hpn_rev == rev))
+            p = self.session.query(cm_partconnect.Parts).filter(
+                (cm_partconnect.Parts.hpn == ant)
+                & (cm_partconnect.Parts.hpn_rev == rev))
             if p.count() == 1:
                 return p.first().manufacturer_number.replace('S/N', '')
             else:

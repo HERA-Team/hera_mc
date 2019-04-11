@@ -10,7 +10,7 @@ from __future__ import absolute_import, division, print_function
 
 import warnings
 from . import mc, cm_utils
-from . import cm_partconn as PC
+from . import cm_partconnect as PC
 from . import cm_revisions
 
 

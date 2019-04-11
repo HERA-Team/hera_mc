@@ -20,7 +20,7 @@ from sqlalchemy import func
 from astropy.time import Time, TimeDelta
 
 from . import mc, cm_utils, cm_handling, cm_transfer, cm_sysdef
-from . import cm_partconn as PC
+from . import cm_partconnect as PC
 
 
 class HookupDossierEntry:

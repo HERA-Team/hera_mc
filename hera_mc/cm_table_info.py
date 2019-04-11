@@ -8,15 +8,15 @@
 
 from __future__ import absolute_import, division, print_function
 
-from . import cm_partconn, geo_location
+from . import cm_partconnect, geo_location
 
 # Locates the table and specifies the required order of deletion (inverse for creation.)
-cm_tables = {'part_info': [cm_partconn.PartInfo, 0],
-             'connections': [cm_partconn.Connections, 1],
-             'parts': [cm_partconn.Parts, 2],
+cm_tables = {'part_info': [cm_partconnect.PartInfo, 0],
+             'connections': [cm_partconnect.Connections, 1],
+             'parts': [cm_partconnect.Parts, 2],
              'geo_location': [geo_location.GeoLocation, 3],
              'station_type': [geo_location.StationType, 4],
-             'dubitable': [cm_partconn.Dubitable, 5]}
+             'dubitable': [cm_partconnect.Dubitable, 5]}
 data_prefix = 'initialization_data_'
 
 

@@ -18,7 +18,7 @@ import numpy as np
 from astropy.time import Time, TimeDelta
 from argparse import Namespace
 from contextlib import contextmanager
-from .. import (geo_location, cm_sysfunc, mc, cm_transfer, cm_partconn,
+from .. import (geo_location, cm_sysutils, mc, cm_transfer, cm_partconnect,
                 cm_hookup, cm_utils, utils, cm_sysdef)
 from . import TestHERAMC
 
@@ -40,7 +40,7 @@ class TestSys(TestHERAMC):
 
     def setUp(self):
         super(TestSys, self).setUp()
-        self.sys_h = cm_sysfunc.Handling(self.test_session)
+        self.sys_h = cm_sysutils.Handling(self.test_session)
 
     def test_ever_fully_connected(self):
         now_list = self.sys_h.get_all_fully_connected_at_date(at_date='now', hookup_type='parts_paper')
@@ -51,7 +51,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(msg, 'Not on "main"')
 
     def test_random_update(self):
-        si = cm_sysfunc.StationInfo()
+        si = cm_sysutils.StationInfo()
         si.update_stn(None)
         si.update_arrays(None)
 
@@ -214,7 +214,7 @@ class TestSys(TestHERAMC):
         dubitable_ants = self.sys_h.get_dubitable_list()
         self.assertTrue(dubitable_ants is None)
         at_date = cm_utils.get_astropytime('2017-01-01')
-        cm_partconn.update_dubitable(self.test_session, at_date.gps, ['1', '2', '3'])
+        cm_partconnect.update_dubitable(self.test_session, at_date.gps, ['1', '2', '3'])
         dubitable_ants = self.sys_h.get_dubitable_list()
         dubitable_ants_list = dubitable_ants.split(",")
         self.assertEqual(len(dubitable_ants_list), 3)
@@ -229,7 +229,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(pams['e'], 'ea>PAM75123:B<eb')  # the actual pam number (the thing written on the case)
 
     def test_get_pam_info(self):
-        sys_h = cm_sysfunc.Handling(self.test_session)
+        sys_h = cm_sysutils.Handling(self.test_session)
         pams = sys_h.get_part_at_station_from_type('HH23', '2017-07-03', 'post-amp', include_ports=False, hookup_type='parts_paper')
         self.assertEqual(len(pams), 1)
         self.assertEqual(pams['HH23:A']['e'], 'PAM75123')  # the actual pam number (the thing written on the case)

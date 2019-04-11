@@ -19,7 +19,7 @@ from astropy.time import Time
 from sqlalchemy import func, desc
 
 from . import mc, cm_utils
-from . import cm_partconn as PC
+from . import cm_partconnect as PC
 from . import cm_revisions as cmrev
 
 
@@ -60,8 +60,8 @@ class PartDossierEntry():
         self.part_type = None
         self.notes_start_date = notes_start_date
         self.sort_notes_by = sort_notes_by
-        self.part = None  # This is the cm_partconn.Parts class
-        self.part_info = []  # This is a list of cm_partconn.PartInfo class entries
+        self.part = None  # This is the cm_partconnect.Parts class
+        self.part_info = []  # This is a list of cm_partconnect.PartInfo class entries
         self.connections = None  # This is the PartConnectionDossierEntry class
         self.geo = None  # This is the geo_location.GeoLocation class
 
