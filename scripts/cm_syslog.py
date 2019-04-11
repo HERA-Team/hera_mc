@@ -9,7 +9,7 @@ Script to handle adding a system-wide comment to the part_info table.
 
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_utils, part_connect, sys_handling
+from hera_mc import mc, cm_utils, cm_partconnect, sys_handling
 import six
 
 SYSTEM = 'System'  # word used in part_info as hpn for these comments
@@ -45,4 +45,4 @@ if __name__ == '__main__':
         print(handling.system_comments(system_kw=SYSTEM, kword=args.keyword))
     else:
         print("Adding system info:  {}:{}".format(SYSTEM, args.keyword))
-        part_connect.add_part_info(session, SYSTEM, args.keyword, at_date, args.comment, args.library_file)
+        cm_partconnect.add_part_info(session, SYSTEM, args.keyword, at_date, args.comment, args.library_file)

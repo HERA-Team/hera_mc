@@ -14,7 +14,7 @@ from contextlib import contextmanager
 import six
 import sys
 
-from .. import part_connect, mc, cm_handling, cm_utils, cm_health
+from .. import cm_partconnect, mc, cm_handling, cm_utils, cm_health
 from . import TestHERAMC
 
 
@@ -43,7 +43,7 @@ class TestConnections(TestHERAMC):
         self.query_time = Time('2017-08-01 01:00:00', scale='utc')
 
         for tp in self.test_hpn:
-            part = part_connect.Parts()
+            part = cm_partconnect.Parts()
             part.hpn = tp
             part.hpn_rev = self.test_rev
             part.hptype = self.test_hptype
@@ -53,7 +53,7 @@ class TestConnections(TestHERAMC):
         self.test_session.commit()
 
         # Add test connection
-        connection = part_connect.Connections()
+        connection = cm_partconnect.Connections()
         connection.upstream_part = self.test_hpn[0]
         connection.up_part_rev = self.test_rev
         connection.downstream_part = self.test_hpn[1]
@@ -74,7 +74,7 @@ class TestConnections(TestHERAMC):
         b = 'down_and_in'
         g = self.test_time
         for tp in [u, d]:
-            part = part_connect.Parts()
+            part = cm_partconnect.Parts()
             part.hpn = tp
             part.hpn_rev = r
             part.hptype = self.test_hptype
@@ -89,7 +89,7 @@ class TestConnections(TestHERAMC):
                 [u, r, d, r, a, b, g, 'upstream_output_port', a],
                 [u, r, d, r, a, b, g, 'downstream_input_port', b],
                 [u, r, d, r, a, b, g, 'start_gpstime', g]]
-        part_connect.update_connection(self.test_session, data, add_new_connection=True)
+        cm_partconnect.update_connection(self.test_session, data, add_new_connection=True)
         located = self.h.get_part_connection_dossier([u], r, a, 'now', True)
         prkey = list(located.keys())[0]
         self.assertTrue(str(located[prkey]).startswith('NEW_TEST_PART_UP:A'))
@@ -130,7 +130,7 @@ class TestConnections(TestHERAMC):
         self.assertTrue('Q' not in out.getvalue().strip())
 
     def test_get_specific_connection(self):
-        c = part_connect.Connections()
+        c = cm_partconnect.Connections()
         c.upstream_part = self.test_hpn[0]
         c.up_part_rev = self.test_rev
         c.downstream_part = self.test_hpn[1]
@@ -189,7 +189,7 @@ class TestConnections(TestHERAMC):
         self.assertFalse(len(x))
 
     def test_duplicate_connections(self):
-        connection = part_connect.Connections()
+        connection = cm_partconnect.Connections()
         healthy = cm_health.Connections(self.test_session)
         # Specific connections
         duplicates = healthy.check_for_existing_connection(['a', 'b', 'c', 'd', 'e', 'f'], self.query_time)

@@ -12,7 +12,7 @@ import os.path
 import subprocess
 import numpy as np
 
-from .. import geo_location, geo_handling, mc, cm_transfer, part_connect
+from .. import geo_location, geo_handling, mc, cm_transfer
 from ..tests import TestHERAMC
 from astropy.time import Time
 

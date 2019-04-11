@@ -13,7 +13,7 @@ import sys
 import copy
 import six
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling, cm_health
+from hera_mc import mc, cm_utils, cm_partconnect, cm_handling, cm_health
 
 
 def query_args(args):
@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
-    connect = part_connect.Connections()
+    connect = cm_partconnect.Connections()
     handling = cm_handling.Handling(session)
     up_check = handling.get_part_connection_dossier(hpn=[args.uppart], rev=args.uprev,
                                                     port=args.upport, at_date=at_date,
@@ -68,7 +68,7 @@ if __name__ == '__main__':
                                                     port=args.dnport, at_date=at_date,
                                                     exact_match=True)
     # Check for connection
-    c = part_connect.Connections()
+    c = cm_partconnect.Connections()
     c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
                  downstream_part=args.dnpart, down_part_rev=args.dnrev, downstream_input_port=args.dnport)
     chk = handling.get_specific_connection(c, at_date)
@@ -85,4 +85,4 @@ if __name__ == '__main__':
                   .format(args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport))
         # Connect parts
         npc = [[args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport]]
-        part_connect.add_new_connections(session, connect, npc, at_date, args.actually_do_it)
+        cm_partconnect.add_new_connections(session, connect, npc, at_date, args.actually_do_it)

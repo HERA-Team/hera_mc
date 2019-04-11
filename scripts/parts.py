@@ -12,7 +12,7 @@ import os.path
 import sys
 import six
 
-from hera_mc import part_connect, cm_handling, cm_utils, mc
+from hera_mc import cm_handling, cm_utils, mc
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()

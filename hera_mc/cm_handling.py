@@ -19,7 +19,7 @@ from astropy.time import Time
 from sqlalchemy import func, desc
 
 from . import mc, cm_utils
-from . import part_connect as PC
+from . import cm_partconnect as PC
 from . import cm_revisions as cmrev
 
 
@@ -60,8 +60,8 @@ class PartDossierEntry():
         self.part_type = None
         self.notes_start_date = notes_start_date
         self.sort_notes_by = sort_notes_by
-        self.part = None  # This is the part_connect.Parts class
-        self.part_info = []  # This is a list of part_connect.PartInfo class entries
+        self.part = None  # This is the cm_partconnect.Parts class
+        self.part_info = []  # This is a list of cm_partconnect.PartInfo class entries
         self.connections = None  # This is the PartConnectionDossierEntry class
         self.geo = None  # This is the geo_location.GeoLocation class
 
@@ -146,7 +146,7 @@ class PartDossierEntry():
 
 
 class PartConnectionDossierEntry:
-    def __init__(self, hpn, rev, port='all'):
+    def __init__(self, hpn, rev, port='all', at_date=None):
         """
         This class holds connections to a specific part.  It only includes immediately
         upstream and downstream of that part (use 'hookup' for cascaded parts.)  This
@@ -169,6 +169,7 @@ class PartConnectionDossierEntry:
         self.rev = rev.upper()
         self.port = port.lower()
         self.entry_key = cm_utils.make_part_key(hpn, rev)
+        self.at_date = at_date
         self.up = {}
         self.down = {}
         self.keys_up = []  # These are ordered/paired keys
@@ -183,9 +184,7 @@ class PartConnectionDossierEntry:
         self.keys_up = [self.entry_key]
         self.keys_down = [self.entry_key]
         self.up[self.entry_key] = copy.copy(conn)
-        self.up[self.entry_key].skip_it = False
         self.down[self.entry_key] = copy.copy(conn)
-        self.down[self.entry_key].skip_it = False
         self.input_ports.add(conn.downstream_input_port)
         self.output_ports.add(conn.upstream_output_port)
 
@@ -200,12 +199,13 @@ class PartConnectionDossierEntry:
                 & (func.upper(PC.Connections.up_part_rev) == self.rev))):
             if self.port == 'all' or conn.upstream_output_port.lower() == self.port:
                 conn.gps2Time()
-                ckey = cm_utils.make_connection_key(conn.downstream_part,
-                                                    conn.down_part_rev,
-                                                    conn.downstream_input_port,
-                                                    conn.start_gpstime)
-                self.down[ckey] = copy.copy(conn)
-                tmp[conn.upstream_output_port + '{:03d}'.format(i)] = ckey
+                if cm_utils.is_active(self.at_date, conn.start_gpstime, conn.stop_gpstime):
+                    ckey = cm_utils.make_connection_key(conn.downstream_part,
+                                                        conn.down_part_rev,
+                                                        conn.downstream_input_port,
+                                                        conn.start_gpstime)
+                    self.down[ckey] = copy.copy(conn)
+                    tmp[conn.upstream_output_port + '{:03d}'.format(i)] = ckey
         self.keys_down = [tmp[x] for x in sorted(tmp.keys())]
 
         # Find where the part is in the downward position, so identify its upward connection
@@ -215,12 +215,13 @@ class PartConnectionDossierEntry:
                 & (func.upper(PC.Connections.down_part_rev) == self.rev))):
             if self.port == 'all' or conn.downstream_input_port.lower() == self.port:
                 conn.gps2Time()
-                ckey = cm_utils.make_connection_key(conn.upstream_part,
-                                                    conn.up_part_rev,
-                                                    conn.upstream_output_port,
-                                                    conn.start_gpstime)
-                self.up[ckey] = copy.copy(conn)
-                tmp[conn.downstream_input_port + '{:03d}'.format(i)] = ckey
+                if cm_utils.is_active(self.at_date, conn.start_gpstime, conn.stop_gpstime):
+                    ckey = cm_utils.make_connection_key(conn.upstream_part,
+                                                        conn.up_part_rev,
+                                                        conn.upstream_output_port,
+                                                        conn.start_gpstime)
+                    self.up[ckey] = copy.copy(conn)
+                    tmp[conn.downstream_input_port + '{:03d}'.format(i)] = ckey
         self.keys_up = [tmp[x] for x in sorted(tmp.keys())]
 
         # Pull out ports and make equi-pair upstream/downstream ports for this part -
@@ -236,34 +237,12 @@ class PartConnectionDossierEntry:
         elif pad > 0:
             self.keys_up.extend([None] * abs(pad))
 
-    def add_filter(self, at_date, rev_type):
-        """
-        Filter the connection_dossier based on whether the entry is active based on the at_date.
-        This is only if the queried rev_type is for ACTIVE or FULL.  Currently they are
-        treated the same.
-        Information on the rev_types may be found in <cm_revisions.get_revisions_of_type>
-        """
-        for u, d in zip(self.keys_up, self.keys_down):
-            if u is not None:
-                self.up[u].skip_it = False
-            if d is not None:
-                self.down[d].skip_it = False
-        rq = rev_type.upper()
-        if rq.startswith('ACTIVE') or rq.startswith('FULL'):  # For now ACTIVE and FULL are handled identically
-            for u, d in zip(self.keys_up, self.keys_down):
-                if u is not None:
-                    if not cm_utils.is_active(at_date, self.up[u].start_gpstime, self.up[u].stop_gpstime):
-                        self.up[u].skip_it = True
-                if d is not None:
-                    if not cm_utils.is_active(at_date, self.down[d].start_gpstime, self.down[d].stop_gpstime):
-                        self.down[d].skip_it = True
-
     def table_entry_row(self, headers):
         tdata = []
         show_conn_dict = {'Part': self.entry_key}
 
         for u, d in zip(self.keys_up, self.keys_down):
-            if u is None or self.up[u].skip_it:
+            if u is None:
                 use_upward_connection = False
                 for h in ['Upstream', 'uStart', 'uStop', '<uOutput:', ':uInput>']:
                     show_conn_dict[h] = ' '
@@ -275,7 +254,7 @@ class PartConnectionDossierEntry:
                 show_conn_dict['uStop'] = cm_utils.get_time_for_display(c.stop_date)
                 show_conn_dict['<uOutput:'] = c.upstream_output_port
                 show_conn_dict[':uInput>'] = c.downstream_input_port
-            if d is None or self.down[d].skip_it:
+            if d is None:
                 use_downward_connection = False
                 for h in ['Downstream', 'dStart', 'dStop', '<dOutput:', ':dInput>']:
                     show_conn_dict[h] = ' '
@@ -568,6 +547,7 @@ class Handling:
         exact_match:  boolean to enforce full part number match
         """
 
+        at_date = cm_utils.get_astropytime(at_date)
         rev_part = self.get_rev_part_dictionary(hpn, rev, at_date, exact_match)
         part_connection_dossier = {}
         for i, xhpn in enumerate(rev_part):
@@ -575,9 +555,8 @@ class Handling:
                 continue
             for xrev in rev_part[xhpn]:
                 this_rev = xrev.rev
-                this_connect = PartConnectionDossierEntry(xhpn, this_rev, port)
+                this_connect = PartConnectionDossierEntry(xhpn, this_rev, port, at_date)
                 this_connect.get_entry(self.session)
-                this_connect.add_filter(at_date, xrev.rev_query)
                 part_connection_dossier[this_connect.entry_key] = this_connect
         return part_connection_dossier
 

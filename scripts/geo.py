@@ -10,7 +10,7 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 
-from hera_mc import mc, geo_handling, cm_utils, part_connect
+from hera_mc import mc, geo_handling, cm_utils
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()

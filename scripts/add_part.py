@@ -13,7 +13,7 @@ import sys
 import copy
 import six
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling
+from hera_mc import mc, cm_utils, cm_partconnect, cm_handling
 
 
 def query_args(args):
@@ -54,8 +54,8 @@ if __name__ == '__main__':
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
-    connect = part_connect.Connections()
-    part = part_connect.Parts()
+    connect = cm_partconnect.Connections()
+    part = cm_partconnect.Parts()
     handling = cm_handling.Handling(session)
     part_check = handling.get_part_dossier(hpn=[args.hpn], rev=args.rev,
                                            at_date=at_date, exact_match=True, full_version=False)
@@ -69,4 +69,4 @@ if __name__ == '__main__':
         if args.verbosity > 1:
             print("Adding new part {}:{}".format(args.hpn, args.rev))
         new_part_add = [(args.hpn, args.rev, args.hptype, args.mfg)]
-        part_connect.add_new_parts(session, part, new_part_add, at_date, args.actually_do_it)
+        cm_partconnect.add_new_parts(session, part, new_part_add, at_date, args.actually_do_it)

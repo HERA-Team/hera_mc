@@ -19,7 +19,7 @@ import sys
 import copy
 import six
 
-from hera_mc import mc, cm_utils, part_connect
+from hera_mc import mc, cm_utils, cm_partconnect
 
 
 def query_args(args):
@@ -55,4 +55,4 @@ if __name__ == '__main__':
 
     # Stop parts
     np = [[args.part, args.rev]]
-    part_connect.stop_existing_parts(session, np, at_date, args.actually_do_it)
+    cm_partconnect.stop_existing_parts(session, np, at_date, args.actually_do_it)
