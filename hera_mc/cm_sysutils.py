@@ -81,35 +81,6 @@ class Handling:
         cofa = self.geo.cofa()
         return cofa
 
-    def get_dubitable_list(self, date='now', return_full=False):
-        """
-        Returns start_time and a list with the dubitable antennas.
-        If date is supplied, returns for that date, otherwise now.
-
-        Parameters:
-        ------------
-        date:  something understandable by cm_utils.get_astropytime
-        return_full:  boolean to return the full object as opposed to the csv string
-        """
-
-        at_date = cm_utils.get_astropytime(date)
-        fnd = []
-        for dubi in self.session.query(cm_partconnect.Dubitable):
-            start_time = cm_utils.get_astropytime(dubi.start_gpstime)
-            stop_time = cm_utils.get_astropytime(dubi.stop_gpstime)
-            if cm_utils.is_active(at_date, start_time, stop_time):
-                fnd.append(dubi)
-        if len(fnd) == 0:
-            return None
-        if len(fnd) == 1:
-            if return_full:
-                start = Time(fnd[0].start_gpstime, format='gps')
-                stop = fnd[0].stop_gpstime
-                alist = cm_utils.listify(fnd[0].ant_list)
-                return (start, stop, alist)
-            else:
-                return str(fnd[0].ant_list)
-
     def get_all_fully_connected_at_date(self, at_date, station_types_to_check='default', hookup_type=None):
         """
         Returns a list of class StationInfo of all of the locations fully connected at_date
@@ -369,3 +340,38 @@ class Handling:
         comments = '\n'.join(rows)
 
         return comments
+
+    def _get_apriori_antenna_set(self):
+        aa_set = []
+        for val in self.session.query(cm_partconnect.AprioriAntenna.antenna).distinct():
+            aa_set.append(val[0])
+        return aa_set
+
+    def get_apriori_for(self, ant, at_date='now'):
+        ant = ant.upper()
+        at_date = cm_utils.get_astropytime(at_date).gps
+        aa_dict = {}
+        for val in self.session.query(cm_partconnect.AprioriAntenna).filter(func.upper(cm_partconnect.AprioriAntenna.antenna) == ant):
+            if val.start_gpstime < at_date:
+                aa_dict[val.start_gpstime] = val.status
+        try:
+            latest = sorted(aa_dict.keys())[-1]
+            return aa_dict[latest]
+        except IndexError:
+            return None
+
+    def get_apriori_status_set(self, at_date='now'):
+        ants = self._get_apriori_antenna_set()
+        aa_status = {}
+        for _x in cm_partconnect.get_apriori_antenna_status_enum():
+            aa_status[_x] = []
+
+        for a in ants:
+            msg = self.get_apriori_for(a, at_date=at_date)
+            if msg is not None:
+                aa_status[msg].append(a)
+        return aa_status
+
+    def get_dubitable_list(self, at_date='now'):
+        aa_status = self.get_apriori_status_set(at_date=at_date)
+        return aa_status['needs_checking'] + aa_status['known_bad'] + aa_status['not_connected']

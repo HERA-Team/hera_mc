@@ -185,7 +185,7 @@ def update_part(session=None, data=None, add_new_part=False):
             session.add(part)
             session.commit()
     cm_utils.log('cm_partconn part update', data_dict=data_dict)
-    if close_session_when_done:
+    if close_session_when_done:  # pragma: no cover
         session.close()
 
     return True
@@ -274,89 +274,42 @@ def get_part_revisions(hpn, session=None):
         revisions[parts_rec.hpn_rev]['hpn'] = hpn  # Just carry this along
         revisions[parts_rec.hpn_rev]['started'] = parts_rec.start_date
         revisions[parts_rec.hpn_rev]['ended'] = parts_rec.stop_date
-    if close_session_when_done:
+    if close_session_when_done:  # pragma: no cover
         session.close()
     return revisions
 
 
-class AntennaStatus(MCDeclarativeBase):
+class AprioriAntenna(MCDeclarativeBase):
     """
-    Table for a priori antenna information.
+    Table for a priori antenna status.
 
     antenna:  antenna designation, e.g. HH123
     start_gpstime: start time for antenna status
-    stop_gpstime:  stop time for antenna status (can be None)
     status:  enum of status - 'passed_checks', 'needs_checking', 'known_bad', 'not_connected'
     """
 
-    __tablename__ = 'antenna_status'
+    __tablename__ = 'apriori_antenna'
 
     antenna = Column(Text, primary_key=True)
     start_gpstime = Column(BigInteger, primary_key=True)
-    stop_gpstime = Column(BigInteger)
     status = Column(Text, nullable=False)
 
     def __repr__(self):
-        return('<>')
+        return('<{}: {}  [{}]>'.format(self.antenna, self.status, self.start_gpstime))
+
+    def status_enum(self):
+        return ['passed_checks', 'needs_checking', 'known_bad', 'not_connected']
 
 
-def update_ant_status(antenna, status, start_gpstime, stop_gpstime=None, session=None):
-    status_enum = ['passed_checks', 'needs_checking', 'known_bad', 'not_connected']
-    if status not in status_enum:
-        raise ValueError("Antenna status must be in {}".format(status_enum))
-
-    close_session_when_done = False
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-
-    new_antstat = AntennaStatus()
-    new_antstat.antenna = antenna
-    new_antstat.status = status
-    new_antstat.start_gpstime = start_gpstime
-    new_antstat.stop_gpstime = stop_gpstime
-    session.add(new_antstat)
-    session.commit()
-
-    if close_session_when_done:
-        session.close()
+def get_apriori_antenna_status_enum():
+    apa = AprioriAntenna()
+    return apa.status_enum()
 
 
-class Dubitable(MCDeclarativeBase):
-    """
-    A table to track the dubitable antennas.
-
-    start_gpstime:  start time of list
-    stop_gpstime:  stop time of list
-    ant_list:  list of dubitable antennas.
-               It is a comma-separated list of antenna integers.  E.g. 1,4,5,23,51
-               (No spaces betweeen).
-    """
-
-    __tablename__ = 'dubitable'
-
-    start_gpstime = Column(BigInteger, primary_key=True)
-    stop_gpstime = Column(BigInteger)
-    ant_list = Column(Text, nullable=False)
-
-    def __repr__(self):
-        return ('<{self.start_gpstime}, {self.stop_gpstime}, {self.ant_list}>'.format(self=self))
-
-
-def update_dubitable(session=None, transition_gpstime=None, data=None):
-    """
-    update the database given a new list of dubitable antennas.
-    It will stop the previous list at transition_gpstime and start the new one
-    at transition_gpstime + 1sec
-
-    Parameters:
-    ------------
-    session:  db session to use
-    transition_gpstime:  gps time to make the change
-    data:  list of antennas, specified by integers.
-           Same number as the HH#, but leave off the 'HH'
-    """
+def update_apriori_antenna(antenna, status, start_gpstime, session=None):
+    new_apa = AprioriAntenna()
+    if status not in new_apa.status_enum():
+        raise ValueError("Antenna apriori status must be in {}".format(new_apa.status_enum()))
 
     close_session_when_done = False
     if session is None:  # pragma: no cover
@@ -364,23 +317,13 @@ def update_dubitable(session=None, transition_gpstime=None, data=None):
         session = db.sessionmaker()
         close_session_when_done = True
 
-    last_one = session.query(Dubitable).filter(Dubitable.stop_gpstime is None)
-    if last_one.count() == 1:  # Stop the previous valid list.
-        old_dubi = last_one.first()
-        old_dubi.stop_gpstime = transition_gpstime
-        session.add(old_dubi)
-    elif last_one.count() > 1:
-        raise ValueError('Too many open dubitable lists.')
-
-    new_dubi = Dubitable()
-    new_dubi.start_gpstime = transition_gpstime + 1
-    new_dubi.ant_list = ','.join(str(a) for a in data)
-    session.add(new_dubi)
+    new_apa.antenna = antenna
+    new_apa.status = status
+    new_apa.start_gpstime = start_gpstime
+    session.add(new_apa)
     session.commit()
-    data_dict = {'start_gpstime': [transition_gpstime], 'ant_list:len': [len(data)]}
-    cm_utils.log('cm_partconnect dubitable update', data_dict=data_dict)
 
-    if close_session_when_done:
+    if close_session_when_done:  # pragma: no cover
         session.close()
 
 
@@ -440,7 +383,7 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
     pi.library_file = library_file
     session.add(pi)
     session.commit()
-    if close_session_when_done:
+    if close_session_when_done:  # pragma: no cover
         session.close()
 
 
@@ -747,7 +690,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
             session.add(connection)
             session.commit()
     cm_utils.log('cm_partconn connection update', data_dict=data_dict)
-    if close_session_when_done:
+    if close_session_when_done:  # pragma: no cover
         session.close()
 
     return True

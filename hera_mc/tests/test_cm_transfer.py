@@ -53,7 +53,7 @@ class TestTransfer(TestHERAMC):
     def test_cm_table_info(self):
         from hera_mc import cm_table_info
         ot = ','.join(cm_table_info.order_the_tables(None))
-        self.assertTrue(ot == 'part_info,connections,parts,geo_location,station_type,dubitable')
+        self.assertTrue(ot == 'part_info,connections,parts,geo_location,station_type,apriori_antenna')
         ot = ','.join(cm_table_info.order_the_tables(['notthere', 'parts']))
         self.assertTrue(ot == 'parts')
 
