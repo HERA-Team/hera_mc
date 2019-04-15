@@ -348,6 +348,16 @@ class Handling:
         return aa_set
 
     def get_apriori_for(self, ant, at_date='now'):
+        """
+        This returns the "apriori" status of an antenna station (e.g. HH12) at a date.  The status enum list
+        may be found by module cm_partconnect.get_apriori_antenna_status_enum().
+
+        Returns the apriori antenna status as a string.  Returns None if not in table.
+
+        Parameters:
+        ------------
+        ant:  antenna station designator (e.g. HH12, HA330) it is a single string
+        """
         ant = ant.upper()
         at_date = cm_utils.get_astropytime(at_date).gps
         aa_dict = {}
@@ -361,6 +371,17 @@ class Handling:
             return None
 
     def get_apriori_status_set(self, at_date='now'):
+        """
+        This returns a dictionary providing the "apriori" state of every antenna station within the apriori_antenna table.
+        The dictionary is keyed on the apriori antenna status type (e.g. "needs_checking"), with values that are all of the
+        antenna station designators with that apriori antenna status.
+
+        Returns a dictionary keyed on apriori antenna status listing the antenna station designators of that type.
+
+        Parameters:
+        ------------
+        at_date:  date for which to get apriori state -- anything cm_utils.get_astropytime can handle.
+        """
         ants = self._get_apriori_antenna_set()
         aa_status = {}
         for _x in cm_partconnect.get_apriori_antenna_status_enum():
@@ -373,5 +394,15 @@ class Handling:
         return aa_status
 
     def get_dubitable_list(self, at_date='now'):
+        """
+        Reads in the apriori_antenna status table and generates the "dubitable" list.
+        The dubitable list is a lists of all antenna station designators that aren't OK for attempted use.
+
+        Returns a list of all antenna station designators that aren't ok for use.
+
+        Parameters:
+        ------------
+        at_date:  date for which to get apriori state -- anything cm_utils.get_astropytime can handle.
+        """
         aa_status = self.get_apriori_status_set(at_date=at_date)
         return aa_status['needs_checking'] + aa_status['known_bad'] + aa_status['not_connected']

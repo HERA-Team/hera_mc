@@ -110,6 +110,18 @@ All parts and connections are timed in that they have a start and stop time of o
 
 Parts are hooked together via connections of their ports, as defined in the connection table.   There are two types of connections:  (1) "hookup" connections and (2) "physical" connections, discussed below.
 
+To capture antenna status, an {\em a priori} antenna status table has been defined to facilitate a work flow to incorporate new antennas into the array and capture and known recalcitrant antennas.  The table provides an enumerated status for each antenna station.  The status is one of:
+\begin{itemize}\setlength\itemsep{-.3em}
+	\item not\_connected
+	\item needs\_checking
+	\item known\_bad
+	\item passed\_checks
+\end{itemize}
+
+
+\subsection{Operation Workflow}
+The work flow is for the operations team to review recently connected antennas on a roughly monthly basis to determine if any should move to another state.  Initially, all antennas have given a "not\_connected" status.  When they are connected, they will be moved to the "needs\_checking" state.  In operation, at each review an antenna may then be moved into one of the states of:  "needs\_checking", "known\_bad", or "passed\_checks".  Antennas not in one of the states of "not\_connected", "known\_bad", or "passed\_checks" is passed along for processing.  Antennas in one of those three states are called "dubitable" antennas, and for backward compatibility the so-called "dubitable" list may be generated.
+
 \subsection{Signal Chain Hookup Connections}
 Hookup connections are those that uniquely map the signal chain from the antenna to the node, including the specific correlator input.  These connections are defined in the file {\tt cm\_part\_connect} as the {\tt full\_connection\_path}.  These are the connections used to generate the correlator hookup.
 The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}, shown as the ports that aren't preceded by a pair of colons (::).  The list below describes the hookup connections.
@@ -900,7 +912,6 @@ The following are suggestions for the future, things we might like to see.
 	\1 site power
 	\1 network status
 \end{outline}
-
 
 
 \subsection{Other Future Ideas}
