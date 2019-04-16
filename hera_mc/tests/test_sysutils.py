@@ -229,17 +229,17 @@ class TestSys(TestHERAMC):
 
     def test_apriori_antenna(self):
         cm_partconnect.update_apriori_antenna('HH2', 'needs_checking', '1214482618', session=self.test_session)
-        g = self.sys_h.get_apriori_status_set()
+        g = self.sys_h.get_apriori_antenna_status_set()
         self.assertEqual(g['needs_checking'][0], 'HH2')
         self.assertRaises(ValueError, cm_partconnect.update_apriori_antenna, 'HH3', 'not_one', '1214482618', session=self.test_session)
-        g = self.sys_h.get_apriori_for('HH4')
-        self.assertEqual(g, None)
+        g = self.sys_h.get_apriori_status_for_antenna('HH2')
+        self.assertEqual(g, 'needs_checking')
         g = cm_partconnect.AprioriAntenna()
         with captured_output() as (out, err):
             print(g)
         self.assertTrue('<None:' in out.getvalue().strip())
-        d = self.sys_h.get_dubitable_list()
-        self.assertTrue('HH0' in d)
+        d = self.sys_h.get_apriori_antenna_status_for_rtp('needs_checking')
+        self.assertTrue(d == 'HH2')
 
 
 if __name__ == '__main__':

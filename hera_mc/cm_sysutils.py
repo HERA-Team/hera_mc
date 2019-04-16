@@ -342,7 +342,7 @@ class Handling:
 
         return comments
 
-    def get_apriori_status_for(self, ant, at_date='now'):
+    def get_apriori_status_for_antenna(self, antenna, at_date='now'):
         """
         This returns the "apriori" status of an antenna station (e.g. HH12) at a date.  The status enum list
         may be found by module cm_partconnect.get_apriori_antenna_status_enum().
@@ -353,14 +353,15 @@ class Handling:
         ------------
         ant:  antenna station designator (e.g. HH12, HA330) it is a single string
         """
-        ant = ant.upper()
+        ant = antenna.upper()
         at_date = cm_utils.get_astropytime(at_date).gps
         cmapa = cm_partconnect.AprioriAntenna
         apa = self.session.query(cmapa).filter(or_(and_(func.upper(cmapa.antenna) == ant, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime.is_(None)),
                                                    and_(func.upper(cmapa.antenna) == ant, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime > at_date))).first()
-        return apa.status
+        if apa is not None:
+            return apa.status
 
-    def get_apriori_antenna_for(self, status, at_date='now'):
+    def get_apriori_antennas_with_status(self, status, at_date='now'):
         """
         This returns a list of all antennas with the provided status query at_date
 
@@ -372,12 +373,12 @@ class Handling:
         at_date:  date for which to get apriori state -- anything cm_utils.get_astropytime can handle.
         """
         at_date = cm_utils.get_astropytime(at_date).gps
-        aa_status = []
+        ap_ants = []
         cmapa = cm_partconnect.AprioriAntenna
         for apa in self.session.query(cmapa).filter(or_(and_(cmapa.status == status, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime.is_(None)),
                                                         and_(cmapa.status == status, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime > at_date))):
-            aa_status.append(apa.antenna)
-        return aa_status
+            ap_ants.append(apa.antenna)
+        return ap_ants
 
     def get_apriori_antenna_status_set(self, at_date='now'):
         """
@@ -387,10 +388,10 @@ class Handling:
         ------------
         at_date:  date for which to get apriori state -- anything cm_utils.get_astropytime can handle.
         """
-        aa_status = {}
-        for _x in cm_partconnect.get_apriori_antenna_status_enum():
-            aa_status[_x] = self.get_apriori_status(_x, at_date=at_date)
-        return aa_status
+        ap_stat = {}
+        for _status in cm_partconnect.get_apriori_antenna_status_enum():
+            ap_stat[_status] = self.get_apriori_antennas_with_status(_status, at_date=at_date)
+        return ap_stat
 
     def get_apriori_antenna_status_for_rtp(self, status, at_date='now'):
         """
@@ -401,4 +402,4 @@ class Handling:
         status:  apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
         at_date:  date for which to get apriori state -- anything cm_utils.get_astropytime can handle.
         """
-        return ','.join(self.get_apriori_antenna_for(status=status, at_date=at_date))
+        return ','.join(self.get_apriori_antennas_with_status(status=status, at_date=at_date))

@@ -307,7 +307,7 @@ def get_apriori_antenna_status_enum():
     return apa.status_enum()
 
 
-def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, session=None, initialization_only=False):
+def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, session=None):
     new_apa = AprioriAntenna()
     if status not in new_apa.status_enum():
         raise ValueError("Antenna apriori status must be in {}".format(new_apa.status_enum()))
@@ -318,13 +318,14 @@ def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, se
         session = db.sessionmaker()
         close_session_when_done = True
 
-    if not initialization_only:
-        antenna = antenna.upper()
-        last_one = 1000
-        for trial in session.query(AprioriAntenna).filter(func.upper(AprioriAntenna.antenna) == antenna):
-            if trial.start_gpstime > last_one:
-                last_one = trial.start_gpstime
-                old_apa = trial
+    antenna = antenna.upper()
+    last_one = 1000
+    old_apa = None
+    for trial in session.query(AprioriAntenna).filter(func.upper(AprioriAntenna.antenna) == antenna):
+        if trial.start_gpstime > last_one:
+            last_one = trial.start_gpstime
+            old_apa = trial
+    if old_apa is not None:
         if old_apa.stop_gpstime is None:
             old_apa.stop_gpstime = start_gpstime
         else:
