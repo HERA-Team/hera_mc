@@ -292,10 +292,11 @@ class AprioriAntenna(MCDeclarativeBase):
 
     antenna = Column(Text, primary_key=True)
     start_gpstime = Column(BigInteger, primary_key=True)
+    stop_gpstime = Column(BigInteger)
     status = Column(Text, nullable=False)
 
     def __repr__(self):
-        return('<{}: {}  [{}]>'.format(self.antenna, self.status, self.start_gpstime))
+        return('<{}: {}  [{} - {}]>'.format(self.antenna, self.status, self.start_gpstime, self.stop_gpstime))
 
     def status_enum(self):
         return ['passed_checks', 'needs_checking', 'known_bad', 'not_connected']
@@ -306,7 +307,7 @@ def get_apriori_antenna_status_enum():
     return apa.status_enum()
 
 
-def update_apriori_antenna(antenna, status, start_gpstime, session=None):
+def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, session=None, initialization_only=False):
     new_apa = AprioriAntenna()
     if status not in new_apa.status_enum():
         raise ValueError("Antenna apriori status must be in {}".format(new_apa.status_enum()))
@@ -317,10 +318,24 @@ def update_apriori_antenna(antenna, status, start_gpstime, session=None):
         session = db.sessionmaker()
         close_session_when_done = True
 
+    if not initialization_only:
+        antenna = antenna.upper()
+        last_one = 1000
+        for trial in session.query(AprioriAntenna).filter(func.upper(AprioriAntenna.antenna) == antenna):
+            if trial.start_gpstime > last_one:
+                last_one = trial.start_gpstime
+                old_apa = trial
+        if old_apa.stop_gpstime is None:
+            old_apa.stop_gpstime = start_gpstime
+        else:
+            raise ValueError("Stop time must be None to update AprioriAntenna")
+        session.add(old_apa)
     new_apa.antenna = antenna
     new_apa.status = status
     new_apa.start_gpstime = start_gpstime
+    new_apa.stop_gpstime = stop_gpstime
     session.add(new_apa)
+
     session.commit()
 
     if close_session_when_done:  # pragma: no cover

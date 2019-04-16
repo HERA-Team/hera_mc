@@ -10,7 +10,7 @@ from __future__ import absolute_import, division, print_function
 
 import six
 from astropy.time import Time, TimeDelta
-from sqlalchemy import func, asc
+from sqlalchemy import func, and_, or_
 import numpy as np
 
 from . import mc, cm_partconnect, cm_utils, cm_hookup, cm_revisions, cm_sysdef
@@ -70,6 +70,7 @@ class Handling:
         self.geo = geo_handling.Handling(self.session)
         self.H = None
         self.sysdef = cm_sysdef.Sysdef()
+        self.apriori_status_set = None
 
     def close(self):  # pragma: no cover
         """
@@ -341,13 +342,7 @@ class Handling:
 
         return comments
 
-    def _get_apriori_antenna_set(self):
-        aa_set = []
-        for val in self.session.query(cm_partconnect.AprioriAntenna.antenna).distinct():
-            aa_set.append(val[0])
-        return aa_set
-
-    def get_apriori_for(self, ant, at_date='now'):
+    def get_apriori_status_for(self, ant, at_date='now'):
         """
         This returns the "apriori" status of an antenna station (e.g. HH12) at a date.  The status enum list
         may be found by module cm_partconnect.get_apriori_antenna_status_enum().
@@ -360,49 +355,50 @@ class Handling:
         """
         ant = ant.upper()
         at_date = cm_utils.get_astropytime(at_date).gps
-        aa_dict = {}
-        for val in self.session.query(cm_partconnect.AprioriAntenna).filter(func.upper(cm_partconnect.AprioriAntenna.antenna) == ant):
-            if val.start_gpstime < at_date:
-                aa_dict[val.start_gpstime] = val.status
-        try:
-            latest = sorted(aa_dict.keys())[-1]
-            return aa_dict[latest]
-        except IndexError:
-            return None
+        cmapa = cm_partconnect.AprioriAntenna
+        apa = self.session.query(cmapa).filter(or_(and_(func.upper(cmapa.antenna) == ant, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime.is_(None)),
+                                                   and_(func.upper(cmapa.antenna) == ant, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime > at_date))).first()
+        return apa.status
 
-    def get_apriori_status_set(self, at_date='now'):
+    def get_apriori_antenna_for(self, status, at_date='now'):
         """
-        This returns a dictionary providing the "apriori" state of every antenna station within the apriori_antenna table.
-        The dictionary is keyed on the apriori antenna status type (e.g. "needs_checking"), with values that are all of the
-        antenna station designators with that apriori antenna status.
+        This returns a list of all antennas with the provided status query at_date
 
-        Returns a dictionary keyed on apriori antenna status listing the antenna station designators of that type.
+        Returns a list of the antenna station designators with that status.
 
         Parameters:
         ------------
+        status:  apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
         at_date:  date for which to get apriori state -- anything cm_utils.get_astropytime can handle.
         """
-        ants = self._get_apriori_antenna_set()
-        aa_status = {}
-        for _x in cm_partconnect.get_apriori_antenna_status_enum():
-            aa_status[_x] = []
-
-        for a in ants:
-            msg = self.get_apriori_for(a, at_date=at_date)
-            if msg is not None:
-                aa_status[msg].append(a)
+        at_date = cm_utils.get_astropytime(at_date).gps
+        aa_status = []
+        cmapa = cm_partconnect.AprioriAntenna
+        for apa in self.session.query(cmapa).filter(or_(and_(cmapa.status == status, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime.is_(None)),
+                                                        and_(cmapa.status == status, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime > at_date))):
+            aa_status.append(apa.antenna)
         return aa_status
 
-    def get_dubitable_list(self, at_date='now'):
+    def get_apriori_antenna_status_set(self, at_date='now'):
         """
-        Reads in the apriori_antenna status table and generates the "dubitable" list.
-        The dubitable list is a lists of all antenna station designators that aren't OK for attempted use.
-
-        Returns a list of all antenna station designators that aren't ok for use.
+        This returns a dictionary keyed on the apriori antenna status value containing the antennas with that status value
 
         Parameters:
         ------------
         at_date:  date for which to get apriori state -- anything cm_utils.get_astropytime can handle.
         """
-        aa_status = self.get_apriori_status_set(at_date=at_date)
-        return aa_status['needs_checking'] + aa_status['known_bad'] + aa_status['not_connected']
+        aa_status = {}
+        for _x in cm_partconnect.get_apriori_antenna_status_enum():
+            aa_status[_x] = self.get_apriori_status(_x, at_date=at_date)
+        return aa_status
+
+    def get_apriori_antenna_status_for_rtp(self, status, at_date='now'):
+        """
+        This returns a csv-string of all antennas with the provided status query at_date
+
+        Parameters:
+        ------------
+        status:  apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
+        at_date:  date for which to get apriori state -- anything cm_utils.get_astropytime can handle.
+        """
+        return ','.join(self.get_apriori_antenna_for(status=status, at_date=at_date))

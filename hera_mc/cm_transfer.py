@@ -142,7 +142,7 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False, testing=Fal
 
     print("This will erase and rewrite the configuration management tables.")
     you_are_sure = six.moves.input("Are you sure you want to do this (y/n)? ")
-    if you_are_sure:
+    if you_are_sure == 'y':
         success = _initialization(session=session, cm_csv_path=None,
                                   tables=tables, maindb=maindb, testing=testing)
     else:

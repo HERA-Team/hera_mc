@@ -824,6 +824,7 @@ stop\_gpstime & BigInt & GPS second when connection ended \\ \hline
 {\bf Column} & {\bf Type} & {\bf Description} \\ \hline
 {\bf antenna}* & text & antenna for which status holds \\ \hline
 {\bf start\_gpstime}* & BigInt & GPS second when status change becomes valid \\ \hline
+stop\_gpstime & BigInt & GPS second at end of status.  None for last \\ \hline
 status* & text & status enum message, one of 'passed\_checks', 'needs\_checking', 'known\_bad', 'not\_connected' \\ \hline
 \end{tabular}
 \end{center}
