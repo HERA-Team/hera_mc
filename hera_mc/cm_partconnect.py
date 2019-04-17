@@ -285,6 +285,7 @@ class AprioriAntenna(MCDeclarativeBase):
 
     antenna:  antenna designation, e.g. HH123
     start_gpstime: start time for antenna status
+    stop_gpstime:  stop time for antenna status
     status:  enum of status - 'passed_checks', 'needs_checking', 'known_bad', 'not_connected'
     """
 
