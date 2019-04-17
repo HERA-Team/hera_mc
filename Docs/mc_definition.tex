@@ -95,11 +95,11 @@ but they are:
          {\bf psql table} & {\bf in python file}  &  {\bf with class name} \\
 	geo\_location 	& hera\_mc/geo\_location.py & GeoLocation \\
 	station\_type 	& hera\_mc/geo\_location.py & StationType \\
-	parts 	& hera\_mc/part\_connect.py & Parts \\
-	part\_info 	         & hera\_mc/part\_connect.py & PartInfo \\
-	connections 	& hera\_mc/part\_connect.py & Connections \\
+	parts 	& hera\_mc/cm\_part\_connect.py & Parts \\
+	part\_info 	         & hera\_mc/cm\_part\_connect.py & PartInfo \\
+	connections 	& hera\_mc/cm\_part\_connect.py & Connections \\
 	cm\_version      & hera\_mc/cm\_transfer.py & CMVersion\\
-	dubitable          & hera\_mc/part\_connect.py & Dubitable\\
+	antenna\_apriori & hera\_mc/cm\_part\_connect.py & AprioriAntenna\
 \end{tabular}
 \end{center}
 
@@ -110,8 +110,21 @@ All parts and connections are timed in that they have a start and stop time of o
 
 Parts are hooked together via connections of their ports, as defined in the connection table.   There are two types of connections:  (1) "hookup" connections and (2) "physical" connections, discussed below.
 
+To capture antenna status, an {\em a priori} antenna status table has been defined to facilitate a work flow to incorporate new antennas into the array and capture and known recalcitrant antennas.  The table provides an enumerated status for each antenna station.  The status is one of:
+\begin{itemize}\setlength\itemsep{-.3em}
+	\item not\_connected
+	\item needs\_checking
+	\item known\_bad
+	\item passed\_checks
+\end{itemize}
+
+
+\subsection{Operation Workflow}
+The work flow in this context relates to antenna migration between one of the {\em a priori} status states above.  It is handled by the operations team, which will review the situation on a roughly monthly cadence.   Initially, all antennas are given a ``not\_connected" status.  When they are connected, they will be moved to the ``needs\_checking" state.  In operation, at each review an antenna may then be moved into one of the states of:  ``needs\_checking", ``known\_bad", or ``passed\_checks".  Ideally, an antenna will not remain in the ``needs\_checking" state for more than one iteration of the review cycle.
+In pipeline operations, the {\em a priori} status state is read by the real-time processing (RTP) system.  Antennas in the ``passed\_checks" (and generally the ``needs\_checking") states are processed and passed on.
+
 \subsection{Signal Chain Hookup Connections}
-Hookup connections are those that uniquely map the signal chain from the antenna to the node, including the specific correlator input.  These connections are defined in the file {\tt part\_connect} as the {\tt full\_connection\_path}.  These are the connections used to generate the correlator hookup.
+Hookup connections are those that uniquely map the signal chain from the antenna to the node, including the specific correlator input.  These connections are defined in the file {\tt cm\_part\_connect} as the {\tt full\_connection\_path}.  These are the connections used to generate the correlator hookup.
 The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}, shown as the ports that aren't preceded by a pair of colons (::).  The list below describes the hookup connections.
 \begin{itemize}\setlength\itemsep{-.3em}
 	\item {\bf Station}: geo\_located position.  See prefixes in table station\_type ({\em e.g.} {\tt HH} for herahex)
@@ -142,7 +155,7 @@ This section provides a high-level overview of the python configuration manageme
 \begin{tabular}{l p{12cm}}
 {\bf geo\_location.py} & Defines {\tt station\_type} and {\tt geo\_location}.  Provides update utility for {\tt geo\_location}.  Contains {\tt is\_in\_geo\_location} and {\tt is\_in\_connections}. \\ \hline
 {\bf geo\_handling.py} & Contains myriad defs that handle various geo functionalities.\\ \hline
-{\bf part\_connect.py} & Defines {\tt parts\_paper}, {\tt part\_info}, and {\tt connections}.  Provides update utilities for {\tt parts\_paper} and {\tt connections}. Contains {\tt \_\_get\_part\_revisions}. \\ \hline
+{\bf cm\_part\_connect.py} & Defines {\tt parts\_paper}, {\tt part\_info}, and {\tt connections}.  Provides update utilities for {\tt parts\_paper} and {\tt connections}. Contains {\tt \_\_get\_part\_revisions}. \\ \hline
 {\bf cm\_table\_info.py} & Has mapping and order of tables and classes for initialization. \\ \hline
 {\bf cm\_handling.py} & Defines the {\tt Handling} class to handle various configuration management functionalities.\\ \hline
 {\bf cm\_health.py} & Contains modules that check for various cm errors or warnings \\ \hline
@@ -151,7 +164,7 @@ This section provides a high-level overview of the python configuration manageme
 {\bf cm\_hookup.py} & Defines the {\tt Hookup} class to help determine and show the full part hookup.\\ \hline
 {\bf cm\_dataview.py} & Contains various methods to display cm information.\\ \hline
 {\bf cm\_utils.py} & Contains various defs called by other modules.\\ \hline
-{\bf sys\_handling.py} & Various system-wide modules.
+{\bf cm\_sysutils.py} & Various system-wide modules.
 \end{tabular}
 
 \subsection{Scripts}
@@ -805,14 +818,15 @@ stop\_gpstime & BigInt & GPS second when connection ended \\ \hline
 \end{tabular}
 \end{center}
 
-\subsubsection{dubitable}
+\subsubsection{antenna\_apriori}
 \begin{center}
 \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
 {\bf Column} & {\bf Type} & {\bf Description} \\ \hline
-{\bf start\_gpstime}* & BigInt & GPS second when antenna list is valid \\ \hline
-stop\_gpstime & BigInt & GPS second when connection ended \\ \hline
-ant\_list* & text & list of antennas that are not commissioned (aka dubitable) \\ \hline
+{\bf antenna}* & text & antenna for which status holds \\ \hline
+{\bf start\_gpstime}* & BigInt & GPS second when status change becomes valid \\ \hline
+stop\_gpstime & BigInt & GPS second at end of status.  None for last \\ \hline
+status* & text & status enum message, one of 'passed\_checks', 'needs\_checking', 'known\_bad', 'not\_connected' \\ \hline
 \end{tabular}
 \end{center}
 
@@ -900,7 +914,6 @@ The following are suggestions for the future, things we might like to see.
 	\1 site power
 	\1 network status
 \end{outline}
-
 
 
 \subsection{Other Future Ideas}

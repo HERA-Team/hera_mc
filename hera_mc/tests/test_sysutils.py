@@ -210,17 +210,6 @@ class TestSys(TestHERAMC):
         self.assertEqual(cofa.lon, corr_dict['cofa_lon'])
         self.assertEqual(cofa.elevation, corr_dict['cofa_alt'])
 
-    def test_dubitable(self):
-        dubitable_ants = self.sys_h.get_dubitable_list()
-        self.assertTrue(dubitable_ants is None)
-        at_date = cm_utils.get_astropytime('2017-01-01')
-        cm_partconnect.update_dubitable(self.test_session, at_date.gps, ['1', '2', '3'])
-        dubitable_ants = self.sys_h.get_dubitable_list()
-        dubitable_ants_list = dubitable_ants.split(",")
-        self.assertEqual(len(dubitable_ants_list), 3)
-        dubitable_ants = self.sys_h.get_dubitable_list(return_full=True)
-        self.assertEqual(len(dubitable_ants[2]), 3)
-
     def test_get_pam_from_hookup(self):
         hookup = cm_hookup.Hookup(self.test_session)
         hud = hookup.get_hookup(['HH23'], at_date='2017-07-03', exact_match=True, hookup_type='parts_paper')
@@ -237,6 +226,21 @@ class TestSys(TestHERAMC):
     def test_system_comments(self):
         comments = self.sys_h.system_comments()
         self.assertEqual(comments[1], 'K')
+
+    def test_apriori_antenna(self):
+        cm_partconnect.update_apriori_antenna('HH2', 'needs_checking', '1214482618', session=self.test_session)
+        d = self.sys_h.get_apriori_antenna_status_for_rtp('needs_checking')
+        self.assertTrue(d == 'HH2')
+        g = self.sys_h.get_apriori_antenna_status_set()
+        self.assertEqual(g['needs_checking'][0], 'HH2')
+        self.assertRaises(ValueError, cm_partconnect.update_apriori_antenna, 'HH3', 'not_one', '1214482618', session=self.test_session)
+        g = self.sys_h.get_apriori_status_for_antenna('HH2')
+        self.assertEqual(g, 'needs_checking')
+        cm_partconnect.update_apriori_antenna('HH2', 'needs_checking', '1214482818', '1214483000', session=self.test_session)
+        self.assertRaises(ValueError, cm_partconnect.update_apriori_antenna, 'HH2', 'needs_checking', '1214482838', session=self.test_session)
+        with captured_output() as (out, err):
+            print(cm_partconnect.AprioriAntenna())
+        self.assertTrue('<None:' in out.getvalue().strip())
 
 
 if __name__ == '__main__':
