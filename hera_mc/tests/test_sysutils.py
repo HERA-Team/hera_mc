@@ -243,6 +243,5 @@ class TestSys(TestHERAMC):
         self.assertTrue('<None:' in out.getvalue().strip())
 
 
-
 if __name__ == '__main__':
     unittest.main()
