@@ -12,7 +12,7 @@ import os.path
 import subprocess
 import numpy as np
 
-from .. import geo_location, geo_handling, mc, cm_transfer, part_connect
+from .. import geo_location, geo_handling, mc, cm_transfer
 from ..tests import TestHERAMC
 from astropy.time import Time
 
@@ -84,7 +84,7 @@ class TestGeo(TestHERAMC):
     def test_get_ants_installed_since(self):
         query_date = Time('2017-05-01 01:00:00', scale='utc')
         ants_in = self.h.get_ants_installed_since(query_date, station_types_to_check=['HH'])
-        self.assertTrue(len(ants_in) == 3)
+        self.assertEqual(len(ants_in), 7)
 
     def test_plotting(self):
         stations_to_plot = ['HH0']
@@ -129,7 +129,7 @@ class TestGeo(TestHERAMC):
         self.assertTrue('herahexe' in st)
 
     def test_get_active_stations(self):
-        active = self.h.get_active_stations('now', ['HH'])
+        active = self.h.get_active_stations('now', ['HH'], hookup_type='parts_paper')
         self.assertEqual(active[0].station_name, 'HH0')
 
     def test_is_in_database(self):

@@ -10,7 +10,7 @@ from __future__ import absolute_import, division, print_function
 
 import warnings
 from . import mc, cm_utils
-from . import part_connect as PC
+from . import cm_partconnect as PC
 from . import cm_revisions
 
 
@@ -22,7 +22,7 @@ def check_for_overlap(interval):
     """
     maxx = max([x for x in interval[0] + interval[1] if x is not None]) + 100
     for i, ival in enumerate(interval):
-        interval[i] = [x if x is not None else maxx for x in ival]
+        ival[1] = maxx if ival[1] is None else ival[1]
     return interval[0][1] > interval[1][0] and interval[1][1] > interval[0][0]
 
 
@@ -35,9 +35,8 @@ class Connections:
             self.session = session
         self.conndict = None
 
-    def ensure_conndict(self):
+    def ingest_conndb(self):
         """
-        If self.conndict is not None, writes the class variables:
         conndict - dictionary - conndict[k] = [conn_1, conn_2...]
             Dictionary of connections keyed as:
             upstream_part:rev:output_port:downstream_part:rev:input_port
@@ -48,8 +47,6 @@ class Connections:
         num_connections:
             Integer of the total number of connections in database.
         """
-        if self.conndict is not None:
-            return
         self.conndict = {}
         self.multiples = set()
         self.num_connections = 0
@@ -71,7 +68,7 @@ class Connections:
 
         Returns the duplicated connections.
         """
-        self.ensure_conndict()
+        self.ingest_conndb()
         self.duplicates = []
         for k in self.multiples:
             for i in range(len(self.conndict[k])):
@@ -110,7 +107,7 @@ class Connections:
         at_date = cm_utils.get_astropytime(at_date)
         connection = [x.lower() for x in connection]
         k = ':'.join(connection)
-        self.ensure_conndict()
+        self.ingest_conndb()
         if k not in self.conndict.keys():
             return False
         for conn in self.conndict[k]:

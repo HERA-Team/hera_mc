@@ -3,6 +3,8 @@
 # Licensed under the 2-clause BSD license.
 
 """Functions to handle various cm revision queries and checks.
+LAST, ACTIVE, ALL, <specific> are handled (typically) via get_revisions_of_type.
+FULL revisions are called directly (get_full_revision)
 
 """
 
@@ -13,7 +15,7 @@ import warnings
 from tabulate import tabulate
 from argparse import Namespace
 
-from . import cm_utils, part_connect
+from . import cm_utils, cm_partconnect
 
 
 def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
@@ -21,22 +23,20 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     Returns namespace of revisions
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
     of rev_query
-    where the [hukey], [pkey] are included for fully_connected queries.
     Allowed types listed below in "help"
 
     Parameters:
     ------------
     hpn:  string for hera part number
-    rev_type:  string for revision type
+    rev_type:  string for revision type.  One of LAST, ACTIVE, ALL, <specific>
     at_date:  astropy.Time to check for
-    session:  db session, or hookup_dict if FULL
+    session:  db session
     """
     if isinstance(hpn, six.string_types) and hpn.lower() == 'help':
         print("""
         Allowed revision types or revisions are (case doesn't matter and only need first 3 letters):
             ACTIVE:  revisions active at_date ('now' as default) -- only one that uses 'at_date'
             LAST:  the last connected revision (could be active or not)
-            FULL:  revision that is part of a fully connected signal path in current or supplied cache
             ALL:  all revisions
             specific_revision:  check for a specific revision
         """)
@@ -54,9 +54,6 @@ def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     if rq.startswith('ALL'):
         return get_all_revisions(hpn, session)
 
-    if rq.startswith('FULL'):
-        return get_full_revision(hpn, session)
-
     return get_specific_revision(hpn, rev_type, session)
 
 
@@ -70,7 +67,7 @@ def get_last_revision(hpn, session=None):
     session:  db session
     """
 
-    revisions = part_connect.get_part_revisions(hpn, session)
+    revisions = cm_partconnect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
     latest_end = cm_utils.get_astropytime('<')
@@ -105,7 +102,7 @@ def get_all_revisions(hpn, session=None):
     session:  db session
     """
 
-    revisions = part_connect.get_part_revisions(hpn, session)
+    revisions = cm_partconnect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
     sort_rev = sorted(revisions.keys())
@@ -128,7 +125,7 @@ def get_specific_revision(hpn, rq, session=None):
     session:  db session
     """
 
-    revisions = part_connect.get_part_revisions(hpn, session)
+    revisions = cm_partconnect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
     this_rev = []
@@ -151,7 +148,7 @@ def get_active_revision(hpn, at_date, session=None):
     session:  db session
     """
 
-    revisions = part_connect.get_part_revisions(hpn, session)
+    revisions = cm_partconnect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
     return_active = []
@@ -164,7 +161,7 @@ def get_active_revision(hpn, at_date, session=None):
     return return_active
 
 
-def get_full_revision(hpn, hookup_dict=None):
+def get_full_revision(hpn, hookup_dict):
     """
     Returns Namespace list of fully connected parts
     If either pol is fully connected, it is returned.
@@ -175,10 +172,6 @@ def get_full_revision(hpn, hookup_dict=None):
     hpn:  string of hera part number (must match hookup_dict keys part type)
     hookup_dict:  hookup dictionary to check for full connection
     """
-    from . import cm_hookup
-    if not isinstance(hookup_dict, dict):
-        H = cm_hookup.Hookup()
-        hookup_dict = H.get_hookup(H.hookup_list_to_cache)
     return_full_keys = []
     for k, h in six.iteritems(hookup_dict):
         hpn_hu, rev_hu = cm_utils.split_part_key(k)

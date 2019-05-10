@@ -11,7 +11,7 @@ import unittest
 import os
 import subprocess
 
-from .. import cm_transfer
+from .. import cm_transfer, mc
 from ..tests import TestHERAMC, is_onsite
 from astropy.time import Time
 
@@ -43,6 +43,8 @@ class TestTransfer(TestHERAMC):
     def test_initialization(self):
         t = cm_transfer._initialization(session='testing_main', cm_csv_path=None)
         self.assertFalse(t)
+        t = mc.get_cm_csv_path(testing=True)
+        self.assertTrue('test_data' in t)
 
     def test_check_if_main(self):
         result = cm_transfer.check_if_main(self.test_session)
@@ -51,7 +53,7 @@ class TestTransfer(TestHERAMC):
     def test_cm_table_info(self):
         from hera_mc import cm_table_info
         ot = ','.join(cm_table_info.order_the_tables(None))
-        self.assertTrue(ot == 'part_info,connections,parts,geo_location,station_type,dubitable')
+        self.assertTrue(ot == 'part_info,connections,parts,geo_location,station_type,apriori_antenna')
         ot = ','.join(cm_table_info.order_the_tables(['notthere', 'parts']))
         self.assertTrue(ot == 'parts')
 

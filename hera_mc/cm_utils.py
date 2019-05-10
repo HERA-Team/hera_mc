@@ -22,11 +22,11 @@ all_hera_zone_prefixes = ['HH', 'HA', 'HB']  # This is for hookup_cache to get a
 default_station_prefixes = ['HH', 'HA', 'HB']  # This is for defaults for sys etc.
 
 
-def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None):
+def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
     """
     Get the current cm_version for recording with antenna locations.
     """
-    if cm_csv_path is None:
+    if cm_csv_path is None or testing:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_path)
         if cm_csv_path is None:
             raise ValueError('No cm_csv_path defined in mc_config file.')
@@ -62,7 +62,12 @@ def log(msg, **kwargs):
 
 
 # #######################################Key stuff
+system_wide_key = '__Sys__'
+
+
 def make_part_key(hpn, rev):
+    if hpn is None:
+        return(system_wide_key)
     return ":".join([hpn, rev]).strip()
 
 
@@ -136,9 +141,11 @@ def add_date_time_args(parser):
 
 
 def is_active(at_date, start_date, stop_date):
-    at_date = get_astropytime(at_date)
-    start_date = get_astropytime(start_date)
-    stop_date = get_stopdate(stop_date)
+    if at_date is None:
+        return True
+    at_date = get_astropytime(at_date).gps
+    start_date = get_astropytime(start_date).gps
+    stop_date = get_stopdate(stop_date).gps
     return at_date >= start_date and at_date <= stop_date
 
 

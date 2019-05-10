@@ -14,8 +14,8 @@ from contextlib import contextmanager
 import six
 import sys
 
-from .. import part_connect, mc, cm_utils, cm_handling, cm_revisions
-from ..tests import TestHERAMC
+from hera_mc import cm_partconnect, mc, cm_utils, cm_handling, cm_revisions
+from hera_mc.tests import TestHERAMC, checkWarnings
 
 
 # define a context manager for checking stdout
@@ -44,7 +44,7 @@ class TestParts(TestHERAMC):
         self.h = cm_handling.Handling(self.test_session)
 
         # Add a test part
-        part = part_connect.Parts()
+        part = cm_partconnect.Parts()
         part.hpn = self.test_part
         part.hpn_rev = self.test_rev
         part.hptype = self.test_hptype
@@ -59,8 +59,8 @@ class TestParts(TestHERAMC):
                 [ntp, 'X', 'hpn_rev', 'X'],
                 [ntp, 'X', 'hptype', 'antenna'],
                 [ntp, 'X', 'start_gpstime', 1172530000]]
-        part_connect.update_part(self.test_session, data, add_new_part=True)
-        located = self.h.get_part_dossier([ntp], 'X', 'now', True)
+        cm_partconnect.update_part(self.test_session, data, add_new_part=True)
+        located = self.h.get_part_dossier(hpn=[ntp], rev='X', at_date='now', exact_match=True)
         prkey = list(located.keys())[0]
         self.assertTrue(str(located[prkey]).startswith('NEW_TEST_PART:X'))
         if len(list(located.keys())) == 1:
@@ -74,16 +74,25 @@ class TestParts(TestHERAMC):
 
     def test_update_update(self):
         data = [[self.test_part, self.test_rev, 'hpn_rev', 'Z']]
-        part_connect.update_part(self.test_session, data, add_new_part=False)
-        located = self.h.get_part_dossier([self.test_part], 'Z', Time('2017-07-01 01:00:00', scale='utc'), True)
+        cm_partconnect.update_part(self.test_session, data, add_new_part=False)
+        dtq = Time('2017-07-01 01:00:00', scale='utc')
+        located = self.h.get_part_dossier(hpn=[self.test_part], rev='Z', at_date=dtq, exact_match=True)
         if len(list(located.keys())) == 1:
             self.assertTrue(located[list(located.keys())[0]].part.hpn_rev == 'Z')
         else:
             self.assertFalse()
 
+    def test_part_dossier(self):
+        located = self.h.get_part_dossier(hpn=None, rev=None, at_date='now', sort_notes_by='part', exact_match=True)
+        self.assertTrue(list(located.keys())[0] == '__Sys__')
+        located = self.h.get_part_dossier(hpn=None, rev=None, at_date='now', sort_notes_by='post', exact_match=True)
+        with captured_output() as (out, err):
+            self.h.show_parts(located, notes_only=True)
+        self.assertTrue('System:A' in out.getvalue().strip())
+
     def test_show_parts(self):
-        part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, 'now', 'Testing', 'library_file')
-        located = self.h.get_part_dossier([self.test_part], self.test_rev, self.start_time, True)
+        cm_partconnect.add_part_info(self.test_session, self.test_part, self.test_rev, self.start_time, 'Testing', 'library_file')
+        located = self.h.get_part_dossier(hpn=[self.test_part], rev=self.test_rev, at_date='now', exact_match=True)
         with captured_output() as (out, err):
             self.h.show_parts(located)
         self.assertTrue('TEST_PART  | Q     | antenna     |         | 2017-07-01 01:00:37' in out.getvalue().strip())
@@ -93,25 +102,26 @@ class TestParts(TestHERAMC):
         with captured_output() as (out, err):
             self.h.show_parts({})
         self.assertTrue('Part not found' in out.getvalue().strip())
-        located = self.h.get_part_dossier(['A0'], ['H'], 'now', True)
+        located = self.h.get_part_dossier(hpn=['A0'], rev=['H'], at_date='now', exact_match=True)
         with captured_output() as (out, err):
             self.h.show_parts(located, notes_only=True)
         self.assertTrue('Comment 2' in out.getvalue().strip())
-        located = self.h.get_part_dossier(['HH0'], ['A'], 'now', True)
+        located = self.h.get_part_dossier(hpn=['HH0'], rev=['A'], at_date='now', exact_match=True)
         with captured_output() as (out, err):
             self.h.show_parts(located)
         self.assertTrue('540901.6E, 6601070.7N, 1052.6m' in out.getvalue().strip())
 
     def test_part_info(self):
-        part_connect.add_part_info(self.test_session, self.test_part, self.test_rev, 'now', 'Testing', 'library_file')
-        located = self.h.get_part_dossier([self.test_part], self.test_rev, self.start_time, True)
+        cm_partconnect.add_part_info(self.test_session, self.test_part, self.test_rev, Time('2017-07-01 01:00:00'),
+                                     'Testing', 'library_file')
+        located = self.h.get_part_dossier(hpn=[self.test_part], rev=self.test_rev, at_date='now', exact_match=True)
         self.assertTrue(located[list(located.keys())[0]].part_info[0].comment == 'Testing')
 
     def test_add_new_parts(self):
         data = [['part_X', 'X', 'station', 'mfg_X']]
-        p = part_connect.Parts()
-        part_connect.add_new_parts(self.test_session, p, data, Time('2017-07-01 01:00:00', scale='utc'), True)
-        located = self.h.get_part_dossier(['part_X'], 'X', Time('2017-07-01 01:00:00'), True)
+        p = cm_partconnect.Parts()
+        cm_partconnect.add_new_parts(self.test_session, p, data, Time('2017-07-01 01:00:00', scale='utc'), True)
+        located = self.h.get_part_dossier(hpn=['part_X'], rev='X', at_date=Time('2017-07-01 01:00:00'), exact_match=True)
         if len(list(located.keys())) == 1:
             self.assertTrue(located[list(located.keys())[0]].part.hpn == 'part_X')
         else:
@@ -168,7 +178,7 @@ class TestParts(TestHERAMC):
         c = cm_health.check_part_for_overlapping_revisions(self.test_part, self.test_session)
         self.assertTrue(len(c) == 0)
         # Add a test part
-        part = part_connect.Parts()
+        part = cm_partconnect.Parts()
         part.hpn = self.test_part
         part.hpn_rev = 'B'
         part.hptype = self.test_hptype
@@ -176,7 +186,8 @@ class TestParts(TestHERAMC):
         part.start_gpstime = self.start_time.gps
         self.test_session.add(part)
         self.test_session.commit()
-        c = cm_health.check_part_for_overlapping_revisions(self.test_part, self.test_session)
+        c = checkWarnings(cm_health.check_part_for_overlapping_revisions, [self.test_part, self.test_session],
+                          message='Q and B are overlapping revisions of part test_part')
         self.assertTrue(len(c) == 1)
 
     def test_datetime(self):

@@ -16,7 +16,7 @@ from astropy.time import Time
 from sqlalchemy import Column, Float, Integer, String, BigInteger, ForeignKey, func
 
 from . import MCDeclarativeBase, NotNull
-from . import mc, part_connect, cm_utils
+from . import mc, cm_utils
 
 
 class StationType(MCDeclarativeBase):

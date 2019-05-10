@@ -12,7 +12,7 @@ import os.path
 import sys
 import six
 
-from hera_mc import part_connect, cm_handling, cm_utils, mc
+from hera_mc import cm_handling, cm_utils, mc
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
@@ -24,18 +24,24 @@ if __name__ == '__main__':
     parser.add_argument('--port', help="Specify port [all]", default='all')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
-    parser.add_argument('--notes', help="(For action=part_info):  Displays part notes with posting dates and not other info",
+    parser.add_argument('--notes', help="<For action=part_info>:  Displays part notes with posting dates and not other info",
                         action='store_true')
+    parser.add_argument('--sort_notes_by', help="<For action=part_info --notes> Can sort the notes listing by part \
+                        ('part') or posting time ('post') [part]", default='part')
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
+    parser.add_argument('--notes_start_date', help="<For part_info notes> start_date for notes [<]", default='<')
+    parser.add_argument('--notes_start_time', help="<For part_info notes> start_time for notes", default=0.0)
 
     args = parser.parse_args()
 
     args.verbosity = cm_utils.parse_verbosity(args.verbosity)
-
+    action_tag = args.action[:2].lower()
+    args.hpn = cm_utils.listify(args.hpn)
     date_query = cm_utils.get_astropytime(args.date, args.time)
+    notes_start_date = cm_utils.get_astropytime(args.notes_start_date, args.notes_start_time)
 
-    if args.action[:2].lower() == 'in':
+    if action_tag == 'in':
         print(
             """
         Available actions are (only need first two letters):
@@ -53,20 +59,22 @@ if __name__ == '__main__':
             health:  runs various "health" checks
 
         Args needing values (or defaulted):
-            -p/--hpn:  part name
+            -p/--hpn:  part name [None]
             -r/--revision:  revision (particular/last/active/full/all) [Active]
             --port:  port name [ALL]
+            --date:  query date [now]
+            --time:  query time
+            --notes_start_date:  start date for notes display [<]
+            --notes_stop_time:  start time for notes display
+            --sort_notes_by:  for the full notes listing (i.e. where hpn=None), you may sort by
+                              the part number ('part') or by the posting time ('post')
 
         Args that are flags
             -e/--exact-match:  match part number exactly, or specify first characters [False]
-            --notes:  (For action=part_info)  Displays part notes with posting dates and not other info
+            --notes:  <For part_info>  Displays part notes with posting dates
         """
         )
         sys.exit()
-
-    # Pre-process the args
-    action_tag = args.action[:2].lower()
-    args.hpn = cm_utils.listify(args.hpn)
 
     # Start session
     db = mc.connect_to_mc_db(args)
@@ -96,13 +104,14 @@ if __name__ == '__main__':
                 cm_health.check_part_for_overlapping_revisions(hpn, session)
         sys.exit()
 
-    if args.hpn is None:
+    if args.hpn is None and not (action_tag == 'pa' and args.notes):
         print("Need to supply a part name.")
         sys.exit()
 
     if action_tag == 'pa':  # part_info
-        part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision,
-                                                 at_date=date_query, exact_match=args.exact_match)
+        part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
+                                                 notes_start_date=notes_start_date, sort_notes_by='part',
+                                                 exact_match=args.exact_match, full_version=True)
         handling.show_parts(part_dossier, args.notes)
     elif action_tag == 'co':  # connection_info
         connection_dossier = handling.get_part_connection_dossier(

@@ -11,7 +11,7 @@ from __future__ import absolute_import, division, print_function
 
 import six
 
-from hera_mc import mc, cm_utils, part_connect, cm_handling
+from hera_mc import mc, cm_utils, cm_partconnect, cm_handling
 
 
 def query_args(args):
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     # Pre-process some args
     if args.date is not None:
         at_date = cm_utils.get_astropytime(args.date, args.time)
-    c = part_connect.Connections()
+    c = cm_partconnect.Connections()
     c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
                  downstream_part=args.dnpart, down_part_rev=args.dnrev, downstream_input_port=args.dnport)
 
@@ -77,4 +77,4 @@ if __name__ == '__main__':
     if go_ahead:
         # Connect parts
         npc = [[args.uppart, args.uprev, args.dnpart, args.dnrev, args.upport, args.dnport, connection_start_was]]
-        part_connect.stop_connections(session, npc, at_date, args.actually_do_it)
+        cm_partconnect.stop_connections(session, npc, at_date, args.actually_do_it)

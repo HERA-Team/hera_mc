@@ -87,7 +87,7 @@ def NotNull(kind, **kwargs):
 from . import version  # noqa
 from . import autocorrelations  # noqa
 from . import cm_transfer  # noqa
-from . import part_connect  # noqa
+from . import cm_partconnect  # noqa
 from . import geo_location  # noqa
 from . import observations  # noqa
 from . import subsystem_error  # noqa

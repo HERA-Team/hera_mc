@@ -11,7 +11,7 @@ from __future__ import absolute_import, division, print_function
 from astropy.time import Time, TimeDelta
 import numpy as np
 
-from . import mc, cm_utils, cm_revisions, sys_handling
+from . import mc, cm_utils, cm_revisions, cm_sysutils
 
 
 class Dataview:
@@ -46,7 +46,7 @@ class Dataview:
             import sys
             fplist = [sys.stdout, open(output, 'w')]
             data_ret = None
-        sys_handle = sys_handling.Handling(self.session)
+        sys_handle = cm_sysutils.Handling(self.session)
         time_step = TimeDelta(time_step * 3600.0 * 24.0, format='sec')
         at_date = start
         while at_date <= stop:

@@ -16,6 +16,7 @@ from sqlalchemy.sql.expression import func
 from astropy.time import Time, TimeDelta
 
 from .utils import get_iterable
+
 """
 Primary session object which handles most DB queries.
 
@@ -1841,7 +1842,7 @@ class MCSession(Session):
 
         Returns:
         --------
-        Optionally returns the CorrelatorConfig (if testing is True)
+        Optionally returns the list of CorrelatorControlState objects (if testing is True)
 
         """
         from .correlator import _get_control_state, CorrelatorControlState
@@ -1930,7 +1931,7 @@ class MCSession(Session):
         self.add(CorrelatorConfigStatus.create(time, config_hash))
 
     def get_correlator_config_status(self, most_recent=None, starttime=None,
-                                     config_hash=None, stoptime=None, state_type=None,
+                                     config_hash=None, stoptime=None,
                                      write_to_file=False, filename=None):
         """
         Get correlator config status record(s) from the M&C database.
@@ -1998,17 +1999,18 @@ class MCSession(Session):
 
         # write config out to a file
         lib_store_path = 'correlator_yaml/' + librarian_filename
-        with open(librarian_filename, 'w') as outfile:
+        librarian_filename_full = os.path.join('/tmp', librarian_filename)
+        with open(librarian_filename_full, 'w') as outfile:
             yaml.dump(config, outfile, default_flow_style=False)
 
         # add config file to librarian
         lib_client = LibrarianClient('local-maint')
 
-        lib_client.upload_file(librarian_filename, lib_store_path, 'infer',
+        lib_client.upload_file(librarian_filename_full, lib_store_path, 'infer',
                                deletion_policy='disallowed', null_obsid=True)
 
         # delete the file
-        os.remove(librarian_filename)
+        os.remove(librarian_filename_full)
 
     def add_correlator_config_from_corrcm(self, config_state_dict=None,
                                           testing=False):
@@ -2039,7 +2041,7 @@ class MCSession(Session):
         if config_state_dict is None:
             config_state_dict = _get_config()
 
-        time = Time(config_state_dict['timestamp'], format='unix')
+        time = config_state_dict['time']
         config = config_state_dict['config']
         config_hash = config_state_dict['hash']
 
@@ -2424,8 +2426,10 @@ class MCSession(Session):
                     if not dryrun:  # pragma: no cover
                         # This config is new.
                         # save it to the Librarian
-                        self._add_config_file_to_librarian(yaml.load(config_file),
-                                                           config_hash, librarian_filename)
+                        with open(config_file, 'r') as stream:
+                            config = yaml.load(stream)
+                        self._add_config_file_to_librarian(config, config_hash,
+                                                           librarian_filename)
 
                         # add it to the config file table
                         self.add(config_file_obj)
@@ -2498,6 +2502,566 @@ class MCSession(Session):
 
         if dryrun:
             return command_list
+
+    def add_correlator_software_versions(self, time, package, version):
+        """
+        Add new correlator software versions to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on the version report timestamp
+        package: string
+            name of the correlator software module or <package>:<script> for
+                daemonized processes(e.g. 'hera_corr_cm', 'udpSender:hera_node_keep_alive.py')
+        version: string
+            version string for this package or script
+        """
+        from .correlator import CorrelatorSoftwareVersions
+
+        self.add(CorrelatorSoftwareVersions.create(time, package, version))
+
+    def get_correlator_software_versions(self, most_recent=None, starttime=None,
+                                         stoptime=None, package=None,
+                                         write_to_file=False, filename=None):
+        """
+        Get correlator software versions record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        package: string
+            name of the correlator software module (e.g. "hera_corr_f")
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of CorrelatorSoftwareVersions objects
+        """
+        from .correlator import CorrelatorSoftwareVersions
+
+        return self._time_filter(CorrelatorSoftwareVersions, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='package', filter_value=package,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def add_snap_config_version(self, init_time, version, init_args, config_hash):
+        """
+        Add new SNAP configuration and version to the M&C database.
+
+        Parameters:
+        ------------
+        init_time: astropy time object
+            astropy time object for when the SNAPs were last initialized with the
+                `hera_snap_feng_init.py` script
+        version: string
+            version string for the hera_corr_f package
+        init_args: string
+            arguments passed to the initialization script at runtime
+        config_hash: string
+            unique hash of the config, foreign key into correlator_config_file table
+        """
+        from .correlator import SNAPConfigVersion
+
+        self.add(SNAPConfigVersion.create(init_time, version, init_args, config_hash))
+
+    def get_snap_config_version(self, most_recent=None, starttime=None, stoptime=None,
+                                write_to_file=False, filename=None):
+        """
+        Get SNAP configuration and version record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of SNAPConfigVersion objects
+        """
+        from .correlator import SNAPConfigVersion
+
+        return self._time_filter(SNAPConfigVersion, 'init_time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def add_corr_snap_versions_from_corrcm(self, corr_snap_version_dict=None,
+                                           testing=False):
+        """Get and add correlator and snap configuration and version information using a HeraCorrCM object.
+
+        This function connects to the correlator and gets the latest data using the
+        `_get_corr_versions` function. For testing purposes, it can
+        optionally accept an input dict instead of connecting to the correlator.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the data frequently on qmaster.
+
+        Parameters:
+        ------------
+        corr_snap_version_dict: dict
+            A dict containing info as in the return dict from corr._get_corr_versions() for
+            testing purposes. If None, _get_corr_versions() is called. Default: None
+        testing: boolean
+            If true, don't add a record of it to the database and return the list of
+            AntennaStatus objects. Default False.
+
+        Returns:
+        --------
+        Optionally returns the list of AntennaStatus objects (if testing is True)
+
+        """
+        from .correlator import (_get_corr_versions, CorrelatorSoftwareVersions,
+                                 SNAPConfigVersion)
+
+        if corr_snap_version_dict is None:
+            corr_snap_version_dict = _get_corr_versions()
+
+        corr_version_list = []
+        snap_version_list = []
+        for package, version_dict in six.iteritems(corr_snap_version_dict):
+            time = Time(version_dict['timestamp'], format='datetime')
+            version = version_dict['version']
+
+            if package == 'hera_corr_cm':
+                # we get a new timestamp every time we call hera_corr_cm.
+                # Don't make a new row unless it's a new version.
+                # First, get most recent version in table
+                last_hera_corr_cm_entry = self.get_correlator_software_versions(
+                    package='hera_corr_cm')
+                if len(last_hera_corr_cm_entry) == 0:
+                    last_version = ''
+                else:
+                    last_version = last_hera_corr_cm_entry[0].version
+                if last_version != version:
+                    # this is a new version, make a new object
+                    corr_version_list.append(
+                        CorrelatorSoftwareVersions.create(time, package, version))
+            elif package != 'snap':
+                corr_version_list.append(
+                    CorrelatorSoftwareVersions.create(time, package, version))
+            else:
+                init_args = version_dict['init_args']
+                config_hash = version_dict['config_md5']
+                snap_version_list.append(SNAPConfigVersion.create(time, version,
+                                                                  init_args,
+                                                                  config_hash))
+
+                config_time = Time(version_dict['config_timestamp'],
+                                   format='datetime')
+                config = version_dict['config']
+                snap_config_dict = {'time': config_time, 'hash': config_hash,
+                                    'config': config}
+
+        # make sure this config is in the correlator config status table
+        # (really should be, but this will add it if it was somehow missed)
+        config_obj_list = self.add_correlator_config_from_corrcm(config_state_dict=snap_config_dict,
+                                                                 testing=testing)
+
+        if testing:
+            return corr_version_list + config_obj_list + snap_version_list
+        else:
+            self._insert_ignoring_duplicates(CorrelatorSoftwareVersions, corr_version_list)
+            self._insert_ignoring_duplicates(SNAPConfigVersion, snap_version_list)
+
+    def _get_node_snap_from_serial(self, snap_serial, session=None):
+        from hera_mc import cm_handling, cm_utils
+        if session is None:
+            session = self
+
+        cmh = cm_handling.Handling(session)
+        conn_dossier = cmh.get_part_connection_dossier(snap_serial, rev='active',
+                                                       port='all', at_date='now')
+
+        if len(conn_dossier.keys()) == 0:
+            warnings.warn('No active dossiers returned for snap serial '
+                          '{snn}. Setting node and snap location numbers to None'.format(snn=snap_serial))
+            return None, None
+
+        if len(conn_dossier.keys()) > 1:
+            warnings.warn('Multiple active dossiers returned for snap serial '
+                          '{snn}. Setting node and snap location numbers to None'.format(snn=snap_serial))
+            return None, None
+
+        snap_num_rev = list(conn_dossier.keys())[0]
+        node_conn = [conn for conn in conn_dossier[snap_num_rev].keys_down if conn is not None]
+
+        node_part = set()
+        node_rev = set()
+        snap_loc = set()
+        for conn in node_conn:
+            conn_tuple = cm_utils.split_connection_key(conn)
+            node_part.add(conn_tuple[0])
+            node_rev.add(conn_tuple[1])
+            snap_loc.add(conn_tuple[2])
+
+        node_part = list(node_part)
+        node_rev = list(node_rev)
+        snap_loc = list(snap_loc)
+        if len(node_part) > 1 or len(node_rev) > 1:
+            warnings.warn('Multiple node connections returned for snap serial '
+                          '{snn}. Setting node and snap location number to None'.format(snn=snap_serial))
+            return None, None
+
+        node_part = node_part[0]
+        try:
+            assert node_part.startswith('N')
+            nodeID = int(node_part[1:])
+        except(ValueError, AssertionError):
+            nodeID = None
+
+        if len(snap_loc) > 1:
+            warnings.warn('Multiple snap location numbers returned for snap serial '
+                          '{snn}. Setting snap location number to None'.format(snn=snap_serial))
+            snap_loc_num = None
+        else:
+            snap_loc = snap_loc[0]
+            try:
+                assert snap_loc.startswith('loc')
+                snap_loc_num = int(snap_loc[3:])
+            except(ValueError, AssertionError):
+                snap_loc_num = None
+
+        return nodeID, snap_loc_num
+
+    def add_snap_status(self, time, hostname, serial_number, psu_alert, pps_count,
+                        fpga_temp, uptime_cycles, last_programmed_time):
+        """
+        Add new snap status data to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by the correlator
+        hostname: string
+            snap hostname
+        serial_number: string
+            Serial number of the SNAP board
+        psu_alert: boolean
+            True if SNAP PSU (aka PMB) controllers have issued an alert. False otherwise.
+        pps_count: integer
+            Number of PPS pulses received since last programming cycle
+        fpga_temp: float
+            Reported FPGA temperature in degrees Celsius
+        uptime_cycles: integer
+            Multiples of 500e6 ADC clocks since last programming cycle
+        last_programmed_time: astropy time object
+            astropy time object based on the last time this FPGA was programmed
+        """
+        from .correlator import SNAPStatus
+
+        # get node & snap location number from config management
+        nodeID, snap_loc_num = self._get_node_snap_from_serial(serial_number)
+
+        self.add(SNAPStatus.create(time, hostname, nodeID, snap_loc_num, serial_number,
+                                   psu_alert, pps_count, fpga_temp, uptime_cycles,
+                                   last_programmed_time))
+
+    def get_snap_status(self, most_recent=None, starttime=None, stoptime=None,
+                        nodeID=None, write_to_file=False, filename=None):
+        """
+        Get snap status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        nodeID: integer
+            node number (integer running from 1 to 30)
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of SNAPStatus objects
+        """
+        from .correlator import SNAPStatus
+
+        return self._time_filter(SNAPStatus, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='node', filter_value=nodeID,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def add_snap_status_from_corrcm(self, snap_status_dict=None, testing=False,
+                                    cm_session=None):
+        """Get and add snap status information using a HeraCorrCM object.
+
+        This function connects to the correlator and gets the latest data using the
+        `_get_snap_status` function. For testing purposes, it can
+        optionally accept an input dict instead of connecting to the correlator.
+        It can use a different session for the cm info (this is useful for testing onsite).
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the data frequently on qmaster.
+
+        Parameters:
+        ------------
+        snap_status_dict: dict
+            A dict containing info as in the return dict from _get_snap_status() for
+            testing purposes. If None, _get_snap_status() is called. Default: None
+        testing: boolean
+            If true, don't add a record of it to the database and return the list of
+            SNAPStatus objects. Default False.
+        cm_session:
+            Session object to use for the CM queries. Defaults to self, but can
+            be set to another session instance (useful for testing).
+
+        Returns:
+        --------
+        Optionally returns the list of SNAPStatus objects (if testing is True)
+
+        """
+        from .correlator import _get_snap_status, SNAPStatus
+
+        if snap_status_dict is None:
+            snap_status_dict = _get_snap_status()
+
+        snap_status_list = []
+        for hostname, snap_dict in six.iteritems(snap_status_dict):
+            time = Time(snap_dict['timestamp'], format='datetime')
+
+            # any entry other than timestamp can be the string 'None'
+            # need to convert those to a None type
+            for key, val in six.iteritems(snap_dict):
+                if val == 'None':
+                    snap_dict[key] = None
+
+            serial_number = snap_dict['serial']
+            psu_alert = snap_dict['pmb_alert']
+            pps_count = snap_dict['pps_count']
+            fpga_temp = snap_dict['temp']
+            uptime_cycles = snap_dict['uptime']
+
+            last_programmed_datetime = snap_dict['last_programmed']
+            if last_programmed_datetime is not None:
+                last_programmed_time = Time(last_programmed_datetime, format='datetime')
+            else:
+                last_programmed_time = None
+
+            # get nodeID & snap location number from config management
+            if serial_number is not None:
+                nodeID, snap_loc_num = self._get_node_snap_from_serial(serial_number,
+                                                                       session=cm_session)
+            else:
+                nodeID = None
+                snap_loc_num = None
+
+            snap_status_list.append(SNAPStatus.create(time, hostname, nodeID, snap_loc_num,
+                                                      serial_number, psu_alert,
+                                                      pps_count, fpga_temp,
+                                                      uptime_cycles,
+                                                      last_programmed_time))
+
+        if testing:
+            return snap_status_list
+        else:
+            self._insert_ignoring_duplicates(SNAPStatus, snap_status_list)
+
+    def add_antenna_status(self, time, antenna_number, antenna_feed_pol,
+                           snap_hostname, snap_channel_number, adc_mean, adc_rms,
+                           adc_power, pam_atten, pam_power, eq_coeffs):
+        """
+        Add new antenna status data to the M&C database.
+
+        Parameters:
+        ------------
+        time: astropy time object
+            astropy time object based on a timestamp reported by the correlator
+        antenna_number: integer
+            antenna number
+        antenna_feed_pol: string
+            Feed polarization, either 'e' or 'n'
+        snap_hostname: string
+            hostname of snap the antenna is connected to
+        snap_channel_number: integer
+            The SNAP ADC channel number (0-7) to which this antenna is connected
+        adc_mean: float
+            Mean ADC value, in ADC units, meaning raw ADC values interpreted as
+            signed integers between -128 and +127. Typically ~ -0.5.
+        adc_rms: float
+            RMS ADC value, in ADC units, meaning raw ADC values interpreted as
+            signed integers between -128 and +127.  Should be ~ 10-20.
+        adc_power: float
+            Mean ADC power, in ADC units squared, meaning raw ADC values
+            interpreted as signed integers between -128 and +127 and then squared.
+            Since mean should be close to zero, this should just be adc_rms^2.
+        pam_atten: integer
+            PAM attenuation setting for this antenna, in dB
+        pam_power: float
+            PAM power sensor reading for this antenna, in dBm
+        eq_coeffs: list(float)
+            Digital EQ coefficients, used for keeping the bit occupancy in the
+            correct range, for this antenna, list of floats. Note this these are
+            not divided out anywhere in the DSP chain (!).
+        """
+        from .correlator import AntennaStatus
+
+        self.add(AntennaStatus.create(time, antenna_number, antenna_feed_pol,
+                                      snap_hostname, snap_channel_number, adc_mean,
+                                      adc_rms, adc_power, pam_atten, pam_power,
+                                      eq_coeffs))
+
+    def get_antenna_status(self, most_recent=None, starttime=None, stoptime=None,
+                           antenna_number=None, write_to_file=False, filename=None):
+        """
+        Get antenna status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent: boolean
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime: astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime: astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        antenna_number: integer
+            antenna number
+
+        write_to_file: boolean
+            Option to write records to a CSV file
+
+        filename: string
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of AntennaStatus objects
+        """
+        from .correlator import AntennaStatus
+
+        return self._time_filter(AntennaStatus, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='antenna_number', filter_value=antenna_number,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def add_antenna_status_from_corrcm(self, ant_status_dict=None, testing=False):
+        """Get and add antenna status information using a HeraCorrCM object.
+
+        This function connects to the correlator and gets the latest data using the
+        `create_antenna_status` function. For testing purposes, it can
+        optionally accept an input dict instead of connecting to the correlator.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the data frequently on qmaster.
+
+        Parameters:
+        ------------
+        ant_status_dict: dict
+            A dict containing info as in the return dict from corr._get_ant_status() for
+            testing purposes. If None, _get_ant_status() is called. Default: None
+        testing: boolean
+            If true, don't add a record of it to the database and return the list of
+            AntennaStatus objects. Default False.
+
+        Returns:
+        --------
+        Optionally returns the list of AntennaStatus objects (if testing is True)
+
+        """
+        from .correlator import create_antenna_status, AntennaStatus
+
+        antenna_status_list = create_antenna_status(ant_status_dict=ant_status_dict)
+
+        if testing:
+            return antenna_status_list
+        else:
+            self._insert_ignoring_duplicates(AntennaStatus, antenna_status_list)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """

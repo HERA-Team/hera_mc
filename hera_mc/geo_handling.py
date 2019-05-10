@@ -14,9 +14,9 @@ import copy
 import warnings
 import six
 from sqlalchemy import func
-from pyproj import Proj
+import cartopy.crs as ccrs
 
-from . import mc, part_connect, cm_utils, geo_location
+from . import mc, cm_partconnect, cm_utils, geo_location
 
 
 def cofa(session=None):
@@ -75,6 +75,8 @@ class Handling:
     """
 
     coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
+    hera_zone = [34, 'J']
+    lat_corr = {'J': 10000000}
 
     def __init__(self, session=None, testing=False):
         """
@@ -160,8 +162,8 @@ class Handling:
             station = self.session.query(geo_location.GeoLocation).filter(
                 func.upper(geo_location.GeoLocation.station_name) == station_name.upper())
         elif db_name == 'connections':
-            station = self.session.query(part_connect.Connections).filter(
-                func.upper(part_connect.Connections.upstream_part) == station_name.upper())
+            station = self.session.query(cm_partconnect.Connections).filter(
+                func.upper(cm_partconnect.Connections.upstream_part) == station_name.upper())
         else:
             raise ValueError('db not found.')
         if station.count() > 0:
@@ -186,9 +188,9 @@ class Handling:
         """
 
         query_date = cm_utils.get_astropytime(query_date)
-        connected_antenna = self.session.query(part_connect.Connections).filter(
-            (func.upper(part_connect.Connections.upstream_part) == station.upper())
-            & (query_date.gps >= part_connect.Connections.start_gpstime))
+        connected_antenna = self.session.query(cm_partconnect.Connections).filter(
+            (func.upper(cm_partconnect.Connections.upstream_part) == station.upper())
+            & (query_date.gps >= cm_partconnect.Connections.start_gpstime))
         ctr = 0
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
@@ -216,9 +218,9 @@ class Handling:
         query_date = cm_utils.get_astropytime(query_date)
         if type(antenna) == float or type(antenna) == int or antenna[0] != 'A':
             antenna = 'A' + str(antenna).strip('0')
-        connected_antenna = self.session.query(part_connect.Connections).filter(
-            (func.upper(part_connect.Connections.downstream_part) == antenna.upper())
-            & (query_date.gps >= part_connect.Connections.start_gpstime))
+        connected_antenna = self.session.query(cm_partconnect.Connections).filter(
+            (func.upper(cm_partconnect.Connections.downstream_part) == antenna.upper())
+            & (query_date.gps >= cm_partconnect.Connections.start_gpstime))
         ctr = 0
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
@@ -240,6 +242,9 @@ class Handling:
         query_date:  astropy Time for contemporary antenna
         """
 
+        latlon_p = ccrs.Geodetic()
+        utm_p = ccrs.UTM(self.hera_zone[0])
+        lat_corr = self.lat_corr[self.hera_zone[1]]
         locations = []
         self.query_date = cm_utils.get_astropytime(query_date)
         for station_name in to_find_list:
@@ -248,8 +253,7 @@ class Handling:
                     & (geo_location.GeoLocation.created_gpstime < self.query_date.gps)):
                 a.gps2Time()
                 a.desc = self.station_types[a.station_type_name]['Description']
-                hera_proj = Proj(proj='utm', zone=a.tile, ellps=a.datum, south=True)
-                a.lon, a.lat = hera_proj(a.easting, a.northing, inverse=True)
+                a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
                 locations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:  # pragma: no cover
                     self.fp_out.write('{:6} {:.2f} {:.2f} {:.4f} {:.4f}\n'.format(station_name, a.easting, a.northing, a.lon, a.lat))
@@ -319,9 +323,9 @@ class Handling:
         if label_to_show == 'num':
             return ant.strip('A')
         if label_to_show == 'ser':
-            p = self.session.query(part_connect.Parts).filter(
-                (part_connect.Parts.hpn == ant)
-                & (part_connect.Parts.hpn_rev == rev))
+            p = self.session.query(cm_partconnect.Parts).filter(
+                (cm_partconnect.Parts.hpn == ant)
+                & (cm_partconnect.Parts.hpn_rev == rev))
             if p.count() == 1:
                 return p.first().manufacturer_number.replace('S/N', '')
             else:
@@ -374,11 +378,11 @@ class Handling:
             plt.plot(p[:, 0], p[:, 1], marker='o', color='0.8', linestyle='none')
         return len(p[:, 0])
 
-    def get_active_stations(self, query_date, station_types_to_use):
+    def get_active_stations(self, query_date, station_types_to_use, hookup_type=None):
         from . import cm_hookup, cm_revisions
         query_date = cm_utils.get_astropytime(query_date)
-        hookup = cm_hookup.Hookup(query_date, self.session)
-        hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache)
+        hookup = cm_hookup.Hookup(self.session)
+        hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache, at_date=query_date, hookup_type=hookup_type)
         self.station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
         active_stations = []
         for st in self.station_types_to_use:
