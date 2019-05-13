@@ -15,26 +15,54 @@ import numpy as np
 import os
 import six
 import copy
+import json
 from argparse import Namespace
 from sqlalchemy import func
 from astropy.time import Time, TimeDelta
 
 from . import mc, cm_utils, cm_handling, cm_transfer, cm_sysdef
-from . import cm_partconnect as PC
+from . import cm_partconnect as partconn
 
 
-class HookupDossierEntry:
-    def __init__(self, entry_key, sysdef):
+class HookupDossierEntry(object):
+    def __init__(self, entry_key=None, sysdef=None, input_dict=None):
         """
         This is the structure of the hookup entry.  All are keyed on polarization
         """
-        self.entry_key = entry_key
-        self.hookup = {}  # actual hookup connection information
-        self.fully_connected = {}  # flag if fully connected
-        self.hookup_type = {}  # name of hookup_type
-        self.columns = {}  # list with the actual column headers in hookup
-        self.timing = {}  # aggregate hookup start and stop
-        self.sysdef = sysdef
+        if input_dict is not None:
+            if entry_key is not None:
+                raise ValueError('cannot initialize HookupDossierEntry with an '
+                                 'entry_key and a dict')
+            if sysdef is not None:
+                raise ValueError('cannot initialize HookupDossierEntry with an '
+                                 'sysdef and a dict')
+            self.entry_key = input_dict['entry_key']
+            hookup_connections_dict = {}
+            for pol, conn_list in six.iteritems(input_dict['hookup']):
+                new_conn_list = []
+                for conn_dict in conn_list:
+                    new_conn_list.append(partconn.get_connection_from_dict(conn_dict))
+                hookup_connections_dict[pol] = new_conn_list
+            self.hookup = hookup_connections_dict
+            self.fully_connected = input_dict['fully_connected']
+            self.hookup_type = input_dict['hookup_type']
+            self.columns = input_dict['columns']
+            self.timing = input_dict['timing']
+            self.sysdef = cm_sysdef.Sysdef(input_dict=input_dict['sysdef'])
+        else:
+            if entry_key is None:
+                raise ValueError('Must initialize HookupDossierEntry with an '
+                                 'entry_key and sysdef')
+            if sysdef is None:
+                raise ValueError('Must initialize HookupDossierEntry with an '
+                                 'entry_key and sysdef')
+            self.entry_key = entry_key
+            self.hookup = {}  # actual hookup connection information
+            self.fully_connected = {}  # flag if fully connected
+            self.hookup_type = {}  # name of hookup_type
+            self.columns = {}  # list with the actual column headers in hookup
+            self.timing = {}  # aggregate hookup start and stop
+            self.sysdef = sysdef
 
     def __repr__(self):
         s = "<{}:  {}>\n".format(self.entry_key, self.hookup_type)
@@ -42,6 +70,21 @@ class HookupDossierEntry:
         s += "{}\n".format(self.fully_connected)
         s += "{}\n".format(self.timing)
         return s
+
+    def _to_dict(self):
+        """
+        Convert this object to a dict (so it can be written to json)
+        """
+        hookup_connections_dict = {}
+        for pol, conn_list in six.iteritems(self.hookup):
+            new_conn_list = []
+            for conn in conn_list:
+                new_conn_list.append(conn._to_dict())
+            hookup_connections_dict[pol] = new_conn_list
+        return {'entry_key': self.entry_key, 'hookup': hookup_connections_dict,
+                'fully_connected': self.fully_connected,
+                'hookup_type': self.hookup_type, 'columns': self.columns,
+                'timing': self.timing, 'sysdef': self.sysdef._to_dict()}
 
     def get_hookup_type_and_column_headers(self, pol, part_types_found):
         """
@@ -191,7 +234,7 @@ def build_new_row_entry(dip, part, rev, port, show):
     return new_row_entry
 
 
-class Hookup:
+class Hookup(object):
     """
     Class to find and display the signal path hookup, with a few utility functions.
     To speed things up, it uses a cache file, but only if the query is for prefixes in
@@ -199,9 +242,9 @@ class Hookup:
     """
     hookup_list_to_cache = cm_utils.all_hera_zone_prefixes
     if six.PY2:
-        hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_2.npy')
+        hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_2.json')
     else:
-        hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_3.npy')
+        hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_3.json')
 
     def __init__(self, session=None):
         """
@@ -369,7 +412,7 @@ class Hookup:
             self.hookup_type = self.sysdef.this_hookup_type
             if self.sysdef.pol is None:
                 continue
-            hookup_dict[k] = HookupDossierEntry(k, self.sysdef)
+            hookup_dict[k] = HookupDossierEntry(entry_key=k, sysdef=self.sysdef)
             for port_pol in self.sysdef.pol:
                 hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part.hpn, part.rev, port_pol)
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[port_pol])
@@ -437,9 +480,9 @@ class Hookup:
         options = []
         next = []
         if current.direction == 'up':      # Going upstream
-            for conn in self.session.query(PC.Connections).filter(
-                    (func.upper(PC.Connections.downstream_part) == current.part.upper())
-                    & (func.upper(PC.Connections.down_part_rev) == current.rev.upper())):
+            for conn in self.session.query(partconn.Connections).filter(
+                    (func.upper(partconn.Connections.downstream_part) == current.part.upper())
+                    & (func.upper(partconn.Connections.down_part_rev) == current.rev.upper())):
                 conn.gps2Time()
                 if not cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     continue
@@ -448,9 +491,9 @@ class Hookup:
                 next.append(self.handling.get_part_dossier(hpn=conn.upstream_part, rev=conn.up_part_rev, at_date=self.at_date,
                                                            exact_match=True, full_version=False)[npk])
         elif current.direction == 'down':  # Going downstream
-            for conn in self.session.query(PC.Connections).filter(
-                    (func.upper(PC.Connections.upstream_part) == current.part.upper())
-                    & (func.upper(PC.Connections.up_part_rev) == current.rev.upper())):
+            for conn in self.session.query(partconn.Connections).filter(
+                    (func.upper(partconn.Connections.upstream_part) == current.part.upper())
+                    & (func.upper(partconn.Connections.up_part_rev) == current.rev.upper())):
                 conn.gps2Time()
                 if not cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
                     continue
@@ -461,12 +504,21 @@ class Hookup:
         return self.sysdef.next_connection(options, current, this, next)
 
     def write_hookup_cache_to_file(self, log_msg):
-        with open(self.hookup_cache_file, 'wb') as f:
-            np.save(f, self.at_date)
-            np.save(f, self.hookup_type)
-            np.save(f, cm_utils.stringify(self.hookup_list_to_cache))
-            np.save(f, self.cached_hookup_dict)
-            np.save(f, self.part_type_cache)
+
+        hookup_dict_for_json = copy.deepcopy(self.cached_hookup_dict)
+        for key, value in six.iteritems(self.cached_hookup_dict):
+            if isinstance(value, HookupDossierEntry):
+                hookup_dict_for_json[key] = value._to_dict()
+
+        save_dict = {'at_date_gps': self.at_date.gps,
+                     'hookup_type': self.hookup_type,
+                     'hookup_list': self.hookup_list_to_cache,
+                     'hookup_dict': hookup_dict_for_json,
+                     'part_type_cache': self.part_type_cache}
+
+        with open(self.hookup_cache_file, 'w') as outfile:
+            json.dump(save_dict, outfile)
+
         cf_info = self.hookup_cache_file_info()
         log_dict = {'hu-list': cm_utils.stringify(self.hookup_list_to_cache),
                     'log_msg': log_msg, 'cache_file_info': cf_info}
@@ -474,12 +526,28 @@ class Hookup:
 
     def read_hookup_cache_from_file(self):
         if os.path.exists(self.hookup_cache_file):
-            with open(self.hookup_cache_file, 'rb') as f:
-                self.cached_at_date = Time(np.load(f, allow_pickle=True).item())
-                self.cached_hookup_type = np.load(f).item()
-                self.cached_hookup_list = cm_utils.listify(np.load(f).item())
-                self.cached_hookup_dict = np.load(f, allow_pickle=True).item()
-                self.part_type_cache = np.load(f, allow_pickle=True).item()
+            with open(self.hookup_cache_file, 'r') as outfile:
+                save_dict = json.load(outfile)
+
+            self.cached_at_date = Time(save_dict['at_date_gps'], format='gps')
+            self.cached_hookup_type = save_dict['hookup_type']
+            self.cached_hookup_list = save_dict['hookup_list']
+            hookup_dict = {}
+            for key, value in six.iteritems(save_dict['hookup_dict']):
+                if isinstance(value, dict):
+                    is_hde = True
+                    if (sorted(value.keys()) != sorted(['entry_key', 'hookup', 'fully_connected',
+                                                       'hookup_type', 'columns', 'timing', 'sysdef'])):
+                        is_hde = False
+                    if is_hde:
+                        hookup_dict[key] = HookupDossierEntry(input_dict=value)
+                    else:
+                        hookup_dict[key] = value
+                else:
+                    hookup_dict[key] = value
+
+            self.cached_hookup_dict = hookup_dict
+            self.part_type_cache = save_dict['part_type_cache']
         else:
             self._hookup_cache_to_use(force_new_cache=True)
             self.read_hookup_cache_from_file()
@@ -516,9 +584,10 @@ class Hookup:
             cm_utils.log('__hookup_cache_file_date_OK:  out of date.', log_dict=log_dict)
             return False
         if os.path.exists(self.hookup_cache_file):
-            with open(self.hookup_cache_file, 'rb') as f:
-                cached_at_date = Time(np.load(f, allow_pickle=True).item())
-                cached_hookup_type = np.load(f).item()
+            with open(self.hookup_cache_file, 'r') as outfile:
+                save_dict = json.load(outfile)
+                cached_at_date = Time(save_dict['at_date_gps'], format='gps')
+                cached_hookup_type = save_dict['hookup_type']
         else:  # pragma: no cover
             return False
 

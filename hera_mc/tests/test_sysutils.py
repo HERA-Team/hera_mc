@@ -95,7 +95,7 @@ class TestSys(TestHERAMC):
 
     def test_hookup_dossier(self):
         sysdef = cm_sysdef.Sysdef()
-        hude = cm_hookup.HookupDossierEntry('testing:key', sysdef)
+        hude = cm_hookup.HookupDossierEntry(entry_key='testing:key', sysdef=sysdef)
         with captured_output() as (out, err):
             hude.get_hookup_type_and_column_headers('x', 'rusty_scissors')
         self.assertTrue('Parts did not conform to any hookup_type' in out.getvalue().strip())
