@@ -297,6 +297,18 @@ def html_table(headers, table):
     return s
 
 
+def csv_table(headers, table):
+    s = ''
+    for h in headers:
+        s += '"{}",'.format(h)
+    s = s.strip(',')
+    for tr in table:
+        for d in tr:
+            s += '"{}",'.format(d)
+        s = s.strip(',')
+    return s
+
+
 def query_default(a, args):
     vargs = vars(args)
     default = vargs[a]

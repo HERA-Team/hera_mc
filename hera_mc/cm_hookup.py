@@ -635,7 +635,7 @@ class Hookup(object):
         revs:  boolean to include revisions letter or not
         state:  show the full hookups only, or all
         file:  file to use, None goes to stdout
-        output_format:  set to html for the web-page version, or ascii
+        output_format:  set to html for the web-page version, or ascii, or csv
 
         """
         show = {'ports': ports, 'revs': revs}
@@ -667,6 +667,8 @@ class Hookup(object):
             dtime = cm_utils.get_time_for_display('now') + '\n'
             table = cm_utils.html_table(headers, table_data)
             table = '<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime + '\t\t</pre>\n\t</body>\n</html>\n'
+        elif output_format == 'csv':
+            table = cm_utils.csv_table(headers, table_data)
         else:
             table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
         print(table, file=file)
