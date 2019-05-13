@@ -475,11 +475,11 @@ class Hookup:
     def read_hookup_cache_from_file(self):
         if os.path.exists(self.hookup_cache_file):
             with open(self.hookup_cache_file, 'rb') as f:
-                self.cached_at_date = Time(np.load(f).item())
+                self.cached_at_date = Time(np.load(f, allow_pickle=True).item())
                 self.cached_hookup_type = np.load(f).item()
                 self.cached_hookup_list = cm_utils.listify(np.load(f).item())
-                self.cached_hookup_dict = np.load(f).item()
-                self.part_type_cache = np.load(f).item()
+                self.cached_hookup_dict = np.load(f, allow_pickle=True).item()
+                self.part_type_cache = np.load(f, allow_pickle=True).item()
         else:
             self._hookup_cache_to_use(force_new_cache=True)
             self.read_hookup_cache_from_file()
@@ -517,7 +517,7 @@ class Hookup:
             return False
         if os.path.exists(self.hookup_cache_file):
             with open(self.hookup_cache_file, 'rb') as f:
-                cached_at_date = Time(np.load(f).item())
+                cached_at_date = Time(np.load(f, allow_pickle=True).item())
                 cached_hookup_type = np.load(f).item()
         else:  # pragma: no cover
             return False
