@@ -534,17 +534,12 @@ class Hookup(object):
             self.cached_hookup_list = save_dict['hookup_list']
             hookup_dict = {}
             for key, value in six.iteritems(save_dict['hookup_dict']):
-                if isinstance(value, dict):
-                    is_hde = True
-                    if (sorted(value.keys()) != sorted(['entry_key', 'hookup', 'fully_connected',
-                                                       'hookup_type', 'columns', 'timing', 'sysdef'])):
-                        is_hde = False
-                    if is_hde:
-                        hookup_dict[key] = HookupDossierEntry(input_dict=value)
-                    else:
-                        hookup_dict[key] = value
-                else:
-                    hookup_dict[key] = value
+                # this should only contain dicts made from HookupDossierEntry
+                # add asserts to make sure
+                assert(isinstance(value, dict))
+                assert(sorted(value.keys()) == sorted(['entry_key', 'hookup', 'fully_connected',
+                                                       'hookup_type', 'columns', 'timing', 'sysdef']))
+                hookup_dict[key] = HookupDossierEntry(input_dict=value)
 
             self.cached_hookup_dict = hookup_dict
             self.part_type_cache = save_dict['part_type_cache']
