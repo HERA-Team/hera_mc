@@ -99,7 +99,7 @@ but they are:
 	part\_info 	         & hera\_mc/cm\_part\_connect.py & PartInfo \\
 	connections 	& hera\_mc/cm\_part\_connect.py & Connections \\
 	cm\_version      & hera\_mc/cm\_transfer.py & CMVersion\\
-	antenna\_apriori & hera\_mc/cm\_part\_connect.py & AprioriAntenna\
+	apriori\_antenna & hera\_mc/cm\_part\_connect.py & AprioriAntenna\
 \end{tabular}
 \end{center}
 
@@ -146,7 +146,7 @@ The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}, show
 \end{figure}
 
 \subsection{Physical Connections}
-Possibly not the most aptly named "physical" connections are other connections that we wish to track for various operational reasons (e.g. tracing a problem to a single PAM chassis etc).  Unlike for hookup connections, these are not defined anywhere and new ones may be included as needs arises.  They are shown in Fig. \ref{fig:hookup} as ports preceded by two colons (::).
+Possibly not the most aptly named "physical" connections are other connections that we wish to track for various operational reasons (e.g. tracing a problem to a single PAM chassis etc).  Unlike for hookup connections, these are not defined anywhere and new ones may be included as needs arises.  They are shown in Fig. \ref{fig:hookup} in blue.
 
 \subsection{Package Modules}
 This section provides a high-level overview of the python configuration management package modules within hera\_mc that are called from scripts or used in interactive sessions.
@@ -818,7 +818,7 @@ stop\_gpstime & BigInt & GPS second when connection ended \\ \hline
 \end{tabular}
 \end{center}
 
-\subsubsection{antenna\_apriori}
+\subsubsection{apriori\_antenna}
 \begin{center}
 \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
