@@ -61,45 +61,64 @@ class Sysdef:
                    next={'up': 'up', 'down': 'down'},
                    arrow={'up': -1, 'down': 1})
 
-    def __init__(self):
-        self.pind = {}
-        self.this_hookup_type = None
+    def __init__(self, input_dict=None):
+        if input_dict is not None:
+            self.pind = input_dict['pind']
+            self.this_hookup_type = input_dict['this_hookup_type']
+            self.corr_index = input_dict['corr_index']
+            self.all_pols = input_dict['all_pols']
+            self.redirect_part_types = input_dict['redirect_part_types']
+            self.single_pol_labeled_parts = input_dict['single_pol_labeled_parts']
+            self.full_connection_path = input_dict['full_connection_path']
+        else:
+            self.pind = {}
+            self.this_hookup_type = None
 
-        # Initialize the dictionaries
-        self.corr_index = self.dict_init(None)
-        self.all_pols = self.dict_init([])
-        self.redirect_part_types = self.dict_init([])
-        self.single_pol_labeled_parts = self.dict_init([])
+            # Initialize the dictionaries
+            self.corr_index = self.dict_init(None)
+            self.all_pols = self.dict_init([])
+            self.redirect_part_types = self.dict_init([])
+            self.single_pol_labeled_parts = self.dict_init([])
 
-        # Redefine dictionary as needed
-        #    Define which component corresponds to the correlator input.
-        self.corr_index['parts_hera'] = 6
-        self.corr_index['parts_paper'] = 10
-        self.corr_index['parts_rfi'] = 4
-        #    Define polarization designations (should be one character)
-        self.all_pols['parts_hera'] = ['e', 'n']
-        self.all_pols['parts_paper'] = ['e', 'n']
-        self.all_pols['parts_rfi'] = ['e', 'n']
-        #    Define "special" parts for systems.  These require additional checking/processing
-        self.redirect_part_types['parts_hera'] = ['node']
-        self.single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
+            # Redefine dictionary as needed
+            #    Define which component corresponds to the correlator input.
+            self.corr_index['parts_hera'] = 6
+            self.corr_index['parts_paper'] = 10
+            self.corr_index['parts_rfi'] = 4
+            #    Define polarization designations (should be one character)
+            self.all_pols['parts_hera'] = ['e', 'n']
+            self.all_pols['parts_paper'] = ['e', 'n']
+            self.all_pols['parts_rfi'] = ['e', 'n']
+            #    Define "special" parts for systems.  These require additional checking/processing
+            self.redirect_part_types['parts_hera'] = ['node']
+            self.single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
 
-        # This generates the full_connection_path dictionary from port_def
-        self.full_connection_path = {}
-        for _x in self.port_def.keys():
-            ordered_path = {}
-            for k, v in six.iteritems(self.port_def[_x]):
-                ordered_path[v['position']] = k
-            sorted_keys = sorted(list(ordered_path.keys()))
-            self.full_connection_path[_x] = []
-            for k in sorted_keys:
-                self.full_connection_path[_x].append(ordered_path[k])
+            # This generates the full_connection_path dictionary from port_def
+            self.full_connection_path = {}
+            for _x in self.port_def.keys():
+                ordered_path = {}
+                for k, v in six.iteritems(self.port_def[_x]):
+                    ordered_path[v['position']] = k
+                sorted_keys = sorted(list(ordered_path.keys()))
+                self.full_connection_path[_x] = []
+                for k in sorted_keys:
+                    self.full_connection_path[_x].append(ordered_path[k])
 
     def dict_init(self, v0):
         y = {}
         for x in self.checking_order:
             y[x] = v0
         return y
+
+    def _to_dict(self):
+        """
+        Convert this object to a dict (so it can be written to json)
+        """
+        return {'pind': self.pind, 'this_hookup_type': self.this_hookup_type,
+                'corr_index': self.corr_index, 'all_pols': self.all_pols,
+                'redirect_part_types': self.redirect_part_types,
+                'single_pol_labeled_parts': self.single_pol_labeled_parts,
+                'full_connection_path': self.full_connection_path}
 
     def handle_redirect_part_types(self, part, at_date='now', session=None):
         """

@@ -95,7 +95,7 @@ class TestSys(TestHERAMC):
 
     def test_hookup_dossier(self):
         sysdef = cm_sysdef.Sysdef()
-        hude = cm_hookup.HookupDossierEntry('testing:key', sysdef)
+        hude = cm_hookup.HookupDossierEntry(entry_key='testing:key', sysdef=sysdef)
         with captured_output() as (out, err):
             hude.get_hookup_type_and_column_headers('x', 'rusty_scissors')
         self.assertTrue('Parts did not conform to any hookup_type' in out.getvalue().strip())
@@ -109,6 +109,17 @@ class TestSys(TestHERAMC):
                                  downstream_input_port='nail', upstream_output_port='screw'))
         xret = hude.get_part_in_hookup_from_type('b', include_revs=True, include_ports=True)
         self.assertEqual(xret['hu'], 'shoe:testing<screw')
+
+        # test errors
+        hude = cm_hookup.HookupDossierEntry(entry_key='testing:key', sysdef=sysdef)
+        hude_dict = hude._to_dict()
+
+        self.assertRaises(ValueError, cm_hookup.HookupDossierEntry, entry_key='testing:key',
+                          input_dict=hude_dict)
+        self.assertRaises(ValueError, cm_hookup.HookupDossierEntry, sysdef=sysdef,
+                          input_dict=hude_dict)
+        self.assertRaises(ValueError, cm_hookup.HookupDossierEntry, entry_key='testing:key')
+        self.assertRaises(ValueError, cm_hookup.HookupDossierEntry, sysdef=sysdef)
 
     def test_sysdef(self):
         sysdef = cm_sysdef.Sysdef()

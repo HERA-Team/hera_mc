@@ -468,6 +468,23 @@ class Connections(MCDeclarativeBase):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+    def _to_dict(self):
+        return {'upstream_part': self.upstream_part,
+                'up_part_rev': self.up_part_rev,
+                'upstream_output_port': self.upstream_output_port,
+                'downstream_part': self.downstream_part,
+                'down_part_rev': self.down_part_rev,
+                'downstream_input_port': self.downstream_input_port}
+
+
+def get_connection_from_dict(input_dict):
+    return Connections(upstream_part=input_dict['upstream_part'],
+                       up_part_rev=input_dict['up_part_rev'],
+                       upstream_output_port=input_dict['upstream_output_port'],
+                       downstream_part=input_dict['downstream_part'],
+                       down_part_rev=input_dict['down_part_rev'],
+                       downstream_input_port=input_dict['downstream_input_port'])
+
 
 def get_null_connection():
     nc = no_connection_designator
