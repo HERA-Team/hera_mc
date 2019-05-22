@@ -504,7 +504,6 @@ class Hookup(object):
         return self.sysdef.next_connection(options, current, this, next)
 
     def write_hookup_cache_to_file(self, log_msg):
-
         hookup_dict_for_json = copy.deepcopy(self.cached_hookup_dict)
         for key, value in six.iteritems(self.cached_hookup_dict):
             if isinstance(value, HookupDossierEntry):
