@@ -125,13 +125,13 @@ In pipeline operations, the {\em a priori} status state is read by the real-time
 
 \subsection{Signal Chain Hookup Connections}
 Hookup connections are those that uniquely map the signal chain from the antenna to the node, including the specific correlator input.  These connections are defined in the file {\tt cm\_part\_connect} as the {\tt full\_connection\_path}.  These are the connections used to generate the correlator hookup.
-The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}, shown as the ports that aren't preceded by a pair of colons (::).  The list below describes the hookup connections.
+The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}, shown in black.  The list below describes the hookup connections.
 \begin{itemize}\setlength\itemsep{-.3em}
 	\item {\bf Station}: geo\_located position.  See prefixes in table station\_type ({\em e.g.} {\tt HH} for herahex)
 	\item {\bf Antenna}:  This is also the correlator number which now matches station number.  {\tt{\bf A}\{\#\}}
 	\item {\bf Feed}:  element feed (Vivaldi).  {\tt {\bf FDV}\{\#\}}
 	\item {\bf FEM}:  front-end module. {\tt {\bf FEM}\{\#\}}
-	\item {\bf Cable-RFoF}:  cable RF-over-fiber FEM-to-PAM.  Number matches station/antenna. {\tt {\bf CRF}\{\#\}}
+	\item {\bf Node bulkhead plate}:  bulkhead plate on node.  {\tt {\bf NBP}\{\#\}}
 	\item {\bf PAM}:  post-amp module in node. {\tt {\bf PAM}\{\#\}}
 	\item {\bf SNAP}:  digitizer/channelizer in node. {\tt {\bf SNP}\{\#\}}
 	\item {\bf Node}: field-deployed node as a part {\tt {\bf N}\{\#\}}
@@ -146,7 +146,7 @@ The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}, show
 \end{figure}
 
 \subsection{Physical Connections}
-Possibly not the most aptly named "physical" connections are other connections that we wish to track for various operational reasons (e.g. tracing a problem to a single PAM chassis etc).  Unlike for hookup connections, these are not defined anywhere and new ones may be included as needs arises.  They are shown in Fig. \ref{fig:hookup} in blue.
+Possibly not the most aptly named "physical" connections are other connections that we wish to track for various operational reasons (e.g. tracing a problem to a single PAM chassis etc).  Unlike for hookup connections, these are not defined anywhere and new ones may be included as needs arise.  They are shown in Fig. \ref{fig:hookup} in blue.
 
 \subsection{Package Modules}
 This section provides a high-level overview of the python configuration management package modules within hera\_mc that are called from scripts or used in interactive sessions.
