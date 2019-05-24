@@ -24,8 +24,12 @@ class Sysdef:
         'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
         'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
         'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
-        'cable-rfof': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 4},
-        'post-amp': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 5},
+        'node-bulkhead': {'up': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'e10', 'e11', 'e12'],
+                                 ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12']],
+                          'down': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'e10', 'e11', 'e12'],
+                                   ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12']],
+                          'position': 4},
+        'post-amp': {'up': [['e'], ['n']], 'down': [['e'], ['n']], 'position': 5},
         'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 6},
         'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 7}
     }
@@ -216,8 +220,9 @@ class Sysdef:
             return None
         next_part_type = self.full_connection_path[self.this_hookup_type][next_part_position]
         next_part_info = self.port_def[self.this_hookup_type][next_part_type]
-        allowed_next_ports = next_part_info[self._D.this[current.direction]][0]
-        if len(next_part_info[self._D.this[current.direction]]) == 2:
+        if len(next_part_info[self._D.this[current.direction]]) == 1:
+            allowed_next_ports = next_part_info[self._D.this[current.direction]][0]
+        elif len(next_part_info[self._D.this[current.direction]]) == 2:
             allowed_next_ports = next_part_info[self._D.this[current.direction]][self.pind[current.pol]]
         options = []
         # prefix is defined to handle the single_pol_labeled_parts
