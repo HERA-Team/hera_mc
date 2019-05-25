@@ -194,12 +194,16 @@ class Handling:
         ctr = 0
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
+                if ctr:
+                    print("Already connected: {} -> {}".format(antenna_connected.upstream_part, antenna_connected.downstream_part))
+                    print("...trying to add:  {} -> {}".format(conn.upstream_part, conn.downstream_part))
                 antenna_connected = copy.copy(conn)
                 ctr += 1
         if ctr == 0:
             return None, None
         elif ctr > 1:
-            raise ValueError('More than one active connection between station and antenna')
+            warnings.warn('More than one active connection between station and antenna')
+            return None, None
         return antenna_connected.downstream_part, antenna_connected.down_part_rev
 
     def find_station_of_antenna(self, antenna, query_date):

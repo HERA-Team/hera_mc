@@ -89,7 +89,6 @@ class Dataview:
         stop:  stop (astropy.Time)
         time_step:  desired time_step resolution in days or fractions thereof (float or int)
         output:  Optional filename to write (and shows on screen).  If None, only returns dictionary.
-        station_types_to_check:  e.g. HH, default used hookup cache set (HH, HA, HB currently)
         output_date_format: jd or ymd
         """
         fplist = [sys.stdout]
@@ -112,3 +111,4 @@ class Dataview:
             for fp in fplist:
                 print("{} {}".format(printable_date, ctr), file=fp)
             at_date += time_step
+        return ctr

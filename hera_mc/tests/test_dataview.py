@@ -26,9 +26,8 @@ class TestParts(TestHERAMC):
         stop = cm_utils.get_astropytime(1184354600)
         interval = 1.0
         filename = None
-        x = dv.ants_by_day(start, stop, interval, filename, station_types_to_check='default', output_date_format='jd')
-        k0 = str(list(x.keys())[0]).split('.')[0]
-        self.assertTrue(k0 == '2457952')
+        n = dv.ants_by_day(start, stop, interval, filename, output_date_format='jd')
+        self.assertEqual(n, 3)
 
 
 if __name__ == '__main__':
