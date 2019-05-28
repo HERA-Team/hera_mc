@@ -634,9 +634,11 @@ class Hookup(object):
         ports:  boolean to include ports or not
         revs:  boolean to include revisions letter or not
         state:  show the full hookups only, or all
-        filename:  file name to use, None goes to stdout
-        output_format:  set to html for the web-page version, or table, or csv
-
+        filename:  file name to use, None goes to stdout.  The file that gets written is
+                   in all cases an "ascii" file
+        output_format:  set to 'html' for a web-page version,
+                        'csv' for a comma-separated value version, or
+                        'table' for a formatted text table
         """
         show = {'ports': ports, 'revs': revs}
         headers = self.make_header_row(hookup_dict, cols_to_show)
