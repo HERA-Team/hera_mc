@@ -623,7 +623,7 @@ class Hookup(object):
         return s
 
     def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
-                    file=None, output_format='ascii'):
+                    file_name=None, output_format='ascii'):
         """
         Print out the hookup table -- uses tabulate package.
 
@@ -634,7 +634,7 @@ class Hookup(object):
         ports:  boolean to include ports or not
         revs:  boolean to include revisions letter or not
         state:  show the full hookups only, or all
-        file:  file to use, None goes to stdout
+        file_name:  file name to use, None goes to stdout
         output_format:  set to html for the web-page version, or ascii, or csv
 
         """
@@ -660,9 +660,11 @@ class Hookup(object):
         if total_shown == 0:
             print("None found for {} (show-state is {})".format(cm_utils.get_time_for_display(self.at_date), state))
             return
-        if file is None:
+        if file_name is None:
             import sys
             file = sys.stdout
+        else:
+            file = open(file_name, 'w')
         if output_format == 'html':
             dtime = cm_utils.get_time_for_display('now') + '\n'
             table = cm_utils.html_table(headers, table_data)
@@ -672,6 +674,8 @@ class Hookup(object):
         else:
             table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
         print(table, file=file)
+        if file_name is not None:
+            file.close()
 
     def make_header_row(self, hookup_dict, cols_to_show):
         col_list = []

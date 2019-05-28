@@ -29,6 +29,8 @@ if __name__ == '__main__':
     parser.add_argument('--hide-ports', dest='ports', help="Hide ports on hookup.", action='store_false')
     parser.add_argument('--revs', help="Show revs on hookup.", action='store_true')
     parser.add_argument('--delete-cache-file', dest='delete_cache_file', help="Deletes the local cache file", action='store_true')
+    parser.add_argument('--output-format', dest='output_format', help="ascii, html, or csv", default='ascii')
+    parser.add_argument('--file', help="output filename, if desired", default=None)
     cm_utils.add_date_time_args(parser)
 
     args = parser.parse_args()
@@ -54,4 +56,4 @@ if __name__ == '__main__':
                                         exact_match=args.exact_match, force_new_cache=args.force_new_cache,
                                         force_db=args.force_db, hookup_type=args.hookup_type)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols,
-                           ports=args.ports, revs=args.revs, state=args.state)
+                           ports=args.ports, revs=args.revs, state=args.state, file=args.file, output_format=args.output_format)

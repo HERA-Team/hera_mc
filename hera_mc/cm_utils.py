@@ -301,11 +301,11 @@ def csv_table(headers, table):
     s = ''
     for h in headers:
         s += '"{}",'.format(h)
-    s = s.strip(',')
+    s = s.strip(',') + '\n'
     for tr in table:
         for d in tr:
             s += '"{}",'.format(d)
-        s = s.strip(',')
+        s = s.strip(',') + '\n'
     return s
 
 
