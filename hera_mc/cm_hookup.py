@@ -623,7 +623,7 @@ class Hookup(object):
         return s
 
     def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
-                    file_name=None, output_format='ascii'):
+                    file_name=None, output_format='table'):
         """
         Print out the hookup table -- uses tabulate package.
 
@@ -635,7 +635,7 @@ class Hookup(object):
         revs:  boolean to include revisions letter or not
         state:  show the full hookups only, or all
         file_name:  file name to use, None goes to stdout
-        output_format:  set to html for the web-page version, or ascii, or csv
+        output_format:  set to html for the web-page version, or table, or csv
 
         """
         show = {'ports': ports, 'revs': revs}
