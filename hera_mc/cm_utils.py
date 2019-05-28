@@ -282,19 +282,53 @@ def put_keys_in_numerical_order(keys):
 
 
 def html_table(headers, table):
-    s = '<table border="1">\n<tr>'
+    """
+    This formats a table into an html table.  Returns a string containing the full html table.
+
+    Parameters:
+    ------------
+    headers:  list of header titles
+    table:  list of rows with data formatted
+            [ [row1_entry1, row1_entry2, ..., row1_entry<len(headers)>],
+              [row2_...],
+              [rowN_...] ]
+    """
+    s_table = '<table border="1">\n<tr>'
     for h in headers:
-        s += '<th>{}</th>'.format(h)
-    s += '</tr>\n'
+        s_table += '<th>{}</th>'.format(h)
+    s_table += '</tr>\n'
     for tr in table:
-        s += '<tr>'
+        s_table += '<tr>'
         for d in tr:
             f = str(d).replace('<', '&lt ')
             f = f.replace('>', '&gt ')
-            s += '<td>{}</td>'.format(f)
-        s += '</tr>\n'
-    s += '</table>'
-    return s
+            s_table += '<td>{}</td>'.format(f)
+        s_table += '</tr>\n'
+    s_table += '</table>'
+    return s_table
+
+
+def csv_table(headers, table):
+    """
+    This formats a table into an csv string.  Returns a string containing the full csv table.
+
+    Parameters:
+    ------------
+    headers:  list of header titles
+    table:  list of rows with data formatted
+            [ [row1_entry1, row1_entry2, ..., row1_entry<len(headers)>],
+              [row2_...],
+              [rowN_...] ]
+    """
+    s_table = ''
+    for h in headers:
+        s_table += '"{}",'.format(h)
+    s_table = s_table.strip(',') + '\n'
+    for tr in table:
+        for d in tr:
+            s_table += '"{}",'.format(d)
+        s_table = s_table.strip(',') + '\n'
+    return s_table
 
 
 def query_default(a, args):

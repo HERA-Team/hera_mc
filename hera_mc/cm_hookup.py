@@ -623,7 +623,7 @@ class Hookup(object):
         return s
 
     def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
-                    file=None, output_format='ascii'):
+                    filename=None, output_format='table'):
         """
         Print out the hookup table -- uses tabulate package.
 
@@ -634,9 +634,11 @@ class Hookup(object):
         ports:  boolean to include ports or not
         revs:  boolean to include revisions letter or not
         state:  show the full hookups only, or all
-        file:  file to use, None goes to stdout
-        output_format:  set to html for the web-page version, or ascii
-
+        filename:  file name to use, None goes to stdout.  The file that gets written is
+                   in all cases an "ascii" file
+        output_format:  set to 'html' for a web-page version,
+                        'csv' for a comma-separated value version, or
+                        'table' for a formatted text table
         """
         show = {'ports': ports, 'revs': revs}
         headers = self.make_header_row(hookup_dict, cols_to_show)
@@ -660,16 +662,22 @@ class Hookup(object):
         if total_shown == 0:
             print("None found for {} (show-state is {})".format(cm_utils.get_time_for_display(self.at_date), state))
             return
-        if file is None:
+        if filename is None:
             import sys
             file = sys.stdout
+        else:
+            file = open(filename, 'w')
         if output_format == 'html':
             dtime = cm_utils.get_time_for_display('now') + '\n'
             table = cm_utils.html_table(headers, table_data)
             table = '<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime + '\t\t</pre>\n\t</body>\n</html>\n'
+        elif output_format == 'csv':
+            table = cm_utils.csv_table(headers, table_data)
         else:
             table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
         print(table, file=file)
+        if filename is not None:
+            file.close()
 
     def make_header_row(self, hookup_dict, cols_to_show):
         col_list = []

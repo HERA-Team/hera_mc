@@ -70,7 +70,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
         hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False, hookup_type='parts_paper')
         with captured_output() as (out, err):
-            hookup.show_hookup(hu, state='all')
+            hookup.show_hookup(hu, state='all', output_format='csv')
         self.assertTrue('1096484416' in out.getvalue().strip())
         hookup.cached_hookup_dict = None
         hookup._hookup_cache_to_use()
