@@ -282,6 +282,17 @@ def put_keys_in_numerical_order(keys):
 
 
 def html_table(headers, table):
+    """
+    This formats a table into an html table.  Returns a string containing the full html table.
+
+    Parameters:
+    ------------
+    headers:  list of header titles
+    table:  list of rows with data formatted
+            [ [row1_entry1, row1_entry2, ..., row1_entry<len(headers)>],
+              [row2_...],
+              [rowN_...] ]
+    """
     s = '<table border="1">\n<tr>'
     for h in headers:
         s += '<th>{}</th>'.format(h)
@@ -298,6 +309,17 @@ def html_table(headers, table):
 
 
 def csv_table(headers, table):
+    """
+    This formats a table into an csv string.  Returns a string containing the full csv table.
+
+    Parameters:
+    ------------
+    headers:  list of header titles
+    table:  list of rows with data formatted
+            [ [row1_entry1, row1_entry2, ..., row1_entry<len(headers)>],
+              [row2_...],
+              [rowN_...] ]
+    """
     s = ''
     for h in headers:
         s += '"{}",'.format(h)
