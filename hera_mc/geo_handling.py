@@ -191,20 +191,19 @@ class Handling:
         connected_antenna = self.session.query(cm_partconnect.Connections).filter(
             (func.upper(cm_partconnect.Connections.upstream_part) == station.upper())
             & (query_date.gps >= cm_partconnect.Connections.start_gpstime))
-        ctr = 0
+        antenna_connected = []
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
-                if ctr:
-                    print("Already connected: {} -> {}".format(antenna_connected.upstream_part, antenna_connected.downstream_part))
-                    print("...trying to add:  {} -> {}".format(conn.upstream_part, conn.downstream_part))
-                antenna_connected = copy.copy(conn)
-                ctr += 1
-        if ctr == 0:
+                antenna_connected.append(copy.copy(conn))
+        if len(antenna_connected) == 0:
             return None, None
-        elif ctr > 1:
-            warnings.warn('More than one active connection between station and antenna.')
+        elif len(antenna_connected) > 1:
+            warning_string = 'More than one active connection between station and antenna.\n'
+            for conn in antenna_connected:
+                warning_string += '\tupstream {} -> downstream {}\n'.format(conn.upstream_part, conn.downstream_part)
+            warnings.warn(warning_string)
             return None, None
-        return antenna_connected.downstream_part, antenna_connected.down_part_rev
+        return antenna_connected[0].downstream_part, antenna_connected[0].down_part_rev
 
     def find_station_of_antenna(self, antenna, query_date):
         """
