@@ -28,10 +28,10 @@ class TestParts(TestHERAMC):
         interval = 1.0
         filename = None
         n = dv.ants_by_day(start, stop, interval, filename, output_date_format='jd')
-        self.assertEqual(n, 3)
+        self.assertEqual(len(n.keys()), 1)
         filename = os.path.expanduser('~/hera_mc_dataview_test.txt')
         n = dv.ants_by_day(start, stop, interval, filename, output_date_format='iso')
-        self.assertEqual(n, 3)
+        self.assertEqual(len(n.keys()), 1)
         os.remove(filename)
 
     def test_connected_by_day(self):
@@ -44,7 +44,7 @@ class TestParts(TestHERAMC):
         self.assertEqual(len(n.keys()), 1)
         filename = os.path.expanduser('~/hera_mc_dataview_test.txt')
         n = dv.connected_by_day(start, stop, interval, output=filename, output_date_format='iso')
-        self.assertEqual(n, None)
+        self.assertEqual(len(n.keys()), 1)
         os.remove(filename)
 
 
