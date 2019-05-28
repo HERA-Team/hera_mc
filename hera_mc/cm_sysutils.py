@@ -304,7 +304,7 @@ class Handling:
         hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all', at_date='now', exact_match=exact_match,
                                    force_new_cache=force_new_hookup_dict, force_db=False, hookup_type=None)
         H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, ports=True,
-                      revs=True, state='full', file_name=output_file, output_format='html')
+                      revs=True, state='full', filename=output_file, output_format='html')
 
         from . import cm_transfer
         if cm_transfer.check_if_main(self.session):  # pragma: no cover
