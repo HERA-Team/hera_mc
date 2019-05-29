@@ -178,7 +178,7 @@ class Handling:
 
         Returns a tuple (antenna_name, antenna_revision), representing the antenna
         that was active at the date query_date, or None if no antenna was active
-        at the station. Raises ValueError if the database lists multiple active
+        at the station. Raises a warning if the database lists multiple active
         connections at the station at query_date.
 
         Parameters:
@@ -191,16 +191,19 @@ class Handling:
         connected_antenna = self.session.query(cm_partconnect.Connections).filter(
             (func.upper(cm_partconnect.Connections.upstream_part) == station.upper())
             & (query_date.gps >= cm_partconnect.Connections.start_gpstime))
-        ctr = 0
+        antenna_connected = []
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
-                antenna_connected = copy.copy(conn)
-                ctr += 1
-        if ctr == 0:
+                antenna_connected.append(copy.copy(conn))
+        if len(antenna_connected) == 0:
             return None, None
-        elif ctr > 1:
-            raise ValueError('More than one active connection between station and antenna')
-        return antenna_connected.downstream_part, antenna_connected.down_part_rev
+        elif len(antenna_connected) > 1:
+            warning_string = 'More than one active connection between station and antenna.\n'
+            for conn in antenna_connected:
+                warning_string += '\tupstream {} -> downstream {}\n'.format(conn.upstream_part, conn.downstream_part)
+            warnings.warn(warning_string)
+            return None, None
+        return antenna_connected[0].downstream_part, antenna_connected[0].down_part_rev
 
     def find_station_of_antenna(self, antenna, query_date):
         """

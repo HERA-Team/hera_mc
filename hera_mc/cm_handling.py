@@ -13,7 +13,6 @@ from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
 import sys
 import copy
-import warnings
 import six
 from astropy.time import Time
 from sqlalchemy import func, desc

@@ -92,6 +92,9 @@ class TestSys(TestHERAMC):
         self.assertEqual(len(hufc.keys()), 0)
         hufc = hookup.get_hookup_from_db(['RO1A1E'], 'A', 'n', at_date='now')
         self.assertEqual(len(hufc.keys()), 0)
+        hookup.hookup_type = None
+        hookup._hookup_cache_file_OK()
+        self.assertEqual(hookup.hookup_type, 'parts_paper')
 
     def test_hookup_dossier(self):
         sysdef = cm_sysdef.Sysdef()
