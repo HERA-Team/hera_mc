@@ -56,4 +56,4 @@ if __name__ == '__main__':
                                         exact_match=args.exact_match, force_new_cache=args.force_new_cache,
                                         force_db=args.force_db, hookup_type=args.hookup_type)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols,
-                           ports=args.ports, revs=args.revs, state=args.state, file_name=args.file, output_format=args.output_format)
+                           ports=args.ports, revs=args.revs, state=args.state, filename=args.file, output_format=args.output_format)
