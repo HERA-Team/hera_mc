@@ -34,7 +34,7 @@ corr_state_dict_nonetime = {'taking_data': {'state': False, 'timestamp': None}}
 
 config_file = os.path.join(DATA_PATH, 'test_data', 'hera_feng_config_example.yaml')
 with open(config_file, 'r') as stream:
-    config = yaml.load(stream)
+    config = yaml.safe_load(stream)
 
 corr_config_example_dict = {'time': Time(1512770942, format='unix'),
                             'hash': 'testhash', 'config': config}

@@ -1988,7 +1988,7 @@ class MCSession(Session):
         Parameters:
         -----------
         config: string
-            decoded yaml string (i.e. result of yaml.load(config_file))
+            decoded yaml string (i.e. result of yaml.safe_load(config_file))
         config_hash: string
             unique hash of the config
         librarian_filename: string
@@ -2427,7 +2427,7 @@ class MCSession(Session):
                         # This config is new.
                         # save it to the Librarian
                         with open(config_file, 'r') as stream:
-                            config = yaml.load(stream)
+                            config = yaml.safe_load(stream)
                         self._add_config_file_to_librarian(config, config_hash,
                                                            librarian_filename)
 
