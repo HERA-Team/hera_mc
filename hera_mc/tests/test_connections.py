@@ -195,13 +195,13 @@ class TestConnections(TestHERAMC):
         duplicates = healthy.check_for_existing_connection(['a', 'b', 'c', 'd', 'e', 'f'], self.query_time)
         self.assertFalse(duplicates)
         cnnctn = [self.test_hpn[0], self.test_rev, 'up_and_out', self.test_hpn[1], self.test_rev, 'down_and_in']
-        duplicates = healthy.check_for_existing_connection(cnnctn, self.query_time, display_results=True)
+        duplicates = healthy.check_for_existing_connection(cnnctn, self.query_time)
         self.assertTrue(duplicates)
         # Add test connection
-        duplicates = healthy.check_for_existing_connection(cnnctn, Time('2015-07-01 01:00:00', scale='utc').gps, display_results=True)
+        duplicates = healthy.check_for_existing_connection(cnnctn, Time('2015-07-01 01:00:00', scale='utc').gps)
         self.assertFalse(duplicates)
         # Duplicated connections
-        duplicates = healthy.check_for_duplicate_connections(display_results=True)
+        duplicates = healthy.check_for_duplicate_connections()
         self.assertTrue(len(duplicates) == 0)
         # Add test duplicate connection
         connection.upstream_part = self.test_hpn[0]
@@ -214,7 +214,7 @@ class TestConnections(TestHERAMC):
         self.test_session.add(connection)
         self.test_session.commit()
         healthy.conndict = None
-        duplicates = healthy.check_for_duplicate_connections(display_results=True)
+        duplicates = healthy.check_for_duplicate_connections()
         self.assertTrue(len(duplicates) == 1)
 
 

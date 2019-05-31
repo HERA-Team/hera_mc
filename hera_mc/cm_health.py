@@ -62,11 +62,10 @@ class Connections:
                     self.multiples[dir].add(k)  # only add to multiples if there is more than one.
                 self.conndict[dir].setdefault(k, []).append(conn_entry)
 
-    def check_for_duplicate_connections(self, display_results=False):
+    def check_for_duplicate_connections(self):
         """
         Checks all of the self.multiple keys to see if any of them overlap in time.
         If they do, it is a conflicting duplicate connection.
-        if display_results is True, it will print the results.
 
         Returns the duplicated connections.
         """
@@ -76,12 +75,12 @@ class Connections:
             for pol in self.sysdef.all_pols[ptty]:
                 all_pols.add(pol.lower())
 
-        self.duplicates = {'up': {}, 'dn': {}}
+        duplicates = {'up': {}, 'dn': {}}
         kdir = {'up': {'Apart': 'upstream_part', 'Arev': 'up_part_rev', 'Aport': 'upstream_output_port',
                        'Bpart': 'downstream_part', 'Brev': 'down_part_rev', 'Bport': 'downstream_input_port'},
                 'dn': {'Apart': 'downstream_part', 'Arev': 'down_part_rev', 'Aport': 'downstream_input_port',
                        'Bpart': 'upstream_part', 'Brev': 'up_part_rev', 'Bport': 'upstream_output_port'}}
-
+        shown_dup = 0
         for dir in ['up', 'dn']:
             for k in self.multiples[dir]:
                 for i in range(len(self.conndict[dir][k])):
@@ -89,33 +88,35 @@ class Connections:
                         intervals = [[self.conndict[dir][k][i].start_gpstime, self.conndict[dir][k][i].stop_gpstime],
                                      [self.conndict[dir][k][j].start_gpstime, self.conndict[dir][k][j].stop_gpstime]]
                         if check_for_overlap(intervals):
-                            self.duplicates[dir].setdefault(k, []).append([self.conndict[dir][k][i], self.conndict[dir][k][j]])
-            if len(self.duplicates[dir]):
-                for k, dup in six.iteritems(self.duplicates[dir]):
-                    print(dup)
-                    A1 = getattr(dup[0], kdir[dir]['Aport'])
-                    A2 = getattr(dup[1], kdir[dir]['Aport'])
-                    B1 = getattr(dup[0], kdir[dir]['Bport'])
-                    B2 = getattr(dup[1], kdir[dir]['Bport'])
-                    print('A {}  {}:  {}    {}'.format(k, dir, A1, A2))
-                    print('B {}  {}:  {}    {}'.format(k, dir, B1, B2))
-                    if A1[0].lower() in all_pols:
-                        include_it = True
-                    else:
-                        include_it = ''
-                    if show_it and display_results:
-                        i1 = [dup[0].start_gpstime, dup[0].stop_gpstime]
-                        i2 = [dup[1].start_gpstime, dup[1].stop_gpstime]
-                        print('\t{}    {:35s}  --->  {:35s}  {:25s} {:25s}'.format(dir, str(dup[1]), str(dup[2]), str(i1), str(i2)))
-        tot_dup = len(self.duplicates['up']) + len(self.duplicates['dn'])
-        if tot_dup:
-            print("{} duplications found.".format(tot_dup))
+                            duplicates[dir].setdefault(k, []).append([self.conndict[dir][k][i], self.conndict[dir][k][j]])
+            if len(duplicates[dir]):
+                for k, duplist in six.iteritems(duplicates[dir]):
+                    for dup in duplist:
+                        Aport_p = k.split(':')[2][0]
+                        Bport_p1 = getattr(dup[0], kdir[dir]['Bport'])[0].lower()
+                        Bport_p2 = getattr(dup[1], kdir[dir]['Bport'])[0].lower()
+                        show_it = True
+                        if Aport_p not in all_pols:
+                            Bport_pols = set()
+                            if Bport_p1 in all_pols:
+                                Bport_pols.add(Bport_p1)
+                            if Bport_p2.lower() in all_pols:
+                                Bport_pols.add(Bport_p2)
+                            if len(Bport_pols) > 1:
+                                show_it = False
+                        if show_it:
+                            shown_dup += 1
+                            i1 = [dup[0].start_gpstime, dup[0].stop_gpstime]
+                            i2 = [dup[1].start_gpstime, dup[1].stop_gpstime]
+                            print('\t{}    {:35s}  &&  {:35s}  {:25s} {:25s}'.format(dir, str(dup[0]), str(dup[1]), str(i1), str(i2)))
+        if shown_dup:
+            print("{} duplications found.".format(shown_dup))
         else:
             print('No duplications found.')
         print('{} connections checked.'.format(self.num_connections))
-        return self.duplicates
+        return duplicates
 
-    def check_for_existing_connection(self, connection, at_date='now', display_results=False):
+    def check_for_existing_connection(self, connection, at_date='now'):
         """
         Checks whether the provided connection is already set up for the at_date provided.
 
@@ -135,8 +136,7 @@ class Connections:
             t0 = conn.start_gpstime
             t1 = conn.stop_gpstime
             if cm_utils.is_active(at_date, t0, t1):
-                if display_results:
-                    print('Connection {} is already made for {}  ({} - {})'.format(k, at_date, t0, t1))
+                print('Connection {} is already made for {}  ({} - {})'.format(k, at_date, t0, t1))
                 return True
         return False
 

@@ -96,10 +96,10 @@ if __name__ == '__main__':
         from hera_mc import cm_health
         healthy = cm_health.Connections(session)
         if args.hpn is None:
-            healthy.check_for_duplicate_connections(display_results=True)
+            healthy.check_for_duplicate_connections()
         else:
             for hpn in args.hpn:
-                healthy.check_for_existing_connection(hpn, display_results=True)
+                healthy.check_for_existing_connection(hpn)
             for hpn in args.hpn:
                 cm_health.check_part_for_overlapping_revisions(hpn, session)
         sys.exit()
