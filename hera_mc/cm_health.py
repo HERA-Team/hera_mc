@@ -15,9 +15,15 @@ import six
 
 def check_for_overlap(interval):
     """
+    Parameter
+    ---------
     intervals:  gps_time intervals to test for overlap
                 format [[span_1_low, span_1_high], [span_2_low, span_2_high]]
                 if the high values are None, they get set to the max value + 100 sec
+
+    Return
+    ------
+    boolean:  True of overlap
     """
     maxx = max([x for x in interval[0] + interval[1] if x is not None]) + 100
     for i, ival in enumerate(interval):
@@ -109,10 +115,8 @@ class Connections:
                             i1 = [dup[0].start_gpstime, dup[0].stop_gpstime]
                             i2 = [dup[1].start_gpstime, dup[1].stop_gpstime]
                             print('\t{}    {:35s}  &&  {:35s}  {:25s} {:25s}'.format(dir, str(dup[0]), str(dup[1]), str(i1), str(i2)))
-        if shown_dup:
-            print("{} duplications found.".format(shown_dup))
-        else:
-            print('No duplications found.')
+        dups = shown_dup if shown_dup else 'No'
+        print("{} duplications found.".format(dups))
         print('{} connections checked.'.format(self.num_connections))
         return duplicates
 
@@ -124,20 +128,26 @@ class Connections:
         ------------
         connection:  connection list [upstream, rev, output_port, downstream, rev, input_port]
         at_date:  date for the connection to be made
+
+        Return
+        ------
+        boolean: True if existing
         """
 
         at_date = cm_utils.get_astropytime(at_date)
         connection = [x.lower() for x in connection]
-        k = ':'.join(connection)
+        k_conn = {'up': ':'.join(connection[:3]), 'dn': ':'.join(connection[3:])}
         self.ingest_conndb()
-        if k not in self.conndict.keys():
+        all_keys = list(self.conndict['up'].keys()) + list(self.conndict['dn'].keys())
+        if k_conn['up'] not in all_keys and k_conn['dn'] not in all_keys:
             return False
-        for conn in self.conndict[k]:
-            t0 = conn.start_gpstime
-            t1 = conn.stop_gpstime
-            if cm_utils.is_active(at_date, t0, t1):
-                print('Connection {} is already made for {}  ({} - {})'.format(k, at_date, t0, t1))
-                return True
+        for dir in ['up', 'dn']:
+            for conn in self.conndict[dir][k_conn[dir]]:
+                t0 = conn.start_gpstime
+                t1 = conn.stop_gpstime
+                if cm_utils.is_active(at_date, t0, t1):
+                    print('Connection {} is already made for {}  ({} - {})'.format(k_conn[dir], at_date, t0, t1))
+                    return True
         return False
 
 

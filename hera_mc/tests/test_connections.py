@@ -197,12 +197,12 @@ class TestConnections(TestHERAMC):
         cnnctn = [self.test_hpn[0], self.test_rev, 'up_and_out', self.test_hpn[1], self.test_rev, 'down_and_in']
         duplicates = healthy.check_for_existing_connection(cnnctn, self.query_time)
         self.assertTrue(duplicates)
-        # Add test connection
-        duplicates = healthy.check_for_existing_connection(cnnctn, Time('2015-07-01 01:00:00', scale='utc').gps)
+        duplicates = healthy.check_for_existing_connection(cnnctn, '<')
         self.assertFalse(duplicates)
+
         # Duplicated connections
         duplicates = healthy.check_for_duplicate_connections()
-        self.assertTrue(len(duplicates) == 0)
+        self.assertEqual(len(duplicates), 2)
         # Add test duplicate connection
         connection.upstream_part = self.test_hpn[0]
         connection.up_part_rev = self.test_rev
@@ -215,7 +215,29 @@ class TestConnections(TestHERAMC):
         self.test_session.commit()
         healthy.conndict = None
         duplicates = healthy.check_for_duplicate_connections()
-        self.assertTrue(len(duplicates) == 1)
+        self.assertTrue(len(duplicates) == 2)
+        conn1 = cm_partconnect.Connections()
+        conn1.upstream_part = self.test_hpn[0]
+        conn1.up_part_rev = self.test_rev
+        conn1.downstream_part = self.test_hpn[1]
+        conn1.down_part_rev = self.test_rev
+        conn1.upstream_output_port = 'terminal'
+        conn1.downstream_input_port = 'n'
+        conn1.start_gpstime = self.test_time + 100
+        self.test_session.add(conn1)
+        conn2 = cm_partconnect.Connections()
+        conn2.upstream_part = self.test_hpn[0]
+        conn2.up_part_rev = self.test_rev
+        conn2.downstream_part = self.test_hpn[1]
+        conn2.down_part_rev = self.test_rev
+        conn2.upstream_output_port = 'terminal'
+        conn2.downstream_input_port = 'e'
+        conn2.start_gpstime = self.test_time + 100
+        self.test_session.add(conn2)
+        self.test_session.commit()
+        healthy.conndict = None
+        duplicates = healthy.check_for_duplicate_connections()
+        self.assertTrue(len(duplicates) == 2)
 
 
 if __name__ == '__main__':
