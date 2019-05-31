@@ -9,9 +9,8 @@
 from __future__ import absolute_import, division, print_function
 
 import warnings
-from . import mc, cm_utils
-from . import cm_partconnect as PC
-from . import cm_revisions
+from . import mc, cm_utils, cm_revisions, cm_sysdef, cm_partconnect
+import six
 
 
 def check_for_overlap(interval):
@@ -34,6 +33,7 @@ class Connections:
         else:
             self.session = session
         self.conndict = None
+        self.sysdef = cm_sysdef.Sysdef()
 
     def ingest_conndb(self):
         """
@@ -47,18 +47,20 @@ class Connections:
         num_connections:
             Integer of the total number of connections in database.
         """
-        self.conndict = {}
-        self.multiples = set()
+        self.conndict = {'up': {}, 'dn': {}}
+        self.multiples = {'up': set(), 'dn': set()}
         self.num_connections = 0
-        for conn in self.session.query(PC.Connections).all():
+        conn = {}
+        for conn_entry in self.session.query(cm_partconnect.Connections).all():
             self.num_connections += 1
-            connection = [conn.upstream_part, conn.up_part_rev, conn.upstream_output_port,
-                          conn.downstream_part, conn.down_part_rev, conn.downstream_input_port]
-            connection = [x.lower() for x in connection]
-            k = ':'.join(connection)
-            if k in self.conndict.keys():
-                self.multiples.add(k)  # only add to multiples if there is more than one.
-            self.conndict.setdefault(k, []).append(conn)
+            conn['up'] = [conn_entry.upstream_part, conn_entry.up_part_rev, conn_entry.upstream_output_port]
+            conn['dn'] = [conn_entry.downstream_part, conn_entry.down_part_rev, conn_entry.downstream_input_port]
+            for dir in ['up', 'dn']:
+                connection = [x.lower() for x in conn[dir]]
+                k = ':'.join(connection)
+                if k in self.conndict[dir].keys():
+                    self.multiples[dir].add(k)  # only add to multiples if there is more than one.
+                self.conndict[dir].setdefault(k, []).append(conn_entry)
 
     def check_for_duplicate_connections(self, display_results=False):
         """
@@ -69,29 +71,48 @@ class Connections:
         Returns the duplicated connections.
         """
         self.ingest_conndb()
-        self.duplicates = []
-        for k in self.multiples:
-            for i in range(len(self.conndict[k])):
-                for j in range(i):
-                    intervals = [[self.conndict[k][i].start_gpstime, self.conndict[k][i].stop_gpstime],
-                                 [self.conndict[k][j].start_gpstime, self.conndict[k][j].stop_gpstime]]
-                    if check_for_overlap(intervals):
-                        self.duplicates.append([self.conndict[k][i], self.conndict[k][j]])
-        if len(self.duplicates):
-            s = 's'
-            if len(self.duplicates) == 1:
-                s = ''
-            if display_results:
-                print('{} duplicate{} found.'.format(len(self.duplicates), s))
-            for dup in self.duplicates:
-                i0 = [dup[0].start_gpstime, dup[0].stop_gpstime]
-                i1 = [dup[1].start_gpstime, dup[1].stop_gpstime]
-                if display_results:
-                    print('\t{}  --->  {} {}'.format(dup[0], i0, i1))
-        elif display_results:
+        all_pols = set()
+        for ptty in self.sysdef.checking_order:
+            for pol in self.sysdef.all_pols[ptty]:
+                all_pols.add(pol.lower())
+
+        self.duplicates = {'up': {}, 'dn': {}}
+        kdir = {'up': {'Apart': 'upstream_part', 'Arev': 'up_part_rev', 'Aport': 'upstream_output_port',
+                       'Bpart': 'downstream_part', 'Brev': 'down_part_rev', 'Bport': 'downstream_input_port'},
+                'dn': {'Apart': 'downstream_part', 'Arev': 'down_part_rev', 'Aport': 'downstream_input_port',
+                       'Bpart': 'upstream_part', 'Brev': 'up_part_rev', 'Bport': 'upstream_output_port'}}
+
+        for dir in ['up', 'dn']:
+            for k in self.multiples[dir]:
+                for i in range(len(self.conndict[dir][k])):
+                    for j in range(i):
+                        intervals = [[self.conndict[dir][k][i].start_gpstime, self.conndict[dir][k][i].stop_gpstime],
+                                     [self.conndict[dir][k][j].start_gpstime, self.conndict[dir][k][j].stop_gpstime]]
+                        if check_for_overlap(intervals):
+                            self.duplicates[dir].setdefault(k, []).append([self.conndict[dir][k][i], self.conndict[dir][k][j]])
+            if len(self.duplicates[dir]):
+                for k, dup in six.iteritems(self.duplicates[dir]):
+                    print(dup)
+                    A1 = getattr(dup[0], kdir[dir]['Aport'])
+                    A2 = getattr(dup[1], kdir[dir]['Aport'])
+                    B1 = getattr(dup[0], kdir[dir]['Bport'])
+                    B2 = getattr(dup[1], kdir[dir]['Bport'])
+                    print('A {}  {}:  {}    {}'.format(k, dir, A1, A2))
+                    print('B {}  {}:  {}    {}'.format(k, dir, B1, B2))
+                    if A1[0].lower() in all_pols:
+                        include_it = True
+                    else:
+                        include_it = ''
+                    if show_it and display_results:
+                        i1 = [dup[0].start_gpstime, dup[0].stop_gpstime]
+                        i2 = [dup[1].start_gpstime, dup[1].stop_gpstime]
+                        print('\t{}    {:35s}  --->  {:35s}  {:25s} {:25s}'.format(dir, str(dup[1]), str(dup[2]), str(i1), str(i2)))
+        tot_dup = len(self.duplicates['up']) + len(self.duplicates['dn'])
+        if tot_dup:
+            print("{} duplications found.".format(tot_dup))
+        else:
             print('No duplications found.')
-        if display_results:
-            print('{} connections checked.'.format(self.num_connections))
+        print('{} connections checked.'.format(self.num_connections))
         return self.duplicates
 
     def check_for_existing_connection(self, connection, at_date='now', display_results=False):
