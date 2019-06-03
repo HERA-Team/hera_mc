@@ -75,7 +75,8 @@ class Connections:
 
         Returns the duplicated connections.
         """
-        self.ingest_conndb()
+        if self.conndict is None:
+            self.ingest_conndb()
         all_pols = set()
         for ptty in self.sysdef.checking_order:
             for pol in self.sysdef.all_pols[ptty]:
@@ -120,35 +121,44 @@ class Connections:
         print('{} connections checked.'.format(self.num_connections))
         return duplicates
 
-    def check_for_existing_connection(self, connection, at_date='now'):
+    def check_for_existing_connection(self, part, rev=None, port=None, side='both', at_date='now'):
         """
-        Checks whether the provided connection is already set up for the at_date provided.
+        Checks whether the provided part is already connected for the at_date provided.
 
         Parameters:
         ------------
-        connection:  connection list [upstream, rev, output_port, downstream, rev, input_port]
-        at_date:  date for the connection to be made
+        part:  part to check [hpn, rev]
+        port:  name of port to check.  If None (default) it checks all/any.
+        side:  "side" of part to check.  Options are:  up, down, or both (default)
+        at_date:  date for the connection to be active
 
         Return
         ------
         boolean: True if existing
         """
 
+        if self.conndict is None:
+            self.ingest_conndb()
         at_date = cm_utils.get_astropytime(at_date)
-        connection = [x.lower() for x in connection]
-        k_conn = {'up': ':'.join(connection[:3]), 'dn': ':'.join(connection[3:])}
-        self.ingest_conndb()
-        all_keys = list(self.conndict['up'].keys()) + list(self.conndict['dn'].keys())
-        if k_conn['up'] not in all_keys and k_conn['dn'] not in all_keys:
-            return False
-        for dir in ['up', 'dn']:
-            for conn in self.conndict[dir][k_conn[dir]]:
-                t0 = conn.start_gpstime
-                t1 = conn.stop_gpstime
-                if cm_utils.is_active(at_date, t0, t1):
-                    print('Connection {} is already made for {}  ({} - {})'.format(k_conn[dir], at_date, t0, t1))
-                    return True
-        return False
+        part_key = ':'.join([x.lower() for x in part])
+        if port is not None:
+            part_key += ':{}'.format(port.lower())
+        if side[0].lower() == 'u':
+            directions = ['up']
+        elif side[0].lower() == 'd':
+            directions = ['dn']
+        elif side[0].lower() == 'b':
+            directions = ['up', 'dn']
+        connected = False
+        for dir in directions:
+            for conn_key in self.conndict[dir].keys():
+                if conn_key.startswith(part_key):
+                    t0 = conn.start_gpstime
+                    t1 = conn.stop_gpstime
+                    if cm_utils.is_active(at_date, t0, t1):
+                        print('Connection {} is already made for {}  ({} - {})'.format(dir, self.conndict[dir][conn_key], at_date, t0, t1))
+                        connected = True
+        return connected
 
 
 def check_part_for_overlapping_revisions(hpn, session=None):
