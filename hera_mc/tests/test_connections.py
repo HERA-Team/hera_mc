@@ -192,12 +192,11 @@ class TestConnections(TestHERAMC):
         connection = cm_partconnect.Connections()
         healthy = cm_health.Connections(self.test_session)
         # Specific connections
-        duplicates = healthy.check_for_existing_connection(['a', 'b', 'c', 'd', 'e', 'f'], self.query_time)
-        self.assertFalse(duplicates)
-        cnnctn = [self.test_hpn[0], self.test_rev, 'up_and_out', self.test_hpn[1], self.test_rev, 'down_and_in']
-        duplicates = healthy.check_for_existing_connection(cnnctn, self.query_time)
+        duplicates = healthy.check_for_existing_connection(hpn=['a'], side='up', at_date=self.query_time)
         self.assertTrue(duplicates)
-        duplicates = healthy.check_for_existing_connection(cnnctn, '<')
+        duplicates = healthy.check_for_existing_connection(hpn=self.test_hpn[0], rev=self.test_rev, port='up_and_out', at_date=self.query_time)
+        self.assertTrue(duplicates)
+        duplicates = healthy.check_for_existing_connection(hpn=self.test_hpn[0], rev=self.test_rev, port='up_and_out', side='dn', at_date='<')
         self.assertFalse(duplicates)
 
         # Duplicated connections

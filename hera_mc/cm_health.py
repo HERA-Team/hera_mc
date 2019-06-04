@@ -121,43 +121,55 @@ class Connections:
         print('{} connections checked.'.format(self.num_connections))
         return duplicates
 
-    def check_for_existing_connection(self, part, rev=None, port=None, side='both', at_date='now'):
+    def check_for_existing_connection(self, hpn, rev=None, port=None, side='both', at_date='now'):
         """
         Checks whether the provided part is already connected for the at_date provided.
 
         Parameters:
         ------------
-        part:  part to check [hpn, rev]
+        hpn:  HERA part number to check
+        rev: revision to check.  If None (default) it checks all/any
         port:  name of port to check.  If None (default) it checks all/any.
         side:  "side" of part to check.  Options are:  up, down, or both (default)
-        at_date:  date for the connection to be active
+        at_date:  date for the connection to be active.  Default is 'now'
 
         Return
         ------
-        boolean: True if existing
+        boolean: True if existing corresponding hpn.
+                 If only one hpn, returns a string, else a list.
         """
+        hpn_list, rev_list = cm_utils.match_listify(hpn, rev)
+        hpn_list, port_list = cm_utils.match_listify(hpn, port)
 
         if self.conndict is None:
             self.ingest_conndb()
         at_date = cm_utils.get_astropytime(at_date)
-        part_key = ':'.join([x.lower() for x in part])
-        if port is not None:
-            part_key += ':{}'.format(port.lower())
         if side[0].lower() == 'u':
             directions = ['up']
         elif side[0].lower() == 'd':
             directions = ['dn']
         elif side[0].lower() == 'b':
             directions = ['up', 'dn']
-        connected = False
-        for dir in directions:
-            for conn_key in self.conndict[dir].keys():
-                if conn_key.startswith(part_key):
-                    t0 = conn.start_gpstime
-                    t1 = conn.stop_gpstime
-                    if cm_utils.is_active(at_date, t0, t1):
-                        print('Connection {} is already made for {}  ({} - {})'.format(dir, self.conndict[dir][conn_key], at_date, t0, t1))
-                        connected = True
+        connected = len(hpn_list) * [False]
+        for i, hpno in enumerate(hpn_list):
+            reno = str(rev_list[i]).lower()
+            pono = str(port_list[i]).lower()
+            part_key = hpno.lower()
+            if reno not in cm_revisions.revision_categories:
+                part_key = '{}:{}'.format(part_key, reno)
+                if pono not in ['all', 'none']:
+                    part_key = '{}:{}'.format(part_key, pono.lower())
+            for dir in directions:
+                for conn_key in self.conndict[dir].keys():
+                    if conn_key.startswith(part_key):
+                        for conn in self.conndict[dir][conn_key]:
+                            t0 = conn.start_gpstime
+                            t1 = conn.stop_gpstime
+                            if cm_utils.is_active(at_date, t0, t1):
+                                print('Connection {} is already made for {}  ({} - {})'.format(dir, conn, at_date, t0, t1))
+                                connected[i] = True
+        if len(connected) == 1:
+            connected = connected[0]
         return connected
 
 

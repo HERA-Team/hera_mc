@@ -18,6 +18,9 @@ from argparse import Namespace
 from . import cm_utils, cm_partconnect
 
 
+revision_categories = ['last', 'active', 'all', 'full', 'none']
+
+
 def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
     """
     Returns namespace of revisions

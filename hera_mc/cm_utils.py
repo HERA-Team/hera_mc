@@ -97,11 +97,26 @@ def stringify(X):
 def listify(X):
     if X is None:
         return None
-    if isinstance(X, six.string_types) and ',' in X:
+    if isinstance(X, six.string_types):
         return X.split(',')
     if isinstance(X, list):
         return X
     return [X]
+
+
+def match_listify(req1, req2):
+    """
+    Makes sure that the two requests are both lists and that they are
+    equal in length.
+    """
+    list1 = listify(req1)
+    if isinstance(req2, list):
+        list2 = req2
+    else:
+        list2 = len(list1) * [req2]
+    if len(list1) != len(list2):
+        raise ValueError("Unmatched list requests.")
+    return list1, list2
 
 
 def add_verbosity_args(parser):
