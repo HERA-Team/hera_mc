@@ -58,10 +58,33 @@ valid_tables = {'hera_obs': {'method': 'get_obs_by_time'},
                 'correlator_control_state': {'method': 'get_correlator_control_state',
                                              'filter_column': 'state_type',
                                              'arg_name': 'state_type'},
+                'correlator_config_status': {'method': 'get_correlator_config_status',
+                                             'filter_column': 'config_hash',
+                                             'arg_name': 'config_hash'},
                 'correlator_control_command': {'method': 'get_correlator_control_command',
                                                'filter_column': 'command',
                                                'arg_name': 'command'},
-                'correlator_take_data_arguments': {'method': 'get_correlator_take_data_arguments'}}
+                'correlator_take_data_arguments': {'method': 'get_correlator_take_data_arguments'},
+                'correlator_config_command': {'method': 'get_correlator_config_command',
+                                              'filter_column': 'config_hash',
+                                              'arg_name': 'config_hash'},
+                'correlator_software_version': {'method': 'get_correlator_software_versions',
+                                                'filter_column': 'package',
+                                                'arg_name': 'package'},
+                'snap_config_version': {'method': 'get_snap_config_version'},
+                'snap_status': {'method': 'get_snap_status',
+                                'filter_column': 'nodeID',
+                                'arg_name': 'node'},
+                'antenna_status': {'method': 'get_antenna_status',
+                                   'filter_column': 'antenna_number',
+                                   'arg_name': 'antenna_number'},
+                'ant_metric': {'method': 'get_antenna_status',
+                               'filter_column': 'antenna_number',
+                               'arg_name': 'antenna_number'}
+                }
+
+# get commands without write_to_file options:
+#   get_correlator_config_file, get_ant_metric, get_array_metric, get_metric_desc
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
