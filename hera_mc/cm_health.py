@@ -15,15 +15,19 @@ import six
 
 def check_for_overlap(interval):
     """
+    Checks to see if two intervals overlap.  Notionally for time, but will work
+    for any ints/floats.
+
     Parameter
     ---------
-    intervals:  gps_time intervals to test for overlap
-                format [[span_1_low, span_1_high], [span_2_low, span_2_high]]
-                if the high values are None, they get set to the max value + 100 sec
+    interval :  intervals to test for overlap
+               format [[span_1_low, span_1_high], [span_2_low, span_2_high]]
+               if the high values are None, they get set to the max value + 100 sec
 
     Return
     ------
-    boolean:  True of overlap
+    boolean
+                True of overlap
     """
     maxx = max([x for x in interval[0] + interval[1] if x is not None]) + 100
     for i, ival in enumerate(interval):
@@ -43,6 +47,8 @@ class Connections:
 
     def ingest_conndb(self):
         """
+        Reads in connections database and makes the following class variables:
+
         conndict - dictionary - conndict[k] = [conn_1, conn_2...]
             Dictionary of connections keyed as:
             upstream_part:rev:output_port:downstream_part:rev:input_port
@@ -73,7 +79,10 @@ class Connections:
         Checks all of the self.multiple keys to see if any of them overlap in time.
         If they do, it is a conflicting duplicate connection.
 
-        Returns the duplicated connections.
+        Return
+        ------
+        Dictionary
+                    containing the duplicated connections.
         """
         if self.conndict is None:
             self.ingest_conndb()
@@ -135,8 +144,8 @@ class Connections:
 
         Return
         ------
-        boolean: True if existing corresponding hpn.
-                 If only one hpn, returns a string, else a list.
+        boolean
+                 True if existing corresponding hpn.  If only one hpn, returns a string, else a list.
         """
         hpn_list, rev_list = cm_utils.match_listify(hpn, rev)
         hpn_list, port_list = cm_utils.match_listify(hpn, port)
@@ -178,11 +187,14 @@ def check_part_for_overlapping_revisions(hpn, session=None):
     Checks hpn for parts that overlap in time.  They are allowed, but
     may also signal unwanted behavior.
 
-    Returns list of overlapping part revisions
-
     Parameters:
     ------------
     hpn:  hera part name
+
+    Return:
+    -------
+    list
+            overlapping part revisions
     """
 
     overlap = []
