@@ -13,29 +13,33 @@ from . import mc, cm_utils, cm_revisions, cm_sysdef, cm_partconnect
 import six
 
 
-def check_for_overlap(interval):
+def check_for_overlap(interval1, interval2):
     """
     Checks to see if two intervals overlap.  Notionally for time, but will work
     for any ints/floats.
 
     Parameter
     ---------
-    interval :  intervals to test for overlap
-               format [[span_1_low, span_1_high], [span_2_low, span_2_high]]
-               if the high values are None, they get set to the max value + 100 sec
+    interval1, interval2 : list
+               intervals to test for overlap
+               format [low_value, high_value]
+               if high_value is None, gets set to the max value + 100 sec (maxx)
 
     Return
     ------
     boolean
-                True of overlap
+                True if intervals overlap
     """
-    maxx = max([x for x in interval[0] + interval[1] if x is not None]) + 100
-    for i, ival in enumerate(interval):
+    maxx = max([x for x in interval1 + interval2 if x is not None]) + 100
+    for ival in [interval1, interval2]:
         ival[1] = maxx if ival[1] is None else ival[1]
-    return interval[0][1] > interval[1][0] and interval[1][1] > interval[0][0]
+    return interval1[1] > interval2[0] and interval2[1] > interval1[0]
 
 
 class Connections:
+    """
+    Provides "health" testing methods for data in the Connections table.
+    """
     def __init__(self, session=None):
         if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
@@ -47,8 +51,11 @@ class Connections:
 
     def ingest_conndb(self):
         """
-        Reads in connections database and makes the following class variables:
+        Reads in connections database for use by class methods.
 
+        Notes
+        -----
+        This methods makes the following class variables:
         conndict - dictionary - conndict[k] = [conn_1, conn_2...]
             Dictionary of connections keyed as:
             upstream_part:rev:output_port:downstream_part:rev:input_port
@@ -101,9 +108,9 @@ class Connections:
             for k in self.multiples[dir]:
                 for i in range(len(self.conndict[dir][k])):
                     for j in range(i):
-                        intervals = [[self.conndict[dir][k][i].start_gpstime, self.conndict[dir][k][i].stop_gpstime],
-                                     [self.conndict[dir][k][j].start_gpstime, self.conndict[dir][k][j].stop_gpstime]]
-                        if check_for_overlap(intervals):
+                        interval1 = [self.conndict[dir][k][i].start_gpstime, self.conndict[dir][k][i].stop_gpstime]
+                        interval2 = [self.conndict[dir][k][j].start_gpstime, self.conndict[dir][k][j].stop_gpstime]
+                        if check_for_overlap(interval1, interval2):
                             duplicates[dir].setdefault(k, []).append([self.conndict[dir][k][i], self.conndict[dir][k][j]])
             if len(duplicates[dir]):
                 for k, duplist in six.iteritems(duplicates[dir]):
@@ -134,13 +141,18 @@ class Connections:
         """
         Checks whether the provided part is already connected for the at_date provided.
 
-        Parameters:
-        ------------
-        hpn:  HERA part number to check
-        rev: revision to check.  If None (default) it checks all/any
-        port:  name of port to check.  If None (default) it checks all/any.
-        side:  "side" of part to check.  Options are:  up, down, or both (default)
-        at_date:  date for the connection to be active.  Default is 'now'
+        Parameters
+        ----------
+        hpn : string or list of strings
+              HERA part number to check.  Can be a list of strings or a csv-list
+        rev : None or string or list of strings.
+              Revision(s) to check.  If None (default) it checks all/any
+        port : None or string or list of strings
+               name of port to check.  If None (default) it checks all/any.
+        side : string
+               "side" of part to check.  Options are:  up, down, or both (default)
+        at_date : string, float, int, Time, or datetime
+                  date for the connection to be active.  Default is 'now'
 
         Return
         ------
@@ -189,7 +201,8 @@ def check_part_for_overlapping_revisions(hpn, session=None):
 
     Parameters:
     ------------
-    hpn:  hera part name
+    hpn : string
+          hera part name
 
     Return:
     -------
@@ -203,7 +216,7 @@ def check_part_for_overlapping_revisions(hpn, session=None):
         for j in range(i):
             intervals = [[revisions[i].started, cm_utils.get_stopdate(revisions[i].ended)],
                          [revisions[j].started, cm_utils.get_stopdate(revisions[j].ended)]]
-            if check_for_overlap(intervals):
+            if check_for_overlap(interval1, interval2):
                 overlap.append([revisions[i], revisions[j]])
 
     if len(overlap) > 0:
