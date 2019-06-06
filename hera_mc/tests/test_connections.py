@@ -164,21 +164,21 @@ class TestConnections(TestHERAMC):
         self.assertTrue(len(sc) == 0)
 
     def test_check_for_overlap(self):
-        x = cm_health.check_for_overlap([[1, 2], [3, 4]])
+        x = cm_health.check_for_overlap([1, 2], [3, 4])
         self.assertFalse(x)
-        x = cm_health.check_for_overlap([[3, 4], [1, 2]])
+        x = cm_health.check_for_overlap([3, 4], [1, 2])
         self.assertFalse(x)
-        x = cm_health.check_for_overlap([[1, 10], [2, 8]])
+        x = cm_health.check_for_overlap([1, 10], [2, 8])
         self.assertTrue(x)
-        x = cm_health.check_for_overlap([[2, 8], [1, 10]])
+        x = cm_health.check_for_overlap([2, 8], [1, 10])
         self.assertTrue(x)
-        x = cm_health.check_for_overlap([[1, 5], [3, 8]])
+        x = cm_health.check_for_overlap([1, 5], [3, 8])
         self.assertTrue(x)
-        x = cm_health.check_for_overlap([[3, 8], [1, 5]])
+        x = cm_health.check_for_overlap([3, 8], [1, 5])
         self.assertTrue(x)
-        x = cm_health.check_for_overlap([[1, 8], [8, 10]])
+        x = cm_health.check_for_overlap([1, 8], [8, 10])
         self.assertFalse(x)
-        x = cm_health.check_for_overlap([[8, 10], [1, 8]])
+        x = cm_health.check_for_overlap([8, 10], [1, 8])
         self.assertFalse(x)
 
     def test_physical_connections(self):
@@ -192,17 +192,16 @@ class TestConnections(TestHERAMC):
         connection = cm_partconnect.Connections()
         healthy = cm_health.Connections(self.test_session)
         # Specific connections
-        duplicates = healthy.check_for_existing_connection(['a', 'b', 'c', 'd', 'e', 'f'], self.query_time)
-        self.assertFalse(duplicates)
-        cnnctn = [self.test_hpn[0], self.test_rev, 'up_and_out', self.test_hpn[1], self.test_rev, 'down_and_in']
-        duplicates = healthy.check_for_existing_connection(cnnctn, self.query_time, display_results=True)
+        duplicates = healthy.check_for_existing_connection(hpn=['a'], side='up', at_date=self.query_time)
         self.assertTrue(duplicates)
-        # Add test connection
-        duplicates = healthy.check_for_existing_connection(cnnctn, Time('2015-07-01 01:00:00', scale='utc').gps, display_results=True)
+        duplicates = healthy.check_for_existing_connection(hpn=self.test_hpn[0], rev=self.test_rev, port='up_and_out', at_date=self.query_time)
+        self.assertTrue(duplicates)
+        duplicates = healthy.check_for_existing_connection(hpn=self.test_hpn[0], rev=self.test_rev, port='up_and_out', side='dn', at_date='<')
         self.assertFalse(duplicates)
+
         # Duplicated connections
-        duplicates = healthy.check_for_duplicate_connections(display_results=True)
-        self.assertTrue(len(duplicates) == 0)
+        duplicates = healthy.check_for_duplicate_connections()
+        self.assertEqual(len(duplicates), 2)
         # Add test duplicate connection
         connection.upstream_part = self.test_hpn[0]
         connection.up_part_rev = self.test_rev
@@ -214,8 +213,30 @@ class TestConnections(TestHERAMC):
         self.test_session.add(connection)
         self.test_session.commit()
         healthy.conndict = None
-        duplicates = healthy.check_for_duplicate_connections(display_results=True)
-        self.assertTrue(len(duplicates) == 1)
+        duplicates = healthy.check_for_duplicate_connections()
+        self.assertTrue(len(duplicates) == 2)
+        conn1 = cm_partconnect.Connections()
+        conn1.upstream_part = self.test_hpn[0]
+        conn1.up_part_rev = self.test_rev
+        conn1.downstream_part = self.test_hpn[1]
+        conn1.down_part_rev = self.test_rev
+        conn1.upstream_output_port = 'terminal'
+        conn1.downstream_input_port = 'n'
+        conn1.start_gpstime = self.test_time + 100
+        self.test_session.add(conn1)
+        conn2 = cm_partconnect.Connections()
+        conn2.upstream_part = self.test_hpn[0]
+        conn2.up_part_rev = self.test_rev
+        conn2.downstream_part = self.test_hpn[1]
+        conn2.down_part_rev = self.test_rev
+        conn2.upstream_output_port = 'terminal'
+        conn2.downstream_input_port = 'e'
+        conn2.start_gpstime = self.test_time + 100
+        self.test_session.add(conn2)
+        self.test_session.commit()
+        healthy.conndict = None
+        duplicates = healthy.check_for_duplicate_connections()
+        self.assertTrue(len(duplicates) == 2)
 
 
 if __name__ == '__main__':
