@@ -84,3 +84,5 @@ target/
 *.mtc1
 *.out
 *.synctex.gz
+
+hera_mc/GIT_INFO
