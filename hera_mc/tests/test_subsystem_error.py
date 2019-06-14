@@ -39,10 +39,20 @@ class TestSubsystemError(TestHERAMC):
         exp_columns['mc_time'] = int(floor(exp_columns['mc_time'].gps))
         expected = SubsystemError(**exp_columns)
 
+        # try testing mode
+        error_obj = self.test_session.add_subsystem_error(
+            self.subsystem_error_values[1], self.subsystem_error_values[2],
+            *self.subsystem_error_values[4:], testing=True)
+
+        # error_obj.id isn't set because that's autoincremented by the database
+        error_obj.id = expected.id
+
+        self.assertTrue(error_obj.isclose(expected))
+
         self.test_session.add_subsystem_error(self.subsystem_error_values[1],
                                               self.subsystem_error_values[2],
                                               *self.subsystem_error_values[4:])
-
+        # now actually add it
         result = self.test_session.get_subsystem_error(starttime=self.subsystem_error_columns['time']
                                                        - TimeDelta(2 * 60, format='sec'))
         self.assertEqual(len(result), 1)
