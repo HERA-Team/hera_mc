@@ -2380,7 +2380,7 @@ class MCSession(Session):
                     warnings.warn('Using a non-standard acclen_spectra!')
 
             if (not isinstance(acclen_spectra, (int, np.integer))
-                    or np.round(acclen_spectra / 2048.) * 2048 - acclen_spectra != 0):
+                    or (acclen_spectra % 2048 != 0)):
                 raise ValueError('acclen_spectra must be an integer type and must be a multiple of 2048.')
 
             if tag is None:
