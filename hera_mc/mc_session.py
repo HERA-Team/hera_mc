@@ -2375,13 +2375,13 @@ class MCSession(Session):
                 raise ValueError('duration must be specified if command is "take_data"')
             if acclen_spectra is None:
                 acclen_spectra = corr.DEFAULT_ACCLEN_SPECTRA
-            else:
-                if acclen_spectra != corr.DEFAULT_ACCLEN_SPECTRA:
-                    warnings.warn('Using a non-standard acclen_spectra!')
 
             if (not isinstance(acclen_spectra, (int, np.integer))
                     or (acclen_spectra % 2048 != 0)):
                 raise ValueError('acclen_spectra must be an integer type and must be a multiple of 2048.')
+
+            if acclen_spectra != corr.DEFAULT_ACCLEN_SPECTRA:
+                warnings.warn('Using a non-standard acclen_spectra!')
 
             if tag is None:
                 raise ValueError('tag must be specified if command is "take_data"')
