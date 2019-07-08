@@ -13,7 +13,7 @@ import subprocess
 import numpy as np
 
 from .. import geo_location, geo_handling, mc, cm_transfer
-from ..tests import TestHERAMC
+from ..tests import TestHERAMC, checkWarnings
 from astropy.time import Time
 
 
@@ -143,7 +143,8 @@ class TestGeo(TestHERAMC):
         self.assertTrue(ant == 'A23')
         ant, rev = self.h.find_antenna_at_station('BB23', 'now')
         self.assertEqual(ant, None)
-        self.assertRaises(ValueError, self.h.find_antenna_at_station, 'HH68', 'now')
+        c = checkWarnings(self.h.find_antenna_at_station, ['HH68', 'now'],
+                          message='More than one active connection between station and antenna.\n\tupstream HH68 -> downstream A66\n\tupstream HH68 -> downstream A68')
         stn = self.h.find_station_of_antenna('A23', 'now')
         self.assertTrue(stn == 'HH23')
         stn = self.h.find_station_of_antenna(23, 'now')

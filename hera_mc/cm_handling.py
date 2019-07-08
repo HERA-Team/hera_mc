@@ -13,7 +13,6 @@ from __future__ import absolute_import, division, print_function
 from tabulate import tabulate
 import sys
 import copy
-import warnings
 import six
 from astropy.time import Time
 from sqlalchemy import func, desc
@@ -338,27 +337,6 @@ class Handling:
             (func.upper(PC.Parts.hpn) == hpn.upper())).first()
         return part_query.hptype
 
-    def listify_hpnrev(self, hpn, rev):
-        """
-        Makes sure that the hpn and revision requests are both lists and that they are
-        equal in length.  This is needed to handle the revision "categories"
-        """
-        if isinstance(hpn, list):
-            hpn_list = hpn
-        elif isinstance(hpn, six.string_types):
-            hpn_list = [hpn]
-        else:
-            raise ValueError("Wrong hpn type.")
-        if isinstance(rev, six.string_types):
-            rev_list = len(hpn_list) * [rev]
-        elif isinstance(rev, list):
-            rev_list = rev
-        else:
-            raise ValueError("Wrong rev type.")
-        if len(hpn_list) != len(rev_list):
-            raise ValueError("Unmatched hpn and rev lists.")
-        return hpn_list, rev_list
-
     def get_rev_part_dictionary(self, hpn, rev, at_date, exact_match):
         """
         This gets the list of hpn that match the rev -- the resulting dictionary
@@ -374,7 +352,7 @@ class Handling:
         """
 
         at_date = cm_utils.get_astropytime(at_date)
-        hpn_list, rev_list = self.listify_hpnrev(hpn=hpn, rev=rev)
+        hpn_list, rev_list = cm_utils.match_listify(req1=hpn, req2=rev)
         rev_part = {}
         for i, xhpn in enumerate(hpn_list):
             if not exact_match and xhpn[-1] != '%':

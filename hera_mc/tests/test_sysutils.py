@@ -70,7 +70,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part, 'HH23')
         hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False, hookup_type='parts_paper')
         with captured_output() as (out, err):
-            hookup.show_hookup(hu, state='all')
+            hookup.show_hookup(hu, state='all', output_format='csv')
         self.assertTrue('1096484416' in out.getvalue().strip())
         hookup.cached_hookup_dict = None
         hookup._hookup_cache_to_use()
@@ -92,10 +92,13 @@ class TestSys(TestHERAMC):
         self.assertEqual(len(hufc.keys()), 0)
         hufc = hookup.get_hookup_from_db(['RO1A1E'], 'A', 'n', at_date='now')
         self.assertEqual(len(hufc.keys()), 0)
+        hookup.hookup_type = None
+        hookup._hookup_cache_file_OK()
+        self.assertEqual(hookup.hookup_type, 'parts_paper')
 
     def test_hookup_dossier(self):
         sysdef = cm_sysdef.Sysdef()
-        hude = cm_hookup.HookupDossierEntry('testing:key', sysdef)
+        hude = cm_hookup.HookupDossierEntry(entry_key='testing:key', sysdef=sysdef)
         with captured_output() as (out, err):
             hude.get_hookup_type_and_column_headers('x', 'rusty_scissors')
         self.assertTrue('Parts did not conform to any hookup_type' in out.getvalue().strip())
@@ -109,6 +112,17 @@ class TestSys(TestHERAMC):
                                  downstream_input_port='nail', upstream_output_port='screw'))
         xret = hude.get_part_in_hookup_from_type('b', include_revs=True, include_ports=True)
         self.assertEqual(xret['hu'], 'shoe:testing<screw')
+
+        # test errors
+        hude = cm_hookup.HookupDossierEntry(entry_key='testing:key', sysdef=sysdef)
+        hude_dict = hude._to_dict()
+
+        self.assertRaises(ValueError, cm_hookup.HookupDossierEntry, entry_key='testing:key',
+                          input_dict=hude_dict)
+        self.assertRaises(ValueError, cm_hookup.HookupDossierEntry, sysdef=sysdef,
+                          input_dict=hude_dict)
+        self.assertRaises(ValueError, cm_hookup.HookupDossierEntry, entry_key='testing:key')
+        self.assertRaises(ValueError, cm_hookup.HookupDossierEntry, sysdef=sysdef)
 
     def test_sysdef(self):
         sysdef = cm_sysdef.Sysdef()

@@ -35,8 +35,8 @@ with db.sessionmaker() as session:
             except Exception as e:
                 print('%s -- error adding node sensors' % time.asctime(), file=sys.stderr)
                 traceback.print_exc(file=sys.stderr)
+                session.rollback()
                 continue
-
             try:
                 session.commit()
             except sqlalchemy.exc.SQLAlchemyError as e:
@@ -54,8 +54,8 @@ with db.sessionmaker() as session:
             except Exception as e:
                 print('%s -- error adding node power status' % time.asctime(), file=sys.stderr)
                 traceback.print_exc(file=sys.stderr)
+                session.rollback()
                 continue
-
             try:
                 session.commit()
             except sqlalchemy.exc.SQLAlchemyError as e:

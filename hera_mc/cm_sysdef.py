@@ -24,8 +24,12 @@ class Sysdef:
         'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
         'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
         'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
-        'cable-rfof': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 4},
-        'post-amp': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 5},
+        'node-bulkhead': {'up': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'e10', 'e11', 'e12'],
+                                 ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12']],
+                          'down': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'e10', 'e11', 'e12'],
+                                   ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12']],
+                          'position': 4},
+        'post-amp': {'up': [['e'], ['n']], 'down': [['e'], ['n']], 'position': 5},
         'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 6},
         'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 7}
     }
@@ -61,45 +65,64 @@ class Sysdef:
                    next={'up': 'up', 'down': 'down'},
                    arrow={'up': -1, 'down': 1})
 
-    def __init__(self):
-        self.pind = {}
-        self.this_hookup_type = None
+    def __init__(self, input_dict=None):
+        if input_dict is not None:
+            self.pind = input_dict['pind']
+            self.this_hookup_type = input_dict['this_hookup_type']
+            self.corr_index = input_dict['corr_index']
+            self.all_pols = input_dict['all_pols']
+            self.redirect_part_types = input_dict['redirect_part_types']
+            self.single_pol_labeled_parts = input_dict['single_pol_labeled_parts']
+            self.full_connection_path = input_dict['full_connection_path']
+        else:
+            self.pind = {}
+            self.this_hookup_type = None
 
-        # Initialize the dictionaries
-        self.corr_index = self.dict_init(None)
-        self.all_pols = self.dict_init([])
-        self.redirect_part_types = self.dict_init([])
-        self.single_pol_labeled_parts = self.dict_init([])
+            # Initialize the dictionaries
+            self.corr_index = self.dict_init(None)
+            self.all_pols = self.dict_init([])
+            self.redirect_part_types = self.dict_init([])
+            self.single_pol_labeled_parts = self.dict_init([])
 
-        # Redefine dictionary as needed
-        #    Define which component corresponds to the correlator input.
-        self.corr_index['parts_hera'] = 6
-        self.corr_index['parts_paper'] = 10
-        self.corr_index['parts_rfi'] = 4
-        #    Define polarization designations (should be one character)
-        self.all_pols['parts_hera'] = ['e', 'n']
-        self.all_pols['parts_paper'] = ['e', 'n']
-        self.all_pols['parts_rfi'] = ['e', 'n']
-        #    Define "special" parts for systems.  These require additional checking/processing
-        self.redirect_part_types['parts_hera'] = ['node']
-        self.single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
+            # Redefine dictionary as needed
+            #    Define which component corresponds to the correlator input.
+            self.corr_index['parts_hera'] = 6
+            self.corr_index['parts_paper'] = 10
+            self.corr_index['parts_rfi'] = 4
+            #    Define polarization designations (should be one character)
+            self.all_pols['parts_hera'] = ['e', 'n']
+            self.all_pols['parts_paper'] = ['e', 'n']
+            self.all_pols['parts_rfi'] = ['e', 'n']
+            #    Define "special" parts for systems.  These require additional checking/processing
+            self.redirect_part_types['parts_hera'] = ['node']
+            self.single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
 
-        # This generates the full_connection_path dictionary from port_def
-        self.full_connection_path = {}
-        for _x in self.port_def.keys():
-            ordered_path = {}
-            for k, v in six.iteritems(self.port_def[_x]):
-                ordered_path[v['position']] = k
-            sorted_keys = sorted(list(ordered_path.keys()))
-            self.full_connection_path[_x] = []
-            for k in sorted_keys:
-                self.full_connection_path[_x].append(ordered_path[k])
+            # This generates the full_connection_path dictionary from port_def
+            self.full_connection_path = {}
+            for _x in self.port_def.keys():
+                ordered_path = {}
+                for k, v in six.iteritems(self.port_def[_x]):
+                    ordered_path[v['position']] = k
+                sorted_keys = sorted(list(ordered_path.keys()))
+                self.full_connection_path[_x] = []
+                for k in sorted_keys:
+                    self.full_connection_path[_x].append(ordered_path[k])
 
     def dict_init(self, v0):
         y = {}
         for x in self.checking_order:
             y[x] = v0
         return y
+
+    def _to_dict(self):
+        """
+        Convert this object to a dict (so it can be written to json)
+        """
+        return {'pind': self.pind, 'this_hookup_type': self.this_hookup_type,
+                'corr_index': self.corr_index, 'all_pols': self.all_pols,
+                'redirect_part_types': self.redirect_part_types,
+                'single_pol_labeled_parts': self.single_pol_labeled_parts,
+                'full_connection_path': self.full_connection_path}
 
     def handle_redirect_part_types(self, part, at_date='now', session=None):
         """
@@ -197,8 +220,9 @@ class Sysdef:
             return None
         next_part_type = self.full_connection_path[self.this_hookup_type][next_part_position]
         next_part_info = self.port_def[self.this_hookup_type][next_part_type]
-        allowed_next_ports = next_part_info[self._D.this[current.direction]][0]
-        if len(next_part_info[self._D.this[current.direction]]) == 2:
+        if len(next_part_info[self._D.this[current.direction]]) == 1:
+            allowed_next_ports = next_part_info[self._D.this[current.direction]][0]
+        elif len(next_part_info[self._D.this[current.direction]]) == 2:
             allowed_next_ports = next_part_info[self._D.this[current.direction]][self.pind[current.pol]]
         options = []
         # prefix is defined to handle the single_pol_labeled_parts

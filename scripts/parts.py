@@ -59,7 +59,7 @@ if __name__ == '__main__':
             health:  runs various "health" checks
 
         Args needing values (or defaulted):
-            -p/--hpn:  part name [None]
+            -p/--hpn:  part name [None].  String - can be a csv list
             -r/--revision:  revision (particular/last/active/full/all) [Active]
             --port:  port name [ALL]
             --date:  query date [now]
@@ -92,16 +92,14 @@ if __name__ == '__main__':
         handling.show_connections(ppc, headers=['Upstream', '<uOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop'])
         sys.exit()
 
-    if action_tag == 'he':  # overlapping revisions
+    if action_tag == 'he':  # various health checks in array
         from hera_mc import cm_health
         healthy = cm_health.Connections(session)
         if args.hpn is None:
-            healthy.check_for_duplicate_connections(display_results=True)
+            duplicates = healthy.check_for_duplicate_connections()
         else:
-            for hpn in args.hpn:
-                healthy.check_for_existing_connection(hpn, display_results=True)
-            for hpn in args.hpn:
-                cm_health.check_part_for_overlapping_revisions(hpn, session)
+            connected = healthy.check_for_existing_connection(hpn=args.hpn, rev=args.revision, port=args.port)
+            overlaps = cm_health.check_part_for_overlapping_revisions(hpn=args.hpn, session)
         sys.exit()
 
     if args.hpn is None and not (action_tag == 'pa' and args.notes):

@@ -9,24 +9,37 @@
 from __future__ import absolute_import, division, print_function
 
 import warnings
-from . import mc, cm_utils
-from . import cm_partconnect as PC
-from . import cm_revisions
+from . import mc, cm_utils, cm_revisions, cm_sysdef, cm_partconnect
+import six
 
 
-def check_for_overlap(interval):
+def check_for_overlap(interval1, interval2):
     """
-    intervals:  gps_time intervals to test for overlap
-                format [[span_1_low, span_1_high], [span_2_low, span_2_high]]
-                if the high values are None, they get set to the max value + 100 sec
+    Checks to see if two intervals overlap.  Notionally for time, but will work
+    for any ints/floats.
+
+    Parameter
+    ---------
+    interval1, interval2 : list
+               intervals to test for overlap
+               format [low_value, high_value]
+               if high_value is None, gets set to the max value + 100 sec (maxx)
+
+    Return
+    ------
+    boolean
+                True if intervals overlap
     """
-    maxx = max([x for x in interval[0] + interval[1] if x is not None]) + 100
-    for i, ival in enumerate(interval):
+    maxx = max([x for x in interval1 + interval2 if x is not None]) + 100
+    for ival in [interval1, interval2]:
         ival[1] = maxx if ival[1] is None else ival[1]
-    return interval[0][1] > interval[1][0] and interval[1][1] > interval[0][0]
+    return interval1[1] > interval2[0] and interval2[1] > interval1[0]
 
 
 class Connections:
+    """
+    Provides "health" testing methods for data in the Connections table.
+    """
     def __init__(self, session=None):
         if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
@@ -34,9 +47,15 @@ class Connections:
         else:
             self.session = session
         self.conndict = None
+        self.sysdef = cm_sysdef.Sysdef()
 
     def ingest_conndb(self):
         """
+        Reads in connections database for use by class methods.
+
+        Notes
+        -----
+        This methods makes the following class variables:
         conndict - dictionary - conndict[k] = [conn_1, conn_2...]
             Dictionary of connections keyed as:
             upstream_part:rev:output_port:downstream_part:rev:input_port
@@ -47,77 +66,132 @@ class Connections:
         num_connections:
             Integer of the total number of connections in database.
         """
-        self.conndict = {}
-        self.multiples = set()
+        self.conndict = {'up': {}, 'dn': {}}
+        self.multiples = {'up': set(), 'dn': set()}
         self.num_connections = 0
-        for conn in self.session.query(PC.Connections).all():
+        conn = {}
+        for conn_entry in self.session.query(cm_partconnect.Connections).all():
             self.num_connections += 1
-            connection = [conn.upstream_part, conn.up_part_rev, conn.upstream_output_port,
-                          conn.downstream_part, conn.down_part_rev, conn.downstream_input_port]
-            connection = [x.lower() for x in connection]
-            k = ':'.join(connection)
-            if k in self.conndict.keys():
-                self.multiples.add(k)  # only add to multiples if there is more than one.
-            self.conndict.setdefault(k, []).append(conn)
+            conn['up'] = [conn_entry.upstream_part, conn_entry.up_part_rev, conn_entry.upstream_output_port]
+            conn['dn'] = [conn_entry.downstream_part, conn_entry.down_part_rev, conn_entry.downstream_input_port]
+            for dir in ['up', 'dn']:
+                connection = [x.lower() for x in conn[dir]]
+                k = ':'.join(connection)
+                if k in self.conndict[dir].keys():
+                    self.multiples[dir].add(k)  # only add to multiples if there is more than one.
+                self.conndict[dir].setdefault(k, []).append(conn_entry)
 
-    def check_for_duplicate_connections(self, display_results=False):
+    def check_for_duplicate_connections(self):
         """
         Checks all of the self.multiple keys to see if any of them overlap in time.
         If they do, it is a conflicting duplicate connection.
-        if display_results is True, it will print the results.
 
-        Returns the duplicated connections.
+        Return
+        ------
+        Dictionary
+                    containing the duplicated connections.
         """
-        self.ingest_conndb()
-        self.duplicates = []
-        for k in self.multiples:
-            for i in range(len(self.conndict[k])):
-                for j in range(i):
-                    intervals = [[self.conndict[k][i].start_gpstime, self.conndict[k][i].stop_gpstime],
-                                 [self.conndict[k][j].start_gpstime, self.conndict[k][j].stop_gpstime]]
-                    if check_for_overlap(intervals):
-                        self.duplicates.append([self.conndict[k][i], self.conndict[k][j]])
-        if len(self.duplicates):
-            s = 's'
-            if len(self.duplicates) == 1:
-                s = ''
-            if display_results:
-                print('{} duplicate{} found.'.format(len(self.duplicates), s))
-            for dup in self.duplicates:
-                i0 = [dup[0].start_gpstime, dup[0].stop_gpstime]
-                i1 = [dup[1].start_gpstime, dup[1].stop_gpstime]
-                if display_results:
-                    print('\t{}  --->  {} {}'.format(dup[0], i0, i1))
-        elif display_results:
-            print('No duplications found.')
-        if display_results:
-            print('{} connections checked.'.format(self.num_connections))
-        return self.duplicates
+        if self.conndict is None:
+            self.ingest_conndb()
+        all_pols = set()
+        for ptty in self.sysdef.checking_order:
+            for pol in self.sysdef.all_pols[ptty]:
+                all_pols.add(pol.lower())
 
-    def check_for_existing_connection(self, connection, at_date='now', display_results=False):
+        duplicates = {'up': {}, 'dn': {}}
+        kdir = {'up': {'Apart': 'upstream_part', 'Arev': 'up_part_rev', 'Aport': 'upstream_output_port',
+                       'Bpart': 'downstream_part', 'Brev': 'down_part_rev', 'Bport': 'downstream_input_port'},
+                'dn': {'Apart': 'downstream_part', 'Arev': 'down_part_rev', 'Aport': 'downstream_input_port',
+                       'Bpart': 'upstream_part', 'Brev': 'up_part_rev', 'Bport': 'upstream_output_port'}}
+        shown_dup = 0
+        for dir in ['up', 'dn']:
+            for k in self.multiples[dir]:
+                for i in range(len(self.conndict[dir][k])):
+                    for j in range(i):
+                        interval1 = [self.conndict[dir][k][i].start_gpstime, self.conndict[dir][k][i].stop_gpstime]
+                        interval2 = [self.conndict[dir][k][j].start_gpstime, self.conndict[dir][k][j].stop_gpstime]
+                        if check_for_overlap(interval1, interval2):
+                            duplicates[dir].setdefault(k, []).append([self.conndict[dir][k][i], self.conndict[dir][k][j]])
+            if len(duplicates[dir]):
+                for k, duplist in six.iteritems(duplicates[dir]):
+                    for dup in duplist:
+                        Aport_p = k.split(':')[2][0]
+                        Bport_p1 = getattr(dup[0], kdir[dir]['Bport'])[0].lower()
+                        Bport_p2 = getattr(dup[1], kdir[dir]['Bport'])[0].lower()
+                        show_it = True
+                        if Aport_p not in all_pols:
+                            Bport_pols = set()
+                            if Bport_p1 in all_pols:
+                                Bport_pols.add(Bport_p1)
+                            if Bport_p2.lower() in all_pols:
+                                Bport_pols.add(Bport_p2)
+                            if len(Bport_pols) > 1:
+                                show_it = False
+                        if show_it:
+                            shown_dup += 1
+                            i1 = [dup[0].start_gpstime, dup[0].stop_gpstime]
+                            i2 = [dup[1].start_gpstime, dup[1].stop_gpstime]
+                            print('\t{}    {:35s}  &&  {:35s}  {:25s} {:25s}'.format(dir, str(dup[0]), str(dup[1]), str(i1), str(i2)))
+        dups = shown_dup if shown_dup else 'No'
+        print("{} duplications found.".format(dups))
+        print('{} connections checked.'.format(self.num_connections))
+        return duplicates
+
+    def check_for_existing_connection(self, hpn, rev=None, port=None, side='both', at_date='now'):
         """
-        Checks whether the provided connection is already set up for the at_date provided.
+        Checks whether the provided part is already connected for the at_date provided.
 
-        Parameters:
-        ------------
-        connection:  connection list [upstream, rev, output_port, downstream, rev, input_port]
-        at_date:  date for the connection to be made
+        Parameters
+        ----------
+        hpn : string or list of strings
+              HERA part number to check.  Can be a list of strings or a csv-list
+        rev : None or string or list of strings.
+              Revision(s) to check.  If None (default) it checks all/any
+        port : None or string or list of strings
+               name of port to check.  If None (default) it checks all/any.
+        side : string
+               "side" of part to check.  Options are:  up, down, or both (default)
+        at_date : string, float, int, Time, or datetime
+                  date for the connection to be active.  Default is 'now'
+
+        Return
+        ------
+        boolean
+                 True if existing corresponding hpn.  If only one hpn, returns a string, else a list.
         """
+        hpn_list, rev_list = cm_utils.match_listify(hpn, rev)
+        hpn_list, port_list = cm_utils.match_listify(hpn, port)
 
+        if self.conndict is None:
+            self.ingest_conndb()
         at_date = cm_utils.get_astropytime(at_date)
-        connection = [x.lower() for x in connection]
-        k = ':'.join(connection)
-        self.ingest_conndb()
-        if k not in self.conndict.keys():
-            return False
-        for conn in self.conndict[k]:
-            t0 = conn.start_gpstime
-            t1 = conn.stop_gpstime
-            if cm_utils.is_active(at_date, t0, t1):
-                if display_results:
-                    print('Connection {} is already made for {}  ({} - {})'.format(k, at_date, t0, t1))
-                return True
-        return False
+        if side[0].lower() == 'u':
+            directions = ['up']
+        elif side[0].lower() == 'd':
+            directions = ['dn']
+        elif side[0].lower() == 'b':
+            directions = ['up', 'dn']
+        connected = len(hpn_list) * [False]
+        for i, hpno in enumerate(hpn_list):
+            reno = str(rev_list[i]).lower()
+            pono = str(port_list[i]).lower()
+            part_key = hpno.lower()
+            if reno not in cm_revisions.revision_categories:
+                part_key = '{}:{}'.format(part_key, reno)
+                if pono not in ['all', 'none']:
+                    part_key = '{}:{}'.format(part_key, pono.lower())
+            for dir in directions:
+                for conn_key in self.conndict[dir].keys():
+                    if conn_key.startswith(part_key):
+                        for conn in self.conndict[dir][conn_key]:
+                            t0 = conn.start_gpstime
+                            t1 = conn.stop_gpstime
+                            if cm_utils.is_active(at_date, t0, t1):
+                                print('Connection {} is already made for {}  ({} - {})'.format(dir, conn, at_date, t0, t1))
+                                connected[i] = True
+        if len(connected) == 1:
+            connected = connected[0]
+        return connected
 
 
 def check_part_for_overlapping_revisions(hpn, session=None):
@@ -125,20 +199,24 @@ def check_part_for_overlapping_revisions(hpn, session=None):
     Checks hpn for parts that overlap in time.  They are allowed, but
     may also signal unwanted behavior.
 
-    Returns list of overlapping part revisions
-
     Parameters:
     ------------
-    hpn:  hera part name
+    hpn : string
+          hera part name
+
+    Return:
+    -------
+    list
+            overlapping part revisions
     """
 
     overlap = []
     revisions = cm_revisions.get_all_revisions(hpn, session)
     for i in range(len(revisions)):
         for j in range(i):
-            intervals = [[revisions[i].started, cm_utils.get_stopdate(revisions[i].ended)],
-                         [revisions[j].started, cm_utils.get_stopdate(revisions[j].ended)]]
-            if check_for_overlap(intervals):
+            interval1 = [revisions[i].started, cm_utils.get_stopdate(revisions[i].ended)]
+            interval2 = [revisions[j].started, cm_utils.get_stopdate(revisions[j].ended)]
+            if check_for_overlap(interval1, interval2):
                 overlap.append([revisions[i], revisions[j]])
 
     if len(overlap) > 0:

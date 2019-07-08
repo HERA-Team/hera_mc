@@ -34,7 +34,7 @@ corr_state_dict_nonetime = {'taking_data': {'state': False, 'timestamp': None}}
 
 config_file = os.path.join(DATA_PATH, 'test_data', 'hera_feng_config_example.yaml')
 with open(config_file, 'r') as stream:
-    config = yaml.load(stream)
+    config = yaml.safe_load(stream)
 
 corr_config_example_dict = {'time': Time(1512770942, format='unix'),
                             'hash': 'testhash', 'config': config}
@@ -511,7 +511,7 @@ class TestCorrelatorControlCommand(TestHERAMC):
         command_list = checkWarnings(self.test_session.correlator_control_command,
                                      ['take_data'],
                                      {'starttime': starttime, 'duration': 100,
-                                      'acclen_spectra': 2, 'tag': 'engineering',
+                                      'acclen_spectra': 2048, 'tag': 'engineering',
                                       'testing': True, 'overwrite_take_data': True},
                                      message='Using a non-standard acclen_spectra')
 
@@ -524,9 +524,9 @@ class TestCorrelatorControlCommand(TestHERAMC):
                                                              'take_data')
         self.assertTrue(command_list[0].isclose(expected_comm))
 
-        int_time = 2 * ((2.0 * 16384) / 500e6)
+        int_time = 2048 * ((2.0 * 16384) / 500e6)
         expected_args = corr.CorrelatorTakeDataArguments.create(
-            command_time_obj, starttime, 100, 2,
+            command_time_obj, starttime, 100, 2048,
             int_time, 'engineering')
 
         self.assertTrue(command_list[1].isclose(expected_args))
@@ -655,6 +655,10 @@ class TestCorrelatorControlCommand(TestHERAMC):
         self.assertRaises(ValueError, self.test_session.correlator_control_command,
                           'take_data', starttime=starttime, duration=100,
                           tag='foo', testing=True)
+
+        self.assertRaises(ValueError, self.test_session.correlator_control_command,
+                          'take_data', starttime=starttime, duration=100,
+                          tag='engineering', acclen_spectra=2, testing=True)
 
         # test setting values for 'take_data' with other commands
         self.assertRaises(ValueError, self.test_session.correlator_control_command,

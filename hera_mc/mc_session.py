@@ -515,26 +515,33 @@ class MCSession(Session):
                                       starttime=None, stoptime=None, hostname=None,
                                       write_to_file=False, filename=None)
 
-    def add_subsystem_error(self, time, subsystem, severity, log):
+    def add_subsystem_error(self, time, subsystem, severity, log, testing=False):
         """
         Add a new subsystem subsystem_error to the M&C database.
 
         Parameters:
         ------------
-        time: astropy time object
+        time : astropy time object
             time of this error report
-        subsystem: string
+        subsystem : str
             name of subsystem with error
-        severity: integer
+        severity : int
             integer indicating severity level, 1 is most severe
-        log: string
+        log : str
             error message or log file name (TBD)
+        testing : bool
+            Option to just return the objects rather than adding them to the DB.
         """
         from .subsystem_error import SubsystemError
 
         db_time = self.get_current_db_time()
 
-        self.add(SubsystemError.create(db_time, time, subsystem, severity, log))
+        error_obj = SubsystemError.create(db_time, time, subsystem, severity, log)
+
+        if testing:
+            return error_obj
+
+        self.add(error_obj)
 
     def get_subsystem_error(self, most_recent=None, starttime=None,
                             stoptime=None, subsystem=None,
@@ -1988,7 +1995,7 @@ class MCSession(Session):
         Parameters:
         -----------
         config: string
-            decoded yaml string (i.e. result of yaml.load(config_file))
+            decoded yaml string (i.e. result of yaml.safe_load(config_file))
         config_hash: string
             unique hash of the config
         librarian_filename: string
@@ -2269,6 +2276,7 @@ class MCSession(Session):
             only applies if command is 'take_data': Length of time to take data for, in seconds
         acclen_spectra: integer
             only applies if command is 'take_data': Accumulation length in spectra.
+            Must be an integer divisible by 2048.
             Default is correlator.DEFAULT_ACCLEN_SPECTRA
         tag: string
             only applies if command is 'take_data': Tag which will end up in data
@@ -2374,9 +2382,14 @@ class MCSession(Session):
                 raise ValueError('duration must be specified if command is "take_data"')
             if acclen_spectra is None:
                 acclen_spectra = corr.DEFAULT_ACCLEN_SPECTRA
-            else:
-                if acclen_spectra != corr.DEFAULT_ACCLEN_SPECTRA:
-                    warnings.warn('Using a non-standard acclen_spectra!')
+
+            if (not isinstance(acclen_spectra, (int, np.integer))
+                    or (acclen_spectra % 2048 != 0)):
+                raise ValueError('acclen_spectra must be an integer type and must be a multiple of 2048.')
+
+            if acclen_spectra != corr.DEFAULT_ACCLEN_SPECTRA:
+                warnings.warn('Using a non-standard acclen_spectra!')
+
             if tag is None:
                 raise ValueError('tag must be specified if command is "take_data"')
 
@@ -2427,7 +2440,7 @@ class MCSession(Session):
                         # This config is new.
                         # save it to the Librarian
                         with open(config_file, 'r') as stream:
-                            config = yaml.load(stream)
+                            config = yaml.safe_load(stream)
                         self._add_config_file_to_librarian(config, config_hash,
                                                            librarian_filename)
 

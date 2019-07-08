@@ -154,16 +154,14 @@ class TestParts(TestHERAMC):
         revision = cm_revisions.get_revisions_of_type('help', 'help')
         self.assertEqual(revision, None)
 
-    def test_listify_hpn(self):
+    def test_match_listify(self):
         testing = [['hpn', 'rev'], [['hpn1', 'hpn2', 'hpn3'], 'rev'], [['hpn1', 'hpn2'], ['rev1', 'rev2']]]
         for testit in testing:
-            h, r = self.h.listify_hpnrev(testit[0], testit[1])
+            h, r = cm_utils.match_listify(testit[0], testit[1])
             self.assertEqual(len(h), len(r))
-
-    def test_listify_hpn_error(self):
-        self.assertRaises(ValueError, self.h.listify_hpnrev, ['hpn'], 1)
-        self.assertRaises(ValueError, self.h.listify_hpnrev, ['hpn'], ['A', 'B'])
-        self.assertRaises(ValueError, self.h.listify_hpnrev, 1, 1)
+        self.assertRaises(ValueError, cm_utils.match_listify, ['hpn'], ['A', 'B'])
+        x = cm_utils.listify(1)
+        self.assertEqual(x[0], 1)
 
     def test_get_part_types(self):
         at_date = self.now
