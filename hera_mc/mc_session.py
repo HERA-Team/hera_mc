@@ -2909,7 +2909,14 @@ class MCSession(Session):
 
         snap_status_list = []
         for hostname, snap_dict in six.iteritems(snap_status_dict):
-            time = Time(snap_dict['timestamp'], format='datetime')
+
+            # first check if the timestamp is the string 'None'
+            # if it is, skip this snap
+            timestamp = snap_dict['timestamp']
+            if timestamp == 'None':
+                continue
+            else:
+                time = Time(timestamp, format='datetime')
 
             # any entry other than timestamp can be the string 'None'
             # need to convert those to a None type
