@@ -25,48 +25,43 @@ parser = mc.get_mc_argument_parser()
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 
-with db.sessionmaker() as session:
+# List of commands (methods) to run on each iteration
+commands_to_run = ['add_node_sensor_readings_from_nodecontrol',
+                   'add_node_power_status_from_nodecontrol']
+
+while True:
     try:
-        while True:
-            time.sleep(MONITORING_INTERVAL)
+        # Use a single session unless there's an error that isn't fixed by a rollback.
+        with db.sessionmaker() as session:
+            while True:
+                time.sleep(MONITORING_INTERVAL)
 
-            try:
-                session.add_node_sensor_readings_from_nodecontrol()
-            except Exception as e:
-                print('%s -- error adding node sensors' % time.asctime(), file=sys.stderr)
-                traceback.print_exc(file=sys.stderr)
-                session.rollback()
-                continue
-            try:
-                session.commit()
-            except sqlalchemy.exc.SQLAlchemyError as e:
-                print('%s -- SQL error committing new node sensor data' % time.asctime(), file=sys.stderr)
-                traceback.print_exc(file=sys.stderr)
-                session.rollback()
-                continue
-            except Exception as e:
-                print('%s -- error committing new node sensor data' % time.asctime(), file=sys.stderr)
-                traceback.print_exc(file=sys.stderr)
-                continue
-
-            try:
-                session.add_node_power_status_from_nodecontrol()
-            except Exception as e:
-                print('%s -- error adding node power status' % time.asctime(), file=sys.stderr)
-                traceback.print_exc(file=sys.stderr)
-                session.rollback()
-                continue
-            try:
-                session.commit()
-            except sqlalchemy.exc.SQLAlchemyError as e:
-                print('%s -- SQL error committing new node power status' % time.asctime(), file=sys.stderr)
-                traceback.print_exc(file=sys.stderr)
-                session.rollback()
-                continue
-            except Exception as e:
-                print('%s -- error committing new node power status' % time.asctime(), file=sys.stderr)
-                traceback.print_exc(file=sys.stderr)
-                continue
-    except KeyboardInterrupt:
-        print("exiting on SIGINT")
-        sys.exit()
+                for command in commands_to_run:
+                    try:
+                        getattr(session, command)()
+                    except Exception as e:
+                        print('{t} -- error calling command {c}'.format(
+                            t=time.asctime(), c=command), file=sys.stderr)
+                        traceback.print_exc(file=sys.stderr)
+                        session.rollback()
+                        continue
+                    try:
+                        session.commit()
+                    except sqlalchemy.exc.SQLAlchemyError as e:
+                        print('{t} -- SQL error committing after command {c}'.format(
+                            t=time.asctime(), c=command), file=sys.stderr)
+                        traceback.print_exc(file=sys.stderr)
+                        session.rollback()
+                        continue
+                    except Exception as e:
+                        print('{t} -- error committing after command {c}'.format(
+                            t=time.asctime(), c=command), file=sys.stderr)
+                        traceback.print_exc(file=sys.stderr)
+                        try:
+                            # First try to roll back the command.
+                            session.rollback()
+                            continue
+                        except Exception as e2:
+                            # If rollback doesn't work, we need a new session.
+                            # This should get out of the with statement to create a new session
+                            reraise_context('error rolling back after command "%r"', command)
