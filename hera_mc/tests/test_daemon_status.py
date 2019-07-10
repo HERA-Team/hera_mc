@@ -50,7 +50,8 @@ class TestDaemonStatus(TestHERAMC):
 
         # have to commit to get the updates to work
         self.test_session.commit()
-        self.test_session.add_daemon_status(*self.column_values[0:2],
+        self.test_session.add_daemon_status(self.column_values[0],
+                                            self.column_values[1],
                                             Time.now(), 'errored')
         self.test_session.commit()
         result = self.test_session.get_daemon_status(starttime=self.columns['time']
