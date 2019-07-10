@@ -65,3 +65,6 @@ while True:
                             # If rollback doesn't work, we need a new session.
                             # This should get out of the with statement to create a new session
                             reraise_context('error rolling back after command "%r"', command)
+    except Exception:
+        # restart while with a new session
+        continue
