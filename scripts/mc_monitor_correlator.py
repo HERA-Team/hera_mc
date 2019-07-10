@@ -39,6 +39,7 @@ while True:
                 for command in commands_to_run:
                     try:
                         getattr(session, command)()
+                        session.commit()
                     except Exception as e:
                         print('{t} -- error calling command {c}'.format(
                             t=time.asctime(), c=command), file=sys.stderr)
@@ -55,49 +56,7 @@ while True:
                             reraise_context('error logging to subsystem_error '
                                             'table after command "%r"', command)
                         continue
-                    try:
-                        session.commit()
-                    except sqlalchemy.exc.SQLAlchemyError as e:
-                        print('{t} -- SQL error committing after command {c}'.format(
-                            t=time.asctime(), c=command), file=sys.stderr)
-                        traceback.print_exc(file=sys.stderr)
-                        traceback_str = traceback.format_exc()
-                        session.rollback()
-                        try:
-                            # try adding an error message to the subsystem_error table
-                            session.add_subsystem_error(Time.now(),
-                                                        'mc_correlator_monitor',
-                                                        2, traceback_str)
-                        except Exception:
-                            # if we can't log error messages to the session, need a new session
-                            reraise_context('error logging to subsystem_error '
-                                            'table after committing command "%r"',
-                                            command)
-                        continue
-                    except Exception as e:
-                        print('{t} -- error committing after command {c}'.format(
-                            t=time.asctime(), c=command), file=sys.stderr)
-                        traceback.print_exc(file=sys.stderr)
-                        traceback_str = traceback.format_exc()
-                        try:
-                            # First try to roll back the command.
-                            session.rollback()
-                            try:
-                                # try adding an error message to the subsystem_error table
-                                session.add_subsystem_error(Time.now(),
-                                                            'mc_correlator_monitor',
-                                                            2, traceback_str)
-                            except Exception:
-                                # if we can't log error messages to the session, need a new session
-                                reraise_context('error logging to subsystem_error '
-                                                'table after committing command "%r"',
-                                                command)
-                            continue
-                        except Exception as e2:
-                            # If rollback doesn't work, we need a new session.
-                            # This should get out of the with statement to create a new session
-                            reraise_context('error rolling back after command "%r"', command)
-    except Exception:
+    except Exception as e:
         # Try to log an error with a new session
         traceback.print_exc(file=sys.stderr)
         with db.sessionmaker() as new_session:
@@ -109,5 +68,5 @@ while True:
             except Exception:
                 # if we can't log error messages to the new session we're in real trouble
                 reraise_context('error logging to subsystem_error with a new session')
-        # restart to get new session
+        # logging with a new session worked, so restart to get a new session
         continue
