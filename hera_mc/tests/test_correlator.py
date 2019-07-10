@@ -89,7 +89,14 @@ snap_status_none_example_dict = {
                         'serial': 'None',
                         'temp': 'None',
                         'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
-                        'uptime': 'None'}}
+                        'uptime': 'None'},
+    'heraNode23Snap2': {'last_programmed': datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
+                        'pmb_alert': False,
+                        'pps_count': 595699,
+                        'serial': 'SNPA000224',
+                        'temp': 59.323028564453125,
+                        'timestamp': 'None',
+                        'uptime': 595699}}
 
 ant_status_example_dict = {
     '4:e': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
