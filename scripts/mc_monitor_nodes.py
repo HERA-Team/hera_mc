@@ -47,7 +47,7 @@ while True:
                         session.rollback()
                         try:
                             # try adding an error message to the subsystem_error table
-                            session.add_subsystem_error(Time.now,
+                            session.add_subsystem_error(Time.now(),
                                                         'mc_node_monitor',
                                                         2, traceback_str)
                         except Exception:
@@ -65,7 +65,7 @@ while True:
                         session.rollback()
                         try:
                             # try adding an error message to the subsystem_error table
-                            session.add_subsystem_error(Time.now,
+                            session.add_subsystem_error(Time.now(),
                                                         'mc_node_monitor',
                                                         2, traceback_str)
                         except Exception:
@@ -84,7 +84,7 @@ while True:
                             session.rollback()
                             try:
                                 # try adding an error message to the subsystem_error table
-                                session.add_subsystem_error(Time.now,
+                                session.add_subsystem_error(Time.now(),
                                                             'mc_node_monitor',
                                                             2, traceback_str)
                             except Exception:
@@ -103,7 +103,7 @@ while True:
         with db.sessionmaker() as new_session:
             try:
                 # try adding an error message to the subsystem_error table
-                session.add_subsystem_error(Time.now,
+                session.add_subsystem_error(Time.now(),
                                             'mc_node_monitor',
                                             2, traceback_str)
             except Exception:
