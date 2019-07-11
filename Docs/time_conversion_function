@@ -1,0 +1,7 @@
+This psql function converts from gps to epoch time. Allows an instantiation of the hera_mc db to be plotted by grafana.
+
+create function gps2epoch(t int) returns int as $$
+begin
+return t + 315964782;
+end
+$$ language plpgsql;
