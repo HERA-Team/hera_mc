@@ -91,7 +91,8 @@ class TestDaemonStatus(TestHERAMC):
                           'foo', self.column_values[3])
 
         self.assertRaises(ValueError, self.test_session.add_daemon_status,
-                          *self.column_values[0:3], 'foo')
+                          self.column_values[0], self.column_values[1],
+                          self.column_values[2], 'foo')
 
         self.test_session.add_daemon_status(*self.column_values)
         self.assertRaises(ValueError, self.test_session.get_daemon_status,
