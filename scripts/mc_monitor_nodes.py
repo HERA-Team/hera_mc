@@ -45,7 +45,7 @@ while True:
                     try:
                         getattr(session, command)()
                         session.commit()
-                        session.add_daemon_status('mc_monitor_correlator',
+                        session.add_daemon_status('mc_monitor_nodes',
                                                   hostname, Time.now(), 'good')
                         session.commit()
                     except Exception as e:
