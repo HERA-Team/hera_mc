@@ -315,6 +315,19 @@ log & text & TBD on format, either a message or a file with the log \\ \hline
 \end{center}
 
 
+\subsubsection{daemon\_status}
+Status of \mc\ daemons that monitor various subsystems.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{name} & string & daemon name\\ \hline
+\textbf{hostname} & string & hostname where daemon is running (the same daemon can run on multiple hosts)\\ \hline
+\textbf{jd} & integer & Julian Date. This allows for some history without keeping all history.\\ \hline
+time & long & most recent status report time in floor(gps seconds)\\ \hline
+status & string & most recent daemon status. One of `good' or `errored'\\ \hline
+\end{tabular}
+\end{center}
 
 % --------------------------- RTP ------------------------------------------------------
 

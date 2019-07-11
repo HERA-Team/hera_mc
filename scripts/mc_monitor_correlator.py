@@ -12,6 +12,8 @@ import sqlalchemy.exc
 import sys
 import time
 import traceback
+import socket
+
 from astropy.time import Time
 
 from hera_mc import mc
@@ -21,6 +23,8 @@ MONITORING_INTERVAL = 60  # seconds
 parser = mc.get_mc_argument_parser()
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
+
+hostname = socket.gethostname()
 
 # List of commands (methods) to run on each iteration
 commands_to_run = ['add_correlator_control_state_from_corrcm',
@@ -40,6 +44,9 @@ while True:
                     try:
                         getattr(session, command)()
                         session.commit()
+                        session.add_daemon_status('mc_monitor_correlator',
+                                                  hostname, Time.now(), 'good')
+                        session.commit()
                     except Exception as e:
                         print('{t} -- error calling command {c}'.format(
                             t=time.asctime(), c=command), file=sys.stderr)
@@ -47,7 +54,10 @@ while True:
                         traceback_str = traceback.format_exc()
                         session.rollback()
                         try:
-                            # try adding an error message to the subsystem_error table
+                            # try to update the daemon_status table and add an
+                            # error message to the subsystem_error table
+                            session.add_daemon_status('mc_monitor_correlator',
+                                                      hostname, Time.now(), 'errored')
                             session.add_subsystem_error(Time.now(),
                                                         'mc_correlator_monitor',
                                                         2, traceback_str)
@@ -61,7 +71,10 @@ while True:
         traceback.print_exc(file=sys.stderr)
         with db.sessionmaker() as new_session:
             try:
-                # try adding an error message to the subsystem_error table
+                # try to update the daemon_status table and add an
+                # error message to the subsystem_error table
+                session.add_daemon_status('mc_monitor_correlator',
+                                          hostname, Time.now(), 'errored')
                 session.add_subsystem_error(Time.now(),
                                             'mc_correlator_monitor',
                                             2, traceback_str)

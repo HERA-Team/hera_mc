@@ -194,18 +194,24 @@ class MCSession(Session):
         else:
             return query.all()
 
-    def _insert_ignoring_duplicates(self, table_class, obj_list):
+    def _insert_ignoring_duplicates(self, table_class, obj_list, update=False):
         """
         If the current database is PostgreSQL, this function will use a
-        special insertion method that will ignore records that are redundant
+        special insertion method that will ignore or update records that are redundant
         with ones already in the database. This makes it convenient to sample
-        the certain data (especially redis data) densely on qmaster.
+        the certain data (especially redis data) densely on qmaster or to
+        update an existing record.
 
-        Parameters:
-        table_class: class
+        Parameters
+        ----------
+        table_class : class
             Class specifying a table to insert into.
-        obj_list: list of objects
+        obj_list : list of objects
             list of objects (of class table_class) to insert into the table.
+        update : bool
+            If true, update the existing record with the new data, otherwise do
+            nothing (which is appropriate if the data is the same because of
+            dense sampling).
         """
         if self.bind.dialect.name == 'postgresql':
             from sqlalchemy import inspect
@@ -221,9 +227,22 @@ class MCSession(Session):
                 for col in inspect(obj).mapper.column_attrs:
                     values[col.expression.name] = getattr(obj, col.key)
 
-                # The special PostgreSQL insert statement lets us ignore
-                # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
-                stmt = insert(table_class).values(**values).on_conflict_do_nothing(index_elements=ies)
+                if update:
+                    # create dict of columns to update (everything other than the primary keys)
+                    update_dict = {}
+                    for col, val in six.iteritems(values):
+                        if col not in ies:
+                            update_dict[col] = val
+
+                    # The special PostgreSQL insert statement lets us update
+                    # existing rows via `ON CONFLICT ... DO UPDATE` syntax.
+                    stmt = insert(table_class).values(**values).on_conflict_do_update(
+                        index_elements=ies, set_=update_dict)
+                else:
+                    # The special PostgreSQL insert statement lets us ignore
+                    # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
+                    stmt = insert(table_class).values(**values).on_conflict_do_nothing(
+                        index_elements=ies)
                 conn.execute(stmt)
         else:  # pragma: no cover
             # Generic approach:
@@ -517,7 +536,7 @@ class MCSession(Session):
 
     def add_subsystem_error(self, time, subsystem, severity, log, testing=False):
         """
-        Add a new subsystem subsystem_error to the M&C database.
+        Add a new subsystem_error to the M&C database.
 
         Parameters:
         ------------
@@ -591,6 +610,87 @@ class MCSession(Session):
         return self._time_filter(SubsystemError, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='subsystem', filter_value=subsystem,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def add_daemon_status(self, name, hostname, time, status, testing=False):
+        """
+        Add a new daemon_status to the M&C database.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will update records that are redundant
+        with ones already in the database.
+
+        Parameters:
+        ------------
+        name : str
+            Name of the daemon
+        hostname : str
+            Name of server where daemon is running
+        time : astropy time object
+            Time of this status report, updated on every iteration of the daemon
+        status : str
+            Status, one of the values in status_list.
+        testing : bool
+            Option to just return the objects rather than adding them to the DB.
+        """
+        from .daemon_status import DaemonStatus
+
+        daemon_status_obj = DaemonStatus.create(name, hostname, time, status)
+
+        if testing:
+            return daemon_status_obj
+
+        self._insert_ignoring_duplicates(DaemonStatus, [daemon_status_obj],
+                                         update=True)
+
+    def get_daemon_status(self, most_recent=None, starttime=None,
+                          stoptime=None, daemon_name=None,
+                          write_to_file=False, filename=None):
+        """
+        Get daemon_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent : bool
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime : astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime : astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        daemon_name : str
+            Name of daemon to get records for. If none, all daemons will be included.
+
+        write_to_file : bool
+            Option to write records to a CSV file
+
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of SubsystemError objects
+        """
+        from .daemon_status import DaemonStatus
+
+        return self._time_filter(DaemonStatus, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='name', filter_value=daemon_name,
                                  write_to_file=write_to_file, filename=filename)
 
     def add_lib_status(self, time, num_files, data_volume_gb, free_space_gb,
