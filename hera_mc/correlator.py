@@ -582,6 +582,17 @@ class AntennaStatus(MCDeclarativeBase):
     pam_atten: PAM attenuation setting for this antenna, in dB. (Integer)
     pam_power: PAM power sensor reading for this antenna, in dBm (Float)
     eq_coeffs: Digital EQ coefficients for this antenna, list of floats stored as a string (String)
+
+
+            pam_voltage (float)   : PAM voltage sensor reading for this antenna (V)
+            pam_current (float)   : PAM current sensor reading for this antenna (A)
+            pam_id (list of ints) : Bytewise serial number of this PAM
+            fem_voltage (float)   : FEM voltage sensor reading for this antenna (V)
+            fem_current (float)   : FEM current sensor reading for this antenna (A)
+            fem_id (list)         : Bytewise serial number of this FEM
+            fem_temp (float)      : FEM temperature sensor reading for this antenna (C)
+            eq_coeffs (list of floats) : Digital EQ coefficients for this antenna
+            histogram (list of ints) : Two-dimensional list: [[bin_centers][counts]] representing ADC histogram
     """
     __tablename__ = 'antenna_status'
     time = Column(BigInteger, primary_key=True)
@@ -605,31 +616,31 @@ class AntennaStatus(MCDeclarativeBase):
 
         Parameters:
         ------------
-        time: astropy time object
+        time : astropy time object
             astropy time object based on a timestamp reported by node
-        antenna_number: integer
+        antenna_number : int
             antenna number
-        antenna_feed_pol: string
+        antenna_feed_pol : str
             Feed polarization, either 'e' or 'n'
-        snap_hostname: string
+        snap_hostname : str
             hostname of snap the antenna is connected to
-        snap_channel_number: integer
+        snap_channel_number : int
             The SNAP ADC channel number (0-7) to which this antenna is connected
-        adc_mean: float
+        adc_mean : float
             Mean ADC value, in ADC units, meaning raw ADC values interpreted as
             signed integers between -128 and +127. Typically ~ -0.5.
-        adc_rms: float
+        adc_rms : float
             RMS ADC value, in ADC units, meaning raw ADC values interpreted as
             signed integers between -128 and +127.  Should be ~ 10-20.
-        adc_power: float
+        adc_power : float
             Mean ADC power, in ADC units squared, meaning raw ADC values
             interpreted as signed integers between -128 and +127 and then squared.
             Since mean should be close to zero, this should just be adc_rms^2.
-        pam_atten: integer
+        pam_atten : int
             PAM attenuation setting for this antenna, in dB
-        pam_power: float
+        pam_power : float
             PAM power sensor reading for this antenna, in dBm
-        eq_coeffs: list(float)
+        eq_coeffs : list of float
             Digital EQ coefficients, used for keeping the bit occupancy in the
             correct range, for this antenna, list of floats. Note this these are
             not divided out anywhere in the DSP chain (!).
