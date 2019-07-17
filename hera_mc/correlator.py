@@ -91,16 +91,28 @@ class CorrelatorControlState(MCDeclarativeBase):
         return cls(time=corr_time, state_type=state_type, state=state)
 
 
-def _get_control_state(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_control_state(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
     Loops through the state types in state_dict and gets the latest state and associated timestamp for each one.
 
-    Returns a 2-level dict, top level key is a key from the state_dict,
-    second level keys are 'timestamp' and 'state' (a boolean)
+    Parameters
+    ---------
+    corr_cm : hera_corr_cm.HeraCorrCM object
+        HeraCorrCM object to use. If None, this function will make a new one.
+    correlator_redis_address : str
+        Address of redis database (only used if corr_cm is None)
+
+    Returns
+    -------
+    dict
+        a 2-level dict, top level key is a key from the state_dict,
+        second level keys are 'timestamp' and 'state' (a boolean)
+
     """
     import hera_corr_cm
 
-    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+    if corr_cm is None:
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     corr_state_dict = {}
     for key, value in six.iteritems(state_dict):
@@ -167,15 +179,27 @@ class CorrelatorConfigStatus(MCDeclarativeBase):
         return cls(time=corr_time, config_hash=config_hash)
 
 
-def _get_config(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_config(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
     Gets the latest config, hash and associated timestamp from the correlator.
 
-    Returns a dict with keys 'timestamp', 'hash' and 'config' (a yaml processed string)
+    Parameters
+    ---------
+    corr_cm : hera_corr_cm.HeraCorrCM object
+        HeraCorrCM object to use. If None, this function will make a new one.
+    correlator_redis_address : str
+        Address of redis database (only used if corr_cm is None)
+
+    Returns
+    -------
+    dict
+        Keys are 'timestamp', 'hash' and 'config' (a yaml processed string)
+
     """
     import hera_corr_cm
 
-    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+    if corr_cm is None:
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     timestamp, config, hash = corr_cm.get_config()
     time = Time(timestamp, format='unix')
@@ -206,6 +230,7 @@ class CorrelatorControlCommand(MCDeclarativeBase):
         command: string
             one of the keys in command_dict (e.g. 'take_data',
             'phase_switching_on', 'phase_switching_off', 'restart')
+
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -218,26 +243,55 @@ class CorrelatorControlCommand(MCDeclarativeBase):
         return cls(time=corr_time, command=command)
 
 
-def _get_integration_time(acclen_spectra, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_integration_time(acclen_spectra, corr_cm=None,
+                          correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
     gets the integration time in seconds for a given acclen in spectra
+
+    Parameters
+    ---------
+    acclen_spectra : integer
+        Accumulation length in number of spectra.
+    corr_cm : hera_corr_cm.HeraCorrCM object
+        HeraCorrCM object to use. If None, this function will make a new one.
+    correlator_redis_address : str
+        Address of redis database (only used if corr_cm is None)
+
+    Returns
+    -------
+    float
+        integration time in seconds
 
     """
     import hera_corr_cm
 
-    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+    if corr_cm is None:
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     return corr_cm.n_spectra_to_secs(acclen_spectra)
 
 
-def _get_next_start_time(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_next_start_time(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
     gets the next start time from the correlator, in gps seconds
+
+    Parameters
+    ---------
+    corr_cm : hera_corr_cm.HeraCorrCM object
+        HeraCorrCM object to use. If None, this function will make a new one.
+    correlator_redis_address : str
+        Address of redis database (only used if corr_cm is None)
+
+    Returns
+    -------
+    astropy Time object
+        Time of the next start time
 
     """
     import hera_corr_cm
 
-    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+    if corr_cm is None:
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     starttime_unix_timestamp = corr_cm.next_start_time()
     if starttime_unix_timestamp == 0.0:
@@ -300,6 +354,7 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
         tag: string
             Tag which will end up in data files as a header entry.
             Must be one of the values in tag_list
+
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -351,6 +406,7 @@ class CorrelatorConfigCommand(MCDeclarativeBase):
             astropy time object based on a timestamp reported by the correlator
         config_hash: string
             unique hash of the config, foreign key into correlator_config_file table
+
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -388,6 +444,7 @@ class CorrelatorSoftwareVersions(MCDeclarativeBase):
                 daemonized processes(e.g. 'hera_corr_cm', 'udpSender:hera_node_keep_alive.py')
         version: string
             version string for this package or script
+
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -429,6 +486,7 @@ class SNAPConfigVersion(MCDeclarativeBase):
             arguments passed to the initialization script at runtime
         config_hash: string
             unique hash of the config, foreign key into correlator_config_file table
+
         """
         if not isinstance(init_time, Time):
             raise ValueError('init_time must be an astropy Time object')
@@ -438,31 +496,43 @@ class SNAPConfigVersion(MCDeclarativeBase):
                    config_hash=config_hash)
 
 
-def _get_corr_versions(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_corr_versions(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
     gets the versions dict from the correlator
 
-    from hera_corr_cm docstring:
-        Returns the version of various software modules in dictionary form.
-        Keys of this dictionary are software packages, e.g. "hera_corr_cm", or of the form
-        <package>:<script> for daemonized processes, e.g. "udpSender:hera_node_receiver.py".
-        The values of this dictionary are themselves dicts, with keys:
-            "version" : A version string for this package
-            "timestamp" : A datetime object indicating when this version was last reported to redis
+    Parameters
+    ---------
+    corr_cm : hera_corr_cm.HeraCorrCM object
+        HeraCorrCM object to use. If None, this function will make a new one.
+    correlator_redis_address : str
+        Address of redis database (only used if corr_cm is None)
 
-        There is one special key, "snap", in the top-level of the returned dictionary. This stores
-        software and configuration states at the time the SNAPs were last initialized with the
-        `hera_snap_feng_init.py` script. For the "snap" dictionary keys are:
-            "version" : version string for the hera_corr_f package.
-            "init_args" : arguments passed to the inialization script at runtime
-            "config" : Configuration structure used at initialization time
-            "config_timestamp" : datetime instance indicating when this file was updated in redis
-            "config_md5" : MD5 hash of this config file
-            "timestamp" : datetime object indicating when the initialization script was called.
+    Returns
+    -------
+    dict
+        from hera_corr_cm docstring:
+            Returns the version of various software modules in dictionary form.
+            Keys of this dictionary are software packages, e.g. "hera_corr_cm", or of the form
+            <package>:<script> for daemonized processes, e.g. "udpSender:hera_node_receiver.py".
+            The values of this dictionary are themselves dicts, with keys:
+                "version" : A version string for this package
+                "timestamp" : A datetime object indicating when this version was last reported to redis
+
+            There is one special key, "snap", in the top-level of the returned dictionary. This stores
+            software and configuration states at the time the SNAPs were last initialized with the
+            `hera_snap_feng_init.py` script. For the "snap" dictionary keys are:
+                "version" : version string for the hera_corr_f package.
+                "init_args" : arguments passed to the inialization script at runtime
+                "config" : Configuration structure used at initialization time
+                "config_timestamp" : datetime instance indicating when this file was updated in redis
+                "config_md5" : MD5 hash of this config file
+                "timestamp" : datetime object indicating when the initialization script was called.
+
     """
     import hera_corr_cm
 
-    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+    if corr_cm is None:
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     return corr_cm.get_version()
 
@@ -541,28 +611,39 @@ class SNAPStatus(MCDeclarativeBase):
                    last_programmed_time=last_programmed_time_gps)
 
 
-def _get_snap_status(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_snap_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
     gets the snap status dict from the correlator
 
-    from hera_corr_cm docstring:
-        Returns a dictionary of snap status flags. Keys of returned dictionaries are
-        snap hostnames. Values of this dictionary are status key/val pairs.
+    Parameters
+    ---------
+    corr_cm : hera_corr_cm.HeraCorrCM object
+        HeraCorrCM object to use. If None, this function will make a new one.
+    correlator_redis_address : str
+        Address of redis database (only used if corr_cm is None)
 
-        These keys are:
-            pmb_alert (bool) : True if SNAP PSU controllers have issued an alert. False otherwise.
-            pps_count (int)  : Number of PPS pulses received since last programming cycle
-            serial (str)     : Serial number of this SNAP board
-            temp (float)     : Reported FPGA temperature (degrees C)
-            uptime (int)     : Multiples of 500e6 ADC clocks since last programming cycle
-            last_programmed (datetime) : Last time this FPGA was programmed
-            timestamp (datetime) : Asynchronous timestamp that these status entries were gathered
+    Returns
+    -------
+    dict
+        from hera_corr_cm docstring:
+            Returns a dictionary of snap status flags. Keys of returned dictionaries are
+            snap hostnames. Values of this dictionary are status key/val pairs.
 
-            Unknown values return the string "None"
+            These keys are:
+                pmb_alert (bool) : True if SNAP PSU controllers have issued an alert. False otherwise.
+                pps_count (int)  : Number of PPS pulses received since last programming cycle
+                serial (str)     : Serial number of this SNAP board
+                temp (float)     : Reported FPGA temperature (degrees C)
+                uptime (int)     : Multiples of 500e6 ADC clocks since last programming cycle
+                last_programmed (datetime) : Last time this FPGA was programmed
+                timestamp (datetime) : Asynchronous timestamp that these status entries were gathered
+
+                Unknown values return the string "None"
     """
     import hera_corr_cm
 
-    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+    if corr_cm is None:
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     return corr_cm.get_f_status()
 
@@ -665,35 +746,46 @@ class AntennaStatus(MCDeclarativeBase):
                    pam_power=pam_power, eq_coeffs=eq_coeffs_string)
 
 
-def _get_ant_status(correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_ant_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
     gets the antenna status dict from the correlator
 
-    from hera_corr_cm docstring:
-        Returns a dictionary of antenna status flags. Keys of returned dictionaries are
-        of the form "<antenna number>:"<e|n>". Values of this dictionary are status key/val pairs.
+    Parameters
+    ---------
+    corr_cm : hera_corr_cm.HeraCorrCM object
+        HeraCorrCM object to use. If None, this function will make a new one.
+    correlator_redis_address : str
+        Address of redis database (only used if corr_cm is None)
 
-        These keys are:
-            adc_mean (float)  : Mean ADC value (in ADC units)
-            adc_rms (float)   : RMS ADC value (in ADC units)
-            adc_power (float) : Mean ADC power (in ADC units squared)
-            f_host (str)      : The hostname of the SNAP board to which this antenna is connected
-            host_ant_id (int) : The SNAP ADC channel number (0-7) to which this antenna is connected
-            pam_atten (int)   : PAM attenuation setting for this antenna (dB)
-            pam_power (float) : PAM power sensor reading for this antenna (dBm)
-            eq_coeffs (list of floats) : Digital EQ coefficients for this antenna
-            timestamp (datetime) : Asynchronous timestamp that these status entries were gathered
+    Returns
+    -------
+    dict
+        from hera_corr_cm docstring:
+            Returns a dictionary of antenna status flags. Keys of returned dictionaries are
+            of the form "<antenna number>:"<e|n>". Values of this dictionary are status key/val pairs.
 
-            Unknown values return the string "None"
+            These keys are:
+                adc_mean (float)  : Mean ADC value (in ADC units)
+                adc_rms (float)   : RMS ADC value (in ADC units)
+                adc_power (float) : Mean ADC power (in ADC units squared)
+                f_host (str)      : The hostname of the SNAP board to which this antenna is connected
+                host_ant_id (int) : The SNAP ADC channel number (0-7) to which this antenna is connected
+                pam_atten (int)   : PAM attenuation setting for this antenna (dB)
+                pam_power (float) : PAM power sensor reading for this antenna (dBm)
+                eq_coeffs (list of floats) : Digital EQ coefficients for this antenna
+                timestamp (datetime) : Asynchronous timestamp that these status entries were gathered
+
+                Unknown values return the string "None"
     """
     import hera_corr_cm
 
-    corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+    if corr_cm is None:
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     return corr_cm.get_ant_status()
 
 
-def create_antenna_status(correlator_redis_address=DEFAULT_REDIS_ADDRESS,
+def create_antenna_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS,
                           ant_status_dict=None):
     """
     Return a list of antenna status objects with data from the correlator.
@@ -710,7 +802,8 @@ def create_antenna_status(correlator_redis_address=DEFAULT_REDIS_ADDRESS,
     """
 
     if ant_status_dict is None:
-        ant_status_dict = _get_ant_status(correlator_redis_address=correlator_redis_address)
+        ant_status_dict = _get_ant_status(corr_cm=corr_cm,
+                                          correlator_redis_address=correlator_redis_address)
 
     ant_status_list = []
     for antkey, ant_dict in six.iteritems(ant_status_dict):

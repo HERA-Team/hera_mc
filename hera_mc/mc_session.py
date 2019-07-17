@@ -52,6 +52,12 @@ class MCSession(Session):
         db_time = Time(db_timestamp)
         return db_time
 
+    def add_corr_obj(self):
+        import hera_corr_cm
+
+        if not hasattr(self, 'corr_obj'):
+            self.corr_obj = hera_corr_cm.HeraCorrCM()
+
     def _write_query_to_file(self, query, table_class, filename=None):
         '''
         A helper method to write out query results to a file.
@@ -1955,7 +1961,8 @@ class MCSession(Session):
         from .correlator import _get_control_state, CorrelatorControlState
 
         if corr_state_dict is None:
-            corr_state_dict = _get_control_state()
+            self.add_corr_obj()
+            corr_state_dict = _get_control_state(corr_cm=self.corr_obj)
 
         corr_state_list = []
         for state_type, dict in six.iteritems(corr_state_dict):
@@ -2146,7 +2153,8 @@ class MCSession(Session):
         from .correlator import _get_config, CorrelatorConfigFile, CorrelatorConfigStatus
 
         if config_state_dict is None:
-            config_state_dict = _get_config()
+            self.add_corr_obj()
+            config_state_dict = _get_config(corr_cm=self.corr_obj)
 
         time = config_state_dict['time']
         config = config_state_dict['config']
@@ -2448,7 +2456,8 @@ class MCSession(Session):
                         starttimes.append(obj.starttime_sec + obj.starttime_ms / 1000.)
                     next_start_time = np.min(np.array(starttimes))
             else:
-                next_start_time = corr._get_next_start_time()
+                self.add_corr_obj()
+                next_start_time = corr._get_next_start_time(corr_cm=self.corr_obj)
 
             if next_start_time is not None:
                 if not overwrite_take_data:
@@ -2497,7 +2506,8 @@ class MCSession(Session):
                 raise ValueError('config_file cannot be specified if command is not "update_config"')
 
             if not testing:
-                integration_time = corr._get_integration_time(acclen_spectra)
+                self.add_corr_obj()
+                integration_time = corr._get_integration_time(acclen_spectra, corr_cm=self.corr_obj)
             else:
                 # based on default values in hera_corr_cm
                 integration_time = acclen_spectra * ((2.0 * 16384) / 500e6)
@@ -2572,15 +2582,14 @@ class MCSession(Session):
                 raise ValueError('config_file cannot be specified if command is not "update_config"')
 
         if not dryrun:  # pragma: no cover
-            import hera_corr_cm
+            self.add_corr_obj()
 
-            corr_controller = hera_corr_cm.HeraCorrCM()
             if command == 'take_data':
                 # the correlator starttime can be different from the commanded
                 # time by as much as 134 ms
                 # the call to hera_corr_cm returns the actual start time (in unix format)
                 starttime_used_unix = \
-                    getattr(corr_controller, corr.command_dict[command])(starttime, duration, acclen, tag=tag)
+                    getattr(self.corr_obj, corr.command_dict[command])(starttime, duration, acclen, tag=tag)
                 starttime_used = Time(starttime_used_unix, format='unix')
 
                 starttime_diff_sec = starttime.gps - starttime_used.gps
@@ -2588,9 +2597,9 @@ class MCSession(Session):
                     warnings.warn('Time difference between commanded and accepted '
                                   'start time is: {tdiff} sec'.format(tdiff=starttime_diff_sec))
             elif command == 'update_config':
-                getattr(corr_controller, corr.command_dict[command])(config_file)
+                getattr(self.corr_obj, corr.command_dict[command])(config_file)
             else:
-                getattr(corr_controller, corr.command_dict[command])
+                getattr(self.corr_obj, corr.command_dict[command])
 
             self.add(command_obj)
             self.commit()
@@ -2780,7 +2789,8 @@ class MCSession(Session):
                                  SNAPConfigVersion)
 
         if corr_snap_version_dict is None:
-            corr_snap_version_dict = _get_corr_versions()
+            self.add_corr_obj()
+            corr_snap_version_dict = _get_corr_versions(corr_cm=self.corr_obj)
 
         corr_version_list = []
         snap_version_list = []
@@ -3005,7 +3015,8 @@ class MCSession(Session):
         from .correlator import _get_snap_status, SNAPStatus
 
         if snap_status_dict is None:
-            snap_status_dict = _get_snap_status()
+            self.add_corr_obj()
+            snap_status_dict = _get_snap_status(corr_cm=self.corr_obj)
 
         snap_status_list = []
         for hostname, snap_dict in six.iteritems(snap_status_dict):
@@ -3176,7 +3187,9 @@ class MCSession(Session):
         """
         from .correlator import create_antenna_status, AntennaStatus
 
-        antenna_status_list = create_antenna_status(ant_status_dict=ant_status_dict)
+        self.add_corr_obj()
+        antenna_status_list = create_antenna_status(corr_cm=self.corr_obj,
+                                                    ant_status_dict=ant_status_dict)
 
         if testing:
             return antenna_status_list
