@@ -3214,8 +3214,12 @@ class MCSession(Session):
         """
         from .correlator import create_antenna_status, AntennaStatus
 
-        self.add_corr_obj()
-        antenna_status_list = create_antenna_status(corr_cm=self.corr_obj,
+        if ant_status_dict is None:
+            self.add_corr_obj()
+            corr_cm = self.corr_obj
+        else:
+            corr_cm = None
+        antenna_status_list = create_antenna_status(corr_cm=corr_cm,
                                                     ant_status_dict=ant_status_dict)
 
         if testing:

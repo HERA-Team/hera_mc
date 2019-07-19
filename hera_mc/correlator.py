@@ -12,6 +12,7 @@ from __future__ import absolute_import, division, print_function
 
 import six
 from math import floor
+import numpy as np
 from astropy.time import Time
 from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String, ForeignKey, ForeignKeyConstraint
 
@@ -785,8 +786,8 @@ class AntennaStatus(MCDeclarativeBase):
                    pam_power=pam_power, pam_voltage=pam_voltage,
                    pam_current=pam_current, pam_id=pam_id, fem_voltage=fem_voltage,
                    fem_current=fem_current, fem_id=fem_id, fem_temp=fem_temp,
-                   eq_coeffs=eq_coeffs_string, histogram_bin_centers=histogram_bin_centers,
-                   histogram=histogram)
+                   eq_coeffs=eq_coeffs_string, histogram_bin_centers=histogram_bin_string,
+                   histogram=histogram_string)
 
 
 def _get_ant_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
@@ -836,6 +837,30 @@ def _get_ant_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS
     return corr_cm.get_ant_status()
 
 
+def _pam_fem_serial_list_to_string(serial_number_list):
+    """
+    Convert the native FEM/PAM Bytewise serial number to a string
+
+    Parameters
+    ----------
+    serial_number_list : list of ints
+        Bytewise serial number of a FEM or PAM
+
+    Returns
+    -------
+    str
+        decoded string serial number
+    """
+    serial_str = ''
+    for int_val in serial_number_list:
+        hex_val = hex(int_val)[2:]
+        # str_val = bytes.fromhex(hex_val).decode('ascii')
+        str_val = hex_val
+        serial_str += str_val
+
+    return serial_str
+
+
 def create_antenna_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS,
                           ant_status_dict=None):
     """
@@ -866,7 +891,7 @@ def create_antenna_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_A
         # any entry other than timestamp can be the string 'None'
         # need to convert those to a None type
         for key, val in six.iteritems(ant_dict):
-            if val == 'None':
+            if val == 'None' or (isinstance(val, float) and np.isnan(val)):
                 ant_dict[key] = None
 
         snap_hostname = ant_dict['f_host']
@@ -878,14 +903,24 @@ def create_antenna_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_A
         pam_power = ant_dict['pam_power']
         pam_voltage = ant_dict['pam_voltage']
         pam_current = ant_dict['pam_current']
-        pam_id = ant_dict['pam_id']
+        if ant_dict['pam_id'] is not None:
+            pam_id = _pam_fem_serial_list_to_string(ant_dict['pam_id'])
+        else:
+            pam_id = None
         fem_voltage = ant_dict['fem_voltage']
         fem_current = ant_dict['fem_current']
-        fem_id = ant_dict['fem_id']
+        if ant_dict['fem_id'] is not None:
+            fem_id = _pam_fem_serial_list_to_string(ant_dict['fem_id'])
+        else:
+            fem_id = None
         fem_temp = ant_dict['fem_temp']
         eq_coeffs = ant_dict['eq_coeffs']
-        histogram_bin_centers = ant_dict['histogram'][0]
-        histogram = ant_dict['histogram'][1]
+        if ant_dict['histogram'] is not None:
+            histogram_bin_centers = ant_dict['histogram'][0]
+            histogram = ant_dict['histogram'][1]
+        else:
+            histogram_bin_centers = None
+            histogram = None
 
         ant_status_list.append(
             AntennaStatus.create(time, antenna_number, antenna_feed_pol,
