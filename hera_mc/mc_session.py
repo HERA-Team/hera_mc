@@ -2775,14 +2775,18 @@ class MCSession(Session):
         ------------
         corr_snap_version_dict: dict
             A dict containing info as in the return dict from corr._get_corr_versions() for
-            testing purposes. If None, _get_corr_versions() is called. Default: None
+            testing purposes. If None, _get_corr_versions() is called.
         testing: boolean
             If true, don't add a record of it to the database and return the list of
-            AntennaStatus objects. Default False.
+            CorrelatorSoftwareVersions, CorrelatorConfigFile, CorrelatorConfigStatus and
+            SNAPConfigVersion objects.
 
         Returns:
         --------
-        Optionally returns the list of AntennaStatus objects (if testing is True)
+        list of objects, optional
+            Optionally returns the list of CorrelatorSoftwareVersions,
+            CorrelatorConfigFile, CorrelatorConfigStatus and
+            SNAPConfigVersion objects (if testing is True)
 
         """
         from .correlator import (_get_corr_versions, CorrelatorSoftwareVersions,
@@ -3068,7 +3072,10 @@ class MCSession(Session):
 
     def add_antenna_status(self, time, antenna_number, antenna_feed_pol,
                            snap_hostname, snap_channel_number, adc_mean, adc_rms,
-                           adc_power, pam_atten, pam_power, eq_coeffs):
+                           adc_power, pam_atten, pam_power, pam_voltage,
+                           pam_current, pam_id, fem_voltage, fem_current, fem_id,
+                           fem_temp, eq_coeffs, histogram_bin_centers,
+                           histogram):
         """
         Add new antenna status data to the M&C database.
 
@@ -3098,17 +3105,37 @@ class MCSession(Session):
             PAM attenuation setting for this antenna, in dB
         pam_power: float
             PAM power sensor reading for this antenna, in dBm
-        eq_coeffs: list(float)
+        pam_voltage : float
+            PAM voltage sensor reading for this antenna, in Volts
+        pam_current : float
+            PAM current sensor reading for this antenna, in Amps
+        pam_id : str
+            serial number of this PAM
+        fem_voltage : float
+            FEM voltage sensor reading for this antenna, in Volts
+        fem_current : float
+            FEM current sensor reading for this antenna, in Amps
+        fem_id : str
+            serial number of this FEM
+        fem_temp : float
+            EM temperature sensor reading for this antenna in degrees Celsius
+        eq_coeffs : list of float
             Digital EQ coefficients, used for keeping the bit occupancy in the
             correct range, for this antenna, list of floats. Note this these are
             not divided out anywhere in the DSP chain (!).
+        histogram_bin_centers : list of int
+            ADC histogram bin centers
+        histogram : list of int
+            ADC histogram counts
         """
         from .correlator import AntennaStatus
 
         self.add(AntennaStatus.create(time, antenna_number, antenna_feed_pol,
                                       snap_hostname, snap_channel_number, adc_mean,
                                       adc_rms, adc_power, pam_atten, pam_power,
-                                      eq_coeffs))
+                                      pam_voltage, pam_current, pam_id, fem_voltage,
+                                      fem_current, fem_id, fem_temp, eq_coeffs,
+                                      histogram_bin_centers, histogram))
 
     def get_antenna_status(self, most_recent=None, starttime=None, stoptime=None,
                            antenna_number=None, write_to_file=False, filename=None):
