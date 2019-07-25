@@ -107,7 +107,16 @@ ant_status_example_dict = {
             'adc_power': 9.080917358398438,
             'pam_atten': 0,
             'pam_power': -13.349140985640002,
-            'eq_coeffs': (np.zeros((1024)) + 56.921875).tolist()},
+            'pam_voltage': 10.248,
+            'pam_current': 0.6541,
+            'pam_id': [112, 217, 32, 59, 1, 0, 0, 14],
+            'fem_voltage': 6.496,
+            'fem_current': 0.5627000000000001,
+            'fem_id': [0, 168, 19, 212, 51, 51, 255, 255],
+            'fem_temp': 26.327341308593752,
+            'eq_coeffs': (np.zeros((1024)) + 56.921875).tolist(),
+            'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
+                          (np.zeros((256)) + 10).tolist()]},
     '31:n': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
              'f_host': 'heraNode4Snap3',
              'host_ant_id': 7,
@@ -116,7 +125,16 @@ ant_status_example_dict = {
              'adc_power': 272.0955810546875,
              'pam_atten': 0,
              'pam_power': -32.03119784856,
-             'eq_coeffs': (np.zeros((1024)) + 73.46875).tolist()}}
+             'pam_voltage': 10.268,
+             'pam_current': 0.6695000000000001,
+             'pam_id': [112, 84, 143, 59, 1, 0, 0, 242],
+             'fem_voltage': float('nan'),
+             'fem_current': float('nan'),
+             'fem_id': [0, 168, 19, 212, 51, 51, 255, 255],
+             'fem_temp': 27.828854980468755,
+             'eq_coeffs': (np.zeros((1024)) + 73.46875).tolist(),
+             'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
+                           (np.zeros((256)) + 12).tolist()]}}
 
 ant_status_nones_example_dict = {
     '4:e': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
@@ -127,7 +145,16 @@ ant_status_nones_example_dict = {
             'adc_power': 'None',
             'pam_atten': 'None',
             'pam_power': 'None',
-            'eq_coeffs': 'None'}}
+            'eq_coeffs': 'None',
+            'pam_voltage': 'None',
+            'pam_current': 'None',
+            'pam_id': 'None',
+            'fem_voltage': 'None',
+            'fem_current': 'None',
+            'fem_id': 'None',
+            'fem_temp': 'None',
+            'eq_coeffs': 'None',
+            'histogram': 'None'}}
 
 
 def test_py3_hashing():
@@ -1418,12 +1445,23 @@ class TestAntennaStatus(TestHERAMC):
 
         t_prog = Time('2016-01-05 20:00:00', scale='utc')
         eq_coeffs = (np.zeros((5)) + 56.921875).tolist()
+        histogram_bins = [-4, -3, -2, -1, 0, 1, 2, 3]
+        histogram = [0, 3, 6, 10, 12, 8, 4, 0]
+        pam_id_list = [112, 217, 32, 59, 1, 0, 0, 14]
+        pam_id = ''.join([hex(i)[2:] for i in pam_id_list])
+        fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
+        fem_id = ''.join([hex(i)[2:] for i in fem_id_list])
         self.test_session.add_antenna_status(t1, 4, 'e', 'heraNode23Snap1', 3,
                                              -0.5308380126953125, 3.0134560488579285,
                                              9.080917358398438, 0, -13.349140985640002,
-                                             eq_coeffs)
+                                             10.248, 0.6541, pam_id, 6.496,
+                                             0.5627000000000001, fem_id,
+                                             26.327341308593752, eq_coeffs,
+                                             histogram_bins, histogram)
 
         eq_coeffs_string = '[56.921875,56.921875,56.921875,56.921875,56.921875]'
+        histogram_bin_string = '[-4,-3,-2,-1,0,1,2,3]'
+        histogram_string = '[0,3,6,10,12,8,4,0]'
         expected = corr.AntennaStatus(time=int(floor(t1.gps)), antenna_number=4,
                                       antenna_feed_pol='e',
                                       snap_hostname='heraNode23Snap1',
@@ -1432,7 +1470,16 @@ class TestAntennaStatus(TestHERAMC):
                                       adc_rms=3.0134560488579285,
                                       adc_power=9.080917358398438, pam_atten=0,
                                       pam_power=-13.349140985640002,
-                                      eq_coeffs=eq_coeffs_string)
+                                      pam_voltage=10.248,
+                                      pam_current=0.6541,
+                                      pam_id=pam_id,
+                                      fem_voltage=6.496,
+                                      fem_current=0.5627000000000001,
+                                      fem_id=fem_id,
+                                      fem_temp=26.327341308593752,
+                                      eq_coeffs=eq_coeffs_string,
+                                      histogram_bin_centers=histogram_bin_string,
+                                      histogram=histogram_string)
 
         result = self.test_session.get_antenna_status(starttime=t1 - TimeDelta(3.0, format='sec'))
         self.assertEqual(len(result), 1)
@@ -1440,10 +1487,19 @@ class TestAntennaStatus(TestHERAMC):
         self.assertTrue(result.isclose(expected))
 
         eq_coeffs = (np.zeros((5)) + 73.46875).tolist()
+        histogram_bins = [-4, -3, -2, -1, 0, 1, 2, 3]
+        histogram = [0, 3, 6, 10, 12, 8, 4, 0]
+        pam_id_list = [112, 84, 143, 59, 1, 0, 0, 242]
+        pam_id = ''.join([hex(i)[2:] for i in pam_id_list])
+        fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
+        fem_id = ''.join([hex(i)[2:] for i in fem_id_list])
         self.test_session.add_antenna_status(t2, 31, 'n', 'heraNode4Snap3', 7,
                                              -0.4805450439453125, 16.495319974304454,
                                              272.0955810546875, 0, -32.03119784856,
-                                             eq_coeffs)
+                                             10.268, 0.6695000000000001, pam_id,
+                                             None, None, fem_id,
+                                             27.828854980468755, eq_coeffs,
+                                             histogram_bins, histogram)
 
         result = self.test_session.get_antenna_status(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                       antenna_number=4)
@@ -1457,6 +1513,8 @@ class TestAntennaStatus(TestHERAMC):
         self.assertTrue(result_most_recent.isclose(expected))
 
         eq_coeffs_string = '[73.46875,73.46875,73.46875,73.46875,73.46875]'
+        histogram_bin_string = '[-4,-3,-2,-1,0,1,2,3]'
+        histogram_string = '[0,3,6,10,12,8,4,0]'
         expected = corr.AntennaStatus(time=int(floor(t2.gps)), antenna_number=31,
                                       antenna_feed_pol='n',
                                       snap_hostname='heraNode4Snap3',
@@ -1465,12 +1523,24 @@ class TestAntennaStatus(TestHERAMC):
                                       adc_rms=16.495319974304454,
                                       adc_power=272.0955810546875, pam_atten=0,
                                       pam_power=-32.03119784856,
-                                      eq_coeffs=eq_coeffs_string)
+                                      pam_voltage=10.268,
+                                      pam_current=0.6695000000000001,
+                                      pam_id=pam_id,
+                                      fem_voltage=None,
+                                      fem_current=None,
+                                      fem_id=fem_id,
+                                      fem_temp=27.828854980468755,
+                                      eq_coeffs=eq_coeffs_string,
+                                      histogram_bin_centers=histogram_bin_string,
+                                      histogram=histogram_string)
 
         result = self.test_session.get_antenna_status(starttime=t1 - TimeDelta(3.0, format='sec'),
                                                       antenna_number=31)
         self.assertEqual(len(result), 1)
         result = result[0]
+        print(result.fem_voltage)
+        print(type(result.fem_voltage))
+        print(type(expected.fem_voltage))
         self.assertTrue(result.isclose(expected))
 
         result_most_recent = self.test_session.get_antenna_status(antenna_number=31)
@@ -1501,17 +1571,39 @@ class TestAntennaStatus(TestHERAMC):
 
         eq_coeffs_str = [str(val) for val in (np.zeros((1024)) + 56.921875).tolist()]
         eq_coeffs_string = '[' + ','.join(eq_coeffs_str) + ']'
+
+        histogram_bin_str = [str(val) for val in np.arange(-128, 182, dtype=np.int).tolist()]
+        histogram_bin_string = '[' + ','.join(histogram_bin_str) + ']'
+        histogram_str = [str(val) for val in (np.zeros((256)) + 10).tolist()]
+        histogram_string = '[' + ','.join(histogram_str) + ']'
+        pam_id_list = [112, 217, 32, 59, 1, 0, 0, 14]
+        pam_id = ''.join([hex(i)[2:] for i in pam_id_list])
+        fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
+        fem_id = ''.join([hex(i)[2:] for i in fem_id_list])
         expected = corr.AntennaStatus(time=int(floor(t1.gps)), antenna_number=4,
                                       antenna_feed_pol='e',
                                       snap_hostname='heraNode23Snap1',
                                       snap_channel_number=3,
                                       adc_mean=-0.5308380126953125,
                                       adc_rms=3.0134560488579285,
-                                      adc_power=9.080917358398438, pam_atten=0,
+                                      adc_power=9.080917358398438,
+                                      pam_atten=0,
                                       pam_power=-13.349140985640002,
-                                      eq_coeffs=eq_coeffs_string)
+                                      pam_voltage=10.248,
+                                      pam_current=0.6541,
+                                      pam_id=pam_id,
+                                      fem_voltage=6.496,
+                                      fem_current=0.5627000000000001,
+                                      fem_id=fem_id,
+                                      fem_temp=26.327341308593752,
+                                      eq_coeffs=eq_coeffs_string,
+                                      histogram_bin_centers=histogram_bin_string,
+                                      histogram=histogram_string)
+
         self.assertEqual(len(result), 1)
         result = result[0]
+        print(result.fem_id)
+        print(expected.fem_id)
         self.assertTrue(result.isclose(expected))
 
         result_most_recent = self.test_session.get_antenna_status(antenna_number=4)
@@ -1524,6 +1616,14 @@ class TestAntennaStatus(TestHERAMC):
 
         eq_coeffs_str = [str(val) for val in (np.zeros((1024)) + 73.46875).tolist()]
         eq_coeffs_string = '[' + ','.join(eq_coeffs_str) + ']'
+        histogram_bin_str = [str(val) for val in np.arange(-128, 182, dtype=np.int).tolist()]
+        histogram_bin_string = '[' + ','.join(histogram_bin_str) + ']'
+        histogram_str = [str(val) for val in (np.zeros((256)) + 12).tolist()]
+        histogram_string = '[' + ','.join(histogram_str) + ']'
+        pam_id_list = [112, 84, 143, 59, 1, 0, 0, 242]
+        pam_id = ''.join([hex(i)[2:] for i in pam_id_list])
+        fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
+        fem_id = ''.join([hex(i)[2:] for i in fem_id_list])
         expected = corr.AntennaStatus(time=int(floor(t1.gps)), antenna_number=31,
                                       antenna_feed_pol='n',
                                       snap_hostname='heraNode4Snap3',
@@ -1532,7 +1632,17 @@ class TestAntennaStatus(TestHERAMC):
                                       adc_rms=16.495319974304454,
                                       adc_power=272.0955810546875, pam_atten=0,
                                       pam_power=-32.03119784856,
-                                      eq_coeffs=eq_coeffs_string)
+                                      pam_voltage=10.268,
+                                      pam_current=0.6695000000000001,
+                                      pam_id=pam_id,
+                                      fem_voltage=None,
+                                      fem_current=None,
+                                      fem_id=fem_id,
+                                      fem_temp=27.828854980468755,
+                                      eq_coeffs=eq_coeffs_string,
+                                      histogram_bin_centers=histogram_bin_string,
+                                      histogram=histogram_string)
+
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
@@ -1553,7 +1663,12 @@ class TestAntennaStatus(TestHERAMC):
                                       snap_hostname=None, snap_channel_number=None,
                                       adc_mean=None, adc_rms=None,
                                       adc_power=None, pam_atten=None,
-                                      pam_power=None, eq_coeffs=None)
+                                      pam_power=None, pam_voltage=None,
+                                      pam_current=None, pam_id=None,
+                                      fem_voltage=None, fem_current=None,
+                                      fem_id=None, fem_temp=None, eq_coeffs=None,
+                                      histogram_bin_centers=None, histogram=None)
+
         self.assertEqual(len(result), 1)
         result = result[0]
         self.assertTrue(result.isclose(expected))
@@ -1562,15 +1677,27 @@ class TestAntennaStatus(TestHERAMC):
         t1 = Time('2016-01-10 01:15:23', scale='utc')
 
         eq_coeffs = (np.zeros((5)) + 56.921875).tolist()
+        histogram_bins = [-4, -3, -2, -1, 0, 1, 2, 3]
+        histogram = [0, 3, 6, 10, 12, 8, 4, 0]
+        pam_id_list = [112, 217, 32, 59, 1, 0, 0, 14]
+        pam_id = ''.join([hex(i)[2:] for i in pam_id_list])
+        fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
+        fem_id = ''.join([hex(i)[2:] for i in fem_id_list])
         self.assertRaises(ValueError, self.test_session.add_antenna_status,
                           'foo', 4, 'e', 'heraNode23Snap1', 3, -0.5308380126953125,
                           3.0134560488579285, 9.080917358398438, 0,
-                          -13.349140985640002, eq_coeffs)
+                          -13.349140985640002, 10.248, 0.6541, pam_id,
+                          6.496, 0.5627000000000001, fem_id,
+                          26.327341308593752, eq_coeffs,
+                          histogram_bins, histogram)
 
         self.assertRaises(ValueError, self.test_session.add_antenna_status,
                           t1, 4, 'x', 'heraNode23Snap1', 3, -0.5308380126953125,
                           3.0134560488579285, 9.080917358398438, 0,
-                          -13.349140985640002, eq_coeffs)
+                          -13.349140985640002, 10.248, 0.6541, pam_id,
+                          6.496, 0.5627000000000001, fem_id,
+                          26.327341308593752, eq_coeffs,
+                          histogram_bins, histogram)
 
     @unittest.skipIf(not is_onsite(), 'This test only works on site')
     def test_site_add_antenna_status_from_corrcm(self):
