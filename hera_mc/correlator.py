@@ -851,14 +851,17 @@ def _pam_fem_serial_list_to_string(serial_number_list):
     str
         decoded string serial number
     """
-    serial_str = ''
-    for int_val in serial_number_list:
-        hex_val = hex(int_val)[2:]
-        # str_val = bytes.fromhex(hex_val).decode('ascii')
-        str_val = hex_val
-        serial_str += str_val
+    try:
+        serial_str = ''
+        for int_val in serial_number_list:
+            hex_val = hex(int_val)[2:]
+            # str_val = bytes.fromhex(hex_val).decode('ascii')
+            str_val = hex_val
+            serial_str += str_val
 
-    return serial_str
+        return serial_str
+    except Exception:
+        return None
 
 
 def create_antenna_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS,
@@ -903,13 +906,13 @@ def create_antenna_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_A
         pam_power = ant_dict['pam_power']
         pam_voltage = ant_dict['pam_voltage']
         pam_current = ant_dict['pam_current']
-        if ant_dict['pam_id'] is not None:
+        if ant_dict['pam_id'] is not None and ant_dict['pam_id'] != -1:
             pam_id = _pam_fem_serial_list_to_string(ant_dict['pam_id'])
         else:
             pam_id = None
         fem_voltage = ant_dict['fem_voltage']
         fem_current = ant_dict['fem_current']
-        if ant_dict['fem_id'] is not None:
+        if ant_dict['fem_id'] is not None and ant_dict['fem_id'] != -1:
             fem_id = _pam_fem_serial_list_to_string(ant_dict['fem_id'])
         else:
             fem_id = None
