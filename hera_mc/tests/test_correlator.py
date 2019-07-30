@@ -317,7 +317,7 @@ class TestCorrelatorCommandState(TestHERAMC):
                           corr_state_dict=bad_corr_state_dict, testing=True)
 
     @unittest.skipIf(not is_onsite(), 'This test only works on site')
-    def test_add_corr_command_state_from_corrcm(self):
+    def test_add_corr_control_state_from_corrcm(self):
 
         self.test_session.add_correlator_control_state_from_corrcm()
         result = self.test_session.get_correlator_control_state(
@@ -1205,7 +1205,7 @@ class TestCorrelatorSNAPVersions(TestHERAMC):
         self.assertTrue(result[1].isclose(expected))
 
     @unittest.skipIf(not is_onsite(), 'This test only works on site')
-    def test_add_corr_command_state_from_corrcm(self):
+    def test_add_corr_snap_versions_from_corrcm(self):
 
         self.test_session.add_corr_snap_versions_from_corrcm()
 
