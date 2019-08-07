@@ -130,6 +130,13 @@ class TestParts(TestHERAMC):
                                      'Testing', 'library_file')
         located = self.h.get_part_dossier(hpn=[self.test_part], rev=self.test_rev, at_date='now', exact_match=True)
         self.assertTrue(located[list(located.keys())[0]].part_info[0].comment == 'Testing')
+        test_info = cm_partconnect.PartInfo()
+        test_info.info(hpn='A', hpn_rev='B', posting_gpstime=1172530000, comment='Hey Hey!')
+        with captured_output() as (out, err):
+            print(test_info)
+        self.assertTrue('heraPartNumber id = A:B' in out.getvalue().strip())
+        test_info.gps2Time()
+        self.assertEqual(int(test_info.posting_date.gps), 1172530000)
 
     def test_add_new_parts(self):
         a_time = Time('2017-07-01 01:00:00', scale='utc')

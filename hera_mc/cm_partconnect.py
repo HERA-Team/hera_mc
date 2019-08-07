@@ -385,9 +385,9 @@ class PartInfo(MCDeclarativeBase):
     library_file = Column(String(256))
 
     def __repr__(self):
-        return '<heraPartNumber id = {self.hpn} comment = {self.comment}>'.format(self=self)
+        return '<heraPartNumber id = {self.hpn}:{self.hpn_rev} comment = {self.comment}>'.format(self=self)
 
-    def gps2Time():
+    def gps2Time(self):
         self.posting_date = Time(self.posting_gpstime, format='gps')
 
     def info(self, **kwargs):
