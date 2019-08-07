@@ -59,7 +59,7 @@ class TestParts(TestHERAMC):
                 [ntp, 'X', 'hpn_rev', 'X'],
                 [ntp, 'X', 'hptype', 'antenna'],
                 [ntp, 'X', 'start_gpstime', 1172530000]]
-        cm_partconnect.update_part(self.test_session, data, add_new_part=True)
+        cm_partconnect.update_part(self.test_session, data)
         located = self.h.get_part_dossier(hpn=[ntp], rev='X', at_date='now', exact_match=True)
         prkey = list(located.keys())[0]
         self.assertTrue(str(located[prkey]).startswith('NEW_TEST_PART:X'))
@@ -72,9 +72,9 @@ class TestParts(TestHERAMC):
         pt = self.h.get_part_type_for(self.test_part)
         self.assertTrue(pt == self.test_hptype)
 
-    def test_update_update(self):
+    def test_update_part(self):
         data = [[self.test_part, self.test_rev, 'hpn_rev', 'Z']]
-        cm_partconnect.update_part(self.test_session, data, add_new_part=False)
+        cm_partconnect.update_part(self.test_session, data)
         dtq = Time('2017-07-01 01:00:00', scale='utc')
         located = self.h.get_part_dossier(hpn=[self.test_part], rev='Z', at_date=dtq, exact_match=True)
         if len(list(located.keys())) == 1:
@@ -120,7 +120,7 @@ class TestParts(TestHERAMC):
     def test_add_new_parts(self):
         data = [['part_X', 'X', 'station', 'mfg_X']]
         p = cm_partconnect.Parts()
-        cm_partconnect.add_new_parts(self.test_session, p, data, Time('2017-07-01 01:00:00', scale='utc'), True)
+        cm_partconnect.add_new_parts(self.test_session, data, Time('2017-07-01 01:00:00', scale='utc'), True)
         located = self.h.get_part_dossier(hpn=['part_X'], rev='X', at_date=Time('2017-07-01 01:00:00'), exact_match=True)
         if len(list(located.keys())) == 1:
             self.assertTrue(located[list(located.keys())[0]].part.hpn == 'part_X')
