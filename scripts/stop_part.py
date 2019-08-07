@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2017 the HERA Collaboration
+# Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """
@@ -15,8 +15,6 @@ use the date.
 
 from __future__ import absolute_import, division, print_function
 
-import sys
-import copy
 import six
 
 from hera_mc import mc, cm_utils, cm_partconnect
@@ -39,9 +37,7 @@ if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-p', '--part', help="Part number", default=None)
     parser.add_argument('-r', '--rev', help='Revision', default=None)
-    parser.add_argument('--actually_do_it', help="Flag to actually do it, as "
-                        "opposed to printing out what it would do.",
-                        action='store_true')
+    parser.add_argument('--allow_override', help="Flag to allow override of existing value.", action='store_true')
     cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
@@ -55,4 +51,4 @@ if __name__ == '__main__':
 
     # Stop parts
     np = [[args.part, args.rev]]
-    cm_partconnect.stop_existing_parts(session, np, at_date, args.actually_do_it)
+    cm_partconnect.stop_existing_parts(session=session, hpnr_list=np, at_date=at_date, allow_override=args.allow_override)

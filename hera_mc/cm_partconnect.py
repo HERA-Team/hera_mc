@@ -1,5 +1,5 @@
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2016 the HERA Collaboration
+# Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """M&C logging of the parts and the connections between them.
@@ -9,7 +9,6 @@
 from __future__ import absolute_import, division, print_function
 
 import six
-from tabulate import tabulate
 from astropy.time import Time
 from sqlalchemy import (BigInteger, Column, Float, ForeignKey,
                         ForeignKeyConstraint, Integer, String,
@@ -67,7 +66,7 @@ class Parts(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def stop_existing_parts(session, hpnr_list, at_date, actually_do_it):
+def stop_existing_parts(session, hpnr_list, at_date, allow_override=False):
     """
     This adds stop times to the previous parts.
 
@@ -76,61 +75,95 @@ def stop_existing_parts(session, hpnr_list, at_date, actually_do_it):
     session:  db session to use
     hpnr_list:  list of lists containing hpn and revision number
     at_date:  date to use for stopping
-    actually_do_it:  boolean to allow the part to be stopped
+    allow_override: flag to allow reseting the stop time even if one exists.
     """
 
     stop_at = int(at_date.gps)
     data = []
+    close_session_when_done = False
+    if session is None:  # pragma: no cover
+        db = mc.connect_to_mc_db(None)
+        session = db.sessionmaker()
+        close_session_when_done = True
 
     for hpnr in hpnr_list:
-        print("Stopping part {}:{} at {}".format(hpnr[0], hpnr[1], str(at_date)))
+        existing = session.query(Parts).filter(
+            (func.upper(Parts.hpn) == hpnr[0].upper())
+            & (func.upper(Parts.hpn_rev) == hpnr[1].upper())).first()
+        if existing is None:
+            print("{}:{} is not found, so can't stop it.".format(hpnr[0], hpnr[1]))
+            continue
+        if existing.stop_gpstime is not None:
+            print("{}:{} already has a stop time ({})".format(hpnr[0], hpnr[1], existing.stop_gpstime))
+            if allow_override:
+                print("\tOverride enabled.   New value {}".format(stop_at))
+            else:
+                continue
+        else:
+            print("Stopping part {}:{} at {}".format(hpnr[0], hpnr[1], str(at_date)))
         data.append([hpnr[0], hpnr[1], 'stop_gpstime', stop_at])
 
-    if actually_do_it:
-        update_part(session, data, False)
-    else:
-        print("--Here's what would happen if you set the --actually_do_it flag:")
-        for d in data:
-            print('\t' + str(d))
+    update_part(session, data)
+    if close_session_when_done:  # pragma: no cover
+        session.close()
 
 
-def add_new_parts(session, p, new_part_list, at_date, actually_do_it):
+def add_new_parts(session, new_part_list, at_date, allow_restart=False):
     """
-    This adds the new parts.
+    This adds the new parts.  If a part is there and is stopped, it will log that info
+    and restart the part.  If it is there and is not stopped, it does nothing.
     Parameters:
     ------------
     session:  db session to use
-    p:  part object
-    hpnr_list:  list containing hpn and revision
+    new_part_list:  list containing hpn, revision and data
     at_date:  date to use for stopping
-    actually_do_it:  boolean to allow the part to be added
+    allow_restart: flag to allow the part to restarted if it already existed
     """
 
     start_at = int(at_date.gps)
     data = []
+    close_session_when_done = False
+    if session is None:  # pragma: no cover
+        db = mc.connect_to_mc_db(None)
+        session = db.sessionmaker()
+        close_session_when_done = True
 
     for hpnr in new_part_list:
-        p.part(hpn=hpnr[0], hpn_rev=hpnr[1], hptype=hpnr[2], manufacturer_number=hpnr[3])
-        print("Adding part {} at {}".format(p, str(at_date)))
-        data.append([p.hpn, p.hpn_rev, 'hpn', p.hpn])
-        data.append([p.hpn, p.hpn_rev, 'hpn_rev', p.hpn_rev])
-        data.append([p.hpn, p.hpn_rev, 'hptype', p.hptype])
-        data.append([p.hpn, p.hpn_rev, 'manufacturer_number', p.manufacturer_number])
-        data.append([p.hpn, p.hpn_rev, 'start_gpstime', start_at])
+        existing = session.query(Parts).filter(
+            (func.upper(Parts.hpn) == hpnr[0].upper())
+            & (func.upper(Parts.hpn_rev) == hpnr[1].upper())).first()
+        if existing is not None and existing.stop_gpstime is None:
+            print("No action. {}:{} already in database with no stop date".format(hpnr[0], hpnr[1]))
+            continue
+        this_data = []
+        this_data.append([hpnr[0], hpnr[1], 'hpn', hpnr[0]])
+        this_data.append([hpnr[0], hpnr[1], 'hpn_rev', hpnr[1]])
+        this_data.append([hpnr[0], hpnr[1], 'hptype', hpnr[2]])
+        this_data.append([hpnr[0], hpnr[1], 'manufacturer_number', hpnr[3]])
+        this_data.append([hpnr[0], hpnr[1], 'start_gpstime', start_at])
+        print_out = "starting part {}:{} at {}".format(hpnr[0], hpnr[1], str(at_date))
+        if existing is not None:
+            if allow_restart:
+                print_out = 're' + print_out
+                this_data.append([hpnr[0], hpnr[1], 'stop_gpstime', None])
+                comment = 'Restarting part.  Previous data {}'.format(existing)
+                add_part_info(session, hpn=hpnr[0], rev=hpnr[1], at_date=at_date, comment=comment, library_file=None)
+            else:
+                print_out = "No action. The request {} not an allowed part restart.".format(hpnr)
+                this_data = None
+        if this_data is not None:
+            data = data + this_data
+        print(print_out.capitalize())
 
-    if actually_do_it:
-        update_part(session, data, True)
-    else:
-        print("--Here's what would happen if you set the --actually_do_it flag:")
-        for d in data:
-            print('\t' + str(d))
+    update_part(session, data)
+    if close_session_when_done:  # pragma: no cover
+        session.close()
 
 
-def update_part(session=None, data=None, add_new_part=False):
+def update_part(session=None, data=None):
     """
-    update the database given a hera part number with columns/values.
-    adds part if add_new_part flag is true
-    use with caution -- should usually use in a script which will do datetime primary key
+    Update the database given a hera part number with columns/values.
+    This is a low-level module, generally called from somewhere else
 
     Parameters:
     ------------
@@ -139,13 +172,10 @@ def update_part(session=None, data=None, add_new_part=False):
         hpnN:  hera part number as primary key
         revN:  hera part number revision as primary key
         columnN:  column name(s)
-        values:  corresponding list of values
-    add_new_part:  boolean to allow a new part to be added
+        valueN:  corresponding list of values
     """
-
     data_dict = format_and_check_update_part_request(data)
     if data_dict is None:
-        print('Error: invalid update_part -- doing nothing.')
         return False
 
     close_session_when_done = False
@@ -161,30 +191,18 @@ def update_part(session=None, data=None, add_new_part=False):
                                                & (func.upper(Parts.hpn_rev) == rev_to_change.upper()))
         num_part = part_rec.count()
         if num_part == 0:
-            if add_new_part:
-                part = Parts()
-            else:
-                print("Error: ", dkey, " does not exist and add_new_part not enabled.")
-                part = None
+            part = Parts()
         elif num_part == 1:
-            if add_new_part:
-                print("Error: ", dkey, "exists and add_new_part is enabled.")
-                part = None
-            else:
-                part = part_rec.first()
-        else:
-            print("Error:  more than one of ", dkey, " exists (which should not happen).")
-            part = None
-        if part:
-            for d in dval:
-                try:
-                    setattr(part, d[2], d[3])
-                except AttributeError:
-                    print(d[2], 'does not exist as a field')
-                    continue
-            session.add(part)
-            session.commit()
-    cm_utils.log('cm_partconn part update', data_dict=data_dict)
+            part = part_rec.first()
+        for d in dval:
+            try:
+                setattr(part, d[2], d[3])
+            except AttributeError:
+                print(d[2], 'does not exist as a field')
+                continue
+        session.add(part)
+        session.commit()
+    cm_utils.log('cm_partconnect part update', data_dict=data_dict)
     if close_session_when_done:  # pragma: no cover
         session.close()
 
@@ -206,7 +224,7 @@ def format_and_check_update_part_request(request):
         columnN:  name of parts column
         valueN:  corresponding new value
     """
-    if request is None:
+    if request is None or len(request) == 0:
         return None
 
     # Split out and get first
@@ -386,16 +404,11 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
-    part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn.upper())
-                                           & (func.upper(Parts.hpn_rev) == rev.upper()))
-    if not part_rec.count():
-        print("FYI - {}:{} does not exist in parts database.".format(hpn, rev))
-        print("This is not a requirement, but you might want to consider adding it.")
 
     pi = PartInfo()
     pi.hpn = hpn
     pi.hpn_rev = rev
-    pi.posting_gpstime = cm_utils.get_astropytime(at_date).gps
+    pi.posting_gpstime = int(cm_utils.get_astropytime(at_date).gps)
     pi.comment = comment
     pi.library_file = library_file
     session.add(pi)
