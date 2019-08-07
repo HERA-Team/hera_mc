@@ -44,7 +44,7 @@ class Parts(MCDeclarativeBase):
     stop_gpstime = Column(BigInteger)
 
     def __repr__(self):
-        return ('<heraPartNumber id={self.hpn}{self.hpn_rev} type={self.hptype} :: {self.start_gpstime} - {self.stop_gpstime}>'
+        return ('<heraPartNumber id={self.hpn}:{self.hpn_rev} type={self.hptype} :: {self.start_gpstime} - {self.stop_gpstime}>'
                 .format(self=self))
 
     def gps2Time(self):
@@ -98,6 +98,7 @@ def stop_existing_parts(session, hpnr_list, at_date, allow_override=False):
             if allow_override:
                 print("\tOverride enabled.   New value {}".format(stop_at))
             else:
+                print("\tOverride not enabled.  No action.")
                 continue
         else:
             print("Stopping part {}:{} at {}".format(hpnr[0], hpnr[1], str(at_date)))
@@ -194,14 +195,18 @@ def update_part(session=None, data=None):
             part = Parts()
         elif num_part == 1:
             part = part_rec.first()
+        set_an_attrib = False
         for d in dval:
             try:
+                getattr(part, d[2])
                 setattr(part, d[2], d[3])
+                set_an_attrib = True
             except AttributeError:
                 print(d[2], 'does not exist as a field')
                 continue
-        session.add(part)
-        session.commit()
+        if set_an_attrib:
+            session.add(part)
+            session.commit()
     cm_utils.log('cm_partconnect part update', data_dict=data_dict)
     if close_session_when_done:  # pragma: no cover
         session.close()
@@ -218,9 +223,8 @@ def format_and_check_update_part_request(request):
     Parameters:
     ------------
     request:  hpn0:[rev0:]column0:value0,hpn1:[rev0]:]column1:value1,[...] or list
-        hpnN:  hera part number, first entry must have one, if absent propagate first
-        revN:  hera part revision number, if absent, propagate first, which, if
-                    absent, defaults to 'last'
+        hpnN:  hera part number (first entry must have one) if absent, propagate first
+        revN:  hera part revision number (first entry must have one) if absent, propagate first
         columnN:  name of parts column
         valueN:  corresponding new value
     """
@@ -237,20 +241,16 @@ def format_and_check_update_part_request(request):
     else:
         data_to_proc = request
     if len(data_to_proc[0]) == 4:
-        hpn0 = data_to_proc[0][0].upper()
-        rev0 = data_to_proc[0][1].upper()
-    elif len(data_to_proc[0]) == 3:
-        hpn0 = data_to_proc[0][0].upper()
-        rev0 = 'LAST'
+        hpn0 = data_to_proc[0][0]
+        rev0 = data_to_proc[0][1]
     else:
-        print('Error:  wrong format for first part update entry: ',
-              data_to_proc[0])
+        print('Error:  wrong format for first part update entry: ', data_to_proc[0])
         return None
     for d in data_to_proc:
         if len(d) == 4:
             pass
         elif len(d) == 3:
-            d.insert(1, 'LAST')
+            d.insert(1, rev0)
         elif len(d) == 2:
             d.insert(0, hpn0)
             d.insert(1, rev0)
