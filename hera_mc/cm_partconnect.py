@@ -508,7 +508,7 @@ def get_null_connection():
     return no_connect
 
 
-def stop_existing_connections_to_part(session, h, conn_list, at_date, actually_do_it):
+def stop_existing_connections_to_part(session, h, conn_list, at_date):
     """
     This adds stop times to the connections for parts listed in conn_list.  Use this method with
     caution, as it currently doesn't include much checking.  You probably should use the much
@@ -521,7 +521,6 @@ def stop_existing_connections_to_part(session, h, conn_list, at_date, actually_d
     h:  part handling object
     conn_list:  list containing parts to stop
     at_date:  date to stop
-    actually_do_it:  boolean to actually stop the part
     """
 
     stop_at = int(at_date.gps)
@@ -541,12 +540,7 @@ def stop_existing_connections_to_part(session, h, conn_list, at_date, actually_d
                         'stop_gpstime', stop_at]
             data.append(stopping)
 
-    if actually_do_it:
-        update_connection(session, data, False)
-    else:
-        print("--Here's what would happen if you set the --actually_do_it flag:")
-        for d in data:
-            print('\t' + str(d))
+    update_connection(session, data, False)
 
 
 def get_connection_key(c, p):
@@ -575,7 +569,7 @@ def get_connection_key(c, p):
     return return_key
 
 
-def stop_connections(session, conn_list, at_date, actually_do_it):
+def stop_connections(session, conn_list, at_date):
     """
     This adds a stop_date to the connections in conn_list
 
@@ -584,7 +578,6 @@ def stop_connections(session, conn_list, at_date, actually_do_it):
     Session:  db session to use
     conn_list:  list of lists with data [[upstream_part,rev,port,downstream_part,rev,port,start_gpstime],...]
     at_date:  date to stop connection
-    actually_do_it:  boolean to actually stop the part
     """
     stop_at = int(at_date.gps)
     data = []
@@ -598,15 +591,10 @@ def stop_connections(session, conn_list, at_date, actually_do_it):
         this_one.append(stop_at)
         data.append(this_one)
 
-    if actually_do_it:
-        update_connection(session, data, False)
-    else:
-        print("--Here's what would happen if you set the --actually_do_it flag:")
-        for d in data:
-            print('\t' + str(d))
+    update_connection(session, data, False)
 
 
-def add_new_connections(session, c, conn_list, at_date, actually_do_it):
+def add_new_connections(session, c, conn_list, at_date):
     """
     This uses a connection object to send data to the update_connection method
     to make a new connection
@@ -617,7 +605,6 @@ def add_new_connections(session, c, conn_list, at_date, actually_do_it):
     c:  connection handling object
     conn_list:  list containing parts to stop
     at_date:  date to stop
-    actually_do_it:  boolean to actually add the part
     """
     start_at = int(at_date.gps)
     data = []
@@ -650,12 +637,7 @@ def add_new_connections(session, c, conn_list, at_date, actually_do_it):
                      c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
                      'start_gpstime', c.start_gpstime])
 
-    if actually_do_it:
-        update_connection(session, data, True)
-    else:
-        print("--Here's what would happen if you set the --actually_do_it flag:")
-        for d in data:
-            print('\t' + str(d))
+    update_connection(session, data, True)
 
 
 def update_connection(session=None, data=None, add_new_connection=False):
