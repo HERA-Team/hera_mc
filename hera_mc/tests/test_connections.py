@@ -105,6 +105,10 @@ class TestConnections(TestHERAMC):
             self.h.show_connections(located, verbosity=2)
         self.assertTrue('new_test_part_up:A | up_and_out  | down_and_in | new_test_part_down:A' in out.getvalue().strip())
 
+    def test_get_null_connection(self):
+        nc = cm_partconnect.get_null_connection()
+        self.assertEqual(nc.upstream_part, cm_partconnect.no_connection_designator)
+
     def test_get_dossier(self):
         x = self.h.get_part_connection_dossier('test_part1', 'active', 'all', at_date='now', exact_match=True)
         y = list(x.keys())[0]
