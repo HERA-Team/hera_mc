@@ -337,6 +337,11 @@ class Handling:
             (func.upper(PC.Parts.hpn) == hpn.upper())).first()
         return part_query.hptype
 
+    def get_part_from_hpnrev(self, hpn, rev):
+        return self.session.query(PC.Parts).filter(
+            (func.upper(PC.Parts.hpn) == hpn.upper())
+            & (func.upper(PC.Parts.hpn_rev) == rev.upper())).first()
+
     def get_rev_part_dictionary(self, hpn, rev, at_date, exact_match):
         """
         This gets the list of hpn that match the rev -- the resulting dictionary
