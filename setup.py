@@ -9,9 +9,11 @@ import os
 import glob
 import io
 import json
+import sys
 from setuptools import setup
 
-from hera_mc import version
+sys.path.append('hera_mc')
+import version  # noqa
 
 
 data = [version.git_origin, version.git_hash, version.git_description, version.git_branch]

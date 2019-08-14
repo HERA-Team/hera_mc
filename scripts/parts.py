@@ -99,7 +99,7 @@ if __name__ == '__main__':
             duplicates = healthy.check_for_duplicate_connections()
         else:
             connected = healthy.check_for_existing_connection(hpn=args.hpn, rev=args.revision, port=args.port)
-            overlaps = cm_health.check_part_for_overlapping_revisions(hpn=args.hpn, session)
+            overlaps = cm_health.check_part_for_overlapping_revisions(hpn=args.hpn)
         sys.exit()
 
     if args.hpn is None and not (action_tag == 'pa' and args.notes):

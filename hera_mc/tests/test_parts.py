@@ -40,7 +40,6 @@ class TestParts(TestHERAMC):
         self.test_rev = 'Q'
         self.test_hptype = 'antenna'
         self.start_time = Time('2017-07-01 01:00:00', scale='utc')
-        self.now = cm_utils.get_astropytime('now')
         self.h = cm_handling.Handling(self.test_session)
 
         # Add a test part
@@ -59,7 +58,7 @@ class TestParts(TestHERAMC):
                 [ntp, 'X', 'hpn_rev', 'X'],
                 [ntp, 'X', 'hptype', 'antenna'],
                 [ntp, 'X', 'start_gpstime', 1172530000]]
-        cm_partconnect.update_part(self.test_session, data, add_new_part=True)
+        cm_partconnect.update_part(self.test_session, data)
         located = self.h.get_part_dossier(hpn=[ntp], rev='X', at_date='now', exact_match=True)
         prkey = list(located.keys())[0]
         self.assertTrue(str(located[prkey]).startswith('NEW_TEST_PART:X'))
@@ -72,15 +71,30 @@ class TestParts(TestHERAMC):
         pt = self.h.get_part_type_for(self.test_part)
         self.assertTrue(pt == self.test_hptype)
 
-    def test_update_update(self):
+    def test_update_part(self):
+        data = [[self.test_part, self.test_rev, 'not_an_attrib', 'Z']]
+        with captured_output() as (out, err):
+            cm_partconnect.update_part(self.test_session, data)
+        self.assertTrue('does not exist as a field' in out.getvalue().strip())
         data = [[self.test_part, self.test_rev, 'hpn_rev', 'Z']]
-        cm_partconnect.update_part(self.test_session, data, add_new_part=False)
+        cm_partconnect.update_part(self.test_session, data)
         dtq = Time('2017-07-01 01:00:00', scale='utc')
         located = self.h.get_part_dossier(hpn=[self.test_part], rev='Z', at_date=dtq, exact_match=True)
         if len(list(located.keys())) == 1:
             self.assertTrue(located[list(located.keys())[0]].part.hpn_rev == 'Z')
         else:
             self.assertFalse()
+
+    def test_format_and_check_update_part_request(self):
+        request = 'test_part:Q:hpn_rev:A'
+        x = cm_partconnect.format_and_check_update_part_request(request)
+        self.assertEqual(list(x.keys())[0], 'test_part:Q')
+        request = 'test_part:hpn_rev:A'
+        x = cm_partconnect.format_and_check_update_part_request(request)
+        self.assertEqual(x, None)
+        request = 'test_part:Q:hpn_rev:A,test_part:mfg:xxx,nope,another:one'
+        x = cm_partconnect.format_and_check_update_part_request(request)
+        self.assertEqual(x['test_part:Q'][2][3], 'one')
 
     def test_part_dossier(self):
         located = self.h.get_part_dossier(hpn=None, rev=None, at_date='now', sort_notes_by='part', exact_match=True)
@@ -116,16 +130,56 @@ class TestParts(TestHERAMC):
                                      'Testing', 'library_file')
         located = self.h.get_part_dossier(hpn=[self.test_part], rev=self.test_rev, at_date='now', exact_match=True)
         self.assertTrue(located[list(located.keys())[0]].part_info[0].comment == 'Testing')
+        test_info = cm_partconnect.PartInfo()
+        test_info.info(hpn='A', hpn_rev='B', posting_gpstime=1172530000, comment='Hey Hey!')
+        with captured_output() as (out, err):
+            print(test_info)
+        self.assertTrue('heraPartNumber id = A:B' in out.getvalue().strip())
+        test_info.gps2Time()
+        self.assertEqual(int(test_info.posting_date.gps), 1172530000)
 
     def test_add_new_parts(self):
+        a_time = Time('2017-07-01 01:00:00', scale='utc')
+        data = [[self.test_part, self.test_rev, self.test_hptype, 'xxx']]
+        with captured_output() as (out, err):
+            cm_partconnect.add_new_parts(self.test_session, data, a_time, True)
+        self.assertTrue("No action." in out.getvalue().strip())
+
+        cm_partconnect.stop_existing_parts(self.test_session, data, a_time, False)
+        with captured_output() as (out, err):
+            cm_partconnect.add_new_parts(self.test_session, data, a_time, False)
+        self.assertTrue("No action." in out.getvalue().strip())
+        with captured_output() as (out, err):
+            cm_partconnect.add_new_parts(self.test_session, data, a_time, True)
+        self.assertTrue("Restarting part test_part:q" in out.getvalue().strip())
+
         data = [['part_X', 'X', 'station', 'mfg_X']]
         p = cm_partconnect.Parts()
-        cm_partconnect.add_new_parts(self.test_session, p, data, Time('2017-07-01 01:00:00', scale='utc'), True)
-        located = self.h.get_part_dossier(hpn=['part_X'], rev='X', at_date=Time('2017-07-01 01:00:00'), exact_match=True)
+        p.part(test_attribute='test')
+        self.assertEqual(p.test_attribute, 'test')
+        cm_partconnect.add_new_parts(self.test_session, data, a_time, True)
+        located = self.h.get_part_dossier(hpn=['part_X'], rev='X', at_date=a_time, exact_match=True)
         if len(list(located.keys())) == 1:
             self.assertTrue(located[list(located.keys())[0]].part.hpn == 'part_X')
         else:
             self.assertFalse()
+
+    def test_stop_parts(self):
+        hpnr = [['test_part', 'Q']]
+        at_date = Time('2017-12-01 01:00:00', scale='utc')
+        cm_partconnect.stop_existing_parts(self.test_session, hpnr, at_date, allow_override=False)
+        p = self.h.get_part_from_hpnrev(hpnr[0][0], hpnr[0][1])
+        self.assertEqual(p.stop_gpstime, 1196125218)
+        with captured_output() as (out, err):
+            cm_partconnect.stop_existing_parts(self.test_session, hpnr, at_date, allow_override=False)
+        self.assertTrue("Override not enabled.  No action." in out.getvalue().strip())
+        with captured_output() as (out, err):
+            cm_partconnect.stop_existing_parts(self.test_session, hpnr, at_date, allow_override=True)
+        self.assertTrue("Override enabled.   New value 1196125218" in out.getvalue().strip())
+        hpnr = [['no_part', 'Q']]
+        with captured_output() as (out, err):
+            cm_partconnect.stop_existing_parts(self.test_session, hpnr, at_date, allow_override=False)
+        self.assertTrue("no_part:Q is not found, so can't stop it." in out.getvalue().strip())
 
     def test_cm_version(self):
         self.h.add_cm_version(cm_utils.get_astropytime('now'), 'Test-git-hash')
@@ -164,7 +218,7 @@ class TestParts(TestHERAMC):
         self.assertEqual(x[0], 1)
 
     def test_get_part_types(self):
-        at_date = self.now
+        at_date = cm_utils.get_astropytime('now')
         a = self.h.get_part_types('all', at_date)
         self.assertTrue('terminals' in a['feed']['output_ports'])
         with captured_output() as (out, err):

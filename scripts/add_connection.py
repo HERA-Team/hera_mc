@@ -45,9 +45,6 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--dnpart', help="Downstream part number", default=None)
     parser.add_argument('--dnrev', help='Downstream part revision', default=None)
     parser.add_argument('--dnport', help='Downstream input port', default=None)
-    parser.add_argument('--actually_do_it', help="Flag to actually do it, as "
-                        "opposed to printing out what it would do.",
-                        action='store_true')
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
@@ -85,4 +82,4 @@ if __name__ == '__main__':
                   .format(args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport))
         # Connect parts
         npc = [[args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport]]
-        cm_partconnect.add_new_connections(session, connect, npc, at_date, args.actually_do_it)
+        cm_partconnect.add_new_connections(session, connect, npc, at_date)

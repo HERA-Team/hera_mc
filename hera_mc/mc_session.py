@@ -52,6 +52,12 @@ class MCSession(Session):
         db_time = Time(db_timestamp)
         return db_time
 
+    def add_corr_obj(self):
+        import hera_corr_cm
+
+        if not hasattr(self, 'corr_obj'):
+            self.corr_obj = hera_corr_cm.HeraCorrCM()
+
     def _write_query_to_file(self, query, table_class, filename=None):
         '''
         A helper method to write out query results to a file.
@@ -194,18 +200,24 @@ class MCSession(Session):
         else:
             return query.all()
 
-    def _insert_ignoring_duplicates(self, table_class, obj_list):
+    def _insert_ignoring_duplicates(self, table_class, obj_list, update=False):
         """
         If the current database is PostgreSQL, this function will use a
-        special insertion method that will ignore records that are redundant
+        special insertion method that will ignore or update records that are redundant
         with ones already in the database. This makes it convenient to sample
-        the certain data (especially redis data) densely on qmaster.
+        the certain data (especially redis data) densely on qmaster or to
+        update an existing record.
 
-        Parameters:
-        table_class: class
+        Parameters
+        ----------
+        table_class : class
             Class specifying a table to insert into.
-        obj_list: list of objects
+        obj_list : list of objects
             list of objects (of class table_class) to insert into the table.
+        update : bool
+            If true, update the existing record with the new data, otherwise do
+            nothing (which is appropriate if the data is the same because of
+            dense sampling).
         """
         if self.bind.dialect.name == 'postgresql':
             from sqlalchemy import inspect
@@ -221,9 +233,22 @@ class MCSession(Session):
                 for col in inspect(obj).mapper.column_attrs:
                     values[col.expression.name] = getattr(obj, col.key)
 
-                # The special PostgreSQL insert statement lets us ignore
-                # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
-                stmt = insert(table_class).values(**values).on_conflict_do_nothing(index_elements=ies)
+                if update:
+                    # create dict of columns to update (everything other than the primary keys)
+                    update_dict = {}
+                    for col, val in six.iteritems(values):
+                        if col not in ies:
+                            update_dict[col] = val
+
+                    # The special PostgreSQL insert statement lets us update
+                    # existing rows via `ON CONFLICT ... DO UPDATE` syntax.
+                    stmt = insert(table_class).values(**values).on_conflict_do_update(
+                        index_elements=ies, set_=update_dict)
+                else:
+                    # The special PostgreSQL insert statement lets us ignore
+                    # existing rows via `ON CONFLICT ... DO NOTHING` syntax.
+                    stmt = insert(table_class).values(**values).on_conflict_do_nothing(
+                        index_elements=ies)
                 conn.execute(stmt)
         else:  # pragma: no cover
             # Generic approach:
@@ -517,7 +542,7 @@ class MCSession(Session):
 
     def add_subsystem_error(self, time, subsystem, severity, log, testing=False):
         """
-        Add a new subsystem subsystem_error to the M&C database.
+        Add a new subsystem_error to the M&C database.
 
         Parameters:
         ------------
@@ -591,6 +616,87 @@ class MCSession(Session):
         return self._time_filter(SubsystemError, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='subsystem', filter_value=subsystem,
+                                 write_to_file=write_to_file, filename=filename)
+
+    def add_daemon_status(self, name, hostname, time, status, testing=False):
+        """
+        Add a new daemon_status to the M&C database.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will update records that are redundant
+        with ones already in the database.
+
+        Parameters:
+        ------------
+        name : str
+            Name of the daemon
+        hostname : str
+            Name of server where daemon is running
+        time : astropy time object
+            Time of this status report, updated on every iteration of the daemon
+        status : str
+            Status, one of the values in status_list.
+        testing : bool
+            Option to just return the objects rather than adding them to the DB.
+        """
+        from .daemon_status import DaemonStatus
+
+        daemon_status_obj = DaemonStatus.create(name, hostname, time, status)
+
+        if testing:
+            return daemon_status_obj
+
+        self._insert_ignoring_duplicates(DaemonStatus, [daemon_status_obj],
+                                         update=True)
+
+    def get_daemon_status(self, most_recent=None, starttime=None,
+                          stoptime=None, daemon_name=None,
+                          write_to_file=False, filename=None):
+        """
+        Get daemon_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If starttime
+        is set but stoptime is not, this method will return the first record(s)
+        after the starttime -- again there can be more than one if there are
+        multiple records at the same time. If you want a range of times you need
+        to set both startime and stoptime. If most_recent is set, startime and
+        stoptime are ignored.
+
+        Parameters:
+        ------------
+        most_recent : bool
+            if True, get most recent record. Defaults to True if starttime is None.
+
+        starttime : astropy time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+
+        stoptime : astropy time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        daemon_name : str
+            Name of daemon to get records for. If none, all daemons will be included.
+
+        write_to_file : bool
+            Option to write records to a CSV file
+
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False
+
+        Returns:
+        --------
+        list of SubsystemError objects
+        """
+        from .daemon_status import DaemonStatus
+
+        return self._time_filter(DaemonStatus, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='name', filter_value=daemon_name,
                                  write_to_file=write_to_file, filename=filename)
 
     def add_lib_status(self, time, num_files, data_volume_gb, free_space_gb,
@@ -1855,7 +1961,8 @@ class MCSession(Session):
         from .correlator import _get_control_state, CorrelatorControlState
 
         if corr_state_dict is None:
-            corr_state_dict = _get_control_state()
+            self.add_corr_obj()
+            corr_state_dict = _get_control_state(corr_cm=self.corr_obj)
 
         corr_state_list = []
         for state_type, dict in six.iteritems(corr_state_dict):
@@ -2046,7 +2153,8 @@ class MCSession(Session):
         from .correlator import _get_config, CorrelatorConfigFile, CorrelatorConfigStatus
 
         if config_state_dict is None:
-            config_state_dict = _get_config()
+            self.add_corr_obj()
+            config_state_dict = _get_config(corr_cm=self.corr_obj)
 
         time = config_state_dict['time']
         config = config_state_dict['config']
@@ -2348,7 +2456,8 @@ class MCSession(Session):
                         starttimes.append(obj.starttime_sec + obj.starttime_ms / 1000.)
                     next_start_time = np.min(np.array(starttimes))
             else:
-                next_start_time = corr._get_next_start_time()
+                self.add_corr_obj()
+                next_start_time = corr._get_next_start_time(corr_cm=self.corr_obj)
 
             if next_start_time is not None:
                 if not overwrite_take_data:
@@ -2397,7 +2506,8 @@ class MCSession(Session):
                 raise ValueError('config_file cannot be specified if command is not "update_config"')
 
             if not testing:
-                integration_time = corr._get_integration_time(acclen_spectra)
+                self.add_corr_obj()
+                integration_time = corr._get_integration_time(acclen_spectra, corr_cm=self.corr_obj)
             else:
                 # based on default values in hera_corr_cm
                 integration_time = acclen_spectra * ((2.0 * 16384) / 500e6)
@@ -2472,15 +2582,14 @@ class MCSession(Session):
                 raise ValueError('config_file cannot be specified if command is not "update_config"')
 
         if not dryrun:  # pragma: no cover
-            import hera_corr_cm
+            self.add_corr_obj()
 
-            corr_controller = hera_corr_cm.HeraCorrCM()
             if command == 'take_data':
                 # the correlator starttime can be different from the commanded
                 # time by as much as 134 ms
                 # the call to hera_corr_cm returns the actual start time (in unix format)
                 starttime_used_unix = \
-                    getattr(corr_controller, corr.command_dict[command])(starttime, duration, acclen, tag=tag)
+                    getattr(self.corr_obj, corr.command_dict[command])(starttime, duration, acclen, tag=tag)
                 starttime_used = Time(starttime_used_unix, format='unix')
 
                 starttime_diff_sec = starttime.gps - starttime_used.gps
@@ -2488,9 +2597,9 @@ class MCSession(Session):
                     warnings.warn('Time difference between commanded and accepted '
                                   'start time is: {tdiff} sec'.format(tdiff=starttime_diff_sec))
             elif command == 'update_config':
-                getattr(corr_controller, corr.command_dict[command])(config_file)
+                getattr(self.corr_obj, corr.command_dict[command])(config_file)
             else:
-                getattr(corr_controller, corr.command_dict[command])
+                getattr(self.corr_obj, corr.command_dict[command])
 
             self.add(command_obj)
             self.commit()
@@ -2666,21 +2775,26 @@ class MCSession(Session):
         ------------
         corr_snap_version_dict: dict
             A dict containing info as in the return dict from corr._get_corr_versions() for
-            testing purposes. If None, _get_corr_versions() is called. Default: None
+            testing purposes. If None, _get_corr_versions() is called.
         testing: boolean
             If true, don't add a record of it to the database and return the list of
-            AntennaStatus objects. Default False.
+            CorrelatorSoftwareVersions, CorrelatorConfigFile, CorrelatorConfigStatus and
+            SNAPConfigVersion objects.
 
         Returns:
         --------
-        Optionally returns the list of AntennaStatus objects (if testing is True)
+        list of objects, optional
+            Optionally returns the list of CorrelatorSoftwareVersions,
+            CorrelatorConfigFile, CorrelatorConfigStatus and
+            SNAPConfigVersion objects (if testing is True)
 
         """
         from .correlator import (_get_corr_versions, CorrelatorSoftwareVersions,
                                  SNAPConfigVersion)
 
         if corr_snap_version_dict is None:
-            corr_snap_version_dict = _get_corr_versions()
+            self.add_corr_obj()
+            corr_snap_version_dict = _get_corr_versions(corr_cm=self.corr_obj)
 
         corr_version_list = []
         snap_version_list = []
@@ -2905,7 +3019,8 @@ class MCSession(Session):
         from .correlator import _get_snap_status, SNAPStatus
 
         if snap_status_dict is None:
-            snap_status_dict = _get_snap_status()
+            self.add_corr_obj()
+            snap_status_dict = _get_snap_status(corr_cm=self.corr_obj)
 
         snap_status_list = []
         for hostname, snap_dict in six.iteritems(snap_status_dict):
@@ -2957,7 +3072,10 @@ class MCSession(Session):
 
     def add_antenna_status(self, time, antenna_number, antenna_feed_pol,
                            snap_hostname, snap_channel_number, adc_mean, adc_rms,
-                           adc_power, pam_atten, pam_power, eq_coeffs):
+                           adc_power, pam_atten, pam_power, pam_voltage,
+                           pam_current, pam_id, fem_voltage, fem_current, fem_id,
+                           fem_temp, eq_coeffs, histogram_bin_centers,
+                           histogram):
         """
         Add new antenna status data to the M&C database.
 
@@ -2987,17 +3105,37 @@ class MCSession(Session):
             PAM attenuation setting for this antenna, in dB
         pam_power: float
             PAM power sensor reading for this antenna, in dBm
-        eq_coeffs: list(float)
+        pam_voltage : float
+            PAM voltage sensor reading for this antenna, in Volts
+        pam_current : float
+            PAM current sensor reading for this antenna, in Amps
+        pam_id : str
+            serial number of this PAM
+        fem_voltage : float
+            FEM voltage sensor reading for this antenna, in Volts
+        fem_current : float
+            FEM current sensor reading for this antenna, in Amps
+        fem_id : str
+            serial number of this FEM
+        fem_temp : float
+            EM temperature sensor reading for this antenna in degrees Celsius
+        eq_coeffs : list of float
             Digital EQ coefficients, used for keeping the bit occupancy in the
             correct range, for this antenna, list of floats. Note this these are
             not divided out anywhere in the DSP chain (!).
+        histogram_bin_centers : list of int
+            ADC histogram bin centers
+        histogram : list of int
+            ADC histogram counts
         """
         from .correlator import AntennaStatus
 
         self.add(AntennaStatus.create(time, antenna_number, antenna_feed_pol,
                                       snap_hostname, snap_channel_number, adc_mean,
                                       adc_rms, adc_power, pam_atten, pam_power,
-                                      eq_coeffs))
+                                      pam_voltage, pam_current, pam_id, fem_voltage,
+                                      fem_current, fem_id, fem_temp, eq_coeffs,
+                                      histogram_bin_centers, histogram))
 
     def get_antenna_status(self, most_recent=None, starttime=None, stoptime=None,
                            antenna_number=None, write_to_file=False, filename=None):
@@ -3076,7 +3214,13 @@ class MCSession(Session):
         """
         from .correlator import create_antenna_status, AntennaStatus
 
-        antenna_status_list = create_antenna_status(ant_status_dict=ant_status_dict)
+        if ant_status_dict is None:
+            self.add_corr_obj()
+            corr_cm = self.corr_obj
+        else:
+            corr_cm = None
+        antenna_status_list = create_antenna_status(corr_cm=corr_cm,
+                                                    ant_status_dict=ant_status_dict)
 
         if testing:
             return antenna_status_list

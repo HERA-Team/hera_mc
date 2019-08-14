@@ -153,8 +153,17 @@ with db.sessionmaker() as session:
                                           memory_size_gb, disk_space_pct,
                                           disk_size_gb, network_bandwidth_mbs)
                 session.commit()
+                session.add_daemon_status('mc_server_status_daemon',
+                                          hostname, Time.now(), 'good')
+                session.commit()
+
                 last_report = now
 
             time.sleep(MONITORING_INTERVAL)
     except KeyboardInterrupt:
         pass
+    except Exception:
+        session.add_daemon_status('mc_server_status_daemon',
+                                  hostname, Time.now(), 'errored')
+        session.commit()
+        raise

@@ -1,19 +1,17 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2017 the HERA Collaboration
+# Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
 """
-Script to handle adding a general part.
+Script to handle adding a part.
 """
 
 from __future__ import absolute_import, division, print_function
 
-import sys
-import copy
 import six
 
-from hera_mc import mc, cm_utils, cm_partconnect, cm_handling
+from hera_mc import mc, cm_utils, cm_partconnect
 
 
 def query_args(args):
@@ -38,35 +36,23 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--rev', help="Revision number of part", default=None)
     parser.add_argument('-t', '--hptype', help="HERA part type", default=None)
     parser.add_argument('-m', '--mfg', help="Manufacturers number for part", default=None)
-    parser.add_argument('--actually_do_it', help="Flag to actually do it, "
-                        "as opposed to printing out what it would do.",
-                        action='store_true')
+    parser.add_argument('--disallow_restart', dest='allow_restart', help="Flag to disallow restarting an "
+                        "existing and stopped part", action='store_false')
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
-    args.verbosity = cm_utils.parse_verbosity(args.verbosity)
 
     if args.hpn is None or args.rev is None or args.hptype is None or args.mfg is None:
         args = query_args(args)
 
     # Pre-process some args
     at_date = cm_utils.get_astropytime(args.date, args.time)
+    args.verbosity = cm_utils.parse_verbosity(args.verbosity)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
-    connect = cm_partconnect.Connections()
-    part = cm_partconnect.Parts()
-    handling = cm_handling.Handling(session)
-    part_check = handling.get_part_dossier(hpn=[args.hpn], rev=args.rev,
-                                           at_date=at_date, exact_match=True, full_version=False)
 
-    # Check for part
-    if len(list(part_check.keys())) > 0:
-        print("Error:  {} is already in parts database".format(args.hpn))
-        print("Stopping this addition.")
-    else:
-        # Add new part
-        if args.verbosity > 1:
-            print("Adding new part {}:{}".format(args.hpn, args.rev))
-        new_part_add = [(args.hpn, args.rev, args.hptype, args.mfg)]
-        cm_partconnect.add_new_parts(session, part, new_part_add, at_date, args.actually_do_it)
+    if args.verbosity > 1:
+        print("Trying to add new part {}:{}".format(args.hpn, args.rev))
+    new_part = [[args.hpn, args.rev, args.hptype, args.mfg]]
+    cm_partconnect.add_new_parts(session, new_part_list=new_part, at_date=at_date, allow_restart=args.allow_restart)
