@@ -39,14 +39,19 @@ class PartDossierEntry():
         It is only/primarily used within confines of cm (called by 'get_part_dossier' in the
         Handling class below).
 
-        Parameters:
-        ------------
-        hpn:  hera part number - for a single part, not list.  Note only looks for exact matches.
-        rev: hera revision - this is for a specific revision, not a class of revisions.
-        at_date:  date after which the part is active.  If inactive, the part will still be included,
-                  but things like notes, geo etc may exclude on that basis.
-        notes_start_date:  start date on which to filter notes.  The stop date is at_date above.
-        sort_notes_by:  can sort notes display by 'part' or 'time'
+        Parameters
+        ----------
+        hpn : str
+            HERA part number - for a single part, not list.  Note: only looks for exact matches.
+        rev : str
+            HERA revision - this is for a specific revision, not a class of revisions.
+        at_date : astropy.Time
+            Date after which the part is active.  If inactive, the part will still be included,
+            but things like notes, geo etc may exclude on that basis.
+        notes_start_date : astropy.Time\
+            Start date on which to filter notes.  The stop date is at_date above.
+        sort_notes_by : str {'part', 'time'}
+            Sort notes display by 'part' or 'time'
         """
         if isinstance(hpn, six.string_types):
             hpn = hpn.upper()
@@ -68,6 +73,9 @@ class PartDossierEntry():
         return("{}:{} -- {} -- <{}>".format(self.hpn, self.rev, self.part, self.connections))
 
     def get_entry(self, session, full_version=True):
+        """
+
+        """
         part_query = session.query(PC.Parts).filter(
             (func.upper(PC.Parts.hpn) == self.hpn) & (func.upper(PC.Parts.hpn_rev) == self.rev))
         self.part = copy.copy(part_query.first())  # There should be only one.

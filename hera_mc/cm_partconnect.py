@@ -66,16 +66,20 @@ class Parts(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def stop_existing_parts(session, hpnr_list, at_date, allow_override=False):
+def stop_existing_parts(session, part_list, at_date, allow_override=False):
     """
     This adds stop times to the previous parts.
 
-    Parameters:
-    ------------
-    session:  db session to use
-    hpnr_list:  list of lists containing hpn and revision number
-    at_date:  date to use for stopping
-    allow_override: flag to allow reseting the stop time even if one exists.
+    Parameters
+    ----------
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+    part_list : list of lists
+        List containing hpn and revision pair(s).  [[hpn0, rev0], ...]
+    at_date : astropy.Time object
+        Date to use for logging the stop
+    allow_override : bool, optional
+        Flag to allow a reset of the stop time even if one exists.  Default is False
     """
 
     stop_at = int(at_date.gps)
@@ -86,7 +90,7 @@ def stop_existing_parts(session, hpnr_list, at_date, allow_override=False):
         session = db.sessionmaker()
         close_session_when_done = True
 
-    for hpnr in hpnr_list:
+    for hpnr in part_list:
         existing = session.query(Parts).filter(
             (func.upper(Parts.hpn) == hpnr[0].upper())
             & (func.upper(Parts.hpn_rev) == hpnr[1].upper())).first()
@@ -109,16 +113,21 @@ def stop_existing_parts(session, hpnr_list, at_date, allow_override=False):
         session.close()
 
 
-def add_new_parts(session, new_part_list, at_date, allow_restart=False):
+def add_new_parts(session, part_list, at_date, allow_restart=False):
     """
     This adds the new parts.  If a part is there and is stopped, it will log that info
     and restart the part.  If it is there and is not stopped, it does nothing.
-    Parameters:
-    ------------
-    session:  db session to use
-    new_part_list:  list containing hpn, revision and data
-    at_date:  date to use for stopping
-    allow_restart: flag to allow the part to restarted if it already existed
+
+    Parameters
+    ----------
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+    part_list : list of lists
+        List containing hpn and revision pair(s).  [[hpn0, rev0], ...]
+    at_date : astropy.Time object
+        Date to use for logging the stop
+    allow_restart : bool, optional
+        Flag to allow the part to restarted if it already existed.  Default is False
     """
 
     start_at = int(at_date.gps)
@@ -129,7 +138,7 @@ def add_new_parts(session, new_part_list, at_date, allow_restart=False):
         session = db.sessionmaker()
         close_session_when_done = True
 
-    for hpnr in new_part_list:
+    for hpnr in part_list:
         existing = session.query(Parts).filter(
             (func.upper(Parts.hpn) == hpnr[0].upper())
             & (func.upper(Parts.hpn_rev) == hpnr[1].upper())).first()
@@ -166,15 +175,24 @@ def update_part(session=None, data=None):
     Update the database given a hera part number with columns/values.
     This is a low-level module, generally called from somewhere else
 
-    Parameters:
-    ------------
-    session:  db session to use
-    data:  [[hpn0,rev0,column0,value0],[...]]
-        hpnN:  hera part number as primary key
-        revN:  hera part number revision as primary key
-        columnN:  column name(s)
-        valueN:  corresponding list of values
+    Parameters
+    ----------
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+    data : list of lists
+        List containing the hpn, rev, column and value to update
+            [[hpn0,rev0,column0,value0],[...]]
+                hpnN:  hera part number as primary key
+                revN:  hera part number revision as primary key
+                columnN:  column name(s)
+                valueN:  corresponding list of values
+
+    Returns
+    -------
+    bool
+        True if any updates were made, else False
     """
+
     data_dict = format_and_check_update_part_request(data)
     if data_dict is None:
         return False
@@ -216,18 +234,24 @@ def update_part(session=None, data=None):
 
 def format_and_check_update_part_request(request):
     """
-    parses the update request
+    Parses the update request into a standard format dictionary keyed on the part/rev pair.
 
-    return dictionary
+    Parameters
+    ----------
+    request : string or list
+        hpn0:rev0:column0:value0,hpn1:rev1:column1:value1,... or
+        [[hpn0, rev0, column0, value0], [...]] where
+            hpnN:  hera part number (first entry must have one) if absent, propagate first
+            revN:  hera part revision number (first entry must have one) if absent, propagate first
+            columnN:  name of parts column
+            valueN:  corresponding new value
 
-    Parameters:
-    ------------
-    request:  hpn0:[rev0:]column0:value0,hpn1:[rev0]:]column1:value1,[...] or list
-        hpnN:  hera part number (first entry must have one) if absent, propagate first
-        revN:  hera part revision number (first entry must have one) if absent, propagate first
-        columnN:  name of parts column
-        valueN:  corresponding new value
+    Returns
+    -------
+    dict or None
+        Dictionary containing the parsed commands, otherwise None if the request is insufficient
     """
+
     if request is None or len(request) == 0:
         return None
 
@@ -269,10 +293,12 @@ def get_part_revisions(hpn, session=None):
     """
     Retrieves revision numbers for a given part (exact match).
 
-    Parameters:
-    -------------
-    hpn:  string for hera part number
-    session:  db session to use
+    Parameters
+    ----------
+    hpn :  str
+        hera part number
+    session : object, optional
+        Database session to use.  If None, it will start a new session, then close.  Default is None.
     """
 
     if hpn is None:
@@ -327,6 +353,20 @@ def get_apriori_antenna_status_enum():
 
 
 def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, session=None):
+    """
+    Parameters
+    ----------
+    antenna : str
+        Antenna designator, e.g. HH104
+    status : str
+        Apriori status.  Must be one of apriori enums.
+    start_gpstime : int
+        Start time for new apriori status, in GPS seconds
+    stop_gpstime : int, optional
+        Stop time for new apriori status, in GPS seconds, or None.  Default = None
+    session : object, optional
+        Database session to use.  If None, it will start a new session, then close.
+    """
     new_apa = AprioriAntenna()
     if status not in new_apa.status_enum():
         raise ValueError("Antenna apriori status must be in {}".format(new_apa.status_enum()))
@@ -398,6 +438,21 @@ class PartInfo(MCDeclarativeBase):
 def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
     """
     Add part information into database.
+
+    Parameters
+    ----------
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+    hpn : str
+        HERA part number
+    rev : str
+        Part revision number
+    at_date : any format that cm_utils.get_astropytime understands
+        Date to use for the log entry
+    comment : str
+        String containing the comment to be logged.
+    library_file : str, None, optional
+        If appropriate, name or link of library file or other information.
     """
     close_session_when_done = False
     if session is None:  # pragma: no cover
@@ -491,6 +546,22 @@ class Connections(MCDeclarativeBase):
 
 
 def get_connection_from_dict(input_dict):
+    """
+    Converts a dictionary holding the connection info into a Connections object.
+
+    Parameter
+    ---------
+    input_dict : dictionary
+        The dictionary must have the following keys:
+            upstream_part, up_part_rev, upstream_output_port
+            downstream_part, down_part_rev, downstream_input_port
+        Other keys will be ignored.
+
+    Returns
+    -------
+    Connections object
+    """
+
     return Connections(upstream_part=input_dict['upstream_part'],
                        up_part_rev=input_dict['up_part_rev'],
                        upstream_output_port=input_dict['upstream_output_port'],
@@ -500,34 +571,45 @@ def get_connection_from_dict(input_dict):
 
 
 def get_null_connection():
+    """
+    Returns a null connection, where all components hold the no_connection_designator and
+    dates/times are None
+
+    Returns
+    -------
+    Connections object
+    """
+
     nc = no_connection_designator
-    no_connect = Connections()
-    no_connect.connection(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
-                          downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
-                          start_gpstime=None, stop_gpstime=None, start_date=None, stop_date=None)
-    return no_connect
+    return Connections(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
+                       downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
+                       start_gpstime=None, stop_gpstime=None, start_date=None, stop_date=None)
 
 
-def stop_existing_connections_to_part(session, h, conn_list, at_date):
+def stop_existing_connections_to_part(session, handling, conn_list, at_date):
     """
     This adds stop times to the connections for parts listed in conn_list.  Use this method with
     caution, as it currently doesn't include much checking.  You probably should use the much
     more specific stop_connections method below.  It is being kept around for possible use in
     future scripts that "remove" replaced parts.
 
-    Parameters:
-    -------------
-    session:  db session to use
-    h:  part handling object
-    conn_list:  list containing parts to stop
-    at_date:  date to stop
+    Parameters
+    ----------
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+    handling :  cm_handling object
+        This is an instance of cm_handling used within this method.
+    conn_list :  list
+        This containing the parts to stop, as [[hpn0, rev0, port0], ...]
+    at_date : astropy.Time object
+        date at which to stop
     """
 
     stop_at = int(at_date.gps)
     data = []
 
     for conn in conn_list:
-        CD = h.get_part_connection_dossier([conn[0]], conn[1], conn[2], at_date, True)
+        CD = handling.get_part_connection_dossier([conn[0]], conn[1], conn[2], at_date, True)
         ck = get_connection_key(CD, conn)
         if ck is None:
             print('There are no connections to stop')
@@ -545,12 +627,19 @@ def stop_existing_connections_to_part(session, h, conn_list, at_date):
 
 def get_connection_key(c, p):
     """
-    Returns the key to use:  this is to make sure edge cases don't trip you up.
+    Returns the standard connection key to use.  Does some checking etc to make sure edge cases don't trip you up.
 
-    Parameters:
-    ------------
-    c:  connection_dossier dictionary
-    p:  connection to find
+    Parameters
+    ----------
+    c : dictionary
+        connection_dossier dictionary with connection information
+    p :  list
+        connection to find [part, rev, port]
+
+    Returns
+    -------
+    str
+        string for the connection or None if not found
     """
 
     p = [p[0].upper(), p[1].upper(), p[2].upper()]
@@ -573,12 +662,16 @@ def stop_connections(session, conn_list, at_date):
     """
     This adds a stop_date to the connections in conn_list
 
-    Parameters:
-    -------------
-    Session:  db session to use
-    conn_list:  list of lists with data [[upstream_part,rev,port,downstream_part,rev,port,start_gpstime],...]
-    at_date:  date to stop connection
+    Parameters
+    ----------
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+    conn_list:  list of lists
+        List with data [[upstream_part,rev,port,downstream_part,rev,port,start_gpstime],...]
+    at_date : astropy.Time
+        date at which to stop connection
     """
+
     stop_at = int(at_date.gps)
     data = []
     for conn in conn_list:
@@ -599,12 +692,16 @@ def add_new_connections(session, c, conn_list, at_date):
     This uses a connection object to send data to the update_connection method
     to make a new connection
 
-    Parameters:
-    -------------
-    session:  db session to use
-    c:  connection handling object
-    conn_list:  list containing parts to stop
-    at_date:  date to stop
+    Parameters
+    ----------
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+    c : Connections object
+        connection handling object
+    conn_list:  list of lists
+        List with data [[upstream_part,rev,port,downstream_part,rev,port,start_gpstime],...]
+    at_date : astropy.Time
+        date at which to start connection
     """
     start_at = int(at_date.gps)
     data = []
@@ -645,13 +742,21 @@ def update_connection(session=None, data=None, add_new_connection=False):
     update the database given a connection with columns/values.
     adds if add_new_connection flag is true
 
-    Parameters:
-    ------------
-    session:  db session to use
-    data:  data for connection:
-        columnN:  column name(s)
-        values:  corresponding list of values
-    add_new_connection:  boolean to actually allow it to be updated
+    Parameters
+    ----------
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+    data : list
+        data for connection, parsable by format_check_update_connection_request
+            columnN:  column name(s)
+            values:  corresponding list of values
+    add_new_connection :  bool
+        Flag to actually allow it to be updated
+
+    Returns
+    -------
+    bool
+        True if succesful, otherwise False
     """
 
     data_dict = format_check_update_connection_request(data)
@@ -729,13 +834,16 @@ def format_check_update_connection_request(request):
     """
     parses the update request
 
-    return dictionary
-
-    Parameters:
-    ------------
-    request:   or list
+    Parameters
+    ----------
+    request:   str, list
         columnN:  name of parts column
         valueN:  corresponding new value
+
+    Returns
+    -------
+    dictionary
+        The dictionary holds the parsed request appropriate for update_connection
     """
 
     if request is None:
@@ -764,5 +872,3 @@ def format_check_update_connection_request(request):
         else:
             data[dkey] = [d]
     return data
-
-###

@@ -21,29 +21,28 @@ from . import cm_utils, cm_partconnect
 revision_categories = ['last', 'active', 'all', 'full', 'none']
 
 
-def get_revisions_of_type(hpn, rev_type, at_date=None, session=None):
+def get_revisions_of_type(hpn, rev_type, at_date='now', session=None):
     """
     Returns namespace of revisions
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
     of rev_query
-    Allowed types listed below in "help"
 
-    Parameters:
-    ------------
-    hpn:  string for hera part number
-    rev_type:  string for revision type.  One of LAST, ACTIVE, ALL, <specific>
-    at_date:  astropy.Time to check for
-    session:  db session
+    Parameters
+    ----------
+    hpn : str
+        HERA part number
+    rev_type : str
+        Revision type/value.  One of LAST, ACTIVE, ALL, <specific>
+    at_date : anything understandable to cm_utils.get_astropytime, optional.
+        Relevant date to check for.  Default is 'now'
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+
+    Returns
+    -------
+    Namespace
+        (hpn, rev, rev_query, started, ended, [hukey], [pkey])
     """
-    if isinstance(hpn, six.string_types) and hpn.lower() == 'help':
-        print("""
-        Allowed revision types or revisions are (case doesn't matter and only need first 3 letters):
-            ACTIVE:  revisions active at_date ('now' as default) -- only one that uses 'at_date'
-            LAST:  the last connected revision (could be active or not)
-            ALL:  all revisions
-            specific_revision:  check for a specific revision
-        """)
-        return None
 
     rq = rev_type.upper()
     if rq.startswith('LAST'):
@@ -64,10 +63,17 @@ def get_last_revision(hpn, session=None):
     """
     Returns list of latest revisions as Namespace(hpn,rev,erv_query,started,ended)
 
-    Parameters:
-    -------------
-    hpn:  hera part name
-    session:  db session
+    Parameters
+    ----------
+    hpn : str
+        HERA part number
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+
+    Returns
+    -------
+    Namespace
+        (hpn, rev, rev_query, started, ended, [hukey], [pkey])
     """
 
     revisions = cm_partconnect.get_part_revisions(hpn, session)
@@ -99,10 +105,17 @@ def get_all_revisions(hpn, session=None):
     """
     Returns list of all revisions as Namespace(hpn,rev,started,ended)
 
-    Parameters:
-    -------------
-    hpn:  string of hera part number
-    session:  db session
+    Parameters
+    ----------
+    hpn : str
+        HERA part number
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+
+    Returns
+    -------
+    Namespace
+        (hpn, rev, rev_query, started, ended, [hukey], [pkey])
     """
 
     revisions = cm_partconnect.get_part_revisions(hpn, session)
@@ -121,11 +134,19 @@ def get_specific_revision(hpn, rq, session=None):
     """
     Returns list of a particular revision as Namespace(hpn,rev,started,ended)
 
-    Parameters:
-    -------------
-    rq:  revision number to find
-    hpn:  string of hera part number
-    session:  db session
+    Parameters
+    ----------
+    hpn : str
+        HERA part number
+    rq : str
+        Specific revision
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+
+    Returns
+    -------
+    Namespace
+        (hpn, rev, rev_query, started, ended, [hukey], [pkey])
     """
 
     revisions = cm_partconnect.get_part_revisions(hpn, session)
@@ -144,11 +165,19 @@ def get_active_revision(hpn, at_date, session=None):
     """
     Returns list of active revisions as Namespace(hpn,rev,started,ended)
 
-    Parameters:
-    -------------
-    hpn:  string of hera part number
-    at_date:  date to check if fully connected
-    session:  db session
+    Parameters
+    ----------
+    hpn : str
+        HERA part number
+    at_date : anything understandable to cm_utils.get_astropytime, optional.
+        Relevant date to check for.  Default is 'now'
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
+
+    Returns
+    -------
+    Namespace
+        (hpn, rev, rev_query, started, ended, [hukey], [pkey])
     """
 
     revisions = cm_partconnect.get_part_revisions(hpn, session)
@@ -170,11 +199,19 @@ def get_full_revision(hpn, hookup_dict):
     If either pol is fully connected, it is returned.
     The hpn type must match the hookup_dict keys part type
 
-    Parameters:
-    -------------
-    hpn:  string of hera part number (must match hookup_dict keys part type)
-    hookup_dict:  hookup dictionary to check for full connection
+    Parameters
+    ----------
+    hpn : str
+        HERA part number (must match hookup_dict keys part type)
+    hookup_dict : dictionary
+        Hookup dictionary containing the queried hookup data set
+
+    Returns
+    -------
+    list
+        List containing the relevant Namepace entries
     """
+
     return_full_keys = []
     for k, h in six.iteritems(hookup_dict):
         hpn_hu, rev_hu = cm_utils.split_part_key(k)
@@ -193,9 +230,10 @@ def show_revisions(rev_list):
     """
     Show revisions for provided revision list
 
-    Parameters:
-    -------------
-    rev_list:  list as provided by one of the other methods
+    Parameters
+    ----------
+    rev_list:  list
+        List of revisions provided by one of the other methods
     """
 
     if len(rev_list) == 0:
