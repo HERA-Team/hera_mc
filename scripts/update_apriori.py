@@ -22,4 +22,4 @@ if __name__ == '__main__':
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
-    cm_partconnect.update_apriori_antenna(antenna=args.hpn, start=args.status, start_gpstime=at_date.gps, stop_gpstime=None, session=session)
+    cm_partconnect.update_apriori_antenna(antenna=args.hpn, status=args.status, start_gpstime=at_date.gps, stop_gpstime=None, session=session)
