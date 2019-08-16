@@ -18,6 +18,14 @@ from . import geo_location, geo_handling
 
 
 class StationInfo:
+    """
+    Object containing station information.
+
+    Parameters
+    ----------
+    stn : str, Object or None, optional.  Default is None.
+        Contains the init station information.  If None, it will initial a blank object.
+    """
     stn_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting', 'northing', 'lon', 'lat',
                 'elevation', 'antenna_number', 'correlator_input', 'start_date', 'stop_date', 'epoch']
 
@@ -32,6 +40,14 @@ class StationInfo:
                 self.update_stn(stn)
 
     def update_stn(self, stn):
+        """
+        Will update the object based on the supplied station information.
+
+        Parameters
+        ----------
+        stn : str, Object or None, optional.  Default is None.
+            Contains the init station information.  If None, it will initial a blank object.
+        """
         if stn is None:
             return
         for s in self.stn_info:
@@ -42,6 +58,14 @@ class StationInfo:
             setattr(self, s, a)
 
     def update_arrays(self, stn):
+        """
+        Will update the object based on the supplied station information.
+
+        Parameters
+        ----------
+        stn : str, Object or None, optional.  Default is None.
+            Contains the init station information.  If None, it will initial a blank object.
+        """
         if stn is None:
             return
         for s in self.stn_info:
@@ -55,13 +79,15 @@ class StationInfo:
 class Handling:
     """
     Class to allow various manipulations of correlator inputs etc
+
+    Parameters
+    ----------
+        session : object
+            session on current database. If session is None, a new session
+            on the default database is created and used.
     """
 
     def __init__(self, session=None):
-        """
-        session: session on current database. If session is None, a new session
-                 on the default database is created and used.
-        """
         if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
@@ -79,6 +105,14 @@ class Handling:
         self.session.close()
 
     def cofa(self):
+        """
+        Returns the geographic information for the center-of-array.
+
+        Returns
+        -------
+        object
+            Geo object for the center-of-array (cofa)
+        """
         cofa = self.geo.cofa()
         return cofa
 
@@ -104,13 +138,20 @@ class Handling:
 
         Parameters
         -----------
-        at_date:  date to check for connections
-        station_types_to_check:  list of station types to check, or 'all' ['default']]
-                                 it can either be the prefix or the "Name" (e.g. 'herahexe')
-        hookup_type:  type of hookup to use (current observing system is 'parts_hera').
-                      If 'None' it will determine which system it thinks it is based on
-                      the part-type.  The order in which it checks is specified in cm_sysdef.
-                      Only change if you know you want a different system (like 'parts_paper').
+        at_date : str, int
+            Date to check for connections.  Anything intelligible by cm_utils.get_astropytime
+        station_types_to_check : list
+            Station types to check, or 'all' ['default']].  It can either be the prefix or the "Name" (e.g. 'herahexe')
+        hookup_type : str
+            Type of hookup to use (current observing system is 'parts_hera').
+            If 'None' it will determine which system it thinks it is based on
+            the part-type.  The order in which it checks is specified in cm_sysdef.
+            Only change if you know you want a different system (like 'parts_paper').
+
+        Returns
+        -------
+        list
+            List of stations connected.
         """
         at_date = cm_utils.get_astropytime(at_date)
         self.H = cm_hookup.Hookup(self.session)
@@ -145,13 +186,21 @@ class Handling:
             'stop_date': end of connection in gps seconds (long or None no end time)
 
         Parameters
-        -----------
-        stn:  is the station information to check
-        at_date:  date to check for connections, must be an astropy.Time
-        hookup_type:  type of hookup to use (current observing system is 'parts_hera').
-                      If 'None' it will determine which system it thinks it is based on
-                      the part-type.  The order in which it checks is specified in cm_sysdef.
-                      Only change if you know you want a different system (like 'parts_paper').
+        ----------
+        stn : object
+            Station object for the station information to check
+        at_date : astropy.Time
+            Date to check for connections, must be an astropy.Time
+        hookup_type : str
+            Type of hookup to use (current observing system is 'parts_hera').
+            If 'None' it will determine which system it thinks it is based on
+            the part-type.  The order in which it checks is specified in cm_sysdef.
+            Only change if you know you want a different system (like 'parts_paper').
+
+        Returns
+        -------
+        object
+            StationInfo object of connected station.
         """
         if self.H is not None:
             H = self.H
@@ -220,15 +269,21 @@ class Handling:
             'antenna_positions': Antenna positions in standard Miriad coordinates
                 (list of 3-element vectors of floats)
             'cm_version': CM git hash (string)
-
-        Parameters:
-        ------------
-        hookup_type:  type of hookup to use (current observing system is 'parts_hera').
-                      If 'None' it will determine which system it thinks it is based on
-                      the part-type.  The order in which it checks is specified in cm_sysdef.
-                      Only change if you know you want a different system (like 'parts_paper').
-
         Note: This method requires pyuvdata
+
+        Parameters
+        ----------
+        hookup_type : str or None, optional
+            Type of hookup to use (current observing system is 'parts_hera').
+            If 'None' it will determine which system it thinks it is based on
+            the part-type.  The order in which it checks is specified in cm_sysdef.
+            Only change if you know you want a different system (like 'parts_paper').
+            Default is None.
+
+        Returns
+        -------
+        dict
+            cm info formatted for the correlator.
         """
         from pyuvdata import utils as uvutils
         from . import cm_handling
@@ -267,21 +322,32 @@ class Handling:
                 'cofa_lon': cofa_loc.lon,
                 'cofa_alt': cofa_loc.elevation}
 
-    def get_part_at_station_from_type(self, stn, at_date, part_type='post-amp', include_revs=False,
+    def get_part_at_station_from_type(self, stn, at_date, part_type, include_revs=False,
                                       include_ports=False, hookup_type=None):
         """
-        input:
-            stn: antenna number of format HHi where i is antenna number (string or list of strings)
-            at_date: date at which connection is true, format 'YYYY-M-D' or 'now'
-            part_type:  part type to look for
-            include_revs:  Flag whether to include all revisions
-            include_ports:  Flag whether to include ports
-            hookup_type:  type of hookup to use (current observing system is 'parts_hera').
-                          If 'None' it will determine which system it thinks it is based on
-                          the part-type.  The order in which it checks is specified in cm_sysdef.
-                          Only change if you know you want a different system (like 'parts_paper').
-        returns:
-            dict of {pol:(location, #)}
+        Parameters
+        ----------
+        stn : str, list
+            Antenna number of format HHi where i is antenna number (string or list of strings)
+        at_date : str
+            Date at which connection is true, format 'YYYY-M-D' or 'now'
+        part_type : str
+            Part type to look for
+        include_revs : bool, optional.
+            Flag whether to include all revisions.  Default is False
+        include_ports : bool, optional.
+            Flag whether to include ports.  Default is False
+        hookup_type : str, optional.
+            Type of hookup to use (current observing system is 'parts_hera').
+            If 'None' it will determine which system it thinks it is based on
+            the part-type.  The order in which it checks is specified in cm_sysdef.
+            Only change if you know you want a different system (like 'parts_paper').
+            Default is None.
+
+        Returns
+        -------
+        dict
+            {pol:(location, #)}
         """
         parts = {}
         H = cm_hookup.Hookup(self.session)
@@ -294,6 +360,27 @@ class Handling:
 
     def publish_summary(self, hlist='default', rev='ACTIVE', exact_match=False,
                         hookup_cols='all', force_new_hookup_dict=True):
+        """
+        Publishes the hookup on hera.today.
+
+        Parameters
+        ----------
+        hlist : str, list,  optional.
+            List of prefixes or stations to use in summary.  Default is the "default" prefix list in cm_utils.
+        rev : str, optional.
+            Revision or revision type.  Default is "ACTIVE"
+        exact_match : bool, optional.
+            Flag for exact_match or included characters.  Default is False.
+        hookup_cols : str, list, optional.
+            List of hookup columns to use, or 'all'. Default is 'all'
+        forc_new_hookup_dict : bool
+            Flag to force a new hookup dict to be generated (as opposed to checking for cache.)
+
+        Returns
+        -------
+        str
+            Status string.  "OK" or "Not on 'main'"
+        """
         import os.path
         if isinstance(hlist, six.string_types):
             hlist = [hlist]
@@ -317,6 +404,21 @@ class Handling:
             return 'Not on "main"'
 
     def system_comments(self, system_kw='System', kword='all'):
+        """
+        Shows "system" comments from the part_info table.
+
+        Parameters
+        ----------
+        system_kw : str, optional
+            Keyword to allow for additional system parameters.  Default is 'System'.
+        kword : str, optional
+            Specific keyword to look for in comment.  Default is 'all'
+
+        Returns
+        -------
+        str
+            String containing entry.
+        """
         col = {'key': ['Keyword'], 'date': ['Posting'], 'comment': ['Comment  <file/url>']}
         for k, v in six.iteritems(col):
             col[k].append(len(v[0]))
@@ -350,7 +452,15 @@ class Handling:
 
         Parameters:
         ------------
-        ant:  antenna station designator (e.g. HH12, HA330) it is a single string
+        ant : str
+            Antenna station designator (e.g. HH12, HA330) it is a single string
+        at_date : str or int
+            Date to look for. Anything intelligible by cm_utils.get_astropytime.
+
+        Returns
+        -------
+        str
+            apriori status
         """
         ant = antenna.upper()
         at_date = cm_utils.get_astropytime(at_date).gps
@@ -366,10 +476,17 @@ class Handling:
 
         Returns a list of the antenna station designators with that status.
 
-        Parameters:
-        ------------
-        status:  apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
-        at_date:  date for which to get apriori state -- anything cm_utils.get_astropytime can handle.
+        Parameters
+        ----------
+        status : str
+            Apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
+        at_date : str or int, optional
+            Date for which to get apriori state -- anything cm_utils.get_astropytime can handle.  Default is 'now'
+
+        Returns
+        -------
+        list of strings
+            Contains stations of that status
         """
         at_date = cm_utils.get_astropytime(at_date).gps
         ap_ants = []
@@ -383,9 +500,15 @@ class Handling:
         """
         This returns a dictionary keyed on the apriori antenna status value containing the antennas with that status value
 
-        Parameters:
-        ------------
-        at_date:  date for which to get apriori state -- anything cm_utils.get_astropytime can handle.
+        Parameters
+        ----------
+        at_date : str or int, optional
+            Date for which to get apriori state -- anything cm_utils.get_astropytime can handle.  Default is 'now'
+
+        Returns
+        -------
+        dict
+            dictionary of stations, keyed on apriori status
         """
         ap_stat = {}
         for _status in cm_partconnect.get_apriori_antenna_status_enum():
@@ -394,11 +517,18 @@ class Handling:
 
     def get_apriori_antenna_status_for_rtp(self, status, at_date='now'):
         """
-        This returns a csv-string of all antennas with the provided status query at_date
+        This returns a csv-string of all antennas with the provided status query at_date, specifically for RTP
 
-        Parameters:
-        ------------
-        status:  apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
-        at_date:  date for which to get apriori state -- anything cm_utils.get_astropytime can handle.
+        Parameters
+        ----------
+        status : str
+            Apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
+        at_date : str or int, optional
+            Date for which to get apriori state -- anything cm_utils.get_astropytime can handle.  Default is 'now'
+
+        Returns
+        -------
+        str
+            csv string of antennas of a given apriori status
         """
         return ','.join(self.get_apriori_antennas_with_status(status=status, at_date=at_date))

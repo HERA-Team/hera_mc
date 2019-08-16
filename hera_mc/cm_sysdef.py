@@ -109,6 +109,18 @@ class Sysdef:
                     self.full_connection_path[_x].append(ordered_path[k])
 
     def dict_init(self, v0):
+        """
+        Initializes the system dict to v0
+        Parameters
+        ----------
+        v0 : str
+            Initialization parameter
+
+        Returns
+        -------
+        dict
+            Initialized dictionary.
+        """
         y = {}
         for x in self.checking_order:
             y[x] = v0
@@ -117,6 +129,11 @@ class Sysdef:
     def _to_dict(self):
         """
         Convert this object to a dict (so it can be written to json)
+
+        Returns
+        -------
+        dict
+            Dictionary version of object.
         """
         return {'pind': self.pind, 'this_hookup_type': self.this_hookup_type,
                 'corr_index': self.corr_index, 'all_pols': self.all_pols,
@@ -127,6 +144,16 @@ class Sysdef:
     def handle_redirect_part_types(self, part, at_date='now', session=None):
         """
         This handles the "special cases" by feeding a new part list back to hookup.
+
+        Parameters
+        ----------
+        part : Part object
+            Part object of current part.
+
+        Returns
+        -------
+        list
+            List of redirected part numbers.
         """
         hpn_list = []
         if part.part_type.lower() == 'node':
@@ -145,6 +172,22 @@ class Sysdef:
         return hpn_list
 
     def find_hookup_type(self, part_type, hookup_type):
+        """
+        Returns the relevant hookup_type.  This is almost a complete trivial method, but
+        it does serve a function for supplying a different hookup_type if needed.
+
+        Parameters
+        ----------
+        part_type : str
+            Part_type to check on, if no hookup_type is provided.
+        hookup_type : str
+            Hookup_type to return, if supplied.
+
+        Returns
+        -------
+        str
+            String for the hooukp_type
+        """
         if hookup_type in self.port_def.keys():
             return hookup_type
         if hookup_type is None:
@@ -161,10 +204,13 @@ class Sysdef:
 
         Parameter:
         -----------
-        part:  current part dossier
-        port_query:  the ports that were requested ('e' or 'n' or 'all')
-        hookup_type:  if not None, will use specified hookup_type
-                      otherwise it will look through in order
+        part : dict
+            Current part dossier
+        port_query : str, optional
+            The ports that were requested ('e' or 'n' or 'all').  Default is 'all'
+        hookup_type : str, None, optional
+            If not None, will use specified hookup_type otherwise it will look through in order.
+            Default is None
         """
         self.this_hookup_type = hookup_type
         if hookup_type is None:
@@ -211,6 +257,22 @@ class Sysdef:
     def next_connection(self, connection_options, current, A, B):
         """
         This checks the options and returns the next connection.
+
+        Parameters
+        ----------
+        connection_options : list
+            List containing the possible next connections.
+        current : object
+            Connections object for current.
+        A : object
+            Part object for part option A
+        B : object
+            Part object for part option B
+
+        Returns
+        -------
+        Object
+            Connection object for next desired connection.
         """
 
         # This sets up the parameters to check for the next part/port

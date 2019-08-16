@@ -41,12 +41,17 @@ class CMVersion(MCDeclarativeBase):
         """
         Create a new cm version object.
 
-        Parameters:
-        ------------
+        Parameters
+        ----------
         time: astropy time object
             time of update
         git_hash: String
             git hash of cm repository
+
+        Returns
+        -------
+        object
+            cm_version object with time/git_hash
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -64,13 +69,18 @@ def package_db_to_csv(session=None, tables='all'):
     This will get the configuration management tables from the database
        and package them to csv files to be read by initialize_db_from_csv
 
-    Parameters:
-    ------------
-    session: Session object
+    Parameters
+    ----------
+    session : object or None, optional
         session on current database. If session is None, a new session
-             on the default database is created and used.
+        on the default database is created and used.
     tables: string
         comma-separated list of names of tables to initialize or 'all'. Default is 'all'
+
+    Returns
+    -------
+    list
+        list of filenames written
     """
     if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
@@ -104,7 +114,8 @@ def pack_n_go(session, cm_csv_path):  # pragma: no cover
 
     Parameters:
     ------------
-    cm_csv_path:  path to csv distribution directory
+    cm_csv_path : str
+        Path to csv distribution directory
     """
 
     # move files over to dist dir
@@ -131,13 +142,20 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False, testing=Fal
 
     Parameters:
     ------------
-    session: Session object
+    session: Session object, optional
         session on current database. If session is None, a new session
-             on the default database is created and used.
-    tables: string
+        on the default database is created and used.  Default is None
+    tables: str, optional
         comma-separated list of names of tables to initialize or 'all'. Default is 'all'
-    maindb: boolean or string
+    maindb: bool or str, optional
         Either False or the password to change from main db. Default is False
+    testing : bool, optional
+        Flag to cover testing
+
+    Returns
+    -------
+    bool
+        Success, True or False
     """
 
     print("This will erase and rewrite the configuration management tables.")
@@ -153,6 +171,25 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False, testing=Fal
 
 def check_if_main(session, config_path=None, expected_hostname='qmaster',
                   test_db_name='testing'):
+    """
+    This determines if the code is running on the site main computer or not.
+
+    Parameters
+    ----------
+    session : object
+        Session object required
+    config_path : str or None, optional
+        Full path to location of config file.  Default is None, which goes to default path.
+    expected_hostname : str, optional
+        Name of the expected main host.  Default is 'qmaster'
+    test_db_name : str, optional
+        Name of test database.  Default is 'testing'
+
+    Returns
+    -------
+    bool
+        True if main host, False if not.
+    """
     # the 'hostname' call on qmaster returns the following value:
     import socket
     import json
@@ -192,6 +229,18 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
 def db_validation(maindb_pw, session):
     """
     Check if you are working on the main db and if so if you have the right password
+
+    Parameters
+    ----------
+    maindb_pw : str
+        password to allow access to main
+    session : object
+        Session object
+
+    Returns
+    -------
+    bool
+        True means you are allowed to modify main database.  False not.
     """
     is_maindb = check_if_main(session)
 
@@ -212,15 +261,22 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, 
     """
     Internal initialization method, should be called via initialize_db_from_csv
 
-    Parameters:
-    ------------
-    session: Session object
+    Parameters
+    ----------
+    session : Session object, optional
         session on current database. If session is None, a new session
-             on the default database is created and used.
-    tables: string
+             on the default database is created and used.  Default is None
+    tables : str, optional
         comma-separated list of names of tables to initialize or 'all'. Default is 'all'
-    maindb: boolean or string
+    maindb : bool or str, optional
         Either False or password to change from main db. Default is False
+    testing : bool, optional
+        Flag to allow for testing.  Default is False
+
+    Returns
+    -------
+    bool
+        Success, True or False
     """
 
     if session is None:  # pragma: no cover
