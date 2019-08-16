@@ -205,8 +205,6 @@ class TestParts(TestHERAMC):
             cm_revisions.show_revisions(revision)
         self.assertTrue('1096509616.0' in out.getvalue().strip())
         self.assertEqual(revision[0].hpn, 'HH23')
-        revision = cm_revisions.get_revisions_of_type('help', 'help')
-        self.assertEqual(revision, None)
 
     def test_match_listify(self):
         testing = [['hpn', 'rev'], [['hpn1', 'hpn2', 'hpn3'], 'rev'], [['hpn1', 'hpn2'], ['rev1', 'rev2']]]

@@ -583,7 +583,7 @@ def get_null_connection():
     nc = no_connection_designator
     return Connections(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
                        downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
-                       start_gpstime=None, stop_gpstime=None, start_date=None, stop_date=None)
+                       start_gpstime=None, stop_gpstime=None)
 
 
 def stop_existing_connections_to_part(session, handling, conn_list, at_date):
