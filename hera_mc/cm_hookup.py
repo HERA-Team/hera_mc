@@ -94,9 +94,12 @@ class HookupDossierEntry(object):
         It just checks which hookup_type the parts are in and keeps however many
         parts are used.
 
-        Parameters:
-        -------------
-        part_types_found:  list of the part types that were found
+        Parameters
+        ----------
+        pol : str
+            Polarization type.
+        part_types_found : list
+            List of the part types that were found
         """
         self.hookup_type[pol] = None
         self.columns[pol] = []
@@ -120,6 +123,14 @@ class HookupDossierEntry(object):
                     self.columns[pol].append(c)
 
     def add_timing_and_fully_connected(self, pol):
+        """
+        Method to add the timing and fully_connected flag for the hookup.
+
+        Parameters
+        ----------
+        pol : str
+            Polarization type for which to add information.
+        """
         if self.hookup_type[pol] is not None:
             full_hookup_length = len(self.sysdef.full_connection_path[self.hookup_type[pol]]) - 1
         else:
@@ -144,17 +155,22 @@ class HookupDossierEntry(object):
         """
         Retrieve the part name for a given part_type from a hookup
 
-        Parameters:
-        ------------
-        part_type:  string of valid part type in hookup_dict (e.g. 'snap' or 'feed')
-        include_revs:  is set to True, returns revision number
-        include_ports:  if set to True, it returns the associated ports to the part
+        Parameters
+        ----------
+        part_type : str
+            String of valid part type in hookup_dict (e.g. 'snap' or 'feed')
+        include_revs : bool
+            Flag to include revision number
+        include_ports : bool
+            Flag to include the associated ports to the part
 
-        returns:
-            parts:  dictionary keyed on polarization for actual installed part number of
-                    specified type within hookup as a string per pol
-                    if include_revs part number is e.g. FDV1:A
-                    if include_ports they are included as e.g. 'input>FDV:A<terminals'
+        Returns
+        -------
+        dict
+            Dictionary keyed on polarization for actual installed part number of
+            specified type within hookup as a string per pol
+                if include_revs part number is e.g. FDV1:A
+                if include_ports they are included as e.g. 'input>FDV:A<terminals'
         """
         parts = {}
         extra_cols = ['start', 'stop']
@@ -196,33 +212,73 @@ class HookupDossierEntry(object):
             parts[pol] = "{}{}{}{}".format(in_port, part_number, rev, out_port)
         return parts
 
-    def table_entry_row(self, pol, headers, part_types, show):
+    def table_entry_row(self, pol, columns, part_types, show):
+        """
+        Produces the hookup table row for given parameters.
+
+        Parameters
+        ----------
+        pol : str
+            Desired polarization
+        columns : list
+            Desired column headers to display
+        part_types : dict
+            Dictionary containing part_types
+        show : dict
+            Dictionary containing flags of what components to show.
+
+        Returns
+        -------
+        list
+            List containing the table entry.
+        """
         timing = self.timing[pol]
-        td = ['-'] * len(headers)
+        td = ['-'] * len(columns)
         # Get the first N-1 parts
         dip = ''
         for d in self.hookup[pol]:
             part_type = part_types[d.upstream_part]
-            if part_type in headers:
+            if part_type in columns:
                 new_row_entry = build_new_row_entry(
                     dip, d.upstream_part, d.up_part_rev, d.upstream_output_port, show)
-                td[headers.index(part_type)] = new_row_entry
+                td[columns.index(part_type)] = new_row_entry
             dip = d.downstream_input_port + '> '
         # Get the last part in the hookup
         part_type = part_types[d.downstream_part]
-        if part_type in headers:
+        if part_type in columns:
             new_row_entry = build_new_row_entry(
                 dip, d.downstream_part, d.down_part_rev, None, show)
-            td[headers.index(part_type)] = new_row_entry
+            td[columns.index(part_type)] = new_row_entry
         # Add timing
-        if 'start' in headers:
-            td[headers.index('start')] = timing[0]
-        if 'stop' in headers:
-            td[headers.index('stop')] = timing[1]
+        if 'start' in columns:
+            td[columns.index('start')] = timing[0]
+        if 'stop' in columns:
+            td[columns.index('stop')] = timing[1]
         return td
 
 
 def build_new_row_entry(dip, part, rev, port, show):
+    """
+    Formats the hookup row entry
+
+    Parameters
+    ----------
+    dip : str
+        Current entry display
+    part : str
+        Current part name
+    rev : str
+        Current part revision
+    port : str
+        Current port name
+    show : dict
+        Dictionary containing flags of what components to show.
+
+    Returns
+    -------
+    str
+        String containing that row entry.
+    """
     new_row_entry = ''
     if show['ports']:
         new_row_entry = dip
@@ -268,11 +324,15 @@ class Hookup(object):
 
         Parameters
         -----------
-        hookup:  will set the cached_hookup_dict to this, which is either a hookup dict or None.
+        hookup : dict or None
+            Will set the cached_hookup_dict to this.
         """
         self.cached_hookup_dict = hookup
 
     def delete_cache_file(self):
+        """
+        Deletes the local cached hookup file.
+        """
         if os.path.exists(self.hookup_cache_file):
             os.remove(self.hookup_cache_file)
 
@@ -285,9 +345,9 @@ class Hookup(object):
         If the cache file is up-to-date and is in memory, this does nothing.
 
         Parameters
-        -----------
-        force_new_cache:  force a new cache hookup to be set and written to disc.
-
+        ----------
+        force_new_cache : bool
+            Flag to force a new cache hookup to be set and written.
         """
         if force_new_cache or not self._hookup_cache_file_OK():
             self.cached_hookup_dict = self.get_hookup_from_db(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
@@ -313,20 +373,33 @@ class Hookup(object):
 
         Parameters
         -----------
-        hpn_list:  - list/string of input hera part number(s) (whole or first part thereof)
-                   - if string == 'cache' it returns the current dict that would be used
-                   - if there are any non-hookup-cached items in list, it reads the database
-        rev:  the revision number or descriptor
-        port_query:  a port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
-        at_date:  date for query
-        exact_match:  boolean for either exact_match or partial
-        force_new_cache:  boolean to force a full database read as opposed to the cache file.
-                          This will also rewrite the cache file in the process
-        force_db:  flag to force the database to be read, not touching the cache file
-        hookup_type:  type of hookup to use (current observing system is 'parts_hera').
-                      If 'None' it will determine which system it thinks it is based on
-                      the part-type.  The order in which it checks is specified in cm_sysdef.
-                      Only change if you know you want a different system (like 'parts_paper').
+        hpn_list : str, list
+            List/string of input hera part number(s) (whole or first part thereof)
+                - if string == 'cache' it returns the current dict that would be used
+                - if there are any non-hookup-cached items in list, it reads the database
+        rev : str, list
+            The matching revision number or descriptor
+        port_query : str
+            A port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
+        at_date :  str, int
+            Date for query.  Anything intelligible to cm_utils.get_astropytime
+        exact_match : bool
+            Flag for either exact_match or partial
+        force_new_cache :  bool
+            Flag to force a full database read as opposed to the cache file.
+            If True, this will also rewrite the cache file in the process
+        force_db : bool
+            Flag to force the database to be read, not touching the cache file
+        hookup_type : str or None
+            Type of hookup to use (current observing system is 'parts_hera').
+            If 'None' it will determine which system it thinks it is based on
+            the part-type.  The order in which it checks is specified in cm_sysdef.
+            Only change if you know you want a different system (like 'parts_paper').
+
+        Returns
+        -------
+        dict
+            Hookup dictionary.
         """
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
@@ -371,6 +444,16 @@ class Hookup(object):
     def _requested_list_OK_for_cache(self, hpn_list):
         """
         Checks that all hookup requests match the cached keys.
+
+        Parameters
+        ----------
+        hpn_list : list
+            List of HERA part numbers being checked.
+
+        Returns
+        -------
+        bool
+            True if the part numbers are in the cached keys. Else False
         """
         for x in hpn_list:
             for key_prefix in self.hookup_list_to_cache:
@@ -384,6 +467,31 @@ class Hookup(object):
         """
         This gets called by the get_hookup wrapper if the database needs to be read (for instance, to generate
         a cache file, or search for parts different than those keyed on in the cache file.)
+
+        Parameters
+        -----------
+        hpn_list : str, list
+            List/string of input hera part number(s) (whole or first part thereof)
+                - if string == 'cache' it returns the current dict that would be used
+                - if there are any non-hookup-cached items in list, it reads the database
+        rev : str, list
+            The matching revision number or descriptor
+        port_query : str
+            A port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
+        at_date :  str, int
+            Date for query.  Anything intelligible to cm_utils.get_astropytime
+        exact_match : bool
+            Flag for either exact_match or partial
+        hookup_type : str or None
+            Type of hookup to use (current observing system is 'parts_hera').
+            If 'None' it will determine which system it thinks it is based on
+            the part-type.  The order in which it checks is specified in cm_sysdef.
+            Only change if you know you want a different system (like 'parts_paper').
+
+        Returns
+        -------
+        dict
+            Hookup dictionary.
         """
         # Reset at_date
         at_date = cm_utils.get_astropytime(at_date)
@@ -421,6 +529,19 @@ class Hookup(object):
         return hookup_dict
 
     def get_part_types_found(self, hookup_connections):
+        """
+        Takes a list of connections and returns the part_types of them.
+
+        Parameters
+        ----------
+        hookup_connections : list
+            List of Connection objects
+
+        Returns
+        -------
+        list
+            List of part_types
+        """
         if not len(hookup_connections):
             return []
         part_types_found = set()
@@ -434,6 +555,23 @@ class Hookup(object):
         return list(part_types_found)
 
     def _follow_hookup_stream(self, part, rev, port_pol):
+        """
+        This follows a list of connections upstream and downstream.
+
+        Parameters
+        ----------
+        part : str
+            HERA part number
+        rev : str
+            HERA part revision
+        port_pol : str
+            Port polarization to follow
+
+        Returns
+        -------
+        list
+            List of connections for that hookup.
+        """
         self.upstream = []
         self.downstream = []
         port = port_pol  # Seed it
@@ -454,6 +592,11 @@ class Hookup(object):
     def _recursive_connect(self, current):
         """
         Find the next connection up the signal chain.
+
+        Parameters
+        ----------
+        current : Namespace object
+            Namespace containing current information.
         """
         next_conn = self._get_next_connection(current)
         if next_conn is not None:
@@ -472,6 +615,11 @@ class Hookup(object):
     def _get_next_connection(self, current):
         """
         Get next connected part going the given direction.
+
+        Parameters
+        ----------
+        current : Namespace object
+            Namespace containing current information.
         """
         # Get all of the port options going the right direction
         tpk = cm_utils.make_part_key(current.part, current.rev)
@@ -504,6 +652,14 @@ class Hookup(object):
         return self.sysdef.next_connection(options, current, this, next)
 
     def write_hookup_cache_to_file(self, log_msg):
+        """
+        Writes the current hookup to the cache file.
+
+        Parameters
+        ----------
+        log_msg : str
+            String containing any desired messages for the cm log.
+        """
         hookup_dict_for_json = copy.deepcopy(self.cached_hookup_dict)
         for key, value in six.iteritems(self.cached_hookup_dict):
             if isinstance(value, HookupDossierEntry):
@@ -524,6 +680,9 @@ class Hookup(object):
         cm_utils.log('update_cache', log_dict=log_dict)
 
     def read_hookup_cache_from_file(self):
+        """
+        Reads the current cache file into memory.
+        """
         if os.path.exists(self.hookup_cache_file):
             with open(self.hookup_cache_file, 'r') as outfile:
                 save_dict = json.load(outfile)
@@ -558,6 +717,16 @@ class Hookup(object):
             cached_at_date:  the date in the cache file for which it was written.
         If the cache_file was written before the latest cm_version, it fails because
         anything could have changed within the database.
+
+        Parameters
+        ----------
+        contemporaneous_minutes : float
+            Number of minutes where the cache file is considered current.
+
+        Returns
+        -------
+        bool
+            True if the cache file is current.
         """
         # Get the relevant dates (checking the cache_file/cm_version up front)
         try:
@@ -599,6 +768,14 @@ class Hookup(object):
             return True
 
     def hookup_cache_file_info(self):
+        """
+        Reads in information about the current cache file.
+
+        Returns
+        -------
+        str
+            String containing the information.
+        """
         if not os.path.exists(self.hookup_cache_file):  # pragma: no cover
             s = "{} does not exist.\n".format(self.hookup_cache_file)
         else:
@@ -628,17 +805,25 @@ class Hookup(object):
         Print out the hookup table -- uses tabulate package.
 
         Parameters
-        -----------
-        hookup_dict:  generated in self.get_hookup
-        cols_to_show:  list of columns to include in hookup listing
-        ports:  boolean to include ports or not
-        revs:  boolean to include revisions letter or not
-        state:  show the full hookups only, or all
-        filename:  file name to use, None goes to stdout.  The file that gets written is
-                   in all cases an "ascii" file
-        output_format:  set to 'html' for a web-page version,
-                        'csv' for a comma-separated value version, or
-                        'table' for a formatted text table
+        ----------
+        hookup_dict : dict
+            Hookup dictionary generated in self.get_hookup
+        cols_to_show : list, str
+            list of columns to include in hookup listing
+        ports : bool
+            Flag to include ports or not
+        revs : bool
+            Flag to include revisions or not
+        state : str
+            String designating whether to show the full hookups only, or all
+        filename : str or None
+            File name to use, None goes to stdout.  The file that gets written is
+            in all cases an "ascii" file
+        output_format : str
+            Set output file type.
+                'html' for a web-page version,
+                'csv' for a comma-separated value version, or
+                'table' for a formatted text table
         """
         show = {'ports': ports, 'revs': revs}
         headers = self.make_header_row(hookup_dict, cols_to_show)
@@ -680,6 +865,21 @@ class Hookup(object):
             file.close()
 
     def make_header_row(self, hookup_dict, cols_to_show):
+        """
+        Generates the appropriate header row for the displayed hookup.
+
+        Parameters
+        ----------
+        hookup_dict : dict
+            Hookup dictionary generated in self.get_hookup
+        cols_to_show : list, str
+            list of columns to include in hookup listing
+
+        Returns
+        -------
+        list
+            List of header titles.
+        """
         col_list = []
         for h in hookup_dict.values():
             for cols in h.columns.values():

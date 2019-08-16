@@ -74,7 +74,15 @@ class PartDossierEntry():
 
     def get_entry(self, session, full_version=True):
         """
+        This retrieves one part_dossier entry.
 
+        Parameters
+        ----------
+        session : object
+            A database session instance
+        full_version : bool, optional
+            Flag to retrieve a full version, or truncated version.  Default is True
+            A truncated version leaves off the part_info, geo and connections
         """
         part_query = session.query(PC.Parts).filter(
             (func.upper(PC.Parts.hpn) == self.hpn) & (func.upper(PC.Parts.hpn_rev) == self.rev))
@@ -87,6 +95,14 @@ class PartDossierEntry():
             self.connections.get_entry(session)
 
     def get_part_info(self, session):
+        """
+        Retrieves the part_info for the part in self.hpn.
+
+        Parameter
+        ---------
+        session : object
+            A database session instance
+        """
         pi_dict = {}
         if self.hpn is None:
             for part_info in session.query(PC.PartInfo).all():
@@ -104,6 +120,14 @@ class PartDossierEntry():
                 self.part_info.append(pi_dict[x])
 
     def get_geo(self, session):
+        """
+        Retrieves the part_info for the part in self.hpn.
+
+        Parameter
+        ---------
+        session : object
+            A database session instance
+        """
         if self.part.hptype == 'station':
             from . import geo_handling
             gh = geo_handling.get_location([self.part.hpn], self.at_date, session=session)
@@ -111,12 +135,39 @@ class PartDossierEntry():
                 self.geo = gh[0]
 
     def get_header_titles(self, headers):
+        """
+        Returns the header titles for the given header names.  The returned header_titles are
+        used in the tabulate display.
+
+        Parameters
+        ----------
+        headers : list
+            List of header names.
+
+        Returns
+        -------
+        list
+            The list of the associated header titles.
+        """
         header_titles = []
         for h in headers:
             header_titles.append(self.col_hdr[h])
         return header_titles
 
     def table_entry_row(self, columns):
+        """
+        Converts the part_dossier column information to a row for the tabulate display.
+
+        Parameters
+        ----------
+        columns : list
+            List of the desired header columns to use.
+
+        Returns
+        -------
+        list
+            A row for the tabulate display.
+        """
         tdata = []
         if 'lib_file' in columns:  # notes only version
             for i, pi in enumerate(self.part_info):
@@ -188,6 +239,14 @@ class PartConnectionDossierEntry:
         return ("{self.hpn}:{self.rev}\n\tkeys_up:  {self.keys_up}\n\tkeys_down:  {self.keys_down}\n".format(self=self))
 
     def make_entry_from_connection(self, conn):
+        """
+        Given a connection object it will populate a connection dossier class.
+
+        Parameters
+        ----------
+        conn : object
+            An object of type Connections.
+        """
         self.keys_up = [self.entry_key]
         self.keys_down = [self.entry_key]
         self.up[self.entry_key] = copy.copy(conn)
@@ -198,6 +257,11 @@ class PartConnectionDossierEntry:
     def get_entry(self, session):
         """
         Gets a PartConnectionDossierEntry class object
+
+        Parameters
+        ----------
+        session : object
+            A database session instance
         """
         # Find where the part is in the upward position, so identify its downward connection
         tmp = {}
@@ -244,7 +308,20 @@ class PartConnectionDossierEntry:
         elif pad > 0:
             self.keys_up.extend([None] * abs(pad))
 
-    def table_entry_row(self, headers):
+    def table_entry_row(self, columns):
+        """
+        Converts the connections_dossier column information to a row for the tabulate display.
+
+        Parameters
+        ----------
+        columns : list
+            List of the desired header columns to use.
+
+        Returns
+        -------
+        list
+            A row for the tabulate display.
+        """
         tdata = []
         show_conn_dict = {'Part': self.entry_key}
 
@@ -275,7 +352,7 @@ class PartConnectionDossierEntry:
                 show_conn_dict[':dInput>'] = c.downstream_input_port
             if use_upward_connection or use_downward_connection:
                 r = []
-                for h in headers:
+                for h in columns:
                     r.append(show_conn_dict[h])
                 tdata.append(r)
 
@@ -289,8 +366,9 @@ class Handling:
 
     def __init__(self, session=None):
         """
-        session: session on current database. If session is None, a new session
-                 on the default database is created and used.
+        session : object
+            session on current database. If session is None, a new session
+            on the default database is created and used.
         """
         if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
@@ -305,12 +383,12 @@ class Handling:
         """
         Add a new cm_version row to the M&C database.
 
-        Parameters:
-        ------------
-        time: astropy time object
-            time of this cm_update
-        git_hash: string
-            git hash of the cm repo
+        Parameters
+        ----------
+        time : astropy time object
+            Time of this cm_update
+        git_hash : str
+            Git hash of the cm repo
         """
         from .cm_transfer import CMVersion
 
@@ -320,14 +398,16 @@ class Handling:
         """
         Get the cm_version git_hash active at a particular time (default: now)
 
-        Parameters:
-        ------------
-        time: time to get active cm_version for (passed to cm_utils.get_astropytime).
-            Default is 'now'
+        Parameters
+        ----------
+        at_date : str, int
+            time to get active cm_version for (passed to cm_utils.get_astropytime).
+            Anything intelligible to cm_utils.get_astropytime.  Default is 'now'
 
-        Returns:
-        --------
-        git hash (string) of the cm_version active at
+        Returns
+        -------
+        str
+            Git hash of the cm_version active at
         """
         from .cm_transfer import CMVersion
 
@@ -341,11 +421,38 @@ class Handling:
         return result[0].git_hash
 
     def get_part_type_for(self, hpn):
+        """
+        Provides the signal path part type for a supplied part number.
+
+        Parameters
+        ----------
+        hpn : str
+            HERA part number.
+
+        Returns
+        -------
+        str
+            The associated part type.
+        """
         part_query = self.session.query(PC.Parts).filter(
             (func.upper(PC.Parts.hpn) == hpn.upper())).first()
         return part_query.hptype
 
     def get_part_from_hpnrev(self, hpn, rev):
+        """
+        Returns a Part object for the supplied part number and revisions.
+
+        Parameters
+        ----------
+        hpn : str
+            HERA part number
+        rev : str
+            Part revision designator
+
+        Returns
+        -------
+        Part object
+        """
         return self.session.query(PC.Parts).filter(
             (func.upper(PC.Parts.hpn) == hpn.upper())
             & (func.upper(PC.Parts.hpn_rev) == rev.upper())).first()
@@ -356,12 +463,21 @@ class Handling:
         is used to get the part and connection "dossiers"
 
         Parameters
-        -----------
-        hpn:  the input hera part number [string or list-of-strings] (whole or first part thereof)
-        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL')
-              if list must match length of hpn
-        at_date:  reference date of dossier [something get_astropytime can handle]
-        exact_match:  boolean to enforce full part number match
+        ----------
+        hpn : list, str
+            The input hera part number [string or list-of-strings] (whole or first part thereof)
+        rev : list, str
+            Specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL')
+            if list must match length of hpn
+        at_date : str, int
+            Reference date of dossier [something get_astropytime can handle]
+        exact_match :  bool
+            If True, will enforce full part number match
+
+        Returns
+        -------
+        dict
+            Dictionary containing the revision part information.
         """
 
         at_date = cm_utils.get_astropytime(at_date)
@@ -380,21 +496,31 @@ class Handling:
                          exact_match=False, full_version=True):
         """
         Return information on a part.  It will return all matching first
-        characters unless exact_match==True.
-        It gets parts as specified under 'rev'
+        characters unless exact_match==True.  It gets parts as specified under 'rev'.
 
         Returns part_dossier: a dictionary keyed on the part_number containing PartDossierEntry classes
 
         Parameters
         -----------
-        hpn:  the input hera part number [string or list-of-strings] (whole or first part thereof)
-        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
-              if list, must match length of hpn
-        at_date:  reference date of dossier (and stop_date for displaying notes)
-        notes_start_date:  start_date for displaying notes
-        sort_notes_by:  for all notes (hpn=None) can sort by 'part' or 'post' ['part']
-        exact_match:  boolean to enforce full part number match
-        full_version:  flag whether to populate the full_version or truncated version of the dossier
+        hpn : str, list
+            The input hera part number [string or list-of-strings] (whole or first part thereof)
+        rev : str, list
+            Specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific). If list, must match length of hpn
+        at_date : str, int
+            Reference date of dossier (and stop_date for displaying notes)
+        notes_start_date : str, int
+            Start_date for displaying notes
+        sort_notes_by : str
+            For all notes (hpn=None) can sort by 'part' or 'post' ['part']
+        exact_match : bool
+            Flag to enforce full part number match
+        full_version : bool
+            Flag whether to populate the full_version or truncated version of the dossier
+
+        Returns
+        -------
+        dict
+            part_dossier dictionary keyed on the part_number containing PartDossierEntry classes
         """
 
         part_dossier = {}
@@ -421,11 +547,13 @@ class Handling:
         """
         Print out part information.  Uses tabulate package.
 
-        Parameters
-        -----------
-        part_dossier:  input dictionary of parts, generated by self.get_part_dossier
-        notes_only:  flag to print out only the notes of a part as opposed to the standard table.
-                     This also includes the note post date and library file (if in database)
+        Parameter
+        ---------
+        part_dossier : dict
+            Input dictionary of parts, generated by self.get_part_dossier
+        notes_only : bool
+            Flag to print out only the notes of a part as opposed to the standard table.
+            This also includes the note post date and library file (if in database)
         """
 
         pd_keys = sorted(list(part_dossier.keys()))
@@ -460,9 +588,15 @@ class Handling:
 
         Returns a list of connections (class)
 
-        Parameters:
-        ------------
-        at_date:  Astropy Time to check epoch.  If None is ignored.
+        Parameters
+        ----------
+        at_date : Astropy Time
+            Time to check epoch.  If None is ignored.
+
+        Returns
+        -------
+        list
+            List of Connections
         """
         if not isinstance(at_date, Time):
             at_date = cm_utils.get_astropytime(at_date)
@@ -490,10 +624,17 @@ class Handling:
 
         Returns a list of connections (class)
 
-        Parameters:
-        ------------
-        c:  connection class containing the query
-        at_date:  Astropy Time to check epoch.  If None is ignored.
+        Parameters
+        ----------
+        c : object
+            Connection class containing the query
+        at_date : Astropy Time
+            Time to check epoch.  If None is ignored.
+
+        Returns
+        -------
+        list
+            List of Connections
         """
         fnd = []
         for conn in self.session.query(PC.Connections).filter(
@@ -522,20 +663,29 @@ class Handling:
 
     def get_part_connection_dossier(self, hpn, rev, port, at_date=None, exact_match=False):
         """
-        Return information on parts connected to hpn
-        It should get connections immediately adjacent to one part (upstream and
-            downstream).
+        Return information on parts connected to hpn.  It should get connections immediately
+        adjacent to one part (upstream and downstream).
 
         Returns connection_dossier dictionary with PartConnectionDossierEntry classes
 
         Parameters
-        -----------
-        hpn:  the input hera part number [string or list-of-strings] (whole or first part thereof)
-        rev:  specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific)
-              if list, must match length of hpn
-        port:  a specifiable port name [string, not a list],  default is 'all'
-        at_date: reference date of dossier, only used if rev==ACTIVE (and for now FULL...)
-        exact_match:  boolean to enforce full part number match
+        ----------
+        hpn : str, list
+            The input hera part number [string or list-of-strings] (whole or first part thereof)
+        rev : str, list
+            Specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific).
+            If list, must match length of hpn
+        port : str
+            A specifiable port name [string, not a list],  default is 'all'
+        at_date : str, int
+            Feference date of dossier, only used if rev==ACTIVE (and for now FULL...)
+        exact_match : bool
+            Flag to enforce full part number match
+
+        Returns
+        -------
+        dict
+            dictconnection_dossier dictionary with PartConnectionDossierEntry classes
         """
 
         at_date = cm_utils.get_astropytime(at_date)
@@ -555,10 +705,12 @@ class Handling:
         """
         Print out active connection information.  Uses tabulate package.
 
-        Parameters
-        -----------
-        connection_dossier:  input dictionary of connections, generated by self.get_connection
-        verbosity:  integer 1, 2, 3 for low, medium, high
+        Parameter
+        ---------
+        connection_dossier : dict
+            Input dictionary of connections, generated by self.get_connection
+        verbosity : int
+            Integer 1, 2, 3 for low, medium, high
         """
         table_data = []
         if headers is None:
@@ -583,16 +735,23 @@ class Handling:
     def get_part_types(self, port, at_date):
         """
         Goes through database and pulls out part types and some other info to
-            display in a table.
+        display in a table.
 
         Returns part_type_dict, a dictionary keyed on part type
 
         Parameters
         -----------
-        port:  if port == '[phy]sical' show only "physical" ports"
-               if port == '[sig]nal' show only "signal" ports
-               if port == 'all' shows all
-        at_date:  date for part_types to be shown
+        port : str
+            If port == '[phy]sical' show only "physical" ports"
+            If port == '[sig]nal' show only "signal" ports
+            If port == 'all' shows all
+        at_date : str, int
+            Date for part_types to be shown
+
+        Returns
+        -------
+        dict
+            part_type_dict, a dictionary keyed on part type
         """
 
         self.part_type_dict = {}
