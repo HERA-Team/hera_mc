@@ -31,9 +31,12 @@ if __name__ == '__main__':
                         "string for interpreting starttime (string).", default=None)
     parser.add_argument('--starttime_scale', help="Astropy Time object scale "
                         "string for interpreting starttime (string).", default=None)
-    parser.add_argument('--duration', help="Required if command is 'take_data', "
+    parser.add_argument('--duration',
+                        help="Required if command is 'take_data', "
                         "ignored otherwise. Length of time to take data for, "
-                        "in seconds (float). ", default=None)
+                        "in seconds (float). ",
+                        type=float,
+                        default=None)
     parser.add_argument('--tag', help="Required if command is 'take_data', "
                         "ignored otherwise. Tag which will end up in data files "
                         "as a header entry, must be one of: "
