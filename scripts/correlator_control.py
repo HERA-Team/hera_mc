@@ -73,11 +73,12 @@ if __name__ == '__main__':
             starttime_obj = Time(args.starttime, format=args.starttime_format,
                                  scale=args.starttime_scale)
         elif args.now:
-            starttime_obj = Time.now()
+            #now + 60s buffer for correlator to collect itself
+            starttime_obj = Time.now() + TimeDelta(Quantity(60,second))
 
     else:
         starttime_obj = None
-    if args.lstlock and starttime_obj is not None :
+    if args.lstlock and starttime_obj is not None:
         LSTbin_size = 16  # seconds
         starttime_obj, LSTbin = LSTScheduler(starttime_obj, LSTbin_size)
         print("locking to {s}s LST grid. Next bin at".format(s=LSTbin_size),
