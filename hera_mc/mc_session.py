@@ -2608,7 +2608,7 @@ class MCSession(Session):
             elif command == 'update_config':
                 getattr(self.corr_obj, corr.command_dict[command])(config_file)
             else:
-                getattr(self.corr_obj, corr.command_dict[command])
+                getattr(self.corr_obj, corr.command_dict[command])()
 
             self.add(command_obj)
             self.commit()
