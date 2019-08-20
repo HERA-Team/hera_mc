@@ -2592,7 +2592,6 @@ class MCSession(Session):
                 # input time needs to be unix epoch in ms
                 starttime_used_unix = \
                     getattr(self.corr_obj, corr.command_dict[command])(np.round(starttime.unix*1000), duration, acclen_spectra, tag=tag)
-                                            int(np.round(starttime.unix*1000)), duration, acclen_spectra, tag=tag)
                 if starttime_used_unix is hera_corr_cm.ERROR:
                     warnings.warn('take_data returned ERROR on inputs: {t}, {d}, {acc},{tag}'.format(
                         t=int(np.round(starttime.unix * 1000)),
