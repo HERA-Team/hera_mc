@@ -2403,7 +2403,8 @@ class MCSession(Session):
             if true, do not use anything that requires connection to correlator (implies dry run)
         """
         from . import correlator as corr
-
+        import hera_corr_cm
+        
         if testing:
             dryrun = True
 
