@@ -2589,7 +2589,7 @@ class MCSession(Session):
                 # time by as much as 134 ms
                 # the call to hera_corr_cm returns the actual start time (in unix format)
                 starttime_used_unix = \
-                    getattr(self.corr_obj, corr.command_dict[command])(starttime, duration, acclen_spectra, tag=tag)
+                    getattr(self.corr_obj, corr.command_dict[command])(starttime.unix, duration, acclen_spectra, tag=tag)
                 starttime_used = Time(starttime_used_unix, format='unix')
 
                 starttime_diff_sec = starttime.gps - starttime_used.gps
