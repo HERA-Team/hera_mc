@@ -78,7 +78,7 @@ if __name__ == '__main__':
                                  scale=args.starttime_scale)
         elif args.now:
             #now + 60s buffer for correlator to collect itself
-            starttime_obj = Time.now() + TimeDelta(Quantity(60,second))
+            starttime_obj = Time.now() + TimeDelta(Quantity(60, 'second'))
 
     else:
         starttime_obj = None
