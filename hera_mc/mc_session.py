@@ -2593,7 +2593,7 @@ class MCSession(Session):
                 starttime_ms = int(np.round(starttime.unix*1000))
                 starttime_used_unix_ms = \
                     getattr(self.corr_obj, corr.command_dict[command])(starttime_ms, duration, acclen_spectra, tag=tag)
-                if starttime_used_unix is hera_corr_cm.ERROR:
+                if starttime_used_unix_ms is hera_corr_cm.ERROR:
                     warnings.warn('take_data returned ERROR on inputs: {t}, {d}, {acc},{tag}'.format(
                         t=starttime_ms,
                         d=duration,
