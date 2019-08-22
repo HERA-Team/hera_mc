@@ -653,27 +653,57 @@ class AntennaStatus(MCDeclarativeBase):
     """
     Definition of antenna status table (based on SNAP info).
 
-    time: gps time of the snap status data, floored (BigInteger, part of primary_key).
-    antenna_number: antenna number (Integer, part of primary_key)
-    antenna_feed_pol: Feed polarization, either 'e' or 'n' (String, part of primary_key)
-    snap_hostname: snap hostname (String)
-    snap_channel_number: The SNAP ADC channel number (0-7) to which this antenna is connected (Integer)
-    adc_mean: Mean ADC value, in ADC units (Float)
-    adc_rms: RMS ADC value, in ADC units (Float)
-    adc_power: Mean ADC power, in ADC units squared (Float)
-    pam_atten: PAM attenuation setting for this antenna, in dB. (Integer)
-    pam_power: PAM power sensor reading for this antenna, in dBm (Float)
-    pam_voltage: PAM voltage sensor reading for this antenna, in Volts (Float)
-    pam_current: PAM current sensor reading for this antenna, in Amps (Float)
-    pam_id: serial number of this PAM (string)
-    fem_voltage: FEM voltage sensor reading for this antenna, in Volts (Float)
-    fem_current: FEM current sensor reading for this antenna, in Amps (Float)
-    fem_id: serial number of this FEM (string)
-    fem_temp: EM temperature sensor reading for this antenna in degrees Celsius (Float)
-    eq_coeffs: Digital EQ coefficients for this antenna, list of floats stored as a string (String)
-    histogram_bin_centers: ADC histogram bin centers, list of ints stored as a string (String)
-    histogram: ADC histogram counts, list of ints stored as a string (String)
+    Attributes
+    ----------
+    time : BigInteger
+        gps time of the snap status data, floored.
+        part of primary_key
+    antenna_number : Integer
+        antenna number
+        part of primary_key
+    antenna_feed_pol : String
+        Feed polarization, either 'e' or 'n'
+        part of primary_key
+    snap_hostname : String
+        snap hostname
+    snap_channel_number : Integer
+        The SNAP ADC channel number (0-7) to which this antenna is connected
+    adc_mean : Float
+        Mean ADC value, in ADC units
+    adc_rms : Float
+        RMS ADC value, in ADC units
+    adc_power : Float
+        Mean ADC power, in ADC units squared
+    pam_atten : Integer
+        PAM attenuation setting for this antenna, in dB.
+    pam_power : Float
+        PAM power sensor reading for this antenna, in dBm
+    pam_voltage : Float
+        PAM voltage sensor reading for this antenna, in Volts
+    pam_current : Float
+        PAM current sensor reading for this antenna, in Amps
+    pam_id : String
+        serial number of this PAM (string)
+    fem_voltage : Float
+        FEM voltage sensor reading for this antenna, in Volts
+    fem_current : Float
+        FEM current sensor reading for this antenna, in Amps
+    fem_id : String
+        serial number of this FEM
+    fem_temp : float
+        EM temperature sensor reading for this antenna in degrees Celsius
+    eq_coeffs : String
+        Digital EQ coefficients for this antenna, list of floats stored as a string
+    histogram_bin_centers : String
+        ADC histogram bin centers, list of ints stored as a string
+    histogram : String
+        ADC histogram counts, list of ints stored as a string
+    autocorrelation : String
+        Real valued autocorrelation value for the given antenna pol
+        list of floats stored as string
+
     """
+
     __tablename__ = 'antenna_status'
     time = Column(BigInteger, primary_key=True)
     antenna_number = Column(Integer, primary_key=True)
@@ -695,13 +725,14 @@ class AntennaStatus(MCDeclarativeBase):
     eq_coeffs = Column(String)
     histogram_bin_centers = Column(String)
     histogram = Column(String)
+    autocorrelation = Column(String)
 
     @classmethod
     def create(cls, time, antenna_number, antenna_feed_pol, snap_hostname,
                snap_channel_number, adc_mean, adc_rms, adc_power, pam_atten,
                pam_power, pam_voltage, pam_current, pam_id, fem_voltage,
                fem_current, fem_id, fem_temp, eq_coeffs, histogram_bin_centers,
-               histogram):
+               histogram, autocorrelation):
         """
         Create a new SNAP status object.
 
@@ -753,6 +784,9 @@ class AntennaStatus(MCDeclarativeBase):
             ADC histogram bin centers
         histogram : list of int
             ADC histogram counts
+        autocorrelation : list of float
+            autocorrelation values as a function of frequency
+
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -779,6 +813,12 @@ class AntennaStatus(MCDeclarativeBase):
         else:
             histogram_string = None
 
+        if autocorrelation is not None:
+            auto_string = [str(val) for val in autocorrelation]
+            auto_string = '[' + ','.join(auto_string) + ']'
+        else:
+            auto_string = None
+
         return cls(time=snap_time, antenna_number=antenna_number,
                    antenna_feed_pol=antenna_feed_pol, snap_hostname=snap_hostname,
                    snap_channel_number=snap_channel_number, adc_mean=adc_mean,
@@ -787,12 +827,12 @@ class AntennaStatus(MCDeclarativeBase):
                    pam_current=pam_current, pam_id=pam_id, fem_voltage=fem_voltage,
                    fem_current=fem_current, fem_id=fem_id, fem_temp=fem_temp,
                    eq_coeffs=eq_coeffs_string, histogram_bin_centers=histogram_bin_string,
-                   histogram=histogram_string)
+                   histogram=histogram_string, autocorrelation=auto_string)
 
 
 def _get_ant_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     """
-    gets the antenna status dict from the correlator
+    Get the antenna status dict from the correlator.
 
     Parameters
     ---------
@@ -825,9 +865,11 @@ def _get_ant_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS
                 fem_temp (float)      : FEM temperature sensor reading for this antenna (C)
                 eq_coeffs (list of floats) : Digital EQ coefficients for this antenna
                 histogram (list of ints) : Two-dimensional list: [[bin_centers][counts]] representing ADC histogram
+                autocorrelation (list of floats) : Autocorrelation spectrum
                 timestamp (datetime) : Asynchronous timestamp that these status entries were gathered
 
                 Unknown values return the string "None"
+
     """
     import hera_corr_cm
 
@@ -871,15 +913,17 @@ def create_antenna_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_A
 
     Parameters:
     ------------
-    correlator_redis_address: Address of server where the correlator redis database can be accessed.
-    ant_status_dict: A dict spoofing the return dict from _get_ant_status for testing
+    correlator_redis_address : str
+        Address of server where the correlator redis database can be accessed.
+    ant_status_dict : dict
+        A dict spoofing the return dict from _get_ant_status for testing
         purposes. Default: None
 
     Returns:
     -----------
     A list of NodeSensor objects
-    """
 
+    """
     if ant_status_dict is None:
         ant_status_dict = _get_ant_status(corr_cm=corr_cm,
                                           correlator_redis_address=correlator_redis_address)
@@ -924,6 +968,10 @@ def create_antenna_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_A
         else:
             histogram_bin_centers = None
             histogram = None
+        if ant_dict['autocorrelation'] is not None:
+            autocorrelation = ant_dict['autocorrelation']
+        else:
+            autocorrelation = None
 
         ant_status_list.append(
             AntennaStatus.create(time, antenna_number, antenna_feed_pol,
@@ -931,6 +979,7 @@ def create_antenna_status(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_A
                                  adc_rms, adc_power, pam_atten, pam_power,
                                  pam_voltage, pam_current, pam_id, fem_voltage,
                                  fem_current, fem_id, fem_temp, eq_coeffs,
-                                 histogram_bin_centers, histogram))
+                                 histogram_bin_centers, histogram,
+                                 autocorrelation))
 
     return ant_status_list
