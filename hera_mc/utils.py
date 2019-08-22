@@ -33,14 +33,23 @@ from astropy import units as u
 import numpy as np
 import datetime
 
-    #input an astropy time object
-    #input an LSTbin_size in seconds
-    #   grid the day into regular LST bins of size LSTbin_size
-    #   return the time of the next occuring LST bin
 
 
 def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
-    if isinstance(starttime, Time)==False:
+    """
+    Round a time to the nearest LST bin.
+
+    LSTbins start at 0 and step according to LSTbin_size.
+
+    Inputs:
+        starttime: astropy time object
+        LSTbin_size: lst bin size in seconds
+        longitude: degrees
+
+    Returns:
+        time of nearest lst bin (astropy.time.Time), lst bin in hours (astropy.coord.Angle)
+    """
+
     sidesec = u.Quantity(1, 'sday').to('day').value  # length of sidereal second in SI seconds.
     locate = coord.EarthLocation(lon=longitude * u.deg, lat=-30 * u.deg)  # HERA location, #XXX get the HERA location programmatically
         raise TypeError("starttime is not a valid Astropy Time object")
