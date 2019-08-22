@@ -39,16 +39,16 @@ def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
 
     Parameters
     -----
-    starttime: astropy.time.Time
+    starttime : astropy.time.Time
                Target schedule time
-    LSTbin_size: float
+    LSTbin_size : float
                  lst bin size in seconds
-    longitude: float
+    longitude : float
                telescope longitude in degrees
 
     Returns
     -----
-    schedule time          :  astropy.time.Time
+    schedule time :  astropy.time.Time
                               time of next LST bin
     schedule sidereal time :  astropy.coord.Angle
                               sidereal time of next LST bin
