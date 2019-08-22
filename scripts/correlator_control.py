@@ -82,7 +82,7 @@ if __name__ == '__main__':
         starttime_obj = None
     if args.lstlock and starttime_obj is not None:
         LSTbin_size = 16  # seconds
-        geo = geo_handling.Handling(self.session)  # get the geo part of CM
+        geo = geo_handling.Handling(session)  # get the geo part of CM
         cofa = geo.cofa()  # center of array (COFA yo)
         longitude = cofa[0].lon  # the longitude in _degrees_
         starttime_obj, LSTbin = LSTScheduler(starttime_obj,
