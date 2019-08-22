@@ -1,8 +1,9 @@
 import nose.tools as nt
 from astropy.time import Time
+from astropy.units import Quantity
 from .. import utils
-sidesec = 365.25/366.25 #length of sidereal second in SI seconds.
 
+sidesec = Quantity(1, 'sday').to('day').value  # length of sidereal second in SI seconds.
 def test_LSTScheduler_lstbinsize():
     """
     test that two bins have the right time separation

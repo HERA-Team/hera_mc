@@ -39,9 +39,10 @@ def LSTScheduler(starttime,LSTbin_size):
     #   grid the day into regular LST bins of size LSTbin_size
     #   return the time of the next occuring LST bin
 
-    sidesec = 365.25/366.25 #length of sidereal second in SI seconds.
+
     locate=coord.EarthLocation(lon=21.25*u.deg, lat=-30.33*u.deg) #HERA location, #XXX get the HERA location programmatically
     if isinstance(starttime, Time)==False:
+    sidesec = u.Quantity(1, 'sday').to('day').value  # length of sidereal second in SI seconds.
         raise TypeError("starttime is not a valid Astropy Time object")
     starttime.location = locate
     numChunks=(24*60*60)/LSTbin_size #seconds in a day
