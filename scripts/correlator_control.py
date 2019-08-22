@@ -12,7 +12,7 @@ import sys
 from astropy.time import Time, TimeDelta
 from astropy.units import Quantity
 from hera_mc.utils import LSTScheduler
-from hera_mc import mc
+from hera_mc import mc, geo_handling
 from hera_mc import correlator as corr
 
 valid_commands = list(sorted(corr.command_dict.keys()))
@@ -84,7 +84,12 @@ if __name__ == '__main__':
         starttime_obj = None
     if args.lstlock and starttime_obj is not None:
         LSTbin_size = 16  # seconds
-        starttime_obj, LSTbin = LSTScheduler(starttime_obj, LSTbin_size)
+        geo = geo_handling.Handling(self.session)  # get the geo part of CM
+        cofa = geo.cofa()  # center of array (COFA yo)
+        longitude = cofa[0].lon  # the longitude in _degrees_
+        starttime_obj, LSTbin = LSTScheduler(starttime_obj,
+                                             LSTbin_size,
+                                             longitude=longitude)
         print("locking to {s}s LST grid. Next bin at".format(s=LSTbin_size),
               starttime_obj.iso)
     command_list = session.correlator_control_command(args.command,
