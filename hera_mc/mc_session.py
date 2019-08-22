@@ -2403,8 +2403,8 @@ class MCSession(Session):
             if true, do not use anything that requires connection to correlator (implies dry run)
         """
         from . import correlator as corr
-        import hera_corr_cm
-        
+
+
         if testing:
             dryrun = True
 
@@ -2584,7 +2584,7 @@ class MCSession(Session):
 
         if not dryrun:  # pragma: no cover
             self.add_corr_obj()
-
+            import hera_corr_cm
             if command == 'take_data':
                 # the correlator starttime can be different from the commanded
                 # time by as much as 134 ms
