@@ -2599,6 +2599,7 @@ class MCSession(Session):
                         d=duration,
                         acc=acclen_spectra,
                         tag=tag))
+                    raise(RunTimeError,"take_data correlator command returned an ERROR, see logs for details")
                 starttime_used = Time(starttime_used_unix_ms/1000., format='unix')
 
                 starttime_diff_sec = starttime.gps - starttime_used.gps
