@@ -36,17 +36,25 @@ else:
 
 def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
     """
-    Round a time to the nearest LST bin.
+    Round a time to the nearest LST bin for a given longitude on the globe
 
-    LSTbins start at 0 and step according to LSTbin_size.
+    LSTbins run from 0 to 24 hours and step according to LSTbin_size.
 
-    Inputs:
-        starttime: astropy time object
-        LSTbin_size: lst bin size in seconds
-        longitude: degrees
+    Parameters
+    -----
+    starttime: astropy.time.Time
+               Target schedule time
+    LSTbin_size: float
+                 lst bin size in seconds
+    longitude: float
+               telescope longitude in degrees
 
-    Returns:
-        time of nearest lst bin (astropy.time.Time), lst bin in hours (astropy.coord.Angle)
+    Returns
+    -----
+    schedule time          :  astropy.time.Time
+                              time of next LST bin
+    schedule sidereal time :  astropy.coord.Angle
+                              sidereal time of next LST bin
     """
 
     sidesec = u.Quantity(1, 'sday').to('day').value  # length of sidereal second in SI seconds.
