@@ -51,29 +51,31 @@ def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
 
     sidesec = u.Quantity(1, 'sday').to('day').value  # length of sidereal second in SI seconds.
     locate = coord.EarthLocation(lon=longitude * u.deg, lat=-30 * u.deg)  # HERA location, #XXX get the HERA location programmatically
+    if not isinstance(starttime, Time):
         raise TypeError("starttime is not a valid Astropy Time object")
     starttime.location = locate
-    numChunks=(24*60*60)/LSTbin_size #seconds in a day
-    lstGrid=np.linspace(0,int(numChunks), int(numChunks)+1, dtype=int) * LSTbin_size
-    hmsList=[None]*(int(numChunks+1))
+    numChunks = (24 * 60 * 60) / LSTbin_size  # seconds in a day
+    lstGrid = np.linspace(0, int(numChunks), int(numChunks) + 1, dtype=int) * LSTbin_size
+    hmsList = [None] * (int(numChunks + 1))
 
-    #convert the grid in seconds to HMS
-    for i, sec in enumerate(lstGrid): #make a grid of our evenly chunked LST times starting from 00h00m00s on the current day
-        hrs=int(lstGrid[i]/3600)
-        mins=int((lstGrid[i]%3600)/60)
-        secs=int(lstGrid[i]-int(hrs*3600)-int(mins*60))
-        if hrs==24: hrs=int(0)
-        hms_str='%02dh%02dm%02ds' % (hrs,mins,secs)
-        hmsList[i]=hms_str
-    lstAngleGrid=coord.Angle(hmsList) #turn LST grid into angle array
+    # convert the grid in seconds to HMS
+    for i, sec in enumerate(lstGrid):  # make a grid of our evenly chunked LST times starting from 00h00m00s on the current day
+        hrs = int(lstGrid[i] / 3600)
+        mins = int((lstGrid[i] % 3600) / 60)
+        secs = int(lstGrid[i] - int(hrs * 3600) - int(mins * 60))
+        if hrs == 24:
+            hrs = int(0)
+        hms_str = '%02dh%02dm%02ds' % (hrs, mins, secs)
+        hmsList[i] = hms_str
+    lstAngleGrid = coord.Angle(hmsList)  # turn LST grid into angle array
     for i, hour in enumerate(lstAngleGrid):
-        if hour>=starttime.sidereal_time('apparent'): #Find the timeslot our target is in
-            diffSide=hour-starttime.sidereal_time('apparent') #get difference in sidereal
-            diffSecs=diffSide.hms[2]*sidesec #convert difference to SI seconds
+        if hour >= starttime.sidereal_time('apparent'):  # Find the timeslot our target is in
+            diffSide = hour - starttime.sidereal_time('apparent')  # get difference in sidereal
+            diffSecs = diffSide.hms[2] * sidesec  # convert difference to SI seconds
             break
-    dt=TimeDelta((diffSecs), format='sec')
-    scheduleTime=starttime+dt #adjust target time by difference to get start time
-    return scheduleTime,hour
+    dt = TimeDelta((diffSecs), format='sec')
+    scheduleTime = starttime + dt  # adjust target time by difference to get start time
+    return scheduleTime, hour
 
 
 
