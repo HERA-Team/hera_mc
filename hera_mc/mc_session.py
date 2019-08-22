@@ -2404,7 +2404,6 @@ class MCSession(Session):
         """
         from . import correlator as corr
 
-
         if testing:
             dryrun = True
 
@@ -2590,7 +2589,7 @@ class MCSession(Session):
                 # time by as much as 134 ms
                 # the call to hera_corr_cm returns the actual start time (in unix format)
                 # input time needs to be unix epoch in ms
-                starttime_ms = int(np.round(starttime.unix*1000))
+                starttime_ms = int(np.round(starttime.unix * 1000))
                 starttime_used_unix_ms = \
                     getattr(self.corr_obj, corr.command_dict[command])(starttime_ms, duration, acclen_spectra, tag=tag)
                 if starttime_used_unix_ms is hera_corr_cm.ERROR:
@@ -2599,8 +2598,8 @@ class MCSession(Session):
                         d=duration,
                         acc=acclen_spectra,
                         tag=tag))
-                    raise(RunTimeError,"take_data correlator command returned an ERROR, see logs for details")
-                starttime_used = Time(starttime_used_unix_ms/1000., format='unix')
+                    raise(RunTimeError, "take_data correlator command returned an ERROR, see logs for details")
+                starttime_used = Time(starttime_used_unix_ms / 1000., format='unix')
 
                 starttime_diff_sec = starttime.gps - starttime_used.gps
                 if np.abs(starttime_diff_sec) > .1:

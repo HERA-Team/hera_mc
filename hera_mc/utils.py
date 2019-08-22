@@ -32,11 +32,8 @@ else:
         return b.decode('utf8')
 
 
-
-
 def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
-    """
-    Round a time to the nearest LST bin for a given longitude on the globe
+    """Round a time to the nearest LST bin for a given longitude on the globe
 
     LSTbins run from 0 to 24 hours and step according to LSTbin_size.
 
@@ -56,7 +53,6 @@ def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
     schedule sidereal time :  astropy.coord.Angle
                               sidereal time of next LST bin
     """
-
     sidesec = u.Quantity(1, 'sday').to('day').value  # length of sidereal second in SI seconds.
     locate = coord.EarthLocation(lon=longitude * u.deg, lat=-30 * u.deg)  # HERA location, #XXX get the HERA location programmatically
     if not isinstance(starttime, Time):
@@ -84,7 +80,6 @@ def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
     dt = TimeDelta((diffSecs), format='sec')
     scheduleTime = starttime + dt  # adjust target time by difference to get start time
     return scheduleTime, hour
-
 
 
 def calculate_obsid(starttime):

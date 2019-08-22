@@ -4,6 +4,8 @@ from astropy.units import Quantity
 from .. import utils
 
 sidesec = Quantity(1, 'sday').to('day').value  # length of sidereal second in SI seconds.
+
+
 def test_LSTScheduler_lstbinsize():
     """
     test that two bins have the right time separation
@@ -16,6 +18,8 @@ def test_LSTScheduler_lstbinsize():
     nt.assert_almost_equal((hour2 - hour1).hour * 3600, LSTbin_size)
     nt.assert_almost_equal((scheduletime2 - scheduletime1).value * 24 * 3600,
                            LSTbin_size * sidesec, places=5)
+
+
 def test_LSTScheduler_multiday():
     """
     test that two bins are at the same LST on different days
@@ -26,7 +30,9 @@ def test_LSTScheduler_multiday():
     # lst is 4 minutes earlier every day
     starttime2 = Time('2019-9-20T05:00:0.0', format='isot', scale='utc')
     scheduletime2, hour2 = utils.LSTScheduler(starttime2, LSTbin_size)
-    nt.assert_almost_equal((hour2.hour - hour1.hour)*3600, 0)
+    nt.assert_almost_equal((hour2.hour - hour1.hour) * 3600, 0)
+
+
 def test_reraise_context():
     with nt.assert_raises(ValueError) as cm:
         try:
