@@ -72,14 +72,12 @@ if __name__ == '__main__':
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
 
-    if args.command == 'take_data':
-        if args.starttime is not None:
-            starttime_obj = Time(args.starttime, format=args.starttime_format,
-                                 scale=args.starttime_scale)
-        elif args.now:
-            #now + 60s buffer for correlator to collect itself
-            starttime_obj = Time.now() + TimeDelta(Quantity(60, 'second'))
-
+    if args.starttime is not None:
+        starttime_obj = Time(args.starttime, format=args.starttime_format,
+                             scale=args.starttime_scale)
+    elif args.now:
+        # now + 60s buffer for correlator to collect itself
+        starttime_obj = Time.now() + TimeDelta(Quantity(60, 'second'))
     else:
         starttime_obj = None
     if args.lstlock and starttime_obj is not None:
