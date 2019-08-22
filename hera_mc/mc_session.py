@@ -3075,7 +3075,7 @@ class MCSession(Session):
                            adc_power, pam_atten, pam_power, pam_voltage,
                            pam_current, pam_id, fem_voltage, fem_current, fem_id,
                            fem_temp, eq_coeffs, histogram_bin_centers,
-                           histogram):
+                           histogram, autocorrelation):
         """
         Add new antenna status data to the M&C database.
 
@@ -3127,6 +3127,8 @@ class MCSession(Session):
             ADC histogram bin centers
         histogram : list of int
             ADC histogram counts
+        autocorrelation : list of float
+            Autorcorrelation spectrum
         """
         from .correlator import AntennaStatus
 
@@ -3135,7 +3137,7 @@ class MCSession(Session):
                                       adc_rms, adc_power, pam_atten, pam_power,
                                       pam_voltage, pam_current, pam_id, fem_voltage,
                                       fem_current, fem_id, fem_temp, eq_coeffs,
-                                      histogram_bin_centers, histogram))
+                                      histogram_bin_centers, histogram, autocorrelation))
 
     def get_antenna_status(self, most_recent=None, starttime=None, stoptime=None,
                            antenna_number=None, write_to_file=False, filename=None):
