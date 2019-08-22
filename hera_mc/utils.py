@@ -11,7 +11,12 @@ import collections
 from math import floor
 import six
 from astropy.time import Time
-
+from astropy.time import Time
+from astropy.time import TimeDelta
+from astropy import coordinates as coord
+from astropy import units as u
+import numpy as np
+import datetime
 
 if six.PY2:
     def str_to_bytes(s):
@@ -26,12 +31,6 @@ else:
     def bytes_to_str(b):
         return b.decode('utf8')
 
-from astropy.time import Time
-from astropy.time import TimeDelta
-from astropy import coordinates as coord
-from astropy import units as u
-import numpy as np
-import datetime
 
 
 
