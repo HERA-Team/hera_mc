@@ -40,18 +40,18 @@ def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
     Parameters
     -----
     starttime : astropy.time.Time
-               Target schedule time
+        Target schedule time
     LSTbin_size : float
-                 lst bin size in seconds
+        lst bin size in seconds
     longitude : float
-               telescope longitude in degrees
+        telescope longitude in degrees
 
     Returns
     -----
     schedule time :  astropy.time.Time
-                              time of next LST bin
+        time of next LST bin
     schedule sidereal time :  astropy.coord.Angle
-                              sidereal time of next LST bin
+        sidereal time of next LST bin
     """
     sidesec = u.Quantity(1, 'sday').to('day').value  # length of sidereal second in SI seconds.
     locate = coord.EarthLocation(lon=longitude * u.deg, lat=-30 * u.deg)  # HERA location, #XXX get the HERA location programmatically
