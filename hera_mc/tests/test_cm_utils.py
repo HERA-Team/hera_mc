@@ -113,7 +113,7 @@ class TestUtils(TestHERAMC):
         self.assertEqual(cm_hash, git_hash)
 
         example_config_path = os.path.join(os.path.dirname(hera_mc.__path__[0]), 'ci', 'example_config.json')
-        self.assertRaises(KeyError, cm_utils.get_cm_repo_git_hash,
+        self.assertRaises(ValueError, cm_utils.get_cm_repo_git_hash,
                           mc_config_path=example_config_path)
 
 
