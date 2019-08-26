@@ -198,9 +198,7 @@ class Handling:
         if len(antenna_connected) == 0:
             return None, None
         elif len(antenna_connected) > 1:
-            warning_string = 'More than one active connection between station and antenna.\n'
-            for conn in antenna_connected:
-                warning_string += '\tupstream {} -> downstream {}\n'.format(conn.upstream_part, conn.downstream_part)
+            warning_string = 'More than one active connection for {}'.format(antenna_connected[0].upstream_part)
             warnings.warn(warning_string)
             return None, None
         return antenna_connected[0].downstream_part, antenna_connected[0].down_part_rev
