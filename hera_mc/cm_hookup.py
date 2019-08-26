@@ -25,10 +25,19 @@ from . import cm_partconnect as partconn
 
 
 class HookupDossierEntry(object):
+    """
+    This is the structure of the hookup entry.  All are keyed on polarization.
+
+    Parameters
+    ----------
+    entry_key : str
+        Entry key to use for the entry.  Must be None if input_dict is not None.
+    sysdef : str
+        Name of part type system for the hookup.  Must be None if input_dict is not None.
+    input_dict : dict
+        Dictionary with seed hookup.  If it is None, entry_key and sysdef must both be provided.
+    """
     def __init__(self, entry_key=None, sysdef=None, input_dict=None):
-        """
-        This is the structure of the hookup entry.  All are keyed on polarization
-        """
         if input_dict is not None:
             if entry_key is not None:
                 raise ValueError('cannot initialize HookupDossierEntry with an '
@@ -477,7 +486,7 @@ class Hookup(object):
         rev : str, list
             The matching revision number or descriptor
         port_query : str
-            A port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
+            A port polarization to follow, or 'all',  ('e', 'n', 'all')
         at_date :  str, int
             Date for query.  Anything intelligible to cm_utils.get_astropytime
         exact_match : bool

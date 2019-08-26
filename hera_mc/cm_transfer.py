@@ -75,7 +75,7 @@ def package_db_to_csv(session=None, tables='all'):
         session on current database. If session is None, a new session
         on the default database is created and used.
     tables: string
-        comma-separated list of names of tables to initialize or 'all'. Default is 'all'
+        comma-separated list of names of tables to initialize or 'all'.
 
     Returns
     -------
@@ -265,13 +265,13 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, 
     ----------
     session : Session object, optional
         session on current database. If session is None, a new session
-             on the default database is created and used.  Default is None
+             on the default database is created and used.
     tables : str, optional
-        comma-separated list of names of tables to initialize or 'all'. Default is 'all'
+        comma-separated list of names of tables to initialize or 'all'.
     maindb : bool or str, optional
-        Either False or password to change from main db. Default is False
+        Either False or password to change from main db.
     testing : bool, optional
-        Flag to allow for testing.  Default is False
+        Flag to allow for testing.
 
     Returns
     -------

@@ -23,7 +23,7 @@ class StationInfo:
 
     Parameters
     ----------
-    stn : str, Object or None, optional.  Default is None.
+    stn : str, Object or None, optional.
         Contains the init station information.  If None, it will initial a blank object.
     """
     stn_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting', 'northing', 'lon', 'lat',
@@ -45,7 +45,7 @@ class StationInfo:
 
         Parameters
         ----------
-        stn : str, Object or None, optional.  Default is None.
+        stn : str, Object or None, optional.
             Contains the init station information.  If None, it will initial a blank object.
         """
         if stn is None:
@@ -63,7 +63,7 @@ class StationInfo:
 
         Parameters
         ----------
-        stn : str, Object or None, optional.  Default is None.
+        stn : str, Object or None, optional.
             Contains the init station information.  If None, it will initial a blank object.
         """
         if stn is None:
@@ -368,11 +368,11 @@ class Handling:
         hlist : str, list,  optional.
             List of prefixes or stations to use in summary.  Default is the "default" prefix list in cm_utils.
         rev : str, optional.
-            Revision or revision type.  Default is "ACTIVE"
+            Revision or revision type.
         exact_match : bool, optional.
-            Flag for exact_match or included characters.  Default is False.
+            Flag for exact_match or included characters.
         hookup_cols : str, list, optional.
-            List of hookup columns to use, or 'all'. Default is 'all'
+            List of hookup columns to use, or 'all'.
         forc_new_hookup_dict : bool
             Flag to force a new hookup dict to be generated (as opposed to checking for cache.)
 
@@ -410,9 +410,9 @@ class Handling:
         Parameters
         ----------
         system_kw : str, optional
-            Keyword to allow for additional system parameters.  Default is 'System'.
+            Keyword to allow for additional system parameters.
         kword : str, optional
-            Specific keyword to look for in comment.  Default is 'all'
+            Specific keyword to look for in comment.
 
         Returns
         -------

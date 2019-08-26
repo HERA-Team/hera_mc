@@ -127,7 +127,7 @@ def add_new_parts(session, part_list, at_date, allow_restart=False):
     at_date : astropy.Time object
         Date to use for logging the stop
     allow_restart : bool, optional
-        Flag to allow the part to restarted if it already existed.  Default is False
+        Flag to allow the part to restarted if it already existed.
     """
 
     start_at = int(at_date.gps)
@@ -327,10 +327,16 @@ class AprioriAntenna(MCDeclarativeBase):
     """
     Table for a priori antenna status.
 
-    antenna:  antenna designation, e.g. HH123
-    start_gpstime: start time for antenna status
-    stop_gpstime:  stop time for antenna status
-    status:  enum of status - 'passed_checks', 'needs_checking', 'known_bad', 'not_connected'
+    Parameters
+    ----------
+    antenna :  str
+        antenna designation, e.g. HH123
+    start_gpstime : int
+        start time for antenna status
+    stop_gpstime : int
+        stop time for antenna status
+    status :  str
+        status - 'passed_checks', 'needs_checking', 'known_bad', 'not_connected'
     """
 
     __tablename__ = 'apriori_antenna'
@@ -363,7 +369,7 @@ def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, se
     start_gpstime : int
         Start time for new apriori status, in GPS seconds
     stop_gpstime : int, optional
-        Stop time for new apriori status, in GPS seconds, or None.  Default = None
+        Stop time for new apriori status, in GPS seconds, or None.
     session : object, optional
         Database session to use.  If None, it will start a new session, then close.
     """

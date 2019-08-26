@@ -29,11 +29,11 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
     Parameters
     ----------
     mc_config_path : str or None, optional
-        Path to configuration file.  If None, uses default.  Default is None.
+        Path to configuration file.  If None, uses default.
     cm_csv_path : str or None, optional
-        Path to the cm csv file updates.  If None, uses default.  Default is None.
+        Path to the cm csv file updates.  If None, uses default.
     testing : bool, optional
-        Flag to allow for testing.  Default is False
+        Flag to allow for testing.
 
     Returns
     -------

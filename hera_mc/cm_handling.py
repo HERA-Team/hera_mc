@@ -202,25 +202,28 @@ class PartDossierEntry():
 
 
 class PartConnectionDossierEntry:
+    """
+    This class holds connections to a specific part.  It only includes immediately
+    upstream and downstream of that part (use 'hookup' for cascaded parts.)  This
+    class gets incorporated into the PartDossier, but can also be used separately.
+    It does not filter by time -- the receiving module can do that if desired.
+    This class does include a module to filter on time that can be called with an at_date.
+
+    It contains the modules to format the dossier for use in the connection display matrix.
+
+    It is only/primarily used within confines of cm (called by 'get_part_connection_dossier'
+    in the Handling class below).
+
+    Parameters:
+    ------------
+    hpn : str
+        hera part number - for a single part, not list.  Note only looks for exact matches.
+    rev : str
+        hera revision - this is for a specific revision, not a class of revisions.
+    port : str
+        connection port - this is either for a specific port name or may use 'all' (default)
+    """
     def __init__(self, hpn, rev, port='all', at_date=None):
-        """
-        This class holds connections to a specific part.  It only includes immediately
-        upstream and downstream of that part (use 'hookup' for cascaded parts.)  This
-        class gets incorporated into the PartDossier, but can also be used separately.
-        It does not filter by time -- the receiving module can do that if desired.
-        This class does include a module to filter on time that can be called with an at_date.
-
-        It contains the modules to format the dossier for use in the connection display matrix.
-
-        It is only/primarily used within confines of cm (called by 'get_part_connection_dossier'
-        in the Handling class below).
-
-        Parameters:
-        ------------
-        hpn: hera part number - for a single part, not list.  Note only looks for exact matches.
-        rev: hera revision - this is for a specific revision, not a class of revisions.
-        port: connection port - this is either for a specific port name or may use 'all' (default)
-        """
         self.hpn = hpn.upper()
         self.rev = rev.upper()
         self.port = port.lower()
@@ -400,7 +403,7 @@ class Handling:
         ----------
         at_date : str, int
             time to get active cm_version for (passed to cm_utils.get_astropytime).
-            Anything intelligible to cm_utils.get_astropytime.  Default is 'now'
+            Anything intelligible to cm_utils.get_astropytime.
 
         Returns
         -------

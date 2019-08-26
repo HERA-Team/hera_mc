@@ -34,7 +34,7 @@ def get_revisions_of_type(hpn, rev_type, at_date='now', session=None):
     rev_type : str
         Revision type/value.  One of LAST, ACTIVE, ALL, <specific>
     at_date : anything understandable to cm_utils.get_astropytime, optional.
-        Relevant date to check for.  Default is 'now'
+        Relevant date to check for.
     session : object
         Database session to use.  If None, it will start a new session, then close.
 
@@ -170,7 +170,7 @@ def get_active_revision(hpn, at_date, session=None):
     hpn : str
         HERA part number
     at_date : anything understandable to cm_utils.get_astropytime, optional.
-        Relevant date to check for.  Default is 'now'
+        Relevant date to check for.
     session : object
         Database session to use.  If None, it will start a new session, then close.
 
@@ -203,7 +203,7 @@ def get_full_revision(hpn, hookup_dict):
     ----------
     hpn : str
         HERA part number (must match hookup_dict keys part type)
-    hookup_dict : dictionary
+    hookup_dict : dict
         Hookup dictionary containing the queried hookup data set
 
     Returns

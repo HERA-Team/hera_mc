@@ -149,9 +149,9 @@ class Connections:
         port : None or string or list of strings
                name of port to check.  If None (default) it checks all/any.
         side : string
-               "side" of part to check.  Options are:  up, down, or both (default)
+               "side" of part to check.  Options are:  up, down, or both
         at_date : string, float, int, Time, or datetime
-                  date for the connection to be active.  Default is 'now'
+                  date for the connection to be active.
 
         Returns
         -------
