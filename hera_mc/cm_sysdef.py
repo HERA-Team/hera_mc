@@ -206,9 +206,9 @@ class Sysdef:
         -----------
         part : dict
             Current part dossier
-        port_query : str, optional
+        port_query : str
             The ports that were requested ('e' or 'n' or 'all').  Default is 'all'
-        hookup_type : str, None, optional
+        hookup_type : str, None
             If not None, will use specified hookup_type otherwise it will look through in order.
             Default is None
         """

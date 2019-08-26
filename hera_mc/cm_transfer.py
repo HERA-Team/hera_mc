@@ -71,7 +71,7 @@ def package_db_to_csv(session=None, tables='all'):
 
     Parameters
     ----------
-    session : object or None, optional
+    session : object or None
         session on current database. If session is None, a new session
         on the default database is created and used.
     tables: string
@@ -142,14 +142,14 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False, testing=Fal
 
     Parameters:
     ------------
-    session: Session object, optional
+    session: Session object
         session on current database. If session is None, a new session
         on the default database is created and used.
-    tables: str, optional
+    tables: str
         comma-separated list of names of tables to initialize or 'all'.
-    maindb: bool or str, optional
+    maindb: bool or str
         Either False or the password to change from main db.
-    testing : bool, optional
+    testing : bool
         Flag to cover testing
 
     Returns
@@ -178,11 +178,11 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     ----------
     session : object
         Session object required
-    config_path : str or None, optional
+    config_path : str or None
         Full path to location of config file.  Default is None, which goes to default path.
-    expected_hostname : str, optional
+    expected_hostname : str
         Name of the expected main host.  Default is 'qmaster'
-    test_db_name : str, optional
+    test_db_name : str
         Name of test database.  Default is 'testing'
 
     Returns
@@ -263,14 +263,14 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, 
 
     Parameters
     ----------
-    session : Session object, optional
+    session : Session object
         session on current database. If session is None, a new session
              on the default database is created and used.
-    tables : str, optional
+    tables : str
         comma-separated list of names of tables to initialize or 'all'.
-    maindb : bool or str, optional
+    maindb : bool or str
         Either False or password to change from main db.
-    testing : bool, optional
+    testing : bool
         Flag to allow for testing.
 
     Returns

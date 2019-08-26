@@ -27,7 +27,7 @@ def order_the_tables(unordered_tables=None):
 
     Parameters
     ----------
-    unordered_tables : list or None, optional
+    unordered_tables : list or None
         list of unordered_tables or None.  Default is None, which gets all cm tables.
 
     Returns

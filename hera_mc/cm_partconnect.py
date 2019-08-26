@@ -78,7 +78,7 @@ def stop_existing_parts(session, part_list, at_date, allow_override=False):
         List containing hpn and revision pair(s).  [[hpn0, rev0], ...]
     at_date : astropy.Time object
         Date to use for logging the stop
-    allow_override : bool, optional
+    allow_override : bool
         Flag to allow a reset of the stop time even if one exists.  Default is False
     """
 
@@ -126,7 +126,7 @@ def add_new_parts(session, part_list, at_date, allow_restart=False):
         List containing hpn and revision pair(s).  [[hpn0, rev0], ...]
     at_date : astropy.Time object
         Date to use for logging the stop
-    allow_restart : bool, optional
+    allow_restart : bool
         Flag to allow the part to restarted if it already existed.
     """
 
@@ -297,7 +297,7 @@ def get_part_revisions(hpn, session=None):
     ----------
     hpn :  str
         hera part number
-    session : object, optional
+    session : object
         Database session to use.  If None, it will start a new session, then close.  Default is None.
     """
 
@@ -368,9 +368,9 @@ def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, se
         Apriori status.  Must be one of apriori enums.
     start_gpstime : int
         Start time for new apriori status, in GPS seconds
-    stop_gpstime : int, optional
+    stop_gpstime : int
         Stop time for new apriori status, in GPS seconds, or None.
-    session : object, optional
+    session : object
         Database session to use.  If None, it will start a new session, then close.
     """
     new_apa = AprioriAntenna()
@@ -457,7 +457,7 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
         Date to use for the log entry
     comment : str
         String containing the comment to be logged.
-    library_file : str, None, optional
+    library_file : str, None
         If appropriate, name or link of library file or other information.
     """
     close_session_when_done = False

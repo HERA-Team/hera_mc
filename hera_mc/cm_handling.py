@@ -78,7 +78,7 @@ class PartDossierEntry():
         ----------
         session : object
             A database session instance
-        full_version : bool, optional
+        full_version : bool
             Flag to retrieve a full version.  If False, a truncated version leaving off
             part_info, geo and connections information is returned.
         """

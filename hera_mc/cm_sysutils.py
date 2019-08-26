@@ -23,7 +23,7 @@ class StationInfo:
 
     Parameters
     ----------
-    stn : str, Object or None, optional.
+    stn : str, Object or None
         Contains the init station information.  If None, it will initial a blank object.
     """
     stn_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting', 'northing', 'lon', 'lat',
@@ -45,7 +45,7 @@ class StationInfo:
 
         Parameters
         ----------
-        stn : str, Object or None, optional.
+        stn : str, Object or None
             Contains the init station information.  If None, it will initial a blank object.
         """
         if stn is None:
@@ -63,7 +63,7 @@ class StationInfo:
 
         Parameters
         ----------
-        stn : str, Object or None, optional.
+        stn : str, Object or None
             Contains the init station information.  If None, it will initial a blank object.
         """
         if stn is None:
@@ -273,7 +273,7 @@ class Handling:
 
         Parameters
         ----------
-        hookup_type : str or None, optional
+        hookup_type : str or None
             Type of hookup to use (current observing system is 'parts_hera').
             If 'None' it will determine which system it thinks it is based on
             the part-type.  The order in which it checks is specified in cm_sysdef.
@@ -333,11 +333,11 @@ class Handling:
             Date at which connection is true, format 'YYYY-M-D' or 'now'
         part_type : str
             Part type to look for
-        include_revs : bool, optional.
+        include_revs : bool
             Flag whether to include all revisions.  Default is False
-        include_ports : bool, optional.
+        include_ports : bool
             Flag whether to include ports.  Default is False
-        hookup_type : str, optional.
+        hookup_type : str
             Type of hookup to use (current observing system is 'parts_hera').
             If 'None' it will determine which system it thinks it is based on
             the part-type.  The order in which it checks is specified in cm_sysdef.
@@ -365,13 +365,13 @@ class Handling:
 
         Parameters
         ----------
-        hlist : str, list,  optional.
+        hlist : str, list
             List of prefixes or stations to use in summary.  Default is the "default" prefix list in cm_utils.
-        rev : str, optional.
+        rev : str
             Revision or revision type.
-        exact_match : bool, optional.
+        exact_match : bool
             Flag for exact_match or included characters.
-        hookup_cols : str, list, optional.
+        hookup_cols : str, list
             List of hookup columns to use, or 'all'.
         forc_new_hookup_dict : bool
             Flag to force a new hookup dict to be generated (as opposed to checking for cache.)
@@ -409,9 +409,9 @@ class Handling:
 
         Parameters
         ----------
-        system_kw : str, optional
+        system_kw : str
             Keyword to allow for additional system parameters.
-        kword : str, optional
+        kword : str
             Specific keyword to look for in comment.
 
         Returns
@@ -480,7 +480,7 @@ class Handling:
         ----------
         status : str
             Apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
-        at_date : str or int, optional
+        at_date : str or int
             Date for which to get apriori state -- anything cm_utils.get_astropytime can handle.  Default is 'now'
 
         Returns
@@ -502,7 +502,7 @@ class Handling:
 
         Parameters
         ----------
-        at_date : str or int, optional
+        at_date : str or int
             Date for which to get apriori state -- anything cm_utils.get_astropytime can handle.  Default is 'now'
 
         Returns
@@ -523,7 +523,7 @@ class Handling:
         ----------
         status : str
             Apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
-        at_date : str or int, optional
+        at_date : str or int
             Date for which to get apriori state -- anything cm_utils.get_astropytime can handle.  Default is 'now'
 
         Returns
