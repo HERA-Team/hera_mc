@@ -127,7 +127,8 @@ def get_cm_csv_path(mc_config_file=None, testing=False):
 
     if testing:
         return test_data_path
-    return config_data.get('cm_csv_path')
+
+    return '/{}'.format(config_data.get('databases')['hera_mc_sqlite']['url'].lstrip('sqlite:////').rstrip('/hera_mc.db'))
 
 
 def connect_to_mc_db(args, forced_db_name=None, check_connect=True):

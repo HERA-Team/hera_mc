@@ -19,21 +19,16 @@ Clone the following two repositories:
 * https://github.com/HERA-Team/hera_cm_db_updates
 
 Then install by:
-1. within the hera_mc directory type `python setup.py install` (or `pip install .`)
+1. within the hera_mc directory type `pip install .` [This is preferred over `python setup.py install`]
 2. in the hera_cm_db_updates directory type `mc_setup_home.py`
 
-To run hera_mc, you will likely need to install some additional python modules (see Python Prerequisites below.)
-
-Python Prerequisites
---------------
-sqlalchemy |  psycopg2 | alembic | dateutil | astropy    | tabulate  | cartopy |
-pandas     | psutil    | numpy   | six      | pyuvdata   | h5py      |         |
-
+To run hera_mc, you will likely need to install some additional python modules.
+These modules are listed in `setup.py` under `install_requires`.
 
 [2.] Set up database configuration file
 ---
-A configuration file `~/.hera_mc/mc_config.json` is needed to tell M&C how to talk to the database.  It should look like the example below,
-making sure to change the `<<<Path-to-repo>>>` to be the full path to where hera_cm_db_updates is located.
+A configuration file `~/.hera_mc/mc_config.json` is needed to tell M&C how to talk to the database.
+Except for `<<<path-to-dbfile>>>` (see below), it should look like this:
 
 ```
 {
@@ -48,13 +43,16 @@ making sure to change the `<<<Path-to-repo>>>` to be the full path to where hera
       "mode": "testing"
     },
     "hera_mc_sqlite": {
-      "url": "sqlite:////<<<Path-to-repo>>>/hera_cm_db_updates/hera_mc.db",
+      "url": "sqlite:///<<<Path-to-dbfile>>>/hera_mc.db",
       "mode": "production"
     }
-  },
-  "cm_csv_path": "<<<Path-to-repo>>>/hera_cm_db_updates"
+  }
 }
 ```
+
+Make sure to change the `<<<Path-to-dbfile>>>` to be the full path to where the sqlite database is located.
+It will likely be something like `/Users/username/Documents/hera/hera_cm_db_updates` (i.e. there will be a total
+of 4 `/` after `sqlite:` and the repo name is `hera_cm_db_updates`)
 
 This example assumes that you’re running PostgreSQL, your database username is
 `hera`, there is no password associated with that user, and that you have two
