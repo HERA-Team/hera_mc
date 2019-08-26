@@ -369,16 +369,16 @@ def get_time_for_display(display):
     return d
 
 
-def get_astropytime(_date, _time=0):
+def get_astropytime(adate, atime=0):
     """
-    Take in various incarnations of _date/_time and return an astropy.Time object or None.
+    Take in various incarnations of adate/atime and return an astropy.Time object or None.
     No time zone is allowed.
 
     Returns:  either astropy Time or None
 
     Parameters
     ----------
-    _date:  date in various formats:
+    adate :  a date in various formats:
                 return astropy Time
                     astropy Time:  just gets returned
                     datetime: just gets converted
@@ -391,58 +391,58 @@ def get_astropytime(_date, _time=0):
                 return None:
                     string:  'none' return None
                     None/False:  return None
-    _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string otherwise ignored
+    atime : a time in various formats, ignored if time information is provided in adate
                 float, int:  hours in decimal time
                 string:  HH[:MM[:SS]] or hours in decimal time
 
     Returns
     -------
-    Time or None
+    astropy.Time or None
     """
 
-    if isinstance(_date, Time):
-        return _date
-    if isinstance(_date, datetime.datetime):
-        return Time(_date, format='datetime')
-    if _date is None or _date is False:
+    if isinstance(adate, Time):
+        return adate
+    if isinstance(adate, datetime.datetime):
+        return Time(adate, format='datetime')
+    if adate is None or adate is False:
         return None
     try:
-        _date = float(_date)
+        adate = float(adate)
     except ValueError:
         pass
-    if isinstance(_date, float):
-        if _date > 1000000000.0:
-            return Time(_date, format='gps')
-        if _date > 2400000.0 and _date < 2500000.0:
-            return Time(_date, format='jd')
-        raise ValueError('Invalid format:  date as a number should be gps time or julian date, not {}.'.format(_date))
-    if isinstance(_date, str):
-        if _date == '<':
+    if isinstance(adate, float):
+        if adate > 1000000000.0:
+            return Time(adate, format='gps')
+        if adate > 2400000.0 and adate < 2500000.0:
+            return Time(adate, format='jd')
+        raise ValueError('Invalid format:  date as a number should be gps time or julian date, not {}.'.format(adate))
+    if isinstance(adate, str):
+        if adate == '<':
             return Time(PAST_DATE, scale='utc')
-        if _date == '>':
+        if adate == '>':
             return future_date()
-        if _date.lower() == 'now' or _date.lower() == 'current':
+        if adate.lower() == 'now' or adate.lower() == 'current':
             return Time.now()
-        if _date.lower() == 'none':
+        if adate.lower() == 'none':
             return None
-        _date = _date.replace('/', '-')
+        adate = adate.replace('/', '-')
         try:
-            return_date = Time(_date, scale='utc')
+            return_date = Time(adate, scale='utc')
         except ValueError:
-            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(_date))
+            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(adate))
         try:
-            _time = float(_time)
+            atime = float(atime)
         except ValueError:
             pass
-        if isinstance(_time, float):
-            return return_date + TimeDelta(_time * 3600.0, format='sec')
-        if isinstance(_time, str):
-            if ':' not in _time:
+        if isinstance(atime, float):
+            return return_date + TimeDelta(atime * 3600.0, format='sec')
+        if isinstance(atime, str):
+            if ':' not in atime:
                 raise ValueError('Invalid format:  time should be H[:M[:S]] (ints or floats)')
             add_time = 0.0
-            for i, d in enumerate(_time.split(':')):
+            for i, d in enumerate(atime.split(':')):
                 if i > 2:
-                    raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'.format(_time))
+                    raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'.format(atime))
                 add_time += (float(d)) * 3600.0 / (60.0**i)
             return return_date + TimeDelta(add_time, format='sec')
 
@@ -551,13 +551,13 @@ def csv_table(headers, table):
     return s_table
 
 
-def query_default(a, args):
+def query_default(param, args):
     """
     Allows for a parameter to be queried, and return defaults for those not provided.
 
     Parameters
     ----------
-    a : str
+    param : str
         The parameter being queried
     args : object
         Namespace object
@@ -567,11 +567,11 @@ def query_default(a, args):
     Queried value or default
     """
     vargs = vars(args)
-    default = vargs[a]
+    default = vargs[param]
     if 'unittesting' in vargs.keys():
         v = vargs['unittesting']
     else:  # pragma: no cover
-        s = '{} [{}]:  '.format(a, str(default))
+        s = '{} [{}]:  '.format(param, str(default))
         v = six.moves.input(s)
     if len(v) == 0:
         return default

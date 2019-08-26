@@ -144,11 +144,11 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False, testing=Fal
     ------------
     session: Session object, optional
         session on current database. If session is None, a new session
-        on the default database is created and used.  Default is None
+        on the default database is created and used.
     tables: str, optional
-        comma-separated list of names of tables to initialize or 'all'. Default is 'all'
+        comma-separated list of names of tables to initialize or 'all'.
     maindb: bool or str, optional
-        Either False or the password to change from main db. Default is False
+        Either False or the password to change from main db.
     testing : bool, optional
         Flag to cover testing
 
