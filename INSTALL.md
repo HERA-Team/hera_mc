@@ -26,10 +26,8 @@ To run hera_mc, you will likely need to install some additional python modules (
 
 Python Prerequisites
 --------------
- sqlalchemy |  psycopg2 | alembic | dateutil | numpy
- -----------|-----------|---------|----------|-------
- astropy    | tabulate  | pandas  | psutil   | pyproj
- six        | pyuvdata  | h5py    | cartopy  |
+sqlalchemy |  psycopg2 | alembic | dateutil | astropy    | tabulate  | cartopy |
+pandas     | psutil    | numpy   | six      | pyuvdata   | h5py      |         |
 
 
 [2.] Set up database configuration file
