@@ -13,7 +13,7 @@ from astropy.time import Time, TimeDelta
 import os
 
 from .. import mc, cm_utils, cm_dataview
-from ..tests import TestHERAMC
+from ..tests import TestHERAMC, checkWarnings
 
 
 class TestParts(TestHERAMC):
@@ -27,11 +27,15 @@ class TestParts(TestHERAMC):
         stop = cm_utils.get_astropytime(1184354600)
         interval = 1.0
         filename = None
-        n = dv.ants_by_day(start, stop, interval, filename, output_date_format='jd')
-        self.assertEqual(len(n.keys()), 1)
+        output_date_format = 'jd'
+        c = checkWarnings(dv.ants_by_day, [start, stop, interval, filename, output_date_format],
+                          message='More than one active connection for HH68')
+        self.assertEqual(len(c), 1)
         filename = os.path.expanduser('~/hera_mc_dataview_test.txt')
-        n = dv.ants_by_day(start, stop, interval, filename, output_date_format='iso')
-        self.assertEqual(len(n.keys()), 1)
+        output_date_format = 'iso'
+        c = checkWarnings(dv.ants_by_day, [start, stop, interval, filename, output_date_format],
+                          message='More than one active connection for HH68')
+        self.assertEqual(len(c), 1)
         os.remove(filename)
 
     def test_connected_by_day(self):

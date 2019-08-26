@@ -105,15 +105,12 @@ class Dataview:
         dictionary
             keyed on date; contains the number of antennas installed on that date
         """
-        if output is None:
-            fplist = []
-        else:
-            fplist = [sys.stdout, open(output, 'w')]
         data_ret = {}
         G = geo_handling.Handling(self.session)
         ants_to_check = list(read_antennas().keys())
         time_step = TimeDelta(time_step * 3600.0 * 24.0, format='sec')
         at_date = start
+        print_out = ''
         while at_date <= stop:
             if output_date_format == 'jd':
                 printable_date = "{:.4f}".format(at_date.jd)
@@ -125,7 +122,11 @@ class Dataview:
                 if ants[0] is not None:
                     ctr += 1
             data_ret[printable_date] = ctr
-            for fp in fplist:
-                print("{} {}".format(printable_date, ctr), file=fp)
+            if output is not None:
+                print_out += "{} {}\n".format(printable_date, ctr)
             at_date += time_step
+        if output is not None:
+            print(print_out)
+            with open(output, 'w') as fp:
+                print(print_out, file=fp)
         return data_ret
