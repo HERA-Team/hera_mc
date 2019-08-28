@@ -1,14 +1,18 @@
 HERA M&C Installation
 =====================
 
-HERA M&C requires `hera_mc` and `postgreSQL`.  
-(Note:  if you are only using it to view configuration management, you may instead use SQLITE and skip step [3.] below).
+HERA M&C requires downloading two repositories `hera_mc` and `hera_cm_db_updates`.  The online database uses `PostgreSQL`
+which requires installing that, however local users may wish to use `SQLITE` instead, as it eliminates the need to install
+PostgreSQL on your local machine (SQLITE is pre-installed on Macs).  If you are developing code under `hera_mc`, it is
+strongly recommended that you install PostgreSQL.  If you are just viewing configuration management (CM) information,
+SQLITE is much easier.  Use of PostgreSQL vs SQLITE is determined by the `"default_db_name"` set below in the database
+configuration file described below.
 
 Installation steps are:
 
 * [1.] Install hera_mc
 * [2.] Setup database configuration file
-* [3.] Install postgreSQL (if not using SQLITE)
+* [3.] Install PostgreSQL (if not using SQLITE)
 
 
 [1.] Install hera_mc
@@ -50,10 +54,15 @@ Except for `<<<path-to-repo>>>` (see below), it should look like this:
 }
 ```
 
-Make sure to change the `<<<Path-to-repo>>>` to be the full path to where the repo `hera_cm_db_updates` is located.
+Make sure to change the `<<<Path-to-repo>>>` to be the full path to where the `hera_cm_db_updates` repo is located.
 It will likely be something like `/Users/username/Documents/hera/hera_cm_db_updates` (i.e. in the json file, there will be a total
 of 4 `/` after `sqlite:`).  Note that regardless of whether you are using PostgreSQL or SQLITE, you should include the
-`"hera_mc_sqlite"` entry for cm updates.
+`"hera_mc_sqlite"` entry for CM updates.
+
+If using the SQLITE version make the second line in `mc_config.json`:
+```
+"default_db_name": "hera_mc_sqlite",
+```
 
 Note that for backward compatibility (and if you are using PostgreSQL) then instead of the `"hera_mc_sqlite"` entry under `"databases"`,
 you may instead include a separate entry:
@@ -75,10 +84,6 @@ separate databases named `hera_mc` and `hera_mc_test` for "production"
 deployment and testing. You must have a database named "testing", in "testing"
 mode, for the M&C test suite to work.
 
-If using the SQLITE version for viewing CM make the second line in mc_config.json:
-```
-"default_db_name": "hera_mc_sqlite",
-```
 If using SQLITE, you don't need to install PostgreSQL and may stop here.
 
 [3.] Install PostgreSQL
