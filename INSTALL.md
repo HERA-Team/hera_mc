@@ -28,7 +28,7 @@ These modules are listed in `setup.py` under `install_requires`.
 [2.] Set up database configuration file
 ---
 A configuration file `~/.hera_mc/mc_config.json` is needed to tell M&C how to talk to the database.
-Except for `<<<path-to-dbfile>>>` (see below), it should look like this:
+Except for `<<<path-to-repo>>>` (see below), it should look like this:
 
 ```
 {
@@ -43,18 +43,33 @@ Except for `<<<path-to-dbfile>>>` (see below), it should look like this:
       "mode": "testing"
     },
     "hera_mc_sqlite": {
-      "url": "sqlite:///<<<Path-to-dbfile>>>/hera_mc.db",
+      "url": "sqlite:///<<<Path-to-repo>>>/hera_mc.db",
       "mode": "production"
     }
   }
 }
 ```
 
-Make sure to change the `<<<Path-to-dbfile>>>` to be the full path to where the sqlite database is located.
-It will likely be something like `/Users/username/Documents/hera/hera_cm_db_updates` (i.e. there will be a total
-of 4 `/` after `sqlite:` and the repo name is `hera_cm_db_updates`)
+Make sure to change the `<<<Path-to-repo>>>` to be the full path to where the repo `hera_cm_db_updates` is located.
+It will likely be something like `/Users/username/Documents/hera/hera_cm_db_updates` (i.e. in the json file, there will be a total
+of 4 `/` after `sqlite:`).  Note that regardless of whether you are using PostgreSQL or SQLITE, you should include the
+`"hera_mc_sqlite"` entry for cm updates.
 
-This example assumes that you’re running PostgreSQL, your database username is
+Note that for backward compatibility (and if you are using PostgreSQL) then instead of the `"hera_mc_sqlite"` entry under `"databases"`,
+you may instead include a separate entry:
+```
+{
+  "default_db_name": "hera_mc",
+  "cm_csv_path": <<<path-to-repo>>>,
+  "databases": {
+    ........
+  }
+}
+```
+The order is to check for `hera_cm_sqlite` first, then the `cm_csv_path` if it is not present.
+
+
+If you are running PostgreSQL, this assumes that your database username is
 `hera`, there is no password associated with that user, and that you have two
 separate databases named `hera_mc` and `hera_mc_test` for "production"
 deployment and testing. You must have a database named "testing", in "testing"
@@ -107,12 +122,14 @@ You will likely have to install packages as it fails, so keep doing `conda insta
 
 If desired, populate the configuration management tables by running the `cm_init.py` script.
 
-If there is already an instance of the postgres server running, you may need to kill it:  `sudo pkill -u postgres`
+If there is already an instance of the postgres server running, you may need to kill it:  `sudo pkill -u postgres`.
+This reset is often needed after a computer restart.  If you can't access the database and it was working, try this then
+restart the server with the PostgreSQL app.
 
 
 ### Installing on Mac OS X with homebrew (not particularly recommended)
 
-Based on our experience getting Dave up and running.
+Based on our experience getting Dave up and running (in the early days...)
 
 ```
 $ brew tap homebrew/services
