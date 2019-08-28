@@ -3,10 +3,10 @@ HERA M&C Installation
 
 HERA M&C requires downloading two repositories `hera_mc` and `hera_cm_db_updates`.  The online database uses `PostgreSQL`
 which requires installing that, however local users may wish to use `SQLITE` instead, as it eliminates the need to install
-PostgreSQL on your local machine (SQLITE is pre-installed on Macs).  If you are developing code under `hera_mc`, it is
-strongly recommended that you install PostgreSQL.  If you are just viewing configuration management (CM) information,
-SQLITE is much easier.  Use of PostgreSQL vs SQLITE is determined by the `"default_db_name"` set below in the database
-configuration file described below.
+PostgreSQL on your local machine (SQLITE is pre-installed on Macs).  If you are developing code under `hera_mc`, you'll
+need to install PostgreSQL.  If you are just viewing configuration management (CM) information, SQLITE is much easier.
+Use of PostgreSQL vs SQLITE is determined by the `"default_db_name"` set below in the database configuration file described
+below.
 
 Installation steps are:
 
