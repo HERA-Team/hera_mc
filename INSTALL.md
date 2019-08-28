@@ -120,7 +120,8 @@ This is done from the shell, in the root hera_mc directory (where the .ini file 
 
 You will likely have to install packages as it fails, so keep doing `conda install <pkg>` until it completes successfully.
 
-If desired, populate the configuration management tables by running the `cm_init.py` script.
+Populate the configuration management tables by running the `cm_init.py` script  This is the same command you will use to
+update your local CM database over time (after pulling `hera_cm_db_updates`).
 
 If there is already an instance of the postgres server running, you may need to kill it:  `sudo pkill -u postgres`.
 This reset is often needed after a computer restart.  If you can't access the database and it was working, try this then
