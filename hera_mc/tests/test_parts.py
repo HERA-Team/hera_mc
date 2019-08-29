@@ -89,10 +89,7 @@ class TestParts(TestHERAMC):
         request = 'test_part:Q:hpn_rev:A'
         x = cm_partconnect.format_and_check_update_part_request(request)
         self.assertEqual(list(x.keys())[0], 'test_part:Q')
-        request = 'test_part:hpn_rev:A'
-        with captured_output() as (out, err):
-            cm_partconnect.format_and_check_update_part_request(request)
-        #self.assertTrue('Wrong format for first part update entry request' in out.getvalue().strip())
+        self.assertRaises(ValueError, cm_partconnect.format_and_check_update_part_request, 'test_part:hpn_rev:A')
         request = 'test_part:Q:hpn_rev:A,test_part:mfg:xxx,nope,another:one'
         x = cm_partconnect.format_and_check_update_part_request(request)
         self.assertEqual(x['test_part:Q'][2][3], 'one')
