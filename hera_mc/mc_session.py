@@ -2593,7 +2593,7 @@ class MCSession(Session):
                 starttime_used_unix_ms = \
                     getattr(self.corr_obj, corr.command_dict[command])(starttime_ms, duration, acclen_spectra, tag=tag)
                 if starttime_used_unix_ms is hera_corr_cm.ERROR:
-                    raise(RunTimeError,
+                    raise(RuntimeError,
                           'take_data correlator command returned an ERROR, on inputs: {t}, {d}, {acc}, {tag}'.format(
                               t=starttime_ms,
                               d=duration,
