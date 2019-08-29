@@ -249,7 +249,7 @@ def format_and_check_update_part_request(request):
     Returns
     -------
     dict or None
-        Dictionary containing the parsed commands, otherwise None if the request is insufficient
+        Dictionary containing the parsed commands, otherwise None if the request is None or empty
     """
 
     if request is None or len(request) == 0:
@@ -268,8 +268,7 @@ def format_and_check_update_part_request(request):
         hpn0 = data_to_proc[0][0]
         rev0 = data_to_proc[0][1]
     else:
-        print('Error:  wrong format for first part update entry: ', data_to_proc[0])
-        return None
+        raise ValueError("Wrong format for first part update entry request.")
     for d in data_to_proc:
         if len(d) == 4:
             pass
@@ -360,6 +359,10 @@ def get_apriori_antenna_status_enum():
 
 def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, session=None):
     """
+    Updates the 'apriori_antenna' status table to one of the class enum values.  If the status
+    is not allowed, an error will be raised.  It adds the appropriate stop time to the previous
+    apriori_antenna status.
+
     Parameters
     ----------
     antenna : str
@@ -631,15 +634,15 @@ def stop_existing_connections_to_part(session, handling, conn_list, at_date):
     update_connection(session, data, False)
 
 
-def get_connection_key(c, p):
+def get_connection_key(conn_dossier, part_port):
     """
     Returns the standard connection key to use.  Does some checking etc to make sure edge cases don't trip you up.
 
     Parameters
     ----------
-    c : dictionary
+    conn_dossier : dictionary
         connection_dossier dictionary with connection information
-    p :  list
+    part_port :  list
         connection to find [part, rev, port]
 
     Returns
@@ -648,14 +651,14 @@ def get_connection_key(c, p):
         string for the connection or None if not found
     """
 
-    p = [p[0].upper(), p[1].upper(), p[2].upper()]
+    pp_upper = [part_port[0].upper(), part_port[1].upper(), part_port[2].upper()]
     ctr = 0
     return_key = None
-    for ckey, cval in six.iteritems(c['connections']):
+    for ckey, cval in six.iteritems(conn_dossier['connections']):
         ca = (cval.upstream_part.upper(), cval.downstream_part.upper())
         cr = (cval.up_part_rev.upper(), cval.down_part_rev.upper())
         co = (cval.upstream_output_port.upper(), cval.downstream_input_port.upper())
-        if cval.stop_gpstime is None and p[0] in ca and p[1] in cr and p[2] in co:
+        if cval.stop_gpstime is None and pp_upper[0] in ca and pp_upper[1] in cr and pp_upper[2] in co:
             ctr += 1
             return_key = ckey
     if ctr > 1:
@@ -693,7 +696,7 @@ def stop_connections(session, conn_list, at_date):
     update_connection(session, data, False)
 
 
-def add_new_connections(session, c, conn_list, at_date):
+def add_new_connections(session, cobj, conn_list, at_date):
     """
     This uses a connection object to send data to the update_connection method
     to make a new connection
@@ -702,7 +705,7 @@ def add_new_connections(session, c, conn_list, at_date):
     ----------
     session : object
         Database session to use.  If None, it will start a new session, then close.
-    c : Connections object
+    cobj : Connections object
         connection handling object
     conn_list:  list of lists
         List with data [[upstream_part,rev,port,downstream_part,rev,port,start_gpstime],...]
@@ -713,32 +716,32 @@ def add_new_connections(session, c, conn_list, at_date):
     data = []
 
     for conn in conn_list:
-        c.connection(upstream_part=conn[0], up_part_rev=conn[1],
-                     downstream_part=conn[3], down_part_rev=conn[4],
-                     upstream_output_port=conn[2], downstream_input_port=conn[5],
-                     start_gpstime=start_at, stop_gpstime=None)
-        print("Starting connection {} at {}".format(c, str(at_date)))
-        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-                     'upstream_part', c.upstream_part])
-        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-                     'up_part_rev', c.up_part_rev])
-        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-                     'downstream_part', c.downstream_part])
-        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-                     'down_part_rev', c.down_part_rev])
-        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-                     'upstream_output_port', c.upstream_output_port])
-        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-                     'downstream_input_port', c.downstream_input_port])
-        data.append([c.upstream_part, c.up_part_rev, c.downstream_part, c.down_part_rev,
-                     c.upstream_output_port, c.downstream_input_port, c.start_gpstime,
-                     'start_gpstime', c.start_gpstime])
+        cobj.connection(upstream_part=conn[0], up_part_rev=conn[1],
+                        downstream_part=conn[3], down_part_rev=conn[4],
+                        upstream_output_port=conn[2], downstream_input_port=conn[5],
+                        start_gpstime=start_at, stop_gpstime=None)
+        print("Starting connection {} at {}".format(cobj, str(at_date)))
+        data.append([cobj.upstream_part, cobj.up_part_rev, cobj.downstream_part, cobj.down_part_rev,
+                     cobj.upstream_output_port, cobj.downstream_input_port, cobj.start_gpstime,
+                     'upstream_part', cobj.upstream_part])
+        data.append([cobj.upstream_part, cobj.up_part_rev, cobj.downstream_part, cobj.down_part_rev,
+                     cobj.upstream_output_port, cobj.downstream_input_port, cobj.start_gpstime,
+                     'up_part_rev', cobj.up_part_rev])
+        data.append([cobj.upstream_part, cobj.up_part_rev, cobj.downstream_part, cobj.down_part_rev,
+                     cobj.upstream_output_port, cobj.downstream_input_port, cobj.start_gpstime,
+                     'downstream_part', cobj.downstream_part])
+        data.append([cobj.upstream_part, cobj.up_part_rev, cobj.downstream_part, cobj.down_part_rev,
+                     cobj.upstream_output_port, cobj.downstream_input_port, cobj.start_gpstime,
+                     'down_part_rev', cobj.down_part_rev])
+        data.append([cobj.upstream_part, cobj.up_part_rev, cobj.downstream_part, cobj.down_part_rev,
+                     cobj.upstream_output_port, cobj.downstream_input_port, cobj.start_gpstime,
+                     'upstream_output_port', cobj.upstream_output_port])
+        data.append([cobj.upstream_part, cobj.up_part_rev, cobj.downstream_part, cobj.down_part_rev,
+                     cobj.upstream_output_port, cobj.downstream_input_port, cobj.start_gpstime,
+                     'downstream_input_port', cobj.downstream_input_port])
+        data.append([cobj.upstream_part, cobj.up_part_rev, cobj.downstream_part, cobj.down_part_rev,
+                     cobj.upstream_output_port, cobj.downstream_input_port, cobj.start_gpstime,
+                     'start_gpstime', cobj.start_gpstime])
 
     update_connection(session, data, True)
 

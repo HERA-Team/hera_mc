@@ -2,22 +2,22 @@
 # Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""
-This module defines all of the system parameters for hookup.  It tries to
-contain all of the ad hoc messy part of walking through a signal chain to
-this one file.
-
-The two-part "meta" assumption is that:
-    a) polarized ports start with one of the polarization characters ('e' or 'n')
-    b) non polarized ports don't start with either character.
-"""
-
 from __future__ import absolute_import, division, print_function
 import six
 from argparse import Namespace
 
 
 class Sysdef:
+    """
+    This class defines the system architecture for the telescope array.  The intent is to
+    have all of the specific defining parameters here in one place.  If a new system is required,
+    this may be extended by defining the parameters here.
+
+    The two-part "meta" assumption is that:
+        a) polarized ports start with one of the polarization characters ('e' or 'n')
+        b) non polarized ports don't start with either character.
+    """
+
     port_def = {}
     port_def['parts_hera'] = {
         'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
@@ -110,11 +110,13 @@ class Sysdef:
 
     def dict_init(self, v0):
         """
-        Initializes the system dict to v0
+        Initializes the system dict to v0.  Note that v0 is set by the calling
+        function.
+
         Parameters
         ----------
         v0 : str
-            Initialization parameter
+            Initialization parameter as defined in the calling function.
 
         Returns
         -------

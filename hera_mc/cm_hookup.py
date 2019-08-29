@@ -106,7 +106,7 @@ class HookupDossierEntry(object):
         Parameters
         ----------
         pol : str
-            Polarization type.
+            Polarization type, 'e' or 'n' for HERA (specified in 'cm_sysdef')
         part_types_found : list
             List of the part types that were found
         """
@@ -138,7 +138,7 @@ class HookupDossierEntry(object):
         Parameters
         ----------
         pol : str
-            Polarization type for which to add information.
+            Polarization type, 'e' or 'n' for HERA (specified in 'cm_sysdef')
         """
         if self.hookup_type[pol] is not None:
             full_hookup_length = len(self.sysdef.full_connection_path[self.hookup_type[pol]]) - 1
@@ -228,7 +228,7 @@ class HookupDossierEntry(object):
         Parameters
         ----------
         pol : str
-            Desired polarization
+            Polarization type, 'e' or 'n' for HERA (specified in 'cm_sysdef')
         columns : list
             Desired column headers to display
         part_types : dict
@@ -248,14 +248,14 @@ class HookupDossierEntry(object):
         for d in self.hookup[pol]:
             part_type = part_types[d.upstream_part]
             if part_type in columns:
-                new_row_entry = build_new_row_entry(
+                new_row_entry = _build_new_row_entry(
                     dip, d.upstream_part, d.up_part_rev, d.upstream_output_port, show)
                 td[columns.index(part_type)] = new_row_entry
             dip = d.downstream_input_port + '> '
         # Get the last part in the hookup
         part_type = part_types[d.downstream_part]
         if part_type in columns:
-            new_row_entry = build_new_row_entry(
+            new_row_entry = _build_new_row_entry(
                 dip, d.downstream_part, d.down_part_rev, None, show)
             td[columns.index(part_type)] = new_row_entry
         # Add timing
@@ -266,14 +266,14 @@ class HookupDossierEntry(object):
         return td
 
 
-def build_new_row_entry(dip, part, rev, port, show):
+def _build_new_row_entry(dip, part, rev, port, show):
     """
-    Formats the hookup row entry
+    Formats the hookup row entry, only called from within the HookupDossierEntry class.
 
     Parameters
     ----------
     dip : str
-        Current entry display
+        Current entry display for the downstream_input_port
     part : str
         Current part name
     rev : str
@@ -334,7 +334,8 @@ class Hookup(object):
         Parameters
         -----------
         hookup : dict or None
-            Will set the cached_hookup_dict to this.
+            Will set the cached_hookup_dict to this.  If set to None, it will force a new cache file
+            to be generated next time a hookup is requested.
         """
         self.cached_hookup_dict = hookup
 
@@ -667,7 +668,9 @@ class Hookup(object):
         Parameters
         ----------
         log_msg : str
-            String containing any desired messages for the cm log.
+            String containing any desired messages for the cm log.  This should be a short description
+            of wny a new cache file is being written.  E.g. "Found new antenna." or "Cronjob to ensure
+            cache file up to date."
         """
         hookup_dict_for_json = copy.deepcopy(self.cached_hookup_dict)
         for key, value in six.iteritems(self.cached_hookup_dict):
@@ -715,7 +718,7 @@ class Hookup(object):
             self.read_hookup_cache_from_file()
         self.hookup_type = self.cached_hookup_type
 
-    def _hookup_cache_file_OK(self, contemporaneous_minutes=15.0):
+    def _hookup_cache_file_OK(self):
         """
         This determines if the cache file is up-to-date relative to the cm database.
         and if hookup_type is correct
@@ -726,11 +729,6 @@ class Hookup(object):
             cached_at_date:  the date in the cache file for which it was written.
         If the cache_file was written before the latest cm_version, it fails because
         anything could have changed within the database.
-
-        Parameters
-        ----------
-        contemporaneous_minutes : float
-            Number of minutes where the cache file is considered current.
 
         Returns
         -------
@@ -772,9 +770,8 @@ class Hookup(object):
         if cached_at_date > cm_hash_time and self.at_date > cm_hash_time:
             return True
 
-        # OK if cached_at_date and the at_date are basically the same is OK
-        if abs(cached_at_date - self.at_date) < TimeDelta(60.0 * contemporaneous_minutes, format='sec'):
-            return True
+        # If not returned above, return False to regenerate
+        return False
 
     def hookup_cache_file_info(self):
         """

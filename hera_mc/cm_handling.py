@@ -134,7 +134,7 @@ class PartDossierEntry():
 
     def get_header_titles(self, headers):
         """
-        Returns the header titles for the given header names.  The returned header_titles are
+        Generates the header titles for the given header names.  The returned header_titles are
         used in the tabulate display.
 
         Parameters
@@ -363,14 +363,15 @@ class PartConnectionDossierEntry:
 class Handling:
     """
     Class to allow various manipulations of parts, connections and their properties etc.
+
+    Parameters
+    ----------
+    session : object
+        session on current database. If session is None, a new session
+        on the default database is created and used.
     """
 
     def __init__(self, session=None):
-        """
-        session : object
-            session on current database. If session is None, a new session
-            on the default database is created and used.
-        """
         if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
@@ -408,7 +409,7 @@ class Handling:
         Returns
         -------
         str
-            Git hash of the cm_version active at
+            Git hash of the cm_version active at 'at_date'
         """
         from .cm_transfer import CMVersion
 

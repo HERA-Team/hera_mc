@@ -51,8 +51,7 @@ class TestSys(TestHERAMC):
         self.assertEqual(msg, 'Not on "main"')
 
     def test_random_update(self):
-        si = cm_sysutils.StationInfo()
-        si.update_stn(None)
+        si = cm_sysutils.SystemInfo()
         si.update_arrays(None)
 
     def test_other_hookup(self):
@@ -236,10 +235,6 @@ class TestSys(TestHERAMC):
         pams = sys_h.get_part_at_station_from_type('HH23', '2017-07-03', 'post-amp', include_ports=False, hookup_type='parts_paper')
         self.assertEqual(len(pams), 1)
         self.assertEqual(pams['HH23:A']['e'], 'PAM75123')  # the actual pam number (the thing written on the case)
-
-    def test_system_comments(self):
-        comments = self.sys_h.system_comments()
-        self.assertEqual(comments[1], 'K')
 
     def test_apriori_antenna(self):
         cm_partconnect.update_apriori_antenna('HH2', 'needs_checking', '1214482618', session=self.test_session)

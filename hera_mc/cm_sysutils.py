@@ -17,45 +17,31 @@ from . import mc, cm_partconnect, cm_utils, cm_hookup, cm_revisions, cm_sysdef
 from . import geo_location, geo_handling
 
 
-class StationInfo:
+class SystemInfo:
     """
-    Object containing station information.
+    Object containing system information.  It is a convenience class for the system info methods below.
 
     Parameters
     ----------
-    stn : str, Object or None
-        Contains the init station information.  If None, it will initial a blank object.
+    stn : None or geo_handling object.  If None, it initializes a class with empty lists.
+        Otherwise, it initializes based on the geo_handling object class.
+        Anything else will generate an error.
     """
-    stn_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting', 'northing', 'lon', 'lat',
+    sys_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting', 'northing', 'lon', 'lat',
                 'elevation', 'antenna_number', 'correlator_input', 'start_date', 'stop_date', 'epoch']
 
     def __init__(self, stn=None):
-        if isinstance(stn, six.string_types) and stn == 'init_arrays':
-            for s in self.stn_info:
+        if stn is None:
+            for s in self.sys_info:
                 setattr(self, s, [])
         else:
-            for s in self.stn_info:
+            for s in self.sys_info:
                 setattr(self, s, None)
-            if stn is not None:
-                self.update_stn(stn)
-
-    def update_stn(self, stn):
-        """
-        Will update the object based on the supplied station information.
-
-        Parameters
-        ----------
-        stn : str, Object or None
-            Contains the init station information.  If None, it will initial a blank object.
-        """
-        if stn is None:
-            return
-        for s in self.stn_info:
-            try:
-                a = getattr(stn, s)
-            except AttributeError:
-                continue
-            setattr(self, s, a)
+                try:
+                    a = getattr(stn, s)
+                except AttributeError:
+                    continue
+                setattr(self, s, a)
 
     def update_arrays(self, stn):
         """
@@ -63,12 +49,12 @@ class StationInfo:
 
         Parameters
         ----------
-        stn : str, Object or None
+        stn : geo_handling object or None
             Contains the init station information.  If None, it will initial a blank object.
         """
         if stn is None:
             return
-        for s in self.stn_info:
+        for s in self.sys_info:
             try:
                 arr = getattr(self, s)
             except AttributeError:  # pragma: no cover
@@ -118,10 +104,10 @@ class Handling:
 
     def get_all_fully_connected_at_date(self, at_date, station_types_to_check='default', hookup_type=None):
         """
-        Returns a list of class StationInfo of all of the locations fully connected at_date
+        Returns a list of class SystemInfo of all of the locations fully connected at_date
         have station_types in station_types_to_check.
 
-        Each location is returned class StationInfo.  Attributes are:
+        Each location is returned class SystemInfo.  Attributes are:
             'station_name': name of station (string, e.g. 'HH27')
             'station_type_name': type of station (type 'herahexe', etc)
             'tile': UTM tile name (string, e.g. '34J'
@@ -168,7 +154,7 @@ class Handling:
 
     def get_fully_connected_location_at_date(self, stn, at_date, hookup_type=None):
         """
-        Returns StationInfo class
+        Returns SystemInfo class
 
         Attributes are:
             'station_name': name of station (string, e.g. 'HH27')
@@ -200,7 +186,7 @@ class Handling:
         Returns
         -------
         object
-            StationInfo object of connected station.
+            SystemInfo object of connected station.
         """
         if self.H is not None:
             H = self.H
@@ -240,7 +226,7 @@ class Handling:
             fnd_list = self.geo.get_location([stn], at_date)
             if len(fnd_list) == 1:
                 fnd = fnd_list[0]
-                station_info = StationInfo(fnd)
+                station_info = SystemInfo(fnd)
                 station_info.antenna_number = ant_num
                 station_info.correlator_input = (str(corr['e']), str(corr['n']))
                 station_info.epoch = 'e:{}, n:{}'.format(pe['e'], pe['n'])
@@ -254,21 +240,6 @@ class Handling:
         """
         Returns a dict with info needed by the correlator.
 
-        Dict keys are:
-            'antenna_number': Antenna numbers (list of integers)
-            'antenna_names': Station names (we use antenna_names because that's
-                what they're called in data files) (list of strings)
-            'station_type': Station type ('herahex', 'paperimaging', etc.)
-                (list of strings)
-            'correlator_inputs': Correlator input strings for x/y (e/n)
-                polarizations (list of 2 element tuples of strings)
-            'antenna_utm_datum_vals': UTM Datum values (list of strings)
-            'antenna_utm_tiles': UTM Tile values (list of strings)
-            'antenna_utm_eastings': UTM eastings (list of floats)
-            'antenna_utm_northings': UTM northings (list of floats)
-            'antenna_positions': Antenna positions in standard Miriad coordinates
-                (list of 3-element vectors of floats)
-            'cm_version': CM git hash (string)
         Note: This method requires pyuvdata
 
         Parameters
@@ -284,6 +255,21 @@ class Handling:
         -------
         dict
             cm info formatted for the correlator.
+            Dict keys are:
+                'antenna_number': Antenna numbers (list of integers)
+                'antenna_names': Station names (we use antenna_names because that's
+                    what they're called in data files) (list of strings)
+                'station_type': Station type ('herahex', 'paperimaging', etc.)
+                    (list of strings)
+                'correlator_inputs': Correlator input strings for x/y (e/n)
+                    polarizations (list of 2 element tuples of strings)
+                'antenna_utm_datum_vals': UTM Datum values (list of strings)
+                'antenna_utm_tiles': UTM Tile values (list of strings)
+                'antenna_utm_eastings': UTM eastings (list of floats)
+                'antenna_utm_northings': UTM northings (list of floats)
+                'antenna_positions': Antenna positions in standard Miriad coordinates
+                    (list of 3-element vectors of floats)
+                'cm_version': CM git hash (string)
         """
         from pyuvdata import utils as uvutils
         from . import cm_handling
@@ -293,7 +279,7 @@ class Handling:
         cofa_loc = self.geo.cofa()[0]
         stations_conn = self.get_all_fully_connected_at_date(
             at_date='now', station_types_to_check=cm_utils.default_station_prefixes, hookup_type=hookup_type)
-        stn_arrays = StationInfo('init_arrays')
+        stn_arrays = SystemInfo()
         for stn in stations_conn:
             stn_arrays.update_arrays(stn)
         # latitudes, longitudes output by get_all_fully_connected_at_date are in degrees
@@ -325,6 +311,9 @@ class Handling:
     def get_part_at_station_from_type(self, stn, at_date, part_type, include_revs=False,
                                       include_ports=False, hookup_type=None):
         """
+        Gets the part number at a given station of a given part type.  E.g. find the 'post-amp' at
+        station 'HH68'.
+
         Parameters
         ----------
         stn : str, list
@@ -402,46 +391,6 @@ class Handling:
             return 'OK'
         else:
             return 'Not on "main"'
-
-    def system_comments(self, system_kw='System', kword='all'):
-        """
-        Shows "system" comments from the part_info table.
-
-        Parameters
-        ----------
-        system_kw : str
-            Keyword to allow for additional system parameters.
-        kword : str
-            Specific keyword to look for in comment.
-
-        Returns
-        -------
-        str
-            String containing entry.
-        """
-        col = {'key': ['Keyword'], 'date': ['Posting'], 'comment': ['Comment  <file/url>']}
-        for k, v in six.iteritems(col):
-            col[k].append(len(v[0]))
-        found_entries = []
-        for x in self.session.query(cm_partconnect.PartInfo).filter((func.upper(cm_partconnect.PartInfo.hpn) == system_kw.upper())):
-            if kword.lower() == 'all' or x.hpn_rev.lower() == kword.lower():
-                commlib = '{}  <{}>'.format(x.comment, x.library_file)
-                display_time = cm_utils.get_time_for_display(x.posting_gpstime)
-                sys_comm = {'key': x.hpn_rev, 'date': display_time, 'comment': commlib}
-                found_entries.append(sys_comm)
-                for k, v in six.iteritems(sys_comm):
-                    if len(v) > col[k][1]:
-                        col[k][1] = len(v)
-        if not len(found_entries):  # pragma: no cover
-            return 'None'
-        rows = ["\n{:{tkw}s} | {:{pt}s} | {}".format(col['key'][0], col['date'][0], col['comment'][0], tkw=col['key'][1], pt=col['date'][1])]
-        rows.append("{}+{}+{}".format((col['key'][1] + 1) * '-', (col['date'][1] + 2) * '-', (col['comment'][1] + 1) * '-'))
-        for fnd in found_entries:
-            rows.append("{:{tkw}s} | {:{pt}s} | {}".format(fnd['key'], fnd['date'], fnd['comment'],
-                                                           tkw=col['key'][1], pt=col['date'][1]))
-        comments = '\n'.join(rows)
-
-        return comments
 
     def get_apriori_status_for_antenna(self, antenna, at_date='now'):
         """
