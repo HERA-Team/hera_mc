@@ -1,14 +1,18 @@
 HERA M&C Installation
 =====================
 
-HERA M&C requires `hera_mc` and `postgreSQL`.  
-(Note:  if you are only using it to view configuration management, you may instead use SQLITE and skip step [3.] below).
+HERA M&C requires downloading two repositories `hera_mc` and `hera_cm_db_updates`.  The online database uses `PostgreSQL`
+which requires installing that, however local users may wish to use `SQLITE` instead, as it eliminates the need to install
+PostgreSQL on your local machine (SQLITE is pre-installed on Macs).  If you are developing code under `hera_mc`, you'll
+need to install PostgreSQL.  If you are just viewing configuration management (CM) information, SQLITE is much easier.
+Use of PostgreSQL vs SQLITE is determined by the `"default_db_name"` set below in the database configuration file described
+below.
 
 Installation steps are:
 
 * [1.] Install hera_mc
 * [2.] Setup database configuration file
-* [3.] Install postgreSQL (if not using SQLITE)
+* [3.] Install PostgreSQL (if not using SQLITE)
 
 
 [1.] Install hera_mc
@@ -19,23 +23,16 @@ Clone the following two repositories:
 * https://github.com/HERA-Team/hera_cm_db_updates
 
 Then install by:
-1. within the hera_mc directory type `python setup.py install` (or `pip install .`)
+1. within the hera_mc directory type `pip install .` [This is preferred over `python setup.py install`]
 2. in the hera_cm_db_updates directory type `mc_setup_home.py`
 
-To run hera_mc, you will likely need to install some additional python modules (see Python Prerequisites below.)
-
-Python Prerequisites
---------------
- sqlalchemy |  psycopg2 | alembic | dateutil | numpy
- -----------|-----------|---------|----------|-------
- astropy    | tabulate  | pandas  | psutil   | pyproj
- six        | pyuvdata  | h5py    |          |
-
+To run hera_mc, you will likely need to install some additional python modules.
+These modules are listed in `setup.py` under `install_requires`.
 
 [2.] Set up database configuration file
 ---
-A configuration file `~/.hera_mc/mc_config.json` is needed to tell M&C how to talk to the database.  It should look like the example below,
-making sure to change the `<<<Path-to-repo>>>` to be the full path to where hera_cm_db_updates is located.
+A configuration file `~/.hera_mc/mc_config.json` is needed to tell M&C how to talk to the database.
+Except for `<<<path-to-repo>>>` (see below), it should look like this:
 
 ```
 {
@@ -50,24 +47,43 @@ making sure to change the `<<<Path-to-repo>>>` to be the full path to where hera
       "mode": "testing"
     },
     "hera_mc_sqlite": {
-      "url": "sqlite:////<<<Path-to-repo>>>/hera_cm_db_updates/hera_mc.db",
+      "url": "sqlite:///<<<Path-to-repo>>>/hera_mc.db",
       "mode": "production"
     }
-  },
-  "cm_csv_path": "<<<Path-to-repo>>>/hera_cm_db_updates"
+  }
 }
 ```
 
-This example assumes that you’re running PostgreSQL, your database username is
+Make sure to change the `<<<Path-to-repo>>>` to be the full path to where the `hera_cm_db_updates` repo is located.
+It will likely be something like `/Users/username/Documents/hera/hera_cm_db_updates` (i.e. in the json file, there will be a total
+of 4 `/` after `sqlite:`).  Note that regardless of whether you are using PostgreSQL or SQLITE, you should include the
+`"hera_mc_sqlite"` entry for CM updates.
+
+If using the SQLITE version make the second line in `mc_config.json`:
+```
+"default_db_name": "hera_mc_sqlite",
+```
+
+Note that for backward compatibility (and if you are using PostgreSQL) then instead of the `"hera_mc_sqlite"` entry under `"databases"`,
+you may instead include a separate entry:
+```
+{
+  "default_db_name": "hera_mc",
+  "cm_csv_path": <<<path-to-repo>>>,
+  "databases": {
+    ........
+  }
+}
+```
+The order is to check for `hera_cm_sqlite` first, then the `cm_csv_path` if it is not present.
+
+
+If you are running PostgreSQL, this assumes that your database username is
 `hera`, there is no password associated with that user, and that you have two
 separate databases named `hera_mc` and `hera_mc_test` for "production"
 deployment and testing. You must have a database named "testing", in "testing"
 mode, for the M&C test suite to work.
 
-If using the SQLITE version for viewing CM make the second line in mc_config.json:
-```
-"default_db_name": "hera_mc_sqlite",
-```
 If using SQLITE, you don't need to install PostgreSQL and may stop here.
 
 [3.] Install PostgreSQL
@@ -109,14 +125,17 @@ This is done from the shell, in the root hera_mc directory (where the .ini file 
 
 You will likely have to install packages as it fails, so keep doing `conda install <pkg>` until it completes successfully.
 
-If desired, populate the configuration management tables by running the `cm_init.py` script.
+Populate the configuration management tables by running the `cm_init.py` script  This is the same command you will use to
+update your local CM database over time (after pulling `hera_cm_db_updates`).
 
-If there is already an instance of the postgres server running, you may need to kill it:  `sudo pkill -u postgres`
+If there is already an instance of the postgres server running, you may need to kill it:  `sudo pkill -u postgres`.
+This reset is often needed after a computer restart.  If you can't access the database and it was working, try this then
+restart the server with the PostgreSQL app.
 
 
 ### Installing on Mac OS X with homebrew (not particularly recommended)
 
-Based on our experience getting Dave up and running.
+Based on our experience getting Dave up and running (in the early days...)
 
 ```
 $ brew tap homebrew/services

@@ -21,6 +21,20 @@ data_prefix = 'initialization_data_'
 
 
 def order_the_tables(unordered_tables=None):
+    """
+    Tables must be loaded into the database in the proper order to satisfy ForeignKey constraints.
+    This method assures that.
+
+    Parameters
+    ----------
+    unordered_tables : list or None
+        list of unordered_tables or None.  Default is None, which gets all cm tables.
+
+    Returns
+    -------
+    list
+        list of ordered tables
+    """
     if unordered_tables is None:
         unordered_tables = cm_tables.keys()
     ordered_tables = []

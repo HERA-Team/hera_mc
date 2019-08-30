@@ -89,9 +89,7 @@ class TestParts(TestHERAMC):
         request = 'test_part:Q:hpn_rev:A'
         x = cm_partconnect.format_and_check_update_part_request(request)
         self.assertEqual(list(x.keys())[0], 'test_part:Q')
-        request = 'test_part:hpn_rev:A'
-        x = cm_partconnect.format_and_check_update_part_request(request)
-        self.assertEqual(x, None)
+        self.assertRaises(ValueError, cm_partconnect.format_and_check_update_part_request, 'test_part:hpn_rev:A')
         request = 'test_part:Q:hpn_rev:A,test_part:mfg:xxx,nope,another:one'
         x = cm_partconnect.format_and_check_update_part_request(request)
         self.assertEqual(x['test_part:Q'][2][3], 'one')
@@ -205,8 +203,6 @@ class TestParts(TestHERAMC):
             cm_revisions.show_revisions(revision)
         self.assertTrue('1096509616.0' in out.getvalue().strip())
         self.assertEqual(revision[0].hpn, 'HH23')
-        revision = cm_revisions.get_revisions_of_type('help', 'help')
-        self.assertEqual(revision, None)
 
     def test_match_listify(self):
         testing = [['hpn', 'rev'], [['hpn1', 'hpn2', 'hpn3'], 'rev'], [['hpn1', 'hpn2'], ['rev1', 'rev2']]]

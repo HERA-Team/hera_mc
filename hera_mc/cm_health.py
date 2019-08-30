@@ -18,17 +18,16 @@ def check_for_overlap(interval1, interval2):
     Checks to see if two intervals overlap.  Notionally for time, but will work
     for any ints/floats.
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     interval1, interval2 : list
-               intervals to test for overlap
-               format [low_value, high_value]
-               if high_value is None, gets set to the max value + 100 sec (maxx)
+        Intervals to test for overlap format [low_value, high_value].
+        If high_value is None, gets set to the max value + 100 sec (maxx)
 
-    Return
-    ------
-    boolean
-                True if intervals overlap
+    Returns
+    -------
+    bool
+        True if intervals overlap
     """
     maxx = max([x for x in interval1 + interval2 if x is not None]) + 100
     for ival in [interval1, interval2]:
@@ -86,10 +85,10 @@ class Connections:
         Checks all of the self.multiple keys to see if any of them overlap in time.
         If they do, it is a conflicting duplicate connection.
 
-        Return
+        Returns
         ------
-        Dictionary
-                    containing the duplicated connections.
+        dict
+            Dictionary containing the duplicated connections.
         """
         if self.conndict is None:
             self.ingest_conndb()
@@ -150,14 +149,14 @@ class Connections:
         port : None or string or list of strings
                name of port to check.  If None (default) it checks all/any.
         side : string
-               "side" of part to check.  Options are:  up, down, or both (default)
+               "side" of part to check.  Options are:  up, down, or both
         at_date : string, float, int, Time, or datetime
-                  date for the connection to be active.  Default is 'now'
+                  date for the connection to be active.
 
-        Return
-        ------
-        boolean
-                 True if existing corresponding hpn.  If only one hpn, returns a string, else a list.
+        Returns
+        -------
+        bool
+            True if existing corresponding hpn.  If only one hpn, returns a string, else a list.
         """
         hpn_list, rev_list = cm_utils.match_listify(hpn, rev)
         hpn_list, port_list = cm_utils.match_listify(hpn, port)
@@ -199,15 +198,15 @@ def check_part_for_overlapping_revisions(hpn, session=None):
     Checks hpn for parts that overlap in time.  They are allowed, but
     may also signal unwanted behavior.
 
-    Parameters:
-    ------------
-    hpn : string
-          hera part name
+    Parameters
+    ----------
+    hpn : str
+        Hera part name
 
-    Return:
+    Returns
     -------
     list
-            overlapping part revisions
+        Overlapping part revisions
     """
 
     overlap = []

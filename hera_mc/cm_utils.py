@@ -25,6 +25,20 @@ default_station_prefixes = ['HH', 'HA', 'HB']  # This is for defaults for sys et
 def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
     """
     Get the current cm_version for recording with antenna locations.
+
+    Parameters
+    ----------
+    mc_config_path : str or None
+        Path to configuration file.  If None, uses default.
+    cm_csv_path : str or None
+        Path to the cm csv file updates.  If None, uses default.
+    testing : bool
+        Flag to allow for testing.
+
+    Returns
+    -------
+    str
+        git hash of cm repository
     """
     if cm_csv_path is None or testing:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_path)
@@ -37,6 +51,16 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
 
 
 def log(msg, **kwargs):
+    """
+    Writes to the standard cm log file.
+
+    Parameters
+    ----------
+    msg : str
+        log message to write.
+    **kwargs : dict
+        keywords and arguments to log.
+    """
     fp = open(mc.cm_log_file, 'a')
     dt = Time.now()
     fp.write('-------------------' + str(dt.datetime) + '  ' + msg
@@ -66,25 +90,97 @@ system_wide_key = '__Sys__'
 
 
 def make_part_key(hpn, rev):
+    """
+    Returns the standard part key of hpn:rev
+
+    Parameters
+    ----------
+    hpn : str
+        HERA part number.  If None, it returns the system_wide_key
+    rev : str
+        HERA part revision
+
+    Returns
+    -------
+    str
+        key
+    """
     if hpn is None:
         return(system_wide_key)
     return ":".join([hpn, rev]).strip()
 
 
 def split_part_key(key):
+    """
+    Splits the standard part key.
+
+    Parameters
+    ----------
+    key : str
+        Standard part key as hpn:rev
+
+    Returns
+    -------
+    tuple
+        hpn, rev
+    """
     return key.split(':')[0], key.split(':')[1]
 
 
 def make_connection_key(hpn, rev, port, start_gps):
+    """
+    Returns the standard connection key of hpn:rev:port:gps_second
+
+    Parameters
+    ----------
+    hpn : str
+        HERA part number.  If None, it returns the system_wide_key
+    rev : str
+        HERA part revision
+    port : str
+        HERA port
+    start_gps : str or int
+        Start time as gps second
+
+    Returns
+    -------
+    str
+        key
+    """
     return ":".join([hpn, rev, port, str(start_gps)]).strip()
 
 
 def split_connection_key(key):
+    """
+    Splits the standard connection key.
+
+    Parameters
+    ----------
+    key : str
+        Standard part key as hpn:rev:port:gps
+
+    Returns
+    -------
+    tuple
+        hpn, rev, port, gps
+    """
     ks = key.split(':')
     return ks[0], ks[1], ks[2], ks[3]
 
 
 def stringify(X):
+    """
+    "Stringify" the input, hopefully sensibly.
+
+    Parameters
+    ----------
+    X
+        Thing to be stringified.
+
+    Returns
+    -------
+    str
+    """
     if X is None:
         return None
     if isinstance(X, six.string_types):
@@ -95,6 +191,18 @@ def stringify(X):
 
 
 def listify(X):
+    """
+    "Listify" the input, hopefully sensibly.
+
+    Parameters
+    ----------
+    X
+        Thing to be listified.
+
+    Returns
+    -------
+    str or None
+    """
     if X is None:
         return None
     if isinstance(X, six.string_types):
@@ -107,7 +215,17 @@ def listify(X):
 def match_listify(req1, req2):
     """
     Makes sure that the two requests are both lists and that they are
-    equal in length.
+    equal in length.  Raises an Error if can't match.
+
+    Parameters
+    ----------
+    req1, req1 : lists
+        Two lists to be matched.
+
+    Returns
+    -------
+    tuple of lists
+        Matched lists
     """
     list1 = listify(req1)
     if isinstance(req2, list):
@@ -124,12 +242,30 @@ def add_verbosity_args(parser):
     Returns the number of 'v's (-v=1 [low], -vv=2 [medium], -vvv=3 [high]) or the supplied integer.
     Defaults to 1
     Parsed by 'parse_verbosity' function
+
+    Parameters
+    ----------
+    parser : object
+        Parser object
     """
     parser.add_argument('-v', '--verbosity', help="Verbosity level -v -vv -vvv. [-v].",
                         nargs='?', default=1)
 
 
 def parse_verbosity(vargs):
+    """
+    Parse the verbosity argument to produce a standardized integer for verbosity.
+
+    Parameters
+    ----------
+    vargs
+        Parser argument
+
+    Returns
+    -------
+    int
+        Integer characterizing verbosity level
+    """
     try:
         return int(vargs)
     except (ValueError, TypeError):
@@ -147,6 +283,10 @@ def add_date_time_args(parser):
     Their values should then be converted into a Python DateTime object using
     the function `get_astropytime`.
 
+    Parameters
+    ----------
+    parser : object
+        Parser object
     """
     parser.add_argument(
         '--date', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]",
@@ -156,6 +296,18 @@ def add_date_time_args(parser):
 
 
 def is_active(at_date, start_date, stop_date):
+    """
+    Checks to see if at_date is within start/stop.
+
+    Parameters
+    ----------
+    at_date : str, int, Time, None
+        Date to check - anything intelligible by cm_utils.get_astropytime
+    start_date : str, int, Time
+        Start date to use - anything intelligible by cm_utils.get_astropytime
+    stop_date : str, int, Time
+        Stop date to use - anything intelligible by cm_utils.get_astropytime
+    """
     if at_date is None:
         return True
     at_date = get_astropytime(at_date).gps
@@ -168,11 +320,27 @@ def future_date():
     """
     Future is defined here, since defining a far FUTURE_DATE typically gives a
     warning about UTC vs UT1 etc
+
+    Returns
+    -------
+    Time
+        Time 300 days in the future.
     """
     return Time.now() + TimeDelta(300, format='jd')
 
 
 def get_stopdate(stop_date):
+    """
+    Provide an appropriate stop date.  If None, provides future_date
+
+    Parameters
+    ----------
+    stop_date : str, int, None, Time
+
+    Returns
+    -------
+    Time
+    """
     if stop_date is None:
         return future_date()
     return get_astropytime(stop_date)
@@ -182,6 +350,15 @@ def get_time_for_display(display):
     """
     Provide a reader-friendly time string for any time parse-able by get_astropytime -
     if that results in None, then the string None is displayed.
+
+    Parameters
+    ----------
+    display : str, int, None, Time
+
+    Returns
+    -------
+    str
+        Readable string of time in display
     """
     d = get_astropytime(display)
 
@@ -192,16 +369,16 @@ def get_time_for_display(display):
     return d
 
 
-def get_astropytime(_date, _time=0):
+def get_astropytime(adate, atime=0):
     """
-    Take in various incarnations of _date/_time and return an astropy.Time object or None.
+    Take in various incarnations of adate/atime and return an astropy.Time object or None.
     No time zone is allowed.
 
     Returns:  either astropy Time or None
 
-    Parameters:
-    -----------
-    _date:  date in various formats:
+    Parameters
+    ----------
+    adate :  a date in various formats:
                 return astropy Time
                     astropy Time:  just gets returned
                     datetime: just gets converted
@@ -214,54 +391,58 @@ def get_astropytime(_date, _time=0):
                 return None:
                     string:  'none' return None
                     None/False:  return None
-    _time:  only used if _date is 'YYYY/M/D'/'YYYY-M-D' string otherwise ignored
+    atime : a time in various formats, ignored if time information is provided in adate
                 float, int:  hours in decimal time
                 string:  HH[:MM[:SS]] or hours in decimal time
+
+    Returns
+    -------
+    astropy.Time or None
     """
 
-    if isinstance(_date, Time):
-        return _date
-    if isinstance(_date, datetime.datetime):
-        return Time(_date, format='datetime')
-    if _date is None or _date is False:
+    if isinstance(adate, Time):
+        return adate
+    if isinstance(adate, datetime.datetime):
+        return Time(adate, format='datetime')
+    if adate is None or adate is False:
         return None
     try:
-        _date = float(_date)
+        adate = float(adate)
     except ValueError:
         pass
-    if isinstance(_date, float):
-        if _date > 1000000000.0:
-            return Time(_date, format='gps')
-        if _date > 2400000.0 and _date < 2500000.0:
-            return Time(_date, format='jd')
-        raise ValueError('Invalid format:  date as a number should be gps time or julian date, not {}.'.format(_date))
-    if isinstance(_date, str):
-        if _date == '<':
+    if isinstance(adate, float):
+        if adate > 1000000000.0:
+            return Time(adate, format='gps')
+        if adate > 2400000.0 and adate < 2500000.0:
+            return Time(adate, format='jd')
+        raise ValueError('Invalid format:  date as a number should be gps time or julian date, not {}.'.format(adate))
+    if isinstance(adate, str):
+        if adate == '<':
             return Time(PAST_DATE, scale='utc')
-        if _date == '>':
+        if adate == '>':
             return future_date()
-        if _date.lower() == 'now' or _date.lower() == 'current':
+        if adate.lower() == 'now' or adate.lower() == 'current':
             return Time.now()
-        if _date.lower() == 'none':
+        if adate.lower() == 'none':
             return None
-        _date = _date.replace('/', '-')
+        adate = adate.replace('/', '-')
         try:
-            return_date = Time(_date, scale='utc')
+            return_date = Time(adate, scale='utc')
         except ValueError:
-            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(_date))
+            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(adate))
         try:
-            _time = float(_time)
+            atime = float(atime)
         except ValueError:
             pass
-        if isinstance(_time, float):
-            return return_date + TimeDelta(_time * 3600.0, format='sec')
-        if isinstance(_time, str):
-            if ':' not in _time:
+        if isinstance(atime, float):
+            return return_date + TimeDelta(atime * 3600.0, format='sec')
+        if isinstance(atime, str):
+            if ':' not in atime:
                 raise ValueError('Invalid format:  time should be H[:M[:S]] (ints or floats)')
             add_time = 0.0
-            for i, d in enumerate(_time.split(':')):
+            for i, d in enumerate(atime.split(':')):
                 if i > 2:
-                    raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'.format(_time))
+                    raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'.format(atime))
                 add_time += (float(d)) * 3600.0 / (60.0**i)
             return return_date + TimeDelta(add_time, format='sec')
 
@@ -271,6 +452,16 @@ def put_keys_in_numerical_order(keys):
     Takes a list of hookup keys in the format of prefix[+number]:revision and puts them in number order.
     If no number supplied, it uses 0. If no revision supplied, it uses 'A'.
     Returns the ordered list of keys
+
+    Parameters
+    ----------
+    keys : list
+        List of hookup keys
+
+    Returns
+    -------
+    list
+        Ordered list of keys
     """
     keylib = {}
     for k in keys:
@@ -300,13 +491,20 @@ def html_table(headers, table):
     """
     This formats a table into an html table.  Returns a string containing the full html table.
 
-    Parameters:
-    ------------
-    headers:  list of header titles
-    table:  list of rows with data formatted
+    Parameters
+    ----------
+    headers : list
+        List of header titles
+    table : list
+        List of rows with data formatted
             [ [row1_entry1, row1_entry2, ..., row1_entry<len(headers)>],
               [row2_...],
               [rowN_...] ]
+
+    Returns
+    -------
+    str
+        String containing the html table
     """
     s_table = '<table border="1">\n<tr>'
     for h in headers:
@@ -327,13 +525,20 @@ def csv_table(headers, table):
     """
     This formats a table into an csv string.  Returns a string containing the full csv table.
 
-    Parameters:
-    ------------
-    headers:  list of header titles
-    table:  list of rows with data formatted
+    Parameters
+    ----------
+    headers : list
+        List of header titles
+    table : list
+        List of rows with data formatted
             [ [row1_entry1, row1_entry2, ..., row1_entry<len(headers)>],
               [row2_...],
               [rowN_...] ]
+
+    Returns
+    -------
+    str
+        String containing the csv table
     """
     s_table = ''
     for h in headers:
@@ -346,13 +551,27 @@ def csv_table(headers, table):
     return s_table
 
 
-def query_default(a, args):
+def query_default(param, args):
+    """
+    Allows for a parameter to be queried, and return defaults for those not provided.
+
+    Parameters
+    ----------
+    param : str
+        The parameter being queried
+    args : object
+        Namespace object
+
+    Returns
+    -------
+    Queried value or default
+    """
     vargs = vars(args)
-    default = vargs[a]
+    default = vargs[param]
     if 'unittesting' in vargs.keys():
         v = vargs['unittesting']
     else:  # pragma: no cover
-        s = '{} [{}]:  '.format(a, str(default))
+        s = '{} [{}]:  '.format(param, str(default))
         v = six.moves.input(s)
     if len(v) == 0:
         return default
