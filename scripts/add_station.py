@@ -119,7 +119,7 @@ def add_entry_to_parts(session, args):
             [hpn, rev, 'hptype', 'station'],
             [hpn, rev, 'manufacturer_number', args.sernum],
             [hpn, rev, 'start_gpstime', dt.gps]]
-    cm_partconnect.update_part(session, data, args.add_new_part)
+    cm_partconnect.update_part(session, data)
 
 
 if __name__ == '__main__':
@@ -134,8 +134,6 @@ if __name__ == '__main__':
     parser.add_argument('--datum', help="Datum of UTM [WGS84]", default='WGS84')
     parser.add_argument('--tile', help="UTM tile [34J]", default='34J')
     parser.add_argument('--add_new_geo', help="Flag to allow update to add a new "
-                        "record.  [True]", action='store_false')
-    parser.add_argument('--add_new_part', help="Flag to allow update to add a new "
                         "record.  [True]", action='store_false')
 
     args = parser.parse_args()
