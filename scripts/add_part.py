@@ -55,4 +55,4 @@ if __name__ == '__main__':
     if args.verbosity > 1:
         print("Trying to add new part {}:{}".format(args.hpn, args.rev))
     new_part = [[args.hpn, args.rev, args.hptype, args.mfg]]
-    cm_partconnect.add_new_parts(session, new_part_list=new_part, at_date=at_date, allow_restart=args.allow_restart)
+    cm_partconnect.add_new_parts(session, part_list=new_part, at_date=at_date, allow_restart=args.allow_restart)
