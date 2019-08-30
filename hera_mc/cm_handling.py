@@ -390,7 +390,7 @@ class Handling:
         time : astropy time object
             Time of this cm_update
         git_hash : str
-            Git hash of the hera_cm_updates repo
+            Git hash of the hera_cm_db_updates repo
         """
         from .cm_transfer import CMVersion
 
