@@ -390,7 +390,7 @@ class Handling:
         time : astropy time object
             Time of this cm_update
         git_hash : str
-            Git hash of the cm repo
+            Git hash of the hera_cm_updates repo
         """
         from .cm_transfer import CMVersion
 
@@ -616,7 +616,7 @@ class Handling:
                 part_connection_dossier[this_connect.entry_key] = this_connect
         return part_connection_dossier
 
-    def get_specific_connection(self, c, at_date=None):
+    def get_specific_connection(self, cobj, at_date=None):
         """
         Finds and returns a list of connections matching the supplied components of the query.
         At the very least upstream_part and downstream_part must be included -- revisions and
@@ -628,7 +628,7 @@ class Handling:
 
         Parameters
         ----------
-        c : object
+        cobj : object
             Connection class containing the query
         at_date : Astropy Time
             Time to check epoch.  If None is ignored.
@@ -640,21 +640,21 @@ class Handling:
         """
         fnd = []
         for conn in self.session.query(PC.Connections).filter(
-                (func.upper(PC.Connections.upstream_part) == c.upstream_part.upper())
-                & (func.upper(PC.Connections.downstream_part) == c.downstream_part.upper())):
+                (func.upper(PC.Connections.upstream_part) == cobj.upstream_part.upper())
+                & (func.upper(PC.Connections.downstream_part) == cobj.downstream_part.upper())):
             conn.gps2Time()
             include_this_one = True
-            if isinstance(c.up_part_rev, str) and \
-                    c.up_part_rev.lower() != conn.up_part_rev.lower():
+            if isinstance(cobj.up_part_rev, str) and \
+                    cobj.up_part_rev.lower() != conn.up_part_rev.lower():
                 include_this_one = False
-            if isinstance(c.down_part_rev, str) and \
-                    c.down_part_rev.lower() != conn.down_part_rev.lower():
+            if isinstance(cobj.down_part_rev, str) and \
+                    cobj.down_part_rev.lower() != conn.down_part_rev.lower():
                 include_this_one = False
-            if isinstance(c.upstream_output_port, str) and \
-                    c.upstream_output_port.lower() != conn.upstream_output_port.lower():
+            if isinstance(cobj.upstream_output_port, str) and \
+                    cobj.upstream_output_port.lower() != conn.upstream_output_port.lower():
                 include_this_one = False
-            if isinstance(c.downstream_input_port, str) and \
-                    c.downstream_input_port.lower() != conn.downstream_input_port.lower():
+            if isinstance(cobj.downstream_input_port, str) and \
+                    cobj.downstream_input_port.lower() != conn.downstream_input_port.lower():
                 include_this_one = False
             if isinstance(at_date, Time) and \
                     not cm_utils.is_active(at_date, conn.start_date, conn.stop_date):
