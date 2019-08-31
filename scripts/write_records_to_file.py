@@ -81,9 +81,6 @@ valid_tables = {'hera_obs': {'method': 'get_obs_by_time'},
                 'antenna_status': {'method': 'get_antenna_status',
                                    'filter_column': 'antenna_number',
                                    'arg_name': 'antenna_number'},
-                'ant_metric': {'method': 'get_antenna_status',
-                               'filter_column': 'antenna_number',
-                               'arg_name': 'antenna_number'}
                 }
 
 # get commands without write_to_file options:
