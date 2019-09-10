@@ -473,6 +473,15 @@ class Hookup(object):
                 return False
         return True
 
+    def get_all_connections(self, at_date='now'):
+        at_date = cm_utils.get_astropytime(at_date).gps
+        all_connections = []
+        for conn in self.session.query(PC.Connections).filter(PC.Connections.start_gpstime <= at_date
+                                                              & (PC.Connections.stop_gpstime >= at_date
+                                                                 | PC.Connections.stop_gpstime is None)):
+            all_connections.append(conn)
+        return all_connections
+
     def get_hookup_from_db(self, hpn_list, rev, port_query, at_date, exact_match=False, hookup_type=None):
         """
         This gets called by the get_hookup wrapper if the database needs to be read (for instance, to generate
@@ -507,6 +516,7 @@ class Hookup(object):
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
         self.hookup_type = hookup_type
+        all_active_connections = []
 
         # Get all the appropriate parts
         parts = self.handling.get_part_dossier(hpn=hpn_list, rev=rev,
