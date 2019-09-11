@@ -325,6 +325,8 @@ class Hookup(object):
         self.part_type_cache = {}
         self.cached_hookup_dict = None
         self.sysdef = cm_sysdef.Sysdef()
+        self.all_parts = None
+        self.all_connections = None
 
     def reset_memory_cache(self, hookup=None):
         """
@@ -480,14 +482,14 @@ class Hookup(object):
         hpn_list_upper = [x.upper() for x in hpn_list]
         found_dict = {}
         for key in search_dict.keys():
-            hpn, rev = cm_utils.split_part_key(key)
+            hpn, rev = cm_utils.split_part_key(key.upper())
             use_this_one = False
             if exact_match:
-                if hpn.upper() in hpn_list_upper:
+                if hpn in hpn_list_upper:
                     use_this_one = True
             else:
-                for p in hpn_list_upper:
-                    if hpn.upper().startswith(p):
+                for hlu in hpn_list_upper:
+                    if hpn.startswith(hlu):
                         use_this_one = True
                         break
             if use_this_one:
@@ -495,18 +497,27 @@ class Hookup(object):
         return(found_dict)
 
     def get_all_active(self, at_date='now'):
+        if self.all_parts is not None and self.all_connections is not None:
+            return
         at_date = cm_utils.get_astropytime(at_date).gps
-        self.all_parts = {}
-        for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= at_date)
-                                                             & ((partconn.Parts.stop_gpstime >= at_date)
-                                                             | (partconn.Parts.stop_gpstime == None))):
-            key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev).upper()
-            self.all_parts[key] = [prt]
         self.all_connections = []
         for cnn in self.session.query(partconn.Connections).filter((partconn.Connections.start_gpstime <= at_date)
                                                                    & ((partconn.Connections.stop_gpstime >= at_date)
                                                                    | (partconn.Connections.stop_gpstime == None))):
             self.all_connections.append([cnn])
+        self.all_parts = {}
+        for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= at_date)
+                                                             & ((partconn.Parts.stop_gpstime >= at_date)
+                                                             | (partconn.Parts.stop_gpstime == None))):
+            key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev).upper()
+            connections = {'up': [], 'down': []}
+            for cnn in self.all_connections:
+                if cnn.upstream_part == prt.hpn and cnn.up_part_rev == prt.hpn_rev:
+                    connections['oneof them'].append(cnn)
+                if cnn.downstream_part == prt.hpn and cnn.down_part_rev == prt.hpn_rev:
+                    connections['otherone'].append(cnn)
+            self.all_parts[key] = prt
+
 
     def get_hookup_from_db(self, hpn_list, port_query, at_date, exact_match=False, hookup_type=None):
         """
@@ -540,14 +551,16 @@ class Hookup(object):
         self.at_date = at_date
         self.hookup_type = hookup_type
         self.get_all_active(at_date)
+        hpn_list = cm_utils.listify(hpn_list)
         parts = self._get_search_dict(hpn_list, self.all_parts, exact_match)
 
         hookup_dict = {}
         for k, part in six.iteritems(parts):
-            hookup_type = self.sysdef.find_hookup_type(part_type=part.part_type, hookup_type=hookup_type)
-            if part.part_type in self.sysdef.redirect_part_types[hookup_type]:
+            print(k, part)
+            hookup_type = self.sysdef.find_hookup_type(part_type=part.hptype, hookup_type=hookup_type)
+            if part.hptype in self.sysdef.redirect_part_types[hookup_type]:
                 redirect_parts = self.sysdef.handle_redirect_part_types(part, at_date=at_date, session=self.session)
-                redirect_hookup_dict = self.get_hookup_from_db(hpn_list=redirect_parts, rev=rev, port_query=port_query,
+                redirect_hookup_dict = self.get_hookup_from_db(hpn_list=redirect_parts, port_query=port_query,
                                                                at_date=self.at_date, exact_match=True, hookup_type=hookup_type)
                 for rhdk, vhd in six.iteritems(redirect_hookup_dict):
                     hookup_dict[rhdk] = vhd
@@ -659,33 +672,21 @@ class Hookup(object):
             Namespace containing current information.
         """
         # Get all of the port options going the right direction
-        tpk = cm_utils.make_part_key(current.part, current.rev)
-        this = self.handling.get_part_dossier(hpn=current.part, rev=current.rev, at_date=self.at_date,
-                                              exact_match=True, full_version=False)[tpk]
+        this = self.all_parts[cm_utils.make_part_key(current.part, current.rev)]
         options = []
         next = []
         if current.direction == 'up':      # Going upstream
-            for conn in self.session.query(partconn.Connections).filter(
-                    (func.upper(partconn.Connections.downstream_part) == current.part.upper())
-                    & (func.upper(partconn.Connections.down_part_rev) == current.rev.upper())):
-                conn.gps2Time()
-                if not cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
-                    continue
-                options.append(copy.copy(conn))
-                npk = cm_utils.make_part_key(conn.upstream_part, conn.up_part_rev)
-                next.append(self.handling.get_part_dossier(hpn=conn.upstream_part, rev=conn.up_part_rev, at_date=self.at_date,
-                                                           exact_match=True, full_version=False)[npk])
+            for conn in self.all_connections:
+                if conn.downstream_part.upper() == current.part.upper() and conn.down_part_rev.upper() == current.rev.upper():
+                    options.append(copy.copy(conn))
+                    npk = cm_utils.make_part_key(conn.upstream_part, conn.up_part_rev)
+                    next.append(self.all_parts[npk])
         elif current.direction == 'down':  # Going downstream
-            for conn in self.session.query(partconn.Connections).filter(
-                    (func.upper(partconn.Connections.upstream_part) == current.part.upper())
-                    & (func.upper(partconn.Connections.up_part_rev) == current.rev.upper())):
-                conn.gps2Time()
-                if not cm_utils.is_active(self.at_date, conn.start_date, conn.stop_date):
-                    continue
-                options.append(copy.copy(conn))
-                npk = cm_utils.make_part_key(conn.downstream_part, conn.down_part_rev)
-                next.append(self.handling.get_part_dossier(hpn=conn.downstream_part, rev=conn.down_part_rev, at_date=self.at_date,
-                                                           exact_match=True, full_version=False)[npk])
+            for conn in self.all_connections:
+                if conn.upstream_part.upper() == current_part.upper() and conn.up_part_rev.upper() == current.rev.upper():
+                    options.append(copy.copy(conn))
+                    npk = cm_utils.make_part_key(conn.downstream_part, conn.down_part_rev)
+                    next.append(self.all_parts[npk])
         return self.sysdef.next_connection(options, current, this, next)
 
     def write_hookup_cache_to_file(self, log_msg):

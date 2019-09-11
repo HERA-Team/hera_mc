@@ -158,7 +158,7 @@ class Sysdef:
             List of redirected part numbers.
         """
         hpn_list = []
-        if part.part_type.lower() == 'node':
+        if part.hptype.lower() == 'node':
             from hera_mc import cm_handling, cm_utils
             rptc = cm_handling.Handling(session)
             conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port='all', at_date=at_date, exact_match=True)
@@ -216,7 +216,7 @@ class Sysdef:
         """
         self.this_hookup_type = hookup_type
         if hookup_type is None:
-            self.this_hookup_type = self.find_hookup_type(part.part_type, None)
+            self.this_hookup_type = self.find_hookup_type(part.hptype, None)
         for i, _p in enumerate([x.lower() for x in self.all_pols[self.this_hookup_type]]):
             self.pind[_p] = i
 
@@ -228,7 +228,7 @@ class Sysdef:
 
         # These are for single pol parts that have their polarization as the last letter of the part name
         # This is only for parts_paper parts at this time.  Not a good idea going forward.
-        if part.part_type in self.single_pol_labeled_parts[self.this_hookup_type]:
+        if part.hptype in self.single_pol_labeled_parts[self.this_hookup_type]:
             en_part_pol = part.hpn[-1].lower()
             if port_query == 'all' or en_part_pol == port_query:
                 self.pol = [en_part_pol]
