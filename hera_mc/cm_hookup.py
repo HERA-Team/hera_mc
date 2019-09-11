@@ -371,10 +371,11 @@ class Hookup(object):
             else:  # pragma: no cover
                 self._hookup_cache_to_use(force_new_cache=True)
 
-    def get_hookup(self, hpn_list, rev='ACTIVE', port_query='all', at_date='now', exact_match=False,
+    def get_hookup(self, hpn_list, port_query='all', at_date='now', exact_match=False,
                    force_new_cache=False, force_db=False, hookup_type=None):
         """
-        Return the full hookup to the supplied part/rev/port in the form of a dictionary.
+        Return the full hookup to the supplied part/rev/port in the form of a dictionary. It will
+        return all active revisions at_date
         The data may come from one of two sources:
         (1) if the (a) part list is consistent with the keys, (b) date is current, and (c) revision
             hash is current with a local cache file, data from the cache file will be used.
@@ -387,8 +388,6 @@ class Hookup(object):
             List/string of input hera part number(s) (whole or first part thereof)
                 - if string == 'cache' it returns the current dict that would be used
                 - if there are any non-hookup-cached items in list, it reads the database
-        rev : str, list
-            The matching revision number or descriptor
         port_query : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
         at_date :  str, int
@@ -416,17 +415,15 @@ class Hookup(object):
         self.hookup_type = hookup_type
 
         # Take appropriate action if hpn_list is a string
-        if isinstance(hpn_list, six.string_types):
-            if hpn_list.lower().startswith('cache'):
-                print("Force read of cache file - not guaranteed fresh.")
-                self.read_hookup_cache_from_file()
-                return self.cached_hookup_dict
-            else:
-                hpn_list = cm_utils.listify(hpn_list)
+        if isinstance(hpn_list, six.string_types) and hpn_list.lower().startswith('cache'):
+            print("Force read of cache file - not guaranteed fresh.")
+            self.read_hookup_cache_from_file()
+            return self.cached_hookup_dict
+        hpn_list = cm_utils.listify(hpn_list)
 
         # Check if force_db either requested or needed
         if force_db or not self._requested_list_OK_for_cache(hpn_list):
-            return self.get_hookup_from_db(hpn_list=hpn_list, rev=rev, port_query=port_query, at_date=at_date,
+            return self.get_hookup_from_db(hpn_list=hpn_list, port_query=port_query, at_date=at_date,
                                            exact_match=exact_match, hookup_type=hookup_type)
 
         # Check/get the appropriate hookup dict
@@ -434,22 +431,7 @@ class Hookup(object):
         self._hookup_cache_to_use(force_new_cache=force_new_cache)
 
         # Now build up the returned hookup_dict
-        hookup_dict = {}
-        hpn_list = [x.lower() for x in hpn_list]
-        for k in self.cached_hookup_dict:
-            hpn, rev = cm_utils.split_part_key(k)
-            use_this_one = False
-            if exact_match:
-                if hpn.lower() in hpn_list:
-                    use_this_one = True
-            else:
-                for p in hpn_list:
-                    if hpn[:len(p)].lower() == p:
-                        use_this_one = True
-                        break
-            if use_this_one:
-                hookup_dict[k] = copy.copy(self.cached_hookup_dict[k])
-        return hookup_dict
+        return self._get_search_dict(hpn_list, self.cached_hookup_dict, exact_match)
 
     def _requested_list_OK_for_cache(self, hpn_list):
         """
@@ -473,28 +455,69 @@ class Hookup(object):
                 return False
         return True
 
-    def get_all_connections(self, at_date='now'):
-        at_date = cm_utils.get_astropytime(at_date).gps
-        all_connections = []
-        for conn in self.session.query(PC.Connections).filter(PC.Connections.start_gpstime <= at_date
-                                                              & (PC.Connections.stop_gpstime >= at_date
-                                                                 | PC.Connections.stop_gpstime is None)):
-            all_connections.append(conn)
-        return all_connections
+    def _get_search_dict(self, hpn_list, search_dict, exact_match):
+        """
+        Determines the complete appropriate set of parts to use within search_dict as
+        specified by hpn_list and exact_match.  It is not case sensitive.
 
-    def get_hookup_from_db(self, hpn_list, rev, port_query, at_date, exact_match=False, hookup_type=None):
+        Parameters
+        ----------
+        hpn_list : list
+            Contains part numbers (or partial part numbers) to include in the hookup list.
+        search_dict : dict
+            Contains information about all parts possible to search, keyed on the "standard"
+            cm_utils.make_part_key
+        exact_match : bool
+            If False, will only check the first characters in each hpn_list entry.  E.g. 'HH1'
+            would allow 'HH1', 'HH10', 'HH123', etc
+
+        Returns
+        -------
+        dict
+            Contains the found entries within search_dict
+        """
+
+        hpn_list_upper = [x.upper() for x in hpn_list]
+        found_dict = {}
+        for key in search_dict.keys():
+            hpn, rev = cm_utils.split_part_key(key)
+            use_this_one = False
+            if exact_match:
+                if hpn.upper() in hpn_list_upper:
+                    use_this_one = True
+            else:
+                for p in hpn_list_upper:
+                    if hpn.upper().startswith(p):
+                        use_this_one = True
+                        break
+            if use_this_one:
+                found_dict[key] = copy.copy(search_dict[key])
+        return(found_dict)
+
+    def get_all_active(self, at_date='now'):
+        at_date = cm_utils.get_astropytime(at_date).gps
+        self.all_parts = {}
+        for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= at_date)
+                                                             & ((partconn.Parts.stop_gpstime >= at_date)
+                                                             | (partconn.Parts.stop_gpstime == None))):
+            key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev).upper()
+            self.all_parts[key] = [prt]
+        self.all_connections = []
+        for cnn in self.session.query(partconn.Connections).filter((partconn.Connections.start_gpstime <= at_date)
+                                                                   & ((partconn.Connections.stop_gpstime >= at_date)
+                                                                   | (partconn.Connections.stop_gpstime == None))):
+            self.all_connections.append([cnn])
+
+    def get_hookup_from_db(self, hpn_list, port_query, at_date, exact_match=False, hookup_type=None):
         """
         This gets called by the get_hookup wrapper if the database needs to be read (for instance, to generate
-        a cache file, or search for parts different than those keyed on in the cache file.)
+        a cache file, or search for parts different than those keyed on in the cache file.)  It will look over
+        all active revisions.
 
         Parameters
         -----------
         hpn_list : str, list
             List/string of input hera part number(s) (whole or first part thereof)
-                - if string == 'cache' it returns the current dict that would be used
-                - if there are any non-hookup-cached items in list, it reads the database
-        rev : str, list
-            The matching revision number or descriptor
         port_query : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all')
         at_date :  str, int
@@ -516,17 +539,11 @@ class Hookup(object):
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
         self.hookup_type = hookup_type
-        all_active_connections = []
+        self.get_all_active(at_date)
+        parts = self._get_search_dict(hpn_list, self.all_parts, exact_match)
 
-        # Get all the appropriate parts
-        parts = self.handling.get_part_dossier(hpn=hpn_list, rev=rev,
-                                               at_date=self.at_date,
-                                               exact_match=exact_match,
-                                               full_version=True)
         hookup_dict = {}
         for k, part in six.iteritems(parts):
-            if not cm_utils.is_active(self.at_date, part.part.start_date, part.part.stop_date):
-                continue
             hookup_type = self.sysdef.find_hookup_type(part_type=part.part_type, hookup_type=hookup_type)
             if part.part_type in self.sysdef.redirect_part_types[hookup_type]:
                 redirect_parts = self.sysdef.handle_redirect_part_types(part, at_date=at_date, session=self.session)
