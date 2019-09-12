@@ -500,22 +500,33 @@ class Hookup(object):
         if self.all_parts is not None and self.all_connections is not None:
             return
         at_date = cm_utils.get_astropytime(at_date).gps
-        self.all_connections = []
+        self.all_connections = {'up': {}, 'down': {}}
+        up_keys = []
+        down_keys = []
         for cnn in self.session.query(partconn.Connections).filter((partconn.Connections.start_gpstime <= at_date)
                                                                    & ((partconn.Connections.stop_gpstime >= at_date)
                                                                    | (partconn.Connections.stop_gpstime == None))):
-            self.all_connections.append([cnn])
+            key = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev, cnn.upstream_output_port)
+            if key in up_keys:
+                raise ValueError("Duplicate active port {}".format(key))
+            up_keys.append(key)
+            self.all_connections['up'][key] = cnn
+            key = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev, cnn.downstream_input_port)
+            if key in down_keys:
+                raise ValueError("Duplicate active port {}".format(key))
+            down_keys.append(key)
+            self.all_connections['down'][key] = cnn
         self.all_parts = {}
         for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= at_date)
                                                              & ((partconn.Parts.stop_gpstime >= at_date)
                                                              | (partconn.Parts.stop_gpstime == None))):
-            key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev).upper()
-            connections = {'up': [], 'down': []}
-            for cnn in self.all_connections:
-                if cnn.upstream_part == prt.hpn and cnn.up_part_rev == prt.hpn_rev:
-                    connections['oneof them'].append(cnn)
-                if cnn.downstream_part == prt.hpn and cnn.down_part_rev == prt.hpn_rev:
-                    connections['otherone'].append(cnn)
+            key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
+            # connections = {'up': [], 'down': []}
+            # for cnn in self.all_connections:
+            #     if cnn.upstream_part == prt.hpn and cnn.up_part_rev == prt.hpn_rev:
+            #         connections['oneof them'].append(cnn)
+            #     if cnn.downstream_part == prt.hpn and cnn.down_part_rev == prt.hpn_rev:
+            #         connections['otherone'].append(cnn)
             self.all_parts[key] = prt
 
 
