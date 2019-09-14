@@ -186,13 +186,13 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
             if isnan(float(item.value)):
                 continue
 
-            # the value_timestamp is the sensor timestamp, while the other is
-            # when the recording system got it. The value_timestamp isn't always
+            # the value_time is the sensor timestamp, while the other is
+            # when the recording system got it. The value_time isn't always
             # present, so test for it
-            if 'value_timestamp' in item._fields:
-                timestamp = item.value_timestamp
+            if 'value_time' in item._fields:
+                timestamp = item.value_time
             else:
-                timestamp = item.timestamp
+                timestamp = item.sample_time
             if timestamp > sensor_times[-1]:
                 sensor_times.append(timestamp)
                 sensor_data.append(float(item.value))
