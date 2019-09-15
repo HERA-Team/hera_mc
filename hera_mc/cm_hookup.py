@@ -633,16 +633,15 @@ class Hookup(object):
         key = cm_utils.make_part_key(part, rev)
         part_type = self.all_parts[key].hptype
         port_list = self.sysdef.get_current_ports(port_pol, part_type)
+        print("636:  fix 'appropriate_port' selection")
         try:
             appropriate_port = port_list['up'][0].upper()
             self.upstream = [self.all_connections['down'][key][appropriate_port]]
-            print("0-638upstream:  ",self.upstream[0])
         except KeyError:
             self.upstream = []
         try:
             appropriate_port = port_list['up'][0].upper()
             self.downstream = [self.all_connections['up'][key][appropriate_port]]
-            print("0-643downstream:  ",self.downstream[0])
         except KeyError:
             self.downstream = []
         hu_dict = {}
@@ -708,7 +707,7 @@ class Hookup(object):
                 next = self.all_connections['down'][npk]
             except KeyError:
                 return None
-            npo = self.sysdef.next_connection(current, this, next)
+            npo = self.sysdef.next_connection(current, next)
             print("706:  ",npk,npo)
             if npo is None:
                 return None
