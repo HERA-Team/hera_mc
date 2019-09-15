@@ -362,8 +362,8 @@ class Hookup(object):
             Flag to force a new cache hookup to be set and written.
         """
         if force_new_cache or not self._hookup_cache_file_OK():
-            self.cached_hookup_dict = self.get_hookup_from_db(hpn_list=self.hookup_list_to_cache, rev='ACTIVE',
-                                                              port_query='all', at_date=self.at_date,
+            self.cached_hookup_dict = self.get_hookup_from_db(hpn=self.hookup_list_to_cache, rev='ACTIVE',
+                                                              port_pol='all', at_date=self.at_date,
                                                               exact_match=False, hookup_type=self.hookup_type)
             log_msg = "force_new_cache:  {}".format(force_new_cache)
             self.write_hookup_cache_to_file(log_msg)
@@ -373,8 +373,8 @@ class Hookup(object):
             else:  # pragma: no cover
                 self._hookup_cache_to_use(force_new_cache=True)
 
-    def get_hookup(self, hpn_list, port_query='all', at_date='now', exact_match=False,
-                   force_new_cache=False, force_db=False, hookup_type=None):
+    def get_hookup(self, hpn, port_pol='all', at_date='now', exact_match=False,
+                   force_new_cache=False, force_db=False, hookup_type='parts_hera'):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary. It will
         return all active revisions at_date
@@ -386,11 +386,11 @@ class Hookup(object):
 
         Parameters
         -----------
-        hpn_list : str, list
+        hpn : str, list
             List/string of input hera part number(s) (whole or first part thereof)
                 - if string == 'cache' it returns the current dict that would be used
                 - if there are any non-hookup-cached items in list, it reads the database
-        port_query : str
+        port_pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
         at_date :  str, int
             Date for query.  Anything intelligible to cm_utils.get_astropytime
@@ -416,16 +416,16 @@ class Hookup(object):
         self.at_date = at_date
         self.hookup_type = hookup_type
 
-        # Take appropriate action if hpn_list is a string
-        if isinstance(hpn_list, six.string_types) and hpn_list.lower().startswith('cache'):
+        # Take appropriate action if hpn is a string
+        if isinstance(hpn, six.string_types) and hpn.lower().startswith('cache'):
             print("Force read of cache file - not guaranteed fresh.")
             self.read_hookup_cache_from_file()
             return self.cached_hookup_dict
-        hpn_list = cm_utils.listify(hpn_list)
+        hpn = cm_utils.listify(hpn)
 
         # Check if force_db either requested or needed
-        if force_db or not self._requested_list_OK_for_cache(hpn_list):
-            return self.get_hookup_from_db(hpn_list=hpn_list, port_query=port_query, at_date=at_date,
+        if force_db or not self._requested_list_OK_for_cache(hpn):
+            return self.get_hookup_from_db(hpn=hpn, port_pol=port_pol, at_date=at_date,
                                            exact_match=exact_match, hookup_type=hookup_type)
 
         # Check/get the appropriate hookup dict
@@ -433,15 +433,15 @@ class Hookup(object):
         self._hookup_cache_to_use(force_new_cache=force_new_cache)
 
         # Now build up the returned hookup_dict
-        return self._get_search_dict(hpn_list, self.cached_hookup_dict, exact_match)
+        return self._get_search_dict(hpn, self.cached_hookup_dict, exact_match)
 
-    def _requested_list_OK_for_cache(self, hpn_list):
+    def _requested_list_OK_for_cache(self, hpn):
         """
         Checks that all hookup requests match the cached keys.
 
         Parameters
         ----------
-        hpn_list : list
+        hpn : list
             List of HERA part numbers being checked.
 
         Returns
@@ -449,7 +449,7 @@ class Hookup(object):
         bool
             True if the part numbers are in the cached keys. Else False
         """
-        for x in hpn_list:
+        for x in hpn:
             for key_prefix in self.hookup_list_to_cache:
                 if x[:len(key_prefix)].upper() == key_prefix.upper():
                     break
@@ -457,20 +457,20 @@ class Hookup(object):
                 return False
         return True
 
-    def _get_search_dict(self, hpn_list, search_dict, exact_match):
+    def _get_search_dict(self, hpn, search_dict, exact_match):
         """
         Determines the complete appropriate set of parts to use within search_dict as
-        specified by hpn_list and exact_match.  It is not case sensitive.
+        specified by hpn and exact_match.  It is not case sensitive.
 
         Parameters
         ----------
-        hpn_list : list
+        hpn : list
             Contains part numbers (or partial part numbers) to include in the hookup list.
         search_dict : dict
             Contains information about all parts possible to search, keyed on the "standard"
             cm_utils.make_part_key
         exact_match : bool
-            If False, will only check the first characters in each hpn_list entry.  E.g. 'HH1'
+            If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
             would allow 'HH1', 'HH10', 'HH123', etc
 
         Returns
@@ -479,16 +479,16 @@ class Hookup(object):
             Contains the found entries within search_dict
         """
 
-        hpn_list_upper = [x.upper() for x in hpn_list]
+        hpn_upper = [x.upper() for x in hpn]
         found_dict = {}
         for key in search_dict.keys():
             hpn, rev = cm_utils.split_part_key(key.upper())
             use_this_one = False
             if exact_match:
-                if hpn in hpn_list_upper:
+                if hpn in hpn_upper:
                     use_this_one = True
             else:
-                for hlu in hpn_list_upper:
+                for hlu in hpn_upper:
                     if hpn.startswith(hlu):
                         use_this_one = True
                         break
@@ -506,31 +506,28 @@ class Hookup(object):
         for cnn in self.session.query(partconn.Connections).filter((partconn.Connections.start_gpstime <= at_date)
                                                                    & ((partconn.Connections.stop_gpstime >= at_date)
                                                                    | (partconn.Connections.stop_gpstime == None))):
-            key = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev, cnn.upstream_output_port)
-            if key in up_keys:
-                raise ValueError("Duplicate active port {}".format(key))
-            up_keys.append(key)
-            self.all_connections['up'][key] = cnn
-            key = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev, cnn.downstream_input_port)
-            if key in down_keys:
-                raise ValueError("Duplicate active port {}".format(key))
-            down_keys.append(key)
-            self.all_connections['down'][key] = cnn
+            chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev, cnn.upstream_output_port)
+            if chk in up_keys:
+                raise ValueError("Duplicate active port {}".format(chk))
+            up_keys.append(chk)
+            chk = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev, cnn.downstream_input_port)
+            if chk in down_keys:
+                raise ValueError("Duplicate active port {}".format(chk))
+            down_keys.append(chk)
+            key = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev)
+            self.all_connections['up'].setdefault(key, {})
+            self.all_connections['up'][key][cnn.upstream_output_port.upper()] = cnn
+            key = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev)
+            self.all_connections['down'].setdefault(key, {})
+            self.all_connections['down'][key][cnn.downstream_input_port.upper()] = cnn
         self.all_parts = {}
         for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= at_date)
                                                              & ((partconn.Parts.stop_gpstime >= at_date)
                                                              | (partconn.Parts.stop_gpstime == None))):
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
-            # connections = {'up': [], 'down': []}
-            # for cnn in self.all_connections:
-            #     if cnn.upstream_part == prt.hpn and cnn.up_part_rev == prt.hpn_rev:
-            #         connections['oneof them'].append(cnn)
-            #     if cnn.downstream_part == prt.hpn and cnn.down_part_rev == prt.hpn_rev:
-            #         connections['otherone'].append(cnn)
             self.all_parts[key] = prt
 
-
-    def get_hookup_from_db(self, hpn_list, port_query, at_date, exact_match=False, hookup_type=None):
+    def get_hookup_from_db(self, hpn, port_pol, at_date, exact_match=False, hookup_type=None):
         """
         This gets called by the get_hookup wrapper if the database needs to be read (for instance, to generate
         a cache file, or search for parts different than those keyed on in the cache file.)  It will look over
@@ -538,9 +535,9 @@ class Hookup(object):
 
         Parameters
         -----------
-        hpn_list : str, list
+        hpn : str, list
             List/string of input hera part number(s) (whole or first part thereof)
-        port_query : str
+        port_pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all')
         at_date :  str, int
             Date for query.  Anything intelligible to cm_utils.get_astropytime
@@ -555,35 +552,34 @@ class Hookup(object):
         Returns
         -------
         dict
-            Hookup dictionary.
+            Hookup dossier dictionary.
         """
         # Reset at_date
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
         self.hookup_type = hookup_type
         self.get_all_active(at_date)
-        hpn_list = cm_utils.listify(hpn_list)
-        parts = self._get_search_dict(hpn_list, self.all_parts, exact_match)
+        hpn = cm_utils.listify(hpn)
+        parts = self._get_search_dict(hpn, self.all_parts, exact_match)
 
         hookup_dict = {}
         for k, part in six.iteritems(parts):
-            print(k, part)
             hookup_type = self.sysdef.find_hookup_type(part_type=part.hptype, hookup_type=hookup_type)
-            if part.hptype in self.sysdef.redirect_part_types[hookup_type]:
-                redirect_parts = self.sysdef.handle_redirect_part_types(part, at_date=at_date, session=self.session)
-                redirect_hookup_dict = self.get_hookup_from_db(hpn_list=redirect_parts, port_query=port_query,
-                                                               at_date=self.at_date, exact_match=True, hookup_type=hookup_type)
-                for rhdk, vhd in six.iteritems(redirect_hookup_dict):
-                    hookup_dict[rhdk] = vhd
-                redirect_hookup_dict = None
-                continue
-            self.sysdef.setup(part=part, port_query=port_query, hookup_type=hookup_type)
+            # if part.hptype in self.sysdef.redirect_part_types[hookup_type]:
+            #     redirect_parts = self.sysdef.handle_redirect_part_types(part, at_date=at_date, session=self.session)
+            #     redirect_hookup_dict = self.get_hookup_from_db(hpn=redirect_parts, port_pol=port_pol,
+            #                                                    at_date=self.at_date, exact_match=True, hookup_type=hookup_type)
+            #     for rhdk, vhd in six.iteritems(redirect_hookup_dict):
+            #         hookup_dict[rhdk] = vhd
+            #     redirect_hookup_dict = None
+            #     continue
+            self.sysdef.setup(part=part, port_pol=port_pol, hookup_type=hookup_type)
             self.hookup_type = self.sysdef.this_hookup_type
             if self.sysdef.pol is None:
                 continue
             hookup_dict[k] = HookupDossierEntry(entry_key=k, sysdef=self.sysdef)
             for port_pol in self.sysdef.pol:
-                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part.hpn, part.rev, port_pol)
+                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part.hpn, part.hpn_rev, port_pol)
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[port_pol])
                 hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
                 hookup_dict[k].add_timing_and_fully_connected(port_pol)
@@ -606,6 +602,7 @@ class Hookup(object):
         if not len(hookup_connections):
             return []
         part_types_found = set()
+        print("CHANGE THIS TO USE THE all_parts dict to get parttypes AND PUT IN SYSDEF")
         for c in hookup_connections:
             part_type = self.handling.get_part_type_for(c.upstream_part).lower()
             part_types_found.add(part_type)
@@ -633,22 +630,38 @@ class Hookup(object):
         list
             List of connections for that hookup.
         """
-        self.upstream = []
-        self.downstream = []
-        port = port_pol  # Seed it
-        pol = port_pol[0]
-        starting = Namespace(direction='up', part=part, rev=rev, port=port, pol=pol)
-        current = copy.copy(starting)
-        self._recursive_connect(current)
-        starting.direction = 'down'
-        self._recursive_connect(starting)
-
-        hu = []
-        for pn in reversed(self.upstream):
-            hu.append(pn)
-        for pn in self.downstream:
-            hu.append(pn)
-        return hu
+        key = cm_utils.make_part_key(part, rev)
+        part_type = self.all_parts[key].hptype
+        port_list = self.sysdef.get_current_ports(port_pol, part_type)
+        try:
+            appropriate_port = port_list['up'][0].upper()
+            self.upstream = [self.all_connections['down'][key][appropriate_port]]
+            print("0-638upstream:  ",self.upstream[0])
+        except KeyError:
+            self.upstream = []
+        try:
+            appropriate_port = port_list['up'][0].upper()
+            self.downstream = [self.all_connections['up'][key][appropriate_port]]
+            print("0-643downstream:  ",self.downstream[0])
+        except KeyError:
+            self.downstream = []
+        hu_dict = {}
+        hu_keys = []
+        for pup, pdn in zip(port_list['up'], port_list['down']):
+            current = Namespace(direction='up', part=part, rev=rev, port=pup, pol=port_pol)
+            self._recursive_connect(current)
+            current = Namespace(direction='down', part=part, rev=rev, port=pdn, pol=port_pol)
+            self._recursive_connect(current)
+            pkey = '|'.join([str(pup), str(pdn)])
+            hu_keys.append(pkey)
+            hu_dict[pkey] = []
+            for pn in reversed(self.upstream):
+                hu_dict[pkey].append(pn)
+            for pn in self.downstream:
+                hu_dict[pkey].append(pn)
+        if len(hu_keys) > 1:
+            raise ValueError("Multiple valued hookup streams not yet allowed.")
+        return hu_dict[hu_keys[0]]
 
     def _recursive_connect(self, current):
         """
@@ -661,6 +674,7 @@ class Hookup(object):
         """
         next_conn = self._get_next_connection(current)
         if next_conn is not None:
+            print("1-{}675:  ".format(current.direction),next_conn)
             if current.direction == 'up':
                 self.upstream.append(next_conn)
                 current.part = next_conn.upstream_part
@@ -683,22 +697,35 @@ class Hookup(object):
             Namespace containing current information.
         """
         # Get all of the port options going the right direction
-        this = self.all_parts[cm_utils.make_part_key(current.part, current.rev)]
-        options = []
-        next = []
+        key = cm_utils.make_part_key(current.part, current.rev).upper()
+        part_type = self.all_parts[key].hptype
+        current.port_list = self.sysdef.get_current_ports(current.pol, part_type)
         if current.direction == 'up':      # Going upstream
-            for conn in self.all_connections:
-                if conn.downstream_part.upper() == current.part.upper() and conn.down_part_rev.upper() == current.rev.upper():
-                    options.append(copy.copy(conn))
-                    npk = cm_utils.make_part_key(conn.upstream_part, conn.up_part_rev)
-                    next.append(self.all_parts[npk])
+            print("699UP  ",current)
+            try:
+                this = self.all_connections['down'][key][current.port.upper()]
+                npk = cm_utils.make_part_key(this.upstream_part, this.up_part_rev)
+                next = self.all_connections['down'][npk]
+            except KeyError:
+                return None
+            npo = self.sysdef.next_connection(current, this, next)
+            print("706:  ",npk,npo)
+            if npo is None:
+                return None
+            return self.all_connections['down'][npk][npo]
         elif current.direction == 'down':  # Going downstream
-            for conn in self.all_connections:
-                if conn.upstream_part.upper() == current_part.upper() and conn.up_part_rev.upper() == current.rev.upper():
-                    options.append(copy.copy(conn))
-                    npk = cm_utils.make_part_key(conn.downstream_part, conn.down_part_rev)
-                    next.append(self.all_parts[npk])
-        return self.sysdef.next_connection(options, current, this, next)
+            print("711DOWN",current)
+            try:
+                this = self.all_connections['up'][key][current.port.upper()]
+                npk = cm_utils.make_part_key(this.downstream_part, this.down_part_rev)
+                next = self.all_connections['up'][npk]
+            except KeyError:
+                return None
+            npo = self.sysdef.next_connection(current, this, next)
+            print("718:  ",npk,npo)
+            if npo is None:
+                return None
+            return self.all_connections['up'][npk][npo]
 
     def write_hookup_cache_to_file(self, log_msg):
         """

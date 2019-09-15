@@ -5,6 +5,7 @@
 from __future__ import absolute_import, division, print_function
 import six
 from argparse import Namespace
+from hera_mc import cm_utils
 
 
 class Sysdef:
@@ -198,9 +199,9 @@ class Sysdef:
                     return hookup_type
         raise ValueError("hookup_type {} is not found.".format(hookup_type))
 
-    def setup(self, part, port_query='all', hookup_type=None):
+    def setup(self, part, port_pol='all', hookup_type=None):
         """
-        Given the current part and port_query (which is either 'all', 'e', or 'n')
+        Given the current part and port_pol (which is either 'all', 'e', or 'n')
         this figures out which pols to do.  Basically, given the part and query it
         figures out whether to return ['e*'], ['n*'], or ['e*', 'n*']
 
@@ -208,7 +209,7 @@ class Sysdef:
         -----------
         part : dict
             Current part dossier
-        port_query : str
+        port_pol : str
             The ports that were requested ('e' or 'n' or 'all').  Default is 'all'
         hookup_type : str, None
             If not None, will use specified hookup_type otherwise it will look through in order.
@@ -220,52 +221,89 @@ class Sysdef:
         for i, _p in enumerate([x.lower() for x in self.all_pols[self.this_hookup_type]]):
             self.pind[_p] = i
 
-        all_pols_lo = [x.lower() for x in self.all_pols[self.this_hookup_type]]
-        port_query = port_query.lower()
-        port_check_list = all_pols_lo + ['all']
-        if port_query not in port_check_list:
-            raise ValueError("Invalid port query {}.  Should be in {}".format(port_query, port_check_list))
+        all_pols_upper = [x.upper() for x in self.all_pols[self.this_hookup_type]]
+        port_pol = port_pol.upper()
+        port_check_list = all_pols_upper + ['ALL']
+        if port_pol not in port_check_list:
+            raise ValueError("Invalid port query {}.  Should be in {}".format(port_pol, port_check_list))
 
         # These are for single pol parts that have their polarization as the last letter of the part name
         # This is only for parts_paper parts at this time.  Not a good idea going forward.
         if part.hptype in self.single_pol_labeled_parts[self.this_hookup_type]:
             en_part_pol = part.hpn[-1].lower()
-            if port_query == 'all' or en_part_pol == port_query:
+            if port_pol == 'all' or en_part_pol == port_pol:
                 self.pol = [en_part_pol]
             else:
                 self.pol = None
             return
 
         # Sort out all of the ports into a 'pol_catalog'.
-        pol_catalog = {}
-        for dir in ['up', 'down']:
-            pol_catalog[dir] = {'e': [], 'n': [], 'a': [], 'o': []}
-        connected_ports = {'up': part.connections.input_ports, 'down': part.connections.output_ports}
-        for dir in ['up', 'down']:
-            for cp in connected_ports[dir]:
-                cp = cp.lower()
-                cp_poldes = 'o' if cp[0] not in all_pols_lo else cp[0]
-                if cp_poldes in all_pols_lo:
-                    pol_catalog[dir]['a'].append(cp)  # p = e + n
-                pol_catalog[dir][cp_poldes].append(cp)
-        up = pol_catalog['up'][port_query[0]]
-        dn = pol_catalog['down'][port_query[0]]
+        #pol_catalog = {}
+        #for dir in ['up', 'down']:
+        #    pol_catalog[dir] = {'e': [], 'n': [], 'a': [], 'o': []}
+        #connected_ports = {'up': part.connections.input_ports, 'down': part.connections.output_ports}
+        #for dir in ['up', 'down']:
+        #    for cp in connected_ports[dir]:
+        #        cp = cp.lower()
+        #        cp_poldes = 'o' if cp[0] not in all_pols_lo else cp[0]
+        #        if cp_poldes in all_pols_lo:
+        #            pol_catalog[dir]['a'].append(cp)  # p = e + n
+        #        pol_catalog[dir][cp_poldes].append(cp)
+        #up = pol_catalog['up'][port_pol[0]]
+        #dn = pol_catalog['down'][port_pol[0]]
 
-        if (len(up) + len(dn)) == 0:  # The part handles both polarizations
-            self.pol = all_pols_lo if port_query == 'all' else port_query
-        else:
-            self.pol = up if len(up) > len(dn) else dn
+        #if (len(up) + len(dn)) == 0:  # The part handles both polarizations
+        #    self.pol = all_pols_lo if port_pol == 'all' else port_pol
+        #else:
+        #    self.pol = up if len(up) > len(dn) else dn
+        self.pol = all_pols_upper if port_pol == 'all' else port_pol
 
-    def next_connection(self, connection_options, current, A, B):
+    def get_current_ports(self, port_pol, part_type):
+        """
+        This will return a list of appropriate current ports for a given part-type,
+        direction, and port_pol request.  The up and down lists are made equal length
+
+        Parameters
+        ----------
+        port_pol : str
+            The port_pol request, either 'e', 'n', 'all'
+        part_type : str
+            Part type of current part
+
+        Returns
+        -------
+        dict
+            Dictionary keyed on 'up'/'down' listing appropriate ports
+        """
+        port_dict = {}
+        for dir in ['up', 'down']:
+            port_dict[dir] = []
+            for port_list in self.port_def[self.this_hookup_type][part_type][dir]:
+                for port in port_list:
+                    if port is None:
+                        port_dict[dir].append(None)
+                    elif port[0].lower() not in self.all_pols[self.this_hookup_type] or port_pol == 'all':
+                        port_dict[dir].append(port)
+                    elif port[0].lower() == port_pol[0].lower():
+                        port_dict[dir].append(port)
+        lpd = Namespace(up=len(port_dict['up']), down=len(port_dict['down']))
+        if lpd.up != lpd.down:
+            if lpd.up > 1 and lpd.down > 1:
+                raise ValueError("Unequal port list lengths are > 1 -- case not handled.")
+            if lpd.up == 1:
+                port_dict['up'] = port_dict['up'] * lpd.down
+            elif lpd.down == 1:
+                port_dict['down'] = port_dict['down'] * lpd.up
+        return port_dict
+
+    def next_connection(self, current, this, next):
         """
         This checks the options and returns the next connection.
 
         Parameters
         ----------
-        connection_options : list
-            List containing the possible next connections.
         current : object
-            Connections object for current.
+            Namespace for current information
         A : object
             Part object for part option A
         B : object
@@ -277,6 +315,36 @@ class Sysdef:
             Connection object for next desired connection.
         """
 
+        print("sd279: current:  ", current)
+        print('\tthis:  ',this)
+        print('\tnext:  ',next)
+        if current.direction == 'up':
+            pkeys = list(next.keys())
+            if len(pkeys) == 1:
+                return next[pkeys[0]].downstream_input_port.upper()
+            else:
+                for pkey in pkeys:
+                    if current.port_pol.upper() == pkey.upper():
+                        return next[pkey].downstream_input_port.upper()
+                for pkey in pkeys:
+                    if current.port_pol[0].upper() == pkey[0].upper():
+                        return next[pkey].downstream_input_port.upper()
+                return None
+        elif current.direction == 'down':
+            pkeys = list(next.keys())
+            if len(pkeys) == 1:
+                return next[pkeys[0]].upstream_output_port.upper()
+            else:
+                for pkey in pkeys:
+                    if current.port_pol.upper() == pkey.upper():
+                        return next[pkey].upstream_output_port.upper()
+                for pkey in pkeys:
+                    if current.port_pol[0].upper() == pkey[0].upper():
+                        return next[pkey].upstream_output_port.upper()
+                return None
+
+            key = cm_utils.make_part_key(next[pkey].downstream_part, next[pkey].down_part_rev)
+            return key, next[pkey].downstream_input_port.upper()
         # This sets up the parameters to check for the next part/port
         this_part_info = self.port_def[self.this_hookup_type][A.part_type]
         next_part_position = this_part_info['position'] + self._D.arrow[current.direction]
