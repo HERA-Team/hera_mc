@@ -634,14 +634,14 @@ class Hookup(object):
         """
         key = cm_utils.make_part_key(part, rev).upper()
         part_type = self.all_parts[key].hptype
-        port_list = self.sysdef.get_ports(pol, part_type)
+        port_list = cm_utils.to_upper(self.sysdef.get_ports(pol, part_type))
         self.upstream = []
         self.downstream = []
         current = Namespace(direction='up', part=part.upper(), rev=rev.upper(), key=key,
-                            pol=pol.upper(), port_list=port_list)
+                            pol=pol.upper(), port=pol[0].upper(), allowed_ports=port_list)
         self._recursive_connect(current)
         current = Namespace(direction='down', part=part.upper(), rev=rev.upper(), key=key,
-                            pol=pol.upper(), port_list=port_list)
+                            pol=pol.upper(), port=pol[0].upper(), allowed_ports=port_list)
         self._recursive_connect(current)
         hu = []
         for pn in reversed(self.upstream):
@@ -664,15 +664,8 @@ class Hookup(object):
             return None
         if current.direction == 'up':
             self.upstream.append(conn)
-            current.part = conn.upstream_part.upper()
-            current.rev = conn.up_part_rev.upper()
         elif current.direction == 'down':
             self.downstream.append(conn)
-            current.part = conn.downstream_part.upper()
-            current.rev = conn.down_part_rev.upper()
-        current.key = cm_utils.make_part_key(current.part, current.rev)
-        part_type = self.all_parts[current.key].hptype
-        current.port_list = self.sysdef.get_ports(current.pol, part_type)
         self._recursive_connect(current)
 
     def _get_connection(self, current):
@@ -684,22 +677,44 @@ class Hookup(object):
         current : Namespace object
             Namespace containing current information.
         """
-        oppodir = self.sysdef.opposite_direction[current.direction]
-        this_port = self._get_port(current)
+        odir = self.sysdef.opposite_direction[current.direction]
         try:
-            this = self.all_connections[oppodir][current.key][this_port]
+            options = cm_utils.to_upper(list(self.all_connections[odir][current.key].keys()))
         except KeyError:
             return None
-        return this
+        this_port = self._get_port(current, options)
+        if this_port is None:
+            return None
+        this_conn = self.all_connections[odir][current.key][this_port]
+        if current.direction == 'up':
+            current.part = this_conn.upstream_part.upper()
+            current.rev = this_conn.up_part_rev.upper()
+            current.port = this_conn.upstream_output_port.upper()
+        elif current.direction == 'down':
+            current.part = this_conn.downstream_part.upper()
+            current.rev = this_conn.down_part_rev.upper()
+            current.port = this_conn.downstream_input_port.upper()
+        current.key = cm_utils.make_part_key(current.part, current.rev)
+        options = cm_utils.to_upper(list(self.all_connections[current.direction][current.key].keys()))
+        part_type = self.all_parts[current.key].hptype
+        current.allowed_ports = cm_utils.to_upper(self.sysdef.get_ports(current.pol, part_type))
+        current.port = self._get_port(current, options)
+        return this_conn
 
-    def _get_port(self, current):
-        if len(current.port_list[current.direction]) == 1:
-            return cm_utils.to_upper(current.port_list[current.direction][0])
-        for p in current.port_list[current.direction]:
-            if cm_utils.to_upper(p) == cm_utils.to_upper(current.pol):
-                return cm_utils.to_upper(p)
-        for p in current.port_list[current.direction]:
-            if p is not None and p[0].upper() == current.pol[0].upper():
+    def _get_port(self, current, options):
+        if current.port is None:
+            return None
+        sysdef_options = []
+        for p in options:
+            if p.upper() in current.allowed_ports:
+                sysdef_options.append(p.upper())
+        if len(sysdef_options) == 1:
+            return sysdef_options[0]
+        for p in sysdef_options:
+            if p == current.port:
+                return p
+        for p in sysdef_options:
+            if p[0] == current.pol[0].upper():
                 return p.upper()
 
     def write_hookup_cache_to_file(self, log_msg):

@@ -257,7 +257,7 @@ class Sysdef:
                 for port in port_list:
                     if port is None:
                         port_dict[dir].append(None)
-                    elif port[0].lower() not in self.all_pols[self.this_hookup_type] or pol == 'all':
+                    elif port[0].lower() not in self.all_pols[self.this_hookup_type] or pol.lower() == 'all':
                         port_dict[dir].append(port)
                     elif port[0].lower() == pol[0].lower():
                         port_dict[dir].append(port)
