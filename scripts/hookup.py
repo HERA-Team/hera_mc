@@ -15,7 +15,6 @@ from hera_mc import cm_hookup, cm_utils, mc
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-p', '--hpn', help="Part number, csv-list or default. (default)", default='default')
-    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  (LAST)", default='LAST')
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char.",
                         dest='exact_match', action='store_true')
     parser.add_argument('-f', '--force-new-cache', dest='force_new_cache', help="Force it to write a new hookup cache file.", action='store_true')
@@ -52,7 +51,7 @@ if __name__ == '__main__':
     elif args.delete_cache_file:
         hookup.delete_cache_file()
     else:
-        hookup_dict = hookup.get_hookup(hpn=args.hpn, rev=args.revision, port_pol=args.port, at_date=at_date,
+        hookup_dict = hookup.get_hookup(hpn=args.hpn, pol=args.port, at_date=at_date,
                                         exact_match=args.exact_match, force_new_cache=args.force_new_cache,
                                         force_db=args.force_db, hookup_type=args.hookup_type)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols,

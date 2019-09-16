@@ -20,7 +20,7 @@ from argparse import Namespace
 from sqlalchemy import func
 from astropy.time import Time, TimeDelta
 
-from . import mc, cm_utils, cm_handling, cm_transfer, cm_sysdef
+from . import mc, cm_utils, cm_transfer, cm_sysdef
 from . import cm_partconnect as partconn
 
 
@@ -321,7 +321,6 @@ class Hookup(object):
             self.session = db.sessionmaker()
         else:
             self.session = session
-        self.handling = cm_handling.Handling(session)
         self.part_type_cache = {}
         self.cached_hookup_dict = None
         self.sysdef = cm_sysdef.Sysdef()
@@ -362,7 +361,7 @@ class Hookup(object):
             Flag to force a new cache hookup to be set and written.
         """
         if force_new_cache or not self._hookup_cache_file_OK():
-            self.cached_hookup_dict = self.get_hookup_from_db(hpn=self.hookup_list_to_cache, rev='ACTIVE',
+            self.cached_hookup_dict = self.get_hookup_from_db(hpn=self.hookup_list_to_cache,
                                                               pol='all', at_date=self.at_date,
                                                               exact_match=False, hookup_type=self.hookup_type)
             log_msg = "force_new_cache:  {}".format(force_new_cache)

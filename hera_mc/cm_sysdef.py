@@ -216,7 +216,7 @@ class Sysdef:
             self.pind[_p] = i
 
         all_pols_upper = [x.upper() for x in self.all_pols[self.this_hookup_type]]
-        pol = pol.upper()
+        pol = cm_utils.to_upper(pol)
         port_check_list = all_pols_upper + ['ALL']
         if pol not in port_check_list:
             raise ValueError("Invalid port query {}.  Should be in {}".format(pol, port_check_list))
