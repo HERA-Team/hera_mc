@@ -225,6 +225,14 @@ def listify(X):
     return [X]
 
 
+def to_upper(X):
+    if X is None:
+        return None
+    if isinstance(X, list):
+        return [to_upper(s) for s in X]
+    return str(X).upper()
+
+
 def match_listify(req1, req2):
     """
     Makes sure that the two requests are both lists and that they are

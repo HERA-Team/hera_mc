@@ -18,7 +18,7 @@ class Sysdef:
         a) polarized ports start with one of the polarization characters ('e' or 'n')
         b) non polarized ports don't start with either character.
     """
-
+    opposite_direction = {'up': 'down', 'down': 'up'}
     port_def = {}
     port_def['parts_hera'] = {
         'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
@@ -258,7 +258,7 @@ class Sysdef:
         #    self.pol = up if len(up) > len(dn) else dn
         self.pol = all_pols_upper if port_pol == 'all' else port_pol
 
-    def get_current_ports(self, port_pol, part_type):
+    def get_ports(self, port_pol, part_type):
         """
         This will return a list of appropriate current ports for a given part-type,
         direction, and port_pol request.  The up and down lists are made equal length
@@ -266,7 +266,7 @@ class Sysdef:
         Parameters
         ----------
         port_pol : str
-            The port_pol request, either 'e', 'n', 'all'
+            The port_pol request, either 'e', 'n' (or starts with those letters) or 'all'
         part_type : str
             Part type of current part
 
@@ -287,6 +287,7 @@ class Sysdef:
                     elif port[0].lower() == port_pol[0].lower():
                         port_dict[dir].append(port)
         lpd = Namespace(up=len(port_dict['up']), down=len(port_dict['down']))
+        print("CM_SYSDEF290:  USE CM_UTILS.MATCH_LISTIFY BELOW")
         if lpd.up != lpd.down:
             if lpd.up > 1 and lpd.down > 1:
                 raise ValueError("Unequal port list lengths are > 1 -- case not handled.")
@@ -296,55 +297,37 @@ class Sysdef:
                 port_dict['down'] = port_dict['down'] * lpd.up
         return port_dict
 
-    def next_connection(self, current, this, next):
+    def get_port(self, current, conn):
         """
-        This checks the options and returns the next connection.
-
-        Parameters
-        ----------
-        current : object
-            Namespace for current information
-        A : object
-            Part object for part option A
-        B : object
-            Part object for part option B
-
-        Returns
-        -------
-        Object
-            Connection object for next desired connection.
+        This checks the options and returns the port
         """
 
-        print("sd279: current:  ", current)
-        print('\tthis:  ',this)
-        print('\tnext:  ',next)
+        print("sd279: current info:  ", current)
+        print('\t\tconn:  ',conn)
+        pkeys = list(conn.keys())
         if current.direction == 'up':
-            pkeys = list(next.keys())
             if len(pkeys) == 1:
                 return next[pkeys[0]].downstream_input_port.upper()
-            else:
-                for pkey in pkeys:
-                    if current.port_pol.upper() == pkey.upper():
-                        return next[pkey].downstream_input_port.upper()
-                for pkey in pkeys:
-                    if current.port_pol[0].upper() == pkey[0].upper():
-                        return next[pkey].downstream_input_port.upper()
-                return None
+            for pkey in pkeys:
+                if current.port_pol.upper() == pkey.upper():
+                    return next[pkey].downstream_input_port.upper()
+            for pkey in pkeys:
+                if current.port_pol[0].upper() == pkey[0].upper():
+                    return next[pkey].downstream_input_port.upper()
+            return None
         elif current.direction == 'down':
-            pkeys = list(next.keys())
             if len(pkeys) == 1:
-                return next[pkeys[0]].upstream_output_port.upper()
-            else:
-                for pkey in pkeys:
-                    if current.port_pol.upper() == pkey.upper():
-                        return next[pkey].upstream_output_port.upper()
-                for pkey in pkeys:
-                    if current.port_pol[0].upper() == pkey[0].upper():
-                        return next[pkey].upstream_output_port.upper()
-                return None
-
-            key = cm_utils.make_part_key(next[pkey].downstream_part, next[pkey].down_part_rev)
-            return key, next[pkey].downstream_input_port.upper()
+                return conn[pkeys[0]].upstream_output_port.upper()
+            for pkey in pkeys:
+                if current.port_pol.upper() == pkey.upper():
+                    return next[pkey].upstream_output_port.upper()
+            for pkey in pkeys:
+                if current.port_pol[0].upper() == pkey[0].upper():
+                    return next[pkey].upstream_output_port.upper()
+            return None
+        print("SHOULDN'T EVER GET HEREQ!!!!!!")
+        key = cm_utils.make_part_key(next[pkey].downstream_part, next[pkey].down_part_rev)
+        return key, next[pkey].downstream_input_port.upper()
         # This sets up the parameters to check for the next part/port
         this_part_info = self.port_def[self.this_hookup_type][A.part_type]
         next_part_position = this_part_info['position'] + self._D.arrow[current.direction]
