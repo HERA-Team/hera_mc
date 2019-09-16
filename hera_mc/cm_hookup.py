@@ -696,7 +696,11 @@ class Hookup(object):
             current.port = this_conn.downstream_input_port.upper()
         current.key = cm_utils.make_part_key(current.part, current.rev)
         options = cm_utils.to_upper(list(self.all_connections[current.direction][current.key].keys()))
-        part_type = self.all_parts[current.key].hptype
+        try:
+            part_type = self.all_parts[current.key].hptype
+        except KeyError:
+            print("{} is not listed as an active part even though listed in an active connection.".format(current.key))
+            return None
         current.allowed_ports = cm_utils.to_upper(self.sysdef.get_ports(current.pol, part_type))
         current.port = self._get_port(current, options)
         return this_conn

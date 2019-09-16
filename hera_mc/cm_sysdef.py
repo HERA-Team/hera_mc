@@ -153,10 +153,10 @@ class Sysdef:
             List of redirected part numbers.
         """
         hpn_list = []
-        if part.hptype.lower() == 'node':
-            from hera_mc import cm_handling, cm_utils
-            rptc = cm_handling.Handling(session)
-            conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port='all', at_date=at_date, exact_match=True)
+        if part.hptype.lower() == 'xxxxxnode':
+            from hera_mc import cm_hookup
+            # rptc = cm_handling.Handling(session)
+            # conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port='all', at_date=at_date, exact_match=True)
             redirect_list = []
             for _k in conn.keys():
                 _pk = cm_utils.split_part_key(_k)[0]
