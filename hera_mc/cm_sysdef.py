@@ -60,12 +60,6 @@ class Sysdef:
     }
     checking_order = ['parts_hera', 'parts_rfi', 'parts_paper', 'parts_test']
 
-    # Various dictionaries needed for next_connection below
-    _D = Namespace(port={'up': 'out', 'down': 'in'},
-                   this={'up': 'down', 'down': 'up'},
-                   next={'up': 'up', 'down': 'down'},
-                   arrow={'up': -1, 'down': 1})
-
     def __init__(self, input_dict=None):
         if input_dict is not None:
             self.pind = input_dict['pind']
@@ -199,9 +193,9 @@ class Sysdef:
                     return hookup_type
         raise ValueError("hookup_type {} is not found.".format(hookup_type))
 
-    def setup(self, part, port_pol='all', hookup_type=None):
+    def setup(self, part, pol='all', hookup_type=None):
         """
-        Given the current part and port_pol (which is either 'all', 'e', or 'n')
+        Given the current part and pol (which is either 'all', 'e', or 'n')
         this figures out which pols to do.  Basically, given the part and query it
         figures out whether to return ['e*'], ['n*'], or ['e*', 'n*']
 
@@ -209,7 +203,7 @@ class Sysdef:
         -----------
         part : dict
             Current part dossier
-        port_pol : str
+        pol : str
             The ports that were requested ('e' or 'n' or 'all').  Default is 'all'
         hookup_type : str, None
             If not None, will use specified hookup_type otherwise it will look through in order.
@@ -222,51 +216,32 @@ class Sysdef:
             self.pind[_p] = i
 
         all_pols_upper = [x.upper() for x in self.all_pols[self.this_hookup_type]]
-        port_pol = port_pol.upper()
+        pol = pol.upper()
         port_check_list = all_pols_upper + ['ALL']
-        if port_pol not in port_check_list:
-            raise ValueError("Invalid port query {}.  Should be in {}".format(port_pol, port_check_list))
+        if pol not in port_check_list:
+            raise ValueError("Invalid port query {}.  Should be in {}".format(pol, port_check_list))
 
         # These are for single pol parts that have their polarization as the last letter of the part name
         # This is only for parts_paper parts at this time.  Not a good idea going forward.
         if part.hptype in self.single_pol_labeled_parts[self.this_hookup_type]:
             en_part_pol = part.hpn[-1].lower()
-            if port_pol == 'all' or en_part_pol == port_pol:
+            if pol == 'all' or en_part_pol == pol:
                 self.pol = [en_part_pol]
             else:
                 self.pol = None
             return
 
-        # Sort out all of the ports into a 'pol_catalog'.
-        #pol_catalog = {}
-        #for dir in ['up', 'down']:
-        #    pol_catalog[dir] = {'e': [], 'n': [], 'a': [], 'o': []}
-        #connected_ports = {'up': part.connections.input_ports, 'down': part.connections.output_ports}
-        #for dir in ['up', 'down']:
-        #    for cp in connected_ports[dir]:
-        #        cp = cp.lower()
-        #        cp_poldes = 'o' if cp[0] not in all_pols_lo else cp[0]
-        #        if cp_poldes in all_pols_lo:
-        #            pol_catalog[dir]['a'].append(cp)  # p = e + n
-        #        pol_catalog[dir][cp_poldes].append(cp)
-        #up = pol_catalog['up'][port_pol[0]]
-        #dn = pol_catalog['down'][port_pol[0]]
+        self.pol = all_pols_upper if pol == 'all' else pol
 
-        #if (len(up) + len(dn)) == 0:  # The part handles both polarizations
-        #    self.pol = all_pols_lo if port_pol == 'all' else port_pol
-        #else:
-        #    self.pol = up if len(up) > len(dn) else dn
-        self.pol = all_pols_upper if port_pol == 'all' else port_pol
-
-    def get_ports(self, port_pol, part_type):
+    def get_ports(self, pol, part_type):
         """
         This will return a list of appropriate current ports for a given part-type,
-        direction, and port_pol request.  The up and down lists are made equal length
+        direction, and pol request.  The up and down lists are made equal length
 
         Parameters
         ----------
-        port_pol : str
-            The port_pol request, either 'e', 'n' (or starts with those letters) or 'all'
+        pol : str
+            The pol request, either 'e', 'n' (or starts with those letters) or 'all'
         part_type : str
             Part type of current part
 
@@ -282,90 +257,8 @@ class Sysdef:
                 for port in port_list:
                     if port is None:
                         port_dict[dir].append(None)
-                    elif port[0].lower() not in self.all_pols[self.this_hookup_type] or port_pol == 'all':
+                    elif port[0].lower() not in self.all_pols[self.this_hookup_type] or pol == 'all':
                         port_dict[dir].append(port)
-                    elif port[0].lower() == port_pol[0].lower():
+                    elif port[0].lower() == pol[0].lower():
                         port_dict[dir].append(port)
-        lpd = Namespace(up=len(port_dict['up']), down=len(port_dict['down']))
-        print("CM_SYSDEF290:  USE CM_UTILS.MATCH_LISTIFY BELOW")
-        if lpd.up != lpd.down:
-            if lpd.up > 1 and lpd.down > 1:
-                raise ValueError("Unequal port list lengths are > 1 -- case not handled.")
-            if lpd.up == 1:
-                port_dict['up'] = port_dict['up'] * lpd.down
-            elif lpd.down == 1:
-                port_dict['down'] = port_dict['down'] * lpd.up
         return port_dict
-
-    def get_port(self, current, conn):
-        """
-        This checks the options and returns the port
-        """
-
-        print("sd279: current info:  ", current)
-        print('\t\tconn:  ',conn)
-        pkeys = list(conn.keys())
-        if current.direction == 'up':
-            if len(pkeys) == 1:
-                return next[pkeys[0]].downstream_input_port.upper()
-            for pkey in pkeys:
-                if current.port_pol.upper() == pkey.upper():
-                    return next[pkey].downstream_input_port.upper()
-            for pkey in pkeys:
-                if current.port_pol[0].upper() == pkey[0].upper():
-                    return next[pkey].downstream_input_port.upper()
-            return None
-        elif current.direction == 'down':
-            if len(pkeys) == 1:
-                return conn[pkeys[0]].upstream_output_port.upper()
-            for pkey in pkeys:
-                if current.port_pol.upper() == pkey.upper():
-                    return next[pkey].upstream_output_port.upper()
-            for pkey in pkeys:
-                if current.port_pol[0].upper() == pkey[0].upper():
-                    return next[pkey].upstream_output_port.upper()
-            return None
-        print("SHOULDN'T EVER GET HEREQ!!!!!!")
-        key = cm_utils.make_part_key(next[pkey].downstream_part, next[pkey].down_part_rev)
-        return key, next[pkey].downstream_input_port.upper()
-        # This sets up the parameters to check for the next part/port
-        this_part_info = self.port_def[self.this_hookup_type][A.part_type]
-        next_part_position = this_part_info['position'] + self._D.arrow[current.direction]
-        if next_part_position < 0 or next_part_position > len(self.full_connection_path[self.this_hookup_type]) - 1:
-            return None
-        next_part_type = self.full_connection_path[self.this_hookup_type][next_part_position]
-        next_part_info = self.port_def[self.this_hookup_type][next_part_type]
-        if len(next_part_info[self._D.this[current.direction]]) == 1:
-            allowed_next_ports = next_part_info[self._D.this[current.direction]][0]
-        elif len(next_part_info[self._D.this[current.direction]]) == 2:
-            allowed_next_ports = next_part_info[self._D.this[current.direction]][self.pind[current.pol]]
-        options = []
-        # prefix is defined to handle the single_pol_labeled_parts
-        prefix_this = A.hpn[-1].lower() if A.part_type in self.single_pol_labeled_parts[self.this_hookup_type] else ''
-        for i, opc in enumerate(connection_options):
-            if B[i].part_type != next_part_type:
-                continue
-            prefix_next = B[i].hpn[-1].lower() if next_part_type in self.single_pol_labeled_parts[self.this_hookup_type] else ''
-            this_port = prefix_this
-            this_port += getattr(opc, '{}stream_{}put_port'.format(self._D.this[current.direction], self._D.port[self._D.this[current.direction]]))
-            next_port = prefix_next
-            next_port += getattr(opc, '{}stream_{}put_port'.format(self._D.next[current.direction], self._D.port[self._D.next[current.direction]]))
-            if next_port[0] == '@':
-                continue
-            if len(connection_options) == 1 and next_port in allowed_next_ports:
-                return opc
-            this = Namespace(part=A.hpn, port=this_port, type=A.part_type, prefix=prefix_this)
-            next = Namespace(part=B[i].hpn, port=next_port, type=B[i].part_type, prefix=prefix_next)
-            options.append(Namespace(this=this, next=next, option=opc, pol=current.pol))
-
-        # This runs through the Namespace to find the actual part/port
-        #    First pass is to check for the specific port-sets that pass
-        for opt in options:
-            check_next_port = opt.next.port.strip(opt.next.prefix)
-            if current.port == opt.this.port and check_next_port in allowed_next_ports:
-                return opt.option
-        #    Second pass checks for matching the leading polarization character.
-        for opt in options:
-            check_next_port = opt.next.port.strip(opt.next.prefix)
-            if current.pol[0] == opt.this.port[0] and check_next_port in allowed_next_ports:
-                return opt.option

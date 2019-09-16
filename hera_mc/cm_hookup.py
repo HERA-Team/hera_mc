@@ -363,7 +363,7 @@ class Hookup(object):
         """
         if force_new_cache or not self._hookup_cache_file_OK():
             self.cached_hookup_dict = self.get_hookup_from_db(hpn=self.hookup_list_to_cache, rev='ACTIVE',
-                                                              port_pol='all', at_date=self.at_date,
+                                                              pol='all', at_date=self.at_date,
                                                               exact_match=False, hookup_type=self.hookup_type)
             log_msg = "force_new_cache:  {}".format(force_new_cache)
             self.write_hookup_cache_to_file(log_msg)
@@ -373,7 +373,7 @@ class Hookup(object):
             else:  # pragma: no cover
                 self._hookup_cache_to_use(force_new_cache=True)
 
-    def get_hookup(self, hpn, port_pol='all', at_date='now', exact_match=False,
+    def get_hookup(self, hpn, pol='all', at_date='now', exact_match=False,
                    force_new_cache=False, force_db=False, hookup_type='parts_hera'):
         """
         Return the full hookup to the supplied part/rev/port in the form of a dictionary. It will
@@ -390,7 +390,7 @@ class Hookup(object):
             List/string of input hera part number(s) (whole or first part thereof)
                 - if string == 'cache' it returns the current dict that would be used
                 - if there are any non-hookup-cached items in list, it reads the database
-        port_pol : str
+        pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
         at_date :  str, int
             Date for query.  Anything intelligible to cm_utils.get_astropytime
@@ -425,7 +425,7 @@ class Hookup(object):
 
         # Check if force_db either requested or needed
         if force_db or not self._requested_list_OK_for_cache(hpn):
-            return self.get_hookup_from_db(hpn=hpn, port_pol=port_pol, at_date=at_date,
+            return self.get_hookup_from_db(hpn=hpn, pol=pol, at_date=at_date,
                                            exact_match=exact_match, hookup_type=hookup_type)
 
         # Check/get the appropriate hookup dict
@@ -527,7 +527,7 @@ class Hookup(object):
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.all_parts[key] = prt
 
-    def get_hookup_from_db(self, hpn, port_pol, at_date, exact_match=False, hookup_type=None):
+    def get_hookup_from_db(self, hpn, pol, at_date, exact_match=False, hookup_type=None):
         """
         This gets called by the get_hookup wrapper if the database needs to be read (for instance, to generate
         a cache file, or search for parts different than those keyed on in the cache file.)  It will look over
@@ -537,7 +537,7 @@ class Hookup(object):
         -----------
         hpn : str, list
             List/string of input hera part number(s) (whole or first part thereof)
-        port_pol : str
+        pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all')
         at_date :  str, int
             Date for query.  Anything intelligible to cm_utils.get_astropytime
@@ -567,13 +567,13 @@ class Hookup(object):
             hookup_type = self.sysdef.find_hookup_type(part_type=part.hptype, hookup_type=hookup_type)
             if part.hptype in self.sysdef.redirect_part_types[hookup_type]:
                 redirect_parts = self.sysdef.handle_redirect_part_types(part, at_date=at_date, session=self.session)
-                redirect_hookup_dict = self.get_hookup_from_db(hpn=redirect_parts, port_pol=port_pol,
+                redirect_hookup_dict = self.get_hookup_from_db(hpn=redirect_parts, pol=pol,
                                                                at_date=self.at_date, exact_match=True, hookup_type=hookup_type)
                 for rhdk, vhd in six.iteritems(redirect_hookup_dict):
                     hookup_dict[rhdk] = vhd
                 redirect_hookup_dict = None
                 continue
-            self.sysdef.setup(part=part, port_pol=port_pol, hookup_type=hookup_type)
+            self.sysdef.setup(part=part, pol=pol, hookup_type=hookup_type)
             self.hookup_type = self.sysdef.this_hookup_type
             if self.sysdef.pol is None:
                 continue
@@ -587,7 +587,8 @@ class Hookup(object):
 
     def get_part_types_found(self, hookup_connections):
         """
-        Takes a list of connections and returns the part_types of them.
+        Takes a list of connections and returns the part_types of them.  It also
+        populates 'self.part_type_cache'
 
         Parameters
         ----------
@@ -606,9 +607,11 @@ class Hookup(object):
             key = cm_utils.make_part_key(c.upstream_part, c.up_part_rev).upper()
             part_type = self.all_parts[key].hptype
             part_types_found.add(part_type)
+            self.part_type_cache[c.upstream_part] = part_type
         key = cm_utils.make_part_key(c.downstream_part, c.down_part_rev).upper()
         part_type = self.all_parts[key].hptype
         part_types_found.add(part_type)
+        self.part_type_cache[c.downstream_part] = part_type
         return list(part_types_found)
 
     def _follow_hookup_stream(self, part, rev, pol):

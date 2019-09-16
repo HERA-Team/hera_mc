@@ -240,8 +240,8 @@ def match_listify(req1, req2):
 
     Parameters
     ----------
-    req1, req1 : lists
-        Two lists to be matched.
+    req1, req1 : list or str
+        Two things to be matched.
 
     Returns
     -------
@@ -249,10 +249,11 @@ def match_listify(req1, req2):
         Matched lists
     """
     list1 = listify(req1)
-    if isinstance(req2, list):
-        list2 = req2
-    else:
-        list2 = len(list1) * [req2]
+    list2 = listify(req2)
+    if len(list1) > len(list2):
+        list2 = len(list1) * list2
+    elif len(list2) > len(list1):
+        list1 = len(list2) * list1
     if len(list1) != len(list2):
         raise ValueError("Unmatched list requests.")
     return list1, list2
