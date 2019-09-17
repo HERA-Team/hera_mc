@@ -266,11 +266,18 @@ class Hookup(object):
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.all_parts[key] = prt
 
-    def check_all_data(self, at_date='now'):
+    def check_active_data(self, at_date='now'):
         """
         Checks self.all_parts and self.all_connections to make sure that all connections have an
         associated active part.  Prints out a message if not true.  If self.all_parts or
         self.all_connections are None, it will get_all_active for at_date.
+
+
+        Parameters
+        ----------
+        at_date : str, int, float, Time, datetime
+            The date for which to check as active if either all_parts or all_connections are None,
+            given as anything comprehensible to get_astropytime
         """
         if self.all_parts is None or self.all_connections is None:
             self.get_all_active(at_date=at_date)
@@ -315,7 +322,7 @@ class Hookup(object):
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
         self.hookup_type = hookup_type
-        self.get_all_active(at_date=at_date, check_data=check_data)
+        self.get_all_active(at_date=at_date)
         hpn = cm_utils.listify(hpn)
         parts = self._get_search_dict(hpn, self.all_parts, exact_match)
         hookup_dict = {}

@@ -53,7 +53,7 @@ if __name__ == '__main__':
     elif args.delete_cache_file:
         hookup.delete_cache_file()
     elif args.check_data:
-        hookup.check_all_data(at_date=at_date)
+        hookup.check_active_data(at_date=at_date)
     else:
         hookup_dict = hookup.get_hookup(hpn=args.hpn, pol=args.pol, at_date=at_date,
                                         exact_match=args.exact_match, force_new_cache=args.force_new_cache,
