@@ -219,30 +219,44 @@ class Hookup(object):
         return(found_dict)
 
     def get_all_active(self, at_date='now'):
+        """
+        Retrieves all active parts and connections for a given at_date.  If
+        a part:rev:port connection already exists, it will generate an error.
+        This method does nothing if self.all_parts and self.all_connections
+        are both not None.
+
+        Writes two class dictionaries:
+                self.all_parts - keyed on part:rev
+                self.all_connections - has keys 'up' and 'down', each of which
+                                       is a dictionary keyed on part:rev for
+                                       upstream_part and downstream_part respectively.
+        Parameters
+        ----------
+        at_date : str, int, float, Time, datetime
+            The date for which to check as active, given as anything comprehensible
+            to get_astropytime
+        """
+
         if self.all_parts is not None and self.all_connections is not None:
             return
         at_date = cm_utils.get_astropytime(at_date).gps
         self.all_connections = {'up': {}, 'down': {}}
-        up_keys = []
-        down_keys = []
-        full_conn_set = set()
+        check_keys = {'up': [], 'down': []}
         for cnn in self.session.query(partconn.Connections).filter((partconn.Connections.start_gpstime <= at_date)
                                                                    & ((partconn.Connections.stop_gpstime >= at_date)
                                                                    | (partconn.Connections.stop_gpstime == None))):
             chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev, cnn.upstream_output_port)
-            if chk in up_keys:
+            if chk in check_keys['up']:
                 raise ValueError("Duplicate active port {}".format(chk))
-            up_keys.append(chk)
+            check_keys['up'].append(chk)
             chk = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev, cnn.downstream_input_port)
-            if chk in down_keys:
+            if chk in check_keys['down']:
                 raise ValueError("Duplicate active port {}".format(chk))
-            down_keys.append(chk)
+            check_keys['down'].append(chk)
             key = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev)
-            full_conn_set.add(key)
             self.all_connections['up'].setdefault(key, {})
             self.all_connections['up'][key][cnn.upstream_output_port.upper()] = cnn
             key = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev)
-            full_conn_set.add(key)
             self.all_connections['down'].setdefault(key, {})
             self.all_connections['down'][key][cnn.downstream_input_port.upper()] = cnn
         self.all_parts = {}
@@ -251,8 +265,14 @@ class Hookup(object):
                                                              | (partconn.Parts.stop_gpstime == None))):
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.all_parts[key] = prt
-        # Check to see if any missing parts
+
+    def check_all_data(self):
+        """
+        Checks self.all_parts and self.all_connections to make sure that all connections have an
+        associated active part.  Prints out a message.
+        """
         full_part_set = list(self.all_parts.keys())
+        full_conn_set = set(list(self.all_connections['up']) + list(self.all_connections['down']))
         missing_parts = []
         for key in full_conn_set:
             if key not in full_part_set:
@@ -292,7 +312,7 @@ class Hookup(object):
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
         self.hookup_type = hookup_type
-        self.get_all_active(at_date)
+        self.get_all_active(at_date=at_date, check_data=check_data)
         hpn = cm_utils.listify(hpn)
         parts = self._get_search_dict(hpn, self.all_parts, exact_match)
         hookup_dict = {}

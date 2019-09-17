@@ -92,7 +92,7 @@ class Sysdef:
             for hutype in self.port_def.keys():
                 self.redirect_part_types[hutype] = []
                 self.single_pol_labeled_parts[hutype] = []
-            self.redirect_part_types['parts_hera'] = ['node']
+            self.redirect_part_types['parts_hera'] = ['node', 'node-bulkhead', 'snap']
             self.single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
 
             # This generates the full_connection_path dictionary from port_def
@@ -156,8 +156,8 @@ class Sysdef:
             List of redirected part numbers.
         """
         hpn_list = []
+        print("SYSDEF159:  redirect not yet handled.")
         if part.part_type.lower() == 'node':
-            print("CMSD160:  redirect not yet handled.")
             from hera_mc import cm_hookup
             # rptc = cm_handling.Handling(session)
             # conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port='all', at_date=at_date, exact_match=True)
