@@ -266,11 +266,14 @@ class Hookup(object):
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.all_parts[key] = prt
 
-    def check_all_data(self):
+    def check_all_data(self, at_date='now'):
         """
         Checks self.all_parts and self.all_connections to make sure that all connections have an
-        associated active part.  Prints out a message.
+        associated active part.  Prints out a message if not true.  If self.all_parts or
+        self.all_connections are None, it will get_all_active for at_date.
         """
+        if self.all_parts is None or self.all_connections is None:
+            self.get_all_active(at_date=at_date)
         full_part_set = list(self.all_parts.keys())
         full_conn_set = set(list(self.all_connections['up']) + list(self.all_connections['down']))
         missing_parts = []
