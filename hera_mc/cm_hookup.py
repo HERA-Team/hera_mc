@@ -439,14 +439,15 @@ class Hookup(object):
         return this_conn
 
     def _get_port(self, current, options):
-        if current.type in self.sysdef.single_pol_labeled_parts[self.hookup_type]:
-            print("HU443 current:  ",current)
         if current.port is None:
             return None
         sysdef_options = []
         for p in options:
             if p in current.allowed_ports:
                 sysdef_options.append(p)
+        if current.type in self.sysdef.single_pol_labeled_parts[self.hookup_type]:
+            if current.part[-1].upper() == current.pol[0]:
+                return sysdef_options[0]
         if len(sysdef_options) == 1:
             return sysdef_options[0]
         for p in sysdef_options:
