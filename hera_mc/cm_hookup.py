@@ -338,11 +338,11 @@ class Hookup(object):
             return []
         part_types_found = set()
         for c in hookup_connections:
-            key = cm_utils.make_part_key(c.upstream_part, c.up_part_rev).upper()
+            key = cm_utils.make_part_key(c.upstream_part, c.up_part_rev)
             part_type = self.all_parts[key].hptype
             part_types_found.add(part_type)
             self.part_type_cache[c.upstream_part] = part_type
-        key = cm_utils.make_part_key(c.downstream_part, c.down_part_rev).upper()
+        key = cm_utils.make_part_key(c.downstream_part, c.down_part_rev)
         part_type = self.all_parts[key].hptype
         part_types_found.add(part_type)
         self.part_type_cache[c.downstream_part] = part_type
@@ -366,7 +366,7 @@ class Hookup(object):
         list
             List of connections for that hookup.
         """
-        key = cm_utils.make_part_key(part, rev).upper()
+        key = cm_utils.make_part_key(part, rev)
         part_type = self.all_parts[key].hptype
         port_list = cm_utils.to_upper(self.sysdef.get_ports(pol, part_type))
         self.upstream = []
@@ -413,7 +413,7 @@ class Hookup(object):
         """
         odir = self.sysdef.opposite_direction[current.direction]
         try:
-            options = cm_utils.to_upper(list(self.all_connections[odir][current.key].keys()))
+            options = list(self.all_connections[odir][current.key].keys())
         except KeyError:
             return None
         this_port = self._get_port(current, options)
@@ -429,7 +429,7 @@ class Hookup(object):
             current.rev = this_conn.down_part_rev.upper()
             current.port = this_conn.downstream_input_port.upper()
         current.key = cm_utils.make_part_key(current.part, current.rev)
-        options = cm_utils.to_upper(list(self.all_connections[current.direction][current.key].keys()))
+        options = list(self.all_connections[current.direction][current.key].keys())
         try:
             part_type = self.all_parts[current.key].hptype
         except KeyError:
@@ -443,16 +443,16 @@ class Hookup(object):
             return None
         sysdef_options = []
         for p in options:
-            if p.upper() in current.allowed_ports:
-                sysdef_options.append(p.upper())
+            if p in current.allowed_ports:
+                sysdef_options.append(p)
         if len(sysdef_options) == 1:
             return sysdef_options[0]
         for p in sysdef_options:
             if p == current.port:
                 return p
         for p in sysdef_options:
-            if p[0] == current.pol[0].upper():
-                return p.upper()
+            if p[0] == current.pol[0]:
+                return p
 
     def write_hookup_cache_to_file(self, log_msg):
         """

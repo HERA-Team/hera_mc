@@ -160,7 +160,7 @@ def make_connection_key(hpn, rev, port, start_gps):
     str
         key
     """
-    return ":".join([hpn, rev, port, str(start_gps)]).strip()
+    return ":".join([hpn.upper(), rev.upper(), port.upper(), str(start_gps).upper()])
 
 
 def split_connection_key(key):
