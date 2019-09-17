@@ -239,14 +239,14 @@ class HookupDossierEntry(object):
         for d in self.hookup[pol]:
             part_type = part_types[d.upstream_part]
             if part_type in columns:
-                new_row_entry = _build_new_row_entry(
+                new_row_entry = self._build_new_row_entry(
                     dip, d.upstream_part, d.up_part_rev, d.upstream_output_port, show)
                 td[columns.index(part_type)] = new_row_entry
             dip = d.downstream_input_port + '> '
         # Get the last part in the hookup
         part_type = part_types[d.downstream_part]
         if part_type in columns:
-            new_row_entry = _build_new_row_entry(
+            new_row_entry = self._build_new_row_entry(
                 dip, d.downstream_part, d.down_part_rev, None, show)
             td[columns.index(part_type)] = new_row_entry
         # Add timing
@@ -256,35 +256,34 @@ class HookupDossierEntry(object):
             td[columns.index('stop')] = timing[1]
         return td
 
+    def _build_new_row_entry(self, dip, part, rev, port, show):
+        """
+        Formats the hookup row entry.
 
-def _build_new_row_entry(dip, part, rev, port, show):
-    """
-    Formats the hookup row entry, only called from within the HookupDossierEntry class.
+        Parameters
+        ----------
+        dip : str
+            Current entry display for the downstream_input_port
+        part : str
+            Current part name
+        rev : str
+            Current part revision
+        port : str
+            Current port name
+        show : dict
+            Dictionary containing flags of what components to show.
 
-    Parameters
-    ----------
-    dip : str
-        Current entry display for the downstream_input_port
-    part : str
-        Current part name
-    rev : str
-        Current part revision
-    port : str
-        Current port name
-    show : dict
-        Dictionary containing flags of what components to show.
-
-    Returns
-    -------
-    str
-        String containing that row entry.
-    """
-    new_row_entry = ''
-    if show['ports']:
-        new_row_entry = dip
-    new_row_entry += part
-    if show['revs']:
-        new_row_entry += ':' + rev
-    if port is not None and show['ports']:
-        new_row_entry += ' <' + port
-    return new_row_entry
+        Returns
+        -------
+        str
+            String containing that row entry.
+        """
+        new_row_entry = ''
+        if show['ports']:
+            new_row_entry = dip
+        new_row_entry += part
+        if show['revs']:
+            new_row_entry += ':' + rev
+        if port is not None and show['ports']:
+            new_row_entry += ' <' + port
+        return new_row_entry

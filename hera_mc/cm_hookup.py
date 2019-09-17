@@ -371,11 +371,11 @@ class Hookup(object):
         port_list = cm_utils.to_upper(self.sysdef.get_ports(pol, part_type))
         self.upstream = []
         self.downstream = []
-        current = Namespace(direction='up', part=part.upper(), rev=rev.upper(), key=key,
-                            pol=pol.upper(), port=pol[0].upper(), allowed_ports=port_list)
+        current = Namespace(direction='up', part=part.upper(), rev=rev.upper(), key=key, pol=pol.upper(),
+                            type=part_type, port=pol[0].upper(), allowed_ports=port_list)
         self._recursive_connect(current)
-        current = Namespace(direction='down', part=part.upper(), rev=rev.upper(), key=key,
-                            pol=pol.upper(), port=pol[0].upper(), allowed_ports=port_list)
+        current = Namespace(direction='down', part=part.upper(), rev=rev.upper(), key=key, pol=pol.upper(),
+                            type=part_type, port=pol[0].upper(), allowed_ports=port_list)
         self._recursive_connect(current)
         hu = []
         for pn in reversed(self.upstream):
@@ -431,14 +431,16 @@ class Hookup(object):
         current.key = cm_utils.make_part_key(current.part, current.rev)
         options = list(self.all_connections[current.direction][current.key].keys())
         try:
-            part_type = self.all_parts[current.key].hptype
+            current.type = self.all_parts[current.key].hptype
         except KeyError:
             return None
-        current.allowed_ports = cm_utils.to_upper(self.sysdef.get_ports(current.pol, part_type))
+        current.allowed_ports = cm_utils.to_upper(self.sysdef.get_ports(current.pol, current.type))
         current.port = self._get_port(current, options)
         return this_conn
 
     def _get_port(self, current, options):
+        if current.type in self.sysdef.single_pol_labeled_parts[self.hookup_type]:
+            print("HU443 current:  ",current)
         if current.port is None:
             return None
         sysdef_options = []
