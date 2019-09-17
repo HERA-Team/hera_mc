@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
-# Copyright 2017 the HERA Collaboration
+# Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""This is meant to hold utility scripts for hookup
+"""
+Allows various views on the antenna hookup, as well as handle the hookup cache file.
 
 """
 from __future__ import absolute_import, division, print_function
@@ -21,12 +22,12 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--cache-info', help="Shows information about the hookup cache file.", dest='cache_info', action='store_true')
     parser.add_argument('--force-db', dest='force_db', help="Force db use (but doesn't rewrite cache)", action='store_true')
     parser.add_argument('--hookup-type', dest='hookup_type', help="Force use of specified hookup type.", default=None)
-    parser.add_argument('--port', help="Define desired port(s) for hookup. (e, n, all)", dest='port', default='all')
+    parser.add_argument('--pol', help="Define desired pol(s) for hookup. (e, n, all)", default='all')
     parser.add_argument('--state', help="Show 'full' or 'all' hookups (full)", default='full')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in hookup, comma-delimited no-space list. (all])",
                         dest='hookup_cols', default='all')
     parser.add_argument('--hide-ports', dest='ports', help="Hide ports on hookup.", action='store_false')
-    parser.add_argument('--revs', help="Show revs on hookup.", action='store_true')
+    parser.add_argument('--show-revs', dest='revs', help="Show revs on hookup.", action='store_true')
     parser.add_argument('--delete-cache-file', dest='delete_cache_file', help="Deletes the local cache file", action='store_true')
     parser.add_argument('--output-format', dest='output_format', help="table, html, or csv", default='table')
     parser.add_argument('--file', help="output filename, if desired", default=None)
@@ -51,8 +52,9 @@ if __name__ == '__main__':
     elif args.delete_cache_file:
         hookup.delete_cache_file()
     else:
-        hookup_dict = hookup.get_hookup(hpn=args.hpn, pol=args.port, at_date=at_date,
+        hookup_dict = hookup.get_hookup(hpn=args.hpn, pol=args.pol, at_date=at_date,
                                         exact_match=args.exact_match, force_new_cache=args.force_new_cache,
                                         force_db=args.force_db, hookup_type=args.hookup_type)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols,
-                           ports=args.ports, revs=args.revs, state=args.state, filename=args.file, output_format=args.output_format)
+                           ports=args.ports, revs=args.revs, state=args.state,
+                           filename=args.file, output_format=args.output_format)

@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 from astropy.time import Time
 
-from .. import cm_partconnect, cm_handling, cm_health
+from .. import cm_partconnect, cm_handling
 
 
 @pytest.fixture(scope='function')
@@ -105,18 +105,18 @@ def test_update_new(conns, capsys):
 
     conns.cm_handle.show_connections(located)
     captured = capsys.readouterr()
-    assert ('new_test_part_up:A | up_and_out  | down_and_in | '
-            'new_test_part_down:A' in captured.out.strip())
+    assert ('NEW_TEST_PART_UP:A | up_and_out  | down_and_in | '
+            'NEW_TEST_PART_DOWN:A' in captured.out.strip())
 
     conns.cm_handle.show_connections(located, verbosity=1)
     captured = capsys.readouterr()
-    assert ('new_test_part_up:A | new_test_part_down:A'
+    assert ('NEW_TEST_PART_UP:A | NEW_TEST_PART_DOWN:A'
             in captured.out.strip())
 
     conns.cm_handle.show_connections(located, verbosity=2)
     captured = capsys.readouterr()
-    assert ('new_test_part_up:A | up_and_out  | down_and_in | '
-            'new_test_part_down:A' in captured.out.strip())
+    assert ('NEW_TEST_PART_UP:A | up_and_out  | down_and_in | '
+            'NEW_TEST_PART_DOWN:A' in captured.out.strip())
 
 
 def test_get_null_connection():
@@ -132,15 +132,15 @@ def test_get_dossier(conns, capsys):
 
     conns.cm_handle.show_connections(x)
     captured = capsys.readouterr()
-    assert ('test_part1:Q | up_and_out  | down_and_in | test_part2:Q'
+    assert ('TEST_PART1:Q | up_and_out  | down_and_in | TEST_PART2:Q'
             in captured.out.strip())
     x = conns.cm_handle.get_part_connection_dossier(
         'test_part2', 'active', 'all', at_date='now', exact_match=True)
     y = list(x.keys())[0]
-    assert y == 'test_part2:Q'
+    assert y == 'TEST_PART2:Q'
     conns.cm_handle.show_connections(x)
     captured = capsys.readouterr()
-    assert ('test_part1:Q | up_and_out  | down_and_in | test_part2:Q'
+    assert ('TEST_PART1:Q | up_and_out  | down_and_in | TEST_PART2:Q'
             in captured.out.strip())
     old_time = Time('2014-08-01 01:00:00', scale='utc')
     x = conns.cm_handle.get_part_connection_dossier(
@@ -192,79 +192,9 @@ def test_get_specific_connection(conns):
     assert len(sc) == 0
 
 
-def test_check_for_overlap():
-    x = cm_health.check_for_overlap([1, 2], [3, 4])
-    assert not x
-    x = cm_health.check_for_overlap([3, 4], [1, 2])
-    assert not x
-    x = cm_health.check_for_overlap([1, 10], [2, 8])
-    assert x
-    x = cm_health.check_for_overlap([2, 8], [1, 10])
-    assert x
-    x = cm_health.check_for_overlap([1, 5], [3, 8])
-    assert x
-    x = cm_health.check_for_overlap([3, 8], [1, 5])
-    assert x
-    x = cm_health.check_for_overlap([1, 8], [8, 10])
-    assert not x
-    x = cm_health.check_for_overlap([8, 10], [1, 8])
-    assert not x
-
-
 def test_physical_connections(conns):
     x = conns.cm_handle.get_physical_connections()
     y = list(x.keys())
-    assert 'PAM75999:A' in y
+    assert 'PAM701:A' in y
     x = conns.cm_handle.get_physical_connections('2016/01/01')
     assert not len(x)
-
-
-def test_duplicate_connections(conns):
-    connection = cm_partconnect.Connections()
-    healthy = cm_health.Connections(conns.test_session)
-    # Specific connections
-    duplicates = healthy.check_for_existing_connection(hpn=['a'], side='up', at_date=conns.query_time)
-    assert duplicates
-    duplicates = healthy.check_for_existing_connection(hpn=conns.test_hpn[0], rev=conns.test_rev, port='up_and_out', at_date=conns.query_time)
-    assert duplicates
-    duplicates = healthy.check_for_existing_connection(hpn=conns.test_hpn[0], rev=conns.test_rev, port='up_and_out', side='dn', at_date='<')
-    assert not duplicates
-
-    # Duplicated connections
-    duplicates = healthy.check_for_duplicate_connections()
-    assert len(duplicates) == 2
-    # Add test duplicate connection
-    connection.upstream_part = conns.test_hpn[0]
-    connection.up_part_rev = conns.test_rev
-    connection.downstream_part = conns.test_hpn[1]
-    connection.down_part_rev = conns.test_rev
-    connection.upstream_output_port = 'up_and_out'
-    connection.downstream_input_port = 'down_and_in'
-    connection.start_gpstime = conns.test_time + 10
-    conns.test_session.add(connection)
-    conns.test_session.commit()
-    healthy.conndict = None
-    duplicates = healthy.check_for_duplicate_connections()
-    assert len(duplicates) == 2
-    conn1 = cm_partconnect.Connections()
-    conn1.upstream_part = conns.test_hpn[0]
-    conn1.up_part_rev = conns.test_rev
-    conn1.downstream_part = conns.test_hpn[1]
-    conn1.down_part_rev = conns.test_rev
-    conn1.upstream_output_port = 'terminal'
-    conn1.downstream_input_port = 'n'
-    conn1.start_gpstime = conns.test_time + 100
-    conns.test_session.add(conn1)
-    conn2 = cm_partconnect.Connections()
-    conn2.upstream_part = conns.test_hpn[0]
-    conn2.up_part_rev = conns.test_rev
-    conn2.downstream_part = conns.test_hpn[1]
-    conn2.down_part_rev = conns.test_rev
-    conn2.upstream_output_port = 'terminal'
-    conn2.downstream_input_port = 'e'
-    conn2.start_gpstime = conns.test_time + 100
-    conns.test_session.add(conn2)
-    conns.test_session.commit()
-    healthy.conndict = None
-    duplicates = healthy.check_for_duplicate_connections()
-    assert len(duplicates) == 2

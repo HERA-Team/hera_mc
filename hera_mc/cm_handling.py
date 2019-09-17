@@ -483,13 +483,15 @@ class Handling:
         """
 
         at_date = cm_utils.get_astropytime(at_date)
-        hpn_list, rev_list = cm_utils.match_listify(req1=hpn, req2=rev)
+        hpn = cm_utils.listify(hpn)
+        if isinstance(rev, six.string_types):
+            rev = len(hpn) * [rev]
         rev_part = {}
-        for i, xhpn in enumerate(hpn_list):
+        for i, xhpn in enumerate(hpn):
             if not exact_match and xhpn[-1] != '%':
                 xhpn = xhpn + '%'
             for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(xhpn)):
-                rev_part[part.hpn] = cmrev.get_revisions_of_type(part.hpn, rev_list[i],
+                rev_part[part.hpn] = cmrev.get_revisions_of_type(part.hpn, rev[i],
                                                                  at_date=at_date,
                                                                  session=self.session)
         return rev_part

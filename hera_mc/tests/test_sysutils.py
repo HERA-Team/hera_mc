@@ -15,7 +15,7 @@ import pytest
 import numpy as np
 
 from .. import (cm_sysutils, cm_partconnect, cm_hookup, cm_utils, utils,
-                cm_sysdef)
+                cm_sysdef, cm_dossier, cm_active)
 
 
 @pytest.fixture(scope='function')
@@ -25,8 +25,8 @@ def sys_handle(mcsession):
 
 def test_ever_fully_connected(sys_handle):
     now_list = sys_handle.get_all_fully_connected_at_date(
-        at_date='now', hookup_type='parts_paper')
-    assert len(now_list) == 1
+        at_date='now', hookup_type='parts_hera')
+    assert len(now_list) == 12
 
 
 def test_publish_summary(sys_handle):
@@ -42,59 +42,35 @@ def test_random_update(sys_handle):
 def test_other_hookup(sys_handle, mcsession, capsys):
     at_date = cm_utils.get_astropytime('2017-07-03')
     hookup = cm_hookup.Hookup(session=mcsession)
-    hookup.reset_memory_cache(None)
     assert hookup.cached_hookup_dict is None
-    hu = hookup.get_hookup(
-        ['A23'], 'H', 'all', at_date=at_date, exact_match=True,
-        force_new_cache=True, hookup_type='parts_paper')
-    hookup.show_hookup(hu, cols_to_show=['station'], state='all',
-                       revs=True, ports=True)
-    captured = capsys.readouterr()
-    assert 'HH23:A <ground' in captured.out.strip()
-    hu = hookup.get_hookup(
-        'A23,A24', 'H', 'all', at_date=at_date, exact_match=True, force_db=True,
-        hookup_type='parts_paper')
-    assert 'A23:H' in hu.keys()
-    hookup.reset_memory_cache(hu)
-    assert (hookup.cached_hookup_dict['A23:H'].hookup['e'][0].upstream_part
-            == 'HH23')
-    hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False,
-                           hookup_type='parts_paper')
-    hookup.show_hookup(hu, state='all', output_format='csv')
-    captured = capsys.readouterr()
-    assert '1096484416' in captured.out.strip()
-    hookup.cached_hookup_dict = None
-    hookup._hookup_cache_to_use()
-    hookup.show_hookup(hu, output_format='html')
-    captured = capsys.readouterr()
-    assert 'DF8B2' in captured.out.strip()
-    hookup.show_hookup({}, cols_to_show=['station'], state='all',
-                       revs=True, ports=True)
-    captured = capsys.readouterr()
-    assert 'None found' in captured.out.strip()
-    hufc = hookup.get_hookup_from_db(['HH'], 'active', 'e', at_date='now')
-    assert len(hufc.keys()) == 9
-    hufc = hookup.get_hookup_from_db(['N23'], 'active', 'e', at_date='now')
-    assert len(hufc.keys()) == 1
-    hufc = hookup.get_hookup_from_db(['SNPZ'], 'active', 'all',
-                                     at_date='2019/02/21')
+
+    hu = hookup.get_hookup(['A700'], 'all', at_date='now', exact_match=True,
+                           hookup_type='parts_hera')
+    out = hookup.show_hookup(hu, cols_to_show=['station'], state='all',
+                             revs=True, ports=True)
+    assert 'HH700:A <ground' in out
+    hu = hookup.get_hookup('A700,A701', 'all', at_date='now', exact_match=True,
+                           hookup_type='parts_hera')
+    assert 'A700:H' in hu.keys()
+    hookup.write_hookup_cache_to_file(log_msg='For testing.')
+    hu = hookup.get_hookup('cache', pol='all', hookup_type='parts_hera')
+    out = hookup.show_hookup(hu, state='all', output_format='csv')
+    assert '1230375618' in out
+    out = hookup.show_hookup(hu, output_format='html')
+    assert 'NBP700' in out
+    out = hookup.show_hookup({}, cols_to_show=['station'], state='all',
+                             revs=True, ports=True)
+    assert out is None
+    hufc = hookup.get_hookup_from_db(['HH'], 'e', at_date='now')
+    assert len(hufc.keys()), 13
+    hufc = hookup.get_hookup_from_db(['N700'], 'e', at_date='now')
     assert len(hufc.keys()) == 4
-    hufc = hookup.get_hookup_from_db(['SNPZ'], 'active', 'e',
-                                     at_date='2019/04/01')
-    assert len(hufc.keys()) == 4
-    hufc = hookup.get_hookup_from_db(['PAM723'], 'A', 'all',
-                                     at_date='2017/12/31')
-    assert len(hufc.keys()) == 0
-    hufc = hookup.get_hookup_from_db(['RO1A1E'], 'A', 'n', at_date='now')
-    assert len(hufc.keys()) == 0
-    hookup.hookup_type = None
-    hookup._hookup_cache_file_OK()
-    assert hookup.hookup_type == 'parts_paper'
+    assert hookup.hookup_type, 'parts_hera'
 
 
 def test_hookup_dossier(sys_handle, capsys):
     sysdef = cm_sysdef.Sysdef()
-    hude = cm_hookup.HookupDossierEntry(entry_key='testing:key', sysdef=sysdef)
+    hude = cm_dossier.HookupEntry(entry_key='testing:key', sysdef=sysdef)
     hude.get_hookup_type_and_column_headers('x', 'rusty_scissors')
     captured = capsys.readouterr()
     assert 'Parts did not conform to any hookup_type' in captured.out.strip()
@@ -113,42 +89,37 @@ def test_hookup_dossier(sys_handle, capsys):
     assert xret['hu'] == 'shoe:testing<screw'
 
     # test errors
-    hude = cm_hookup.HookupDossierEntry(entry_key='testing:key', sysdef=sysdef)
+    hude = cm_dossier.HookupEntry(entry_key='testing:key', sysdef=sysdef)
     hude_dict = hude._to_dict()
 
-    pytest.raises(ValueError, cm_hookup.HookupDossierEntry,
+    pytest.raises(ValueError, cm_dossier.HookupEntry,
                   entry_key='testing:key', input_dict=hude_dict)
-    pytest.raises(ValueError, cm_hookup.HookupDossierEntry, sysdef=sysdef,
+    pytest.raises(ValueError, cm_dossier.HookupEntry, sysdef=sysdef,
                   input_dict=hude_dict)
-    pytest.raises(ValueError, cm_hookup.HookupDossierEntry,
+    pytest.raises(ValueError, cm_dossier.HookupEntry,
                   entry_key='testing:key')
-    pytest.raises(ValueError, cm_hookup.HookupDossierEntry, sysdef=sysdef)
+    pytest.raises(ValueError, cm_dossier.HookupEntry, sysdef=sysdef)
 
 
 def test_sysdef(sys_handle, mcsession):
     sysdef = cm_sysdef.Sysdef()
-    part = Namespace(hpn='N0', rev='A', part_type='node')
-    part.connections = Namespace(input_ports=['loc0', '@mars'], output_ports=[])
-    hl = sysdef.handle_redirect_part_types(part, 'now', mcsession)
-    assert len(hl) == 3
-    part.hpn = 'RI123ZE'
-    sysdef.setup(part, port_query='e')
-    assert sysdef.pol == 'e'
-    part.hpn = 'RI123Z'
-    part.part_type = 'cable-post-amp(in)'
-    sysdef.setup(part, port_query='e', hookup_type='parts_paper')
-    assert sysdef.pol is None
-    sysdef.setup(part, port_query='all', hookup_type='parts_paper')
-    assert sysdef.this_hookup_type == 'parts_paper'
+    active = cm_active.ActiveData(session=self.test_session)
+    active.get_parts(at_date=None)
+    active.get_connections(at_date=None)
+    part = Namespace(hpn='N700', hpn_rev='A', hptype='node')
+    part.connections = Namespace(input_ports=['loc0', '@mars'],
+                                 output_ports=[])
+    hl = sysdef.handle_redirect_part_types(part, active)
+    assert len(hl), 4
     part.hpn = 'doorknob'
     part.part_type = 'node'
-    sysdef.setup(part, port_query='all')
-    assert 'e' in sysdef.pol
-    sysdef.setup(part, port_query='e')
-    assert 'e' in sysdef.pol
+    sysdef.setup(part, pol='all')
+    assert 'E<loc0' in sysdef.ppkeys
+    sysdef.setup(part, pol='e')
+    assert 'E<loc0' in sysdef.ppkeys
     part.connections.input_ports = ['@loc1', 'top', 'bottom']
-    sysdef.setup(part, port_query='e')
-    assert 'e' in sysdef.pol
+    sysdef.setup(part, pol='e')
+    assert 'E<loc0' in sysdef.ppkeys
     rg = Namespace(direction='up', part='apart', rev='A', port='e1', pol='e')
     op = [Namespace(upstream_part='apart', upstream_output_port='eb',
                     downstream_part='bpart', downstream_input_port='e1')]
@@ -158,26 +129,19 @@ def test_sysdef(sys_handle, mcsession):
     A = Namespace(hpn='apart', part_type='front-end')
     B = [Namespace(hpn='apart', part_type='cable-rfof'),
          Namespace(hpn='bpart', part_type='cable-rfof')]
-    xxx = sysdef.next_connection(op, rg, A, B)
-    assert xxx is None
     rg.port = 'rug'
     op[0].downstream_input_port = 'rug'
-    xxx = sysdef.next_connection(op, rg, A, B)
-    assert xxx is None
     pytest.raises(ValueError, sysdef.find_hookup_type, 'dull_knife',
                   'parts_not')
     part = Namespace(part_type='nope')
-    pytest.raises(ValueError, sysdef.setup, part, port_query='nope',
+    pytest.raises(ValueError, sysdef.setup, part, pol='nope',
                   hookup_type='parts_hera')
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):
     hookup = cm_hookup.Hookup(session=mcsession)
     hookup.hookup_cache_file_info()
-    hookup.reset_memory_cache(None)
-    hookup.at_date = cm_utils.get_astropytime('2017-07-03')
-    hookup.hookup_type = None
-    hookup._hookup_cache_to_use()
+    # TODO: this doesn't appear to test anything!
 
 
 def test_some_fully_connected(sys_handle):
@@ -188,7 +152,7 @@ def test_some_fully_connected(sys_handle):
 def test_correlator_info(sys_handle):
     corr_dict = sys_handle.get_cminfo_correlator(hookup_type='parts_hera')
     ant_names = corr_dict['antenna_names']
-    assert len(ant_names) == 4
+    assert len(ant_names) == 12
 
     corr_inputs = corr_dict['correlator_inputs']
 
@@ -198,14 +162,13 @@ def test_correlator_info(sys_handle):
     assert len(index) == 1
     index = index[0]
 
-    assert stn_types[index] == 'herahexn'
-
-    assert corr_inputs[index] == ('e6>SNPZ000042', 'n4>SNPZ000042')
+    assert stn_types[index] == 'herahexw'
+    assert corr_inputs[index] == ('e10>SNPA000700', 'n8>SNPA000700')
 
     assert ([int(name.split('HH')[1]) for name in ant_names]
             == corr_dict['antenna_numbers'])
 
-    assert set(corr_dict['antenna_numbers']) == set([701, 703, 704, 705])
+    assert set(corr_dict['antenna_numbers']) == set(range(701, 713))
 
     assert corr_dict['cm_version'] is not None
 
@@ -236,40 +199,41 @@ def test_correlator_info(sys_handle):
 
 def test_get_pam_from_hookup(sys_handle, mcsession):
     hookup = cm_hookup.Hookup(mcsession)
-    hud = hookup.get_hookup(['HH23'], at_date='2017-07-03', exact_match=True,
-                            hookup_type='parts_paper')
+    hud = hookup.get_hookup((['HH701'], at_date='2019-07-03', exact_match=True,
+                             hookup_type='parts_hera')
     pams = hud[list(hud.keys())[0]].get_part_in_hookup_from_type(
         'post-amp', include_ports=True, include_revs=True)
     assert len(pams) == 2
     # the actual pam number (the thing written on the case)
-    assert pams['e'] == 'ea>PAM75123:B<eb'
+    assert pams['E<ground'] == 'e>PAM701:A<e'
 
 
 def test_get_pam_info(sys_handle, mcsession):
     sys_h = cm_sysutils.Handling(mcsession)
     pams = sys_h.get_part_at_station_from_type(
-        'HH23', '2017-07-03', 'post-amp', include_ports=False,
-        hookup_type='parts_paper')
+        'HH701', '2019-07-03', 'post-amp', include_ports=False,
+        hookup_type='parts_hera')
     assert len(pams) == 1
     # the actual pam number (the thing written on the case)
-    assert pams['HH23:A']['e'] == 'PAM75123'
+    assert pamspams['HH701:A']['E<ground'] == 'PAM701'
 
 
 def test_apriori_antenna(sys_handle, mcsession, capsys):
-    cm_partconnect.update_apriori_antenna('HH2', 'needs_checking',
-                                          '1214482618', session=mcsession)
+    cm_partconnect.update_apriori_antenna('HH701', 'needs_checking',
+                                          '1214382618', session=mcsession)
     d = sys_handle.get_apriori_antenna_status_for_rtp('needs_checking')
-    assert d == 'HH2'
+    assert d == 'HH701'
     g = sys_handle.get_apriori_antenna_status_set()
-    assert g['needs_checking'][0] == 'HH2'
+    assert g['needs_checking'][0] == 'HH701'
     pytest.raises(ValueError, cm_partconnect.update_apriori_antenna,
                   'HH3', 'not_one', '1214482618', session=mcsession)
-    g = sys_handle.get_apriori_status_for_antenna('HH2')
+    g = sys_handle.get_apriori_status_for_antenna('HH701')
     assert g == 'needs_checking'
     cm_partconnect.update_apriori_antenna(
-        'HH2', 'needs_checking', '1214482818', '1214483000', session=mcsession)
+        'HH701', 'needs_checking', '1214482818', '1214483000',
+        session=mcsession)
     pytest.raises(ValueError, cm_partconnect.update_apriori_antenna,
-                  'HH2', 'needs_checking', '1214482838', session=mcsession)
+                  'HH701', 'needs_checking', '1214482838', session=mcsession)
     print(cm_partconnect.AprioriAntenna())
     captured = capsys.readouterr()
     assert '<None:' in captured.out.strip()

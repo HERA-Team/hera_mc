@@ -233,32 +233,6 @@ def to_upper(X):
     return str(X).upper()
 
 
-def match_listify(req1, req2):
-    """
-    Makes sure that the two requests are both lists and that they are
-    equal in length.  Raises an Error if can't match.
-
-    Parameters
-    ----------
-    req1, req1 : list or str
-        Two things to be matched.
-
-    Returns
-    -------
-    tuple of lists
-        Matched lists
-    """
-    list1 = listify(req1)
-    list2 = listify(req2)
-    if len(list1) > len(list2):
-        list2 = len(list1) * list2
-    elif len(list2) > len(list1):
-        list1 = len(list2) * list1
-    if len(list1) != len(list2):
-        raise ValueError("Unmatched list requests.")
-    return list1, list2
-
-
 def add_verbosity_args(parser):
     """Add a standardized "--verbosity" argument to an ArgParser object.
     Returns the number of 'v's (-v=1 [low], -vv=2 [medium], -vvv=3 [high]) or the supplied integer.

@@ -158,8 +158,11 @@ class Connections:
         bool
             True if existing corresponding hpn.  If only one hpn, returns a string, else a list.
         """
-        hpn_list, rev_list = cm_utils.match_listify(hpn, rev)
-        hpn_list, port_list = cm_utils.match_listify(hpn, port)
+        hpn = cm_utils.listify(hpn)
+        if isinstance(rev, six.string_types) or rev is None:
+            rev = len(hpn) * [rev]
+        if isinstance(port, six.string_types) or port is None:
+            port = len(hpn) * [port]
 
         if self.conndict is None:
             self.ingest_conndb()
@@ -170,10 +173,10 @@ class Connections:
             directions = ['dn']
         elif side[0].lower() == 'b':
             directions = ['up', 'dn']
-        connected = len(hpn_list) * [False]
-        for i, hpno in enumerate(hpn_list):
-            reno = str(rev_list[i]).lower()
-            pono = str(port_list[i]).lower()
+        connected = len(hpn) * [False]
+        for i, hpno in enumerate(hpn):
+            reno = str(rev[i]).lower()
+            pono = str(port[i]).lower()
             part_key = hpno.lower()
             if reno not in cm_revisions.revision_categories:
                 part_key = '{}:{}'.format(part_key, reno)

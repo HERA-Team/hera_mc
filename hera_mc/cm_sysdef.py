@@ -89,6 +89,9 @@ class Sysdef:
             self.all_pols['parts_paper'] = ['e', 'n']
             self.all_pols['parts_rfi'] = ['e', 'n']
             #    Define "special" parts for systems.  These require additional checking/processing
+            for hutype in self.port_def.keys():
+                self.redirect_part_types[hutype] = []
+                self.single_pol_labeled_parts[hutype] = []
             self.redirect_part_types['parts_hera'] = ['node']
             self.single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
 
@@ -153,7 +156,7 @@ class Sysdef:
             List of redirected part numbers.
         """
         hpn_list = []
-        if part.hptype.lower() == 'xxxxxnode':
+        if part.part_type.lower() == 'node':
             from hera_mc import cm_hookup
             # rptc = cm_handling.Handling(session)
             # conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port='all', at_date=at_date, exact_match=True)
@@ -202,7 +205,7 @@ class Sysdef:
         Parameter:
         -----------
         part : dict
-            Current part dossier
+            Current part info
         pol : str
             The ports that were requested ('e' or 'n' or 'all').  Default is 'all'
         hookup_type : str, None
@@ -231,7 +234,7 @@ class Sysdef:
                 self.pol = None
             return
 
-        self.pol = all_pols_upper if pol == 'all' else pol
+        self.pol = all_pols_upper if pol == 'ALL' else pol
 
     def get_ports(self, pol, part_type):
         """
