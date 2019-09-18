@@ -267,7 +267,7 @@ class Hookup(object):
             self.hookup_type = self.sysdef.this_hookup_type
             if self.sysdef.pol is None:
                 continue
-            hookup_dict[k] = cm_dossier.HookupDossierEntry(entry_key=k, sysdef=self.sysdef)
+            hookup_dict[k] = cm_dossier.HookupEntry(entry_key=k, sysdef=self.sysdef)
             for port_pol in self.sysdef.pol:
                 hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part=part.hpn, rev=part.hpn_rev, pol=port_pol)
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[port_pol])
@@ -426,7 +426,7 @@ class Hookup(object):
         """
         hookup_dict_for_json = copy.deepcopy(self.cached_hookup_dict)
         for key, value in six.iteritems(self.cached_hookup_dict):
-            if isinstance(value, cm_dossier.HookupDossierEntry):
+            if isinstance(value, cm_dossier.HookupEntry):
                 hookup_dict_for_json[key] = value._to_dict()
 
         save_dict = {'at_date_gps': self.at_date.gps,
@@ -456,12 +456,12 @@ class Hookup(object):
             self.cached_hookup_list = save_dict['hookup_list']
             hookup_dict = {}
             for key, value in six.iteritems(save_dict['hookup_dict']):
-                # this should only contain dicts made from HookupDossierEntry
+                # this should only contain dicts made from HookupEntry
                 # add asserts to make sure
                 assert(isinstance(value, dict))
                 assert(sorted(value.keys()) == sorted(['entry_key', 'hookup', 'fully_connected',
                                                        'hookup_type', 'columns', 'timing', 'sysdef']))
-                hookup_dict[key] = cm_dossier.HookupDossierEntry(input_dict=value)
+                hookup_dict[key] = cm_dossier.HookupEntry(input_dict=value)
 
             self.cached_hookup_dict = hookup_dict
             self.part_type_cache = save_dict['part_type_cache']

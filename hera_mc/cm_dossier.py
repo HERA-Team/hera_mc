@@ -108,7 +108,7 @@ class ActiveData:
                 print("{} is not listed as an active part even though listed in an active connection.".format(key))
 
 
-class HookupDossierEntry(object):
+class HookupEntry(object):
     """
     This is the structure of the hookup entry.  All are keyed on polarization.
 
