@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument('--force-cache', dest='force_db', help="Force db use (but doesn't rewrite cache)", action='store_false')
     parser.add_argument('--hookup-type', dest='hookup_type', help="Force use of specified hookup type.", default=None)
     parser.add_argument('--pol', help="Define desired pol(s) for hookup. (e, n, all)", default='all')
-    parser.add_argument('--state', help="Show 'full' or 'all' hookups (full)", default='full')
+    parser.add_argument('--all', help="Toggle to show 'all' hookups", action='store_true')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in hookup, comma-delimited no-space list. (all])",
                         dest='hookup_cols', default='all')
     parser.add_argument('--hide-ports', dest='ports', help="Hide ports on hookup.", action='store_false')
@@ -44,6 +44,8 @@ if __name__ == '__main__':
         args.hpn = cm_utils.default_station_prefixes
     else:
         args.hpn = cm_utils.listify(args.hpn)
+    state = 'all' if args.all else 'full'
+
     # Start session
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
@@ -59,5 +61,5 @@ if __name__ == '__main__':
                                         exact_match=args.exact_match, force_new_cache=args.force_new_cache,
                                         force_db=args.force_db, hookup_type=args.hookup_type)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols,
-                           ports=args.ports, revs=args.revs, state=args.state,
+                           ports=args.ports, revs=args.revs, state=state,
                            filename=args.file, output_format=args.output_format)
