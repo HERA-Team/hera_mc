@@ -31,7 +31,7 @@ if __name__ == '__main__':
     parser.add_argument('--delete-cache-file', dest='delete_cache_file', help="Deletes the local cache file", action='store_true')
     parser.add_argument('--output-format', dest='output_format', help="table, html, or csv", default='table')
     parser.add_argument('--file', help="output filename, if desired", default=None)
-    parser.add_argument('--check-data', dest='check_data', help="Flag to just check active data for given date.", action='store_true')
+    parser.add_argument('--check', dest='check_data', help="Flag to just check active data for given date.", action='store_true')
     cm_utils.add_date_time_args(parser)
 
     args = parser.parse_args()
@@ -55,7 +55,9 @@ if __name__ == '__main__':
     elif args.delete_cache_file:
         hookup.delete_cache_file()
     elif args.check_data:
-        hookup.check_active_data(at_date=at_date)
+        from hera_mc import cm_dossier
+        active = cm_dossier.ActiveDataDossier(session, at_date=at_date)
+        active.check()
     else:
         hookup_dict = hookup.get_hookup(hpn=args.hpn, pol=args.pol, at_date=at_date,
                                         exact_match=args.exact_match, force_new_cache=args.force_new_cache,

@@ -157,7 +157,7 @@ class Sysdef:
         """
         hpn_list = []
         print("SYSDEF159:  redirect not yet handled.")
-        if part.part_type.lower() == 'node':
+        if part.hptype.lower() == 'node':
             from hera_mc import cm_hookup
             # rptc = cm_handling.Handling(session)
             # conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port='all', at_date=at_date, exact_match=True)

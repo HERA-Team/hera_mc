@@ -9,11 +9,11 @@ Methods for handling locating correlator and various system aspects.
 from __future__ import absolute_import, division, print_function
 
 import six
-from astropy.time import Time, TimeDelta
+from astropy.time import Time
 from sqlalchemy import func, and_, or_
 import numpy as np
 
-from . import mc, cm_partconnect, cm_utils, cm_hookup, cm_revisions, cm_sysdef
+from . import mc, cm_partconnect, cm_utils, cm_revisions, cm_sysdef, cm_hookup
 from . import geo_location, geo_handling
 
 

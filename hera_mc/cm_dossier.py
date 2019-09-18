@@ -11,8 +11,101 @@ from __future__ import absolute_import, division, print_function
 
 import six
 
-from . import cm_sysdef
+from . import cm_sysdef, cm_utils
 from . import cm_partconnect as partconn
+
+
+class ActiveDataDossier:
+    """
+    Object containing the active parts and connections for a given date.
+
+    Parameters
+    ----------
+    at_date : str, int, float, Time, datetime
+    """
+
+    def __init__(self, session, at_date='now'):
+        self.session = session
+        self.at_date = at_date
+        self.connections = None
+        self.parts = None
+
+    def get(self, at_date=None):
+        """
+        Retrieves all active parts and connections for a given at_date.  If
+        a part:rev:port connection already exists, it will generate an error.
+        This method does nothing if self.all_parts and self.all_connections
+        are both not None.  If at_date is None, uses class at_date
+
+        Writes two class dictionaries:
+                self.parts - keyed on part:rev
+                self.connections - has keys 'up' and 'down', each of which
+                                   is a dictionary keyed on part:rev for
+                                   upstream_part and downstream_part respectively.
+        Parameters
+        ----------
+        at_date : str, int, float, Time, datetime (optional)
+            The date for which to check as active, given as anything comprehensible
+            to get_astropytime
+        """
+
+        if self.parts is not None and self.connections is not None:
+            return
+        if at_date is None:
+            at_date = self.at_date
+        gps_time = cm_utils.get_astropytime(at_date).gps
+        self.connections = {'up': {}, 'down': {}}
+        check_keys = {'up': [], 'down': []}
+        for cnn in self.session.query(partconn.Connections).filter((partconn.Connections.start_gpstime <= gps_time)
+                                                                   & ((partconn.Connections.stop_gpstime >= gps_time)
+                                                                   | (partconn.Connections.stop_gpstime == None))):
+            chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev, cnn.upstream_output_port)
+            if chk in check_keys['up']:
+                raise ValueError("Duplicate active port {}".format(chk))
+            check_keys['up'].append(chk)
+            chk = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev, cnn.downstream_input_port)
+            if chk in check_keys['down']:
+                raise ValueError("Duplicate active port {}".format(chk))
+            check_keys['down'].append(chk)
+            key = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev)
+            self.connections['up'].setdefault(key, {})
+            self.connections['up'][key][cnn.upstream_output_port.upper()] = cnn
+            key = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev)
+            self.connections['down'].setdefault(key, {})
+            self.connections['down'][key][cnn.downstream_input_port.upper()] = cnn
+        self.parts = {}
+        for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= gps_time)
+                                                             & ((partconn.Parts.stop_gpstime >= gps_time)
+                                                             | (partconn.Parts.stop_gpstime == None))):
+            key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
+            self.parts[key] = prt
+
+    def check(self, at_date=None):
+        """
+        Checks self.all_parts and self.all_connections to make sure that all connections have an
+        associated active part.  Prints out a message if not true.  If self.all_parts or
+        self.all_connections are None, it will get_all_active for at_date.
+
+
+        Parameters
+        ----------
+        at_date : str, int, float, Time, datetime (optional)
+            The date for which to check as active if either all_parts or all_connections are None,
+            given as anything comprehensible to get_astropytime
+        """
+        if at_date is None:
+            at_date = self.at_date
+        if self.parts is None or self.connections is None:
+            self.get(at_date=at_date)
+        full_part_set = list(self.parts.keys())
+        full_conn_set = set(list(self.connections['up']) + list(self.connections['down']))
+        missing_parts = []
+        for key in full_conn_set:
+            if key not in full_part_set:
+                missing_parts.append(key)
+        if len(missing_parts):
+            for key in missing_parts:
+                print("{} is not listed as an active part even though listed in an active connection.".format(key))
 
 
 class HookupDossierEntry(object):

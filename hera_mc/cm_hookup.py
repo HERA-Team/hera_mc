@@ -47,8 +47,6 @@ class Hookup(object):
         self.part_type_cache = {}
         self.cached_hookup_dict = None
         self.sysdef = cm_sysdef.Sysdef()
-        self.all_parts = None
-        self.all_connections = None
 
     def reset_memory_cache(self, hookup=None):
         """
@@ -218,79 +216,6 @@ class Hookup(object):
                 found_dict[key] = copy.copy(search_dict[key])
         return(found_dict)
 
-    def get_all_active(self, at_date='now'):
-        """
-        Retrieves all active parts and connections for a given at_date.  If
-        a part:rev:port connection already exists, it will generate an error.
-        This method does nothing if self.all_parts and self.all_connections
-        are both not None.
-
-        Writes two class dictionaries:
-                self.all_parts - keyed on part:rev
-                self.all_connections - has keys 'up' and 'down', each of which
-                                       is a dictionary keyed on part:rev for
-                                       upstream_part and downstream_part respectively.
-        Parameters
-        ----------
-        at_date : str, int, float, Time, datetime
-            The date for which to check as active, given as anything comprehensible
-            to get_astropytime
-        """
-
-        if self.all_parts is not None and self.all_connections is not None:
-            return
-        at_date = cm_utils.get_astropytime(at_date).gps
-        self.all_connections = {'up': {}, 'down': {}}
-        check_keys = {'up': [], 'down': []}
-        for cnn in self.session.query(partconn.Connections).filter((partconn.Connections.start_gpstime <= at_date)
-                                                                   & ((partconn.Connections.stop_gpstime >= at_date)
-                                                                   | (partconn.Connections.stop_gpstime == None))):
-            chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev, cnn.upstream_output_port)
-            if chk in check_keys['up']:
-                raise ValueError("Duplicate active port {}".format(chk))
-            check_keys['up'].append(chk)
-            chk = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev, cnn.downstream_input_port)
-            if chk in check_keys['down']:
-                raise ValueError("Duplicate active port {}".format(chk))
-            check_keys['down'].append(chk)
-            key = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev)
-            self.all_connections['up'].setdefault(key, {})
-            self.all_connections['up'][key][cnn.upstream_output_port.upper()] = cnn
-            key = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev)
-            self.all_connections['down'].setdefault(key, {})
-            self.all_connections['down'][key][cnn.downstream_input_port.upper()] = cnn
-        self.all_parts = {}
-        for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= at_date)
-                                                             & ((partconn.Parts.stop_gpstime >= at_date)
-                                                             | (partconn.Parts.stop_gpstime == None))):
-            key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
-            self.all_parts[key] = prt
-
-    def check_active_data(self, at_date='now'):
-        """
-        Checks self.all_parts and self.all_connections to make sure that all connections have an
-        associated active part.  Prints out a message if not true.  If self.all_parts or
-        self.all_connections are None, it will get_all_active for at_date.
-
-
-        Parameters
-        ----------
-        at_date : str, int, float, Time, datetime
-            The date for which to check as active if either all_parts or all_connections are None,
-            given as anything comprehensible to get_astropytime
-        """
-        if self.all_parts is None or self.all_connections is None:
-            self.get_all_active(at_date=at_date)
-        full_part_set = list(self.all_parts.keys())
-        full_conn_set = set(list(self.all_connections['up']) + list(self.all_connections['down']))
-        missing_parts = []
-        for key in full_conn_set:
-            if key not in full_part_set:
-                missing_parts.append(key)
-        if len(missing_parts):
-            for key in missing_parts:
-                print("{} is not listed as an active part even though listed in an active connection.".format(key))
-
     def get_hookup_from_db(self, hpn, pol, at_date, exact_match=False, hookup_type=None):
         """
         This gets called by the get_hookup wrapper if the database needs to be read (for instance, to generate
@@ -322,9 +247,10 @@ class Hookup(object):
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
         self.hookup_type = hookup_type
-        self.get_all_active(at_date=at_date)
+        self.active = cm_dossier.ActiveDataDossier(self.session, at_date=at_date)
+        self.active.get(at_date=at_date)
         hpn = cm_utils.listify(hpn)
-        parts = self._get_search_dict(hpn, self.all_parts, exact_match)
+        parts = self._get_search_dict(hpn, self.active.parts, exact_match)
         hookup_dict = {}
         for k, part in six.iteritems(parts):
             hookup_type = self.sysdef.find_hookup_type(part_type=part.hptype, hookup_type=hookup_type)
@@ -369,11 +295,11 @@ class Hookup(object):
         part_types_found = set()
         for c in hookup_connections:
             key = cm_utils.make_part_key(c.upstream_part, c.up_part_rev)
-            part_type = self.all_parts[key].hptype
+            part_type = self.active.parts[key].hptype
             part_types_found.add(part_type)
             self.part_type_cache[c.upstream_part] = part_type
         key = cm_utils.make_part_key(c.downstream_part, c.down_part_rev)
-        part_type = self.all_parts[key].hptype
+        part_type = self.active.parts[key].hptype
         part_types_found.add(part_type)
         self.part_type_cache[c.downstream_part] = part_type
         return list(part_types_found)
@@ -397,15 +323,15 @@ class Hookup(object):
             List of connections for that hookup.
         """
         key = cm_utils.make_part_key(part, rev)
-        part_type = self.all_parts[key].hptype
+        part_type = self.active.parts[key].hptype
         port_list = cm_utils.to_upper(self.sysdef.get_ports(pol, part_type))
         self.upstream = []
         self.downstream = []
         current = Namespace(direction='up', part=part.upper(), rev=rev.upper(), key=key, pol=pol.upper(),
-                            type=part_type, port=pol[0].upper(), allowed_ports=port_list)
+                            hptype=part_type, port=pol[0].upper(), allowed_ports=port_list)
         self._recursive_connect(current)
         current = Namespace(direction='down', part=part.upper(), rev=rev.upper(), key=key, pol=pol.upper(),
-                            type=part_type, port=pol[0].upper(), allowed_ports=port_list)
+                            hptype=part_type, port=pol[0].upper(), allowed_ports=port_list)
         self._recursive_connect(current)
         hu = []
         for pn in reversed(self.upstream):
@@ -443,13 +369,13 @@ class Hookup(object):
         """
         odir = self.sysdef.opposite_direction[current.direction]
         try:
-            options = list(self.all_connections[odir][current.key].keys())
+            options = list(self.active.connections[odir][current.key].keys())
         except KeyError:
             return None
         this_port = self._get_port(current, options)
         if this_port is None:
             return None
-        this_conn = self.all_connections[odir][current.key][this_port]
+        this_conn = self.active.connections[odir][current.key][this_port]
         if current.direction == 'up':
             current.part = this_conn.upstream_part.upper()
             current.rev = this_conn.up_part_rev.upper()
@@ -459,9 +385,9 @@ class Hookup(object):
             current.rev = this_conn.down_part_rev.upper()
             current.port = this_conn.downstream_input_port.upper()
         current.key = cm_utils.make_part_key(current.part, current.rev)
-        options = list(self.all_connections[current.direction][current.key].keys())
+        options = list(self.active.connections[current.direction][current.key].keys())
         try:
-            current.type = self.all_parts[current.key].hptype
+            current.type = self.active.parts[current.key].hptype
         except KeyError:
             return None
         current.allowed_ports = cm_utils.to_upper(self.sysdef.get_ports(current.pol, current.type))
@@ -475,7 +401,7 @@ class Hookup(object):
         for p in options:
             if p in current.allowed_ports:
                 sysdef_options.append(p)
-        if current.type in self.sysdef.single_pol_labeled_parts[self.hookup_type]:
+        if current.hptype in self.sysdef.single_pol_labeled_parts[self.hookup_type]:
             if current.part[-1].upper() == current.pol[0]:
                 return sysdef_options[0]
         if len(sysdef_options) == 1:
