@@ -247,7 +247,7 @@ class Hookup(object):
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
         self.hookup_type = hookup_type
-        self.active = cm_dossier.ActiveDataDossier(self.session, at_date=at_date)
+        self.active = cm_dossier.ActiveData(self.session, at_date=at_date)
         self.active.get(at_date=at_date)
         hpn = cm_utils.listify(hpn)
         parts = self._get_search_dict(hpn, self.active.parts, exact_match)

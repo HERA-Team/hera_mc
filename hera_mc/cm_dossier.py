@@ -15,7 +15,7 @@ from . import cm_sysdef, cm_utils
 from . import cm_partconnect as partconn
 
 
-class ActiveDataDossier:
+class ActiveData:
     """
     Object containing the active parts and connections for a given date.
 

@@ -56,7 +56,7 @@ if __name__ == '__main__':
         hookup.delete_cache_file()
     elif args.check_data:
         from hera_mc import cm_dossier
-        active = cm_dossier.ActiveDataDossier(session, at_date=at_date)
+        active = cm_dossier.ActiveData(session, at_date=at_date)
         active.check()
     else:
         hookup_dict = hookup.get_hookup(hpn=args.hpn, pol=args.pol, at_date=at_date,
