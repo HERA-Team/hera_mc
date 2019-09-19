@@ -12,12 +12,12 @@ import os.path
 import sys
 import six
 
-from hera_mc import cm_handling, cm_utils, mc
+from hera_mc import mc, cm_handling, cm_utils
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('action', nargs='?', help="Actions are:  info, types, part_info, conn_info, rev_info, \
-                                                   physical, check_rev, health.  'info' for more.", default='part_info')
+                                                   physical, check_rev.  'info' for more.", default='part_info')
     # set values for 'action' to use
     parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv-list. [None]", default=None)
     parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [active]", default='active')
@@ -56,7 +56,6 @@ if __name__ == '__main__':
                        (Use 'hookup.py' to look at the connections that see the
                        station-correlator hookup)
             check_rev:  checks whether a given part/rev exists
-            health:  runs various "health" checks
 
         Args needing values (or defaulted):
             -p/--hpn:  part name [None].  String - can be a csv list
@@ -90,16 +89,6 @@ if __name__ == '__main__':
     if action_tag == 'ph':  # physical port connections
         ppc = handling.get_physical_connections(date_query)
         handling.show_connections(ppc, headers=['Upstream', '<uOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop'])
-        sys.exit()
-
-    if action_tag == 'he':  # various health checks in array
-        from hera_mc import cm_health
-        healthy = cm_health.Connections(session)
-        if args.hpn is None:
-            duplicates = healthy.check_for_duplicate_connections()
-        else:
-            connected = healthy.check_for_existing_connection(hpn=args.hpn, rev=args.revision, port=args.port)
-            overlaps = cm_health.check_part_for_overlapping_revisions(hpn=args.hpn)
         sys.exit()
 
     if args.hpn is None and not (action_tag == 'pa' and args.notes):
