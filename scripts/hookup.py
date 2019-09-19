@@ -20,6 +20,7 @@ if __name__ == '__main__':
                         dest='exact_match', action='store_true')
     parser.add_argument('--pol', help="Define desired pol(s) for hookup. (e, n, all)", default='all')
     parser.add_argument('--all', help="Toggle to show 'all' hookups as opposed to 'full'", action='store_true')
+    parser.add_argument('--notes', help="If set, this will also show hookup notes.", action='store_true')
     parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in hookup, comma-delimited no-space list. (all])",
                         dest='hookup_cols', default='all')
     parser.add_argument('--hookup-type', dest='hookup_type', help="Force use of specified hookup type.", default=None)
@@ -62,6 +63,8 @@ if __name__ == '__main__':
         hookup_dict = hookup.get_hookup(hpn=args.hpn, pol=args.pol, at_date=at_date,
                                         exact_match=args.exact_match, use_cache=use_cache,
                                         hookup_type=args.hookup_type)
+        if args.notes:
+            hookup.show_notes(hookup_dict=hookup_dict, state=state)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols,
                            ports=args.ports, revs=args.revs, state=state,
                            filename=args.file, output_format=args.output_format)

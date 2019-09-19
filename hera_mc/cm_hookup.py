@@ -498,6 +498,9 @@ class Hookup(object):
         s += '\nCM Version latest cm_hash_time:  {}\n'.format(cm_utils.get_time_for_display(cm_hash_time))
         return s
 
+    def show_notes(self, hookup_dict=hookup_dict, state='full'):
+        print("METHOD TO SHOW THE NOTES FROM ALL PARTS IN HOOKUP")
+
     def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
                     filename=None, output_format='table'):
         """
