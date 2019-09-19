@@ -72,7 +72,6 @@ if __name__ == '__main__':
                                   filename=args.file, output_format=output_format)
         if output_format == 'display':
             print(show)
-
         if args.notes:
             dashes = '-------------------------------------------------------------------------'
             print("\nNotes:\n{}\n".format(dashes))
