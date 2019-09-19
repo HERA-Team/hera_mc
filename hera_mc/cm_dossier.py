@@ -24,7 +24,11 @@ class ActiveData:
     at_date : str, int, float, Time, datetime
     """
 
-    def __init__(self, session, at_date='now'):
+    def __init__(self, session=None, at_date='now'):
+        if session is None:  # pragma: no cover
+            from . import mc
+            db = mc.connect_to_mc_db(None)
+            session = db.sessionmaker()
         self.session = session
         self.at_date = at_date
         self.connections = None
@@ -96,11 +100,12 @@ class ActiveData:
         """
         if at_date is None:
             at_date = self.at_date
-        gps_time = cm_utils.get_astropytime(at_date).gps
+        gps_time = int(cm_utils.get_astropytime(at_date).gps)
         self.info = {}
         for inf in self.session.query(partconn.PartInfo).filter((partconn.PartInfo.posting_gpstime <= gps_time)):
             key = cm_utils.make_part_key(inf.hpn, inf.hpn_rev)
-            self.info[key] = inf
+            self.info.setdefault(key, [])
+            self.info[key].append(inf)
 
     def check(self, at_date=None):
         """

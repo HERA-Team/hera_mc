@@ -61,12 +61,15 @@ if __name__ == '__main__':
         active.check()
     else:
         hookup_dict = hookup.get_hookup(hpn=args.hpn, pol=args.pol, at_date=at_date,
-                                        exact_match=args.exact_match, use_cache=use_cache,
+                                        exact_match=args.exact_match, use_cache=args.use_cache,
                                         hookup_type=args.hookup_type)
-        if args.notes:
-            hookup.show_notes(hookup_dict=hookup_dict, state=state)
         hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols,
                            ports=args.ports, revs=args.revs, state=state,
                            filename=args.file, output_format=args.output_format)
+        if args.notes:
+            dashes = '-------------------------------------------------------------------------'
+            print("\nNotes:\n{}\n".format(dashes))
+            print(hookup.show_notes(hookup_dict=hookup_dict, state=state))
+            print(dashes)
         if args.write_cache_file:
             hookup.write_cache_file(args.cache_log)

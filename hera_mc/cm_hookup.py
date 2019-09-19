@@ -47,6 +47,7 @@ class Hookup(object):
         self.part_type_cache = {}
         self.cached_hookup_dict = None
         self.sysdef = cm_sysdef.Sysdef()
+        self.active = None
 
     def delete_cache_file(self):
         """
@@ -498,9 +499,38 @@ class Hookup(object):
         s += '\nCM Version latest cm_hash_time:  {}\n'.format(cm_utils.get_time_for_display(cm_hash_time))
         return s
 
-    def show_notes(self, hookup_dict=hookup_dict, state='full'):
-        print("METHOD TO SHOW THE NOTES FROM ALL PARTS IN HOOKUP")
-        info = cm_dossier.get_info(self.at_date)
+    def show_notes(self, hookup_dict, state='full'):
+        if self.active is None:
+            self.active = cm_dossier.ActiveData(self.session, at_date=self.at_date)
+        self.active.get_info(self.at_date)
+        info_keys = list(self.active.info.keys())
+        full_info_string = ''
+        for hkey in hookup_dict.keys():
+            all_hu_hpn = set()
+            for pol in self.sysdef.pol:
+                for hpn in hookup_dict[hkey].hookup[pol]:
+                    if state == 'all' or (state == 'full' and hookup_dict[hkey].fully_connected[pol]):
+                        all_hu_hpn.add(cm_utils.make_part_key(hpn.upstream_part, hpn.up_part_rev))
+                        all_hu_hpn.add(cm_utils.make_part_key(hpn.downstream_part, hpn.down_part_rev))
+            all_hu_hpn = sorted(list(all_hu_hpn))
+            hdr = "---{}---".format(hkey)
+            entry_info = ''
+            if hkey in info_keys:  # Do the hkey first
+                for entry in self.active.info[hkey]:
+                    acomment = entry.comment.replace('\\n', '\n')
+                    atime = cm_utils.get_time_for_display(entry.posting_gpstime)
+                    entry_info += "\t{} ({})  {}\n".format(hkey, atime, acomment)
+            for ikey in all_hu_hpn:
+                if ikey == hkey:
+                    continue
+                if ikey in info_keys:
+                    for entry in self.active.info[ikey]:
+                        acomment = entry.comment.replace('\\n', '\n')
+                        atime = cm_utils.get_time_for_display(entry.posting_gpstime)
+                        entry_info += "\t{} ({})  {}\n".format(ikey, atime, acomment)
+            if len(entry_info):
+                full_info_string += "{}\n{}\n".format(hdr, entry_info)
+        return full_info_string
 
     def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
                     filename=None, output_format='table'):
