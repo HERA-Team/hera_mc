@@ -80,6 +80,28 @@ class ActiveData:
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.parts[key] = prt
 
+    def get_info(self, at_date=None):
+        """
+        Retrieves all current part infomation (ie. before date).
+        If at_date is None, uses class at_date
+
+        Writes class dictionary:
+                self.info - keyed on part:rev
+
+        Parameters
+        ----------
+        at_date : str, int, float, Time, datetime (optional)
+            The date for which to check as active, given as anything comprehensible
+            to get_astropytime
+        """
+        if at_date is None:
+            at_date = self.at_date
+        gps_time = cm_utils.get_astropytime(at_date).gps
+        self.info = {}
+        for inf in self.session.query(partconn.PartInfo).filter((partconn.PartInfo.posting_gpstime <= gps_time)):
+            key = cm_utils.make_part_key(inf.hpn, inf.hpn_rev)
+            self.info[key] = inf
+
     def check(self, at_date=None):
         """
         Checks self.all_parts and self.all_connections to make sure that all connections have an

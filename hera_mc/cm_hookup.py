@@ -500,6 +500,7 @@ class Hookup(object):
 
     def show_notes(self, hookup_dict=hookup_dict, state='full'):
         print("METHOD TO SHOW THE NOTES FROM ALL PARTS IN HOOKUP")
+        info = cm_dossier.get_info(self.at_date)
 
     def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
                     filename=None, output_format='table'):
