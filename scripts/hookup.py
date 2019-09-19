@@ -26,8 +26,7 @@ if __name__ == '__main__':
     parser.add_argument('--hookup-type', dest='hookup_type', help="Force use of specified hookup type.", default=None)
     parser.add_argument('--hide-ports', dest='ports', help="Hide ports on hookup.", action='store_false')
     parser.add_argument('--show-revs', dest='revs', help="Show revs on hookup.", action='store_true')
-    parser.add_argument('--output-format', dest='output_format', help="table, html, or csv", default='table')
-    parser.add_argument('--file', help="output filename, if desired", default=None)
+    parser.add_argument('--file', help="output filename, if desired.  Tags are '.txt', '.html', '.csv' to set type.", default=None)
     parser.add_argument('--check', dest='check_data', help="Flag to just check active data for given date.", action='store_true')
     # Cache options
     parser.add_argument('--use-cache', dest='use_cache', help="Force cache use (but doesn't rewrite cache)", action='store_true')
@@ -46,6 +45,11 @@ if __name__ == '__main__':
     else:
         args.hpn = cm_utils.listify(args.hpn)
     state = 'all' if args.all else 'full'
+    if args.file is None:
+        output_format = 'display'
+    else:
+        print("Writing data to {}".format(args.file))
+        output_format = args.file.split('.')[-1]
 
     # Start session
     db = mc.connect_to_mc_db(args)
@@ -63,9 +67,12 @@ if __name__ == '__main__':
         hookup_dict = hookup.get_hookup(hpn=args.hpn, pol=args.pol, at_date=at_date,
                                         exact_match=args.exact_match, use_cache=args.use_cache,
                                         hookup_type=args.hookup_type)
-        hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols,
-                           ports=args.ports, revs=args.revs, state=state,
-                           filename=args.file, output_format=args.output_format)
+        show = hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols,
+                                  ports=args.ports, revs=args.revs, state=state,
+                                  filename=args.file, output_format=output_format)
+        if output_format == 'display':
+            print(show)
+
         if args.notes:
             dashes = '-------------------------------------------------------------------------'
             print("\nNotes:\n{}\n".format(dashes))

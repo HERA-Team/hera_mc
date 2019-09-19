@@ -10,7 +10,6 @@ This finds and displays part hookups.
 from __future__ import absolute_import, division, print_function
 
 from tabulate import tabulate
-import sys
 import os
 import six
 import copy
@@ -500,6 +499,21 @@ class Hookup(object):
         return s
 
     def show_notes(self, hookup_dict, state='full'):
+        """
+        Print out the information for hookup.
+
+        Parameters
+        ----------
+        hookup_dict : dict
+            Hookup dictionary generated in self.get_hookup
+        state : str
+            String designating whether to show the full hookups only, or all
+
+        Returns
+        -------
+        str
+            Content as a string
+        """
         if self.active is None:
             self.active = cm_dossier.ActiveData(self.session, at_date=self.at_date)
         self.active.get_info(self.at_date)
@@ -515,14 +529,10 @@ class Hookup(object):
             all_hu_hpn = sorted(list(all_hu_hpn))
             hdr = "---{}---".format(hkey)
             entry_info = ''
-            if hkey in info_keys:  # Do the hkey first
-                for entry in self.active.info[hkey]:
-                    acomment = entry.comment.replace('\\n', '\n')
-                    atime = cm_utils.get_time_for_display(entry.posting_gpstime)
-                    entry_info += "\t{} ({})  {}\n".format(hkey, atime, acomment)
+            if hkey in all_hu_hpn:  # Do the hkey first
+                all_hu_hpn.remove(hkey)
+                all_hu_hpn = [hkey] + all_hu_hpn
             for ikey in all_hu_hpn:
-                if ikey == hkey:
-                    continue
                 if ikey in info_keys:
                     for entry in self.active.info[ikey]:
                         acomment = entry.comment.replace('\\n', '\n')
@@ -557,6 +567,12 @@ class Hookup(object):
                 'html' for a web-page version,
                 'csv' for a comma-separated value version, or
                 'table' for a formatted text table
+
+        Returns
+        -------
+        str
+            Table as a string
+
         """
         show = {'ports': ports, 'revs': revs}
         headers = self.make_header_row(hookup_dict, cols_to_show)
@@ -580,22 +596,18 @@ class Hookup(object):
         if total_shown == 0:
             print("None found for {} (show-state is {})".format(cm_utils.get_time_for_display(self.at_date), state))
             return
-        if filename is None:
-            import sys
-            file = sys.stdout
-        else:
-            file = open(filename, 'w')
-        if output_format == 'html':
+        if output_format.lower().startswith('htm'):
             dtime = cm_utils.get_time_for_display('now') + '\n'
             table = cm_utils.html_table(headers, table_data)
             table = '<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime + '\t\t</pre>\n\t</body>\n</html>\n'
-        elif output_format == 'csv':
+        elif output_format.lower().startswith('csv'):
             table = cm_utils.csv_table(headers, table_data)
         else:
             table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
-        print(table, file=file)
         if filename is not None:
-            file.close()
+            with open(filename, 'w') as fp:
+                print(table, file=fp)
+        return table
 
     def make_header_row(self, hookup_dict, cols_to_show):
         """
