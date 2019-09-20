@@ -2854,6 +2854,24 @@ class MCSession(Session):
             self._insert_ignoring_duplicates(SNAPConfigVersion, snap_version_list)
 
     def _get_node_snap_from_serial(self, snap_serial, session=None):
+        """
+        Get SNAP connection information from SNAP serial number.
+
+        Parameters
+        ----------
+        snap_serial : str
+            SNAP serial number.
+        session : Session object
+            Session to pass to cm_handling.Handling. Defaults to self.
+
+        Returns
+        -------
+        nodeID: int
+            Node number.
+        snap_loc_num : int
+            SNAP location number.
+
+        """
         from hera_mc import cm_handling, cm_utils
         if session is None:
             session = self
@@ -2912,6 +2930,35 @@ class MCSession(Session):
                 snap_loc_num = None
 
         return nodeID, snap_loc_num
+
+    def get_snap_hostname_from_serial(self, serial_number):
+        """
+        Get SNAP hostname from the SNAP serial number.
+
+        Parameters
+        ----------
+        serial_number : str
+            SNAP serial number.
+
+        Returns:
+        --------
+        str or None
+            SNAP hostname if serial_number is found in the snap_status table,
+            None otherwise.
+
+        """
+        from .correlator import SNAPStatus
+
+        # get most recent entry with this serial number
+        query = self.query(SNAPStatus).filter(
+            SNAPStatus.serial_number == serial_number).order_by(
+                desc(SNAPStatus.time)).limit(1)
+
+        result = query.all()
+        if len(result) < 1:
+            return None
+
+        return result[0].hostname
 
     def add_snap_status(self, time, hostname, serial_number, psu_alert, pps_count,
                         fpga_temp, uptime_cycles, last_programmed_time):
