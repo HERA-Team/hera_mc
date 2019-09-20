@@ -2,19 +2,16 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Tracking observations.
+"""Observation table."""
 
-"""
 from __future__ import absolute_import, division, print_function
 
 import six
-import numpy as np
 from astropy.time import Time
 from astropy.coordinates import EarthLocation
 from sqlalchemy import Column, BigInteger, Float
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from . import geo_handling
 from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_TOL
 
 
@@ -22,14 +19,25 @@ class Observation(MCDeclarativeBase):
     """
     Definition of hera_obs table.
 
-    obsid: observation identification number, generally equal to the floor of
-        the start time in gps seconds (long integer)
-    starttime: observation start time in gps seconds (double)
-    stoptime: observation stop time in gps seconds (double)
-    jd_start: observation start time in JDs, calculated from starttime (double)
-    lststart: observation start time in lst, calculated from starttime and
-        HERA array location (double)
+    Definition of node sensor table.
+
+    Attributes
+    ----------
+    obsid : BigInteger Column
+        Observation identification number, generally equal to the floor of
+        the start time in gps seconds. The primary key.
+    starttime : Float Column
+        Observation start time in gps seconds.
+    stoptime : Float Column
+        Observation stop time in gps seconds.
+    jd_start : Float Column
+        Observation start time in JDs, calculated from starttime.
+    lststart : Float Column
+        Observation start time in lst, calculated from starttime and HERA array
+        location.
+
     """
+
     __tablename__ = 'hera_obs'
     obsid = Column(BigInteger, primary_key=True, autoincrement=False)
     starttime = Column(Float, nullable=False)  # Float is mapped to DOUBLE PRECISION in postgresql
@@ -43,6 +51,7 @@ class Observation(MCDeclarativeBase):
 
     @hybrid_property
     def length(self):
+        """Observation length in seconds."""
         return self.stoptime - self.starttime
 
     @classmethod
@@ -52,12 +61,13 @@ class Observation(MCDeclarativeBase):
 
         Parameters:
         ------------
-        starttime: astropy time object
-            observation starttime
-        stoptime: astropy time object
-            observation stoptime
-        obsid: long integer
-            observation identification number.
+        starttime : astropy Time object
+            Observation starttime.
+        stoptime : astropy Time object
+            Observation stoptime.
+        obsid : long integer
+            Observation identification number.
+
         """
         if not isinstance(starttime, Time):
             raise ValueError('starttime must be an astropy Time object')
@@ -71,7 +81,8 @@ class Observation(MCDeclarativeBase):
         # for jd need to ensure that we're in utc
         starttime = starttime.utc
 
-        starttime.location = EarthLocation.from_geodetic(hera_cofa.lon, hera_cofa.lat)
+        starttime.location = EarthLocation.from_geodetic(
+            hera_cofa.lon, hera_cofa.lat)
 
         return cls(obsid=obsid, starttime=starttime.gps, stoptime=stoptime.gps,
                    jd_start=starttime.jd,

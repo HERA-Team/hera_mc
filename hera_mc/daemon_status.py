@@ -3,7 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """
-M&C daemon_status table
+M&C daemon_status table.
 
 The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
@@ -24,12 +24,21 @@ class DaemonStatus(MCDeclarativeBase):
     """
     Definition of daemon_status table.
 
-    name: name of daemon
-    hostname: location where daemon is running
-    jd: julian date
-    time: time of latest update(gps seconds) (BigInteger)
-    status: status, one of the values in status_list (String)
+    Attributes
+    ----------
+    name : String Column
+        Name of daemon. Part of the primary key.
+    hostname : String Column
+        Hostname where daemon is running. Part of the primary key.
+    jd : BigInteger Column
+        Julian date of the status. Part of the primary key.
+    time : BigInteger Column
+        GPS time of latest update, floored.
+    status : String Column
+        Status, one of the values in status_list.
+
     """
+
     __tablename__ = 'daemon_status'
     name = Column(String(32), primary_key=True)
     hostname = Column(String(32), primary_key=True)
@@ -42,7 +51,7 @@ class DaemonStatus(MCDeclarativeBase):
         """
         Create a new daemon_status object.
 
-        Parameters:
+        Parameters
         ------------
         name : str
             Name of the daemon
@@ -52,6 +61,7 @@ class DaemonStatus(MCDeclarativeBase):
             Time of this status report, updated on every iteration of the daemon
         status : str
             Status, one of the values in status_list.
+
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -62,4 +72,5 @@ class DaemonStatus(MCDeclarativeBase):
             raise ValueError('Status must be one of: [{statlist}]'.format(
                 statlist=', '.join(status_list)))
 
-        return cls(name=name, hostname=hostname, jd=jd, time=time, status=status)
+        return cls(name=name, hostname=hostname, jd=jd, time=time,
+                   status=status)
