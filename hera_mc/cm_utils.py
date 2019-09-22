@@ -89,6 +89,13 @@ def log(msg, **kwargs):
 system_wide_key = '__Sys__'
 
 
+def port_is_polarized(port, pol_list):
+    for pol in pol_list:
+        if port.upper().startswith(pol.upper()):
+            return True
+    return False
+
+
 def make_part_key(hpn, rev, port=None):
     """
     Returns the standard part key of hpn:rev[:port].  Port is only

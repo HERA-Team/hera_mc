@@ -212,12 +212,10 @@ class Hookup(object):
             #     redirect_hookup_dict = None
             #     continue
             self.sysdef.setup(part=part, pol=pol, hookup_type=hookup_type)
-            if self.sysdef.pol is None:
-                continue
             self.hookup_type = self.sysdef.this_hookup_type
             hookup_dict[k] = cm_dossier.HookupEntry(entry_key=k, sysdef=self.sysdef)
-            for port_pol in self.sysdef.pol:
-                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part=part.hpn, rev=part.hpn_rev, pol=port_pol)
+            for port_pol in self.sysdef.ppkeys:
+                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part=part.hpn, rev=part.hpn_rev, port_pol=port_pol)
                 part_types_found = self.get_part_types_found(hookup_dict[k].hookup[port_pol])
                 hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
                 hookup_dict[k].add_timing_and_fully_connected(port_pol)
@@ -252,7 +250,7 @@ class Hookup(object):
         self.part_type_cache[c.downstream_part] = part_type
         return list(part_types_found)
 
-    def _follow_hookup_stream(self, part, rev, pol):
+    def _follow_hookup_stream(self, part, rev, port_pol):
         """
         This follows a list of connections upstream and downstream.
 
@@ -262,8 +260,8 @@ class Hookup(object):
             HERA part number
         rev : str
             HERA part revision
-        pol : str
-            Port polarization to follow.  Should be 'e' or 'n'.
+        port_pol : str
+            Port polarization to follow.  Should be 'E<port' or 'N<port'.
 
         Returns
         -------
@@ -272,14 +270,15 @@ class Hookup(object):
         """
         key = cm_utils.make_part_key(part, rev)
         part_type = self.active.parts[key].hptype
+        pol, port = port_pol.split('<')
         port_list = cm_utils.to_upper(self.sysdef.get_ports(pol, part_type))
         self.upstream = []
         self.downstream = []
         current = Namespace(direction='up', part=part.upper(), rev=rev.upper(), key=key, pol=pol.upper(),
-                            hptype=part_type, port=pol[0].upper(), allowed_ports=port_list)
+                            hptype=part_type, port=port.upper(), allowed_ports=port_list)
         self._recursive_connect(current)
         current = Namespace(direction='down', part=part.upper(), rev=rev.upper(), key=key, pol=pol.upper(),
-                            hptype=part_type, port=pol[0].upper(), allowed_ports=port_list)
+                            hptype=part_type, port=port.upper(), allowed_ports=port_list)
         self._recursive_connect(current)
         hu = []
         for pn in reversed(self.upstream):

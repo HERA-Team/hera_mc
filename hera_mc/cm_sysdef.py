@@ -62,7 +62,6 @@ class Sysdef:
 
     def __init__(self, input_dict=None):
         if input_dict is not None:
-            self.pind = input_dict['pind']
             self.this_hookup_type = input_dict['this_hookup_type']
             self.corr_index = input_dict['corr_index']
             self.all_pols = input_dict['all_pols']
@@ -70,7 +69,6 @@ class Sysdef:
             self.single_pol_labeled_parts = input_dict['single_pol_labeled_parts']
             self.full_connection_path = input_dict['full_connection_path']
         else:
-            self.pind = {}
             self.this_hookup_type = None
 
             # Initialize the dictionaries
@@ -135,7 +133,7 @@ class Sysdef:
         dict
             Dictionary version of object.
         """
-        return {'pind': self.pind, 'this_hookup_type': self.this_hookup_type,
+        return {'this_hookup_type': self.this_hookup_type,
                 'corr_index': self.corr_index, 'all_pols': self.all_pols,
                 'redirect_part_types': self.redirect_part_types,
                 'single_pol_labeled_parts': self.single_pol_labeled_parts,
@@ -217,26 +215,36 @@ class Sysdef:
         self.this_hookup_type = hookup_type
         if hookup_type is None:
             self.this_hookup_type = self.find_hookup_type(part.hptype, None)
-        for i, _p in enumerate([x.lower() for x in self.all_pols[self.this_hookup_type]]):
-            self.pind[_p] = i
 
-        all_pols_upper = [x.upper() for x in self.all_pols[self.this_hookup_type]]
+        all_pols = [x.upper() for x in self.all_pols[self.this_hookup_type]]
         pol = cm_utils.to_upper(pol)
-        port_check_list = all_pols_upper + ['ALL']
-        if pol not in port_check_list:
+        if pol not in all_pols + ['ALL']:
             raise ValueError("Invalid port query {}.  Should be in {}".format(pol, port_check_list))
+        use_pols = all_pols if pol == 'ALL' else [pol]
 
-        # These are for single pol parts that have their polarization as the last letter of the part name
-        # This is only for parts_paper parts at this time.  Not a good idea going forward.
-        if part.hptype in self.single_pol_labeled_parts[self.this_hookup_type]:
-            en_part_pol = part.hpn[-1].lower()
-            if pol == 'all' or en_part_pol == pol:
-                self.pol = [en_part_pol]
-            else:
-                self.pol = None
-            return
+        port_up = self.port_def[self.this_hookup_type][part.hptype]['up']
+        port_dn = self.port_def[self.this_hookup_type][part.hptype]['down']
+        dir2use = port_up if len(port_up) > len(port_dn) else port_dn
+        if dir2use[0][0] is None:
+            dir2use = port_up
 
-        self.pol = all_pols_upper if pol == 'ALL' else pol
+        ppkey_list = []
+        for pport_list in dir2use:
+            for port in pport_list:
+                if cm_utils.port_is_polarized(port, all_pols):
+                    if cm_utils.port_is_polarized(port, use_pols):
+                        ppkey_list.append(port)
+                else:
+                    ppkey_list.append(port)
+
+        self.ppkeys = []
+        for _pol in use_pols:
+            for _port in ppkey_list:
+                if cm_utils.port_is_polarized(_port, all_pols):
+                    if cm_utils.port_is_polarized(_port, [_pol]):
+                        self.ppkeys.append('{}<{}'.format(_pol, _port))
+                else:
+                    self.ppkeys.append('{}<{}'.format(_pol, _port))
 
     def get_ports(self, pol, part_type):
         """
