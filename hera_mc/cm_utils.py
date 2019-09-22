@@ -450,16 +450,17 @@ def get_astropytime(adate, atime=0):
             return return_date + TimeDelta(add_time, format='sec')
 
 
-def put_keys_in_numerical_order(keys):
+def put_keys_in_order(keys, sort_order='NPR'):
     """
-    Takes a list of hookup keys in the format of prefix[+number]:revision and puts them in number order.
-    If no number supplied, it uses 0. If no revision supplied, it uses 'A'.
-    Returns the ordered list of keys
+    Takes a list of hookup keys in the format of prefix[number][:revision] and
+    puts them in alpha+number order.
 
     Parameters
     ----------
     keys : list
         List of hookup keys
+    sort_order : str
+        Order of sorting: N=number, P=prefix, R=revision
 
     Returns
     -------
@@ -481,7 +482,12 @@ def put_keys_in_numerical_order(keys):
                 continue
         prefix = c[:i]
         rev = c[colon + 1:]
-        dkey = (n, prefix, rev)
+        if sort_order.upper() == 'NPR':
+            dkey = (n, prefix, rev)
+        elif sort_order.upper() == 'PNR':
+            dkey = (prefix, n, rev)
+        elif sort_order.upper() == 'RPN':
+            dkey = (rev, prefix, n)
         keylib[dkey] = k
 
     keyordered = []

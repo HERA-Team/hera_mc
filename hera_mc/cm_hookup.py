@@ -518,14 +518,14 @@ class Hookup(object):
         self.active.get_info(self.at_date)
         info_keys = list(self.active.info.keys())
         full_info_string = ''
-        for hkey in hookup_dict.keys():
+        for hkey in cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR'):
             all_hu_hpn = set()
-            for pol in self.sysdef.pol:
+            for pol in hookup_dict[hkey].hookup.keys():
                 for hpn in hookup_dict[hkey].hookup[pol]:
                     if state == 'all' or (state == 'full' and hookup_dict[hkey].fully_connected[pol]):
                         all_hu_hpn.add(cm_utils.make_part_key(hpn.upstream_part, hpn.up_part_rev))
                         all_hu_hpn.add(cm_utils.make_part_key(hpn.downstream_part, hpn.down_part_rev))
-            all_hu_hpn = sorted(list(all_hu_hpn))
+            all_hu_hpn = cm_utils.put_keys_in_order(list(all_hu_hpn), sort_order='PNR')
             hdr = "---{}---".format(hkey)
             entry_info = ''
             if hkey in all_hu_hpn:  # Do the hkey first
@@ -576,10 +576,9 @@ class Hookup(object):
         show = {'ports': ports, 'revs': revs}
         headers = self.make_header_row(hookup_dict, cols_to_show)
         table_data = []
-        numerical_keys = cm_utils.put_keys_in_numerical_order(sorted(hookup_dict.keys()))
         total_shown = 0
-        for hukey in numerical_keys:
-            for pol in sorted(hookup_dict[hukey].hookup.keys()):
+        for hukey in cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR'):
+            for pol in cm_utils.put_keys_in_order(hookup_dict[hukey].hookup.keys(), sort_order='PNR'):
                 if not len(hookup_dict[hukey].hookup[pol]):
                     continue
                 use_this_row = False
