@@ -18,7 +18,6 @@ from argparse import Namespace
 from astropy.time import Time
 
 from . import mc, cm_utils, cm_transfer, cm_sysdef, cm_dossier
-from . import cm_partconnect as partconn
 
 
 class Hookup(object):
@@ -90,12 +89,11 @@ class Hookup(object):
         self.at_date = at_date
         self.hookup_type = hookup_type
 
-        # Take appropriate action if hpn == 'cache'
         if isinstance(hpn, six.string_types) and hpn.lower() == 'cache':
             self.read_hookup_cache_from_file()
             return self.cached_hookup_dict
-        hpn = cm_utils.listify(hpn)
 
+        hpn = cm_utils.listify(hpn)
         if use_cache and self.requested_list_OK_for_cache(hpn):
             self.read_hookup_cache_from_file()
             return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
@@ -202,15 +200,14 @@ class Hookup(object):
         hookup_dict = {}
         for k, part in six.iteritems(parts):
             hookup_type = self.sysdef.find_hookup_type(part_type=part.hptype, hookup_type=hookup_type)
-            # if part.hptype in self.sysdef.redirect_part_types[hookup_type]:
-            #     print("Currently not working.")
-            #     redirect_parts = self.sysdef.handle_redirect_part_types(part, at_date=at_date, session=self.session)
-            #     redirect_hookup_dict = self.get_hookup_from_db(hpn=redirect_parts, pol=pol,
-            #                                                    at_date=self.at_date, exact_match=True, hookup_type=hookup_type)
-            #     for rhdk, vhd in six.iteritems(redirect_hookup_dict):
-            #         hookup_dict[rhdk] = vhd
-            #     redirect_hookup_dict = None
-            #     continue
+            if part.hptype in self.sysdef.redirect_part_types[hookup_type]:
+                redirect_parts = self.sysdef.handle_redirect_part_types(part, self.active)
+                redirect_hookup_dict = self.get_hookup_from_db(hpn=redirect_parts, pol=pol, at_date=self.at_date,
+                                                               exact_match=True, hookup_type=hookup_type)
+                for rhdk, vhd in six.iteritems(redirect_hookup_dict):
+                    hookup_dict[rhdk] = vhd
+                redirect_hookup_dict = None
+                continue
             self.sysdef.setup(part=part, pol=pol, hookup_type=hookup_type)
             self.hookup_type = self.sysdef.this_hookup_type
             hookup_dict[k] = cm_dossier.HookupEntry(entry_key=k, sysdef=self.sysdef)
@@ -497,7 +494,7 @@ class Hookup(object):
         s += '\nCM Version latest cm_hash_time:  {}\n'.format(cm_utils.get_time_for_display(cm_hash_time))
         return s
 
-    def show_notes(self, hookup_dict, state='full'):
+    def show_notes(self, hookup_dict, state='all'):
         """
         Print out the information for hookup.
 

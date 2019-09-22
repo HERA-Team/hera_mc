@@ -90,7 +90,7 @@ class Sysdef:
             for hutype in self.port_def.keys():
                 self.redirect_part_types[hutype] = []
                 self.single_pol_labeled_parts[hutype] = []
-            self.redirect_part_types['parts_hera'] = ['node', 'node-bulkhead', 'snap']
+            self.redirect_part_types['parts_hera'] = ['node']
             self.single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
 
             # This generates the full_connection_path dictionary from port_def
@@ -139,14 +139,16 @@ class Sysdef:
                 'single_pol_labeled_parts': self.single_pol_labeled_parts,
                 'full_connection_path': self.full_connection_path}
 
-    def handle_redirect_part_types(self, part, at_date='now', session=None):
+    def handle_redirect_part_types(self, part, active):
         """
         This handles the "special cases" by feeding a new part list back to hookup.
 
         Parameters
         ----------
         part : Part object
-            Part object of current part.
+            Part object of current part
+        active : ActiveData object
+            Contains the current data.
 
         Returns
         -------
@@ -154,21 +156,10 @@ class Sysdef:
             List of redirected part numbers.
         """
         hpn_list = []
-        print("SYSDEF159:  redirect not yet handled.")
         if part.hptype.lower() == 'node':
-            from hera_mc import cm_hookup
-            # rptc = cm_handling.Handling(session)
-            # conn = rptc.get_part_connection_dossier(part.hpn, part.rev, port='all', at_date=at_date, exact_match=True)
-            conn = {}
-            redirect_list = []
-            for _k in conn.keys():
-                _pk = cm_utils.split_part_key(_k)[0]
-                if _pk.upper() == part.hpn.upper():
-                    redirect_list.append(_k)
-            for _r in redirect_list:
-                for _x in conn[_r].keys_up:
-                    if _x.upper().startswith('SNP'):
-                        hpn_list.append(cm_utils.split_connection_key(_x)[0])
+            for conn in active.connections['down'][cm_utils.make_part_key(part.hpn, part.hpn_rev)].values():
+                if conn.upstream_part.startswith('SNP'):
+                    hpn_list.append(conn.upstream_part)
         return hpn_list
 
     def find_hookup_type(self, part_type, hookup_type):

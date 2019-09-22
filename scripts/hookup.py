@@ -73,9 +73,8 @@ if __name__ == '__main__':
         if output_format == 'display':
             print(show)
         if args.notes:
-            dashes = '-------------------------------------------------------------------------'
-            print("\nNotes:\n{}\n".format(dashes))
+            print("\nNotes:\n-------------------------------------------------------------------------")
             print(hookup.show_notes(hookup_dict=hookup_dict, state=state))
-            print(dashes)
+            print('-------------------------------------------------------------------------')
         if args.write_cache_file:
             hookup.write_cache_file(args.cache_log)
