@@ -90,20 +90,28 @@ def update(session=None, data=None, add_new_geo=False):
     use with caution -- should usually use in a script which will do datetime
         primary key etc
 
-    Parameters:
-    ------------
-    session: session on current database. If session is None, a new session
-             on the default database is created and used.
-    data:  [[station_name0,column0,value0],[...]]
-           where
+    Parameters
+    ----------
+    session : session
+        session on current database. If session is None, a new session
+        on the default database is created and used.
+    data : str or list
+        [[station_name0,column0,value0],[...]]
+        where
                 station_nameN:  station_name (starts with char)
                 values:  corresponding list of values
-    add_new_geo:  boolean to allow a new entry to be made.
+    add_new_geo : bool
+        allow a new entry to be made.
+
+    Returns
+    -------
+    bool
+        Flag if successful
     """
 
     data_dict = format_check_update_request(data)
     if data_dict is None:
-        print('Error: invalid update -- doing nothing.')
+        print('No update - doing nothing.')
         return False
 
     close_session_when_done = False
@@ -121,23 +129,16 @@ def update(session=None, data=None, add_new_geo=False):
                 gr = GeoLocation()
                 make_update = True
             else:
-                print("Error: ", station_name, "does not exist and add_new_geo not enabled.")
+                raise ValueError("{} does not exist and add_new_geo not enabled.".format(station_name))
         elif num_rec == 1:
             if add_new_geo:
-                print("Error: ", station_name, "exists and and_new_geo is enabled.")
+                raise ValueError("{} exists and and_new_geo is enabled.".format(station_name))
             else:
                 gr = geo_rec.first()
                 make_update = True
-        else:  # pragma: no cover
-            print("Error:  more than one of ", station_name,
-                  " exists (which should not happen).")
         if make_update:
             for d in data_dict[station_name]:
-                try:
-                    setattr(gr, d[1], d[2])
-                except AttributeError:
-                    print(d[1], 'does not exist as a field')
-                    continue
+                setattr(gr, d[1], d[2])
             session.add(gr)
             session.commit()
     cm_utils.log('geo_location update', data_dict=data_dict)
@@ -149,18 +150,24 @@ def update(session=None, data=None, add_new_geo=False):
 
 def format_check_update_request(request):
     """
-    parses the update request
+    Parses the update request for use in the update function
 
     return dictionary
 
-    Parameters:
-    ------------
-    request:  station_name0:column0:value0, [station_name1:]column1:value1, [...] or list
+    Parameters
+    ----------
+    request : str or list
+        station_name0:column0:value0, [station_name1:]column1:value1, [...] or list
         station_nameN: first entry must have the station_name,
                        if it does not then propagate first station_name but
                        can't restart 3 then 2
         columnN:  name of geo_location column
         valueN:  corresponding new value
+
+    Returns
+    -------
+    dict
+        Parsed request for update
     """
     if request is None:
         return None
@@ -175,18 +182,14 @@ def format_check_update_request(request):
     if len(data_to_proc[0]) == 3:
         station_name0 = data_to_proc[0][0]
         for d in data_to_proc:
-            if len(d) == 3:
-                pass
-            elif len(d) == 2:
+            if len(d) == 2:
                 d.insert(0, station_name0)
-            else:
-                print('Invalid format for update request.')
-                continue
+            elif len(d) != 3:
+                raise ValueError('Invalid format for update request.')
             if d[0] in data.keys():
                 data[d[0]].append(d)
             else:
                 data[d[0]] = [d]
     else:
-        print('Invalid parse request - need 3 parameters for at least first one.')
-        data = None
+        raise ValueError('Invalid parse request - need 3 parameters for at least first one.')
     return data
