@@ -393,7 +393,6 @@ class Handling:
             Git hash of the hera_cm_db_updates repo
         """
         from .cm_transfer import CMVersion
-
         self.session.add(CMVersion.create(time, git_hash))
 
     def get_cm_version(self, at_date='now'):
@@ -419,7 +418,6 @@ class Handling:
         # get last row before at_date
         result = self.session.query(CMVersion).filter(CMVersion.update_time < at_date.gps).order_by(
             desc(CMVersion.update_time)).limit(1).all()
-
         return result[0].git_hash
 
     def get_part_type_for(self, hpn):
