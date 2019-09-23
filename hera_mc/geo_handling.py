@@ -224,8 +224,10 @@ class Handling:
         """
 
         query_date = cm_utils.get_astropytime(query_date)
-        if type(antenna) == float or type(antenna) == int or antenna[0] != 'A':
-            antenna = 'A' + str(antenna).strip('0')
+        if isinstance(antenna, (int, float)):
+            antenna = 'A' + str(int(antenna))
+        elif antenna[0].upper() != 'A':
+            antenna = 'A' + antenna
         connected_antenna = self.session.query(cm_partconnect.Connections).filter(
             (func.upper(cm_partconnect.Connections.downstream_part) == antenna.upper())
             & (query_date.gps >= cm_partconnect.Connections.start_gpstime))
