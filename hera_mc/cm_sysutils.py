@@ -217,12 +217,13 @@ class Handling:
             corr = {}
             pe = {}
             for p, hu in six.iteritems(current_hookup):
-                pe[p] = hud[k].hookup_type[p]
-                cind = self.sysdef.corr_index[pe[p]] - 1  # The '- 1' makes it the downstream_part
+                pol = p[0].lower()
+                pe[pol] = hud[k].hookup_type[p]
+                cind = self.sysdef.corr_index[pe[pol]] - 1  # The '- 1' makes it the downstream_part
                 try:
-                    corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
+                    corr[pol] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
                 except IndexError:  # pragma: no cover
-                    corr[p] = 'None'
+                    corr[pol] = 'None'
             fnd_list = self.geo.get_location([stn], at_date)
             if len(fnd_list) == 1:
                 fnd = fnd_list[0]
@@ -347,8 +348,7 @@ class Handling:
             parts[k] = hu.get_part_in_hookup_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
 
-    def publish_summary(self, hlist='default', rev='ACTIVE', exact_match=False,
-                        hookup_cols='all', force_new_hookup_dict=True):
+    def publish_summary(self, hlist='default', exact_match=False, hookup_cols='all'):
         """
         Publishes the hookup on hera.today.
 
@@ -356,14 +356,10 @@ class Handling:
         ----------
         hlist : str, list
             List of prefixes or stations to use in summary.  Default is the "default" prefix list in cm_utils.
-        rev : str
-            Revision or revision type.
         exact_match : bool
             Flag for exact_match or included characters.
         hookup_cols : str, list
             List of hookup columns to use, or 'all'.
-        forc_new_hookup_dict : bool
-            Flag to force a new hookup dict to be generated (as opposed to checking for cache.)
 
         Returns
         -------
@@ -376,8 +372,7 @@ class Handling:
         hlist = cm_utils.listify(hlist)
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         H = cm_hookup.Hookup(self.session)
-        hookup_dict = H.get_hookup(hpn=hlist, pol='all', at_date='now', exact_match=exact_match,
-                                   force_new_cache=force_new_hookup_dict, force_db=False, hookup_type=None)
+        hookup_dict = H.get_hookup(hpn=hlist, pol='all', at_date='now', exact_match=exact_match, hookup_type=None)
         H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, ports=True,
                       revs=True, state='full', filename=output_file, output_format='html')
 

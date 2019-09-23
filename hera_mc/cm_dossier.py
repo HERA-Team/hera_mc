@@ -151,10 +151,10 @@ class HookupEntry(object):
     def __init__(self, entry_key=None, sysdef=None, input_dict=None):
         if input_dict is not None:
             if entry_key is not None:
-                raise ValueError('cannot initialize HookupDossierEntry with an '
+                raise ValueError('cannot initialize HookupEntry with an '
                                  'entry_key and a dict')
             if sysdef is not None:
-                raise ValueError('cannot initialize HookupDossierEntry with an '
+                raise ValueError('cannot initialize HookupEntry with an '
                                  'sysdef and a dict')
             self.entry_key = input_dict['entry_key']
             hookup_connections_dict = {}
@@ -171,10 +171,10 @@ class HookupEntry(object):
             self.sysdef = cm_sysdef.Sysdef(input_dict=input_dict['sysdef'])
         else:
             if entry_key is None:
-                raise ValueError('Must initialize HookupDossierEntry with an '
+                raise ValueError('Must initialize HookupEntry with an '
                                  'entry_key and sysdef')
             if sysdef is None:
-                raise ValueError('Must initialize HookupDossierEntry with an '
+                raise ValueError('Must initialize HookupEntry with an '
                                  'entry_key and sysdef')
             self.entry_key = entry_key
             self.hookup = {}  # actual hookup connection information

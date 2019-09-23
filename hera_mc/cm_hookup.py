@@ -192,24 +192,22 @@ class Hookup(object):
         # Reset at_date
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
-        self.hookup_type = hookup_type
         self.active = cm_dossier.ActiveData(self.session, at_date=at_date)
         self.active.get(at_date=at_date)
         hpn = cm_utils.listify(hpn)
         parts = self._cull_dict(hpn, self.active.parts, exact_match)
         hookup_dict = {}
         for k, part in six.iteritems(parts):
-            hookup_type = self.sysdef.find_hookup_type(part_type=part.hptype, hookup_type=hookup_type)
-            if part.hptype in self.sysdef.redirect_part_types[hookup_type]:
+            self.hookup_type = self.sysdef.find_hookup_type(part_type=part.hptype, hookup_type=hookup_type)
+            if part.hptype in self.sysdef.redirect_part_types[self.hookup_type]:
                 redirect_parts = self.sysdef.handle_redirect_part_types(part, self.active)
                 redirect_hookup_dict = self.get_hookup_from_db(hpn=redirect_parts, pol=pol, at_date=self.at_date,
-                                                               exact_match=True, hookup_type=hookup_type)
+                                                               exact_match=True, hookup_type=self.hookup_type)
                 for rhdk, vhd in six.iteritems(redirect_hookup_dict):
                     hookup_dict[rhdk] = vhd
                 redirect_hookup_dict = None
                 continue
-            self.sysdef.setup(part=part, pol=pol, hookup_type=hookup_type)
-            self.hookup_type = self.sysdef.this_hookup_type
+            self.sysdef.setup(part=part, pol=pol, hookup_type=self.hookup_type)
             hookup_dict[k] = cm_dossier.HookupEntry(entry_key=k, sysdef=self.sysdef)
             for port_pol in self.sysdef.ppkeys:
                 hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(part=part.hpn, rev=part.hpn_rev, port_pol=port_pol)
@@ -357,7 +355,7 @@ class Hookup(object):
             if p[0] == current.pol[0]:
                 return p
 
-    def write_hookup_cache_to_file(self, log_msg):
+    def write_hookup_cache_to_file(self, log_msg='Write.'):
         """
         Writes the current hookup to the cache file.
 
@@ -368,6 +366,11 @@ class Hookup(object):
             of wny a new cache file is being written.  E.g. "Found new antenna." or "Cronjob to ensure
             cache file up to date."
         """
+        self.hookup_list_to_cache = cm_utils.default_station_prefixes
+        self.at_date = cm_utils.get_astropytime('now')
+        self.hookup_type = 'parts_hera'
+        self.cached_hookup_dict = self.get_hookup_from_db(self.hookup_list_to_cache, pol='all', at_date=self.at_date,
+                                                          exact_match=False, hookup_type=self.hookup_type)
         hookup_dict_for_json = copy.deepcopy(self.cached_hookup_dict)
         for key, value in six.iteritems(self.cached_hookup_dict):
             if isinstance(value, cm_dossier.HookupEntry):
@@ -378,7 +381,6 @@ class Hookup(object):
                      'hookup_list': self.hookup_list_to_cache,
                      'hookup_dict': hookup_dict_for_json,
                      'part_type_cache': self.part_type_cache}
-
         with open(self.hookup_cache_file, 'w') as outfile:
             json.dump(save_dict, outfile)
 
@@ -394,8 +396,8 @@ class Hookup(object):
         if os.path.exists(self.hookup_cache_file):
             with open(self.hookup_cache_file, 'r') as outfile:
                 cache_dict = json.load(outfile)
-            if self.hookup_cache_file_current(cache_dict):
-                print("<<<Cache IS current with database")
+            if self.hookup_cache_file_OK(cache_dict):
+                print("<<<Cache IS current with database>>>")
             else:
                 print("<<<Cache is NOT current with database>>>")
             self.cached_at_date = Time(cache_dict['at_date_gps'], format='gps')

@@ -62,14 +62,14 @@ class Sysdef:
 
     def __init__(self, input_dict=None):
         if input_dict is not None:
-            self.this_hookup_type = input_dict['this_hookup_type']
+            self.hookup_type = input_dict['hookup_type']
             self.corr_index = input_dict['corr_index']
             self.all_pols = input_dict['all_pols']
             self.redirect_part_types = input_dict['redirect_part_types']
             self.single_pol_labeled_parts = input_dict['single_pol_labeled_parts']
             self.full_connection_path = input_dict['full_connection_path']
         else:
-            self.this_hookup_type = None
+            self.hookup_type = None
 
             # Initialize the dictionaries
             self.corr_index = self.dict_init(None)
@@ -133,7 +133,7 @@ class Sysdef:
         dict
             Dictionary version of object.
         """
-        return {'this_hookup_type': self.this_hookup_type,
+        return {'hookup_type': self.hookup_type,
                 'corr_index': self.corr_index, 'all_pols': self.all_pols,
                 'redirect_part_types': self.redirect_part_types,
                 'single_pol_labeled_parts': self.single_pol_labeled_parts,
@@ -153,7 +153,7 @@ class Sysdef:
         Returns
         -------
         list
-            List of redirected part numbers.
+            List of redirected parts.
         """
         hpn_list = []
         if part.hptype.lower() == 'node':
@@ -203,18 +203,18 @@ class Sysdef:
             If not None, will use specified hookup_type otherwise it will look through in order.
             Default is None
         """
-        self.this_hookup_type = hookup_type
+        self.hookup_type = hookup_type
         if hookup_type is None:
-            self.this_hookup_type = self.find_hookup_type(part.hptype, None)
+            self.hookup_type = self.find_hookup_type(part.hptype, None)
 
-        all_pols = [x.upper() for x in self.all_pols[self.this_hookup_type]]
+        all_pols = [x.upper() for x in self.all_pols[self.hookup_type]]
         pol = cm_utils.to_upper(pol)
         if pol not in all_pols + ['ALL']:
-            raise ValueError("Invalid port query {}.  Should be in {}".format(pol, port_check_list))
+            raise ValueError("Invalid port query {}.".format(pol))
         use_pols = all_pols if pol == 'ALL' else [pol]
 
-        port_up = self.port_def[self.this_hookup_type][part.hptype]['up']
-        port_dn = self.port_def[self.this_hookup_type][part.hptype]['down']
+        port_up = self.port_def[self.hookup_type][part.hptype]['up']
+        port_dn = self.port_def[self.hookup_type][part.hptype]['down']
         dir2use = port_up if len(port_up) > len(port_dn) else port_dn
         if dir2use[0][0] is None:
             dir2use = port_up
@@ -257,11 +257,11 @@ class Sysdef:
         port_dict = {}
         for dir in ['up', 'down']:
             port_dict[dir] = []
-            for port_list in self.port_def[self.this_hookup_type][part_type][dir]:
+            for port_list in self.port_def[self.hookup_type][part_type][dir]:
                 for port in port_list:
                     if port is None:
                         port_dict[dir].append(None)
-                    elif port[0].lower() not in self.all_pols[self.this_hookup_type] or pol.lower() == 'all':
+                    elif port[0].lower() not in self.all_pols[self.hookup_type] or pol.lower() == 'all':
                         port_dict[dir].append(port.upper())
                     elif port[0].lower() == pol[0].lower():
                         port_dict[dir].append(port.upper())

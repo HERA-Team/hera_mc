@@ -210,10 +210,17 @@ class Handling:
         Returns None or the active station_name (must be an active station for
             the query_date)
 
-        Parameters:
-        ------------
-        antenna:  antenna number as float, int, or string. If needed, it prepends the 'A'
-        query_date:  is the astropy Time for contemporary antenna
+        Parameters
+        ----------
+        antenna : float, int, str
+            antenna number as float, int, or string. If needed, it prepends the 'A'
+        query_date : string, int, Time, datetime
+            is the astropy Time for contemporary antenna
+
+        Returns
+        -------
+        str
+            station connected
         """
 
         query_date = cm_utils.get_astropytime(query_date)
