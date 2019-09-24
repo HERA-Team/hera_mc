@@ -257,7 +257,11 @@ class Sysdef:
         port_dict = {}
         for dir in ['up', 'down']:
             port_dict[dir] = []
-            for port_list in self.port_def[self.hookup_type][part_type][dir]:
+            try:
+                oports = self.port_def[self.hookup_type][part_type]
+            except KeyError:
+                return {}
+            for port_list in oports[dir]:
                 for port in port_list:
                     if port is None:
                         port_dict[dir].append(None)
