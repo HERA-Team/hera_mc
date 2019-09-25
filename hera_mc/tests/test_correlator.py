@@ -1422,6 +1422,16 @@ class TestSNAPStatus(TestHERAMC):
         node, snap_loc_num = self.test_session._get_node_snap_from_serial('SNPA000315')
         self.assertTrue(node is None)
 
+    def test_get_snap_hostname_from_serial(self):
+        self.test_session.add_snap_status_from_corrcm(
+            snap_status_dict=snap_status_example_dict)
+
+        hostname = self.test_session.get_snap_hostname_from_serial('SNPA000222')
+        assert hostname == 'heraNode23Snap1'
+
+        hostname = self.test_session.get_snap_hostname_from_serial('blah')
+        assert hostname is None
+
     @unittest.skipIf(not is_onsite(), 'This test only works on site')
     def test_site_add_snap_status_from_corrcm(self):
 
