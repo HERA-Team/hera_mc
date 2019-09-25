@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import Column, Integer, String
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -10,13 +10,6 @@ from sqlalchemy import ForeignKey
 from ..db_check import is_valid_database
 from ..db_check import check_connection
 from .. import mc
-
-
-def setup_module(self):
-    # Quiet log output for the tests
-    import logging
-    from .. import logger
-    # logger.setLevel(logging.FATAL)
 
 
 def gen_test_model():
@@ -79,7 +72,7 @@ def test_validity_pass():
     """
     engine = mc.connect_to_mc_testing_db().engine
     conn = engine.connect()
-    trans = conn.begin()
+    conn.begin()
 
     Base, ValidTestModel = gen_test_model()
     Session = sessionmaker(bind=engine)
@@ -101,7 +94,7 @@ def test_validity_table_missing():
     """See check fails when there is a missing table"""
     engine = mc.connect_to_mc_testing_db().engine
     conn = engine.connect()
-    trans = conn.begin()
+    conn.begin()
 
     Base, ValidTestModel = gen_test_model()
     Session = sessionmaker(bind=engine)
@@ -119,7 +112,7 @@ def test_validity_column_missing():
     """See check fails when there is a missing table"""
     engine = mc.connect_to_mc_testing_db().engine
     conn = engine.connect()
-    trans = conn.begin()
+    conn.begin()
 
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -143,7 +136,7 @@ def test_validity_pass_relationship():
     """
     engine = mc.connect_to_mc_testing_db().engine
     conn = engine.connect()
-    trans = conn.begin()
+    conn.begin()
 
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -171,7 +164,7 @@ def test_validity_pass_declarative():
     """
     engine = mc.connect_to_mc_testing_db().engine
     conn = engine.connect()
-    trans = conn.begin()
+    conn.begin()
 
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -191,7 +184,7 @@ def test_validity_pass_declarative():
 
 
 def test_check_connection():
-    """ Check that a missing database raises appropriate exception. """
+    """Check that a missing database raises appropriate exception."""
     # Create database connection with fake url
     db = mc.DeclarativeDB('postgresql://hera@localhost/foo')
     with db.sessionmaker() as s:

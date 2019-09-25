@@ -41,7 +41,7 @@ sure the right thing happened. It's also a very good idea to run
 `alembic downgrade -1` to back up to before your revision and check that the
 database looks right (of course you then need to re-run the upgrade command to
   get back to where you meant to be.)
-5. Run `nosetests` to check that all the tests pass.
+5. Run `pytest` to check that all the tests pass.
 6. git add the alembic/version that was created and commit your work.
 7. When you're satisfied that everything works as expected, add a description
 of your new table to the documentation in docs/mc_definition.tex.

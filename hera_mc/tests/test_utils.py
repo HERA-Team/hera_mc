@@ -1,9 +1,20 @@
-import nose.tools as nt
+# -*- mode: python; coding: utf-8 -*-
+# Copyright 2017 the HERA Collaboration
+# Licensed under the 2-clause BSD license.
+
+from __future__ import absolute_import, division, print_function
+
+import pytest
+import numpy as np
+import numpy.testing as npt
+
 from astropy.time import Time
 from astropy.units import Quantity
+
 from .. import utils
 
-sidesec = Quantity(1, 'sday').to('day').value  # length of sidereal second in SI seconds.
+# length of sidereal second in SI seconds.
+sidesec = Quantity(1, 'sday').to('day').value
 
 
 def test_LSTScheduler_lstbinsize():
@@ -15,9 +26,11 @@ def test_LSTScheduler_lstbinsize():
     scheduletime1, hour1 = utils.LSTScheduler(starttime1, LSTbin_size)
     starttime2 = Time('2019-9-19T05:05:15.0', format='isot', scale='utc')
     scheduletime2, hour2 = utils.LSTScheduler(starttime2, LSTbin_size)
-    nt.assert_almost_equal((hour2 - hour1).hour * 3600, LSTbin_size)
-    nt.assert_almost_equal((scheduletime2 - scheduletime1).value * 24 * 3600,
-                           LSTbin_size * sidesec, places=5)
+    print((hour2 - hour1).hour * 3600)
+    print(LSTbin_size)
+    assert np.isclose((hour2 - hour1).hour * 3600, LSTbin_size)
+    npt.assert_almost_equal((scheduletime2 - scheduletime1).value * 24 * 3600,
+                            LSTbin_size * sidesec, decimal=5)
 
 
 def test_LSTScheduler_multiday():
@@ -30,30 +43,27 @@ def test_LSTScheduler_multiday():
     # lst is 4 minutes earlier every day
     starttime2 = Time('2019-9-20T05:00:0.0', format='isot', scale='utc')
     scheduletime2, hour2 = utils.LSTScheduler(starttime2, LSTbin_size)
-    nt.assert_almost_equal((hour2.hour - hour1.hour) * 3600, 0)
+    assert np.isclose((hour2.hour - hour1.hour) * 3600, 0)
 
 
 def test_reraise_context():
-    with nt.assert_raises(ValueError) as cm:
+    with pytest.raises(ValueError) as cm:
         try:
             raise ValueError('Initial Exception message.')
         except ValueError:
             utils._reraise_context('Add some info')
-    ex = cm.exception
-    nt.assert_equal(ex.args[0], 'Add some info: Initial Exception message.')
+    assert str(cm.value).startswith('Add some info: Initial Exception message.')
 
-    with nt.assert_raises(ValueError) as cm:
+    with pytest.raises(ValueError) as cm:
         try:
             raise ValueError('Initial Exception message.')
         except ValueError:
             utils._reraise_context('Add some info %s', 'and then more')
-    ex = cm.exception
-    nt.assert_equal(ex.args[0], 'Add some info and then more: Initial Exception message.')
+    assert str(cm.value).startswith('Add some info and then more: Initial Exception message.')
 
-    with nt.assert_raises(EnvironmentError) as cm:
+    with pytest.raises(EnvironmentError) as cm:
         try:
             raise EnvironmentError(1, 'some bad problem')
         except EnvironmentError:
             utils._reraise_context('Add some info')
-    ex = cm.exception
-    nt.assert_equal(ex.args[1], 'Add some info: some bad problem')
+    assert 'Add some info: some bad problem' in str(cm.value)
