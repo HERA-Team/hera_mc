@@ -19,7 +19,9 @@ from ..tests import checkWarnings
 from ..qm import AntMetrics, ArrayMetrics
 
 
-metrics_dict = get_metrics_dict()
+@pytest.fixture(scope='module')
+def metrics_dict():
+    return get_metrics_dict()
 
 
 def test_AntMetrics(mcsession):
@@ -163,7 +165,7 @@ def test_MetricList(mcsession):
     assert 'Auto-generated description.' in r[0].desc
 
 
-def test_update_qm_list(mcsession):
+def test_update_qm_list(mcsession, metrics_dict):
     test_session = mcsession
     test_session.update_qm_list()
     r = test_session.get_metric_desc()

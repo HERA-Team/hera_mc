@@ -23,155 +23,188 @@ from hera_mc.data import DATA_PATH
 from ..tests import onsite, checkWarnings
 
 
-corr_command_example_dict = {
-    'taking_data': {'state': True,
-                    'timestamp': Time(1512770942, format='unix')},
-    'phase_switching': {'state': False,
-                        'timestamp': Time(1512770944, format='unix')},
-    'noise_diode': {'state': True,
-                    'timestamp': Time(1512770946, format='unix')},
-}
-corr_state_dict_nonetime = {'taking_data': {'state': False, 'timestamp': None}}
-
-config_file = os.path.join(DATA_PATH, 'test_data',
-                           'hera_feng_config_example.yaml')
-with open(config_file, 'r') as stream:
-    config = yaml.safe_load(stream)
-
-corr_config_example_dict = {'time': Time(1512770942, format='unix'),
-                            'hash': 'testhash', 'config': config}
-
-init_args = ("Namespace(config_file=None, eth=True, initialize=True, "
-             + "mansync=False, noise=False, program=False, "
-             + "redishost='redishost', sync=True, tvg=False)")
-
-corr_snap_version_example_dict = {
-    'udpSender:hera_node_keep_alive.py': {
-        'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 17, 438357),
-        'version': '0.0.1-1eaa49ea'},
-    'hera_corr_f:hera_snap_redis_monitor.py': {
-        'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 14, 317679),
-        'version': '0.0.1-3c7fdaf6'},
-    'udpSender:hera_node_cmd_check.py': {
-        'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 17, 631614),
-        'version': '0.0.1-1eaa49ea'},
-    'udpSender:hera_node_receiver.py': {
-        'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 16, 555086),
-        'version': '0.0.1-1eaa49ea'},
-    'hera_corr_cm': {
-        'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 17, 644984),
-        'version': '0.0.1-11a573c9'},
-    'snap': {'config': config,
-             'config_md5': 'testhash',
-             'config_timestamp': datetime.datetime(
-                 2019, 2, 18, 5, 41, 29, 376363),
-             'init_args': init_args,
-             'timestamp': datetime.datetime(2019, 3, 27, 8, 28, 25, 806626),
-             'version': '0.0.1-3c7fdaf6'}}
-
-snap_status_example_dict = {
-    'heraNode23Snap1': {'last_programmed': datetime.datetime(2016, 1, 10, 23,
-                                                             16, 3),
-                        'pmb_alert': False,
-                        'pps_count': 595687,
-                        'serial': 'SNPA000222',
-                        'temp': 57.984954833984375,
-                        'timestamp': datetime.datetime(
-                            2016, 1, 5, 20, 44, 52, 741137),
-                        'uptime': 595686},
-    'heraNode4Snap0': {'last_programmed': datetime.datetime(2016, 1, 10, 23,
-                                                            16, 3),
-                       'pmb_alert': False,
-                       'pps_count': 595699,
-                       'serial': 'SNPA000224',
-                       'temp': 59.323028564453125,
-                       'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52,
-                                                      739322),
-                       'uptime': 595699}}
-
-snap_status_none_example_dict = {
-    'heraNode23Snap1': {'last_programmed': 'None',
-                        'pmb_alert': 'None',
-                        'pps_count': 'None',
-                        'serial': 'None',
-                        'temp': 'None',
-                        'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52,
-                                                       741137),
-                        'uptime': 'None'},
-    'heraNode23Snap2': {'last_programmed': datetime.datetime(2016, 1, 5, 20,
-                                                             44, 52, 741137),
-                        'pmb_alert': False,
-                        'pps_count': 595699,
-                        'serial': 'SNPA000224',
-                        'temp': 59.323028564453125,
-                        'timestamp': 'None',
-                        'uptime': 595699}}
-
-ant_status_example_dict = {
-    '4:e': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
-            'f_host': 'heraNode23Snap1',
-            'host_ant_id': 3,
-            'adc_mean': -0.5308380126953125,
-            'adc_rms': 3.0134560488579285,
-            'adc_power': 9.080917358398438,
-            'pam_atten': 0,
-            'pam_power': -13.349140985640002,
-            'pam_voltage': 10.248,
-            'pam_current': 0.6541,
-            'pam_id': [112, 217, 32, 59, 1, 0, 0, 14],
-            'fem_voltage': 6.496,
-            'fem_current': 0.5627000000000001,
-            'fem_id': [0, 168, 19, 212, 51, 51, 255, 255],
-            'fem_temp': 26.327341308593752,
-            'eq_coeffs': (np.zeros((1024)) + 56.921875).tolist(),
-            'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
-                          (np.zeros((256)) + 10).tolist()]},
-    '31:n': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
-             'f_host': 'heraNode4Snap3',
-             'host_ant_id': 7,
-             'adc_mean': -0.4805450439453125,
-             'adc_rms': 16.495319974304454,
-             'adc_power': 272.0955810546875,
-             'pam_atten': 0,
-             'pam_power': -32.03119784856,
-             'pam_voltage': 10.268,
-             'pam_current': 0.6695000000000001,
-             'pam_id': [112, 84, 143, 59, 1, 0, 0, 242],
-             'fem_voltage': float('nan'),
-             'fem_current': float('nan'),
-             'fem_id': [0, 168, 19, 212, 51, 51, 255, 255],
-             'fem_temp': 27.828854980468755,
-             'eq_coeffs': (np.zeros((1024)) + 73.46875).tolist(),
-             'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
-                           (np.zeros((256)) + 12).tolist()]}}
-
-ant_status_nones_example_dict = {
-    '4:e': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
-            'f_host': 'None',
-            'host_ant_id': 'None',
-            'adc_mean': 'None',
-            'adc_rms': 'None',
-            'adc_power': 'None',
-            'pam_atten': 'None',
-            'pam_power': 'None',
-            'eq_coeffs': 'None',
-            'pam_voltage': 'None',
-            'pam_current': 'None',
-            'pam_id': 'None',
-            'fem_voltage': 'None',
-            'fem_current': 'None',
-            'fem_id': 'None',
-            'fem_temp': 'None',
-            'eq_coeffs': 'None',
-            'histogram': 'None'}}
+@pytest.fixture(scope='module')
+def corrcommand():
+    return {
+        'taking_data': {'state': True,
+                        'timestamp': Time(1512770942, format='unix')},
+        'phase_switching': {'state': False,
+                            'timestamp': Time(1512770944, format='unix')},
+        'noise_diode': {'state': True,
+                        'timestamp': Time(1512770946, format='unix')},
+    }
 
 
-def test_py3_hashing():
+@pytest.fixture(scope='module')
+def corrstate_nonetime():
+    return {'taking_data': {'state': False, 'timestamp': None}}
+
+
+@pytest.fixture(scope='module')
+def config():
+    config_file = os.path.join(DATA_PATH, 'test_data',
+                               'hera_feng_config_example.yaml')
+    with open(config_file, 'r') as stream:
+        config = yaml.safe_load(stream)
+
+    return config_file, config
+
+
+@pytest.fixture(scope='module')
+def corrconfig(config):
+    return {'time': Time(1512770942, format='unix'),
+            'hash': 'testhash', 'config': config[1]}
+
+
+@pytest.fixture(scope='module')
+def init_args():
+    return ("Namespace(config_file=None, eth=True, initialize=True, "
+            + "mansync=False, noise=False, program=False, "
+            + "redishost='redishost', sync=True, tvg=False)")
+
+
+@pytest.fixture(scope='module')
+def snapversion(config, init_args):
+    return {
+        'udpSender:hera_node_keep_alive.py': {
+            'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 17, 438357),
+            'version': '0.0.1-1eaa49ea'},
+        'hera_corr_f:hera_snap_redis_monitor.py': {
+            'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 14, 317679),
+            'version': '0.0.1-3c7fdaf6'},
+        'udpSender:hera_node_cmd_check.py': {
+            'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 17, 631614),
+            'version': '0.0.1-1eaa49ea'},
+        'udpSender:hera_node_receiver.py': {
+            'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 16, 555086),
+            'version': '0.0.1-1eaa49ea'},
+        'hera_corr_cm': {
+            'timestamp': datetime.datetime(2019, 4, 2, 19, 7, 17, 644984),
+            'version': '0.0.1-11a573c9'},
+        'snap': {'config': config[1],
+                 'config_md5': 'testhash',
+                 'config_timestamp': datetime.datetime(
+                     2019, 2, 18, 5, 41, 29, 376363),
+                 'init_args': init_args,
+                 'timestamp': datetime.datetime(2019, 3, 27, 8, 28, 25, 806626),
+                 'version': '0.0.1-3c7fdaf6'}}
+
+
+@pytest.fixture(scope='module')
+def snapstatus():
+    return {
+        'heraNode23Snap1': {'last_programmed': datetime.datetime(2016, 1, 10,
+                                                                 23, 16, 3),
+                            'pmb_alert': False,
+                            'pps_count': 595687,
+                            'serial': 'SNPA000222',
+                            'temp': 57.984954833984375,
+                            'timestamp': datetime.datetime(
+                                2016, 1, 5, 20, 44, 52, 741137),
+                            'uptime': 595686},
+        'heraNode4Snap0': {'last_programmed': datetime.datetime(2016, 1, 10, 23,
+                                                                16, 3),
+                           'pmb_alert': False,
+                           'pps_count': 595699,
+                           'serial': 'SNPA000224',
+                           'temp': 59.323028564453125,
+                           'timestamp': datetime.datetime(2016, 1, 5, 20, 44,
+                                                          52, 739322),
+                           'uptime': 595699}}
+
+
+@pytest.fixture(scope='module')
+def snapstatus_none():
+    return {
+        'heraNode23Snap1': {'last_programmed': 'None',
+                            'pmb_alert': 'None',
+                            'pps_count': 'None',
+                            'serial': 'None',
+                            'temp': 'None',
+                            'timestamp': datetime.datetime(2016, 1, 5, 20, 44,
+                                                           52, 741137),
+                            'uptime': 'None'},
+        'heraNode23Snap2': {'last_programmed': datetime.datetime(2016, 1, 5, 20,
+                                                                 44, 52,
+                                                                 741137),
+                            'pmb_alert': False,
+                            'pps_count': 595699,
+                            'serial': 'SNPA000224',
+                            'temp': 59.323028564453125,
+                            'timestamp': 'None',
+                            'uptime': 595699}}
+
+
+@pytest.fixture(scope='module')
+def antstatus():
+    return {
+        '4:e': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
+                'f_host': 'heraNode23Snap1',
+                'host_ant_id': 3,
+                'adc_mean': -0.5308380126953125,
+                'adc_rms': 3.0134560488579285,
+                'adc_power': 9.080917358398438,
+                'pam_atten': 0,
+                'pam_power': -13.349140985640002,
+                'pam_voltage': 10.248,
+                'pam_current': 0.6541,
+                'pam_id': [112, 217, 32, 59, 1, 0, 0, 14],
+                'fem_voltage': 6.496,
+                'fem_current': 0.5627000000000001,
+                'fem_id': [0, 168, 19, 212, 51, 51, 255, 255],
+                'fem_temp': 26.327341308593752,
+                'eq_coeffs': (np.zeros((1024)) + 56.921875).tolist(),
+                'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
+                              (np.zeros((256)) + 10).tolist()]},
+        '31:n': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
+                 'f_host': 'heraNode4Snap3',
+                 'host_ant_id': 7,
+                 'adc_mean': -0.4805450439453125,
+                 'adc_rms': 16.495319974304454,
+                 'adc_power': 272.0955810546875,
+                 'pam_atten': 0,
+                 'pam_power': -32.03119784856,
+                 'pam_voltage': 10.268,
+                 'pam_current': 0.6695000000000001,
+                 'pam_id': [112, 84, 143, 59, 1, 0, 0, 242],
+                 'fem_voltage': float('nan'),
+                 'fem_current': float('nan'),
+                 'fem_id': [0, 168, 19, 212, 51, 51, 255, 255],
+                 'fem_temp': 27.828854980468755,
+                 'eq_coeffs': (np.zeros((1024)) + 73.46875).tolist(),
+                 'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
+                               (np.zeros((256)) + 12).tolist()]}}
+
+
+@pytest.fixture(scope='module')
+def antstatus_none():
+    return {
+        '4:e': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
+                'f_host': 'None',
+                'host_ant_id': 'None',
+                'adc_mean': 'None',
+                'adc_rms': 'None',
+                'adc_power': 'None',
+                'pam_atten': 'None',
+                'pam_power': 'None',
+                'eq_coeffs': 'None',
+                'pam_voltage': 'None',
+                'pam_current': 'None',
+                'pam_id': 'None',
+                'fem_voltage': 'None',
+                'fem_current': 'None',
+                'fem_id': 'None',
+                'fem_temp': 'None',
+                'eq_coeffs': 'None',
+                'histogram': 'None'}}
+
+
+def test_py3_hashing(config):
     # make sure I get the same answer as with python 2.7 & no explicit encoding
     # (like the correlator)
     py27_hash = '3b03414da0abe738aae071cccb911377'
 
-    with open(config_file, 'r') as fh:
+    with open(config[0], 'r') as fh:
         config_string = fh.read().encode('utf-8')
         config_hash = hashlib.md5(config_string).hexdigest()
 
@@ -234,10 +267,10 @@ def test_add_corr_command_state(mcsession):
     assert result == []
 
 
-def test_add_correlator_control_state_from_corrcm(mcsession):
+def test_add_correlator_control_state_from_corrcm(mcsession, corrcommand):
     test_session = mcsession
     corr_state_obj_list = test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=corr_command_example_dict, testing=True)
+        corr_state_dict=corrcommand, testing=True)
 
     for obj in corr_state_obj_list:
         test_session.add(obj)
@@ -268,10 +301,11 @@ def test_add_correlator_control_state_from_corrcm(mcsession):
     assert len(result) == 3
 
 
-def test_add_correlator_control_state_from_corrcm_nonetime_noprior(mcsession):
+def test_add_correlator_control_state_from_corrcm_nonetime_noprior(
+        mcsession, corrstate_nonetime):
     test_session = mcsession
     test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=corr_state_dict_nonetime)
+        corr_state_dict=corrstate_nonetime)
 
     result = test_session.get_correlator_control_state(most_recent=True)
     res_time = result[0].time
@@ -285,13 +319,14 @@ def test_add_correlator_control_state_from_corrcm_nonetime_noprior(mcsession):
     assert result.isclose(expected)
 
 
-def test_add_correlator_control_state_from_corrcm_nonetime_priortrue(mcsession):
+def test_add_correlator_control_state_from_corrcm_nonetime_priortrue(
+        mcsession, corrcommand, corrstate_nonetime):
     test_session = mcsession
     test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=corr_command_example_dict)
+        corr_state_dict=corrcommand)
 
     test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=corr_state_dict_nonetime)
+        corr_state_dict=corrstate_nonetime)
 
     result = test_session.get_correlator_control_state(most_recent=True)
     res_time = result[0].time
@@ -304,7 +339,8 @@ def test_add_correlator_control_state_from_corrcm_nonetime_priortrue(mcsession):
     assert result.isclose(expected)
 
 
-def test_add_correlator_control_state_from_corrcm_nonetime_priorfalse(mcsession):
+def test_add_correlator_control_state_from_corrcm_nonetime_priorfalse(
+        mcsession, corrstate_nonetime):
     test_session = mcsession
     not_taking_data_state_dict = {'taking_data': {
         'state': False, 'timestamp': Time(1512770942, format='unix')}}
@@ -312,7 +348,7 @@ def test_add_correlator_control_state_from_corrcm_nonetime_priorfalse(mcsession)
         corr_state_dict=not_taking_data_state_dict)
 
     corr_state_obj_list = test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=corr_state_dict_nonetime, testing=True)
+        corr_state_dict=corrstate_nonetime, testing=True)
     test_session._insert_ignoring_duplicates(
         corr.CorrelatorControlState, corr_state_obj_list)
 
@@ -363,20 +399,20 @@ def test_add_corr_control_state_from_corrcm(mcsession):
     assert len(result) == 1
 
 
-def test_add_corr_config(mcsession):
+def test_add_corr_config(mcsession, config):
     test_session = mcsession
     t1 = Time('2016-01-10 01:15:23', scale='utc')
     t2 = t1 + TimeDelta(120.0, format='sec')
 
     config_hash = 'testhash'
 
-    test_session.add_correlator_config_file(config_hash, config_file)
+    test_session.add_correlator_config_file(config_hash, config[0])
     test_session.commit()
     test_session.add_correlator_config_status(t1, config_hash)
     test_session.commit()
 
     file_expected = corr.CorrelatorConfigFile(config_hash=config_hash,
-                                              filename=config_file)
+                                              filename=config[0])
     status_expected = corr.CorrelatorConfigStatus(time=int(floor(t1.gps)),
                                                   config_hash=config_hash)
 
@@ -392,7 +428,7 @@ def test_add_corr_config(mcsession):
     assert status_result.isclose(status_expected)
 
     config_hash2 = 'testhash2'
-    test_session.add_correlator_config_file(config_hash2, config_file)
+    test_session.add_correlator_config_file(config_hash2, config[0])
     test_session.commit()
     test_session.add_correlator_config_status(t2, config_hash2)
     test_session.commit()
@@ -436,10 +472,10 @@ def test_add_corr_config(mcsession):
     assert result == []
 
 
-def test_add_correlator_config_from_corrcm(mcsession):
+def test_add_correlator_config_from_corrcm(mcsession, corrconfig):
     test_session = mcsession
     corr_config_list = test_session.add_correlator_config_from_corrcm(
-        config_state_dict=corr_config_example_dict, testing=True)
+        config_state_dict=corrconfig, testing=True)
 
     for obj in corr_config_list:
         test_session.add(obj)
@@ -468,7 +504,7 @@ def test_add_correlator_config_from_corrcm(mcsession):
     assert status_result.isclose(status_expected)
 
 
-def test_add_correlator_config_from_corrcm_match_prior(mcsession):
+def test_add_correlator_config_from_corrcm_match_prior(mcsession, corrconfig):
     test_session = mcsession
     # test behavior when matching config exists at an earlier time
     t1 = Time(1512770942.726777, format='unix')
@@ -481,7 +517,7 @@ def test_add_correlator_config_from_corrcm_match_prior(mcsession):
     test_session.commit()
 
     corr_config_list = test_session.add_correlator_config_from_corrcm(
-        config_state_dict=corr_config_example_dict, testing=True)
+        config_state_dict=corrconfig, testing=True)
 
     status_expected = corr.CorrelatorConfigStatus(time=int(floor(t1.gps)),
                                                   config_hash='testhash')
@@ -489,7 +525,7 @@ def test_add_correlator_config_from_corrcm_match_prior(mcsession):
     assert corr_config_list[0].isclose(status_expected)
 
 
-def test_add_correlator_config_from_corrcm_duplicate(mcsession):
+def test_add_correlator_config_from_corrcm_duplicate(mcsession, corrconfig):
     test_session = mcsession
     # test behavior when duplicate config exists
     t1 = Time(1512770942.726777, format='unix')
@@ -501,7 +537,7 @@ def test_add_correlator_config_from_corrcm_duplicate(mcsession):
     test_session.commit()
 
     corr_config_list = test_session.add_correlator_config_from_corrcm(
-        config_state_dict=corr_config_example_dict, testing=True)
+        config_state_dict=corrconfig, testing=True)
 
     assert len(corr_config_list) == 0
 
@@ -526,34 +562,34 @@ def test_add_correlator_config_from_corrcm_onsite(mcsession):
         assert result[0].__class__ == corr.CorrelatorConfigStatus
 
 
-def test_control_command_no_recent_status(mcsession):
+@pytest.mark.parametrize(
+    ("command"),
+    list(set(corr.command_dict.keys())
+         - set(['take_data', 'update_config'])))
+def test_control_command_no_recent_status(mcsession, command):
     test_session = mcsession
     # test things on & off with no recent status
-    commands_to_test = list(corr.command_dict.keys())
-    commands_to_test.remove('take_data')
-    commands_to_test.remove('update_config')
-    for command in commands_to_test:
-        command_list = test_session.correlator_control_command(
-            command, testing=True)
+    command_list = test_session.correlator_control_command(
+        command, testing=True)
 
-        assert len(command_list) == 1
-        command_time = command_list[0].time
-        assert Time.now().gps - command_time < 2.
+    assert len(command_list) == 1
+    command_time = command_list[0].time
+    assert Time.now().gps - command_time < 2.
 
-        command_time_obj = Time(command_time, format='gps')
-        expected = corr.CorrelatorControlCommand.create(command_time_obj,
-                                                        command)
+    command_time_obj = Time(command_time, format='gps')
+    expected = corr.CorrelatorControlCommand.create(command_time_obj,
+                                                    command)
 
-        assert command_list[0].isclose(expected)
+    assert command_list[0].isclose(expected)
 
-        # test adding the command(s) to the database and retrieving them
-        for cmd in command_list:
-            test_session.add(cmd)
-        result_list = test_session.get_correlator_control_command(
-            starttime=Time.now() - TimeDelta(10, format='sec'),
-            stoptime=Time.now() + TimeDelta(10, format='sec'), command=command)
-        assert len(result_list) == 1
-        assert command_list[0].isclose(result_list[0])
+    # test adding the command(s) to the database and retrieving them
+    for cmd in command_list:
+        test_session.add(cmd)
+    result_list = test_session.get_correlator_control_command(
+        starttime=Time.now() - TimeDelta(10, format='sec'),
+        stoptime=Time.now() + TimeDelta(10, format='sec'), command=command)
+    assert len(result_list) == 1
+    assert command_list[0].isclose(result_list[0])
 
 
 def test_take_data_command_no_recent_status(mcsession):
@@ -607,13 +643,13 @@ def test_take_data_command_no_recent_status(mcsession):
     assert command_list[1].isclose(expected_args)
 
 
-def test_control_command_with_recent_status(mcsession):
+@pytest.mark.parametrize(
+    ("commands_to_test"),
+    [list(set(corr.command_dict.keys())
+          - set(['take_data', 'update_config', 'restart']))])
+def test_control_command_with_recent_status(mcsession, commands_to_test):
     test_session = mcsession
     # test things on & off with a recent status
-    commands_to_test = list(corr.command_dict.keys())
-    commands_to_test.remove('take_data')
-    commands_to_test.remove('update_config')
-    commands_to_test.remove('restart')
     for command in commands_to_test:
         state_type = corr.command_state_map[command]['state_type']
         state = corr.command_state_map[command]['state']
@@ -707,63 +743,51 @@ def test_take_data_command_with_recent_status(mcsession):
     assert len(result_args) == 1
     assert result_args[0].isclose(expected_args)
 
-    result_args = test_session.get_correlator_take_data_arguments(starttime=Time.now())
+    result_args = test_session.get_correlator_take_data_arguments(
+        starttime=Time.now())
     assert len(result_args) == 1
     assert not result_args[0].isclose(expected_args)
 
 
-def test_control_command_errors(mcsession):
+@pytest.mark.parametrize(
+    ("command", "kwargs"),
+    [('foo', {}),
+     ('take_data', {'starttime': Time.now() + TimeDelta(10, format='sec'),
+                    'duration': 100}),
+     ('take_data', {'starttime': Time.now() + TimeDelta(10, format='sec'),
+                    'tag': 'engineering'}),
+     ('take_data', {'duration': 100, 'tag': 'engineering'}),
+     ('take_data', {'starttime': 'foo', 'duration': 100, 'tag': 'engineering'}),
+     ('take_data', {'starttime': Time.now() + TimeDelta(10, format='sec'),
+                    'duration': 100, 'tag': 'foo'}),
+     ('take_data', {'starttime': Time.now() + TimeDelta(10, format='sec'),
+                    'duration': 100, 'tag': 'foo', 'acclen_spectra': 2}),
+     ('noise_diode_on',
+      {'starttime': Time.now() + TimeDelta(10, format='sec')}),
+     ('phase_switching_off', {'duration': 100}),
+     ('restart', {'acclen_spectra': corr.DEFAULT_ACCLEN_SPECTRA}),
+     ('noise_diode_off', {'tag': 'engineering'})])
+def test_control_command_errors(mcsession, command, kwargs):
     test_session = mcsession
-    # test bad command
     pytest.raises(ValueError, test_session.correlator_control_command,
-                  'foo', testing=True)
+                  command, testing=True, **kwargs)
 
-    # test not setting required values for 'take_data'
-    starttime = Time.now() + TimeDelta(10, format='sec')
-    pytest.raises(ValueError, test_session.correlator_control_command,
-                  'take_data', starttime=starttime, duration=100, testing=True)
-    pytest.raises(ValueError, test_session.correlator_control_command,
-                  'take_data', starttime=starttime, tag='engineering',
-                  testing=True)
-    pytest.raises(ValueError, test_session.correlator_control_command,
-                  'take_data', duration=100, tag='engineering', testing=True)
 
-    # test bad values for 'take_data'
-    pytest.raises(ValueError, test_session.correlator_control_command,
-                  'take_data', starttime='foo', duration=100,
-                  tag='engineering', testing=True)
-
-    pytest.raises(ValueError, test_session.correlator_control_command,
-                  'take_data', starttime=starttime, duration=100,
-                  tag='foo', testing=True)
-
-    pytest.raises(ValueError, test_session.correlator_control_command,
-                  'take_data', starttime=starttime, duration=100,
-                  tag='engineering', acclen_spectra=2, testing=True)
-
-    # test setting values for 'take_data' with other commands
-    pytest.raises(ValueError, test_session.correlator_control_command,
-                  'noise_diode_on', starttime=starttime, testing=True)
-    pytest.raises(ValueError, test_session.correlator_control_command,
-                  'phase_switching_off', duration=100, testing=True)
-    pytest.raises(ValueError, test_session.correlator_control_command,
-                  'restart', acclen_spectra=corr.DEFAULT_ACCLEN_SPECTRA,
-                  testing=True)
-    pytest.raises(ValueError, test_session.correlator_control_command,
-                  'noise_diode_off', tag='engineering', testing=True)
-
+@pytest.mark.parametrize(
+    ("command"), list(set(corr.command_dict.keys())
+                      - set(['take_data', 'update_config',
+                             'stop_taking_data'])))
+def test_control_command_errors_taking_data(mcsession, command):
+    test_session = mcsession
     # test bad commands while taking data
     t1 = Time.now() - TimeDelta(60, format='sec')
     test_session.add_correlator_control_state(t1, 'taking_data', True)
 
-    commands_to_test = list(corr.command_dict.keys())
-    commands_to_test.remove('stop_taking_data')
-    commands_to_test.remove('take_data')
-    commands_to_test.remove('update_config')
-    for command in commands_to_test:
-        pytest.raises(RuntimeError, test_session.correlator_control_command,
-                      command, testing=True)
+    pytest.raises(RuntimeError, test_session.correlator_control_command,
+                  command, testing=True)
 
+
+def test_control_command_errors_other():
     pytest.raises(ValueError, corr.CorrelatorControlCommand.create,
                   'foo', 'take_data')
 
@@ -785,17 +809,17 @@ def test_get_next_start_time():
     corr._get_next_start_time()
 
 
-def test_corr_config_command_no_recent_config(mcsession):
+def test_corr_config_command_no_recent_config(mcsession, config):
     test_session = mcsession
     # test commanding a config with no recent config status
     t1 = Time.now()
 
-    with open(config_file, 'r') as fh:
+    with open(config[0], 'r') as fh:
         config_string = fh.read().encode('utf-8')
         config_hash = hashlib.md5(config_string).hexdigest()
 
     command_list = test_session.correlator_control_command(
-        'update_config', config_file=config_file, testing=True)
+        'update_config', config_file=config[0], testing=True)
     assert len(command_list) == 3
 
     # test adding the config obj(s) to the database and retrieving them
@@ -804,7 +828,7 @@ def test_corr_config_command_no_recent_config(mcsession):
         test_session.commit()
 
     file_expected = corr.CorrelatorConfigFile(
-        config_hash=config_hash, filename=config_file)
+        config_hash=config_hash, filename=config[0])
     assert command_list[0].isclose(file_expected)
 
     file_result = test_session.get_correlator_config_file(config_hash)
@@ -833,11 +857,11 @@ def test_corr_config_command_no_recent_config(mcsession):
     assert config_comm_result.isclose(config_comm_expected)
 
 
-def test_corr_config_command_with_recent_config(mcsession):
+def test_corr_config_command_with_recent_config(mcsession, config, corrconfig):
     test_session = mcsession
     # test commanding a config with a recent (different) config status
     corr_config_list = test_session.add_correlator_config_from_corrcm(
-        config_state_dict=corr_config_example_dict, testing=True)
+        config_state_dict=corrconfig, testing=True)
 
     for obj in corr_config_list:
         test_session.add(obj)
@@ -845,12 +869,12 @@ def test_corr_config_command_with_recent_config(mcsession):
 
     t1 = Time.now()
 
-    with open(config_file, 'r') as fh:
+    with open(config[0], 'r') as fh:
         config_string = fh.read().encode('utf-8')
         config_hash = hashlib.md5(config_string).hexdigest()
 
     command_list = test_session.correlator_control_command(
-        'update_config', config_file=config_file, testing=True)
+        'update_config', config_file=config[0], testing=True)
     assert len(command_list) == 3
 
     # test adding the config obj(s) to the database and retrieving them
@@ -859,7 +883,7 @@ def test_corr_config_command_with_recent_config(mcsession):
         test_session.commit()
 
     file_expected = corr.CorrelatorConfigFile(
-        config_hash=config_hash, filename=config_file)
+        config_hash=config_hash, filename=config[0])
     assert command_list[0].isclose(file_expected)
 
     file_result = test_session.get_correlator_config_file(config_hash)
@@ -889,14 +913,15 @@ def test_corr_config_command_with_recent_config(mcsession):
     assert config_comm_result.isclose(config_comm_expected)
 
 
-def test_corr_config_command_with_recent_config_match_prior(mcsession):
+def test_corr_config_command_with_recent_config_match_prior(mcsession,
+                                                            config, corrconfig):
     test_session = mcsession
     # test commanding a config with a recent (different) config status but a
     # matching prior one
     t1 = Time.now()
     t0 = Time(1512760942, format='unix')
 
-    with open(config_file, 'r') as fh:
+    with open(config[0], 'r') as fh:
         config_string = fh.read().encode('utf-8')
         config_hash = hashlib.md5(config_string).hexdigest()
 
@@ -921,14 +946,14 @@ def test_corr_config_command_with_recent_config_match_prior(mcsession):
 
     # make more recent one that doesn't match
     corr_config_list = test_session.add_correlator_config_from_corrcm(
-        config_state_dict=corr_config_example_dict, testing=True)
+        config_state_dict=corrconfig, testing=True)
 
     for obj in corr_config_list:
         test_session.add(obj)
         test_session.commit()
 
     command_list = test_session.correlator_control_command(
-        'update_config', config_file=config_file, testing=True)
+        'update_config', config_file=config[0], testing=True)
     assert len(command_list) == 2
 
     # test adding the config obj(s) to the database and retrieving them
@@ -957,12 +982,12 @@ def test_corr_config_command_with_recent_config_match_prior(mcsession):
     assert config_comm_result.isclose(config_comm_expected)
 
 
-def test_corr_config_command_same_recent_config(mcsession):
+def test_corr_config_command_same_recent_config(mcsession, config):
     test_session = mcsession
     # test commanding a config with the same recent config status
     t0 = Time(1512760942, format='unix')
 
-    with open(config_file, 'r') as fh:
+    with open(config[0], 'r') as fh:
         config_string = fh.read().encode('utf-8')
         config_hash = hashlib.md5(config_string).hexdigest()
 
@@ -986,11 +1011,11 @@ def test_corr_config_command_same_recent_config(mcsession):
     assert file_result.isclose(file_expected)
 
     command_list = test_session.correlator_control_command(
-        'update_config', config_file=config_file, testing=True)
+        'update_config', config_file=config[0], testing=True)
     assert len(command_list) == 0
 
 
-def test_config_command_errors(mcsession):
+def test_config_command_errors(mcsession, config):
     test_session = mcsession
     pytest.raises(ValueError, corr.CorrelatorConfigCommand.create,
                   'foo', 'testhash')
@@ -1001,12 +1026,12 @@ def test_config_command_errors(mcsession):
 
     # setting config_file with other commands
     pytest.raises(ValueError, test_session.correlator_control_command,
-                  'restart', config_file=config_file, testing=True)
+                  'restart', config_file=config[0], testing=True)
 
     starttime = Time.now() + TimeDelta(10, format='sec')
     pytest.raises(ValueError, test_session.correlator_control_command,
                   'take_data', starttime=starttime, duration=100,
-                  tag='engineering', config_file=config_file, testing=True)
+                  tag='engineering', config_file=config[0], testing=True)
 
 
 def test_add_correlator_software_versions(mcsession):
@@ -1075,12 +1100,12 @@ def test_software_version_errors(mcsession):
                   'foo', 'hera_corr_cm', '0.0.1-11a573c9')
 
 
-def test_add_snap_config_version(mcsession):
+def test_add_snap_config_version(mcsession, config, init_args):
     test_session = mcsession
     t1 = Time('2016-01-10 01:15:23', scale='utc')
     t2 = t1 + TimeDelta(120.0, format='sec')
 
-    test_session.add_correlator_config_file('testhash', config_file)
+    test_session.add_correlator_config_file('testhash', config[0])
     test_session.commit()
     test_session.add_correlator_config_status(t1, 'testhash')
     test_session.commit()
@@ -1098,7 +1123,7 @@ def test_add_snap_config_version(mcsession):
     result = result[0]
     assert result.isclose(expected)
 
-    test_session.add_correlator_config_file('testhash2', config_file)
+    test_session.add_correlator_config_file('testhash2', config[0])
     test_session.commit()
     test_session.add_correlator_config_status(t2, 'testhash2')
     test_session.commit()
@@ -1130,18 +1155,18 @@ def test_add_snap_config_version(mcsession):
     assert result == []
 
 
-def test_snap_config_version_errors(mcsession):
+def test_snap_config_version_errors(mcsession, init_args):
     test_session = mcsession
     pytest.raises(ValueError, test_session.add_snap_config_version,
                   'foo', '0.0.1-3c7fdaf6', init_args, 'testhash')
 
 
-def test_add_corr_snap_versions_from_corrcm(mcsession):
+def test_add_corr_snap_versions_from_corrcm(mcsession, snapversion, init_args):
     test_session = mcsession
     # use testing to prevent call to hera_librarian to save new config file
     corr_snap_version_obj_list = \
         test_session.add_corr_snap_versions_from_corrcm(
-            corr_snap_version_dict=corr_snap_version_example_dict, testing=True)
+            corr_snap_version_dict=snapversion, testing=True)
 
     for obj in corr_snap_version_obj_list:
         test_session.add(obj)
@@ -1212,7 +1237,7 @@ def test_add_corr_snap_versions_from_corrcm(mcsession):
 
     # test that a new hera_corr_cm timestamp with the same version doesn't make
     # a new row
-    new_dict = copy.deepcopy(corr_snap_version_example_dict)
+    new_dict = copy.deepcopy(snapversion)
     new_dict['hera_corr_cm']['timestamp'] = (
         datetime.datetime(2019, 4, 2, 19, 8, 17, 644984))
 
@@ -1236,7 +1261,7 @@ def test_add_corr_snap_versions_from_corrcm(mcsession):
     assert result[0].isclose(expected)
 
     # test that a new hera_corr_cm timestamp with a new version makes a new row
-    new_dict = copy.deepcopy(corr_snap_version_example_dict)
+    new_dict = copy.deepcopy(snapversion)
     new_dict['hera_corr_cm']['timestamp'] = (
         datetime.datetime(2019, 4, 2, 19, 8, 17, 644984))
     new_dict['hera_corr_cm']['version'] = '0.0.1-b43b2b72'
@@ -1345,10 +1370,10 @@ def test_add_snap_status(mcsession):
     assert result == []
 
 
-def test_add_snap_status_from_corrcm(mcsession):
+def test_add_snap_status_from_corrcm(mcsession, snapstatus):
     test_session = mcsession
     test_session.add_snap_status_from_corrcm(
-        snap_status_dict=snap_status_example_dict)
+        snap_status_dict=snapstatus)
 
     t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
               format='datetime')
@@ -1392,10 +1417,10 @@ def test_add_snap_status_from_corrcm(mcsession):
     assert len(result_most_recent) == 2
 
 
-def test_add_snap_status_from_corrcm_with_nones(mcsession):
+def test_add_snap_status_from_corrcm_with_nones(mcsession, snapstatus_none):
     test_session = mcsession
     snap_status_obj_list = test_session.add_snap_status_from_corrcm(
-        snap_status_dict=snap_status_none_example_dict, testing=True)
+        snap_status_dict=snapstatus_none, testing=True)
 
     for obj in snap_status_obj_list:
         test_session.add(obj)
@@ -1468,7 +1493,7 @@ def test_get_node_snap_from_serial_errors(mcsession):
     # test multiple times
     node, snap_loc_num = checkWarnings(
         test_session._get_node_snap_from_serial, ['SNPC000020'], nwarnings=0)
-    assert node, 4
+    assert node == 4
     assert snap_loc_num == 3
 
     # test multiple times with change in location
@@ -1496,10 +1521,10 @@ def test_get_node_snap_from_serial_errors(mcsession):
     assert node is None
 
 
-def test_get_snap_hostname_from_serial(mcsession):
+def test_get_snap_hostname_from_serial(mcsession, snapstatus):
     test_session = mcsession
     test_session.add_snap_status_from_corrcm(
-        snap_status_dict=snap_status_example_dict)
+        snap_status_dict=snapstatus)
 
     hostname = test_session.get_snap_hostname_from_serial('SNPA000222')
     assert hostname == 'heraNode23Snap1'
@@ -1625,9 +1650,6 @@ def test_add_antenna_status(mcsession):
         starttime=t1 - TimeDelta(3.0, format='sec'), antenna_number=31)
     assert len(result) == 1
     result = result[0]
-    print(result.fem_voltage)
-    print(type(result.fem_voltage))
-    print(type(expected.fem_voltage))
     assert result.isclose(expected)
 
     result_most_recent = test_session.get_antenna_status(antenna_number=31)
@@ -1647,10 +1669,10 @@ def test_add_antenna_status(mcsession):
     assert result == []
 
 
-def test_add_antenna_status_from_corrcm(mcsession):
+def test_add_antenna_status_from_corrcm(mcsession, antstatus):
     test_session = mcsession
     ant_status_obj_list = test_session.add_antenna_status_from_corrcm(
-        ant_status_dict=ant_status_example_dict, testing=True)
+        ant_status_dict=antstatus, testing=True)
 
     for obj in ant_status_obj_list:
         test_session.add(obj)
@@ -1695,8 +1717,6 @@ def test_add_antenna_status_from_corrcm(mcsession):
 
     assert len(result) == 1
     result = result[0]
-    print(result.fem_id)
-    print(expected.fem_id)
     assert result.isclose(expected)
 
     result_most_recent = test_session.get_antenna_status(antenna_number=4)
@@ -1745,10 +1765,10 @@ def test_add_antenna_status_from_corrcm(mcsession):
     assert len(result_most_recent) == 2
 
 
-def test_add_antenna_status_from_corrcm_with_nones(mcsession):
+def test_add_antenna_status_from_corrcm_with_nones(mcsession, antstatus_none):
     test_session = mcsession
     test_session.add_antenna_status_from_corrcm(
-        ant_status_dict=ant_status_nones_example_dict)
+        ant_status_dict=antstatus_none)
 
     t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
               format='datetime')

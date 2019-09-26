@@ -18,6 +18,7 @@ from .. import weather
 from . import onsite
 
 
+# could be parameterized
 def test_reduce_time_vals():
     times = np.array(range(125)) + 31.24
     values = np.array(range(125)) + 31.24

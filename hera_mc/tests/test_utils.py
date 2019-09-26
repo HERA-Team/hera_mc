@@ -13,9 +13,6 @@ from astropy.units import Quantity
 
 from .. import utils
 
-# length of sidereal second in SI seconds.
-sidesec = Quantity(1, 'sday').to('day').value
-
 
 def test_LSTScheduler_lstbinsize():
     """
@@ -29,6 +26,8 @@ def test_LSTScheduler_lstbinsize():
     print((hour2 - hour1).hour * 3600)
     print(LSTbin_size)
     assert np.isclose((hour2 - hour1).hour * 3600, LSTbin_size)
+    # length of sidereal second in SI seconds.
+    sidesec = Quantity(1, 'sday').to('day').value
     npt.assert_almost_equal((scheduletime2 - scheduletime1).value * 24 * 3600,
                             LSTbin_size * sidesec, decimal=5)
 

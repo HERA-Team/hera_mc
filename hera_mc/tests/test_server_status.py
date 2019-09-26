@@ -16,19 +16,31 @@ from ..rtp import RTPServerStatus
 from ..librarian import LibServerStatus
 
 
-column_names = ['hostname', 'mc_time', 'ip_address', 'system_time',
-                'num_cores', 'cpu_load_pct', 'uptime_days',
-                'memory_used_pct', 'memory_size_gb',
-                'disk_space_pct', 'disk_size_gb',
-                'network_bandwidth_mbs']
-column_values = ['test_host', Time.now(), '0.0.0.0', Time.now(),
-                 16, 20.5, 31.4, 43.2, 32., 46.8, 510.4, 10.4]
-columns = dict(zip(column_names, column_values))
+@pytest.fixture(scope='module')
+def status():
+    class DataHolder(object):
+        column_names = ['hostname', 'mc_time', 'ip_address', 'system_time',
+                        'num_cores', 'cpu_load_pct', 'uptime_days',
+                        'memory_used_pct', 'memory_size_gb',
+                        'disk_space_pct', 'disk_size_gb',
+                        'network_bandwidth_mbs']
+        column_values = ['test_host', Time.now(), '0.0.0.0', Time.now(),
+                         16, 20.5, 31.4, 43.2, 32., 46.8, 510.4, 10.4]
+        columns = dict(zip(column_names, column_values))
+    data = DataHolder()
+
+    # yields the data we need but will continue to the del call after tests
+    yield data
+
+    # some post-test object cleanup
+    del(data)
+
+    return
 
 
-def test_repr():
+def test_repr(status):
     for sub in ['rtp', 'lib']:
-        exp_columns = columns.copy()
+        exp_columns = status.columns.copy()
         exp_columns['mc_time'] = int(floor(exp_columns['mc_time'].gps))
         exp_columns.pop('system_time')
         exp_columns['mc_system_timediff'] = 0
@@ -47,10 +59,10 @@ def test_repr():
     assert str(servstat) == rep_string
 
 
-def test_add_server_status(mcsession):
+def test_add_server_status(mcsession, status):
     test_session = mcsession
     for sub in ['rtp', 'lib']:
-        exp_columns = columns.copy()
+        exp_columns = status.columns.copy()
         exp_columns['mc_time'] = int(floor(Time.now().gps))
         exp_columns['mc_system_timediff'] = (exp_columns['mc_time']
                                              - exp_columns['system_time'].gps)
@@ -61,21 +73,22 @@ def test_add_server_status(mcsession):
         elif sub == 'lib':
             expected = LibServerStatus(**exp_columns)
 
-        test_session.add_server_status(sub, column_values[0],
-                                       *column_values[2:11],
-                                       network_bandwidth_mbs=column_values[11])
+        test_session.add_server_status(
+            sub, status.column_values[0], *status.column_values[2:11],
+            network_bandwidth_mbs=status.column_values[11])
         result = test_session.get_server_status(
-            sub, starttime=columns['system_time'] - TimeDelta(2, format='sec'))
+            sub, starttime=(status.columns['system_time']
+                            - TimeDelta(2, format='sec')))
         assert len(result) == 1
         result = result[0]
 
         if sub == 'rtp':
             result = test_session.get_rtp_server_status(
-                sub, starttime=columns['system_time']
+                sub, starttime=status.columns['system_time']
                 - TimeDelta(2, format='sec'))
         else:
             result = test_session.get_librarian_server_status(
-                sub, starttime=columns['system_time']
+                sub, starttime=status.columns['system_time']
                 - TimeDelta(2, format='sec'))
         assert len(result) == 1
         result = result[0]
@@ -90,24 +103,30 @@ def test_add_server_status(mcsession):
 
         assert result.isclose(expected)
 
-        test_session.add_server_status(sub, 'test_host2', *column_values[2:11],
-                                       network_bandwidth_mbs=column_values[11])
+        test_session.add_server_status(
+            sub, 'test_host2', *status.column_values[2:11],
+            network_bandwidth_mbs=status.column_values[11])
         result_host = test_session.get_server_status(
-            sub, starttime=columns['system_time'] - TimeDelta(2, format='sec'),
-            hostname=columns['hostname'],
-            stoptime=columns['system_time'] + TimeDelta(2 * 60, format='sec'))
+            sub, starttime=(status.columns['system_time']
+                            - TimeDelta(2, format='sec')),
+            hostname=status.columns['hostname'],
+            stoptime=(status.columns['system_time']
+                      + TimeDelta(2 * 60, format='sec')))
         assert len(result_host) == 1
         result_host = result_host[0]
         assert result_host.isclose(expected)
 
         result_mult = test_session.get_server_status(
-            sub, starttime=columns['system_time'] - TimeDelta(2, format='sec'),
-            stoptime=columns['system_time'] + TimeDelta(2 * 60, format='sec'))
+            sub, starttime=(status.columns['system_time']
+                            - TimeDelta(2, format='sec')),
+            stoptime=(status.columns['system_time']
+                      + TimeDelta(2 * 60, format='sec')))
 
         assert len(result_mult) == 2
 
         result2 = test_session.get_server_status(
-            sub, starttime=columns['system_time'] - TimeDelta(2, format='sec'),
+            sub, starttime=(status.columns['system_time']
+                            - TimeDelta(2, format='sec')),
             hostname='test_host2')[0]
         # mc_times will be different, so won't match. set them equal so that
         # we can test the rest
@@ -115,34 +134,34 @@ def test_add_server_status(mcsession):
         assert not result2.isclose(expected)
 
 
-def test_errors_server_statuss(mcsession):
+def test_errors_server_statuss(mcsession, status):
     test_session = mcsession
     for sub in ['rtp', 'lib']:
         pytest.raises(ValueError, test_session.add_server_status, sub,
-                      column_values[0], column_values[2],
-                      'foo', *column_values[4:11],
-                      network_bandwidth_mbs=column_values[11])
+                      status.column_values[0], status.column_values[2],
+                      'foo', *status.column_values[4:11],
+                      network_bandwidth_mbs=status.column_values[11])
 
         test_session.add_server_status(
-            sub, column_values[0], *column_values[2:11],
-            network_bandwidth_mbs=column_values[11])
+            sub, status.column_values[0], *status.column_values[2:11],
+            network_bandwidth_mbs=status.column_values[11])
         pytest.raises(ValueError, test_session.get_server_status,
                       sub, starttime='test_host')
         pytest.raises(ValueError, test_session.get_server_status,
-                      sub, starttime=columns['system_time'],
+                      sub, starttime=status.columns['system_time'],
                       stoptime='test_host')
 
         if sub == 'rtp':
             pytest.raises(ValueError, RTPServerStatus.create, 'foo',
-                          column_values[0], *column_values[2:11],
-                          network_bandwidth_mbs=column_values[11])
+                          status.column_values[0], *status.column_values[2:11],
+                          network_bandwidth_mbs=status.column_values[11])
         elif sub == 'lib':
             pytest.raises(ValueError, LibServerStatus.create, 'foo',
-                          column_values[0], *column_values[2:11],
-                          network_bandwidth_mbs=column_values[11])
+                          status.column_values[0], *status.column_values[2:11],
+                          network_bandwidth_mbs=status.column_values[11])
 
     pytest.raises(ValueError, test_session.add_server_status, 'foo',
-                  column_values[0], *column_values[2:11],
-                  network_bandwidth_mbs=column_values[11])
+                  status.column_values[0], *status.column_values[2:11],
+                  network_bandwidth_mbs=status.column_values[11])
     pytest.raises(ValueError, test_session.get_server_status,
-                  'foo', starttime=column_values[1])
+                  'foo', starttime=status.column_values[1])

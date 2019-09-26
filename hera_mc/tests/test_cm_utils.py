@@ -43,23 +43,25 @@ def test_various():
     assert x == 'unittest'
 
 
-def test_stringify_listify():
-    x = cm_utils.stringify(None)
-    assert x is None
-    x = cm_utils.stringify('Test')
-    assert x == 'Test'
-    x = cm_utils.stringify(['a', 'b'])
-    assert x == 'a,b'
-    x = cm_utils.stringify(0)
-    assert x == '0'
-    x = cm_utils.listify(None)
-    assert x is None
-    x = cm_utils.listify('Test')
-    assert x[0] == 'Test'
-    x = cm_utils.listify('a,b')
-    assert x[0] == 'a'
-    x = cm_utils.listify(['a', 'b'])
-    assert x[0] == 'a'
+@pytest.mark.parametrize(("input", "expected"),
+                         [(None, None), ('Test', 'Test'), (['a', 'b'], 'a,b')])
+def test_stringify(input, expected):
+    x = cm_utils.stringify(input)
+    if expected is not None:
+        assert x == expected
+    else:
+        assert x is expected
+
+
+@pytest.mark.parametrize(("input", "expected"),
+                         [(None, None), ('Test', ['Test']),
+                          ('a,b', ['a', 'b'])])
+def test_listify(input, expected):
+    x = cm_utils.listify(input)
+    if expected is not None:
+        assert x == expected
+    else:
+        assert x is expected
 
 
 def test_verbosity():

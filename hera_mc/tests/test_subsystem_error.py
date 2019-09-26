@@ -13,25 +13,37 @@ from astropy.time import Time, TimeDelta
 from ..subsystem_error import SubsystemError
 
 
-time = Time.now()
-subsystem_error_names = ['id', 'time', 'subsystem', 'mc_time', 'severity',
-                         'log']
-subsystem_error_values = [1, time, 'librarian', time, 1, 'bad problem']
-subsystem_error_columns = dict(zip(subsystem_error_names,
-                                   subsystem_error_values))
+@pytest.fixture(scope='module')
+def subsys():
+    class DataHolder(object):
+        time = Time.now()
+        subsystem_error_names = ['id', 'time', 'subsystem', 'mc_time',
+                                 'severity', 'log']
+        subsystem_error_values = [1, time, 'librarian', time, 1, 'bad problem']
+        subsystem_error_columns = dict(zip(subsystem_error_names,
+                                           subsystem_error_values))
+    data = DataHolder()
+
+    # yields the data we need but will continue to the del call after tests
+    yield data
+
+    # some post-test object cleanup
+    del(data)
+
+    return
 
 
-def test_add_subsystem_error(mcsession):
+def test_add_subsystem_error(mcsession, subsys):
     test_session = mcsession
-    exp_columns = subsystem_error_columns.copy()
+    exp_columns = subsys.subsystem_error_columns.copy()
     exp_columns['time'] = int(floor(exp_columns['time'].gps))
     exp_columns['mc_time'] = int(floor(exp_columns['mc_time'].gps))
     expected = SubsystemError(**exp_columns)
 
     # try testing mode
     error_obj = test_session.add_subsystem_error(
-        subsystem_error_values[1], subsystem_error_values[2],
-        *subsystem_error_values[4:], testing=True)
+        subsys.subsystem_error_values[1], subsys.subsystem_error_values[2],
+        *subsys.subsystem_error_values[4:], testing=True)
 
     # error_obj.id isn't set because that's autoincremented by the database
     error_obj.id = expected.id
@@ -41,35 +53,35 @@ def test_add_subsystem_error(mcsession):
 
     assert error_obj.isclose(expected)
 
-    test_session.add_subsystem_error(subsystem_error_values[1],
-                                     subsystem_error_values[2],
-                                     *subsystem_error_values[4:])
+    test_session.add_subsystem_error(subsys.subsystem_error_values[1],
+                                     subsys.subsystem_error_values[2],
+                                     *subsys.subsystem_error_values[4:])
     # now actually add it
     result = test_session.get_subsystem_error(
-        starttime=subsystem_error_columns['time']
+        starttime=subsys.subsystem_error_columns['time']
         - TimeDelta(2 * 60, format='sec'))
     assert len(result) == 1
     result = result[0]
 
     assert result.isclose(expected)
 
-    test_session.add_subsystem_error(subsystem_error_values[1], 'rtp',
-                                     *subsystem_error_values[4:])
+    test_session.add_subsystem_error(subsys.subsystem_error_values[1], 'rtp',
+                                     *subsys.subsystem_error_values[4:])
     result_subsystem = \
         test_session.get_subsystem_error(
-            starttime=subsystem_error_columns['time']
+            starttime=subsys.subsystem_error_columns['time']
             - TimeDelta(2, format='sec'),
-            subsystem=subsystem_error_columns['subsystem'],
-            stoptime=subsystem_error_columns['time']
+            subsystem=subsys.subsystem_error_columns['subsystem'],
+            stoptime=subsys.subsystem_error_columns['time']
             + TimeDelta(2 * 60, format='sec'))
     assert len(result_subsystem) == 1
     result_subsystem = result_subsystem[0]
     assert result_subsystem.isclose(expected)
 
     result_mult = test_session.get_subsystem_error(
-        starttime=subsystem_error_columns['time']
+        starttime=subsys.subsystem_error_columns['time']
         - TimeDelta(2, format='sec'),
-        stoptime=subsystem_error_columns['time']
+        stoptime=subsys.subsystem_error_columns['time']
         + TimeDelta(2 * 60, format='sec'))
 
     assert len(result_mult) == 2
@@ -79,22 +91,22 @@ def test_add_subsystem_error(mcsession):
     assert subsystems == ['librarian', 'rtp']
 
     result2 = test_session.get_subsystem_error(
-        starttime=subsystem_error_columns['time'] - TimeDelta(2, format='sec'),
+        starttime=subsys.subsystem_error_columns['time'] - TimeDelta(2, format='sec'),
         subsystem='rtp')[0]
 
     assert not result2.isclose(expected)
 
 
-def test_errors_subsystem_error(mcsession):
+def test_errors_subsystem_error(mcsession, subsys):
     test_session = mcsession
     pytest.raises(ValueError, test_session.add_subsystem_error,
-                  'foo', subsystem_error_values[2],
-                  *subsystem_error_values[4:])
+                  'foo', subsys.subsystem_error_values[2],
+                  *subsys.subsystem_error_values[4:])
 
-    test_session.add_subsystem_error(subsystem_error_values[1],
-                                     subsystem_error_values[2],
-                                     *subsystem_error_values[4:])
+    test_session.add_subsystem_error(subsys.subsystem_error_values[1],
+                                     subsys.subsystem_error_values[2],
+                                     *subsys.subsystem_error_values[4:])
     pytest.raises(ValueError, test_session.get_subsystem_error,
                   starttime='foo')
     pytest.raises(ValueError, test_session.get_subsystem_error,
-                  starttime=subsystem_error_columns['time'], stoptime='foo')
+                  starttime=subsys.subsystem_error_columns['time'], stoptime='foo')
