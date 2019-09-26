@@ -6,28 +6,10 @@
 
 from __future__ import absolute_import, division, print_function
 
-import sys
-from contextlib import contextmanager
-
-import six
 import pytest
 from astropy.time import Time
 
 from .. import cm_partconnect, cm_handling, cm_health
-
-
-# define a context manager for checking stdout
-# from https://stackoverflow.com/questions/4219717/
-#   how-to-assert-output-with-nosetest-unittest-in-python
-@contextmanager
-def captured_output():
-    new_out, new_err = six.StringIO(), six.StringIO()
-    old_out, old_err = sys.stdout, sys.stderr
-    try:
-        sys.stdout, sys.stderr = new_out, new_err
-        yield sys.stdout, sys.stderr
-    finally:
-        sys.stdout, sys.stderr = old_out, old_err
 
 
 @pytest.fixture(scope='function')
@@ -89,7 +71,7 @@ def conns(mcsession):
     return
 
 
-def test_update_new(conns):
+def test_update_new(conns, capsys):
     u = 'new_test_part_up'
     d = 'new_test_part_down'
     r = 'A'
@@ -120,18 +102,21 @@ def test_update_new(conns):
     assert str(located[prkey]).startswith('NEW_TEST_PART_UP:A')
     ckey = located[prkey].keys_down[0]
     assert located[prkey].down[ckey].upstream_part == u
-    with captured_output() as (out, err):
-        conns.cm_handle.show_connections(located)
+
+    conns.cm_handle.show_connections(located)
+    captured = capsys.readouterr()
     assert ('new_test_part_up:A | up_and_out  | down_and_in | '
-            'new_test_part_down:A' in out.getvalue().strip())
-    with captured_output() as (out, err):
-        conns.cm_handle.show_connections(located, verbosity=1)
+            'new_test_part_down:A' in captured.out.strip())
+
+    conns.cm_handle.show_connections(located, verbosity=1)
+    captured = capsys.readouterr()
     assert ('new_test_part_up:A | new_test_part_down:A'
-            in out.getvalue().strip())
-    with captured_output() as (out, err):
-        conns.cm_handle.show_connections(located, verbosity=2)
+            in captured.out.strip())
+
+    conns.cm_handle.show_connections(located, verbosity=2)
+    captured = capsys.readouterr()
     assert ('new_test_part_up:A | up_and_out  | down_and_in | '
-            'new_test_part_down:A' in out.getvalue().strip())
+            'new_test_part_down:A' in captured.out.strip())
 
 
 def test_get_null_connection():
@@ -139,23 +124,24 @@ def test_get_null_connection():
     assert nc.upstream_part == cm_partconnect.no_connection_designator
 
 
-def test_get_dossier(conns):
+def test_get_dossier(conns, capsys):
     x = conns.cm_handle.get_part_connection_dossier(
         'test_part1', 'active', 'all', at_date='now', exact_match=True)
     y = list(x.keys())[0]
     assert y == 'test_part1:Q'
-    with captured_output() as (out, err):
-        conns.cm_handle.show_connections(x)
+
+    conns.cm_handle.show_connections(x)
+    captured = capsys.readouterr()
     assert ('test_part1:Q | up_and_out  | down_and_in | test_part2:Q'
-            in out.getvalue().strip())
+            in captured.out.strip())
     x = conns.cm_handle.get_part_connection_dossier(
         'test_part2', 'active', 'all', at_date='now', exact_match=True)
     y = list(x.keys())[0]
     assert y == 'test_part2:Q'
-    with captured_output() as (out, err):
-        conns.cm_handle.show_connections(x)
+    conns.cm_handle.show_connections(x)
+    captured = capsys.readouterr()
     assert ('test_part1:Q | up_and_out  | down_and_in | test_part2:Q'
-            in out.getvalue().strip())
+            in captured.out.strip())
     old_time = Time('2014-08-01 01:00:00', scale='utc')
     x = conns.cm_handle.get_part_connection_dossier(
         'test_part1', 'active', 'all', at_date=old_time, exact_match=True)
@@ -166,9 +152,9 @@ def test_get_dossier(conns):
     z = {}
     z['tst'] = cm_handling.PartConnectionDossierEntry(
         'test_part1', 'active', 'all')
-    with captured_output() as (out, err):
-        conns.cm_handle.show_connections(z)
-    assert 'Q' not in out.getvalue().strip()
+    conns.cm_handle.show_connections(z)
+    captured = capsys.readouterr()
+    assert 'Q' not in captured.out.strip()
 
 
 def test_get_specific_connection(conns):

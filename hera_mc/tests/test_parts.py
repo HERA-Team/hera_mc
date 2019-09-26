@@ -6,29 +6,11 @@
 
 from __future__ import absolute_import, division, print_function
 
-import sys
-from contextlib import contextmanager
-
-import six
 import pytest
 from astropy.time import Time
 
 from hera_mc import cm_partconnect, cm_utils, cm_handling, cm_revisions
 from hera_mc.tests import checkWarnings
-
-
-# define a context manager for checking stdout
-# from https://stackoverflow.com/questions/4219717/
-#     how-to-assert-output-with-nosetest-unittest-in-python
-@contextmanager
-def captured_output():
-    new_out, new_err = six.StringIO(), six.StringIO()
-    old_out, old_err = sys.stdout, sys.stderr
-    try:
-        sys.stdout, sys.stderr = new_out, new_err
-        yield sys.stdout, sys.stderr
-    finally:
-        sys.stdout, sys.stderr = old_out, old_err
 
 
 @pytest.fixture(scope='function')
@@ -92,11 +74,11 @@ def test_find_part_type(parts):
     assert pt == parts.test_hptype
 
 
-def test_update_part(parts):
+def test_update_part(parts, capsys):
     data = [[parts.test_part, parts.test_rev, 'not_an_attrib', 'Z']]
-    with captured_output() as (out, err):
-        cm_partconnect.update_part(parts.test_session, data)
-    assert 'does not exist as a field' in out.getvalue().strip()
+    cm_partconnect.update_part(parts.test_session, data)
+    captured = capsys.readouterr()
+    assert 'does not exist as a field' in captured.out.strip()
     data = [[parts.test_part, parts.test_rev, 'hpn_rev', 'Z']]
     cm_partconnect.update_part(parts.test_session, data)
     dtq = Time('2017-07-01 01:00:00', scale='utc')
@@ -118,7 +100,7 @@ def test_format_and_check_update_part_request(parts):
     assert x['test_part:Q'][2][3] == 'one'
 
 
-def test_part_dossier(parts):
+def test_part_dossier(parts, capsys):
     located = parts.cm_handle.get_part_dossier(
         hpn=None, rev=None, at_date='now', sort_notes_by='part',
         exact_match=True)
@@ -126,41 +108,41 @@ def test_part_dossier(parts):
     located = parts.cm_handle.get_part_dossier(
         hpn=None, rev=None, at_date='now', sort_notes_by='post',
         exact_match=True)
-    with captured_output() as (out, err):
-        parts.cm_handle.show_parts(located, notes_only=True)
-    assert 'System:A' in out.getvalue().strip()
+    parts.cm_handle.show_parts(located, notes_only=True)
+    captured = capsys.readouterr()
+    assert 'System:A' in captured.out.strip()
 
 
-def test_show_parts(parts):
+def test_show_parts(parts, capsys):
     cm_partconnect.add_part_info(
         parts.test_session, parts.test_part, parts.test_rev, parts.start_time,
         'Testing', 'library_file')
     located = parts.cm_handle.get_part_dossier(
         hpn=[parts.test_part], rev=parts.test_rev, at_date='now',
         exact_match=True)
-    with captured_output() as (out, err):
-        parts.cm_handle.show_parts(located)
+    parts.cm_handle.show_parts(located)
+    captured = capsys.readouterr()
     assert ('TEST_PART  | Q     | antenna     |         | 2017-07-01 01:00:37'
-            in out.getvalue().strip())
-    with captured_output() as (out, err):
-        parts.cm_handle.show_parts(located, notes_only=True)
-    assert 'library_file' in out.getvalue().strip()
-    with captured_output() as (out, err):
-        parts.cm_handle.show_parts({})
-    assert 'Part not found' in out.getvalue().strip()
+            in captured.out.strip())
+    parts.cm_handle.show_parts(located, notes_only=True)
+    captured = capsys.readouterr()
+    assert 'library_file' in captured.out.strip()
+    parts.cm_handle.show_parts({})
+    captured = capsys.readouterr()
+    assert 'Part not found' in captured.out.strip()
     located = parts.cm_handle.get_part_dossier(
         hpn=['A0'], rev=['H'], at_date='now', exact_match=True)
-    with captured_output() as (out, err):
-        parts.cm_handle.show_parts(located, notes_only=True)
-    assert 'Comment 2' in out.getvalue().strip()
+    parts.cm_handle.show_parts(located, notes_only=True)
+    captured = capsys.readouterr()
+    assert 'Comment 2' in captured.out.strip()
     located = parts.cm_handle.get_part_dossier(
         hpn=['HH0'], rev=['A'], at_date='now', exact_match=True)
-    with captured_output() as (out, err):
-        parts.cm_handle.show_parts(located)
-    assert '540901.6E, 6601070.7N, 1052.6m' in out.getvalue().strip()
+    parts.cm_handle.show_parts(located)
+    captured = capsys.readouterr()
+    assert '540901.6E, 6601070.7N, 1052.6m' in captured.out.strip()
 
 
-def test_part_info(parts):
+def test_part_info(parts, capsys):
     cm_partconnect.add_part_info(
         parts.test_session, parts.test_part, parts.test_rev,
         Time('2017-07-01 01:00:00'), 'Testing', 'library_file')
@@ -171,27 +153,27 @@ def test_part_info(parts):
     test_info = cm_partconnect.PartInfo()
     test_info.info(hpn='A', hpn_rev='B', posting_gpstime=1172530000,
                    comment='Hey Hey!')
-    with captured_output() as (out, err):
-        print(test_info)
-    assert 'heraPartNumber id = A:B' in out.getvalue().strip()
+    print(test_info)
+    captured = capsys.readouterr()
+    assert 'heraPartNumber id = A:B' in captured.out.strip()
     test_info.gps2Time()
     assert int(test_info.posting_date.gps) == 1172530000
 
 
-def test_add_new_parts(parts):
+def test_add_new_parts(parts, capsys):
     a_time = Time('2017-07-01 01:00:00', scale='utc')
     data = [[parts.test_part, parts.test_rev, parts.test_hptype, 'xxx']]
-    with captured_output() as (out, err):
-        cm_partconnect.add_new_parts(parts.test_session, data, a_time, True)
-    assert "No action." in out.getvalue().strip()
+    cm_partconnect.add_new_parts(parts.test_session, data, a_time, True)
+    captured = capsys.readouterr()
+    assert "No action." in captured.out.strip()
 
     cm_partconnect.stop_existing_parts(parts.test_session, data, a_time, False)
-    with captured_output() as (out, err):
-        cm_partconnect.add_new_parts(parts.test_session, data, a_time, False)
-    assert "No action." in out.getvalue().strip()
-    with captured_output() as (out, err):
-        cm_partconnect.add_new_parts(parts.test_session, data, a_time, True)
-    assert "Restarting part test_part:q" in out.getvalue().strip()
+    cm_partconnect.add_new_parts(parts.test_session, data, a_time, False)
+    captured = capsys.readouterr()
+    assert "No action." in captured.out.strip()
+    cm_partconnect.add_new_parts(parts.test_session, data, a_time, True)
+    captured = capsys.readouterr()
+    assert "Restarting part test_part:q" in captured.out.strip()
 
     data = [['part_X', 'X', 'station', 'mfg_X']]
     p = cm_partconnect.Parts()
@@ -204,26 +186,26 @@ def test_add_new_parts(parts):
     assert located[list(located.keys())[0]].part.hpn == 'part_X'
 
 
-def test_stop_parts(parts):
+def test_stop_parts(parts, capsys):
     hpnr = [['test_part', 'Q']]
     at_date = Time('2017-12-01 01:00:00', scale='utc')
     cm_partconnect.stop_existing_parts(parts.test_session, hpnr, at_date,
                                        allow_override=False)
     p = parts.cm_handle.get_part_from_hpnrev(hpnr[0][0], hpnr[0][1])
     assert p.stop_gpstime == 1196125218
-    with captured_output() as (out, err):
-        cm_partconnect.stop_existing_parts(parts.test_session, hpnr, at_date,
-                                           allow_override=False)
-    assert "Override not enabled.  No action." in out.getvalue().strip()
-    with captured_output() as (out, err):
-        cm_partconnect.stop_existing_parts(parts.test_session, hpnr, at_date,
-                                           allow_override=True)
-    assert "Override enabled.   New value 1196125218" in out.getvalue().strip()
+    cm_partconnect.stop_existing_parts(parts.test_session, hpnr, at_date,
+                                       allow_override=False)
+    captured = capsys.readouterr()
+    assert "Override not enabled.  No action." in captured.out.strip()
+    cm_partconnect.stop_existing_parts(parts.test_session, hpnr, at_date,
+                                       allow_override=True)
+    captured = capsys.readouterr()
+    assert "Override enabled.   New value 1196125218" in captured.out.strip()
     hpnr = [['no_part', 'Q']]
-    with captured_output() as (out, err):
-        cm_partconnect.stop_existing_parts(parts.test_session, hpnr, at_date,
-                                           allow_override=False)
-    assert "no_part:Q is not found, so can't stop it." in out.getvalue().strip()
+    cm_partconnect.stop_existing_parts(parts.test_session, hpnr, at_date,
+                                       allow_override=False)
+    captured = capsys.readouterr()
+    assert "no_part:Q is not found, so can't stop it." in captured.out.strip()
 
 
 def test_cm_version(parts):
@@ -233,7 +215,7 @@ def test_cm_version(parts):
     assert gh == 'Test-git-hash'
 
 
-def test_get_revisions_of_type(parts):
+def test_get_revisions_of_type(parts, capsys):
     at_date = None
     rev_types = ['LAST', 'ACTIVE', 'ALL', 'A']
     for rq in rev_types:
@@ -248,14 +230,14 @@ def test_get_revisions_of_type(parts):
     assert revision[0].rev == 'Z'
     revision = cm_revisions.get_revisions_of_type(
         None, 'ACTIVE', 'now', parts.test_session)
-    with captured_output() as (out, err):
-        cm_revisions.show_revisions(revision)
-    assert 'No revisions found' in out.getvalue().strip()
+    cm_revisions.show_revisions(revision)
+    captured = capsys.readouterr()
+    assert 'No revisions found' in captured.out.strip()
     revision = cm_revisions.get_revisions_of_type(
         'HH23', 'ACTIVE', 'now', parts.test_session)
-    with captured_output() as (out, err):
-        cm_revisions.show_revisions(revision)
-    assert '1096509616.0' in out.getvalue().strip()
+    cm_revisions.show_revisions(revision)
+    captured = capsys.readouterr()
+    assert '1096509616.0' in captured.out.strip()
     assert revision[0].hpn == 'HH23'
 
 
@@ -270,13 +252,13 @@ def test_match_listify(parts):
     assert x[0] == 1
 
 
-def test_get_part_types(parts):
+def test_get_part_types(parts, capsys):
     at_date = cm_utils.get_astropytime('now')
     a = parts.cm_handle.get_part_types('all', at_date)
     assert 'terminals' in a['feed']['output_ports']
-    with captured_output() as (out, err):
-        parts.cm_handle.show_part_types()
-    assert 'A, B, Q, R, Z' in out.getvalue().strip()
+    parts.cm_handle.show_part_types()
+    captured = capsys.readouterr()
+    assert 'A, B, Q, R, Z' in captured.out.strip()
 
 
 def test_check_overlapping(parts):

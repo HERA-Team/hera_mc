@@ -7,9 +7,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os.path
-import sys
 import subprocess
-from contextlib import contextmanager
 from argparse import Namespace
 
 import six
@@ -18,20 +16,6 @@ import numpy as np
 
 from .. import (cm_sysutils, cm_partconnect, cm_hookup, cm_utils, utils,
                 cm_sysdef)
-
-
-# define a context manager for checking stdout
-# from https://stackoverflow.com/questions/4219717/
-#    how-to-assert-output-with-nosetest-unittest-in-python
-@contextmanager
-def captured_output():
-    new_out, new_err = six.StringIO(), six.StringIO()
-    old_out, old_err = sys.stdout, sys.stderr
-    try:
-        sys.stdout, sys.stderr = new_out, new_err
-        yield sys.stdout, sys.stderr
-    finally:
-        sys.stdout, sys.stderr = old_out, old_err
 
 
 @pytest.fixture(scope='function')
@@ -55,7 +39,7 @@ def test_random_update(sys_handle):
     si.update_arrays(None)
 
 
-def test_other_hookup(sys_handle, mcsession):
+def test_other_hookup(sys_handle, mcsession, capsys):
     at_date = cm_utils.get_astropytime('2017-07-03')
     hookup = cm_hookup.Hookup(session=mcsession)
     hookup.reset_memory_cache(None)
@@ -63,10 +47,10 @@ def test_other_hookup(sys_handle, mcsession):
     hu = hookup.get_hookup(
         ['A23'], 'H', 'all', at_date=at_date, exact_match=True,
         force_new_cache=True, hookup_type='parts_paper')
-    with captured_output() as (out, err):
-        hookup.show_hookup(hu, cols_to_show=['station'], state='all',
-                           revs=True, ports=True)
-    assert 'HH23:A <ground' in out.getvalue().strip()
+    hookup.show_hookup(hu, cols_to_show=['station'], state='all',
+                       revs=True, ports=True)
+    captured = capsys.readouterr()
+    assert 'HH23:A <ground' in captured.out.strip()
     hu = hookup.get_hookup(
         'A23,A24', 'H', 'all', at_date=at_date, exact_match=True, force_db=True,
         hookup_type='parts_paper')
@@ -76,18 +60,18 @@ def test_other_hookup(sys_handle, mcsession):
             == 'HH23')
     hu = hookup.get_hookup('cached', 'H', 'pol', force_new_cache=False,
                            hookup_type='parts_paper')
-    with captured_output() as (out, err):
-        hookup.show_hookup(hu, state='all', output_format='csv')
-    assert '1096484416' in out.getvalue().strip()
+    hookup.show_hookup(hu, state='all', output_format='csv')
+    captured = capsys.readouterr()
+    assert '1096484416' in captured.out.strip()
     hookup.cached_hookup_dict = None
     hookup._hookup_cache_to_use()
-    with captured_output() as (out, err):
-        hookup.show_hookup(hu, output_format='html')
-    assert 'DF8B2' in out.getvalue().strip()
-    with captured_output() as (out, err):
-        hookup.show_hookup({}, cols_to_show=['station'], state='all',
-                           revs=True, ports=True)
-    assert 'None found' in out.getvalue().strip()
+    hookup.show_hookup(hu, output_format='html')
+    captured = capsys.readouterr()
+    assert 'DF8B2' in captured.out.strip()
+    hookup.show_hookup({}, cols_to_show=['station'], state='all',
+                       revs=True, ports=True)
+    captured = capsys.readouterr()
+    assert 'None found' in captured.out.strip()
     hufc = hookup.get_hookup_from_db(['HH'], 'active', 'e', at_date='now')
     assert len(hufc.keys()) == 9
     hufc = hookup.get_hookup_from_db(['N23'], 'active', 'e', at_date='now')
@@ -108,15 +92,15 @@ def test_other_hookup(sys_handle, mcsession):
     assert hookup.hookup_type == 'parts_paper'
 
 
-def test_hookup_dossier(sys_handle):
+def test_hookup_dossier(sys_handle, capsys):
     sysdef = cm_sysdef.Sysdef()
     hude = cm_hookup.HookupDossierEntry(entry_key='testing:key', sysdef=sysdef)
-    with captured_output() as (out, err):
-        hude.get_hookup_type_and_column_headers('x', 'rusty_scissors')
-    assert 'Parts did not conform to any hookup_type' in out.getvalue().strip()
-    with captured_output() as (out, err):
-        print(hude)
-    assert '<testing:key:' in out.getvalue().strip()
+    hude.get_hookup_type_and_column_headers('x', 'rusty_scissors')
+    captured = capsys.readouterr()
+    assert 'Parts did not conform to any hookup_type' in captured.out.strip()
+    print(hude)
+    captured = capsys.readouterr()
+    assert '<testing:key:' in captured.out.strip()
     hude.get_part_in_hookup_from_type('rusty_scissors', include_revs=True,
                                       include_ports=True)
     hude.columns = {'x': 'y', 'hu': 'b', 'm': 'l'}
@@ -271,7 +255,7 @@ def test_get_pam_info(sys_handle, mcsession):
     assert pams['HH23:A']['e'] == 'PAM75123'
 
 
-def test_apriori_antenna(sys_handle, mcsession):
+def test_apriori_antenna(sys_handle, mcsession, capsys):
     cm_partconnect.update_apriori_antenna('HH2', 'needs_checking',
                                           '1214482618', session=mcsession)
     d = sys_handle.get_apriori_antenna_status_for_rtp('needs_checking')
@@ -286,6 +270,6 @@ def test_apriori_antenna(sys_handle, mcsession):
         'HH2', 'needs_checking', '1214482818', '1214483000', session=mcsession)
     pytest.raises(ValueError, cm_partconnect.update_apriori_antenna,
                   'HH2', 'needs_checking', '1214482838', session=mcsession)
-    with captured_output() as (out, err):
-        print(cm_partconnect.AprioriAntenna())
-    assert '<None:' in out.getvalue().strip()
+    print(cm_partconnect.AprioriAntenna())
+    captured = capsys.readouterr()
+    assert '<None:' in captured.out.strip()

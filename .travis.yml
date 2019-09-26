@@ -41,7 +41,7 @@ before_script:
   - cp ci/example_config.json ~/.hera_mc/mc_config.json
   - alembic upgrade head
 script:
-  - nosetests --with-coverage --cover-package=hera_mc
+  - python -m pytest hera_mc --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
   - pycodestyle . --ignore=E501,W503 --exclude=alembic
 
 after_success:
