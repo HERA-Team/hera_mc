@@ -1507,6 +1507,7 @@ def test_get_snap_hostname_from_serial(mcsession):
     hostname = test_session.get_snap_hostname_from_serial('blah')
     assert hostname is None
 
+
 @onsite
 def test_site_add_snap_status_from_corrcm(mcsession):
     test_session = mcsession
