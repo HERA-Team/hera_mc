@@ -38,6 +38,7 @@ def sensor():
                                 format='unix').to_datetime()}
     }
 
+
 @pytest.fixture(scope='module')
 def power():
     return {
