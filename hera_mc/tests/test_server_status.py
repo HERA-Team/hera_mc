@@ -51,9 +51,10 @@ def test_add_server_status(mcsession):
     test_session = mcsession
     for sub in ['rtp', 'lib']:
         exp_columns = columns.copy()
-        exp_columns['mc_time'] = int(floor(exp_columns['mc_time'].gps))
+        exp_columns['mc_time'] = int(floor(Time.now().gps))
+        exp_columns['mc_system_timediff'] = (exp_columns['mc_time']
+                                             - exp_columns['system_time'].gps)
         exp_columns.pop('system_time')
-        exp_columns['mc_system_timediff'] = 0
 
         if sub == 'rtp':
             expected = RTPServerStatus(**exp_columns)
