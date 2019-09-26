@@ -37,6 +37,7 @@ def status():
 
     return
 
+
 @pytest.fixture(scope='module')
 def observation():
     class DataHolder(object):
