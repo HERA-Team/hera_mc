@@ -3147,7 +3147,7 @@ class MCSession(Session):
         snap_hostname: string
             hostname of snap the antenna is connected to
         snap_channel_number: integer
-            The SNAP ADC channel number (0-7) to which this antenna is connected
+            The SNAP ADC channel number (0-5) to which this antenna is connected
         adc_mean: float
             Mean ADC value, in ADC units, meaning raw ADC values interpreted as
             signed integers between -128 and +127. Typically ~ -0.5.
