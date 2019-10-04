@@ -193,7 +193,8 @@ class Hookup(object):
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
         self.active = cm_dossier.ActiveData(self.session, at_date=at_date)
-        self.active.get(at_date=at_date)
+        self.active.get_parts(at_date=None)
+        self.active.get_connections(at_date=None)
         hpn = cm_utils.listify(hpn)
         parts = self._cull_dict(hpn, self.active.parts, exact_match)
         hookup_dict = {}
@@ -496,6 +497,42 @@ class Hookup(object):
         s += '\nCM Version latest cm_hash_time:  {}\n'.format(cm_utils.get_time_for_display(cm_hash_time))
         return s
 
+    def get_notes(self, hookup_dict, state='all'):
+        """
+        Print out the information for hookup.
+
+        Parameters
+        ----------
+        hookup_dict : dict
+            Hookup dictionary generated in self.get_hookup
+        state : str
+            String designating whether to show the full hookups only, or all
+
+        Returns
+        -------
+        dict
+            hookup notes
+        """
+        if self.active is None:
+            self.active = cm_dossier.ActiveData(self.session, at_date=self.at_date)
+        self.active.get_info(self.at_date)
+        info_keys = list(self.active.info.keys())
+        hu_notes = {}
+        for hkey in hookup_dict.keys():
+            all_hu_hpn = set()
+            for pol in hookup_dict[hkey].hookup.keys():
+                for hpn in hookup_dict[hkey].hookup[pol]:
+                    if state == 'all' or (state == 'full' and hookup_dict[hkey].fully_connected[pol]):
+                        all_hu_hpn.add(cm_utils.make_part_key(hpn.upstream_part, hpn.up_part_rev))
+                        all_hu_hpn.add(cm_utils.make_part_key(hpn.downstream_part, hpn.down_part_rev))
+            hu_notes[hkey] = {}
+            for ikey in all_hu_hpn:
+                if ikey in info_keys:
+                    hu_notes[hkey][ikey] = {}
+                    for entry in self.active.info[ikey]:
+                        hu_notes[hkey][ikey][entry.posting_gpstime] = entry.comment.replace('\\n', '\n')
+        return hu_notes
+
     def show_notes(self, hookup_dict, state='all'):
         """
         Print out the information for hookup.
@@ -512,30 +549,21 @@ class Hookup(object):
         str
             Content as a string
         """
-        if self.active is None:
-            self.active = cm_dossier.ActiveData(self.session, at_date=self.at_date)
-        self.active.get_info(self.at_date)
-        info_keys = list(self.active.info.keys())
+        hu_notes = self.get_notes(hookup_dict=hookup_dict, state=state)
         full_info_string = ''
-        for hkey in cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR'):
-            all_hu_hpn = set()
-            for pol in hookup_dict[hkey].hookup.keys():
-                for hpn in hookup_dict[hkey].hookup[pol]:
-                    if state == 'all' or (state == 'full' and hookup_dict[hkey].fully_connected[pol]):
-                        all_hu_hpn.add(cm_utils.make_part_key(hpn.upstream_part, hpn.up_part_rev))
-                        all_hu_hpn.add(cm_utils.make_part_key(hpn.downstream_part, hpn.down_part_rev))
-            all_hu_hpn = cm_utils.put_keys_in_order(list(all_hu_hpn), sort_order='PNR')
+        for hkey in cm_utils.put_keys_in_order(list(hu_notes.keys()), sort_order='NPR'):
             hdr = "---{}---".format(hkey)
             entry_info = ''
-            if hkey in all_hu_hpn:  # Do the hkey first
-                all_hu_hpn.remove(hkey)
-                all_hu_hpn = [hkey] + all_hu_hpn
-            for ikey in all_hu_hpn:
-                if ikey in info_keys:
-                    for entry in self.active.info[ikey]:
-                        acomment = entry.comment.replace('\\n', '\n')
-                        atime = cm_utils.get_time_for_display(entry.posting_gpstime)
-                        entry_info += "\t{} ({})  {}\n".format(ikey, atime, acomment)
+            part_hu_hpn = cm_utils.put_keys_in_order(list(hu_notes[hkey].keys()), sort_order='PNR')
+            if hkey in part_hu_hpn:  # Do the hkey first
+                part_hu_hpn.remove(hkey)
+                part_hu_hpn = [hkey] + part_hu_hpn
+            for ikey in part_hu_hpn:
+                for entry in self.active.info[ikey]:
+                    acomment = entry.comment.replace('\\n', '\n')
+                    hu_notes[ikey][entry.posting_gpstime] = acomment
+                    atime = cm_utils.get_time_for_display(entry.posting_gpstime)
+                    entry_info += "\t{} ({})  {}\n".format(ikey, atime, acomment)
             if len(entry_info):
                 full_info_string += "{}\n{}\n".format(hdr, entry_info)
         return full_info_string
