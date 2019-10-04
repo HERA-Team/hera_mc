@@ -247,14 +247,12 @@ def db_validation(maindb_pw, session):
     if not is_maindb:
         return True
 
-    allowed = True
     if maindb_pw is False:
-        print('Error:  attempting access to main db without a password')
-        allowed = False
-    elif maindb_pw != 'pw4maindb':
-        print('Error:  incorrect password for main db')
-        allowed = False
-    return allowed
+        raise ValueError('Error:  attempting access to main db without a password')
+    if maindb_pw != 'pw4maindb':
+        raise ValueError('Error:  incorrect password for main db')
+
+    return True
 
 
 def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, testing=False):

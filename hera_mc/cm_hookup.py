@@ -499,7 +499,7 @@ class Hookup(object):
 
     def get_notes(self, hookup_dict, state='all'):
         """
-        Print out the information for hookup.
+        Retrieves information for hookup.
 
         Parameters
         ----------
