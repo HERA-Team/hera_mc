@@ -87,16 +87,13 @@ class TestTransfer(TestHERAMC):
     def test_main_validation(self):
         valid = cm_transfer.db_validation(None, 'testing_not_main')
         self.assertTrue(valid)
-        valid = cm_transfer.db_validation(False, 'testing_main')
-        self.assertFalse(valid)
-        valid = cm_transfer.db_validation('x', 'testing_main')
-        self.assertFalse(valid)
         valid = cm_transfer.db_validation('pw4maindb', 'testing_main')
         self.assertTrue(valid)
+        self.assertRaises(ValueError, cm_transfer.db_validation, False, 'testing_main')
+        self.assertRaises(ValueError, cm_transfer.db_validation, 'x', 'testing_main')
 
     def test_initialization(self):
-        t = cm_transfer._initialization(session='testing_main', cm_csv_path=None)
-        self.assertFalse(t)
+        self.assertRaises(ValueError, cm_transfer._initialization, 'testing_main', None)
         t = mc.get_cm_csv_path(testing=True)
         self.assertTrue('test_data' in t)
 
