@@ -559,11 +559,10 @@ class Hookup(object):
                 part_hu_hpn.remove(hkey)
                 part_hu_hpn = [hkey] + part_hu_hpn
             for ikey in part_hu_hpn:
-                for entry in self.active.info[ikey]:
-                    acomment = entry.comment.replace('\\n', '\n')
-                    hu_notes[ikey][entry.posting_gpstime] = acomment
-                    atime = cm_utils.get_time_for_display(entry.posting_gpstime)
-                    entry_info += "\t{} ({})  {}\n".format(ikey, atime, acomment)
+                gps_times = sorted(list(hu_notes[hkey][ikey].keys()))
+                for gtime in gps_times:
+                    atime = cm_utils.get_time_for_display(gtime)
+                    entry_info += "\t{} ({})  {}\n".format(ikey, atime, hu_notes[hkey][ikey][gtime])
             if len(entry_info):
                 full_info_string += "{}\n{}\n".format(hdr, entry_info)
         return full_info_string
