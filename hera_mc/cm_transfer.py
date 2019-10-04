@@ -134,7 +134,7 @@ def pack_n_go(session, cm_csv_path):  # pragma: no cover
     session.commit()
 
 
-def initialize_db_from_csv(session=None, tables='all', maindb=False, testing=False):  # pragma: no cover
+def initialize_db_from_csv(session=None, tables='all', maindb=False, testing=False, cm_csv_path=None):  # pragma: no cover
     """
     This entry module provides a double-check entry point to read the csv files and
        repopulate the configuration management database.  It destroys all current entries,
@@ -151,6 +151,8 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False, testing=Fal
         Either False or the password to change from main db.
     testing : bool
         Flag to cover testing
+    cm_csv_path : str or None
+        Path where the csv files reside.  If None uses default.
 
     Returns
     -------
@@ -161,7 +163,7 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False, testing=Fal
     print("This will erase and rewrite the configuration management tables.")
     you_are_sure = six.moves.input("Are you sure you want to do this (y/n)? ")
     if you_are_sure == 'y':
-        success = _initialization(session=session, cm_csv_path=None,
+        success = _initialization(session=session, cm_csv_path=cm_csv_path,
                                   tables=tables, maindb=maindb, testing=testing)
     else:
         print("Exit with no rewrite.")
