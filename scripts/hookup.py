@@ -60,8 +60,8 @@ if __name__ == '__main__':
     elif args.delete_cache_file:
         hookup.delete_cache_file()
     elif args.check_data:
-        from hera_mc import cm_dossier
-        active = cm_dossier.ActiveData(session, at_date=at_date)
+        from hera_mc import cm_active
+        active = cm_active.ActiveData(session, at_date=at_date)
         active.check()
     else:
         hookup_dict = hookup.get_hookup(hpn=args.hpn, pol=args.pol, at_date=at_date,

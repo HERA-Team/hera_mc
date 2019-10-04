@@ -17,7 +17,7 @@ import json
 from argparse import Namespace
 from astropy.time import Time
 
-from . import mc, cm_utils, cm_transfer, cm_sysdef, cm_dossier
+from . import mc, cm_utils, cm_transfer, cm_sysdef, cm_dossier, cm_active
 
 
 class Hookup(object):
@@ -192,7 +192,7 @@ class Hookup(object):
         # Reset at_date
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
-        self.active = cm_dossier.ActiveData(self.session, at_date=at_date)
+        self.active = cm_active.ActiveData(self.session, at_date=at_date)
         self.active.get_parts(at_date=None)
         self.active.get_connections(at_date=None)
         hpn = cm_utils.listify(hpn)
@@ -514,7 +514,7 @@ class Hookup(object):
             hookup notes
         """
         if self.active is None:
-            self.active = cm_dossier.ActiveData(self.session, at_date=self.at_date)
+            self.active = cm_active.ActiveData(self.session, at_date=self.at_date)
         self.active.get_info(self.at_date)
         info_keys = list(self.active.info.keys())
         hu_notes = {}
