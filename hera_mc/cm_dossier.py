@@ -35,6 +35,7 @@ class ActiveData:
         self.parts = None
         self.connections = None
         self.info = None
+        self.apriori = None
 
     def is_data_current(self, data_type, at_date):
         """
@@ -43,7 +44,7 @@ class ActiveData:
         Parameters
         ----------
         data_type : str
-            One of the allowed data_types:  parts, connections, info
+            One of the allowed data_types:  parts, connections, info, apriori
         at_date : astropytime.Time or None
             Date for which to check.  If none, assumes match to self.at_date
 
@@ -167,6 +168,33 @@ class ActiveData:
             key = cm_utils.make_part_key(info.hpn, info.hpn_rev)
             self.info.setdefault(key, [])
             self.info[key].append(info)
+
+    def get_apriori(self, at_date=None, rev='A'):
+        """
+        Retrieves apriori status for a given at_date.
+        If at_date is None, uses self.at_date.  If not, will redefine self.at_date
+
+        Writes class dictionary:
+                self.apriori - keyed on part:rev
+
+        Parameters
+        ----------
+        at_date : str, int, float, Time, datetime (optional)
+            The date for which to check as active, given as anything comprehensible
+            to get_astropytime.  If not present uses self.at_date
+        rev : str
+            Revision of antenna-station (always A)
+        """
+        at_date = cm_utils.get_astropytime(at_date)
+        if self.is_data_current('apriori', at_date):
+            return
+        gps_time = self.set_times(at_date)
+        self.apriori = {}
+        for astat in self.session.query(partconn.AprioriAntenna).filter((partconn.AprioriAntenna.start_gpstime <= gps_time)
+                                                                        & ((partconn.AprioriAntenna.stop_gpstime >= gps_time)
+                                                                        | (partconn.AprioriAntenna.stop_gpstime == None))):
+            key = cm_utils.make_part_key(astat.antenna, rev)
+            self.apriori[key] = astat.status
 
     def check(self, at_date=None):
         """
