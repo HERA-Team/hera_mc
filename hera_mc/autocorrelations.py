@@ -75,7 +75,8 @@ class Autocorrelations(MCDeclarativeBase):
 
 
 def plot_HERA_autocorrelations_for_plotly(session):
-    from plotly import graph_objs as go, plotly as py
+    from plotly import graph_objects as go
+    from chart_studio import plotly as py
 
     hera_ants = [9, 10, 20, 22, 31, 43, 53, 64, 65, 72, 80, 81, 88, 89, 96, 97, 104, 105, 112]
     # Fill in arrays from the DB.
