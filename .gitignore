@@ -86,3 +86,4 @@ target/
 *.synctex.gz
 
 hera_mc/GIT_INFO
+.pytest_cache

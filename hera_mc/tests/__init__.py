@@ -8,61 +8,21 @@
 
 from __future__ import absolute_import, division, print_function
 
-import unittest
-import socket
 import warnings
 import sys
-import collections
+import socket
 
-from hera_mc import mc, cm_transfer
+import pytest
+
 from hera_mc.utils import get_iterable
-
-test_db = None
 
 
 def is_onsite():
     return (socket.gethostname() == 'qmaster')
 
 
-def setup_package():
-    global test_db
-
-    test_db = mc.connect_to_mc_testing_db()
-    test_db.create_tables()
-    session = test_db.sessionmaker()
-    cm_transfer._initialization(session=session, cm_csv_path=mc.test_data_path)
-
-
-def teardown_package():
-    test_db.drop_tables()
-
-
-# create a class for most tests to inheret from with db setup stuff
-class TestHERAMC(unittest.TestCase):
-
-    def setUp(self):
-        self.test_db = test_db
-        self.test_conn = self.test_db.engine.connect()
-        self.test_trans = self.test_conn.begin()
-        self.test_session = mc.MCSession(bind=self.test_conn)
-        import astropy
-        astropy.utils.iers.conf.auto_max_age = None
-
-    def tearDown(self):
-        self.test_session.close()
-
-        # rollback - everything that happened with the
-        # Session above (including calls to commit())
-        # is rolled back.
-        self.test_trans.rollback()
-
-        # return connection to the Engine
-        self.test_conn.close()
-
-        # delete the hookup cache file
-        from .. import cm_hookup
-        hookup = cm_hookup.Hookup(session=self.test_session)
-        hookup.delete_cache_file()
+onsite = pytest.mark.skipif(not is_onsite(),
+                            reason='This test only works on site')
 
 
 # Functions that are useful for testing:
@@ -80,7 +40,42 @@ def clearWarnings():
 def checkWarnings(func, func_args=[], func_kwargs={},
                   category=UserWarning,
                   nwarnings=1, message=None, known_warning=None):
-    """Function to check expected warnings."""
+    """
+    Check expected warnings.
+
+    Useful for checking that appropriate warnings are raised and to capture
+    (and silence) warnings in tests.
+
+    Parameters
+    ----------
+    func : function
+        Function or method to check warnings for.
+    func_args : list, optional
+        List of positional parameters to pass `func`
+    func_kwargs : dict, optional
+        Dict of keyword parameter to pass func. Keys are the parameter names,
+        values are the values to pass to the parameters.
+    nwarnings : int
+        Number of expected warnings.
+    category : warning type or list of warning types
+        Expected warning type(s). If a scalar is passed and `nwarnings` is
+        greater than one, the same category will be expected for all warnings.
+    message : str or list of str
+        Expected warning string(s). If a scalar is passed and `nwarnings` is
+        greater than one, the same warning string will be expected for all warnings.
+    known_warning : {'miriad', 'paper_uvfits', 'fhd'}, optional
+        Shorthand way to specify one of a standard set of warnings.
+
+    Returns
+    -------
+    Value returned by `func`
+
+    Raises
+    ------
+    AssertionError
+        If the warning(s) raised by func do not match the expected values.
+
+    """
     if (not isinstance(category, list) or len(category) == 1) and nwarnings > 1:
         if isinstance(category, list):
             category = category * nwarnings

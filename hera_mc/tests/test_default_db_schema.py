@@ -19,7 +19,7 @@ def test_default_db_schema():
     default_db = mc.connect_to_mc_db(None)
     engine = default_db.engine
     conn = engine.connect()
-    trans = conn.begin()
+    conn.begin()
 
     Session = sessionmaker(bind=engine)
     session = Session()
