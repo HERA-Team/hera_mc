@@ -19,7 +19,9 @@ def test_classTime():
 
 def test_db_to_csv():
     files_written = cm_transfer.package_db_to_csv(tables='parts')
+    assert len(files_written) == 1
     files_written = cm_transfer.package_db_to_csv(tables='all')
+    assert len(files_written) == 6
     for fw in files_written:
         os.remove(fw)
 
@@ -50,6 +52,7 @@ def test_check_if_main(mcsession):
 def test_cm_table_info():
     from hera_mc import cm_table_info
     ot = ','.join(cm_table_info.order_the_tables(None))
-    assert ot == 'part_info,connections,parts,geo_location,station_type,apriori_antenna'
+    assert (ot == 'part_info,connections,parts,geo_location,station_type,'
+            'apriori_antenna')
     ot = ','.join(cm_table_info.order_the_tables(['notthere', 'parts']))
     assert ot == 'parts'
