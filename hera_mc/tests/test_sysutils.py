@@ -103,7 +103,7 @@ def test_hookup_dossier(sys_handle, capsys):
 
 def test_sysdef(sys_handle, mcsession):
     sysdef = cm_sysdef.Sysdef()
-    active = cm_active.ActiveData(session=self.test_session)
+    active = cm_active.ActiveData(session=mcsession)
     active.get_parts(at_date=None)
     active.get_connections(at_date=None)
     part = Namespace(hpn='N700', hpn_rev='A', hptype='node')
@@ -199,8 +199,8 @@ def test_correlator_info(sys_handle):
 
 def test_get_pam_from_hookup(sys_handle, mcsession):
     hookup = cm_hookup.Hookup(mcsession)
-    hud = hookup.get_hookup((['HH701'], at_date='2019-07-03', exact_match=True,
-                             hookup_type='parts_hera')
+    hud = hookup.get_hookup(['HH701'], at_date='2019-07-03', exact_match=True,
+                            hookup_type='parts_hera')
     pams = hud[list(hud.keys())[0]].get_part_in_hookup_from_type(
         'post-amp', include_ports=True, include_revs=True)
     assert len(pams) == 2
@@ -215,7 +215,7 @@ def test_get_pam_info(sys_handle, mcsession):
         hookup_type='parts_hera')
     assert len(pams) == 1
     # the actual pam number (the thing written on the case)
-    assert pamspams['HH701:A']['E<ground'] == 'PAM701'
+    assert pams['HH701:A']['E<ground'] == 'PAM701'
 
 
 def test_apriori_antenna(sys_handle, mcsession, capsys):
@@ -230,10 +230,10 @@ def test_apriori_antenna(sys_handle, mcsession, capsys):
     g = sys_handle.get_apriori_status_for_antenna('HH701')
     assert g == 'needs_checking'
     cm_partconnect.update_apriori_antenna(
-        'HH701', 'needs_checking', '1214482818', '1214483000',
+        'HH700', 'needs_checking', '1214482818', '1214483000',
         session=mcsession)
-    pytest.raises(ValueError, cm_partconnect.update_apriori_antenna,
-                  'HH701', 'needs_checking', '1214482838', session=mcsession)
+    pytest.raises(ValueError, cm_partconnect.update_apriori_antenna, 'HH700',
+                  'needs_checking', '1214482838', session=mcsession)
     print(cm_partconnect.AprioriAntenna())
     captured = capsys.readouterr()
     assert '<None:' in captured.out.strip()

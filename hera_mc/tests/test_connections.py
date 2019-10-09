@@ -128,7 +128,7 @@ def test_get_dossier(conns, capsys):
     x = conns.cm_handle.get_part_connection_dossier(
         'test_part1', 'active', 'all', at_date='now', exact_match=True)
     y = list(x.keys())[0]
-    assert y == 'test_part1:Q'
+    assert y == 'TEST_PART1:Q'
 
     conns.cm_handle.show_connections(x)
     captured = capsys.readouterr()
