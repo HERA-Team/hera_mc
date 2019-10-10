@@ -10,8 +10,7 @@ These are key data for tracking antenna performance and failures.
 
 from __future__ import absolute_import, division, print_function
 
-from argparse import Namespace
-import datetime
+import cm_sysutils
 import numpy as np
 from sqlalchemy import (BigInteger, Column, DateTime, Float, Integer,
                         SmallInteger, String)
@@ -78,11 +77,18 @@ def plot_HERA_autocorrelations_for_plotly(session):
     from plotly import graph_objects as go
     from chart_studio import plotly as py
 
-    hera_ants = [9, 10, 20, 22, 31, 43, 53, 64, 65, 72, 80, 81, 88, 89, 96, 97, 104, 105, 112]
-    # Fill in arrays from the DB.
+    hsession = cm_sysutils.Handling(session)
+    stations = hsession.get_all_fully_connected_at_date(at_date='now')
+
+    hera_ants = []
+    for station in stations:
+        if station.antenna_number not in hera_ants:
+            ants = np.append(hera_ants, station.antenna_number)
+    hera_ants = np.unique(ants)
 
     data = []
 
+    # Plot antennas labeled as fully hooked up
     q = (session.query(Autocorrelations).
          filter(Autocorrelations.measurement_type == 0).
          filter(Autocorrelations.antnum.in_(hera_ants)).
