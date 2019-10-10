@@ -140,8 +140,8 @@ def test_sysdef(sys_handle, mcsession):
 
 def test_hookup_cache_file_info(sys_handle, mcsession):
     hookup = cm_hookup.Hookup(session=mcsession)
-    hookup.hookup_cache_file_info()
-    # TODO: this doesn't appear to test anything!
+    cfi = hookup.hookup_cache_file_info()
+    assert 'json does not exist' in cfi
 
 
 def test_some_fully_connected(sys_handle):

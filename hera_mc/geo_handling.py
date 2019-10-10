@@ -139,7 +139,7 @@ class Handling:
 
     def start_file(self, fname):
         import os.path as op
-        if op.isfile(fname):  # pragma: no cover
+        if op.isfile(fname):
             print("{} exists so appending to it".format(fname))
         else:
             print("Writing to new {}".format(fname))

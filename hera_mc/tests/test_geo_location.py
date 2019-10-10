@@ -51,9 +51,10 @@ def test_update_update(mcsession, geo_handle):
     assert located[0].elevation == 1100.0
 
 
-def test_random(geo_handle):
+def test_random(geo_handle, capsys):
     geo_handle.start_file('test')
-    # TODO: this test doesn't appear to test anything!
+    captured = capsys.readouterr()
+    assert 'Writing to new test' in captured.out
 
 
 def test_geo_location(mcsession):
