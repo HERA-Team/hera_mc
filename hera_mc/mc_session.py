@@ -2877,21 +2877,24 @@ class MCSession(Session):
             session = self
 
         cmh = cm_handling.Handling(session)
-        conn_dossier = cmh.get_part_connection_dossier(snap_serial, rev='active',
-                                                       port='all', at_date='now')
+        conn_dossier = cmh.get_part_connection_dossier(
+            snap_serial, rev='active', port='all', at_date='now')
 
         if len(conn_dossier.keys()) == 0:
-            warnings.warn('No active dossiers returned for snap serial '
-                          '{snn}. Setting node and snap location numbers to None'.format(snn=snap_serial))
+            warnings.warn('No active dossiers returned for snap serial {snn}. '
+                          'Setting node and snap location numbers to None'
+                          .format(snn=snap_serial))
             return None, None
 
         if len(conn_dossier.keys()) > 1:
             warnings.warn('Multiple active dossiers returned for snap serial '
-                          '{snn}. Setting node and snap location numbers to None'.format(snn=snap_serial))
+                          '{snn}. Setting node and snap location numbers to '
+                          'None'.format(snn=snap_serial))
             return None, None
 
         snap_num_rev = list(conn_dossier.keys())[0]
-        node_conn = [conn for conn in conn_dossier[snap_num_rev].keys_down if conn is not None]
+        node_conn = [conn for conn in conn_dossier[snap_num_rev].keys_down
+                     if conn is not None]
 
         node_part = set()
         node_rev = set()
@@ -2907,7 +2910,8 @@ class MCSession(Session):
         snap_loc = list(snap_loc)
         if len(node_part) > 1 or len(node_rev) > 1:
             warnings.warn('Multiple node connections returned for snap serial '
-                          '{snn}. Setting node and snap location number to None'.format(snn=snap_serial))
+                          '{snn}. Setting node and snap location number to '
+                          'None'.format(snn=snap_serial))
             return None, None
 
         node_part = node_part[0]
@@ -2918,13 +2922,14 @@ class MCSession(Session):
             nodeID = None
 
         if len(snap_loc) > 1:
-            warnings.warn('Multiple snap location numbers returned for snap serial '
-                          '{snn}. Setting snap location number to None'.format(snn=snap_serial))
+            warnings.warn('Multiple snap location numbers returned for snap '
+                          'serial {snn}. Setting snap location number to None'
+                          .format(snn=snap_serial))
             snap_loc_num = None
         else:
             snap_loc = snap_loc[0]
             try:
-                assert snap_loc.startswith('loc')
+                assert snap_loc.lower().startswith('loc')
                 snap_loc_num = int(snap_loc[3:])
             except(ValueError, AssertionError):
                 snap_loc_num = None
