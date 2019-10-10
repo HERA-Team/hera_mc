@@ -16,6 +16,7 @@ import os
 import socket
 import sys
 import time
+from builtins import int
 from astropy.time import Time
 import netifaces
 import numpy as np
@@ -82,8 +83,8 @@ prev_index = REPORTING_CADENCE - 1
 # When we detect a wraparound we bump these up to maintain continuity.
 # We use Python 'long's so we'll be fine.
 
-net_rx_offset = 0L
-net_tx_offset = 0L
+net_rx_offset = int(0)
+net_tx_offset = int(0)
 
 # OK, let's go.
 
@@ -100,11 +101,11 @@ with db.sessionmaker() as session:
             net = psutil.net_io_counters()
 
             if net.bytes_sent < tx_buf[prev_index]:  # have we wrapped?
-                net_tx_offset += (1L << 32)  # assuming wraparound only affects 32-bit
+                net_tx_offset += (int(1) << 32)  # assuming wraparound only affects 32-bit
             tx_buf[index] = net.bytes_sent + net_tx_offset
 
             if net.bytes_recv < rx_buf[prev_index]:
-                net_rx_offset += (1L << 32)
+                net_rx_offset += (int(1) << 32)
             rx_buf[index] = net.bytes_recv + net_rx_offset
 
             prev_index = index
