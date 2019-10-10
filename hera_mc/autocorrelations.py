@@ -12,6 +12,7 @@ from __future__ import absolute_import, division, print_function
 
 import cm_sysutils
 import numpy as np
+import six
 from sqlalchemy import (BigInteger, Column, DateTime, Float, Integer,
                         SmallInteger, String)
 
@@ -74,7 +75,11 @@ class Autocorrelations(MCDeclarativeBase):
 
 
 def plot_HERA_autocorrelations_for_plotly(session):
-    from plotly import graph_objects as go
+    if six.PY3:
+        from plotly import graph_objects as go
+    else:
+        from plotly import graph_objs as go
+
     from chart_studio import plotly as py
 
     hsession = cm_sysutils.Handling(session)
