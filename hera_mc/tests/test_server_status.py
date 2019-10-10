@@ -101,6 +101,13 @@ def test_add_server_status(mcsession, status):
         if mc_system_timediff_diff > 0.001:
             expected.mc_system_timediff = result.mc_system_timediff
 
+        # mc_time might be off by one between expected & result because of the
+        # time between the commands
+        mc_timediff = (abs(result.mc_time - expected.mc_time))
+        assert mc_timediff < 2
+        if mc_timediff > 0.001:
+            expected.mc_time = result.mc_time
+
         assert result.isclose(expected)
 
         test_session.add_server_status(
