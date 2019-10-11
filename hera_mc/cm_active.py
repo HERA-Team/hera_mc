@@ -100,7 +100,7 @@ class ActiveData:
         self.parts = {}
         for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= gps_time)
                                                              & ((partconn.Parts.stop_gpstime >= gps_time)
-                                                             | (partconn.Parts.stop_gpstime == None))):
+                                                             | (partconn.Parts.stop_gpstime == None))):  # noqa
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.parts[key] = prt
 
@@ -129,7 +129,7 @@ class ActiveData:
         check_keys = {'up': [], 'down': []}
         for cnn in self.session.query(partconn.Connections).filter((partconn.Connections.start_gpstime <= gps_time)
                                                                    & ((partconn.Connections.stop_gpstime >= gps_time)
-                                                                   | (partconn.Connections.stop_gpstime == None))):
+                                                                   | (partconn.Connections.stop_gpstime == None))):  # noqa
             chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev, cnn.upstream_output_port)
             if chk in check_keys['up']:
                 raise ValueError("Duplicate active port {}".format(chk))
@@ -192,7 +192,7 @@ class ActiveData:
         self.apriori = {}
         for astat in self.session.query(partconn.AprioriAntenna).filter((partconn.AprioriAntenna.start_gpstime <= gps_time)
                                                                         & ((partconn.AprioriAntenna.stop_gpstime >= gps_time)
-                                                                        | (partconn.AprioriAntenna.stop_gpstime == None))):
+                                                                        | (partconn.AprioriAntenna.stop_gpstime == None))):  # noqa
             key = cm_utils.make_part_key(astat.antenna, rev)
             self.apriori[key] = astat.status
 
