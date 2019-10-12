@@ -79,10 +79,11 @@ class ActiveData:
             self.at_date = at_date
         return self.at_date.gps
 
-    def get_parts(self, at_date=None):
+    def load_parts(self, at_date=None):
         """
         Retrieves all active parts for a given at_date.
-        If at_date is None, uses self.at_date.  If not, will redefine self.at_date
+        Sets this object's at_date and loads the active parts on to the object.
+        If at_date is None, the existing at_date on the object will be used.
 
         Writes class dictionary:
                 self.parts - keyed on part:rev
@@ -104,7 +105,7 @@ class ActiveData:
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.parts[key] = prt
 
-    def get_connections(self, at_date=None):
+    def load_connections(self, at_date=None):
         """
         Retrieves all active connections for a given at_date.  If a part:rev:port
         connection already exists, it will generate an error.
@@ -169,7 +170,7 @@ class ActiveData:
             self.info.setdefault(key, [])
             self.info[key].append(info)
 
-    def get_apriori(self, at_date=None, rev='A'):
+    def load_apriori(self, at_date=None, rev='A'):
         """
         Retrieves apriori status for a given at_date.
         If at_date is None, uses self.at_date.  If not, will redefine self.at_date
@@ -212,9 +213,9 @@ class ActiveData:
         if at_date is None:
             at_date = self.at_date
         if not self.is_data_current('parts', at_date):
-            self.get_parts(at_date=at_date)
+            self.load_parts(at_date=at_date)
         if not self.is_data_current('connections', at_date):
-            self.get_connections(at_date=at_date)
+            self.load_connections(at_date=at_date)
         full_part_set = list(self.parts.keys())
         full_conn_set = set(list(self.connections['up']) + list(self.connections['down']))
         missing_parts = []

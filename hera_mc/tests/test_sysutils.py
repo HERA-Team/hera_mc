@@ -104,8 +104,8 @@ def test_hookup_dossier(sys_handle, capsys):
 def test_sysdef(sys_handle, mcsession):
     sysdef = cm_sysdef.Sysdef()
     active = cm_active.ActiveData(session=mcsession)
-    active.get_parts(at_date=None)
-    active.get_connections(at_date=None)
+    active.load_parts(at_date=None)
+    active.load_connections(at_date=None)
     part = Namespace(hpn='N700', hpn_rev='A', hptype='node')
     part.connections = Namespace(input_ports=['loc0', '@mars'],
                                  output_ports=[])

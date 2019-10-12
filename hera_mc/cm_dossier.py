@@ -4,7 +4,7 @@
 # Licensed under the 2-clause BSD license.
 
 """
-This contains the "Dossier" classes for Hookup, Parts and Connections
+This contains the HookupEntry class which serves as a "dossier" for hookup entries.
 
 """
 from __future__ import absolute_import, division, print_function
