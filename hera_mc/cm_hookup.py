@@ -176,8 +176,7 @@ class Hookup(object):
 
     def get_part_types_found(self, hookup_connections):
         """
-        Takes a list of connections and returns the part_types of them.  It also
-        populates 'self.part_type_cache'
+        Takes a list of connections, returns the part_types and populates 'self.part_type_cache'
 
         Parameters
         ----------
@@ -423,8 +422,8 @@ class Hookup(object):
 
     def hookup_cache_file_OK(self, cache_dict=None):
         """
-        This determines if the cache file is up-to-date relative to the cm database.
-        and if hookup_type is correct
+        Determines if the cache file is up-to-date with the cm database and if hookup_type is correct
+
         There are 4 relevant dates:
             cm_hash_time:  last time the database was updated per CMVersion
             file_mod_time:  when the cache file was last changed (ie written)
