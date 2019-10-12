@@ -82,6 +82,7 @@ class ActiveData:
     def load_parts(self, at_date=None):
         """
         Retrieves all active parts for a given at_date.
+
         Sets this object's at_date and loads the active parts on to the object.
         If at_date is None, the existing at_date on the object will be used.
 
@@ -107,9 +108,10 @@ class ActiveData:
 
     def load_connections(self, at_date=None):
         """
-        Retrieves all active connections for a given at_date.  If a part:rev:port
-        connection already exists, it will generate an error.
-        If at_date is None, uses self.at_date.  If not, will redefine self.at_date
+        Retrieves all active connections for a given at_date.
+
+        Sets this object's at_date and loads the active parts on to the object.
+        If at_date is None, the existing at_date on the object will be used.
 
         Writes class dictionary:
                 self.connections - has keys 'up' and 'down', each of which
@@ -146,10 +148,12 @@ class ActiveData:
             self.connections['down'].setdefault(key, {})
             self.connections['down'][key][cnn.downstream_input_port.upper()] = cnn
 
-    def get_info(self, at_date=None):
+    def load_info(self, at_date=None):
         """
         Retrieves all current part infomation (ie. before date).
-        If at_date is None, uses class at_date
+
+        Sets this object's at_date and loads the active parts on to the object.
+        If at_date is None, the existing at_date on the object will be used.
 
         Writes class dictionary:
                 self.info - keyed on part:rev
@@ -173,7 +177,9 @@ class ActiveData:
     def load_apriori(self, at_date=None, rev='A'):
         """
         Retrieves apriori status for a given at_date.
-        If at_date is None, uses self.at_date.  If not, will redefine self.at_date
+
+        Sets this object's at_date and loads the active parts on to the object.
+        If at_date is None, the existing at_date on the object will be used.
 
         Writes class dictionary:
                 self.apriori - keyed on part:rev
