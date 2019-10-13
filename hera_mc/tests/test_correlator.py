@@ -17,7 +17,7 @@ import yaml
 import numpy as np
 from astropy.time import Time, TimeDelta
 
-from hera_mc import mc
+from hera_mc import mc, cm_partconnect
 import hera_mc.correlator as corr
 from hera_mc.data import DATA_PATH
 from ..tests import onsite, checkWarnings
@@ -86,60 +86,60 @@ def snapversion(config, init_args):
                  'config_timestamp': datetime.datetime(
                      2019, 2, 18, 5, 41, 29, 376363),
                  'init_args': init_args,
-                 'timestamp': datetime.datetime(2019, 3, 27, 8, 28, 25, 806626),
+                 'timestamp':
+                 datetime.datetime(2019, 3, 27, 8, 28, 25, 806626),
                  'version': '0.0.1-3c7fdaf6'}}
 
 
 @pytest.fixture(scope='module')
 def snapstatus():
     return {
-        'heraNode23Snap1': {'last_programmed': datetime.datetime(2016, 1, 10,
-                                                                 23, 16, 3),
-                            'pmb_alert': False,
-                            'pps_count': 595687,
-                            'serial': 'SNPA000222',
-                            'temp': 57.984954833984375,
-                            'timestamp': datetime.datetime(
-                                2016, 1, 5, 20, 44, 52, 741137),
-                            'uptime': 595686},
-        'heraNode4Snap0': {'last_programmed': datetime.datetime(2016, 1, 10, 23,
-                                                                16, 3),
-                           'pmb_alert': False,
-                           'pps_count': 595699,
-                           'serial': 'SNPA000224',
-                           'temp': 59.323028564453125,
-                           'timestamp': datetime.datetime(2016, 1, 5, 20, 44,
-                                                          52, 739322),
-                           'uptime': 595699}}
+        'heraNode700Snap0': {'last_programmed':
+                             datetime.datetime(2016, 1, 10, 23, 16, 3),
+                             'pmb_alert': False,
+                             'pps_count': 595687,
+                             'serial': 'SNPA000700',
+                             'temp': 57.984954833984375,
+                             'timestamp': datetime.datetime(
+                                 2016, 1, 5, 20, 44, 52, 741137),
+                             'uptime': 595686},
+        'heraNode701Snap3': {'last_programmed':
+                             datetime.datetime(2016, 1, 10, 23, 16, 3),
+                             'pmb_alert': False,
+                             'pps_count': 595699,
+                             'serial': 'SNPD000703',
+                             'temp': 59.323028564453125,
+                             'timestamp': datetime.datetime(
+                                 2016, 1, 5, 20, 44, 52, 739322),
+                             'uptime': 595699}}
 
 
 @pytest.fixture(scope='module')
 def snapstatus_none():
     return {
-        'heraNode23Snap1': {'last_programmed': 'None',
-                            'pmb_alert': 'None',
-                            'pps_count': 'None',
-                            'serial': 'None',
-                            'temp': 'None',
-                            'timestamp': datetime.datetime(2016, 1, 5, 20, 44,
-                                                           52, 741137),
-                            'uptime': 'None'},
-        'heraNode23Snap2': {'last_programmed': datetime.datetime(2016, 1, 5, 20,
-                                                                 44, 52,
-                                                                 741137),
-                            'pmb_alert': False,
-                            'pps_count': 595699,
-                            'serial': 'SNPA000224',
-                            'temp': 59.323028564453125,
-                            'timestamp': 'None',
-                            'uptime': 595699}}
+        'heraNode700Snap0': {'last_programmed': 'None',
+                             'pmb_alert': 'None',
+                             'pps_count': 'None',
+                             'serial': 'None',
+                             'temp': 'None',
+                             'timestamp': datetime.datetime(
+                                 2016, 1, 5, 20, 44, 52, 741137),
+                             'uptime': 'None'},
+        'heraNode701Snap3': {'last_programmed':
+                             datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
+                             'pmb_alert': False,
+                             'pps_count': 595699,
+                             'serial': 'SNPD000703',
+                             'temp': 59.323028564453125,
+                             'timestamp': 'None',
+                             'uptime': 595699}}
 
 
 @pytest.fixture(scope='module')
 def antstatus():
     return {
         '4:e': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
-                'f_host': 'heraNode23Snap1',
+                'f_host': 'heraNode700Snap0',
                 'host_ant_id': 3,
                 'adc_mean': -0.5308380126953125,
                 'adc_rms': 3.0134560488579285,
@@ -156,7 +156,8 @@ def antstatus():
                 'eq_coeffs': (np.zeros((1024)) + 56.921875).tolist(),
                 'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
                               (np.zeros((256)) + 10).tolist()]},
-        '31:n': {'timestamp': datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
+        '31:n': {'timestamp':
+                 datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
                  'f_host': 'heraNode4Snap3',
                  'host_ant_id': 7,
                  'adc_mean': -0.4805450439453125,
@@ -269,8 +270,9 @@ def test_add_corr_command_state(mcsession):
 
 def test_add_correlator_control_state_from_corrcm(mcsession, corrcommand):
     test_session = mcsession
-    corr_state_obj_list = test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=corrcommand, testing=True)
+    corr_state_obj_list = \
+        test_session.add_correlator_control_state_from_corrcm(
+            corr_state_dict=corrcommand, testing=True)
 
     for obj in corr_state_obj_list:
         test_session.add(obj)
@@ -344,11 +346,13 @@ def test_add_correlator_control_state_from_corrcm_nonetime_priorfalse(
     test_session = mcsession
     not_taking_data_state_dict = {'taking_data': {
         'state': False, 'timestamp': Time(1512770942, format='unix')}}
-    corr_state_obj_list = test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=not_taking_data_state_dict)
+    corr_state_obj_list = \
+        test_session.add_correlator_control_state_from_corrcm(
+            corr_state_dict=not_taking_data_state_dict)
 
-    corr_state_obj_list = test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=corrstate_nonetime, testing=True)
+    corr_state_obj_list = \
+        test_session.add_correlator_control_state_from_corrcm(
+            corr_state_dict=corrstate_nonetime, testing=True)
     test_session._insert_ignoring_duplicates(
         corr.CorrelatorControlState, corr_state_obj_list)
 
@@ -623,7 +627,8 @@ def test_take_data_command_no_recent_status(mcsession):
                                  ['take_data'],
                                  {'starttime': starttime, 'duration': 100,
                                   'acclen_spectra': 2048, 'tag': 'engineering',
-                                  'testing': True, 'overwrite_take_data': True},
+                                  'testing': True,
+                                  'overwrite_take_data': True},
                                  message='Using a non-standard acclen_spectra')
 
     assert len(command_list) == 2
@@ -757,7 +762,8 @@ def test_take_data_command_with_recent_status(mcsession):
      ('take_data', {'starttime': Time.now() + TimeDelta(10, format='sec'),
                     'tag': 'engineering'}),
      ('take_data', {'duration': 100, 'tag': 'engineering'}),
-     ('take_data', {'starttime': 'foo', 'duration': 100, 'tag': 'engineering'}),
+     ('take_data', {'starttime': 'foo', 'duration': 100,
+                    'tag': 'engineering'}),
      ('take_data', {'starttime': Time.now() + TimeDelta(10, format='sec'),
                     'duration': 100, 'tag': 'foo'}),
      ('take_data', {'starttime': Time.now() + TimeDelta(10, format='sec'),
@@ -793,7 +799,8 @@ def test_control_command_errors_other():
 
     t1 = Time('2016-01-10 01:15:23', scale='utc')
     pytest.raises(ValueError, corr.CorrelatorTakeDataArguments.create,
-                  'foo', t1, 100, 2, 2 * ((2.0 * 16384) / 500e6), 'engineering')
+                  'foo', t1, 100, 2, 2 * ((2.0 * 16384) / 500e6),
+                  'engineering')
 
 
 @onsite
@@ -914,7 +921,8 @@ def test_corr_config_command_with_recent_config(mcsession, config, corrconfig):
 
 
 def test_corr_config_command_with_recent_config_match_prior(mcsession,
-                                                            config, corrconfig):
+                                                            config,
+                                                            corrconfig):
     test_session = mcsession
     # test commanding a config with a recent (different) config status but a
     # matching prior one
@@ -1305,14 +1313,14 @@ def test_add_snap_status(mcsession):
     t1 = Time('2016-01-10 01:15:23', scale='utc')
 
     t_prog = Time('2016-01-05 20:00:00', scale='utc')
-    test_session.add_snap_status(t1, 'heraNode23Snap1', 'SNPA000222',
+    test_session.add_snap_status(t1, 'heraNode700Snap0', 'SNPA000700',
                                  False, 595687, 57.984954833984375,
                                  595686, t_prog)
 
     expected = corr.SNAPStatus(time=int(floor(t1.gps)),
-                               hostname='heraNode23Snap1',
-                               serial_number='SNPA000222', node=23,
-                               snap_loc_num=1,
+                               hostname='heraNode700Snap0',
+                               serial_number='SNPA000700', node=700,
+                               snap_loc_num=0,
                                psu_alert=False, pps_count=595687,
                                fpga_temp=57.984954833984375,
                                uptime_cycles=595686,
@@ -1323,37 +1331,37 @@ def test_add_snap_status(mcsession):
     result = result[0]
     assert result.isclose(expected)
 
-    test_session.add_snap_status(t1, 'heraNode4Snap0', 'SNPA000224',
+    test_session.add_snap_status(t1, 'heraNode701Snap3', 'SNPD000703',
                                  True, 595699, 59.323028564453125,
                                  595699, t_prog)
 
     result = test_session.get_snap_status(
-        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=23)
+        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=700)
     assert len(result) == 1
     result = result[0]
     assert result.isclose(expected)
 
-    result_most_recent = test_session.get_snap_status(nodeID=23)
+    result_most_recent = test_session.get_snap_status(nodeID=700)
     assert len(result_most_recent) == 1
     result_most_recent = result_most_recent[0]
     assert result_most_recent.isclose(expected)
 
     expected = corr.SNAPStatus(time=int(floor(t1.gps)),
-                               hostname='heraNode4Snap0',
-                               serial_number='SNPA000224', node=4,
-                               snap_loc_num=0,
+                               hostname='heraNode701Snap3',
+                               serial_number='SNPD000703', node=701,
+                               snap_loc_num=3,
                                psu_alert=True, pps_count=595699,
                                fpga_temp=59.323028564453125,
                                uptime_cycles=595699,
                                last_programmed_time=int(floor(t_prog.gps)))
 
     result = test_session.get_snap_status(
-        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=4)
+        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=701)
     assert len(result) == 1
     result = result[0]
     assert result.isclose(expected)
 
-    result_most_recent = test_session.get_snap_status(nodeID=4)
+    result_most_recent = test_session.get_snap_status(nodeID=701)
     assert len(result_most_recent) == 1
     result_most_recent = result_most_recent[0]
     assert result_most_recent.isclose(expected)
@@ -1379,12 +1387,12 @@ def test_add_snap_status_from_corrcm(mcsession, snapstatus):
               format='datetime')
     t_prog = Time(datetime.datetime(2016, 1, 10, 23, 16, 3), format='datetime')
     result = test_session.get_snap_status(
-        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=23)
+        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=700)
 
     expected = corr.SNAPStatus(time=int(floor(t1.gps)),
-                               hostname='heraNode23Snap1',
-                               serial_number='SNPA000222', node=23,
-                               snap_loc_num=1,
+                               hostname='heraNode700Snap0',
+                               serial_number='SNPA000700', node=700,
+                               snap_loc_num=0,
                                psu_alert=False, pps_count=595687,
                                fpga_temp=57.984954833984375,
                                uptime_cycles=595686,
@@ -1393,18 +1401,18 @@ def test_add_snap_status_from_corrcm(mcsession, snapstatus):
     result = result[0]
     assert result.isclose(expected)
 
-    result_most_recent = test_session.get_snap_status(nodeID=23)
+    result_most_recent = test_session.get_snap_status(nodeID=700)
     assert len(result_most_recent) == 1
     result_most_recent = result_most_recent[0]
     assert result_most_recent.isclose(expected)
 
     result = test_session.get_snap_status(
-        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=4)
+        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=701)
 
     expected = corr.SNAPStatus(time=int(floor(t1.gps)),
-                               hostname='heraNode4Snap0',
-                               serial_number='SNPA000224', node=4,
-                               snap_loc_num=0,
+                               hostname='heraNode701Snap3',
+                               serial_number='SNPD000703', node=701,
+                               snap_loc_num=3,
                                psu_alert=False, pps_count=595699,
                                fpga_temp=59.323028564453125,
                                uptime_cycles=595699,
@@ -1431,8 +1439,9 @@ def test_add_snap_status_from_corrcm_with_nones(mcsession, snapstatus_none):
         starttime=t1 - TimeDelta(3.0, format='sec'))
 
     expected = corr.SNAPStatus(time=int(floor(t1.gps)),
-                               hostname='heraNode23Snap1',
-                               serial_number=None, node=None, snap_loc_num=None,
+                               hostname='heraNode700Snap0',
+                               serial_number=None, node=None,
+                               snap_loc_num=None,
                                psu_alert=None, pps_count=None,
                                fpga_temp=None, uptime_cycles=None,
                                last_programmed_time=None)
@@ -1446,78 +1455,269 @@ def test_snap_status_errors(mcsession):
     t1 = Time('2016-01-10 01:15:23', scale='utc')
 
     pytest.raises(ValueError, test_session.add_snap_status,
-                  'foo', 'heraNode23Snap1', 'SNPA000222', False,
+                  'foo', 'heraNode700Snap0', 'SNPA000700', False,
                   595687, 57.984954833984375, 595686, t1)
 
     pytest.raises(ValueError, test_session.add_snap_status,
-                  t1, 'heraNode23Snap1', 'SNPA000222', False, 595687,
+                  t1, 'heraNode700Snap0', 'SNPA000700', False, 595687,
                   57.984954833984375, 595686, 'foo')
 
 
-def test_get_node_snap_from_serial_errors(mcsession):
-    test_session = mcsession
-    node, snap_loc_num = checkWarnings(test_session._get_node_snap_from_serial,
+def test_get_node_snap_from_serial_nodossier(mcsession):
+    node, snap_loc_num = checkWarnings(mcsession._get_node_snap_from_serial,
                                        ['foo'],
                                        message='No active dossiers')
 
     assert node is None
     assert snap_loc_num is None
 
-    # test multiple snap location numbers
+
+def test_get_node_snap_from_serial_multiple_locs(mcsession):
+    """Test multiple snap location numbers."""
+    connection = cm_partconnect.Connections()
+    connection.upstream_part = 'SNPD000703'
+    connection.up_part_rev = 'A'
+    connection.downstream_part = 'N701'
+    connection.down_part_rev = 'A'
+    connection.upstream_output_port = 'rack'
+    connection.downstream_input_port = 'loc2'
+    connection.start_gpstime = 1230375618
+    mcsession.add(connection)
+    mcsession.commit()
     node, snap_loc_num = checkWarnings(
-        test_session._get_node_snap_from_serial, ['SNPC000017'],
+        mcsession._get_node_snap_from_serial, ['SNPD000703'],
         message='Multiple snap location numbers returned')
-    assert node == 0
+    assert node == 701
     assert snap_loc_num is None
 
+
+def test_get_node_snap_from_serial_multiple_nodes(mcsession):
+    """Test multiple node numbers."""
+    connection = cm_partconnect.Connections()
+    connection.upstream_part = 'SNPD000703'
+    connection.up_part_rev = 'A'
+    connection.downstream_part = 'N700'
+    connection.down_part_rev = 'A'
+    connection.upstream_output_port = 'rack'
+    connection.downstream_input_port = 'loc3'
+    connection.start_gpstime = 1230375618
+    mcsession.add(connection)
+    mcsession.commit()
     node, snap_loc_num = checkWarnings(
-        test_session._get_node_snap_from_serial, ['SNPC000018'],
+        mcsession._get_node_snap_from_serial, ['SNPD000703'],
         message='Multiple node connections returned')
     assert node is None
     assert snap_loc_num is None
 
-    # test multiple node numbers
+
+def test_get_node_snap_from_serial_multiple_noderevs(mcsession):
+    """Test multiple node revisions."""
+    # add part for new revision
+    part = cm_partconnect.Parts()
+    part.hpn = 'N701'
+    part.hpn_rev = 'B'
+    part.hptype = 'node'
+    part.manufacture_number = 'N701'
+    part.start_gpstime = 1230375618
+    mcsession.add(part)
+    mcsession.commit()
+
+    connection = cm_partconnect.Connections()
+    connection.upstream_part = 'SNPD000703'
+    connection.up_part_rev = 'A'
+    connection.downstream_part = 'N701'
+    connection.down_part_rev = 'B'
+    connection.upstream_output_port = 'rack'
+    connection.downstream_input_port = 'loc3'
+    connection.start_gpstime = 1230375718
+    mcsession.add(connection)
+    mcsession.commit()
     node, snap_loc_num = checkWarnings(
-        test_session._get_node_snap_from_serial, ['SNPC000018'],
+        mcsession._get_node_snap_from_serial, ['SNPD000703'],
         message='Multiple node connections returned')
     assert node is None
     assert snap_loc_num is None
 
-    # test multiple node revisions
-    node, snap_loc_num = checkWarnings(
-        test_session._get_node_snap_from_serial, ['SNPC000019'],
-        message='Multiple node connections returned')
-    assert node is None
-    assert snap_loc_num is None
 
-    # test multiple times
+def test_get_node_snap_from_serial_multiple_times_sameloc(mcsession):
+    """Test multiple times, same location."""
+    connection = cm_partconnect.Connections()
+    connection.upstream_part = 'SNPD000703'
+    connection.up_part_rev = 'A'
+    connection.downstream_part = 'N701'
+    connection.down_part_rev = 'A'
+    connection.upstream_output_port = 'rack'
+    connection.downstream_input_port = 'loc3'
+    connection.start_gpstime = 1230375718
+    mcsession.add(connection)
+    mcsession.commit()
     node, snap_loc_num = checkWarnings(
-        test_session._get_node_snap_from_serial, ['SNPC000020'], nwarnings=0)
-    assert node == 4
+        mcsession._get_node_snap_from_serial, ['SNPD000703'], nwarnings=0)
+    assert node == 701
     assert snap_loc_num == 3
 
-    # test multiple times with change in location
-    node, snap_loc_num = checkWarnings(test_session._get_node_snap_from_serial,
-                                       ['SNPC000021'], nwarnings=0)
-    assert node == 5
-    assert snap_loc_num == 0
 
+def test_get_node_snap_from_serial_multiple_times_diffloc(mcsession):
+    """Test multiple times with change in location."""
+    # stop earlier connection
+    conn_to_stop = [['SNPD000703', 'A', 'N701', 'A', 'rack', 'loc3',
+                    1230375618]]
+    cm_partconnect.stop_connections(mcsession, conn_to_stop,
+                                    Time(1230375700, format='gps'))
+
+    connection = cm_partconnect.Connections()
+    connection.upstream_part = 'SNPD000703'
+    connection.up_part_rev = 'A'
+    connection.downstream_part = 'N701'
+    connection.down_part_rev = 'A'
+    connection.upstream_output_port = 'rack'
+    connection.downstream_input_port = 'loc2'
+    connection.start_gpstime = 1230375718
+    mcsession.add(connection)
+    mcsession.commit()
+    node, snap_loc_num = checkWarnings(mcsession._get_node_snap_from_serial,
+                                       ['SNPD000703'], nwarnings=0)
+    assert node == 701
+    assert snap_loc_num == 2
+
+
+def test_get_node_snap_from_serial_multiple_dossiers(mcsession):
+    """Test multiple active dossiers."""
+    # add part for new revision
+    part = cm_partconnect.Parts()
+    part.hpn = 'SNPD000703'
+    part.hpn_rev = 'B'
+    part.hptype = 'snap'
+    part.manufacture_number = 'SNPD000703'
+    part.start_gpstime = 1230375618
+    mcsession.add(part)
+    mcsession.commit()
+
+    connection = cm_partconnect.Connections()
+    connection.upstream_part = 'SNPD000703'
+    connection.up_part_rev = 'B'
+    connection.downstream_part = 'N701'
+    connection.down_part_rev = 'A'
+    connection.upstream_output_port = 'rack'
+    connection.downstream_input_port = 'loc2'
+    connection.start_gpstime = 1230375618
+    mcsession.add(connection)
+    mcsession.commit()
     node, snap_loc_num = checkWarnings(
-        test_session._get_node_snap_from_serial, ['SNPB000005'],
+        mcsession._get_node_snap_from_serial, ['SNPD000703'],
         message='Multiple active dossiers returned')
     assert node is None
     assert snap_loc_num is None
 
-    node, snap_loc_num = test_session._get_node_snap_from_serial('SNPA000312')
+
+def test_get_node_snap_from_serial_no_loc(mcsession):
+    # test no 'loc' in dossier
+    # add part
+    part = cm_partconnect.Parts()
+    part.hpn = 'SNPD000704'
+    part.hpn_rev = 'A'
+    part.hptype = 'snap'
+    part.manufacture_number = 'SNPD000704'
+    part.start_gpstime = 1230375618
+    mcsession.add(part)
+    mcsession.commit()
+
+    connection = cm_partconnect.Connections()
+    connection.upstream_part = 'SNPD000704'
+    connection.up_part_rev = 'A'
+    connection.downstream_part = 'N701'
+    connection.down_part_rev = 'A'
+    connection.upstream_output_port = 'rack'
+    connection.downstream_input_port = 'slot2'
+    connection.start_gpstime = 1230375618
+    mcsession.add(connection)
+    mcsession.commit()
+    node, snap_loc_num = mcsession._get_node_snap_from_serial('SNPD000704')
     assert snap_loc_num is None
 
-    node, snap_loc_num = test_session._get_node_snap_from_serial('SNPA000313')
+
+def test_get_node_snap_from_serial_no_locnum(mcsession):
+    # test no number after 'loc' in dossier
+    # add part
+    part = cm_partconnect.Parts()
+    part.hpn = 'SNPD000704'
+    part.hpn_rev = 'A'
+    part.hptype = 'snap'
+    part.manufacture_number = 'SNPD000704'
+    part.start_gpstime = 1230375618
+    mcsession.add(part)
+    mcsession.commit()
+
+    connection = cm_partconnect.Connections()
+    connection.upstream_part = 'SNPD000704'
+    connection.up_part_rev = 'A'
+    connection.downstream_part = 'N701'
+    connection.down_part_rev = 'A'
+    connection.upstream_output_port = 'rack'
+    connection.downstream_input_port = 'loctwo'
+    connection.start_gpstime = 1230375618
+    mcsession.add(connection)
+    mcsession.commit()
+    node, snap_loc_num = mcsession._get_node_snap_from_serial('SNPD000704')
     assert snap_loc_num is None
 
-    node, snap_loc_num = test_session._get_node_snap_from_serial('SNPA000314')
+
+def test_get_node_snap_from_serial_no_node(mcsession):
+    # test no 'N' before upstream part
+    # add part
+    part = cm_partconnect.Parts()
+    part.hpn = 'SNPD000704'
+    part.hpn_rev = 'A'
+    part.hptype = 'snap'
+    part.manufacture_number = 'SNPD000704'
+    part.start_gpstime = 1230375618
+    mcsession.add(part)
+    mcsession.commit()
+
+    connection = cm_partconnect.Connections()
+    connection.upstream_part = 'SNPD000704'
+    connection.up_part_rev = 'A'
+    connection.downstream_part = 'PAM710'
+    connection.down_part_rev = 'A'
+    connection.upstream_output_port = 'rack'
+    connection.downstream_input_port = 'loc2'
+    connection.start_gpstime = 1230375618
+    mcsession.add(connection)
+    node, snap_loc_num = mcsession._get_node_snap_from_serial('SNPD000704')
     assert node is None
 
-    node, snap_loc_num = test_session._get_node_snap_from_serial('SNPA000315')
+
+def test_get_node_snap_from_serial_no_nodenum(mcsession):
+    # test no number after 'N' in upstream part
+    # add part
+    part = cm_partconnect.Parts()
+    part.hpn = 'SNPD000704'
+    part.hpn_rev = 'A'
+    part.hptype = 'snap'
+    part.manufacture_number = 'SNPD000704'
+    part.start_gpstime = 1230375618
+    mcsession.add(part)
+    mcsession.commit()
+
+    part = cm_partconnect.Parts()
+    part.hpn = 'Nseven'
+    part.hpn_rev = 'A'
+    part.hptype = 'node'
+    part.manufacture_number = 'Nseven'
+    part.start_gpstime = 1230375618
+    mcsession.add(part)
+    mcsession.commit()
+
+    connection = cm_partconnect.Connections()
+    connection.upstream_part = 'SNPD000704'
+    connection.up_part_rev = 'A'
+    connection.downstream_part = 'Nseven'
+    connection.down_part_rev = 'A'
+    connection.upstream_output_port = 'rack'
+    connection.downstream_input_port = 'loc2'
+    connection.start_gpstime = 1230375618
+    mcsession.add(connection)
+    node, snap_loc_num = mcsession._get_node_snap_from_serial('SNPD000704')
     assert node is None
 
 
@@ -1526,8 +1726,8 @@ def test_get_snap_hostname_from_serial(mcsession, snapstatus):
     test_session.add_snap_status_from_corrcm(
         snap_status_dict=snapstatus)
 
-    hostname = test_session.get_snap_hostname_from_serial('SNPA000222')
-    assert hostname == 'heraNode23Snap1'
+    hostname = test_session.get_snap_hostname_from_serial('SNPA000700')
+    assert hostname == 'heraNode700Snap0'
 
     hostname = test_session.get_snap_hostname_from_serial('blah')
     assert hostname is None
@@ -1562,7 +1762,7 @@ def test_add_antenna_status(mcsession):
     pam_id = ''.join([hex(i)[2:] for i in pam_id_list])
     fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
     fem_id = ''.join([hex(i)[2:] for i in fem_id_list])
-    test_session.add_antenna_status(t1, 4, 'e', 'heraNode23Snap1', 3,
+    test_session.add_antenna_status(t1, 4, 'e', 'heraNode700Snap0', 3,
                                     -0.5308380126953125, 3.0134560488579285,
                                     9.080917358398438, 0, -13.349140985640002,
                                     10.248, 0.6541, pam_id, 6.496,
@@ -1575,7 +1775,7 @@ def test_add_antenna_status(mcsession):
     histogram_string = '[0,3,6,10,12,8,4,0]'
     expected = corr.AntennaStatus(time=int(floor(t1.gps)), antenna_number=4,
                                   antenna_feed_pol='e',
-                                  snap_hostname='heraNode23Snap1',
+                                  snap_hostname='heraNode700Snap0',
                                   snap_channel_number=3,
                                   adc_mean=-0.5308380126953125,
                                   adc_rms=3.0134560488579285,
@@ -1697,7 +1897,7 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
     fem_id = ''.join([hex(i)[2:] for i in fem_id_list])
     expected = corr.AntennaStatus(time=int(floor(t1.gps)), antenna_number=4,
                                   antenna_feed_pol='e',
-                                  snap_hostname='heraNode23Snap1',
+                                  snap_hostname='heraNode700Snap0',
                                   snap_channel_number=3,
                                   adc_mean=-0.5308380126953125,
                                   adc_rms=3.0134560488579285,
@@ -1727,7 +1927,8 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
     result = test_session.get_antenna_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), antenna_number=31)
 
-    eq_coeffs_str = [str(val) for val in (np.zeros((1024)) + 73.46875).tolist()]
+    eq_coeffs_str = [str(val) for val in
+                     (np.zeros((1024)) + 73.46875).tolist()]
     eq_coeffs_string = '[' + ','.join(eq_coeffs_str) + ']'
     histogram_bin_str = [str(val) for val
                          in np.arange(-128, 182, dtype=np.int).tolist()]
@@ -1803,7 +2004,7 @@ def test_antenna_status_errors(mcsession):
     fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
     fem_id = ''.join([hex(i)[2:] for i in fem_id_list])
     pytest.raises(ValueError, test_session.add_antenna_status,
-                  'foo', 4, 'e', 'heraNode23Snap1', 3, -0.5308380126953125,
+                  'foo', 4, 'e', 'heraNode700Snap0', 3, -0.5308380126953125,
                   3.0134560488579285, 9.080917358398438, 0,
                   -13.349140985640002, 10.248, 0.6541, pam_id,
                   6.496, 0.5627000000000001, fem_id,
@@ -1811,7 +2012,7 @@ def test_antenna_status_errors(mcsession):
                   histogram_bins, histogram)
 
     pytest.raises(ValueError, test_session.add_antenna_status,
-                  t1, 4, 'x', 'heraNode23Snap1', 3, -0.5308380126953125,
+                  t1, 4, 'x', 'heraNode700Snap0', 3, -0.5308380126953125,
                   3.0134560488579285, 9.080917358398438, 0,
                   -13.349140985640002, 10.248, 0.6541, pam_id,
                   6.496, 0.5627000000000001, fem_id,

@@ -393,7 +393,6 @@ class Handling:
             Git hash of the hera_cm_db_updates repo
         """
         from .cm_transfer import CMVersion
-
         self.session.add(CMVersion.create(time, git_hash))
 
     def get_cm_version(self, at_date='now'):
@@ -419,7 +418,6 @@ class Handling:
         # get last row before at_date
         result = self.session.query(CMVersion).filter(CMVersion.update_time < at_date.gps).order_by(
             desc(CMVersion.update_time)).limit(1).all()
-
         return result[0].git_hash
 
     def get_part_type_for(self, hpn):
@@ -483,13 +481,15 @@ class Handling:
         """
 
         at_date = cm_utils.get_astropytime(at_date)
-        hpn_list, rev_list = cm_utils.match_listify(req1=hpn, req2=rev)
+        hpn = cm_utils.listify(hpn)
+        if isinstance(rev, six.string_types):
+            rev = len(hpn) * [rev]
         rev_part = {}
-        for i, xhpn in enumerate(hpn_list):
+        for i, xhpn in enumerate(hpn):
             if not exact_match and xhpn[-1] != '%':
                 xhpn = xhpn + '%'
             for part in self.session.query(PC.Parts).filter(PC.Parts.hpn.ilike(xhpn)):
-                rev_part[part.hpn] = cmrev.get_revisions_of_type(part.hpn, rev_list[i],
+                rev_part[part.hpn] = cmrev.get_revisions_of_type(part.hpn, rev[i],
                                                                  at_date=at_date,
                                                                  session=self.session)
         return rev_part

@@ -16,7 +16,7 @@ import six
 from sqlalchemy import func
 import cartopy.crs as ccrs
 
-from . import mc, cm_partconnect, cm_utils, geo_location
+from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef
 
 
 def cofa(session=None):
@@ -139,7 +139,7 @@ class Handling:
 
     def start_file(self, fname):
         import os.path as op
-        if op.isfile(fname):  # pragma: no cover
+        if op.isfile(fname):
             print("{} exists so appending to it".format(fname))
         else:
             print("Writing to new {}".format(fname))
@@ -210,15 +210,24 @@ class Handling:
         Returns None or the active station_name (must be an active station for
             the query_date)
 
-        Parameters:
-        ------------
-        antenna:  antenna number as float, int, or string. If needed, it prepends the 'A'
-        query_date:  is the astropy Time for contemporary antenna
+        Parameters
+        ----------
+        antenna : float, int, str
+            antenna number as float, int, or string. If needed, it prepends the 'A'
+        query_date : string, int, Time, datetime
+            is the astropy Time for contemporary antenna
+
+        Returns
+        -------
+        str
+            station connected
         """
 
         query_date = cm_utils.get_astropytime(query_date)
-        if type(antenna) == float or type(antenna) == int or antenna[0] != 'A':
-            antenna = 'A' + str(antenna).strip('0')
+        if isinstance(antenna, (int, float)):
+            antenna = 'A' + str(int(antenna))
+        elif antenna[0].upper() != 'A':
+            antenna = 'A' + antenna
         connected_antenna = self.session.query(cm_partconnect.Connections).filter(
             (func.upper(cm_partconnect.Connections.downstream_part) == antenna.upper())
             & (query_date.gps >= cm_partconnect.Connections.start_gpstime))
@@ -282,7 +291,7 @@ class Handling:
             if sttc.lower() == 'all':
                 return list(self.station_types.keys())
             elif sttc.lower() == 'default':
-                sttc = cm_utils.default_station_prefixes
+                sttc = cm_sysdef.hera_zone_prefixes
             else:
                 sttc = [sttc]
         sttypes = set()

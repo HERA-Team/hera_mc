@@ -1,4 +1,3 @@
 antenna,start_gpstime,status
-HH0,1214481618,not_connected
-HH0,1214482618,not_connected
-HH1,1214482618,known_bad
+HH700,1214481618,not_connected
+HH701,1214482618,known_bad

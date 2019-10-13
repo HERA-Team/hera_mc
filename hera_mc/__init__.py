@@ -91,6 +91,11 @@ def NotNull(kind, **kwargs):
 from . import version  # noqa
 from . import autocorrelations  # noqa
 from . import cm_transfer  # noqa
+from . import cm_dossier  # noqa
+from . import cm_active  # noqa
+from . import cm_sysdef  # noqa
+from . import cm_utils  # noqa
+from . import cm_sysutils  # noqa
 from . import cm_partconnect  # noqa
 from . import correlator  # noqa
 from . import daemon_status  # noqa

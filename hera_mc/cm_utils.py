@@ -18,8 +18,6 @@ import datetime
 from . import mc
 
 PAST_DATE = '2000-01-01'
-all_hera_zone_prefixes = ['HH', 'HA', 'HB']  # This is for hookup_cache to get all
-default_station_prefixes = ['HH', 'HA', 'HB']  # This is for defaults for sys etc.
 
 
 def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
@@ -89,9 +87,17 @@ def log(msg, **kwargs):
 system_wide_key = '__Sys__'
 
 
-def make_part_key(hpn, rev):
+def port_is_polarized(port, pol_list):
+    for pol in pol_list:
+        if port.upper().startswith(pol.upper()):
+            return True
+    return False
+
+
+def make_part_key(hpn, rev, port=None):
     """
-    Returns the standard part key of hpn:rev
+    Returns the standard part key of hpn:rev[:port].  Port is only
+    included if not None
 
     Parameters
     ----------
@@ -99,6 +105,8 @@ def make_part_key(hpn, rev):
         HERA part number.  If None, it returns the system_wide_key
     rev : str
         HERA part revision
+    port : str
+        HERA port name
 
     Returns
     -------
@@ -106,13 +114,17 @@ def make_part_key(hpn, rev):
         key
     """
     if hpn is None:
-        return(system_wide_key)
-    return ":".join([hpn, rev]).strip()
+        return system_wide_key
+
+    if port is None:
+        return ":".join([hpn.upper(), rev.upper()])
+
+    return ":".join([hpn.upper(), rev.upper(), port.upper()])
 
 
 def split_part_key(key):
     """
-    Splits the standard part key.
+    Splits the standard part key.  Only returns port if present in key.
 
     Parameters
     ----------
@@ -122,9 +134,15 @@ def split_part_key(key):
     Returns
     -------
     tuple
-        hpn, rev
+        hpn, rev, [,port]
     """
-    return key.split(':')[0], key.split(':')[1]
+
+    split_key = key.split(":")
+
+    if len(split_key) == 2:
+        return split_key[0], split_key[1]
+
+    return split_key[0], split_key[1], split_key[2]
 
 
 def make_connection_key(hpn, rev, port, start_gps):
@@ -147,7 +165,7 @@ def make_connection_key(hpn, rev, port, start_gps):
     str
         key
     """
-    return ":".join([hpn, rev, port, str(start_gps)]).strip()
+    return ":".join([hpn.upper(), rev.upper(), port.upper(), str(start_gps).upper()])
 
 
 def split_connection_key(key):
@@ -212,29 +230,12 @@ def listify(X):
     return [X]
 
 
-def match_listify(req1, req2):
-    """
-    Makes sure that the two requests are both lists and that they are
-    equal in length.  Raises an Error if can't match.
-
-    Parameters
-    ----------
-    req1, req1 : lists
-        Two lists to be matched.
-
-    Returns
-    -------
-    tuple of lists
-        Matched lists
-    """
-    list1 = listify(req1)
-    if isinstance(req2, list):
-        list2 = req2
-    else:
-        list2 = len(list1) * [req2]
-    if len(list1) != len(list2):
-        raise ValueError("Unmatched list requests.")
-    return list1, list2
+def to_upper(X):
+    if X is None:
+        return None
+    if isinstance(X, list):
+        return [to_upper(s) for s in X]
+    return str(X).upper()
 
 
 def add_verbosity_args(parser):
@@ -447,16 +448,17 @@ def get_astropytime(adate, atime=0):
             return return_date + TimeDelta(add_time, format='sec')
 
 
-def put_keys_in_numerical_order(keys):
+def put_keys_in_order(keys, sort_order='NPR'):
     """
-    Takes a list of hookup keys in the format of prefix[+number]:revision and puts them in number order.
-    If no number supplied, it uses 0. If no revision supplied, it uses 'A'.
-    Returns the ordered list of keys
+    Takes a list of hookup keys in the format of prefix[number][:revision] and
+    puts them in alpha+number order.
 
     Parameters
     ----------
     keys : list
         List of hookup keys
+    sort_order : str
+        Order of sorting: N=number, P=prefix, R=revision
 
     Returns
     -------
@@ -478,7 +480,12 @@ def put_keys_in_numerical_order(keys):
                 continue
         prefix = c[:i]
         rev = c[colon + 1:]
-        dkey = (n, prefix, rev)
+        if sort_order.upper() == 'NPR':
+            dkey = (n, prefix, rev)
+        elif sort_order.upper() == 'PNR':
+            dkey = (prefix, n, rev)
+        elif sort_order.upper() == 'RPN':
+            dkey = (rev, prefix, n)
         keylib[dkey] = k
 
     keyordered = []

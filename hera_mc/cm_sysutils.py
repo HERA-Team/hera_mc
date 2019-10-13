@@ -9,11 +9,11 @@ Methods for handling locating correlator and various system aspects.
 from __future__ import absolute_import, division, print_function
 
 import six
-from astropy.time import Time, TimeDelta
+from astropy.time import Time
 from sqlalchemy import func, and_, or_
 import numpy as np
 
-from . import mc, cm_partconnect, cm_utils, cm_hookup, cm_revisions, cm_sysdef
+from . import mc, cm_partconnect, cm_utils, cm_revisions, cm_sysdef, cm_hookup
 from . import geo_location, geo_handling
 
 
@@ -192,7 +192,7 @@ class Handling:
             H = self.H
         else:
             H = cm_hookup.Hookup(self.session)
-        hud = H.get_hookup(hpn_list=[stn], at_date=at_date, exact_match=True, hookup_type=hookup_type)
+        hud = H.get_hookup(hpn=[stn], at_date=at_date, exact_match=True, hookup_type=hookup_type)
         station_info = None
         fully_connected = cm_revisions.get_full_revision(stn, hud)
         fully_connected_keys = set()
@@ -217,12 +217,13 @@ class Handling:
             corr = {}
             pe = {}
             for p, hu in six.iteritems(current_hookup):
-                pe[p] = hud[k].hookup_type[p]
-                cind = self.sysdef.corr_index[pe[p]] - 1  # The '- 1' makes it the downstream_part
+                pol = p[0].lower()
+                pe[pol] = hud[k].hookup_type[p]
+                cind = self.sysdef.corr_index[pe[pol]] - 1  # The '- 1' makes it the downstream_part
                 try:
-                    corr[p] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
+                    corr[pol] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
                 except IndexError:  # pragma: no cover
-                    corr[p] = 'None'
+                    corr[pol] = 'None'
             fnd_list = self.geo.get_location([stn], at_date)
             if len(fnd_list) == 1:
                 fnd = fnd_list[0]
@@ -278,7 +279,7 @@ class Handling:
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
         stations_conn = self.get_all_fully_connected_at_date(
-            at_date='now', station_types_to_check=cm_utils.default_station_prefixes, hookup_type=hookup_type)
+            at_date='now', station_types_to_check=cm_sysdef.hera_zone_prefixes, hookup_type=hookup_type)
         stn_arrays = SystemInfo()
         for stn in stations_conn:
             stn_arrays.update_arrays(stn)
@@ -342,13 +343,12 @@ class Handling:
         H = cm_hookup.Hookup(self.session)
         if isinstance(stn, six.string_types):
             stn = [stn]
-        hud = H.get_hookup(hpn_list=stn, at_date=at_date, exact_match=True, hookup_type=hookup_type)
+        hud = H.get_hookup(hpn=stn, at_date=at_date, exact_match=True, hookup_type=hookup_type)
         for k, hu in six.iteritems(hud):
             parts[k] = hu.get_part_in_hookup_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
 
-    def publish_summary(self, hlist='default', rev='ACTIVE', exact_match=False,
-                        hookup_cols='all', force_new_hookup_dict=True):
+    def publish_summary(self, hlist='default', exact_match=False, hookup_cols='all'):
         """
         Publishes the hookup on hera.today.
 
@@ -356,14 +356,10 @@ class Handling:
         ----------
         hlist : str, list
             List of prefixes or stations to use in summary.  Default is the "default" prefix list in cm_utils.
-        rev : str
-            Revision or revision type.
         exact_match : bool
             Flag for exact_match or included characters.
         hookup_cols : str, list
             List of hookup columns to use, or 'all'.
-        forc_new_hookup_dict : bool
-            Flag to force a new hookup dict to be generated (as opposed to checking for cache.)
 
         Returns
         -------
@@ -371,14 +367,12 @@ class Handling:
             Status string.  "OK" or "Not on 'main'"
         """
         import os.path
-        if isinstance(hlist, six.string_types):
-            hlist = [hlist]
-        if hlist[0].lower() == 'default':
-            hlist = cm_utils.default_station_prefixes
+        if isinstance(hlist, six.string_types) and hlist.lower() == 'default':
+            hlist = cm_sysdef.hera_zone_prefixes
+        hlist = cm_utils.listify(hlist)
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         H = cm_hookup.Hookup(self.session)
-        hookup_dict = H.get_hookup(hpn_list=hlist, rev=rev, port_query='all', at_date='now', exact_match=exact_match,
-                                   force_new_cache=force_new_hookup_dict, force_db=False, hookup_type=None)
+        hookup_dict = H.get_hookup(hpn=hlist, pol='all', at_date='now', exact_match=exact_match, hookup_type=None)
         H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, ports=True,
                       revs=True, state='full', filename=output_file, output_format='html')
 

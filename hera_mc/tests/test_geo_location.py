@@ -8,8 +8,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from .. import geo_location, geo_handling
-from ..tests import checkWarnings
+from .. import geo_location, geo_handling, cm_partconnect
 from astropy.time import Time
 
 
@@ -46,37 +45,28 @@ def test_update_new(mcsession, geo_handle):
 
 
 def test_update_update(mcsession, geo_handle):
-    data = [["HH23", 'elevation', 1100.0]]
+    data = [["HH704", 'elevation', 1100.0]]
     geo_location.update(mcsession, data, add_new_geo=False)
-    located = geo_handle.get_location(["HH23"], 'now')
+    located = geo_handle.get_location(["HH704"], 'now')
     assert located[0].elevation == 1100.0
 
 
-def test_random(geo_handle):
+def test_random(geo_handle, capsys):
     geo_handle.start_file('test')
+    captured = capsys.readouterr()
+    assert 'Writing to new test' in captured.out
 
 
 def test_geo_location(mcsession):
     g = geo_location.GeoLocation()
     g.geo(station_name='TestSetAttr')
     assert g.station_name == 'TESTSETATTR'
-    print(g)
     s = geo_location.StationType()
-    print(s)
     rv = geo_location.update()
     assert not rv
-    rv = geo_location.update(session=mcsession, data='HH0:Tile')
-    assert not rv
-    rv = geo_location.update(session=mcsession,
-                             data='HH0:Tile:34J,Elevation:0.0,Northing')
-    assert rv
-    rv = geo_location.update(session=mcsession, data='HHX:Tile:34J')
-    assert rv
-    rv = geo_location.update(session=mcsession, data='HH0:Tile:34J',
-                             add_new_geo=True)
-    assert rv
-    rv = geo_location.update(session=mcsession, data='HH0:NotThere:34J')
-    assert rv
+    pytest.raises(ValueError, geo_location.update, mcsession, 'HH0:Tile')
+    pytest.raises(ValueError, geo_location.update, mcsession,
+                  'HH0:Tile:34J,Elevation:0.0,Northing')
 
 
 def test_station_types(geo_handle):
@@ -88,20 +78,22 @@ def test_get_ants_installed_since(geo_handle):
     query_date = Time('2017-05-01 01:00:00', scale='utc')
     ants_in = geo_handle.get_ants_installed_since(
         query_date, station_types_to_check=['HH'])
-    assert len(ants_in) == 7
+    assert len(ants_in) == 13
 
 
 def test_plotting(geo_handle):
     stations_to_plot = ['HH0']
-    query_date = Time('2017-08-25 01:00:00', scale='utc')
+    query_date = Time('2019-09-20 01:00:00', scale='utc')
     stations = geo_handle.get_location(stations_to_plot, query_date)
     geo_handle.plot_stations(stations, xgraph='E', ygraph='N',
                              show_label='name', marker_color='k',
                              marker_shape='*', marker_size=14)
-    geo_handle.plot_stations(stations, xgraph='E', ygraph='N', show_label='num',
-                             marker_color='k', marker_shape='*', marker_size=14)
-    geo_handle.plot_stations(stations, xgraph='E', ygraph='N', show_label='ser',
-                             marker_color='k', marker_shape='*', marker_size=14)
+    geo_handle.plot_stations(stations, xgraph='E', ygraph='N',
+                             show_label='num', marker_color='k',
+                             marker_shape='*', marker_size=14)
+    geo_handle.plot_stations(stations, xgraph='E', ygraph='N',
+                             show_label='ser', marker_color='k',
+                             marker_shape='*', marker_size=14)
     geo_handle.plot_stations(stations, xgraph='E', ygraph='N',
                              show_label='other_thing', marker_color='k',
                              marker_shape='*', marker_size=14)
@@ -122,15 +114,15 @@ def test_plotting(geo_handle):
 
 
 def test_antenna_label(geo_handle):
-    stations_to_plot = ['HH0']
-    query_date = Time('2017-08-25 01:00:00', scale='utc')
+    stations_to_plot = ['HH700']
+    query_date = Time('2019-09-20 01:00:00', scale='utc')
     stations = geo_handle.get_location(stations_to_plot, query_date)
     x = geo_handle.get_antenna_label('name', stations[0], query_date)
-    assert x == 'HH0'
+    assert x == 'HH700'
     x = geo_handle.get_antenna_label('num', stations[0], query_date)
-    assert x == '0'
+    assert x == '700'
     x = geo_handle.get_antenna_label('ser', stations[0], query_date)
-    assert x == 'H3'
+    assert x == '700'
 
 
 def test_parse_station_types(geo_handle):
@@ -142,29 +134,34 @@ def test_parse_station_types(geo_handle):
 
 def test_get_active_stations(geo_handle):
     active = geo_handle.get_active_stations(
-        'now', ['HH'], hookup_type='parts_paper')
-    assert active[0].station_name == 'HH0'
+        'now', ['HH'], hookup_type='parts_hera')
+    assert len(active) == 12
 
 
 def test_is_in_database(geo_handle):
-    assert geo_handle.is_in_database('HH23', 'geo_location')
-    assert geo_handle.is_in_database('HH23', 'connections')
+    assert geo_handle.is_in_database('HH700', 'geo_location')
+    assert geo_handle.is_in_database('HH700', 'connections')
     assert not geo_handle.is_in_database('BB0', 'geo_location')
     pytest.raises(ValueError, geo_handle.is_in_database, 'HH666', 'wrong_one')
 
 
-def test_find_antenna_station_pair(geo_handle):
-    ant, rev = geo_handle.find_antenna_at_station('HH23', 'now')
-    assert ant == 'A23'
+def test_find_antenna_station_pair(geo_handle, mcsession):
+    ant, rev = geo_handle.find_antenna_at_station('HH700', 'now')
+    assert ant == 'A700'
     ant, rev = geo_handle.find_antenna_at_station('BB23', 'now')
     assert ant is None
-    c = checkWarnings(geo_handle.find_antenna_at_station, ['HH68', 'now'],
-                      message='More than one active connection for HH68')
-    assert len(c) == 2
-    stn = geo_handle.find_station_of_antenna('A23', 'now')
-    assert stn == 'HH23'
-    stn = geo_handle.find_station_of_antenna(23, 'now')
-    assert stn == 'HH23'
+    u = ['HH700', 'A', 'A700', 'H', 'ground', 'ground', 1220000000]
+    data = [u + ['upstream_part', u[0]],
+            u + ['up_part_rev', u[1]],
+            u + ['downstream_part', u[2]],
+            u + ['down_part_rev', u[3]],
+            u + ['upstream_output_port', u[4]],
+            u + ['downstream_input_port', u[5]],
+            u + ['start_gpstime', u[6]]]
+    cm_partconnect.update_connection(mcsession, data,
+                                     add_new_connection=True)
+    pytest.raises(ValueError, geo_handle.find_station_of_antenna, 700, 'now')
+    stn = geo_handle.find_station_of_antenna('A702', 'now')
+    assert stn == 'HH702'
     stn = geo_handle.find_station_of_antenna(1024, 'now')
     assert stn is None
-    pytest.raises(ValueError, geo_handle.find_station_of_antenna, 68, 'now')

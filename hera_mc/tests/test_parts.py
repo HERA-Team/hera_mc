@@ -10,16 +10,16 @@ import pytest
 from astropy.time import Time
 
 from hera_mc import cm_partconnect, cm_utils, cm_handling, cm_revisions
-from hera_mc.tests import checkWarnings
 
 
 @pytest.fixture(scope='function')
 def parts(mcsession):
+    """Fixture for commonly used part data."""
     test_session = mcsession
     test_part = 'test_part'
     test_rev = 'Q'
     test_hptype = 'antenna'
-    start_time = Time('2017-07-01 01:00:00', scale='utc')
+    start_time = Time('2019-07-01 01:00:00', scale='utc')
     cm_handle = cm_handling.Handling(test_session)
 
     # Add a test part
@@ -110,7 +110,7 @@ def test_part_dossier(parts, capsys):
         exact_match=True)
     parts.cm_handle.show_parts(located, notes_only=True)
     captured = capsys.readouterr()
-    assert 'System:A' in captured.out.strip()
+    assert 'A700:H' in captured.out.strip()
 
 
 def test_show_parts(parts, capsys):
@@ -122,8 +122,7 @@ def test_show_parts(parts, capsys):
         exact_match=True)
     parts.cm_handle.show_parts(located)
     captured = capsys.readouterr()
-    assert ('TEST_PART  | Q     | antenna     |         | 2017-07-01 01:00:37'
-            in captured.out.strip())
+    assert ('TEST_PART' in captured.out.strip())
     parts.cm_handle.show_parts(located, notes_only=True)
     captured = capsys.readouterr()
     assert 'library_file' in captured.out.strip()
@@ -131,12 +130,12 @@ def test_show_parts(parts, capsys):
     captured = capsys.readouterr()
     assert 'Part not found' in captured.out.strip()
     located = parts.cm_handle.get_part_dossier(
-        hpn=['A0'], rev=['H'], at_date='now', exact_match=True)
+        hpn=['A700'], rev=['H'], at_date='now', exact_match=True)
     parts.cm_handle.show_parts(located, notes_only=True)
     captured = capsys.readouterr()
     assert 'Comment 2' in captured.out.strip()
     located = parts.cm_handle.get_part_dossier(
-        hpn=['HH0'], rev=['A'], at_date='now', exact_match=True)
+        hpn=['HH700'], rev=['A'], at_date='now', exact_match=True)
     parts.cm_handle.show_parts(located)
     captured = capsys.readouterr()
     assert '540901.6E, 6601070.7N, 1052.6m' in captured.out.strip()
@@ -209,9 +208,10 @@ def test_stop_parts(parts, capsys):
 
 
 def test_cm_version(parts):
-    parts.cm_handle.add_cm_version(cm_utils.get_astropytime('now'),
+    parts.cm_handle.add_cm_version(Time('2019-09-20 01:00:00', scale='utc'),
                                    'Test-git-hash')
-    gh = parts.cm_handle.get_cm_version()
+    gh = parts.cm_handle.get_cm_version(Time('2019-09-20 01:00:00',
+                                             scale='utc'))
     assert gh == 'Test-git-hash'
 
 
@@ -220,36 +220,25 @@ def test_get_revisions_of_type(parts, capsys):
     rev_types = ['LAST', 'ACTIVE', 'ALL', 'A']
     for rq in rev_types:
         revision = cm_revisions.get_revisions_of_type(
-            'HH0', rq, at_date, parts.test_session)
+            'HH700', rq, at_date, parts.test_session)
         assert revision[0].rev == 'A'
         revision = cm_revisions.get_revisions_of_type(
             None, rq, at_date, parts.test_session)
         assert len(revision) == 0
     revision = cm_revisions.get_revisions_of_type(
-        'TEST_FEED', 'LAST', 'now', parts.test_session)
-    assert revision[0].rev == 'Z'
+        parts.test_part, 'LAST', 'now', parts.test_session)
+    assert revision[0].rev == 'Q'
     revision = cm_revisions.get_revisions_of_type(
         None, 'ACTIVE', 'now', parts.test_session)
     cm_revisions.show_revisions(revision)
     captured = capsys.readouterr()
     assert 'No revisions found' in captured.out.strip()
     revision = cm_revisions.get_revisions_of_type(
-        'HH23', 'ACTIVE', 'now', parts.test_session)
+        'HH700', 'ACTIVE', 'now', parts.test_session)
     cm_revisions.show_revisions(revision)
     captured = capsys.readouterr()
-    assert '1096509616.0' in captured.out.strip()
-    assert revision[0].hpn == 'HH23'
-
-
-def test_match_listify(parts):
-    testing = [['hpn', 'rev'], [['hpn1', 'hpn2', 'hpn3'], 'rev'],
-               [['hpn1', 'hpn2'], ['rev1', 'rev2']]]
-    for testit in testing:
-        h, r = cm_utils.match_listify(testit[0], testit[1])
-        assert len(h) == len(r)
-    pytest.raises(ValueError, cm_utils.match_listify, ['hpn'], ['A', 'B'])
-    x = cm_utils.listify(1)
-    assert x[0] == 1
+    assert '1230372018' in captured.out.strip()
+    assert revision[0].hpn == 'HH700'
 
 
 def test_get_part_types(parts, capsys):
@@ -258,28 +247,7 @@ def test_get_part_types(parts, capsys):
     assert 'terminals' in a['feed']['output_ports']
     parts.cm_handle.show_part_types()
     captured = capsys.readouterr()
-    assert 'A, B, Q, R, Z' in captured.out.strip()
-
-
-def test_check_overlapping(parts):
-    from .. import cm_health
-    c = cm_health.check_part_for_overlapping_revisions(
-        parts.test_part, parts.test_session)
-    assert len(c) == 0
-    # Add a test part
-    part = cm_partconnect.Parts()
-    part.hpn = parts.test_part
-    part.hpn_rev = 'B'
-    part.hptype = parts.test_hptype
-    part.manufacture_number = 'XYZ'
-    part.start_gpstime = parts.start_time.gps
-    parts.test_session.add(part)
-    parts.test_session.commit()
-    c = checkWarnings(
-        cm_health.check_part_for_overlapping_revisions,
-        func_args=[parts.test_part, parts.test_session],
-        message='Q and B are overlapping revisions of part test_part')
-    assert len(c) == 1
+    assert 'H, Q' in captured.out.strip()
 
 
 def test_datetime(parts):

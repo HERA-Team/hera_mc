@@ -103,8 +103,8 @@ def test_datetime():
     pytest.raises(ValueError, cm_utils.get_astropytime, '2018/1/1', 'x')
 
 
-def test_put_keys_in_numerical_order():
-    x = cm_utils.put_keys_in_numerical_order(['HH1', 'HH0:A'])
+def test_put_keys_in_order():
+    x = cm_utils.put_keys_in_order(['HH1', 'HH0:A'])
     assert x[0] == 'HH0:A'
 
 

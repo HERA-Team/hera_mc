@@ -29,17 +29,15 @@ def test_db_to_csv():
 def test_main_validation():
     valid = cm_transfer.db_validation(None, 'testing_not_main')
     assert valid
-    valid = cm_transfer.db_validation(False, 'testing_main')
-    assert not valid
-    valid = cm_transfer.db_validation('x', 'testing_main')
-    assert not valid
     valid = cm_transfer.db_validation('pw4maindb', 'testing_main')
     assert valid
+    pytest.raises(ValueError, cm_transfer.db_validation, False, 'testing_main')
+    pytest.raises(ValueError, cm_transfer.db_validation, 'x', 'testing_main')
 
 
 def test_initialization():
-    t = cm_transfer._initialization(session='testing_main', cm_csv_path=None)
-    assert not t
+    pytest.raises(ValueError, cm_transfer._initialization, 'testing_main',
+                  None)
     t = mc.get_cm_csv_path(testing=True)
     assert 'test_data' in t
 
