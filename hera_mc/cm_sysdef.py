@@ -7,6 +7,8 @@ import six
 from argparse import Namespace
 from hera_mc import cm_utils
 
+hera_zone_prefixes = ['HH', 'HA', 'HB']
+
 
 class Sysdef:
     """

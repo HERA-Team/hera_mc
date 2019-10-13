@@ -11,7 +11,7 @@ from __future__ import absolute_import, division, print_function
 
 import os.path
 
-from hera_mc import mc, cm_hookup, cm_utils
+from hera_mc import mc, cm_hookup, cm_utils, cm_sysdef
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     at_date = cm_utils.get_astropytime(args.date, args.time)
     args.hookup_cols = cm_utils.listify(args.hookup_cols)
     if args.hpn == 'default':
-        args.hpn = cm_utils.default_station_prefixes
+        args.hpn = cm_sysdef.hera_zone_prefixes
     else:
         args.hpn = cm_utils.listify(args.hpn)
     state = 'all' if args.all else 'full'

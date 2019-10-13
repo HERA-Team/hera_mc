@@ -5,7 +5,6 @@
 
 """
 This finds and displays part hookups.
-
 """
 from __future__ import absolute_import, division, print_function
 
@@ -22,21 +21,23 @@ from . import mc, cm_utils, cm_transfer, cm_sysdef, cm_dossier, cm_active
 
 class Hookup(object):
     """
-    Class to find and display the signal path hookup, with a few utility functions.
-    To speed things up, it uses a cache file, but only if the query is for prefixes in
-    hookup_list_to_cache and if the cache file is current relative to the cm_version
+    Class to find and display the signal path hookup information.
+
+    Hookup traces parts and connections through the signal path (as defined
+    by the connections in cm_sysdef).
+
+    Parameters
+    ----------
+    session : session object or None
+        If None, it will start a new session on the database.
     """
-    hookup_list_to_cache = cm_utils.all_hera_zone_prefixes
+    hookup_list_to_cache = cm_sysdef.hera_zone_prefixes
     if six.PY2:
         hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_2.json')
     else:
         hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_3.json')
 
     def __init__(self, session=None):
-        """
-        Hookup traces parts and connections through the signal path (as defined
-        by the connections in cm_sysdef).
-        """
         if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
@@ -371,7 +372,6 @@ class Hookup(object):
             of wny a new cache file is being written.  E.g. "Found new antenna." or "Cronjob to ensure
             cache file up to date."
         """
-        self.hookup_list_to_cache = cm_utils.default_station_prefixes
         self.at_date = cm_utils.get_astropytime('now')
         self.hookup_type = 'parts_hera'
         self.cached_hookup_dict = self.get_hookup_from_db(self.hookup_list_to_cache, pol='all', at_date=self.at_date,

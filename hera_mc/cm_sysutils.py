@@ -279,7 +279,7 @@ class Handling:
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
         stations_conn = self.get_all_fully_connected_at_date(
-            at_date='now', station_types_to_check=cm_utils.default_station_prefixes, hookup_type=hookup_type)
+            at_date='now', station_types_to_check=cm_sysdef.hera_zone_prefixes, hookup_type=hookup_type)
         stn_arrays = SystemInfo()
         for stn in stations_conn:
             stn_arrays.update_arrays(stn)
@@ -368,7 +368,7 @@ class Handling:
         """
         import os.path
         if isinstance(hlist, six.string_types) and hlist.lower() == 'default':
-            hlist = cm_utils.default_station_prefixes
+            hlist = cm_sysdef.hera_zone_prefixes
         hlist = cm_utils.listify(hlist)
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         H = cm_hookup.Hookup(self.session)

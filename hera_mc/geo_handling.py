@@ -16,7 +16,7 @@ import six
 from sqlalchemy import func
 import cartopy.crs as ccrs
 
-from . import mc, cm_partconnect, cm_utils, geo_location
+from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef
 
 
 def cofa(session=None):
@@ -291,7 +291,7 @@ class Handling:
             if sttc.lower() == 'all':
                 return list(self.station_types.keys())
             elif sttc.lower() == 'default':
-                sttc = cm_utils.default_station_prefixes
+                sttc = cm_sysdef.hera_zone_prefixes
             else:
                 sttc = [sttc]
         sttypes = set()
