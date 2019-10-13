@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 from astropy.time import Time
 
-from .. import cm_partconnect, cm_handling
+from .. import cm_partconnect, cm_handling, cm_dossier
 
 
 @pytest.fixture(scope='function')
@@ -150,8 +150,7 @@ def test_get_dossier(conns, capsys):
         'test_part2', 'active', 'all', at_date=old_time, exact_match=True)
     assert len(x) == 0
     z = {}
-    z['tst'] = cm_handling.PartConnectionDossierEntry(
-        'test_part1', 'active', 'all')
+    z['tst'] = cm_dossier.PartConnectionEntry('test_part1', 'active', 'all')
     conns.cm_handle.show_connections(z)
     captured = capsys.readouterr()
     assert 'Q' not in captured.out.strip()
