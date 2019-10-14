@@ -787,10 +787,6 @@ def update_connection(session=None, data=None, add_new_connection=False):
         boup_to_change = data_dict[dkey][0][4]
         aodn_to_change = data_dict[dkey][0][5]
         strt_to_change = data_dict[dkey][0][6]
-        if urev_to_change.startswith('LAST'):
-            urev_to_change = cm_revisions.get_last_revision(upcn_to_change, session)[0][0]
-        if drev_to_change.startswith('LAST'):
-            drev_to_change = cm_revisions.get_last_revision(dncn_to_change, session)[0][0]
         conn_rec = session.query(Connections).filter(
             (Connections.upstream_part == upcn_to_change)
             & (Connections.up_part_rev == urev_to_change)
