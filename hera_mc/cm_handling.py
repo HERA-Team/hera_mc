@@ -17,7 +17,7 @@ import six
 from astropy.time import Time
 from sqlalchemy import func, desc
 
-from . import mc, cm_utils, cm_dossier
+from . import mc, cm_utils, cm_dossier, cm_active
 from . import cm_partconnect as partconn
 from . import cm_revisions as cmrev
 
@@ -119,57 +119,17 @@ class Handling:
             (func.upper(partconn.Parts.hpn) == hpn.upper())
             & (func.upper(partconn.Parts.hpn_rev) == rev.upper())).first()
 
-    def get_rev_part_dictionary(self, hpn, rev, at_date, exact_match):
-        """
-        This gets the list of hpn that match the rev -- the resulting dictionary
-        is used to get the part and connection "dossiers"
-
-        Parameters
-        ----------
-        hpn : list, str
-            The input hera part number [string or list-of-strings] (whole or first part thereof)
-        rev : list, str
-            Specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL')
-            if list must match length of hpn
-        at_date : str, int
-            Reference date of dossier [something get_astropytime can handle]
-        exact_match :  bool
-            If True, will enforce full part number match
-
-        Returns
-        -------
-        dict
-            Dictionary containing the revision part information.
-        """
-
-        at_date = cm_utils.get_astropytime(at_date)
-        hpn = cm_utils.listify(hpn)
-        if isinstance(rev, six.string_types):
-            rev = len(hpn) * [rev]
-        rev_part = {}
-        for i, xhpn in enumerate(hpn):
-            if not exact_match and xhpn[-1] != '%':
-                xhpn = xhpn + '%'
-            for part in self.session.query(partconn.Parts).filter(partconn.Parts.hpn.ilike(xhpn)):
-                rev_part[part.hpn] = cmrev.get_revisions_of_type(part.hpn, rev[i],
-                                                                 at_date=at_date,
-                                                                 session=self.session)
-        return rev_part
-
-    def get_part_dossier(self, hpn, rev, at_date, notes_start_date='<', sort_notes_by='part',
+    def get_part_dossier(self, hpn, rev=None, at_date='now', notes_start_date='<', sort_notes_by='part',
                          exact_match=False, full_version=True):
         """
-        Return information on a part.  It will return all matching first
-        characters unless exact_match==True.  It gets parts as specified under 'rev'.
-
-        Returns part_dossier: a dictionary keyed on the part_number containing PartEntry dossier classes
+        Return information on a part or parts.
 
         Parameters
         -----------
         hpn : str, list
-            The input hera part number [string or list-of-strings] (whole or first part thereof)
-        rev : str, list
-            Specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific). If list, must match length of hpn
+            Hera part number [string or list-of-strings] (whole or first part thereof)
+        rev : str, list, None
+            Specific revision(s) or None. If list, must match length of hpn
         at_date : str, int
             Reference date of dossier (and stop_date for displaying notes)
         notes_start_date : str, int
@@ -187,13 +147,12 @@ class Handling:
             dictionary keyed on the part_number containing PartEntry dossier classes
         """
 
+        active = cm_active.ActiveData(self.session, at_date=at_date)
+        active.load_parts(at_date=at_date)
         part_dossier = {}
-        if hpn is None:
-            allinfo = cm_dossier.PartEntry(hpn=None, rev=None, at_date=at_date, notes_start_date=notes_start_date,
-                                           sort_notes_by=sort_notes_by)
-            allinfo.get_part_info(session=self.session)
-            part_dossier[allinfo.entry_key] = allinfo
-        else:
+
+        for hpn, rev in cm_utils.match_list(hpn, rev):
+            
             rev_part = self.get_rev_part_dictionary(hpn=hpn, rev=rev, at_date=at_date, exact_match=exact_match)
             # Now get unique part/revs and put into dictionary
             for xhpn in rev_part:
