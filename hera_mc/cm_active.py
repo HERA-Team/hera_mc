@@ -203,6 +203,14 @@ class ActiveData:
             key = cm_utils.make_part_key(astat.antenna, rev)
             self.apriori[key] = astat.status
 
+    def load_geo(self, at_date=None):
+        at_date = cm_utils.get_astropytime(at_date)
+        if self.is_data_current('geo', at_date):
+            return
+        gps_time = self.set_times(at_date)
+        self.geo = {}
+        print("FINISH ","THIS")
+
     def check(self, at_date=None):
         """
         Checks self.parts and self.connections to make sure that all connections have an
