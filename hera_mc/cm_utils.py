@@ -230,6 +230,16 @@ def listify(X):
     return [X]
 
 
+def match_list(a_obj, b_obj):
+    if not isinstance(a_obj, list):
+        a_obj = [a_obj]
+    if not isinstance(b_obj, list):
+        b_obj = [b_obj] * len(a_obj)
+    if len(a_obj) != len(b_obj):
+        raise ValueError("Objects must be same length")
+    return zip(a_obj, b_obj)
+
+
 def to_upper(X):
     if X is None:
         return None
