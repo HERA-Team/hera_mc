@@ -12,7 +12,7 @@ from __future__ import absolute_import, division, print_function
 from hera_mc import mc, cm_utils, cm_sysutils
 
 if __name__ == '__main__':
-    default_hookup_cols = ['station', 'feed', 'front-end', 'post-amp', 'snap', 'node']
+    default_hookup_cols = ['station', 'feed', 'front-end', 'node-bulkhead', 'post-amp', 'snap', 'node']
     parser = mc.get_mc_argument_parser()
     # set values for 'action' to use
     parser.add_argument('-p', '--hpn', help="Part number, csv-list or [default]", default='default')
