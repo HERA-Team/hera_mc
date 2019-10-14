@@ -215,7 +215,7 @@ def test_get_pam_info(sys_handle, mcsession):
         hookup_type='parts_hera')
     assert len(pams) == 1
     # the actual pam number (the thing written on the case)
-    assert pams['HH701:A']['E<ground'] == 'PAM701'
+    assert pams['HH701:A']['E'] == 'PAM701'
 
 
 def test_apriori_antenna(sys_handle, mcsession, capsys):
