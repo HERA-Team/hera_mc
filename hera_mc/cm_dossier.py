@@ -38,11 +38,11 @@ class HookupEntry(object):
                                  'sysdef and a dict')
             self.entry_key = input_dict['entry_key']
             hookup_connections_dict = {}
-            for pol, conn_list in six.iteritems(input_dict['hookup']):
+            for port, conn_list in six.iteritems(input_dict['hookup']):
                 new_conn_list = []
                 for conn_dict in conn_list:
                     new_conn_list.append(partconn.get_connection_from_dict(conn_dict))
-                hookup_connections_dict[pol] = new_conn_list
+                hookup_connections_dict[port] = new_conn_list
             self.hookup = hookup_connections_dict
             self.fully_connected = input_dict['fully_connected']
             self.hookup_type = input_dict['hookup_type']
@@ -76,17 +76,17 @@ class HookupEntry(object):
         Convert this object to a dict (so it can be written to json)
         """
         hookup_connections_dict = {}
-        for pol, conn_list in six.iteritems(self.hookup):
+        for port, conn_list in six.iteritems(self.hookup):
             new_conn_list = []
             for conn in conn_list:
                 new_conn_list.append(conn._to_dict())
-            hookup_connections_dict[pol] = new_conn_list
+            hookup_connections_dict[port] = new_conn_list
         return {'entry_key': self.entry_key, 'hookup': hookup_connections_dict,
                 'fully_connected': self.fully_connected,
                 'hookup_type': self.hookup_type, 'columns': self.columns,
                 'timing': self.timing, 'sysdef': self.sysdef._to_dict()}
 
-    def get_hookup_type_and_column_headers(self, pol, part_types_found):
+    def get_hookup_type_and_column_headers(self, port, part_types_found):
         """
         The columns in the hookup contain parts in the hookup chain and the column headers are
         the part types contained in that column.  This returns the headers for the retrieved hookup.
@@ -96,13 +96,13 @@ class HookupEntry(object):
 
         Parameters
         ----------
-        pol : str
-            Polarization type, 'e' or 'n' for HERA (specified in 'cm_sysdef')
+        port : str
+            Part port to get, of the form 'POL<port', e.g. 'E<ground'
         part_types_found : list
             List of the part types that were found
         """
-        self.hookup_type[pol] = None
-        self.columns[pol] = []
+        self.hookup_type[port] = None
+        self.columns[port] = []
         if len(part_types_found) == 0:
             return
         is_this_one = False
@@ -117,27 +117,27 @@ class HookupEntry(object):
             print('Parts did not conform to any hookup_type')
             return
         else:
-            self.hookup_type[pol] = is_this_one
+            self.hookup_type[port] = is_this_one
             for c in self.sysdef.full_connection_path[is_this_one]:
                 if c in part_types_found:
-                    self.columns[pol].append(c)
+                    self.columns[port].append(c)
 
-    def add_timing_and_fully_connected(self, pol):
+    def add_timing_and_fully_connected(self, port):
         """
         Method to add the timing and fully_connected flag for the hookup.
 
         Parameters
         ----------
-        pol : str
-            Polarization type, 'e' or 'n' for HERA (specified in 'cm_sysdef')
+        port : str
+            Part port to get, of the form 'POL<port', e.g. 'E<ground'
         """
-        if self.hookup_type[pol] is not None:
-            full_hookup_length = len(self.sysdef.full_connection_path[self.hookup_type[pol]]) - 1
+        if self.hookup_type[port] is not None:
+            full_hookup_length = len(self.sysdef.full_connection_path[self.hookup_type[port]]) - 1
         else:
             full_hookup_length = -1
         latest_start = 0
         earliest_stop = None
-        for c in self.hookup[pol]:
+        for c in self.hookup[port]:
             if c.start_gpstime > latest_start:
                 latest_start = c.start_gpstime
             if c.stop_gpstime is None:
@@ -146,10 +146,10 @@ class HookupEntry(object):
                 earliest_stop = c.stop_gpstime
             elif c.stop_gpstime < earliest_stop:
                 earliest_stop = c.stop_gpstime
-        self.timing[pol] = [latest_start, earliest_stop]
-        self.fully_connected[pol] = len(self.hookup[pol]) == full_hookup_length
-        self.columns[pol].append('start')
-        self.columns[pol].append('stop')
+        self.timing[port] = [latest_start, earliest_stop]
+        self.fully_connected[port] = len(self.hookup[port]) == full_hookup_length
+        self.columns[port].append('start')
+        self.columns[port].append('stop')
 
     def get_part_in_hookup_from_type(self, part_type, include_revs=False, include_ports=False):
         """
@@ -174,51 +174,51 @@ class HookupEntry(object):
         """
         parts = {}
         extra_cols = ['start', 'stop']
-        for pol, names in six.iteritems(self.columns):
+        for port, names in six.iteritems(self.columns):
             if part_type not in names:
-                parts[pol] = None
+                parts[port] = None
                 continue
             iend = 1
             for ec in extra_cols:
-                if ec in self.columns[pol]:
+                if ec in self.columns[port]:
                     iend += 1
             part_ind = names.index(part_type)
             is_first_one = (part_ind == 0)
             is_last_one = (part_ind == len(names) - iend)
             # Get part number
             if is_last_one:
-                part_number = self.hookup[pol][part_ind - 1].downstream_part
+                part_number = self.hookup[port][part_ind - 1].downstream_part
             else:
-                part_number = self.hookup[pol][part_ind].upstream_part
+                part_number = self.hookup[port][part_ind].upstream_part
             # Get rev
             rev = ''
             if include_revs:
                 if is_last_one:
-                    rev = ':' + self.hookup[pol][part_ind - 1].down_part_rev
+                    rev = ':' + self.hookup[port][part_ind - 1].down_part_rev
                 else:
-                    rev = ':' + self.hookup[pol][part_ind].up_part_rev
+                    rev = ':' + self.hookup[port][part_ind].up_part_rev
             # Get ports
             in_port = ''
             out_port = ''
             if include_ports:
                 if is_first_one:
-                    out_port = '<' + self.hookup[pol][part_ind].upstream_output_port
+                    out_port = '<' + self.hookup[port][part_ind].upstream_output_port
                 elif is_last_one:
-                    in_port = self.hookup[pol][part_ind - 1].downstream_input_port + '>'
+                    in_port = self.hookup[port][part_ind - 1].downstream_input_port + '>'
                 else:
-                    out_port = '<' + self.hookup[pol][part_ind].upstream_output_port
-                    in_port = self.hookup[pol][part_ind - 1].downstream_input_port + '>'
+                    out_port = '<' + self.hookup[port][part_ind].upstream_output_port
+                    in_port = self.hookup[port][part_ind - 1].downstream_input_port + '>'
             # Finish
-            parts[pol] = "{}{}{}{}".format(in_port, part_number, rev, out_port)
+            parts[port] = "{}{}{}{}".format(in_port, part_number, rev, out_port)
         return parts
 
-    def table_entry_row(self, pol, columns, part_types, show):
+    def table_entry_row(self, port, columns, part_types, show):
         """
         Produces the hookup table row for given parameters.
 
         Parameters
         ----------
-        pol : str
+        port : str
             Polarization type, 'e' or 'n' for HERA (specified in 'cm_sysdef')
         columns : list
             Desired column headers to display
@@ -232,11 +232,11 @@ class HookupEntry(object):
         list
             List containing the table entry.
         """
-        timing = self.timing[pol]
+        timing = self.timing[port]
         td = ['-'] * len(columns)
         # Get the first N-1 parts
         dip = ''
-        for d in self.hookup[pol]:
+        for d in self.hookup[port]:
             part_type = part_types[d.upstream_part]
             if part_type in columns:
                 new_row_entry = self._build_new_row_entry(

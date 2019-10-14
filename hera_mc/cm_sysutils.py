@@ -345,7 +345,10 @@ class Handling:
             stn = [stn]
         hud = H.get_hookup(hpn=stn, at_date=at_date, exact_match=True, hookup_type=hookup_type)
         for k, hu in six.iteritems(hud):
-            parts[k] = hu.get_part_in_hookup_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
+            parts[k] = {}
+            this_hu = hu.get_part_in_hookup_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
+            for this_k, this_hpn in this_hu.items():
+                parts[k][this_k[0]] = this_hpn
         return parts
 
     def publish_summary(self, hlist='default', exact_match=False, hookup_cols='all'):
