@@ -10,13 +10,12 @@ These are key data for tracking antenna performance and failures.
 
 from __future__ import absolute_import, division, print_function
 
-import cm_sysutils
 import numpy as np
 import six
 from sqlalchemy import (BigInteger, Column, DateTime, Float, Integer,
                         SmallInteger, String)
 
-from . import MCDeclarativeBase, NotNull
+from . import MCDeclarativeBase, NotNull, cm_sysutils
 
 
 class _MeasurementTypes(object):
