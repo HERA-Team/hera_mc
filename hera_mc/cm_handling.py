@@ -19,7 +19,6 @@ from sqlalchemy import func, desc
 
 from . import mc, cm_utils, cm_dossier, cm_active
 from . import cm_partconnect as partconn
-from . import cm_revisions as cmrev
 
 
 class Handling:
@@ -119,8 +118,21 @@ class Handling:
             (func.upper(partconn.Parts.hpn) == hpn.upper())
             & (func.upper(partconn.Parts.hpn_rev) == rev.upper())).first()
 
-    def get_part_dossier(self, hpn, rev=None, at_date='now', notes_start_date='<', sort_notes_by='part',
-                         exact_match=False, full_version=True):
+    def get_hpn_list(self, hpn, rev, active, exact_match):
+        match_list = cm_utils.match_list(hpn, rev, upper=True)
+        if not exact_match:
+            all_hpn = []
+            all_rev = []
+            for h_hpn, h_rev in match_list:
+                for key in active.parts.keys():
+                    if key.upper().startswith(h_hpn):
+                        k_hpn, k_rev = cm_utils.split_part_key(key)
+                        all_hpn.append(k_hpn.upper())
+                        all_rev.append(h_rev)
+            match_list = cm_utils.match_list(all_hpn, all_rev, upper=True)
+        return match_list
+
+    def get_part_dossier(self, hpn, rev=None, at_date='now', notes_start_date='<', exact_match=True, full_version=True):
         """
         Return information on a part or parts.
 
@@ -129,15 +141,13 @@ class Handling:
         hpn : str, list
             Hera part number [string or list-of-strings] (whole or first part thereof)
         rev : str, list, None
-            Specific revision(s) or None. If list, must match length of hpn
-        at_date : str, int
+            Specific revision(s) or None (which yields all). If list, must match length of hpn
+        at_date : str, int, datetime, Time
             Reference date of dossier (and stop_date for displaying notes)
-        notes_start_date : str, int
+        notes_start_date : str, int, datetime, Time
             Start_date for displaying notes
-        sort_notes_by : str
-            For all notes (hpn=None) can sort by 'part' or 'post' ['part']
         exact_match : bool
-            Flag to enforce full part number match
+            Flag to enforce full part number match, or "startswith"
         full_version : bool
             Flag whether to populate the full_version or truncated version of the dossier
 
@@ -148,22 +158,27 @@ class Handling:
         """
 
         active = cm_active.ActiveData(self.session, at_date=at_date)
-        active.load_parts(at_date=at_date)
+        active.load_parts()
+        if full_version:
+            active.load_connections()
+            active.load_info()
+            active.load_geo()
         part_dossier = {}
 
-        for hpn, rev in cm_utils.match_list(hpn, rev):
-            
-            rev_part = self.get_rev_part_dictionary(hpn=hpn, rev=rev, at_date=at_date, exact_match=exact_match)
-            # Now get unique part/revs and put into dictionary
-            for xhpn in rev_part:
-                if len(rev_part[xhpn]) == 0:
-                    continue
-                for xrev in rev_part[xhpn]:
-                    this_rev = xrev.rev
-                    this_part = cm_dossier.PartEntry(hpn=xhpn, rev=this_rev, at_date=at_date, notes_start_date=notes_start_date)
-                    this_part.get_entry(session=self.session, full_version=full_version)
-                    this_part.part_type = self.get_part_type_for(xhpn)
-                    part_dossier[this_part.entry_key] = this_part
+        hpn_list = self.get_hpn_list(hpn, rev, active, exact_match)
+
+        for h_hpn, h_rev in hpn_list:
+            if h_rev is None:
+                h_rev = active.revs(h_hpn)
+            elif isinstance(h_rev, six.string_types):
+                h_rev = [x.strip().upper() for x in h_rev.split(',')]
+            for rev in h_rev:
+                key = cm_utils.make_part_key(h_hpn, rev)
+                if key in active.parts.keys():
+                    this_part = cm_dossier.PartEntry(hpn=h_hpn, rev=rev, at_date=at_date, notes_start_date=notes_start_date)
+                    this_part.get_entry(active, full_version=full_version)
+                    part_dossier[key] = this_part
+
         return part_dossier
 
     def show_parts(self, part_dossier, notes_only=False):
@@ -284,47 +299,7 @@ class Handling:
                 fnd.append(copy.copy(conn))
         return fnd
 
-    def get_part_connection_dossier(self, hpn, rev, port, at_date=None, exact_match=False):
-        """
-        Return information on parts connected to hpn.  It should get connections immediately
-        adjacent to one part (upstream and downstream).
-
-        Returns connection dictionary with PartConnectionEntry dossier classes
-
-        Parameters
-        ----------
-        hpn : str, list
-            The input hera part number [string or list-of-strings] (whole or first part thereof)
-        rev : str, list
-            Specific revision(s) or category(ies) ('LAST', 'ACTIVE', 'ALL', 'FULL', specific).
-            If list, must match length of hpn
-        port : str
-            A specifiable port name [string, not a list],  default is 'all'
-        at_date : str, int
-            Feference date of dossier, only used if rev==ACTIVE (and for now FULL...)
-        exact_match : bool
-            Flag to enforce full part number match
-
-        Returns
-        -------
-        dict
-            dict connection dictionary with PartConnectionEntry classes
-        """
-
-        at_date = cm_utils.get_astropytime(at_date)
-        rev_part = self.get_rev_part_dictionary(hpn, rev, at_date, exact_match)
-        part_connection_dossier = {}
-        for i, xhpn in enumerate(rev_part):
-            if len(rev_part[xhpn]) == 0:
-                continue
-            for xrev in rev_part[xhpn]:
-                this_rev = xrev.rev
-                this_connect = cm_dossier.PartConnectionEntry(xhpn, this_rev, port, at_date)
-                this_connect.get_entry(self.session)
-                part_connection_dossier[this_connect.entry_key] = this_connect
-        return part_connection_dossier
-
-    def show_connections(self, connection_dossier, headers=None, verbosity=3):
+    def show_connections(self, part_dossier, headers=None, verbosity=3):
         """
         Print out active connection information.  Uses tabulate package.
 
