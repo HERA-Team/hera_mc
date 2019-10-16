@@ -10,11 +10,10 @@ connections entries, and hookup entries.
 from __future__ import absolute_import, division, print_function
 
 import six
-import copy
 
 from . import cm_sysdef, cm_utils
 from . import cm_partconnect as partconn
-from sqlalchemy import func
+from . import geo_location
 
 
 class PartEntry():
@@ -23,6 +22,11 @@ class PartEntry():
     part_info, and, if applicable, geo_location.
 
     It contains the modules to format the dossier for use in the parts display matrix.
+    Full available list is (in col_hdr dict below):
+    'hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_date', 'stop_date', 'input_ports', 'output_ports', 'geo',
+    'part_info', 'post_date', 'lib_file', 'up_start_date', 'up_stop_date',
+    'upstream_part', 'upstream_output_port', 'upstream_input_port', 'connected_part', 'downstream_output_port',
+    'downstream_input_port', 'downstream_part', 'down_start_time', 'down_stop_time'
 
     Parameters
     ----------
@@ -35,33 +39,7 @@ class PartEntry():
         but things like notes, geo etc may exclude on that basis.
     notes_start_date : astropy.Time
         Start date on which to filter notes.  The stop date is at_date above.
-    sort_notes_by : str {'part', 'time'}
-        Sort notes display by 'part' or 'time'
     """
-
-    col_hdr = {'hpn': 'HERA P/N',
-               'hpn_rev': 'Rev',
-               'hptype': 'Part Type',
-               'manufacturer_number': 'Mfg #',
-               'start_date': 'Start',
-               'stop_date': 'Stop',
-               'input_ports': 'Input',
-               'output_ports': 'Output',
-               'geo': 'Geo',
-               'part_info': 'Note',
-               'post_date': 'Date',
-               'lib_file': 'File',
-               'up_start_date': 'uStart',
-               'up_stop_date': 'uStop',
-               'upstream_part': 'Upstream',
-               'upstream_output_port': '<uOutput:',
-               'upstream_input_port': ':uInput>',
-               'connected_part': 'Part',
-               'downstream_output_port': '<dOutput:',
-               'downstream_input_port': ':dInput>',
-               'downstream_part': 'Downstream',
-               'down_start_time': 'dStart',
-               'down_stop_time': 'dStop'}
 
     def __init__(self, hpn, rev, at_date, notes_start_date):
         self.hpn = hpn
@@ -70,10 +48,36 @@ class PartEntry():
         self.at_date = at_date
         self.notes_start_date = notes_start_date
         # Below are the database components of the dossier
-        self.part = None  # This is the cm_partconnect.Parts class
-        self.part_info = None  # This is a list of cm_partconnect.PartInfo class entries
-        self.connections = {'up': None, 'down': None}  # This is the list of connections with part in up/down position
-        self.geo = None  # This is the geo_location.GeoLocation class
+        self.input_ports = []
+        self.output_ports = []
+        self.part = partconn.Parts()
+        self.part_info = partconn.PartInfo()
+        self.connections = {'up': partconn.Connections(), 'down': partconn.Connections()}
+        self.geo = geo_location.GeoLocation()
+        # These are the allowed header columns
+        self.col_hdr = {'hpn': 'HERA P/N',
+                        'hpn_rev': 'Rev',
+                        'hptype': 'Part Type',
+                        'manufacturer_number': 'Mfg #',
+                        'start_gpstime': 'Start',
+                        'stop_gpstime': 'Stop',
+                        'input_ports': 'Input',
+                        'output_ports': 'Output',
+                        'geo': 'Geo',
+                        'comment': 'Note',
+                        'posting_gpstime': 'Date',
+                        'lib_file': 'File',
+                        'up.start_date': 'uStart',
+                        'up.stop_date': 'uStop',
+                        'up.part': 'Upstream',
+                        'up.output_port': '<uOutput:',
+                        'up.input_port': ':uInput>',
+                        'entry_key': 'Part',
+                        'down.output_port': '<dOutput:',
+                        'down.input_port': ':dInput>',
+                        'down.part': 'Downstream',
+                        'down.start_time': 'dStart',
+                        'down.stop_time': 'dStop'}
 
     def __repr__(self):
         return("{}:{} -- {}".format(self.hpn, self.rev, self.part))
@@ -92,6 +96,10 @@ class PartEntry():
         self.get_connections(active=active)
         self.get_part_info(active=active)
         self.get_geo(active=active)
+        self.add_ports()
+
+    def add_ports(self):
+        print("add the input_ports, output_ports"," to dossier")
 
     def get_connections(self, active):
         """
@@ -116,9 +124,11 @@ class PartEntry():
         active : ActiveData class
             Contains the active database entries.
         """
+        self.part_info = []
         if self.entry_key in active.info.keys():
-            if active.info[self.entry_key].posting_gpstime > self.notes_start_date:
-                self.part_info = active.info[self.entry_key]
+            for pi_entry in active.info[self.entry_key]:
+                if pi_entry.posting_gpstime > self.notes_start_date.gps:
+                    self.part_info.append(pi_entry)
 
     def get_geo(self, active):
         """
@@ -133,34 +143,34 @@ class PartEntry():
         if key in active.geo.keys():
             self.geo = active.geo[key]
 
-    def part_header_titles(self, headers):
+    def get_headers(self, columns):
         """
-        Generates the header titles for the given header names.  The returned header_titles are
+        Generates the header titles for the given columns.  The returned headers are
         used in the tabulate display.
 
         Parameters
         ----------
-        headers : list
-            List of header names.
+        columns : list
+            List of columns to show.
 
         Returns
         -------
         list
-            The list of the associated header titles.
+            The list of the associated headers
         """
-        header_titles = []
-        for h in headers:
-            header_titles.append(self.col_hdr[h])
-        return header_titles
+        headers = []
+        for c in columns:
+            headers.append(self.col_hdr[c])
+        return headers
 
-    def table_entry_row(self, columns):
+    def table_row(self, columns):
         """
         Converts the part_dossier column information to a row for the tabulate display.
 
         Parameters
         ----------
         columns : list
-            List of the desired header columns to use.
+            List of the desired columns to use.
 
         Returns
         -------
@@ -175,7 +185,16 @@ class PartEntry():
                 try:
                     x = getattr(self.part, c)
                 except AttributeError:
-                    x = getattr(self.connections, c)
+                    try:
+                        x = getattr(self.connections['up'], c)
+                    except AttributeError:
+                        try:
+                            x = getattr(self.connections['down'], c)
+                        except AttributeError:
+                            try:
+                                x = getattr(self.part_info, c)
+                            except AttributeError:
+                                x = None
             if c == 'part_info' and len(x):
                 x = '\n'.join(pi.comment for pi in x)
             elif c == 'geo' and x:
@@ -188,22 +207,7 @@ class PartEntry():
         tdata = [tdata]
         return tdata
 
-    def connection_table_entry_row(self, columns):
-        """
-        Converts the connections column information to a row for the tabulate display.
 
-        Parameters
-        ----------
-        columns : list
-            List of the desired header columns to use.
-
-        Returns
-        -------
-        list
-            A row for the tabulate display.
-        """
-        tdata = []
-        show_conn_dict = {'Part': self.entry_key}
 
         for u, d in zip(self.keys_up, self.keys_down):
             if u is None:
