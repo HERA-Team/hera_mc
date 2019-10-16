@@ -58,7 +58,7 @@ class PartEntry():
     def __repr__(self):
         return("{}:{} -- {}".format(self.hpn, self.rev, self.part))
 
-    def get_entry(self, active, full_version=False):
+    def get_entry(self, active):
         """
         Gets the part dossier entry.
 
@@ -66,15 +66,12 @@ class PartEntry():
         ----------
         active : ActiveData class
             Contains the active database entries
-        full_version : bool
-            Flag to read in the full version, or just use the short version
         """
         self.part = active.parts[self.entry_key]
         self.part.gps2Time()
-        if full_version:
-            self.get_connections(active=active)
-            self.get_part_info(active=active)
-            self.get_geo(active=active)
+        self.get_connections(active=active)
+        self.get_part_info(active=active)
+        self.get_geo(active=active)
 
     def get_connections(self, active):
         """
@@ -150,24 +147,24 @@ class PartEntry():
             A row for the tabulate display.
         """
         tdata = []
-            for c in columns:
+        for c in columns:
+            try:
+                x = getattr(self, c)
+            except AttributeError:
                 try:
-                    x = getattr(self, c)
+                    x = getattr(self.part, c)
                 except AttributeError:
-                    try:
-                        x = getattr(self.part, c)
-                    except AttributeError:
-                        x = getattr(self.connections, c)
-                if c == 'part_info' and len(x):
-                    x = '\n'.join(pi.comment for pi in x)
-                elif c == 'geo' and x:
-                    x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
-                elif c in ['start_date', 'stop_date']:
-                    x = cm_utils.get_time_for_display(x)
-                elif isinstance(x, (list, set)):
-                    x = ', '.join(x)
-                tdata.append(x)
-            tdata = [tdata]
+                    x = getattr(self.connections, c)
+            if c == 'part_info' and len(x):
+                x = '\n'.join(pi.comment for pi in x)
+            elif c == 'geo' and x:
+                x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
+            elif c in ['start_date', 'stop_date']:
+                x = cm_utils.get_time_for_display(x)
+            elif isinstance(x, (list, set)):
+                x = ', '.join(x)
+            tdata.append(x)
+        tdata = [tdata]
         return tdata
 
     def connection_table_entry_row(self, columns):

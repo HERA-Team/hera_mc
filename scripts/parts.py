@@ -26,8 +26,6 @@ if __name__ == '__main__':
                         dest='exact_match', action='store_true')
     parser.add_argument('--notes', help="<For action=part_info>:  Displays part notes with posting dates and not other info",
                         action='store_true')
-    parser.add_argument('--sort_notes_by', help="<For action=part_info --notes> Can sort the notes listing by part \
-                        ('part') or posting time ('post') [part]", default='part')
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--notes_start_date', help="<For part_info notes> start_date for notes [<]", default='<')
@@ -97,14 +95,13 @@ if __name__ == '__main__':
 
     if action_tag == 'pa':  # part_info
         part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
-                                                 notes_start_date=notes_start_date, sort_notes_by='part',
-                                                 exact_match=args.exact_match, full_version=True)
+                                                 notes_start_date=notes_start_date, exact_match=args.exact_match)
         handling.show_parts(part_dossier, args.notes)
     elif action_tag == 'co':  # connection_info
-        connection_dossier = handling.get_part_connection_dossier(
-            hpn=args.hpn, rev=args.revision, port=args.port,
-            at_date=date_query, exact_match=args.exact_match)
-        handling.show_connections(connection_dossier, verbosity=args.verbosity)
+        print("NEED TO MAKE CONNECTIONS COLS")
+        part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
+                                                 notes_start_date=notes_start_date, exact_match=args.exact_match)
+        handling.show_parts(part_dossier, args.notes)
     elif action_tag == 're':  # revisions
         for hpn in args.hpn:
             rev_ret = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
