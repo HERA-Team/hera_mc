@@ -195,9 +195,9 @@ class Handling:
         if len(pd_keys) == 0:
             return 'Part not found'
         table_data = []
-        headers = part_dossier[pd_keys[0]].get_header_titles(columns)
+        headers = part_dossier[pd_keys[0]].get_headers(columns)
         for hpnr in pd_keys:
-            new_rows = part_dossier[hpnr].table_entry_row(columns)
+            new_rows = part_dossier[hpnr].table_row(columns)
             for nr in new_rows:
                 table_data.append(nr)
         return '\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
