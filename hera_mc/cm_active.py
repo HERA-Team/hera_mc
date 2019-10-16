@@ -36,6 +36,7 @@ class ActiveData:
         self.connections = None
         self.info = None
         self.apriori = None
+        self.geo = None
 
     def is_data_current(self, data_type, at_date):
         """
@@ -44,7 +45,7 @@ class ActiveData:
         Parameters
         ----------
         data_type : str
-            One of the allowed data_types:  parts, connections, info, apriori
+            One of the allowed data_types:  parts, connections, info, apriori, geo
         at_date : astropytime.Time or None
             Date for which to check.  If none, assumes match to self.at_date
 
@@ -201,15 +202,26 @@ class ActiveData:
                                                                         & ((partconn.AprioriAntenna.stop_gpstime >= gps_time)
                                                                         | (partconn.AprioriAntenna.stop_gpstime == None))):  # noqa
             key = cm_utils.make_part_key(astat.antenna, rev)
-            self.apriori[key] = astat.status
+            self.apriori[key] = astat
 
     def load_geo(self, at_date=None):
+        from . import geo_location
         at_date = cm_utils.get_astropytime(at_date)
         if self.is_data_current('geo', at_date):
             return
         gps_time = self.set_times(at_date)
         self.geo = {}
-        print("FINISH ","THIS")
+        for ageo in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.created_gpstime <= gps_time):
+            key = cm_utils.make_part_key(ageo.station_name, None)
+            self.geo[key] = ageo
+
+    def revs(self, hpn):
+        hpn_revs = []
+        hpn = hpn.upper()
+        for part in self.parts.values():
+            if hpn == part.hpn.upper():
+                hpn_revs.append(part.hpn_rev)
+        return hpn_revs
 
     def check(self, at_date=None):
         """
