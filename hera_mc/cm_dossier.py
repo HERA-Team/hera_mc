@@ -39,17 +39,37 @@ class PartEntry():
         Sort notes display by 'part' or 'time'
     """
 
-    col_hdr = {'hpn': 'HERA P/N', 'hpn_rev': 'Rev', 'hptype': 'Part Type',
-               'manufacturer_number': 'Mfg #', 'start_date': 'Start', 'stop_date': 'Stop',
-               'input_ports': 'Input', 'output_ports': 'Output', 'geo': 'Geo',
-               'part_info': 'Note', 'post_date': 'Date', 'lib_file': 'File'}
+    col_hdr = {'hpn': 'HERA P/N',
+               'hpn_rev': 'Rev',
+               'hptype': 'Part Type',
+               'manufacturer_number': 'Mfg #',
+               'start_date': 'Start',
+               'stop_date': 'Stop',
+               'input_ports': 'Input',
+               'output_ports': 'Output',
+               'geo': 'Geo',
+               'part_info': 'Note',
+               'post_date': 'Date',
+               'lib_file': 'File',
+               'up_start_date': 'uStart',
+               'up_stop_date': 'uStop',
+               'upstream_part': 'Upstream',
+               'upstream_output_port': '<uOutput:',
+               'upstream_input_port': ':uInput>',
+               'connected_part': 'Part',
+               'downstream_output_port': '<dOutput:',
+               'downstream_input_port': ':dInput>',
+               'downstream_part': 'Downstream',
+               'down_start_time': 'dStart',
+               'down_stop_time': 'dStop'}
 
-    def __init__(self, hpn, rev, at_date, notes_start_date, sort_notes_by='part'):
+    def __init__(self, hpn, rev, at_date, notes_start_date):
         self.hpn = hpn
         self.rev = rev
         self.entry_key = cm_utils.make_part_key(self.hpn, self.rev)
         self.at_date = at_date
         self.notes_start_date = notes_start_date
+        # Below are the database components of the dossier
         self.part = None  # This is the cm_partconnect.Parts class
         self.part_info = None  # This is a list of cm_partconnect.PartInfo class entries
         self.connections = {'up': None, 'down': None}  # This is the list of connections with part in up/down position
@@ -97,7 +117,8 @@ class PartEntry():
             Contains the active database entries.
         """
         if self.entry_key in active.info.keys():
-            self.part_info = active.info[self.entry_key]
+            if active.info[self.entry_key].posting_gpstime > self.notes_start_date:
+                self.part_info = active.info[self.entry_key]
 
     def get_geo(self, active):
         """
