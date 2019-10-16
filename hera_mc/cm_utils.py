@@ -116,6 +116,9 @@ def make_part_key(hpn, rev, port=None):
     if hpn is None:
         return system_wide_key
 
+    if rev is None:
+        return hpn.upper()
+
     if port is None:
         return ":".join([hpn.upper(), rev.upper()])
 
@@ -230,22 +233,25 @@ def listify(X):
     return [X]
 
 
-def match_list(a_obj, b_obj):
+def match_list(a_obj, b_obj, upper=False):
     if not isinstance(a_obj, list):
         a_obj = [a_obj]
     if not isinstance(b_obj, list):
         b_obj = [b_obj] * len(a_obj)
     if len(a_obj) != len(b_obj):
         raise ValueError("Objects must be same length")
-    return zip(a_obj, b_obj)
+    if upper:
+        return zip(to_upper(a_obj), to_upper(b_obj))
+    else:
+        return zip(a_obj, b_obj)
 
 
 def to_upper(X):
-    if X is None:
-        return None
     if isinstance(X, list):
         return [to_upper(s) for s in X]
-    return str(X).upper()
+    if isinstance(X, six.string_types):
+        return X.upper()
+    return X
 
 
 def add_verbosity_args(parser):
