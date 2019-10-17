@@ -40,6 +40,29 @@ class PartEntry():
     notes_start_date : astropy.Time
         Start date on which to filter notes.  The stop date is at_date above.
     """
+    col_hdr = {'hpn': 'HERA P/N',
+               'hpn_rev': 'Rev',
+               'hptype': 'Part Type',
+               'manufacturer_number': 'Mfg #',
+               'start_gpstime': 'Start',
+               'stop_gpstime': 'Stop',
+               'input_ports': 'Input',
+               'output_ports': 'Output',
+               'geo': 'Geo',
+               'comment': 'Note',
+               'posting_gpstime': 'Date',
+               'lib_file': 'File',
+               'up.start_gpstime': 'uStart',
+               'up.stop_gpstime': 'uStop',
+               'up.part': 'Upstream',
+               'up.output_port': '<uOutput:',
+               'up.input_port': ':uInput>',
+               'entry_key': 'Part',
+               'down.output_port': '<dOutput:',
+               'down.input_port': ':dInput>',
+               'down.part': 'Downstream',
+               'down.start_gpstime': 'dStart',
+               'down.stop_gpstime': 'dStop'}
 
     def __init__(self, hpn, rev, at_date, notes_start_date):
         self.hpn = hpn
@@ -50,34 +73,10 @@ class PartEntry():
         # Below are the database components of the dossier
         self.input_ports = []
         self.output_ports = []
-        self.part = partconn.Parts()
-        self.part_info = partconn.PartInfo()
-        self.connections = {'up': partconn.Connections(), 'down': partconn.Connections()}
-        self.geo = geo_location.GeoLocation()
-        # These are the allowed header columns
-        self.col_hdr = {'hpn': 'HERA P/N',
-                        'hpn_rev': 'Rev',
-                        'hptype': 'Part Type',
-                        'manufacturer_number': 'Mfg #',
-                        'start_gpstime': 'Start',
-                        'stop_gpstime': 'Stop',
-                        'input_ports': 'Input',
-                        'output_ports': 'Output',
-                        'geo': 'Geo',
-                        'comment': 'Note',
-                        'posting_gpstime': 'Date',
-                        'lib_file': 'File',
-                        'up.start_date': 'uStart',
-                        'up.stop_date': 'uStop',
-                        'up.part': 'Upstream',
-                        'up.output_port': '<uOutput:',
-                        'up.input_port': ':uInput>',
-                        'entry_key': 'Part',
-                        'down.output_port': '<dOutput:',
-                        'down.input_port': ':dInput>',
-                        'down.part': 'Downstream',
-                        'down.start_time': 'dStart',
-                        'down.stop_time': 'dStop'}
+        self.part = None
+        self.part_info = None
+        self.connections = {'up': None, 'down': None}
+        self.geo = None
 
     def __repr__(self):
         return("{}:{} -- {}".format(self.hpn, self.rev, self.part))
@@ -178,67 +177,36 @@ class PartEntry():
             A row for the tabulate display.
         """
         tdata = []
+        use_ports = [['no_ports', 'no_cols']]
         for c in columns:
-            try:
-                x = getattr(self, c)
-            except AttributeError:
+            if 'up.' or 'down.' in c:
+                if len(self.input_ports) > len(self.output_ports):
+                    use_ports = None
+        for port_info in use_ports:
+            trow = []
+            for c in columns:
                 try:
-                    x = getattr(self.part, c)
+                    x = getattr(self, c)
                 except AttributeError:
                     try:
-                        x = getattr(self.connections['up'], c)
+                        x = getattr(self.part, c)
                     except AttributeError:
                         try:
-                            x = getattr(self.connections['down'], c)
+                            x = getattr(self.part_info, c)
                         except AttributeError:
-                            try:
-                                x = getattr(self.part_info, c)
-                            except AttributeError:
-                                x = None
-            if c == 'part_info' and len(x):
-                x = '\n'.join(pi.comment for pi in x)
-            elif c == 'geo' and x:
-                x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
-            elif c in ['start_date', 'stop_date']:
-                x = cm_utils.get_time_for_display(x)
-            elif isinstance(x, (list, set)):
-                x = ', '.join(x)
-            tdata.append(x)
-        tdata = [tdata]
-        return tdata
+                            x = None
 
-
-
-        for u, d in zip(self.keys_up, self.keys_down):
-            if u is None:
-                use_upward_connection = False
-                for h in ['Upstream', 'uStart', 'uStop', '<uOutput:', ':uInput>']:
-                    show_conn_dict[h] = ' '
-            else:
-                use_upward_connection = True
-                c = self.up[u]
-                show_conn_dict['Upstream'] = cm_utils.make_part_key(c.upstream_part, c.up_part_rev)
-                show_conn_dict['uStart'] = cm_utils.get_time_for_display(c.start_date)
-                show_conn_dict['uStop'] = cm_utils.get_time_for_display(c.stop_date)
-                show_conn_dict['<uOutput:'] = c.upstream_output_port
-                show_conn_dict[':uInput>'] = c.downstream_input_port
-            if d is None:
-                use_downward_connection = False
-                for h in ['Downstream', 'dStart', 'dStop', '<dOutput:', ':dInput>']:
-                    show_conn_dict[h] = ' '
-            else:
-                use_downward_connection = True
-                c = self.down[d]
-                show_conn_dict['Downstream'] = cm_utils.make_part_key(c.downstream_part, c.down_part_rev)
-                show_conn_dict['dStart'] = cm_utils.get_time_for_display(c.start_date)
-                show_conn_dict['dStop'] = cm_utils.get_time_for_display(c.stop_date)
-                show_conn_dict['<dOutput:'] = c.upstream_output_port
-                show_conn_dict[':dInput>'] = c.downstream_input_port
-            if use_upward_connection or use_downward_connection:
-                r = []
-                for h in columns:
-                    r.append(show_conn_dict[h])
-                tdata.append(r)
+                csplit = c.split('.')[-1]
+                if c == 'comment' and len(x):
+                    x = '\n'.join(pi.comment for pi in x)
+                elif c == 'geo' and x:
+                    x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
+                elif csplit in ['start_gpstime', 'stop_gpstime', 'posting_gpstime']:
+                    x = cm_utils.get_time_for_display(x)
+                elif isinstance(x, (list, set)):
+                    x = ', '.join(x)
+                trow.append(x)
+            tdata.append(trow)
         return tdata
 
 
