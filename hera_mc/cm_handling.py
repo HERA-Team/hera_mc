@@ -180,7 +180,7 @@ class Handling:
                     part_dossier[key] = this_part
         return part_dossier
 
-    def show_dossier(self, part_dossier, columns):
+    def show_dossier(self, dossier, columns):
         """
         Generate part information print string.  Uses tabulate package.
 
@@ -191,13 +191,13 @@ class Handling:
         columns : list
             List of column headers to use.
         """
-        pd_keys = cm_utils.put_keys_in_order(list(part_dossier.keys()))
+        pd_keys = cm_utils.put_keys_in_order(list(dossier.keys()))
         if len(pd_keys) == 0:
             return 'Part not found'
         table_data = []
-        headers = part_dossier[pd_keys[0]].get_headers(columns)
+        headers = dossier[pd_keys[0]].get_headers(columns)
         for hpnr in pd_keys:
-            new_rows = part_dossier[hpnr].table_row(columns)
+            new_rows = dossier[hpnr].table_row(columns)
             for nr in new_rows:
                 table_data.append(nr)
         return '\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
