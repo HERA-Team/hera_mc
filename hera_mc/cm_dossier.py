@@ -98,7 +98,10 @@ class PartEntry():
         self.add_ports()
 
     def add_ports(self):
-        print("add the input_ports, output_ports"," to dossier")
+        if self.connections['down'] is not None:
+            self.input_ports = cm_utils.put_keys_in_order([x.lower() for x in self.connections['down'].keys()], 'PNR')
+        if self.connections['up'] is not None:
+            self.output_ports = cm_utils.put_keys_in_order([x.lower() for x in self.connections['up'].keys()], 'PNR')
 
     def get_connections(self, active):
         """
@@ -179,9 +182,9 @@ class PartEntry():
         tdata = []
         use_ports = [['no_ports', 'no_cols']]
         for c in columns:
-            if 'up.' or 'down.' in c:
+            if 'up.' in c or 'down.' in c:
                 if len(self.input_ports) > len(self.output_ports):
-                    use_ports = None
+                    use_ports = [['no', 'no']]
         for port_info in use_ports:
             trow = []
             for c in columns:
