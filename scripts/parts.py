@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser.add_argument('action', nargs='?', help="Actions are:  parts, connections, notes, revisions", default='parts')
     # set values for 'action' to use
     parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv-list. [None]", default=None)
-    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [active]", default='active')
+    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.", default=None)
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
     parser.add_argument('--notes', help="<For action=part_info>:  Displays part notes with posting dates and not other info",
