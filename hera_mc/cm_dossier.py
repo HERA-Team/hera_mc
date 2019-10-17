@@ -197,7 +197,7 @@ class PartEntry():
                             x = None
 
                 csplit = c.split('.')[-1]
-                if c == 'comment' and len(x):
+                if c == 'comment' and x is not None and len(x):
                     x = '\n'.join(pi.comment for pi in x)
                 elif c == 'geo' and x:
                     x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
