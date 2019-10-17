@@ -29,6 +29,7 @@ if __name__ == '__main__':
                         dest='station_types', default='default')
     parser.add_argument('--label', choices=['name', 'num', 'ser', 'none'], default='num',
                         help="Label by station_name (name), ant_num (num) serial_num (ser) or none (none) (num)")
+    parser.add_argument('--hookup-type', dest='hookup_type', help="Hookup type to use for active antennas.", default=None)
     args = parser.parse_args()
     if len(args.fg_action) > 1:
         position = cm_utils.listify(args.fg_action[1])
@@ -68,7 +69,7 @@ if __name__ == '__main__':
         G.start_file(args.file)
 
     if args.fg_action.startswith('a'):
-        located = G.get_active_stations(at_date, station_types_to_use=args.station_types)
+        located = G.get_active_stations(at_date, station_types_to_use=args.station_types, hookup_type=args.hookup_type)
         G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, label=args.label,
                         marker_color='k', marker_shape='*', marker_size=fg_markersize)
     elif args.fg_action.startswith('i'):
