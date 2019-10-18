@@ -50,20 +50,20 @@ class PartEntry():
                'comment': 'Note',
                'posting_gpstime': 'Date',
                'library_file': 'File',
-               'up.start_gpstime': 'Start',
-               'up.stop_gpstime': 'Stop',
+               'up.start_gpstime': 'uStart',
+               'up.stop_gpstime': 'uStop',
                'up.upstream_part': 'Upstream',
-               'up.up_part_rev': 'Rev',
-               'up.upstream_output_port': 'Output:',
-               'up.downstream_input_port': 'Input',
-               'down.upstream_output_port': 'Output',
-               'down.downstream_input_port': 'Input',
+               'up.up_part_rev': 'uRev',
+               'up.upstream_output_port': 'uOut',
+               'up.downstream_input_port': 'uIn',
+               'down.upstream_output_port': 'dOut',
+               'down.downstream_input_port': 'dIn',
                'down.downstream_part': 'Downstream',
-               'down.down_part_rev': 'Rev',
-               'down.start_gpstime': 'Start',
-               'down.stop_gpstime': 'Stop'}
+               'down.down_part_rev': 'dRev',
+               'down.start_gpstime': 'dStart',
+               'down.stop_gpstime': 'dStop'}
 
-    def __init__(self, hpn, rev, at_date, notes_start_date):
+    def __init__(self, hpn, rev, at_date='now', notes_start_date='<'):
         self.hpn = hpn
         self.rev = rev
         self.entry_key = cm_utils.make_part_key(self.hpn, self.rev)
@@ -165,7 +165,7 @@ class PartEntry():
             headers.append(self.col_hdr[c])
         return headers
 
-    def table_row(self, columns):
+    def table_row(self, columns, ports=None):
         """
         Converts the part_dossier column information to a row for the tabulate display.
 
@@ -173,21 +173,40 @@ class PartEntry():
         ----------
         columns : list
             List of the desired columns to use.
+        ports : list or None
+            Contains a list of the allowed ports.  If None, it allows all.
 
         Returns
         -------
         list
             A row or rows for the tabulate display.
         """
-        tdata = []
         conns = [[None, None]]
+        ports_included = False
         for col in columns:
             if 'up.' in col or 'down.' in col:
+                ports_included = True
                 conns = zip_longest([self.connections.down[x.upper()] for x in self.input_ports],
                                     [self.connections.up[x.upper()] for x in self.output_ports])
                 break
+        if ports_included and ports is not None:
+            new_up = []
+            new_dn = []
+            for up, down in conns:
+                if up is None or up.upstream_output_port.upper() in ports or up.downstream_input_port.upper() in ports:
+                    new_up.append(up)
+                else:
+                    new_up.append(None)
+                if down is None or down.upstream_output_port.upper() in ports or down.downstream_input_port.upper() in ports:
+                    new_dn.append(down)
+                else:
+                    new_up.append(None)
+            conns = zip(new_up, new_dn)
+
+        tdata = []
         for up, down in conns:
             trow = []
+            no_port_data = True
             for col in columns:
                 cbeg = col.split('.')[0]
                 cend = col.split('.')[-1]
@@ -205,16 +224,21 @@ class PartEntry():
                                 x = getattr(use, cend)
                             except AttributeError:
                                 x = None
+                if cbeg in ['up', 'down'] and x is not None:
+                    no_port_data = False
                 if col == 'comment' and x is not None and len(x):
                     x = '\n'.join([y.strip() for y in x])
-                elif col == 'geo' and x:
+                elif col == 'geo' and x is not None:
                     x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
                 elif cend in ['start_gpstime', 'stop_gpstime', 'posting_gpstime']:
                     x = cm_utils.get_time_for_display(x)
                 elif isinstance(x, (list, set)):
                     x = ', '.join(x)
                 trow.append(x)
-            tdata.append(trow)
+            if ports_included and no_port_data:
+                trow = None
+            if trow is not None:
+                tdata.append(trow)
         return tdata
 
 

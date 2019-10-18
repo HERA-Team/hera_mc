@@ -13,10 +13,6 @@ for allowed columns.)
 """
 from __future__ import absolute_import, division, print_function
 
-import os.path
-import sys
-import six
-
 from hera_mc import mc, cm_handling, cm_utils
 
 if __name__ == '__main__':
@@ -27,7 +23,11 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--revision', help="Revision for hpn, or None.", default=None)
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
-    parser.add_argument('--columns', help="Custom columns, see cm_dossier.PartEntry", default=None)
+    parser.add_argument('--columns', help="Custom columns, see cm_dossier.PartEntry (overrides)", default=None)
+    parser.add_argument('--list-all-columns', dest='list_columns', help="Show a list of all available columns", action='store_true')
+    parser.add_argument('--hide-sigpath', dest='sigpath', help="Hide signal path ports", action='store_false')
+    parser.add_argument('--hide-phys', dest='phys', help="Hide physical ports", action='store_false')
+    parser.add_argument('--ports', help="Include only these ports (overrides), csv-list", default=None)
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--notes_start_date', help="<For notes> start_date for notes [<]", default='<')
@@ -50,6 +50,15 @@ if __name__ == '__main__':
         for hpn in args.hpn:
             rev_ret = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
             cm_handling.cmrev.show_revisions(rev_ret)
+        import sys
+        sys.exit()
+
+    if args.list_columns:
+        from hera_mc import cm_dossier
+        blank = cm_dossier.PartEntry(None, None)
+        for col in blank.col_hdr.keys():
+            print('\t{:30s}\t{}'.format(col, blank.col_hdr[col]))
+        import sys
         sys.exit()
 
     if action_tag == 'pa':  # parts
@@ -86,7 +95,16 @@ if __name__ == '__main__':
 
     if args.columns is not None:
         columns = args.columns
+    if args.ports is not None:
+        ports = args.ports.split(',')
+    else:
+        ports = []
+        if args.sigpath:
+            ports.append('sigpath')
+        if args.phys:
+            ports.append('physical')
+        ports = ','.join(ports)
 
-    dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
+    dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision, ports=ports, at_date=date_query,
                                    notes_start_date=notes_start_date, exact_match=args.exact_match)
     print(handling.show_dossier(dossier, columns))
