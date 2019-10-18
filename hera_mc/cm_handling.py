@@ -17,7 +17,7 @@ import six
 from astropy.time import Time
 from sqlalchemy import func, desc
 
-from . import mc, cm_utils, cm_dossier, cm_active
+from . import mc, cm_utils, cm_sysdef, cm_dossier
 from . import cm_partconnect as partconn
 
 
@@ -132,7 +132,42 @@ class Handling:
             match_list = cm_utils.match_list(all_hpn, all_rev, upper=True)
         return match_list
 
-    def get_dossier(self, hpn, rev=None, at_date='now', notes_start_date='<', exact_match=True):
+    def _set_ports(self, inp):
+        if self.ports is None:  # Initialize
+            self.ports = {}
+            sysdef = cm_sysdef.Sysdef()
+            self.all_sigpath_ports = sysdef.get_all_ports(cm_sysdef.operational_hookup_types)
+            for port_type in cm_sysdef.all_port_types:
+                self.ports[port_type] = set()
+            del(sysdef)
+            return
+
+        if isinstance(inp, cm_dossier.PartEntry):  # Capture ports
+            for part_ports in [inp.input_ports, inp.output_ports]:
+                for p in part_ports:
+                    if p in self.all_sigpath_ports:
+                        self.ports['sigpath'].add(p)
+                    else:
+                        self.ports['physical'].add(p)
+            return
+
+        if isinstance(inp, list):  # Return restrictive allowed list
+            self.allowed_ports = [x.upper() for x in inp]
+            return
+
+        if inp is None:
+            self.allowed_ports = None
+            return
+
+        inp = inp.split(',')
+        allowed_ports = set()
+        for pt in inp:
+            for prt in self.ports[pt]:
+                allowed_ports.add(prt)
+        self.allowed_ports = [x.upper() for x in allowed_ports]
+        return
+
+    def get_dossier(self, hpn, rev=None, ports=None, at_date='now', notes_start_date='<', exact_match=True):
         """
         Return information on a part or parts.
 
@@ -143,6 +178,11 @@ class Handling:
         rev : str, list, None
             Specific revision(s) or None (which yields all). If list, must match length of hpn.
             Each element of a string may be a csv-list of revisions, which gets parsed later.
+        ports : list, str, None
+            Ports to include in dossier.
+            If None, counterintuitively, all are included (see cm_sysdef.all_port_types)
+            If str, it assumes that types are provided (see cm_sysdef.all_port_types), specified as csv-list.
+            If list, it only allows those.
         at_date : str, int, datetime, Time
             Reference date of dossier (and stop_date for displaying notes)
         notes_start_date : str, int, datetime, Time
@@ -156,6 +196,8 @@ class Handling:
             dictionary keyed on the part_number:rev containing PartEntry dossier classes
         """
 
+        from . import cm_active
+
         at_date = cm_utils.get_astropytime(at_date)
         notes_start_date = cm_utils.get_astropytime(notes_start_date)
         active = cm_active.ActiveData(self.session, at_date=at_date)
@@ -166,6 +208,8 @@ class Handling:
         part_dossier = {}
 
         hpn_list = self._get_hpn_list(hpn, rev, active, exact_match)
+        self.ports = None
+        self._set_ports(None)
 
         for loop_hpn, loop_rev in hpn_list:
             if loop_rev is None:
@@ -175,9 +219,12 @@ class Handling:
             for rev in loop_rev:
                 key = cm_utils.make_part_key(loop_hpn, rev)
                 if key in active.parts.keys():
-                    this_part = cm_dossier.PartEntry(hpn=loop_hpn, rev=rev, at_date=at_date, notes_start_date=notes_start_date)
+                    this_part = cm_dossier.PartEntry(hpn=loop_hpn, rev=rev, at_date=at_date,
+                                                     notes_start_date=notes_start_date)
                     this_part.get_entry(active)
                     part_dossier[key] = this_part
+                    self._set_ports(this_part)
+        self._set_ports(ports)
         return part_dossier
 
     def show_dossier(self, dossier, columns):
@@ -195,9 +242,9 @@ class Handling:
         if len(pd_keys) == 0:
             return 'Part not found'
         table_data = []
-        headers = dossier[pd_keys[0]].get_headers(columns)
+        headers = dossier[pd_keys[0]].get_headers(columns=columns)
         for hpnr in pd_keys:
-            new_rows = dossier[hpnr].table_row(columns)
+            new_rows = dossier[hpnr].table_row(columns=columns, ports=self.allowed_ports)
             for nr in new_rows:
                 table_data.append(nr)
         return '\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
@@ -248,75 +295,3 @@ class Handling:
             if include_this_one:
                 fnd.append(copy.copy(conn))
         return fnd
-
-    def get_part_types(self, port, at_date):
-        """
-        Goes through database and pulls out part types and some other info to
-        display in a table.
-
-        Returns part_type_dict, a dictionary keyed on part type
-
-        Parameters
-        -----------
-        port : str
-            If port == '[phy]sical' show only "physical" ports"
-            If port == '[sig]nal' show only "signal" ports
-            If port == 'all' shows all
-        at_date : str, int
-            Date for part_types to be shown
-
-        Returns
-        -------
-        dict
-            part_type_dict, a dictionary keyed on part type
-        """
-
-        self.part_type_dict = {}
-        for part in self.session.query(partconn.Parts).all():
-            key = cm_utils.make_part_key(part.hpn, part.hpn_rev)
-            if part.hptype not in self.part_type_dict.keys():
-                self.part_type_dict[part.hptype] = {'part_list': [key],
-                                                    'connections': 0,
-                                                    'input_ports': set(),
-                                                    'output_ports': set(),
-                                                    'revisions': set()}
-            else:
-                self.part_type_dict[part.hptype]['part_list'].append(key)
-        port = port.lower()[:3]
-        chk_conn = cm_dossier.PartConnectionEntry('type', 'type', 'type')
-        for k, v in six.iteritems(self.part_type_dict):
-            for pa in v['part_list']:
-                hpn, rev = cm_utils.split_part_key(pa)
-                chk_conn.__init__(hpn, rev, 'all')
-                chk_conn.get_entry(self.session)
-                for iop in ['input_ports', 'output_ports']:
-                    for p in getattr(chk_conn, iop):
-                        if p is not None:
-                            v['connections'] += 1
-                            show_it = (port == 'all') or\
-                                      (port == 'sig' and p[0] != '@') or\
-                                      (port == 'phy' and p[0] == '@')
-                            if show_it:
-                                v[iop].add(p)
-                v['revisions'].add(rev)
-
-        return self.part_type_dict
-
-    def show_part_types(self):
-        """
-        Displays the part_types dictionary
-        """
-
-        headers = ['Part type', '# dbase', '# connect', 'Input ports', 'Output ports',
-                   'Revisions']
-        table_data = []
-        for k in sorted(self.part_type_dict.keys()):
-            td = [k, len(self.part_type_dict[k]['part_list']),
-                  self.part_type_dict[k]['connections']]
-            td.append(', '.join(sorted(self.part_type_dict[k]['input_ports'])))
-            td.append(', '.join(sorted(self.part_type_dict[k]['output_ports'])))
-            td.append(', '.join(sorted(self.part_type_dict[k]['revisions'])))
-            table_data.append(td)
-        print()
-        print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
-        print()
