@@ -3,7 +3,12 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""This is meant to hold utility scripts for handling parts and connections
+"""
+Utility scripts to display part and connection information.
+
+Actions 'parts', 'connections', 'notes' differ only by defining a different set of columns,
+which may be overridden by instead using the args.columns parameter (see cm_dossier.PartEntry
+for allowed columns.)
 
 """
 from __future__ import absolute_import, division, print_function
@@ -22,8 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.", default=None)
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
-    parser.add_argument('--notes', help="<For action=part_info>:  Displays part notes with posting dates and not other info",
-                        action='store_true')
+    parser.add_argument('--columns', help="Custom columns, see cm_dossier.PartEntry", default=None)
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--notes_start_date', help="<For notes> start_date for notes [<]", default='<')
@@ -48,13 +52,28 @@ if __name__ == '__main__':
             cm_handling.cmrev.show_revisions(rev_ret)
         sys.exit()
 
-    if action_tag == 'pa':  # part_info
-        columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_gpstime', 'stop_gpstime',
-                   'input_ports', 'output_ports', 'geo', 'comment']
-    elif action_tag == 'co':  # connection_info
+    if action_tag == 'pa':  # parts
+        if args.verbosity == 1:
+            columns = ['hpn', 'hpn_rev', 'hptype', 'input_ports', 'output_ports']
+        elif args.verbosity == 2:
+            columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_gpstime', 'stop_gpstime',
+                       'input_ports', 'output_ports', 'geo']
+        else:
+            columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_gpstime', 'stop_gpstime',
+                       'input_ports', 'output_ports', 'geo', 'comment']
+    elif action_tag == 'co':  # connections
         columns = []
     elif action_tag == 'no':  # notes
-        columns = ['hpn', 'comment']
+        if args.verbosity == 1:
+            columns = ['hpn', 'comment']
+        elif args.verbosity == 2:
+            columns = ['hpn', 'posting_gpstime', 'comment']
+        else:
+            columns = ['hpn', 'posting_gpstime', 'library_file', 'comment']
+
+    if args.columns is not None:
+        columns = args.columns
+
     dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
                                    notes_start_date=notes_start_date, exact_match=args.exact_match)
     print(handling.show_dossier(dossier, columns))

@@ -10,10 +10,12 @@ connections entries, and hookup entries.
 from __future__ import absolute_import, division, print_function
 
 import six
+from argparse import Namespace
 
 from . import cm_sysdef, cm_utils
 from . import cm_partconnect as partconn
 from . import geo_location
+from itertools import zip_longest
 
 
 class PartEntry():
@@ -51,7 +53,7 @@ class PartEntry():
                'geo': 'Geo',
                'comment': 'Note',
                'posting_gpstime': 'Date',
-               'lib_file': 'File',
+               'library_file': 'File',
                'up.start_gpstime': 'uStart',
                'up.stop_gpstime': 'uStop',
                'up.part': 'Upstream',
@@ -74,8 +76,8 @@ class PartEntry():
         self.input_ports = []
         self.output_ports = []
         self.part = None
-        self.part_info = None
-        self.connections = {'up': None, 'down': None}
+        self.part_info = Namespace(comment=[], posting_gpstime=[], library_file=[])
+        self.connections = Namespace(up=None, down=None)
         self.geo = None
 
     def __repr__(self):
@@ -98,10 +100,10 @@ class PartEntry():
         self.add_ports()
 
     def add_ports(self):
-        if self.connections['down'] is not None:
-            self.input_ports = cm_utils.put_keys_in_order([x.lower() for x in self.connections['down'].keys()], 'PNR')
-        if self.connections['up'] is not None:
-            self.output_ports = cm_utils.put_keys_in_order([x.lower() for x in self.connections['up'].keys()], 'PNR')
+        if self.connections.down is not None:
+            self.input_ports = cm_utils.put_keys_in_order([x.lower() for x in self.connections.down.keys()], 'PNR')
+        if self.connections.up is not None:
+            self.output_ports = cm_utils.put_keys_in_order([x.lower() for x in self.connections.up.keys()], 'PNR')
 
     def get_connections(self, active):
         """
@@ -113,9 +115,9 @@ class PartEntry():
             Contains the active database entries.
         """
         if self.entry_key in active.connections['up'].keys():
-            self.connections['up'] = active.connections['up'][self.entry_key]
+            self.connections.up = active.connections['up'][self.entry_key]
         if self.entry_key in active.connections['down'].keys():
-            self.connections['down'] = active.connections['down'][self.entry_key]
+            self.connections.down = active.connections['down'][self.entry_key]
 
     def get_part_info(self, active):
         """
@@ -126,11 +128,12 @@ class PartEntry():
         active : ActiveData class
             Contains the active database entries.
         """
-        self.part_info = []
         if self.entry_key in active.info.keys():
             for pi_entry in active.info[self.entry_key]:
                 if pi_entry.posting_gpstime > self.notes_start_date.gps:
-                    self.part_info.append(pi_entry)
+                    self.part_info.comment.append(pi_entry.comment)
+                    self.part_info.posting_gpstime.append(pi_entry.posting_gpstime)
+                    self.part_info.library_file.append(pi_entry.library_file)
 
     def get_geo(self, active):
         """
@@ -177,37 +180,46 @@ class PartEntry():
         Returns
         -------
         list
-            A row for the tabulate display.
+            A row or rows for the tabulate display.
         """
         tdata = []
-        use_ports = [['no_ports', 'no_cols']]
+        conns = [[None, None]]
         for c in columns:
             if 'up.' in c or 'down.' in c:
-                if len(self.input_ports) > len(self.output_ports):
-                    use_ports = [['no', 'no']]
-        for port_info in use_ports:
+                conns = zip_longest([self.connections.down[x] for x in self.input_ports],
+                                    [self.connections.up[x] for x in self.output_ports])
+                break
+        for up, down in conns:
             trow = []
-            for c in columns:
+            for col in columns:
+                cbeg = col.split('.')[0]
+                cend = col.split('.')[-1]
                 try:
-                    x = getattr(self, c)
+                    x = getattr(self, col)
                 except AttributeError:
                     try:
-                        x = getattr(self.part, c)
+                        x = getattr(self.part, col)
                     except AttributeError:
                         try:
-                            x = getattr(self.part_info, c)
+                            x = getattr(self.part_info, col)
                         except AttributeError:
-                            x = None
-
-                csplit = c.split('.')[-1]
-                if c == 'comment' and x is not None and len(x):
-                    x = '\n'.join(pi.comment for pi in x)
-                elif c == 'geo' and x:
+                            try:
+                                x = getattr(use.this_side, cend)
+                            except AttributeError:
+                                x = None
+                print(col, x)
+                if col == 'comment' and x is not None and len(x):
+                    x = '\n'.join([y.strip() for y in x])
+                elif col == 'geo' and x:
                     x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
-                elif csplit in ['start_gpstime', 'stop_gpstime', 'posting_gpstime']:
+                elif cend in ['start_gpstime', 'stop_gpstime', 'posting_gpstime']:
                     x = cm_utils.get_time_for_display(x)
                 elif isinstance(x, (list, set)):
                     x = ', '.join(x)
+                elif cend == 'up':
+                    print(x,' Need to do.')
+                elif cend == 'down':
+                    print(x, 'Need todo')
                 trow.append(x)
             tdata.append(trow)
         return tdata
