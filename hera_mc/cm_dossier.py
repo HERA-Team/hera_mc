@@ -24,11 +24,7 @@ class PartEntry():
     part_info, and, if applicable, geo_location.
 
     It contains the modules to format the dossier for use in the parts display matrix.
-    Full available list is (in col_hdr dict below):
-    'hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_date', 'stop_date', 'input_ports', 'output_ports', 'geo',
-    'part_info', 'post_date', 'lib_file', 'up_start_date', 'up_stop_date',
-    'upstream_part', 'upstream_output_port', 'upstream_input_port', 'connected_part', 'downstream_output_port',
-    'downstream_input_port', 'downstream_part', 'down_start_time', 'down_stop_time'
+    Full available list is in col_hdr dict below.
 
     Parameters
     ----------
@@ -54,17 +50,18 @@ class PartEntry():
                'comment': 'Note',
                'posting_gpstime': 'Date',
                'library_file': 'File',
-               'up.start_gpstime': 'uStart',
-               'up.stop_gpstime': 'uStop',
-               'up.part': 'Upstream',
-               'up.output_port': '<uOutput:',
-               'up.input_port': ':uInput>',
-               'entry_key': 'Part',
-               'down.output_port': '<dOutput:',
-               'down.input_port': ':dInput>',
-               'down.part': 'Downstream',
-               'down.start_gpstime': 'dStart',
-               'down.stop_gpstime': 'dStop'}
+               'up.start_gpstime': 'Start',
+               'up.stop_gpstime': 'Stop',
+               'up.upstream_part': 'Upstream',
+               'up.up_part_rev': 'Rev',
+               'up.upstream_output_port': 'Output:',
+               'up.downstream_input_port': 'Input',
+               'down.upstream_output_port': 'Output',
+               'down.downstream_input_port': 'Input',
+               'down.downstream_part': 'Downstream',
+               'down.down_part_rev': 'Rev',
+               'down.start_gpstime': 'Start',
+               'down.stop_gpstime': 'Stop'}
 
     def __init__(self, hpn, rev, at_date, notes_start_date):
         self.hpn = hpn
@@ -184,10 +181,10 @@ class PartEntry():
         """
         tdata = []
         conns = [[None, None]]
-        for c in columns:
-            if 'up.' in c or 'down.' in c:
-                conns = zip_longest([self.connections.down[x] for x in self.input_ports],
-                                    [self.connections.up[x] for x in self.output_ports])
+        for col in columns:
+            if 'up.' in col or 'down.' in col:
+                conns = zip_longest([self.connections.down[x.upper()] for x in self.input_ports],
+                                    [self.connections.up[x.upper()] for x in self.output_ports])
                 break
         for up, down in conns:
             trow = []
@@ -203,11 +200,11 @@ class PartEntry():
                         try:
                             x = getattr(self.part_info, col)
                         except AttributeError:
+                            use = up if cbeg == 'up' else down
                             try:
-                                x = getattr(use.this_side, cend)
+                                x = getattr(use, cend)
                             except AttributeError:
                                 x = None
-                print(col, x)
                 if col == 'comment' and x is not None and len(x):
                     x = '\n'.join([y.strip() for y in x])
                 elif col == 'geo' and x:
@@ -216,10 +213,6 @@ class PartEntry():
                     x = cm_utils.get_time_for_display(x)
                 elif isinstance(x, (list, set)):
                     x = ', '.join(x)
-                elif cend == 'up':
-                    print(x,' Need to do.')
-                elif cend == 'down':
-                    print(x, 'Need todo')
                 trow.append(x)
             tdata.append(trow)
         return tdata

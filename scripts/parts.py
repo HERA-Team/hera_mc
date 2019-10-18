@@ -23,8 +23,8 @@ if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('action', nargs='?', help="Actions are:  parts, connections, notes, revisions", default='parts')
     # set values for 'action' to use
-    parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv-list. [None]", default=None)
-    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.", default=None)
+    parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv-list.")
+    parser.add_argument('-r', '--revision', help="Revision for hpn, or None.", default=None)
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
     parser.add_argument('--columns', help="Custom columns, see cm_dossier.PartEntry", default=None)
@@ -62,7 +62,20 @@ if __name__ == '__main__':
             columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_gpstime', 'stop_gpstime',
                        'input_ports', 'output_ports', 'geo', 'comment']
     elif action_tag == 'co':  # connections
-        columns = []
+        if args.verbosity == 1:
+            columns = ['up.upstream_part', 'up.upstream_output_port', 'up.downstream_input_port',
+                       'hpn',
+                       'down.upstream_output_port', 'down.downstream_input_port', 'down.downstream_part']
+        elif args.verbosity == 2:
+            columns = ['up.upstream_part', 'up.up_part_rev', 'up.upstream_output_port', 'up.downstream_input_port',
+                       'hpn', 'hpn_rev',
+                       'down.upstream_output_port', 'down.downstream_input_port', 'down.downstream_part', 'down.down_part_rev']
+        else:
+            columns = ['up.start_gpstime', 'up.stop_gpstime', 'up.upstream_part', 'up.up_part_rev',
+                       'up.upstream_output_port', 'up.downstream_input_port',
+                       'hpn', 'hpn_rev',
+                       'down.upstream_output_port', 'down.downstream_input_port', 'down.downstream_part', 'down.down_part_rev',
+                       'down.start_gpstime', 'down.stop_gpstime']
     elif action_tag == 'no':  # notes
         if args.verbosity == 1:
             columns = ['hpn', 'comment']

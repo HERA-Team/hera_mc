@@ -202,33 +202,6 @@ class Handling:
                 table_data.append(nr)
         return '\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
 
-    def get_physical_connections(self, at_date=None):
-        """
-        Finds and returns a list of "physical" connections, as opposed to "hookup" connections.
-            In this context "hookup" refers to all signal path connections that uniquely determine
-            the path from station to correlator input.
-            "Physical" refers to other connections that we wish to track, such as power or rack location.
-            The leading character of physical ports is '@'.
-        If at_date is of type Time, it will only return connections valid at that time.  Otherwise
-        it ignores at_date (i.e. it will return any such connection over all time.)
-
-        Returns a list of connections (class)
-
-        Parameters
-        ----------
-        at_date : Astropy Time
-            Time to check epoch.  If None is ignored.
-
-        Returns
-        -------
-        list
-            List of Connections
-        """
-        at_date = cm_utils.get_astropytime(at_date)
-        phys_conn = {}
-        print("IMPLEMENT ","THIS")
-        return phys_conn
-
     def get_specific_connection(self, cobj, at_date=None):
         """
         Finds and returns a list of connections matching the supplied components of the query.
