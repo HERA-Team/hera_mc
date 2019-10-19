@@ -96,64 +96,19 @@ def test_update_new(conns, capsys):
             [u, r, d, r, a, b, g, 'start_gpstime', g]]
     cm_partconnect.update_connection(conns.test_session, data,
                                      add_new_connection=True)
-    located = conns.cm_handle.get_part_connection_dossier(
-        [u], r, a, 'now', True)
+    located = conns.cm_handle.get_dossier([u], r, 'physical', 'now', exact_match=True)
     prkey = list(located.keys())[0]
-    assert str(located[prkey]).startswith('NEW_TEST_PART_UP:A')
-    ckey = located[prkey].keys_down[0]
-    assert located[prkey].down[ckey].upstream_part == u
+    assert prkey == 'NEW_TEST_PART_UP:A'
+    ckey = located[prkey].output_ports
+    assert a in ckey
 
-    conns.cm_handle.show_connections(located)
-    captured = capsys.readouterr()
-    assert ('NEW_TEST_PART_UP:A | up_and_out  | down_and_in | '
-            'NEW_TEST_PART_DOWN:A' in captured.out.strip())
-
-    conns.cm_handle.show_connections(located, verbosity=1)
-    captured = capsys.readouterr()
-    assert ('NEW_TEST_PART_UP:A | NEW_TEST_PART_DOWN:A'
-            in captured.out.strip())
-
-    conns.cm_handle.show_connections(located, verbosity=2)
-    captured = capsys.readouterr()
-    assert ('NEW_TEST_PART_UP:A | up_and_out  | down_and_in | '
-            'NEW_TEST_PART_DOWN:A' in captured.out.strip())
+    captured = conns.cm_handle.show_dossier(located, ['hpn'])
+    assert 'NEW_TEST_PART_UP' in captured
 
 
 def test_get_null_connection():
     nc = cm_partconnect.get_null_connection()
     assert nc.upstream_part == cm_partconnect.no_connection_designator
-
-
-def test_get_dossier(conns, capsys):
-    x = conns.cm_handle.get_part_connection_dossier(
-        'test_part1', 'active', 'all', at_date='now', exact_match=True)
-    y = list(x.keys())[0]
-    assert y == 'TEST_PART1:Q'
-
-    conns.cm_handle.show_connections(x)
-    captured = capsys.readouterr()
-    assert ('TEST_PART1:Q | up_and_out  | down_and_in | TEST_PART2:Q'
-            in captured.out.strip())
-    x = conns.cm_handle.get_part_connection_dossier(
-        'test_part2', 'active', 'all', at_date='now', exact_match=True)
-    y = list(x.keys())[0]
-    assert y == 'TEST_PART2:Q'
-    conns.cm_handle.show_connections(x)
-    captured = capsys.readouterr()
-    assert ('TEST_PART1:Q | up_and_out  | down_and_in | TEST_PART2:Q'
-            in captured.out.strip())
-    old_time = Time('2014-08-01 01:00:00', scale='utc')
-    x = conns.cm_handle.get_part_connection_dossier(
-        'test_part1', 'active', 'all', at_date=old_time, exact_match=True)
-    assert len(x) == 0
-    x = conns.cm_handle.get_part_connection_dossier(
-        'test_part2', 'active', 'all', at_date=old_time, exact_match=True)
-    assert len(x) == 0
-    z = {}
-    z['tst'] = cm_dossier.PartConnectionEntry('test_part1', 'active', 'all')
-    conns.cm_handle.show_connections(z)
-    captured = capsys.readouterr()
-    assert 'Q' not in captured.out.strip()
 
 
 def test_get_specific_connection(conns):
@@ -189,11 +144,3 @@ def test_get_specific_connection(conns):
     at_date = Time('2017-05-01 01:00:00', scale='utc')
     sc = conns.cm_handle.get_specific_connection(c, at_date)
     assert len(sc) == 0
-
-
-def test_physical_connections(conns):
-    x = conns.cm_handle.get_physical_connections()
-    y = list(x.keys())
-    assert 'PAM701:A' in y
-    x = conns.cm_handle.get_physical_connections('2016/01/01')
-    assert not len(x)
