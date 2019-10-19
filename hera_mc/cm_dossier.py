@@ -97,6 +97,9 @@ class PartEntry():
         self.add_ports()
 
     def add_ports(self):
+        """
+        Pulls out the input_ports and output_ports to a class variable
+        """
         if self.connections.down is not None:
             self.input_ports = cm_utils.put_keys_in_order([x.lower() for x in self.connections.down.keys()], 'PNR')
         if self.connections.up is not None:
@@ -181,6 +184,7 @@ class PartEntry():
         list
             A row or rows for the tabulate display.
         """
+        # This section generates the appropriate ports to use, if necessary.
         conns = [[None, None]]
         ports_included = False
         for col in columns:
@@ -203,6 +207,7 @@ class PartEntry():
                     new_up.append(None)
             conns = zip(new_up, new_dn)
 
+        # This section pulls the appropriate value for a given cell out of the data.
         tdata = []
         for up, down in conns:
             trow = []
