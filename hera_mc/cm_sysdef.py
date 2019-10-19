@@ -24,6 +24,7 @@ class Sysdef:
         a) polarized ports start with one of the polarization characters ('e' or 'n')
         b) non polarized ports don't start with either character.
     """
+    opposite_direction = {'up': 'down', 'down': 'up'}
     port_def = {}
     port_def['parts_hera'] = {
         'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
