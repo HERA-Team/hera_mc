@@ -61,12 +61,10 @@ def test_update_new(parts):
             [ntp, 'X', 'hptype', 'antenna'],
             [ntp, 'X', 'start_gpstime', 1172530000]]
     cm_partconnect.update_part(parts.test_session, data)
-    located = parts.cm_handle.get_part_dossier(hpn=[ntp], rev='X',
-                                               at_date='now', exact_match=True)
+    located = parts.cm_handle.get_dossier(hpn=[ntp], rev=['X'], ports=None,
+                                          at_date='now', exact_match=True)
     prkey = list(located.keys())[0]
-    assert str(located[prkey]).startswith('NEW_TEST_PART:X')
-    assert len(list(located.keys())) == 1
-    assert located[list(located.keys())[0]].part.hpn == ntp
+    assert prkey == 'NEW_TEST_PART:X'
 
 
 def test_find_part_type(parts):
@@ -81,9 +79,10 @@ def test_update_part(parts, capsys):
     assert 'does not exist as a field' in captured.out.strip()
     data = [[parts.test_part, parts.test_rev, 'hpn_rev', 'Z']]
     cm_partconnect.update_part(parts.test_session, data)
-    dtq = Time('2017-07-01 01:00:00', scale='utc')
-    located = parts.cm_handle.get_part_dossier(
-        hpn=[parts.test_part], rev='Z', at_date=dtq, exact_match=True)
+    dtq = Time('2019-09-01 01:00:00', scale='utc')
+    located = parts.cm_handle.get_dossier(
+        hpn=[parts.test_part], rev=None, ports=None, at_date=dtq, exact_match=True)
+    print(located)
     assert len(list(located.keys())) == 1
     assert located[list(located.keys())[0]].part.hpn_rev == 'Z'
 
@@ -100,55 +99,35 @@ def test_format_and_check_update_part_request(parts):
     assert x['test_part:Q'][2][3] == 'one'
 
 
-def test_part_dossier(parts, capsys):
-    located = parts.cm_handle.get_part_dossier(
-        hpn=None, rev=None, at_date='now', sort_notes_by='part',
-        exact_match=True)
-    assert list(located.keys())[0] == '__Sys__'
-    located = parts.cm_handle.get_part_dossier(
-        hpn=None, rev=None, at_date='now', sort_notes_by='post',
-        exact_match=True)
-    parts.cm_handle.show_parts(located, notes_only=True)
-    captured = capsys.readouterr()
-    assert 'A700:H' in captured.out.strip()
-
-
-def test_show_parts(parts, capsys):
+def test_show_dossier(parts, capsys):
     cm_partconnect.add_part_info(
         parts.test_session, parts.test_part, parts.test_rev, parts.start_time,
         'Testing', 'library_file')
-    located = parts.cm_handle.get_part_dossier(
-        hpn=[parts.test_part], rev=parts.test_rev, at_date='now',
-        exact_match=True)
-    parts.cm_handle.show_parts(located)
-    captured = capsys.readouterr()
-    assert ('TEST_PART' in captured.out.strip())
-    parts.cm_handle.show_parts(located, notes_only=True)
-    captured = capsys.readouterr()
-    assert 'library_file' in captured.out.strip()
-    parts.cm_handle.show_parts({})
-    captured = capsys.readouterr()
-    assert 'Part not found' in captured.out.strip()
-    located = parts.cm_handle.get_part_dossier(
-        hpn=['A700'], rev=['H'], at_date='now', exact_match=True)
-    parts.cm_handle.show_parts(located, notes_only=True)
-    captured = capsys.readouterr()
-    assert 'Comment 2' in captured.out.strip()
-    located = parts.cm_handle.get_part_dossier(
-        hpn=['HH700'], rev=['A'], at_date='now', exact_match=True)
-    parts.cm_handle.show_parts(located)
-    captured = capsys.readouterr()
-    assert '540901.6E, 6601070.7N, 1052.6m' in captured.out.strip()
+    located = parts.cm_handle.get_dossier(
+        hpn=[parts.test_part], rev=parts.test_rev, ports=None,
+        at_date='now', exact_match=True)
+    captured = parts.cm_handle.show_dossier(located, ['hpn'])
+    assert 'TEST_PART' in captured
+    captured = parts.cm_handle.show_dossier({}, ['hpn'])
+    assert 'Part not found' in captured
+    located = parts.cm_handle.get_dossier(
+        hpn=['A700'], rev=['H'], ports=None, at_date='now', exact_match=True)
+    captured = parts.cm_handle.show_dossier(located, ['comment'])
+    assert 'Comment 2' in captured
+    located = parts.cm_handle.get_dossier(
+        hpn=['HH700'], rev=['A'], ports=None, at_date='now', exact_match=True)
+    captured = parts.cm_handle.show_dossier(located, ['geo'])
+    assert '540901.6E, 6601070.7N, 1052.6m' in captured
 
 
 def test_part_info(parts, capsys):
     cm_partconnect.add_part_info(
         parts.test_session, parts.test_part, parts.test_rev,
         Time('2017-07-01 01:00:00'), 'Testing', 'library_file')
-    located = parts.cm_handle.get_part_dossier(
-        hpn=[parts.test_part], rev=parts.test_rev, at_date='now',
-        exact_match=True)
-    assert located[list(located.keys())[0]].part_info[0].comment == 'Testing'
+    located = parts.cm_handle.get_dossier(
+        hpn=[parts.test_part], rev=parts.test_rev, ports=None,
+        at_date='now', exact_match=True)
+    assert 'Testing' in located[list(located.keys())[0]].part_info.comment
     test_info = cm_partconnect.PartInfo()
     test_info.info(hpn='A', hpn_rev='B', posting_gpstime=1172530000,
                    comment='Hey Hey!')
@@ -179,8 +158,8 @@ def test_add_new_parts(parts, capsys):
     p.part(test_attribute='test')
     assert p.test_attribute == 'test'
     cm_partconnect.add_new_parts(parts.test_session, data, a_time, True)
-    located = parts.cm_handle.get_part_dossier(
-        hpn=['part_X'], rev='X', at_date=a_time, exact_match=True)
+    located = parts.cm_handle.get_dossier(
+        hpn=['part_X'], rev=['X'], ports=None, at_date=a_time, exact_match=True)
     assert len(list(located.keys())) == 1
     assert located[list(located.keys())[0]].part.hpn == 'part_X'
 
@@ -239,15 +218,6 @@ def test_get_revisions_of_type(parts, capsys):
     captured = capsys.readouterr()
     assert '1230372018' in captured.out.strip()
     assert revision[0].hpn == 'HH700'
-
-
-def test_get_part_types(parts, capsys):
-    at_date = cm_utils.get_astropytime('now')
-    a = parts.cm_handle.get_part_types('all', at_date)
-    assert 'terminals' in a['feed']['output_ports']
-    parts.cm_handle.show_part_types()
-    captured = capsys.readouterr()
-    assert 'H, Q' in captured.out.strip()
 
 
 def test_datetime(parts):
