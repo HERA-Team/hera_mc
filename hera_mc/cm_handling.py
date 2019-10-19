@@ -4,9 +4,7 @@
 # Licensed under the 2-clause BSD license.
 
 """
-This is meant to hold helpful modules for parts and connections scripts contained
-within the Handling class.
-
+Holds helpful modules for parts and connections scripts.
 """
 from __future__ import absolute_import, division, print_function
 
@@ -119,6 +117,26 @@ class Handling:
             & (func.upper(partconn.Parts.hpn_rev) == rev.upper())).first()
 
     def _get_hpn_list(self, hpn, rev, active, exact_match):
+        """
+        Returns hpn,rev zip list to accommodate non-exact matches
+
+        Parameters
+        ----------
+        hpn : str, list
+            As supplied to get_dossier
+        rev : str, list, None
+            As supplied to get_dossier
+
+        active : class ActiveData
+            Contains the active at appropriate date
+        exact_match : bool
+            Flag to enforce exact match, or first letter
+
+        Returns
+        -------
+        zip class
+            Contains the hpn, rev pairs
+        """
         match_list = cm_utils.match_list(hpn, rev, upper=True)
         if not exact_match:
             all_hpn = []
@@ -133,6 +151,14 @@ class Handling:
         return match_list
 
     def _set_ports(self, inp):
+        """
+        Handles 3 distinct phases of get_dossier:  initialize, get ports, set allowed
+
+        Parameters
+        ----------
+        inp : optional/class PartEntry/list/str/None
+            inp parameter, which differs during the process
+        """
         if self.ports is None:  # Initialize
             self.ports = {}
             sysdef = cm_sysdef.Sysdef()
