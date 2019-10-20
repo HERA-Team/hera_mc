@@ -247,11 +247,11 @@ def match_list(a_obj, b_obj, upper=False):
 
 
 def to_upper(X):
+    if X is None:
+        return None
     if isinstance(X, list):
         return [to_upper(s) for s in X]
-    if isinstance(X, six.string_types):
-        return X.upper()
-    return X
+    return str(X).upper()
 
 
 def add_verbosity_args(parser):
