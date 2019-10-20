@@ -273,6 +273,7 @@ class Hookup(object):
         except KeyError:
             return None
         this_port = self._get_port(current, options)
+        print("CMH276",this_port)
         if this_port is None:
             return None
         this_conn = self.active.connections[odir][current.key][this_port]
