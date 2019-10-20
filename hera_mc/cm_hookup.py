@@ -305,6 +305,10 @@ class Hookup(object):
         if current.hptype in self.sysdef.single_pol_labeled_parts[self.hookup_type]:
             if current.part[-1].upper() == current.pol[0]:
                 return sysdef_options[0]
+        print("CMH308","xxx")
+        print(current)
+        print(sysdef_options)
+        print(options)
         if len(sysdef_options) == 1:
             return sysdef_options[0]
         for p in sysdef_options:
