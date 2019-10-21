@@ -1487,15 +1487,24 @@ def test_get_node_snap_from_serial_multiple_locs(mcsession):
 
 def test_get_node_snap_from_serial_multiple_locs(mcsession):
     """Test multiple snap location numbers."""
-    connection = cm_partconnect.Connections()
-    connection.upstream_part = 'SNPD000703'
-    connection.up_part_rev = 'A'
-    connection.downstream_part = 'N701'
-    connection.down_part_rev = 'A'
-    connection.upstream_output_port = 'rack'
-    connection.downstream_input_port = 'loc2'
-    connection.start_gpstime = 1230375618
-    mcsession.add(connection)
+    # connection = cm_partconnect.Connections()
+    # connection.upstream_part = 'SNPD000703'
+    # connection.up_part_rev = 'A'
+    # connection.downstream_part = 'N701'
+    # connection.down_part_rev = 'A'
+    # connection.upstream_output_port = 'rack'
+    # connection.downstream_input_port = 'loc2'
+    # connection.start_gpstime = 1230375618
+    # mcsession.add(connection)
+    # mcsession.commit()
+    part = cm_partconnect.Parts()
+    part.hpn = 'SNPD000703'
+    part.hpn_rev = 'B'
+    part.hptype = 'snap'
+    part.manufacture_number = 'D000703'
+    part.start_gpstime = 1230375618
+    mcsession.add(part)
+    mcsession.commit()
     connection = cm_partconnect.Connections()
     connection.upstream_part = 'SNPD000703'
     connection.up_part_rev = 'B'
