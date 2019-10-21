@@ -29,7 +29,7 @@ else:
     from plotly import graph_objs as go
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def test_figure(mcsession):
     test_session = mcsession
     figure = autocorrelations.plot_HERA_autocorrelations_for_plotly(
