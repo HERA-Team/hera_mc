@@ -2885,6 +2885,12 @@ class MCSession(Session):
                           .format(snn=snap_serial))
             return None, None
 
+        if len(conn_dossier.keys()) > 1:
+            warnings.warn('Multiple {} snaps were found, please specify the revision. '
+                          'Setting node and snap location numbers to None'
+                          .format(snap_serial))
+            return None, None
+
         snap_num_rev = list(conn_dossier.keys())[0]
         snap_node_conn = conn_dossier[snap_num_rev].connections.up['RACK']
         nodeID = int(snap_node_conn.downstream_part[1:])
