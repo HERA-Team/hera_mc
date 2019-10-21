@@ -25,7 +25,8 @@ install:
   - conda info -a
   - conda install six numpy astropy scipy python-dateutil sqlalchemy psycopg2
     pandas matplotlib tabulate psutil cartopy pytest-cov pip pycodestyle
-    alembic coveralls pyuvdata h5py
+    alembic coveralls pyuvdata h5py plotly
+  - conda install chart-studio -c plotly
   - conda list
   - pip install git+https://github.com/HERA-Team/hera_qm.git;
   - python setup.py install
