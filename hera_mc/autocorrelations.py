@@ -88,7 +88,7 @@ def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
     for station in stations:
         if station.antenna_number not in hera_ants:
             hera_ants = np.append(hera_ants, station.antenna_number)
-    hera_ants = np.unique(hera_ants).astype(int)
+    hera_ants = np.unique(hera_ants).astype(int).tolist()
 
     data = []
 
