@@ -73,7 +73,7 @@ class Autocorrelations(MCDeclarativeBase):
                'value={self.value}>').format(self=self)
 
 
-def plot_HERA_autocorrelations_for_plotly(session):
+def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
     if six.PY3:
         from plotly import graph_objects as go
     else:
@@ -87,8 +87,8 @@ def plot_HERA_autocorrelations_for_plotly(session):
     hera_ants = []
     for station in stations:
         if station.antenna_number not in hera_ants:
-            ants = np.append(hera_ants, station.antenna_number)
-    hera_ants = np.unique(ants)
+            hera_ants = np.append(hera_ants, station.antenna_number)
+    hera_ants = np.unique(hera_ants).astype(int)
 
     data = []
 
@@ -126,6 +126,9 @@ def plot_HERA_autocorrelations_for_plotly(session):
     fig = go.Figure(data=scatters,
                     layout=layout,
                     )
-    py.plot(fig, auto_open=False,
-            filename='HERA_daily_autos',
-            )
+    if offline_testing:
+        return fig
+    else:
+        py.plot(fig, auto_open=False,
+                filename='HERA_daily_autos',
+                )
