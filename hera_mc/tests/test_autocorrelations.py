@@ -52,18 +52,9 @@ def test_figure_is_created(test_figure):
 def test_ants_in_figure(mcsession, test_figure, sys_handle):
     # This test is a little tautological however it does check that all
     # antennas we "think" are connected have autocorrelations.
+    # the test session has no entries in this table so it should be null
     figure = test_figure
-
-    stations = sys_handle.get_all_fully_connected_at_date(
-        at_date='now', hookup_type='parts_hera'
-    )
-
-    hera_ants = []
-    for station in stations:
-        if station.antenna_number not in hera_ants:
-            ants = np.append(hera_ants, station.antenna_number)
-    hera_ants = np.unique(ants)
 
     ants_in_fig = [d.name for d in figure.data]
 
-    assert all([ha in ants_in_fig for ha in hera_ants])
+    assert ants_in_fig == []
