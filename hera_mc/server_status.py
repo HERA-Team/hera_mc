@@ -10,6 +10,7 @@ the documentation needs to be kept up to date with any changes.
 """
 from __future__ import absolute_import, division, print_function
 
+import six
 from math import floor
 from astropy.time import Time
 from sqlalchemy import Column, Integer, String, Float, BigInteger
@@ -107,7 +108,12 @@ class ServerStatus(MCDeclarativeBase):
 
 def plot_host_status_for_plotly(session):
     from astropy.time import Time
-    from plotly import graph_objs as go, plotly
+    if six.PY3:
+        from plotly import graph_objects as go
+    else:
+        from plotly import graph_objs as go
+
+    from chart_studio import plotly as chart_plotly
 
     THIRTY_DAYS = 24 * 3600 * 30
     gps_time_cutoff = Time.now().gps - THIRTY_DAYS
@@ -170,7 +176,7 @@ def plot_host_status_for_plotly(session):
         layout=layout,
     )
 
-    plotly.plot(
+    chart_plotly.plot(
         fig,
         auto_open=False,
         filename='karoo_host_load_averages',
