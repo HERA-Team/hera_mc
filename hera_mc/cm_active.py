@@ -4,7 +4,7 @@
 # Licensed under the 2-clause BSD license.
 
 """
-This finds and displays part hookups.
+Methods to load all active data for a given date.
 
 """
 from __future__ import absolute_import, division, print_function
@@ -84,7 +84,7 @@ class ActiveData:
         """
         Retrieves all active parts for a given at_date.
 
-        Sets this object's at_date and loads the active parts on to the object.
+        Loads the active parts onto the class and sets the class at_date.
         If at_date is None, the existing at_date on the object will be used.
 
         Writes class dictionary:
@@ -111,8 +111,9 @@ class ActiveData:
         """
         Retrieves all active connections for a given at_date.
 
-        Sets this object's at_date and loads the active parts on to the object.
+        Loads the active parts onto the class and sets the class at_date.
         If at_date is None, the existing at_date on the object will be used.
+        This method will ValueError if a duplicate is found.
 
         Writes class dictionary:
                 self.connections - has keys 'up' and 'down', each of which
@@ -153,7 +154,7 @@ class ActiveData:
         """
         Retrieves all current part infomation (ie. before date).
 
-        Sets this object's at_date and loads the active parts on to the object.
+        Loads the part information up to at_date onto the class and sets the class at_date
         If at_date is None, the existing at_date on the object will be used.
 
         Writes class dictionary:
@@ -177,9 +178,9 @@ class ActiveData:
 
     def load_apriori(self, at_date=None, rev='A'):
         """
-        Retrieves apriori status for a given at_date.
+        Retrieves all active apriori status for a given at_date.
 
-        Sets this object's at_date and loads the active parts on to the object.
+        Loads the active apriori data onto the class and sets the class at_date.
         If at_date is None, the existing at_date on the object will be used.
 
         Writes class dictionary:
@@ -205,6 +206,21 @@ class ActiveData:
             self.apriori[key] = astat
 
     def load_geo(self, at_date=None):
+        """
+        Retrieves all current geo_location data (ie. before date).
+
+        Loads the geo data at_date onto the class and sets the class at_date.
+        If at_date is None, the existing at_date on the object will be used.
+
+        Writes class dictionary:
+                self.geo - keyed on part
+
+        Parameters
+        ----------
+        at_date : str, int, float, Time, datetime (optional)
+            The date for which to check as active, given as anything comprehensible
+            to get_astropytime
+        """
         from . import geo_location
         at_date = cm_utils.get_astropytime(at_date)
         if self.is_data_current('geo', at_date):
@@ -216,6 +232,19 @@ class ActiveData:
             self.geo[key] = ageo
 
     def revs(self, hpn):
+        """
+        Returns a list of active revisions for a given hpn.
+
+        Parameters
+        ----------
+        hpn : str
+            A HERA part number (not a list)
+
+        Returns
+        -------
+        list
+            List of revisions for supplied hpn.  Typically one element.
+        """
         hpn_revs = []
         hpn = hpn.upper()
         for part in self.parts.values():
@@ -225,15 +254,22 @@ class ActiveData:
 
     def check(self, at_date=None):
         """
-        Checks self.parts and self.connections to make sure that all connections have an
-        associated active part.  Reads in data or connections if not current. Prints out a
-        message if not true.
+        Checks to make sure that all connections have an associated active part.
+
+        The database will allow non-active parts to have a connection, which is not
+        desired.  This will check and list connections without an associated active
+        part.  It does not Error or Warn, but just lists.
 
         Parameters
         ----------
         at_date : str, int, float, Time, datetime (optional)
             The date for which to check as active if either all_parts or all_connections are None,
             given as anything comprehensible to get_astropytime
+
+        Returns
+        -------
+        list
+            List of missing parts.
         """
         at_date = cm_utils.get_astropytime(at_date)
         if at_date is None:
@@ -251,3 +287,4 @@ class ActiveData:
         if len(missing_parts):
             for key in missing_parts:
                 print("{} is not listed as an active part even though listed in an active connection.".format(key))
+        return missing_parts
