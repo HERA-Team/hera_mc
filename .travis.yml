@@ -23,7 +23,7 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda install six numpy astropy scipy python-dateutil sqlalchemy psycopg2
+  - conda install six numpy astropy scipy python-dateutil sqlalchemy psycopg2 itertools
     pandas matplotlib tabulate psutil cartopy pytest-cov pip pycodestyle
     alembic coveralls pyuvdata h5py
   - conda list
