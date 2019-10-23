@@ -1,57 +1,58 @@
 # -*- mode: python; coding: utf-8 -*-
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
-"""
-Common utility fuctions
+"""Common utility fuctions."""
 
-"""
 from __future__ import absolute_import, division, print_function
 
-import collections
 from math import floor
 import six
-from astropy.time import Time
 from astropy.time import Time
 from astropy.time import TimeDelta
 from astropy import coordinates as coord
 from astropy import units as u
 import numpy as np
-import datetime
 
 if six.PY2:
     def str_to_bytes(s):
+        """Python 2 compliant str to byte conversion."""
         return s
 
     def bytes_to_str(b):
+        """Python 2 compliant byte to str conversion."""
         return b
 else:
     def str_to_bytes(s):
+        """Python 3 compliant str to byte conversion."""
         return s.encode('utf8')
 
     def bytes_to_str(b):
+        """Python 3 compliant byte to str conversion."""
         return b.decode('utf8')
 
 
 def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
-    """Round a time to the nearest LST bin for a given longitude on the globe
+    """
+    Round a time to the nearest LST bin for a given longitude on the globe.
 
     LSTbins run from 0 to 24 hours and step according to LSTbin_size.
 
     Parameters
     -----
     starttime : astropy.time.Time
-        Target schedule time
+        Target schedule time.
     LSTbin_size : float
-        lst bin size in seconds
+        LST bin size in seconds.
     longitude : float
-        telescope longitude in degrees
+        Telescope longitude in degrees.
 
     Returns
     -----
     schedule time :  astropy.time.Time
-        time of next LST bin
+        Time of next LST bin.
     schedule sidereal time :  astropy.coord.Angle
-        sidereal time of next LST bin
+        Sidereal time of next LST bin.
+
     """
     sidesec = u.Quantity(1, 'sday').to('day').value  # length of sidereal second in SI seconds.
     locate = coord.EarthLocation(lon=longitude * u.deg, lat=-30 * u.deg)  # HERA location, #XXX get the HERA location programmatically
@@ -88,12 +89,14 @@ def calculate_obsid(starttime):
 
     Parameters:
     ------------
-    starttime: astropy time object
-      observation starttime
+    starttime : astropy.time.Time
+      Observation starttime.
 
     Returns:
     --------
-    obid
+    long
+        obsid
+
     """
     if not isinstance(starttime, Time):
         raise ValueError('starttime must be an astropy Time object')
@@ -102,7 +105,7 @@ def calculate_obsid(starttime):
 
 
 def get_iterable(x):
-    """Helper function to ensure iterability."""
+    """Get an interable form of input."""
     if isinstance(x, str):
         return (x,)
     else:
@@ -114,13 +117,16 @@ def get_iterable(x):
 
 
 def _reraise_context(fmt, *args):
-    """Reraise an exception with its message modified to specify additional context.
+    """
+    Reraise an exception with its message modified to specify additional context.
 
     This function tries to help provide context when a piece of code
     encounters an exception while trying to get something done, and it wishes
     to propagate contextual information farther up the call stack. It is a
     consistent way to do it for both Python 2 and 3, since Python 2 does not
-    provide Python 3’s `exception chaining <https://www.python.org/dev/peps/pep-3134/>`_ functionality.
+    provide Python 3’s
+    `exception chaining <https://www.python.org/dev/peps/pep-3134/>`_
+    functionality.
     Instead of that more sophisticated infrastructure, this function just
     modifies the textual message associated with the exception being raised.
     If only a single argument is supplied, the exception text is prepended with
@@ -128,7 +134,8 @@ def _reraise_context(fmt, *args):
     the first argument is treated as an old-fashioned ``printf``-type
     (``%``-based) format string, and the remaining arguments are the formatted
     values.
-    Borrowed from pwkit (https://github.com/pkgw/pwkit/blob/master/pwkit/__init__.py)
+    Borrowed from pwkit
+    (https://github.com/pkgw/pwkit/blob/master/pwkit/__init__.py)
     Example usage::
       from hera_mc.utils import reraise_context
       filename = 'my-filename.txt'
@@ -142,6 +149,7 @@ def _reraise_context(fmt, *args):
     If an exception with text ``"bad value"`` were to be raised inside the
     ``try`` block in the above example, its text would be modified to read
     ``"while reading \"my-filename.txt\": bad value"``.
+
     """
     import sys
 

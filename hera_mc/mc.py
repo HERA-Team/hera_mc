@@ -11,13 +11,11 @@ your database and configure M&C to find it.
 from __future__ import absolute_import, division, print_function
 
 import os.path as op
-import os
-import sys
 from abc import ABCMeta
 from six import add_metaclass
-from sqlalchemy import create_engine, update
+from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 
 from . import MCDeclarativeBase
 from .mc_session import MCSession
@@ -31,12 +29,14 @@ cm_log_file = op.expanduser('~/.hera_mc/cm_log.txt')
 
 @add_metaclass(ABCMeta)
 class DB(object):
-    """Abstract base class for M&C database object.
+    """
+    Abstract base class for M&C database object.
 
     This ABC is only instantiated through the AutomappedDB or DeclarativeDB
     subclasses.
 
     """
+
     engine = None
     sessionmaker = sessionmaker(class_=MCSession)
     sqlalchemy_base = None
@@ -49,18 +49,24 @@ class DB(object):
 
 class DeclarativeDB(DB):
     """
-    Declarative M&C database object -- to create M&C database tables
+    Declarative M&C database object -- to create M&C database tables.
+
+    Parameters
+    ----------
+    db_url : str
+        Database location.
+
     """
 
     def __init__(self, db_url):
         super(DeclarativeDB, self).__init__(MCDeclarativeBase, db_url)
 
     def create_tables(self):
-        """Create all M&C tables"""
+        """Create all M&C tables."""
         self.sqlalchemy_base.metadata.create_all(self.engine)
 
     def drop_tables(self):
-        """Drop all M&C tables"""
+        """Drop all M&C tables."""
         self.sqlalchemy_base.metadata.bind = self.engine
         self.sqlalchemy_base.metadata.drop_all(self.engine)
 
@@ -71,6 +77,11 @@ class AutomappedDB(DB):
     This is intended for use with the production M&C database. __init__()
     raises an exception if the existing database does not match the schema
     defined in the SQLAlchemy initialization magic.
+
+    Parameters
+    ----------
+    db_url : str
+        Database location.
 
     """
 
@@ -86,11 +97,12 @@ class AutomappedDB(DB):
 
 
 def get_mc_argument_parser():
-    """Get an `argparse.ArgumentParser` object that includes some predefined
-    arguments global to all scripts that interact with the M&C system.
+    """
+    Get an M&C specific `argparse.ArgumentParser` object.
 
-    Currently, these are the path to the M&C config file, and the name of the
-    M&C database connection to use.
+    Includes some predefined arguments global to all scripts that interact with
+    the M&C system. Currently, these are the path to the M&C config file, and
+    the name of the M&C database connection to use.
 
     Once you have parsed arguments, you can pass the resulting object to a
     function like `connect_to_mc_db()` to automatically use the settings it
@@ -104,19 +116,21 @@ def get_mc_argument_parser():
                    default=default_config_file,
                    help='Path to the mc_config.json configuration file.')
     p.add_argument('--db', dest='mc_db_name', type=str,
-                   help='Name of the database to connect to. The default is used if unspecified.')
+                   help='Name of the database to connect to. The default is '
+                   'used if unspecified.')
     return p
 
 
 def get_cm_csv_path(mc_config_file=None, testing=False):
     """
-    Returns the full path to csv files read from the mc config file
+    Return the full path to csv files read from the mc config file.
 
-    Parameters:
+    Parameters
     -------------
-    mc_config_file:  pass a different config file if desired.  None goes to default.
-    """
+    mc_config_file : str
+        Pass a different config file if desired.  None goes to default.
 
+    """
     if mc_config_file is None:
         mc_config_file = default_config_file
 
@@ -129,19 +143,33 @@ def get_cm_csv_path(mc_config_file=None, testing=False):
         return test_data_path
 
     try:
-        cm_csv_path = '/{}'.format(config_data.get('databases')['hera_mc_sqlite']['url'].lstrip('sqlite:////').rstrip('/hera_mc.db'))
+        cm_csv_path = '/{}'.format(config_data.get(
+            'databases')['hera_mc_sqlite']['url'].lstrip(
+                'sqlite:////').rstrip('/hera_mc.db'))
     except KeyError:
         cm_csv_path = config_data.get('cm_csv_path')
     return cm_csv_path
 
 
 def connect_to_mc_db(args, forced_db_name=None, check_connect=True):
-    """Return an instance of the `DB` class providing access to the M&C database.
+    """Get a DB object that is connected to the M&C database.
 
-    *args* should be the result of calling `parse_args` on an
-     `argparse.ArgumentParser` instance created by calling
-     `get_mc_argument_parser()`. Alternatively, it can be None to use the full
-     defaults.
+    Parameters
+    -------------
+    args : arguments
+        The result of calling `parse_args` on an `argparse.ArgumentParser`
+        instance created by calling `get_mc_argument_parser()`. Alternatively,
+        it can be None to use the full defaults.
+    forced_db_name : str, optional
+        Database name to use (forced). If not set, uses the default one from
+        args.
+    check_connect : bool
+        Option to test the database connection.
+
+    Returns
+    -------
+    DB object
+        An instance of the `DB` class providing access to the M&C database.
 
     """
     if args is None:
@@ -173,37 +201,55 @@ def connect_to_mc_db(args, forced_db_name=None, check_connect=True):
 
     db_data = db_data.get(db_name)
     if db_data is None:
-        raise RuntimeError('cannot connect to M&C database: no DB named {0!r} in the '
-                           '"databases" section of {1!r}'.format(db_name, config_path))
+        raise RuntimeError('cannot connect to M&C database: no DB named {0!r} '
+                           'in the "databases" section of {1!r}'.format(
+                               db_name, config_path))
 
     db_url = db_data.get('url')
     if db_url is None:
-        raise RuntimeError('cannot connect to M&C database: no "url" item for the DB '
-                           'named {0!r} in {1!r}'.format(db_name, config_path))
+        raise RuntimeError('cannot connect to M&C database: no "url" item for '
+                           'the DB named {0!r} in {1!r}'.format(
+                               db_name, config_path))
 
     db_mode = db_data.get('mode')
     if db_mode is None:
-        raise RuntimeError('cannot connect to M&C database: no "mode" item for the DB '
-                           'named {0!r} in {1!r}'.format(db_name, config_path))
+        raise RuntimeError('cannot connect to M&C database: no "mode" item for '
+                           'the DB named {0!r} in {1!r}'.format(
+                               db_name, config_path))
 
     if db_mode == 'testing':
         db = DeclarativeDB(db_url)
     elif db_mode == 'production':
         db = AutomappedDB(db_url)
     else:
-        raise RuntimeError('cannot connect to M&C database: unrecognized mode {0!r} for'
-                           'the DB named {1!r} in {2!r}'.format(db_mode, db_name,
-                                                                config_path))
+        raise RuntimeError('cannot connect to M&C database: unrecognized mode '
+                           '{0!r} for the DB named {1!r} in {2!r}'.format(
+                               db_mode, db_name, config_path))
 
     if check_connect:
         # Test database connection
         with db.sessionmaker() as session:
             from . import db_check
             if not db_check.check_connection(session):
-                raise RuntimeError('Could not establish valid connection to database.')
+                raise RuntimeError('Could not establish valid connection to '
+                                   'database.')
 
     return db
 
 
 def connect_to_mc_testing_db(forced_db_name='testing'):
+    """Get a DB object that is connected to the testing M&C database.
+
+    Parameters
+    -------------
+    forced_db_name : str
+        Database name to use.
+
+    Returns
+    -------
+    DB object
+        An instance of the `DB` class providing access to the testing M&C
+        database.
+
+    """
     return connect_to_mc_db(None, forced_db_name=forced_db_name)

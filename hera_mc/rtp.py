@@ -3,7 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """
-RTP tables
+RTP tables.
 
 The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
@@ -12,7 +12,8 @@ from __future__ import absolute_import, division, print_function
 
 from math import floor
 from astropy.time import Time
-from sqlalchemy import Column, ForeignKey, Integer, BigInteger, String, Text, Float, Enum
+from sqlalchemy import (Column, ForeignKey, Integer, BigInteger, String, Text,
+                        Float, Enum)
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from . import MCDeclarativeBase, DEFAULT_MIN_TOL, DEFAULT_HOUR_TOL
@@ -22,6 +23,38 @@ rtp_process_enum = ['queued', 'started', 'finished', 'error']
 
 
 class RTPServerStatus(ServerStatus):
+    """
+    RTP version of the ServerStatus object.
+
+    Attributes
+    ----------
+    hostname : String Column
+        Name of server. Part of the primary key.
+    mc_time : BigInteger Column
+        GPS time report received by M&C, floored. Part of the primary key.
+    ip_address : String Column
+        IP address of server.
+    mc_system_timediff : Float Column
+        Difference between M&C time and time report sent by server in seconds.
+    num_cores : Integer Column
+        Number of cores on server.
+    cpu_load_pct : Float Column
+        CPU load percent = total load / num_cores, 5 min average.
+    uptime_days : Float Column
+        Server uptime in decimal days.
+    memory_used_pct : Float Column
+        Percent of memory used, 5 min average.
+    memory_size_gb : Float Column
+        Amount of memory on server in GB .
+    disk_space_pct : Float Column
+        Percent of disk used.
+    disk_size_gb : Float Column
+        Amount of disk space on server in GB.
+    network_bandwidth_mbs : Float Column
+        Network bandwidth in MB/s, 5 min average. Can be null if not applicable.
+
+    """
+
     __tablename__ = 'rtp_server_status'
 
 
@@ -29,15 +62,25 @@ class RTPStatus(MCDeclarativeBase):
     """
     Definition of rtp_status table.
 
-    time: time of this status in floor(gps seconds) (BigInteger). Primary_key
-    status: status (options TBD) (String)
-    event_min_elapsed: minutes elapsed since last event (Float)
-    num_processes: number of processes running (Integer)
-    restart_hours_elapsed: hours elapsed since last restart (Float)
+    Attributes
+    ----------
+    time : BigInteger Column
+        GPS time of this status, floored. The primary key.
+    status : String Column
+        status (options TBD).
+    event_min_elapsed : Float Column
+        Minutes elapsed since last event.
+    num_processes : Integer Column
+        Number of processes running.
+    restart_hours_elapsed : Float Column
+        Hours elapsed since last restart.
+
     """
+
     __tablename__ = 'rtp_status'
     time = Column(BigInteger, primary_key=True, autoincrement=False)
-    status = Column(String(64), nullable=False)  # should this be an enum? or text?
+    # should this be an enum? or text?
+    status = Column(String(64), nullable=False)
     event_min_elapsed = Column(Float, nullable=False)
     num_processes = Column(Integer, nullable=False)
     restart_hours_elapsed = Column(Float, nullable=False)
@@ -53,22 +96,28 @@ class RTPStatus(MCDeclarativeBase):
 
         Parameters:
         ------------
-        time: astropy time object
+        time : astropy Time object
             time of this status
-        status: string
+        status : str
             status (options TBD)
-        event_min_elapsed: float
+        event_min_elapsed : float
             minutes since last event
-        num_processes: integer
+        num_processes : int
             number of processes running
-        restart_hours_elapsed: float
+        restart_hours_elapsed : float
             hours since last restart
+
+        Returns
+        -------
+        RTPStatus object
+
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
         time = floor(time.gps)
 
-        return cls(time=time, status=status, event_min_elapsed=event_min_elapsed,
+        return cls(time=time, status=status,
+                   event_min_elapsed=event_min_elapsed,
                    num_processes=num_processes,
                    restart_hours_elapsed=restart_hours_elapsed)
 
@@ -77,14 +126,23 @@ class RTPProcessEvent(MCDeclarativeBase):
     """
     Definition of rtp_process_event table.
 
-    time: time of this status in floor(gps seconds) (BigInteger). Part of primary_key.
-    obsid: observation obsid (BigInteger).  Part of primary_key. Foreign key into Observation table
-    event: one of ["queued", "started", "finished", "error"] (rtp_process_enum)
+    Attributes
+    ----------
+    time : BigInteger Column
+        GPS time of this status, floored. The primary key.
+    obsid : BigInteger Column
+        Observation obsid.  Part of primary_key. Foreign key into
+        Observation table.
+    event : Enum Column
+        One of ["queued", "started", "finished", "error"] (rtp_process_enum).
+
     """
+
     __tablename__ = 'rtp_process_event'
     time = Column(BigInteger, primary_key=True)
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
-    event = Column(Enum(*rtp_process_enum, name='rtp_process_enum'), nullable=False)
+    event = Column(Enum(*rtp_process_enum, name='rtp_process_enum'),
+                   nullable=False)
 
     @classmethod
     def create(cls, time, obsid, event):
@@ -93,12 +151,17 @@ class RTPProcessEvent(MCDeclarativeBase):
 
         Parameters:
         ------------
-        time: astropy time object
-            time of this event
-        obsid: long
-            observation obsid (Foreign key into Observation)
-        event: string
-            must be one of ["queued", "started", "finished", "error"]
+        time : astropy Time object
+            Time of this event
+        obsid : long
+            Observation obsid (Foreign key into Observation)
+        event : {"queued", "started", "finished", "error"}
+            Process event type.
+
+        Returns
+        -------
+        RTPProcessEvent object
+
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -111,18 +174,34 @@ class RTPProcessRecord(MCDeclarativeBase):
     """
     Definition of rtp_process_record table.
 
-    time: time of this status in floor(gps seconds) (BigInteger). Part of primary_key
-    obsid: observation obsid (BigInteger). Part of primary_key. Foreign key into Observation table
-    pipeline_list: concatentated list of RTP tasks (String)
-    rtp_git_version: RTP git version (String)
-    rtp_git_hash: RTP git hash (String)
-    hera_qm_git_version: hera_qm git version (String)
-    hera_qm_git_hash: hera_qm git hash (String)
-    hera_cal_git_version: hera_cal git version (String)
-    hera_cal_git_hash: hera_cal git hash (String)
-    pyuvdata_git_version: pyuvdata git version (String)
-    pyuvdata_git_hash: pyuvdata git hash (String)
+    Attributes
+    ----------
+    time : BigInteger Column
+        GPS time of this record, floored. The primary key.
+    obsid : BigInteger Column
+        Observation obsid.  Part of primary_key. Foreign key into
+        Observation table.
+    pipeline_list : String Column
+        Concatentated list of RTP tasks.
+    rtp_git_version : String Column
+        RTP git version.
+    rtp_git_hash : String Column
+        RTP git hash.
+    hera_qm_git_version : String Column
+        hera_qm git version.
+    hera_qm_git_hash : String Column
+        hera_qm git hash.
+    hera_cal_git_version : String Column
+        hera_cal git version.
+    hera_cal_git_hash : String Column
+        hera_cal git hash.
+    pyuvdata_git_version : String Column
+        pyuvdata git version.
+    pyuvdata_git_hash : String Column
+        pyuvdata git hash.
+
     """
+
     __tablename__ = 'rtp_process_record'
     time = Column(BigInteger, primary_key=True)
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
@@ -137,36 +216,42 @@ class RTPProcessRecord(MCDeclarativeBase):
     pyuvdata_git_hash = Column(String(64), nullable=False)
 
     @classmethod
-    def create(cls, time, obsid, pipeline_list, rtp_git_version, rtp_git_hash, hera_qm_git_version,
-               hera_qm_git_hash, hera_cal_git_version, hera_cal_git_hash, pyuvdata_git_version,
-               pyuvdata_git_hash):
+    def create(cls, time, obsid, pipeline_list, rtp_git_version, rtp_git_hash,
+               hera_qm_git_version, hera_qm_git_hash,
+               hera_cal_git_version, hera_cal_git_hash,
+               pyuvdata_git_version, pyuvdata_git_hash):
         """
         Create a new rtp_process_record object.
 
         Parameters:
         ------------
-        time: astropy time object
+        time : astropy Time object
             time of this event
-        obsid: long
+        obsid : long
             observation obsid (Foreign key into Observation)
-        pipeline_list: string
+        pipeline_list : str
             concatentated list of RTP tasks
-        rtp_git_version: string
+        rtp_git_version : str
             RTP git version
-        rtp_git_hash: string
+        rtp_git_hash : str
             RTP git hash
-        hera_qm_git_version: string
+        hera_qm_git_version : str
             hera_qm git version
-        hera_qm_git_hash: string
+        hera_qm_git_hash : str
             hera_qm git hash
-        hera_cal_git_version: string
+        hera_cal_git_version : str
             hera_cal git version
-        hera_cal_git_hash: string
+        hera_cal_git_hash : str
             hera_cal git hash
-        pyuvdata_git_version: string
+        pyuvdata_git_version : str
             pyuvdata git version
-        pyuvdata_git_hash: string
+        pyuvdata_git_hash : str
             pyuvdata git hash
+
+        Returns
+        -------
+        RTPProcessRecord object
+
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -174,23 +259,37 @@ class RTPProcessRecord(MCDeclarativeBase):
 
         return cls(time=time, obsid=obsid, pipeline_list=pipeline_list,
                    rtp_git_version=rtp_git_version, rtp_git_hash=rtp_git_hash,
-                   hera_qm_git_version=hera_qm_git_version, hera_qm_git_hash=hera_qm_git_hash,
-                   hera_cal_git_version=hera_cal_git_version, hera_cal_git_hash=hera_cal_git_hash,
-                   pyuvdata_git_version=pyuvdata_git_version, pyuvdata_git_hash=pyuvdata_git_hash)
+                   hera_qm_git_version=hera_qm_git_version,
+                   hera_qm_git_hash=hera_qm_git_hash,
+                   hera_cal_git_version=hera_cal_git_version,
+                   hera_cal_git_hash=hera_cal_git_hash,
+                   pyuvdata_git_version=pyuvdata_git_version,
+                   pyuvdata_git_hash=pyuvdata_git_hash)
 
 
 class RTPTaskResourceRecord(MCDeclarativeBase):
     """
     Definition of rtp_task_resource_record table.
 
-    obsid: observation obsid (BigInteger). Part of primary_key. Foreign key into Observation table
-    task_name: name of task in pipeline (e.g., OMNICAL) (String). Part of primary_key
-    start_time: start time of the task in floor(gps_seconds) (BigInteger)
-    stop_time: stop time of the task in floor(gps_seconds) (BigInteger)
-    max_memory: the maximum amount of memory consumed by a task, in MB (Float)
-    avg_cpu_load: the average amount of CPU used by the task, as number of cores (e.g.,
-                  2.00 means 2 CPUs used) (Float)
+    Attributes
+    ----------
+    obsid : BigInteger Column
+        Observation obsid.  Part of primary_key. Foreign key into
+        Observation table.
+    task_name : String Column
+        Name of task in pipeline (e.g., OMNICAL). Part of primary_key
+    start_time : BigInteger Column
+        Start time of the task in floor(gps_seconds).
+    stop_time : BigInteger Column
+        Stop time of the task in floor(gps_seconds).
+    max_memory : Float Column
+        The maximum amount of memory consumed by a task, in MB.
+    avg_cpu_load : Float Column
+        The average amount of CPU used by the task, as number of cores
+        (e.g., 2.00 means 2 CPUs used).
+
     """
+
     __tablename__ = 'rtp_task_resource_record'
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
     task_name = Column(Text, primary_key=True)
@@ -201,6 +300,7 @@ class RTPTaskResourceRecord(MCDeclarativeBase):
 
     @hybrid_property
     def elapsed(self):
+        """Time elapsed for this task."""
         return self.stop_time - self.start_time
 
     @classmethod
@@ -211,18 +311,23 @@ class RTPTaskResourceRecord(MCDeclarativeBase):
 
         Parameters:
         ------------
-        obsid: long
-            observation obsid (Foreign key into Observation)
-        task_name: string
-            name of the task in the pipeline (e.g., OMNICAL)
-        start_time: astropy time object
-            start time of the task
-        stop_time: astropy time object
-            stop time of the task
-        max_memory: float
-            max amount of memory used, in MB
-        avg_cpu_load: float
-            average cpu load, in number of cores
+        obsid : long
+            Observation obsid (Foreign key into Observation).
+        task_name : str
+            Name of the task in the pipeline (e.g., OMNICAL).
+        start_time : astropy Time object
+            Start time of the task.
+        stop_time : astropy Time object
+            Stop time of the task.
+        max_memory : float
+            Max amount of memory used, in MB.
+        avg_cpu_load : float
+            Average cpu load, in number of cores.
+
+        Returns
+        -------
+        RTPTaskResourceRecord object
+
         """
         if not isinstance(start_time, Time):
             raise ValueError('start_time must be an astropy Time object')
@@ -231,5 +336,6 @@ class RTPTaskResourceRecord(MCDeclarativeBase):
         start_time = floor(start_time.gps)
         stop_time = floor(stop_time.gps)
 
-        return cls(obsid=obsid, task_name=task_name, start_time=start_time, stop_time=stop_time,
-                   max_memory=max_memory, avg_cpu_load=avg_cpu_load)
+        return cls(obsid=obsid, task_name=task_name, start_time=start_time,
+                   stop_time=stop_time, max_memory=max_memory,
+                   avg_cpu_load=avg_cpu_load)

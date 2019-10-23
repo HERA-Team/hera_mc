@@ -2,9 +2,8 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Handling weather data sourced from meerkat's katportalclient.
+"""Handle weather data sourced from meerkat's katportalclient."""
 
-"""
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
@@ -23,35 +22,52 @@ katportal_url = 'http://portal.mkat.karoo.kat.ac.za/api/client'
 # to data volume and reduction strategies and periods)
 # You can get the needed information using the katportal example scripts at:
 #   https://github.com/ska-sa/katportalclient/tree/master/examples
-weather_sensor_dict = {'wind_speed': {'sensor_name': 'anc_mean_wind_speed',
-                                      'units': 'm/s',
-                                      'reduction': 'mean', 'period': 300,
-                                      'description': "Mean of  ['wind.wind-speed', 'weather.wind-speed'] in (600 * 1.0s) window (report period: 1s)"},
-                       'wind_gust': {'sensor_name': 'anc_gust_wind_speed',
-                                     'units': 'm/s',
-                                     'reduction': 'max', 'period': 120,
-                                     'description': "Max of  ['wind.wind-speed', 'weather.wind-speed'] in (3 * 1.0s) window (report period: 1s)"},
-                       'wind_direction': {'sensor_name': 'anc_wind_wind_direction',
-                                          'units': 'deg',
-                                          'reduction': 'mean', 'period': 30,
-                                          'description': "Wind direction angle (report period: 10s)"},
-                       'temperature': {'sensor_name': 'anc_weather_temperature',
-                                       'units': 'deg Celsius',
-                                       'reduction': 'decimate', 'period': 30,
-                                       'description': "Air temperature (report period: 10s)"},
-                       'humidity': {'sensor_name': 'anc_weather_humidity',
-                                    'units': 'percent',
-                                    'reduction': 'mean', 'period': 60,
-                                    'description': "Air humidity (report period: 10s)"},
-                       'pressure': {'sensor_name': 'anc_weather_pressure', 'units': 'mbar',
-                                    'reduction': 'mean', 'period': 60,
-                                    'description': "Barometric pressure (report period: 10s)"},
-                       'rain': {'sensor_name': 'anc_weather_rain', 'units': 'mm',
-                                'reduction': 'sum', 'period': 60,
-                                'description': "Rainfall (report period: 10s)"}}
+weather_sensor_dict = {
+    'wind_speed': {'sensor_name': 'anc_mean_wind_speed', 'units': 'm/s',
+                   'reduction': 'mean', 'period': 300,
+                   'description': "Mean of ['wind.wind-speed', "
+                   "'weather.wind-speed'] in (600 * 1.0s) window "
+                   "(report period: 1s)"},
+    'wind_gust': {'sensor_name': 'anc_gust_wind_speed', 'units': 'm/s',
+                  'reduction': 'max', 'period': 120,
+                  'description': "Max of ['wind.wind-speed', "
+                  "'weather.wind-speed'] in (3 * 1.0s) window "
+                  "(report period: 1s)"},
+    'wind_direction': {'sensor_name': 'anc_wind_wind_direction', 'units': 'deg',
+                       'reduction': 'mean', 'period': 30,
+                       'description': "Wind direction angle "
+                       "(report period: 10s)"},
+    'temperature': {'sensor_name': 'anc_weather_temperature',
+                    'units': 'deg Celsius',
+                    'reduction': 'decimate', 'period': 30,
+                    'description': "Air temperature (report period: 10s)"},
+    'humidity': {'sensor_name': 'anc_weather_humidity', 'units': 'percent',
+                 'reduction': 'mean', 'period': 60,
+                 'description': "Air humidity (report period: 10s)"},
+    'pressure': {'sensor_name': 'anc_weather_pressure', 'units': 'mbar',
+                 'reduction': 'mean', 'period': 60,
+                 'description': "Barometric pressure (report period: 10s)"},
+    'rain': {'sensor_name': 'anc_weather_rain', 'units': 'mm',
+             'reduction': 'sum', 'period': 60,
+             'description': "Rainfall (report period: 10s)"}}
 
 
 def _reduce_time_vals(times, vals, period, strategy='decimate'):
+    """
+    Reduce the number of values.
+
+    Parameters
+    ----------
+    times : float or astropy.time.Time
+        Times of readings.
+    vals : float
+        Reading values.
+    period : int
+        Final period of reduced values in seconds.
+    strategy : {'decimate', 'max', 'mean', 'sum'}
+        Strategy for data reduction.
+
+    """
     if not isinstance(period, (int, np.int)):
         raise ValueError('period must be an integer')
 
@@ -93,10 +109,18 @@ class WeatherData(MCDeclarativeBase):
     """
     Definition of weather table.
 
-    time: gps time of KAT weather sensor data, floored (BigInteger, part of primary_key).
-    variable: name of weather variable. One of the keys in weather_sensor_dict (String, part of primary_key)
-    value: measured value (Float)
+    Attributes
+    ----------
+    time : BigInteger Column
+        GPS time of KAT weather sensor data, floored. Part of the primary key.
+    variable : String Column
+        Name of weather variable. One of the keys in weather_sensor_dict.
+        Part of the primary key.
+    value : Float Column
+        Measured value.
+
     """
+
     __tablename__ = 'weather_data'
     time = Column(BigInteger, primary_key=True)
     variable = Column(String, nullable=False, primary_key=True)
@@ -109,12 +133,17 @@ class WeatherData(MCDeclarativeBase):
 
         Parameters:
         ------------
-        time: astropy time object
-            astropy time object based on a timestamp from the katportal sensor.
-        variable: string
-            must be a key in weather_sensor_dict
-        value: float
-            value from the sensor associated with the variable
+        time : astropy Time object
+            Astropy time object based on a timestamp from the katportal sensor.
+        variable : str
+            Must be a key in weather_sensor_dict.
+        value : float
+            Value from the sensor associated with the variable.
+
+        Returns
+        -------
+        WeatherData object
+
         """
         if not isinstance(time, Time):
             raise ValueError('time must be an astropy Time object')
@@ -134,17 +163,18 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
 
     Parameters:
     ------------
-    starttime: astropy time object
-        time to start getting history.
-    stoptime: astropy time object
-        time to stop getting history.
-    variable: string
-        variable to get history for. Must be a key in weather_sensor_dict,
-        defaults to all keys in weather_sensor_dict
+    starttime : astropy Time object
+        Time to start getting history.
+    stoptime : astropy Time object
+        Time to stop getting history.
+    variable : str
+        Variable to get history for. Must be a key in weather_sensor_dict,
+        defaults to all keys in weather_sensor_dict.
 
     Returns:
     -----------
     A list of WeatherData objects (only accessible via a yield call)
+
     """
     from katportalclient import KATPortalClient
 
@@ -219,17 +249,18 @@ def create_from_sensors(starttime, stoptime, variables=None):
 
     Parameters:
     ------------
-    starttime: astropy time object
-        time to start getting history.
-    stoptime: astropy time object
-        time to stop getting history.
-    variable: string
-        variable to get history for. Must be a key in weather_sensor_dict,
-        defaults to all keys in weather_sensor_dict
+    starttime : astropy Time object
+        Time to start getting history.
+    stoptime : astropy Time object
+        Time to stop getting history.
+    variable : str
+        Variable to get history for. Must be a key in weather_sensor_dict,
+        defaults to all keys in weather_sensor_dict.
 
     Returns:
     -----------
     A list of WeatherData objects
+
     """
     io_loop = tornado.ioloop.IOLoop.current()
     return io_loop.run_sync(lambda: _helper_create_from_sensors(starttime, stoptime,
