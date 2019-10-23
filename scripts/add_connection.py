@@ -9,11 +9,9 @@ Script to add a general connection to the database.
 
 from __future__ import absolute_import, division, print_function
 
-import sys
-import copy
 import six
 
-from hera_mc import mc, cm_utils, cm_partconnect, cm_handling, cm_health
+from hera_mc import mc, cm_utils, cm_partconnect, cm_handling
 
 
 def query_args(args):
@@ -58,12 +56,7 @@ if __name__ == '__main__':
     session = db.sessionmaker()
     connect = cm_partconnect.Connections()
     handling = cm_handling.Handling(session)
-    up_check = handling.get_part_connection_dossier(hpn=[args.uppart], rev=args.uprev,
-                                                    port=args.upport, at_date=at_date,
-                                                    exact_match=True)
-    dn_check = handling.get_part_connection_dossier(hpn=[args.dnpart], rev=args.dnrev,
-                                                    port=args.dnport, at_date=at_date,
-                                                    exact_match=True)
+
     # Check for connection
     c = cm_partconnect.Connections()
     c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
