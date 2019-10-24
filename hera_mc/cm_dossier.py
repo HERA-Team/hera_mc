@@ -386,7 +386,7 @@ class HookupEntry(object):
         self.columns[port].append('start')
         self.columns[port].append('stop')
 
-    def get_part_in_hookup_from_type(self, part_type, include_revs=False, include_ports=False):
+    def get_part_from_type(self, part_type, include_revs=False, include_ports=False):
         """
         Retrieve the part name for a given part_type from a hookup
 
