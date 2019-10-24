@@ -77,15 +77,15 @@ def test_hookup_dossier(sys_handle, capsys):
     print(hude)
     captured = capsys.readouterr()
     assert '<testing:key:' in captured.out.strip()
-    hude.get_part_in_hookup_from_type('rusty_scissors', include_revs=True,
-                                      include_ports=True)
+    hude.get_part_from_type('rusty_scissors', include_revs=True,
+                            include_ports=True)
     hude.columns = {'x': 'y', 'hu': 'b', 'm': 'l'}
     hude.hookup['hu'] = []
     hude.hookup['hu'].append(Namespace(
         downstream_part='shoe', down_part_rev='testing',
         downstream_input_port='nail', upstream_output_port='screw'))
-    xret = hude.get_part_in_hookup_from_type('b', include_revs=True,
-                                             include_ports=True)
+    xret = hude.get_part_from_type('b', include_revs=True,
+                                   include_ports=True)
     assert xret['hu'] == 'shoe:testing<screw'
 
     # test errors
@@ -201,7 +201,7 @@ def test_get_pam_from_hookup(sys_handle, mcsession):
     hookup = cm_hookup.Hookup(mcsession)
     hud = hookup.get_hookup(['HH701'], at_date='2019-07-03', exact_match=True,
                             hookup_type='parts_hera')
-    pams = hud[list(hud.keys())[0]].get_part_in_hookup_from_type(
+    pams = hud[list(hud.keys())[0]].get_part_from_type(
         'post-amp', include_ports=True, include_revs=True)
     assert len(pams) == 2
     # the actual pam number (the thing written on the case)
