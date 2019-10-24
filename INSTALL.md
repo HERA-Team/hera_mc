@@ -10,10 +10,27 @@ below.
 
 Installation steps are:
 
+* [0.] Optionally install dependencies (if you like to manage them yourself e.g. via conda)
 * [1.] Install hera_mc
 * [2.] Setup database configuration file
 * [3.] Install PostgreSQL (if not using SQLITE)
 
+[0.] Optionally install dependencies
+
+The dependencies are:
+- six
+- numpy
+- astrop
+- sqlalchemy
+- psycopg2
+- alembic
+- python-dateutil
+- tabulate
+- pandas
+- psutil
+- cartopy
+
+All the dependencies should be available via conda.
 
 [1.] Install hera_mc
 ---
