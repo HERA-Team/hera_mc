@@ -4,8 +4,8 @@
 # Licensed under the 2-clause BSD license.
 
 """
-This contains the Entry classes which serves as a "dossier" for part entries,
-connections entries, and hookup entries.
+This contains the Entry classes which serves as a "dossier" for part entries
+and hookup entries.
 """
 from __future__ import absolute_import, division, print_function
 

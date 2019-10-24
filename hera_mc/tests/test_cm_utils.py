@@ -54,14 +54,53 @@ def test_stringify(input, expected):
 
 
 @pytest.mark.parametrize(("input", "expected"),
-                         [(None, None), ('Test', ['Test']),
-                          ('a,b', ['a', 'b'])])
+                         [('Test', ['Test']),
+                          ('a,b', ['a', 'b']),
+                          (['Test'], ['Test']),
+                          (1, [1])])
 def test_listify(input, expected):
     x = cm_utils.listify(input)
-    if expected is not None:
-        assert x == expected
-    else:
-        assert x is expected
+    assert x == expected
+    x = cm_utils.listify(None, None_as_list=False)
+    assert x is None
+    x = cm_utils.listify(None, None_as_list=True)
+    assert x[0] is None
+
+
+def test_match_list():
+    x = cm_utils.match_list(['a', 'b'], 'c', None)
+    y = list(x)
+    assert y[1][1] == 'c'
+    x = cm_utils.match_list('a', ['b', 'c'], 'upper')
+    y = list(x)
+    assert y[1][0] == 'A'
+    x = cm_utils.match_list(1, 2, 'lower')
+    y = list(x)
+    assert y[0][0] == '1'
+    pytest.raises(ValueError, cm_utils.match_list, [1, 2, 3], [1, 2, 3, 4, 5])
+    pytest.raises(ValueError, cm_utils.match_list, [1], [2], 'x')
+
+
+def test_to_upper():
+    x = cm_utils.to_upper('a')
+    assert x == 'A'
+    x = cm_utils.to_upper(['a'])
+    assert x[0] == 'A'
+    x = cm_utils.to_upper(1)
+    assert x == '1'
+    x = cm_utils.to_upper(None)
+    assert x is None
+
+
+def test_to_lower():
+    x = cm_utils.to_lower('a')
+    assert x == 'a'
+    x = cm_utils.to_lower(['a'])
+    assert x[0] == 'a'
+    x = cm_utils.to_lower(1)
+    assert x == '1'
+    x = cm_utils.to_lower(None)
+    assert x is None
 
 
 def test_verbosity():
