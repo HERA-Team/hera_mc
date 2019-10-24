@@ -16,6 +16,7 @@ Installation steps are:
 * [3.] Install PostgreSQL (if not using SQLITE)
 
 [0.] Optionally install dependencies
+---
 
 The dependencies are:
 - six
