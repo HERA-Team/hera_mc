@@ -137,7 +137,7 @@ class Handling:
         zip class
             Contains the hpn, rev pairs
         """
-        match_list = cm_utils.match_list(hpn, rev, upper=True)
+        match_list = cm_utils.match_list(hpn, rev, case_type='upper')
         if not exact_match:
             all_hpn = []
             all_rev = []
@@ -147,7 +147,7 @@ class Handling:
                         k_hpn, k_rev = cm_utils.split_part_key(key)
                         all_hpn.append(k_hpn.upper())
                         all_rev.append(h_rev)
-            match_list = cm_utils.match_list(all_hpn, all_rev, upper=True)
+            match_list = cm_utils.match_list(all_hpn, all_rev, case_type='upper')
         return match_list
 
     def _set_ports(self, inp):

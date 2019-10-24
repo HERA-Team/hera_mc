@@ -211,7 +211,7 @@ def stringify(X):
     return str(X)
 
 
-def listify(X):
+def listify(X, None_as_list=False):
     """
     "Listify" the input, hopefully sensibly.
 
@@ -219,13 +219,18 @@ def listify(X):
     ----------
     X
         Thing to be listified.
+    None_as_list : bool
+        If False return None, otherwise return [None]
 
     Returns
     -------
-    str or None
+    List or None
     """
     if X is None:
-        return None
+        if None_as_list:
+            return [None]
+        else:
+            return None
     if isinstance(X, six.string_types):
         return X.split(',')
     if isinstance(X, list):
@@ -233,25 +238,88 @@ def listify(X):
     return [X]
 
 
-def match_list(a_obj, b_obj, upper=False):
-    if not isinstance(a_obj, list):
-        a_obj = [a_obj]
-    if not isinstance(b_obj, list):
-        b_obj = [b_obj] * len(a_obj)
+def match_list(a_obj, b_obj, case_type=None):
+    """
+    Returns a zipped list-pair of same length.
+
+    This can handle objects of any type, but its primary use is to make sure
+    part number/revision calls as lists or strings are matched.  If case_type is
+    not None, then all elements will be returned as str or None.
+
+    Parameters
+    ----------
+    a_obj
+        First object to match
+    b_obj
+        Second object to match
+    case_type : str or None
+        To convert to 'uppercase'/'u' or 'lowercase'/'l' strings.  None keeps as supplied.
+
+    Returns
+    -------
+    zip
+
+    Raises
+    ------
+    ValueError
+        If supplied objects can't be matched or invalid case_type.
+    """
+    a_obj = listify(a_obj, None_as_list=True)
+    b_obj = listify(b_obj, None_as_list=True)
+    if len(a_obj) > len(b_obj):
+        b_obj = b_obj * len(a_obj)
+    elif len(b_obj) > len(a_obj):
+        a_obj = a_obj * len(b_obj)
     if len(a_obj) != len(b_obj):
-        raise ValueError("Objects must be same length")
-    if upper:
-        return zip(to_upper(a_obj), to_upper(b_obj))
-    else:
+        raise ValueError("Lists must be same length")
+    if case_type is None:
         return zip(a_obj, b_obj)
+    case_type = case_type[0].lower()
+    if case_type == 'u':
+        return zip(to_upper(a_obj), to_upper(b_obj))
+    elif case_type == 'l':
+        return zip(to_lower(a_obj), to_lower(b_obj))
+    raise ValueError("Invalid case_type.")
 
 
 def to_upper(X):
+    """
+    Recursively convert objects to uppercase strings, except if None.
+
+    Parameters
+    ----------
+    X
+        Object to be converted to upper.
+
+    Returns
+    -------
+    str, list or None
+    """
     if X is None:
         return None
     if isinstance(X, list):
         return [to_upper(s) for s in X]
     return str(X).upper()
+
+
+def to_lower(X):
+    """
+    Recursively convert objects to lowercase strings, except if None.
+
+    Parameters
+    ----------
+    X
+        Object to be converted to lower.
+
+    Returns
+    -------
+    str, list or None
+    """
+    if X is None:
+        return None
+    if isinstance(X, list):
+        return [to_lower(s) for s in X]
+    return str(X).lower()
 
 
 def add_verbosity_args(parser):
