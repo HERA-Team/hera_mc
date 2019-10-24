@@ -113,7 +113,6 @@ class ActiveData:
 
         Loads the active parts onto the class and sets the class at_date.
         If at_date is None, the existing at_date on the object will be used.
-        This method will ValueError if a duplicate is found.
 
         Writes class dictionary:
                 self.connections - has keys 'up' and 'down', each of which
@@ -124,6 +123,11 @@ class ActiveData:
         at_date : str, int, float, Time, datetime (optional)
             The date for which to check as active, given as anything comprehensible
             to get_astropytime.  If not present uses self.at_date
+
+        Raises
+        ------
+        ValueError
+            If a duplicate is found.
         """
 
         at_date = cm_utils.get_astropytime(at_date)
