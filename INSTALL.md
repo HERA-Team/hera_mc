@@ -21,7 +21,7 @@ Installation steps are:
 The dependencies are:
 - six
 - numpy
-- astrop
+- astropy
 - sqlalchemy
 - psycopg2
 - alembic
