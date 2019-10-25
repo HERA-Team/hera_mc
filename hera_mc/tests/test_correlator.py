@@ -1464,28 +1464,14 @@ def test_snap_status_errors(mcsession):
 
 
 def test_get_node_snap_from_serial_nodossier(mcsession):
-    node, snap_loc_num = checkWarnings(mcsession._get_node_snap_from_serial, ['foo'])
-
+    node, snap_loc_num = checkWarnings(mcsession._get_node_snap_from_serial, ['foo'],
+                                       message="No active dossiers returned "
+                                       "for snap serial foo. Setting node and snap location numbers to None")
     assert node is None
     assert snap_loc_num is None
 
 
-def test_get_node_snap_from_serial_multiple_locs(mcsession):
-    """Test multiple snap location numbers."""
-    connection = cm_partconnect.Connections()
-    connection.upstream_part = 'SNPD000703'
-    connection.up_part_rev = 'A'
-    connection.downstream_part = 'N701'
-    connection.down_part_rev = 'A'
-    connection.upstream_output_port = 'rack'
-    connection.downstream_input_port = 'loc2'
-    connection.start_gpstime = 1230375618
-    mcsession.add(connection)
-    mcsession.commit()
-    pytest.raises(ValueError, mcsession._get_node_snap_from_serial, ['SNPD000703'])
-
-
-def test_get_node_snap_from_serial_multiple_locs(mcsession):
+def test_get_node_snap_from_serial_multiple_revs(mcsession):
     """Test multiple snap location numbers."""
     part = cm_partconnect.Parts()
     part.hpn = 'SNPD000703'
@@ -1505,8 +1491,10 @@ def test_get_node_snap_from_serial_multiple_locs(mcsession):
     connection.start_gpstime = 1230375618
     mcsession.add(connection)
     mcsession.commit()
-    node, snap_loc_num = checkWarnings(mcsession._get_node_snap_from_serial, ['SNPD000703'])
-
+    node, snap_loc_num = checkWarnings(mcsession._get_node_snap_from_serial, ['SNPD000703'],
+                                       message="Multiple SNPD000703 snaps were found, "
+                                       "please specify the revision. Setting node and snap "
+                                       "location numbers to None")
     assert node is None
     assert snap_loc_num is None
 
