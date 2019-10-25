@@ -82,7 +82,6 @@ def test_update_part(parts, capsys):
     dtq = Time('2019-09-01 01:00:00', scale='utc')
     located = parts.cm_handle.get_dossier(
         hpn=[parts.test_part], rev=None, ports=None, at_date=dtq, exact_match=True)
-    print(located)
     assert len(list(located.keys())) == 1
     assert located[list(located.keys())[0]].part.hpn_rev == 'Z'
 
