@@ -5,8 +5,6 @@
 """Testing environment setup and teardown for pytest."""
 from __future__ import absolute_import, division, print_function
 
-import socket
-
 import pytest
 import six.moves.urllib as urllib
 from astropy.utils import iers
@@ -30,7 +28,7 @@ def setup_and_teardown_package():
         iers.IERS_A.open(iers.IERS_A_URL)
         t1 = Time.now()
         t1.ut1
-    except(urllib.error.URLError):
+    except(urllib.error.URLError, IOError):
         iers.conf.auto_max_age = None
 
     test_db = mc.connect_to_mc_testing_db()
