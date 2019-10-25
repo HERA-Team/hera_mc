@@ -77,8 +77,12 @@ def test_match_list():
     x = cm_utils.match_list(1, 2, 'lower')
     y = list(x)
     assert y[0][0] == '1'
-    pytest.raises(ValueError, cm_utils.match_list, [1, 2, 3], [1, 2, 3, 4, 5])
-    pytest.raises(ValueError, cm_utils.match_list, [1], [2], 'x')
+    with pytest.raises(ValueError) as ml:
+        cm_utils.match_list([1, 2, 3], [1, 2, 3, 4, 5])
+    assert str(ml.value).startswith('Lists must be same length')
+    with pytest.raises(ValueError) as ml:
+        cm_utils.match_list([1], [2], 'x')
+    assert str(ml.value).startswith('Invalid case_type.')
 
 
 def test_to_upper():
