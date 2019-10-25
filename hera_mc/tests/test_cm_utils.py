@@ -118,7 +118,9 @@ def test_verbosity():
     assert x == 1
     x = cm_utils.parse_verbosity('vv')
     assert x == 3
-    pytest.raises(ValueError, cm_utils.parse_verbosity, 'x')
+    with pytest.raises(ValueError) as tv:
+        cm_utils.parse_verbosity('x')
+    assert str(tv.value).startswith("Invalid argument to verbosity")
 
 
 def test_datetime():
