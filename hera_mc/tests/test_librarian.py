@@ -20,7 +20,9 @@ from .. import utils
 @pytest.fixture(scope='module')
 def status():
     class DataHolder(object):
-        time = Time.now() - TimeDelta(6 * 60, format='sec')
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(6 * 60, format='sec')
         status_names = ['time', 'num_files', 'data_volume_gb',
                         'free_space_gb', 'upload_min_elapsed',
                         'num_processes', 'git_version', 'git_hash']
@@ -41,7 +43,9 @@ def status():
 @pytest.fixture(scope='module')
 def raidstatus():
     class DataHolder(object):
-        time = Time.now() - TimeDelta(6 * 60, format='sec')
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(6 * 60, format='sec')
         raid_status_names = ['time', 'hostname', 'num_disks', 'info']
         raid_status_values = [time, 'raid_1', 16,
                               'megaraid controller is happy']
@@ -61,7 +65,9 @@ def raidstatus():
 @pytest.fixture(scope='module')
 def raiderror():
     class DataHolder(object):
-        time = Time.now() - TimeDelta(6 * 60, format='sec')
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(6 * 60, format='sec')
         raid_error_names = ['id', 'time', 'hostname', 'disk', 'log']
         raid_error_values = [1, time, 'raid_1', 'd4', 'unhappy disk']
         raid_error_columns = dict(zip(raid_error_names, raid_error_values))
@@ -80,7 +86,9 @@ def raiderror():
 @pytest.fixture(scope='module')
 def remote():
     class DataHolder(object):
-        time = Time.now() - TimeDelta(6 * 60, format='sec')
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(6 * 60, format='sec')
         remote_status_names = ['time', 'remote_name', 'ping_time',
                                'num_file_uploads', 'bandwidth_mbs']
         remote_status_values = [time, 'nrao', .13, 5, 56.4]
@@ -100,7 +108,9 @@ def remote():
 @pytest.fixture(scope='module')
 def file():
     class DataHolder(object):
-        time = Time.now() - TimeDelta(6 * 60, format='sec')
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(6 * 60, format='sec')
         obsid = utils.calculate_obsid(time)
         observation_names = ['starttime', 'stoptime', 'obsid']
         observation_values = [time, time + TimeDelta(10 * 60, format='sec'),

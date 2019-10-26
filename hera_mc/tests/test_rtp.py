@@ -21,7 +21,9 @@ from hera_mc.data import DATA_PATH
 @pytest.fixture(scope='module')
 def status():
     class DataHolder(object):
-        time = Time.now() - TimeDelta(30 * 60, format='sec')
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(30 * 60, format='sec')
         status_names = ['time', 'status', 'event_min_elapsed',
                         'num_processes', 'restart_hours_elapsed']
         status_values = [time, 'happy', 3.6, 8, 10.2]
@@ -41,7 +43,9 @@ def status():
 @pytest.fixture(scope='module')
 def observation():
     class DataHolder(object):
-        time = Time.now() - TimeDelta(30 * 60, format='sec')
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(30 * 60, format="sec")
         obsid = utils.calculate_obsid(time)
         observation_names = ['starttime', 'stoptime', 'obsid']
         observation_values = [time, time + TimeDelta(10 * 60, format='sec'),
@@ -62,7 +66,9 @@ def observation():
 @pytest.fixture(scope='module')
 def event(observation):
     class DataHolder(object):
-        time = Time.now() - TimeDelta(30 * 60, format='sec')
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(30 * 60, format='sec')
         event_names = ['time', 'obsid', 'event']
         event_values = [time, observation.obsid, 'queued']
         event_columns = dict(zip(event_names, event_values))
@@ -81,7 +87,9 @@ def event(observation):
 @pytest.fixture(scope='module')
 def record(observation):
     class DataHolder(object):
-        time = Time.now() - TimeDelta(30 * 60, format='sec')
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(30 * 60, format='sec')
         record_names = ['time', 'obsid', 'pipeline_list', 'rtp_git_version',
                         'rtp_git_hash', 'hera_qm_git_version',
                         'hera_qm_git_hash',
@@ -106,7 +114,9 @@ def record(observation):
 @pytest.fixture(scope='module')
 def task(observation):
     class DataHolder(object):
-        time = Time.now() - TimeDelta(30 * 60, format='sec')
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(30 * 60, format='sec')
         task_resource_names = ['obsid', 'task_name', 'start_time', 'stop_time',
                                'max_memory', 'avg_cpu_load']
         task_resource_values = [observation.obsid, 'OMNICAL', time,
