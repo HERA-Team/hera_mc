@@ -10,7 +10,7 @@ below.
 
 Installation steps are:
 
-* [0.] Optionally install dependencies (if you like to manage them yourself e.g. via conda)
+* [0.] We strongly recommend installing dependencies (e.g. via conda)
 * [1.] Install hera_mc
 * [2.] Setup database configuration file
 * [3.] Install PostgreSQL (if not using SQLITE)
@@ -30,6 +30,7 @@ The dependencies are:
 - pandas
 - psutil
 - cartopy
+- pyyaml
 
 All the dependencies should be available via conda.
 
