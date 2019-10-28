@@ -111,6 +111,26 @@ def test_get_null_connection():
     assert nc.upstream_part == cm_partconnect.no_connection_designator
 
 
+def test_stop_existing_connections_to_part(conns, capsys):
+    cmh = cm_handling.Handling()
+    conn_list = [['HH00', 'A', 'ground']]
+    stop_Time = Time('2019-10-27T00:53:53.530')
+    cm_partconnect.stop_existing_connections_to_part(conns.test_session, cmh, conn_list, stop_Time)
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith("There are no connections to stop")
+    conn_list = [['HH700', 'A', 'ground']]
+
+
+def test_various_connection(capsys):
+    c = cm_partconnect.Connections()
+    print(c)
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith('<None')
+    c.stop_gpstime = 1256172851.53
+    c.gps2Time()
+    assert c.stop_date.isot == '2019-10-27T00:53:53.530'
+
+
 def test_get_specific_connection(conns):
     c = cm_partconnect.Connections()
     c.upstream_part = conns.test_hpn[0]

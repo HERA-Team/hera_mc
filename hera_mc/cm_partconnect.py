@@ -618,8 +618,7 @@ def stop_existing_connections_to_part(session, handling, conn_list, at_date):
     data = []
 
     for conn in conn_list:
-        CD = handling.get_part_connection_dossier([conn[0]], conn[1], conn[2], at_date, True)
-        ck = get_connection_key(CD, conn)
+        part = handling.get_dossier([conn[0]], conn[1], conn[2], at_date=at_date, exact_match=True)
         if ck is None:
             print('There are no connections to stop')
         else:
@@ -632,39 +631,6 @@ def stop_existing_connections_to_part(session, handling, conn_list, at_date):
             data.append(stopping)
 
     update_connection(session, data, False)
-
-
-def get_connection_key(conn_dossier, part_port):
-    """
-    Returns the standard connection key to use.  Does some checking etc to make sure edge cases don't trip you up.
-
-    Parameters
-    ----------
-    conn_dossier : dictionary
-        connection_dossier dictionary with connection information
-    part_port :  list
-        connection to find [part, rev, port]
-
-    Returns
-    -------
-    str
-        string for the connection or None if not found
-    """
-
-    pp_upper = [part_port[0].upper(), part_port[1].upper(), part_port[2].upper()]
-    ctr = 0
-    return_key = None
-    for ckey, cval in six.iteritems(conn_dossier['connections']):
-        ca = (cval.upstream_part.upper(), cval.downstream_part.upper())
-        cr = (cval.up_part_rev.upper(), cval.down_part_rev.upper())
-        co = (cval.upstream_output_port.upper(), cval.downstream_input_port.upper())
-        if cval.stop_gpstime is None and pp_upper[0] in ca and pp_upper[1] in cr and pp_upper[2] in co:
-            ctr += 1
-            return_key = ckey
-    if ctr > 1:
-        print("Warning:  too many connections were found.  Returning None")
-        return_key = None
-    return return_key
 
 
 def stop_connections(session, conn_list, at_date):
