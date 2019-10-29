@@ -10,13 +10,12 @@ These are key data for tracking antenna performance and failures.
 
 from __future__ import absolute_import, division, print_function
 
-from argparse import Namespace
-import datetime
 import numpy as np
+import six
 from sqlalchemy import (BigInteger, Column, DateTime, Float, Integer,
                         SmallInteger, String)
 
-from . import MCDeclarativeBase, NotNull
+from . import MCDeclarativeBase, NotNull, cm_sysutils
 
 
 class _MeasurementTypes(object):
@@ -74,14 +73,26 @@ class Autocorrelations(MCDeclarativeBase):
                'value={self.value}>').format(self=self)
 
 
-def plot_HERA_autocorrelations_for_plotly(session):
-    from plotly import graph_objs as go, plotly as py
+def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
+    if six.PY3:
+        from plotly import graph_objects as go
+    else:
+        from plotly import graph_objs as go
 
-    hera_ants = [9, 10, 20, 22, 31, 43, 53, 64, 65, 72, 80, 81, 88, 89, 96, 97, 104, 105, 112]
-    # Fill in arrays from the DB.
+    from chart_studio import plotly as py
+
+    hsession = cm_sysutils.Handling(session)
+    stations = hsession.get_all_fully_connected_at_date(at_date='now')
+
+    hera_ants = []
+    for station in stations:
+        if station.antenna_number not in hera_ants:
+            hera_ants = np.append(hera_ants, station.antenna_number)
+    hera_ants = np.unique(hera_ants).astype(int).tolist()
 
     data = []
 
+    # Plot antennas labeled as fully hooked up
     q = (session.query(Autocorrelations).
          filter(Autocorrelations.measurement_type == 0).
          filter(Autocorrelations.antnum.in_(hera_ants)).
@@ -115,6 +126,9 @@ def plot_HERA_autocorrelations_for_plotly(session):
     fig = go.Figure(data=scatters,
                     layout=layout,
                     )
-    py.plot(fig, auto_open=False,
-            filename='HERA_daily_autos',
-            )
+    if offline_testing:
+        return fig
+    else:
+        py.plot(fig, auto_open=False,
+                filename='HERA_daily_autos',
+                )

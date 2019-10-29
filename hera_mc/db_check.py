@@ -1,6 +1,7 @@
 # -*- mode: python; coding: utf-8 -*-
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
+"""Database consistency checking functions."""
 
 from __future__ import absolute_import, division, print_function
 
@@ -17,16 +18,18 @@ def check_connection(session):
 
     Parameters
     ----------
-    session: SQLAlchemy session bound to an engine
+    session : SQLAlchemy session
+        Session to use to check the connection, bound to an engine.
 
     Returns
     ---------
     True if database responds to simple SQL query. Otherwise False.
+
     """
     from sqlalchemy.exc import OperationalError
     result = True
     try:
-        r = session.execute('SELECT 1')
+        session.execute('SELECT 1')
     except OperationalError:
         result = False
     return result
@@ -34,8 +37,7 @@ def check_connection(session):
 
 def is_valid_database(base, session):
     """
-    Check whether the current database matches the models declared in model
-    base.
+    Check that the current database matches the models declared in model base.
 
     Currently we check that all tables exist with all columns.
 
@@ -46,8 +48,10 @@ def is_valid_database(base, session):
 
     Parameters
     ----------
-    base: instance of SQLAlchemy Declarative Base to check
-    session: SQLAlchemy session bound to an engine
+    base : Declarative Base
+        Instance of SQLAlchemy Declarative Base to check.
+    session : SQLAlchemy session
+        Session to use, bound to an engine.
 
     Returns
     ----------
@@ -76,7 +80,7 @@ def is_valid_database(base, session):
         if table in tables:
             # Check all columns are found
             # Looks like [{'default':
-            #                  "nextval('validity_check_test_id_seq'::regclass)",
+            #               "nextval('validity_check_test_id_seq'::regclass)",
             #              'autoincrement': True, 'nullable': False,
             #              'type': INTEGER(), 'name': 'id'}]
 

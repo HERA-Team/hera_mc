@@ -10,6 +10,7 @@ the documentation needs to be kept up to date with any changes.
 """
 from __future__ import absolute_import, division, print_function
 
+import six
 from math import floor
 from astropy.time import Time
 from sqlalchemy import Column, Integer, String, Float, BigInteger
@@ -21,22 +22,35 @@ class ServerStatus(MCDeclarativeBase):
     """
     Definition of server_status table.
 
-    hostname: name of server (String). Part of primary_key
-    mc_time: time report received by M&C in floor(gps seconds) (BigInteger).
-        Part of primary_key
-    ip_address: IP address of server (String)
-    mc_system_timediff: difference between M&C time and time report sent by
-        server in seconds (Float)
-    num_cores: number of cores on server (Integer)
-    cpu_load_pct: CPU load percent = total load / num_cores, 5 min average (Float)
-    uptime_days: server uptime in decimal days (Float)
-    memory_used_pct: Percent of memory used, 5 min average (Float)
-    memory_size_gb: Amount of memory on server in GB (Float)
-    disk_space_pct: Percent of disk used (Float)
-    disk_size_gb: Amount of disk space on server in GB (Float)
-    network_bandwidth_mbs: Network bandwidth in MB/s, 5 min average. Can be null
-        if not applicable
+    Attributes
+    ----------
+    hostname : String Column
+        Name of server. Part of the primary key.
+    mc_time : BigInteger Column
+        GPS time report received by M&C, floored. Part of the primary key.
+    ip_address : String Column
+        IP address of server.
+    mc_system_timediff : Float Column
+        Difference between M&C time and time report sent by server in seconds.
+    num_cores : Integer Column
+        Number of cores on server.
+    cpu_load_pct : Float Column
+        CPU load percent = total load / num_cores, 5 min average.
+    uptime_days : Float Column
+        Server uptime in decimal days.
+    memory_used_pct : Float Column
+        Percent of memory used, 5 min average.
+    memory_size_gb : Float Column
+        Amount of memory on server in GB .
+    disk_space_pct : Float Column
+        Percent of disk used.
+    disk_size_gb : Float Column
+        Amount of disk space on server in GB.
+    network_bandwidth_mbs : Float Column
+        Network bandwidth in MB/s, 5 min average. Can be null if not applicable.
+
     """
+
     __abstract__ = True
     hostname = Column(String(32), primary_key=True)
     mc_time = Column(BigInteger, primary_key=True)
@@ -63,31 +77,33 @@ class ServerStatus(MCDeclarativeBase):
 
         Parameters:
         ------------
-        db_time: astropy time object
-            astropy time object based on a timestamp from the database.
+        db_time : astropy Time object
+            Astropy time object based on a timestamp from the database.
             Usually generated from MCSession.get_current_db_time()
-        hostname: string
-            name of server
-        ip_address: string
+        hostname : str
+            Name of server.
+        ip_address : str
             IP address of server
-        system_time: astropy time object
-            time report sent by server
-        num_cores: integer
-            number of cores on server
-        cpu_load_pct: float
-            CPU load percent = total load / num_cores, 5 min average
-        uptime_days: float
-            server uptime in decimal days
-        memory_used_pct: float
-            Percent of memory used, 5 min average
-        memory_size_gb: float
-            Amount of memory on server in GB
-        disk_space_pct: float
-            Percent of disk used
-        disk_size_gb: float
-            Amount of disk space on server in GB
-        network_bandwidth_mbs: float
-            Network bandwidth in MB/s, 5 min average. Can be null if not applicable
+        system_time : astropy Time object
+            Time report sent by server.
+        num_cores : int
+            Number of cores on server.
+        cpu_load_pct : float
+            CPU load percent = total load / num_cores, 5 min average.
+        uptime_days : float
+            Server uptime in decimal days.
+        memory_used_pct : float
+            Percent of memory used, 5 min average.
+        memory_size_gb : float
+            Amount of memory on server in GB.
+        disk_space_pct : float
+            Percent of disk used.
+        disk_size_gb : float
+            Amount of disk space on server in GB.
+        network_bandwidth_mbs : float
+            Network bandwidth in MB/s, 5 min average. Can be null if not
+            applicable.
+
         """
         if not isinstance(db_time, Time):
             raise ValueError('db_time must be an astropy Time object')
@@ -107,7 +123,12 @@ class ServerStatus(MCDeclarativeBase):
 
 def plot_host_status_for_plotly(session):
     from astropy.time import Time
-    from plotly import graph_objs as go, plotly
+    if six.PY3:
+        from plotly import graph_objects as go
+    else:
+        from plotly import graph_objs as go
+
+    from chart_studio import plotly as chart_plotly
 
     THIRTY_DAYS = 24 * 3600 * 30
     gps_time_cutoff = Time.now().gps - THIRTY_DAYS
@@ -170,7 +191,7 @@ def plot_host_status_for_plotly(session):
         layout=layout,
     )
 
-    plotly.plot(
+    chart_plotly.plot(
         fig,
         auto_open=False,
         filename='karoo_host_load_averages',

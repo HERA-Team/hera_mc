@@ -21,13 +21,23 @@ class SubsystemError(MCDeclarativeBase):
     """
     Definition of subsystem_error table.
 
-    id: autoincrementing error id (BigInteger). Primary_key
-    time: time of error in floor(gps seconds) (BigInteger)
-    subsystem: name of subsystem (String)
-    mc_time: time error was report to M&C in floor(gps seconds) (BigInteger)
-    severity: integer indicating severity level, 1 is most severe (Integer)
-    log: error message (Text)
+    Attributes
+    ----------
+    id : BigInteger Column
+        Autoincrementing error id. Primary_key
+    time : BigInteger Column
+        GPS time of this error, floored.
+    subsystem : String Column
+        Name of subsystem.
+    mc_time : BigInteger Column
+        GPS time error was report to M&C, floored.
+    severity : Integer Column
+        Integer indicating severity level, 1 is most severe.
+    log : Text Column
+        Error message.
+
     """
+
     __tablename__ = 'subsystem_error'
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     time = Column(BigInteger, nullable=False)
@@ -43,17 +53,22 @@ class SubsystemError(MCDeclarativeBase):
 
         Parameters:
         ------------
-        db_time: astropy time object
-            astropy time object based on a timestamp from the database.
+        db_time : astropy Time object
+            Astropy time object based on a timestamp from the database.
             Usually generated from MCSession.get_current_db_time()
-        time: astropy time object
-            time of this error report
-        subsystem: string
-            name of subsystem with error
-        severity: integer
-            integer indicating severity level, 1 is most severe
-        log: string
-            error message or log file name (TBD)
+        time : astropy Time object
+            Time of this error report.
+        subsystem : str
+            Name of subsystem with error.
+        severity : int
+            Integer indicating severity level, 1 is most severe.
+        log : str
+            error message or log file name (TBD).
+
+        Returns
+        -------
+        SubsystemError object
+
         """
         if not isinstance(db_time, Time):
             raise ValueError('db_time must be an astropy Time object')

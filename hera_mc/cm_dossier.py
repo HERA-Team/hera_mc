@@ -171,7 +171,11 @@ class PartEntry():
             headers.append(self.col_hdr[c])
         return headers
 
+<<<<<<< HEAD
     def table_row(self, columns, ports):
+=======
+    def table_row(self, columns, ports=None):
+>>>>>>> a16acf870ea9a4faea05117d245e0fcbe5efdd74
         """
         Converts the part_dossier column information to a row for the tabulate display.
 
@@ -179,8 +183,13 @@ class PartEntry():
         ----------
         columns : list
             List of the desired columns to use.
+<<<<<<< HEAD
         ports : list
             Allowed ports to show.
+=======
+        ports : list or None
+            Contains a list of the allowed ports.  If None, it allows all.
+>>>>>>> a16acf870ea9a4faea05117d245e0fcbe5efdd74
 
         Returns
         -------
