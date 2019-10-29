@@ -82,8 +82,8 @@ def test_get_ants_installed_since(geo_handle):
 
 
 def test_plotting(geo_handle):
-    stations_to_plot = ['HH0']
-    query_date = Time('2019-09-20 01:00:00', scale='utc')
+    stations_to_plot = ['HH702']
+    query_date = Time('2019-20-20 01:00:00', scale='utc')
     stations = geo_handle.get_location(stations_to_plot, query_date)
     geo_handle.plot_stations(stations, xgraph='E', ygraph='N',
                              show_label='name', marker_color='k',
@@ -123,6 +123,11 @@ def test_antenna_label(geo_handle):
     assert x == '700'
     x = geo_handle.get_antenna_label('ser', stations[0], query_date)
     assert x == '700'
+
+
+def test_geo_handling(geo_handle):
+    h = geo_handling.get_location(['HH701'], session=geo_handle.session)
+    assert h[0].station_name == 'HH701'
 
 
 def test_parse_station_types(geo_handle):
