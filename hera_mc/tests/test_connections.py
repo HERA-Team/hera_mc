@@ -96,13 +96,13 @@ def test_update_new(conns, capsys):
             [u, r, d, r, a, b, g, 'start_gpstime', g]]
     cm_partconnect.update_connection(conns.test_session, data,
                                      add_new_connection=True)
-    located = conns.cm_handle.get_dossier([u], r, 'physical', 'now', exact_match=True)
+    located = conns.cm_handle.get_dossier([u], r, 'now', exact_match=True)
     prkey = list(located.keys())[0]
     assert prkey == 'NEW_TEST_PART_UP:A'
     ckey = located[prkey].output_ports
     assert a in ckey
 
-    captured = conns.cm_handle.show_dossier(located, ['hpn'])
+    captured = conns.cm_handle.show_dossier(located, ['hpn'], ports='physical')
     assert 'NEW_TEST_PART_UP' in captured
 
 
