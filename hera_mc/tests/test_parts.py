@@ -61,8 +61,7 @@ def test_update_new(parts):
             [ntp, 'X', 'hptype', 'antenna'],
             [ntp, 'X', 'start_gpstime', 1172530000]]
     cm_partconnect.update_part(parts.test_session, data)
-    located = parts.cm_handle.get_dossier(hpn=[ntp], rev=['X'], ports=None,
-                                          at_date='now', exact_match=True)
+    located = parts.cm_handle.get_dossier(hpn=[ntp], rev=['X'], at_date='now', exact_match=True)
     prkey = list(located.keys())[0]
     assert prkey == 'NEW_TEST_PART:X'
 
@@ -81,7 +80,7 @@ def test_update_part(parts, capsys):
     cm_partconnect.update_part(parts.test_session, data)
     dtq = Time('2019-09-01 01:00:00', scale='utc')
     located = parts.cm_handle.get_dossier(
-        hpn=[parts.test_part], rev=None, ports=None, at_date=dtq, exact_match=True)
+        hpn=[parts.test_part], rev=None, at_date=dtq, exact_match=True)
     assert len(list(located.keys())) == 1
     assert located[list(located.keys())[0]].part.hpn_rev == 'Z'
 
@@ -102,19 +101,17 @@ def test_show_dossier(parts, capsys):
     cm_partconnect.add_part_info(
         parts.test_session, parts.test_part, parts.test_rev, parts.start_time,
         'Testing', 'library_file')
-    located = parts.cm_handle.get_dossier(
-        hpn=[parts.test_part], rev=parts.test_rev, ports=None,
-        at_date='now', exact_match=True)
+    located = parts.cm_handle.get_dossier(hpn=[parts.test_part], rev=parts.test_rev,
+                                          at_date='now', exact_match=True)
     captured = parts.cm_handle.show_dossier(located, ['hpn'])
     assert 'TEST_PART' in captured
     captured = parts.cm_handle.show_dossier({}, ['hpn'])
     assert 'Part not found' in captured
-    located = parts.cm_handle.get_dossier(
-        hpn=['A700'], rev=['H'], ports=None, at_date='now', exact_match=True)
+    located = parts.cm_handle.get_dossier(hpn=['A700'], rev=['H'], at_date='now', exact_match=True)
     captured = parts.cm_handle.show_dossier(located, ['comment'])
     assert 'Comment 2' in captured
     located = parts.cm_handle.get_dossier(
-        hpn=['HH700'], rev=['A'], ports=None, at_date='now', exact_match=True)
+        hpn=['HH700'], rev=['A'], at_date='now', exact_match=True)
     captured = parts.cm_handle.show_dossier(located, ['geo'])
     assert '540901.6E, 6601070.7N, 1052.6m' in captured
 
@@ -123,9 +120,8 @@ def test_part_info(parts, capsys):
     cm_partconnect.add_part_info(
         parts.test_session, parts.test_part, parts.test_rev,
         Time('2017-07-01 01:00:00'), 'Testing', 'library_file')
-    located = parts.cm_handle.get_dossier(
-        hpn=[parts.test_part], rev=parts.test_rev, ports=None,
-        at_date='now', exact_match=True)
+    located = parts.cm_handle.get_dossier(hpn=[parts.test_part], rev=parts.test_rev,
+                                          at_date='now', exact_match=True)
     assert 'Testing' in located[list(located.keys())[0]].part_info.comment
     test_info = cm_partconnect.PartInfo()
     test_info.info(hpn='A', hpn_rev='B', posting_gpstime=1172530000,
@@ -158,7 +154,7 @@ def test_add_new_parts(parts, capsys):
     assert p.test_attribute == 'test'
     cm_partconnect.add_new_parts(parts.test_session, data, a_time, True)
     located = parts.cm_handle.get_dossier(
-        hpn=['part_X'], rev=['X'], ports=None, at_date=a_time, exact_match=True)
+        hpn=['part_X'], rev=['X'], at_date=a_time, exact_match=True)
     assert len(list(located.keys())) == 1
     assert located[list(located.keys())[0]].part.hpn == 'part_X'
 

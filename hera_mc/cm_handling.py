@@ -282,7 +282,7 @@ class Handling:
         str
             String containing the dossier table.
         """
-        self._set_allowed_ports(ports)
+        self._get_allowed_ports(ports)
         pd_keys = cm_utils.put_keys_in_order(list(dossier.keys()))
         if len(pd_keys) == 0:
             return 'Part not found'

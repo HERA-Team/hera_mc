@@ -107,4 +107,4 @@ if __name__ == '__main__':
 
     dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
                                    notes_start_date=notes_start_date, exact_match=args.exact_match)
-    print(handling.show_dossier(dossier, columns, port=ports))
+    print(handling.show_dossier(dossier, columns, ports=ports))

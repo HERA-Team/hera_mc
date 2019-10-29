@@ -22,7 +22,7 @@ def conns(mcsession):
     test_time = Time('2017-07-01 01:00:00', scale='utc').gps
     query_time = Time('2017-08-01 01:00:00', scale='utc')
 
-    session = mcsession
+    test_session = mcsession
     for tp in test_hpn:
         part = cm_partconnect.Parts()
         part.hpn = tp
@@ -30,8 +30,8 @@ def conns(mcsession):
         part.hptype = test_hptype
         part.manufacture_number = test_mfg
         part.start_gpstime = test_time
-        session.add(part)
-    session.commit()
+        test_session.add(part)
+    test_session.commit()
 
     # Add test connection
     connection = cm_partconnect.Connections()
@@ -42,10 +42,10 @@ def conns(mcsession):
     connection.upstream_output_port = 'up_and_out'
     connection.downstream_input_port = 'down_and_in'
     connection.start_gpstime = test_time
-    session.add(connection)
-    session.commit()
+    test_session.add(connection)
+    test_session.commit()
 
-    cm_handle = cm_handling.Handling(session)
+    cm_handle = cm_handling.Handling(test_session)
 
     class DataHolder(object):
         def __init__(self, test_session, test_hpn, test_rev, test_hptype,
@@ -59,7 +59,7 @@ def conns(mcsession):
             self.query_time = query_time
             self.cm_handle = cm_handle
 
-    conns = DataHolder(session, test_hpn, test_rev, test_hptype, test_mfg,
+    conns = DataHolder(test_session, test_hpn, test_rev, test_hptype, test_mfg,
                        test_time, query_time, cm_handle)
 
     # yields the data we need but will continue to the del call after tests
@@ -112,13 +112,11 @@ def test_get_null_connection():
 
 
 def test_stop_existing_connections_to_part(conns, capsys):
-    cmh = cm_handling.Handling()
-    conn_list = [['HH00', 'A', 'ground']]
+    conn_list = [['HH701', 'A', 'ground']]
     stop_Time = Time('2019-10-27T00:53:53.530')
-    cm_partconnect.stop_existing_connections_to_part(conns.test_session, cmh, conn_list, stop_Time)
+    cm_partconnect.stop_existing_connections_to_part(conns.test_session, conns.cm_handle, conn_list, stop_Time)
     captured = capsys.readouterr()
-    assert captured.out.strip().startswith("There are no connections to stop")
-    conn_list = [['HH700', 'A', 'ground']]
+    assert captured.out.strip().startswith("Stopping connection")
 
 
 def test_various_connection(capsys):
@@ -126,9 +124,10 @@ def test_various_connection(capsys):
     print(c)
     captured = capsys.readouterr()
     assert captured.out.strip().startswith('<None')
+    c.start_gpstime = 1256171851.53
     c.stop_gpstime = 1256172851.53
     c.gps2Time()
-    assert c.stop_date.isot == '2019-10-27T00:53:53.530'
+    assert c.stop_date.isot == '2019-10-27T00:54:30.530'
 
 
 def test_get_specific_connection(conns):

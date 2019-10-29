@@ -609,7 +609,7 @@ def stop_existing_connections_to_part(session, handling, conn_list, at_date):
     handling :  cm_handling object
         This is an instance of cm_handling used within this method.
     conn_list :  list
-        This containing the parts to stop, as [[hpn0, rev0, port0], ...]
+        This containing the connections to stop, as [[hpn0, rev0, port0], ...]
     at_date : astropy.Time object
         date at which to stop
     """
@@ -617,19 +617,22 @@ def stop_existing_connections_to_part(session, handling, conn_list, at_date):
     stop_at = int(at_date.gps)
     data = []
 
-    print("CM_PARTCONNECT620:  CONN[2]")
     for conn in conn_list:
         part = handling.get_dossier(conn[0], conn[1], at_date=at_date, exact_match=True)
-        if ck is None:
-            print('There are no connections to stop')
-        else:
-            x = CD['connections'][ck]
-            print("Stopping connection {} at {}".format(x, str(at_date)))
-            stopping = [x.upstream_part, x.up_part_rev, x.downstream_part,
-                        x.down_part_rev, x.upstream_output_port,
-                        x.downstream_input_port, x.start_gpstime,
-                        'stop_gpstime', stop_at]
-            data.append(stopping)
+        if len(part):
+            key = cm_utils.make_part_key(conn[0], conn[1])
+            x = None
+            if conn[2].lower() in part[key].input_ports:
+                x = part[key].connections.down[conn[2].upper()]
+            elif conn[2].lower() in part[key].output_ports:
+                x = part[key].connections.up[conn[2].upper()]
+            if x is not None:
+                print("Stopping connection {} at {}".format(x, str(at_date)))
+                stopping = [x.upstream_part, x.up_part_rev, x.downstream_part,
+                            x.down_part_rev, x.upstream_output_port,
+                            x.downstream_input_port, x.start_gpstime,
+                            'stop_gpstime', stop_at]
+                data.append(stopping)
 
     update_connection(session, data, False)
 
