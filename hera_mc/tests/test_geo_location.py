@@ -83,7 +83,7 @@ def test_get_ants_installed_since(geo_handle):
 
 def test_plotting(geo_handle):
     stations_to_plot = ['HH702']
-    query_date = Time('2019-20-20 01:00:00', scale='utc')
+    query_date = Time('2019-10-20 01:00:00', scale='utc')
     stations = geo_handle.get_location(stations_to_plot, query_date)
     geo_handle.plot_stations(stations, xgraph='E', ygraph='N',
                              show_label='name', marker_color='k',
