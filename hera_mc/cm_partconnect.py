@@ -617,8 +617,9 @@ def stop_existing_connections_to_part(session, handling, conn_list, at_date):
     stop_at = int(at_date.gps)
     data = []
 
+    print("CM_PARTCONNECT620:  CONN[2]")
     for conn in conn_list:
-        part = handling.get_dossier([conn[0]], conn[1], conn[2], at_date=at_date, exact_match=True)
+        part = handling.get_dossier(conn[0], conn[1], at_date=at_date, exact_match=True)
         if ck is None:
             print('There are no connections to stop')
         else:

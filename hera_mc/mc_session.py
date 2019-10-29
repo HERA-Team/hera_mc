@@ -3001,7 +3001,7 @@ class MCSession(Session):
             session = self
 
         cmh = cm_handling.Handling(session)
-        conn_dossier = cmh.get_dossier(snap_serial, rev=rev, ports=None, at_date='now')
+        conn_dossier = cmh.get_dossier(snap_serial, rev=rev, at_date='now')
 
         if len(conn_dossier.keys()) == 0:
             warnings.warn('No active dossiers returned for snap serial {snn}. '

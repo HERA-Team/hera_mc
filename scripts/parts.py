@@ -105,6 +105,6 @@ if __name__ == '__main__':
             ports.append('physical')
         ports = ','.join(ports)
 
-    dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision, ports=ports, at_date=date_query,
+    dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
                                    notes_start_date=notes_start_date, exact_match=args.exact_match)
-    print(handling.show_dossier(dossier, columns))
+    print(handling.show_dossier(dossier, columns, port=ports))
