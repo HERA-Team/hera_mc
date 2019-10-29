@@ -24,8 +24,7 @@ def test_log():
 
 
 def test_various():
-    a, b, c, d = cm_utils.split_connection_key('a:b:c:d')
-    assert c[0] == 'c'
+    a = 'a'
     args = argparse.Namespace(a='def_test', unittesting='')
     x = cm_utils.query_default(a, args)
     assert x == 'def_test'
@@ -41,10 +40,23 @@ def test_various():
     args = argparse.Namespace(a='def_test', unittesting='unittest')
     x = cm_utils.query_default(a, args)
     assert x == 'unittest'
+    spk = cm_utils.make_part_key(None, None)
+    assert spk == cm_utils.system_wide_key
+    a, b, c = cm_utils.split_part_key('a:b:c')
+    assert c == 'c'
+    is_active = cm_utils.is_active(None, None, None)
+    assert is_active
+    t_tst = cm_utils.get_astropytime('now')
+    out = cm_utils.get_stopdate(t_tst)
+    assert out == t_tst
+    d = cm_utils.get_time_for_display(None)
+    assert d == 'None'
+    c = cm_utils.put_keys_in_order(['1:A:Z', '2:B:X'], 'RPN')
+    assert c[0] == '1:A:Z'
 
 
 @pytest.mark.parametrize(("input", "expected"),
-                         [(None, None), ('Test', 'Test'), (['a', 'b'], 'a,b')])
+                         [(None, None), ('Test', 'Test'), (['a', 'b'], 'a,b'), (1, '1')])
 def test_stringify(input, expected):
     x = cm_utils.stringify(input)
     if expected is not None:

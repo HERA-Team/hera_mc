@@ -148,47 +148,6 @@ def split_part_key(key):
     return split_key[0], split_key[1], split_key[2]
 
 
-def make_connection_key(hpn, rev, port, start_gps):
-    """
-    Returns the standard connection key of hpn:rev:port:gps_second
-
-    Parameters
-    ----------
-    hpn : str
-        HERA part number.  If None, it returns the system_wide_key
-    rev : str
-        HERA part revision
-    port : str
-        HERA port
-    start_gps : str or int
-        Start time as gps second
-
-    Returns
-    -------
-    str
-        key
-    """
-    return ":".join([hpn.upper(), rev.upper(), port.upper(), str(start_gps).upper()])
-
-
-def split_connection_key(key):
-    """
-    Splits the standard connection key.
-
-    Parameters
-    ----------
-    key : str
-        Standard part key as hpn:rev:port:gps
-
-    Returns
-    -------
-    tuple
-        hpn, rev, port, gps
-    """
-    ks = key.split(':')
-    return ks[0], ks[1], ks[2], ks[3]
-
-
 def stringify(X):
     """
     "Stringify" the input, hopefully sensibly.
