@@ -59,6 +59,12 @@ command_state_map = {'take_data': {'allowed_when_recording': False},
                      'noise_diode_off': {'state_type': 'noise_diode',
                                          'state': False,
                                          'allowed_when_recording': False},
+                     'load_is_on': {'state_type': 'load',
+                                    'state': True,
+                                    'allowed_when_recording': False},
+                     'load_is_off': {'state_type': 'load',
+                                     'state': False,
+                                     'allowed_when_recording': False},
                      'update_config': {'allowed_when_recording': True},
                      'restart': {'allowed_when_recording': False}}
 
