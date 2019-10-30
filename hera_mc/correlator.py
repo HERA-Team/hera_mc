@@ -38,6 +38,9 @@ command_dict = {'take_data': 'take_data',
                 'phase_switching_off': 'phase_switch_disable',
                 'noise_diode_on': 'noise_diode_enable',
                 'noise_diode_off': 'noise_diode_disable',
+                'load_enable': 'load_enable',
+                "load_disable": 'load_disable',
+                'antenna_enable': 'antenna_enable',
                 'update_config': 'update_config', 'restart': 'restart'}
 
 command_state_map = {'take_data': {'allowed_when_recording': False},
