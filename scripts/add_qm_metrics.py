@@ -19,13 +19,7 @@ args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 session = db.sessionmaker()
 
-files = args.files
-if len(files) == 0:
-    import sys
-    print >>sys.stderr, 'Please provide a list of quality metric files.'
-    sys.exit(1)
-
-for f in files:
+for f in args.files:
     session.ingest_metrics_file(f, args.type)
 
 session.commit()
