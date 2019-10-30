@@ -8,10 +8,6 @@ Script to add quality metrics file to M&C database.
 """
 from __future__ import absolute_import, division, print_function
 
-import os
-import numpy as np
-import warnings
-
 import hera_mc.mc as mc
 
 parser = mc.get_mc_argument_parser()
@@ -23,13 +19,7 @@ args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 session = db.sessionmaker()
 
-files = args.files
-if len(files) == 0:
-    import sys
-    print >>sys.stderr, 'Please provide a list of quality metric files.'
-    sys.exit(1)
-
-for f in files:
+for f in args.files:
     session.ingest_metrics_file(f, args.type)
 
 session.commit()
