@@ -10,10 +10,29 @@ below.
 
 Installation steps are:
 
+* [0.] We strongly recommend installing dependencies (e.g. via conda)
 * [1.] Install hera_mc
 * [2.] Setup database configuration file
 * [3.] Install PostgreSQL (if not using SQLITE)
 
+[0.] Optionally install dependencies
+---
+
+The dependencies are:
+- six
+- numpy
+- astropy
+- sqlalchemy
+- psycopg2
+- alembic
+- python-dateutil
+- tabulate
+- pandas
+- psutil
+- cartopy
+- pyyaml
+
+All the dependencies should be available via conda.
 
 [1.] Install hera_mc
 ---
@@ -23,7 +42,12 @@ Clone the following two repositories:
 * https://github.com/HERA-Team/hera_cm_db_updates
 
 Then install by:
-1. within the hera_mc directory type `pip install .` [This is preferred over `python setup.py install`]
+1. within the hera_mc directory type `pip install .`
+[This is preferred over `python setup.py install`]. Note you can add
+`--no-deps` to the pip call if you want to manage dependencies yourself
+(e.g. with conda) and you can add `-e` for a developer style install that will
+always use the code currently on your machine (so you don't have to reinstall
+every time you change something).
 2. in the hera_cm_db_updates directory type `mc_setup_home.py`
 
 To run hera_mc, you will likely need to install some additional python modules.
