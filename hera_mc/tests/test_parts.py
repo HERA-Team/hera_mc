@@ -213,6 +213,11 @@ def test_get_revisions_of_type(parts, capsys):
     captured = capsys.readouterr()
     assert '1230372018' in captured.out.strip()
     assert revision[0].hpn == 'HH700'
+    with pytest.raises(ValueError) as ml:
+        cm_revisions.get_revisions_of_type('HH700', 'FULL')
+    assert str(ml.value).startswith('FULL')
+    rev = cm_revisions.get_last_revision('TEST', parts.test_session)
+    assert rev[0].hpn == 'TEST'
 
 
 def test_datetime(parts):
