@@ -122,11 +122,11 @@ def test_various_dossier(capsys):
     print(d)
     captured = capsys.readouterr()
     assert captured.out.strip() == 'A:B -- test'
-    d.connections.down = {'B': 'b'}
-    d.connections.up = {'A': 'a'}
+    d.connections.down = {'B': None}
+    d.connections.up = {'A': None}
     d.input_ports = ['b']
     d.output_ports = ['a']
-    x = d.table_row(['up.', 'down.'], None)
+    x = d.table_row(['up.', 'down.'], 'A')
     assert len(x) == 0
 
 
