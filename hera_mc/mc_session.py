@@ -3428,7 +3428,7 @@ class MCSession(Session):
             Observation identification number.
         ant : int
             Antenna number.
-        pol : str ('x' or 'y')
+        pol : str ('x', 'y', 'n', or 'e')
             Polarization name.
         metric : str
             Metric name, foreign key into `metric_list`.
@@ -3451,7 +3451,7 @@ class MCSession(Session):
         ------------
         ant : int or list of integers
             Antenna number. Defaults to returning all antennas.
-        pol : str ('x' or 'y'), or list
+        pol : str ('x', 'y', 'n', or 'e'), or list
             Polarization. Defaults to returning all pols.
         metric : str or list of strings
             Metric name. Defaults to returning all metrics.

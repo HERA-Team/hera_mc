@@ -29,7 +29,7 @@ class AntMetrics(MCDeclarativeBase):
     obsid:      observation identification number, generally equal to the floor
                 of the start time in gps seconds (long integer)
     ant:        Antenna number (int >= 0)
-    pol:        Polarization ('x' or 'y')
+    pol:        Polarization ('x', 'y', 'n', or 'e')
     metric:     Name of metric (str)
     mc_time:    time metric is reported to M&C in floor(gps seconds) (BigInteger)
     val:        Value of metric (double)
@@ -60,7 +60,7 @@ class AntMetrics(MCDeclarativeBase):
             observation identification number.
         ant: integer
             antenna number
-        pol: string ('x' or 'y')
+        pol: string ('x', 'y', 'n', or 'e')
             polarization
         metric: string
             metric name
@@ -78,10 +78,10 @@ class AntMetrics(MCDeclarativeBase):
         try:
             pol = str(pol)
         except ValueError:
-            raise ValueError('pol must be string "x" or "y".')
+            raise ValueError('pol must be string "x", "y", "n", or "e".')
         pol = pol.lower()
-        if pol not in ('x', 'y'):
-            raise ValueError('pol must be string "x" or "y".')
+        if pol not in ('x', 'y', 'n', 'e'):
+            raise ValueError('pol must be string "x", "y", "n", or "e".')
         if not isinstance(metric, six.string_types):
             raise ValueError('metric must be string.')
         if not isinstance(db_time, Time):
