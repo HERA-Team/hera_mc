@@ -1493,7 +1493,7 @@ def test_get_node_snap_from_serial_multiple_revs(mcsession):
     mcsession.commit()
     node, snap_loc_num = checkWarnings(mcsession._get_node_snap_from_serial, ['SNPD000703'],
                                        message="Multiple SNPD000703 snaps were found, "
-                                       "please specify the revision. Setting node and snap "
+                                       "which shouldn't happen. Setting node and snap "
                                        "location numbers to None")
     assert node is None
     assert snap_loc_num is None

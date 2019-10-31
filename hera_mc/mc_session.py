@@ -2975,7 +2975,7 @@ class MCSession(Session):
             self._insert_ignoring_duplicates(SNAPConfigVersion,
                                              snap_version_list)
 
-    def _get_node_snap_from_serial(self, snap_serial, rev=None, session=None):
+    def _get_node_snap_from_serial(self, snap_serial, session=None):
         """
         Get SNAP connection information from SNAP serial number.
 
@@ -2983,8 +2983,6 @@ class MCSession(Session):
         ----------
         snap_serial : str
             SNAP serial number.
-        rev : str or None
-            SNAP revision number.  If None it uses available.
         session : Session object
             Session to pass to cm_handling.Handling. Defaults to self.
 
@@ -3001,7 +2999,7 @@ class MCSession(Session):
             session = self
 
         cmh = cm_handling.Handling(session)
-        conn_dossier = cmh.get_dossier(snap_serial, rev=rev, at_date='now')
+        conn_dossier = cmh.get_dossier(snap_serial, rev=None, at_date='now')
 
         if len(conn_dossier.keys()) == 0:
             warnings.warn('No active dossiers returned for snap serial {snn}. '
@@ -3010,8 +3008,8 @@ class MCSession(Session):
             return None, None
 
         if len(conn_dossier.keys()) > 1:
-            warnings.warn('Multiple {} snaps were found, please specify the revision. '
-                          'Setting node and snap location numbers to None'
+            warnings.warn("Multiple {} snaps were found, which shouldn't happen. "
+                          "Setting node and snap location numbers to None"
                           .format(snap_serial))
             return None, None
 
