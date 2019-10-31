@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 from astropy.time import Time
 
-from hera_mc import cm_partconnect, cm_utils, cm_handling, cm_revisions
+from hera_mc import cm_partconnect, cm_utils, cm_handling, cm_revisions, cm_dossier
 
 
 @pytest.fixture(scope='function')
@@ -114,6 +114,20 @@ def test_show_dossier(parts, capsys):
         hpn=['HH700'], rev=['A'], at_date='now', exact_match=True)
     captured = parts.cm_handle.show_dossier(located, ['geo'])
     assert '540901.6E, 6601070.7N, 1052.6m' in captured
+
+
+def test_various_dossier(capsys):
+    d = cm_dossier.PartEntry('A', 'B')
+    d.part = 'test'
+    print(d)
+    captured = capsys.readouterr()
+    assert captured.out.strip() == 'A:B -- test'
+    d.connections.down = {'B': 'b'}
+    d.connections.up = {'A': 'a'}
+    d.input_ports = ['b']
+    d.output_ports = ['a']
+    x = d.table_row(['up.', 'down.'], None)
+    assert len(x) == 0
 
 
 def test_part_info(parts, capsys):
