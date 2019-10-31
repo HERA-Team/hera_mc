@@ -44,10 +44,10 @@ if __name__ == "__main__":
             pipeline_list=args.pipeline_list,
             rtp_git_version=hera_opm_version_info['version'],
             rtp_git_hash=hera_opm_version_info['git_hash'],
-            hera_qm_git_hash=hera_qm_version_info['version'],
-            hera_qm_git_version=hera_qm_version_info['git_hash'],
-            hera_cal_git_hash=hera_cal_version_info['version'],
-            hera_cal_git_version=hera_cal_version_info['git_hash'],
+            hera_qm_git_version=hera_qm_version_info['version'],
+            hera_qm_git_hash=hera_qm_version_info['git_hash'],
+            hera_cal_git_version=hera_cal_version_info['version'],
+            hera_cal_git_hash=hera_cal_version_info['git_hash'],
             pyuvdata_git_version=pyuvdata_version_info['version'],
             pyuvdata_git_hash=pyuvdata_version_info['git_hash']
 
