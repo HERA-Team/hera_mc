@@ -86,7 +86,7 @@ def test_AntMetrics(mcsession, pol_x, pol_y):
      ]
 
 )
-def test_add_AntMetrics_errors(mcsession, ant, pol, metric, mc_time, val, err_msg):
+def test_add_AntMetrics_errors(mcsession, ant, pol, metric, val, err_msg):
     test_session = mcsession
     # Initialize
     t1 = Time('2016-01-10 01:15:23', scale='utc')
