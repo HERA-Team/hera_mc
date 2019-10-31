@@ -102,7 +102,7 @@ class CorrelatorControlState(MCDeclarativeBase):
             Astropy time object based on a timestamp reported by the correlator.
         state_type : str
             Must be a key in state_dict (e.g. 'taking_data', 'phase_switching',
-            'noise_diode').
+            'noise_diode', 'load').
         state : bool
             Is the state_type true or false.
 
