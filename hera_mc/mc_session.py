@@ -1967,7 +1967,7 @@ class MCSession(Session):
             Ignored if most_recent is True.
         state_type : str
             must be a key in correlator.state_dict (e.g. 'taking_data',
-            'phase_switching', 'noise_diode')
+            'phase_switching', 'noise_diode', 'load')
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
