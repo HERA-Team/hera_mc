@@ -24,7 +24,11 @@ def metrics_dict():
     return get_metrics_dict()
 
 
-def test_AntMetrics(mcsession):
+@pytest.mark.parametrize('pol_x,pol_y', [('x', 'y'),
+                                         ('n', 'e')
+                                         ]
+                         )
+def test_AntMetrics(mcsession, pol_x, pol_y):
     test_session = mcsession
     # Initialize
     t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -41,51 +45,96 @@ def test_AntMetrics(mcsession):
     test_session.commit()
 
     # now the tests
-    test_session.add_ant_metric(obsid, 0, 'x', 'test', 4.5)
+    test_session.add_ant_metric(obsid, 0, pol_x, 'test', 4.5)
     r = test_session.get_ant_metric(metric='test')
     assert len(r) == 1
-    assert r[0].antpol == (0, 'x')
+    assert r[0].antpol == (0, pol_x)
     assert r[0].metric == 'test'
     assert r[0].val == 4.5
 
     # Test more exciting queries
-    test_session.add_ant_metric(obsid, 0, 'y', 'test', 2.5)
-    test_session.add_ant_metric(obsid, 3, 'x', 'test', 2.5)
-    test_session.add_ant_metric(obsid, 3, 'y', 'test', 2.5)
+    test_session.add_ant_metric(obsid, 0, pol_y, 'test', 2.5)
+    test_session.add_ant_metric(obsid, 3, pol_x, 'test', 2.5)
+    test_session.add_ant_metric(obsid, 3, pol_y, 'test', 2.5)
     r = test_session.get_ant_metric()
     assert len(r) == 4
     r = test_session.get_ant_metric(ant=0)
     assert len(r) == 2
     for ri in r:
         assert ri.ant == 0
-    r = test_session.get_ant_metric(pol='x')
+    r = test_session.get_ant_metric(pol=pol_x)
     assert len(r) == 2
     for ri in r:
-        assert ri.pol == 'x'
+        assert ri.pol == pol_x
     r = test_session.get_ant_metric(starttime=obsid - 10, stoptime=obsid + 4)
     assert len(r) == 4
     t1 = Time(obsid - 10, format='gps')
     t2 = Time(obsid + 4, format='gps')
     r = test_session.get_ant_metric(starttime=t1, stoptime=t2)
     assert len(r) == 4
-    r = test_session.get_ant_metric(ant=[0, 3], pol=['x', 'y'])
+    r = test_session.get_ant_metric(ant=[0, 3], pol=[pol_x, pol_y])
     assert len(r) == 4
 
+
+@pytest.mark.parametrize(
+    'ant,pol,metric,mc_time,val,err_msg',
+    [('0', 'x', 'test', 4.5, 'antenna must be an integer.'),
+     (0, u'\xff', 'test', 4.5, 'pol must be string"x"'),
+     (0, 'Q', 'test', 4.5, 'pol must be string'),
+     (0, 'x', 4, 4.5, 'metric must be string.'),
+     (0, 'x', 'test', 'value', 'val must be castable as float'),
+     ]
+
+)
+def test_add_AntMetrics_errors(mcsession, ant, pol, metric, mc_time, val, err_msg):
+    test_session = mcsession
+    # Initialize
+    t1 = Time('2016-01-10 01:15:23', scale='utc')
+    t2 = t1 + TimeDelta(120.0, format='sec')
+    obsid = utils.calculate_obsid(t1)
+    # Create obs to satifsy foreign key constraints
+    test_session.add_obs(t1, t2, obsid)
+    test_session.add_obs(t1 - TimeDelta(10.0, format='sec'), t2,
+                         obsid - 10)
+    test_session.add_obs(t1 + TimeDelta(10.0, format='sec'), t2,
+                         obsid + 10)
+    # Same for metric description
+    test_session.add_metric_desc('test', 'Test metric')
+    test_session.commit()
+
     # Test exceptions
-    pytest.raises(ValueError, test_session.add_ant_metric, 'obs',
-                  0, 'x', 'test', 4.5)
-    pytest.raises(ValueError, test_session.add_ant_metric, obsid,
-                  '0', 'x', 'test', 4.5)
-    pytest.raises(ValueError, test_session.add_ant_metric, obsid,
-                  0, 'N', 'test', 4.5)
-    pytest.raises(ValueError, test_session.add_ant_metric, obsid,
-                  0, u'\xff', 'test', 4.5)
-    pytest.raises(ValueError, test_session.add_ant_metric, obsid,
-                  0, 'x', 4, 4.5)
-    pytest.raises(ValueError, test_session.add_ant_metric, obsid,
-                  0, 'x', 'test', 'value')
-    pytest.raises(ValueError, AntMetrics.create, obsid, 0, 'x',
-                  'test', obsid, 4.5)
+    with pytest.raises(ValueError) as cm:
+        test_session.add_ant_metric(obsid, ant, pol, metric, mc_time, val)
+    assert str(cm.value).startswith(err_msg)
+
+
+def test_add_AntMetrics_bad_obsid(mcsession):
+    test_session = mcsession
+    # Initialize
+    t1 = Time('2016-01-10 01:15:23', scale='utc')
+    t2 = t1 + TimeDelta(120.0, format='sec')
+    obsid = utils.calculate_obsid(t1)
+    # Create obs to satifsy foreign key constraints
+    test_session.add_obs(t1, t2, obsid)
+    test_session.add_obs(t1 - TimeDelta(10.0, format='sec'), t2,
+                         obsid - 10)
+    test_session.add_obs(t1 + TimeDelta(10.0, format='sec'), t2,
+                         obsid + 10)
+    # Same for metric description
+    test_session.add_metric_desc('test', 'Test metric')
+    test_session.commit()
+    with pytest.raises(ValueError) as cm:
+        test_session.add_ant_metric('obs', 0, 'x', 'test', 4.5)
+    assert str(cm.value).startswith('obsid must be an integer')
+
+
+def test_create_AntMetrics_bad_mc_time(mcsession):
+    # # Initialize a time
+    t1 = Time('2016-01-10 01:15:23', scale='utc')
+    obsid = utils.calculate_obsid(t1)
+    with pytest.raises(ValueError) as cm:
+        AntMetrics.create(obsid, 0, 'x', 'test', obsid, 4.5)
+    assert str(cm.value).startswith('db_time must be and astropy Time object')
 
 
 def test_ArrayMetrics(mcsession):
