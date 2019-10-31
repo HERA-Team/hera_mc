@@ -134,7 +134,7 @@ def test_create_AntMetrics_bad_mc_time(mcsession):
     obsid = utils.calculate_obsid(t1)
     with pytest.raises(ValueError) as cm:
         AntMetrics.create(obsid, 0, 'x', 'test', obsid, 4.5)
-    assert str(cm.value).startswith('db_time must be and astropy Time object')
+    assert str(cm.value).startswith('db_time must be an astropy Time object')
 
 
 def test_ArrayMetrics(mcsession):
