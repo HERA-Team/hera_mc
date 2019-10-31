@@ -27,7 +27,8 @@ DEFAULT_REDIS_ADDRESS = "redishost"
 # key is state type, value is method name in hera_corr_cm
 state_dict = {'taking_data': 'is_recording',
               'phase_switching': 'phase_switch_is_on',
-              'noise_diode': 'noise_diode_is_on'}
+              'noise_diode': 'noise_diode_is_on',
+              'load': 'load_is_on'}
 
 tag_list = ['science', 'engineering']
 
