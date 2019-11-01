@@ -18,7 +18,7 @@ import pyuvdata
 
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('file', metavar='file', type=str, nargs='+',
+    parser.add_argument('file', metavar='file', type=str, nargs=1,
                         help='Basename of file procesed by RTP')
     parser.add_argument('--pipeline_list', dest='pipeline_list', type=str,
                         required=True,
