@@ -1464,19 +1464,26 @@ def test_snap_status_errors(mcsession):
 
 
 def test_get_node_snap_from_serial_nodossier(mcsession):
-    node, snap_loc_num = checkWarnings(mcsession._get_node_snap_from_serial,
-                                       ['foo'],
-                                       message='No active dossiers')
-
+    node, snap_loc_num = checkWarnings(mcsession._get_node_snap_from_serial, ['foo'],
+                                       message="No active dossiers returned "
+                                       "for snap serial foo. Setting node and snap location numbers to None")
     assert node is None
     assert snap_loc_num is None
 
 
-def test_get_node_snap_from_serial_multiple_locs(mcsession):
+def test_get_node_snap_from_serial_multiple_revs(mcsession):
     """Test multiple snap location numbers."""
+    part = cm_partconnect.Parts()
+    part.hpn = 'SNPD000703'
+    part.hpn_rev = 'B'
+    part.hptype = 'snap'
+    part.manufacture_number = 'D000703'
+    part.start_gpstime = 1230375618
+    mcsession.add(part)
+    mcsession.commit()
     connection = cm_partconnect.Connections()
     connection.upstream_part = 'SNPD000703'
-    connection.up_part_rev = 'A'
+    connection.up_part_rev = 'B'
     connection.downstream_part = 'N701'
     connection.down_part_rev = 'A'
     connection.upstream_output_port = 'rack'
@@ -1484,77 +1491,12 @@ def test_get_node_snap_from_serial_multiple_locs(mcsession):
     connection.start_gpstime = 1230375618
     mcsession.add(connection)
     mcsession.commit()
-    node, snap_loc_num = checkWarnings(
-        mcsession._get_node_snap_from_serial, ['SNPD000703'],
-        message='Multiple snap location numbers returned')
-    assert node == 701
-    assert snap_loc_num is None
-
-
-def test_get_node_snap_from_serial_multiple_nodes(mcsession):
-    """Test multiple node numbers."""
-    connection = cm_partconnect.Connections()
-    connection.upstream_part = 'SNPD000703'
-    connection.up_part_rev = 'A'
-    connection.downstream_part = 'N700'
-    connection.down_part_rev = 'A'
-    connection.upstream_output_port = 'rack'
-    connection.downstream_input_port = 'loc3'
-    connection.start_gpstime = 1230375618
-    mcsession.add(connection)
-    mcsession.commit()
-    node, snap_loc_num = checkWarnings(
-        mcsession._get_node_snap_from_serial, ['SNPD000703'],
-        message='Multiple node connections returned')
+    node, snap_loc_num = checkWarnings(mcsession._get_node_snap_from_serial, ['SNPD000703'],
+                                       message="Multiple SNPD000703 snaps were found, "
+                                       "which shouldn't happen. Setting node and snap "
+                                       "location numbers to None")
     assert node is None
     assert snap_loc_num is None
-
-
-def test_get_node_snap_from_serial_multiple_noderevs(mcsession):
-    """Test multiple node revisions."""
-    # add part for new revision
-    part = cm_partconnect.Parts()
-    part.hpn = 'N701'
-    part.hpn_rev = 'B'
-    part.hptype = 'node'
-    part.manufacture_number = 'N701'
-    part.start_gpstime = 1230375618
-    mcsession.add(part)
-    mcsession.commit()
-
-    connection = cm_partconnect.Connections()
-    connection.upstream_part = 'SNPD000703'
-    connection.up_part_rev = 'A'
-    connection.downstream_part = 'N701'
-    connection.down_part_rev = 'B'
-    connection.upstream_output_port = 'rack'
-    connection.downstream_input_port = 'loc3'
-    connection.start_gpstime = 1230375718
-    mcsession.add(connection)
-    mcsession.commit()
-    node, snap_loc_num = checkWarnings(
-        mcsession._get_node_snap_from_serial, ['SNPD000703'],
-        message='Multiple node connections returned')
-    assert node is None
-    assert snap_loc_num is None
-
-
-def test_get_node_snap_from_serial_multiple_times_sameloc(mcsession):
-    """Test multiple times, same location."""
-    connection = cm_partconnect.Connections()
-    connection.upstream_part = 'SNPD000703'
-    connection.up_part_rev = 'A'
-    connection.downstream_part = 'N701'
-    connection.down_part_rev = 'A'
-    connection.upstream_output_port = 'rack'
-    connection.downstream_input_port = 'loc3'
-    connection.start_gpstime = 1230375718
-    mcsession.add(connection)
-    mcsession.commit()
-    node, snap_loc_num = checkWarnings(
-        mcsession._get_node_snap_from_serial, ['SNPD000703'], nwarnings=0)
-    assert node == 701
-    assert snap_loc_num == 3
 
 
 def test_get_node_snap_from_serial_multiple_times_diffloc(mcsession):
@@ -1579,146 +1521,6 @@ def test_get_node_snap_from_serial_multiple_times_diffloc(mcsession):
                                        ['SNPD000703'], nwarnings=0)
     assert node == 701
     assert snap_loc_num == 2
-
-
-def test_get_node_snap_from_serial_multiple_dossiers(mcsession):
-    """Test multiple active dossiers."""
-    # add part for new revision
-    part = cm_partconnect.Parts()
-    part.hpn = 'SNPD000703'
-    part.hpn_rev = 'B'
-    part.hptype = 'snap'
-    part.manufacture_number = 'SNPD000703'
-    part.start_gpstime = 1230375618
-    mcsession.add(part)
-    mcsession.commit()
-
-    connection = cm_partconnect.Connections()
-    connection.upstream_part = 'SNPD000703'
-    connection.up_part_rev = 'B'
-    connection.downstream_part = 'N701'
-    connection.down_part_rev = 'A'
-    connection.upstream_output_port = 'rack'
-    connection.downstream_input_port = 'loc2'
-    connection.start_gpstime = 1230375618
-    mcsession.add(connection)
-    mcsession.commit()
-    node, snap_loc_num = checkWarnings(
-        mcsession._get_node_snap_from_serial, ['SNPD000703'],
-        message='Multiple active dossiers returned')
-    assert node is None
-    assert snap_loc_num is None
-
-
-def test_get_node_snap_from_serial_no_loc(mcsession):
-    # test no 'loc' in dossier
-    # add part
-    part = cm_partconnect.Parts()
-    part.hpn = 'SNPD000704'
-    part.hpn_rev = 'A'
-    part.hptype = 'snap'
-    part.manufacture_number = 'SNPD000704'
-    part.start_gpstime = 1230375618
-    mcsession.add(part)
-    mcsession.commit()
-
-    connection = cm_partconnect.Connections()
-    connection.upstream_part = 'SNPD000704'
-    connection.up_part_rev = 'A'
-    connection.downstream_part = 'N701'
-    connection.down_part_rev = 'A'
-    connection.upstream_output_port = 'rack'
-    connection.downstream_input_port = 'slot2'
-    connection.start_gpstime = 1230375618
-    mcsession.add(connection)
-    mcsession.commit()
-    node, snap_loc_num = mcsession._get_node_snap_from_serial('SNPD000704')
-    assert snap_loc_num is None
-
-
-def test_get_node_snap_from_serial_no_locnum(mcsession):
-    # test no number after 'loc' in dossier
-    # add part
-    part = cm_partconnect.Parts()
-    part.hpn = 'SNPD000704'
-    part.hpn_rev = 'A'
-    part.hptype = 'snap'
-    part.manufacture_number = 'SNPD000704'
-    part.start_gpstime = 1230375618
-    mcsession.add(part)
-    mcsession.commit()
-
-    connection = cm_partconnect.Connections()
-    connection.upstream_part = 'SNPD000704'
-    connection.up_part_rev = 'A'
-    connection.downstream_part = 'N701'
-    connection.down_part_rev = 'A'
-    connection.upstream_output_port = 'rack'
-    connection.downstream_input_port = 'loctwo'
-    connection.start_gpstime = 1230375618
-    mcsession.add(connection)
-    mcsession.commit()
-    node, snap_loc_num = mcsession._get_node_snap_from_serial('SNPD000704')
-    assert snap_loc_num is None
-
-
-def test_get_node_snap_from_serial_no_node(mcsession):
-    # test no 'N' before upstream part
-    # add part
-    part = cm_partconnect.Parts()
-    part.hpn = 'SNPD000704'
-    part.hpn_rev = 'A'
-    part.hptype = 'snap'
-    part.manufacture_number = 'SNPD000704'
-    part.start_gpstime = 1230375618
-    mcsession.add(part)
-    mcsession.commit()
-
-    connection = cm_partconnect.Connections()
-    connection.upstream_part = 'SNPD000704'
-    connection.up_part_rev = 'A'
-    connection.downstream_part = 'PAM710'
-    connection.down_part_rev = 'A'
-    connection.upstream_output_port = 'rack'
-    connection.downstream_input_port = 'loc2'
-    connection.start_gpstime = 1230375618
-    mcsession.add(connection)
-    node, snap_loc_num = mcsession._get_node_snap_from_serial('SNPD000704')
-    assert node is None
-
-
-def test_get_node_snap_from_serial_no_nodenum(mcsession):
-    # test no number after 'N' in upstream part
-    # add part
-    part = cm_partconnect.Parts()
-    part.hpn = 'SNPD000704'
-    part.hpn_rev = 'A'
-    part.hptype = 'snap'
-    part.manufacture_number = 'SNPD000704'
-    part.start_gpstime = 1230375618
-    mcsession.add(part)
-    mcsession.commit()
-
-    part = cm_partconnect.Parts()
-    part.hpn = 'Nseven'
-    part.hpn_rev = 'A'
-    part.hptype = 'node'
-    part.manufacture_number = 'Nseven'
-    part.start_gpstime = 1230375618
-    mcsession.add(part)
-    mcsession.commit()
-
-    connection = cm_partconnect.Connections()
-    connection.upstream_part = 'SNPD000704'
-    connection.up_part_rev = 'A'
-    connection.downstream_part = 'Nseven'
-    connection.down_part_rev = 'A'
-    connection.upstream_output_port = 'rack'
-    connection.downstream_input_port = 'loc2'
-    connection.start_gpstime = 1230375618
-    mcsession.add(connection)
-    node, snap_loc_num = mcsession._get_node_snap_from_serial('SNPD000704')
-    assert node is None
 
 
 def test_get_snap_hostname_from_serial(mcsession, snapstatus):

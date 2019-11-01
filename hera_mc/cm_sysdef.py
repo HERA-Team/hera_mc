@@ -8,6 +8,8 @@ from argparse import Namespace
 from hera_mc import cm_utils
 
 hera_zone_prefixes = ['HH', 'HA', 'HB']
+operational_hookup_types = ['parts_hera', 'parts_paper']
+all_port_types = ['sigpath', 'physical']
 
 
 class Sysdef:
@@ -15,6 +17,8 @@ class Sysdef:
     This class defines the system architecture for the telescope array.  The intent is to
     have all of the specific defining parameters here in one place.  If a new system is required,
     this may be extended by defining the parameters here.
+
+    This only defines the signal path ports.
 
     The two-part "meta" assumption is that:
         a) polarized ports start with one of the polarization characters ('e' or 'n')
@@ -140,6 +144,17 @@ class Sysdef:
                 'redirect_part_types': self.redirect_part_types,
                 'single_pol_labeled_parts': self.single_pol_labeled_parts,
                 'full_connection_path': self.full_connection_path}
+
+    def get_all_ports(self, hookup_types):
+        all_ports = []
+        for hut in hookup_types:
+            for key in self.port_def[hut].keys():
+                for dir in ['up', 'down']:
+                    for ports in self.port_def[hut][key][dir]:
+                        for port in ports:
+                            if port is not None:
+                                all_ports.append(port)
+        return all_ports
 
     def handle_redirect_part_types(self, part, active):
         """

@@ -77,15 +77,15 @@ def test_hookup_dossier(sys_handle, capsys):
     print(hude)
     captured = capsys.readouterr()
     assert '<testing:key:' in captured.out.strip()
-    hude.get_part_in_hookup_from_type('rusty_scissors', include_revs=True,
-                                      include_ports=True)
+    hude.get_part_from_type('rusty_scissors', include_revs=True,
+                            include_ports=True)
     hude.columns = {'x': 'y', 'hu': 'b', 'm': 'l'}
     hude.hookup['hu'] = []
     hude.hookup['hu'].append(Namespace(
         downstream_part='shoe', down_part_rev='testing',
         downstream_input_port='nail', upstream_output_port='screw'))
-    xret = hude.get_part_in_hookup_from_type('b', include_revs=True,
-                                             include_ports=True)
+    xret = hude.get_part_from_type('b', include_revs=True,
+                                   include_ports=True)
     assert xret['hu'] == 'shoe:testing<screw'
 
     # test errors
@@ -136,6 +136,28 @@ def test_sysdef(sys_handle, mcsession):
     part = Namespace(part_type='nope')
     pytest.raises(ValueError, sysdef.setup, part, pol='nope',
                   hookup_type='parts_hera')
+    curr = active.is_data_current('parts', None)
+    assert curr
+    curr = active.set_times(cm_utils.get_astropytime('2017-07-03'))
+    assert int(curr) == 1183075218
+    active.load_parts()
+    x = active.check()
+    assert len(x) == 0
+    active.parts = 'test'
+    active.load_parts(None)
+    assert active.parts == 'test'
+    active.connections = 'test'
+    active.load_connections(None)
+    assert active.connections == 'test'
+    active.info = 'test'
+    active.load_info(None)
+    assert active.info == 'test'
+    active.apriori = 'test'
+    active.load_apriori(None)
+    assert active.apriori == 'test'
+    active.geo = 'test'
+    active.load_geo(None)
+    assert active.geo == 'test'
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):
@@ -201,7 +223,7 @@ def test_get_pam_from_hookup(sys_handle, mcsession):
     hookup = cm_hookup.Hookup(mcsession)
     hud = hookup.get_hookup(['HH701'], at_date='2019-07-03', exact_match=True,
                             hookup_type='parts_hera')
-    pams = hud[list(hud.keys())[0]].get_part_in_hookup_from_type(
+    pams = hud[list(hud.keys())[0]].get_part_from_type(
         'post-amp', include_ports=True, include_revs=True)
     assert len(pams) == 2
     # the actual pam number (the thing written on the case)

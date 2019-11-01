@@ -3,35 +3,35 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""This is meant to hold utility scripts for handling parts and connections
+"""
+Utility scripts to display part and connection information.
+
+Actions 'parts', 'connections', 'notes' differ only by defining a different set of columns,
+which may be overridden by instead using the args.columns parameter (see cm_dossier.PartEntry
+for allowed columns.)
 
 """
 from __future__ import absolute_import, division, print_function
-
-import os.path
-import sys
-import six
 
 from hera_mc import mc, cm_handling, cm_utils
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('action', nargs='?', help="Actions are:  info, types, part_info, conn_info, rev_info, \
-                                                   physical, check_rev.  'info' for more.", default='part_info')
+    parser.add_argument('action', nargs='?', help="Actions are:  parts, connections, notes, revisions", default='parts')
     # set values for 'action' to use
-    parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv-list. [None]", default=None)
-    parser.add_argument('-r', '--revision', help="Specify revision or last/active/full/all for hpn.  [active]", default='active')
-    parser.add_argument('--port', help="Specify port [all]", default='all')
+    parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv-list.")
+    parser.add_argument('-r', '--revision', help="Revision for hpn, or None.", default=None)
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
-    parser.add_argument('--notes', help="<For action=part_info>:  Displays part notes with posting dates and not other info",
-                        action='store_true')
-    parser.add_argument('--sort_notes_by', help="<For action=part_info --notes> Can sort the notes listing by part \
-                        ('part') or posting time ('post') [part]", default='part')
+    parser.add_argument('--columns', help="Custom columns, see cm_dossier.PartEntry (overrides)", default=None)
+    parser.add_argument('--list-all-columns', dest='list_columns', help="Show a list of all available columns", action='store_true')
+    parser.add_argument('--hide-sigpath', dest='sigpath', help="Hide signal path ports", action='store_false')
+    parser.add_argument('--hide-phys', dest='phys', help="Hide physical ports", action='store_false')
+    parser.add_argument('--ports', help="Include only these ports (overrides), csv-list", default=None)
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
-    parser.add_argument('--notes_start_date', help="<For part_info notes> start_date for notes [<]", default='<')
-    parser.add_argument('--notes_start_time', help="<For part_info notes> start_time for notes", default=0.0)
+    parser.add_argument('--notes_start_date', help="<For notes> start_date for notes [<]", default='<')
+    parser.add_argument('--notes_start_time', help="<For notes> start_time for notes", default=0.0)
 
     args = parser.parse_args()
 
@@ -41,83 +41,70 @@ if __name__ == '__main__':
     date_query = cm_utils.get_astropytime(args.date, args.time)
     notes_start_date = cm_utils.get_astropytime(args.notes_start_date, args.notes_start_time)
 
-    if action_tag == 'in':
-        print(
-            """
-        Available actions are (only need first two letters):
-            info:  this information
-            part_info:  provide a summary of given part/rev
-            conn_info:  provide a summary of connections to given part/rev/port
-            rev_info:  provide a summary of revisions of given part/rev
-            types:  provide a summary of part types
-            physical:  shows the "physical" connections, which are those _not_ needed
-                       to uniquely track antenna-to-correlator but that we still want to
-                       track though, e.g. power, rack location, ...
-                       (Use 'hookup.py' to look at the connections that see the
-                       station-correlator hookup)
-            check_rev:  checks whether a given part/rev exists
-
-        Args needing values (or defaulted):
-            -p/--hpn:  part name [None].  String - can be a csv list
-            -r/--revision:  revision (particular/last/active/full/all) [Active]
-            --port:  port name [ALL]
-            --date:  query date [now]
-            --time:  query time
-            --notes_start_date:  start date for notes display [<]
-            --notes_stop_time:  start time for notes display
-            --sort_notes_by:  for the full notes listing (i.e. where hpn=None), you may sort by
-                              the part number ('part') or by the posting time ('post')
-
-        Args that are flags
-            -e/--exact-match:  match part number exactly, or specify first characters [False]
-            --notes:  <For part_info>  Displays part notes with posting dates
-        """
-        )
-        sys.exit()
-
     # Start session
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
     handling = cm_handling.Handling(session)
 
-    # Process
-    if action_tag == 'ty':  # types of parts
-        part_type_dict = handling.get_part_types(args.port, date_query)
-        handling.show_part_types()
-        sys.exit()
-
-    if action_tag == 'ph':  # physical port connections
-        ppc = handling.get_physical_connections(date_query)
-        handling.show_connections(ppc, headers=['Upstream', '<uOutput:', ':dInput>', 'Downstream', 'dStart', 'dStop'])
-        sys.exit()
-
-    if args.hpn is None and not (action_tag == 'pa' and args.notes):
-        print("Need to supply a part name.")
-        sys.exit()
-
-    if action_tag == 'pa':  # part_info
-        part_dossier = handling.get_part_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
-                                                 notes_start_date=notes_start_date, sort_notes_by='part',
-                                                 exact_match=args.exact_match, full_version=True)
-        handling.show_parts(part_dossier, args.notes)
-    elif action_tag == 'co':  # connection_info
-        connection_dossier = handling.get_part_connection_dossier(
-            hpn=args.hpn, rev=args.revision, port=args.port,
-            at_date=date_query, exact_match=args.exact_match)
-        handling.show_connections(connection_dossier, verbosity=args.verbosity)
-    elif action_tag == 're':  # revisions
+    if action_tag == 're':  # revisions
         for hpn in args.hpn:
             rev_ret = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
-            if hpn.lower() != 'help':
-                cm_handling.cmrev.show_revisions(rev_ret)
-    elif action_tag == 'ch':  # check revisions
-        for hpn in args.hpn:
-            rev_chk = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
-            print("{}:{} ".format(hpn, args.revision), end='')
-            if len(rev_chk):
-                for r in rev_chk:
-                    start = cm_utils.get_time_for_display(r.started)
-                    end = cm_utils.get_time_for_display(r.ended)
-                    print("found as {}:{}    start: {}  end: {}".format(r.hpn, r.rev, start, end))
-            else:
-                print("not found.")
+            cm_handling.cmrev.show_revisions(rev_ret)
+        import sys
+        sys.exit()
+
+    if args.list_columns:
+        from hera_mc import cm_dossier
+        blank = cm_dossier.PartEntry(None, None)
+        for col in blank.col_hdr.keys():
+            print('\t{:30s}\t{}'.format(col, blank.col_hdr[col]))
+        import sys
+        sys.exit()
+
+    if action_tag == 'pa':  # parts
+        if args.verbosity == 1:
+            columns = ['hpn', 'hpn_rev', 'hptype', 'input_ports', 'output_ports']
+        elif args.verbosity == 2:
+            columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_gpstime', 'stop_gpstime',
+                       'input_ports', 'output_ports', 'geo']
+        else:
+            columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_gpstime', 'stop_gpstime',
+                       'input_ports', 'output_ports', 'geo', 'comment']
+    elif action_tag == 'co':  # connections
+        if args.verbosity == 1:
+            columns = ['up.upstream_part', 'up.upstream_output_port', 'up.downstream_input_port',
+                       'hpn',
+                       'down.upstream_output_port', 'down.downstream_input_port', 'down.downstream_part']
+        elif args.verbosity == 2:
+            columns = ['up.upstream_part', 'up.up_part_rev', 'up.upstream_output_port', 'up.downstream_input_port',
+                       'hpn', 'hpn_rev',
+                       'down.upstream_output_port', 'down.downstream_input_port', 'down.downstream_part', 'down.down_part_rev']
+        else:
+            columns = ['up.start_gpstime', 'up.stop_gpstime', 'up.upstream_part', 'up.up_part_rev',
+                       'up.upstream_output_port', 'up.downstream_input_port',
+                       'hpn', 'hpn_rev',
+                       'down.upstream_output_port', 'down.downstream_input_port', 'down.downstream_part', 'down.down_part_rev',
+                       'down.start_gpstime', 'down.stop_gpstime']
+    elif action_tag == 'no':  # notes
+        if args.verbosity == 1:
+            columns = ['hpn', 'comment']
+        elif args.verbosity == 2:
+            columns = ['hpn', 'posting_gpstime', 'comment']
+        else:
+            columns = ['hpn', 'posting_gpstime', 'library_file', 'comment']
+
+    if args.columns is not None:
+        columns = args.columns
+    if args.ports is not None:
+        ports = args.ports.split(',')
+    else:
+        ports = []
+        if args.sigpath:
+            ports.append('sigpath')
+        if args.phys:
+            ports.append('physical')
+        ports = ','.join(ports)
+
+    dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
+                                   notes_start_date=notes_start_date, exact_match=args.exact_match)
+    print(handling.show_dossier(dossier, columns, ports=ports))

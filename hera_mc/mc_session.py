@@ -2999,8 +2999,7 @@ class MCSession(Session):
             session = self
 
         cmh = cm_handling.Handling(session)
-        conn_dossier = cmh.get_part_connection_dossier(
-            snap_serial, rev='active', port='all', at_date='now')
+        conn_dossier = cmh.get_dossier(snap_serial, rev=None, at_date='now')
 
         if len(conn_dossier.keys()) == 0:
             warnings.warn('No active dossiers returned for snap serial {snn}. '
@@ -3009,52 +3008,15 @@ class MCSession(Session):
             return None, None
 
         if len(conn_dossier.keys()) > 1:
-            warnings.warn('Multiple active dossiers returned for snap serial '
-                          '{snn}. Setting node and snap location numbers to '
-                          'None'.format(snn=snap_serial))
+            warnings.warn("Multiple {} snaps were found, which shouldn't happen. "
+                          "Setting node and snap location numbers to None"
+                          .format(snap_serial))
             return None, None
 
         snap_num_rev = list(conn_dossier.keys())[0]
-        node_conn = [conn for conn in conn_dossier[snap_num_rev].keys_down
-                     if conn is not None]
-
-        node_part = set()
-        node_rev = set()
-        snap_loc = set()
-        for conn in node_conn:
-            conn_tuple = cm_utils.split_connection_key(conn)
-            node_part.add(conn_tuple[0])
-            node_rev.add(conn_tuple[1])
-            snap_loc.add(conn_tuple[2])
-
-        node_part = list(node_part)
-        node_rev = list(node_rev)
-        snap_loc = list(snap_loc)
-        if len(node_part) > 1 or len(node_rev) > 1:
-            warnings.warn('Multiple node connections returned for snap serial '
-                          '{snn}. Setting node and snap location number to '
-                          'None'.format(snn=snap_serial))
-            return None, None
-
-        node_part = node_part[0]
-        try:
-            assert node_part.startswith('N')
-            nodeID = int(node_part[1:])
-        except(ValueError, AssertionError):
-            nodeID = None
-
-        if len(snap_loc) > 1:
-            warnings.warn('Multiple snap location numbers returned for snap '
-                          'serial {snn}. Setting snap location number to None'
-                          .format(snn=snap_serial))
-            snap_loc_num = None
-        else:
-            snap_loc = snap_loc[0]
-            try:
-                assert snap_loc.lower().startswith('loc')
-                snap_loc_num = int(snap_loc[3:])
-            except(ValueError, AssertionError):
-                snap_loc_num = None
+        snap_node_conn = conn_dossier[snap_num_rev].connections.up['RACK']
+        nodeID = int(snap_node_conn.downstream_part[1:])
+        snap_loc_num = int(snap_node_conn.downstream_input_port[3:])
 
         return nodeID, snap_loc_num
 

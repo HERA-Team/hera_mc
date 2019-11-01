@@ -24,8 +24,7 @@ def test_log():
 
 
 def test_various():
-    a, b, c, d = cm_utils.split_connection_key('a:b:c:d')
-    assert c[0] == 'c'
+    a = 'a'
     args = argparse.Namespace(a='def_test', unittesting='')
     x = cm_utils.query_default(a, args)
     assert x == 'def_test'
@@ -41,10 +40,23 @@ def test_various():
     args = argparse.Namespace(a='def_test', unittesting='unittest')
     x = cm_utils.query_default(a, args)
     assert x == 'unittest'
+    spk = cm_utils.make_part_key(None, None)
+    assert spk == cm_utils.system_wide_key
+    a, b, c = cm_utils.split_part_key('a:b:c')
+    assert c == 'c'
+    is_active = cm_utils.is_active(None, None, None)
+    assert is_active
+    t_tst = cm_utils.get_astropytime('now')
+    out = cm_utils.get_stopdate(t_tst)
+    assert out == t_tst
+    d = cm_utils.get_time_for_display(None)
+    assert d == 'None'
+    c = cm_utils.put_keys_in_order(['1:A:Z', '2:B:X'], 'RPN')
+    assert c[0] == '1:A:Z'
 
 
 @pytest.mark.parametrize(("input", "expected"),
-                         [(None, None), ('Test', 'Test'), (['a', 'b'], 'a,b')])
+                         [(None, None), ('Test', 'Test'), (['a', 'b'], 'a,b'), (1, '1')])
 def test_stringify(input, expected):
     x = cm_utils.stringify(input)
     if expected is not None:
@@ -54,14 +66,57 @@ def test_stringify(input, expected):
 
 
 @pytest.mark.parametrize(("input", "expected"),
-                         [(None, None), ('Test', ['Test']),
-                          ('a,b', ['a', 'b'])])
+                         [('Test', ['Test']),
+                          ('a,b', ['a', 'b']),
+                          (['Test'], ['Test']),
+                          (1, [1])])
 def test_listify(input, expected):
     x = cm_utils.listify(input)
-    if expected is not None:
-        assert x == expected
-    else:
-        assert x is expected
+    assert x == expected
+    x = cm_utils.listify(None, None_as_list=False)
+    assert x is None
+    x = cm_utils.listify(None, None_as_list=True)
+    assert x[0] is None
+
+
+def test_match_list():
+    x = cm_utils.match_list(['a', 'b'], 'c', None)
+    y = list(x)
+    assert y[1][1] == 'c'
+    x = cm_utils.match_list('a', ['b', 'c'], 'upper')
+    y = list(x)
+    assert y[1][0] == 'A'
+    x = cm_utils.match_list(1, 2, 'lower')
+    y = list(x)
+    assert y[0][0] == '1'
+    with pytest.raises(ValueError) as ml:
+        cm_utils.match_list([1, 2, 3], [1, 2, 3, 4, 5])
+    assert str(ml.value).startswith('Lists must be same length')
+    with pytest.raises(ValueError) as ml:
+        cm_utils.match_list([1], [2], 'x')
+    assert str(ml.value).startswith('Invalid case_type.')
+
+
+def test_to_upper():
+    x = cm_utils.to_upper('a')
+    assert x == 'A'
+    x = cm_utils.to_upper(['a'])
+    assert x[0] == 'A'
+    x = cm_utils.to_upper(1)
+    assert x == '1'
+    x = cm_utils.to_upper(None)
+    assert x is None
+
+
+def test_to_lower():
+    x = cm_utils.to_lower('a')
+    assert x == 'a'
+    x = cm_utils.to_lower(['a'])
+    assert x[0] == 'a'
+    x = cm_utils.to_lower(1)
+    assert x == '1'
+    x = cm_utils.to_lower(None)
+    assert x is None
 
 
 def test_verbosity():
@@ -75,7 +130,9 @@ def test_verbosity():
     assert x == 1
     x = cm_utils.parse_verbosity('vv')
     assert x == 3
-    pytest.raises(ValueError, cm_utils.parse_verbosity, 'x')
+    with pytest.raises(ValueError) as tv:
+        cm_utils.parse_verbosity('x')
+    assert str(tv.value).startswith("Invalid argument to verbosity")
 
 
 def test_datetime():

@@ -53,8 +53,11 @@ def get_revisions_of_type(hpn, rev_type, at_date='now', session=None):
             at_date = cm_utils.get_astropytime('now')
         return get_active_revision(hpn, at_date, session)
 
-    if rq.startswith('ALL'):
+    if rq.startswith('ALL') or rq.startswith('NONE'):
         return get_all_revisions(hpn, session)
+
+    if rq.startswith('FULL'):
+        raise ValueError('FULL revisions called with get_full_revision directly')
 
     return get_specific_revision(hpn, rev_type, session)
 

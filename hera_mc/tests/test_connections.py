@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 from astropy.time import Time
 
-from .. import cm_partconnect, cm_handling
+from .. import cm_partconnect, cm_handling, cm_dossier
 
 
 @pytest.fixture(scope='function')
@@ -22,7 +22,7 @@ def conns(mcsession):
     test_time = Time('2017-07-01 01:00:00', scale='utc').gps
     query_time = Time('2017-08-01 01:00:00', scale='utc')
 
-    session = mcsession
+    test_session = mcsession
     for tp in test_hpn:
         part = cm_partconnect.Parts()
         part.hpn = tp
@@ -30,8 +30,8 @@ def conns(mcsession):
         part.hptype = test_hptype
         part.manufacture_number = test_mfg
         part.start_gpstime = test_time
-        session.add(part)
-    session.commit()
+        test_session.add(part)
+    test_session.commit()
 
     # Add test connection
     connection = cm_partconnect.Connections()
@@ -42,10 +42,10 @@ def conns(mcsession):
     connection.upstream_output_port = 'up_and_out'
     connection.downstream_input_port = 'down_and_in'
     connection.start_gpstime = test_time
-    session.add(connection)
-    session.commit()
+    test_session.add(connection)
+    test_session.commit()
 
-    cm_handle = cm_handling.Handling(session)
+    cm_handle = cm_handling.Handling(test_session)
 
     class DataHolder(object):
         def __init__(self, test_session, test_hpn, test_rev, test_hptype,
@@ -59,7 +59,7 @@ def conns(mcsession):
             self.query_time = query_time
             self.cm_handle = cm_handle
 
-    conns = DataHolder(session, test_hpn, test_rev, test_hptype, test_mfg,
+    conns = DataHolder(test_session, test_hpn, test_rev, test_hptype, test_mfg,
                        test_time, query_time, cm_handle)
 
     # yields the data we need but will continue to the del call after tests
@@ -96,27 +96,14 @@ def test_update_new(conns, capsys):
             [u, r, d, r, a, b, g, 'start_gpstime', g]]
     cm_partconnect.update_connection(conns.test_session, data,
                                      add_new_connection=True)
-    located = conns.cm_handle.get_part_connection_dossier(
-        [u], r, a, 'now', True)
+    located = conns.cm_handle.get_dossier([u], r, 'now', exact_match=True)
     prkey = list(located.keys())[0]
-    assert str(located[prkey]).startswith('NEW_TEST_PART_UP:A')
-    ckey = located[prkey].keys_down[0]
-    assert located[prkey].down[ckey].upstream_part == u
+    assert prkey == 'NEW_TEST_PART_UP:A'
+    ckey = located[prkey].output_ports
+    assert a in ckey
 
-    conns.cm_handle.show_connections(located)
-    captured = capsys.readouterr()
-    assert ('NEW_TEST_PART_UP:A | up_and_out  | down_and_in | '
-            'NEW_TEST_PART_DOWN:A' in captured.out.strip())
-
-    conns.cm_handle.show_connections(located, verbosity=1)
-    captured = capsys.readouterr()
-    assert ('NEW_TEST_PART_UP:A | NEW_TEST_PART_DOWN:A'
-            in captured.out.strip())
-
-    conns.cm_handle.show_connections(located, verbosity=2)
-    captured = capsys.readouterr()
-    assert ('NEW_TEST_PART_UP:A | up_and_out  | down_and_in | '
-            'NEW_TEST_PART_DOWN:A' in captured.out.strip())
+    captured = conns.cm_handle.show_dossier(located, ['hpn'], ports='physical')
+    assert 'NEW_TEST_PART_UP' in captured
 
 
 def test_get_null_connection():
@@ -124,37 +111,23 @@ def test_get_null_connection():
     assert nc.upstream_part == cm_partconnect.no_connection_designator
 
 
-def test_get_dossier(conns, capsys):
-    x = conns.cm_handle.get_part_connection_dossier(
-        'test_part1', 'active', 'all', at_date='now', exact_match=True)
-    y = list(x.keys())[0]
-    assert y == 'TEST_PART1:Q'
+def test_stop_existing_connections_to_part(conns, capsys):
+    conn_list = [['HH701', 'A', 'ground']]
+    stop_Time = Time('2019-10-27T00:53:53.530')
+    cm_partconnect.stop_existing_connections_to_part(conns.test_session, conns.cm_handle, conn_list, stop_Time)
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith("Stopping connection")
 
-    conns.cm_handle.show_connections(x)
+
+def test_various_connection(capsys):
+    c = cm_partconnect.Connections()
+    print(c)
     captured = capsys.readouterr()
-    assert ('TEST_PART1:Q | up_and_out  | down_and_in | TEST_PART2:Q'
-            in captured.out.strip())
-    x = conns.cm_handle.get_part_connection_dossier(
-        'test_part2', 'active', 'all', at_date='now', exact_match=True)
-    y = list(x.keys())[0]
-    assert y == 'TEST_PART2:Q'
-    conns.cm_handle.show_connections(x)
-    captured = capsys.readouterr()
-    assert ('TEST_PART1:Q | up_and_out  | down_and_in | TEST_PART2:Q'
-            in captured.out.strip())
-    old_time = Time('2014-08-01 01:00:00', scale='utc')
-    x = conns.cm_handle.get_part_connection_dossier(
-        'test_part1', 'active', 'all', at_date=old_time, exact_match=True)
-    assert len(x) == 0
-    x = conns.cm_handle.get_part_connection_dossier(
-        'test_part2', 'active', 'all', at_date=old_time, exact_match=True)
-    assert len(x) == 0
-    z = {}
-    z['tst'] = cm_handling.PartConnectionDossierEntry(
-        'test_part1', 'active', 'all')
-    conns.cm_handle.show_connections(z)
-    captured = capsys.readouterr()
-    assert 'Q' not in captured.out.strip()
+    assert captured.out.strip().startswith('<None')
+    c.start_gpstime = 1256171851.53
+    c.stop_gpstime = 1256172851.53
+    c.gps2Time()
+    assert c.stop_date.isot == '2019-10-27T00:54:30.530'
 
 
 def test_get_specific_connection(conns):
@@ -190,11 +163,3 @@ def test_get_specific_connection(conns):
     at_date = Time('2017-05-01 01:00:00', scale='utc')
     sc = conns.cm_handle.get_specific_connection(c, at_date)
     assert len(sc) == 0
-
-
-def test_physical_connections(conns):
-    x = conns.cm_handle.get_physical_connections()
-    y = list(x.keys())
-    assert 'PAM701:A' in y
-    x = conns.cm_handle.get_physical_connections('2016/01/01')
-    assert not len(x)
