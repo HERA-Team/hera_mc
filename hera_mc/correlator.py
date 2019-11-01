@@ -841,6 +841,10 @@ class AntennaStatus(MCDeclarativeBase):
     fem_voltage = Column(Float)
     fem_current = Column(Float)
     fem_id = Column(String)
+    fem_switch = Column(String)
+    fem_lna_power = Column(Boolean)
+    fem_imu_theta = Column(Float)
+    fem_imu_phi = Column(Float)
     fem_temp = Column(Float)
     eq_coeffs = Column(String)
     histogram_bin_centers = Column(String)
@@ -850,7 +854,8 @@ class AntennaStatus(MCDeclarativeBase):
     def create(cls, time, antenna_number, antenna_feed_pol, snap_hostname,
                snap_channel_number, adc_mean, adc_rms, adc_power, pam_atten,
                pam_power, pam_voltage, pam_current, pam_id, fem_voltage,
-               fem_current, fem_id, fem_temp, eq_coeffs, histogram_bin_centers,
+               fem_current, fem_id, fem_switch, fem_lna_power, fem_imu_theta,
+               fem_imu_phi, fem_temp, eq_coeffs, histogram_bin_centers,
                histogram):
         """
         Create a new antenna status object.
@@ -866,7 +871,8 @@ class AntennaStatus(MCDeclarativeBase):
         snap_hostname : str
             Hostname of snap the antenna is connected to.
         snap_channel_number : int
-            The SNAP ADC channel number (0-7) that this antenna is connected to.
+            The SNAP ADC channel number (0-7) that this antenna is connected
+            to.
         adc_mean : float
             Mean ADC value, in ADC units, meaning raw ADC values interpreted as
             signed integers between -128 and +127. Typically ~ -0.5.
@@ -893,13 +899,21 @@ class AntennaStatus(MCDeclarativeBase):
         fem_current : float
             FEM current sensor reading for this antenna, in Amps.
         fem_id : str
-            Serial number of this FEM
+            Serial number of this FEM.
+        fem_switch : {'antenna', 'load', 'noise'}
+            Switch state for this FEM.
+        fem_lna_power : bool
+            Power state of this FEM (True if powered).
+        fem_imu_theta : float
+            IMU-reported theta, in degrees.
+        fem_imu_phi : float
+            IMU-reported phi, in degrees.
         fem_temp : float
             EM temperature sensor reading for this antenna in degrees Celsius.
         eq_coeffs : list of float
             Digital EQ coefficients, used for keeping the bit occupancy in the
-            correct range, for this antenna, list of floats. Note this these are
-            not divided out anywhere in the DSP chain (!).
+            correct range, for this antenna, list of floats. Note this these
+            are not divided out anywhere in the DSP chain (!).
         histogram_bin_centers : list of int
             ADC histogram bin centers.
         histogram : list of int
@@ -912,6 +926,10 @@ class AntennaStatus(MCDeclarativeBase):
 
         if antenna_feed_pol not in ['e', 'n']:
             raise ValueError('antenna_feed_pol must be "e" or "n".')
+
+        if (fem_switch is not None
+                and fem_switch not in ['antenna', 'load', 'noise']):
+            raise ValueError('fem_switch must be "antenna", "load", "noise"')
 
         if eq_coeffs is not None:
             eq_coeffs_str = [str(val) for val in eq_coeffs]
@@ -939,7 +957,9 @@ class AntennaStatus(MCDeclarativeBase):
                    pam_power=pam_power, pam_voltage=pam_voltage,
                    pam_current=pam_current, pam_id=pam_id,
                    fem_voltage=fem_voltage, fem_current=fem_current,
-                   fem_id=fem_id, fem_temp=fem_temp,
+                   fem_id=fem_id, fem_switch=fem_switch,
+                   fem_lna_power=fem_lna_power, fem_imu_theta=fem_imu_theta,
+                   fem_imu_phi=fem_imu_phi, fem_temp=fem_temp,
                    eq_coeffs=eq_coeffs_string,
                    histogram_bin_centers=histogram_bin_string,
                    histogram=histogram_string)
@@ -985,6 +1005,12 @@ def _get_ant_status(corr_cm=None,
             fem_current (float)   : FEM current sensor reading for this
                                     antenna (A)
             fem_id (list)         : Bytewise serial number of this FEM
+            fem_switch(str)       : Switch state for this FEM ('antenna',
+                                    'load', or 'noise')
+            fem_e_lna_power(bool) : True if East-pol LNA is powered
+            fem_n_lna_power(bool) : True if North-pol LNA is powered
+            fem_imu_theta (float) : IMU-reported theta (degrees)
+            fem_imu_phi (float)   : IMU-reported phi (degrees)
             fem_temp (float)      : FEM temperature sensor reading for this
                                     antenna (C)
             eq_coeffs (list of floats) : Digital EQ coefficients for this
@@ -1088,6 +1114,15 @@ def create_antenna_status(corr_cm=None,
             fem_id = _pam_fem_serial_list_to_string(ant_dict['fem_id'])
         else:
             fem_id = None
+        fem_switch = ant_dict['fem_switch']
+        if antenna_feed_pol == 'n':
+            fem_lna_power = ant_dict['fem_n_lna_power']
+        elif antenna_feed_pol == 'e':
+            fem_lna_power = ant_dict['fem_e_lna_power']
+        if fem_lna_power is not None:
+            fem_lna_power = fem_lna_power == 'True'
+        fem_imu_theta = ant_dict['fem_imu_theta']
+        fem_imu_phi = ant_dict['fem_imu_phi']
         fem_temp = ant_dict['fem_temp']
         eq_coeffs = ant_dict['eq_coeffs']
         if ant_dict['histogram'] is not None:
@@ -1102,7 +1137,9 @@ def create_antenna_status(corr_cm=None,
                                  snap_hostname, snap_channel_number, adc_mean,
                                  adc_rms, adc_power, pam_atten, pam_power,
                                  pam_voltage, pam_current, pam_id, fem_voltage,
-                                 fem_current, fem_id, fem_temp, eq_coeffs,
+                                 fem_current, fem_id, fem_switch,
+                                 fem_lna_power, fem_imu_theta, fem_imu_phi,
+                                 fem_temp, eq_coeffs,
                                  histogram_bin_centers, histogram))
 
     return ant_status_list
