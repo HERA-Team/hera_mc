@@ -34,13 +34,14 @@ if __name__ == "__main__":
 
     uv = pyuvdata.UVData()
     uv.read_uvh5(args.file, read_data=False, run_check_acceptability=False)
-    obsid = Time(np.unique(uv.time_array)[0], scale='utc', format='jd')
+    t0 = Time(np.unique(uv.time_array)[0], scale='utc', format='jd')
+    obsid = int(np.floor(t0.gps))
 
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         session.add_rtp_process_record(
             time=Time.now(),
-            obsid=obsid.gps,
+            obsid=obsid,
             pipeline_list=args.pipeline_list,
             rtp_git_version=hera_opm_version_info['version'],
             rtp_git_hash=hera_opm_version_info['git_hash'],
