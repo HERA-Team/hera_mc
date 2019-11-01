@@ -209,7 +209,7 @@ class ActiveData:
                                                                         | (partconn.AprioriAntenna.stop_gpstime == None))):  # noqa
             key = cm_utils.make_part_key(astat.antenna, rev)
             if key in apriori_keys:
-                raise ValueError("{} already has a current apriori state.".format(key))
+                raise ValueError("{} already has an active apriori state.".format(key))
             apriori_keys.append(key)
             self.apriori[key] = astat
 
