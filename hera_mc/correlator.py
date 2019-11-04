@@ -18,6 +18,7 @@ from sqlalchemy import (Column, BigInteger, Integer, Float, Boolean, String,
                         ForeignKey, ForeignKeyConstraint)
 
 from . import MCDeclarativeBase
+import hera_mc.utils as mcutils
 
 # default acclen -- corresponds to a bit under 10 seconds (~9.66 seconds)
 DEFAULT_ACCLEN_SPECTRA = 147456
@@ -238,6 +239,7 @@ def _get_config(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
 
     timestamp, config, hash = corr_cm.get_config()
     time = Time(timestamp, format='unix')
+    hash = mcutils.bytes_to_str(hash)
 
     return {'time': time, 'hash': hash, 'config': config}
 
