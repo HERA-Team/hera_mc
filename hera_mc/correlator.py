@@ -62,9 +62,9 @@ command_state_map = {'take_data': {'allowed_when_recording': False},
                      'load_on': {'state_type': 'load',
                                  'state': True,
                                  'allowed_when_recording': False},
-                     'loads_off': {'state_type': 'load',
-                                   'state': False,
-                                   'allowed_when_recording': False},
+                     'load_off': {'state_type': 'load',
+                                  'state': False,
+                                  'allowed_when_recording': False},
                      'update_config': {'allowed_when_recording': True},
                      'restart': {'allowed_when_recording': False}}
 
