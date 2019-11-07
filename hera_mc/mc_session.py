@@ -3220,7 +3220,8 @@ class MCSession(Session):
                            snap_hostname, snap_channel_number, adc_mean,
                            adc_rms, adc_power, pam_atten, pam_power,
                            pam_voltage, pam_current, pam_id, fem_voltage,
-                           fem_current, fem_id, fem_temp, eq_coeffs,
+                           fem_current, fem_id, fem_switch, fem_lna_power,
+                           fem_imu_theta, fem_imu_phi, fem_temp, eq_coeffs,
                            histogram_bin_centers, histogram):
         """
         Add new antenna status data to the M&C database.
@@ -3260,6 +3261,14 @@ class MCSession(Session):
             PAM current sensor reading for this antenna, in Amps.
         pam_id : str
             Serial number of this PAM.
+        fem_switch : {'antenna', 'load', 'noise'}
+            Switch state for this FEM.
+        fem_lna_power : bool
+            Power state of this FEM (True if powered).
+        fem_imu_theta : float
+            IMU-reported theta, in degrees.
+        fem_imu_phi : float
+            IMU-reported phi, in degrees.
         fem_voltage : float
             FEM voltage sensor reading for this antenna, in Volts.
         fem_current : float
@@ -3270,8 +3279,8 @@ class MCSession(Session):
             EM temperature sensor reading for this antenna in degrees Celsius.
         eq_coeffs : list of float
             Digital EQ coefficients, used for keeping the bit occupancy in the
-            correct range, for this antenna, list of floats. Note this these are
-            not divided out anywhere in the DSP chain (!).
+            correct range, for this antenna, list of floats. Note this these
+            are not divided out anywhere in the DSP chain (!).
         histogram_bin_centers : list of int
             ADC histogram bin centers.
         histogram : list of int
@@ -3284,7 +3293,8 @@ class MCSession(Session):
             time, antenna_number, antenna_feed_pol, snap_hostname,
             snap_channel_number, adc_mean, adc_rms, adc_power, pam_atten,
             pam_power, pam_voltage, pam_current, pam_id, fem_voltage,
-            fem_current, fem_id, fem_temp, eq_coeffs, histogram_bin_centers,
+            fem_current, fem_id, fem_switch, fem_lna_power, fem_imu_theta,
+            fem_imu_phi, fem_temp, eq_coeffs, histogram_bin_centers,
             histogram))
 
     def get_antenna_status(self, most_recent=None, starttime=None,
