@@ -22,6 +22,7 @@ import os.path
 import socket
 from subprocess import Popen, PIPE, STDOUT
 import sys
+import six
 
 from astropy.time import Time, TimeDelta
 
@@ -113,6 +114,8 @@ show_all = Popen([storcli, '/c%d' % controller, 'show', 'all'],
 item_values = {}
 
 for line in show_all.stdout:
+    if six.PY3:
+        line = line.decode("utf-8")
     for item in show_all_items:
         if line.startswith(item):
             item_values[item] = line.split('=', 1)[1].strip()
@@ -150,6 +153,8 @@ seq_num = None
 cur_event_data = {}
 
 for line in event_log.stdout:
+    if six.PY3:
+        line = line.decode("utf-8")
     if state == NOT_IN_EVENT:
         if line.startswith('seqNum:'):
             # The extra 0 arg here means to guess the numeric base; seqnum is in hex with a 0x prefix.
