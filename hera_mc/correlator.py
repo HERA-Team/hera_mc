@@ -28,7 +28,8 @@ DEFAULT_REDIS_ADDRESS = "redishost"
 # key is state type, value is method name in hera_corr_cm
 state_dict = {'taking_data': 'is_recording',
               'phase_switching': 'phase_switch_is_on',
-              'noise_diode': 'noise_diode_is_on'}
+              'noise_diode': 'noise_diode_is_on',
+              'load': 'load_is_on'}
 
 tag_list = ['science', 'engineering']
 
@@ -39,6 +40,8 @@ command_dict = {'take_data': 'take_data',
                 'phase_switching_off': 'phase_switch_disable',
                 'noise_diode_on': 'noise_diode_enable',
                 'noise_diode_off': 'noise_diode_disable',
+                'load_on': 'load_enable',
+                "load_off": 'load_disable',
                 'update_config': 'update_config', 'restart': 'restart'}
 
 command_state_map = {'take_data': {'allowed_when_recording': False},
@@ -57,6 +60,12 @@ command_state_map = {'take_data': {'allowed_when_recording': False},
                      'noise_diode_off': {'state_type': 'noise_diode',
                                          'state': False,
                                          'allowed_when_recording': False},
+                     'load_on': {'state_type': 'load',
+                                 'state': True,
+                                 'allowed_when_recording': False},
+                     'load_off': {'state_type': 'load',
+                                  'state': False,
+                                  'allowed_when_recording': False},
                      'update_config': {'allowed_when_recording': True},
                      'restart': {'allowed_when_recording': False}}
 
@@ -93,7 +102,7 @@ class CorrelatorControlState(MCDeclarativeBase):
             Astropy time object based on a timestamp reported by the correlator.
         state_type : str
             Must be a key in state_dict (e.g. 'taking_data', 'phase_switching',
-            'noise_diode').
+            'noise_diode', 'load').
         state : bool
             Is the state_type true or false.
 
