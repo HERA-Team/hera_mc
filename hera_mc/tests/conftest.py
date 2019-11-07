@@ -29,7 +29,7 @@ def setup_and_teardown_package():
     try:
         t1 = Time.now()
         t1.ut1
-    except(urllib.error.URLError, IOError):
+    except(urllib.error.URLError, IOError, iers.IERSRangeError):
         iers.conf.auto_max_age = None
 
     test_db = mc.connect_to_mc_testing_db()
