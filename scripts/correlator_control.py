@@ -62,8 +62,8 @@ if __name__ == '__main__':
     parser.add_argument('--testing', help="Testing mode: do not use anything that "
                         "requires a connection to the correlator "
                         "(implies dryrun) [False]", action='store_true')
-    parser.add_argument('--lstlock', help="Lock observation start to a 16s LST grid"
-                        "[True]", action='store_true', default=True)
+    parser.add_argument('--lstlock', help="Lock observation start to a 16s LST grid "
+                        "[True]", action='store_true')
     parser.add_argument('--now', help="Take data in 60s."
                         "overrides: starttime, starttime_format and starttime_scale",
                         action='store_true')
