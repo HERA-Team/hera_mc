@@ -47,6 +47,8 @@ def test_LSTScheduler_multiday():
         atol = 10  # arcseconds
     else:
         atol = 1e-8  # default value
+    print('tolerance (in arcseconds):', atol)
+    print('lst diff (in arcseconds):', (hour2.hour - hour1.hour) * 3600)
     assert np.isclose((hour2.hour - hour1.hour) * 3600, 0, atol=atol)
 
 
