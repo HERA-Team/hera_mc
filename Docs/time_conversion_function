@@ -5,3 +5,9 @@ begin
 return t + 315964782;
 end
 $$ language plpgsql;
+
+create function gps2epoch(t bigint) returns bigint as $$
+begin
+return t + 315964782;
+end
+$$ language plpgsql;
