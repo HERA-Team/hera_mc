@@ -46,7 +46,7 @@ if __name__ == '__main__':
                         "ignored otherwise. Accumulation length in spectra, "
                         "must be an integer and a multiple of 2048. "
                         "Defaults to a value that produces ~10s integration time. ",
-                        default=None)
+                        type=int, default=None)
     parser.add_argument('--overwrite_take_data', help="Only used if command is "
                         "'take_data', ignored otherwise. Option to force an "
                         "overwrite of the next take data command if there is "
