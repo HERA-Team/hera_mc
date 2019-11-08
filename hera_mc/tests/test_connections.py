@@ -130,6 +130,19 @@ def test_various_connection(capsys):
     assert c.stop_date.isot == '2019-10-27T00:54:30.530'
 
 
+def test_connection_equality():
+    c = cm_partconnect.Connections()
+    c.upstream_part = 'up_part'
+    c.up_part_rev = 'up_part_rev'
+    c.downstream_part = 'down_part'
+    c.down_part_rev = 'down_part_rev'
+    c.upstream_output_port = 'up_and_out'
+    c.downstream_input_port = 'down_and_in'
+    assert c == c
+    nc = cm_partconnect.get_null_connection()
+    assert c != nc
+
+
 def test_get_specific_connection(conns):
     c = cm_partconnect.Connections()
     c.upstream_part = conns.test_hpn[0]
