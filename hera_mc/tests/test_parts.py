@@ -147,6 +147,17 @@ def test_part_info(parts, capsys):
     assert int(test_info.posting_date.gps) == 1172530000
 
 
+def test_equality():
+    p1 = cm_partconnect.Parts()
+    p1.hpn = 'hpn1'
+    p1.hpn_rev = 'hpn1_rev'
+    p2 = cm_partconnect.Parts()
+    p2.hpn = 'hpn2'
+    p2.hpn_rev = 'hpn2_rev'
+    assert p1 == p1
+    assert p1 != p2
+
+
 def test_add_new_parts(parts, capsys):
     a_time = Time('2017-07-01 01:00:00', scale='utc')
     data = [[parts.test_part, parts.test_rev, parts.test_hptype, 'xxx']]

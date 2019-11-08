@@ -47,6 +47,13 @@ class Parts(MCDeclarativeBase):
         return ('<heraPartNumber id={self.hpn}:{self.hpn_rev} type={self.hptype} :: {self.start_gpstime} - {self.stop_gpstime}>'
                 .format(self=self))
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__) and\
+           self.hpn.upper() == other.hpn.upper() and\
+           self.hpn_rev.upper() == other.hpn_rev.upper():
+            return True
+        return False
+
     def gps2Time(self):
         """
         Make astropy.Time object from gps
@@ -527,6 +534,17 @@ class Connections(MCDeclarativeBase):
         down = '{self.downstream_part}:{self.down_part_rev}'.format(self=self)
         return ('<{}<{self.upstream_output_port}|{self.downstream_input_port}>{}>'
                 .format(up, down, self=self))
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__) and\
+           self.upstream_part.upper() == other.upstream_part.upper() and\
+           self.up_part_rev.upper() == other.up_part_rev.upper() and\
+           self.upstream_output_port.upper() == other.upstream_output_port.upper() and\
+           self.downstream_part.upper() == other.downstream_part.upper() and\
+           self.down_part_rev.upper() == other.down_part_rev.upper() and\
+           self.downstream_input_port.upper() == other.downstream_input_port.upper():
+            return True
+        return False
 
     def gps2Time(self):
         """
