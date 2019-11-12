@@ -38,16 +38,12 @@ def test_LSTScheduler_multiday():
     """
     LSTbin_size = 10
     # pick a date far in the past just in case IERS is down
-    starttime1 = Time('2015-9-19T05:04:00.0', format='isot', scale='utc')
+    starttime1 = Time('2015-9-19T05:04:09.0', format='isot', scale='utc')
     scheduletime1, hour1 = utils.LSTScheduler(starttime1, LSTbin_size)
     # lst is 4 minutes earlier every day
-    starttime2 = Time('2015-9-20T05:00:0.0', format='isot', scale='utc')
+    starttime2 = Time('2015-9-20T05:00:09.0', format='isot', scale='utc')
     scheduletime2, hour2 = utils.LSTScheduler(starttime2, LSTbin_size)
-    if iers.conf.auto_max_age is None:
-        atol = 10  # arcseconds
-    else:
-        atol = 1e-8  # default value
-    assert np.isclose((hour2.hour - hour1.hour) * 3600, 0, atol=atol)
+    assert np.isclose((hour2.hour - hour1.hour) * 3600, 0)
 
 
 def test_reraise_context():
