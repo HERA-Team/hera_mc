@@ -239,7 +239,7 @@ class PartEntry():
                 elif col == 'geo' and x is not None:
                     x = "{:.1f}E, {:.1f}N, {:.1f}m".format(x.easting, x.northing, x.elevation)
                 elif cend in ['start_gpstime', 'stop_gpstime', 'posting_gpstime']:
-                    x = cm_utils.get_time_for_display(x)
+                    x = cm_utils.get_time_for_display(x[0])
                 elif isinstance(x, (list, set)):
                     x = ', '.join(x)
                 trow.append(x)
