@@ -348,13 +348,13 @@ class Handling:
             parts[k] = hu.get_part_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
 
-    def publish_summary(self, hlist='default', exact_match=False, hookup_cols='all'):
+    def publish_summary(self, hlist=['default'], exact_match=False, hookup_cols='all'):
         """
         Publishes the hookup on hera.today.
 
         Parameters
         ----------
-        hlist : str, list
+        hlist : list
             List of prefixes or stations to use in summary.  Default is the "default" prefix list in cm_utils.
         exact_match : bool
             Flag for exact_match or included characters.
@@ -367,14 +367,13 @@ class Handling:
             Status string.  "OK" or "Not on 'main'"
         """
         import os.path
-        if isinstance(hlist, six.string_types) and hlist.lower() == 'default':
+        if hlist[0].lower() == 'default':
             hlist = cm_sysdef.hera_zone_prefixes
-        hlist = cm_utils.listify(hlist)
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         H = cm_hookup.Hookup(self.session)
         hookup_dict = H.get_hookup(hpn=hlist, pol='all', at_date='now', exact_match=exact_match, hookup_type=None)
-        H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, ports=True,
-                      revs=True, state='full', filename=output_file, output_format='html')
+        H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, state='full', ports=True,
+                      revs=True, filename=output_file, output_format='html')
 
         from . import cm_transfer
         if cm_transfer.check_if_main(self.session):  # pragma: no cover
