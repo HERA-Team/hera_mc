@@ -212,7 +212,30 @@ def antstatus_none():
                 'fem_imu_phi': 'None',
                 'fem_temp': 'None',
                 'eq_coeffs': 'None',
-                'histogram': 'None'}}
+                'histogram': 'None'},
+        '31:n': {'timestamp':
+                 datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
+                 'f_host': 'None',
+                 'host_ant_id': 'None',
+                 'adc_mean': 'None',
+                 'adc_rms': 'None',
+                 'adc_power': 'None',
+                 'pam_atten': 'None',
+                 'pam_power': 'None',
+                 'pam_voltage': 'None',
+                 'pam_current': 'None',
+                 'pam_id': 'None',
+                 'fem_voltage': float('nan'),
+                 'fem_current': float('nan'),
+                 'fem_id': 'None',
+                 'fem_switch': 'Unknown mode',
+                 'fem_e_lna_power': 'None',
+                 'fem_n_lna_power': 'None',
+                 'fem_imu_theta': 'None',
+                 'fem_imu_phi': 'None',
+                 'fem_temp': 'None',
+                 'eq_coeffs': 'None',
+                 'histogram': 'None'}}
 
 
 def test_py3_hashing(config):
@@ -1805,13 +1828,15 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
 
 def test_add_antenna_status_from_corrcm_with_nones(mcsession, antstatus_none):
     test_session = mcsession
-    test_session.add_antenna_status_from_corrcm(
-        ant_status_dict=antstatus_none)
+    checkWarnings(test_session.add_antenna_status_from_corrcm,
+                  func_kwargs={'ant_status_dict': antstatus_none},
+                  message='fem_switch value is Unknown mode')
 
     t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
               format='datetime')
     result = test_session.get_antenna_status(
         starttime=t1 - TimeDelta(3.0, format='sec'))
+    assert len(result) == 2
 
     expected = corr.AntennaStatus(time=int(floor(t1.gps)), antenna_number=4,
                                   antenna_feed_pol='e',
@@ -1827,7 +1852,25 @@ def test_add_antenna_status_from_corrcm_with_nones(mcsession, antstatus_none):
                                   fem_temp=None, eq_coeffs=None,
                                   histogram_bin_centers=None, histogram=None)
 
-    assert len(result) == 1
+    result = test_session.get_antenna_status(antenna_number=4)
+    result = result[0]
+    assert result.isclose(expected)
+
+    expected = corr.AntennaStatus(time=int(floor(t1.gps)), antenna_number=31,
+                                  antenna_feed_pol='n',
+                                  snap_hostname=None, snap_channel_number=None,
+                                  adc_mean=None, adc_rms=None,
+                                  adc_power=None, pam_atten=None,
+                                  pam_power=None, pam_voltage=None,
+                                  pam_current=None, pam_id=None,
+                                  fem_voltage=None, fem_current=None,
+                                  fem_id=None, fem_switch=None,
+                                  fem_lna_power=None, fem_imu_theta=None,
+                                  fem_imu_phi=None,
+                                  fem_temp=None, eq_coeffs=None,
+                                  histogram_bin_centers=None, histogram=None)
+
+    result = test_session.get_antenna_status(antenna_number=31)
     result = result[0]
     assert result.isclose(expected)
 
