@@ -10,9 +10,11 @@ Includes many SNAP-related things.
 """
 from __future__ import absolute_import, division, print_function
 
-import six
 from math import floor
+import warnings
+
 import numpy as np
+import six
 from astropy.time import Time
 from sqlalchemy import (Column, BigInteger, Integer, Float, Boolean, String,
                         ForeignKey, ForeignKeyConstraint)
@@ -1124,6 +1126,13 @@ def create_antenna_status(corr_cm=None,
         else:
             fem_id = None
         fem_switch = ant_dict['fem_switch']
+        if (fem_switch is not None
+                and fem_switch not in ['antenna', 'load', 'noise']):
+            warnings.warn('fem_switch value is {}, should be one of: '
+                          '"antenna", "load", "noise" or "None". '
+                          'Setting to None.'.format(fem_switch))
+            fem_switch = None
+
         if antenna_feed_pol == 'n':
             fem_lna_power = ant_dict['fem_n_lna_power']
         elif antenna_feed_pol == 'e':
