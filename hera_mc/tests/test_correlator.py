@@ -186,6 +186,7 @@ def antstatus():
                  'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
                                (np.zeros((256)) + 12).tolist()]}}
 
+
 @pytest.fixture(scope='module')
 def antstatus_none():
     return {
@@ -1872,6 +1873,7 @@ def test_add_antenna_status_from_corrcm_with_nones(mcsession, antstatus_none):
     result = test_session.get_antenna_status(antenna_number=31)
     result = result[0]
     assert result.isclose(expected)
+
 
 def test_antenna_status_errors(mcsession):
     test_session = mcsession
