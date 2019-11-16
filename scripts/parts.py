@@ -87,7 +87,7 @@ if __name__ == '__main__':
                        'down.start_gpstime', 'down.stop_gpstime']
     elif action_tag == 'no':  # notes
         if args.verbosity == 1:
-            columns = ['hpn', 'comment']
+            columns = ['hpn', 'posting_gpstime', 'comment']
         elif args.verbosity == 2:
             columns = ['hpn', 'posting_gpstime', 'comment']
         else:
