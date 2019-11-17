@@ -103,12 +103,12 @@ def test_show_dossier(parts, capsys):
         'Testing', 'library_file')
     located = parts.cm_handle.get_dossier(hpn=[parts.test_part], rev=parts.test_rev,
                                           at_date='now', exact_match=True)
-    captured = parts.cm_handle.show_dossier(located, ['hpn'])
+    captured = parts.cm_handle.show_dossier(located, ['hpn', 'start_gpstime'])
     assert 'TEST_PART' in captured
     captured = parts.cm_handle.show_dossier({}, ['hpn'])
     assert 'Part not found' in captured
     located = parts.cm_handle.get_dossier(hpn=['A700'], rev=['H'], at_date='now', exact_match=True)
-    captured = parts.cm_handle.show_dossier(located, ['comment'])
+    captured = parts.cm_handle.show_dossier(located, ['comment', 'posting_gpstime'])
     assert 'Comment 2' in captured
     located = parts.cm_handle.get_dossier(
         hpn=['HH700'], rev=['A'], at_date='now', exact_match=True)
