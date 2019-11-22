@@ -27,5 +27,5 @@ dependencies:
   - sqlalchemy
   - tabulate
   - pip:
-      - pytest-pytest
+      - flake8-pytest
       - git+https://github.com/HERA-Team/hera_qm.git
