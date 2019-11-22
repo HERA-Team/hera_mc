@@ -38,29 +38,6 @@ class ActiveData:
         self.apriori = None
         self.geo = None
 
-    def is_data_current(self, data_type, at_date):
-        """
-        Determines if the class data of type data_type is current at at_date.
-
-        Parameters
-        ----------
-        data_type : str
-            One of the allowed data_types:  parts, connections, info, apriori, geo
-        at_date : astropytime.Time or None
-            Date for which to check.  If none, assumes match to self.at_date
-
-        Returns
-        -------
-        bool
-            True if current
-        """
-
-        if getattr(self, data_type) is None:
-            return False
-        if at_date is None or abs(at_date.gps - self.at_date.gps) < self.close_enough:
-            return True
-        return False
-
     def set_times(self, at_date):
         """
         Makes sure that at_date and self.at_date are synced and supplies gps time
@@ -97,8 +74,6 @@ class ActiveData:
             to get_astropytime.  If not present uses self.at_date
         """
         at_date = cm_utils.get_astropytime(at_date)
-        if self.is_data_current('parts', at_date):
-            return
         gps_time = self.set_times(at_date)
         self.parts = {}
         for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= gps_time)
@@ -131,13 +106,11 @@ class ActiveData:
         """
 
         at_date = cm_utils.get_astropytime(at_date)
-        if self.is_data_current('connections', at_date):
-            return
         gps_time = self.set_times(at_date)
         self.connections = {'up': {}, 'down': {}}
         check_keys = {'up': [], 'down': []}
         for cnn in self.session.query(partconn.Connections).filter((partconn.Connections.start_gpstime <= gps_time)
-                                                                   & ((partconn.Connections.stop_gpstime >= gps_time)
+                                                                   & ((partconn.Connections.stop_gpstime > gps_time)
                                                                    | (partconn.Connections.stop_gpstime == None))):  # noqa
             chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev, cnn.upstream_output_port)
             if chk in check_keys['up']:
@@ -171,8 +144,6 @@ class ActiveData:
             to get_astropytime
         """
         at_date = cm_utils.get_astropytime(at_date)
-        if self.is_data_current('info', at_date):
-            return
         gps_time = self.set_times(at_date)
         self.info = {}
         for info in self.session.query(partconn.PartInfo).filter((partconn.PartInfo.posting_gpstime <= gps_time)):
@@ -199,8 +170,6 @@ class ActiveData:
             Revision of antenna-station (always A)
         """
         at_date = cm_utils.get_astropytime(at_date)
-        if self.is_data_current('apriori', at_date):
-            return
         gps_time = self.set_times(at_date)
         self.apriori = {}
         for astat in self.session.query(partconn.AprioriAntenna).filter((partconn.AprioriAntenna.start_gpstime <= gps_time)
@@ -227,8 +196,6 @@ class ActiveData:
         """
         from . import geo_location
         at_date = cm_utils.get_astropytime(at_date)
-        if self.is_data_current('geo', at_date):
-            return
         gps_time = self.set_times(at_date)
         self.geo = {}
         for ageo in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.created_gpstime <= gps_time):
@@ -255,40 +222,3 @@ class ActiveData:
             if hpn == part.hpn.upper():
                 hpn_revs.append(part.hpn_rev)
         return hpn_revs
-
-    def check(self, at_date=None):
-        """
-        Checks to make sure that all connections have an associated active part.
-
-        The database will allow non-active parts to have a connection, which is not
-        desired.  This will check and list connections without an associated active
-        part.  It does not Error or Warn, but just lists.
-
-        Parameters
-        ----------
-        at_date : str, int, float, Time, datetime (optional)
-            The date for which to check as active if either all_parts or all_connections are None,
-            given as anything comprehensible to get_astropytime
-
-        Returns
-        -------
-        list
-            List of missing parts.
-        """
-        at_date = cm_utils.get_astropytime(at_date)
-        if at_date is None:
-            at_date = self.at_date
-        if not self.is_data_current('parts', at_date):
-            self.load_parts(at_date=at_date)
-        if not self.is_data_current('connections', at_date):
-            self.load_connections(at_date=at_date)
-        full_part_set = list(self.parts.keys())
-        full_conn_set = set(list(self.connections['up']) + list(self.connections['down']))
-        missing_parts = []
-        for key in full_conn_set:
-            if key not in full_part_set:
-                missing_parts.append(key)
-        if len(missing_parts):
-            for key in missing_parts:
-                print("{} is not listed as an active part even though listed in an active connection.".format(key))
-        return missing_parts

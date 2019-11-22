@@ -27,7 +27,6 @@ if __name__ == '__main__':
     parser.add_argument('--hide-ports', dest='ports', help="Hide ports on hookup.", action='store_false')
     parser.add_argument('--show-revs', dest='revs', help="Show revs on hookup.", action='store_true')
     parser.add_argument('--file', help="output filename, if desired.  Tags are '.txt', '.html', '.csv' to set type.", default=None)
-    parser.add_argument('--check', dest='check_data', help="Flag to just check active data for given date.", action='store_true')
     # Cache options
     parser.add_argument('--use-cache', dest='use_cache', help="Force cache use (but doesn't rewrite cache)", action='store_true')
     parser.add_argument('--delete-cache-file', dest='delete_cache_file', help="Deletes the local cache file", action='store_true')
@@ -59,10 +58,6 @@ if __name__ == '__main__':
         print(hookup.hookup_cache_file_info())
     elif args.delete_cache_file:
         hookup.delete_cache_file()
-    elif args.check_data:
-        from hera_mc import cm_active
-        active = cm_active.ActiveData(session, at_date=at_date)
-        active.check()
     else:
         hookup_dict = hookup.get_hookup(hpn=args.hpn, pol=args.pol, at_date=at_date,
                                         exact_match=args.exact_match, use_cache=args.use_cache,
