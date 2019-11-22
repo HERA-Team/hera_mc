@@ -10,7 +10,7 @@ dependencies:
   - chart-studio
   - coveralls
   - flake8
-  - flake8-pytest
+  - flake8-docstrings
   - h5py
   - matplotlib
   - numpy
@@ -27,5 +27,5 @@ dependencies:
   - sqlalchemy
   - tabulate
   - pip:
-      - pytest-docstrings
+      - pytest-pytest
       - git+https://github.com/HERA-Team/hera_qm.git
