@@ -25,7 +25,7 @@ install:
   - conda info -a
   - conda create --name=hera_mc_test
   - conda env update -f ci/hera_mc_test.yaml
-  - conda activate hera_mc_test
+  - sourcex activate hera_mc_test
   - conda list
   - pip install .
 addons:
