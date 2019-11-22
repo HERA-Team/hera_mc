@@ -254,7 +254,7 @@ class PartEntry():
 
 class HookupEntry(object):
     """
-    This is the structure of the hookup entry.  All are keyed on polarization.
+    This is the structure of the hookup entry.  All are keyed on polarization<port.
 
     Parameters
     ----------

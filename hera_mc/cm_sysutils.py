@@ -118,8 +118,7 @@ class Handling:
             'elevation': station elevation (float)
             'antenna_number': antenna number (integer)
             'correlator_input': correlator input for x (East) pol and y (North) pol (string tuple-pair)
-            'start_date': start of connection in gps seconds (long)
-            'stop_date': end of connection in gps seconds (long or None no end time)
+            'timing': start and stop gps seconds for both pols
 
         Parameters
         -----------
@@ -153,34 +152,21 @@ class Handling:
             current_hookup = hud[key].hookup
             corr = {}
             pe = {}
-            for p, hu in six.iteritems(current_hookup):
-                pol = p[0].lower()
-                pe[pol] = hud[k].hookup_type[p]
+            station_info.timing = {}
+            for ppkey, hu in six.iteritems(current_hookup):
+                pol = ppkey[0].lower()
+                pe[pol] = hud[key].hookup_type[ppkey]
                 cind = self.sysdef.corr_index[pe[pol]] - 1  # The '- 1' makes it the downstream_part
                 try:
                     corr[pol] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
                 except IndexError:  # pragma: no cover
                     corr[pol] = 'None'
-            fnd_list = self.geo.get_location([stn], at_date)
-            if len(fnd_list) == 1:
-                fnd = fnd_list[0]
+                station_info.timing[pol] = hud[key].timing[ppkey]
 
-                station_info.correlator_input = (str(corr['e']), str(corr['n']))
-                station_info.epoch = 'e:{}, n:{}'.format(pe['e'], pe['n'])
-                if pe['e'] == pe['n']:
-                    station_info.epoch = str(pe['e'])
-                    station_info.start_date = fctime['start']
-                station_info.stop_date = fctime['end']
-
-
-
-
+            station_info.correlator_input = (str(corr['e']), str(corr['n']))
+            station_info.epoch = 'e:{}, n:{}'.format(pe['e'], pe['n'])
             station_conn.append(station_info)
         return station_conn
-###########################
-
-
-
 
     def get_cminfo_correlator(self, hookup_type=None):
         """
