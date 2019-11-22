@@ -2,11 +2,12 @@ name: hera_mc_test
 channels:
   - defaults
   - conda-forge
-  - chart-studio
+  - plotly
 dependencies:
   - alembic
   - astropy
   - cartopy
+  - chart-studio
   - coveralls
   - flake8
   - flake8-pytest
