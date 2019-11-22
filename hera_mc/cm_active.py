@@ -23,7 +23,6 @@ class ActiveData:
     ----------
     at_date : str, int, float, Time, datetime
     """
-    close_enough = 2.0  # Seconds within which the dates are close enough
 
     def __init__(self, session=None, at_date='now'):
         if session is None:  # pragma: no cover
