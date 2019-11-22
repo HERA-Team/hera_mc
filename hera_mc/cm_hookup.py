@@ -355,9 +355,10 @@ class Hookup(object):
             return self.cached_hookup_dict
 
         hpn = cm_utils.listify(hpn)
-        if use_cache and self.requested_list_OK_for_cache(hpn):
-            self.read_hookup_cache_from_file()
-            return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
+        if use_cache:
+            if self.requested_list_OK_for_cache(hpn):
+                self.read_hookup_cache_from_file()
+                return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
 
         return self.get_hookup_from_db(hpn=hpn, pol=pol, at_date=at_date,
                                        exact_match=exact_match, hookup_type=hookup_type)
