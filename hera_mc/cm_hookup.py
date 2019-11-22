@@ -333,7 +333,8 @@ class Hookup(object):
         exact_match : bool
             Flag for either exact_match or partial
         use_cache : bool
-            Flag to force the cache to be read, if present and keys agree
+            Flag to force the cache to be read, if present and keys agree.  This is largely
+            deprecated, but kept for archival possibilities for the future.
         hookup_type : str or None
             Type of hookup to use (current observing system is 'parts_hera').
             If 'None' it will determine which system it thinks it is based on

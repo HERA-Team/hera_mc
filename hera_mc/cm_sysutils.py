@@ -13,8 +13,8 @@ from astropy.time import Time
 from sqlalchemy import func, and_, or_
 import numpy as np
 
-from . import mc, cm_partconnect, cm_utils, cm_revisions, cm_sysdef, cm_hookup
-from . import geo_location, geo_handling
+from . import mc, cm_partconnect, cm_utils, cm_sysdef, cm_hookup
+from . import geo_handling
 
 
 class SystemInfo:
@@ -102,10 +102,9 @@ class Handling:
         cofa = self.geo.cofa()
         return cofa
 
-    def get_all_fully_connected_at_date(self, at_date, station_types_to_check='default', hookup_type=None):
+    def get_connected_stations(self, at_date, hookup_type=None):
         """
-        Returns a list of class SystemInfo of all of the locations fully connected at_date
-        have station_types in station_types_to_check.
+        Returns a list of class SystemInfo of all of the stations connected at_date.
 
         Each location is returned class SystemInfo.  Attributes are:
             'station_name': name of station (string, e.g. 'HH27')
@@ -126,8 +125,6 @@ class Handling:
         -----------
         at_date : str, int
             Date to check for connections.  Anything intelligible by cm_utils.get_astropytime
-        station_types_to_check : list
-            Station types to check, or 'all' ['default']].  It can either be the prefix or the "Name" (e.g. 'herahexe')
         hookup_type : str
             Type of hookup to use (current observing system is 'parts_hera').
             If 'None' it will determine which system it thinks it is based on
@@ -139,81 +136,21 @@ class Handling:
         list
             List of stations connected.
         """
+
+        import cm_active
         at_date = cm_utils.get_astropytime(at_date)
-        self.H = cm_hookup.Hookup(self.session)
-        self.geo.get_station_types()
-        station_types_to_check = self.geo.parse_station_types_to_check(station_types_to_check)
+        HU = cm_hookup.Hookup(self.session)
+        hud = HU.get_hookup(hpn=cm_sysdef.hera_zone_prefixes, pol='all', at_date=at_date,
+                            exact_match=False, use_cache=False, hookup_type=hookup_type)
+        active = cm_active.ActiveData(session=self.session, at_date=at_date)
+        active.load_geo()
         station_conn = []
-        for st in station_types_to_check:
-            for stn in self.geo.station_types[st]['Stations']:
-                station_info = self.get_fully_connected_location_at_date(stn=stn, at_date=at_date, hookup_type=hookup_type)
-                if station_info is not None:
-                    station_conn.append(station_info)
-        self.H = None  # Reset back in case gets called again outside of this method.
-        return station_conn
-
-    def get_fully_connected_location_at_date(self, stn, at_date, hookup_type=None):
-        """
-        Returns SystemInfo class
-
-        Attributes are:
-            'station_name': name of station (string, e.g. 'HH27')
-            'station_type_name': type of station (type 'herahexe', etc)
-            'tile': UTM tile name (string, e.g. '34J'
-            'datum': UTM datum (string, e.g. 'WGS84')
-            'easting': station UTM easting (float)
-            'northing': station UTM northing (float)
-            'lon': station longitude (float)
-            'lat': station latitude (float)
-            'elevation': station elevation (float)
-            'antenna_number': antenna number (integer)
-            'correlator_input': correlator input for x (East) pol and y (North) pol (string tuple-pair)
-            'start_date': start of connection in gps seconds (long)
-            'stop_date': end of connection in gps seconds (long or None no end time)
-
-        Parameters
-        ----------
-        stn : object
-            Station object for the station information to check
-        at_date : astropy.Time
-            Date to check for connections, must be an astropy.Time
-        hookup_type : str
-            Type of hookup to use (current observing system is 'parts_hera').
-            If 'None' it will determine which system it thinks it is based on
-            the part-type.  The order in which it checks is specified in cm_sysdef.
-            Only change if you know you want a different system (like 'parts_paper').
-
-        Returns
-        -------
-        object
-            SystemInfo object of connected station.
-        """
-        if self.H is not None:
-            H = self.H
-        else:
-            H = cm_hookup.Hookup(self.session)
-        hud = H.get_hookup(hpn=[stn], at_date=at_date, exact_match=True, hookup_type=hookup_type)
-        station_info = None
-        fully_connected = cm_revisions.get_full_revision(stn, hud)
-        fully_connected_keys = set()
-        fctime = {'start': 0.0, 'end': 1.0E10}
-        for i, fc in enumerate(fully_connected):
-            if cm_utils.is_active(at_date, fc.started, fc.ended):
-                fully_connected_keys.add(fc.hukey)
-                if fc.started > fctime['start']:
-                    fctime['start'] = fc.started
-                if fc.ended is not None:
-                    if fc.ended < fctime['end']:
-                        fctime['end'] = fc.ended
-        if len(fully_connected_keys) == 1:
-            k = fully_connected_keys.pop()
-            current_hookup = hud[k].hookup
-            p = list(current_hookup.keys())[0]
-            stn = current_hookup[p][0].upstream_part
-            ant_num = current_hookup[p][0].downstream_part
-            # ant_num here is unicode with an A in front of the number (e.g. u'A22').
-            # But we just want an integer, so we strip the A and cast it to int
-            ant_num = int(ant_num[1:])
+        for key in hud.keys():
+            stn, rev = cm_utils.split_part_key(key)
+            ant_num = int(stn[2:])
+            station_info = SystemInfo(stn)
+            station_info.antenna_number = ant_num
+            current_hookup = hud[key].hookup
             corr = {}
             pe = {}
             for p, hu in six.iteritems(current_hookup):
@@ -227,15 +164,23 @@ class Handling:
             fnd_list = self.geo.get_location([stn], at_date)
             if len(fnd_list) == 1:
                 fnd = fnd_list[0]
-                station_info = SystemInfo(fnd)
-                station_info.antenna_number = ant_num
+
                 station_info.correlator_input = (str(corr['e']), str(corr['n']))
                 station_info.epoch = 'e:{}, n:{}'.format(pe['e'], pe['n'])
                 if pe['e'] == pe['n']:
                     station_info.epoch = str(pe['e'])
                     station_info.start_date = fctime['start']
                 station_info.stop_date = fctime['end']
-        return station_info
+
+
+
+
+            station_conn.append(station_info)
+        return station_conn
+###########################
+
+
+
 
     def get_cminfo_correlator(self, hookup_type=None):
         """
@@ -278,8 +223,7 @@ class Handling:
         cm_h = cm_handling.Handling(session=self.session)
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
-        stations_conn = self.get_all_fully_connected_at_date(
-            at_date='now', station_types_to_check=cm_sysdef.hera_zone_prefixes, hookup_type=hookup_type)
+        stations_conn = self.get_connected_stations(at_date='now', hookup_type=hookup_type)
         stn_arrays = SystemInfo()
         for stn in stations_conn:
             stn_arrays.update_arrays(stn)
