@@ -54,7 +54,6 @@ class ActiveData:
         bool
             True if current
         """
-
         if getattr(self, data_type) is None:
             return False
         if at_date is None or abs(at_date.gps - self.at_date.gps) < self.close_enough:
@@ -136,6 +135,7 @@ class ActiveData:
         gps_time = self.set_times(at_date)
         self.connections = {'up': {}, 'down': {}}
         check_keys = {'up': [], 'down': []}
+        print("CA145!!!!!!!!!!!!!!")
         for cnn in self.session.query(partconn.Connections).filter((partconn.Connections.start_gpstime <= gps_time)
                                                                    & ((partconn.Connections.stop_gpstime > gps_time)
                                                                    | (partconn.Connections.stop_gpstime == None))):  # noqa
@@ -143,14 +143,19 @@ class ActiveData:
             if chk in check_keys['up']:
                 raise ValueError("Duplicate active port {}".format(chk))
             check_keys['up'].append(chk)
+            print("CA145!!!!!!!!!!!!!!")
             chk = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev, cnn.downstream_input_port)
             if chk in check_keys['down']:
                 raise ValueError("Duplicate active port {}".format(chk))
             check_keys['down'].append(chk)
             key = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev)
+            if cnn.upstream_part.upper()=='PCH1':
+                print('CA151UP  ',cnn)
             self.connections['up'].setdefault(key, {})
             self.connections['up'][key][cnn.upstream_output_port.upper()] = cnn
             key = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev)
+            if key=='PCH1:A':
+                print("CA156DOWN  ",cnn)
             self.connections['down'].setdefault(key, {})
             self.connections['down'][key][cnn.downstream_input_port.upper()] = cnn
 
