@@ -53,6 +53,8 @@ def test_other_hookup(sys_handle, mcsession, capsys):
                            hookup_type='parts_hera')
     assert 'A700:H' in hu.keys()
     hookup.write_hookup_cache_to_file(log_msg='For testing.')
+    hu = hookup.get_hookup('HH', 'all', at_date='now', exact_match=True, use_cache=True)
+    assert len(hu) == 0
     hu = hookup.get_hookup('cache', pol='all', hookup_type='parts_hera')
     out = hookup.show_hookup(hu, state='all', output_format='csv')
     assert '1230375618' in out
@@ -66,6 +68,18 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     hufc = hookup.get_hookup_from_db(['N700'], 'e', at_date='now')
     assert len(hufc.keys()) == 3
     assert hookup.hookup_type, 'parts_hera'
+    gptf = hookup.get_part_types_found([])
+    assert len(gptf) == 0
+
+
+def test_hookup_notes(mcsession, capsys):
+    hookup = cm_hookup.Hookup(session=mcsession)
+    hu = hookup.get_hookup(['HH'])
+    notes = hookup.get_notes(hu)
+    assert len(notes) == 13
+    print(hookup.show_notes(hu))
+    captured = capsys.readouterr()
+    assert '---HH700:A---' in captured.out.strip()
 
 
 def test_hookup_dossier(sys_handle, capsys):
