@@ -8,12 +8,8 @@
 
 from __future__ import absolute_import, division, print_function
 
-import os
-import socket
-import sys
-import copy
 from astropy.time import Time
-from sqlalchemy import Column, Float, Integer, String, BigInteger, ForeignKey, func
+from sqlalchemy import Column, Float, String, BigInteger, ForeignKey, func
 
 from . import MCDeclarativeBase, NotNull
 from . import mc, cm_utils

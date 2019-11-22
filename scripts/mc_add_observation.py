@@ -5,15 +5,13 @@
 
 from __future__ import absolute_import, division, print_function
 
-import argparse
 import os
 import numpy as np
-from astropy.time import Time, TimeDelta
+from astropy.time import Time
 
 import aipy
 from pyuvdata import UVData
 
-from hera_mc.observations import Observation
 from hera_mc import mc
 
 a = mc.get_mc_argument_parser()

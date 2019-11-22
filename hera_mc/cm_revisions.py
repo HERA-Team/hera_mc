@@ -11,7 +11,6 @@ FULL revisions are called directly (get_full_revision)
 from __future__ import absolute_import, division, print_function
 
 import six
-import warnings
 from tabulate import tabulate
 from argparse import Namespace
 

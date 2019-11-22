@@ -1,0 +1,30 @@
+name: hera_mc_test
+channels:
+  - defaults
+  - conda-forge
+  - chart-studio
+dependencies:
+  - alembic
+  - astropy
+  - cartopy
+  - coveralls
+  - flake8
+  - flake8-pytest
+  - h5py
+  - matplotlib
+  - numpy
+  - pandas
+  - pip
+  - plotly
+  - psutil
+  - psycopg2
+  - pytest-cov
+  - python-dateutil
+  - pyuvdata
+  - scipy
+  - six
+  - sqlalchemy
+  - tabulate
+  - pip:
+      - pytest-docstrings
+      - git+https://github.com/HERA-Team/hera_qm.git

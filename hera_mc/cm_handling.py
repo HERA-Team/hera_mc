@@ -9,7 +9,6 @@ Holds helpful modules for parts and connections scripts.
 from __future__ import absolute_import, division, print_function
 
 from tabulate import tabulate
-import sys
 import copy
 import six
 from astropy.time import Time

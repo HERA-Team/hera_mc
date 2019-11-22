@@ -321,7 +321,9 @@ class Handling:
             if a.station_type_name.lower() in station_types_to_check:
                 found_stations.append(a)
                 if self.fp_out is not None and not self.testing:
-                    self.fp_out.write('{:6} {:.2f} {:.2f} {:.4f} {:.4f}\n'.format(station_name, a.easting, a.northing, a.lon, a.lat))
+                    self.fp_out.write(
+                        '{:6} {:.2f} {:.2f} {:.4f} {:.4f}\n'
+                        .format(a.station_name, a.easting, a.northing, a.lon, a.lat))
         return found_stations
 
     def get_antenna_label(self, label_to_show, stn, query_date):

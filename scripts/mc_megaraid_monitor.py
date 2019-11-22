@@ -18,9 +18,8 @@ import datetime
 import dateutil.tz
 import errno
 import json
-import os.path
 import socket
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 import sys
 import six
 
@@ -233,7 +232,6 @@ with db.sessionmaker() as session:
             time = parse_storcli_datetime(abs_time_str)
         else:
             boot_rel_time = int(data.pop('Seconds since last reboot'))
-            import datetime
             import psutil
             boot = datetime.datetime.fromtimestamp(psutil.boot_time())
             delta = TimeDelta(boot_rel_time, format='sec')

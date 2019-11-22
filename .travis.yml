@@ -23,13 +23,10 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda install six numpy astropy scipy python-dateutil sqlalchemy psycopg2
-    pandas matplotlib tabulate psutil cartopy pytest-cov pip pycodestyle
-    alembic coveralls pyuvdata h5py plotly
-  - conda install chart-studio -c plotly
+  - conda create --name=hera_mc_test
+  - conda env update -f ci/hera_mc_test.yml
   - conda list
-  - pip install git+https://github.com/HERA-Team/hera_qm.git;
-  - python setup.py install
+  - pip install .
 addons:
     postgresql: "9.5"
 services:
@@ -43,7 +40,7 @@ before_script:
   - alembic upgrade head
 script:
   - python -m pytest hera_mc --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
-  - pycodestyle . --ignore=E501,W503 --exclude=alembic
+  - flake8
 
 after_success:
     - coveralls

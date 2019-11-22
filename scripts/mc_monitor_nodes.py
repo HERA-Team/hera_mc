@@ -36,7 +36,8 @@ commands_to_run = ['add_node_sensor_readings_from_nodecontrol',
 
 while True:
     try:
-        # Use a single session unless there's an error that isn't fixed by a rollback.
+        # Use a single session unless there's an error that isn't fixed by a
+        # rollback.
         with db.sessionmaker() as session:
             while True:
                 time.sleep(MONITORING_INTERVAL)
@@ -48,7 +49,7 @@ while True:
                         session.add_daemon_status('mc_monitor_nodes',
                                                   hostname, Time.now(), 'good')
                         session.commit()
-                    except Exception as e:
+                    except Exception:
                         print('{t} -- error calling command {c}'.format(
                             t=time.asctime(), c=command), file=sys.stderr)
                         traceback.print_exc(file=sys.stderr)
@@ -58,14 +59,17 @@ while True:
                             # try to update the daemon_status table and add an
                             # error message to the subsystem_error table
                             session.add_daemon_status('mc_monitor_nodes',
-                                                      hostname, Time.now(), 'errored')
+                                                      hostname, Time.now(),
+                                                      'errored')
                             session.add_subsystem_error(Time.now(),
                                                         'mc_node_monitor',
                                                         2, traceback_str)
                         except Exception:
-                            # if we can't log error messages to the session, need a new session
-                            utils.reraise_context('error logging to subsystem_error '
-                                                  'table after command "%r"', command)
+                            # if we can't log error messages to the session,
+                            # need a new session
+                            utils._reraise_context(
+                                'error logging to subsystem_error '
+                                'table after command "%r"', command)
                         continue
     except Exception:
         # Try to log an error with a new session
@@ -80,7 +84,9 @@ while True:
                                             'mc_node_monitor',
                                             2, traceback_str)
             except Exception:
-                # if we can't log error messages to the new session we're in real trouble
-                utils.reraise_context('error logging to subsystem_error with a new session')
+                # if we can't log error messages to the new session
+                # we're in real trouble
+                utils._reraise_context(
+                    'error logging to subsystem_error with a new session')
         # logging with a new session worked, so restart to get a new session
         continue

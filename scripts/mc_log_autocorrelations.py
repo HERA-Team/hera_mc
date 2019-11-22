@@ -14,13 +14,17 @@ import numpy as np
 import redis
 import sys
 
+import six.moves as sm
+
 from hera_mc import autocorrelations, mc
 
 
 # Yay hardcoded config settings:
 
 redis_host = 'redishost'
-antnums = xrange(128)
+
+sm.range
+antnums = sm.range(128)
 
 # End of config.
 

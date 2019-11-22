@@ -14,11 +14,10 @@ from argparse import Namespace
 
 from . import cm_sysdef, cm_utils
 from . import cm_partconnect as partconn
-from . import geo_location
 if six.PY3:
     from itertools import zip_longest
 if six.PY2:
-    from itertools import izip_longest as zip_longest
+    from itertools import izip_longest as zip_longest # noqa
 
 
 class PartEntry():

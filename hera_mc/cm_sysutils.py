@@ -9,7 +9,6 @@ Methods for handling locating correlator and various system aspects.
 from __future__ import absolute_import, division, print_function
 
 import six
-from astropy.time import Time
 from sqlalchemy import func, and_, or_
 import numpy as np
 

@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 from astropy.time import Time
 
-from .. import cm_partconnect, cm_handling, cm_dossier
+from .. import cm_partconnect, cm_handling
 
 
 @pytest.fixture(scope='function')

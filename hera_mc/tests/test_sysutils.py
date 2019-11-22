@@ -40,7 +40,6 @@ def test_random_update(sys_handle):
 
 
 def test_other_hookup(sys_handle, mcsession, capsys):
-    at_date = cm_utils.get_astropytime('2017-07-03')
     hookup = cm_hookup.Hookup(session=mcsession)
     assert hookup.cached_hookup_dict is None
 
@@ -140,9 +139,6 @@ def test_sysdef(sys_handle, mcsession):
     op.append(Namespace(upstream_part='aprt', upstream_output_port='eb',
                         downstream_part='bprt', downstream_input_port='ea'))
     rg.port = 'e4'
-    A = Namespace(hpn='apart', part_type='front-end')
-    B = [Namespace(hpn='apart', part_type='cable-rfof'),
-         Namespace(hpn='bpart', part_type='cable-rfof')]
     rg.port = 'rug'
     op[0].downstream_input_port = 'rug'
     pytest.raises(ValueError, sysdef.find_hookup_type, 'dull_knife',

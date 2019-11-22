@@ -4,7 +4,6 @@
 
 from __future__ import absolute_import, division, print_function
 import six
-from argparse import Namespace
 from hera_mc import cm_utils
 
 hera_zone_prefixes = ['HH', 'HA', 'HB']

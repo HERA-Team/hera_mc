@@ -10,8 +10,8 @@ from __future__ import absolute_import, division, print_function
 
 import six
 from astropy.time import Time
-from sqlalchemy import (BigInteger, Column, Float, ForeignKey,
-                        ForeignKeyConstraint, Integer, String,
+from sqlalchemy import (BigInteger, Column,
+                        ForeignKeyConstraint, String,
                         Text, func)
 
 from . import MCDeclarativeBase, NotNull

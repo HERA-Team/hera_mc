@@ -9,8 +9,6 @@ Methods to load all active data for a given date.
 """
 from __future__ import absolute_import, division, print_function
 
-import six
-
 from . import cm_utils
 from . import cm_partconnect as partconn
 

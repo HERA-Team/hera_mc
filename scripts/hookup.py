@@ -9,8 +9,6 @@ Allows various views on the antenna hookup, as well as handle the hookup cache f
 """
 from __future__ import absolute_import, division, print_function
 
-import os.path
-
 from hera_mc import mc, cm_hookup, cm_utils, cm_sysdef
 
 if __name__ == '__main__':
