@@ -162,6 +162,8 @@ class Handling:
                 except IndexError:  # pragma: no cover
                     corr[pol] = 'None'
                 station_info.timing[pol] = hud[key].timing[ppkey]
+            if corr['e'] == 'None' and corr['n'] == 'None':
+                continue
             station_info.correlator_input = (str(corr['e']), str(corr['n']))
             station_info.epoch = 'e:{}, n:{}'.format(pe['e'], pe['n'])
             station_conn.append(station_info)
@@ -212,7 +214,7 @@ class Handling:
         stn_arrays = SystemInfo()
         for stn in stations_conn:
             stn_arrays.update_arrays(stn)
-        # latitudes, longitudes output by get_all_fully_connected_at_date are in degrees
+        # latitudes, longitudes output by get_connected_stations are in degrees
         # XYZ_from_LatLonAlt wants radians
         ecef_positions = uvutils.XYZ_from_LatLonAlt(np.array(stn_arrays.lat) * np.pi / 180.,
                                                     np.array(stn_arrays.lon) * np.pi / 180.,
