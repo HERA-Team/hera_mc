@@ -82,7 +82,7 @@ def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
     from chart_studio import plotly as py
 
     hsession = cm_sysutils.Handling(session)
-    stations = hsession.get_all_fully_connected_at_date(at_date='now')
+    stations = hsession.get_connected_stations(at_date='now')
 
     hera_ants = []
     for station in stations:

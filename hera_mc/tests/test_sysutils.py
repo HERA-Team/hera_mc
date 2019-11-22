@@ -24,7 +24,7 @@ def sys_handle(mcsession):
 
 
 def test_ever_fully_connected(sys_handle):
-    now_list = sys_handle.get_all_fully_connected_at_date(
+    now_list = sys_handle.get_connected_stations(
         at_date='now', hookup_type='parts_hera')
     assert len(now_list) == 12
 
@@ -164,11 +164,6 @@ def test_hookup_cache_file_info(sys_handle, mcsession):
     hookup = cm_hookup.Hookup(session=mcsession)
     cfi = hookup.hookup_cache_file_info()
     assert 'json does not exist' in cfi
-
-
-def test_some_fully_connected(sys_handle):
-    x = sys_handle.get_fully_connected_location_at_date('HH701', '2019/02/21')
-    assert x.antenna_number == 701
 
 
 def test_correlator_info(sys_handle):
