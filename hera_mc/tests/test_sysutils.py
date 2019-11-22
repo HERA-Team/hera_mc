@@ -136,28 +136,10 @@ def test_sysdef(sys_handle, mcsession):
     part = Namespace(part_type='nope')
     pytest.raises(ValueError, sysdef.setup, part, pol='nope',
                   hookup_type='parts_hera')
-    curr = active.is_data_current('parts', None)
-    assert curr
     curr = active.set_times(cm_utils.get_astropytime('2017-07-03'))
     assert int(curr) == 1183075218
-    active.load_parts()
-    x = active.check()
-    assert len(x) == 0
-    active.parts = 'test'
-    active.load_parts(None)
-    assert active.parts == 'test'
-    active.connections = 'test'
-    active.load_connections(None)
-    assert active.connections == 'test'
-    active.info = 'test'
-    active.load_info(None)
-    assert active.info == 'test'
-    active.apriori = 'test'
-    active.load_apriori(None)
-    assert active.apriori == 'test'
-    active.geo = 'test'
-    active.load_geo(None)
-    assert active.geo == 'test'
+    active.load_apriori('now')
+    assert active.apriori['HH700:A'].status == 'not_connected'
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):
