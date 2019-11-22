@@ -136,18 +136,18 @@ class Handling:
             List of stations connected.
         """
 
-        import cm_active
         at_date = cm_utils.get_astropytime(at_date)
         HU = cm_hookup.Hookup(self.session)
         hud = HU.get_hookup(hpn=cm_sysdef.hera_zone_prefixes, pol='all', at_date=at_date,
                             exact_match=False, use_cache=False, hookup_type=hookup_type)
-        active = cm_active.ActiveData(session=self.session, at_date=at_date)
-        active.load_geo()
         station_conn = []
-        for key in hud.keys():
+        found_keys = list(hud.keys())
+        found_stations = [x.split(':')[0] for x in found_keys]
+        station_geo = self.geo.get_location(found_stations, at_date)
+        for i, key in enumerate(found_keys):
             stn, rev = cm_utils.split_part_key(key)
             ant_num = int(stn[2:])
-            station_info = SystemInfo(stn)
+            station_info = SystemInfo(station_geo[i])
             station_info.antenna_number = ant_num
             current_hookup = hud[key].hookup
             corr = {}
@@ -162,7 +162,6 @@ class Handling:
                 except IndexError:  # pragma: no cover
                     corr[pol] = 'None'
                 station_info.timing[pol] = hud[key].timing[ppkey]
-
             station_info.correlator_input = (str(corr['e']), str(corr['n']))
             station_info.epoch = 'e:{}, n:{}'.format(pe['e'], pe['n'])
             station_conn.append(station_info)
@@ -220,7 +219,6 @@ class Handling:
                                                     stn_arrays.elevation)
         rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions,
                                                       cofa_loc.lon * np.pi / 180.)
-
         return {'antenna_numbers': stn_arrays.antenna_number,
                 # This is actually station names, not antenna names,
                 # but antenna_names is what it's called in pyuvdata
