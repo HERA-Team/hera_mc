@@ -138,6 +138,8 @@ def test_sysdef(sys_handle, mcsession):
                   hookup_type='parts_hera')
     curr = active.set_times(cm_utils.get_astropytime('2017-07-03'))
     assert int(curr) == 1183075218
+    active.load_apriori('now')
+    assert active.apriori['HH700:A'].status == 'not_connected'
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):
