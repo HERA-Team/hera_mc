@@ -333,7 +333,8 @@ class Hookup(object):
         exact_match : bool
             Flag for either exact_match or partial
         use_cache : bool
-            Flag to force the cache to be read, if present and keys agree
+            Flag to force the cache to be read, if present and keys agree.  This is largely
+            deprecated, but kept for archival possibilities for the future.
         hookup_type : str or None
             Type of hookup to use (current observing system is 'parts_hera').
             If 'None' it will determine which system it thinks it is based on
@@ -354,9 +355,10 @@ class Hookup(object):
             return self.cached_hookup_dict
 
         hpn = cm_utils.listify(hpn)
-        if use_cache and self.requested_list_OK_for_cache(hpn):
-            self.read_hookup_cache_from_file()
-            return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
+        if use_cache:
+            if self.requested_list_OK_for_cache(hpn):
+                self.read_hookup_cache_from_file()
+                return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
 
         return self.get_hookup_from_db(hpn=hpn, pol=pol, at_date=at_date,
                                        exact_match=exact_match, hookup_type=hookup_type)

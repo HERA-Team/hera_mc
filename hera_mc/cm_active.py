@@ -23,7 +23,6 @@ class ActiveData:
     ----------
     at_date : str, int, float, Time, datetime
     """
-    close_enough = 2.0  # Seconds within which the dates are close enough
 
     def __init__(self, session=None, at_date='now'):
         if session is None:  # pragma: no cover
@@ -37,28 +36,6 @@ class ActiveData:
         self.info = None
         self.apriori = None
         self.geo = None
-
-    def is_data_current(self, data_type, at_date):
-        """
-        Determines if the class data of type data_type is current at at_date.
-
-        Parameters
-        ----------
-        data_type : str
-            One of the allowed data_types:  parts, connections, info, apriori, geo
-        at_date : astropytime.Time or None
-            Date for which to check.  If none, assumes match to self.at_date
-
-        Returns
-        -------
-        bool
-            True if current
-        """
-        if getattr(self, data_type) is None:
-            return False
-        if at_date is None or abs(at_date.gps - self.at_date.gps) < self.close_enough:
-            return True
-        return False
 
     def set_times(self, at_date):
         """
@@ -96,8 +73,6 @@ class ActiveData:
             to get_astropytime.  If not present uses self.at_date
         """
         at_date = cm_utils.get_astropytime(at_date)
-        if self.is_data_current('parts', at_date):
-            return
         gps_time = self.set_times(at_date)
         self.parts = {}
         for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= gps_time)
@@ -130,8 +105,6 @@ class ActiveData:
         """
 
         at_date = cm_utils.get_astropytime(at_date)
-        if self.is_data_current('connections', at_date):
-            return
         gps_time = self.set_times(at_date)
         self.connections = {'up': {}, 'down': {}}
         check_keys = {'up': [], 'down': []}
@@ -170,8 +143,6 @@ class ActiveData:
             to get_astropytime
         """
         at_date = cm_utils.get_astropytime(at_date)
-        if self.is_data_current('info', at_date):
-            return
         gps_time = self.set_times(at_date)
         self.info = {}
         for info in self.session.query(partconn.PartInfo).filter((partconn.PartInfo.posting_gpstime <= gps_time)):
@@ -198,8 +169,6 @@ class ActiveData:
             Revision of antenna-station (always A)
         """
         at_date = cm_utils.get_astropytime(at_date)
-        if self.is_data_current('apriori', at_date):
-            return
         gps_time = self.set_times(at_date)
         self.apriori = {}
         apriori_keys = []
@@ -230,8 +199,6 @@ class ActiveData:
         """
         from . import geo_location
         at_date = cm_utils.get_astropytime(at_date)
-        if self.is_data_current('geo', at_date):
-            return
         gps_time = self.set_times(at_date)
         self.geo = {}
         for ageo in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.created_gpstime <= gps_time):
