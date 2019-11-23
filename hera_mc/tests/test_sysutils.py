@@ -154,6 +154,13 @@ def test_sysdef(sys_handle, mcsession):
     assert int(curr) == 1183075218
     active.load_apriori('now')
     assert active.apriori['HH700:A'].status == 'not_connected'
+    ap = cm_partconnect.AprioriAntenna()
+    ap.antenna = 'HH700'
+    ap.start_gpstime = int(cm_utils.get_astropytime('2019-01-01').gps)
+    ap.status = 'duplicate'
+    mcsession.add(ap)
+    mcsession.commit()
+    pytest.raises(ValueError, active.load_apriori, 'now')
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):
