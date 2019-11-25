@@ -91,7 +91,7 @@ if __name__ == '__main__':
         elif args.verbosity == 2:
             columns = ['hpn', 'posting_gpstime', 'comment']
         else:
-            columns = ['hpn', 'posting_gpstime', 'library_file', 'comment']
+            columns = ['hpn', 'posting_gpstime', 'reference', 'comment']
 
     if args.columns is not None:
         columns = args.columns

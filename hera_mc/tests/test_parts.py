@@ -100,7 +100,7 @@ def test_format_and_check_update_part_request(parts):
 def test_show_dossier(parts, capsys):
     cm_partconnect.add_part_info(
         parts.test_session, parts.test_part, parts.test_rev, parts.start_time,
-        'Testing', 'library_file')
+        'Testing', 'reference')
     located = parts.cm_handle.get_dossier(hpn=[parts.test_part], rev=parts.test_rev,
                                           at_date='now', exact_match=True)
     captured = parts.cm_handle.show_dossier(located, ['hpn', 'start_gpstime'])
@@ -133,7 +133,7 @@ def test_various_dossier(capsys):
 def test_part_info(parts, capsys):
     cm_partconnect.add_part_info(
         parts.test_session, parts.test_part, parts.test_rev,
-        Time('2017-07-01 01:00:00'), 'Testing', 'library_file')
+        Time('2017-07-01 01:00:00'), 'Testing', 'reference')
     located = parts.cm_handle.get_dossier(hpn=[parts.test_part], rev=parts.test_rev,
                                           at_date='now', exact_match=True)
     assert 'Testing' in located[list(located.keys())[0]].part_info.comment

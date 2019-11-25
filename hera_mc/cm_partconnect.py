@@ -164,7 +164,7 @@ def add_new_parts(session, part_list, at_date, allow_restart=False):
                 print_out = 're' + print_out
                 this_data.append([hpnr[0], hpnr[1], 'stop_gpstime', None])
                 comment = 'Restarting part.  Previous data {}'.format(existing)
-                add_part_info(session, hpn=hpnr[0], rev=hpnr[1], at_date=at_date, comment=comment, library_file=None)
+                add_part_info(session, hpn=hpnr[0], rev=hpnr[1], at_date=at_date, comment=comment, reference=None)
             else:
                 print_out = "No action. The request {} not an allowed part restart.".format(hpnr)
                 this_data = None
@@ -429,7 +429,7 @@ class PartInfo(MCDeclarativeBase):
     posting_gpstime: time that the data are posted
         Part of the primary_key
     comment: Comment associated with this data - or the data itself...
-    library_file: Name of datafile held in library
+    reference: Other reference associated with this entry.
     """
 
     __tablename__ = 'part_info'
@@ -438,7 +438,7 @@ class PartInfo(MCDeclarativeBase):
     hpn_rev = Column(String(32), nullable=False, primary_key=True)
     posting_gpstime = NotNull(BigInteger, primary_key=True)
     comment = NotNull(String(2048))
-    library_file = Column(String(256))
+    reference = Column(String(256))
 
     def __repr__(self):
         return '<heraPartNumber id = {self.hpn}:{self.hpn_rev} comment = {self.comment}>'.format(self=self)
@@ -451,7 +451,7 @@ class PartInfo(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
+def add_part_info(session, hpn, rev, at_date, comment, reference=None):
     """
     Add part information into database.
 
@@ -467,7 +467,7 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
         Date to use for the log entry
     comment : str
         String containing the comment to be logged.
-    library_file : str, None
+    reference : str, None
         If appropriate, name or link of library file or other information.
     """
     close_session_when_done = False
@@ -481,7 +481,7 @@ def add_part_info(session, hpn, rev, at_date, comment, library_file=None):
     pi.hpn_rev = rev
     pi.posting_gpstime = int(cm_utils.get_astropytime(at_date).gps)
     pi.comment = comment
-    pi.library_file = library_file
+    pi.reference = reference
     session.add(pi)
     session.commit()
     if close_session_when_done:  # pragma: no cover
