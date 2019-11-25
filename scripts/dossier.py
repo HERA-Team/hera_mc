@@ -15,56 +15,51 @@ from __future__ import absolute_import, division, print_function
 
 from hera_mc import mc, cm_handling, cm_utils
 
-if __name__ == '__main__':
-    parser = mc.get_mc_argument_parser()
-    parser.add_argument('view', nargs='?', help="Views are:  parts, connections, notes, revisions.\
-                                                 Need first letter only.", default='parts')
-    # set values for 'action' to use
-    parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv list.")
-    parser.add_argument('-r', '--revision', help="Revision for hpn, or None for active.", default=None)
-    parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
-                        dest='exact_match', action='store_true')
-    parser.add_argument('--columns', help="Custom columns as csv list.  Use '--list-all-columns' for options.", default=None)
-    parser.add_argument('--list-all-columns', dest='list_columns', help="Show a list of all available columns", action='store_true')
-    parser.add_argument('--hide-sigpath', dest='sigpath', help="Hide signal path ports", action='store_false')
-    parser.add_argument('--hide-phys', dest='phys', help="Hide physical ports", action='store_false')
-    parser.add_argument('--ports', help="Include only these ports, csv list", default=None)
-    cm_utils.add_verbosity_args(parser)
-    cm_utils.add_date_time_args(parser)
-    parser.add_argument('--notes-start-date', dest='notes_start_date', help="<For notes> start_date for notes [<]",
-                        default='<')
-    parser.add_argument('--notes-start-time', dest='notes_start_time', help="<For notes> start_time for notes",
-                        default=0.0)
+all_views = {'p': 'parts', 'c': 'connections', 'n': 'notes', 'r': 'revisions'}
 
-    args = parser.parse_args()
+parser = mc.get_mc_argument_parser()
+parser.add_argument('view', nargs='?', help="Views are:  {}.  Need first letter only.\
+                    ".format(', '.join(all_views.values())), default='parts')
+# set values for 'action' to use
+parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv list.")
+parser.add_argument('-r', '--revision', help="Revision for hpn, or None for active.", default=None)
+parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
+                    dest='exact_match', action='store_true')
+parser.add_argument('--columns', help="Custom columns as csv list.  Use '--list-all-columns' for options.", default=None)
+parser.add_argument('--list-all-columns', dest='list_columns', help="Show a list of all available columns", action='store_true')
+parser.add_argument('--hide-sigpath', dest='sigpath', help="Hide signal path ports", action='store_false')
+parser.add_argument('--hide-phys', dest='phys', help="Hide physical ports", action='store_false')
+parser.add_argument('--ports', help="Include only these ports, csv list", default=None)
+cm_utils.add_verbosity_args(parser)
+cm_utils.add_date_time_args(parser)
+parser.add_argument('--notes-start-date', dest='notes_start_date', help="<For notes> start_date for notes [<]",
+                    default='<')
+parser.add_argument('--notes-start-time', dest='notes_start_time', help="<For notes> start_time for notes",
+                    default=0.0)
+args = parser.parse_args()
 
-    args.verbosity = cm_utils.parse_verbosity(args.verbosity)
-    action_tag = args.action[:2].lower()
-    args.hpn = cm_utils.listify(args.hpn)
-    date_query = cm_utils.get_astropytime(args.date, args.time)
-    notes_start_date = cm_utils.get_astropytime(args.notes_start_date, args.notes_start_time)
+args.verbosity = cm_utils.parse_verbosity(args.verbosity)
+view = all_views[args.view[0].lower()] if not args.list_all_columns else 'all-columns'
+args.hpn = cm_utils.listify(args.hpn)
+date_query = cm_utils.get_astropytime(args.date, args.time)
+notes_start_date = cm_utils.get_astropytime(args.notes_start_date, args.notes_start_time)
 
-    # Start session
-    db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
+# Start session
+db = mc.connect_to_mc_db(args)
+session = db.sessionmaker()
+
+if view == 'all-columns':
+    from hera_mc import cm_dossier
+    blank = cm_dossier.PartEntry(None, None)
+    for col in blank.col_hdr.keys():
+        print('\t{:30s}\t{}'.format(col, blank.col_hdr[col]))
+elif view == 'revisions':
+    for hpn in args.hpn:
+        rev_ret = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
+        cm_handling.cmrev.show_revisions(rev_ret)
+else:
     handling = cm_handling.Handling(session)
-
-    if action_tag == 're':  # revisions
-        for hpn in args.hpn:
-            rev_ret = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
-            cm_handling.cmrev.show_revisions(rev_ret)
-        import sys
-        sys.exit()
-
-    if args.list_columns:
-        from hera_mc import cm_dossier
-        blank = cm_dossier.PartEntry(None, None)
-        for col in blank.col_hdr.keys():
-            print('\t{:30s}\t{}'.format(col, blank.col_hdr[col]))
-        import sys
-        sys.exit()
-
-    if action_tag == 'pa':  # parts
+    if view == 'parts':
         if args.verbosity == 1:
             columns = ['hpn', 'hpn_rev', 'hptype', 'input_ports', 'output_ports']
         elif args.verbosity == 2:
@@ -73,7 +68,7 @@ if __name__ == '__main__':
         else:
             columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_gpstime', 'stop_gpstime',
                        'input_ports', 'output_ports', 'geo', 'comment']
-    elif action_tag == 'co':  # connections
+    elif view == 'connections':
         if args.verbosity == 1:
             columns = ['up.upstream_part', 'up.upstream_output_port', 'up.downstream_input_port',
                        'hpn',
@@ -88,7 +83,7 @@ if __name__ == '__main__':
                        'hpn', 'hpn_rev',
                        'down.upstream_output_port', 'down.downstream_input_port', 'down.downstream_part', 'down.down_part_rev',
                        'down.start_gpstime', 'down.stop_gpstime']
-    elif action_tag == 'no':  # notes
+    elif view == 'notes':
         if args.verbosity == 1:
             columns = ['hpn', 'posting_gpstime', 'comment']
         elif args.verbosity == 2:
