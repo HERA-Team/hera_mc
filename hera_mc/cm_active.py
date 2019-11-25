@@ -76,7 +76,7 @@ class ActiveData:
         gps_time = self.set_times(at_date)
         self.parts = {}
         for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= gps_time)
-                                                             & ((partconn.Parts.stop_gpstime >= gps_time)
+                                                             & ((partconn.Parts.stop_gpstime > gps_time)
                                                              | (partconn.Parts.stop_gpstime == None))):  # noqa
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.parts[key] = prt
@@ -171,10 +171,14 @@ class ActiveData:
         at_date = cm_utils.get_astropytime(at_date)
         gps_time = self.set_times(at_date)
         self.apriori = {}
+        apriori_keys = []
         for astat in self.session.query(partconn.AprioriAntenna).filter((partconn.AprioriAntenna.start_gpstime <= gps_time)
-                                                                        & ((partconn.AprioriAntenna.stop_gpstime >= gps_time)
+                                                                        & ((partconn.AprioriAntenna.stop_gpstime > gps_time)
                                                                         | (partconn.AprioriAntenna.stop_gpstime == None))):  # noqa
             key = cm_utils.make_part_key(astat.antenna, rev)
+            if key in apriori_keys:
+                raise ValueError("{} already has an active apriori state.".format(key))
+            apriori_keys.append(key)
             self.apriori[key] = astat
 
     def load_geo(self, at_date=None):
