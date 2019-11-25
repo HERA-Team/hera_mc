@@ -160,7 +160,9 @@ def test_sysdef(sys_handle, mcsession):
     ap.status = 'duplicate'
     mcsession.add(ap)
     mcsession.commit()
-    pytest.raises(ValueError, active.load_apriori, 'now')
+    with pytest.raises(ValueError) as apdup:
+        active.load_apriori('now')
+    assert str(apdup.value).startswith("HH700:A already has an active apriori state")
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):
