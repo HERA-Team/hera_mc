@@ -4,9 +4,9 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Utility scripts to display part and connection information.
+Utility scripts to display dossier information.
 
-Actions 'parts', 'connections', 'notes' differ only by defining a different set of columns,
+Actions 'parts', 'connections', and 'notes' differ only by defining a different set of columns,
 which may be overridden by instead using the args.columns parameter (see cm_dossier.PartEntry
 for allowed columns.)
 
@@ -17,21 +17,24 @@ from hera_mc import mc, cm_handling, cm_utils
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('action', nargs='?', help="Actions are:  parts, connections, notes, revisions", default='parts')
+    parser.add_argument('view', nargs='?', help="Views are:  parts, connections, notes, revisions.\
+                                                 Need first letter only.", default='parts')
     # set values for 'action' to use
-    parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv-list.")
-    parser.add_argument('-r', '--revision', help="Revision for hpn, or None.", default=None)
+    parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv list.")
+    parser.add_argument('-r', '--revision', help="Revision for hpn, or None for active.", default=None)
     parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
-    parser.add_argument('--columns', help="Custom columns, see cm_dossier.PartEntry (overrides)", default=None)
+    parser.add_argument('--columns', help="Custom columns as csv list.  Use '--list-all-columns' for options.", default=None)
     parser.add_argument('--list-all-columns', dest='list_columns', help="Show a list of all available columns", action='store_true')
     parser.add_argument('--hide-sigpath', dest='sigpath', help="Hide signal path ports", action='store_false')
     parser.add_argument('--hide-phys', dest='phys', help="Hide physical ports", action='store_false')
-    parser.add_argument('--ports', help="Include only these ports (overrides), csv-list", default=None)
+    parser.add_argument('--ports', help="Include only these ports, csv list", default=None)
     cm_utils.add_verbosity_args(parser)
     cm_utils.add_date_time_args(parser)
-    parser.add_argument('--notes_start_date', help="<For notes> start_date for notes [<]", default='<')
-    parser.add_argument('--notes_start_time', help="<For notes> start_time for notes", default=0.0)
+    parser.add_argument('--notes-start-date', dest='notes_start_date', help="<For notes> start_date for notes [<]",
+                        default='<')
+    parser.add_argument('--notes-start-time', dest='notes_start_time', help="<For notes> start_time for notes",
+                        default=0.0)
 
     args = parser.parse_args()
 
