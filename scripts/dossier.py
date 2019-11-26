@@ -7,8 +7,7 @@
 Utility scripts to display dossier information.
 
 Actions 'parts', 'connections', and 'notes' differ only by defining a different set of columns,
-which may be overridden by instead using the args.columns parameter (see cm_dossier.PartEntry
-for allowed columns.)
+which may be overridden by instead using the args.columns parameter (--list-all-columns)
 
 """
 from __future__ import absolute_import, division, print_function
@@ -22,7 +21,7 @@ parser.add_argument('view', nargs='?', help="Views are:  {}.  Need first letter 
                     ".format(', '.join(all_views.values())), default='parts')
 # set values for 'action' to use
 parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv list.")
-parser.add_argument('-r', '--revision', help="Revision for hpn, or None for active.", default=None)
+parser.add_argument('-r', '--revision', help="Revision for hpn.  Typically don't change from default.", default=None)
 parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
                     dest='exact_match', action='store_true')
 parser.add_argument('--columns', help="Custom columns as csv list.  Use '--list-all-columns' for options.", default=None)
