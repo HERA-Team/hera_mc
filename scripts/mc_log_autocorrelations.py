@@ -53,7 +53,8 @@ with db.sessionmaker() as dbsession:
             try:
                 data = rsession.hgetall('visdata://%d/%d/%s%s' % (ant, ant, pol, pol))
             except Exception as e:
-                print('failed to get autocorrelation %d%s: %s (%s)' % (ant, pol, e, e.__class__.__name__),
+                print('failed to get autocorrelation %d%s: %s (%s)'
+                      % (ant, pol, e, e.__class__.__name__),
                       file=sys.stderr)
                 n_failures += 1
                 continue

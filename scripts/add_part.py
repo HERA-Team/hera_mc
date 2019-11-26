@@ -36,7 +36,8 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--rev', help="Revision number of part", default=None)
     parser.add_argument('-t', '--hptype', help="HERA part type", default=None)
     parser.add_argument('-m', '--mfg', help="Manufacturers number for part", default=None)
-    parser.add_argument('--disallow_restart', dest='allow_restart', help="Flag to disallow restarting an "
+    parser.add_argument('--disallow_restart', dest='allow_restart',
+                        help="Flag to disallow restarting an "
                         "existing and stopped part", action='store_false')
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
@@ -55,4 +56,5 @@ if __name__ == '__main__':
     if args.verbosity > 1:
         print("Trying to add new part {}:{}".format(args.hpn, args.rev))
     new_part = [[args.hpn, args.rev, args.hptype, args.mfg]]
-    cm_partconnect.add_new_parts(session, part_list=new_part, at_date=at_date, allow_restart=args.allow_restart)
+    cm_partconnect.add_new_parts(session, part_list=new_part, at_date=at_date,
+                                 allow_restart=args.allow_restart)

@@ -103,9 +103,11 @@ class PartEntry():
         Pulls out the input_ports and output_ports to a class variable
         """
         if self.connections.down is not None:
-            self.input_ports = cm_utils.put_keys_in_order([x.lower() for x in self.connections.down.keys()], 'PNR')
+            self.input_ports = cm_utils.put_keys_in_order(
+                [x.lower() for x in self.connections.down.keys()], 'PNR')
         if self.connections.up is not None:
-            self.output_ports = cm_utils.put_keys_in_order([x.lower() for x in self.connections.up.keys()], 'PNR')
+            self.output_ports = cm_utils.put_keys_in_order(
+                [x.lower() for x in self.connections.up.keys()], 'PNR')
 
     def get_connections(self, active):
         """
@@ -199,11 +201,13 @@ class PartEntry():
             new_up = []
             new_dn = []
             for up, down in conns:
-                if up is None or up.upstream_output_port.upper() in ports or up.downstream_input_port.upper() in ports:
+                if (up is None or up.upstream_output_port.upper() in ports
+                        or up.downstream_input_port.upper() in ports):
                     new_up.append(up)
                 else:
                     new_up.append(None)
-                if down is None or down.upstream_output_port.upper() in ports or down.downstream_input_port.upper() in ports:
+                if (down is None or down.upstream_output_port.upper() in ports
+                        or down.downstream_input_port.upper() in ports):
                     new_dn.append(down)
                 else:
                     new_up.append(None)

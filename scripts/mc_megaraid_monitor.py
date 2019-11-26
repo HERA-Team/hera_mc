@@ -156,7 +156,8 @@ for line in event_log.stdout:
         line = line.decode("utf-8")
     if state == NOT_IN_EVENT:
         if line.startswith('seqNum:'):
-            # The extra 0 arg here means to guess the numeric base; seqnum is in hex with a 0x prefix.
+            # The extra 0 arg here means to guess the numeric base;
+            # seqnum is in hex with a 0x prefix.
             seq_num = int(line.split(':', 1)[1].strip(), 0)
             state = IN_EVENT
     elif state == IN_EVENT:

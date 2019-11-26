@@ -114,7 +114,8 @@ def test_get_null_connection():
 def test_stop_existing_connections_to_part(conns, capsys):
     conn_list = [['HH701', 'A', 'ground']]
     stop_Time = Time('2019-10-27T00:53:53.530')
-    cm_partconnect.stop_existing_connections_to_part(conns.test_session, conns.cm_handle, conn_list, stop_Time)
+    cm_partconnect.stop_existing_connections_to_part(
+        conns.test_session, conns.cm_handle, conn_list, stop_Time)
     captured = capsys.readouterr()
     assert captured.out.strip().startswith("Stopping connection")
 

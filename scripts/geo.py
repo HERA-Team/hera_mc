@@ -13,21 +13,33 @@ from hera_mc import mc, geo_handling, cm_utils
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('fg_action', nargs='*', default=['active'],
-                        help="Actions for foreground listing:  a[ctive], i[nstalled], p[osition] <csv-list>, c[ofa], s[ince], n[one] (active)")
+                        help="Actions for foreground listing:  "
+                        "a[ctive], i[nstalled], p[osition] <csv-list>, c[ofa], "
+                        "s[ince], n[one] (active)")
     parser.add_argument('-b', '--background', help="Set background type (layers)",
-                        choices=['none', 'installed', 'layers', 'all'], default='installed')
-    parser.add_argument('-g', '--graph', help="Graph (plot) station types (False)", action='store_true')
-    parser.add_argument('-f', '--file', help="Name of file to write out 'foreground' antenna positions", default=None)
+                        choices=['none', 'installed', 'layers', 'all'],
+                        default='installed')
+    parser.add_argument('-g', '--graph', help="Graph (plot) station types (False)",
+                        action='store_true')
+    parser.add_argument('-f', '--file',
+                        help="Name of file to write out 'foreground' antenna positions",
+                        default=None)
     cm_utils.add_date_time_args(parser)
     parser.add_argument('-x', '--xgraph', help="X-axis of graph. [E]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='E')
     parser.add_argument('-y', '--ygraph', help="Y-axis of graph. [N]",
                         choices=['N', 'n', 'E', 'e', 'Z', 'z'], default='N')
-    parser.add_argument('-t', '--station-types', help="Station types searched (csv_list or 'all') Can use types or prefixes.  (default)",
+    parser.add_argument('-t', '--station-types',
+                        help="Station types searched (csv_list or 'all') "
+                        "Can use types or prefixes. (default)",
                         dest='station_types', default='default')
-    parser.add_argument('--label', choices=['name', 'num', 'ser', 'none'], default='num',
-                        help="Label by station_name (name), ant_num (num) serial_num (ser) or none (none) (num)")
-    parser.add_argument('--hookup-type', dest='hookup_type', help="Hookup type to use for active antennas.", default=None)
+    parser.add_argument('--label', choices=['name', 'num', 'ser', 'none'],
+                        default='num',
+                        help="Label by station_name (name), ant_num (num) "
+                        "serial_num (ser) or none (none) (num)")
+    parser.add_argument('--hookup-type', dest='hookup_type',
+                        help="Hookup type to use for active antennas.",
+                        default=None)
     args = parser.parse_args()
     if len(args.fg_action) > 1:
         position = cm_utils.listify(args.fg_action[1])
@@ -67,7 +79,8 @@ if __name__ == '__main__':
         G.start_file(args.file)
 
     if args.fg_action.startswith('a'):
-        located = G.get_active_stations(at_date, station_types_to_use=args.station_types, hookup_type=args.hookup_type)
+        located = G.get_active_stations(
+            at_date, station_types_to_use=args.station_types, hookup_type=args.hookup_type)
         G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, label=args.label,
                         marker_color='k', marker_shape='*', marker_size=fg_markersize)
     elif args.fg_action.startswith('i'):

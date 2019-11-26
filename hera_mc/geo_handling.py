@@ -123,15 +123,18 @@ class Handling:
         """
         self.station_types = {}
         for sta in self.session.query(geo_location.StationType):
-            self.station_types[sta.station_type_name.lower()] = {'Prefix': sta.prefix.upper(),
-                                                                 'Description': sta.description,
-                                                                 'Marker': sta.plot_marker, 'Stations': set()}
+            self.station_types[sta.station_type_name.lower()] = {
+                'Prefix': sta.prefix.upper(),
+                'Description': sta.description,
+                'Marker': sta.plot_marker,
+                'Stations': set()}
         for loc in self.session.query(geo_location.GeoLocation):
             self.station_types[loc.station_type_name]['Stations'].add(loc.station_name)
             expected_prefix = self.station_types[loc.station_type_name]['Prefix'].upper()
             actual_prefix = loc.station_name[:len(expected_prefix)].upper()
             if expected_prefix != actual_prefix:  # pragma: no cover
-                s = "Prefixes don't match: expected {} but got {} for {}".format(expected_prefix, actual_prefix, loc.station_name)
+                s = ("Prefixes don't match: expected {} but got {} for {}"
+                     .format(expected_prefix, actual_prefix, loc.station_name))
                 warnings.warn(s)
 
     def set_graph(self, graph_it):
@@ -198,7 +201,8 @@ class Handling:
         if len(antenna_connected) == 0:
             return None, None
         elif len(antenna_connected) > 1:
-            warning_string = 'More than one active connection for {}'.format(antenna_connected[0].upstream_part)
+            warning_string = 'More than one active connection for {}'.format(
+                antenna_connected[0].upstream_part)
             warnings.warn(warning_string)
             return None, None
         return antenna_connected[0].downstream_part, antenna_connected[0].down_part_rev
@@ -266,7 +270,8 @@ class Handling:
                 a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
                 locations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:  # pragma: no cover
-                    self.fp_out.write('{:6} {:.2f} {:.2f} {:.4f} {:.4f}\n'.format(station_name, a.easting, a.northing, a.lon, a.lat))
+                    self.fp_out.write('{:6} {:.2f} {:.2f} {:.4f} {:.4f}\n'.format(
+                        station_name, a.easting, a.northing, a.lon, a.lat))
         return locations
 
     def print_loc_info(self, loc_list):
@@ -394,7 +399,9 @@ class Handling:
         from . import cm_hookup, cm_revisions
         query_date = cm_utils.get_astropytime(query_date)
         hookup = cm_hookup.Hookup(self.session)
-        hookup_dict = hookup.get_hookup(hookup.hookup_list_to_cache, at_date=query_date, hookup_type=hookup_type)
+        hookup_dict = hookup.get_hookup(
+            hookup.hookup_list_to_cache, at_date=query_date,
+            hookup_type=hookup_type)
         self.station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
         active_stations = []
         for st in self.station_types_to_use:

@@ -57,7 +57,8 @@ class MCDeclarativeBase(object):
                 if other_c is None:
                     pass  # nullable columns, both null
                 else:
-                    print('column {col} is None in first object and {val} in the second.'.format(col=c, val=other_c))
+                    print('column {col} is None in first object and {val} in the second.'
+                          .format(col=c, val=other_c))
                     return False
             else:
                 if hasattr(self, 'tols') and c.name in self.tols.keys():
@@ -68,7 +69,8 @@ class MCDeclarativeBase(object):
                     atol = 1e-08
                     rtol = 1e-05
                 if not np.isclose(self_c, other_c, atol=atol, rtol=rtol):
-                    print('column {col} is float-like or a float-like array, values are not equal'.format(col=c))
+                    print('column {col} is float-like or a float-like array, values are not equal'
+                          .format(col=c))
                     return False
         return True
 

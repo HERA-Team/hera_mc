@@ -30,13 +30,18 @@ class Sysdef:
         'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
         'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
         'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
-        'node-bulkhead': {'up': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'e10', 'e11', 'e12'],
-                                 ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12']],
-                          'down': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'e10', 'e11', 'e12'],
-                                   ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12']],
+        'node-bulkhead': {'up': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7',
+                                  'e8', 'e9', 'e10', 'e11', 'e12'],
+                                 ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7',
+                                  'n8', 'n9', 'n10', 'n11', 'n12']],
+                          'down': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7',
+                                    'e8', 'e9', 'e10', 'e11', 'e12'],
+                                   ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7',
+                                    'n8', 'n9', 'n10', 'n11', 'n12']],
                           'position': 4},
         'post-amp': {'up': [['e'], ['n']], 'down': [['e'], ['n']], 'position': 5},
-        'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 6},
+        'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']],
+                 'down': [['rack']], 'position': 6},
         'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 7}
     }
     port_def['parts_paper'] = {
@@ -57,7 +62,8 @@ class Sysdef:
         'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
         'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
         'temp-cable': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 3},
-        'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']], 'down': [['rack']], 'position': 4},
+        'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']],
+                 'down': [['rack']], 'position': 4},
         'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 5}
     }
     port_def['parts_test'] = {
@@ -96,7 +102,8 @@ class Sysdef:
                 self.redirect_part_types[hutype] = []
                 self.single_pol_labeled_parts[hutype] = []
             self.redirect_part_types['parts_hera'] = ['node']
-            self.single_pol_labeled_parts['parts_paper'] = ['cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
+            self.single_pol_labeled_parts['parts_paper'] = [
+                'cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
 
             # This generates the full_connection_path dictionary from port_def
             self.full_connection_path = {}
@@ -173,7 +180,8 @@ class Sysdef:
         """
         hpn_list = []
         if part.hptype.lower() == 'node':
-            for conn in active.connections['down'][cm_utils.make_part_key(part.hpn, part.hpn_rev)].values():
+            for conn in active.connections['down'][cm_utils.make_part_key(
+                    part.hpn, part.hpn_rev)].values():
                 if conn.upstream_part.startswith('SNP'):
                     hpn_list.append(conn.upstream_part)
         return hpn_list
@@ -281,7 +289,8 @@ class Sysdef:
                 for port in port_list:
                     if port is None:
                         port_dict[dir].append(None)
-                    elif port[0].lower() not in self.all_pols[self.hookup_type] or pol.lower() == 'all':
+                    elif (port[0].lower() not in self.all_pols[self.hookup_type]
+                          or pol.lower() == 'all'):
                         port_dict[dir].append(port.upper())
                     elif port[0].lower() == pol[0].lower():
                         port_dict[dir].append(port.upper())

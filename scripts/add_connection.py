@@ -59,8 +59,10 @@ if __name__ == '__main__':
 
     # Check for connection
     c = cm_partconnect.Connections()
-    c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
-                 downstream_part=args.dnpart, down_part_rev=args.dnrev, downstream_input_port=args.dnport)
+    c.connection(upstream_part=args.uppart, up_part_rev=args.uprev,
+                 upstream_output_port=args.upport,
+                 downstream_part=args.dnpart, down_part_rev=args.dnrev,
+                 downstream_input_port=args.dnport)
     chk = handling.get_specific_connection(c, at_date)
     if len(chk) == 0:
         go_ahead = True
@@ -72,7 +74,8 @@ if __name__ == '__main__':
     if go_ahead:
         if args.verbosity > 1:
             print('Adding connection {}:{}:{} <-> {}:{}:{}'
-                  .format(args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport))
+                  .format(args.uppart, args.uprev, args.upport, args.dnpart,
+                          args.dnrev, args.dnport))
         # Connect parts
         npc = [[args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport]]
         cm_partconnect.add_new_connections(session, connect, npc, at_date)

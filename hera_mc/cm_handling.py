@@ -286,7 +286,8 @@ class Handling:
         ports : list, str, None
             Ports to show.
             If None, counterintuitively, all are included (see cm_sysdef.all_port_types)
-            If str, it assumes that types are provided (see cm_sysdef.all_port_types), specified as csv-list.
+            If str, it assumes that types are provided (see cm_sysdef.all_port_types),
+                specified as csv-list.
             If list, it only allows those.
 
         Returns
@@ -331,7 +332,8 @@ class Handling:
         fnd = []
         for conn in self.session.query(partconn.Connections).filter(
                 (func.upper(partconn.Connections.upstream_part) == cobj.upstream_part.upper())
-                & (func.upper(partconn.Connections.downstream_part) == cobj.downstream_part.upper())):
+                & (func.upper(partconn.Connections.downstream_part)
+                   == cobj.downstream_part.upper())):
             conn.gps2Time()
             include_this_one = True
             if isinstance(cobj.up_part_rev, str) and \

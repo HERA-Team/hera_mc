@@ -159,7 +159,8 @@ def get_specific_revision(hpn, rq, session=None):
         if rq.upper() == rev.upper():
             start_date = revisions[rev]['started']
             end_date = revisions[rev]['ended']
-            this_rev = [Namespace(hpn=hpn, rev=rev, rev_query=rq, started=start_date, ended=end_date)]
+            this_rev = [Namespace(hpn=hpn, rev=rev, rev_query=rq,
+                                  started=start_date, ended=end_date)]
     return this_rev
 
 
@@ -190,7 +191,8 @@ def get_active_revision(hpn, at_date, session=None):
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
         if cm_utils.is_active(at_date, started, ended):
-            return_active.append(Namespace(hpn=hpn, rev=rev, rev_query='ACTIVE', started=started, ended=ended))
+            return_active.append(Namespace(hpn=hpn, rev=rev, rev_query='ACTIVE',
+                                           started=started, ended=ended))
 
     return return_active
 

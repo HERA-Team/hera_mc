@@ -37,7 +37,9 @@ if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-p', '--part', help="Part number", default=None)
     parser.add_argument('-r', '--rev', help='Revision', default=None)
-    parser.add_argument('--allow_override', help="Flag to allow override of existing value.", action='store_true')
+    parser.add_argument('--allow_override',
+                        help="Flag to allow override of existing value.",
+                        action='store_true')
     cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
@@ -51,4 +53,6 @@ if __name__ == '__main__':
 
     # Stop parts
     np = [[args.part, args.rev]]
-    cm_partconnect.stop_existing_parts(session=session, hpnr_list=np, at_date=at_date, allow_override=args.allow_override)
+    cm_partconnect.stop_existing_parts(session=session, hpnr_list=np,
+                                       at_date=at_date,
+                                       allow_override=args.allow_override)

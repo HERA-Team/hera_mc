@@ -18,10 +18,13 @@ if __name__ == '__main__':
     ]
     parser = mc.get_mc_argument_parser()
     # set values for 'action' to use
-    parser.add_argument('-p', '--hpn', help="Part number, csv-list or [default]", default='default')
-    parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
+    parser.add_argument('-p', '--hpn', help="Part number, csv-list or [default]",
+                        default='default')
+    parser.add_argument('-e', '--exact-match',
+                        help="Force exact matches on part numbers, not beginning N char. [False]",
                         dest='exact_match', action='store_true')
-    parser.add_argument('--hookup-cols', help="Specify a subset of parts to show comma-delimited no-space list.",
+    parser.add_argument('--hookup-cols',
+                        help="Specify a subset of parts to show comma-delimited no-space list.",
                         dest='hookup_cols', default=default_hookup_cols)
 
     args = parser.parse_args()

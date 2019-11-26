@@ -13,7 +13,8 @@ from hera_mc import mc, cm_utils, cm_partconnect
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-p', '--hpn', help="HERA part number")
-    parser.add_argument('-s', '--status', help="New apriori status.", choices=['passed_checks', 'needs_checking', 'known_bad', 'not_connected'])
+    parser.add_argument('-s', '--status', help="New apriori status.",
+                        choices=['passed_checks', 'needs_checking', 'known_bad', 'not_connected'])
     cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
@@ -22,4 +23,6 @@ if __name__ == '__main__':
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
-    cm_partconnect.update_apriori_antenna(antenna=args.hpn, status=args.status, start_gpstime=at_date.gps, stop_gpstime=None, session=session)
+    cm_partconnect.update_apriori_antenna(
+        antenna=args.hpn, status=args.status, start_gpstime=at_date.gps,
+        stop_gpstime=None, session=session)
