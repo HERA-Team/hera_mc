@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 from astropy.time import Time
 
-from hera_mc import cm_partconnect, cm_utils, cm_handling, cm_revisions, cm_dossier
+from hera_mc import cm_partconnect, cm_utils, cm_handling, cm_revisions, cm_dossier, cm_active
 
 
 @pytest.fixture(scope='function')
@@ -226,6 +226,13 @@ def test_cm_version(parts):
     assert gh == 'Test-git-hash'
 
 
+def test_active_revisions():
+    active = cm_active.ActiveData()
+    active.load_parts()
+    revs = active.revs('HH')
+    assert revs[0].hpn == 'HH'
+
+
 def test_get_revisions_of_type(parts, capsys):
     at_date = None
     rev_types = ['LAST', 'ACTIVE', 'ALL', 'A']
@@ -250,7 +257,7 @@ def test_get_revisions_of_type(parts, capsys):
     assert revision[0].hpn == 'HH700'
     captured = cm_revisions.show_revisions(revision, 'present')
     assert 'HH700' in captured
-    captured = cm_revisions.show_revisions(revision, ['HPN', 'Revision'])
+    captured = cm_revisions.show_revisions(revision, 'HPN,Revision')
     assert 'HH700' in captured
     with pytest.raises(ValueError) as ml:
         cm_revisions.get_revisions_of_type('HH700', 'FULL')
