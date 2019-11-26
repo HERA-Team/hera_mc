@@ -247,13 +247,13 @@ class Handling:
 
         for loop_hpn, loop_rev in hpn_list:
             if loop_rev is None:
-                loop_rev = active.revs(loop_hpn)
+                loop_rev = [x.rev for x in active.revs(loop_hpn)]
             elif isinstance(loop_rev, six.string_types):
                 loop_rev = [x.strip().upper() for x in loop_rev.split(',')]
             for rev in loop_rev:
-                key = cm_utils.make_part_key(loop_hpn, rev.rev)
+                key = cm_utils.make_part_key(loop_hpn, rev)
                 if key in active.parts.keys():
-                    this_part = cm_dossier.PartEntry(hpn=loop_hpn, rev=rev.rev, at_date=at_date,
+                    this_part = cm_dossier.PartEntry(hpn=loop_hpn, rev=rev, at_date=at_date,
                                                      notes_start_date=notes_start_date)
                     this_part.get_entry(active)
                     part_dossier[key] = this_part

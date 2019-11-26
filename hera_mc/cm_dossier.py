@@ -250,8 +250,9 @@ class PartEntry():
                     number_entries += 1
             if ports_included and no_port_data:
                 trow = None
-            if trow is not None and number_entries > 1:
-                tdata.append(trow)
+            if trow is not None and len(trow):
+                if number_entries > 1 or number_entries == len(columns):
+                    tdata.append(trow)
         return tdata
 
 

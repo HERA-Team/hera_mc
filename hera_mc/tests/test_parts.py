@@ -236,7 +236,7 @@ def test_get_revisions_of_type(parts, capsys):
         'HH700', 'ACTIVE', 'now', parts.test_session)
     cm_revisions.show_revisions(revision)
     captured = capsys.readouterr()
-    assert '1230372018' in captured.out.strip()
+    assert 'HH700' in captured.out.strip()
     assert revision[0].hpn == 'HH700'
     with pytest.raises(ValueError) as ml:
         cm_revisions.get_revisions_of_type('HH700', 'FULL')
