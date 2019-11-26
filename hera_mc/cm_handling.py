@@ -195,7 +195,7 @@ class Handling:
             self.allowed_ports = None
             return
 
-        ports = ports.split(',')
+        ports = ports.upper().split(',')
         port_types = [x.upper() for x in self.ports.keys()]
         allowed_ports = set()
         for pt in ports:

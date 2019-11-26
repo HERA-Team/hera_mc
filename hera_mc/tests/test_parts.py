@@ -71,6 +71,18 @@ def test_find_part_type(parts):
     assert pt == parts.test_hptype
 
 
+def test_various_handling_utils(parts, capsys):
+    parts.cm_handle._get_allowed_ports(['a'])
+    assert parts.cm_handle.allowed_ports[0] == 'A'
+    parts.cm_handle.ports = {'C': 'test'}
+    parts.cm_handle._get_allowed_ports('a,b')
+    captured = capsys.readouterr()
+    assert 'A not in' in captured.out.strip()
+    parts.cm_handle.ports = {'A': '[A]'}
+    parts.cm_handle._get_allowed_ports('a,b')
+    assert 'A' in parts.cm_handle.allowed_ports
+
+
 def test_update_part(parts, capsys):
     data = [[parts.test_part, parts.test_rev, 'not_an_attrib', 'Z']]
     cm_partconnect.update_part(parts.test_session, data)
@@ -80,7 +92,7 @@ def test_update_part(parts, capsys):
     cm_partconnect.update_part(parts.test_session, data)
     dtq = Time('2019-09-01 01:00:00', scale='utc')
     located = parts.cm_handle.get_dossier(
-        hpn=[parts.test_part], rev=None, at_date=dtq, exact_match=True)
+        hpn=[parts.test_part], rev=None, at_date=dtq, exact_match=False)
     assert len(list(located.keys())) == 1
     assert located[list(located.keys())[0]].part.hpn_rev == 'Z'
 
@@ -236,6 +248,10 @@ def test_get_revisions_of_type(parts, capsys):
     captured = cm_revisions.show_revisions(revision)
     assert 'HH700' in captured
     assert revision[0].hpn == 'HH700'
+    captured = cm_revisions.show_revisions(revision, 'present')
+    assert 'HH700' in captured
+    captured = cm_revisions.show_revisions(revision, ['HPN', 'Revision'])
+    assert 'HH700' in captured
     with pytest.raises(ValueError) as ml:
         cm_revisions.get_revisions_of_type('HH700', 'FULL')
     assert str(ml.value).startswith('FULL')
