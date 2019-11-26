@@ -39,7 +39,7 @@ parser.add_argument('--notes-start-time', dest='notes_start_time', help="<For no
 args = parser.parse_args()
 
 args.verbosity = cm_utils.parse_verbosity(args.verbosity)
-view = all_views[args.view[0].lower()] if not args.list_all_columns else 'all-columns'
+view = all_views[args.view[0].lower()] if not args.list_columns else 'list_columns'
 args.hpn = cm_utils.listify(args.hpn)
 date_query = cm_utils.get_astropytime(args.date, args.time)
 notes_start_date = cm_utils.get_astropytime(args.notes_start_date, args.notes_start_time)
@@ -48,15 +48,17 @@ notes_start_date = cm_utils.get_astropytime(args.notes_start_date, args.notes_st
 db = mc.connect_to_mc_db(args)
 session = db.sessionmaker()
 
-if view == 'all-columns':
+if view == 'list_columns':
     from hera_mc import cm_dossier
     blank = cm_dossier.PartEntry(None, None)
     for col in blank.col_hdr.keys():
         print('\t{:30s}\t{}'.format(col, blank.col_hdr[col]))
 elif view == 'revisions':
-    for hpn in args.hpn:
-        rev_ret = cm_handling.cmrev.get_revisions_of_type(hpn, args.revision, date_query, session)
-        cm_handling.cmrev.show_revisions(rev_ret)
+    from hera_mc import cm_active, cm_revisions
+    active = cm_active.ActiveData(session, date_query)
+    active.load_parts()
+    revs = active.revs(args.hpn)
+    cm_revisions.show_revisions(revs)
 else:
     handling = cm_handling.Handling(session)
     if view == 'parts':
@@ -92,16 +94,16 @@ else:
             columns = ['hpn', 'posting_gpstime', 'reference', 'comment']
 
     if args.columns is not None:
-        columns = args.columns
+        columns = cm_utils.listify(args.columns)
     if args.ports is not None:
-        ports = args.ports.split(',')
+        ports = cm_utils.listify(args.ports)  # specify port names as list.
     else:
         ports = []
         if args.sigpath:
             ports.append('sigpath')
         if args.phys:
             ports.append('physical')
-        ports = ','.join(ports)
+        ports = ','.join(ports)  # Need to specify as a string for port types.
 
     dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
                                    notes_start_date=notes_start_date, exact_match=args.exact_match)

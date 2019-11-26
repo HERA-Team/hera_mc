@@ -215,6 +215,7 @@ class PartEntry():
         for up, down in conns:
             trow = []
             no_port_data = True
+            number_entries = 0
             for col in columns:
                 cbeg = col.split('.')[0]
                 cend = col.split('.')[-1]
@@ -245,9 +246,11 @@ class PartEntry():
                 elif isinstance(x, (list, set)):
                     x = ', '.join(x)
                 trow.append(x)
+                if x is not None and len(x):
+                    number_entries += 1
             if ports_included and no_port_data:
                 trow = None
-            if trow is not None:
+            if trow is not None and number_entries > 1:
                 tdata.append(trow)
         return tdata
 

@@ -106,7 +106,7 @@ def get_last_revision(hpn, session=None):
 
 def get_all_revisions(hpn, session=None):
     """
-    Returns list of all revisions as Namespace(hpn,rev,started,ended)
+    Returns list of all revisions as Namespace(hpn, rev, started, ended)
 
     Parameters
     ----------
@@ -236,15 +236,29 @@ def show_revisions(rev_list):
     Parameters
     ----------
     rev_list:  list
-        List of revisions provided by one of the other methods
+        List of revision Namespaces provided by one of the other methods
     """
-
     if len(rev_list) == 0:
         print("No revisions found.")
-    else:
-        headers = ['HPN', 'Revision', 'Start', 'Stop']
-        table_data = []
-        for r in rev_list:
-            table_data.append([r.hpn, r.rev, r.started, r.ended])
-        print(tabulate(table_data, headers=headers, tablefmt='simple'))
-        print('\n')
+        return
+
+    number_present = False
+    for r in rev_list:
+        try:
+            n = r.number
+            number_present = True
+        except AttributeError:
+            r.number = 0
+    table_data = []
+    headers = ['HPN', 'Revision', 'Start', 'Stop']
+    if number_present:
+        headers.insert(2, 'Number')
+    for r in rev_list:
+        row = [r.hpn, r.rev, cm_utils.get_time_for_display(r.started),
+               cm_utils.get_time_for_display(r.ended)]
+        if number_present:
+            row.insert(2, r.number)
+        table_data.append(row)
+
+    print(tabulate(table_data, headers=headers, tablefmt='simple'))
+    print('\n')

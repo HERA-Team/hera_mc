@@ -251,9 +251,9 @@ class Handling:
             elif isinstance(loop_rev, six.string_types):
                 loop_rev = [x.strip().upper() for x in loop_rev.split(',')]
             for rev in loop_rev:
-                key = cm_utils.make_part_key(loop_hpn, rev)
+                key = cm_utils.make_part_key(loop_hpn, rev.rev)
                 if key in active.parts.keys():
-                    this_part = cm_dossier.PartEntry(hpn=loop_hpn, rev=rev, at_date=at_date,
+                    this_part = cm_dossier.PartEntry(hpn=loop_hpn, rev=rev.rev, at_date=at_date,
                                                      notes_start_date=notes_start_date)
                     this_part.get_entry(active)
                     part_dossier[key] = this_part
