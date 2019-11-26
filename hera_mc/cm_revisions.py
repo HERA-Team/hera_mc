@@ -229,36 +229,59 @@ def get_full_revision(hpn, hookup_dict):
     return return_full_keys
 
 
-def show_revisions(rev_list):
+revision_columns = {'HPN': {'attr': 'hpn', 'default': '', 'is_time': False},
+                    'Revision': {'attr': 'rev', 'default': '', 'is_time': False},
+                    'Number': {'attr': 'number', 'default': 0, 'is_time': False},
+                    'Start': {'attr': 'started', 'default': '', 'is_time': True},
+                    'Stop': {'attr': 'ended', 'default': '', 'is_time': True}
+                    }
+ordered_columns = ['HPN', 'Revision', 'Number', 'Start', 'Stop']
+
+
+def show_revisions(rev_list, columns='all'):
     """
     Show revisions for provided revision list
 
     Parameters
     ----------
-    rev_list:  list
+    rev_list : list
         List of revision Namespaces provided by one of the other methods
+    columns : list or str
+        Columns to include.  If 'all', include all present.  Can be a csv string list.
     """
     if len(rev_list) == 0:
-        print("No revisions found.")
-        return
+        return "No revisions found."
 
-    number_present = False
+    # Get attributes present and set defaults as needed
+    for col in ordered_columns:
+        revision_columns[col]['present'] = False
     for r in rev_list:
-        try:
-            n = r.number
-            number_present = True
-        except AttributeError:
-            r.number = 0
+        for col in ordered_columns:
+            try:
+                x = getattr(r, revision_columns[col]['attr'])
+                revision_columns[col]['present'] = True
+            except AttributeError:
+                setattr(r, revision_columns[col]['attr'], revision_columns[col]['default'])
+    # Get columns to display
+    if isinstance(columns, str):
+        if columns == 'all':
+            columns = ordered_columns
+        elif columns == 'present':
+            columns = []
+            for col in ordered_columns:
+                if revision_columns[col]['present']:
+                    columns.append(col)
+        else:
+            columns = columns.split(',')
+    # Make table
     table_data = []
-    headers = ['HPN', 'Revision', 'Start', 'Stop']
-    if number_present:
-        headers.insert(2, 'Number')
     for r in rev_list:
-        row = [r.hpn, r.rev, cm_utils.get_time_for_display(r.started),
-               cm_utils.get_time_for_display(r.ended)]
-        if number_present:
-            row.insert(2, r.number)
+        row = []
+        for col in columns:
+            rev_attr = getattr(r, revision_columns[col]['attr'])
+            if revision_columns[col]['is_time']:
+                rev_attr = cm_utils.get_time_for_display(rev_attr)
+            row.append(rev_attr)
         table_data.append(row)
 
-    print(tabulate(table_data, headers=headers, tablefmt='simple'))
-    print('\n')
+    return tabulate(table_data, headers=columns, tablefmt='simple')

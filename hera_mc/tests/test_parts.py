@@ -229,14 +229,12 @@ def test_get_revisions_of_type(parts, capsys):
     assert revision[0].rev == 'Q'
     revision = cm_revisions.get_revisions_of_type(
         None, 'ACTIVE', 'now', parts.test_session)
-    cm_revisions.show_revisions(revision)
-    captured = capsys.readouterr()
-    assert 'No revisions found' in captured.out.strip()
+    captured = cm_revisions.show_revisions(revision)
+    assert 'No revisions found' in captured
     revision = cm_revisions.get_revisions_of_type(
         'HH700', 'ACTIVE', 'now', parts.test_session)
-    cm_revisions.show_revisions(revision)
-    captured = capsys.readouterr()
-    assert 'HH700' in captured.out.strip()
+    captured = cm_revisions.show_revisions(revision)
+    assert 'HH700' in captured
     assert revision[0].hpn == 'HH700'
     with pytest.raises(ValueError) as ml:
         cm_revisions.get_revisions_of_type('HH700', 'FULL')

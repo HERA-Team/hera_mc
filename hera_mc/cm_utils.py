@@ -292,8 +292,8 @@ def add_verbosity_args(parser):
     parser : object
         Parser object
     """
-    parser.add_argument('-v', '--verbosity', help="Verbosity level -v -vv -vvv. [-v].",
-                        nargs='?', default=1)
+    parser.add_argument('-v', '--verbosity', help="Verbosity level -v -vv -vvv. [-vv].",
+                        nargs='?', default=2)
 
 
 def parse_verbosity(vargs):
