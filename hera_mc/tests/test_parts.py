@@ -230,6 +230,7 @@ def test_active_revisions():
     active = cm_active.ActiveData()
     active.load_parts()
     revs = active.revs('HH')
+    print("TP233:  ",revs)
     assert revs[0].hpn == 'HH'
 
 
