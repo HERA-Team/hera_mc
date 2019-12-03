@@ -226,11 +226,10 @@ def test_cm_version(parts):
     assert gh == 'Test-git-hash'
 
 
-def test_active_revisions():
-    active = cm_active.ActiveData()
+def test_active_revisions(parts):
+    active = cm_active.ActiveData(parts.test_session)
     active.load_parts()
     revs = active.revs('HH')
-    print("TP233:  ",revs)
     assert revs[0].hpn == 'HH'
 
 
