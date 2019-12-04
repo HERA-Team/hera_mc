@@ -23,8 +23,7 @@ from hera_mc import autocorrelations, mc
 
 redis_host = 'redishost'
 
-sm.range
-antnums = sm.range(128)
+antnums = list(sm.range(128))
 
 # End of config.
 
