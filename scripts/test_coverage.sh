@@ -6,6 +6,6 @@ cd $DIR/..
 pip install -e .
 
 cd hera_mc/tests
-python -m pytest --cov=pyuvdata --cov-config=../../.coveragerc\
+python -m pytest --cov=hera_mc --cov-config=.coveragerc \
        --cov-report term --cov-report html:cover \
        "$@"
