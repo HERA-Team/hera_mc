@@ -12,7 +12,6 @@ bit much).
 """
 from __future__ import absolute_import, division, print_function
 
-import sqlalchemy.exc
 import sys
 import time
 import traceback
@@ -20,7 +19,7 @@ import socket
 
 from astropy.time import Time
 
-from hera_mc import mc
+from hera_mc import mc, utils
 
 MONITORING_INTERVAL = 60  # seconds
 
@@ -32,7 +31,8 @@ hostname = socket.gethostname()
 
 # List of commands (methods) to run on each iteration
 commands_to_run = ['add_node_sensor_readings_from_nodecontrol',
-                   'add_node_power_status_from_nodecontrol']
+                   'add_node_power_status_from_nodecontrol',
+                   'add_node_white_rabbit_status_from_nodecontrol']
 
 while True:
     try:
@@ -64,8 +64,8 @@ while True:
                                                         2, traceback_str)
                         except Exception:
                             # if we can't log error messages to the session, need a new session
-                            reraise_context('error logging to subsystem_error '
-                                            'table after command "%r"', command)
+                            utils.reraise_context('error logging to subsystem_error '
+                                                  'table after command "%r"', command)
                         continue
     except Exception:
         # Try to log an error with a new session
@@ -81,6 +81,6 @@ while True:
                                             2, traceback_str)
             except Exception:
                 # if we can't log error messages to the new session we're in real trouble
-                reraise_context('error logging to subsystem_error with a new session')
+                utils.reraise_context('error logging to subsystem_error with a new session')
         # logging with a new session worked, so restart to get a new session
         continue
