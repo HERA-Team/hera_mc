@@ -4,10 +4,7 @@
 
 """Define package structure."""
 
-from __future__ import absolute_import, division, print_function
-
 import numpy as np
-import six
 
 # Before we can do anything else, we need to initialize some core, shared
 # variables.
@@ -50,7 +47,7 @@ class MCDeclarativeBase(object):
         for c in self_columns:
             self_c = getattr(self, c.name)
             other_c = getattr(other, c.name)
-            if isinstance(self_c, six.string_types + six.integer_types):
+            if isinstance(self_c, (str, int)):
                 if self_c != other_c:
                     print('column {col} is string-like or int-like, values are not '
                           'equal'.format(col=c))

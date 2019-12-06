@@ -7,8 +7,6 @@
 Prints Time info for given date/time
 
 """
-from __future__ import absolute_import, division, print_function
-
 from astropy.time import Time
 
 from hera_mc import mc, cm_utils

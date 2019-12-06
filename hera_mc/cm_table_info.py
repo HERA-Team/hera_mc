@@ -4,8 +4,6 @@
 
 """Some table info for configuration management."""
 
-from __future__ import absolute_import, division, print_function
-
 from . import cm_partconnect, geo_location
 
 # Locates the table and specifies the required order of deletion (inverse for creation.)

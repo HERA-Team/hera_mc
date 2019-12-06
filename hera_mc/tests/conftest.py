@@ -3,10 +3,8 @@
 # Licensed under the 2-clause BSD License
 
 """Testing environment setup and teardown for pytest."""
-from __future__ import absolute_import, division, print_function
-
 import pytest
-import six.moves.urllib as urllib
+import urllib
 from astropy.utils import iers
 from astropy.time import Time
 

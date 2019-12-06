@@ -4,7 +4,6 @@
 # Licensed under the 2-clause BSD license.
 
 """Methods to load all active data for a given date."""
-from __future__ import absolute_import, division, print_function
 
 from . import cm_utils
 from . import cm_partconnect as partconn

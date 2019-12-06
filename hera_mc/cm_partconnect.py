@@ -4,9 +4,6 @@
 
 """M&C logging of the parts and the connections between them."""
 
-from __future__ import absolute_import, division, print_function
-
-import six
 from astropy.time import Time
 from sqlalchemy import (BigInteger, Column,
                         ForeignKeyConstraint, String,
@@ -221,7 +218,7 @@ def update_part(session=None, data=None):
         session = db.sessionmaker()
         close_session_when_done = True
 
-    for dkey, dval in six.iteritems(data_dict):
+    for dkey, dval in data_dict.items():
         hpn_to_change = dval[0][0]
         rev_to_change = dval[0][1]
         part_rec = session.query(Parts).filter(

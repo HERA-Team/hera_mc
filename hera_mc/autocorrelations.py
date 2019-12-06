@@ -2,18 +2,16 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""M&C logging of antenna autocorrelation powers.
+"""
+M&C logging of antenna autocorrelation powers.
 
 These are key data for tracking antenna performance and failures.
 
 """
 
-from __future__ import absolute_import, division, print_function
-
 from math import floor
 from astropy.time import Time
 import numpy as np
-import six
 from sqlalchemy import BigInteger, Column, Float, Integer, String
 import re
 import redis
@@ -116,7 +114,7 @@ class HeraAuto(MCDeclarativeBase):
         if antenna_feed_pol not in ["e", "n"]:
             raise ValueError("antenna_feed_pol must be 'e' or 'n'.")
 
-        if not isinstance(measurement_type, six.string_types):
+        if not isinstance(measurement_type, str):
             raise ValueError("measurement_type must be a string")
 
         if measurement_type not in allowed_measurement_types:
@@ -146,10 +144,7 @@ def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
     offline_testing : bool
         Option to return the figure rather than sending it to plotly.
     """
-    if six.PY3:
-        from plotly import graph_objects as go
-    else:
-        from plotly import graph_objs as go
+    from plotly import graph_objs as go
 
     from chart_studio import plotly as py
 

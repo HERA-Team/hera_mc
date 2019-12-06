@@ -6,8 +6,6 @@
 """This is meant to hold utility scripts for weather
 
 """
-from __future__ import absolute_import, division, print_function
-
 import sys
 from astropy.time import Time
 

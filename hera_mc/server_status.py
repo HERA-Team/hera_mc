@@ -8,9 +8,6 @@ Common server_status table.
 The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
 """
-from __future__ import absolute_import, division, print_function
-
-import six
 from math import floor
 from astropy.time import Time
 from sqlalchemy import Column, Integer, String, Float, BigInteger
@@ -132,10 +129,7 @@ def plot_host_status_for_plotly(session):
 
     """
     from astropy.time import Time
-    if six.PY3:
-        from plotly import graph_objects as go
-    else:
-        from plotly import graph_objs as go
+    from plotly import graph_objects as go
 
     from chart_studio import plotly as chart_plotly
 

@@ -6,8 +6,6 @@
 """
 Script to add an RTP process event record to M&C.
 """
-from __future__ import print_function, division, absolute_import
-
 import numpy as np
 import h5py
 from astropy.time import Time

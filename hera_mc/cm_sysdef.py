@@ -4,8 +4,6 @@
 
 """Defines the system architecture for the telescope array."""
 
-from __future__ import absolute_import, division, print_function
-import six
 from hera_mc import cm_utils
 from hera_mc.mc import data_path
 import json
@@ -57,7 +55,7 @@ class Sysdef:
                 self.redirect_part_types[hutype] = this_sys['redirect_part_types']
                 self.single_pol_labeled_parts[hutype] = this_sys['single_pol_labeled_parts']
                 ordered_path = {}
-                for k, v in six.iteritems(self.port_def[hutype]):
+                for k, v in self.port_def[hutype].items():
                     ordered_path[v['position']] = k
                 sorted_keys = sorted(list(ordered_path.keys()))
                 self.full_connection_path[hutype] = []

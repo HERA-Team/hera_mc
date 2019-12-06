@@ -5,8 +5,6 @@
 """
 Test that default database matches code schema.
 """
-from __future__ import absolute_import, division, print_function
-
 from sqlalchemy.orm import sessionmaker
 
 from .. import mc, MCDeclarativeBase

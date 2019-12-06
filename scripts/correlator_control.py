@@ -6,7 +6,6 @@
 """script to control correlator (taking data, noise diode, phase switching)
 
 """
-from __future__ import absolute_import, division, print_function
 
 from astropy.time import Time, TimeDelta
 from astropy.units import Quantity

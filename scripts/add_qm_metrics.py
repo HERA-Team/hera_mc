@@ -6,8 +6,6 @@
 """
 Script to add quality metrics file to M&C database.
 """
-from __future__ import absolute_import, division, print_function
-
 import hera_mc.mc as mc
 
 parser = mc.get_mc_argument_parser()

@@ -11,8 +11,6 @@ set of columns, which may be overridden by instead using the args.columns parame
 (--list-all-columns)
 
 """
-from __future__ import absolute_import, division, print_function
-
 from hera_mc import mc, cm_handling, cm_utils
 
 all_views = {'p': 'parts', 'c': 'connections', 'i': 'info', 'r': 'revisions', 'n': 'node'}

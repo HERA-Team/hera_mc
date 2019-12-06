@@ -9,9 +9,6 @@ LAST, ACTIVE, ALL, <specific> are handled (typically) via get_revisions_of_type.
 FULL revisions are called directly (get_full_revision)
 """
 
-from __future__ import absolute_import, division, print_function
-
-import six
 from tabulate import tabulate
 from argparse import Namespace
 
@@ -219,10 +216,10 @@ def get_full_revision(hpn, hookup_dict):
 
     """
     return_full_keys = []
-    for k, h in six.iteritems(hookup_dict):
+    for k, h in hookup_dict.items():
         hpn_hu, rev_hu = cm_utils.split_part_key(k)
         if hpn_hu.lower() == hpn.lower():
-            for pol, is_connected in six.iteritems(h.fully_connected):
+            for pol, is_connected in h.fully_connected.items():
                 if is_connected:
                     tsrt = h.timing[pol][0]
                     tend = h.timing[pol][1]

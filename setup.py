@@ -5,8 +5,6 @@
 
 """Module setup."""
 
-from __future__ import absolute_import, division, print_function
-
 import os
 import glob
 import io
@@ -37,7 +35,7 @@ setup_args = {
     'packages': ['hera_mc', 'hera_mc.tests'],
     'scripts': glob.glob('scripts/*'),
     'include_package_data': True,
-    'install_requires': ["six", "numpy", "astropy", "sqlalchemy", "psycopg2",
+    'install_requires': ["numpy", "astropy", "sqlalchemy", "psycopg2",
                          "alembic", "python-dateutil", "tabulate", "pandas",
                          "psutil", "cartopy", "pyyaml", "redis"],
     'tests_require': ["pyyaml"],
@@ -47,6 +45,8 @@ setup_args = {
                     "License :: OSI Approved :: MIT License",
                     "Operating System :: OS Independent",
                     "Programming Language :: Python",
+                    'Programming Language :: Python :: 3.6',
+                    'Programming Language :: Python :: 3.7',
                     "Topic :: Scientific/Engineering"]
 }
 

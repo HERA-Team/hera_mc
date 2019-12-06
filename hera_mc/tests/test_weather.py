@@ -5,8 +5,6 @@
 """Testing for `hera_mc.weather`.
 
 """
-from __future__ import absolute_import, division, print_function
-
 import os
 from math import floor
 

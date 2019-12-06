@@ -4,8 +4,6 @@
 
 """Handle weather data sourced from meerkat's katportalclient."""
 
-from __future__ import absolute_import, division, print_function
-
 import numpy as np
 from astropy.time import Time
 from math import floor, isnan

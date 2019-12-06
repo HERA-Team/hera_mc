@@ -8,12 +8,10 @@ Definitions to generate table initialization files.
 
 Used in scripts cm_init.py, cm_pack.py
 """
-from __future__ import absolute_import, division, print_function
 
 import os.path
 from math import floor
 import subprocess
-import six
 from astropy.time import Time
 import pandas as pd
 import csv
@@ -67,7 +65,7 @@ class CMVersion(MCDeclarativeBase):
         time = int(floor(time.gps))
 
         # In Python 3, we sometimes get Unicode, sometimes bytes
-        if isinstance(git_hash, six.binary_type):
+        if isinstance(git_hash, bytes):
             git_hash = utils.bytes_to_str(git_hash)
 
         return cls(update_time=time, git_hash=git_hash)
@@ -177,7 +175,7 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False,
 
     """
     print("This will erase and rewrite the configuration management tables.")
-    you_are_sure = six.moves.input("Are you sure you want to do this (y/n)? ")
+    you_are_sure = input("Are you sure you want to do this (y/n)? ")
     if you_are_sure == 'y':
         success = _initialization(session=session, cm_csv_path=cm_csv_path,
                                   tables=tables, maindb=maindb, testing=testing)
@@ -213,9 +211,9 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     import socket
     import json
 
-    if isinstance(session, six.string_types) and session == 'testing_not_main':
+    if isinstance(session, str) and session == 'testing_not_main':
         return False
-    if isinstance(session, six.string_types) and session == 'testing_main':
+    if isinstance(session, str) and session == 'testing_main':
         return True
 
     hostname = socket.gethostname()

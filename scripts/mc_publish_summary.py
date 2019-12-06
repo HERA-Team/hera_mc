@@ -7,8 +7,6 @@
 If not on qmaster, it just writes the html file.
 
 """
-from __future__ import absolute_import, division, print_function
-
 from hera_mc import mc, cm_utils, cm_sysutils
 
 if __name__ == '__main__':

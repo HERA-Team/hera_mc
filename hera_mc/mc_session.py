@@ -8,12 +8,9 @@ See INSTALL.md in the Git repository for instructions on how to initialize
 your database and configure M&C to find it.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import os
 import numpy as np
 import warnings
-import six
 from math import floor
 
 from sqlalchemy import desc, asc
@@ -261,7 +258,7 @@ class MCSession(Session):
                     # create dict of columns to update (everything other than
                     # the primary keys)
                     update_dict = {}
-                    for col, val in six.iteritems(values):
+                    for col, val in values.items():
                         if col not in ies:
                             update_dict[col] = val
 
@@ -1803,7 +1800,7 @@ class MCSession(Session):
         if nodeID not in node_list:
             raise ValueError('node not in list of active nodes: ', node_list)
 
-        if isinstance(part, six.string_types):
+        if isinstance(part, str):
             part = [part]
         else:
             # ensure no duplicates
@@ -2261,7 +2258,7 @@ class MCSession(Session):
             corr_state_dict = _get_control_state(corr_cm=self.corr_obj)
 
         corr_state_list = []
-        for state_type, dict in six.iteritems(corr_state_dict):
+        for state_type, dict in corr_state_dict.items():
             unix_timestamp = dict['timestamp']
             state = dict['state']
             if unix_timestamp is not None:
@@ -3181,7 +3178,7 @@ class MCSession(Session):
 
         corr_version_list = []
         snap_version_list = []
-        for package, version_dict in six.iteritems(corr_snap_version_dict):
+        for package, version_dict in corr_snap_version_dict.items():
             time = Time(version_dict['timestamp'], format='datetime')
             version = version_dict['version']
 
@@ -3424,7 +3421,7 @@ class MCSession(Session):
             snap_status_dict = _get_snap_status(corr_cm=self.corr_obj)
 
         snap_status_list = []
-        for hostname, snap_dict in six.iteritems(snap_status_dict):
+        for hostname, snap_dict in snap_status_dict.items():
 
             # first check if the timestamp is the string 'None'
             # if it is, skip this snap
@@ -3436,7 +3433,7 @@ class MCSession(Session):
 
             # any entry other than timestamp can be the string 'None'
             # need to convert those to a None type
-            for key, val in six.iteritems(snap_dict):
+            for key, val in snap_dict.items():
                 if val == 'None':
                     snap_dict[key] = None
 
@@ -3947,7 +3944,7 @@ class MCSession(Session):
             )
         time = Time(timestamp_jd, format='jd')
 
-        for antpol, auto in six.iteritems(hera_autos_dict):
+        for antpol, auto in hera_autos_dict.items():
             ant, pol = antpol.split(":")
             ant = int(ant)
             auto = np.asarray(auto)

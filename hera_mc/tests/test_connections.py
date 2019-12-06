@@ -4,8 +4,6 @@
 
 """Testing for `hera_mc.connections`."""
 
-from __future__ import absolute_import, division, print_function
-
 import pytest
 from astropy.time import Time
 
