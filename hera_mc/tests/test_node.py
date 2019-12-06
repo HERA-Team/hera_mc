@@ -71,7 +71,7 @@ EEPROM FRU info is valid:
  FRU SERIAL  : 7SWRLENv?.0-S08_313
  FRU PARTNUM : 7SWRLENv?.0-S08
  FRU FID     : 2017-12-13 10:25:23.617560
- FRU CUSTOM  : �
+ FRU CUSTOM  : tag
 Gateware info:
  GW ID      : 0x751e41c0
  GW VERSION : 3.9.29
@@ -95,7 +95,7 @@ def white_rabbit_status():
                FRU SERIAL  : 7SWRLENv?.0-S08_313
                FRU PARTNUM : 7SWRLENv?.0-S08
                FRU FID     : 2017-12-13 10:25:23.617560
-               FRU CUSTOM  : �
+               FRU CUSTOM  : tag
               Gateware info:
                GW ID      : 0x751e41c0
                GW VERSION : 3.9.29
