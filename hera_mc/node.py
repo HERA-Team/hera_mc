@@ -57,8 +57,8 @@ wr_key_dict = {
     'manufacture_serial': 'wr_fru_serial',
     'manufacture_vendor': 'wr_fru_vendor',
     'port0_ad': 'wr0_ad',
-    'port0_link_asymmetry': 'wr0_asym',
-    'port0_manual_phase': 'wr0_aux',
+    'port0_link_asymmetry_ps': 'wr0_asym',
+    'port0_manual_phase_ps': 'wr0_aux',
     'port0_clock_offset_ps': 'wr0_cko',
     'port0_cable_rt_delay_ps': 'wr0_crtt',
     'port0_master_slave_delay_ps': 'wr0_dms',
@@ -79,10 +79,10 @@ wr_key_dict = {
     'port0_sync_source': 'wr0_syncs',
     'port0_packets_sent': 'wr0_tx',
     'port0_update_counter': 'wr0_ucnt',
-    'port0_tai_sec': 'wr0_sec',
+    'port0_time': 'wr0_sec',
     'port1_ad': 'wr1_ad',
-    'port1_link_asymmetry': 'wr1_asym',
-    'port1_manual_phase': 'wr1_aux',
+    'port1_link_asymmetry_ps': 'wr1_asym',
+    'port1_manual_phase_ps': 'wr1_aux',
     'port1_clock_offset_ps': 'wr1_cko',
     'port1_cable_rt_delay_ps': 'wr1_crtt',
     'port1_master_slave_delay_ps': 'wr1_dms',
@@ -103,7 +103,7 @@ wr_key_dict = {
     'port1_sync_source': 'wr1_syncs',
     'port1_packets_sent': 'wr1_tx',
     'port1_update_counter': 'wr1_ucnt',
-    'port1_tai_sec': 'wr1_sec',
+    'port1_time': 'wr1_sec',
 }
 wr_datetime_keys = ['build_date', 'gw_date', 'manufacture_date']
 wr_tai_sec_keys = ['port0_tai_sec', 'port1_tai_sec']
@@ -862,9 +862,16 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
 
         """
         params_dict = {}
-        for col, value in enumerate(col_dict):
-            if col in wr_datetime_keys or col in wr_tai_sec_keys or col == 'node_time':
+        for col, value in col_dict.items():
+            if col == 'node_time':
                 if not isinstance(value, Time):
+                    print(col)
+                    raise ValueError(col + ' must be an astropy Time object')
+                params_dict[col] = floor(value.gps)
+            elif ((col in wr_datetime_keys or col in wr_tai_sec_keys)
+                  and value is not None):
+                if not isinstance(value, Time):
+                    print(col)
                     raise ValueError(col + ' must be an astropy Time object')
                 params_dict[col] = floor(value.gps)
             else:
@@ -977,7 +984,7 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
 
     Returns
     -------
-    A list of NodeSensor objects
+    A list of NodeWhiteRabbitStatus objects
 
     """
     if node_list is None:
@@ -998,21 +1005,25 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
 
         node_time = Time(timestamp, format='datetime', scale='utc')
 
-        col_dict = {node_time: node_time, node: node}
-        for key, value in enumerate(wr_key_dict):
+        col_dict = {'node_time': node_time, 'node': node}
+        for key, value in wr_key_dict.items():
             # key is column name, value is related key into wr_data
             wr_data_value = wr_data[value]
-            if (wr_data_value == 'None' or (isinstance(wr_data_value, float)
-                                            and np.isnan(wr_data_value))):
+            if isinstance(wr_data_value, float) and np.isnan(wr_data_value):
                 wr_data_value = None
 
-            if key in wr_datetime_keys:
+            if key in wr_datetime_keys and wr_data_value is not None:
                 col_dict[key] = Time(wr_data_value, format='datetime', scale='utc')
-            elif key in wr_tai_sec_keys:
+            elif key in wr_tai_sec_keys and wr_data_value is not None:
                 col_dict[key] = Time(wr_data_value, format='unix', scale='tai')
+            elif key == 'aliases' and wr_data_value is not None:
+                if len(wr_data_value) == 0:
+                    col_dict[key] = None
+                else:
+                    col_dict[key] = ', '.join(wr_data_value)
             else:
                 col_dict[key] = wr_data_value
 
-        wr_status_list.append(NodeSensor.create(col_dict))
+        wr_status_list.append(NodeWhiteRabbitStatus.create(col_dict))
 
     return wr_status_list

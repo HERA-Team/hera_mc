@@ -1618,7 +1618,7 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
         nodeID : int
-            node number (integer running from 1 to 30)
+            node number (integer running from 0 to 30)
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -1649,7 +1649,7 @@ class MCSession(Session):
         time : astropy Time object
             Astropy time object based on a timestamp reported by node.
         nodeID : int
-            Node number (integer running from 1 to 30).
+            Node number (integer running from 0 to 30).
         snap_relay_powered : bool
             Power status of the snap relay, True=powered.
         snap0_powered : bool
@@ -1719,7 +1719,7 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
         nodeID : int
-            node number (integer running from 1 to 30)
+            node number (integer running from 0 to 30)
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -1748,7 +1748,7 @@ class MCSession(Session):
         Parameters
         ----------
         nodeID : int
-            Node number (integer running from 1 to 30).
+            Node number (integer running from 0 to 30).
         part : str or list of strings
             Part name(s) (e.g. fem, snap0) or 'all', allowed values are keys to
             node.power_command_part_dict.
@@ -1901,7 +1901,7 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
         nodeID : int
-            node number (integer running from 1 to 30)
+            node number (integer running from 0 to 30)
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -2118,7 +2118,7 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
         nodeID : int
-            node number (integer running from 1 to 30)
+            node number (integer running from 0 to 30)
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -3332,7 +3332,7 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
         nodeID : int
-            node number (integer running from 1 to 30)
+            node number (integer running from 0 to 30)
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
