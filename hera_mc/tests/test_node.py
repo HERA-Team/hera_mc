@@ -78,6 +78,7 @@ Gateware info:
  GW DATE    : 17/03/29 17:18
 ''')
 
+board_info_str = 'some very long string\n blah blah blah'
 
 @pytest.fixture(scope='module')
 def white_rabbit_status():
