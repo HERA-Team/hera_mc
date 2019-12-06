@@ -106,7 +106,7 @@ wr_key_dict = {
     'port1_time': 'wr1_sec',
 }
 wr_datetime_keys = ['build_date', 'gw_date', 'manufacture_date']
-wr_tai_sec_keys = ['port0_tai_sec', 'port1_tai_sec']
+wr_tai_sec_keys = ['port0_time', 'port1_time']
 
 
 def get_node_list(nodeServerAddress=defaultServerAddress):
