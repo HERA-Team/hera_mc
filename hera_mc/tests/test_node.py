@@ -494,7 +494,16 @@ def test_add_node_sensor_readings_from_nodecontrol(mcsession):
     result = test_session.get_node_sensor_readings(
         starttime=Time.now() - TimeDelta(120.0, format='sec'),
         stoptime=Time.now() + TimeDelta(120.0, format='sec'))
-    assert len(result) == len(node_list)
+
+    nodes_with_status = []
+    for sensor_obj in result:
+        nodes_with_status.append(sensor_obj.node)
+    if len(result) != len(nodes_with_status):
+        print('Nodes that hera_node_mc returns as active:')
+        print(node_list)
+        print('Nodes with sensor readings:')
+        print(nodes_with_status)
+    assert len(result) == len(nodes_with_status)
 
 
 def test_add_node_power_status(mcsession, power):
@@ -623,7 +632,16 @@ def test_add_node_power_status_from_nodecontrol(mcsession):
     result = test_session.get_node_power_status(
         starttime=Time.now() - TimeDelta(120.0, format='sec'),
         stoptime=Time.now() + TimeDelta(120.0, format='sec'))
-    assert len(result) == len(node_list)
+
+    nodes_with_status = []
+    for pw_obj in result:
+        nodes_with_status.append(pw_obj.node)
+    if len(result) != len(nodes_with_status):
+        print('Nodes that hera_node_mc returns as active:')
+        print(node_list)
+        print('Nodes with power status info:')
+        print(nodes_with_status)
+    assert len(result) == len(nodes_with_status)
 
 
 def test_node_power_command(mcsession):
@@ -898,4 +916,13 @@ def test_add_white_rabbit_status_from_nodecontrol(mcsession):
     result = test_session.get_node_white_rabbit_status(
         starttime=Time.now() - TimeDelta(120.0, format='sec'),
         stoptime=Time.now() + TimeDelta(120.0, format='sec'))
-    assert len(result) == len(node_list)
+
+    nodes_with_status = []
+    for wr_obj in result:
+        nodes_with_status.append(wr_obj.node)
+    if len(result) != len(nodes_with_status):
+        print('Nodes that hera_node_mc returns as active:')
+        print(node_list)
+        print('Nodes with white rabbit status info:')
+        print(nodes_with_status)
+    assert len(result) == len(nodes_with_status)
