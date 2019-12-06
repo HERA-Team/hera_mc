@@ -76,7 +76,8 @@ class ActiveData:
         for prt in self.session.query(partconn.Parts).filter(
             (partconn.Parts.start_gpstime <= gps_time)
             & ((partconn.Parts.stop_gpstime > gps_time)
-               | (partconn.Parts.stop_gpstime == None))):  # noqa
+               | (partconn.Parts.stop_gpstime == None))  # noqa
+        ):
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.parts[key] = prt
 
@@ -110,7 +111,8 @@ class ActiveData:
         for cnn in self.session.query(partconn.Connections).filter(
             (partconn.Connections.start_gpstime <= gps_time)
             & ((partconn.Connections.stop_gpstime > gps_time)
-               | (partconn.Connections.stop_gpstime == None))):  # noqa
+               | (partconn.Connections.stop_gpstime == None))  # noqa
+        ):
             chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev,
                                          cnn.upstream_output_port)
             if chk in check_keys['up']:
@@ -148,7 +150,8 @@ class ActiveData:
         gps_time = self.set_times(at_date)
         self.info = {}
         for info in self.session.query(partconn.PartInfo).filter(
-                (partconn.PartInfo.posting_gpstime <= gps_time)):
+                (partconn.PartInfo.posting_gpstime <= gps_time)
+        ):
             key = cm_utils.make_part_key(info.hpn, info.hpn_rev)
             self.info.setdefault(key, [])
             self.info[key].append(info)
@@ -207,7 +210,8 @@ class ActiveData:
         gps_time = self.set_times(at_date)
         self.geo = {}
         for ageo in self.session.query(geo_location.GeoLocation).filter(
-                geo_location.GeoLocation.created_gpstime <= gps_time):
+                geo_location.GeoLocation.created_gpstime <= gps_time
+        ):
             key = cm_utils.make_part_key(ageo.station_name, None)
             self.geo[key] = ageo
 

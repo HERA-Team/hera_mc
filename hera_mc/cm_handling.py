@@ -333,7 +333,8 @@ class Handling:
         for conn in self.session.query(partconn.Connections).filter(
             (func.upper(partconn.Connections.upstream_part) == cobj.upstream_part.upper())
             & (func.upper(partconn.Connections.downstream_part)
-               == cobj.downstream_part.upper())):
+               == cobj.downstream_part.upper())
+        ):
             conn.gps2Time()
             include_this_one = True
             if isinstance(cobj.up_part_rev, str) and \
