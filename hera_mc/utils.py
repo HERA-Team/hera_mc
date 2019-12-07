@@ -10,9 +10,11 @@ from astropy import coordinates as coord
 from astropy import units as u
 import numpy as np
 
+
 def str_to_bytes(s):
     """Python 3 compliant str to byte conversion."""
     return s.encode('utf8')
+
 
 def bytes_to_str(b):
     """Python 3 compliant byte to str conversion."""
