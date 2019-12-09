@@ -80,6 +80,7 @@ Gateware info:
 
 board_info_str = 'some very long string\n blah blah blah'
 
+
 @pytest.fixture(scope='module')
 def white_rabbit_status():
     return {
