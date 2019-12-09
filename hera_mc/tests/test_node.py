@@ -95,7 +95,7 @@ def white_rabbit_status():
               'wr_gw_version': '3.9.29',
               'wr_gw_id': '0x751e41c0',
               'wr_build': '064c608-dirty',
-              'wr_fru_custom': '�',
+              'wr_fru_custom': 'tag',
               'wr_fru_device': 'WRLEN',
               'wr_fru_fid': Time('2017-12-13 10:25:23.617560').to_datetime(),
               'wr_fru_partnum': '7SWRLENv?.0-S08',
