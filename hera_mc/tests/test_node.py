@@ -84,24 +84,7 @@ board_info_str = 'some very long string\n blah blah blah'
 def white_rabbit_status():
     return {
         '1': {'timestamp': Time(1512770942.726777, format='unix').to_datetime(),
-              'board_info_str': ('''
-              wrc# ver
-              WR Core build: 064c608-dirty
-              Built on Jan 24 2017, 16:38:15
-              Built for 117 kB RAM, stack is 2048 bytes
-              1-wire ROM ID (DS18B20U) : 0x72000009
-              EEPROM FRU info is valid:
-               FRU VENDOR  : 7S
-               FRU DEVICE  : WRLEN
-               FRU SERIAL  : 7SWRLENv?.0-S08_313
-               FRU PARTNUM : 7SWRLENv?.0-S08
-               FRU FID     : 2017-12-13 10:25:23.617560
-               FRU CUSTOM  : tag
-              Gateware info:
-               GW ID      : 0x751e41c0
-               GW VERSION : 3.9.29
-               GW DATE    : 17/03/29 17:18
-              '''),
+              'board_info_str': (board_info_str),
               'aliases': ['heraNode0wr'],
               'ip': '10.80.2.138',
               'mode': 'WRC_SLAVE_WR0',
