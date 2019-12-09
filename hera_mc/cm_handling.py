@@ -218,8 +218,8 @@ class Handling:
         rev : str, list, None
             Specific revision(s) or None (which yields all). If list, must match length of hpn.
             Each element of a string may be a csv-list of revisions, which gets parsed later.
-        at_date : str, int, datetime, Time
-            Reference date of dossier (and stop_date for displaying notes)
+        at_date : str, int, datetime, Time, None
+            Reference date of dossier (and stop_date for displaying notes).  Can be None if active is supplied
         active : cm_active.ActiveData class or None
             Use supplied ActiveData.  If None, read in.
         notes_start_date : str, int, datetime, Time
@@ -239,6 +239,12 @@ class Handling:
         notes_start_date = cm_utils.get_astropytime(notes_start_date)
         if active is None:
             active = cm_active.ActiveData(self.session, at_date=at_date)
+        elif at_date is not None:
+            date_diff = abs(at_date - active.at_date).sec
+            if date_diff > 1.0:
+                raise ValueError("Supplied date and active date do not agree ({}sec)".format(date_diff))
+        else:
+            at_date = active.at_date
         if active.parts is None:
             active.load_parts(at_date=at_date)
         if active.connections is None:
