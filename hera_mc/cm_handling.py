@@ -207,7 +207,7 @@ class Handling:
         self.allowed_ports = [x.upper() for x in allowed_ports]
         return
 
-    def get_dossier(self, hpn, rev=None, at_date='now', notes_start_date='<', exact_match=True):
+    def get_dossier(self, hpn, rev=None, at_date='now', active=None, notes_start_date='<', exact_match=True):
         """
         Return information on a part or parts.
 
@@ -220,6 +220,8 @@ class Handling:
             Each element of a string may be a csv-list of revisions, which gets parsed later.
         at_date : str, int, datetime, Time
             Reference date of dossier (and stop_date for displaying notes)
+        active : cm_active.ActiveData class or None
+            Use supplied ActiveData.  If None, read in.
         notes_start_date : str, int, datetime, Time
             Start_date for displaying notes
         exact_match : bool
@@ -235,11 +237,16 @@ class Handling:
 
         at_date = cm_utils.get_astropytime(at_date)
         notes_start_date = cm_utils.get_astropytime(notes_start_date)
-        active = cm_active.ActiveData(self.session, at_date=at_date)
-        active.load_parts()
-        active.load_connections()
-        active.load_info()
-        active.load_geo()
+        if active is None:
+            active = cm_active.ActiveData(self.session, at_date=at_date)
+        if active.parts is None:
+            active.load_parts(at_date=at_date)
+        if active.connections is None:
+            active.load_connections(at_date=at_date)
+        if active.info is None:
+            active.load_info(at_date=at_date)
+        if active.geo is None:
+            active.load_geo(at_date=at_date)
         part_dossier = {}
 
         hpn_list = self._get_hpn_list(hpn, rev, active, exact_match)
