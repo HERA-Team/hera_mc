@@ -35,7 +35,7 @@ jobs:
       OS: ${{ matrix.os }}
       # use localhost for the host here because we are running the job on the VM.
       POSTGRES_HOST: localhost
-      POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+      POSTGRES_PORT: ${{ jobs.tests.services.ports['5432'] }} # get randomly assigned published port
     name: Testing
     needs: [flake8]
     runs-on: ${{ matrix.os }}
