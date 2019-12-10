@@ -81,6 +81,14 @@ jobs:
         working-directory: ./postgres
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+      - name: Logging output
+        if: failure()
+        run: |
+          ls -lthra ./postgres
+          
+        working-directory: ./postgres
+
+
       - name: Upgrade Database Schema
         run: |
          mkdir ~/.hera_mc
