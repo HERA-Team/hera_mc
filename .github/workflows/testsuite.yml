@@ -111,8 +111,9 @@ jobs:
           ls -lthra $PSQL_PATH
           export PATH="$PSQL_PATH:$PATH"
           echo $PATH
-          $PSQL_PATH -c "SELECT rolname, rolpassword FROM pg_catalog.pg_authid WHERE rolname='hera';" -U postgres
-          locate pg_hba.conf
+          HBA_FILE=locate pg_hba.conf
+          echo $HBA_FILE
+          cat $HBA_FILE
       - name: Run Tests
         run: |
           PSQL_PATH=`locate psql`
