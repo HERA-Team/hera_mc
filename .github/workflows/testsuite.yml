@@ -83,6 +83,7 @@ jobs:
       - name: Logging output
         if: failure()
         run: |
+          locate psql
           ls -lthra ./
       - name: Upgrade Database Schema
         run: |
