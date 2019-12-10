@@ -78,17 +78,12 @@ jobs:
           psql -c 'create database hera_mc_test;' -U postgres
           psql -c 'create database hera_mc;' -U postgres
           psql -c 'create user hera;' -U postgres
-        working-directory: ./postgres
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Logging output
         if: failure()
         run: |
-          ls -lthra ./postgres
-          
-        working-directory: ./postgres
-
-
+          ls -lthra ./
       - name: Upgrade Database Schema
         run: |
          mkdir ~/.hera_mc
