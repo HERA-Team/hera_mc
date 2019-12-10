@@ -102,6 +102,17 @@ jobs:
          alembic upgrade head
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+      - name: Logging output
+        if: failure()
+        run: |
+          ls -lthra ./
+          locate psql
+          PSQL_PATH=`locate psql`
+          ls -lthra $PSQL_PATH
+          export PATH="$PSQL_PATH:$PATH"
+          echo $PATH
+          $PSQL_PATH -c "SELECT rolname, rolpassword FROM pg_catalog.pg_authid WHERE rolname='hera';" -U postgres
+          locate pg_hba.conf
       - name: Run Tests
         run: |
           PSQL_PATH=`locate psql`
