@@ -78,12 +78,16 @@ jobs:
           psql -c 'create database hera_mc_test;' -U postgres
           psql -c 'create database hera_mc;' -U postgres
           psql -c 'create user hera;' -U postgres
-          mkdir ~/.hera_mc
-          cp ci/example_config.json ~/.hera_mc/mc_config.json
-          alembic upgrade head
+        working-directory: ./postgres
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
-
+      - name: Upgrade Database Schema
+        run: |
+         mkdir ~/.hera_mc
+         cp ci/example_config.json ~/.hera_mc/mc_config.json
+         alembic upgrade head
+       env:
+         POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Run Tests
         run: |
           export PATH="$HOME/miniconda/bin:$PATH"
