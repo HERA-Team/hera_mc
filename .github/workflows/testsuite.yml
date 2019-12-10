@@ -94,26 +94,21 @@ jobs:
           echo $PATH
       - name: Upgrade Database Schema
         run: |
-         PSQL_PATH=`locate psql`
-         export PATH="$HOME/miniconda/bin:$PSQL_PATH:$PATH"
-         source activate $ENV_NAME
-         mkdir ~/.hera_mc
-         cp ci/example_config.json ~/.hera_mc/mc_config.json
-         alembic upgrade head
+          PSQL_PATH=`locate psql`
+          export PATH="$HOME/miniconda/bin:$PSQL_PATH:$PATH"
+          source activate $ENV_NAME
+          mkdir ~/.hera_mc
+          echo "cp ci/example_config.json ~/.hera_mc/mc_config.json"
+          cp ci/example_config.json ~/.hera_mc/mc_config.json
+          echo "alembic upgrade head"
+          alembic upgrade head
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Logging output
         if: failure()
         run: |
-          ls -lthra ./
-          locate psql
-          PSQL_PATH=`locate psql`
-          ls -lthra $PSQL_PATH
-          export PATH="$PSQL_PATH:$PATH"
-          echo $PATH
-          HBA_FILE=`locate pg_hba.conf`
-          echo $HBA_FILE
-          cat $HBA_FILE
+          echo "mc_config.json settings"
+          cat ~/.hera_mc/mc_config.json
       - name: Run Tests
         run: |
           PSQL_PATH=`locate psql`
