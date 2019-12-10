@@ -202,7 +202,7 @@ class Handling:
             if pt.upper() not in port_types:
                 print("{} not in {}".format(pt, port_types))
                 continue
-            for prt in self.ports[pt]:
+            for prt in self.ports[pt.lower()]:
                 allowed_ports.add(prt)
         self.allowed_ports = [x.upper() for x in allowed_ports]
         return

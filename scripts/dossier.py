@@ -119,7 +119,7 @@ else:  # view == 'parts' or view == 'connections' or view == 'notes'
             ports.append('physical')
         ports = ','.join(ports)  # Need to specify as a string for port types.
 
-    dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query,
+    dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query, active=None,
                                    notes_start_date=notes_start_date, exact_match=args.exact_match)
     print(handling.show_dossier(dossier, columns, ports=ports))
 print()
