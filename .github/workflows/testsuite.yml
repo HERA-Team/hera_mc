@@ -76,24 +76,23 @@ jobs:
       - name: Setup postgres
         run: |
           PSQL_PATH=`locate psql`
-          export PATH="$HOME/miniconda/bin:$PSQL_PATH:$PATH"
-          source activate $ENV_NAME
+          export PATH="$PSQL_PATH:$PATH"
           $PSQL_PATH -c 'create database hera_mc_test;' -U postgres
           $PSQL_PATH -c 'create database hera_mc;' -U postgres
           $PSQL_PATH -c 'create user hera;' -U postgres
-          $PSQL_PATH -c "ALTER USER hera WITH PASSWORD 'hera';" -U postgres
-          mkdir ~/.hera_mc
-          echo "cp ci/example_config.json ~/.hera_mc/mc_config.json"
-          cp ci/example_config.json ~/.hera_mc/mc_config.json
-          echo "alembic upgrade head"
-          alembic upgrade head
+          $PSQL_PATH -c "ALTER USER hera WITH PASSWORD '';" -U postgres
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Upgrade Database Schema
         run: |
           PSQL_PATH=`locate psql`
-
-
+          export PATH="$HOME/miniconda/bin:$PSQL_PATH:$PATH"
+          source activate $ENV_NAME
+          mkdir ~/.hera_mc
+          echo "cp ci/example_config.json ~/.hera_mc/mc_config.json"
+          cp ci/example_config.json ~/.hera_mc/mc_config.json
+          echo "alembic upgrade head"
+          alembic upgrade head
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Logging output
