@@ -5,10 +5,10 @@ set -xe
 if [[ ! $OS == 'macos-latest' ]]; then
   if [ ! -z "$WITH_SUDO" ]; then
     sudo apt-get update
-    sudo apt-get install -y gcc g++ curl
+    sudo apt-get install -y gcc g++ curl libpq-dev
   else
     apt-get update
-    apt-get install -y gcc g++ curl
+    apt-get install -y gcc g++ curl libpq-dev
   fi
 fi
 conda config --set always_yes yes --set changeps1 no
