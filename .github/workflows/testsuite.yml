@@ -33,6 +33,9 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
       WITH_SUDO: yes
       OS: ${{ matrix.os }}
+      # use localhost for the host here because we are running the job on the VM.
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
     name: Testing
     needs: [flake8]
     runs-on: ${{ matrix.os }}
@@ -79,21 +82,11 @@ jobs:
           mkdir ~/.hera_mc
           cp ci/example_config.json ~/.hera_mc/mc_config.json
           alembic upgrade head
-        working-directory: ./postgres
-        env:
-          # use localhost for the host here because we are running the job on the VM.
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Run Tests
         run: |
           export PATH="$HOME/miniconda/bin:$PATH"
           source activate $ENV_NAME
           python -m pytest -v --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
-        working-directory: ./postgres
-        env:
-          # use localhost for the host here because we are running the job on the VM.
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - uses: codecov/codecov-action@master
         if: matrix.os == 'ubuntu-latest' && success()
         with:
