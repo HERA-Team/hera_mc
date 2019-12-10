@@ -80,18 +80,9 @@ jobs:
           $PSQL_PATH -c 'create database hera_mc_test;' -U postgres
           $PSQL_PATH -c 'create database hera_mc;' -U postgres
           $PSQL_PATH -c 'create user hera;' -U postgres
-          $PSQL_PATH -c 'ALTER USER hera WITH PASSWORD;' -U postgres
+          $PSQL_PATH -c "ALTER USER hera WITH PASSWORD 'hera';" -U postgres
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
-      - name: Logging output
-        if: failure()
-        run: |
-          ls -lthra ./
-          locate psql
-          PSQL_PATH=`locate psql`
-          ls -lthra $PSQL_PATH
-          export PATH="$PSQL_PATH:$PATH"
-          echo $PATH
       - name: Upgrade Database Schema
         run: |
           PSQL_PATH=`locate psql`
@@ -109,6 +100,10 @@ jobs:
         run: |
           echo "mc_config.json settings"
           cat ~/.hera_mc/mc_config.json
+          PSQL_PATH=`locate psql`
+          export PATH="$PSQL_PATH:$PATH"
+          echo "hera psql info"
+          $PSQL_PATH -c "SELECT rolname, rolpassword FROM pg_catalog.pg_authid WHERE rolname='hera';" -U postgres
       - name: Run Tests
         run: |
           PSQL_PATH=`locate psql`
