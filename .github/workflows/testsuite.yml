@@ -75,6 +75,8 @@ jobs:
           pip install -e .[all]
       - name: Setup postgres
         run: |
+          PSQL_PATH=`locate psql`
+          export PATH="$PSQL_PATH:$PATH"
           psql -c 'create database hera_mc_test;' -U postgres
           psql -c 'create database hera_mc;' -U postgres
           psql -c 'create user hera;' -U postgres
@@ -87,6 +89,9 @@ jobs:
           ls -lthra ./
       - name: Upgrade Database Schema
         run: |
+         PSQL_PATH=`locate psql`
+         export PATH="$HOME/miniconda/bin:$PSQL_PATH:$PATH"
+         source activate $ENV_NAME
          mkdir ~/.hera_mc
          cp ci/example_config.json ~/.hera_mc/mc_config.json
          alembic upgrade head
@@ -94,7 +99,8 @@ jobs:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Run Tests
         run: |
-          export PATH="$HOME/miniconda/bin:$PATH"
+          PSQL_PATH=`locate psql`
+          export PATH="$HOME/miniconda/bin:$PSQL_PATH:$PATH"
           source activate $ENV_NAME
           python -m pytest -v --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
