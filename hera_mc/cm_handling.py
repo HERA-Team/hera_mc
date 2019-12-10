@@ -165,7 +165,7 @@ class Handling:
             sysdef = cm_sysdef.Sysdef()
             self.all_sigpath_ports = sysdef.get_all_ports(cm_sysdef.operational_hookup_types)
             for port_type in cm_sysdef.all_port_types:
-                self.ports[port_type] = set()
+                self.ports[port_type.upper()] = set()
             del(sysdef)
             return
 
@@ -173,9 +173,9 @@ class Handling:
         for part_ports in [inp.input_ports, inp.output_ports]:
             for p in part_ports:
                 if p in self.all_sigpath_ports:
-                    self.ports['sigpath'].add(p)
+                    self.ports['SIGPATH'].add(p)
                 else:
-                    self.ports['physical'].add(p)
+                    self.ports['PHYSICAL'].add(p)
         return
 
     def _get_allowed_ports(self, ports):
@@ -202,7 +202,7 @@ class Handling:
             if pt.upper() not in port_types:
                 print("{} not in {}".format(pt, port_types))
                 continue
-            for prt in self.ports[pt.lower()]:
+            for prt in self.ports[pt.upper()]:
                 allowed_ports.add(prt)
         self.allowed_ports = [x.upper() for x in allowed_ports]
         return
