@@ -35,6 +35,9 @@ jobs:
       OS: ${{ matrix.os }}
       # use localhost for the host here because we are running the job on the VM.
       POSTGRES_HOST: localhost
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     name: Testing
     needs: [flake8]
     runs-on: ${{ matrix.os }}
