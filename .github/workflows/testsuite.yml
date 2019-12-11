@@ -76,10 +76,10 @@ jobs:
           pip install -e .[all]
       - name: Setup postgres
         run: |
-          export PGPASSWORD=$POSTGRES_PASSWORD
-          psql -c 'create database hera_mc_test;' -U postgres -h $POSTGRES_HOST  -p $POSTGRES_PORT
-          psql -c 'create database hera_mc;' -U postgres -h $POSTGRES_HOST  -p $POSTGRES_PORT
-          psql -c 'create user hera;' -U postgres -h $POSTGRES_HOST -p $POSTGRES_PORT
+          export postgresql_url=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
+          psql $postgresql_url -c 'create database hera_mc_test;'
+          psql $postgresql_url -c 'create database hera_mc;' -U postgres -h $POSTGRES_HOST  -p $POSTGRES_PORT
+          psql $postgresql_url -c 'create user hera;' -U postgres -h $POSTGRES_HOST -p $POSTGRES_PORT
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Upgrade Database Schema
