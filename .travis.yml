@@ -26,7 +26,7 @@ install:
   - conda create --name=tests
   - conda env update -f ci/tests.yaml
   - source activate tests
-  - conda install flake8  # because it's not in the tests.yaml
+  - conda install flake8 coveralls  # because it's not in the tests.yaml
   - conda list
   - pip install .
 addons:
