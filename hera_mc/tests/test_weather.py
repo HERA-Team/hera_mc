@@ -152,7 +152,7 @@ def test_add_weather(mcsession):
 @onsite
 def test_add_from_sensor(mcsession):
     test_session = mcsession
-    t1 = Time('2017-11-10 01:15:23', scale='utc')
+    t1 = Time('2019-11-10 01:15:23', scale='utc')
     t2 = t1 + TimeDelta(280.0, format='sec')
     t3 = t2 + TimeDelta(300.0, format='sec')
     t4 = t3 + TimeDelta(280.0, format='sec')

@@ -28,9 +28,11 @@ class MCSession(Session):
     """Primary session object that handles most DB queries."""
 
     def __enter__(self):
+        """Enter the session."""
         return self
 
     def __exit__(self, etype, evalue, etb):
+        """Exit the session, rollback if there's an error otherwise commit."""
         if etype is not None:
             self.rollback()  # exception raised
         else:
@@ -43,7 +45,7 @@ class MCSession(Session):
         Get the current time according to the database.
 
         Returns
-        --------
+        -------
         astropy Time object
             Current database time as an astropy time object.
 
@@ -137,7 +139,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of objects, optional
             If write_to_file is False: List of objects that match the filtering.
 
@@ -270,7 +272,7 @@ class MCSession(Session):
         Add a new observation to the M&C database.
 
         Parameters
-        ------------
+        ----------
         starttime : astropy Time object
             Observation starttime.
         stoptime : astropy Time object
@@ -293,14 +295,14 @@ class MCSession(Session):
         Get observation(s) from the M&C database.
 
         Parameters
-        ------------
+        ----------
         obsid : long integer
             Observation identification number, generally the gps second
             corresponding to the observation start time. If obsid is None,
             all obsids will be returned.
 
         Returns
-        --------
+        -------
         list of Observation objects
 
         """
@@ -326,7 +328,7 @@ class MCSession(Session):
         stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -345,7 +347,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of Observation objects.
 
         """
@@ -363,7 +365,7 @@ class MCSession(Session):
         Add a new subsystem server_status to the M&C database.
 
         Parameters
-        ------------
+        ----------
         subsystem : str
             Name of subsystem. Must be one of ['rtp', 'lib'].
         hostname : str
@@ -420,7 +422,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         subsystem : str
             Name of subsystem. Must be one of ['rtp', 'lib'].
         most_recent : bool
@@ -444,7 +446,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of ServerStatus objects
 
         """
@@ -476,7 +478,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -498,7 +500,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of RTPServerStatus objects
 
         """
@@ -521,7 +523,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -543,7 +545,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of LibServerStatus objects
 
         """
@@ -557,7 +559,7 @@ class MCSession(Session):
         Add a new subsystem_error to the M&C database.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of this error report.
         subsystem : str
@@ -597,7 +599,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -619,7 +621,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of SubsystemError objects
 
         """
@@ -640,7 +642,7 @@ class MCSession(Session):
         with ones already in the database.
 
         Parameters
-        ------------
+        ----------
         name : str
             Name of the daemon.
         hostname : str
@@ -679,7 +681,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -701,7 +703,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of DaemonStatus objects
 
         """
@@ -719,7 +721,7 @@ class MCSession(Session):
         Add a new lib_status object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of this status.
         num_files : int
@@ -758,7 +760,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -780,7 +782,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of LibStatus objects
 
         """
@@ -795,7 +797,7 @@ class MCSession(Session):
         Add a new lib_raid_status object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of this status.
         hostname : str
@@ -825,7 +827,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -847,7 +849,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of LibRAIDStatus objects
 
         """
@@ -864,7 +866,7 @@ class MCSession(Session):
         Add a new lib_raid_error object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of this error.
         hostname : str
@@ -894,7 +896,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -916,7 +918,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of LibRAIDErrors objects
 
         """
@@ -934,7 +936,7 @@ class MCSession(Session):
         Add a new lib_remote_status object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of this status.
         remote_name : str
@@ -967,7 +969,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -989,7 +991,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of LibRemoteStatus objects
 
         """
@@ -1006,7 +1008,7 @@ class MCSession(Session):
         Add a new lib_file row.
 
         Parameters
-        ------------
+        ----------
         filename : str
             Name of file created.
         obsid : long or None
@@ -1038,7 +1040,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         filename : str
             Filename to get records for.
         obsid : long
@@ -1060,7 +1062,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of LibFiles objects
 
         """
@@ -1097,7 +1099,7 @@ class MCSession(Session):
         Add a new rtp_status object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of this status.
         status : str
@@ -1127,7 +1129,7 @@ class MCSession(Session):
         stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -1146,7 +1148,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of RTPStatus objects
 
         """
@@ -1161,7 +1163,7 @@ class MCSession(Session):
         Add a new rtp_process_event row.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of event.
         obsid : long
@@ -1189,7 +1191,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -1210,7 +1212,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of RTPProcessEvent objects
 
         """
@@ -1231,7 +1233,7 @@ class MCSession(Session):
         Add a new rtp_process_record row.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of event.
         obsid : long
@@ -1281,7 +1283,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -1302,7 +1304,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of RTPProcessEvent objects
 
         """
@@ -1321,7 +1323,7 @@ class MCSession(Session):
         Add a new rtp_task_resource_record row.
 
         Parameters
-        ------------
+        ----------
         obsid : long
             Observation obsid, Foreign key into observation.
         task_name : str
@@ -1360,7 +1362,7 @@ class MCSession(Session):
         At least one of obsid, starttime or most_recent must be specified.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime,
             obsid and task_name are all None.
@@ -1384,7 +1386,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        -----------
+        -------
         list of RTPTaskResourceRecord objects
 
         """
@@ -1437,7 +1439,7 @@ class MCSession(Session):
         Add new weather data to the M&C database.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object based on a timestamp from the katportal sensor.
         variable : str
@@ -1459,7 +1461,7 @@ class MCSession(Session):
         using the "create_from_sensors" function.
 
         Parameters
-        ------------
+        ----------
         starttime : astropy Time object
             Time to start getting history.
         stoptime : astropy Time object
@@ -1501,7 +1503,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -1524,7 +1526,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         if write_to_file is False: list of WeatherData objects
 
         """
@@ -1547,7 +1549,7 @@ class MCSession(Session):
         Add new node sensor data to the M&C database.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object based on a timestamp reported by node.
         nodeID : int
@@ -1604,7 +1606,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -1616,7 +1618,7 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
         nodeID : int
-            node number (integer running from 1 to 30)
+            node number (integer running from 0 to 30)
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -1625,7 +1627,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         if write_to_file is False: list of NodeSensor objects
 
         """
@@ -1643,11 +1645,11 @@ class MCSession(Session):
         Add new node power status data to the M&C database.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object based on a timestamp reported by node.
         nodeID : int
-            Node number (integer running from 1 to 30).
+            Node number (integer running from 0 to 30).
         snap_relay_powered : bool
             Power status of the snap relay, True=powered.
         snap0_powered : bool
@@ -1705,7 +1707,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -1717,7 +1719,7 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
         nodeID : int
-            node number (integer running from 1 to 30)
+            node number (integer running from 0 to 30)
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -1726,7 +1728,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of NodePowerStatus objects
 
         """
@@ -1744,9 +1746,9 @@ class MCSession(Session):
         Issue a power command (on/off) to a particular node & part.
 
         Parameters
-        ------------
+        ----------
         nodeID : int
-            Node number (integer running from 1 to 30).
+            Node number (integer running from 0 to 30).
         part : str or list of strings
             Part name(s) (e.g. fem, snap0) or 'all', allowed values are keys to
             node.power_command_part_dict.
@@ -1887,7 +1889,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -1899,7 +1901,7 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
         nodeID : int
-            node number (integer running from 1 to 30)
+            node number (integer running from 0 to 30)
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -1908,7 +1910,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of NodePowerCommand objects
 
         """
@@ -1920,12 +1922,229 @@ class MCSession(Session):
                                  filter_column='node', filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
 
+    def add_node_white_rabbit_status(self, col_dict):
+        """
+        Add new node white rabbit status data to the M&C database.
+
+        Parameters
+        ----------
+        col_dict : dict
+            dictionary that must contain the following entries:
+
+            node_time : astropy Time object
+                Astropy time object based on a timestamp reported by node.
+            node : int
+                Node number (within 1 to 30).
+            board_info_str : str
+                A raw string representing the WR-LEN's response to the `ver` command.
+                Relevant parts of this string are individually unpacked in other entries.
+            aliases : str
+                Hostname aliases of this node's WR-LEN (comma separated if more than one).
+            ip : str
+                IP address of this node's WR-LEN
+            mode : str
+                WR-LEN operating mode (eg. "WRC_SLAVE_WR0")
+            serial : str
+                Canonical HERA hostname (~= serial number) of this node's WR-LEN
+            temperature : float
+                WR-LEN temperature in degrees C
+            build_date : astropy Time object
+                Build date of WR-LEN software in floored GPS seconds.
+            gw_date : astropy Time object
+                WR-LEN gateware build date in floored GPS seconds.
+            gw_version : str
+                WR-LEN gateware version number
+            gw_id : str
+                WR-LEN gateware ID number
+            build_hash : str
+                WR-LEN build git hash
+            manufacture_tag : str
+                Custom manufacturer tag
+            manufacture_device : str
+                Manufacturer device name designation
+            manufacture_date : astropy Time object
+                Manufacturer invoice(?) date
+            manufacture_partnum : str
+                Manufacturer part number
+            manufacture_serial : str
+                Manufacturer serial number
+            manufacture_vendor : str
+                Vendor name
+            port0_ad : int
+                ???
+            port0_link_asymmetry_ps : int
+                Port 0 total link asymmetry in picosec
+            port0_manual_phase_ps : int
+                ??? Port 0 manual phase adjustment in picosec
+            port0_clock_offset_ps : int
+                Port 0 Clock offset in picosec
+            port0_cable_rt_delay_ps : int
+                Port 0 Cable round-trip delay in picosec
+            port0_master_slave_delay_ps : int
+                Port 0 Master-Slave delay in in picosec
+            port0_master_rx_phy_delay_ps : int
+                Port 0 Master RX PHY delay in picosec
+            port0_slave_rx_phy_delay_ps : int
+                Port 0 Slave RX PHY delay in picosec
+            port0_master_tx_phy_delay_ps : int
+                Port 0 Master TX PHY delay in picosec
+            port0_slave_tx_phy_delay_ps : int
+                Port 0 Slave TX PHY delay in picosec
+            port0_hd : int
+                ???
+            port0_link : bool
+                Port 0 link up state
+            port0_lock : bool
+                Port 0 timing lock state
+            port0_md : int
+                ???
+            port0_rt_time_ps : int
+                Port 0 round-trip time in picosec
+            port0_nsec : int
+                ???
+            port0_packets_received : int
+                Port 0 number of packets received
+            port0_phase_setpoint_ps : int
+                Port 0 phase setpoint in picosec
+            port0_servo_state : str
+                Port 0 servo state
+            port0_sv : int
+                ???
+            port0_sync_source : str
+                Port 0 source of synchronization (either 'wr0' or 'wr1')
+            port0_packets_sent : int
+                Port 0 number of packets transmitted
+            port0_update_counter : int
+                Port 0 update counter
+            port0_time : astropy Time object
+                Astropy Time object based on Port 0 current TAI time in seconds from UNIX epoch.
+            port1_ad : int
+                ???
+            port1_link_asymmetry_ps : int
+                Port 1 total link asymmetry in picosec
+            port1_manual_phase_ps : int
+                ??? Port 1 manual phase adjustment in picosec
+            port1_clock_offset_ps : int
+                Port 1 Clock offset in picosec
+            port1_cable_rt_delay_ps : int
+                Port 1 Cable round-trip delay in picosec
+            port1_master_slave_delay_ps : int
+                Port 1 Master-Slave delay in in picosec
+            port1_master_rx_phy_delay_ps : int
+                Port 1 Master RX PHY delay in picosec
+            port1_slave_rx_phy_delay_ps : int
+                Port 1 Slave RX PHY delay in picosec
+            port1_master_tx_phy_delay_ps : int
+                Port 1 Master TX PHY delay in picosec
+            port1_slave_tx_phy_delay_ps : int
+                Port 1 Slave TX PHY delay in picosec
+            port1_hd : int
+                ???
+            port1_link : bool
+                Port 1 link up state
+            port1_lock : bool
+                Port 1 timing lock state
+            port1_md : int
+                ???
+            port1_rt_time_ps : int
+                Port 1 round-trip time in picosec
+            port1_nsec : int
+                ???
+            port1_packets_received : int
+                Port 1 number of packets received
+            port1_phase_setpoint_ps : int
+                Port 1 phase setpoint in picosec
+            port1_servo_state : str
+                Port 1 servo state
+            port1_sv : int
+                ???
+            port1_sync_source : str
+                Port 1 source of synchronization (either 'wr0' or 'wr1')
+            port1_packets_sent : int
+                Port 1 number of packets transmitted
+            port1_update_counter : int
+                Port 1 update counter
+            port1_time : astropy Time object
+                Astropy Time object based on Port 1 current TAI time in seconds from UNIX epoch.
+
+        """
+        from .node import NodeWhiteRabbitStatus
+
+        self.add(NodeWhiteRabbitStatus.create(col_dict))
+
+    def add_node_white_rabbit_status_from_nodecontrol(self):
+        """
+        Get and add node white rabbit information using a nodeControl object.
+
+        This function connects to the node and gets the latest data using the
+        `create_wr_status` function.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the node white rabbit data densely on qmaster.
+
+        """
+        from .node import create_wr_status, NodeWhiteRabbitStatus
+
+        node_wr_status_list = create_wr_status()
+
+        self._insert_ignoring_duplicates(NodeWhiteRabbitStatus, node_wr_status_list)
+
+    def get_node_white_rabbit_status(self, most_recent=None, starttime=None,
+                                     stoptime=None, nodeID=None,
+                                     write_to_file=False, filename=None):
+        """
+        Get node_white_rabbit_status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        nodeID : int
+            node number (integer running from 0 to 30)
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        if write_to_file is False: list of NodeWhiteRabbitStatus objects
+
+        """
+        from .node import NodeWhiteRabbitStatus
+
+        return self._time_filter(NodeWhiteRabbitStatus, 'node_time',
+                                 most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='node', filter_value=nodeID,
+                                 write_to_file=write_to_file, filename=filename)
+
     def add_correlator_control_state(self, time, state_type, state):
         """
         Add new correlator control state data to the M&C database.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object based on a timestamp reported by the correlator.
         state_type : str
@@ -1954,7 +2173,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -1976,7 +2195,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of CorrelatorControlState objects
 
         """
@@ -2004,7 +2223,7 @@ class MCSession(Session):
         the data frequently on qmaster.
 
         Parameters
-        ------------
+        ----------
         corr_state_dict : dict
             A dict containing info as in the return dict from
             `_get_control_state()` for testing purposes. If None,
@@ -2014,7 +2233,7 @@ class MCSession(Session):
             list of CorrelatorControlState objects.
 
         Returns
-        --------
+        -------
         list of CorrelatorControlState objects, optional
             If testing is True, returns the list of CorrelatorControlState
             objects based on the corr_state_dict.
@@ -2065,7 +2284,7 @@ class MCSession(Session):
         Add new correlator config file to the M&C database.
 
         Parameters
-        ------------
+        ----------
         config_hash : str
             Unique hash of the config.
         config_file : str
@@ -2081,12 +2300,12 @@ class MCSession(Session):
         Get a correlator config file record from the M&C database.
 
         Parameters
-        ------------
+        ----------
         config_hash : str
             Unique hash for config file.
 
         Returns
-        --------
+        -------
         list of CorrelatorConfigFile objects
 
         """
@@ -2102,7 +2321,7 @@ class MCSession(Session):
         Add new correlator config status to the M&C database.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object based on a timestamp reported by the correlator.
         config_hash : str
@@ -2128,7 +2347,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -2149,7 +2368,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of CorrelatorConfigStatus objects
 
         """
@@ -2167,7 +2386,7 @@ class MCSession(Session):
         Save a new config file in the Librarian.
 
         Parameters
-        -----------
+        ----------
         config : str
             Decoded yaml string (i.e. result of yaml.safe_load(config_file)).
         config_hash : str
@@ -2196,7 +2415,8 @@ class MCSession(Session):
 
     def add_correlator_config_from_corrcm(self, config_state_dict=None,
                                           testing=False):
-        """Get and add correlator config information using a HeraCorrCM object.
+        """
+        Get and add correlator config information using a HeraCorrCM object.
 
         This function connects to the correlator and gets the latest config
         using the `corr._get_config` function. If it is a new config file, it
@@ -2205,7 +2425,7 @@ class MCSession(Session):
         to the correlator.
 
         Parameters
-        ------------
+        ----------
         config_state_dict : dict
             A dict containing info as in the return dict from _get_config() for
             testing purposes. If None, _get_config() is called.
@@ -2215,7 +2435,7 @@ class MCSession(Session):
             CorrelatorConfigStatus objects.
 
         Returns
-        --------
+        -------
         list of objects, optional
             If testing is True, returns the list of CorrelatorConfigFile and
             CorrelatorConfigStatus objects based on the config_state_dict.
@@ -2298,7 +2518,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -2320,7 +2540,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of CorrelatorControlCommand objects
 
         """
@@ -2346,7 +2566,7 @@ class MCSession(Session):
         stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         use_command_time : bool
             Controls whether the query uses the time the command is sent to the
             correlator or the starttime for the take_data command to filter on.
@@ -2373,7 +2593,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of CorrelatorTakeDataArguments objects
 
         """
@@ -2405,7 +2625,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -2426,7 +2646,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of CorrelatorConfigCommand objects
 
         """
@@ -2447,7 +2667,7 @@ class MCSession(Session):
         Issue a correlator control command.
 
         Parameters
-        ------------
+        ----------
         command : str
             One of the keys in correlator.command_dict (e.g. 'take_data',
             'phase_switching_on', 'phase_switching_off', 'restart').
@@ -2754,7 +2974,7 @@ class MCSession(Session):
         Add new correlator software versions to the M&C database.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object based on the version report timestamp.
         package : str
@@ -2784,7 +3004,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -2805,7 +3025,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of CorrelatorSoftwareVersions objects
 
         """
@@ -2823,7 +3043,7 @@ class MCSession(Session):
         Add new SNAP configuration and version to the M&C database.
 
         Parameters
-        ------------
+        ----------
         init_time : astropy Time object
             Astropy time object for when the SNAPs were last initialized with
             the `hera_snap_feng_init.py` script
@@ -2856,7 +3076,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -2875,7 +3095,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of SNAPConfigVersion objects
 
         """
@@ -2888,7 +3108,8 @@ class MCSession(Session):
 
     def add_corr_snap_versions_from_corrcm(self, corr_snap_version_dict=None,
                                            testing=False):
-        """Get and add correlator and SNAP configuration and version info.
+        """
+        Get and add correlator and SNAP configuration and version info.
 
         This function connects to the correlator and gets the latest data using
         the `_get_corr_versions` function. For testing purposes, it can
@@ -2900,7 +3121,7 @@ class MCSession(Session):
         the data frequently on qmaster.
 
         Parameters
-        ------------
+        ----------
         corr_snap_version_dict : dict
             A dict containing info as in the return dict from
             `corr._get_corr_versions()` for testing purposes. If None,
@@ -2911,7 +3132,7 @@ class MCSession(Session):
             CorrelatorConfigStatus and SNAPConfigVersion objects.
 
         Returns
-        --------
+        -------
         list of objects, optional
             Optionally returns the list of CorrelatorSoftwareVersions,
             CorrelatorConfigFile, CorrelatorConfigStatus and
@@ -2994,7 +3215,7 @@ class MCSession(Session):
             SNAP location number.
 
         """
-        from hera_mc import cm_handling, cm_utils
+        from hera_mc import cm_handling
         if session is None:
             session = self
 
@@ -3029,8 +3250,8 @@ class MCSession(Session):
         serial_number : str
             SNAP serial number.
 
-        Returns:
-        --------
+        Returns
+        -------
         str or None
             SNAP hostname if serial_number is found in the snap_status table,
             None otherwise.
@@ -3056,7 +3277,7 @@ class MCSession(Session):
         Add new snap status data to the M&C database.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object based on a timestamp reported by the correlator.
         hostname : str
@@ -3099,7 +3320,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -3111,7 +3332,7 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
         nodeID : int
-            node number (integer running from 1 to 30)
+            node number (integer running from 0 to 30)
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -3120,7 +3341,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of SNAPStatus objects
 
         """
@@ -3147,7 +3368,7 @@ class MCSession(Session):
         the data frequently on qmaster.
 
         Parameters
-        ------------
+        ----------
         snap_status_dict : dict
             A dict containing info as in the return dict from _get_snap_status()
             for testing purposes. If None, _get_snap_status() is called.
@@ -3159,7 +3380,7 @@ class MCSession(Session):
             be set to another session instance (useful for testing).
 
         Returns
-        --------
+        -------
         Optionally returns the list of SNAPStatus objects (if testing is True)
 
         """
@@ -3227,7 +3448,7 @@ class MCSession(Session):
         Add new antenna status data to the M&C database.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object based on a timestamp reported by the
             correlator.
@@ -3312,7 +3533,7 @@ class MCSession(Session):
         startime and stoptime are ignored.
 
         Parameters
-        ------------
+        ----------
         most_recent : bool
             If True, get most recent record. Defaults to True if starttime is
             None.
@@ -3333,7 +3554,7 @@ class MCSession(Session):
             Ignored if write_to_file is False.
 
         Returns
-        --------
+        -------
         list of AntennaStatus objects
 
         """
@@ -3359,7 +3580,7 @@ class MCSession(Session):
         the data frequently on qmaster.
 
         Parameters
-        ------------
+        ----------
         ant_status_dict : dict
             A dict containing info as in the return dict from
             corr._get_ant_status() for testing purposes. If None,
@@ -3369,7 +3590,7 @@ class MCSession(Session):
             list of AntennaStatus objects.
 
         Returns
-        --------
+        -------
         list of objects, optional
             If testing is true, returns the list of AntennaStatus objects based
             on the ant_status_dict.
@@ -3395,7 +3616,7 @@ class MCSession(Session):
         Add a new antenna metric to the M&C database.
 
         Parameters
-        ------------
+        ----------
         obsid : long integer
             Observation identification number.
         ant : int
@@ -3420,7 +3641,7 @@ class MCSession(Session):
         Get antenna metric(s) from the M&C database.
 
         Parameters
-        ------------
+        ----------
         ant : int or list of integers
             Antenna number. Defaults to returning all antennas.
         pol : str ('x', 'y', 'n', or 'e'), or list
@@ -3433,7 +3654,7 @@ class MCSession(Session):
             End of query time interval. Defaults to now.
 
         Returns
-        --------
+        -------
         list of AntMetrics objects
 
         """
@@ -3462,7 +3683,7 @@ class MCSession(Session):
         Add a new array metric to the M&C database.
 
         Parameters
-        ------------
+        ----------
         obsid : long integer
             Observation identification number.
         metric : str
@@ -3482,7 +3703,7 @@ class MCSession(Session):
         Get array metric(s) from the M&C database.
 
         Parameters
-        ------------
+        ----------
         metric : str or list of strings
             Metric name. Defaults to returning all metrics.
         starttime : astropy Time object OR gps second.
@@ -3491,7 +3712,7 @@ class MCSession(Session):
             End of query time interval. Defaults to now.
 
         Returns
-        --------
+        -------
         list of ArrayMetrics objects
 
         """
@@ -3516,7 +3737,7 @@ class MCSession(Session):
         Add a new metric description to the M&C database.
 
         Parameters
-        ------------
+        ----------
         metric : str
             Metric name.
         desc : str
@@ -3535,7 +3756,7 @@ class MCSession(Session):
         for new metrics.
 
         Parameters
-        ------------
+        ----------
         metric : str
             Metric name.
         desc : str
@@ -3553,12 +3774,12 @@ class MCSession(Session):
         Get metric description(s) from the M&C database.
 
         Parameters
-        ------------
+        ----------
         metric : str or list of strings
             Metric name. Defaults to returning all metrics.
 
         Returns
-        --------
+        -------
         list of MetricList objects
 
         """
@@ -3575,7 +3796,7 @@ class MCSession(Session):
         Check that metric has a description in the db, fill one in if not.
 
         Parameters
-        -----------
+        ----------
         metrics : str or list of strings
             Metric name.
 
@@ -3609,7 +3830,7 @@ class MCSession(Session):
         Add a file worth of quality metrics to the db.
 
         Parameters
-        -----------
+        ----------
         filename : str
             File containing metrics to be added to db.
         ftype : {'ant', 'firstcal', 'omnical'}
