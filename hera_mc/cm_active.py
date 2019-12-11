@@ -212,7 +212,7 @@ class ActiveData:
         Parameters
         ----------
         hpn : str or list
-            A HERA part number, or list of part numbers or fractions thereof.
+            HERA part number or list.  Checks equality or startswith, depending on below.
         exact_match : bool
             Flag to look for exact matches to part numbers or not.
 
