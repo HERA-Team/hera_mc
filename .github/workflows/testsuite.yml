@@ -76,12 +76,22 @@ jobs:
           pip install -e .[all]
       - name: Setup postgres
         run: |
-          export POSTGRES_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
           psql $POSTGRES_URL -c 'create database hera_mc_test;'
           psql $POSTGRES_URL -c 'create database hera_mc;'
           psql $POSTGRES_URL -c 'create user hera;'
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+          POSTGRES_URL: postgresql://${{ POSTGRES_USER }}:${{ POSTGRES_PASSWORD }}@${{ POSTGRES_HOST }}:${{ POSTGRES_PORT }}/${{ POSTGRES_DB }}
+      - name: Logging output
+        if: failure()
+        run: |
+          echo "POSTGRES URL"
+          echo $POSTGRES_URL
+          echo "psql roles"
+          psql  $POSTGRES_URL -c "SELECT rolname FROM pg_roles;"
+        env:
+          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+          POSTGRES_URL: postgresql://${{ POSTGRES_USER }}:${{ POSTGRES_PASSWORD }}@${{ POSTGRES_HOST }}:${{ POSTGRES_PORT }}/${{ POSTGRES_DB }}
       - name: Upgrade Database Schema
         run: |
           export PATH="$HOME/miniconda/bin:$PSQL_PATH:$PATH"
