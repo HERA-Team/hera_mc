@@ -47,6 +47,7 @@ jobs:
       postgres:
         image: postgres:10.8
         env:
+          POSTGRES_HOST: localhost
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
@@ -75,9 +76,9 @@ jobs:
           pip install -e .[all]
       - name: Setup postgres
         run: |
-          psql -c 'create database hera_mc_test;' -U postgres
-          psql -c 'create database hera_mc;' -U postgres
-          psql -c 'create user hera;' -U postgres
+          psql -c 'create database hera_mc_test;' -U postgres -h $POSTGRES_HOST  -p $POSTGRES_PORT
+          psql -c 'create database hera_mc;' -U postgres -h $POSTGRES_HOST  -p $POSTGRES_PORT
+          psql -c 'create user hera;' -U postgres -h $POSTGRES_HOST -p $POSTGRES_PORT
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Upgrade Database Schema
