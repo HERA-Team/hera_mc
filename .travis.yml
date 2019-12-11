@@ -23,9 +23,9 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create --name=hera_mc_test
-  - conda env update -f ci/hera_mc_test.yaml
-  - source activate hera_mc_test
+  - conda create --name=tests
+  - conda env update -f ci/tests.yaml
+  - source activate tests
   - conda list
   - pip install .
 addons:
