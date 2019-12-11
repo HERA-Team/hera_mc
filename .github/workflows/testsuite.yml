@@ -76,6 +76,7 @@ jobs:
           pip install -e .[all]
       - name: Setup postgres
         run: |
+          export PGPASSWORD=$POSTGRES_PASSWORD
           psql -c 'create database hera_mc_test;' -U postgres -h $POSTGRES_HOST  -p $POSTGRES_PORT
           psql -c 'create database hera_mc;' -U postgres -h $POSTGRES_HOST  -p $POSTGRES_PORT
           psql -c 'create user hera;' -U postgres -h $POSTGRES_HOST -p $POSTGRES_PORT
