@@ -5,10 +5,10 @@ set -xe
 if [[ ! $OS == 'macos-latest' ]]; then
   if [ ! -z "$WITH_SUDO" ]; then
     sudo apt-get update
-    sudo apt-get install -y gcc g++ curl libpq-dev
+    sudo apt-get install -y gcc g++ curl libpq-dev postgresql-client
   else
     apt-get update
-    apt-get install -y gcc g++ curl libpq-dev
+    apt-get install -y gcc g++ curl libpq-dev postgresql-client
   fi
 fi
 conda config --set always_yes yes --set changeps1 no

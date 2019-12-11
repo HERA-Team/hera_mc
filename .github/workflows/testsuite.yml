@@ -75,17 +75,13 @@ jobs:
           pip install -e .[all]
       - name: Setup postgres
         run: |
-          PSQL_PATH=`locate psql`
-          export PATH="$PSQL_PATH:$PATH"
-          $PSQL_PATH -c 'create database hera_mc_test;' -U postgres
-          $PSQL_PATH -c 'create database hera_mc;' -U postgres
-          $PSQL_PATH -c 'create user hera;' -U postgres
-          $PSQL_PATH -c "ALTER USER hera WITH PASSWORD '';" -U postgres
+          psql -c 'create database hera_mc_test;' -U postgres
+          psql -c 'create database hera_mc;' -U postgres
+          psql -c 'create user hera;' -U postgres
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Upgrade Database Schema
         run: |
-          PSQL_PATH=`locate psql`
           export PATH="$HOME/miniconda/bin:$PSQL_PATH:$PATH"
           source activate $ENV_NAME
           mkdir ~/.hera_mc
@@ -100,14 +96,11 @@ jobs:
         run: |
           echo "mc_config.json settings"
           cat ~/.hera_mc/mc_config.json
-          PSQL_PATH=`locate psql`
-          export PATH="$PSQL_PATH:$PATH"
           echo "hera psql info"
-          $PSQL_PATH -c "SELECT rolname, rolpassword FROM pg_catalog.pg_authid WHERE rolname='hera';" -U postgres
+          psql -c "SELECT rolname, rolpassword FROM pg_catalog.pg_authid WHERE rolname='hera';" -U postgres
       - name: Run Tests
         run: |
-          PSQL_PATH=`locate psql`
-          export PATH="$HOME/miniconda/bin:$PSQL_PATH:$PATH"
+          export PATH="$HOME/miniconda/bin:$PATH"
           source activate $ENV_NAME
           python -m pytest -v --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
