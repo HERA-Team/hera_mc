@@ -85,34 +85,15 @@ jobs:
           psql $POSTGRES_URL -c "create user hera with password 'hera';"
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
-      - name: Logging output
-        if: failure()
-        run: |
-          export POSTGRES_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
-          echo "POSTGRES URL"
-          echo $POSTGRES_URL
-          echo "psql roles"
-          psql  $POSTGRES_URL -c "SELECT rolname FROM pg_roles;"
-        env:
-          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Upgrade Database Schema
         run: |
           export PATH="$HOME/miniconda/bin:$PSQL_PATH:$PATH"
           source activate $ENV_NAME
           mkdir ~/.hera_mc
-          echo "cp ci/example_config.json ~/.hera_mc/mc_config.json"
           cp ci/example_config.json ~/.hera_mc/mc_config.json
-          echo "alembic upgrade head"
           alembic upgrade head
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
-      - name: Logging output
-        if: failure()
-        run: |
-          echo "mc_config.json settings"
-          cat ~/.hera_mc/mc_config.json
-          echo "hera psql info"
-          psql -c "SELECT rolname, rolpassword FROM pg_catalog.pg_authid WHERE rolname='hera';" -U postgres
       - name: Run Tests
         run: |
           export PATH="$HOME/miniconda/bin:$PATH"
