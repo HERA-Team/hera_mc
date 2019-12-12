@@ -207,7 +207,8 @@ class ActiveData:
 
     def revs(self, hpn, exact_match=False):
         """
-        Returns a list of active revisions for given hpn.
+        Returns a list of active revisions for the provided hpn list.  The returned
+        list is the concatentated set of revisions found for the provided list.
 
         Parameters
         ----------
