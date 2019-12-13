@@ -7,7 +7,9 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
+import numpy as np
 from astropy.time import Time
+from collections import OrderedDict
 
 from hera_mc import cm_partconnect, cm_utils, cm_handling, cm_revisions, cm_dossier, cm_active
 
@@ -239,6 +241,156 @@ def test_active_revisions(parts):
     xxx = hndl.get_dossier('HH701', at_date=None, active=active)
     yyy = list(xxx.keys())[0]
     assert yyy == 'HH701:A'
+
+
+def test_active_revisions_mixed_start_time(parts):
+    test_part = 'test_part2'
+    test_rev = 'Q'
+    test_hptype = 'antenna'
+    start_time = Time('2019-07-01 00:30:00', scale='utc')
+
+    # Add a test part
+    part = cm_partconnect.Parts()
+    part.hpn = test_part
+    part.hpn_rev = test_rev
+    part.hptype = test_hptype
+    part.manufacture_number = 'XYZ'
+    part.start_gpstime = start_time.gps
+    parts.test_session.add(part)
+    parts.test_session.commit()
+
+    active = cm_active.ActiveData(parts.test_session)
+    active.load_parts()
+    key_order = np.argsort([
+        active.parts[k].start_gpstime for k in active.parts.keys()
+    ])
+    key_order = [list(active.parts.keys())[k] for k in key_order]
+    print(active.parts[key_order[-1]])
+    print(active.parts[key_order[-2]])
+    key_order[-1], key_order[-2] = key_order[-2], key_order[-1]
+    active.parts = OrderedDict({
+        key: active.parts[key] for key in key_order
+    })
+    vals = list(active.parts.values())
+    print(vals[0])
+    print(vals[1])
+    revs = active.revs('TEST_PART')
+
+    assert revs[0].hpn == 'TEST_PART'
+    assert revs[0].number == 2
+    assert revs[0].started == start_time.gps
+
+
+def test_active_revisions_mixed_stop_time(parts):
+    test_part = 'new_part2'
+    test_rev = 'Q'
+    test_hptype = 'antenna'
+    start_time = Time('2019-07-01 00:30:00', scale='utc')
+    stop_time = Time('2050-07-01 01:45:00', scale='utc')
+
+    # Add a test part
+    part = cm_partconnect.Parts()
+    part.hpn = test_part
+    part.hpn_rev = test_rev
+    part.hptype = test_hptype
+    part.manufacture_number = 'XYZ'
+    part.start_gpstime = start_time.gps
+    part.stop_gpstime = stop_time.gps
+    parts.test_session.add(part)
+    parts.test_session.commit()
+    #
+    test_part = 'new_part3'
+    test_rev = 'Q'
+    test_hptype = 'antenna'
+    start_time = Time('2019-07-01 00:31:00', scale='utc')
+    stop_time = Time('2050-07-01 02:45:00', scale='utc')
+
+    # Add a test part
+    part1 = cm_partconnect.Parts()
+    part1.hpn = test_part
+    part1.hpn_rev = test_rev
+    part1.hptype = test_hptype
+    part1.manufacture_number = 'XYZ'
+    part1.start_gpstime = start_time.gps
+    part1.stop_gpstime = stop_time.gps
+    parts.test_session.add(part1)
+    parts.test_session.commit()
+
+    active = cm_active.ActiveData(parts.test_session)
+
+    active.load_parts()
+    key_order = np.argsort([
+        active.parts[k].start_gpstime for k in active.parts.keys()
+    ])
+
+    key_order = [list(active.parts.keys())[k] for k in key_order]
+    active.parts = OrderedDict({
+        key: active.parts[key] for key in key_order
+    })
+
+    vals = list(active.parts.values())
+    assert part1 in vals
+
+    revs = active.revs('NEW_PART')
+
+    assert revs[0].hpn == 'NEW_PART'
+    assert revs[0].number == 2
+    assert revs[0].ended == stop_time.gps
+
+
+def test_active_revisions_mixed_stop_one_none(parts):
+    test_part = 'new_part2'
+    test_rev = 'Q'
+    test_hptype = 'antenna'
+    start_time = Time('2019-07-01 00:30:00', scale='utc')
+    stop_time = Time('2050-07-01 01:45:00', scale='utc')
+
+    # Add a test part
+    part = cm_partconnect.Parts()
+    part.hpn = test_part
+    part.hpn_rev = test_rev
+    part.hptype = test_hptype
+    part.manufacture_number = 'XYZ'
+    part.start_gpstime = start_time.gps
+    part.stop_gpstime = stop_time.gps
+    parts.test_session.add(part)
+    parts.test_session.commit()
+    #
+    test_part = 'new_part3'
+    test_rev = 'Q'
+    test_hptype = 'antenna'
+    start_time = Time('2019-07-01 00:31:00', scale='utc')
+
+    # Add a test part
+    part1 = cm_partconnect.Parts()
+    part1.hpn = test_part
+    part1.hpn_rev = test_rev
+    part1.hptype = test_hptype
+    part1.manufacture_number = 'XYZ'
+    part1.start_gpstime = start_time.gps
+    parts.test_session.add(part1)
+    parts.test_session.commit()
+
+    active = cm_active.ActiveData(parts.test_session)
+
+    active.load_parts()
+    key_order = np.argsort([
+        active.parts[k].start_gpstime for k in active.parts.keys()
+    ])
+
+    key_order = [list(active.parts.keys())[k] for k in key_order]
+    active.parts = OrderedDict({
+        key: active.parts[key] for key in key_order
+    })
+
+    vals = list(active.parts.values())
+    assert part1 in vals
+
+    revs = active.revs('NEW_PART')
+
+    assert revs[0].hpn == 'NEW_PART'
+    assert revs[0].number == 2
+    assert revs[0].ended is None
 
 
 def test_get_revisions_of_type(parts, capsys):
