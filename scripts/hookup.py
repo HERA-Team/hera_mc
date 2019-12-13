@@ -21,8 +21,9 @@ if __name__ == '__main__':
     parser.add_argument('--pol', help="Define desired pol(s) for hookup. (e, n, all)", default='all')
     parser.add_argument('--all', help="Toggle to show 'all' hookups as opposed to 'full'", action='store_true')
     parser.add_argument('--notes', help="If set, this will also show hookup notes.", action='store_true')
-    parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in hookup, comma-delimited no-space list. (all])",
+    parser.add_argument('--hookup-cols', help="Specify a subset of parts to show in hookup, csv-list. (all])",
                         dest='hookup_cols', default='all')
+    parser.add_argument('--sortby', help="Part-type column order to sort display.  (csv-list)", default=None)
     parser.add_argument('--hookup-type', dest='hookup_type', help="Force use of specified hookup type.", default=None)
     parser.add_argument('--hide-ports', dest='ports', help="Hide ports on hookup.", action='store_false')
     parser.add_argument('--show-revs', dest='revs', help="Show revs on hookup.", action='store_true')
@@ -63,7 +64,7 @@ if __name__ == '__main__':
                                         exact_match=args.exact_match, use_cache=args.use_cache,
                                         hookup_type=args.hookup_type)
         show = hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols,
-                                  ports=args.ports, revs=args.revs, state=state,
+                                  ports=args.ports, revs=args.revs, sortby=args.sortby, state=state,
                                   filename=args.file, output_format=output_format)
         if output_format == 'display':
             print(show)
