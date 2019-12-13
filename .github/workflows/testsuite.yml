@@ -54,7 +54,6 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
-          REDIS_HOST: redishost
         ports:
         # will assign a random free host port
         - 5432:5432
@@ -62,6 +61,11 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
         image: redis
+        env:
+          REDIS_HOST: redishost
+        networks:
+            aliases:
+              - redishost
         ports:
         - 6379:6379
         options: --entrypoint redis-server
