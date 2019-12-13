@@ -278,7 +278,7 @@ class Handling:
             parts[k] = hu.get_part_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
 
-    def publish_summary(self, hlist=['default'], exact_match=False, hookup_cols='all'):
+    def publish_summary(self, hlist=['default'], exact_match=False, hookup_cols='all', sortby='node,station'):
         """
         Publishes the hookup on hera.today.
 
@@ -302,8 +302,8 @@ class Handling:
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         H = cm_hookup.Hookup(self.session)
         hookup_dict = H.get_hookup(hpn=hlist, pol='all', at_date='now', exact_match=exact_match, hookup_type=None)
-        H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, state='full', ports=True,
-                      revs=True, filename=output_file, output_format='html')
+        x = H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, state='full', ports=True,
+                          revs=True, sortby=sortby, filename=output_file, output_format='html')
 
         from . import cm_transfer
         if cm_transfer.check_if_main(self.session):  # pragma: no cover
