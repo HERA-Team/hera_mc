@@ -205,23 +205,48 @@ class ActiveData:
             key = cm_utils.make_part_key(ageo.station_name, None)
             self.geo[key] = ageo
 
-    def revs(self, hpn):
+    def revs(self, hpn, exact_match=False):
         """
-        Returns a list of active revisions for a given hpn.
+        Returns a list of active revisions for the provided hpn list.  The returned
+        list is the concatentated set of revisions found for the provided list.
+
+        The purpose is to find out what active revisions are present in the database.
+        E.g., to check for all active revisions for all PAMs, call with hpn='PAM'.  To check
+        for revisions for a particular one, call with 'PAM123'.  To guarantee only one part
+        one should also set exact_match=True.
 
         Parameters
         ----------
-        hpn : str
-            A HERA part number (not a list)
+        hpn : str or list
+            HERA part number or list.  Checks equality or startswith, depending on below.
+        exact_match : bool
+            Flag to look for exact matches to part numbers or not.
 
         Returns
         -------
         list
-            List of revisions for supplied hpn.  Typically one element.
+            List of revision Namespaces for supplied hpn.  Can show with cm_revisions.show_revisions
         """
-        hpn_revs = []
-        hpn = hpn.upper()
-        for part in self.parts.values():
-            if hpn == part.hpn.upper():
-                hpn_revs.append(part.hpn_rev)
-        return hpn_revs
+        from argparse import Namespace
+        hpn = [x.upper() for x in cm_utils.listify(hpn)]
+        rev_dict = {}
+        for hloop in hpn:
+            rev_dict[hloop] = {}
+            for part in self.parts.values():
+                phup = part.hpn.upper()
+                use_this_one = (phup == hloop) if exact_match else phup.startswith(hloop)
+                if use_this_one:
+                    prup = part.hpn_rev.upper()
+                    rev_dict[hloop].setdefault(prup, Namespace(hpn=hloop, rev=prup, number=0,
+                                               started=part.start_gpstime, ended=part.stop_gpstime))
+                    rev_dict[hloop][prup].number += 1
+                    if part.start_gpstime < rev_dict[hloop][prup].started:
+                        rev_dict[hloop][prup].started = part.start_gpstime
+                    if rev_dict[hloop][prup].ended is not None:
+                        if part.stop_gpstime is None or part.stop_gpstime > rev_dict[hloop][prup].ended:
+                            rev_dict[hloop][prup].ended = part.stop_gpstime
+        hpn_rev = []
+        for hloop in sorted(list(rev_dict.keys())):
+            for rev in sorted(list(rev_dict[hloop].keys())):
+                hpn_rev.append(rev_dict[hloop][rev])
+        return hpn_rev

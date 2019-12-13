@@ -52,7 +52,7 @@ class PartEntry():
                'geo': 'Geo',
                'comment': 'Note',
                'posting_gpstime': 'Date',
-               'library_file': 'File',
+               'reference': 'File',
                'up.start_gpstime': 'uStart',
                'up.stop_gpstime': 'uStop',
                'up.upstream_part': 'Upstream',
@@ -76,7 +76,7 @@ class PartEntry():
         self.input_ports = []
         self.output_ports = []
         self.part = None
-        self.part_info = Namespace(comment=[], posting_gpstime=[], library_file=[])
+        self.part_info = Namespace(comment=[], posting_gpstime=[], reference=[])
         self.connections = Namespace(up=None, down=None)
         self.geo = None
 
@@ -136,7 +136,7 @@ class PartEntry():
                 if pi_entry.posting_gpstime > self.notes_start_date.gps:
                     self.part_info.comment.append(pi_entry.comment)
                     self.part_info.posting_gpstime.append(pi_entry.posting_gpstime)
-                    self.part_info.library_file.append(pi_entry.library_file)
+                    self.part_info.reference.append(pi_entry.reference)
 
     def get_geo(self, active):
         """
@@ -215,6 +215,7 @@ class PartEntry():
         for up, down in conns:
             trow = []
             no_port_data = True
+            number_entries = 0
             for col in columns:
                 cbeg = col.split('.')[0]
                 cend = col.split('.')[-1]
@@ -245,10 +246,13 @@ class PartEntry():
                 elif isinstance(x, (list, set)):
                     x = ', '.join(x)
                 trow.append(x)
+                if x is not None and len(x):
+                    number_entries += 1
             if ports_included and no_port_data:
                 trow = None
-            if trow is not None:
-                tdata.append(trow)
+            if trow is not None and len(trow):
+                if number_entries > 1 or number_entries == len(columns):
+                    tdata.append(trow)
         return tdata
 
 

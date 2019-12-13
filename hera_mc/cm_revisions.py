@@ -106,7 +106,7 @@ def get_last_revision(hpn, session=None):
 
 def get_all_revisions(hpn, session=None):
     """
-    Returns list of all revisions as Namespace(hpn,rev,started,ended)
+    Returns list of all revisions as Namespace(hpn, rev, started, ended)
 
     Parameters
     ----------
@@ -229,22 +229,59 @@ def get_full_revision(hpn, hookup_dict):
     return return_full_keys
 
 
-def show_revisions(rev_list):
+revision_columns = {'HPN': {'attr': 'hpn', 'default': '', 'is_time': False},
+                    'Revision': {'attr': 'rev', 'default': '', 'is_time': False},
+                    'Number': {'attr': 'number', 'default': 0, 'is_time': False},
+                    'Start': {'attr': 'started', 'default': '', 'is_time': True},
+                    'Stop': {'attr': 'ended', 'default': '', 'is_time': True}
+                    }
+ordered_columns = ['HPN', 'Revision', 'Number', 'Start', 'Stop']
+
+
+def show_revisions(rev_list, columns='all'):
     """
     Show revisions for provided revision list
 
     Parameters
     ----------
-    rev_list:  list
-        List of revisions provided by one of the other methods
+    rev_list : list
+        List of revision Namespaces provided by one of the other methods
+    columns : list or str
+        Columns to include.  If 'all', include all present.  Can be a csv string list.
     """
-
     if len(rev_list) == 0:
-        print("No revisions found.")
-    else:
-        headers = ['HPN', 'Revision', 'Start', 'Stop']
-        table_data = []
-        for r in rev_list:
-            table_data.append([r.hpn, r.rev, r.started, r.ended])
-        print(tabulate(table_data, headers=headers, tablefmt='simple'))
-        print('\n')
+        return "No revisions found."
+
+    # Get attributes present and set defaults as needed
+    for col in ordered_columns:
+        revision_columns[col]['present'] = False
+    for r in rev_list:
+        for col in ordered_columns:
+            try:
+                x = getattr(r, revision_columns[col]['attr'])
+                revision_columns[col]['present'] = True
+            except AttributeError:
+                setattr(r, revision_columns[col]['attr'], revision_columns[col]['default'])
+    # Get columns to display
+    if isinstance(columns, str):
+        if columns == 'all':
+            columns = ordered_columns
+        elif columns == 'present':
+            columns = []
+            for col in ordered_columns:
+                if revision_columns[col]['present']:
+                    columns.append(col)
+        else:
+            columns = columns.split(',')
+    # Make table
+    table_data = []
+    for r in rev_list:
+        row = []
+        for col in columns:
+            rev_attr = getattr(r, revision_columns[col]['attr'])
+            if revision_columns[col]['is_time']:
+                rev_attr = cm_utils.get_time_for_display(rev_attr)
+            row.append(rev_attr)
+        table_data.append(row)
+
+    return tabulate(table_data, headers=columns, tablefmt='simple')
