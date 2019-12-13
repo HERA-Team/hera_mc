@@ -235,7 +235,8 @@ class ActiveData:
         Returns
         -------
         list
-            List of revision Namespaces for supplied hpn.  Can show with cm_revisions.show_revisions
+            List of revision Namespaces for supplied hpn.
+            Can show with cm_revisions.show_revisions
         """
         from argparse import Namespace
         hpn = [x.upper() for x in cm_utils.listify(hpn)]
@@ -247,13 +248,16 @@ class ActiveData:
                 use_this_one = (phup == hloop) if exact_match else phup.startswith(hloop)
                 if use_this_one:
                     prup = part.hpn_rev.upper()
-                    rev_dict[hloop].setdefault(prup, Namespace(hpn=hloop, rev=prup, number=0,
-                                               started=part.start_gpstime, ended=part.stop_gpstime))
+                    rev_dict[hloop].setdefault(
+                        prup, Namespace(hpn=hloop, rev=prup, number=0,
+                                        started=part.start_gpstime,
+                                        ended=part.stop_gpstime))
                     rev_dict[hloop][prup].number += 1
                     if part.start_gpstime < rev_dict[hloop][prup].started:
                         rev_dict[hloop][prup].started = part.start_gpstime
                     if rev_dict[hloop][prup].ended is not None:
-                        if part.stop_gpstime is None or part.stop_gpstime > rev_dict[hloop][prup].ended:
+                        if (part.stop_gpstime is None
+                                or part.stop_gpstime > rev_dict[hloop][prup].ended):
                             rev_dict[hloop][prup].ended = part.stop_gpstime
         hpn_rev = []
         for hloop in sorted(list(rev_dict.keys())):

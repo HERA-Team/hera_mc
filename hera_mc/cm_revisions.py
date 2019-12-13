@@ -259,7 +259,7 @@ def show_revisions(rev_list, columns='all'):
     for r in rev_list:
         for col in ordered_columns:
             try:
-                x = getattr(r, revision_columns[col]['attr'])
+                getattr(r, revision_columns[col]['attr'])
                 revision_columns[col]['present'] = True
             except AttributeError:
                 setattr(r, revision_columns[col]['attr'], revision_columns[col]['default'])

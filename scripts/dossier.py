@@ -6,8 +6,10 @@
 """
 Utility scripts to display dossier information.
 
-Actions 'parts', 'connections', and 'notes' differ only by defining a different set of columns,
-which may be overridden by instead using the args.columns parameter (--list-all-columns)
+Actions 'parts', 'connections', and 'notes' differ only by defining a different
+set of columns,
+which may be overridden by instead using the args.columns parameter
+(--list-all-columns)
 
 """
 from __future__ import absolute_import, division, print_function
@@ -21,19 +23,31 @@ parser.add_argument('view', nargs='?', help="Views are:  {}.  Need first letter 
                     ".format(', '.join(all_views.values())), default='parts')
 # set values for 'action' to use
 parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv list.")
-parser.add_argument('-r', '--revision', help="Revision for hpn.  Typically don't change from default.", default=None)
-parser.add_argument('-e', '--exact-match', help="Force exact matches on part numbers, not beginning N char. [False]",
+parser.add_argument('-r', '--revision',
+                    help="Revision for hpn. Typically don't change from default.",
+                    default=None)
+parser.add_argument('-e', '--exact-match',
+                    help="Force exact matches on part numbers, not beginning "
+                         "N char. [False]",
                     dest='exact_match', action='store_true')
-parser.add_argument('--columns', help="Custom columns as csv list.  Use '--list-all-columns' for options.", default=None)
-parser.add_argument('--list-all-columns', dest='list_columns', help="Show a list of all available columns", action='store_true')
-parser.add_argument('--hide-sigpath', dest='sigpath', help="Hide signal path ports", action='store_false')
-parser.add_argument('--hide-phys', dest='phys', help="Hide physical ports", action='store_false')
-parser.add_argument('--ports', help="Include only these ports, csv list", default=None)
+parser.add_argument('--columns', help="Custom columns as csv list. "
+                    "Use '--list-all-columns' for options.", default=None)
+parser.add_argument('--list-all-columns', dest='list_columns',
+                    help="Show a list of all available columns",
+                    action='store_true')
+parser.add_argument('--hide-sigpath', dest='sigpath', help="Hide signal path ports",
+                    action='store_false')
+parser.add_argument('--hide-phys', dest='phys', help="Hide physical ports",
+                    action='store_false')
+parser.add_argument('--ports', help="Include only these ports, csv list",
+                    default=None)
 cm_utils.add_verbosity_args(parser)
 cm_utils.add_date_time_args(parser)
-parser.add_argument('--notes-start-date', dest='notes_start_date', help="<For notes> start_date for notes [<]",
+parser.add_argument('--notes-start-date', dest='notes_start_date',
+                    help="<For notes> start_date for notes [<]",
                     default='<')
-parser.add_argument('--notes-start-time', dest='notes_start_time', help="<For notes> start_time for notes",
+parser.add_argument('--notes-start-time', dest='notes_start_time',
+                    help="<For notes> start_time for notes",
                     default=0.0)
 args = parser.parse_args()
 
@@ -41,7 +55,8 @@ args.verbosity = cm_utils.parse_verbosity(args.verbosity)
 view = all_views[args.view[0].lower()]
 args.hpn = cm_utils.listify(args.hpn)
 date_query = cm_utils.get_astropytime(args.date, args.time)
-notes_start_date = cm_utils.get_astropytime(args.notes_start_date, args.notes_start_time)
+notes_start_date = cm_utils.get_astropytime(args.notes_start_date,
+                                            args.notes_start_time)
 
 # Start session
 db = mc.connect_to_mc_db(args)
@@ -79,25 +94,33 @@ else:  # view == 'parts' or view == 'connections' or view == 'notes'
         if args.verbosity == 1:
             columns = ['hpn', 'hpn_rev', 'hptype', 'input_ports', 'output_ports']
         elif args.verbosity == 2:
-            columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_gpstime', 'stop_gpstime',
+            columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number',
+                       'start_gpstime', 'stop_gpstime',
                        'input_ports', 'output_ports', 'geo']
         else:
-            columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number', 'start_gpstime', 'stop_gpstime',
+            columns = ['hpn', 'hpn_rev', 'hptype', 'manufacturer_number',
+                       'start_gpstime', 'stop_gpstime',
                        'input_ports', 'output_ports', 'geo', 'comment']
     elif view == 'connections':
         if args.verbosity == 1:
-            columns = ['up.upstream_part', 'up.upstream_output_port', 'up.downstream_input_port',
+            columns = ['up.upstream_part', 'up.upstream_output_port',
+                       'up.downstream_input_port',
                        'hpn',
-                       'down.upstream_output_port', 'down.downstream_input_port', 'down.downstream_part']
+                       'down.upstream_output_port', 'down.downstream_input_port',
+                       'down.downstream_part']
         elif args.verbosity == 2:
-            columns = ['up.upstream_part', 'up.up_part_rev', 'up.upstream_output_port', 'up.downstream_input_port',
-                       'hpn', 'hpn_rev',
-                       'down.upstream_output_port', 'down.downstream_input_port', 'down.downstream_part', 'down.down_part_rev']
-        else:
-            columns = ['up.start_gpstime', 'up.stop_gpstime', 'up.upstream_part', 'up.up_part_rev',
+            columns = ['up.upstream_part', 'up.up_part_rev',
                        'up.upstream_output_port', 'up.downstream_input_port',
                        'hpn', 'hpn_rev',
-                       'down.upstream_output_port', 'down.downstream_input_port', 'down.downstream_part', 'down.down_part_rev',
+                       'down.upstream_output_port', 'down.downstream_input_port',
+                       'down.downstream_part', 'down.down_part_rev']
+        else:
+            columns = ['up.start_gpstime', 'up.stop_gpstime', 'up.upstream_part',
+                       'up.up_part_rev',
+                       'up.upstream_output_port', 'up.downstream_input_port',
+                       'hpn', 'hpn_rev',
+                       'down.upstream_output_port', 'down.downstream_input_port',
+                       'down.downstream_part', 'down.down_part_rev',
                        'down.start_gpstime', 'down.stop_gpstime']
     elif view == 'notes':
         if args.verbosity == 1:
@@ -119,7 +142,9 @@ else:  # view == 'parts' or view == 'connections' or view == 'notes'
             ports.append('physical')
         ports = ','.join(ports)  # Need to specify as a string for port types.
 
-    dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision, at_date=date_query, active=None,
-                                   notes_start_date=notes_start_date, exact_match=args.exact_match)
+    dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision,
+                                   at_date=date_query, active=None,
+                                   notes_start_date=notes_start_date,
+                                   exact_match=args.exact_match)
     print(handling.show_dossier(dossier, columns, ports=ports))
 print()
