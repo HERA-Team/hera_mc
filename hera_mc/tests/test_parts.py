@@ -231,6 +231,14 @@ def test_active_revisions(parts):
     active.load_parts()
     revs = active.revs('HH')
     assert revs[0].hpn == 'HH'
+    hndl = cm_handling.Handling(parts.test_session)
+    with pytest.raises(ValueError) as ml:
+        hndl.get_dossier('HH701', at_date='2019/12/01', active=active)
+    assert str(ml.value).startswith('Supplied')
+    active.at_date = Time('2019-12-10')
+    xxx = hndl.get_dossier('HH701', at_date=None, active=active)
+    yyy = list(xxx.keys())[0]
+    assert yyy == 'HH701:A'
 
 
 def test_get_revisions_of_type(parts, capsys):
