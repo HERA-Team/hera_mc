@@ -97,6 +97,13 @@ def test_match_list():
     assert str(ml.value).startswith('Invalid case_type.')
 
 
+def test_peel():
+    x = cm_utils.peel_key('X9:V', 'RNP')
+    assert x[0] == 'V'
+    x = cm_utils.peel_key('X9:V', 'PRN')
+    assert x[0] == 'X'
+
+
 def test_to_upper():
     x = cm_utils.to_upper('a')
     assert x == 'A'
