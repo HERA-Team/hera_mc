@@ -10,8 +10,8 @@ from __future__ import absolute_import, division, print_function
 
 import six
 from astropy.time import Time
-from sqlalchemy import (BigInteger, Column, Float, ForeignKey,
-                        ForeignKeyConstraint, Integer, String,
+from sqlalchemy import (BigInteger, Column,
+                        ForeignKeyConstraint, String,
                         Text, func)
 
 from . import MCDeclarativeBase, NotNull
@@ -44,7 +44,8 @@ class Parts(MCDeclarativeBase):
     stop_gpstime = Column(BigInteger)
 
     def __repr__(self):
-        return ('<heraPartNumber id={self.hpn}:{self.hpn_rev} type={self.hptype} :: {self.start_gpstime} - {self.stop_gpstime}>'
+        return ('<heraPartNumber id={self.hpn}:{self.hpn_rev} '
+                'type={self.hptype} :: {self.start_gpstime} - {self.stop_gpstime}>'
                 .format(self=self))
 
     def __eq__(self, other):
@@ -105,7 +106,8 @@ def stop_existing_parts(session, part_list, at_date, allow_override=False):
             print("{}:{} is not found, so can't stop it.".format(hpnr[0], hpnr[1]))
             continue
         if existing.stop_gpstime is not None:
-            print("{}:{} already has a stop time ({})".format(hpnr[0], hpnr[1], existing.stop_gpstime))
+            print("{}:{} already has a stop time ({})".format(
+                hpnr[0], hpnr[1], existing.stop_gpstime))
             if allow_override:
                 print("\tOverride enabled.   New value {}".format(stop_at))
             else:
@@ -164,7 +166,8 @@ def add_new_parts(session, part_list, at_date, allow_restart=False):
                 print_out = 're' + print_out
                 this_data.append([hpnr[0], hpnr[1], 'stop_gpstime', None])
                 comment = 'Restarting part.  Previous data {}'.format(existing)
-                add_part_info(session, hpn=hpnr[0], rev=hpnr[1], at_date=at_date, comment=comment, reference=None)
+                add_part_info(session, hpn=hpnr[0], rev=hpnr[1], at_date=at_date,
+                              comment=comment, reference=None)
             else:
                 print_out = "No action. The request {} not an allowed part restart.".format(hpnr)
                 this_data = None
@@ -213,8 +216,9 @@ def update_part(session=None, data=None):
     for dkey, dval in six.iteritems(data_dict):
         hpn_to_change = dval[0][0]
         rev_to_change = dval[0][1]
-        part_rec = session.query(Parts).filter((func.upper(Parts.hpn) == hpn_to_change.upper())
-                                               & (func.upper(Parts.hpn_rev) == rev_to_change.upper()))
+        part_rec = session.query(Parts).filter(
+            (func.upper(Parts.hpn) == hpn_to_change.upper())
+            & (func.upper(Parts.hpn_rev) == rev_to_change.upper()))
         num_part = part_rec.count()
         if num_part == 0:
             part = Parts()
@@ -304,7 +308,8 @@ def get_part_revisions(hpn, session=None):
     hpn :  str
         hera part number
     session : object
-        Database session to use.  If None, it will start a new session, then close.  Default is None.
+        Database session to use.  If None, it will start a new session, then close.
+
     """
 
     if hpn is None:
@@ -353,7 +358,8 @@ class AprioriAntenna(MCDeclarativeBase):
     status = Column(Text, nullable=False)
 
     def __repr__(self):
-        return('<{}: {}  [{} - {}]>'.format(self.antenna, self.status, self.start_gpstime, self.stop_gpstime))
+        return('<{}: {}  [{} - {}]>'.format(
+            self.antenna, self.status, self.start_gpstime, self.stop_gpstime))
 
     def status_enum(self):
         return ['passed_checks', 'needs_checking', 'known_bad', 'not_connected']
@@ -396,7 +402,8 @@ def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, se
     antenna = antenna.upper()
     last_one = 1000
     old_apa = None
-    for trial in session.query(AprioriAntenna).filter(func.upper(AprioriAntenna.antenna) == antenna):
+    for trial in session.query(AprioriAntenna).filter(
+            func.upper(AprioriAntenna.antenna) == antenna):
         if trial.start_gpstime > last_one:
             last_one = trial.start_gpstime
             old_apa = trial
@@ -441,7 +448,8 @@ class PartInfo(MCDeclarativeBase):
     reference = Column(String(256))
 
     def __repr__(self):
-        return '<heraPartNumber id = {self.hpn}:{self.hpn_rev} comment = {self.comment}>'.format(self=self)
+        return ('<heraPartNumber id = {self.hpn}:{self.hpn_rev} '
+                'comment = {self.comment}>'.format(self=self))
 
     def gps2Time(self):
         self.posting_date = Time(self.posting_gpstime, format='gps')
@@ -672,8 +680,8 @@ def stop_connections(session, conn_list, at_date):
     stop_at = int(at_date.gps)
     data = []
     for conn in conn_list:
-        print("Stopping connection {}:{}<{} - {}>{}:{} at {}".format(conn[0], conn[1], conn[4],
-                                                                     conn[2], conn[3], conn[5], str(at_date)))
+        print("Stopping connection {}:{}<{} - {}>{}:{} at {}".format(
+            conn[0], conn[1], conn[4], conn[2], conn[3], conn[5], str(at_date)))
         this_one = []
         for cc in conn:
             this_one.append(cc)

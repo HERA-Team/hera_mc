@@ -55,7 +55,8 @@ def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
 
     """
     sidesec = u.Quantity(1, 'sday').to('day').value  # length of sidereal second in SI seconds.
-    locate = coord.EarthLocation(lon=longitude * u.deg, lat=-30 * u.deg)  # HERA location, #XXX get the HERA location programmatically
+    # HERA location, #XXX get the HERA location programmatically
+    locate = coord.EarthLocation(lon=longitude * u.deg, lat=-30 * u.deg)
     if not isinstance(starttime, Time):
         raise TypeError("starttime is not a valid Astropy Time object")
     starttime.location = locate
@@ -64,7 +65,8 @@ def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
     hmsList = [None] * (int(numChunks + 1))
 
     # convert the grid in seconds to HMS
-    for i, sec in enumerate(lstGrid):  # make a grid of our evenly chunked LST times starting from 00h00m00s on the current day
+    # make a grid of our evenly chunked LST times starting from 00h00m00s on the current day
+    for i, sec in enumerate(lstGrid):
         hrs = int(lstGrid[i] / 3600)
         mins = int((lstGrid[i] % 3600) / 60)
         secs = int(lstGrid[i] - int(hrs * 3600) - int(mins * 60))
@@ -74,9 +76,12 @@ def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
         hmsList[i] = hms_str
     lstAngleGrid = coord.Angle(hmsList)  # turn LST grid into angle array
     for i, hour in enumerate(lstAngleGrid):
-        if hour >= starttime.sidereal_time('apparent'):  # Find the timeslot our target is in
-            diffSide = hour - starttime.sidereal_time('apparent')  # get difference in sidereal
-            diffSecs = diffSide.hms[2] * sidesec  # convert difference to SI seconds
+        # Find the timeslot our target is in
+        if hour >= starttime.sidereal_time('apparent'):
+            # get difference in sidereal
+            diffSide = hour - starttime.sidereal_time('apparent')
+            # convert difference to SI seconds
+            diffSecs = diffSide.hms[2] * sidesec
             break
     dt = TimeDelta((diffSecs), format='sec')
     scheduleTime = starttime + dt  # adjust target time by difference to get start time
@@ -125,7 +130,7 @@ def _reraise_context(fmt, *args):
     to propagate contextual information farther up the call stack. It is a
     consistent way to do it for both Python 2 and 3, since Python 2 does not
     provide Python 3’s
-    `exception chaining <https://www.python.org/dev/peps/pep-3134/>`_
+    exception chaining <https://www.python.org/dev/peps/pep-3134/>
     functionality.
     Instead of that more sophisticated infrastructure, this function just
     modifies the textual message associated with the exception being raised.
@@ -148,7 +153,7 @@ def _reraise_context(fmt, *args):
         # The exception is reraised and so control leaves this function.
     If an exception with text ``"bad value"`` were to be raised inside the
     ``try`` block in the above example, its text would be modified to read
-    ``"while reading \"my-filename.txt\": bad value"``.
+    ``"while reading "my-filename.txt": bad value"``.
 
     """
     import sys

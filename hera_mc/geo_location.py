@@ -8,12 +8,8 @@
 
 from __future__ import absolute_import, division, print_function
 
-import os
-import socket
-import sys
-import copy
 from astropy.time import Time
-from sqlalchemy import Column, Float, Integer, String, BigInteger, ForeignKey, func
+from sqlalchemy import Column, Float, String, BigInteger, ForeignKey, func
 
 from . import MCDeclarativeBase, NotNull
 from . import mc, cm_utils
@@ -39,7 +35,9 @@ class StationType(MCDeclarativeBase):
     plot_marker = Column(String(64))
 
     def __repr__(self):
-        return '<subarray {self.station_type_name}: prefix={self.prefix} description={self.description} marker={self.plot_marker}>'.format(self=self)
+        return ('<subarray {self.station_type_name}: prefix={self.prefix} '
+                'description={self.description} marker={self.plot_marker}>'
+                .format(self=self))
 
 
 class GeoLocation(MCDeclarativeBase):
@@ -121,7 +119,8 @@ def update(session=None, data=None, add_new_geo=False):
         close_session_when_done = True
 
     for station_name in data_dict.keys():
-        geo_rec = session.query(GeoLocation).filter(func.upper(GeoLocation.station_name) == station_name.upper())
+        geo_rec = session.query(GeoLocation).filter(
+            func.upper(GeoLocation.station_name) == station_name.upper())
         num_rec = geo_rec.count()
         make_update = False
         if num_rec == 0:
@@ -129,10 +128,12 @@ def update(session=None, data=None, add_new_geo=False):
                 gr = GeoLocation()
                 make_update = True
             else:
-                raise ValueError("{} does not exist and add_new_geo not enabled.".format(station_name))
+                raise ValueError("{} does not exist and add_new_geo not enabled."
+                                 .format(station_name))
         elif num_rec == 1:
             if add_new_geo:
-                raise ValueError("{} exists and and_new_geo is enabled.".format(station_name))
+                raise ValueError("{} exists and and_new_geo is enabled."
+                                 .format(station_name))
             else:
                 gr = geo_rec.first()
                 make_update = True

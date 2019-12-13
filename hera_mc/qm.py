@@ -8,16 +8,13 @@
 from __future__ import absolute_import, division, print_function
 
 import six
-import numpy as np
 from astropy.time import Time
-from astropy.coordinates import EarthLocation
 from math import floor
 from sqlalchemy import (Column, Integer, BigInteger, Float, ForeignKey,
-                        String, ForeignKeyConstraint)
+                        String)
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from . import geo_handling
-from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_TOL
+from . import MCDeclarativeBase, DEFAULT_GPS_TOL
 
 
 class AntMetrics(MCDeclarativeBase):

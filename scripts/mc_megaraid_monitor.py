@@ -18,9 +18,8 @@ import datetime
 import dateutil.tz
 import errno
 import json
-import os.path
 import socket
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 import sys
 import six
 
@@ -157,7 +156,8 @@ for line in event_log.stdout:
         line = line.decode("utf-8")
     if state == NOT_IN_EVENT:
         if line.startswith('seqNum:'):
-            # The extra 0 arg here means to guess the numeric base; seqnum is in hex with a 0x prefix.
+            # The extra 0 arg here means to guess the numeric base;
+            # seqnum is in hex with a 0x prefix.
             seq_num = int(line.split(':', 1)[1].strip(), 0)
             state = IN_EVENT
     elif state == IN_EVENT:
@@ -233,7 +233,6 @@ with db.sessionmaker() as session:
             time = parse_storcli_datetime(abs_time_str)
         else:
             boot_rel_time = int(data.pop('Seconds since last reboot'))
-            import datetime
             import psutil
             boot = datetime.datetime.fromtimestamp(psutil.boot_time())
             delta = TimeDelta(boot_rel_time, format='sec')

@@ -9,7 +9,6 @@ Methods for handling locating correlator and various system aspects.
 from __future__ import absolute_import, division, print_function
 
 import six
-from astropy.time import Time
 from sqlalchemy import func, and_, or_
 import numpy as np
 
@@ -19,7 +18,7 @@ from . import geo_handling
 
 class SystemInfo:
     """
-    Object containing system information.  It is a convenience class for the system info methods below.
+    Object containing system information, a convenience for the system info methods below.
 
     Parameters
     ----------
@@ -27,8 +26,10 @@ class SystemInfo:
         Otherwise, it initializes based on the geo_handling object class.
         Anything else will generate an error.
     """
-    sys_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting', 'northing', 'lon', 'lat',
-                'elevation', 'antenna_number', 'correlator_input', 'start_date', 'stop_date', 'epoch']
+    sys_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting',
+                'northing', 'lon', 'lat',
+                'elevation', 'antenna_number', 'correlator_input', 'start_date',
+                'stop_date', 'epoch']
 
     def __init__(self, stn=None):
         if stn is None:
@@ -117,7 +118,8 @@ class Handling:
             'lat': station latitude (float)
             'elevation': station elevation (float)
             'antenna_number': antenna number (integer)
-            'correlator_input': correlator input for x (East) pol and y (North) pol (string tuple-pair)
+            'correlator_input': correlator input for x (East) pol and y (North) pol
+                (string tuple-pair)
             'timing': start and stop gps seconds for both pols
 
         Parameters
@@ -158,7 +160,8 @@ class Handling:
                 pe[pol] = hud[key].hookup_type[ppkey]
                 cind = self.sysdef.corr_index[pe[pol]] - 1  # The '- 1' makes it the downstream_part
                 try:
-                    corr[pol] = "{}>{}".format(hu[cind].downstream_input_port, hu[cind].downstream_part)
+                    corr[pol] = "{}>{}".format(
+                        hu[cind].downstream_input_port, hu[cind].downstream_part)
                 except IndexError:  # pragma: no cover
                     corr[pol] = 'None'
                 station_info.timing[pol] = hud[key].timing[ppkey]
@@ -275,7 +278,8 @@ class Handling:
             stn = [stn]
         hud = H.get_hookup(hpn=stn, at_date=at_date, exact_match=True, hookup_type=hookup_type)
         for k, hu in six.iteritems(hud):
-            parts[k] = hu.get_part_from_type(part_type, include_revs=include_revs, include_ports=include_ports)
+            parts[k] = hu.get_part_from_type(
+                part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
 
     def publish_summary(self, hlist=['default'], exact_match=False, hookup_cols='all'):
@@ -285,7 +289,8 @@ class Handling:
         Parameters
         ----------
         hlist : list
-            List of prefixes or stations to use in summary.  Default is the "default" prefix list in cm_utils.
+            List of prefixes or stations to use in summary.
+            Default is the "default" prefix list in cm_utils.
         exact_match : bool
             Flag for exact_match or included characters.
         hookup_cols : str, list
@@ -301,8 +306,10 @@ class Handling:
             hlist = cm_sysdef.hera_zone_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
         H = cm_hookup.Hookup(self.session)
-        hookup_dict = H.get_hookup(hpn=hlist, pol='all', at_date='now', exact_match=exact_match, hookup_type=None)
-        H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols, state='full', ports=True,
+        hookup_dict = H.get_hookup(hpn=hlist, pol='all', at_date='now',
+                                   exact_match=exact_match, hookup_type=None)
+        H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols,
+                      state='full', ports=True,
                       revs=True, filename=output_file, output_format='html')
 
         from . import cm_transfer
@@ -317,8 +324,10 @@ class Handling:
 
     def get_apriori_status_for_antenna(self, antenna, at_date='now'):
         """
-        This returns the "apriori" status of an antenna station (e.g. HH12) at a date.  The status enum list
-        may be found by module cm_partconnect.get_apriori_antenna_status_enum().
+        This returns the "apriori" status of an antenna station (e.g. HH12) at a date.
+
+        The status enum list may be found by module
+        cm_partconnect.get_apriori_antenna_status_enum().
 
         Returns the apriori antenna status as a string.  Returns None if not in table.
 
@@ -337,8 +346,11 @@ class Handling:
         ant = antenna.upper()
         at_date = cm_utils.get_astropytime(at_date).gps
         cmapa = cm_partconnect.AprioriAntenna
-        apa = self.session.query(cmapa).filter(or_(and_(func.upper(cmapa.antenna) == ant, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime.is_(None)),
-                                                   and_(func.upper(cmapa.antenna) == ant, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime > at_date))).first()
+        apa = self.session.query(cmapa).filter(
+            or_(and_(func.upper(cmapa.antenna) == ant, cmapa.start_gpstime <= at_date,
+                     cmapa.stop_gpstime.is_(None)),
+                and_(func.upper(cmapa.antenna) == ant, cmapa.start_gpstime <= at_date,
+                     cmapa.stop_gpstime > at_date))).first()
         if apa is not None:
             return apa.status
 
@@ -353,7 +365,8 @@ class Handling:
         status : str
             Apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
         at_date : str or int
-            Date for which to get apriori state -- anything cm_utils.get_astropytime can handle.  Default is 'now'
+            Date for which to get apriori state -- anything
+            cm_utils.get_astropytime can handle.
 
         Returns
         -------
@@ -363,24 +376,29 @@ class Handling:
         at_date = cm_utils.get_astropytime(at_date).gps
         ap_ants = []
         cmapa = cm_partconnect.AprioriAntenna
-        for apa in self.session.query(cmapa).filter(or_(and_(cmapa.status == status, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime.is_(None)),
-                                                        and_(cmapa.status == status, cmapa.start_gpstime <= at_date, cmapa.stop_gpstime > at_date))):
+        for apa in self.session.query(cmapa).filter(
+            or_(and_(cmapa.status == status, cmapa.start_gpstime <= at_date,
+                     cmapa.stop_gpstime.is_(None)),
+                and_(cmapa.status == status, cmapa.start_gpstime <= at_date,
+                     cmapa.stop_gpstime > at_date))):
             ap_ants.append(apa.antenna)
         return ap_ants
 
     def get_apriori_antenna_status_set(self, at_date='now'):
         """
-        This returns a dictionary keyed on the apriori antenna status value containing the antennas with that status value
+        Get a dictionary with the antennas for each apriori status type.
 
         Parameters
         ----------
         at_date : str or int
-            Date for which to get apriori state -- anything cm_utils.get_astropytime can handle.  Default is 'now'
+            Date for which to get apriori state -- anything
+            cm_utils.get_astropytime can handle.
 
         Returns
         -------
         dict
-            dictionary of stations, keyed on apriori status
+            dictionary of antennas, keyed on the apriori antenna status value
+            containing the antennas with that status value
         """
         ap_stat = {}
         for _status in cm_partconnect.get_apriori_antenna_status_enum():
@@ -389,14 +407,15 @@ class Handling:
 
     def get_apriori_antenna_status_for_rtp(self, status, at_date='now'):
         """
-        This returns a csv-string of all antennas with the provided status query at_date, specifically for RTP
+        Get a csv-string of all antennas for an apriori status for RTP.
 
         Parameters
         ----------
         status : str
             Apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
         at_date : str or int
-            Date for which to get apriori state -- anything cm_utils.get_astropytime can handle.  Default is 'now'
+            Date for which to get apriori state -- anything
+            cm_utils.get_astropytime can handle.  Default is 'now'
 
         Returns
         -------

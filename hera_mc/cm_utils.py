@@ -8,7 +8,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import os.path
 import subprocess
 import six
 from astropy.time import Time
@@ -459,7 +458,8 @@ def get_astropytime(adate, atime=0):
             return Time(adate, format='gps')
         if adate > 2400000.0 and adate < 2500000.0:
             return Time(adate, format='jd')
-        raise ValueError('Invalid format:  date as a number should be gps time or julian date, not {}.'.format(adate))
+        raise ValueError('Invalid format:  date as a number should be gps time '
+                         'or julian date, not {}.'.format(adate))
     if isinstance(adate, str):
         if adate == '<':
             return Time(PAST_DATE, scale='utc')
@@ -473,7 +473,8 @@ def get_astropytime(adate, atime=0):
         try:
             return_date = Time(adate, scale='utc')
         except ValueError:
-            raise ValueError('Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(adate))
+            raise ValueError(
+                'Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(adate))
         try:
             atime = float(atime)
         except ValueError:
@@ -486,7 +487,8 @@ def get_astropytime(adate, atime=0):
             add_time = 0.0
             for i, d in enumerate(atime.split(':')):
                 if i > 2:
-                    raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'.format(atime))
+                    raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'
+                                     .format(atime))
                 add_time += (float(d)) * 3600.0 / (60.0**i)
             return return_date + TimeDelta(add_time, format='sec')
 

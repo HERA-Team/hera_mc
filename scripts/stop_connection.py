@@ -52,8 +52,10 @@ if __name__ == '__main__':
     if args.date is not None:
         at_date = cm_utils.get_astropytime(args.date, args.time)
     c = cm_partconnect.Connections()
-    c.connection(upstream_part=args.uppart, up_part_rev=args.uprev, upstream_output_port=args.upport,
-                 downstream_part=args.dnpart, down_part_rev=args.dnrev, downstream_input_port=args.dnport)
+    c.connection(upstream_part=args.uppart, up_part_rev=args.uprev,
+                 upstream_output_port=args.upport,
+                 downstream_part=args.dnpart, down_part_rev=args.dnrev,
+                 downstream_input_port=args.dnport)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
@@ -68,10 +70,12 @@ if __name__ == '__main__':
     else:
         print("Error:  Connection to stop is not valid.  Quitting.")
         print('{}:{}:{} <X> {}:{}:{}'
-              .format(args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport))
+              .format(args.uppart, args.uprev, args.upport, args.dnpart,
+                      args.dnrev, args.dnport))
         go_ahead = False
 
     if go_ahead:
         # Connect parts
-        npc = [[args.uppart, args.uprev, args.dnpart, args.dnrev, args.upport, args.dnport, connection_start_was]]
+        npc = [[args.uppart, args.uprev, args.dnpart, args.dnrev,
+                args.upport, args.dnport, connection_start_was]]
         cm_partconnect.stop_connections(session, npc, at_date)

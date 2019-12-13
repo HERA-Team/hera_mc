@@ -11,7 +11,6 @@ FULL revisions are called directly (get_full_revision)
 from __future__ import absolute_import, division, print_function
 
 import six
-import warnings
 from tabulate import tabulate
 from argparse import Namespace
 
@@ -160,7 +159,8 @@ def get_specific_revision(hpn, rq, session=None):
         if rq.upper() == rev.upper():
             start_date = revisions[rev]['started']
             end_date = revisions[rev]['ended']
-            this_rev = [Namespace(hpn=hpn, rev=rev, rev_query=rq, started=start_date, ended=end_date)]
+            this_rev = [Namespace(hpn=hpn, rev=rev, rev_query=rq,
+                                  started=start_date, ended=end_date)]
     return this_rev
 
 
@@ -191,7 +191,8 @@ def get_active_revision(hpn, at_date, session=None):
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
         if cm_utils.is_active(at_date, started, ended):
-            return_active.append(Namespace(hpn=hpn, rev=rev, rev_query='ACTIVE', started=started, ended=ended))
+            return_active.append(Namespace(hpn=hpn, rev=rev, rev_query='ACTIVE',
+                                           started=started, ended=ended))
 
     return return_active
 
@@ -258,7 +259,7 @@ def show_revisions(rev_list, columns='all'):
     for r in rev_list:
         for col in ordered_columns:
             try:
-                x = getattr(r, revision_columns[col]['attr'])
+                getattr(r, revision_columns[col]['attr'])
                 revision_columns[col]['present'] = True
             except AttributeError:
                 setattr(r, revision_columns[col]['attr'], revision_columns[col]['default'])

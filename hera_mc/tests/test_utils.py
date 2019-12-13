@@ -10,7 +10,6 @@ import numpy.testing as npt
 
 from astropy.time import Time
 from astropy.units import Quantity
-from astropy.utils import iers
 
 from .. import utils
 

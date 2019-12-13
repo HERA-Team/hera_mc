@@ -1502,9 +1502,10 @@ def test_snap_status_errors(mcsession):
 
 
 def test_get_node_snap_from_serial_nodossier(mcsession):
-    node, snap_loc_num = checkWarnings(mcsession._get_node_snap_from_serial, ['foo'],
-                                       message="No active dossiers returned "
-                                       "for snap serial foo. Setting node and snap location numbers to None")
+    node, snap_loc_num = checkWarnings(
+        mcsession._get_node_snap_from_serial, ['foo'],
+        message="No active dossiers returned for snap serial foo. "
+        "Setting node and snap location numbers to None")
     assert node is None
     assert snap_loc_num is None
 

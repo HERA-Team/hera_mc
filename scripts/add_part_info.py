@@ -34,7 +34,8 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--rev', help="Revision of part", default='last')
     parser.add_argument('-c', '--comment', help="Comment on part", default=None)
     parser.add_argument('-l', '--reference', help="Library filename", default=None)
-    parser.add_argument('-q', '--query', help="Set flag if wished to be queried", action='store_true')
+    parser.add_argument('-q', '--query', help="Set flag if wished to be queried",
+                        action='store_true')
     cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
@@ -54,4 +55,5 @@ if __name__ == '__main__':
 
     # Check for part
     print("Adding info for part {}:{}".format(args.hpn, args.rev))
-    cm_partconnect.add_part_info(session, args.hpn, args.rev, at_date, args.comment, args.reference)
+    cm_partconnect.add_part_info(session, args.hpn, args.rev, at_date,
+                                 args.comment, args.reference)

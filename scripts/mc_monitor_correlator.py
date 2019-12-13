@@ -8,7 +8,6 @@
 """
 from __future__ import absolute_import, division, print_function
 
-import sqlalchemy.exc
 import sys
 import time
 import traceback
@@ -17,6 +16,7 @@ import socket
 from astropy.time import Time
 
 from hera_mc import mc
+from hera_mc import utils
 
 MONITORING_INTERVAL = 60  # seconds
 
@@ -35,7 +35,8 @@ commands_to_run = ['add_correlator_control_state_from_corrcm',
 
 while True:
     try:
-        # Use a single session unless there's an error that isn't fixed by a rollback.
+        # Use a single session unless there's an error that isn't fixed by a
+        # rollback.
         with db.sessionmaker() as session:
             while True:
                 time.sleep(MONITORING_INTERVAL)
@@ -44,10 +45,11 @@ while True:
                     try:
                         getattr(session, command)()
                         session.commit()
-                        session.add_daemon_status('mc_monitor_correlator',
-                                                  hostname, Time.now(), 'good')
+                        session.add_daemon_status(
+                            'mc_monitor_correlator',
+                            hostname, Time.now(), 'good')
                         session.commit()
-                    except Exception as e:
+                    except Exception:
                         print('{t} -- error calling command {c}'.format(
                             t=time.asctime(), c=command), file=sys.stderr)
                         traceback.print_exc(file=sys.stderr)
@@ -56,17 +58,20 @@ while True:
                         try:
                             # try to update the daemon_status table and add an
                             # error message to the subsystem_error table
-                            session.add_daemon_status('mc_monitor_correlator',
-                                                      hostname, Time.now(), 'errored')
-                            session.add_subsystem_error(Time.now(),
-                                                        'mc_correlator_monitor',
-                                                        2, traceback_str)
+                            session.add_daemon_status(
+                                'mc_monitor_correlator',
+                                hostname, Time.now(), 'errored')
+                            session.add_subsystem_error(
+                                Time.now(), 'mc_correlator_monitor',
+                                2, traceback_str)
                         except Exception:
-                            # if we can't log error messages to the session, need a new session
-                            reraise_context('error logging to subsystem_error '
-                                            'table after command "%r"', command)
+                            # if we can't log error messages to the session,
+                            # need a new session
+                            utils._reraise_context(
+                                'error logging to subsystem_error '
+                                'table after command "%r"', command)
                         continue
-    except Exception as e:
+    except Exception:
         # Try to log an error with a new session
         traceback.print_exc(file=sys.stderr)
         with db.sessionmaker() as new_session:
@@ -79,7 +84,9 @@ while True:
                                             'mc_correlator_monitor',
                                             2, traceback_str)
             except Exception:
-                # if we can't log error messages to the new session we're in real trouble
-                reraise_context('error logging to subsystem_error with a new session')
+                # if we can't log error messages to the new session we're in
+                # real trouble
+                utils._reraise_context(
+                    'error logging to subsystem_error with a new session')
         # logging with a new session worked, so restart to get a new session
         continue

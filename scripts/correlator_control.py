@@ -8,7 +8,6 @@
 """
 from __future__ import absolute_import, division, print_function
 
-import sys
 from astropy.time import Time, TimeDelta
 from astropy.units import Quantity
 from hera_mc.utils import LSTScheduler
