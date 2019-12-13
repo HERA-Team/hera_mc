@@ -583,8 +583,33 @@ class Hookup(object):
                 full_info_string += "{}\n{}\n".format(hdr, entry_info)
         return full_info_string
 
+    def sort_hookup_display(self, sortby, hookup_dict, def_sort_order='NRP'):
+        if sortby is None:
+            return cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR')
+        if isinstance(sortby, str):
+            sortby = sortby.split(',')
+        sort_order_dict = {}
+        for stmp in sortby:
+            ss = stmp.split(':')
+            if len(ss) == 1:
+                ss.append(def_sort_order)
+            sort_order_dict[ss[0]] = ss[1]
+        key_bucket = {}
+        show = {'revs': True, 'ports': False}
+        for this_key, this_hu in hookup_dict.items():
+            pk = list(this_hu.hookup.keys())[0]
+            this_entry = this_hu.table_entry_row(pk, sortby, self.part_type_cache, show)
+            ekey = []
+            for eee in [cm_utils.peel_key(x, sort_order_dict[sortby[i]]) for i, x in enumerate(this_entry)]:
+                ekey += eee
+            key_bucket[tuple(ekey)] = this_key
+        sorted_keys = []
+        for _k, _v in sorted(key_bucket.items()):
+            sorted_keys.append(_v)
+        return sorted_keys
+
     def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
-                    filename=None, output_format='table'):
+                    sortby=None, filename=None, output_format='table'):
         """
         Print out the hookup table -- uses tabulate package.
 
@@ -594,12 +619,16 @@ class Hookup(object):
             Hookup dictionary generated in self.get_hookup
         cols_to_show : list, str
             list of columns to include in hookup listing
+        state : str
+            String designating whether to show the full hookups only, or all
         ports : bool
             Flag to include ports or not
         revs : bool
             Flag to include revisions or not
-        state : str
-            String designating whether to show the full hookups only, or all
+        sortby : list, str or None
+            Columns to sort the listed hookup.  None uses the keys.  str is a csv-list
+            List items may have an argument separated by ':' for 'N'umber'P'refix'R'ev
+            order (see cm_utils.put_keys_in_order).  Not included uses 'NRP'
         filename : str or None
             File name to use, None goes to stdout.  The file that gets written is
             in all cases an "ascii" file
@@ -619,9 +648,10 @@ class Hookup(object):
         headers = self.make_header_row(hookup_dict, cols_to_show)
         table_data = []
         total_shown = 0
-        for hukey in cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR'):
-            for pol in cm_utils.put_keys_in_order(
-                    hookup_dict[hukey].hookup.keys(), sort_order='PNR'):
+        sorted_hukeys = self.sort_hookup_display(sortby, hookup_dict, def_sort_order='NRP')
+        for hukey in sorted_hukeys:
+            for pol in cm_utils.put_keys_in_order(hookup_dict[hukey].hookup.keys(),
+                                                  sort_order='PNR'):
                 if not len(hookup_dict[hukey].hookup[pol]):
                     continue
                 use_this_row = False

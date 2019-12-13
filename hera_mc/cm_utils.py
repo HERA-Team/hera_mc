@@ -493,6 +493,36 @@ def get_astropytime(adate, atime=0):
             return return_date + TimeDelta(add_time, format='sec')
 
 
+def peel_key(key, sort_order):
+    rev = ''
+    if ':' not in key:
+        rev = ':A'
+    c = key + rev
+    colon = c.find(':')
+    for i in range(len(c)):
+        try:
+            n = int(c[i:colon])
+            break
+        except ValueError:
+            n = 0
+            continue
+    prefix = c[:i]
+    rev = c[colon + 1:]
+    sort_order = sort_order.upper()
+    if sort_order == 'NPR':
+        return (n, prefix, rev)
+    if sort_order == 'PNR':
+        return (prefix, n, rev)
+    if sort_order == 'RPN':
+        return (rev, prefix, n)
+    if sort_order == 'NRP':
+        return (n, rev, prefix)
+    if sort_order == 'RNP':
+        return (rev, n, prefix)
+    if sort_order == 'PRN':
+        return (prefix, rev, n)
+
+
 def put_keys_in_order(keys, sort_order='NPR'):
     """
     Takes a list of hookup keys in the format of prefix[number][:revision] and
@@ -512,26 +542,7 @@ def put_keys_in_order(keys, sort_order='NPR'):
     """
     keylib = {}
     for k in keys:
-        c = k
-        if ':' not in k:
-            c = k + ':A'
-        colon = c.find(':')
-        for i in range(len(c)):
-            try:
-                n = int(c[i:colon])
-                break
-            except ValueError:
-                n = 0
-                continue
-        prefix = c[:i]
-        rev = c[colon + 1:]
-        if sort_order.upper() == 'NPR':
-            dkey = (n, prefix, rev)
-        elif sort_order.upper() == 'PNR':
-            dkey = (prefix, n, rev)
-        elif sort_order.upper() == 'RPN':
-            dkey = (rev, prefix, n)
-        keylib[dkey] = k
+        keylib[peel_key(k, sort_order)] = k
 
     keyordered = []
     for k in sorted(keylib.keys()):
