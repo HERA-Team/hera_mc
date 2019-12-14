@@ -56,7 +56,8 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     assert len(hu) == 0
     hu = hookup.get_hookup('cache', pol='all', hookup_type='parts_hera')
     out = hookup.show_hookup(hu, state='all', sortby='station', output_format='csv')
-    assert '1230375618' in out
+    out = out.splitlines()[6].strip('"')
+    assert out.startswith('HH702')
     out = hookup.show_hookup(hu, output_format='html')
     assert 'NBP700' in out
     out = hookup.show_hookup({}, cols_to_show=['station'], state='all',
