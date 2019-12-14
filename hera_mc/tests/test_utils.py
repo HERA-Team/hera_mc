@@ -2,7 +2,6 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-import pytest
 import numpy as np
 import numpy.testing as npt
 
