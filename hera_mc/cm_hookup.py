@@ -600,7 +600,8 @@ class Hookup(object):
             pk = list(this_hu.hookup.keys())[0]
             this_entry = this_hu.table_entry_row(pk, sortby, self.part_type_cache, show)
             ekey = []
-            for eee in [cm_utils.peel_key(x, sort_order_dict[sortby[i]]) for i, x in enumerate(this_entry)]:
+            for eee in [cm_utils.peel_key(x, sort_order_dict[sortby[i]])
+                        for i, x in enumerate(this_entry)]:
                 ekey += eee
             key_bucket[tuple(ekey)] = this_key
         sorted_keys = []

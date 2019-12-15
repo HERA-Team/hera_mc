@@ -282,7 +282,8 @@ class Handling:
                 part_type, include_revs=include_revs, include_ports=include_ports)
         return parts
 
-    def publish_summary(self, hlist=['default'], exact_match=False, hookup_cols='all', sortby='node,station'):
+    def publish_summary(self, hlist=['default'], exact_match=False, hookup_cols='all',
+                        sortby='node,station'):
         """
         Publishes the hookup on hera.today.
 
