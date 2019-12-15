@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 from astropy.time import Time
 
-from .. import cm_partconnect, cm_handling, cm_dossier
+from .. import cm_partconnect, cm_handling
 
 
 @pytest.fixture(scope='function')
@@ -102,7 +102,7 @@ def test_update_new(conns, capsys):
     ckey = located[prkey].output_ports
     assert a in ckey
 
-    captured = conns.cm_handle.show_dossier(located, ['hpn'], ports='physical')
+    captured = conns.cm_handle.show_dossier(located, ['hpn'], ports=None)
     assert 'NEW_TEST_PART_UP' in captured
 
 
@@ -114,7 +114,8 @@ def test_get_null_connection():
 def test_stop_existing_connections_to_part(conns, capsys):
     conn_list = [['HH701', 'A', 'ground']]
     stop_Time = Time('2019-10-27T00:53:53.530')
-    cm_partconnect.stop_existing_connections_to_part(conns.test_session, conns.cm_handle, conn_list, stop_Time)
+    cm_partconnect.stop_existing_connections_to_part(
+        conns.test_session, conns.cm_handle, conn_list, stop_Time)
     captured = capsys.readouterr()
     assert captured.out.strip().startswith("Stopping connection")
 

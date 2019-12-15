@@ -9,7 +9,6 @@ Holds helpful modules for parts and connections scripts.
 from __future__ import absolute_import, division, print_function
 
 from tabulate import tabulate
-import sys
 import copy
 import six
 from astropy.time import Time
@@ -165,7 +164,7 @@ class Handling:
             sysdef = cm_sysdef.Sysdef()
             self.all_sigpath_ports = sysdef.get_all_ports(cm_sysdef.operational_hookup_types)
             for port_type in cm_sysdef.all_port_types:
-                self.ports[port_type] = set()
+                self.ports[port_type.upper()] = set()
             del(sysdef)
             return
 
@@ -173,9 +172,9 @@ class Handling:
         for part_ports in [inp.input_ports, inp.output_ports]:
             for p in part_ports:
                 if p in self.all_sigpath_ports:
-                    self.ports['sigpath'].add(p)
+                    self.ports['SIGPATH'].add(p)
                 else:
-                    self.ports['physical'].add(p)
+                    self.ports['PHYSICAL'].add(p)
         return
 
     def _get_allowed_ports(self, ports):
@@ -195,19 +194,20 @@ class Handling:
             self.allowed_ports = None
             return
 
-        ports = ports.split(',')
+        ports = ports.upper().split(',')
         port_types = [x.upper() for x in self.ports.keys()]
         allowed_ports = set()
         for pt in ports:
             if pt.upper() not in port_types:
                 print("{} not in {}".format(pt, port_types))
                 continue
-            for prt in self.ports[pt]:
+            for prt in self.ports[pt.upper()]:
                 allowed_ports.add(prt)
         self.allowed_ports = [x.upper() for x in allowed_ports]
         return
 
-    def get_dossier(self, hpn, rev=None, at_date='now', notes_start_date='<', exact_match=True):
+    def get_dossier(self, hpn, rev=None, at_date='now', active=None,
+                    notes_start_date='<', exact_match=True):
         """
         Return information on a part or parts.
 
@@ -216,10 +216,15 @@ class Handling:
         hpn : str, list
             Hera part number [string or list-of-strings] (whole or first part thereof)
         rev : str, list, None
-            Specific revision(s) or None (which yields all). If list, must match length of hpn.
-            Each element of a string may be a csv-list of revisions, which gets parsed later.
-        at_date : str, int, datetime, Time
-            Reference date of dossier (and stop_date for displaying notes)
+            Specific revision(s) or None (which yields all). If list, must
+            match length of hpn.
+            Each element of a string may be a csv-list of revisions, which gets
+            parsed later.
+        at_date : str, int, datetime, Time, None
+            Reference date of dossier (and stop_date for displaying notes).
+            Can be None if active is supplied
+        active : cm_active.ActiveData class or None
+            Use supplied ActiveData.  If None, read in.
         notes_start_date : str, int, datetime, Time
             Start_date for displaying notes
         exact_match : bool
@@ -228,18 +233,31 @@ class Handling:
         Returns
         -------
         dict
-            dictionary keyed on the part_number:rev containing PartEntry dossier classes
+            dictionary keyed on the part_number:rev containing PartEntry
+            dossier classes
         """
 
         from . import cm_active
 
         at_date = cm_utils.get_astropytime(at_date)
         notes_start_date = cm_utils.get_astropytime(notes_start_date)
-        active = cm_active.ActiveData(self.session, at_date=at_date)
-        active.load_parts()
-        active.load_connections()
-        active.load_info()
-        active.load_geo()
+        if active is None:
+            active = cm_active.ActiveData(self.session, at_date=at_date)
+        elif at_date is not None:
+            date_diff = abs(at_date - active.at_date).sec
+            if date_diff > 1.0:
+                raise ValueError("Supplied date and active date do not agree "
+                                 "({}sec)".format(date_diff))
+        else:
+            at_date = active.at_date
+        if active.parts is None:
+            active.load_parts(at_date=at_date)
+        if active.connections is None:
+            active.load_connections(at_date=at_date)
+        if active.info is None:
+            active.load_info(at_date=at_date)
+        if active.geo is None:
+            active.load_geo(at_date=at_date)
         part_dossier = {}
 
         hpn_list = self._get_hpn_list(hpn, rev, active, exact_match)
@@ -247,13 +265,14 @@ class Handling:
 
         for loop_hpn, loop_rev in hpn_list:
             if loop_rev is None:
-                loop_rev = active.revs(loop_hpn)
+                loop_rev = [x.rev for x in active.revs(loop_hpn)]
             elif isinstance(loop_rev, six.string_types):
                 loop_rev = [x.strip().upper() for x in loop_rev.split(',')]
             for rev in loop_rev:
                 key = cm_utils.make_part_key(loop_hpn, rev)
                 if key in active.parts.keys():
-                    this_part = cm_dossier.PartEntry(hpn=loop_hpn, rev=rev, at_date=at_date,
+                    this_part = cm_dossier.PartEntry(hpn=loop_hpn, rev=rev,
+                                                     at_date=at_date,
                                                      notes_start_date=notes_start_date)
                     this_part.get_entry(active)
                     part_dossier[key] = this_part
@@ -273,8 +292,10 @@ class Handling:
             List of column headers to use.
         ports : list, str, None
             Ports to show.
-            If None, counterintuitively, all are included (see cm_sysdef.all_port_types)
-            If str, it assumes that types are provided (see cm_sysdef.all_port_types), specified as csv-list.
+            If None, counterintuitively, all are included
+                (see cm_sysdef.all_port_types)
+            If str, it assumes that types are provided
+                (see cm_sysdef.all_port_types), specified as csv-list.
             If list, it only allows those.
 
         Returns
@@ -289,18 +310,21 @@ class Handling:
         table_data = []
         headers = dossier[pd_keys[0]].get_headers(columns=columns)
         for hpnr in pd_keys:
-            new_rows = dossier[hpnr].table_row(columns=columns, ports=self.allowed_ports)
+            new_rows = dossier[hpnr].table_row(columns=columns,
+                                               ports=self.allowed_ports)
             for nr in new_rows:
                 table_data.append(nr)
         return '\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
 
     def get_specific_connection(self, cobj, at_date=None):
         """
-        Finds and returns a list of connections matching the supplied components of the query.
-        At the very least upstream_part and downstream_part must be included -- revisions and
-        ports are ignored unless they are of type string.
-        If at_date is of type Time, it will only return connections valid at that time.  Otherwise
-        it ignores at_date (i.e. it will return any such connection over all time.)
+        Finds and returns a list of connections matching the supplied components
+        of the query.
+        At the very least upstream_part and downstream_part must be included
+        -- revisions and ports are ignored unless they are of type string.
+        If at_date is of type Time, it will only return connections valid at
+        that time.  Otherwise it ignores at_date (i.e. it will return any such
+        connection over all time.)
 
         Returns a list of connections (class)
 
@@ -318,8 +342,10 @@ class Handling:
         """
         fnd = []
         for conn in self.session.query(partconn.Connections).filter(
-                (func.upper(partconn.Connections.upstream_part) == cobj.upstream_part.upper())
-                & (func.upper(partconn.Connections.downstream_part) == cobj.downstream_part.upper())):
+            (func.upper(partconn.Connections.upstream_part) == cobj.upstream_part.upper())
+            & (func.upper(partconn.Connections.downstream_part)
+               == cobj.downstream_part.upper())
+        ):
             conn.gps2Time()
             include_this_one = True
             if isinstance(cobj.up_part_rev, str) and \

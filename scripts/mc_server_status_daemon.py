@@ -18,7 +18,6 @@ import sys
 import time
 from builtins import int
 from astropy.time import Time
-import netifaces
 import numpy as np
 import psutil
 

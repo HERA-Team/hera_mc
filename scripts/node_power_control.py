@@ -8,9 +8,6 @@
 """
 from __future__ import absolute_import, division, print_function
 
-import sys
-from astropy.time import Time
-
 from hera_mc import mc, cm_utils, node
 
 valid_part_names = list(node.power_command_part_dict.keys())

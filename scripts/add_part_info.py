@@ -22,8 +22,8 @@ def query_args(args):
     args.rev = cm_utils.query_default('rev', args)
     if args.comment is None:
         args.comment = six.moves.input('Comment:  ')
-    if args.library_file is None:
-        args.library_file = six.moves.input('Library_file:  ')
+    if args.reference is None:
+        args.reference = six.moves.input('reference:  ')
     args.date = cm_utils.query_default('date', args)
     return args
 
@@ -33,8 +33,9 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--hpn', help="HERA part number", default=None)
     parser.add_argument('-r', '--rev', help="Revision of part", default='last')
     parser.add_argument('-c', '--comment', help="Comment on part", default=None)
-    parser.add_argument('-l', '--library_file', help="Library filename", default=None)
-    parser.add_argument('-q', '--query', help="Set flag if wished to be queried", action='store_true')
+    parser.add_argument('-l', '--reference', help="Library filename", default=None)
+    parser.add_argument('-q', '--query', help="Set flag if wished to be queried",
+                        action='store_true')
     cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
@@ -43,8 +44,8 @@ if __name__ == '__main__':
 
     # Pre-process some args
     at_date = cm_utils.get_astropytime(args.date, args.time)
-    if type(args.library_file) == str and args.library_file.lower() == 'none':
-        args.library_file = None
+    if type(args.reference) == str and args.reference.lower() == 'none':
+        args.reference = None
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
@@ -54,4 +55,5 @@ if __name__ == '__main__':
 
     # Check for part
     print("Adding info for part {}:{}".format(args.hpn, args.rev))
-    cm_partconnect.add_part_info(session, args.hpn, args.rev, at_date, args.comment, args.library_file)
+    cm_partconnect.add_part_info(session, args.hpn, args.rev, at_date,
+                                 args.comment, args.reference)

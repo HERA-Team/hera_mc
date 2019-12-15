@@ -10,7 +10,7 @@ Script to show cm_log_file.  Extremely simplified here - can fancify later.
 from __future__ import absolute_import, division, print_function
 
 
-from hera_mc import cm_utils, mc
+from hera_mc import mc
 
 
 with open(mc.cm_log_file, 'r') as log_file:

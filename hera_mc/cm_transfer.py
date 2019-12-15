@@ -95,7 +95,8 @@ def package_db_to_csv(session=None, tables='all'):
         tables_to_write = tables.split(',')
 
     print("Writing packaged files to current directory.")
-    print("--> If packing from qmaster, be sure to use 'cm_pack.py --go' to copy, commit and log the change.")
+    print("--> If packing from qmaster, be sure to use 'cm_pack.py --go' to "
+          "copy, commit and log the change.")
     print("    Note:  this works via the hera_cm_db_updates repo.")
     files_written = []
     for table in tables_to_write:
@@ -134,7 +135,8 @@ def pack_n_go(session, cm_csv_path):  # pragma: no cover
     session.commit()
 
 
-def initialize_db_from_csv(session=None, tables='all', maindb=False, testing=False, cm_csv_path=None):  # pragma: no cover
+def initialize_db_from_csv(session=None, tables='all', maindb=False,
+                           testing=False, cm_csv_path=None):  # pragma: no cover
     """
     This entry module provides a double-check entry point to read the csv files and
        repopulate the configuration management database.  It destroys all current entries,

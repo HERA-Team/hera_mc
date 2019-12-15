@@ -19,10 +19,17 @@ if __name__ == '__main__':
     parser.add_argument('action', help='type to chart:  connected and/or ants')
     parser.add_argument('--dt', help="timestep in days", default=30)
     cm_utils.add_date_time_args(parser)
-    parser.add_argument('--date2', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' or gps or julian [now]", default='now')
-    parser.add_argument('--time2', help="UTC hh:mm or float (hours) ignored unless date of YYYY/MM/DD format", default=0.0)
-    parser.add_argument('--output_date_format', help="Output date format.  Either 'jd' or 'ymd'", default='jd')
-    parser.add_argument('--hookup_type', help='parts_hera or parts_paper', default='parts_hera')
+    parser.add_argument('--date2',
+                        help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' "
+                        "or gps or julian [now]",
+                        default='now')
+    parser.add_argument('--time2',
+                        help="UTC hh:mm or float (hours) ignored unless date of YYYY/MM/DD format",
+                        default=0.0)
+    parser.add_argument('--output_date_format',
+                        help="Output date format.  Either 'jd' or 'ymd'", default='jd')
+    parser.add_argument('--hookup_type',
+                        help='parts_hera or parts_paper', default='parts_hera')
     args = parser.parse_args()
 
     if isinstance(args.dt, six.string_types):
@@ -40,7 +47,8 @@ if __name__ == '__main__':
         dv.connected_by_day(date_1, date_2, args.dt,
                             output='connected.txt',
                             station_types_to_check='default',
-                            output_date_format=args.output_date_format, hookup_type=args.hookup_type)
+                            output_date_format=args.output_date_format,
+                            hookup_type=args.hookup_type)
     if 'ants' in args.action:
         dv.ants_by_day(date_1, date_2, args.dt,
                        output='ants.txt',

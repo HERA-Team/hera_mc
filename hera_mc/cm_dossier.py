@@ -14,11 +14,10 @@ from argparse import Namespace
 
 from . import cm_sysdef, cm_utils
 from . import cm_partconnect as partconn
-from . import geo_location
 if six.PY3:
     from itertools import zip_longest
 if six.PY2:
-    from itertools import izip_longest as zip_longest
+    from itertools import izip_longest as zip_longest # noqa
 
 
 class PartEntry():
@@ -52,7 +51,7 @@ class PartEntry():
                'geo': 'Geo',
                'comment': 'Note',
                'posting_gpstime': 'Date',
-               'library_file': 'File',
+               'reference': 'File',
                'up.start_gpstime': 'uStart',
                'up.stop_gpstime': 'uStop',
                'up.upstream_part': 'Upstream',
@@ -76,7 +75,7 @@ class PartEntry():
         self.input_ports = []
         self.output_ports = []
         self.part = None
-        self.part_info = Namespace(comment=[], posting_gpstime=[], library_file=[])
+        self.part_info = Namespace(comment=[], posting_gpstime=[], reference=[])
         self.connections = Namespace(up=None, down=None)
         self.geo = None
 
@@ -104,9 +103,11 @@ class PartEntry():
         Pulls out the input_ports and output_ports to a class variable
         """
         if self.connections.down is not None:
-            self.input_ports = cm_utils.put_keys_in_order([x.lower() for x in self.connections.down.keys()], 'PNR')
+            self.input_ports = cm_utils.put_keys_in_order(
+                [x.lower() for x in self.connections.down.keys()], 'PNR')
         if self.connections.up is not None:
-            self.output_ports = cm_utils.put_keys_in_order([x.lower() for x in self.connections.up.keys()], 'PNR')
+            self.output_ports = cm_utils.put_keys_in_order(
+                [x.lower() for x in self.connections.up.keys()], 'PNR')
 
     def get_connections(self, active):
         """
@@ -136,7 +137,7 @@ class PartEntry():
                 if pi_entry.posting_gpstime > self.notes_start_date.gps:
                     self.part_info.comment.append(pi_entry.comment)
                     self.part_info.posting_gpstime.append(pi_entry.posting_gpstime)
-                    self.part_info.library_file.append(pi_entry.library_file)
+                    self.part_info.reference.append(pi_entry.reference)
 
     def get_geo(self, active):
         """
@@ -200,11 +201,13 @@ class PartEntry():
             new_up = []
             new_dn = []
             for up, down in conns:
-                if up is None or up.upstream_output_port.upper() in ports or up.downstream_input_port.upper() in ports:
+                if (up is None or up.upstream_output_port.upper() in ports
+                        or up.downstream_input_port.upper() in ports):
                     new_up.append(up)
                 else:
                     new_up.append(None)
-                if down is None or down.upstream_output_port.upper() in ports or down.downstream_input_port.upper() in ports:
+                if (down is None or down.upstream_output_port.upper() in ports
+                        or down.downstream_input_port.upper() in ports):
                     new_dn.append(down)
                 else:
                     new_up.append(None)
@@ -215,6 +218,7 @@ class PartEntry():
         for up, down in conns:
             trow = []
             no_port_data = True
+            number_entries = 0
             for col in columns:
                 cbeg = col.split('.')[0]
                 cend = col.split('.')[-1]
@@ -245,10 +249,13 @@ class PartEntry():
                 elif isinstance(x, (list, set)):
                     x = ', '.join(x)
                 trow.append(x)
+                if x is not None and len(x):
+                    number_entries += 1
             if ports_included and no_port_data:
                 trow = None
-            if trow is not None:
-                tdata.append(trow)
+            if trow is not None and len(trow):
+                if number_entries > 1 or number_entries == len(columns):
+                    tdata.append(trow)
         return tdata
 
 

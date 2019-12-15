@@ -5,22 +5,9 @@
 """Testing for `hera_mc.autocorrelations`."""
 from __future__ import absolute_import, division, print_function
 
-import os
-import copy
-import time
-import datetime
-import hashlib
-from math import floor
-
 import pytest
-import yaml
-import numpy as np
-from astropy.time import Time, TimeDelta
 
-from hera_mc import mc, autocorrelations, cm_sysutils
-import hera_mc.correlator as corr
-from hera_mc.data import DATA_PATH
-from ..tests import onsite, checkWarnings
+from hera_mc import autocorrelations, cm_sysutils
 
 import six
 if six.PY3:

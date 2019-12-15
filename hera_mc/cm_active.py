@@ -9,8 +9,6 @@ Methods to load all active data for a given date.
 """
 from __future__ import absolute_import, division, print_function
 
-import six
-
 from . import cm_utils
 from . import cm_partconnect as partconn
 
@@ -75,9 +73,11 @@ class ActiveData:
         at_date = cm_utils.get_astropytime(at_date)
         gps_time = self.set_times(at_date)
         self.parts = {}
-        for prt in self.session.query(partconn.Parts).filter((partconn.Parts.start_gpstime <= gps_time)
-                                                             & ((partconn.Parts.stop_gpstime > gps_time)
-                                                             | (partconn.Parts.stop_gpstime == None))):  # noqa
+        for prt in self.session.query(partconn.Parts).filter(
+            (partconn.Parts.start_gpstime <= gps_time)
+            & ((partconn.Parts.stop_gpstime > gps_time)
+               | (partconn.Parts.stop_gpstime == None))  # noqa
+        ):
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.parts[key] = prt
 
@@ -108,14 +108,18 @@ class ActiveData:
         gps_time = self.set_times(at_date)
         self.connections = {'up': {}, 'down': {}}
         check_keys = {'up': [], 'down': []}
-        for cnn in self.session.query(partconn.Connections).filter((partconn.Connections.start_gpstime <= gps_time)
-                                                                   & ((partconn.Connections.stop_gpstime > gps_time)
-                                                                   | (partconn.Connections.stop_gpstime == None))):  # noqa
-            chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev, cnn.upstream_output_port)
+        for cnn in self.session.query(partconn.Connections).filter(
+            (partconn.Connections.start_gpstime <= gps_time)
+            & ((partconn.Connections.stop_gpstime > gps_time)
+               | (partconn.Connections.stop_gpstime == None))  # noqa
+        ):
+            chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev,
+                                         cnn.upstream_output_port)
             if chk in check_keys['up']:
                 raise ValueError("Duplicate active port {}".format(chk))
             check_keys['up'].append(chk)
-            chk = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev, cnn.downstream_input_port)
+            chk = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev,
+                                         cnn.downstream_input_port)
             if chk in check_keys['down']:
                 raise ValueError("Duplicate active port {}".format(chk))
             check_keys['down'].append(chk)
@@ -145,7 +149,9 @@ class ActiveData:
         at_date = cm_utils.get_astropytime(at_date)
         gps_time = self.set_times(at_date)
         self.info = {}
-        for info in self.session.query(partconn.PartInfo).filter((partconn.PartInfo.posting_gpstime <= gps_time)):
+        for info in self.session.query(partconn.PartInfo).filter(
+                (partconn.PartInfo.posting_gpstime <= gps_time)
+        ):
             key = cm_utils.make_part_key(info.hpn, info.hpn_rev)
             self.info.setdefault(key, [])
             self.info[key].append(info)
@@ -172,9 +178,11 @@ class ActiveData:
         gps_time = self.set_times(at_date)
         self.apriori = {}
         apriori_keys = []
-        for astat in self.session.query(partconn.AprioriAntenna).filter((partconn.AprioriAntenna.start_gpstime <= gps_time)
-                                                                        & ((partconn.AprioriAntenna.stop_gpstime > gps_time)
-                                                                        | (partconn.AprioriAntenna.stop_gpstime == None))):  # noqa
+        for astat in self.session.query(partconn.AprioriAntenna).filter(
+            (partconn.AprioriAntenna.start_gpstime <= gps_time)
+            & ((partconn.AprioriAntenna.stop_gpstime > gps_time)
+               | (partconn.AprioriAntenna.stop_gpstime == None))  # noqa
+        ):
             key = cm_utils.make_part_key(astat.antenna, rev)
             if key in apriori_keys:
                 raise ValueError("{} already has an active apriori state.".format(key))
@@ -201,27 +209,58 @@ class ActiveData:
         at_date = cm_utils.get_astropytime(at_date)
         gps_time = self.set_times(at_date)
         self.geo = {}
-        for ageo in self.session.query(geo_location.GeoLocation).filter(geo_location.GeoLocation.created_gpstime <= gps_time):
+        for ageo in self.session.query(geo_location.GeoLocation).filter(
+                geo_location.GeoLocation.created_gpstime <= gps_time
+        ):
             key = cm_utils.make_part_key(ageo.station_name, None)
             self.geo[key] = ageo
 
-    def revs(self, hpn):
+    def revs(self, hpn, exact_match=False):
         """
-        Returns a list of active revisions for a given hpn.
+        Returns a list of active revisions for the provided hpn list.  The returned
+        list is the concatentated set of revisions found for the provided list.
+
+        The purpose is to find out what active revisions are present in the database.
+        E.g., to check for all active revisions for all PAMs, call with hpn='PAM'.  To check
+        for revisions for a particular one, call with 'PAM123'.  To guarantee only one part
+        one should also set exact_match=True.
 
         Parameters
         ----------
-        hpn : str
-            A HERA part number (not a list)
+        hpn : str or list
+            HERA part number or list.  Checks equality or startswith, depending on below.
+        exact_match : bool
+            Flag to look for exact matches to part numbers or not.
 
         Returns
         -------
         list
-            List of revisions for supplied hpn.  Typically one element.
+            List of revision Namespaces for supplied hpn.
+            Can show with cm_revisions.show_revisions
         """
-        hpn_revs = []
-        hpn = hpn.upper()
-        for part in self.parts.values():
-            if hpn == part.hpn.upper():
-                hpn_revs.append(part.hpn_rev)
-        return hpn_revs
+        from argparse import Namespace
+        hpn = [x.upper() for x in cm_utils.listify(hpn)]
+        rev_dict = {}
+        for hloop in hpn:
+            rev_dict[hloop] = {}
+            for part in self.parts.values():
+                phup = part.hpn.upper()
+                use_this_one = (phup == hloop) if exact_match else phup.startswith(hloop)
+                if use_this_one:
+                    prup = part.hpn_rev.upper()
+                    rev_dict[hloop].setdefault(
+                        prup, Namespace(hpn=hloop, rev=prup, number=0,
+                                        started=part.start_gpstime,
+                                        ended=part.stop_gpstime))
+                    rev_dict[hloop][prup].number += 1
+                    if part.start_gpstime < rev_dict[hloop][prup].started:
+                        rev_dict[hloop][prup].started = part.start_gpstime
+                    if rev_dict[hloop][prup].ended is not None:
+                        if (part.stop_gpstime is None
+                                or part.stop_gpstime > rev_dict[hloop][prup].ended):
+                            rev_dict[hloop][prup].ended = part.stop_gpstime
+        hpn_rev = []
+        for hloop in sorted(list(rev_dict.keys())):
+            for rev in sorted(list(rev_dict[hloop].keys())):
+                hpn_rev.append(rev_dict[hloop][rev])
+        return hpn_rev

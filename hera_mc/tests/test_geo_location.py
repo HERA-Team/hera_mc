@@ -61,7 +61,6 @@ def test_geo_location(mcsession):
     g = geo_location.GeoLocation()
     g.geo(station_name='TestSetAttr')
     assert g.station_name == 'TESTSETATTR'
-    s = geo_location.StationType()
     rv = geo_location.update()
     assert not rv
     pytest.raises(ValueError, geo_location.update, mcsession, 'HH0:Tile')

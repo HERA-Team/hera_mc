@@ -14,13 +14,16 @@ import numpy as np
 import redis
 import sys
 
+import six.moves as sm
+
 from hera_mc import autocorrelations, mc
 
 
 # Yay hardcoded config settings:
 
 redis_host = 'redishost'
-antnums = xrange(128)
+
+antnums = list(sm.range(128))
 
 # End of config.
 
@@ -49,7 +52,8 @@ with db.sessionmaker() as dbsession:
             try:
                 data = rsession.hgetall('visdata://%d/%d/%s%s' % (ant, ant, pol, pol))
             except Exception as e:
-                print('failed to get autocorrelation %d%s: %s (%s)' % (ant, pol, e, e.__class__.__name__),
+                print('failed to get autocorrelation %d%s: %s (%s)'
+                      % (ant, pol, e, e.__class__.__name__),
                       file=sys.stderr)
                 n_failures += 1
                 continue
