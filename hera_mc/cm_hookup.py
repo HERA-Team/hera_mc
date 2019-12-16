@@ -175,7 +175,7 @@ class Hookup(object):
         return hookup_dict
 
     def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
-                    filename=None, output_format='table'):
+                    sortby=None, filename=None, output_format='table'):
         """
         Print out the hookup table -- uses tabulate package.
 
@@ -189,6 +189,10 @@ class Hookup(object):
             Flag to include ports or not
         revs : bool
             Flag to include revisions or not
+        sortby : list, str or None
+            Columns to sort the listed hookup.  None uses the keys.  str is a csv-list
+            List items may have an argument separated by ':' for 'N'umber'P'refix'R'ev
+            order (see cm_utils.put_keys_in_order).  Not included uses 'NRP'
         state : str
             String designating whether to show the full hookups only, or all
         filename : str or None
@@ -210,9 +214,10 @@ class Hookup(object):
         headers = self.make_header_row(hookup_dict, cols_to_show)
         table_data = []
         total_shown = 0
-        for hukey in cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR'):
-            for pol in cm_utils.put_keys_in_order(
-                    hookup_dict[hukey].hookup.keys(), sort_order='PNR'):
+        sorted_hukeys = self.sort_hookup_display(sortby, hookup_dict, def_sort_order='NRP')
+        for hukey in sorted_hukeys:
+            for pol in cm_utils.put_keys_in_order(hookup_dict[hukey].hookup.keys(),
+                                                  sort_order='PNR'):
                 if not len(hookup_dict[hukey].hookup[pol]):
                     continue
                 use_this_row = False
@@ -242,6 +247,32 @@ class Hookup(object):
             with open(filename, 'w') as fp:
                 print(table, file=fp)
         return table
+
+    def sort_hookup_display(self, sortby, hookup_dict, def_sort_order='NRP'):
+        if sortby is None:
+            return cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR')
+        if isinstance(sortby, str):
+            sortby = sortby.split(',')
+        sort_order_dict = {}
+        for stmp in sortby:
+            ss = stmp.split(':')
+            if len(ss) == 1:
+                ss.append(def_sort_order)
+            sort_order_dict[ss[0]] = ss[1]
+        key_bucket = {}
+        show = {'revs': True, 'ports': False}
+        for this_key, this_hu in hookup_dict.items():
+            pk = list(this_hu.hookup.keys())[0]
+            this_entry = this_hu.table_entry_row(pk, sortby, self.part_type_cache, show)
+            ekey = []
+            for eee in [cm_utils.peel_key(x, sort_order_dict[sortby[i]])
+                        for i, x in enumerate(this_entry)]:
+                ekey += eee
+            key_bucket[tuple(ekey)] = this_key
+        sorted_keys = []
+        for _k, _v in sorted(key_bucket.items()):
+            sorted_keys.append(_v)
+        return sorted_keys
 
     def make_header_row(self, hookup_dict, cols_to_show):
         """
@@ -718,179 +749,12 @@ class Hookup(object):
             cm_utils.get_time_for_display(cm_hash_time))
         return s
 
-    def get_notes(self, hookup_dict, state='all'):
+    def delete_cache_file(self):
         """
-        Retrieves information for hookup.
-
-        Parameters
-        ----------
-        hookup_dict : dict
-            Hookup dictionary generated in self.get_hookup
-        state : str
-            String designating whether to show the full hookups only, or all
-
-        Returns
-        -------
-        dict
-            hookup notes
+        Deletes the local cached hookup file.
         """
-        if self.active is None:
-            self.active = cm_active.ActiveData(self.session, at_date=self.at_date)
-        self.active.load_info(self.at_date)
-        info_keys = list(self.active.info.keys())
-        hu_notes = {}
-        for hkey in hookup_dict.keys():
-            all_hu_hpn = set()
-            for pol in hookup_dict[hkey].hookup.keys():
-                for hpn in hookup_dict[hkey].hookup[pol]:
-                    if (state == 'all'
-                            or (state == 'full' and hookup_dict[hkey].fully_connected[pol])):
-                        all_hu_hpn.add(
-                            cm_utils.make_part_key(hpn.upstream_part, hpn.up_part_rev))
-                        all_hu_hpn.add(
-                            cm_utils.make_part_key(hpn.downstream_part, hpn.down_part_rev))
-            hu_notes[hkey] = {}
-            for ikey in all_hu_hpn:
-                if ikey in info_keys:
-                    hu_notes[hkey][ikey] = {}
-                    for entry in self.active.info[ikey]:
-                        hu_notes[hkey][ikey][entry.posting_gpstime] =\
-                            entry.comment.replace('\\n', '\n')
-        return hu_notes
-
-    def show_notes(self, hookup_dict, state='all'):
-        """
-        Print out the information for hookup.
-
-        Parameters
-        ----------
-        hookup_dict : dict
-            Hookup dictionary generated in self.get_hookup
-        state : str
-            String designating whether to show the full hookups only, or all
-
-        Returns
-        -------
-        str
-            Content as a string
-        """
-        hu_notes = self.get_notes(hookup_dict=hookup_dict, state=state)
-        full_info_string = ''
-        for hkey in cm_utils.put_keys_in_order(list(hu_notes.keys()), sort_order='NPR'):
-            hdr = "---{}---".format(hkey)
-            entry_info = ''
-            part_hu_hpn = cm_utils.put_keys_in_order(list(hu_notes[hkey].keys()), sort_order='PNR')
-            if hkey in part_hu_hpn:  # Do the hkey first
-                part_hu_hpn.remove(hkey)
-                part_hu_hpn = [hkey] + part_hu_hpn
-            for ikey in part_hu_hpn:
-                gps_times = sorted(list(hu_notes[hkey][ikey].keys()))
-                for gtime in gps_times:
-                    atime = cm_utils.get_time_for_display(gtime)
-                    entry_info += "\t{} ({})  {}\n".format(ikey, atime, hu_notes[hkey][ikey][gtime])
-            if len(entry_info):
-                full_info_string += "{}\n{}\n".format(hdr, entry_info)
-        return full_info_string
-
-    def sort_hookup_display(self, sortby, hookup_dict, def_sort_order='NRP'):
-        if sortby is None:
-            return cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR')
-        if isinstance(sortby, str):
-            sortby = sortby.split(',')
-        sort_order_dict = {}
-        for stmp in sortby:
-            ss = stmp.split(':')
-            if len(ss) == 1:
-                ss.append(def_sort_order)
-            sort_order_dict[ss[0]] = ss[1]
-        key_bucket = {}
-        show = {'revs': True, 'ports': False}
-        for this_key, this_hu in hookup_dict.items():
-            pk = list(this_hu.hookup.keys())[0]
-            this_entry = this_hu.table_entry_row(pk, sortby, self.part_type_cache, show)
-            ekey = []
-            for eee in [cm_utils.peel_key(x, sort_order_dict[sortby[i]])
-                        for i, x in enumerate(this_entry)]:
-                ekey += eee
-            key_bucket[tuple(ekey)] = this_key
-        sorted_keys = []
-        for _k, _v in sorted(key_bucket.items()):
-            sorted_keys.append(_v)
-        return sorted_keys
-
-    def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
-                    sortby=None, filename=None, output_format='table'):
-        """
-        Print out the hookup table -- uses tabulate package.
-
-        Parameters
-        ----------
-        hookup_dict : dict
-            Hookup dictionary generated in self.get_hookup
-        cols_to_show : list, str
-            list of columns to include in hookup listing
-        state : str
-            String designating whether to show the full hookups only, or all
-        ports : bool
-            Flag to include ports or not
-        revs : bool
-            Flag to include revisions or not
-        sortby : list, str or None
-            Columns to sort the listed hookup.  None uses the keys.  str is a csv-list
-            List items may have an argument separated by ':' for 'N'umber'P'refix'R'ev
-            order (see cm_utils.put_keys_in_order).  Not included uses 'NRP'
-        filename : str or None
-            File name to use, None goes to stdout.  The file that gets written is
-            in all cases an "ascii" file
-        output_format : str
-            Set output file type.
-                'html' for a web-page version,
-                'csv' for a comma-separated value version, or
-                'table' for a formatted text table
-
-        Returns
-        -------
-        str
-            Table as a string
-
-        """
-        show = {'ports': ports, 'revs': revs}
-        headers = self.make_header_row(hookup_dict, cols_to_show)
-        table_data = []
-        total_shown = 0
-        sorted_hukeys = self.sort_hookup_display(sortby, hookup_dict, def_sort_order='NRP')
-        for hukey in sorted_hukeys:
-            for pol in cm_utils.put_keys_in_order(hookup_dict[hukey].hookup.keys(),
-                                                  sort_order='PNR'):
-                if not len(hookup_dict[hukey].hookup[pol]):
-                    continue
-                use_this_row = False
-                if state.lower() == 'all':
-                    use_this_row = True
-                elif state.lower() == 'full' and hookup_dict[hukey].fully_connected[pol]:
-                    use_this_row = True
-                if not use_this_row:
-                    continue
-                total_shown += 1
-                td = hookup_dict[hukey].table_entry_row(pol, headers, self.part_type_cache, show)
-                table_data.append(td)
-        if total_shown == 0:
-            print("None found for {} (show-state is {})".format(
-                cm_utils.get_time_for_display(self.at_date), state))
-            return
-        if output_format.lower().startswith('htm'):
-            dtime = cm_utils.get_time_for_display('now') + '\n'
-            table = cm_utils.html_table(headers, table_data)
-            table = ('<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime
-                     + '\t\t</pre>\n\t</body>\n</html>\n')
-        elif output_format.lower().startswith('csv'):
-            table = cm_utils.csv_table(headers, table_data)
-        else:
-            table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
-        if filename is not None:
-            with open(filename, 'w') as fp:
-                print(table, file=fp)
-        return table
+        if os.path.exists(self.hookup_cache_file):
+            os.remove(self.hookup_cache_file)
 
     def _requested_list_OK_for_cache(self, hpn):
         """
