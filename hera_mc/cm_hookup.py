@@ -55,14 +55,14 @@ class Hookup(object):
         if os.path.exists(self.hookup_cache_file):
             os.remove(self.hookup_cache_file)
 
-    def requested_list_OK_for_cache(self, hpn):
+    def _requested_list_OK_for_cache(self, hpn):
         """
         Checks that all hookup requests match the cached keys.
 
         Parameters
         ----------
         hpn : list
-            List of HERA part numbers being checked.
+            List of HERA part numbers being checked as returned from self.proc_hpnlist
 
         Returns
         -------
@@ -79,7 +79,8 @@ class Hookup(object):
 
     def _cull_dict(self, hpn, search_dict, exact_match):
         """
-        Determines the complete appropriate set of parts to use within search_dict.
+        Based on the list contained in hpn, determines the complete appropriate set
+        of parts to use within search_dict.
 
         The supplied search_dict has all options, which are culled by the supplied
         hpn and exact_match flag.
@@ -87,7 +88,7 @@ class Hookup(object):
         Parameters
         ----------
         hpn : list
-            Contains part numbers (or partial part numbers) to include in the hookup list.
+            List of HERA part numbers being checked as returned from self.proc_hpnlist
         search_dict : dict
             Contains information about all parts possible to search, keyed on the "standard"
             cm_utils.make_part_key
@@ -118,18 +119,34 @@ class Hookup(object):
                 found_dict[key] = copy.copy(search_dict[key])
         return(found_dict)
 
-    def proc_hpnlist(self, hpn_request):
+    def proc_hpnlist(self, hpn_request, exact_match):
         """
         This processes the hpn request list.  If the list member is of the
-        form ':xxx.a;b;c' it will call the sysdef.xxx module with [a, b, c]
-        as the argument.
+        form ':xxx.a;b;c' it will call the cm_sysdef.xxx module with [a, b, c]
+        as the argument.  If an ':xxx method' is found, it sets exact_match
+        to True
 
         Parameters
         ----------
+        hpn_request : list, str
+            The list of hpns to check.  See options under get_hookup
+        exact_match : bool
+            If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
+            would allow 'HH1', 'HH10', 'HH123', etc
+
+        Returns
+        -------
+        list
+            updated hpn request list
+        bool
+            updated exact_match setting
         """
         hpn_proc = []
+        if isinstance(hpn_request, six.string_types) and hpn_request.lower() == 'default':
+            return cm_sysdef.hera_zone_prefixes, False
         for hpn in cm_utils.listify(hpn_request):
             if hpn.startswith(':'):
+                exact_match = True
                 metharg = hpn[1:].split('.')
                 sysdef_method = metharg[0]
                 sysdef_arg = []
@@ -139,7 +156,7 @@ class Hookup(object):
                 hpn_proc += y
             else:
                 hpn_proc.append(hpn)
-        return hpn_proc
+        return hpn_proc, exact_match
 
     def get_hookup_from_db(self, hpn, pol, at_date, exact_match=False, hookup_type=None):
         """
@@ -153,14 +170,20 @@ class Hookup(object):
         Parameters
         -----------
         hpn : str, list
-            List/string of input hera part number(s) (whole or first part thereof)
-            Can include a cm_sysdef method via e.g. :xxx.a;b;c
+            List/string of input hera part number(s) (whole or 'startswith')
+            If string
+                - 'cache' returns the entire cache file
+                - 'default' uses default station prefixes in cm_sysdef
+                - otherwise converts as csv-list
+            If element of list is of format ':xxx.a;b;c' it finds the appropriate
+                method as cm_sysdef.Sysdef.xxx([a, b, c])
         pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all')
         at_date :  str, int
             Date for query.  Anything intelligible to cm_utils.get_astropytime
         exact_match : bool
-            Flag for either exact_match or partial
+            If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
+            would allow 'HH1', 'HH10', 'HH123', etc
         hookup_type : str or None
             Type of hookup to use (current observing system is 'parts_hera').
             If 'None' it will determine which system it thinks it is based on
@@ -178,7 +201,7 @@ class Hookup(object):
         self.active = cm_active.ActiveData(self.session, at_date=at_date)
         self.active.load_parts(at_date=None)
         self.active.load_connections(at_date=None)
-        hpn = self.proc_hpnlist(hpn)
+        hpn, exact_match = self.proc_hpnlist(hpn, exact_match)
         parts = self._cull_dict(hpn, self.active.parts, exact_match)
         hookup_dict = {}
         for k, part in six.iteritems(parts):
@@ -354,17 +377,20 @@ class Hookup(object):
         Parameters
         -----------
         hpn : str, list
-            List/string of input hera part number(s) (whole or first part thereof)
-                - if string == 'cache' it returns the entire cache file
-                - if 'default', uses default station prefixes in cm_sysdef
+            List/string of input hera part number(s) (whole or 'startswith')
+            If string
+                - 'cache' returns the entire cache file
+                - 'default' uses default station prefixes in cm_sysdef
+                - otherwise converts as csv-list
             If element of list is of format ':xxx.a;b;c' it finds the appropriate
-                method in cm_sysdef
+                method as cm_sysdef.Sysdef.xxx([a, b, c])
         pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
         at_date :  str, int
             Date for query.  Anything intelligible to cm_utils.get_astropytime
         exact_match : bool
-            Flag for either exact_match or partial
+            If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
+            would allow 'HH1', 'HH10', 'HH123', etc
         use_cache : bool
             Flag to force the cache to be read, if present and keys agree.  This is largely
             deprecated, but kept for archival possibilities for the future.
@@ -383,16 +409,13 @@ class Hookup(object):
         self.at_date = at_date
         self.hookup_type = hookup_type
 
-        if isinstance(hpn, six.string_types):
-            if hpn.lower() == 'cache':
-                self.read_hookup_cache_from_file()
-                return self.cached_hookup_dict
-            elif hpn == 'default':
-                hpn = cm_sysdef.hera_zone_prefixes
+        if isinstance(hpn, six.string_types) and hpn.lower() == 'cache':
+            self.read_hookup_cache_from_file()
+            return self.cached_hookup_dict
 
         if use_cache:
-            hpn = cm_utils.listify(hpn)
-            if self.requested_list_OK_for_cache(hpn):
+            hpn, exact_match = self.proc_hpnlist(hpn, exact_match)
+            if self._requested_list_OK_for_cache(hpn):
                 self.read_hookup_cache_from_file()
                 return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
 
