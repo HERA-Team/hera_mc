@@ -118,6 +118,29 @@ class Hookup(object):
                 found_dict[key] = copy.copy(search_dict[key])
         return(found_dict)
 
+    def proc_hpnlist(self, hpn_request):
+        """
+        This processes the hpn request list.  If the list member is of the
+        form ':xxx.a;b;c' it will call the sysdef.xxx module with [a, b, c]
+        as the argument.
+
+        Parameters
+        ----------
+        """
+        hpn_proc = []
+        for hpn in cm_utils.listify(hpn_request):
+            if hpn.startswith(':'):
+                metharg = hpn[1:].split('.')
+                sysdef_method = metharg[0]
+                sysdef_arg = []
+                if len(metharg) > 1:
+                    sysdef_arg = metharg[1].split(';')
+                y = getattr(self.sysdef, sysdef_method)(sysdef_arg)
+                hpn_proc += y
+            else:
+                hpn_proc.append(hpn)
+        return hpn_proc
+
     def get_hookup_from_db(self, hpn, pol, at_date, exact_match=False, hookup_type=None):
         """
         Get the hookup dict from the database for the supplied match parameters.
@@ -131,6 +154,7 @@ class Hookup(object):
         -----------
         hpn : str, list
             List/string of input hera part number(s) (whole or first part thereof)
+            Can include a cm_sysdef method via e.g. :xxx.a;b;c
         pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all')
         at_date :  str, int
@@ -154,7 +178,7 @@ class Hookup(object):
         self.active = cm_active.ActiveData(self.session, at_date=at_date)
         self.active.load_parts(at_date=None)
         self.active.load_connections(at_date=None)
-        hpn = cm_utils.listify(hpn)
+        hpn = self.proc_hpnlist(hpn)
         parts = self._cull_dict(hpn, self.active.parts, exact_match)
         hookup_dict = {}
         for k, part in six.iteritems(parts):
@@ -332,6 +356,9 @@ class Hookup(object):
         hpn : str, list
             List/string of input hera part number(s) (whole or first part thereof)
                 - if string == 'cache' it returns the entire cache file
+                - if 'default', uses default station prefixes in cm_sysdef
+            If element of list is of format ':xxx.a;b;c' it finds the appropriate
+                method in cm_sysdef
         pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
         at_date :  str, int
@@ -356,12 +383,15 @@ class Hookup(object):
         self.at_date = at_date
         self.hookup_type = hookup_type
 
-        if isinstance(hpn, six.string_types) and hpn.lower() == 'cache':
-            self.read_hookup_cache_from_file()
-            return self.cached_hookup_dict
+        if isinstance(hpn, six.string_types):
+            if hpn.lower() == 'cache':
+                self.read_hookup_cache_from_file()
+                return self.cached_hookup_dict
+            elif hpn == 'default':
+                hpn = cm_sysdef.hera_zone_prefixes
 
-        hpn = cm_utils.listify(hpn)
         if use_cache:
+            hpn = cm_utils.listify(hpn)
             if self.requested_list_OK_for_cache(hpn):
                 self.read_hookup_cache_from_file()
                 return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)

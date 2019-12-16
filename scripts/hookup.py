@@ -71,10 +71,6 @@ if __name__ == '__main__':
     # Pre-process the args
     at_date = cm_utils.get_astropytime(args.date, args.time)
     args.hookup_cols = cm_utils.listify(args.hookup_cols)
-    if args.hpn == 'default':
-        args.hpn = cm_sysdef.hera_zone_prefixes
-    else:
-        args.hpn = cm_utils.listify(args.hpn)
     state = 'all' if args.all else 'full'
     if args.file is None:
         output_format = 'display'
