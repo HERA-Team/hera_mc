@@ -242,7 +242,7 @@ def test_ingest_metrics_file(mcsession):
     # Create obs to satifsy foreign key constraints
     test_session.add_obs(t1, t2, obsid)
     test_session.commit()
-    filename = os.path.join(mc.test_data_path, 'example_firstcal_metrics.json')
+    filename = os.path.join(mc.test_data_path, 'example_firstcal_metrics.hdf5')
     filebase = os.path.basename(filename)
     pytest.raises(ValueError, test_session.ingest_metrics_file,
                   filename, 'firstcal')
