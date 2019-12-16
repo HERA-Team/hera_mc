@@ -185,6 +185,8 @@ class Hookup(object):
             Hookup dictionary generated in self.get_hookup
         cols_to_show : list, str
             list of columns to include in hookup listing
+        state : str
+            String designating whether to show the full hookups only, or all
         ports : bool
             Flag to include ports or not
         revs : bool
@@ -193,8 +195,6 @@ class Hookup(object):
             Columns to sort the listed hookup.  None uses the keys.  str is a csv-list
             List items may have an argument separated by ':' for 'N'umber'P'refix'R'ev
             order (see cm_utils.put_keys_in_order).  Not included uses 'NRP'
-        state : str
-            String designating whether to show the full hookups only, or all
         filename : str or None
             File name to use, None goes to stdout.  The file that gets written is
             in all cases an "ascii" file
@@ -211,10 +211,10 @@ class Hookup(object):
 
         """
         show = {'ports': ports, 'revs': revs}
-        headers = self.make_header_row(hookup_dict, cols_to_show)
+        headers = self._make_header_row(hookup_dict, cols_to_show)
         table_data = []
         total_shown = 0
-        sorted_hukeys = self.sort_hookup_display(sortby, hookup_dict, def_sort_order='NRP')
+        sorted_hukeys = self._sort_hookup_display(sortby, hookup_dict, def_sort_order='NRP')
         for hukey in sorted_hukeys:
             for pol in cm_utils.put_keys_in_order(hookup_dict[hukey].hookup.keys(),
                                                   sort_order='PNR'):
@@ -247,64 +247,6 @@ class Hookup(object):
             with open(filename, 'w') as fp:
                 print(table, file=fp)
         return table
-
-    def sort_hookup_display(self, sortby, hookup_dict, def_sort_order='NRP'):
-        if sortby is None:
-            return cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR')
-        if isinstance(sortby, str):
-            sortby = sortby.split(',')
-        sort_order_dict = {}
-        for stmp in sortby:
-            ss = stmp.split(':')
-            if len(ss) == 1:
-                ss.append(def_sort_order)
-            sort_order_dict[ss[0]] = ss[1]
-        key_bucket = {}
-        show = {'revs': True, 'ports': False}
-        for this_key, this_hu in hookup_dict.items():
-            pk = list(this_hu.hookup.keys())[0]
-            this_entry = this_hu.table_entry_row(pk, sortby, self.part_type_cache, show)
-            ekey = []
-            for eee in [cm_utils.peel_key(x, sort_order_dict[sortby[i]])
-                        for i, x in enumerate(this_entry)]:
-                ekey += eee
-            key_bucket[tuple(ekey)] = this_key
-        sorted_keys = []
-        for _k, _v in sorted(key_bucket.items()):
-            sorted_keys.append(_v)
-        return sorted_keys
-
-    def make_header_row(self, hookup_dict, cols_to_show):
-        """
-        Generates the appropriate header row for the displayed hookup.
-
-        Parameters
-        ----------
-        hookup_dict : dict
-            Hookup dictionary generated in self.get_hookup
-        cols_to_show : list, str
-            list of columns to include in hookup listing
-
-        Returns
-        -------
-        list
-            List of header titles.
-        """
-        col_list = []
-        for h in hookup_dict.values():
-            for cols in h.columns.values():
-                if len(cols) > len(col_list):
-                    col_list = copy.copy(cols)
-        if isinstance(cols_to_show, six.string_types):
-            cols_to_show = [cols_to_show]
-        if cols_to_show[0].lower() == 'all':
-            return col_list
-        headers = []
-        cols_to_show = [x.lower() for x in cols_to_show]
-        for col in col_list:
-            if col.lower() in cols_to_show:
-                headers.append(col)
-        return headers
 
     # ##################################### Notes ############################################
     def get_notes(self, hookup_dict, state='all'):
@@ -607,6 +549,64 @@ class Hookup(object):
         for p in sysdef_options:
             if p[0] == current.pol[0]:
                 return p
+
+    def _sort_hookup_display(self, sortby, hookup_dict, def_sort_order='NRP'):
+        if sortby is None:
+            return cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR')
+        if isinstance(sortby, str):
+            sortby = sortby.split(',')
+        sort_order_dict = {}
+        for stmp in sortby:
+            ss = stmp.split(':')
+            if len(ss) == 1:
+                ss.append(def_sort_order)
+            sort_order_dict[ss[0]] = ss[1]
+        key_bucket = {}
+        show = {'revs': True, 'ports': False}
+        for this_key, this_hu in hookup_dict.items():
+            pk = list(this_hu.hookup.keys())[0]
+            this_entry = this_hu.table_entry_row(pk, sortby, self.part_type_cache, show)
+            ekey = []
+            for eee in [cm_utils.peel_key(x, sort_order_dict[sortby[i]])
+                        for i, x in enumerate(this_entry)]:
+                ekey += eee
+            key_bucket[tuple(ekey)] = this_key
+        sorted_keys = []
+        for _k, _v in sorted(key_bucket.items()):
+            sorted_keys.append(_v)
+        return sorted_keys
+
+    def _make_header_row(self, hookup_dict, cols_to_show):
+        """
+        Generates the appropriate header row for the displayed hookup.
+
+        Parameters
+        ----------
+        hookup_dict : dict
+            Hookup dictionary generated in self.get_hookup
+        cols_to_show : list, str
+            list of columns to include in hookup listing
+
+        Returns
+        -------
+        list
+            List of header titles.
+        """
+        col_list = []
+        for h in hookup_dict.values():
+            for cols in h.columns.values():
+                if len(cols) > len(col_list):
+                    col_list = copy.copy(cols)
+        if isinstance(cols_to_show, six.string_types):
+            cols_to_show = [cols_to_show]
+        if cols_to_show[0].lower() == 'all':
+            return col_list
+        headers = []
+        cols_to_show = [x.lower() for x in cols_to_show]
+        for col in col_list:
+            if col.lower() in cols_to_show:
+                headers.append(col)
+        return headers
 
     # ############################### Cache file methods #####################################
     def write_hookup_cache_to_file(self, log_msg='Write.'):
