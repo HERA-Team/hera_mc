@@ -47,6 +47,8 @@ if __name__ == '__main__':
                         help="output filename, if desired.  Tags are '.txt', "
                         "'.html', '.csv' to set type.",
                         default=None)
+    parser.add_argument('--sortby', help="Part-type column order to sort display.  (csv-list)",
+                        default=None)
     # Cache options
     parser.add_argument('--use-cache', dest='use_cache',
                         help="Force cache use (but doesn't rewrite cache)",
@@ -93,7 +95,7 @@ if __name__ == '__main__':
                                         exact_match=args.exact_match, use_cache=args.use_cache,
                                         hookup_type=args.hookup_type)
         show = hookup.show_hookup(hookup_dict=hookup_dict, cols_to_show=args.hookup_cols,
-                                  ports=args.ports, revs=args.revs, state=state,
+                                  ports=args.ports, revs=args.revs, sortby=args.sortby, state=state,
                                   filename=args.file, output_format=output_format)
         if output_format == 'display':
             print(show)
