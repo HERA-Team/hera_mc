@@ -65,7 +65,7 @@ class Hookup(object):
                 - 'cache' returns the entire cache file
                 - 'default' uses default station prefixes in cm_sysdef
                 - otherwise converts as csv-list
-            If element of list is of format ':xxx.a;b;c' it finds the appropriate
+            If element of list is of format '.xxx:a/b/c' it finds the appropriate
                 method as cm_sysdef.Sysdef.xxx([a, b, c])
         pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
@@ -122,7 +122,7 @@ class Hookup(object):
                 - 'cache' returns the entire cache file
                 - 'default' uses default station prefixes in cm_sysdef
                 - otherwise converts as csv-list
-            If element of list is of format ':xxx.a;b;c' it finds the appropriate
+            If element of list is of format '.xxx:a/b/c' it finds the appropriate
                 method as cm_sysdef.Sysdef.xxx([a, b, c])
         pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all')
@@ -395,7 +395,7 @@ class Hookup(object):
     def _proc_hpnlist(self, hpn_request, exact_match):
         """
         This processes the hpn request list.  If the list member is of the
-        form ':xxx.a;b;c' it will call the cm_sysdef.xxx module with [a, b, c]
+        form ':xxx.a/b/c' it will call the cm_sysdef.xxx module with [a, b, c]
         as the argument.  If an ':xxx method' is found, it sets exact_match
         to True
 
@@ -406,7 +406,7 @@ class Hookup(object):
             If string
                 - 'default' uses default station prefixes in cm_sysdef
                 - otherwise converts as csv-list
-            If element of list is of format ':xxx.a;b;c' it finds the appropriate
+            If element of list is of format '.xxx:a/b/c' it finds the appropriate
                 method as cm_sysdef.Sysdef.xxx([a, b, c])
         exact_match : bool
             If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
@@ -423,13 +423,13 @@ class Hookup(object):
         if isinstance(hpn_request, six.string_types) and hpn_request.lower() == 'default':
             return cm_sysdef.hera_zone_prefixes, False
         for hpn in cm_utils.listify(hpn_request):
-            if hpn.startswith(':'):
+            if hpn.startswith('.'):
                 exact_match = True
-                metharg = hpn[1:].split('.')
-                sysdef_method = metharg[0]
+                marg = hpn[1:].split(':')
+                sysdef_method = marg[0]
                 sysdef_arg = []
-                if len(metharg) > 1:
-                    sysdef_arg = metharg[1].split(';')
+                if len(marg) > 1:
+                    sysdef_arg = marg[1].split('/')
                 y = getattr(self.sysdef, sysdef_method)(sysdef_arg)
                 hpn_proc += y
             else:
