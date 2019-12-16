@@ -226,7 +226,7 @@ class Handling:
 
         for loop_hpn, loop_rev in hpn_list:
             if loop_rev is None:
-                loop_rev = active.revs(loop_hpn)
+                loop_rev = [x.rev for x in active.revs(loop_hpn)]
             elif isinstance(loop_rev, str):
                 loop_rev = [x.strip().upper() for x in loop_rev.split(',')]
             for rev in loop_rev:
