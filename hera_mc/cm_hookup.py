@@ -68,17 +68,18 @@ class Hookup(object):
             If element of list is of format '.xxx:a/b/c' it finds the appropriate
                 method as cm_sysdef.Sysdef.xxx([a, b, c])
         pol : str
-            A port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
+            A port polarization to follow, or 'all',  ('e', 'n', 'all') Default is 'all'.
         at_date :  str, int
-            Date for query.  Anything intelligible to cm_utils.get_astropytime
+            Date for query.  Anything intelligible to cm_utils.get_astropytime. Default
+            is 'now'
         exact_match : bool
             If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
-            would allow 'HH1', 'HH10', 'HH123', etc
+            would allow 'HH1', 'HH10', 'HH123', etc.  Default is False
         use_cache : bool
             Flag to force the cache to be read, if present and keys agree.  This is largely
-            deprecated, but kept for archival possibilities for the future.
+            deprecated, but kept for archival possibilities for the future. Default is False
         hookup_type : str or None
-            Type of hookup to use (current observing system is 'parts_hera').
+            Type of hookup to use.  Default is 'parts_hera'.
             If 'None' it will determine which system it thinks it is based on
             the part-type.  The order in which it checks is specified in cm_sysdef.
             Only change if you know you want a different system (like 'parts_paper').
