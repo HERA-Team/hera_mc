@@ -39,6 +39,15 @@ def test_random_update(sys_handle):
     si.update_arrays(None)
 
 
+def test_sys_method(mcsession):
+    hookup = cm_hookup.Hookup(session=mcsession)
+    hu = hookup.get_hookup('.node:3/4')
+    assert len(hu.keys()) == 0
+    sysu = cm_sysdef.Sysdef()
+    nd = sysu.node([0])
+    assert nd[0] == 'HH0'
+
+
 def test_other_hookup(sys_handle, mcsession, capsys):
     hookup = cm_hookup.Hookup(session=mcsession)
     assert hookup.cached_hookup_dict is None
