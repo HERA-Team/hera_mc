@@ -68,7 +68,7 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     hufc = hookup.get_hookup_from_db(['N700'], 'e', at_date='now')
     assert len(hufc.keys()) == 3
     assert hookup.hookup_type, 'parts_hera'
-    gptf = hookup.get_part_types_found([])
+    gptf = hookup._get_part_types_found([])
     assert len(gptf) == 0
 
 
