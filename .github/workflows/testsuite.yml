@@ -65,8 +65,8 @@ jobs:
           REDIS_HOST: redishost
         ports:
         - 6379:6379
-        options: --entrypoint redis-server --network-alias $REDIS_HOST --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-        
+        options: --entrypoint redis-server --network-alias $REDIS_HOST -v /home/runner/work/hera_mc/hera_mc/hera_mc/data:/data
+
     steps:
       - uses: actions/checkout@master
         with:
@@ -106,6 +106,7 @@ jobs:
         run: |
           export PATH="$HOME/miniconda/bin:$PATH"
           source activate $ENV_NAME
+          pwd -P
           python -m pytest --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
