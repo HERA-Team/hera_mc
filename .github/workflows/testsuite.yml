@@ -103,13 +103,17 @@ jobs:
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
       - name: Initialize Redis
-      # Grab the name of the redis container with bash magic
+        # Grab the name of the redis container with bash magic
+        # stop the conatiner, replace the dump file with our save file
+        # add the IP to the hosts file to preserve some hardcoded defaults
         run: |
           DOCKER_NAME=`/usr/bin/docker ps -a --filter="name=redis" | awk '{print $11}' | tail -n 1`
           /usr/bin/docker stop $DOCKER_NAME
           sudo rm /data/dump.rdb
           sudo cp hera_mc/data/test_data/dump.rdb /data
           /usr/bin/docker start $DOCKER_NAME
+          DOCKER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $DOCKER_NAME`
+          echo "$DOCKER_IP redishost" | sudo tee -a /etc/hosts
       - name: Run Tests
         run: |
           export PATH="$HOME/miniconda/bin:$PATH"
