@@ -22,11 +22,9 @@ def is_onsite():
         import redis
         r = redis.Redis()
         hera_redis = len([k for k in r.keys() if 'hera' in k.decode()]) > 0
-        return (socket.gethostname() == 'qmaster') or hera_redis
     except:  # noqa
         hera_redis = False
-        print('Could not make redis connection')
-        raise
+    return (socket.gethostname() == 'qmaster') or hera_redis
 
 
 onsite = pytest.mark.skipif(not is_onsite(),
