@@ -2,12 +2,11 @@ name: tests
 channels:
   - defaults
   - conda-forge
-  - plotly
 dependencies:
   - alembic
   - astropy
   - cartopy
-  - chart-studio
+  - plotly::chart-studio
   - h5py
   - matplotlib
   - numpy
@@ -23,5 +22,7 @@ dependencies:
   - six
   - sqlalchemy
   - tabulate
+  - redis-py
+  - pyyaml
   - pip:
       - git+https://github.com/HERA-Team/hera_qm.git
