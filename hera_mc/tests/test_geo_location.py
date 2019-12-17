@@ -112,16 +112,19 @@ def test_plotting(geo_handle):
     geo_handle.plot_all_stations()
 
 
-def test_antenna_label(geo_handle):
+@pytest.mark.parametrize(
+    ('label_type, val'), [
+        ('name', 'HH700'),
+        ('num', '700'),
+        ('ser', '700')
+    ]
+)
+def test_antenna_label(geo_handle, label_type, val):
     stations_to_plot = ['HH700']
     query_date = Time('2019-09-20 01:00:00', scale='utc')
     stations = geo_handle.get_location(stations_to_plot, query_date)
-    x = geo_handle.get_antenna_label('name', stations[0], query_date)
-    assert x == 'HH700'
-    x = geo_handle.get_antenna_label('num', stations[0], query_date)
-    assert x == '700'
-    x = geo_handle.get_antenna_label('ser', stations[0], query_date)
-    assert x == '700'
+    x = geo_handle.get_antenna_label(label_type, stations[0], query_date)
+    assert x == val
 
 
 def test_geo_handling(geo_handle):
