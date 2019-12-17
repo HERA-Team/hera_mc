@@ -110,14 +110,6 @@ jobs:
           sudo rm /data/dump.rdb
           sudo cp hera_mc/data/test_data/dump.rdb /data
           /usr/bin/docker start $DOCKER_NAME
-      - name: Debugging stuff
-        if: failure()
-        run: |
-          /usr/bin/docker ps -a
-          pwd -P
-          ls .
-          echo "/data"
-          ls /data
       - name: Run Tests
         run: |
           export PATH="$HOME/miniconda/bin:$PATH"
