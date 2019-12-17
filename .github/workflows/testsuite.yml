@@ -105,11 +105,11 @@ jobs:
       - name: Initialize Redis
       # Grab the name of the redis container with bash magic
         run: |
-          DOCKER_NAME=`docker ps -a --filter="name=redis" | awk '{print $8}' | tail -n 1`
-          docker stop $DOCKER_NAME
+          DOCKER_NAME=`/usr/bin/docker ps -a --filter="name=redis" | awk '{print $8}' | tail -n 1`
+          /usr/bin/docker stop $DOCKER_NAME
           sudo rm /data/dump.rdb
           sudo cp hera_mc/data/test_data/dump.rdb /data
-          docker start $DOCKER_NAME
+          /usr/bin/docker start $DOCKER_NAME
       - name: Debugging stuff
         if: failure()
         run: |
