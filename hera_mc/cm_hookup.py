@@ -267,7 +267,8 @@ class Hookup(object):
         """
         if self.active is None:
             self.active = cm_active.ActiveData(self.session, at_date=self.at_date)
-        self.active.load_info(self.at_date)
+        if self.active.info is None:
+            self.active.load_info(self.at_date)
         info_keys = list(self.active.info.keys())
         hu_notes = {}
         for hkey in hookup_dict.keys():

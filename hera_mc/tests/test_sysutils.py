@@ -39,13 +39,28 @@ def test_random_update(sys_handle):
     si.update_arrays(None)
 
 
-def test_sys_method(mcsession):
+def test_sys_method_notes(mcsession):
     hookup = cm_hookup.Hookup(session=mcsession)
     hu = hookup.get_hookup('.node:3/4')
     assert len(hu.keys()) == 0
     sysu = cm_sysdef.Sysdef()
     nd = sysu.node([0])
     assert nd[0] == 'HH0'
+    hu = hookup.get_hookup('HH700')
+    hu['HH700:A'].hookup['E<ground'] = []
+    x = hookup.show_hookup(hu)
+    assert x is None
+    hookup.active.load_info()
+    hookup.active.info['HH700:A'] = [cm_partconnect.PartInfo(hpn='HH700', hpn_rev='A',
+                                                             comment='Comment3',
+                                                             posting_gpstime=1232532198)]
+    x = hookup.show_notes(hu)
+    assert x.splitlines()[1].strip().startswith('HH700:A')
+    hookup.active = None
+    notes = hookup.get_notes(hu)
+    assert list(notes.keys())[0] == 'HH700:A'
+    prf = hookup._proc_hpnlist('default', True)
+    assert prf[0][1] == 'HA'
 
 
 def test_other_hookup(sys_handle, mcsession, capsys):
@@ -79,6 +94,11 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     assert hookup.hookup_type, 'parts_hera'
     gptf = hookup._get_part_types_found([])
     assert len(gptf) == 0
+    x = hookup._get_port(Namespace(port=None), 'A')
+    assert x is None
+    hookup.hookup_list_to_cache = ['A1']
+    x = hookup._requested_list_OK_for_cache(['B1'])
+    assert x is False
 
 
 def test_hookup_notes(mcsession, capsys):
