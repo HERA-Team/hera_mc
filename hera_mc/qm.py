@@ -191,7 +191,7 @@ class NodeMetrics(MCDeclarativeBase):
     mc_time:    time metric is reported to M&C in floor(gps seconds) (BigInteger)
     val:        Value of metric (double)
     """
-    __tablename__ = 'ant_metrics'
+    __tablename__ = 'node_metrics'
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
     ant = Column(Integer, primary_key=True)
     pol = Column(String, primary_key=True)
@@ -202,21 +202,17 @@ class NodeMetrics(MCDeclarativeBase):
     # tolerances set to 1ms
     tols = {'mc_time': DEFAULT_GPS_TOL}
 
-    @hybrid_property
-    def antpol(self):
-        return (self.ant, self.pol)
-
     @classmethod
     def create(cls, obsid, ant, pol, metric, db_time, val):
         """
-        Create a new ant_metric object using Astropy to compute the LST.
+        Create a new node_metric object using Astropy to compute the LST.
 
         Parameters:
         ------------
         obsid: long integer
             observation identification number.
-        ant: integer
-            antenna number
+        node: integer
+            node number
         pol: string ('x', 'y', 'n', or 'e')
             polarization
         metric: string
@@ -230,15 +226,15 @@ class NodeMetrics(MCDeclarativeBase):
 
         if not isinstance(obsid, six.integer_types):
             raise ValueError('obsid must be an integer.')
-        if not isinstance(ant, six.integer_types):
-            raise ValueError('antenna must be an integer.')
+        if not isinstance(node, six.integer_types):
+            raise ValueError('node must be an integer.')
         try:
             pol = str(pol)
         except ValueError:
-            raise ValueError('pol must be string "x", "y", "n", or "e".')
+            raise ValueError('pol must be string "xx" or "yy")
         pol = pol.lower()
-        if pol not in ('x', 'y', 'n', 'e'):
-            raise ValueError('pol must be string "x", "y", "n", or "e".')
+        if pol not in ('xx', 'yy'):
+            raise ValueError('pol must be string "xx" or "yy")
         if not isinstance(metric, six.string_types):
             raise ValueError('metric must be string.')
         if not isinstance(db_time, Time):
