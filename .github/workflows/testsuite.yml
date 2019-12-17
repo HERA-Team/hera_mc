@@ -105,6 +105,7 @@ jobs:
       - name: Initialize Redis
       # Grab the name of the redis container with bash magic
         run: |
+          /usr/bin/docker ps -a
           DOCKER_NAME=`/usr/bin/docker ps -a --filter="name=redis" | awk '{print $8}' | tail -n 1`
           /usr/bin/docker stop $DOCKER_NAME
           sudo rm /data/dump.rdb
