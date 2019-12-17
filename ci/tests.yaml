@@ -25,7 +25,6 @@ dependencies:
   - pyyaml
   - redis-py
   - pip:
-      - katportalclient
       - git+https://github.com/HERA-Team/hera_qm.git
       - git+https://github.com/HERA-Team/hera_corr_cm.git
       - git+https://github.com/HERA-Team/hera_node_mc.git
