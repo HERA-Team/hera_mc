@@ -65,7 +65,7 @@ jobs:
           REDIS_HOST: redishost
         ports:
         - 6379:6379
-        options: --entrypoint redis-server --network-alias $REDIS_HOST -v /home/runner/work/hera_mc/hera_mc/hera_mc/data:/data
+        options: --entrypoint redis-server --network-alias $REDIS_HOST -v /data:/data
 
     steps:
       - uses: actions/checkout@master
@@ -102,11 +102,25 @@ jobs:
           alembic upgrade head
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+      - name: Initialize Redis
+      # Grab the name of the redis container with bash magic
+        run: |
+          DOCKER_NAME=`docker ps -a --filter="name=redis" | awk '{print $8}' | tail -n 1`
+          docker stop $DOCKER_NAME
+          sudo rm /data/dump.rdb
+          sudo cp hera_mc/data/test_data/dump.rdb /data
+          docker start $DOCKER_NAME
+      - name: Debugging stuff
+        if: failure()
+        run: |
+          pwd -P
+          ls .
+          echo "/data"
+          ls /data
       - name: Run Tests
         run: |
           export PATH="$HOME/miniconda/bin:$PATH"
           source activate $ENV_NAME
-          pwd -P
           python -m pytest --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
