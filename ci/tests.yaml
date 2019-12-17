@@ -26,3 +26,4 @@ dependencies:
   - redis-py
   - pip:
       - git+https://github.com/HERA-Team/hera_qm.git
+      - git+https://github.com/HERA-Team/hera_corr_cm.git
