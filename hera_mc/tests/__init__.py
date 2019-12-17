@@ -22,7 +22,7 @@ def is_onsite():
         import redis
         r = redis.Redis()
         hera_redis = len([k for k in r.keys() if 'hera' in k.decode()]) > 0
-    except:
+    except:  # noqa
         hera_redis = False
     return (socket.gethostname() == 'qmaster') or hera_redis
 
