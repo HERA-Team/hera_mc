@@ -193,7 +193,7 @@ class Handling:
         query_date = cm_utils.get_astropytime(query_date)
         connected_antenna = self.session.query(cm_partconnect.Connections).filter(
             (func.upper(cm_partconnect.Connections.upstream_part) == station.upper())
-            & (query_date.gps >= cm_partconnect.Connections.start_gpstime))
+            & (cm_partconnect.Connections.start_gpstime <= query_date.gps))
         antenna_connected = []
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
@@ -234,7 +234,7 @@ class Handling:
             antenna = 'A' + antenna
         connected_antenna = self.session.query(cm_partconnect.Connections).filter(
             (func.upper(cm_partconnect.Connections.downstream_part) == antenna.upper())
-            & (query_date.gps >= cm_partconnect.Connections.start_gpstime))
+            & (cm_partconnect.Connections.start_gpstime <= query_date.gps))
         ctr = 0
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:

@@ -74,8 +74,9 @@ class Handling:
         at_date = cm_utils.get_astropytime(at_date)
 
         # get last row before at_date
-        result = self.session.query(CMVersion).filter(CMVersion.update_time < at_date.gps).order_by(
-            desc(CMVersion.update_time)).limit(1).all()
+        result = (self.session.query(CMVersion).filter(CMVersion.update_time <= at_date.gps)
+                  .order_by(desc(CMVersion.update_time)).limit(1).all()
+                  )
         return result[0].git_hash
 
     def get_part_type_for(self, hpn):
