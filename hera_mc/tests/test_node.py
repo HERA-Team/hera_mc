@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 
 from .. import node
-from ..tests import onsite
+from ..tests import requires_redis
 from hera_mc.data import DATA_PATH
 
 
@@ -469,7 +469,7 @@ def test_sensor_reading_errors(mcsession, sensor):
     assert str(cm.value).startswith('time must be an astropy Time object')
 
 
-@onsite
+@requires_redis
 def test_add_node_sensor_readings_from_nodecontrol(mcsession):
     test_session = mcsession
 
@@ -607,7 +607,7 @@ def test_node_power_status_errors(mcsession, power):
                   snap2_powered, snap3_powered, fem_powered, pam_powered)
 
 
-@onsite
+@requires_redis
 def test_add_node_power_status_from_nodecontrol(mcsession):
     test_session = mcsession
 
@@ -891,7 +891,7 @@ def test_white_rabbit_status_errors(mcsession, white_rabbit_status_cleaned, key)
     assert str(cm.value).startswith(key + ' must be an astropy Time object')
 
 
-@onsite
+@requires_redis
 def test_add_white_rabbit_status_from_nodecontrol(mcsession):
     test_session = mcsession
 

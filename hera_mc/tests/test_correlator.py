@@ -20,7 +20,7 @@ from astropy.time import Time, TimeDelta
 from hera_mc import mc, cm_partconnect
 import hera_mc.correlator as corr
 from hera_mc.data import DATA_PATH
-from ..tests import onsite, checkWarnings
+from ..tests import onsite, checkWarnings, requires_redis
 
 
 @pytest.fixture(scope='module')
@@ -425,7 +425,7 @@ def test_control_state_errors(mcsession):
                   corr_state_dict=bad_corr_state_dict, testing=True)
 
 
-@onsite
+@requires_redis
 def test_add_corr_control_state_from_corrcm(mcsession):
     test_session = mcsession
 
@@ -590,7 +590,7 @@ def test_config_errors(mcsession):
                   'foo', 'testhash')
 
 
-@onsite
+@requires_redis
 def test_add_correlator_config_from_corrcm_onsite(mcsession):
     test_session = mcsession
 
@@ -841,7 +841,7 @@ def test_control_command_errors_other():
                   'engineering')
 
 
-@onsite
+@requires_redis
 def test_get_integration_time():
     n_spectra = 147456
     int_time = corr._get_integration_time(n_spectra)
@@ -849,7 +849,7 @@ def test_get_integration_time():
     assert int_time > 0
 
 
-@onsite
+@requires_redis
 def test_get_next_start_time():
     corr._get_next_start_time()
 
@@ -1574,7 +1574,7 @@ def test_get_snap_hostname_from_serial(mcsession, snapstatus):
     assert hostname is None
 
 
-@onsite
+@requires_redis
 def test_site_add_snap_status_from_corrcm(mcsession):
     test_session = mcsession
 
@@ -1915,7 +1915,7 @@ def test_antenna_status_errors(mcsession):
                   histogram_bins, histogram)
 
 
-@onsite
+@requires_redis
 def test_site_add_antenna_status_from_corrcm(mcsession):
     test_session = mcsession
 
