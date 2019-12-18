@@ -339,3 +339,9 @@ def test_apriori_update_after_stopped(sys_handle, mcsession, capsys):
             'HH700', "RF_ok", '1214482838', session=mcsession
         )
     assert str(cm.value).startswith("Stop time must be None to update AprioriAntenna")
+
+
+def test_apriori_repr(capsys):
+    print(cm_partconnect.AprioriAntenna())
+    captured = capsys.readouterr()
+    assert '<None:' in captured.out.strip()
