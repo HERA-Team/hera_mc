@@ -65,7 +65,7 @@ jobs:
           REDIS_HOST: redishost
         ports:
         - 6379:6379
-        options: --entrypoint redis-server --network-alias $REDIS_HOST -v /data:/data --health-cmd redis_cli ping --health-interval 10s --health-timeout 5s --health-retries 5
+        options: --entrypoint redis-server --network-alias $REDIS_HOST -v /data:/data --health-cmd "redis_cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
       - uses: actions/checkout@master
@@ -107,7 +107,7 @@ jobs:
         # stop the conatiner, replace the dump file with our save file
         # add the IP to the hosts file to preserve some hardcoded defaults
         run: |
-          DOCKER_NAME=`/usr/bin/docker ps -a --filter="name=redis" | awk '{print $11}' | tail -n 1`
+          DOCKER_NAME=`/usr/bin/docker ps -a --filter="ancestor=redis" --format='{{.Names}}'`
           /usr/bin/docker stop $DOCKER_NAME
           sudo rm /data/dump.rdb
           sudo cp hera_mc/data/test_data/dump.rdb /data
