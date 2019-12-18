@@ -68,7 +68,7 @@ with db.sessionmaker() as dbsession:
                     ants.append(ant)
                     pols.append(pols)
             ants = np.unique(ants)
-            pols = np.unique(ants)
+            pols = np.unique(pols)
 
             # We put an identical timestamp for all records. The records from the
             # redis server also include timestamps (as JDs), but I think it's actually
