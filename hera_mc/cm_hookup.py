@@ -48,6 +48,73 @@ class Hookup(object):
         self.sysdef = cm_sysdef.Sysdef()
         self.active = None
 
+    def get_hookup_from_db(self, hpn, pol, at_date, exact_match=False, hookup_type=None):
+        """
+        Get the hookup dict from the database for the supplied match parameters.
+
+        This gets called by the get_hookup wrapper if the database needs to be
+        read (for instance, to generate a cache file, or search for parts
+        different than those keyed on in the cache file.)  It will look over
+        all active revisions.
+
+        Parameters
+        -----------
+        hpn : str, list
+            List/string of input hera part number(s) (whole or 'startswith')
+            If string
+                - 'default' uses default station prefixes in cm_sysdef
+                - otherwise converts as csv-list
+            If element of list is of format '.xxx:a/b/c' it finds the appropriate
+                method as cm_sysdef.Sysdef.xxx([a, b, c])
+        pol : str
+            A port polarization to follow, or 'all',  ('e', 'n', 'all')
+        at_date :  str, int
+            Date for query.  Anything intelligible to cm_utils.get_astropytime
+        exact_match : bool
+            If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
+            would allow 'HH1', 'HH10', 'HH123', etc
+        hookup_type : str or None
+            Type of hookup to use (current observing system is 'parts_hera').
+            If 'None' it will determine which system it thinks it is based on
+            the part-type.  The order in which it checks is specified in cm_sysdef.
+            Only change if you know you want a different system (like 'parts_paper').
+
+        Returns
+        -------
+        dict
+            Hookup dossier dictionary as defined in cm_dossier
+        """
+        # Reset at_date
+        at_date = cm_utils.get_astropytime(at_date)
+        self.at_date = at_date
+        self.active = cm_active.ActiveData(self.session, at_date=at_date)
+        self.active.load_parts(at_date=None)
+        self.active.load_connections(at_date=None)
+        hpn, exact_match = self._proc_hpnlist(hpn, exact_match)
+        parts = self._cull_dict(hpn, self.active.parts, exact_match)
+        hookup_dict = {}
+        for k, part in six.iteritems(parts):
+            self.hookup_type = self.sysdef.find_hookup_type(
+                part_type=part.hptype, hookup_type=hookup_type)
+            if part.hptype in self.sysdef.redirect_part_types[self.hookup_type]:
+                redirect_parts = self.sysdef.handle_redirect_part_types(part, self.active)
+                redirect_hookup_dict = self.get_hookup_from_db(
+                    hpn=redirect_parts, pol=pol, at_date=self.at_date,
+                    exact_match=True, hookup_type=self.hookup_type)
+                for rhdk, vhd in six.iteritems(redirect_hookup_dict):
+                    hookup_dict[rhdk] = vhd
+                redirect_hookup_dict = None
+                continue
+            self.sysdef.setup(part=part, pol=pol, hookup_type=self.hookup_type)
+            hookup_dict[k] = cm_dossier.HookupEntry(entry_key=k, sysdef=self.sysdef)
+            for port_pol in self.sysdef.ppkeys:
+                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(
+                    part=part.hpn, rev=part.hpn_rev, port_pol=port_pol)
+                part_types_found = self._get_part_types_found(hookup_dict[k].hookup[port_pol])
+                hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
+                hookup_dict[k].add_timing_and_fully_connected(port_pol)
+        return hookup_dict
+
     def get_hookup(self, hpn, pol='all', at_date='now', exact_match=False,
                    use_cache=False, hookup_type='parts_hera'):
         """
@@ -105,74 +172,6 @@ class Hookup(object):
 
         return self.get_hookup_from_db(hpn=hpn, pol=pol, at_date=at_date,
                                        exact_match=exact_match, hookup_type=hookup_type)
-
-    def get_hookup_from_db(self, hpn, pol, at_date, exact_match=False, hookup_type=None):
-        """
-        Get the hookup dict from the database for the supplied match parameters.
-
-        This gets called by the get_hookup wrapper if the database needs to be
-        read (for instance, to generate a cache file, or search for parts
-        different than those keyed on in the cache file.)  It will look over
-        all active revisions.
-
-        Parameters
-        -----------
-        hpn : str, list
-            List/string of input hera part number(s) (whole or 'startswith')
-            If string
-                - 'cache' returns the entire cache file
-                - 'default' uses default station prefixes in cm_sysdef
-                - otherwise converts as csv-list
-            If element of list is of format '.xxx:a/b/c' it finds the appropriate
-                method as cm_sysdef.Sysdef.xxx([a, b, c])
-        pol : str
-            A port polarization to follow, or 'all',  ('e', 'n', 'all')
-        at_date :  str, int
-            Date for query.  Anything intelligible to cm_utils.get_astropytime
-        exact_match : bool
-            If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
-            would allow 'HH1', 'HH10', 'HH123', etc
-        hookup_type : str or None
-            Type of hookup to use (current observing system is 'parts_hera').
-            If 'None' it will determine which system it thinks it is based on
-            the part-type.  The order in which it checks is specified in cm_sysdef.
-            Only change if you know you want a different system (like 'parts_paper').
-
-        Returns
-        -------
-        dict
-            Hookup dossier dictionary as defined in cm_dossier
-        """
-        # Reset at_date
-        at_date = cm_utils.get_astropytime(at_date)
-        self.at_date = at_date
-        self.active = cm_active.ActiveData(self.session, at_date=at_date)
-        self.active.load_parts(at_date=None)
-        self.active.load_connections(at_date=None)
-        hpn, exact_match = self._proc_hpnlist(hpn, exact_match)
-        parts = self._cull_dict(hpn, self.active.parts, exact_match)
-        hookup_dict = {}
-        for k, part in six.iteritems(parts):
-            self.hookup_type = self.sysdef.find_hookup_type(
-                part_type=part.hptype, hookup_type=hookup_type)
-            if part.hptype in self.sysdef.redirect_part_types[self.hookup_type]:
-                redirect_parts = self.sysdef.handle_redirect_part_types(part, self.active)
-                redirect_hookup_dict = self.get_hookup_from_db(
-                    hpn=redirect_parts, pol=pol, at_date=self.at_date,
-                    exact_match=True, hookup_type=self.hookup_type)
-                for rhdk, vhd in six.iteritems(redirect_hookup_dict):
-                    hookup_dict[rhdk] = vhd
-                redirect_hookup_dict = None
-                continue
-            self.sysdef.setup(part=part, pol=pol, hookup_type=self.hookup_type)
-            hookup_dict[k] = cm_dossier.HookupEntry(entry_key=k, sysdef=self.sysdef)
-            for port_pol in self.sysdef.ppkeys:
-                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(
-                    part=part.hpn, rev=part.hpn_rev, port_pol=port_pol)
-                part_types_found = self._get_part_types_found(hookup_dict[k].hookup[port_pol])
-                hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
-                hookup_dict[k].add_timing_and_fully_connected(port_pol)
-        return hookup_dict
 
     def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
                     sortby=None, filename=None, output_format='table'):

@@ -297,6 +297,20 @@ class Sysdef:
         return port_dict
 
     def node(self, node_nums):
+        """
+        Given a list of node_nums, returnes the associated antennas as per the
+        data file 'nodes.txt'
+
+        Parameters
+        ----------
+        node_nums : list
+            Integers of the desired node numbers.
+
+        Returns
+        -------
+        list
+            Strings of the antenna hpns within those nodes.
+        """
         from . import geo_sysdef
         node = geo_sysdef.read_nodes()
         ants = []

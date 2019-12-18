@@ -46,6 +46,14 @@ region = {'herahexw': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 
 
 def read_nodes():
+    """
+    Reads in the node information from nodes.txt.
+
+    Returns
+    -------
+    dict
+        Contains location and antenna list for all nodes.  Keyed on node number as int
+    """
     node_coord_file_name = os.path.join(mc.data_path, 'nodes.txt')
     default_elevation = 1050.0
     nodes = {}
@@ -62,6 +70,14 @@ def read_nodes():
 
 
 def read_antennas():
+    """
+    Reads in the antenna information from HERA_350.txt.
+
+    Returns
+    -------
+    dict
+        Contains location for all antennas.  Keyed on antenna hpn
+    """
     antenna_coord_file_name = os.path.join(mc.data_path, 'HERA_350.txt')
     antennas = {}
     with open(antenna_coord_file_name, 'r') as fp:
