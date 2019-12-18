@@ -65,7 +65,7 @@ jobs:
           REDIS_HOST: redishost
         ports:
         - 6379:6379
-        options: --entrypoint redis-server --network-alias $REDIS_HOST -v /data:/data --health-cmd "redis_cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+        options: --entrypoint redis-server --network-alias $REDIS_HOST -v /data:/data --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
       - uses: actions/checkout@master
