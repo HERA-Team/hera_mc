@@ -66,7 +66,7 @@ with db.sessionmaker() as dbsession:
                 if match is not None:
                     ant, pol = int(match.group("ant")), match.group("pol")
                     ants.append(ant)
-                    pols.append(pols)
+                    pols.append(pol)
             ants = np.unique(ants)
             pols = np.unique(pols)
 
