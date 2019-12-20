@@ -91,3 +91,7 @@ We are now regularly backing up the database to the Librarian and copying it to 
 Once you've downloaded the files, you can create the database (using postgres) like this:
 
 `pg_restore -cCOx  -d hera_mc  maint.20180213.karoo.mandc.dbbackup.pgdump`
+
+# Adding new features and testing
+
+`hera_mc` uses redis during testing to check that values read from redis in the live version can be correctly added to the databases and retrieved again. When adding new features which require data being read from redis, or through any hera correlator code, a new redis.rdb file must be created on `redishost` on site which contains an example of the new data and added to the repository by overwriting the existing redis.rdb in the `test_data` folder.
