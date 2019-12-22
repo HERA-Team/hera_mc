@@ -558,9 +558,10 @@ class Hookup(object):
         sort_order_dict = {}
         for stmp in sortby:
             ss = stmp.split(':')
-            if len(ss) == 1:
-                ss.append(def_sort_order)
-            sort_order_dict[ss[0]] = ss[1]
+            if ss[0] in self.col_list:
+                if len(ss) == 1:
+                    ss.append(def_sort_order)
+                sort_order_dict[ss[0]] = ss[1]
         if 'station' not in sort_order_dict.keys():
             sortby.append('station')
             sort_order_dict['station'] = 'NPR'
@@ -595,18 +596,18 @@ class Hookup(object):
         list
             List of header titles.
         """
-        col_list = []
+        self.col_list = []
         for h in hookup_dict.values():
             for cols in h.columns.values():
-                if len(cols) > len(col_list):
-                    col_list = copy.copy(cols)
+                if len(cols) > len(self.col_list):
+                    self.col_list = copy.copy(cols)
         if isinstance(cols_to_show, six.string_types):
-            cols_to_show = [cols_to_show]
-        if cols_to_show[0].lower() == 'all':
-            return col_list
-        headers = []
+            cols_to_show = cols_to_show.split(',')
         cols_to_show = [x.lower() for x in cols_to_show]
-        for col in col_list:
+        if 'all' in cols_to_show:
+            return self.col_list
+        headers = []
+        for col in self.col_list:
             if col.lower() in cols_to_show:
                 headers.append(col)
         return headers
