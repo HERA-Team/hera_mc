@@ -561,6 +561,9 @@ class Hookup(object):
             if len(ss) == 1:
                 ss.append(def_sort_order)
             sort_order_dict[ss[0]] = ss[1]
+        if 'station' not in sort_order_dict.keys():
+            sortby.append('station')
+            sort_order_dict['station'] = 'NPR'
         key_bucket = {}
         show = {'revs': True, 'ports': False}
         for this_key, this_hu in hookup_dict.items():
