@@ -23,8 +23,13 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create --name=tests
-  - conda env update -f ci/tests.yaml
+  - conda create --name=tests python="$TRAVIS_PYTHON_VERSION"
+  -  if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+       conda env update -f ci/tests_py2.yaml
+     else
+       conda env update -f ci/tests.yaml
+     fi
+  # - conda env update -f ci/tests.yaml
   - source activate tests
   - conda install flake8 coveralls  # because it's not in the tests.yaml
   - conda list

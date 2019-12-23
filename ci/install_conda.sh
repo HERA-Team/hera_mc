@@ -15,7 +15,13 @@ conda config --set always_yes yes --set changeps1 no
 conda update -q conda
 conda info -a
 conda create --name=${ENV_NAME}  python=$PYTHON --quiet
-conda env update -n ${ENV_NAME} -f ci/${ENV_NAME}.yaml
+
+if [[ $PYTHON == 2.7 ]]; then
+  conda env update -n ${ENV_NAME} -f ci/${ENV_NAME}_py2.yaml
+else
+  conda env update -n ${ENV_NAME} -f ci/${ENV_NAME}.yaml
+fi
+
 source activate ${ENV_NAME}
 conda list -n ${ENV_NAME}
 # check that the python version matches the desired one; exit immediately if not
