@@ -24,4 +24,4 @@ dependencies:
   - tabulate
   - pyyaml
   - pip:
-      - git+https://github.com/HERA-Team/hera_qm.git
+      - git+https://github.com/HERA-Team/hera_qm.git@hera_mc_support
