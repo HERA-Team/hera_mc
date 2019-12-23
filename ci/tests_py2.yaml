@@ -1,0 +1,28 @@
+name: tests
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=2.7
+  - alembic
+  - astropy
+  - cartopy
+  - plotly::chart-studio
+  - h5py
+  - matplotlib
+  - numpy
+  - pandas
+  - pip
+  - plotly
+  - psutil
+  - psycopg2
+  - pytest-cov
+  - python-dateutil
+  - pyuvdata
+  - scipy
+  - six
+  - sqlalchemy
+  - tabulate
+  - pyyaml
+  - pip:
+      - git+https://github.com/HERA-Team/hera_qm.git@v1.1
