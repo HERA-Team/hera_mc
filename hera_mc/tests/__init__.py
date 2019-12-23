@@ -17,6 +17,20 @@ import pytest
 from hera_mc.utils import get_iterable
 
 
+def redis_online():
+    try:
+        import redis
+        r = redis.Redis()
+        hera_redis = len([k for k in r.keys() if 'hera' in k.decode()]) > 0
+    except:  # noqa
+        hera_redis = False
+    return (socket.gethostname() == 'qmaster') or hera_redis
+
+
+requires_redis = pytest.mark.skipif(not redis_online(),
+                                    reason='This test requires a working redis database.')
+
+
 def is_onsite():
     return (socket.gethostname() == 'qmaster')
 
