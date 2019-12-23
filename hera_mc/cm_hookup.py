@@ -48,38 +48,286 @@ class Hookup(object):
         self.sysdef = cm_sysdef.Sysdef()
         self.active = None
 
-    def delete_cache_file(self):
+    def get_hookup_from_db(self, hpn, pol, at_date, exact_match=False, hookup_type=None):
         """
-        Deletes the local cached hookup file.
-        """
-        if os.path.exists(self.hookup_cache_file):
-            os.remove(self.hookup_cache_file)
+        Get the hookup dict from the database for the supplied match parameters.
 
-    def requested_list_OK_for_cache(self, hpn):
-        """
-        Checks that all hookup requests match the cached keys.
+        This gets called by the get_hookup wrapper if the database needs to be
+        read (for instance, to generate a cache file, or search for parts
+        different than those keyed on in the cache file.)  It will look over
+        all active revisions.
 
         Parameters
-        ----------
-        hpn : list
-            List of HERA part numbers being checked.
+        -----------
+        hpn : str, list
+            List/string of input hera part number(s) (whole or 'startswith')
+            If string
+                - 'default' uses default station prefixes in cm_sysdef
+                - otherwise converts as csv-list
+            If element of list is of format '.xxx:a/b/c' it finds the appropriate
+                method as cm_sysdef.Sysdef.xxx([a, b, c])
+        pol : str
+            A port polarization to follow, or 'all',  ('e', 'n', 'all')
+        at_date :  str, int
+            Date for query.  Anything intelligible to cm_utils.get_astropytime
+        exact_match : bool
+            If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
+            would allow 'HH1', 'HH10', 'HH123', etc
+        hookup_type : str or None
+            Type of hookup to use (current observing system is 'parts_hera').
+            If 'None' it will determine which system it thinks it is based on
+            the part-type.  The order in which it checks is specified in cm_sysdef.
+            Only change if you know you want a different system (like 'parts_paper').
 
         Returns
         -------
-        bool
-            True if the part numbers are in the cached keys. Else False
+        dict
+            Hookup dossier dictionary as defined in cm_dossier
         """
-        for x in hpn:
-            for key_prefix in self.hookup_list_to_cache:
-                if x[:len(key_prefix)].upper() == key_prefix.upper():
-                    break
-            else:
-                return False
-        return True
+        # Reset at_date
+        at_date = cm_utils.get_astropytime(at_date)
+        self.at_date = at_date
+        self.active = cm_active.ActiveData(self.session, at_date=at_date)
+        self.active.load_parts(at_date=None)
+        self.active.load_connections(at_date=None)
+        hpn, exact_match = self._proc_hpnlist(hpn, exact_match)
+        parts = self._cull_dict(hpn, self.active.parts, exact_match)
+        hookup_dict = {}
+        for k, part in six.iteritems(parts):
+            self.hookup_type = self.sysdef.find_hookup_type(
+                part_type=part.hptype, hookup_type=hookup_type)
+            if part.hptype in self.sysdef.redirect_part_types[self.hookup_type]:
+                redirect_parts = self.sysdef.handle_redirect_part_types(part, self.active)
+                redirect_hookup_dict = self.get_hookup_from_db(
+                    hpn=redirect_parts, pol=pol, at_date=self.at_date,
+                    exact_match=True, hookup_type=self.hookup_type)
+                for rhdk, vhd in six.iteritems(redirect_hookup_dict):
+                    hookup_dict[rhdk] = vhd
+                redirect_hookup_dict = None
+                continue
+            self.sysdef.setup(part=part, pol=pol, hookup_type=self.hookup_type)
+            hookup_dict[k] = cm_dossier.HookupEntry(entry_key=k, sysdef=self.sysdef)
+            for port_pol in self.sysdef.ppkeys:
+                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(
+                    part=part.hpn, rev=part.hpn_rev, port_pol=port_pol)
+                part_types_found = self._get_part_types_found(hookup_dict[k].hookup[port_pol])
+                hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
+                hookup_dict[k].add_timing_and_fully_connected(port_pol)
+        return hookup_dict
 
+    def get_hookup(self, hpn, pol='all', at_date='now', exact_match=False,
+                   use_cache=False, hookup_type='parts_hera'):
+        """
+        Return the hookup to the supplied part/pol in the form of a dictionary.
+
+        It will return all active revisions at_date from either the database or
+        the cache file if use_cache == True and the part number keys agree.  This
+        is a wrapper for get_hookup_from_db to allow for the cache file.
+
+        Parameters
+        -----------
+        hpn : str, list
+            List/string of input hera part number(s) (whole or 'startswith')
+            If string
+                - 'cache' returns the entire cache file
+                - 'default' uses default station prefixes in cm_sysdef
+                - otherwise converts as csv-list
+            If element of list is of format '.xxx:a/b/c' it finds the appropriate
+                method as cm_sysdef.Sysdef.xxx([a, b, c])
+        pol : str
+            A port polarization to follow, or 'all',  ('e', 'n', 'all') Default is 'all'.
+        at_date :  str, int
+            Date for query.  Anything intelligible to cm_utils.get_astropytime. Default
+            is 'now'
+        exact_match : bool
+            If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
+            would allow 'HH1', 'HH10', 'HH123', etc.  Default is False
+        use_cache : bool
+            Flag to force the cache to be read, if present and keys agree.  This is largely
+            deprecated, but kept for archival possibilities for the future. Default is False
+        hookup_type : str or None
+            Type of hookup to use.  Default is 'parts_hera'.
+            If 'None' it will determine which system it thinks it is based on
+            the part-type.  The order in which it checks is specified in cm_sysdef.
+            Only change if you know you want a different system (like 'parts_paper').
+
+        Returns
+        -------
+        dict
+            Hookup dossier dictionary as defined in cm_dossier.py
+        """
+        at_date = cm_utils.get_astropytime(at_date)
+        self.at_date = at_date
+        self.hookup_type = hookup_type
+
+        if isinstance(hpn, six.string_types) and hpn.lower() == 'cache':
+            self.read_hookup_cache_from_file()
+            return self.cached_hookup_dict
+
+        if use_cache:
+            hpn, exact_match = self._proc_hpnlist(hpn, exact_match)
+            if self._requested_list_OK_for_cache(hpn):
+                self.read_hookup_cache_from_file()
+                return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
+
+        return self.get_hookup_from_db(hpn=hpn, pol=pol, at_date=at_date,
+                                       exact_match=exact_match, hookup_type=hookup_type)
+
+    def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
+                    sortby=None, filename=None, output_format='table'):
+        """
+        Print out the hookup table -- uses tabulate package.
+
+        Parameters
+        ----------
+        hookup_dict : dict
+            Hookup dictionary generated in self.get_hookup
+        cols_to_show : list, str
+            list of columns to include in hookup listing
+        state : str
+            String designating whether to show the full hookups only, or all
+        ports : bool
+            Flag to include ports or not
+        revs : bool
+            Flag to include revisions or not
+        sortby : list, str or None
+            Columns to sort the listed hookup.  None uses the keys.  str is a csv-list
+            List items may have an argument separated by ':' for 'N'umber'P'refix'R'ev
+            order (see cm_utils.put_keys_in_order).  Not included uses 'NRP'
+        filename : str or None
+            File name to use, None goes to stdout.  The file that gets written is
+            in all cases an "ascii" file
+        output_format : str
+            Set output file type.
+                'html' for a web-page version,
+                'csv' for a comma-separated value version, or
+                'table' for a formatted text table
+
+        Returns
+        -------
+        str
+            Table as a string
+
+        """
+        show = {'ports': ports, 'revs': revs}
+        headers = self._make_header_row(hookup_dict, cols_to_show)
+        table_data = []
+        total_shown = 0
+        sorted_hukeys = self._sort_hookup_display(sortby, hookup_dict, def_sort_order='NRP')
+        for hukey in sorted_hukeys:
+            for pol in cm_utils.put_keys_in_order(hookup_dict[hukey].hookup.keys(),
+                                                  sort_order='PNR'):
+                if not len(hookup_dict[hukey].hookup[pol]):
+                    continue
+                use_this_row = False
+                if state.lower() == 'all':
+                    use_this_row = True
+                elif state.lower() == 'full' and hookup_dict[hukey].fully_connected[pol]:
+                    use_this_row = True
+                if not use_this_row:
+                    continue
+                total_shown += 1
+                td = hookup_dict[hukey].table_entry_row(pol, headers, self.part_type_cache, show)
+                table_data.append(td)
+        if total_shown == 0:
+            print("None found for {} (show-state is {})".format(
+                cm_utils.get_time_for_display(self.at_date), state))
+            return
+        if output_format.lower().startswith('htm'):
+            dtime = cm_utils.get_time_for_display('now') + '\n'
+            table = cm_utils.html_table(headers, table_data)
+            table = ('<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime
+                     + '\t\t</pre>\n\t</body>\n</html>\n')
+        elif output_format.lower().startswith('csv'):
+            table = cm_utils.csv_table(headers, table_data)
+        else:
+            table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
+        if filename is not None:
+            with open(filename, 'w') as fp:
+                print(table, file=fp)
+        return table
+
+    # ##################################### Notes ############################################
+    def get_notes(self, hookup_dict, state='all'):
+        """
+        Retrieves information for hookup.
+
+        Parameters
+        ----------
+        hookup_dict : dict
+            Hookup dictionary generated in self.get_hookup
+        state : str
+            String designating whether to show the full hookups only, or all
+
+        Returns
+        -------
+        dict
+            hookup notes
+        """
+        if self.active is None:
+            self.active = cm_active.ActiveData(self.session, at_date=self.at_date)
+        if self.active.info is None:
+            self.active.load_info(self.at_date)
+        info_keys = list(self.active.info.keys())
+        hu_notes = {}
+        for hkey in hookup_dict.keys():
+            all_hu_hpn = set()
+            for pol in hookup_dict[hkey].hookup.keys():
+                for hpn in hookup_dict[hkey].hookup[pol]:
+                    if (state == 'all'
+                            or (state == 'full' and hookup_dict[hkey].fully_connected[pol])):
+                        all_hu_hpn.add(
+                            cm_utils.make_part_key(hpn.upstream_part, hpn.up_part_rev))
+                        all_hu_hpn.add(
+                            cm_utils.make_part_key(hpn.downstream_part, hpn.down_part_rev))
+            hu_notes[hkey] = {}
+            for ikey in all_hu_hpn:
+                if ikey in info_keys:
+                    hu_notes[hkey][ikey] = {}
+                    for entry in self.active.info[ikey]:
+                        hu_notes[hkey][ikey][entry.posting_gpstime] =\
+                            entry.comment.replace('\\n', '\n')
+        return hu_notes
+
+    def show_notes(self, hookup_dict, state='all'):
+        """
+        Print out the information for hookup.
+
+        Parameters
+        ----------
+        hookup_dict : dict
+            Hookup dictionary generated in self.get_hookup
+        state : str
+            String designating whether to show the full hookups only, or all
+
+        Returns
+        -------
+        str
+            Content as a string
+        """
+        hu_notes = self.get_notes(hookup_dict=hookup_dict, state=state)
+        full_info_string = ''
+        for hkey in cm_utils.put_keys_in_order(list(hu_notes.keys()), sort_order='NPR'):
+            hdr = "---{}---".format(hkey)
+            entry_info = ''
+            part_hu_hpn = cm_utils.put_keys_in_order(list(hu_notes[hkey].keys()), sort_order='PNR')
+            if hkey in part_hu_hpn:  # Do the hkey first
+                part_hu_hpn.remove(hkey)
+                part_hu_hpn = [hkey] + part_hu_hpn
+            for ikey in part_hu_hpn:
+                gps_times = sorted(list(hu_notes[hkey][ikey].keys()))
+                for gtime in gps_times:
+                    atime = cm_utils.get_time_for_display(gtime)
+                    entry_info += "\t{} ({})  {}\n".format(ikey, atime, hu_notes[hkey][ikey][gtime])
+            if len(entry_info):
+                full_info_string += "{}\n{}\n".format(hdr, entry_info)
+        return full_info_string
+
+    # ################################ Internal methods ######################################
     def _cull_dict(self, hpn, search_dict, exact_match):
         """
-        Determines the complete appropriate set of parts to use within search_dict.
+        Based on the list contained in hpn, determines the complete appropriate set
+        of parts to use within search_dict.
 
         The supplied search_dict has all options, which are culled by the supplied
         hpn and exact_match flag.
@@ -87,7 +335,7 @@ class Hookup(object):
         Parameters
         ----------
         hpn : list
-            Contains part numbers (or partial part numbers) to include in the hookup list.
+            List of HERA part numbers being checked as returned from self._proc_hpnlist
         search_dict : dict
             Contains information about all parts possible to search, keyed on the "standard"
             cm_utils.make_part_key
@@ -118,68 +366,51 @@ class Hookup(object):
                 found_dict[key] = copy.copy(search_dict[key])
         return(found_dict)
 
-    def get_hookup_from_db(self, hpn, pol, at_date, exact_match=False, hookup_type=None):
+    def _proc_hpnlist(self, hpn_request, exact_match):
         """
-        Get the hookup dict from the database for the supplied match parameters.
-
-        This gets called by the get_hookup wrapper if the database needs to be
-        read (for instance, to generate a cache file, or search for parts
-        different than those keyed on in the cache file.)  It will look over
-        all active revisions.
+        This processes the hpn request list.  If the list member is of the
+        form ':xxx.a/b/c' it will call the cm_sysdef.xxx module with [a, b, c]
+        as the argument.  If an ':xxx method' is found, it sets exact_match
+        to True
 
         Parameters
-        -----------
-        hpn : str, list
-            List/string of input hera part number(s) (whole or first part thereof)
-        pol : str
-            A port polarization to follow, or 'all',  ('e', 'n', 'all')
-        at_date :  str, int
-            Date for query.  Anything intelligible to cm_utils.get_astropytime
+        ----------
+        hpn_request : str, list
+            List/string of input hera part number(s) (whole or 'startswith')
+            If string
+                - 'default' uses default station prefixes in cm_sysdef
+                - otherwise converts as csv-list
+            If element of list is of format '.xxx:a/b/c' it finds the appropriate
+                method as cm_sysdef.Sysdef.xxx([a, b, c])
         exact_match : bool
-            Flag for either exact_match or partial
-        hookup_type : str or None
-            Type of hookup to use (current observing system is 'parts_hera').
-            If 'None' it will determine which system it thinks it is based on
-            the part-type.  The order in which it checks is specified in cm_sysdef.
-            Only change if you know you want a different system (like 'parts_paper').
+            If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
+            would allow 'HH1', 'HH10', 'HH123', etc
 
         Returns
         -------
-        dict
-            Hookup dossier dictionary.
+        list
+            updated hpn request list
+        bool
+            updated exact_match setting
         """
-        # Reset at_date
-        at_date = cm_utils.get_astropytime(at_date)
-        self.at_date = at_date
-        self.active = cm_active.ActiveData(self.session, at_date=at_date)
-        self.active.load_parts(at_date=None)
-        self.active.load_connections(at_date=None)
-        hpn = cm_utils.listify(hpn)
-        parts = self._cull_dict(hpn, self.active.parts, exact_match)
-        hookup_dict = {}
-        for k, part in six.iteritems(parts):
-            self.hookup_type = self.sysdef.find_hookup_type(
-                part_type=part.hptype, hookup_type=hookup_type)
-            if part.hptype in self.sysdef.redirect_part_types[self.hookup_type]:
-                redirect_parts = self.sysdef.handle_redirect_part_types(part, self.active)
-                redirect_hookup_dict = self.get_hookup_from_db(
-                    hpn=redirect_parts, pol=pol, at_date=self.at_date,
-                    exact_match=True, hookup_type=self.hookup_type)
-                for rhdk, vhd in six.iteritems(redirect_hookup_dict):
-                    hookup_dict[rhdk] = vhd
-                redirect_hookup_dict = None
-                continue
-            self.sysdef.setup(part=part, pol=pol, hookup_type=self.hookup_type)
-            hookup_dict[k] = cm_dossier.HookupEntry(entry_key=k, sysdef=self.sysdef)
-            for port_pol in self.sysdef.ppkeys:
-                hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(
-                    part=part.hpn, rev=part.hpn_rev, port_pol=port_pol)
-                part_types_found = self.get_part_types_found(hookup_dict[k].hookup[port_pol])
-                hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
-                hookup_dict[k].add_timing_and_fully_connected(port_pol)
-        return hookup_dict
+        hpn_proc = []
+        if isinstance(hpn_request, six.string_types) and hpn_request.lower() == 'default':
+            return cm_sysdef.hera_zone_prefixes, False
+        for hpn in cm_utils.listify(hpn_request):
+            if hpn.startswith('.'):
+                exact_match = True
+                marg = hpn[1:].split(':')
+                sysdef_method = marg[0]
+                sysdef_arg = []
+                if len(marg) > 1:
+                    sysdef_arg = marg[1].split('/')
+                y = getattr(self.sysdef, sysdef_method)(sysdef_arg)
+                hpn_proc += y
+            else:
+                hpn_proc.append(hpn)
+        return hpn_proc, exact_match
 
-    def get_part_types_found(self, hookup_connections):
+    def _get_part_types_found(self, hookup_connections):
         """
         Takes a list of connections, returns the part_types and populates 'self.part_type_cache'
 
@@ -319,56 +550,69 @@ class Hookup(object):
             if p[0] == current.pol[0]:
                 return p
 
-    def get_hookup(self, hpn, pol='all', at_date='now', exact_match=False,
-                   use_cache=False, hookup_type='parts_hera'):
-        """
-        Return the hookup to the supplied part/pol in the form of a dictionary.
+    def _sort_hookup_display(self, sortby, hookup_dict, def_sort_order='NRP'):
+        if sortby is None:
+            return cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR')
+        if isinstance(sortby, str):
+            sortby = sortby.split(',')
+        sort_order_dict = {}
+        for stmp in sortby:
+            ss = stmp.split(':')
+            if ss[0] in self.col_list:
+                if len(ss) == 1:
+                    ss.append(def_sort_order)
+                sort_order_dict[ss[0]] = ss[1]
+        if 'station' not in sort_order_dict.keys():
+            sortby.append('station')
+            sort_order_dict['station'] = 'NPR'
+        key_bucket = {}
+        show = {'revs': True, 'ports': False}
+        for this_key, this_hu in hookup_dict.items():
+            pk = list(this_hu.hookup.keys())[0]
+            this_entry = this_hu.table_entry_row(pk, sortby, self.part_type_cache, show)
+            ekey = []
+            for eee in [cm_utils.peel_key(x, sort_order_dict[sortby[i]])
+                        for i, x in enumerate(this_entry)]:
+                ekey += eee
+            key_bucket[tuple(ekey)] = this_key
+        sorted_keys = []
+        for _k, _v in sorted(key_bucket.items()):
+            sorted_keys.append(_v)
+        return sorted_keys
 
-        It will return all active revisions at_date from either the database or
-        the cache file if use_cache == True and the part number keys agree.
+    def _make_header_row(self, hookup_dict, cols_to_show):
+        """
+        Generates the appropriate header row for the displayed hookup.
 
         Parameters
-        -----------
-        hpn : str, list
-            List/string of input hera part number(s) (whole or first part thereof)
-                - if string == 'cache' it returns the entire cache file
-        pol : str
-            A port polarization to follow, or 'all',  ('e', 'n', 'all') default is 'all'.
-        at_date :  str, int
-            Date for query.  Anything intelligible to cm_utils.get_astropytime
-        exact_match : bool
-            Flag for either exact_match or partial
-        use_cache : bool
-            Flag to force the cache to be read, if present and keys agree.  This is largely
-            deprecated, but kept for archival possibilities for the future.
-        hookup_type : str or None
-            Type of hookup to use (current observing system is 'parts_hera').
-            If 'None' it will determine which system it thinks it is based on
-            the part-type.  The order in which it checks is specified in cm_sysdef.
-            Only change if you know you want a different system (like 'parts_paper').
+        ----------
+        hookup_dict : dict
+            Hookup dictionary generated in self.get_hookup
+        cols_to_show : list, str
+            list of columns to include in hookup listing
 
         Returns
         -------
-        dict
-            Hookup dictionary.
+        list
+            List of header titles.
         """
-        at_date = cm_utils.get_astropytime(at_date)
-        self.at_date = at_date
-        self.hookup_type = hookup_type
+        self.col_list = []
+        for h in hookup_dict.values():
+            for cols in h.columns.values():
+                if len(cols) > len(self.col_list):
+                    self.col_list = copy.copy(cols)
+        if isinstance(cols_to_show, six.string_types):
+            cols_to_show = cols_to_show.split(',')
+        cols_to_show = [x.lower() for x in cols_to_show]
+        if 'all' in cols_to_show:
+            return self.col_list
+        headers = []
+        for col in self.col_list:
+            if col.lower() in cols_to_show:
+                headers.append(col)
+        return headers
 
-        if isinstance(hpn, six.string_types) and hpn.lower() == 'cache':
-            self.read_hookup_cache_from_file()
-            return self.cached_hookup_dict
-
-        hpn = cm_utils.listify(hpn)
-        if use_cache:
-            if self.requested_list_OK_for_cache(hpn):
-                self.read_hookup_cache_from_file()
-                return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
-
-        return self.get_hookup_from_db(hpn=hpn, pol=pol, at_date=at_date,
-                                       exact_match=exact_match, hookup_type=hookup_type)
-
+    # ############################### Cache file methods #####################################
     def write_hookup_cache_to_file(self, log_msg='Write.'):
         """
         Writes the current hookup to the cache file.
@@ -509,208 +753,31 @@ class Hookup(object):
             cm_utils.get_time_for_display(cm_hash_time))
         return s
 
-    def get_notes(self, hookup_dict, state='all'):
+    def delete_cache_file(self):
         """
-        Retrieves information for hookup.
+        Deletes the local cached hookup file.
+        """
+        if os.path.exists(self.hookup_cache_file):
+            os.remove(self.hookup_cache_file)
+
+    def _requested_list_OK_for_cache(self, hpn):
+        """
+        Checks that all hookup requests match the cached keys.
 
         Parameters
         ----------
-        hookup_dict : dict
-            Hookup dictionary generated in self.get_hookup
-        state : str
-            String designating whether to show the full hookups only, or all
+        hpn : list
+            List of HERA part numbers being checked as returned from self._proc_hpnlist
 
         Returns
         -------
-        dict
-            hookup notes
+        bool
+            True if the part numbers are in the cached keys. Else False
         """
-        if self.active is None:
-            self.active = cm_active.ActiveData(self.session, at_date=self.at_date)
-        self.active.load_info(self.at_date)
-        info_keys = list(self.active.info.keys())
-        hu_notes = {}
-        for hkey in hookup_dict.keys():
-            all_hu_hpn = set()
-            for pol in hookup_dict[hkey].hookup.keys():
-                for hpn in hookup_dict[hkey].hookup[pol]:
-                    if (state == 'all'
-                            or (state == 'full' and hookup_dict[hkey].fully_connected[pol])):
-                        all_hu_hpn.add(
-                            cm_utils.make_part_key(hpn.upstream_part, hpn.up_part_rev))
-                        all_hu_hpn.add(
-                            cm_utils.make_part_key(hpn.downstream_part, hpn.down_part_rev))
-            hu_notes[hkey] = {}
-            for ikey in all_hu_hpn:
-                if ikey in info_keys:
-                    hu_notes[hkey][ikey] = {}
-                    for entry in self.active.info[ikey]:
-                        hu_notes[hkey][ikey][entry.posting_gpstime] =\
-                            entry.comment.replace('\\n', '\n')
-        return hu_notes
-
-    def show_notes(self, hookup_dict, state='all'):
-        """
-        Print out the information for hookup.
-
-        Parameters
-        ----------
-        hookup_dict : dict
-            Hookup dictionary generated in self.get_hookup
-        state : str
-            String designating whether to show the full hookups only, or all
-
-        Returns
-        -------
-        str
-            Content as a string
-        """
-        hu_notes = self.get_notes(hookup_dict=hookup_dict, state=state)
-        full_info_string = ''
-        for hkey in cm_utils.put_keys_in_order(list(hu_notes.keys()), sort_order='NPR'):
-            hdr = "---{}---".format(hkey)
-            entry_info = ''
-            part_hu_hpn = cm_utils.put_keys_in_order(list(hu_notes[hkey].keys()), sort_order='PNR')
-            if hkey in part_hu_hpn:  # Do the hkey first
-                part_hu_hpn.remove(hkey)
-                part_hu_hpn = [hkey] + part_hu_hpn
-            for ikey in part_hu_hpn:
-                gps_times = sorted(list(hu_notes[hkey][ikey].keys()))
-                for gtime in gps_times:
-                    atime = cm_utils.get_time_for_display(gtime)
-                    entry_info += "\t{} ({})  {}\n".format(ikey, atime, hu_notes[hkey][ikey][gtime])
-            if len(entry_info):
-                full_info_string += "{}\n{}\n".format(hdr, entry_info)
-        return full_info_string
-
-    def sort_hookup_display(self, sortby, hookup_dict, def_sort_order='NRP'):
-        if sortby is None:
-            return cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR')
-        if isinstance(sortby, str):
-            sortby = sortby.split(',')
-        sort_order_dict = {}
-        for stmp in sortby:
-            ss = stmp.split(':')
-            if len(ss) == 1:
-                ss.append(def_sort_order)
-            sort_order_dict[ss[0]] = ss[1]
-        key_bucket = {}
-        show = {'revs': True, 'ports': False}
-        for this_key, this_hu in hookup_dict.items():
-            pk = list(this_hu.hookup.keys())[0]
-            this_entry = this_hu.table_entry_row(pk, sortby, self.part_type_cache, show)
-            ekey = []
-            for eee in [cm_utils.peel_key(x, sort_order_dict[sortby[i]])
-                        for i, x in enumerate(this_entry)]:
-                ekey += eee
-            key_bucket[tuple(ekey)] = this_key
-        sorted_keys = []
-        for _k, _v in sorted(key_bucket.items()):
-            sorted_keys.append(_v)
-        return sorted_keys
-
-    def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
-                    sortby=None, filename=None, output_format='table'):
-        """
-        Print out the hookup table -- uses tabulate package.
-
-        Parameters
-        ----------
-        hookup_dict : dict
-            Hookup dictionary generated in self.get_hookup
-        cols_to_show : list, str
-            list of columns to include in hookup listing
-        state : str
-            String designating whether to show the full hookups only, or all
-        ports : bool
-            Flag to include ports or not
-        revs : bool
-            Flag to include revisions or not
-        sortby : list, str or None
-            Columns to sort the listed hookup.  None uses the keys.  str is a csv-list
-            List items may have an argument separated by ':' for 'N'umber'P'refix'R'ev
-            order (see cm_utils.put_keys_in_order).  Not included uses 'NRP'
-        filename : str or None
-            File name to use, None goes to stdout.  The file that gets written is
-            in all cases an "ascii" file
-        output_format : str
-            Set output file type.
-                'html' for a web-page version,
-                'csv' for a comma-separated value version, or
-                'table' for a formatted text table
-
-        Returns
-        -------
-        str
-            Table as a string
-
-        """
-        show = {'ports': ports, 'revs': revs}
-        headers = self.make_header_row(hookup_dict, cols_to_show)
-        table_data = []
-        total_shown = 0
-        sorted_hukeys = self.sort_hookup_display(sortby, hookup_dict, def_sort_order='NRP')
-        for hukey in sorted_hukeys:
-            for pol in cm_utils.put_keys_in_order(hookup_dict[hukey].hookup.keys(),
-                                                  sort_order='PNR'):
-                if not len(hookup_dict[hukey].hookup[pol]):
-                    continue
-                use_this_row = False
-                if state.lower() == 'all':
-                    use_this_row = True
-                elif state.lower() == 'full' and hookup_dict[hukey].fully_connected[pol]:
-                    use_this_row = True
-                if not use_this_row:
-                    continue
-                total_shown += 1
-                td = hookup_dict[hukey].table_entry_row(pol, headers, self.part_type_cache, show)
-                table_data.append(td)
-        if total_shown == 0:
-            print("None found for {} (show-state is {})".format(
-                cm_utils.get_time_for_display(self.at_date), state))
-            return
-        if output_format.lower().startswith('htm'):
-            dtime = cm_utils.get_time_for_display('now') + '\n'
-            table = cm_utils.html_table(headers, table_data)
-            table = ('<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime
-                     + '\t\t</pre>\n\t</body>\n</html>\n')
-        elif output_format.lower().startswith('csv'):
-            table = cm_utils.csv_table(headers, table_data)
-        else:
-            table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
-        if filename is not None:
-            with open(filename, 'w') as fp:
-                print(table, file=fp)
-        return table
-
-    def make_header_row(self, hookup_dict, cols_to_show):
-        """
-        Generates the appropriate header row for the displayed hookup.
-
-        Parameters
-        ----------
-        hookup_dict : dict
-            Hookup dictionary generated in self.get_hookup
-        cols_to_show : list, str
-            list of columns to include in hookup listing
-
-        Returns
-        -------
-        list
-            List of header titles.
-        """
-        col_list = []
-        for h in hookup_dict.values():
-            for cols in h.columns.values():
-                if len(cols) > len(col_list):
-                    col_list = copy.copy(cols)
-        if isinstance(cols_to_show, six.string_types):
-            cols_to_show = [cols_to_show]
-        if cols_to_show[0].lower() == 'all':
-            return col_list
-        headers = []
-        cols_to_show = [x.lower() for x in cols_to_show]
-        for col in col_list:
-            if col.lower() in cols_to_show:
-                headers.append(col)
-        return headers
+        for x in hpn:
+            for key_prefix in self.hookup_list_to_cache:
+                if x[:len(key_prefix)].upper() == key_prefix.upper():
+                    break
+            else:
+                return False
+        return True

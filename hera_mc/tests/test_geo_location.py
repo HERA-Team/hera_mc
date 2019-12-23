@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from .. import geo_location, geo_handling, cm_partconnect
+from .. import geo_location, geo_handling, cm_partconnect, geo_sysdef
 from astropy.time import Time
 
 
@@ -27,6 +27,13 @@ def test_cofa(mcsession, geo_handle):
     # test that function works the same as method
     cofa_func = geo_handling.cofa(session=mcsession)[0]
     assert cofa.isclose(cofa_func)
+
+
+def test_geo_sysdef():
+    n = geo_sysdef.read_nodes()
+    assert n[3]['ants'][1] == 37
+    a = geo_sysdef.read_antennas()
+    assert int(a['HH123']['E']) == 540945
 
 
 def test_update_new(mcsession, geo_handle):

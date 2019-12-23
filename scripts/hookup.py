@@ -9,12 +9,12 @@ Allows various views on the antenna hookup, as well as handle the hookup cache f
 """
 from __future__ import absolute_import, division, print_function
 
-from hera_mc import mc, cm_hookup, cm_utils, cm_sysdef
+from hera_mc import mc, cm_hookup, cm_utils
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.add_argument('-p', '--hpn',
-                        help="Part number, csv-list or default. (default)",
+                        help="Part number, csv-list, default/cache or method. (default)",
                         default='default')
     parser.add_argument('-e', '--exact-match',
                         help="Force exact matches on part numbers, not beginning N char.",
@@ -71,10 +71,6 @@ if __name__ == '__main__':
     # Pre-process the args
     at_date = cm_utils.get_astropytime(args.date, args.time)
     args.hookup_cols = cm_utils.listify(args.hookup_cols)
-    if args.hpn == 'default':
-        args.hpn = cm_sysdef.hera_zone_prefixes
-    else:
-        args.hpn = cm_utils.listify(args.hpn)
     state = 'all' if args.all else 'full'
     if args.file is None:
         output_format = 'display'

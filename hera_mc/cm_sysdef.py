@@ -295,3 +295,32 @@ class Sysdef:
                     elif port[0].lower() == pol[0].lower():
                         port_dict[dir].append(port.upper())
         return port_dict
+
+    def node(self, node_nums):
+        """
+        Given a list of node_nums, returnes the associated antennas as per the
+        data file 'nodes.txt'
+
+        Parameters
+        ----------
+        node_nums : list
+            Integers of the desired node numbers.
+
+        Returns
+        -------
+        list
+            Strings of the antenna hpns within those nodes.
+        """
+        from . import geo_sysdef
+        node = geo_sysdef.read_nodes()
+        ants = []
+        for nd in node_nums:
+            for ant in node[int(nd)]['ants']:
+                if ant in geo_sysdef.region['heraringa']:
+                    prefix = 'HA'
+                elif ant in geo_sysdef.region['heraringb']:
+                    prefix = 'HB'
+                else:
+                    prefix = 'HH'
+                ants.append("{}{}".format(prefix, ant))
+        return ants
