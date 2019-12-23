@@ -1,7 +1,7 @@
 # hera_mc
 
-[![Build Status](https://travis-ci.org/HERA-Team/hera_mc.svg?branch=master)](https://travis-ci.org/HERA-Team/hera_mc)
-[![Coverage Status](https://coveralls.io/repos/github/HERA-Team/hera_mc/badge.svg?branch=master)](https://coveralls.io/github/HERA-Team/hera_mc?branch=master)
+![](https://github.com/HERA-Team/hera_mc/workflows/Run%20Tests/badge.svg?branch=master)
+[![codecov](https://codecov.io/gh/HERA-Team/hera_mc/branch/master/graph/badge.svg)](https://codecov.io/gh/HERA-Team/hera_mc)
 
 This is the main repository for HERA's monitor and control subsystems.
 Installation instructions may be found in [INSTALL.md](./INSTALL.md).
