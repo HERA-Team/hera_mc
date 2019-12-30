@@ -60,7 +60,7 @@ class HeraAuto(MCDeclarativeBase):
         Cannot be None
     """
 
-    __tablename__ = "heraautos"
+    __tablename__ = "hera_autos"
 
     time = Column(BigInteger, primary_key=True)
     antenna_number = Column(Integer, primary_key=True)
