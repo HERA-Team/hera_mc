@@ -10,12 +10,14 @@ These are key data for tracking antenna performance and failures.
 
 from __future__ import absolute_import, division, print_function
 
+from math import floor
+from astropy.time import Time
 import numpy as np
 import six
 from sqlalchemy import (BigInteger, Column, DateTime, Float, Integer,
                         SmallInteger, String)
 
-from . import MCDeclarativeBase, NotNull, cm_sysutils
+from . import MCDeclarativeBase, NotNull
 
 
 class _MeasurementTypes(object):
@@ -31,13 +33,147 @@ class _MeasurementTypes(object):
     median = 0
     "The median value across the whole autocorrelation spectrum."
 
-    names = ['median']
+    names = ["median"]
     "A list of textual names corresponding to each value."
 
 
 MeasurementTypes = _MeasurementTypes()
 
 
+class HeraAuto(MCDeclarativeBase):
+    """
+    Definition of median antenna autocorrelation table of hera antennas.
+
+    Attributes
+    ----------
+    time : BigInteger Column
+        The time in GPS seconds of the observation, floored as an int. Part of primary_key
+    antenna_number : Integer Column
+        Antenna number. Part of primary_key.
+    antenna_feed_pol : String Column
+        Feed polarization, either 'e' or 'n'. Part of primary_key.
+    measurement_type : SmallInt Column
+        The type of measurement; see MeasurementTypes enumeration.
+        Cannot be None.
+    value : Float Columnn
+        53 precision autocorrelation value.
+        Cannot be None
+    """
+
+    __tablename__ = "heraautos"
+
+    time = Column(BigInteger, primary_key=True)
+    antenna_number = Column(Integer, primary_key=True)
+    antenna_feed_pol = Column(String, primary_key=True)
+    measurement_type = Column(SmallInteger, nullable=False)
+    # recommended portable way of getting double-precision float.
+    value = Column(Float(precision="53"), nullable=False)
+
+    @classmethod
+    def create(cls, time, antenna_number, antenna_feed_pol, measurement_type, value):
+        """
+        Create a new Autocorrelation table object.
+
+        Parameters
+        ----------
+        time : astropy time object
+            Astropy time object based on timestamp of autocorrelation.
+        antenna_number : int
+            Antenna Number
+        antenna_feed_pol : str
+            Feed polarization, either 'e' or 'n'.
+        measurement_type : Int
+            The type of measurement as defined in the MeasurementTypes class.
+            Currently only supports 'median'.
+        value : float
+            The median autocorrelation value as a float.
+
+        """
+        if not isinstance(time, Time):
+            raise ValueError("time must be an astropy Time object.")
+        auto_time = floor(time.gps)
+
+        if antenna_feed_pol not in ['e', 'n']:
+            raise ValueError("antenna_feed_pol must be 'e' or 'n'.")
+
+        if isinstance(measurement_type, six.string_types):
+            try:
+                measurement_type = MeasurementTypes.names.index(measurement_type.lower())
+            except ValueError:
+                raise ValueError(
+                    "Autocorrelation type {0} not supported. "
+                    "Only the following types are supported: {1}"
+                    .format(measurement_type, MeasurementTypes.names)
+                )
+
+        if measurement_type not in list(six.moves.range(len(MeasurementTypes.names))):
+            raise ValueError(
+                "Input measurement type is not in range of accepted values. "
+                "Input {0}, Allowed range 0-{1}"
+                .format(measurement_type, len(MeasurementTypes.names) - 1)
+            )
+
+        return cls(time=auto_time, antenna_number=antenna_number,
+                   antenna_feed_pol=antenna_feed_pol, measurement_type=0, value=value)
+
+    @property
+    def measurement_type_name(self):
+        return MeasurementTypes.names[self.measurement_type]
+
+    def __repr__(self):
+        return("<HeraAuto time={self.time} antenna_number={self.antenna_number} "
+               "polarization={self.antenna_feed_pol} measurement_type={self.measurement_type_name} "
+               "value={self.value}>").format(self=self)
+
+
+def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
+    if six.PY3:
+        from plotly import graph_objects as go
+    else:
+        from plotly import graph_objs as go
+
+    from chart_studio import plotly as py
+
+    data = []
+    all_autos = session.get_autocorrelation(most_recent=True)
+
+    antennas = set(['{ant}{pol}'.format(ant=item.antenna_number, pol=item.antenna_feed_pol)
+                    for item in all_autos])
+    data = {}
+    for ant in antennas:
+        data[ant] = []
+    for item in all_autos:
+        key = '{ant}{pol}'.format(ant=item.antenna_number, pol=item.antenna_feed_pol)
+        data[key].append([Time(item.time, format='gps').isot, item.value])
+    scatters = []
+    for ant in data:
+        d = np.array(data[ant])
+        scatters.append(go.Scatter(x=d[:, 0],
+                                   y=d[:, 1],
+                                   name=ant,
+                                   ))
+
+    # Finish plot
+
+    layout = go.Layout(showlegend=True,
+                       title='HERA Autocorrelations',
+                       xaxis={'title': 'Date',
+                              },
+                       yaxis={'title': 'auto power',
+                              },
+                       )
+    fig = go.Figure(data=scatters,
+                    layout=layout,
+                    )
+    if offline_testing:
+        return fig
+    else:
+        py.plot(fig, auto_open=False,
+                filename='HERA_daily_autos',
+                )
+
+
+# This table is deprecated and no longer maintained
 class Autocorrelations(MCDeclarativeBase):
     """A table logging antenna autocorrelations.
 
@@ -71,64 +207,3 @@ class Autocorrelations(MCDeclarativeBase):
         return('<Autocorrelations id={self.id} time={self.time} antnum={self.antnum} '
                'polarization={self.polarization} measurement_type={self.measurement_type_name} '
                'value={self.value}>').format(self=self)
-
-
-def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
-    if six.PY3:
-        from plotly import graph_objects as go
-    else:
-        from plotly import graph_objs as go
-
-    from chart_studio import plotly as py
-
-    hsession = cm_sysutils.Handling(session)
-    stations = hsession.get_connected_stations(at_date='now')
-
-    hera_ants = []
-    for station in stations:
-        if station.antenna_number not in hera_ants:
-            hera_ants = np.append(hera_ants, station.antenna_number)
-    hera_ants = np.unique(hera_ants).astype(int).tolist()
-
-    data = []
-
-    # Plot antennas labeled as fully hooked up
-    q = (session.query(Autocorrelations).
-         filter(Autocorrelations.measurement_type == 0).
-         filter(Autocorrelations.antnum.in_(hera_ants)).
-         order_by(Autocorrelations.time).
-         all())
-    antennas = set(['{ant}{pol}'.format(ant=item.antnum, pol=item.polarization)
-                    for item in q])
-    data = {}
-    for ant in antennas:
-        data[ant] = []
-    for item in q:
-        key = '{ant}{pol}'.format(ant=item.antnum, pol=item.polarization)
-        data[key].append([item.time, item.value])
-    scatters = []
-    for ant in data:
-        d = np.array(data[ant])
-        scatters.append(go.Scatter(x=d[:, 0],
-                                   y=d[:, 1],
-                                   name=ant,
-                                   ))
-
-    # Finish plot
-
-    layout = go.Layout(showlegend=True,
-                       title='HERA Autocorrelations',
-                       xaxis={'title': 'Date',
-                              },
-                       yaxis={'title': 'auto power',
-                              },
-                       )
-    fig = go.Figure(data=scatters,
-                    layout=layout,
-                    )
-    if offline_testing:
-        return fig
-    else:
-        py.plot(fig, auto_open=False,
-                filename='HERA_daily_autos',
-                )
