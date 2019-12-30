@@ -14,13 +14,27 @@ import time
 from builtins import int
 
 import re
-import datetime
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
 import numpy as np
 import redis
 
 
 from hera_mc import autocorrelations, mc
+
+
+def test_redis_connection(rsession, redispool, max_tries=3):
+    redis_count = 0
+    while redis_count <= max_tries:
+        try:
+            rsession.ping()
+            # got a good connection return to the monitor
+            return rsession
+        except redis.exceptions.ConnectionError:
+            print("Redis connection not found, attempting to reconnect.")
+            rsession = redis.Redis(connection_pool=redis_pool)
+            redis_count += 1
+            if redis_count == max_tries:
+                raise
 
 
 # Preliminaries. We have a small validity check since the M&C design specifies
@@ -52,6 +66,9 @@ rsession = redis.Redis(connection_pool=redis_pool)
 with db.sessionmaker() as dbsession:
     try:
         while True:
+
+            rsession = test_redis_connection(rsession, redis_pool)
+
             hostname = socket.gethostname()
             keys = [
                 k.decode("utf-8")
@@ -70,38 +87,57 @@ with db.sessionmaker() as dbsession:
             ants = np.unique(ants)
             pols = np.unique(pols)
 
-            # We put an identical timestamp for all records. The records from the
-            # redis server also include timestamps (as JDs), but I think it's actually
-            # preferable to use our own clock here. Note that we also ensure that the
-            # records grabbed in one execution of this script have identical
-            # timestamps, which is a nice property.
-            auto_time = datetime.datetime.utcnow()
+            now = Time.now()
+            auto_time = Time(
+                np.frombuffer(rsession.get("auto:timestamp"), dtype=np.float64).item(),
+                format="jd",
+            )
+
+            if abs(now - auto_time) >= TimeDelta(300, format='sec'):
+                print(
+                    "Autocorrelations are at least 5 minutes old, "
+                    "or from the future, adding values as None."
+                )
+                autos_none = True
+            else:
+                autos_none = False
 
             for ant in ants:
                 for pol in pols:
 
-                    d = rsession.get("auto:{ant:d}{pol:s}".format(ant=ant, pol=pol))
-                    if d is not None:
-                        auto = np.frombuffer(d, dtype=np.float32)
+                    auto = rsession.get("auto:{ant:d}{pol:s}".format(ant=ant, pol=pol))
+                    # For now, we just compute the median:
 
-                        # For now, we just compute the median:
+                    if autos_none or auto is None:
+                        auto = None
+                    else:
+                        # copy the value because frombuffer returns immutable type
+                        auto = np.frombuffer(auto, dtype=np.float32).copy()
+                        auto = np.median(auto).item()
 
-                        ac = autocorrelations.Autocorrelations()
-                        ac.time = auto_time
-                        ac.antnum = ant
-                        ac.polarization = pol
-                        ac.measurement_type = autocorrelations.MeasurementTypes.median
-                        # must turn np.float32 into plain Python float
-                        ac.value = np.median(auto).item()
+                    if args.debug:
 
-                        if args.debug:
-                            print(auto.shape, repr(ac))
-                        if not args.noop:
-                            dbsession.add(ac)
+                        ac = autocorrelations.HeraAuto.create(
+                            time=auto_time,
+                            antenna_number=ant,
+                            antenna_feed_pol=pol,
+                            measurement_type=autocorrelations.MeasurementTypes.median,
+                            value=auto
+                        )
+                        print(auto.shape, repr(ac))
+                    if not args.noop:
 
-                            dbsession.add_daemon_status('mc_log_autocorrelations',
-                                                        hostname, Time.now(), 'good')
-                            dbsession.commit()
+                        dbsession.add_autocorrelation(
+                            time=auto_time,
+                            antenna_number=ant,
+                            antenna_feed_pol=pol,
+                            measurement_type=autocorrelations.MeasurementTypes.median,
+                            value=auto
+                        )
+
+                        dbsession.add_daemon_status('mc_log_autocorrelations',
+                                                    hostname, Time.now(), 'good')
+                        dbsession.commit()
 
             time.sleep(MONITORING_INTERVAL)
 
