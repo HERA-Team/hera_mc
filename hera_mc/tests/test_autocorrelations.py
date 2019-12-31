@@ -10,7 +10,7 @@ import datetime
 import numpy as np
 from math import floor
 from astropy.time import Time, TimeDelta
-from hera_mc import autocorrelations, cm_sysutils
+from hera_mc import autocorrelations
 
 import six
 if six.PY3:
