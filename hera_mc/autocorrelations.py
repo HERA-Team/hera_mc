@@ -120,11 +120,6 @@ class HeraAuto(MCDeclarativeBase):
     def measurement_type_name(self):
         return MeasurementTypes.names[self.measurement_type]
 
-    def __repr__(self):
-        return("<HeraAuto time={self.time} antenna_number={self.antenna_number} "
-               "polarization={self.antenna_feed_pol} measurement_type={self.measurement_type_name} "
-               "value={self.value}>").format(self=self)
-
 
 def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
     if six.PY3:

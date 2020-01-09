@@ -51,7 +51,7 @@ def autocorrs():
 
 
 @pytest.mark.parametrize("antnum", [4, 31])
-def test_autos_added(mcsession, autocorrs, antnum, capsys):
+def test_autos_added(mcsession, autocorrs, antnum):
     test_session = mcsession
     for ant in autocorrs:
         corr = autocorrs[ant]
@@ -81,16 +81,6 @@ def test_autos_added(mcsession, autocorrs, antnum, capsys):
     assert len(result) == 1
     result = result[0]
     assert result.isclose(expected)
-
-    print(result)
-    captured = capsys.readouterr()
-    repr = (
-        "<HeraAuto time={result.time} antenna_number={result.antenna_number} "
-        "polarization={result.antenna_feed_pol} measurement_type={result.measurement_type_name} "
-        "value={result.value}>"
-        .format(result=result)
-    )
-    assert captured.out.startswith(repr)
 
 
 @pytest.mark.parametrize(
