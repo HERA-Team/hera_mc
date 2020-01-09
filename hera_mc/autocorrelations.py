@@ -56,7 +56,6 @@ class HeraAuto(MCDeclarativeBase):
         The type of measurement; see MeasurementTypes enumeration.
         Cannot be None.
     value : Float Columnn
-        53 precision autocorrelation value.
         Cannot be None
     """
 
@@ -66,8 +65,7 @@ class HeraAuto(MCDeclarativeBase):
     antenna_number = Column(Integer, primary_key=True)
     antenna_feed_pol = Column(String, primary_key=True)
     measurement_type = Column(SmallInteger, nullable=False)
-    # recommended portable way of getting double-precision float.
-    value = Column(Float(precision="53"), nullable=False)
+    value = Column(Float, nullable=False)
 
     @classmethod
     def create(cls, time, antenna_number, antenna_feed_pol, measurement_type, value):
