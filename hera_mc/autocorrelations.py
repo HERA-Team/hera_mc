@@ -14,8 +14,7 @@ from math import floor
 from astropy.time import Time
 import numpy as np
 import six
-from sqlalchemy import (BigInteger, Column, DateTime, Float, Integer,
-                        SmallInteger, String)
+from sqlalchemy import BigInteger, Column, Float, Integer, String
 
 from . import MCDeclarativeBase
 
