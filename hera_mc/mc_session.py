@@ -3869,8 +3869,8 @@ class MCSession(Session):
         antenna_feed_pol : str
             Feed polarization, either 'e' or 'n'.
         measurement_type : Int
-            The type of measurement as defined in the MeasurementTypes class.
-            Currently only supports 'median'.
+            The type of measurement type of the autocorrelation.
+            Currently supports: 'median'.
         value : float
             The median autocorrelation value as a float.
         """

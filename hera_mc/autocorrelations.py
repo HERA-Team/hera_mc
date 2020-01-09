@@ -17,27 +17,10 @@ import six
 from sqlalchemy import (BigInteger, Column, DateTime, Float, Integer,
                         SmallInteger, String)
 
-from . import MCDeclarativeBase, NotNull
+from . import MCDeclarativeBase
 
 
-class _MeasurementTypes(object):
-    """A read-only enumeration of different ways we can measure the
-    autocorrelation power, since each autocorrelation measurement is a
-    spectrum. For now we only have one type, but in the future we might add
-    min/max/rms, different sub-windows of the spectra, etc.
-
-    These values are logged into the M&C database. Once a certain value is
-    created, never remove or change it!
-
-    """
-    median = 0
-    "The median value across the whole autocorrelation spectrum."
-
-    names = ["median"]
-    "A list of textual names corresponding to each value."
-
-
-MeasurementTypes = _MeasurementTypes()
+allowed_measurement_types = ["median"]
 
 
 class HeraAuto(MCDeclarativeBase):
@@ -52,8 +35,9 @@ class HeraAuto(MCDeclarativeBase):
         Antenna number. Part of primary_key.
     antenna_feed_pol : String Column
         Feed polarization, either 'e' or 'n'. Part of primary_key.
-    measurement_type : SmallInt Column
-        The type of measurement; see MeasurementTypes enumeration.
+    measurement_type : String Column
+        The type of measurement.
+        Currently available types: median
         Cannot be None.
     value : Float Columnn
         Cannot be None
@@ -64,7 +48,7 @@ class HeraAuto(MCDeclarativeBase):
     time = Column(BigInteger, primary_key=True)
     antenna_number = Column(Integer, primary_key=True)
     antenna_feed_pol = Column(String, primary_key=True)
-    measurement_type = Column(SmallInteger, nullable=False)
+    measurement_type = Column(String, nullable=False)
     value = Column(Float, nullable=False)
 
     @classmethod
@@ -81,8 +65,8 @@ class HeraAuto(MCDeclarativeBase):
         antenna_feed_pol : str
             Feed polarization, either 'e' or 'n'.
         measurement_type : Int
-            The type of measurement as defined in the MeasurementTypes class.
-            Currently only supports 'median'.
+            The measurment type of the autocorrelation.
+            Currently supports: 'median'.
         value : float
             The median autocorrelation value as a float.
 
@@ -91,32 +75,26 @@ class HeraAuto(MCDeclarativeBase):
             raise ValueError("time must be an astropy Time object.")
         auto_time = floor(time.gps)
 
-        if antenna_feed_pol not in ['e', 'n']:
+        if antenna_feed_pol not in ["e", "n"]:
             raise ValueError("antenna_feed_pol must be 'e' or 'n'.")
 
-        if isinstance(measurement_type, six.string_types):
-            try:
-                measurement_type = MeasurementTypes.names.index(measurement_type.lower())
-            except ValueError:
-                raise ValueError(
-                    "Autocorrelation type {0} not supported. "
-                    "Only the following types are supported: {1}"
-                    .format(measurement_type, MeasurementTypes.names)
-                )
+        if not isinstance(measurement_type, six.string_types):
+            raise ValueError("measurement_type must be a string")
 
-        if measurement_type not in list(six.moves.range(len(MeasurementTypes.names))):
+        if measurement_type not in allowed_measurement_types:
             raise ValueError(
-                "Input measurement type is not in range of accepted values. "
-                "Input {0}, Allowed range 0-{1}"
-                .format(measurement_type, len(MeasurementTypes.names) - 1)
+                "Autocorrelation type {0} not supported. "
+                "Only the following types are supported: {1}"
+                .format(measurement_type, allowed_measurement_types)
             )
 
-        return cls(time=auto_time, antenna_number=antenna_number,
-                   antenna_feed_pol=antenna_feed_pol, measurement_type=0, value=value)
-
-    @property
-    def measurement_type_name(self):
-        return MeasurementTypes.names[self.measurement_type]
+        return cls(
+            time=auto_time,
+            antenna_number=antenna_number,
+            antenna_feed_pol=antenna_feed_pol,
+            measurement_type=measurement_type,
+            value=value
+        )
 
 
 def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):

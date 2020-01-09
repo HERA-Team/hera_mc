@@ -121,17 +121,17 @@ with db.sessionmaker() as dbsession:
                             time=auto_time,
                             antenna_number=ant,
                             antenna_feed_pol=pol,
-                            measurement_type=autocorrelations.MeasurementTypes.median,
+                            measurement_type="median",
                             value=auto
                         )
-                        print(auto.shape, repr(ac))
+                        print(auto.shape, ac)
                     if not args.noop:
 
                         dbsession.add_autocorrelation(
                             time=auto_time,
                             antenna_number=ant,
                             antenna_feed_pol=pol,
-                            measurement_type=autocorrelations.MeasurementTypes.median,
+                            measurement_type="median",
                             value=auto
                         )
 

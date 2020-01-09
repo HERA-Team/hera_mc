@@ -7,7 +7,6 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 import datetime
-import numpy as np
 from math import floor
 from astropy.time import Time, TimeDelta
 from hera_mc import autocorrelations
@@ -44,7 +43,7 @@ def autocorrs():
             "time": Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 739322), format='datetime'),
             "antenna_number": 31,
             "antenna_feed_pol": "n",
-            "measurement_type": autocorrelations.MeasurementTypes.median,
+            "measurement_type": "median",
             "value": 876.44509
         }
     }
@@ -74,7 +73,7 @@ def test_autos_added(mcsession, autocorrs, antnum):
         time=int(floor(t1.gps)),
         antenna_number=antnum,
         antenna_feed_pol=autocorrs[ant_key]["antenna_feed_pol"],
-        measurement_type=autocorrelations.MeasurementTypes.median,
+        measurement_type="median",
         value=autocorrs[ant_key]["value"]
     )
     result = test_session.get_autocorrelation(antenna_number=antnum)
@@ -86,24 +85,24 @@ def test_autos_added(mcsession, autocorrs, antnum):
 @pytest.mark.parametrize(
     "args,err_type,err_msg", [
         (
-            [Time(2458843, format='jd').gps, 4, "e", 0, 12.1],
+            [Time(2458843, format='jd').gps, 4, "median", 0, 12.1],
             ValueError,
             "time must be an astropy Time object."
         ),
         (
-            [Time(2458843, format='jd'), 4, "x", 0, 12.1],
+            [Time(2458843, format='jd'), 4, "x", "median", 12.1],
             ValueError,
             "antenna_feed_pol must be 'e' or 'n'."
         ),
         (
-            [Time(2458843, format='jd'), 4, "e", "bad", 12.1],
+            [Time(2458843, format='jd'), 4, "e", 0, 12.1],
             ValueError,
-            "Autocorrelation type bad not supported"
+            "measurement_type must be a string"
         ),
         (
-            [Time(2458843, format='jd'), 4, "e", -1, 12.1],
+            [Time(2458843, format='jd'), 4, "e", "bad", 12.1],
             ValueError,
-            "Input measurement type is not in range of accepted values. "
+            "Autocorrelation type bad not supported."
         )
     ]
 )
