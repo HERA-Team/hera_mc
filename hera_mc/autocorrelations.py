@@ -171,39 +171,3 @@ def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
         py.plot(fig, auto_open=False,
                 filename='HERA_daily_autos',
                 )
-
-
-# This table is deprecated and no longer maintained
-class Autocorrelations(MCDeclarativeBase):
-    """A table logging antenna autocorrelations.
-
-    """
-    __tablename__ = 'autocorrelations'
-
-    id = Column(BigInteger, primary_key=True)
-    "A unique ID number for each record; no intrinsic meaning."
-
-    time = NotNull(DateTime)
-    "The time when the information was generated; stored as SqlAlchemy UTC DateTime."
-
-    antnum = NotNull(Integer)
-    "The internal antenna number to which this record pertains."
-
-    polarization = NotNull(String(1))
-    """Which polarization this record refers to: "x" or "y"."""
-
-    measurement_type = NotNull(SmallInteger)
-    "The type of measurement; see MeasurementTypes enumeration."
-
-    # recommended portable way of getting double-precision float.
-    value = NotNull(Float(precision='53'))
-    "The autocorrelation value."
-
-    @property
-    def measurement_type_name(self):
-        return MeasurementTypes.names[self.measurement_type]
-
-    def __repr__(self):
-        return('<Autocorrelations id={self.id} time={self.time} antnum={self.antnum} '
-               'polarization={self.polarization} measurement_type={self.measurement_type_name} '
-               'value={self.value}>').format(self=self)
