@@ -21,8 +21,8 @@ def upgrade():
     sa.Column('time', sa.BigInteger(), nullable=False),
     sa.Column('antenna_number', sa.Integer(), nullable=False),
     sa.Column('antenna_feed_pol', sa.String(), nullable=False),
-    sa.Column('measurement_type', sa.SmallInteger(), nullable=False),
-    sa.Column('value', sa.Float(precision='53'), nullable=False),
+    sa.Column('measurement_type', sa.String(), nullable=False),
+    sa.Column('value', sa.Float(), nullable=False),
     sa.PrimaryKeyConstraint('time', 'antenna_number', 'antenna_feed_pol')
     )
     # ### end Alembic commands ###
