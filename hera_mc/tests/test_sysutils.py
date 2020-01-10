@@ -300,29 +300,15 @@ def test_apriori_antenna(sys_handle, mcsession, capsys, status):
     ]
 )
 def test_apriori_antenna_old(sys_handle, mcsession, capsys, status):
-    with pytest.warns(DeprecationWarning) as record:
+    with pytest.raises(ValueError) as cm:
         cm_partconnect.update_apriori_antenna(
             'HH701', status, '1214382618', session=mcsession
         )
-    assert (
-        record[0]
-        .message.args[0]
-        .startswith("The status '{0}' is deprecated.".format(status))
+    assert str(cm.value).startswith(
+        "The status '{0}' is deprecated. "
+        "Please select one of the new status values {1}."
+        .format(status, cm_partconnect.get_apriori_antenna_status_enum())
     )
-    d = sys_handle.get_apriori_antenna_status_for_rtp(status)
-    if status == 'not_connected':
-        assert d == 'HH700,HH701'
-    else:
-        assert d == 'HH701'
-
-    g = sys_handle.get_apriori_antenna_status_set()
-    if status == 'not_connected':
-        assert g[status] == ['HH700', 'HH701']
-    else:
-        assert g[status][0] == 'HH701'
-
-    g = sys_handle.get_apriori_status_for_antenna('HH701')
-    assert g == status
 
 
 def test_apriori_antenna_unknown_status(sys_handle, mcsession, capsys):

@@ -384,7 +384,7 @@ class AprioriAntenna(MCDeclarativeBase):
         ]
 
     def status_enum(self):
-        return self.valid_statuses() + self.old_statuses()
+        return self.valid_statuses()
 
 
 def get_apriori_antenna_status_enum():
@@ -412,16 +412,17 @@ def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, se
         Database session to use.  If None, it will start a new session, then close.
     """
     new_apa = AprioriAntenna()
+
+    if status in new_apa.old_statuses():
+        raise ValueError(
+            "The status '{0}' is deprecated. "
+            "Please select one of the new status values {1}."
+            .format(status, new_apa.valid_statuses()),
+        )
+
     if status not in new_apa.status_enum():
         raise ValueError("Antenna apriori status must be in {}".format(new_apa.status_enum()))
 
-    if status in new_apa.old_statuses():
-        warnings.warn(
-            "The status '{0}' is deprecated. "
-            "Discontinue use in favor of the new status values {1}."
-            .format(status, new_apa.valid_statuses()),
-            DeprecationWarning
-        )
     close_session_when_done = False
     if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
