@@ -13,8 +13,6 @@ from astropy.time import Time
 from sqlalchemy import (BigInteger, Column,
                         ForeignKeyConstraint, String,
                         Text, func)
-import warnings
-
 from . import MCDeclarativeBase, NotNull
 from . import mc, cm_utils
 
