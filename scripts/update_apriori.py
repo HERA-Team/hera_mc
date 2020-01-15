@@ -24,10 +24,9 @@ if __name__ == "__main__":
             "RF_ok",
             "digital_maintenance",
             "digital_ok",
-            "passed_checks",
-            "needs_checking",
-            "known_bad",
-            "not_connected",
+            "calibration_maintenance",
+            "calibration_ok",
+            "calibration_triage"
         ],
     )
     cm_utils.add_date_time_args(parser)
