@@ -348,7 +348,7 @@ class AprioriAntenna(MCDeclarativeBase):
     status :  str
         status - "dish_maintenance", "dish_ok","RF_maintenance", "RF_ok",
                  "digital_maintenance", "digital_ok",
-                 "calibration maintenance", "calibration ok","calibration triage"
+                 "calibration_maintenance", "calibration_ok","calibration_triage"
 
                  OLDER VALUES - Maintained for backwards compatibility
                  "passed_checks", "needs_checking", "known_bad", "not_connected"
@@ -376,9 +376,9 @@ class AprioriAntenna(MCDeclarativeBase):
             "RF_ok",
             "digital_maintenance",
             "digital_ok",
-            "calibration maintenance",
-            "calibration ok",
-            "calibration triage"
+            "calibration_maintenance",
+            "calibration_ok",
+            "calibration_triage"
         ]
 
     def status_enum(self):

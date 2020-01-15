@@ -274,9 +274,9 @@ def test_get_pam_info(sys_handle, mcsession):
         "RF_ok",
         "digital_maintenance",
         "digital_ok",
-        "calibration maintenance",
-        "calibration ok",
-        "calibration triage"
+        "calibration_maintenance",
+        "calibration_ok",
+        "calibration_triage"
     ]
 )
 def test_apriori_antenna(sys_handle, mcsession, capsys, status):
