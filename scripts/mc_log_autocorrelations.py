@@ -37,9 +37,7 @@ def test_redis_connection(rsession, redispool, max_tries=3):
                 raise
 
 
-# Preliminaries. We have a small validity check since the M&C design specifies
-# the memory, network, and system load are to be 5-minute averages.
-
+# Preliminaries.
 MONITORING_INTERVAL = 60  # seconds
 # End of config.
 
