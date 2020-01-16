@@ -64,6 +64,7 @@ rsession = redis.Redis(connection_pool=redis_pool)
 with db.sessionmaker() as dbsession:
     try:
         while True:
+            time.sleep(MONITORING_INTERVAL)
 
             rsession = test_redis_connection(rsession, redis_pool)
 
@@ -91,53 +92,62 @@ with db.sessionmaker() as dbsession:
                 format="jd",
             )
 
-            if abs(now - auto_time) >= TimeDelta(300, format='sec'):
+            if now - auto_time >= TimeDelta(60, format='sec'):
                 print(
-                    "Autocorrelations are at least 5 minutes old, "
-                    "or from the future, adding values as None."
+                    "Autocorrelations have not changed since {} "
+                    "skipping addition of autos for this timestamp: {}"
+                    .format(auto_time.iso, now.iso)
+
                 )
-                autos_none = True
-            else:
-                autos_none = False
+                continue
+
+            elif now - auto_time < 0:
+                print(
+                    "Autocorrelations are from the future! "
+                    "skipping addition of autos for this timestamp: {}"
+                    .format(now.iso)
+
+                )
+                continue
 
             for ant in ants:
                 for pol in pols:
 
                     auto = rsession.get("auto:{ant:d}{pol:s}".format(ant=ant, pol=pol))
                     # For now, we just compute the median:
-
-                    if autos_none or auto is None:
-                        auto = None
-                    else:
+                    if auto is not None:
                         # copy the value because frombuffer returns immutable type
                         auto = np.frombuffer(auto, dtype=np.float32).copy()
                         auto = np.median(auto).item()
 
-                    if args.debug:
+                        if args.debug:
 
-                        ac = autocorrelations.HeraAuto.create(
-                            time=auto_time,
-                            antenna_number=ant,
-                            antenna_feed_pol=pol,
-                            measurement_type="median",
-                            value=auto
+                            ac = autocorrelations.HeraAuto.create(
+                                time=auto_time,
+                                antenna_number=ant,
+                                antenna_feed_pol=pol,
+                                measurement_type="median",
+                                value=auto
+                            )
+                            print(auto.shape, ac)
+                        if not args.noop:
+
+                            dbsession.add_autocorrelation(
+                                time=auto_time,
+                                antenna_number=ant,
+                                antenna_feed_pol=pol,
+                                measurement_type="median",
+                                value=auto
+                            )
+
+                            dbsession.add_daemon_status('mc_log_autocorrelations',
+                                                        hostname, Time.now(), 'good')
+                            dbsession.commit()
+                    else:
+                        print(
+                            "Auto for {ant}:{pol} is None in redis. Skipping"
+                            .format(ant=ant, pol=pol)
                         )
-                        print(auto.shape, ac)
-                    if not args.noop:
-
-                        dbsession.add_autocorrelation(
-                            time=auto_time,
-                            antenna_number=ant,
-                            antenna_feed_pol=pol,
-                            measurement_type="median",
-                            value=auto
-                        )
-
-                        dbsession.add_daemon_status('mc_log_autocorrelations',
-                                                    hostname, Time.now(), 'good')
-                        dbsession.commit()
-
-            time.sleep(MONITORING_INTERVAL)
 
     except KeyboardInterrupt:
         pass
