@@ -48,7 +48,7 @@ class HeraAuto(MCDeclarativeBase):
     antenna_number = Column(Integer, primary_key=True)
     antenna_feed_pol = Column(String, primary_key=True)
     measurement_type = Column(String, nullable=False)
-    value = Column(Float, nullable=True)
+    value = Column(Float, nullable=False)
 
     @classmethod
     def create(cls, time, antenna_number, antenna_feed_pol, measurement_type, value):
