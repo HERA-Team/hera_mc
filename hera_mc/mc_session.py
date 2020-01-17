@@ -4717,7 +4717,6 @@ class MCSession(Session):
         list of ArrayMetrics objects
 
         """
-        args = []
         if metric is not None:
             filter_column = 'metric'
         else:
