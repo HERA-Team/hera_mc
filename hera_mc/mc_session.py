@@ -4690,7 +4690,7 @@ class MCSession(Session):
             args.append(AntMetrics.metric.in_(get_iterable(metric)))
         query = query.filter(*args)
         if write_to_file:
-            self._write_query_to_file(query, ArrayMetrics, filename=filename)
+            self._write_query_to_file(query, AntMetrics, filename=filename)
         else:
             return query.all()
 
