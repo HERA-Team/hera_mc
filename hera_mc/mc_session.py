@@ -4674,9 +4674,11 @@ class MCSession(Session):
         list of AntMetrics objects
 
         """
-        if not isinstance(starttime, Time):
+        if not (starttime is None or isinstance(starttime, Time)):
+            # Convert gps to astropy Time object, but leave None alone
             starttime = Time(starttime, format='gps')
-        if not isinstance(stoptime, Time):
+        if not (stoptime is None or isinstance(stoptime, Time)):
+            # Convert gps to astropy Time object, but leave None alone
             stoptime = Time(stoptime, format='gps')
         query = self._time_filter(AntMetrics, 'obsid', starttime=starttime,
                                   stoptime=stoptime, return_query=True)
@@ -4738,9 +4740,11 @@ class MCSession(Session):
         list of ArrayMetrics objects
 
         """
-        if not isinstance(starttime, Time):
+        if not (starttime is None or isinstance(starttime, Time)):
+            # Convert gps to astropy Time object, but leave None alone
             starttime = Time(starttime, format='gps')
-        if not isinstance(stoptime, Time):
+        if not (stoptime is None or isinstance(stoptime, Time)):
+            # Convert gps to astropy Time object, but leave None alone
             stoptime = Time(stoptime, format='gps')
         query = self._time_filter(ArrayMetrics, starttime=starttime,
                                   stoptime=stoptime, return_query=True)
