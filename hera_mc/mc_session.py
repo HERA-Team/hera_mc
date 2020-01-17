@@ -4645,7 +4645,7 @@ class MCSession(Session):
         obj_list = [AntMetrics.create(obsid, ant, pol, metric, db_time, val)]
         self._insert_ignoring_duplicates(AntMetrics, obj_list, update=True)
 
-    def _metric_time_to_time_filter(time, start=True):
+    def _metric_time_to_time_filter(self, time, start=True):
         """
         Aligns time keywords between metric functions and _time_filter.
 
