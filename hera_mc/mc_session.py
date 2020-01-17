@@ -4719,17 +4719,12 @@ class MCSession(Session):
         """
         args = []
         if metric is not None:
-            args.append(ArrayMetrics.metric.in_(get_iterable(metric)))
-        if starttime is None:
-            starttime = 0
-        elif isinstance(starttime, Time):
-            starttime = starttime.gps
-        if stoptime is None:
-            stoptime = Time.now().gps
-        elif isinstance(stoptime, Time):
-            stoptime = stoptime.gps
-        args.append(ArrayMetrics.obsid.between(starttime, stoptime))
-        return self.query(ArrayMetrics).filter(*args).all()
+            filter_column = 'metric'
+        else:
+            filter_column = None
+        return self._time_filter(ArrayMetrics, 'obsid', starttime=starttime,
+                                 stoptime=stoptime, filter_column=filter_column,
+                                 filter_value=metric)
 
     def add_metric_desc(self, metric, desc):
         """
