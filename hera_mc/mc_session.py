@@ -4746,7 +4746,7 @@ class MCSession(Session):
         if not (stoptime is None or isinstance(stoptime, Time)):
             # Convert gps to astropy Time object, but leave None alone
             stoptime = Time(stoptime, format='gps')
-        query = self._time_filter(ArrayMetrics, starttime=starttime,
+        query = self._time_filter(ArrayMetrics, 'obsid', starttime=starttime,
                                   stoptime=stoptime, return_query=True)
         args = []
         if metric is not None:
