@@ -56,6 +56,8 @@ database to the new schema.
   - qmaster, the HERA conda environment
   - qmaster, the RTP conda environment
   - hera_corr_head, the hera3 conda environment
+  - hera_corr_head, the hera-venv environment (virtual environment not conda)
+  - hera-sn1, the hera-venv environment (virtual environment not conda)
 
 # Deleting all the tables in a database (in psql shell)
 This can be useful to do on your local machine if your database is in a weird state. Never do this on site!!!
