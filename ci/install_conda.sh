@@ -22,10 +22,12 @@ else
   conda env update -n ${ENV_NAME} -f ci/${ENV_NAME}.yaml
 fi
 
-conda update sip
-
 source activate ${ENV_NAME}
 conda list -n ${ENV_NAME}
+
+conda update sip
+conda list -n ${ENV_NAME}
+
 # check that the python version matches the desired one; exit immediately if not
 PYVER=`python -c "from __future__ import print_function; import sys; print('{:d}.{:d}'.format(sys.version_info.major, sys.version_info.minor))"`
 if [[ $PYVER != $PYTHON ]]; then
