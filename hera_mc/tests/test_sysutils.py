@@ -266,22 +266,71 @@ def test_get_pam_info(sys_handle, mcsession):
     assert pams['HH701:A']['E<ground'] == 'PAM701'
 
 
-def test_apriori_antenna(sys_handle, mcsession, capsys):
-    cm_partconnect.update_apriori_antenna('HH701', 'needs_checking',
+@pytest.mark.parametrize(
+    'status', [
+        "dish_maintenance",
+        "dish_ok",
+        "RF_maintenance",
+        "RF_ok",
+        "digital_maintenance",
+        "digital_ok",
+        "calibration_maintenance",
+        "calibration_ok",
+        "calibration_triage"
+    ]
+)
+def test_apriori_antenna(sys_handle, mcsession, capsys, status):
+    cm_partconnect.update_apriori_antenna('HH701', status,
                                           '1214382618', session=mcsession)
-    d = sys_handle.get_apriori_antenna_status_for_rtp('needs_checking')
+    d = sys_handle.get_apriori_antenna_status_for_rtp(status)
     assert d == 'HH701'
     g = sys_handle.get_apriori_antenna_status_set()
-    assert g['needs_checking'][0] == 'HH701'
-    pytest.raises(ValueError, cm_partconnect.update_apriori_antenna,
-                  'HH3', 'not_one', '1214482618', session=mcsession)
+    assert g[status][0] == 'HH701'
+
     g = sys_handle.get_apriori_status_for_antenna('HH701')
-    assert g == 'needs_checking'
+    assert g == status
+
+
+@pytest.mark.parametrize(
+    'status', [
+        "passed_checks",
+        "needs_checking",
+        "known_bad",
+        "not_connected",
+    ]
+)
+def test_apriori_antenna_old(sys_handle, mcsession, capsys, status):
+    with pytest.raises(ValueError) as cm:
+        cm_partconnect.update_apriori_antenna(
+            'HH701', status, '1214382618', session=mcsession
+        )
+    assert str(cm.value).startswith(
+        "The status '{0}' is deprecated. "
+        "Please select one of the new status values {1}."
+        .format(status, cm_partconnect.get_apriori_antenna_status_enum())
+    )
+
+
+def test_apriori_antenna_unknown_status(sys_handle, mcsession, capsys):
+    with pytest.raises(ValueError) as cm:
+        cm_partconnect.update_apriori_antenna(
+            'HH3', 'not_one', '1214482618', session=mcsession
+        )
+    assert str(cm.value).startswith("Antenna apriori status must be in")
+
+
+def test_apriori_update_after_stopped(sys_handle, mcsession, capsys):
     cm_partconnect.update_apriori_antenna(
-        'HH700', 'needs_checking', '1214482818', '1214483000',
-        session=mcsession)
-    pytest.raises(ValueError, cm_partconnect.update_apriori_antenna, 'HH700',
-                  'needs_checking', '1214482838', session=mcsession)
+        'HH700', "RF_ok", '1214482818', '1214483000', session=mcsession
+    )
+    with pytest.raises(ValueError) as cm:
+        cm_partconnect.update_apriori_antenna(
+            'HH700', "RF_ok", '1214482838', session=mcsession
+        )
+    assert str(cm.value).startswith("Stop time must be None to update AprioriAntenna")
+
+
+def test_apriori_repr(capsys):
     print(cm_partconnect.AprioriAntenna())
     captured = capsys.readouterr()
     assert '<None:' in captured.out.strip()

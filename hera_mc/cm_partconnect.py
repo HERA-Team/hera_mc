@@ -13,7 +13,6 @@ from astropy.time import Time
 from sqlalchemy import (BigInteger, Column,
                         ForeignKeyConstraint, String,
                         Text, func)
-
 from . import MCDeclarativeBase, NotNull
 from . import mc, cm_utils
 
@@ -347,7 +346,12 @@ class AprioriAntenna(MCDeclarativeBase):
     stop_gpstime : int
         stop time for antenna status
     status :  str
-        status - 'passed_checks', 'needs_checking', 'known_bad', 'not_connected'
+        status - "dish_maintenance", "dish_ok","RF_maintenance", "RF_ok",
+                 "digital_maintenance", "digital_ok",
+                 "calibration_maintenance", "calibration_ok","calibration_triage"
+
+                 OLDER VALUES - Maintained for backwards compatibility
+                 "passed_checks", "needs_checking", "known_bad", "not_connected"
     """
 
     __tablename__ = 'apriori_antenna'
@@ -361,8 +365,24 @@ class AprioriAntenna(MCDeclarativeBase):
         return('<{}: {}  [{} - {}]>'.format(
             self.antenna, self.status, self.start_gpstime, self.stop_gpstime))
 
+    def old_statuses(self):
+        return ["passed_checks", "needs_checking", "known_bad", "not_connected"]
+
+    def valid_statuses(self):
+        return [
+            "dish_maintenance",
+            "dish_ok",
+            "RF_maintenance",
+            "RF_ok",
+            "digital_maintenance",
+            "digital_ok",
+            "calibration_maintenance",
+            "calibration_ok",
+            "calibration_triage"
+        ]
+
     def status_enum(self):
-        return ['passed_checks', 'needs_checking', 'known_bad', 'not_connected']
+        return self.valid_statuses()
 
 
 def get_apriori_antenna_status_enum():
@@ -390,6 +410,14 @@ def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, se
         Database session to use.  If None, it will start a new session, then close.
     """
     new_apa = AprioriAntenna()
+
+    if status in new_apa.old_statuses():
+        raise ValueError(
+            "The status '{0}' is deprecated. "
+            "Please select one of the new status values {1}."
+            .format(status, new_apa.valid_statuses()),
+        )
+
     if status not in new_apa.status_enum():
         raise ValueError("Antenna apriori status must be in {}".format(new_apa.status_enum()))
 
