@@ -22,6 +22,8 @@ else
   conda env update -n ${ENV_NAME} -f ci/${ENV_NAME}.yaml
 fi
 
+conda update sip
+
 source activate ${ENV_NAME}
 conda list -n ${ENV_NAME}
 # check that the python version matches the desired one; exit immediately if not
