@@ -25,7 +25,11 @@ fi
 source activate ${ENV_NAME}
 conda list -n ${ENV_NAME}
 
-conda update sip
+# there's an issue on python 3.8 with sip being out of date
+# Try manually updating it.
+if [[ $ENV_NAME == 'tests' ]]; then
+conda update -n ${ENV_NAME} sip
+fi
 conda list -n ${ENV_NAME}
 
 # check that the python version matches the desired one; exit immediately if not
