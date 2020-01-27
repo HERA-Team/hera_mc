@@ -15,11 +15,48 @@ from astropy.time import Time
 import numpy as np
 import six
 from sqlalchemy import BigInteger, Column, Float, Integer, String
+import re
+import redis
 
 from . import MCDeclarativeBase
+from .correlator import DEFAULT_REDIS_ADDRESS
 
 
 allowed_measurement_types = ["median"]
+measurement_func_dict = {"median": np.median}
+
+
+def _get_autos_from_redis(redis_address=DEFAULT_REDIS_ADDRESS):
+
+    redis_pool = redis.ConnectionPool(host=DEFAULT_REDIS_ADDRESS)
+    rsession = redis.Redis(connection_pool=redis_pool)
+
+    auto_time = Time(
+        np.frombuffer(rsession.get("auto:timestamp"), dtype=np.float64).item(),
+        format="jd",
+    )
+    autos_dict = {"timestamp": auto_time.jd}
+
+    keys = [
+        k.decode("utf-8")
+        for k in rsession.keys()
+        if k.startswith(b"auto") and not k.endswith(b"timestamp")
+    ]
+
+    for key in keys:
+        match = re.search(r"auto:(?P<ant>\d+)(?P<pol>e|n)", key)
+        if match is not None:
+            ant, pol = int(match.group("ant")), match.group("pol")
+
+            antpol = "{ant:d}:{pol:s}".format(ant=ant, pol=pol)
+            auto = rsession.get("auto:{ant:d}{pol:s}".format(ant=ant, pol=pol))
+            if auto is not None:
+                # copy the value because frombuffer returns immutable type
+                auto = np.frombuffer(auto, dtype=np.float32).copy()
+
+            autos_dict[antpol] = auto
+
+    return autos_dict
 
 
 class HeraAuto(MCDeclarativeBase):
@@ -63,7 +100,7 @@ class HeraAuto(MCDeclarativeBase):
             Antenna Number
         antenna_feed_pol : str
             Feed polarization, either 'e' or 'n'.
-        measurement_type : Int
+        measurement_type : str
             The measurment type of the autocorrelation.
             Currently supports: 'median'.
         value : float

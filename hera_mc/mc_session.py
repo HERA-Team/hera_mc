@@ -3858,7 +3858,7 @@ class MCSession(Session):
     def add_autocorrelation(self, time, antenna_number, antenna_feed_pol,
                             measurement_type, value):
         """
-        Add new antenna status data to the M&C database.
+        Add new autocorrelation column to the M&C database.
 
         Parameters
         ----------
@@ -3868,7 +3868,7 @@ class MCSession(Session):
             Antenna Number
         antenna_feed_pol : str
             Feed polarization, either 'e' or 'n'.
-        measurement_type : Int
+        measurement_type : str
             The type of measurement type of the autocorrelation.
             Currently supports: 'median'.
         value : float
@@ -3877,6 +3877,74 @@ class MCSession(Session):
         from .autocorrelations import HeraAuto
 
         self.add(HeraAuto.create(time, antenna_number, antenna_feed_pol, measurement_type, value))
+
+    def add_autocorrelations_from_redis(self, hera_autos_dict=None, testing=False,
+                                        redishost=None, measurement_type=None):
+        """Get current autocorrelations from redis and insert into M&C.
+
+        hera_autos_dict : dict, optional
+            A dict containing info as in the return dict from
+            `_get_autos_from_redis()` for testing purposes. If None,
+            `_get_autos_from_redis()` is called.
+        testing : bool
+            If true, do not add records to database, instead return list of HeraAuto objects.
+        redishost : str, optional
+            The hostname of the redis server to connect to if hera_autos_dict is None.
+            Defaults to DEFAULT_REDIS_ADDRESS stored in M&C session object.
+        measurement_type : str, optional
+            The type of measurement to take from the autos.
+            Available choices are: ['median']
+            If None, defaults to median.
+        """
+        from .autocorrelations import _get_autos_from_redis, HeraAuto, measurement_func_dict
+
+        if hera_autos_dict is None:
+            hera_autos_dict = _get_autos_from_redis(redishost=redishost)
+
+        if measurement_type is None:
+            measurement_type = "median"
+
+        hera_auto_list = []
+
+        timestamp_jd = hera_autos_dict.pop("timestamp", None)
+
+        if timestamp_jd is None:
+            raise ValueError(
+                "No timestamp found in hera_autos_dict. "
+                "A timestamp (in JD) must be present to log autocorelations."
+            )
+        time = Time(timestamp_jd, format='jd')
+
+        for antpol, auto in six.iteritems(hera_autos_dict):
+            ant, pol = antpol.split(":")
+            ant = int(ant)
+            auto = np.asarray(auto)
+
+            ant_stat = self.get_antenna_status(most_recent=True, antenna_number=ant)
+            # the previous query will return a list of possibly both polarizations
+            # for the given antenna, need to filter down to this polarization if present.
+            eq_coeffs = [stat.eq_coeffs for stat in ant_stat if stat.antenna_feed_pol == pol]
+            if len(eq_coeffs) > 0:
+                eq_coeffs = eq_coeffs[0]
+            else:
+                eq_coeffs = None
+
+            if eq_coeffs is not None:
+                eq_coeffs = np.fromstring(eq_coeffs.strip("[]"), sep=",")
+                eq_coeffs = np.median(eq_coeffs)
+            else:
+                eq_coeffs = 1.0
+
+            auto = measurement_func_dict[measurement_type](auto / eq_coeffs**2).item()
+
+            hera_auto_list.append(
+                HeraAuto.create(time, ant, pol, measurement_type, auto)
+            )
+
+        if testing:
+            return hera_auto_list
+        else:
+            self._insert_ignoring_duplicates(HeraAuto, hera_auto_list)
 
     def get_autocorrelation(self, most_recent=None, starttime=None,
                             stoptime=None, antenna_number=None,
