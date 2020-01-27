@@ -3900,7 +3900,6 @@ class MCSession(Session):
 
         if hera_autos_dict is None:
             hera_autos_dict = _get_autos_from_redis(redishost=redishost)
-
         if measurement_type is None:
             measurement_type = "median"
 

@@ -11,6 +11,8 @@ from math import floor
 from astropy.time import Time, TimeDelta
 from hera_mc import autocorrelations
 
+from ..tests import requires_redis
+
 import six
 
 if six.PY3:
@@ -242,3 +244,12 @@ def test_add_autos_from_redis_errors(mcsession, auto_dict):
             hera_autos_dict=auto_dict, testing=True,
         )
     assert str(cm.value).startswith("No timestamp found in hera_autos_dict. ")
+
+
+@requires_redis
+def test_with_redis_add_autos_from_redis_errors(mcsession):
+    test_session = mcsession
+
+    test_session.add_autocorrelations_from_redis()
+    result = test_session.get_autocorrelation(most_recent=True)
+    assert len(result) >= 1
