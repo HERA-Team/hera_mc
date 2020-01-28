@@ -3919,22 +3919,7 @@ class MCSession(Session):
             ant = int(ant)
             auto = np.asarray(auto)
 
-            ant_stat = self.get_antenna_status(most_recent=True, antenna_number=ant)
-            # the previous query will return a list of possibly both polarizations
-            # for the given antenna, need to filter down to this polarization if present.
-            eq_coeffs = [stat.eq_coeffs for stat in ant_stat if stat.antenna_feed_pol == pol]
-            if len(eq_coeffs) > 0:
-                eq_coeffs = eq_coeffs[0]
-            else:
-                eq_coeffs = None
-
-            if eq_coeffs is not None:
-                eq_coeffs = np.fromstring(eq_coeffs.strip("[]"), sep=",")
-                eq_coeffs = np.median(eq_coeffs)
-            else:
-                eq_coeffs = 1.0
-
-            auto = measurement_func_dict[measurement_type](auto / eq_coeffs**2).item()
+            auto = measurement_func_dict[measurement_type](auto).item()
 
             hera_auto_list.append(
                 HeraAuto.create(time, ant, pol, measurement_type, auto)
