@@ -9,150 +9,83 @@ server by the correlator software.
 """
 from __future__ import absolute_import, division, print_function
 
-import socket
+import sys
 import time
-from builtins import int
+import socket
 
-import re
-from astropy.time import Time, TimeDelta
-import numpy as np
-import redis
+from astropy.time import Time
 
+from hera_mc import mc, utils
 
-from hera_mc import autocorrelations, mc
+# Preliminaries. We have a small validity check since the M&C design specifies
+# the memory, network, and system load are to be 5-minute averages.
 
-
-def test_redis_connection(rsession, redispool, max_tries=3):
-    redis_count = 0
-    while redis_count <= max_tries:
-        try:
-            rsession.ping()
-            # got a good connection return to the monitor
-            return rsession
-        except redis.exceptions.ConnectionError:
-            print("Redis connection not found, attempting to reconnect.")
-            rsession = redis.Redis(connection_pool=redis_pool)
-            redis_count += 1
-            if redis_count == max_tries:
-                raise
-
-
-# Preliminaries.
 MONITORING_INTERVAL = 60  # seconds
 # End of config.
 
-
 parser = mc.get_mc_argument_parser()
-parser.add_argument("--redishost", "-r", default="redishost",
-                    help="The hostname of the redis server.")
-parser.add_argument('--redisport', '-p', default=6379,
-                    help="Port for the redis server connection.")
-parser.add_argument('--debug', action='store_true',
-                    help='Print out debugging information.')
-parser.add_argument('--noop', action='store_true',
-                    help='Do not actually save information to the database.')
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 
-# allocate the maximum size of the autocorrelations as a buffer.
-auto = np.zeros(8192, dtype=np.float32)
+hostname = socket.gethostname()
 
-# make a redis pool and connect to redis
-redis_pool = redis.ConnectionPool(host=args.redishost, port=args.redisport)
-rsession = redis.Redis(connection_pool=redis_pool)
-
-with db.sessionmaker() as dbsession:
+while True:
     try:
-        while True:
-            time.sleep(MONITORING_INTERVAL)
+        with db.sessionmaker() as session:
+            while True:
+                try:
+                    time.sleep(MONITORING_INTERVAL)
 
-            rsession = test_redis_connection(rsession, redis_pool)
+                    session.add_autocorrelations_from_redis()
+                    session.commit()
+                    session.add_daemon_status(
+                        "mc_log_autocorrelations",
+                        hostname,
+                        Time.now(),
+                        "good"
+                    )
+                    session.commit()
 
-            hostname = socket.gethostname()
-            keys = [
-                k.decode("utf-8")
-                for k in rsession.keys()
-                if k.startswith(b"auto") and not k.endswith(b"timestamp")
-            ]
+                except Exception:
+                    print(
+                        "{t} -- error calling command {c}".format(
+                            t=time.asctime(),
+                            c="add_autocorrelations_from_redis"
+                        ),
+                        file=sys.stderr
+                    )
 
-            ants = []
-            pols = []
-            for key in keys:
-                match = re.search(r"auto:(?P<ant>\d+)(?P<pol>e|n)", key)
-                if match is not None:
-                    ant, pol = int(match.group("ant")), match.group("pol")
-                    ants.append(ant)
-                    pols.append(pol)
-            ants = np.unique(ants)
-            pols = np.unique(pols)
-
-            now = Time.now()
-            auto_time = Time(
-                np.frombuffer(rsession.get("auto:timestamp"), dtype=np.float64).item(),
-                format="jd",
-            )
-
-            if now - auto_time >= TimeDelta(60, format='sec'):
-                print(
-                    "Autocorrelations have not changed since {} "
-                    "skipping addition of autos for this timestamp: {}"
-                    .format(auto_time.iso, now.iso)
-
-                )
-                continue
-
-            elif now - auto_time < 0:
-                print(
-                    "Autocorrelations are from the future! "
-                    "skipping addition of autos for this timestamp: {}"
-                    .format(now.iso)
-
-                )
-                continue
-
-            for ant in ants:
-                for pol in pols:
-
-                    auto = rsession.get("auto:{ant:d}{pol:s}".format(ant=ant, pol=pol))
-                    # For now, we just compute the median:
-                    if auto is not None:
-                        # copy the value because frombuffer returns immutable type
-                        auto = np.frombuffer(auto, dtype=np.float32).copy()
-                        auto = np.median(auto).item()
-
-                        if args.debug:
-
-                            ac = autocorrelations.HeraAuto.create(
-                                time=auto_time,
-                                antenna_number=ant,
-                                antenna_feed_pol=pol,
-                                measurement_type="median",
-                                value=auto
-                            )
-                            print(auto.shape, ac)
-                        if not args.noop:
-
-                            dbsession.add_autocorrelation(
-                                time=auto_time,
-                                antenna_number=ant,
-                                antenna_feed_pol=pol,
-                                measurement_type="median",
-                                value=auto
-                            )
-
-                            dbsession.add_daemon_status('mc_log_autocorrelations',
-                                                        hostname, Time.now(), 'good')
-                            dbsession.commit()
-                    else:
-                        print(
-                            "Auto for {ant}:{pol} is None in redis. Skipping"
-                            .format(ant=ant, pol=pol)
+                    session.rollback()
+                    try:
+                        session.add_daemon_status(
+                            "mc_log_autocorrelations",
+                            hostname,
+                            Time.now(),
+                            "errored"
                         )
-
-    except KeyboardInterrupt:
-        pass
+                        session.commit()
+                    except Exception:
+                        utils._reraise_context(
+                            "error logging daemon status after command '%r'",
+                            "add_autocorrelations_from_redis"
+                        )
+                    continue
     except Exception:
-        dbsession.add_daemon_status('mc_log_autocorrelations',
-                                    hostname, Time.now(), 'errored')
-        dbsession.commit()
-        raise
+        # Try to log an error with a new session
+        with db.sessionmaker() as new_session:
+            try:
+                # try to update the daemon_status table and add an
+                # error message to the subsystem_error table
+                session.add_daemon_status(
+                    "mc_log_autocorrelations",
+                    hostname,
+                    Time.now(),
+                    "errored"
+                )
+            except Exception:
+                # if we can't log error messages to the new session we're in
+                # real trouble
+                utils._reraise_context(
+                    'error logging to daemon status with a new session')
+        # logging with a new session worked, so restart to get a new session
+        continue
