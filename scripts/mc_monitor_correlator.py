@@ -31,7 +31,8 @@ commands_to_run = ['add_correlator_control_state_from_corrcm',
                    'add_correlator_config_from_corrcm',
                    'add_snap_status_from_corrcm',
                    'add_corr_snap_versions_from_corrcm',
-                   'add_antenna_status_from_corrcm']
+                   'add_antenna_status_from_corrcm',
+                   "add_autocorrelations_from_redis"]
 
 while True:
     try:
