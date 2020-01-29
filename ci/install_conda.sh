@@ -28,7 +28,7 @@ conda list -n ${ENV_NAME}
 # there's an issue on python 3.8 with sip being out of date
 # Try manually updating it.
 if [[ $ENV_NAME == 'tests' ]]; then
-conda install -n ${ENV_NAME} sip">4.19.8"
+conda update pyqt -c conda-forge
 fi
 conda list -n ${ENV_NAME}
 
