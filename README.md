@@ -55,6 +55,7 @@ database to the new schema.
 
   - qmaster, the HERA conda environment
   - qmaster, the RTP conda environment
+  - qmaster, the HERA_py2 conda environment
   - hera-corr-head, the hera3 conda environment
   - hera-corr-head, the hera-venv environment (virtual environment not conda)
 
