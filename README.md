@@ -58,6 +58,7 @@ database to the new schema.
   - qmaster, the HERA_py2 conda environment
   - hera-corr-head, the hera3 conda environment
   - hera-corr-head, the hera-venv environment (virtual environment not conda)
+  - hera-snap-head, the hera-venv environment (virtual environment not conda)
 
 # Deleting all the tables in a database (in psql shell)
 This can be useful to do on your local machine if your database is in a weird state. Never do this on site!!!
