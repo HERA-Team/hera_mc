@@ -50,6 +50,15 @@ changes integrated into master.
 9. Once the changes have been incorporated into master, you can log onto site,
 pull the master branch and run `alembic upgrade head` to update the onsite
 database to the new schema.
+10. Pull and reinstall in *all* of the following machines & environments
+(this is a critical step!):
+
+  - qmaster, the HERA conda environment
+  - qmaster, the RTP conda environment
+  - qmaster, the HERA_py2 conda environment
+  - hera-corr-head, the hera3 conda environment
+  - hera-corr-head, the hera-venv environment (virtual environment not conda)
+  - hera-snap-head, the hera-venv environment (virtual environment not conda)
 
 # Deleting all the tables in a database (in psql shell)
 This can be useful to do on your local machine if your database is in a weird state. Never do this on site!!!
