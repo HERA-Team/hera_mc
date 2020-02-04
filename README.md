@@ -34,36 +34,58 @@ more mistakes with table or column alterations than with table creations. Also
 be sure to remove any dropped tables in the upgrade section (and corresponding
   table creation commands in the downgrade portion) -- we have some old tables
   that we no longer use but don't want to drop on site.
-4. Run `alembic upgrade head` to apply your schema changes -- be sure to
+6. Run `alembic upgrade head` to apply your schema changes -- be sure to
 `pip install .` if you didn't do a developer install. At this point it's a very
 good idea to inspect the database table (using the psql command line) to make
 sure the right thing happened. It's also a very good idea to run
 `alembic downgrade -1` to back up to before your revision and check that the
 database looks right (of course you then need to re-run the upgrade command to
   get back to where you meant to be.)
-5. Run `pytest` to check that all the tests pass.
-6. git add the alembic/version that was created and commit your work.
-7. When you're satisfied that everything works as expected, add a description
+7. Run `pytest` to check that all the tests pass.
+8. git add the alembic/version that was created and commit your work.
+9. When you're satisfied that everything works as expected, add a description
 of your new table to the documentation in docs/mc_definition.tex.
-8. Create a pull request on github to ask for a code review and to get your
+10. Create a pull request on github to ask for a code review and to get your
 changes integrated into master.
-9. Once the changes have been incorporated into master, you can log onto site,
+11. Once the changes have been incorporated into master, you can log onto site,
 pull the master branch and run `alembic upgrade head` to update the onsite
 database to the new schema.
-10. Pull and reinstall in *all* of the following machines & environments
+12. Pull and reinstall in *all* of the following machines & environments
 (this is a critical step!):
 
-  - qmaster, the HERA conda environment
-  - qmaster, the RTP conda environment
-  - qmaster, the HERA_py2 conda environment
-  - hera-corr-head, the hera3 conda environment
-  - hera-corr-head, the hera-venv environment (virtual environment not conda)
-  - hera-snap-head, the .venv environment (virtual environment not conda)
+  - qmaster machine
+    - `HERA` conda environment
+    - `RTP` conda environment
+    - `HERA_py2` conda environment
+  - hera-corr-head machine
+    - `hera3` conda environment
+  - hera-corr-head machine
+    - `hera-venv` environment (virtual environment not conda)
+  - hera-snap-head machine
+    - `.venv` environment (virtual environment not conda)
+13. Restart the following daemons across the hera correletor computer cluster.
+This is generally done with `systemctl restart <daemon_name>.service`. Some
+machines use upstart instead of systemd, as marked below. In those cases, use
+`initctl restart <daemon_name>`.
 
-11. Restart the following daemons across the hera correletor computer cluster:
-  - qmaster, hera-corr-status
-  - qmaster, hera-node-status
-  - qmaster, hera-server-status
+  - qmaster machine
+    - `hera-corr-status` daemon
+    - `hera-node-status` daemon
+    - `hera-server-status` daemon
+  - pot1 machine (upstart)
+    - `hera-server-status` daemon
+  - pot6 machine
+    - `hera-server-status` daemon
+  - pot7 machine (upstart)
+    - `hera-server-status` daemon
+  - pot8 machine (upstart)
+    - `hera-server-status` daemon
+  - still[1-4] machines (upstart)
+    - `hera-server-status` daemon
+  - gpu[1-8] machines (upstart)
+    - `hera-server-status` daemon
+  - bigmem[1-2] machines (upstart)
+    - `hera-server-status` daemon
 
 # Deleting all the tables in a database (in psql shell)
 This can be useful to do on your local machine if your database is in a weird state. Never do this on site!!!
