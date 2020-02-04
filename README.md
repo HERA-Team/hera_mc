@@ -60,6 +60,11 @@ database to the new schema.
   - hera-corr-head, the hera-venv environment (virtual environment not conda)
   - hera-snap-head, the .venv environment (virtual environment not conda)
 
+11. Restart the following daemons across the hera correletor computer cluster:
+  - qmaster, hera-corr-status
+  - qmaster, hera-node-status
+  - qmaster, hera-server-status
+
 # Deleting all the tables in a database (in psql shell)
 This can be useful to do on your local machine if your database is in a weird state. Never do this on site!!!
 ```
