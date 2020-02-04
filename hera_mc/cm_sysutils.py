@@ -317,16 +317,6 @@ class Handling:
                       state='full', ports=True, revs=True,
                       sortby=sortby, filename=output_file, output_format='html')
 
-        from . import cm_transfer
-        if cm_transfer.check_if_main(self.session):  # pragma: no cover
-            import subprocess
-            location_on_web = 'hera.today:/var/www/html/hookup.html'
-            sc_command = 'scp {} {}'.format(output_file, location_on_web)
-            subprocess.call(sc_command, shell=True)
-            return 'OK'
-        else:
-            return 'Not on "main"'
-
     def get_apriori_status_for_antenna(self, antenna, at_date='now'):
         """
         Get the "apriori" status of an antenna station (e.g. HH12) at a date.
