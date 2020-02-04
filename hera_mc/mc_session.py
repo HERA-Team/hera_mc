@@ -3854,3 +3854,126 @@ class MCSession(Session):
         for metric, val in d['array_metrics'].items():
             self.check_metric_desc(metric)
             self.add_array_metric(obsid, metric, val)
+
+    def add_autocorrelation(self, time, antenna_number, antenna_feed_pol,
+                            measurement_type, value):
+        """
+        Add new autocorrelation column to the M&C database.
+
+        Parameters
+        ----------
+        time : astropy time object
+            Astropy time object based on timestamp of autocorrelation.
+        antenna_number : int
+            Antenna Number
+        antenna_feed_pol : str
+            Feed polarization, either 'e' or 'n'.
+        measurement_type : str
+            The type of measurement type of the autocorrelation.
+            Currently supports: 'median'.
+        value : float
+            The median autocorrelation value as a float.
+        """
+        from .autocorrelations import HeraAuto
+
+        self.add(HeraAuto.create(time, antenna_number, antenna_feed_pol, measurement_type, value))
+
+    def add_autocorrelations_from_redis(self, hera_autos_dict=None, testing=False,
+                                        redishost=None, measurement_type=None):
+        """Get current autocorrelations from redis and insert into M&C.
+
+        hera_autos_dict : dict, optional
+            A dict containing info as in the return dict from
+            `_get_autos_from_redis()` for testing purposes. If None,
+            `_get_autos_from_redis()` is called.
+        testing : bool
+            If true, do not add records to database, instead return list of HeraAuto objects.
+        redishost : str, optional
+            The hostname of the redis server to connect to if hera_autos_dict is None.
+            Defaults to DEFAULT_REDIS_ADDRESS stored in M&C session object.
+        measurement_type : str, optional
+            The type of measurement to take from the autos.
+            Available choices are: ['median']
+            If None, defaults to median.
+        """
+        from .autocorrelations import _get_autos_from_redis, HeraAuto, measurement_func_dict
+
+        if hera_autos_dict is None:
+            hera_autos_dict = _get_autos_from_redis(redishost=redishost)
+        if measurement_type is None:
+            measurement_type = "median"
+
+        hera_auto_list = []
+
+        timestamp_jd = hera_autos_dict.pop("timestamp", None)
+
+        if timestamp_jd is None:
+            raise ValueError(
+                "No timestamp found in hera_autos_dict. "
+                "A timestamp (in JD) must be present to log autocorelations."
+            )
+        time = Time(timestamp_jd, format='jd')
+
+        for antpol, auto in six.iteritems(hera_autos_dict):
+            ant, pol = antpol.split(":")
+            ant = int(ant)
+            auto = np.asarray(auto)
+
+            auto = measurement_func_dict[measurement_type](auto).item()
+
+            hera_auto_list.append(
+                HeraAuto.create(time, ant, pol, measurement_type, auto)
+            )
+
+        if testing:
+            return hera_auto_list
+        else:
+            self._insert_ignoring_duplicates(HeraAuto, hera_auto_list)
+
+    def get_autocorrelation(self, most_recent=None, starttime=None,
+                            stoptime=None, antenna_number=None,
+                            write_to_file=False, filename=None):
+        """
+        Get  autocorrelation record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        antenna_number : int
+            antenna number
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        list of Autocorrelation objects
+
+        """
+        from .autocorrelations import HeraAuto
+
+        return self._time_filter(HeraAuto, 'time', most_recent=most_recent,
+                                 starttime=starttime, stoptime=stoptime,
+                                 filter_column='antenna_number',
+                                 filter_value=antenna_number,
+                                 write_to_file=write_to_file, filename=filename)

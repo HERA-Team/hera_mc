@@ -10,67 +10,127 @@ These are key data for tracking antenna performance and failures.
 
 from __future__ import absolute_import, division, print_function
 
+from math import floor
+from astropy.time import Time
 import numpy as np
 import six
-from sqlalchemy import (BigInteger, Column, DateTime, Float, Integer,
-                        SmallInteger, String)
+from sqlalchemy import BigInteger, Column, Float, Integer, String
+import re
+import redis
 
-from . import MCDeclarativeBase, NotNull, cm_sysutils
+from . import MCDeclarativeBase
+from .correlator import DEFAULT_REDIS_ADDRESS
 
 
-class _MeasurementTypes(object):
-    """A read-only enumeration of different ways we can measure the
-    autocorrelation power, since each autocorrelation measurement is a
-    spectrum. For now we only have one type, but in the future we might add
-    min/max/rms, different sub-windows of the spectra, etc.
+allowed_measurement_types = ["median"]
+measurement_func_dict = {"median": np.median}
 
-    These values are logged into the M&C database. Once a certain value is
-    created, never remove or change it!
 
+def _get_autos_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+
+    redis_pool = redis.ConnectionPool(host=DEFAULT_REDIS_ADDRESS)
+    rsession = redis.Redis(connection_pool=redis_pool)
+
+    auto_time = Time(
+        np.frombuffer(rsession.get("auto:timestamp"), dtype=np.float64).item(),
+        format="jd",
+    )
+    autos_dict = {"timestamp": auto_time.jd}
+
+    keys = [
+        k.decode("utf-8")
+        for k in rsession.keys()
+        if k.startswith(b"auto") and not k.endswith(b"timestamp")
+    ]
+
+    for key in keys:
+        match = re.search(r"auto:(?P<ant>\d+)(?P<pol>e|n)", key)
+        if match is not None:
+            ant, pol = int(match.group("ant")), match.group("pol")
+
+            antpol = "{ant:d}:{pol:s}".format(ant=ant, pol=pol)
+            auto = rsession.get("auto:{ant:d}{pol:s}".format(ant=ant, pol=pol))
+            if auto is not None:
+                # copy the value because frombuffer returns immutable type
+                auto = np.frombuffer(auto, dtype=np.float32).copy()
+
+            autos_dict[antpol] = auto
+
+    return autos_dict
+
+
+class HeraAuto(MCDeclarativeBase):
     """
-    median = 0
-    "The median value across the whole autocorrelation spectrum."
+    Definition of median antenna autocorrelation table of hera antennas.
 
-    names = ['median']
-    "A list of textual names corresponding to each value."
-
-
-MeasurementTypes = _MeasurementTypes()
-
-
-class Autocorrelations(MCDeclarativeBase):
-    """A table logging antenna autocorrelations.
-
+    Attributes
+    ----------
+    time : BigInteger Column
+        The time in GPS seconds of the observation, floored as an int. Part of primary_key
+    antenna_number : Integer Column
+        Antenna number. Part of primary_key.
+    antenna_feed_pol : String Column
+        Feed polarization, either 'e' or 'n'. Part of primary_key.
+    measurement_type : String Column
+        The type of measurement.
+        Currently available types: median
+        Cannot be None.
+    value : Float Columnn
+        Cannot be None
     """
-    __tablename__ = 'autocorrelations'
 
-    id = Column(BigInteger, primary_key=True)
-    "A unique ID number for each record; no intrinsic meaning."
+    __tablename__ = "hera_autos"
 
-    time = NotNull(DateTime)
-    "The time when the information was generated; stored as SqlAlchemy UTC DateTime."
+    time = Column(BigInteger, primary_key=True)
+    antenna_number = Column(Integer, primary_key=True)
+    antenna_feed_pol = Column(String, primary_key=True)
+    measurement_type = Column(String, nullable=False)
+    value = Column(Float, nullable=False)
 
-    antnum = NotNull(Integer)
-    "The internal antenna number to which this record pertains."
+    @classmethod
+    def create(cls, time, antenna_number, antenna_feed_pol, measurement_type, value):
+        """
+        Create a new Autocorrelation table object.
 
-    polarization = NotNull(String(1))
-    """Which polarization this record refers to: "x" or "y"."""
+        Parameters
+        ----------
+        time : astropy time object
+            Astropy time object based on timestamp of autocorrelation.
+        antenna_number : int
+            Antenna Number
+        antenna_feed_pol : str
+            Feed polarization, either 'e' or 'n'.
+        measurement_type : str
+            The measurment type of the autocorrelation.
+            Currently supports: 'median'.
+        value : float
+            The median autocorrelation value as a float.
 
-    measurement_type = NotNull(SmallInteger)
-    "The type of measurement; see MeasurementTypes enumeration."
+        """
+        if not isinstance(time, Time):
+            raise ValueError("time must be an astropy Time object.")
+        auto_time = floor(time.gps)
 
-    # recommended portable way of getting double-precision float.
-    value = NotNull(Float(precision='53'))
-    "The autocorrelation value."
+        if antenna_feed_pol not in ["e", "n"]:
+            raise ValueError("antenna_feed_pol must be 'e' or 'n'.")
 
-    @property
-    def measurement_type_name(self):
-        return MeasurementTypes.names[self.measurement_type]
+        if not isinstance(measurement_type, six.string_types):
+            raise ValueError("measurement_type must be a string")
 
-    def __repr__(self):
-        return('<Autocorrelations id={self.id} time={self.time} antnum={self.antnum} '
-               'polarization={self.polarization} measurement_type={self.measurement_type_name} '
-               'value={self.value}>').format(self=self)
+        if measurement_type not in allowed_measurement_types:
+            raise ValueError(
+                "Autocorrelation type {0} not supported. "
+                "Only the following types are supported: {1}"
+                .format(measurement_type, allowed_measurement_types)
+            )
+
+        return cls(
+            time=auto_time,
+            antenna_number=antenna_number,
+            antenna_feed_pol=antenna_feed_pol,
+            measurement_type=measurement_type,
+            value=value
+        )
 
 
 def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
@@ -81,31 +141,17 @@ def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
 
     from chart_studio import plotly as py
 
-    hsession = cm_sysutils.Handling(session)
-    stations = hsession.get_connected_stations(at_date='now')
-
-    hera_ants = []
-    for station in stations:
-        if station.antenna_number not in hera_ants:
-            hera_ants = np.append(hera_ants, station.antenna_number)
-    hera_ants = np.unique(hera_ants).astype(int).tolist()
-
     data = []
+    all_autos = session.get_autocorrelation(most_recent=True)
 
-    # Plot antennas labeled as fully hooked up
-    q = (session.query(Autocorrelations).
-         filter(Autocorrelations.measurement_type == 0).
-         filter(Autocorrelations.antnum.in_(hera_ants)).
-         order_by(Autocorrelations.time).
-         all())
-    antennas = set(['{ant}{pol}'.format(ant=item.antnum, pol=item.polarization)
-                    for item in q])
+    antennas = set(['{ant}{pol}'.format(ant=item.antenna_number, pol=item.antenna_feed_pol)
+                    for item in all_autos])
     data = {}
     for ant in antennas:
         data[ant] = []
-    for item in q:
-        key = '{ant}{pol}'.format(ant=item.antnum, pol=item.polarization)
-        data[key].append([item.time, item.value])
+    for item in all_autos:
+        key = '{ant}{pol}'.format(ant=item.antenna_number, pol=item.antenna_feed_pol)
+        data[key].append([Time(item.time, format='gps').isot, item.value])
     scatters = []
     for ant in data:
         d = np.array(data[ant])

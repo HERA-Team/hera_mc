@@ -31,6 +31,7 @@ The dependencies are:
 - psutil
 - cartopy
 - pyyaml
+- redis-py
 
 All the dependencies should be available via conda.
 

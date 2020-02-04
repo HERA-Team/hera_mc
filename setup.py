@@ -37,7 +37,7 @@ setup_args = {
     'include_package_data': True,
     'install_requires': ["six", "numpy", "astropy", "sqlalchemy", "psycopg2",
                          "alembic", "python-dateutil", "tabulate", "pandas",
-                         "psutil", "cartopy", "pyyaml"],
+                         "psutil", "cartopy", "pyyaml", "redis"],
     'tests_require': ["pyyaml"],
     'classifiers': ["Development Status :: 4 - Beta",
                     "Environment :: Console",
