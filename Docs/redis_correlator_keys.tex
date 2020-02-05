@@ -2,8 +2,8 @@
 \usepackage[utf8]{inputenc}
 
 \title{Correlator Redis Keys}
-\author{Jack Hickish}
-\date{June 2019}
+\author{Jack Hickish, David DeBoer}
+\date{June 2019, February 2020}
 
 \begin{document}
 
@@ -12,6 +12,28 @@
 \section{Introduction}
 The HERA correlator implements a correlation pipeline using the HASHPIPE engine. The HASHPIPE library has built-in support for status monitoring using a redis database.
 This document outlines the status keys the correlator posts to redis, most of which come from the original PAPER GPU correlator design.
+
+\section{F-Engine keys}
+
+The F-engine (~aka SNAPs) store information related to the mappings between SNAP, antenna, position as \texttt{corr:map<key>}, which may be retrieved by using \texttt{json.loads(<redis-session>.hget(`corr:map', <key>))}
+The following keys are implemented
+
+\begin{centering}
+\begin{tabular}{c p{0.7\textwidth}}
+\hline
+Key Name & Description \\
+\hline
+\hline
+ant\_to\_snap           & Mapping of antenna number to snap hostname \\
+snap\_to\_ant           & Mapping of snap hostnames to antennas \\
+ant\_pos                   & ECEF positions of all the antennas \\
+cofa                          & lat, lon, alt of the center-of-the array \\
+update\_time           & Unix time of update \\
+update\_time\_str     & Human-readable time of update \\
+snap\_host                & Mapping of SNAP part number to hostname \\
+\end{tabular}
+\end{centering}
+
 
 \section{X-Engine keys}
 

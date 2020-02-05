@@ -15,12 +15,17 @@ import pytest
 import numpy as np
 
 from .. import (cm_sysutils, cm_partconnect, cm_hookup, cm_utils, utils,
-                cm_sysdef, cm_dossier, cm_active)
+                cm_sysdef, cm_dossier, cm_active, cm_redis_corr)
 
 
 @pytest.fixture(scope='function')
 def sys_handle(mcsession):
     return cm_sysutils.Handling(mcsession)
+
+
+def test_set_redis_cminfo(mcsession):
+    test_out = cm_redis_corr.set_redis_cminfo(redishost=None, session=mcsession, testing=True)
+    assert '{"host": "SNPA000700", "channel": 0}' in test_out['ant_to_snap']
 
 
 def test_ever_fully_connected(sys_handle):
@@ -31,7 +36,7 @@ def test_ever_fully_connected(sys_handle):
 
 def test_publish_summary(sys_handle):
     msg = sys_handle.publish_summary()
-    assert msg == 'Not on "main"'
+    assert msg is None
 
 
 def test_random_update(sys_handle):
