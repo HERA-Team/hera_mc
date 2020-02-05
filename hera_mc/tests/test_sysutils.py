@@ -16,6 +16,9 @@ import numpy as np
 
 from .. import (cm_sysutils, cm_partconnect, cm_hookup, cm_utils, utils,
                 cm_sysdef, cm_dossier, cm_active, cm_redis_corr)
+from .. tests import requires_redis
+from .. correlator import DEFAULT_REDIS_ADDRESS
+import redis
 
 
 @pytest.fixture(scope='function')
@@ -23,8 +26,12 @@ def sys_handle(mcsession):
     return cm_sysutils.Handling(mcsession)
 
 
+@requires_redis
 def test_set_redis_cminfo(mcsession):
-    test_out = cm_redis_corr.set_redis_cminfo(redishost=None, session=mcsession, testing=True)
+    redishost = DEFAULT_REDIS_ADDRESS
+    cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession)
+    rsession = redis.Redis(redishost)
+    test_out = rsession.hget('corr:map', 'ant_to_snap')
     assert '{"host": "SNPA000700", "channel": 0}' in test_out['ant_to_snap']
 
 

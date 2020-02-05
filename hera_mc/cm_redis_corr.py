@@ -23,7 +23,7 @@ def snap_part_to_host_input(part, rsession=None):
     adc_num = int(adc[1:]) // 2  # divide by 2 because ADC is in demux 2
     if rsession is None:
         hostname = name
-    else:  # pragma:  no cover
+    else:
         _x = rsession.hget('corr:map', 'snap_host')
         if _x is None:
             hostname = name
@@ -72,7 +72,7 @@ def cminfo_redis_loc(cminfo):
     return ant_pos, cofa
 
 
-def set_redis_cminfo(redishost=None, session=None, testing=False):
+def set_redis_cminfo(redishost=None, session=None):
     """
     Gets the configuration management information and writes to the
     redis database for the correlator.
@@ -84,13 +84,11 @@ def set_redis_cminfo(redishost=None, session=None, testing=False):
     """
     h = cm_sysutils.Handling(session=session)
     cminfo = h.get_cminfo_correlator()
-    if testing:
-        rsession = None
-    else:  # pragma:  no cover
-        if redishost is None:
-            redishost = DEFAULT_REDIS_ADDRESS
-        redis_pool = redis.ConnectionPool(host=redishost)
-        rsession = redis.Redis(connection_pool=redis_pool)
+
+    if redishost is None:
+        redishost = DEFAULT_REDIS_ADDRESS
+    redis_pool = redis.ConnectionPool(host=redishost)
+    rsession = redis.Redis(connection_pool=redis_pool)
 
     snap_to_ant, ant_to_snap = cminfo_redis_snap(cminfo, rsession=rsession)
     ant_pos, cofa = cminfo_redis_loc(cminfo)
@@ -103,7 +101,4 @@ def set_redis_cminfo(redishost=None, session=None, testing=False):
     redhash['update_time_str'] = time.ctime(redhash['update_time'])
     redhash['cm_version'] = cminfo['cm_version']
 
-    if testing:
-        return redhash
-    else:  # pragma:  no cover
-        rsession.hmset('corr:map', redhash)
+    rsession.hmset('corr:map', redhash)
