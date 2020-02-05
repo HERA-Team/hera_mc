@@ -23,11 +23,11 @@ def snap_part_to_host_input(part, rsession=None):
     adc_num = int(adc[1:]) // 2  # divide by 2 because ADC is in demux 2
     if rsession is None:
         hostname = name
-    else:
+    else:  # pragma:  no cover
         _x = rsession.hget('corr:map', 'snap_host')
         if _x is None:
             hostname = name
-        else:
+        else:  # pragma:  no cover
             hostname = json.loads(_x)[name]
     return hostname, adc_num
 
@@ -86,7 +86,7 @@ def set_redis_cminfo(redishost=None, session=None, testing=False):
     cminfo = h.get_cminfo_correlator()
     if testing:
         rsession = None
-    else:
+    else:  # pragma:  no cover
         if redishost is None:
             redishost = DEFAULT_REDIS_ADDRESS
         redis_pool = redis.ConnectionPool(host=redishost)
@@ -105,5 +105,5 @@ def set_redis_cminfo(redishost=None, session=None, testing=False):
 
     if testing:
         return redhash
-    else:
+    else:  # pragma:  no cover
         rsession.hmset('corr:map', redhash)
