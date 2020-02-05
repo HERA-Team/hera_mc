@@ -17,7 +17,24 @@ from .correlator import DEFAULT_REDIS_ADDRESS
 
 def snap_part_to_host_input(part, rsession=None):
     """
-    Given a part string, eg. 'e2>SNPC000008', return the hostname and adc number
+    Given a part string, eg. 'e2>SNPC000008' it will return the putative hostname
+    and adc number.  If a redis session is supplied and key available it returns the
+    hostname, otherwise it returns the SNAP name.  If None, returns the SNAP name.
+
+    Parameters
+    ----------
+    part : str
+        port>snap part string as returned by cminfo
+    rsession : None or redis session
+        If redis session and key available it returns the hostname, otherwise SNAP name
+        If None, returns the SNAP name
+
+    Returns
+    -------
+    hostname : str
+        hostname as parsed from input 'part' and redis
+    adc_num : str
+        port ADC number, as parsed from input 'part'
     """
     adc, name = part.split('>')
     adc_num = int(adc[1:]) // 2  # divide by 2 because ADC is in demux 2
@@ -36,6 +53,20 @@ def cminfo_redis_snap(cminfo, rsession=None):
     """
     Use hera_mc's get_cminfo_correlator method to build a dictionary
     of correlator mappings
+
+    Parameters
+    ----------
+    cminfo : dict
+        Dictionary as returned from get_cminfo_correlator()
+    rsession : None or redis session
+        Pass through of redis session
+
+    Returns
+    -------
+    snap_to_ant : dict
+        Dictionary mapping the snaps to the antennas
+    ant_to_snap : dict
+        Dictionary mapping each antenna to its snap
     """
     snap_to_ant = {}
     ant_to_snap = {}
@@ -65,6 +96,21 @@ def cminfo_redis_snap(cminfo, rsession=None):
 
 
 def cminfo_redis_loc(cminfo):
+    """
+    Places the positional data into redis for use by the correlator.
+
+    Parameter
+    ---------
+    cminfo : dict
+        Dictionary as returned from get_cminfo_correlator()
+
+    Returns
+    -------
+    ant_pos : dict
+        Dictionary containing the ECEF positions of all of the antennas.
+    cofa : dict
+        Dictionary containing the lat, lon, alt of the center-of-array
+    """
     ant_pos = {}
     for num, loc in zip(cminfo['antenna_numbers'], cminfo['antenna_positions']):
         ant_pos[num] = list(loc)
@@ -79,8 +125,10 @@ def set_redis_cminfo(redishost=None, session=None):
 
     Parameters
     ----------
-    redishost : str
-        Hostname for the redis database
+    redishost : None or str
+        Hostname for the redis database.  If None uses default
+    session : None or hera_mc session
+        Session for hera_mc instance.  None uses default
     """
     h = cm_sysutils.Handling(session=session)
     cminfo = h.get_cminfo_correlator()
