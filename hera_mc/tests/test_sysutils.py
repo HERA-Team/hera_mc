@@ -28,11 +28,12 @@ def sys_handle(mcsession):
 
 @requires_redis
 def test_set_redis_cminfo(mcsession):
+    # redishost = 'localhost'
     redishost = DEFAULT_REDIS_ADDRESS
     cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession)
     rsession = redis.Redis(redishost)
     test_out = rsession.hget('corr:map', 'ant_to_snap')
-    assert '{"host": "SNPA000700", "channel": 0}' in test_out['ant_to_snap']
+    assert b'{"host": "SNPA000700", "channel": 0}' in test_out
 
 
 def test_ever_fully_connected(sys_handle):

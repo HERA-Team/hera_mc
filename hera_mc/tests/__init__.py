@@ -18,10 +18,15 @@ from hera_mc.utils import get_iterable
 
 
 def redis_online():
+    # redishost = 'localhost'
+    redishost = None
     try:
         import redis
-        r = redis.Redis()
-        hera_redis = len([k for k in r.keys() if 'hera' in k.decode()]) > 0
+        r = redis.Redis(redishost)
+        if redishost == 'localhost':
+            hera_redis = r
+        else:
+            hera_redis = len([k for k in r.keys() if 'hera' in k.decode()]) > 0
     except:  # noqa
         hera_redis = False
     return (socket.gethostname() == 'qmaster') or hera_redis
