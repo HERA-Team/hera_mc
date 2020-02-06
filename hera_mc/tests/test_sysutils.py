@@ -17,7 +17,7 @@ import numpy as np
 from .. import (cm_sysutils, cm_partconnect, cm_hookup, cm_utils, utils,
                 cm_sysdef, cm_dossier, cm_active, cm_redis_corr)
 from .. tests import requires_redis
-from .. correlator import DEFAULT_REDIS_ADDRESS
+from .. tests import TEST_DEFAULT_REDIS_HOST
 import redis
 
 
@@ -28,8 +28,7 @@ def sys_handle(mcsession):
 
 @requires_redis
 def test_set_redis_cminfo(mcsession):
-    # redishost = 'localhost'
-    redishost = DEFAULT_REDIS_ADDRESS
+    redishost = TEST_DEFAULT_REDIS_HOST
     cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession)
     rsession = redis.Redis(redishost)
     test_out = rsession.hget('corr:map', 'ant_to_snap')

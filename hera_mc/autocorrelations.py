@@ -26,7 +26,7 @@ allowed_measurement_types = ["median"]
 measurement_func_dict = {"median": np.median}
 
 
-def _get_autos_from_redis(redishost=None):
+def _get_autos_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
     if redishost is None:
         redishost = DEFAULT_REDIS_ADDRESS
     redis_pool = redis.ConnectionPool(host=redishost)

@@ -16,7 +16,7 @@ This document outlines the status keys the correlator posts to redis, most of wh
 \section{F-Engine keys}
 
 The F-engine (~aka SNAPs) store information related to the mappings between SNAP, antenna, position as \texttt{corr:map<key>}, which may be retrieved by using \texttt{json.loads(<redis-session>.hget(`corr:map', <key>))}
-The following keys under 'corr:map' are implemented
+The following keys under the \texttt{corr:map} hash are implemented
 
 \begin{centering}
 \begin{tabular}{c p{0.7\textwidth}}

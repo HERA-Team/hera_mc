@@ -126,7 +126,7 @@ def cminfo_redis_loc(cminfo):
     return locations
 
 
-def set_redis_cminfo(redishost=None, session=None):
+def set_redis_cminfo(redishost=DEFAULT_REDIS_ADDRESS, session=None):
     """
     Gets the configuration management information and writes to the
     redis database for the correlator.
