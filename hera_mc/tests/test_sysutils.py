@@ -34,6 +34,8 @@ def test_set_redis_cminfo(mcsession):
     rsession = redis.Redis(redishost)
     test_out = rsession.hget('corr:map', 'ant_to_snap')
     assert b'{"host": "SNPA000700", "channel": 0}' in test_out
+    test_out = rsession.hget('corr:map', 'cofa')
+    assert b'{"lat": -30.72' in test_out
 
 
 def test_ever_fully_connected(sys_handle):
