@@ -16,7 +16,7 @@ This document outlines the status keys the correlator posts to redis, most of wh
 \section{F-Engine keys}
 
 The F-engine (~aka SNAPs) store information related to the mappings between SNAP, antenna, position as \texttt{corr:map<key>}, which may be retrieved by using \texttt{json.loads(<redis-session>.hget(`corr:map', <key>))}
-The following keys are implemented
+The following keys under 'corr:map' are implemented
 
 \begin{centering}
 \begin{tabular}{c p{0.7\textwidth}}
@@ -26,7 +26,11 @@ Key Name & Description \\
 \hline
 ant\_to\_snap           & Mapping of antenna number to snap hostname \\
 snap\_to\_ant           & Mapping of snap hostnames to antennas \\
-ant\_pos                   & ECEF positions of all the antennas \\
+antenna\_numbers  & list of the associated antenna numbers for the antenna\_positions \\
+antenna\_names & associated list of antenna names \\
+antenna\_positions                   & uvutils.rotECEF\_from\_ECEF positions of all the antennas \\
+antenna\_utm\_eastings & easting positions of antennas \\
+antenna\_utm\_northings & northing positions of antennas \\
 cofa                          & lat, lon, alt of the center-of-the array \\
 update\_time           & Unix time of update \\
 update\_time\_str     & Human-readable time of update \\
