@@ -73,25 +73,23 @@ def cminfo_redis_snap(cminfo, rsession=None):
     ant_to_snap = {}
     for antn, ant in enumerate(cminfo['antenna_numbers']):
         name = cminfo['antenna_names'][antn]
+        e_pol = None
+        n_pol = None
         for pol in cminfo['correlator_inputs'][antn]:
-            if pol.startswith('e'):
+            if pol.lower().startswith('e') and '>' in pol:
                 e_pol = pol
-            if pol.startswith('n'):
+            if pol.lower().startswith('n') and '>' in pol:
                 n_pol = pol
         ant_to_snap[ant] = {}
-        if e_pol != 'None':
-            snapi_e, channel_e = snap_part_to_host_input(cminfo['correlator_inputs'][antn][0],
-                                                         rsession=rsession)
+        if e_pol is not None:
+            snapi_e, channel_e = snap_part_to_host_input(e_pol, rsession=rsession)
             ant_to_snap[ant]['e'] = {'host': snapi_e, 'channel': channel_e}
-            if snapi_e not in snap_to_ant.keys():
-                snap_to_ant[snapi_e] = [None] * 6
+            snap_to_ant.setdefault(snapi_e, [None] * 6)
             snap_to_ant[snapi_e][channel_e] = name + 'E'
-        if n_pol != 'None':
-            snapi_n, channel_n = snap_part_to_host_input(cminfo['correlator_inputs'][antn][1],
-                                                         rsession=rsession)
+        if n_pol is not None:
+            snapi_n, channel_n = snap_part_to_host_input(n_pol, rsession=rsession)
             ant_to_snap[ant]['n'] = {'host': snapi_n, 'channel': channel_n}
-            if snapi_n not in snap_to_ant.keys():
-                snap_to_ant[snapi_n] = [None] * 6
+            snap_to_ant.setdefault(snapi_n, [None] * 6)
             snap_to_ant[snapi_n][channel_n] = name + 'N'
     return snap_to_ant, ant_to_snap
 

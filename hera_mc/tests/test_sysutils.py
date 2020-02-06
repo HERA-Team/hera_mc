@@ -37,6 +37,13 @@ def test_set_redis_cminfo(mcsession):
     assert b'{"lat": -30.72' in test_out
 
 
+def test_other_redis():
+    snap_info = 'e2>SNPC000008'
+    host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, rsession=None)
+    assert host == 'SNPC000008'
+    assert adc == 1
+
+
 def test_ever_fully_connected(sys_handle):
     now_list = sys_handle.get_connected_stations(
         at_date='now', hookup_type='parts_hera')
