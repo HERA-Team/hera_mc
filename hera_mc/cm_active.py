@@ -3,10 +3,7 @@
 # Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""
-Methods to load all active data for a given date.
-
-"""
+"""Methods to load all active data for a given date."""
 from __future__ import absolute_import, division, print_function
 
 from . import cm_utils
@@ -20,6 +17,7 @@ class ActiveData:
     Parameters
     ----------
     at_date : str, int, float, Time, datetime
+
     """
 
     def __init__(self, session=None, at_date='now'):
@@ -37,18 +35,18 @@ class ActiveData:
 
     def set_times(self, at_date):
         """
-        Makes sure that at_date and self.at_date are synced and supplies gps time
+        Make sure that at_date and self.at_date are synced and supplies gps time.
 
         Parameters
         ----------
         at_date : astropytime.Time or None
             Date for which to check.  If none, assumes self.at_date
 
-
         Returns
         -------
         int
             gps seconds of at_date
+
         """
         if at_date is not None:
             self.at_date = at_date
@@ -56,7 +54,7 @@ class ActiveData:
 
     def load_parts(self, at_date=None):
         """
-        Retrieves all active parts for a given at_date.
+        Retrieve all active parts for a given at_date.
 
         Loads the active parts onto the class and sets the class at_date.
         If at_date is None, the existing at_date on the object will be used.
@@ -69,6 +67,7 @@ class ActiveData:
         at_date : str, int, float, Time, datetime (optional)
             The date for which to check as active, given as anything comprehensible
             to get_astropytime.  If not present uses self.at_date
+
         """
         at_date = cm_utils.get_astropytime(at_date)
         gps_time = self.set_times(at_date)
@@ -83,7 +82,7 @@ class ActiveData:
 
     def load_connections(self, at_date=None):
         """
-        Retrieves all active connections for a given at_date.
+        Retrieve all active connections for a given at_date.
 
         Loads the active parts onto the class and sets the class at_date.
         If at_date is None, the existing at_date on the object will be used.
@@ -92,6 +91,7 @@ class ActiveData:
                 self.connections - has keys 'up' and 'down', each of which
                                    is a dictionary keyed on part:rev for
                                    upstream_part and downstream_part respectively.
+
         Parameters
         ----------
         at_date : str, int, float, Time, datetime (optional)
@@ -102,8 +102,8 @@ class ActiveData:
         ------
         ValueError
             If a duplicate is found.
-        """
 
+        """
         at_date = cm_utils.get_astropytime(at_date)
         gps_time = self.set_times(at_date)
         self.connections = {'up': {}, 'down': {}}
@@ -132,7 +132,7 @@ class ActiveData:
 
     def load_info(self, at_date=None):
         """
-        Retrieves all current part infomation (ie. before date).
+        Retrieve all current part infomation (ie. before date).
 
         Loads the part information up to at_date onto the class and sets the class at_date
         If at_date is None, the existing at_date on the object will be used.
@@ -145,6 +145,7 @@ class ActiveData:
         at_date : str, int, float, Time, datetime (optional)
             The date for which to check as active, given as anything comprehensible
             to get_astropytime
+
         """
         at_date = cm_utils.get_astropytime(at_date)
         gps_time = self.set_times(at_date)
@@ -158,7 +159,7 @@ class ActiveData:
 
     def load_apriori(self, at_date=None, rev='A'):
         """
-        Retrieves all active apriori status for a given at_date.
+        Retrieve all active apriori status for a given at_date.
 
         Loads the active apriori data onto the class and sets the class at_date.
         If at_date is None, the existing at_date on the object will be used.
@@ -173,6 +174,7 @@ class ActiveData:
             to get_astropytime.  If not present uses self.at_date
         rev : str
             Revision of antenna-station (always A)
+
         """
         at_date = cm_utils.get_astropytime(at_date)
         gps_time = self.set_times(at_date)
@@ -191,7 +193,7 @@ class ActiveData:
 
     def load_geo(self, at_date=None):
         """
-        Retrieves all current geo_location data (ie. before date).
+        Retrieve all current geo_location data (ie. before date).
 
         Loads the geo data at_date onto the class and sets the class at_date.
         If at_date is None, the existing at_date on the object will be used.
@@ -204,6 +206,7 @@ class ActiveData:
         at_date : str, int, float, Time, datetime (optional)
             The date for which to check as active, given as anything comprehensible
             to get_astropytime
+
         """
         from . import geo_location
         at_date = cm_utils.get_astropytime(at_date)
@@ -217,8 +220,9 @@ class ActiveData:
 
     def revs(self, hpn, exact_match=False):
         """
-        Returns a list of active revisions for the provided hpn list.  The returned
-        list is the concatentated set of revisions found for the provided list.
+        Return a list of active revisions for the provided hpn list.
+
+        The returned list is the concatentated set of revisions found for the provided list.
 
         The purpose is to find out what active revisions are present in the database.
         E.g., to check for all active revisions for all PAMs, call with hpn='PAM'.  To check
@@ -237,6 +241,7 @@ class ActiveData:
         list
             List of revision Namespaces for supplied hpn.
             Can show with cm_revisions.show_revisions
+
         """
         from argparse import Namespace
         hpn = [x.upper() for x in cm_utils.listify(hpn)]

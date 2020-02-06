@@ -2,10 +2,11 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Functions to handle various cm revision queries and checks.
+"""
+Functions to handle various cm revision queries and checks.
+
 LAST, ACTIVE, ALL, <specific> are handled (typically) via get_revisions_of_type.
 FULL revisions are called directly (get_full_revision)
-
 """
 
 from __future__ import absolute_import, division, print_function
@@ -22,9 +23,9 @@ revision_categories = ['last', 'active', 'all', 'full', 'none']
 
 def get_revisions_of_type(hpn, rev_type, at_date='now', session=None):
     """
-    Returns namespace of revisions
-        (hpn, rev, rev_query, started, ended, [hukey], [pkey])
-    of rev_query
+    Return namespace of revisions of rev_query.
+
+    Namespace is: (hpn, rev, rev_query, started, ended, [hukey], [pkey])
 
     Parameters
     ----------
@@ -41,8 +42,8 @@ def get_revisions_of_type(hpn, rev_type, at_date='now', session=None):
     -------
     Namespace
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
-    """
 
+    """
     rq = rev_type.upper()
     if rq.startswith('LAST'):
         return get_last_revision(hpn, session)
@@ -63,7 +64,7 @@ def get_revisions_of_type(hpn, rev_type, at_date='now', session=None):
 
 def get_last_revision(hpn, session=None):
     """
-    Returns list of latest revisions as Namespace(hpn,rev,erv_query,started,ended)
+    Return list of latest revisions as Namespace(hpn,rev,erv_query,started,ended).
 
     Parameters
     ----------
@@ -76,8 +77,8 @@ def get_last_revision(hpn, session=None):
     -------
     Namespace
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
-    """
 
+    """
     revisions = cm_partconnect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
@@ -105,7 +106,7 @@ def get_last_revision(hpn, session=None):
 
 def get_all_revisions(hpn, session=None):
     """
-    Returns list of all revisions as Namespace(hpn, rev, started, ended)
+    Return list of all revisions as Namespace(hpn, rev, started, ended).
 
     Parameters
     ----------
@@ -118,8 +119,8 @@ def get_all_revisions(hpn, session=None):
     -------
     Namespace
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
-    """
 
+    """
     revisions = cm_partconnect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
@@ -134,7 +135,7 @@ def get_all_revisions(hpn, session=None):
 
 def get_specific_revision(hpn, rq, session=None):
     """
-    Returns list of a particular revision as Namespace(hpn,rev,started,ended)
+    Return list of a particular revision as Namespace(hpn,rev,started,ended).
 
     Parameters
     ----------
@@ -149,8 +150,8 @@ def get_specific_revision(hpn, rq, session=None):
     -------
     Namespace
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
-    """
 
+    """
     revisions = cm_partconnect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
@@ -166,7 +167,7 @@ def get_specific_revision(hpn, rq, session=None):
 
 def get_active_revision(hpn, at_date, session=None):
     """
-    Returns list of active revisions as Namespace(hpn,rev,started,ended)
+    Return list of active revisions as Namespace(hpn,rev,started,ended).
 
     Parameters
     ----------
@@ -181,8 +182,8 @@ def get_active_revision(hpn, at_date, session=None):
     -------
     Namespace
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
-    """
 
+    """
     revisions = cm_partconnect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
@@ -199,7 +200,8 @@ def get_active_revision(hpn, at_date, session=None):
 
 def get_full_revision(hpn, hookup_dict):
     """
-    Returns Namespace list of fully connected parts
+    Return Namespace list of fully connected parts.
+
     If either pol is fully connected, it is returned.
     The hpn type must match the hookup_dict keys part type
 
@@ -214,8 +216,8 @@ def get_full_revision(hpn, hookup_dict):
     -------
     list
         List containing the relevant Namepace entries
-    """
 
+    """
     return_full_keys = []
     for k, h in six.iteritems(hookup_dict):
         hpn_hu, rev_hu = cm_utils.split_part_key(k)
@@ -241,7 +243,7 @@ ordered_columns = ['HPN', 'Revision', 'Number', 'Start', 'Stop']
 
 def show_revisions(rev_list, columns='all'):
     """
-    Show revisions for provided revision list
+    Show revisions for provided revision list.
 
     Parameters
     ----------
@@ -249,6 +251,7 @@ def show_revisions(rev_list, columns='all'):
         List of revision Namespaces provided by one of the other methods
     columns : list or str
         Columns to include.  If 'all', include all present.  Can be a csv string list.
+
     """
     if len(rev_list) == 0:
         return "No revisions found."

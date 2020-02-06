@@ -2,9 +2,7 @@
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Some low-level configuration management utility functions.
-
-"""
+"""Some low-level configuration management utility functions."""
 
 from __future__ import absolute_import, division, print_function
 
@@ -36,6 +34,7 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
     -------
     str
         git hash of cm repository
+
     """
     if cm_csv_path is None or testing:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_path)
@@ -49,7 +48,7 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
 
 def log(msg, **kwargs):
     """
-    Writes to the standard cm log file.
+    Write to the standard cm log file.
 
     Parameters
     ----------
@@ -57,6 +56,7 @@ def log(msg, **kwargs):
         log message to write.
     **kwargs : dict
         keywords and arguments to log.
+
     """
     fp = open(mc.cm_log_file, 'a')
     dt = Time.now()
@@ -87,6 +87,7 @@ system_wide_key = '__Sys__'
 
 
 def port_is_polarized(port, pol_list):
+    """Determine if a part is polarized."""
     for pol in pol_list:
         if port.upper().startswith(pol.upper()):
             return True
@@ -95,8 +96,9 @@ def port_is_polarized(port, pol_list):
 
 def make_part_key(hpn, rev, port=None):
     """
-    Returns the standard part key of hpn:rev[:port].  Port is only
-    included if not None
+    Return the standard part key of hpn:rev[:port].
+
+    Port is only included if not None
 
     Parameters
     ----------
@@ -111,6 +113,7 @@ def make_part_key(hpn, rev, port=None):
     -------
     str
         key
+
     """
     if hpn is None:
         return system_wide_key
@@ -126,7 +129,9 @@ def make_part_key(hpn, rev, port=None):
 
 def split_part_key(key):
     """
-    Splits the standard part key.  Only returns port if present in key.
+    Split the standard part key.
+
+    Only returns port if present in key.
 
     Parameters
     ----------
@@ -137,8 +142,8 @@ def split_part_key(key):
     -------
     tuple
         hpn, rev, [,port]
-    """
 
+    """
     split_key = key.split(":")
 
     if len(split_key) == 2:
@@ -159,6 +164,7 @@ def stringify(X):
     Returns
     -------
     str
+
     """
     if X is None:
         return None
@@ -183,6 +189,7 @@ def listify(X, None_as_list=False):
     Returns
     -------
     List or None
+
     """
     if X is None:
         if None_as_list:
@@ -198,7 +205,7 @@ def listify(X, None_as_list=False):
 
 def match_list(a_obj, b_obj, case_type=None):
     """
-    Returns a zipped list-pair of same length.
+    Return a zipped list-pair of same length.
 
     This can handle objects of any type, but its primary use is to make sure
     part number/revision calls as lists or strings are matched.  If case_type is
@@ -221,6 +228,7 @@ def match_list(a_obj, b_obj, case_type=None):
     ------
     ValueError
         If supplied objects can't be matched or invalid case_type.
+
     """
     a_obj = listify(a_obj, None_as_list=True)
     b_obj = listify(b_obj, None_as_list=True)
@@ -252,6 +260,7 @@ def to_upper(X):
     Returns
     -------
     str, list or None
+
     """
     if X is None:
         return None
@@ -272,6 +281,7 @@ def to_lower(X):
     Returns
     -------
     str, list or None
+
     """
     if X is None:
         return None
@@ -281,7 +291,9 @@ def to_lower(X):
 
 
 def add_verbosity_args(parser):
-    """Add a standardized "--verbosity" argument to an ArgParser object.
+    """
+    Add a standardized "--verbosity" argument to an ArgParser object.
+
     Returns the number of 'v's (-v=1 [low], -vv=2 [medium], -vvv=3 [high]) or the supplied integer.
     Defaults to 1
     Parsed by 'parse_verbosity' function
@@ -290,6 +302,7 @@ def add_verbosity_args(parser):
     ----------
     parser : object
         Parser object
+
     """
     parser.add_argument('-v', '--verbosity', help="Verbosity level -v -vv -vvv. [-vv].",
                         nargs='?', default=2)
@@ -308,6 +321,7 @@ def parse_verbosity(vargs):
     -------
     int
         Integer characterizing verbosity level
+
     """
     try:
         return int(vargs)
@@ -322,7 +336,9 @@ def parse_verbosity(vargs):
 
 # ##############################################DATE STUFF
 def add_date_time_args(parser):
-    """Add standardized "--date" and "--time" arguments to an ArgParser object.
+    """
+    Add standardized "--date" and "--time" arguments to an ArgParser object.
+
     Their values should then be converted into a Python DateTime object using
     the function `get_astropytime`.
 
@@ -330,6 +346,7 @@ def add_date_time_args(parser):
     ----------
     parser : object
         Parser object
+
     """
     parser.add_argument(
         '--date', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]",
@@ -340,7 +357,7 @@ def add_date_time_args(parser):
 
 def is_active(at_date, start_date, stop_date):
     """
-    Checks to see if at_date is within start/stop.
+    Check to see if at_date is within start/stop.
 
     Parameters
     ----------
@@ -350,6 +367,7 @@ def is_active(at_date, start_date, stop_date):
         Start date to use - anything intelligible by cm_utils.get_astropytime
     stop_date : str, int, Time
         Stop date to use - anything intelligible by cm_utils.get_astropytime
+
     """
     if at_date is None:
         return True
@@ -361,28 +379,33 @@ def is_active(at_date, start_date, stop_date):
 
 def future_date():
     """
-    Future is defined here, since defining a far FUTURE_DATE typically gives a
-    warning about UTC vs UT1 etc
+    Future is defined here.
+
+    Defining a far FUTURE_DATE typically gives a warning about UTC vs UT1 etc.
 
     Returns
     -------
     Time
         Time 300 days in the future.
+
     """
     return Time.now() + TimeDelta(300, format='jd')
 
 
 def get_stopdate(stop_date):
     """
-    Provide an appropriate stop date.  If None, provides future_date
+    Provide an appropriate stop date.
 
     Parameters
     ----------
     stop_date : str, int, None, Time
+        Anything intelligible by `get_astropytime`. If None, uses `future_date`.
 
     Returns
     -------
-    Time
+    Time object
+        Time object for stop_date.
+
     """
     if stop_date is None:
         return future_date()
@@ -391,17 +414,21 @@ def get_stopdate(stop_date):
 
 def get_time_for_display(display):
     """
-    Provide a reader-friendly time string for any time parse-able by get_astropytime -
+    Provide a reader-friendly time string.
+
+    Accepts any time parse-able by get_astropytime -
     if that results in None, then the string None is displayed.
 
     Parameters
     ----------
     display : str, int, None, Time
+        Time to display.
 
     Returns
     -------
     str
-        Readable string of time in display
+        Human readable string of time in display.
+
     """
     d = get_astropytime(display)
 
@@ -414,6 +441,8 @@ def get_time_for_display(display):
 
 def get_astropytime(adate, atime=0):
     """
+    Get an astropy time object based on provided string.
+
     Take in various incarnations of adate/atime and return an astropy.Time object or None.
     No time zone is allowed.
 
@@ -441,8 +470,8 @@ def get_astropytime(adate, atime=0):
     Returns
     -------
     astropy.Time or None
-    """
 
+    """
     if isinstance(adate, Time):
         return adate
     if isinstance(adate, datetime.datetime):
@@ -494,6 +523,17 @@ def get_astropytime(adate, atime=0):
 
 
 def peel_key(key, sort_order):
+    """
+    Separate a hookup key into its parts.
+
+    Parameters
+    ----------
+    key : str
+        key to separate.
+    sort_order : str
+        String specifying how to sort the key parts.
+
+    """
     rev = ''
     if ':' not in key:
         rev = ':A'
@@ -525,6 +565,8 @@ def peel_key(key, sort_order):
 
 def put_keys_in_order(keys, sort_order='NPR'):
     """
+    Order hookup keys by alpha+number order.
+
     Takes a list of hookup keys in the format of prefix[number][:revision] and
     puts them in alpha+number order.
 
@@ -539,6 +581,7 @@ def put_keys_in_order(keys, sort_order='NPR'):
     -------
     list
         Ordered list of keys
+
     """
     keylib = {}
     for k in keys:
@@ -552,7 +595,7 @@ def put_keys_in_order(keys, sort_order='NPR'):
 
 def html_table(headers, table):
     """
-    This formats a table into an html table.  Returns a string containing the full html table.
+    Format a table into an html table.
 
     Parameters
     ----------
@@ -567,7 +610,8 @@ def html_table(headers, table):
     Returns
     -------
     str
-        String containing the html table
+        String containing the full html table.
+
     """
     s_table = '<table border="1">\n<tr>'
     for h in headers:
@@ -586,7 +630,7 @@ def html_table(headers, table):
 
 def csv_table(headers, table):
     """
-    This formats a table into an csv string.  Returns a string containing the full csv table.
+    Format a table into an csv string.
 
     Parameters
     ----------
@@ -601,7 +645,8 @@ def csv_table(headers, table):
     Returns
     -------
     str
-        String containing the csv table
+        String containing the full csv table.
+
     """
     s_table = ''
     for h in headers:
@@ -616,7 +661,7 @@ def csv_table(headers, table):
 
 def query_default(param, args):
     """
-    Allows for a parameter to be queried, and return defaults for those not provided.
+    Allow for a parameter to be queried, and return defaults for those not provided.
 
     Parameters
     ----------
@@ -628,6 +673,7 @@ def query_default(param, args):
     Returns
     -------
     Queried value or default
+
     """
     vargs = vars(args)
     default = vargs[param]

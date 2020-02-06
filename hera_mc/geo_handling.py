@@ -3,7 +3,8 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Keeping track of geo-located stations.
+Keep track of geo-located stations.
+
 Top modules are generally called by external (to CM) scripts.
 Bottom part is the class that does the work.
 """
@@ -21,11 +22,12 @@ from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef
 
 def cofa(session=None):
     """
-    Returns location class of current COFA
+    Return location class of current COFA.
 
-    Parameters:
-    -------------
+    Parameters
+    ----------
     session:  db session to use
+
     """
     h = Handling(session)
     located = h.cofa()
@@ -35,18 +37,24 @@ def cofa(session=None):
 
 def get_location(location_names, query_date='now', session=None):
     """
-    This provides a function to query a location and get a geo_location
-        class back, with lon/lat added to the class.
+    Get a GeoLocation object with lon/lat attributes for a location name.
+
     This is the wrapper for other modules outside cm to call.
 
-    Returns location class of called name
+    Parameters
+    ----------
+    location_names : list of str
+        location names, either a station (geo_location key) or an antenna
+    query_date :  str
+        Date for query. Anything that `get_astropytime` can translate.
+    session : Session object
+        Session to use.
 
-    Parameters:
-    -------------
-    location_names:  location name, may be either a station (geo_location key)
-                     or an antenna
-    query_date:  date for query
-    session:  db session to use
+    Returns
+    -------
+    list of GeoLocation objects
+        objects corresponding to location_names, wtih lon/lat attributes added.
+
     """
     query_date = cm_utils.get_astropytime(query_date)
     h = Handling(session)
@@ -57,11 +65,14 @@ def get_location(location_names, query_date='now', session=None):
 
 def show_it_now(fignm=None):  # pragma: no cover
     """
+    Show plot.
+
     Used in scripts to actually make plot (as opposed to within python). Seems to be needed...
 
-    Parameters:
-    -------------
+    Parameters
+    ----------
     fignm:  string/int for figure
+
     """
     import matplotlib.pyplot as plt
     if fignm is not None:
@@ -72,6 +83,13 @@ def show_it_now(fignm=None):  # pragma: no cover
 class Handling:
     """
     Class to allow various manipulations of geo_locations and their properties etc.
+
+    Parameters
+    ----------
+    session : Session object
+        session on current database. If session is None, a new session
+        on the default database is created and used.
+
     """
 
     coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
@@ -79,10 +97,6 @@ class Handling:
     lat_corr = {'J': 10000000}
 
     def __init__(self, session=None, testing=False):
-        """
-        session: session on current database. If session is None, a new session
-                 on the default database is created and used.
-        """
         if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
             self.session = db.sessionmaker()
@@ -97,16 +111,17 @@ class Handling:
         self.station_types_plotted = False
 
     def close(self):
-        """
-        Close the session
-        """
+        """Close the session."""
         self.session.close()
 
     def cofa(self):
         """
         Get the current center of array.
 
-        Returns located cofa.
+        Returns
+        -------
+        GeoLocation object
+            GeoLocation object for the center of the array.
         """
         current_cofa = self.station_types['cofa']['Stations']
         located = self.get_location(current_cofa, 'now')
@@ -118,8 +133,9 @@ class Handling:
 
     def get_station_types(self):
         """
-        adds a dictionary of sub-arrays (station_types) to the class
-             [station_type_name]{'Prefix', 'Description':'...', 'plot_marker':'...', 'stations':[]}
+        Add a dictionary of sub-arrays (station_types) to the object.
+
+        [station_type_name]{'Prefix', 'Description':'...', 'plot_marker':'...', 'stations':[]}
         """
         self.station_types = {}
         for sta in self.session.query(geo_location.StationType):
@@ -138,9 +154,27 @@ class Handling:
                 warnings.warn(s)
 
     def set_graph(self, graph_it):
+        """
+        Set the graph attribute.
+
+        Parameters
+        ----------
+        graph_it : bool
+            Flag indicating whether a graph should be made.
+
+        """
         self.graph = graph_it
 
     def start_file(self, fname):
+        """
+        Open file for writing.
+
+        Parameters
+        ----------
+        fname :  str
+            File name to write to.
+
+        """
         import os.path as op
         if op.isfile(fname):
             print("{} exists so appending to it".format(fname))
@@ -152,14 +186,20 @@ class Handling:
 
     def is_in_database(self, station_name, db_name='geo_location'):
         """
-        checks to see if a station_name is in the named database
+        Check to see if a station_name is in the specified database table.
 
-        return True/False
+        Parameters
+        ----------
+        station_name :  str
+            Name of station.
+        db_name :  str
+            Name of database table
 
-        Parameters:
-        ------------
-        station_name:  string name of station
-        db_name:  name of database table
+        Returns
+        -------
+        bool
+            True if station_name is present in specified table, False otherwise.
+
         """
         if db_name == 'geo_location':
             station = self.session.query(geo_location.GeoLocation).filter(
@@ -177,19 +217,24 @@ class Handling:
 
     def find_antenna_at_station(self, station, query_date):
         """
-        checks to see what antenna is at a station
+        Get antenna details for a station.
 
-        Returns a tuple (antenna_name, antenna_revision), representing the antenna
-        that was active at the date query_date, or None if no antenna was active
-        at the station. Raises a warning if the database lists multiple active
-        connections at the station at query_date.
+        Parameters
+        ----------
+        station :  str
+            station name
+        query_date : string, int, Time, datetime
+            Date to get information for, anything that can be parsed by `get_astropytime`.
 
-        Parameters:
-        ------------
-        station:  station name as string.
-        query_date:  is the astropy Time for contemporary antenna
+        Returns
+        -------
+        tuple of str
+            (antenna_name, antenna_revision) for the antenna
+            that was active at the date query_date, or None if no antenna was active
+            at the station. Raises a warning if the database lists multiple active
+            connections at the station at query_date.
+
         """
-
         query_date = cm_utils.get_astropytime(query_date)
         connected_antenna = self.session.query(cm_partconnect.Connections).filter(
             (func.upper(cm_partconnect.Connections.upstream_part) == station.upper())
@@ -209,24 +254,21 @@ class Handling:
 
     def find_station_of_antenna(self, antenna, query_date):
         """
-        checks to see at which station an antenna is located
-
-        Returns None or the active station_name (must be an active station for
-            the query_date)
+        Get station for an antenna.
 
         Parameters
         ----------
         antenna : float, int, str
             antenna number as float, int, or string. If needed, it prepends the 'A'
         query_date : string, int, Time, datetime
-            is the astropy Time for contemporary antenna
+            Date to get information for, anything that can be parsed by `get_astropytime`.
 
         Returns
         -------
         str
-            station connected
-        """
+            station the antenna is connected to at query date.
 
+        """
         query_date = cm_utils.get_astropytime(query_date)
         if isinstance(antenna, (int, float)):
             antenna = 'A' + str(int(antenna))
@@ -248,14 +290,21 @@ class Handling:
 
     def get_location(self, to_find_list, query_date):
         """
-        Return the location of station_names in to_find_list at query_date.
+        Get GeoLocation objects for a list of station_names.
 
-        Parameters:
-        ------------
-        to_find_list:  station names to find (must be a list)
-        query_date:  astropy Time for contemporary antenna
+        Parameters
+        ----------
+        to_find_list :  list of str
+            station names to find
+        query_date : string, int, Time, datetime
+            Date to get information for, anything that can be parsed by `get_astropytime`.
+
+        Returns
+        -------
+        list of GeoLocation objects
+            GeoLocation objects corresponding to station names.
+
         """
-
         latlon_p = ccrs.Geodetic()
         utm_p = ccrs.UTM(self.hera_zone[0])
         lat_corr = self.lat_corr[self.hera_zone[1]]
@@ -276,7 +325,13 @@ class Handling:
 
     def print_loc_info(self, loc_list):
         """
-        Prints out location information as returned from get_location.
+        Print out location information as returned from get_location.
+
+        Parameters
+        ----------
+        loc_list : list of str
+            List of location_names to print information for.
+
         """
         if loc_list is None or len(loc_list) == 0:
             print("No locations found.")
@@ -291,6 +346,20 @@ class Handling:
             print('\tcreated:  ', cm_utils.get_time_for_display(a.created_date))
 
     def parse_station_types_to_check(self, sttc):
+        """
+        Parse station strings to list of startions.
+
+        Parameters
+        ----------
+        sttc : str or list of str
+            Stations to check, can be a list of stations or "all" or "default".
+
+        Returns
+        -------
+        list of str
+            List of startions.
+
+        """
         self.get_station_types()
         if isinstance(sttc, six.string_types):
             if sttc.lower() == 'all':
@@ -311,12 +380,15 @@ class Handling:
 
     def get_ants_installed_since(self, query_date, station_types_to_check='all'):
         """
-        Returns list of antennas installed since query_date.
+        Get list of antennas installed since query_date.
 
         Parameters
-        -----------
-        query_date:  date to limit check for installation
-        station_types_to_check:  list of stations types to limit check
+        ----------
+        query_date : astropy Time
+            Date to get limit check for installation.
+        station_types_to_check : str or list of str
+            Stations types to limit check.
+
         """
         station_types_to_check = self.parse_station_types_to_check(station_types_to_check)
         dt = query_date.gps
@@ -332,6 +404,23 @@ class Handling:
         return found_stations
 
     def get_antenna_label(self, label_to_show, stn, query_date):
+        """
+        Get a label for a station.
+
+        Parameters
+        ----------
+        label_to_show : str
+            Specify label type, one of ["name", "num", "ser"]
+        stn : GeoLocation object
+            station to get label for.
+        query_date : string, int, Time, datetime
+            Date to get information for, anything that can be parsed by `get_astropytime`.
+
+        Returns
+        -------
+        str
+            station label
+        """
         if label_to_show == 'name':
             return stn.station_name
         ant, rev = self.find_antenna_at_station(stn.station_name, query_date)
@@ -353,10 +442,13 @@ class Handling:
         """
         Plot a list of stations.
 
-        Parameters:
-        ------------
-        stations_to_plot_list:  list containing station_names (note:  NOT antenna_numbers)
-        kwargs:  arguments for marker_color, marker_shape, marker_size, label, xgraph, ygraph
+        Parameters
+        ----------
+        stations_to_plot_list : list of str
+            list containing station_names (note:  NOT antenna_numbers)
+        kwargs :  dict
+            arguments for marker_color, marker_shape, marker_size, label, xgraph, ygraph
+
         """
         if not len(locations) or not self.graph or self.testing:
             return
@@ -385,6 +477,7 @@ class Handling:
         return
 
     def plot_all_stations(self):
+        """Plot all stations."""
         if not self.graph:
             return
         import os.path
@@ -396,6 +489,24 @@ class Handling:
         return len(p[:, 0])
 
     def get_active_stations(self, query_date, station_types_to_use, hookup_type=None):
+        """
+        Get active stations.
+
+        Parameters
+        ----------
+        query_date : string, int, Time, datetime
+            Date to get avtive stations for, anything that can be parsed by `get_astropytime`.
+        station_types_to_use : str or list of str
+            Stations to use, can be a list of stations or "all" or "default".
+        hookup_type : str
+            hookup_type to use
+
+        Returns
+        -------
+        list of GeoLocation objects
+            List of GeoLocation objects for all active stations.
+
+        """
         from . import cm_hookup, cm_revisions
         query_date = cm_utils.get_astropytime(query_date)
         hookup = cm_hookup.Hookup(self.session)
@@ -415,15 +526,17 @@ class Handling:
 
     def plot_station_types(self, query_date, station_types_to_use, **kwargs):
         """
-        Plot the various sub-array types
+        Plot the various sub-array types.
 
-        Return figure number of plot
+        Parameters
+        ----------
+        query_date : string, int, Time, datetime
+            Date to get avtive stations for, anything that can be parsed by `get_astropytime`.
+        station_types_to_use : str or list of str
+            station_types or prefixes to plot.
+        kwargs :  dict
+            matplotlib arguments for marker_color, marker_shape, marker_size, label, xgraph, ygraph
 
-        Parameters:
-        ------------
-        query_date:  date to use.
-        station_types:  station_types or prefixes to plot
-        kwargs:  marker_color, marker_shape, marker_size, label, xgraph, ygraph
         """
         if self.station_types_plotted:
             return

@@ -52,7 +52,7 @@ class DaemonStatus(MCDeclarativeBase):
         Create a new daemon_status object.
 
         Parameters
-        ------------
+        ----------
         name : str
             Name of the daemon
         hostname : str

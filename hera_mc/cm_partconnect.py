@@ -2,9 +2,7 @@
 # Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""M&C logging of the parts and the connections between them.
-
-"""
+"""M&C logging of the parts and the connections between them."""
 
 from __future__ import absolute_import, division, print_function
 
@@ -21,18 +19,29 @@ no_connection_designator = '-X-'
 
 class Parts(MCDeclarativeBase):
     """
-    A table logging parts within the HERA system
+    A table logging parts within the HERA system.
+
     Stations will be considered parts of type='station'
     Note that ideally install_date would also be a primary key, but that
     screws up ForeignKey in connections
 
-    hpn: HERA part number for each part; part of the primary key.
-    hpn_rev: A revision letter of sequences of hpn - starts with A. . Part of the primary_key
-    hptype: A part-dependent string, i.e. feed, frontend, ...
-    manufacturer_number: A part number/serial number as specified by manufacturer
-    start_gpstime: The date when the part was installed (or otherwise assigned by project).
-    stop_gpstime: The date when the part was removed (or otherwise de-assigned by project).
+    Attributes
+    ----------
+    hpn : String Column
+        HERA part number for each part; part of the primary key.
+    hpn_rev : String Column
+        A revision letter of sequences of hpn - starts with A. . Part of the primary_key
+    hptype : String Column
+        A part-dependent string, i.e. feed, frontend, ...
+    manufacturer_number : String Column
+        A part number/serial number as specified by manufacturer
+    start_gpstime : BigInteger Column
+        The date when the part was installed (or otherwise assigned by project).
+    stop_gpstime : BigInteger Column
+        The date when the part was removed (or otherwise de-assigned by project).
+
     """
+
     __tablename__ = 'parts'
 
     hpn = Column(String(64), primary_key=True)
@@ -43,11 +52,13 @@ class Parts(MCDeclarativeBase):
     stop_gpstime = Column(BigInteger)
 
     def __repr__(self):
+        """Define representation."""
         return ('<heraPartNumber id={self.hpn}:{self.hpn_rev} '
                 'type={self.hptype} :: {self.start_gpstime} - {self.stop_gpstime}>'
                 .format(self=self))
 
     def __eq__(self, other):
+        """Define equality."""
         if isinstance(other, self.__class__) and\
            self.hpn.upper() == other.hpn.upper() and\
            self.hpn_rev.upper() == other.hpn_rev.upper():
@@ -55,10 +66,7 @@ class Parts(MCDeclarativeBase):
         return False
 
     def gps2Time(self):
-        """
-        Make astropy.Time object from gps
-        """
-
+        """Make astropy.Time object from gps."""
         self.start_date = Time(self.start_gpstime, format='gps')
         if self.stop_gpstime is None:
             self.stop_date = None
@@ -66,16 +74,14 @@ class Parts(MCDeclarativeBase):
             self.stop_date = Time(self.stop_gpstime, format='gps')
 
     def part(self, **kwargs):
-        """
-        Allows one to specify an arbitrary part.
-        """
+        """Allow specification of an arbitrary part."""
         for key, value in kwargs.items():
             setattr(self, key, value)
 
 
 def stop_existing_parts(session, part_list, at_date, allow_override=False):
     """
-    This adds stop times to the previous parts.
+    Add stop times to the previous parts.
 
     Parameters
     ----------
@@ -87,8 +93,8 @@ def stop_existing_parts(session, part_list, at_date, allow_override=False):
         Date to use for logging the stop
     allow_override : bool
         Flag to allow a reset of the stop time even if one exists.  Default is False
-    """
 
+    """
     stop_at = int(at_date.gps)
     data = []
     close_session_when_done = False
@@ -123,7 +129,9 @@ def stop_existing_parts(session, part_list, at_date, allow_override=False):
 
 def add_new_parts(session, part_list, at_date, allow_restart=False):
     """
-    This adds the new parts.  If a part is there and is stopped, it will log that info
+    Add new parts.
+
+    If a part is there and is stopped, it will log that info
     and restart the part.  If it is there and is not stopped, it does nothing.
 
     Parameters
@@ -136,8 +144,8 @@ def add_new_parts(session, part_list, at_date, allow_restart=False):
         Date to use for logging the stop
     allow_restart : bool
         Flag to allow the part to restarted if it already existed.
-    """
 
+    """
     start_at = int(at_date.gps)
     data = []
     close_session_when_done = False
@@ -182,6 +190,7 @@ def add_new_parts(session, part_list, at_date, allow_restart=False):
 def update_part(session=None, data=None):
     """
     Update the database given a hera part number with columns/values.
+
     This is a low-level module, generally called from somewhere else
 
     Parameters
@@ -200,8 +209,8 @@ def update_part(session=None, data=None):
     -------
     bool
         True if any updates were made, else False
-    """
 
+    """
     data_dict = format_and_check_update_part_request(data)
     if data_dict is None:
         return False
@@ -244,7 +253,7 @@ def update_part(session=None, data=None):
 
 def format_and_check_update_part_request(request):
     """
-    Parses the update request into a standard format dictionary keyed on the part/rev pair.
+    Parse the update request into a standard format dictionary keyed on the part/rev pair.
 
     Parameters
     ----------
@@ -260,8 +269,8 @@ def format_and_check_update_part_request(request):
     -------
     dict or None
         Dictionary containing the parsed commands, otherwise None if the request is None or empty
-    """
 
+    """
     if request is None or len(request) == 0:
         return None
 
@@ -300,7 +309,7 @@ def format_and_check_update_part_request(request):
 
 def get_part_revisions(hpn, session=None):
     """
-    Retrieves revision numbers for a given part (exact match).
+    Retrieve revision numbers for a given part (exact match).
 
     Parameters
     ----------
@@ -310,7 +319,6 @@ def get_part_revisions(hpn, session=None):
         Database session to use.  If None, it will start a new session, then close.
 
     """
-
     if hpn is None:
         return {}
 
@@ -362,13 +370,16 @@ class AprioriAntenna(MCDeclarativeBase):
     status = Column(Text, nullable=False)
 
     def __repr__(self):
+        """Define representation."""
         return('<{}: {}  [{} - {}]>'.format(
             self.antenna, self.status, self.start_gpstime, self.stop_gpstime))
 
     def old_statuses(self):
+        """Define old statuses in database but no longer used."""
         return ["passed_checks", "needs_checking", "known_bad", "not_connected"]
 
     def valid_statuses(self):
+        """Define current valid statuses."""
         return [
             "dish_maintenance",
             "dish_ok",
@@ -382,19 +393,22 @@ class AprioriAntenna(MCDeclarativeBase):
         ]
 
     def status_enum(self):
+        """Get list of valid statuses."""
         return self.valid_statuses()
 
 
 def get_apriori_antenna_status_enum():
+    """Get list of valid apriori statuses."""
     apa = AprioriAntenna()
     return apa.status_enum()
 
 
 def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, session=None):
     """
-    Updates the 'apriori_antenna' status table to one of the class enum values.  If the status
-    is not allowed, an error will be raised.  It adds the appropriate stop time to the previous
-    apriori_antenna status.
+    Update the 'apriori_antenna' status table to one of the class enum values.
+
+    If the status is not allowed, an error will be raised.
+    Adds the appropriate stop time to the previous apriori_antenna status.
 
     Parameters
     ----------
@@ -408,6 +422,7 @@ def update_apriori_antenna(antenna, status, start_gpstime, stop_gpstime=None, se
         Stop time for new apriori status, in GPS seconds, or None.
     session : object
         Database session to use.  If None, it will start a new session, then close.
+
     """
     new_apa = AprioriAntenna()
 
@@ -457,14 +472,20 @@ class PartInfo(MCDeclarativeBase):
     """
     A table for logging test information etc for parts.
 
-    hpn: A HERA part number for each part; intend to QRcode with this string.
+    Attributes
+    ----------
+    hpn : String Column
+        A HERA part number for each part; intend to QRcode with this string.
         Part of the primary_key
-    hpn_rev: HERA part revision number for each part; if sequencing same part number.
+    hpn_rev : String Column
+        HERA part revision number for each part; if sequencing same part number.
         Part of the primary_key
-    posting_gpstime: time that the data are posted
-        Part of the primary_key
-    comment: Comment associated with this data - or the data itself...
-    reference: Other reference associated with this entry.
+    posting_gpstime : BigInteger Column
+        Time that the data are posted. Part of the primary_key
+    comment : String Column
+        Comment associated with this data - or the data itself...
+    reference : String Column
+        Other reference associated with this entry.
     """
 
     __tablename__ = 'part_info'
@@ -476,13 +497,16 @@ class PartInfo(MCDeclarativeBase):
     reference = Column(String(256))
 
     def __repr__(self):
+        """Define representation."""
         return ('<heraPartNumber id = {self.hpn}:{self.hpn_rev} '
                 'comment = {self.comment}>'.format(self=self))
 
     def gps2Time(self):
+        """Add a posting_date attribute (astropy Time object) based on posting_gpstime."""
         self.posting_date = Time(self.posting_gpstime, format='gps')
 
     def info(self, **kwargs):
+        """Add arbitrary attributes passed in a dict to this object."""
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -505,6 +529,7 @@ def add_part_info(session, hpn, rev, at_date, comment, reference=None):
         String containing the comment to be logged.
     reference : str, None
         If appropriate, name or link of library file or other information.
+
     """
     close_session_when_done = False
     if session is None:  # pragma: no cover
@@ -527,27 +552,39 @@ def add_part_info(session, hpn, rev, at_date, comment, reference=None):
 class Connections(MCDeclarativeBase):
     """
     A table for logging connections between parts.
+
     Part and Port must be unique when combined
 
-    upstream_part: up refers to the skyward part,
+    Attributes
+    ----------
+    upstream_part : String Column
+        up refers to the skyward part,
         e.g. frontend:cable, 'A' is the frontend, 'B' is the cable.
         Signal flows from A->B"
         Part of the primary_key, Foreign Key into parts
-    up_part_rev: up refers to the skyward part revision number.
+    up_part_rev : String Column
+        up refers to the skyward part revision number.
         Part of the primary_key, Foreign Key into parts
-    upstream_output_port: connected output port on upstream (skyward) part.
+    upstream_output_port : String Column
+        connected output port on upstream (skyward) part.
         Part of the primary_key
-    downstream_part: down refers to the part that is further from the sky, e.g.
+    downstream_part : String Column
+        down refers to the part that is further from the sky, e.g.
         Part of the primary_key, Foreign Key into parts
-    down_part_rev: down refers to the part that is further from the sky, e.g.
+    down_part_rev : String Column
+        down refers to the part that is further from the sky, e.g.
         Part of the primary_key, Foreign Key into parts
-    downstream_input_port: connected input port on downstream (further from the sky) part
+    downstream_input_port : String Column
+        connected input port on downstream (further from the sky) part
         Part of the primary_key
-    start_gpstime: start_time is the time that the connection is set
+    start_gpstime : BigInteger Column
+        start_time is the time that the connection is set
         Part of the primary_key
-    stop_gpstime: stop_time is the time that the connection is removed
+    stop_gpstime : BigInteger Column
+        stop_time is the time that the connection is removed
 
     """
+
     __tablename__ = 'connections'
 
     upstream_part = Column(String(64), nullable=False, primary_key=True)
@@ -566,12 +603,14 @@ class Connections(MCDeclarativeBase):
     stop_gpstime = Column(BigInteger)
 
     def __repr__(self):
+        """Define representation."""
         up = '{self.upstream_part}:{self.up_part_rev}'.format(self=self)
         down = '{self.downstream_part}:{self.down_part_rev}'.format(self=self)
         return ('<{}<{self.upstream_output_port}|{self.downstream_input_port}>{}>'
                 .format(up, down, self=self))
 
     def __eq__(self, other):
+        """Define equality."""
         if isinstance(other, self.__class__) and\
            self.upstream_part.upper() == other.upstream_part.upper() and\
            self.up_part_rev.upper() == other.up_part_rev.upper() and\
@@ -584,7 +623,9 @@ class Connections(MCDeclarativeBase):
 
     def gps2Time(self):
         """
-        Adds gps seconds to Time.
+        Add start_date and stop_date attributes (astropy Time objects).
+
+        Based on start_gpstime and stop_gpstime.
         """
         self.start_date = Time(self.start_gpstime, format='gps')
         if self.stop_gpstime is None:
@@ -594,6 +635,8 @@ class Connections(MCDeclarativeBase):
 
     def connection(self, **kwargs):
         """
+        Add arbitrary attributes passed in a dict to this object.
+
         Allows arbitrary connection to be specified.
         """
         for key, value in kwargs.items():
@@ -610,7 +653,7 @@ class Connections(MCDeclarativeBase):
 
 def get_connection_from_dict(input_dict):
     """
-    Converts a dictionary holding the connection info into a Connections object.
+    Convert a dictionary holding the connection info into a Connections object.
 
     Parameter
     ---------
@@ -623,8 +666,8 @@ def get_connection_from_dict(input_dict):
     Returns
     -------
     Connections object
-    """
 
+    """
     return Connections(upstream_part=input_dict['upstream_part'],
                        up_part_rev=input_dict['up_part_rev'],
                        upstream_output_port=input_dict['upstream_output_port'],
@@ -635,14 +678,15 @@ def get_connection_from_dict(input_dict):
 
 def get_null_connection():
     """
-    Returns a null connection, where all components hold the no_connection_designator and
-    dates/times are None
+    Return a null connection.
+
+    All components hold the no_connection_designator and dates/times are None
 
     Returns
     -------
     Connections object
-    """
 
+    """
     nc = no_connection_designator
     return Connections(upstream_part=nc, up_part_rev=nc, upstream_output_port=nc,
                        downstream_part=nc, down_part_rev=nc, downstream_input_port=nc,
@@ -651,7 +695,9 @@ def get_null_connection():
 
 def stop_existing_connections_to_part(session, handling, conn_list, at_date):
     """
-    This adds stop times to the connections for parts listed in conn_list.  Use this method with
+    Add stop times to the connections for parts listed in conn_list.
+
+    Use this method with
     caution, as it currently doesn't include much checking.  You probably should use the much
     more specific stop_connections method below.  It is being kept around for possible use in
     future scripts that "remove" replaced parts.
@@ -666,8 +712,8 @@ def stop_existing_connections_to_part(session, handling, conn_list, at_date):
         This containing the connections to stop, as [[hpn0, rev0, port0], ...]
     at_date : astropy.Time object
         date at which to stop
-    """
 
+    """
     stop_at = int(at_date.gps)
     data = []
 
@@ -693,7 +739,7 @@ def stop_existing_connections_to_part(session, handling, conn_list, at_date):
 
 def stop_connections(session, conn_list, at_date):
     """
-    This adds a stop_date to the connections in conn_list
+    Add a stop_date to the connections in conn_list.
 
     Parameters
     ----------
@@ -703,8 +749,8 @@ def stop_connections(session, conn_list, at_date):
         List with data [[upstream_part,rev,port,downstream_part,rev,port,start_gpstime],...]
     at_date : astropy.Time
         date at which to stop connection
-    """
 
+    """
     stop_at = int(at_date.gps)
     data = []
     for conn in conn_list:
@@ -722,6 +768,8 @@ def stop_connections(session, conn_list, at_date):
 
 def add_new_connections(session, cobj, conn_list, at_date):
     """
+    Add a new connection based on a Connection object.
+
     This uses a connection object to send data to the update_connection method
     to make a new connection
 
@@ -735,6 +783,7 @@ def add_new_connections(session, cobj, conn_list, at_date):
         List with data [[upstream_part,rev,port,downstream_part,rev,port,start_gpstime],...]
     at_date : astropy.Time
         date at which to start connection
+
     """
     start_at = int(at_date.gps)
     data = []
@@ -772,8 +821,9 @@ def add_new_connections(session, cobj, conn_list, at_date):
 
 def update_connection(session=None, data=None, add_new_connection=False):
     """
-    update the database given a connection with columns/values.
-    adds if add_new_connection flag is true
+    Update the database given a connection with columns/values.
+
+    Will add a new connection if add_new_connection flag is true
 
     Parameters
     ----------
@@ -790,8 +840,8 @@ def update_connection(session=None, data=None, add_new_connection=False):
     -------
     bool
         True if succesful, otherwise False
-    """
 
+    """
     data_dict = format_check_update_connection_request(data)
     if data_dict is None:
         print('Error: invalid update')
@@ -861,7 +911,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
 
 def format_check_update_connection_request(request):
     """
-    parses the update request
+    Parse the update request.
 
     Parameters
     ----------
@@ -873,8 +923,8 @@ def format_check_update_connection_request(request):
     -------
     dictionary
         The dictionary holds the parsed request appropriate for update_connection
-    """
 
+    """
     if request is None:
         return None
     # Split out and get first

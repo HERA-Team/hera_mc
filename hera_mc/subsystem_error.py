@@ -3,7 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Common subsystem_error table
+Common subsystem_error table.
 
 The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
@@ -51,8 +51,8 @@ class SubsystemError(MCDeclarativeBase):
         """
         Create a new subsystem_error object.
 
-        Parameters:
-        ------------
+        Parameters
+        ----------
         db_time : astropy Time object
             Astropy time object based on a timestamp from the database.
             Usually generated from MCSession.get_current_db_time()

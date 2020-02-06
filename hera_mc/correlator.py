@@ -99,7 +99,7 @@ class CorrelatorControlState(MCDeclarativeBase):
         Create a new correlator control state object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object based on a timestamp reported by the correlator.
         state_type : str
@@ -127,7 +127,7 @@ def _get_control_state(corr_cm=None,
     Get the latest states and associated timestamp from the correlator.
 
     Parameters
-    ---------
+    ----------
     corr_cm : hera_corr_cm.HeraCorrCM object
         HeraCorrCM object to use. If None, this function will make a new one.
     correlator_redis_address : str
@@ -177,7 +177,7 @@ class CorrelatorConfigFile(MCDeclarativeBase):
         Create a new correlator config file object.
 
         Parameters
-        ------------
+        ----------
         config_hash : str
             unique hash of the config
         filename : str
@@ -212,7 +212,7 @@ class CorrelatorConfigStatus(MCDeclarativeBase):
         Create a new correlator config status object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object based on a timestamp reported by the correlator.
         config_hash : str
@@ -231,7 +231,7 @@ def _get_config(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     Get the latest config, hash and associated timestamp from the correlator.
 
     Parameters
-    ---------
+    ----------
     corr_cm : hera_corr_cm.HeraCorrCM object
         HeraCorrCM object to use. If None, this function will make a new one.
     correlator_redis_address : str
@@ -278,7 +278,7 @@ class CorrelatorControlCommand(MCDeclarativeBase):
         Create a new correlator control command object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object for time command was sent.
         command : str
@@ -304,7 +304,7 @@ def _get_integration_time(acclen_spectra, corr_cm=None,
     Get the integration time in seconds for a given acclen in spectra.
 
     Parameters
-    ---------
+    ----------
     acclen_spectra : int
         Accumulation length in number of spectra.
     corr_cm : hera_corr_cm.HeraCorrCM object
@@ -332,7 +332,7 @@ def _get_next_start_time(corr_cm=None,
     Get the next start time from the correlator, in gps seconds.
 
     Parameters
-    ---------
+    ----------
     corr_cm : hera_corr_cm.HeraCorrCM object
         HeraCorrCM object to use. If None, this function will make a new one.
     correlator_redis_address : str
@@ -409,7 +409,7 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
         Create a new correlator take data arguments object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object for time the take_data command was sent.
         starttime : astropy Time object
@@ -482,7 +482,7 @@ class CorrelatorConfigCommand(MCDeclarativeBase):
         Create a new correlator config command object.
 
         Parameters
-        ------------
+        ----------
         time : astropy time object
             Astropy time object based on a timestamp reported by the correlator
         config_hash : str
@@ -526,7 +526,7 @@ class CorrelatorSoftwareVersions(MCDeclarativeBase):
         Create a new correlator software versions object.
 
         Parameters
-        ------------
+        ----------
         time : astropy time object
             Astropy time object based on the version report timestamp.
         package : str
@@ -578,7 +578,7 @@ class SNAPConfigVersion(MCDeclarativeBase):
         Create a new SNAP configuration and version object.
 
         Parameters
-        ------------
+        ----------
         init_time : astropy time object
             Astropy time object for when the SNAPs were last initialized with
             the `hera_snap_feng_init.py` script.
@@ -605,7 +605,7 @@ def _get_corr_versions(corr_cm=None,
     Get the versions dict from the correlator.
 
     Parameters
-    ---------
+    ----------
     corr_cm : hera_corr_cm.HeraCorrCM object
         HeraCorrCM object to use. If None, this function will make a new one.
     correlator_redis_address : str
@@ -697,7 +697,7 @@ class SNAPStatus(MCDeclarativeBase):
         Create a new SNAP status object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Astropy time object based on a timestamp reported by node.
         hostname : str
@@ -747,7 +747,7 @@ def _get_snap_status(corr_cm=None,
     Get the snap status dict from the correlator.
 
     Parameters
-    ---------
+    ----------
     corr_cm : hera_corr_cm.HeraCorrCM object
         HeraCorrCM object to use. If None, this function will make a new one.
     correlator_redis_address : str
@@ -872,7 +872,7 @@ class AntennaStatus(MCDeclarativeBase):
         Create a new antenna status object.
 
         Parameters
-        ------------
+        ----------
         time : astropy time object
             Astropy time object based on a timestamp reported by node.
         antenna_number : int
@@ -982,7 +982,7 @@ def _get_ant_status(corr_cm=None,
     Get the antenna status dict from the correlator.
 
     Parameters
-    ---------
+    ----------
     corr_cm : hera_corr_cm.HeraCorrCM object
         HeraCorrCM object to use. If None, this function will make a new one.
     correlator_redis_address : str
@@ -1078,14 +1078,14 @@ def create_antenna_status(corr_cm=None,
     Return a list of antenna status objects with data from the correlator.
 
     Parameters
-    ------------
+    ----------
     correlator_redis_address: Address of server where the correlator redis
         database can be accessed.
     ant_status_dict: A dict spoofing the return dict from _get_ant_status for
         testing purposes.
 
     Returns
-    -----------
+    -------
     list of AntennaStatus objects
 
     """

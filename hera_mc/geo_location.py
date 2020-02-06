@@ -2,9 +2,7 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Keeping track of geo-located stations.
-
-"""
+"""Keep track of geo-located stations."""
 
 from __future__ import absolute_import, division, print_function
 
@@ -17,16 +15,24 @@ from . import mc, cm_utils
 
 class StationType(MCDeclarativeBase):
     """
-    A table to track/denote station type data categories in various ways
+    Table to track/denote station type data categories in various ways.
 
-    station_type_name: Name of type class, Primary_key
+    Attributes
+    ----------
+    station_type_name : String Column
+        Name of type class, Primary_key
+    prefix : String Column
+        String prefix to station type, elements of which are typically
+        characterized by <prefix><int>. Comma-delimit list if more than one.
         Note that prefix is not in the primary_key, so there can be multiple
         prefixes per type_name.
-    prefix: String prefix to station type, elements of which are typically
-            characterized by <prefix><int>. Comma-delimit list if more than one.
-    description: Short description of station type.
-    plot_marker: matplotlib marker type to use
+    description : String Column
+        hort description of station type.
+    plot_marker : String Column
+        matplotlib marker type to use
+
     """
+
     __tablename__ = 'station_type'
 
     station_type_name = Column(String(64), primary_key=True)
@@ -35,25 +41,39 @@ class StationType(MCDeclarativeBase):
     plot_marker = Column(String(64))
 
     def __repr__(self):
+        """Define representation."""
         return ('<subarray {self.station_type_name}: prefix={self.prefix} '
                 'description={self.description} marker={self.plot_marker}>'
                 .format(self=self))
 
 
 class GeoLocation(MCDeclarativeBase):
-    """A table logging stations within HERA.
-
-    station_name: Colloquial name of station (which is a unique location on the ground).
-        This one shouldn't change. Primary_key
-    station_type_name: Name of station type of which it is a member.
-        Should match prefix per station_type table.
-    datum: Datum of the geoid.
-    tile: UTM tile
-    northing: Northing coordinate in m
-    easting: Easting coordinate in m
-    elevation: Elevation in m
-    created_gpstime: The date when the station assigned by project.
     """
+    A table logging stations within HERA.
+
+    Attributes
+    ----------
+    station_name : String Column
+        Colloquial name of station (which is a unique location on the ground).
+        This one shouldn't change. Primary_key
+    station_type_name : String Column
+        Name of station type of which it is a member.
+        Should match prefix per station_type table.
+    datum : String Column
+        Datum of the geoid.
+    tile : String Column
+        UTM tile
+    northing : Float Column
+        Northing coordinate in m
+    easting : Float Column
+        Easting coordinate in m
+    elevation : Float Column
+        Elevation in m
+    created_gpstime : BigInteger Column
+        The date when the station assigned by project.
+
+    """
+
     __tablename__ = 'geo_location'
 
     station_name = Column(String(64), primary_key=True)
@@ -67,15 +87,18 @@ class GeoLocation(MCDeclarativeBase):
     created_gpstime = NotNull(BigInteger)
 
     def gps2Time(self):
+        """Add a created_date attribute -- an astropy Time object based on created_gpstime."""
         self.created_date = Time(self.created_gpstime, format='gps')
 
     def geo(self, **kwargs):
+        """Add arbitrary attributes to object based on dict."""
         for key, value in kwargs.items():
             if key == 'station_name':
                 value = value.upper()
             setattr(self, key, value)
 
     def __repr__(self):
+        """Define representation."""
         return '<station_name={self.station_name} station_type={self.station_type_name} \
         northing={self.northing} easting={self.easting} \
         elevation={self.elevation}>'.format(self=self)
@@ -83,8 +106,8 @@ class GeoLocation(MCDeclarativeBase):
 
 def update(session=None, data=None, add_new_geo=False):
     """
-    update the database given a station_name and station_number with columns/values
-        and provides some checking.
+    Update the geo_location table with some data.
+
     use with caution -- should usually use in a script which will do datetime
         primary key etc
 
@@ -105,8 +128,8 @@ def update(session=None, data=None, add_new_geo=False):
     -------
     bool
         Flag if successful
-    """
 
+    """
     data_dict = format_check_update_request(data)
     if data_dict is None:
         print('No update - doing nothing.')
@@ -151,7 +174,7 @@ def update(session=None, data=None, add_new_geo=False):
 
 def format_check_update_request(request):
     """
-    Parses the update request for use in the update function
+    Parse the update request for use in the update function.
 
     return dictionary
 
@@ -169,6 +192,7 @@ def format_check_update_request(request):
     -------
     dict
         Parsed request for update
+
     """
     if request is None:
         return None

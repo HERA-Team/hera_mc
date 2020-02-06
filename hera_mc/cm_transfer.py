@@ -5,6 +5,7 @@
 
 """
 Definitions to generate table initialization files.
+
 Used in scripts cm_init.py, cm_pack.py
 """
 from __future__ import absolute_import, division, print_function
@@ -23,15 +24,23 @@ from . import MCDeclarativeBase, mc, cm_table_info, cm_utils, utils
 
 class CMVersion(MCDeclarativeBase):
     """
-    Definition of cm_version table. This table simply stores the git hash of the
-        repository to which the cm tables were packaged from the onsite database.
+    Definition of cm_version table.
+
+    This table simply stores the git hash of the
+    repository to which the cm tables were packaged from the onsite database.
 
     For offsite & test databases, this table is populated by the cm initialization
-        code using the git hash of the repository used for the initialization.
+    code using the git hash of the repository used for the initialization.
 
-    update_time: gps time of the cm update (long integer) Primary key.
-    git_hash: cm repo git hash (String)
+    Attributes
+    ----------
+    update_time : BigInteger Column
+        gps time of the cm update (long integer) Primary key.
+    git_hash : String Column
+        cm repo git hash (String)
+
     """
+
     __tablename__ = 'cm_version'
     update_time = Column(BigInteger, primary_key=True, autoincrement=False)
     git_hash = Column(String(64), nullable=False)
@@ -66,8 +75,9 @@ class CMVersion(MCDeclarativeBase):
 
 def package_db_to_csv(session=None, tables='all'):
     """
-    This will get the configuration management tables from the database
-       and package them to csv files to be read by initialize_db_from_csv
+    Get the configuration management tables and package them to csv files.
+
+    The csv files are read by initialize_db_from_csv.
 
     Parameters
     ----------
@@ -81,6 +91,7 @@ def package_db_to_csv(session=None, tables='all'):
     -------
     list
         list of filenames written
+
     """
     if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
@@ -110,15 +121,16 @@ def package_db_to_csv(session=None, tables='all'):
 
 def pack_n_go(session, cm_csv_path):  # pragma: no cover
     """
-    This module will move the csv files to the distribution directory, commit them
-    and put the new commit hash into the database
+    Move the csv files to the distribution directory, commit them and update the hash.
 
-    Parameters:
-    ------------
+    Puts the new commit hash into the M&C database
+
+    Parameters
+    ----------
     cm_csv_path : str
         Path to csv distribution directory
-    """
 
+    """
     # move files over to dist dir
     cmd = "mv -f *.csv {}".format(cm_csv_path)
     subprocess.call(cmd, shell=True)
@@ -138,12 +150,14 @@ def pack_n_go(session, cm_csv_path):  # pragma: no cover
 def initialize_db_from_csv(session=None, tables='all', maindb=False,
                            testing=False, cm_csv_path=None):  # pragma: no cover
     """
-    This entry module provides a double-check entry point to read the csv files and
-       repopulate the configuration management database.  It destroys all current entries,
-       hence the double-check
+    Read the csv files and repopulate the configuration management database.
 
-    Parameters:
-    ------------
+    This entry module provides a double-check entry point to read the csv files and
+    repopulate the configuration management database.  It destroys all current entries,
+    hence the double-check
+
+    Parameters
+    ----------
     session: Session object
         session on current database. If session is None, a new session
         on the default database is created and used.
@@ -160,8 +174,8 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False,
     -------
     bool
         Success, True or False
-    """
 
+    """
     print("This will erase and rewrite the configuration management tables.")
     you_are_sure = six.moves.input("Are you sure you want to do this (y/n)? ")
     if you_are_sure == 'y':
@@ -176,7 +190,7 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False,
 def check_if_main(session, config_path=None, expected_hostname='qmaster',
                   test_db_name='testing'):
     """
-    This determines if the code is running on the site main computer or not.
+    Determine if the code is running on the site main computer or not.
 
     Parameters
     ----------
@@ -193,6 +207,7 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     -------
     bool
         True if main host, False if not.
+
     """
     # the 'hostname' call on qmaster returns the following value:
     import socket
@@ -232,7 +247,7 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
 
 def db_validation(maindb_pw, session):
     """
-    Check if you are working on the main db and if so if you have the right password
+    Check if you are working on the main db and if so if you have the right password.
 
     Parameters
     ----------
@@ -245,6 +260,7 @@ def db_validation(maindb_pw, session):
     -------
     bool
         True means you are allowed to modify main database.  False not.
+
     """
     is_maindb = check_if_main(session)
 
@@ -261,7 +277,9 @@ def db_validation(maindb_pw, session):
 
 def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, testing=False):
     """
-    Internal initialization method, should be called via initialize_db_from_csv
+    Initialize the database.
+
+    This is an internal initialization method, it should be called via initialize_db_from_csv.
 
     Parameters
     ----------
@@ -279,8 +297,8 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, 
     -------
     bool
         Success, True or False
-    """
 
+    """
     if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()

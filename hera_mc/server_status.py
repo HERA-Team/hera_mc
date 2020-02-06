@@ -3,7 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Common server_status table
+Common server_status table.
 
 The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
@@ -75,8 +75,8 @@ class ServerStatus(MCDeclarativeBase):
         """
         Create a new server_status object.
 
-        Parameters:
-        ------------
+        Parameters
+        ----------
         db_time : astropy Time object
             Astropy time object based on a timestamp from the database.
             Usually generated from MCSession.get_current_db_time()
@@ -122,6 +122,15 @@ class ServerStatus(MCDeclarativeBase):
 
 
 def plot_host_status_for_plotly(session):
+    """
+    Plot host status using plotly.
+
+    Parameters
+    ----------
+    session : MCSession object
+        MCSession object to get data from database with.
+
+    """
     from astropy.time import Time
     if six.PY3:
         from plotly import graph_objects as go

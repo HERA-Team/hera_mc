@@ -59,8 +59,8 @@ class Observation(MCDeclarativeBase):
         """
         Create a new observation object using Astropy to compute the LST.
 
-        Parameters:
-        ------------
+        Parameters
+        ----------
         starttime : astropy Time object
             Observation starttime.
         stoptime : astropy Time object

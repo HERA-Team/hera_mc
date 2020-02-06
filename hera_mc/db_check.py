@@ -22,7 +22,7 @@ def check_connection(session):
         Session to use to check the connection, bound to an engine.
 
     Returns
-    ---------
+    -------
     True if database responds to simple SQL query. Otherwise False.
 
     """
@@ -54,7 +54,7 @@ def is_valid_database(base, session):
         Session to use, bound to an engine.
 
     Returns
-    ----------
+    -------
     True if all declared models have corresponding tables and columns.
 
     """
