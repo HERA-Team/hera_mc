@@ -11,6 +11,7 @@ from __future__ import absolute_import, division, print_function
 import json
 import redis
 import time
+import six
 from . import cm_sysutils
 from .correlator import DEFAULT_REDIS_ADDRESS
 
@@ -111,11 +112,18 @@ def cminfo_redis_loc(cminfo):
     cofa : dict
         Dictionary containing the lat, lon, alt of the center-of-array
     """
-    ant_pos = {}
-    for num, loc in zip(cminfo['antenna_numbers'], cminfo['antenna_positions']):
-        ant_pos[num] = list(loc)
-    cofa = {'lat': cminfo['cofa_lat'], 'lon': cminfo['cofa_lon'], 'alt': cminfo['cofa_alt']}
-    return ant_pos, cofa
+    locations = {}
+    locations['antenna_numbers'] = cminfo['antenna_numbers']
+    locations['antenna_names'] = cminfo['antenna_names']
+    antenna_positions = []
+    for _x in cminfo['antenna_positions']:
+        antenna_positions.append(list(_x))
+    locations['antenna_positions'] = antenna_positions
+    locations['antenna_utm_eastings'] = cminfo['antenna_utm_eastings']
+    locations['antenna_utm_northings'] = cminfo['antenna_utm_northings']
+    locations['cofa'] = {'lat': cminfo['cofa_lat'], 'lon': cminfo['cofa_lon'],
+                         'alt': cminfo['cofa_alt']}
+    return locations
 
 
 def set_redis_cminfo(redishost=None, session=None):
@@ -139,12 +147,12 @@ def set_redis_cminfo(redishost=None, session=None):
     rsession = redis.Redis(connection_pool=redis_pool)
 
     snap_to_ant, ant_to_snap = cminfo_redis_snap(cminfo, rsession=rsession)
-    ant_pos, cofa = cminfo_redis_loc(cminfo)
+    locations = cminfo_redis_loc(cminfo)
     redhash = {}
+    for key, value in six.iteritems(locations):
+        redhash[key] = json.dumps(value)
     redhash['snap_to_ant'] = json.dumps(snap_to_ant)
     redhash['ant_to_snap'] = json.dumps(ant_to_snap)
-    redhash['ant_pos'] = json.dumps(ant_pos)
-    redhash['cofa'] = json.dumps(cofa)
     redhash['update_time'] = time.time()
     redhash['update_time_str'] = time.ctime(redhash['update_time'])
     redhash['cm_version'] = cminfo['cm_version']
