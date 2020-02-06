@@ -139,6 +139,7 @@ def set_redis_cminfo(redishost=DEFAULT_REDIS_ADDRESS, session=None):
     h = cm_sysutils.Handling(session=session)
     cminfo = h.get_cminfo_correlator()
 
+    # This is retained so that explicitly providing redishost=None has the desired behavior
     if redishost is None:
         redishost = DEFAULT_REDIS_ADDRESS
     redis_pool = redis.ConnectionPool(host=redishost)

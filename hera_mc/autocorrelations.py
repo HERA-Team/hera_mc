@@ -27,6 +27,7 @@ measurement_func_dict = {"median": np.median}
 
 
 def _get_autos_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+    # This is retained so that explicitly providing redishost=None has the desired behavior
     if redishost is None:
         redishost = DEFAULT_REDIS_ADDRESS
     redis_pool = redis.ConnectionPool(host=redishost)
