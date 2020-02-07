@@ -48,7 +48,10 @@ def snap_part_to_host_input(part, redis_info=None):
         if _x is None:
             hostname = name
         else:
-            hostname = json.loads(_x)[name]
+            try:
+                hostname = json.loads(_x)[name]
+            except KeyError:
+                hostname = name
     return hostname, adc_num
 
 
@@ -135,7 +138,7 @@ def set_redis_cminfo(redishost=DEFAULT_REDIS_ADDRESS, session=None, testing=Fals
     cminfo = h.get_cminfo_correlator()
 
     # This is retained so that explicitly providing redishost=None has the desired behavior
-    if redishost is None:
+    if redishost is None:  # pragma: no cover
         redishost = DEFAULT_REDIS_ADDRESS
     redis_pool = redis.ConnectionPool(host=redishost)
     rsession = redis.Redis(connection_pool=redis_pool)
