@@ -18,8 +18,7 @@ class Sysdef:
     Defines the system architecture for the telescope array.
 
     The intent is to have all of the specific defining parameters here in one place.
-    If a new system is required,
-    this may be extended by defining the parameters here.
+    If a new system is required, this may be extended by defining the parameters here.
 
     This only defines the signal path ports.
 
@@ -217,8 +216,8 @@ class Sysdef:
         """
         Return the relevant hookup_type.
 
-        This is almost a complete trivial method, but
-        it does serve a function for supplying a different hookup_type if needed.
+        This is almost a complete trivial method, but it does serve a function
+        for supplying a different hookup_type if needed.
 
         Parameters
         ----------

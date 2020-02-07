@@ -225,9 +225,9 @@ class ActiveData:
         The returned list is the concatentated set of revisions found for the provided list.
 
         The purpose is to find out what active revisions are present in the database.
-        E.g., to check for all active revisions for all PAMs, call with hpn='PAM'.  To check
-        for revisions for a particular one, call with 'PAM123'.  To guarantee only one part
-        one should also set exact_match=True.
+        E.g., to check for all active revisions for all PAMs, call with hpn='PAM'.
+        To check for revisions for a particular one, call with 'PAM123'.
+        To guarantee only one part one should also set exact_match=True.
 
         Parameters
         ----------

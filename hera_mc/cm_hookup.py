@@ -142,10 +142,11 @@ class Hookup(object):
             is 'now'
         exact_match : bool
             If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
-            would allow 'HH1', 'HH10', 'HH123', etc.  Default is False
+            would allow 'HH1', 'HH10', 'HH123', etc.
         use_cache : bool
-            Flag to force the cache to be read, if present and keys agree.  This is largely
-            deprecated, but kept for archival possibilities for the future. Default is False
+            Flag to force the cache to be read, if present and keys agree.
+            This is largely deprecated, but kept for archival possibilities
+            for the future.
         hookup_type : str or None
             Type of hookup to use.  Default is 'parts_hera'.
             If 'None' it will determine which system it thinks it is based on

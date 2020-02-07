@@ -108,8 +108,8 @@ def update(session=None, data=None, add_new_geo=False):
     """
     Update the geo_location table with some data.
 
-    use with caution -- should usually use in a script which will do datetime
-        primary key etc
+    Use with caution -- should usually use in a script which will do datetime
+    primary key etc.
 
     Parameters
     ----------
@@ -175,8 +175,6 @@ def update(session=None, data=None, add_new_geo=False):
 def format_check_update_request(request):
     """
     Parse the update request for use in the update function.
-
-    return dictionary
 
     Parameters
     ----------

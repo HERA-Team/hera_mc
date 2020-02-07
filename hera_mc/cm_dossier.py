@@ -339,8 +339,8 @@ class HookupEntry(object):
         """
         Return the headers for the retrieved hookup.
 
-        The columns in the hookup contain parts in the hookup chain and the column headers are
-        the part types contained in that column.
+        The columns in the hookup contain parts in the hookup chain and the
+        column headers are the part types contained in that column.
 
         It just checks which hookup_type the parts are in and keeps however many
         parts are used.

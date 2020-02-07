@@ -294,9 +294,8 @@ def add_verbosity_args(parser):
     """
     Add a standardized "--verbosity" argument to an ArgParser object.
 
-    Returns the number of 'v's (-v=1 [low], -vv=2 [medium], -vvv=3 [high]) or the supplied integer.
-    Defaults to 1
-    Parsed by 'parse_verbosity' function
+    Returns the number of 'v's (-v=1 [low], -vv=2 [medium], -vvv=3 [high]) or
+    the supplied integer. Parsed by 'parse_verbosity' function. Defaults to 1.
 
     Parameters
     ----------

@@ -92,7 +92,7 @@ def stop_existing_parts(session, part_list, at_date, allow_override=False):
     at_date : astropy.Time object
         Date to use for logging the stop
     allow_override : bool
-        Flag to allow a reset of the stop time even if one exists.  Default is False
+        Flag to allow a reset of the stop time even if one exists.
 
     """
     stop_at = int(at_date.gps)
@@ -697,10 +697,9 @@ def stop_existing_connections_to_part(session, handling, conn_list, at_date):
     """
     Add stop times to the connections for parts listed in conn_list.
 
-    Use this method with
-    caution, as it currently doesn't include much checking.  You probably should use the much
-    more specific stop_connections method below.  It is being kept around for possible use in
-    future scripts that "remove" replaced parts.
+    Use this method with caution, as it currently doesn't include much checking.
+    You probably should use the much more specific stop_connections method below.
+    It is being kept around for possible use in future scripts that "remove" replaced parts.
 
     Parameters
     ----------

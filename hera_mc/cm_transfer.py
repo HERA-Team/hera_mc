@@ -26,8 +26,8 @@ class CMVersion(MCDeclarativeBase):
     """
     Definition of cm_version table.
 
-    This table simply stores the git hash of the
-    repository to which the cm tables were packaged from the onsite database.
+    This table simply stores the git hash of the repository to which the
+    cm tables were packaged from the onsite database.
 
     For offsite & test databases, this table is populated by the cm initialization
     code using the git hash of the repository used for the initialization.

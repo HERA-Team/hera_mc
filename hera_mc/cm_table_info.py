@@ -22,7 +22,8 @@ def order_the_tables(unordered_tables=None):
     """
     Ensure that the tables are loaded into the database in the proper order.
 
-    Tables must be loaded into the database in the proper order to satisfy ForeignKey constraints.
+    Tables must be loaded into the database in the proper order to satisfy
+    ForeignKey constraints.
 
     Parameters
     ----------
