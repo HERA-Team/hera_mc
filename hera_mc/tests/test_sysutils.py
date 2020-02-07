@@ -29,17 +29,17 @@ def sys_handle(mcsession):
 @requires_redis
 def test_set_redis_cminfo(mcsession):
     redishost = TEST_DEFAULT_REDIS_HOST
-    cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession)
+    cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession, testing=True)
     rsession = redis.Redis(redishost)
-    test_out = rsession.hget('corr:map', 'ant_to_snap')
+    test_out = rsession.hget('testing_corr:map', 'ant_to_snap')
     assert b'{"host": "SNPA000700", "channel": 0}' in test_out
-    test_out = rsession.hget('corr:map', 'cofa')
+    test_out = rsession.hget('testing_corr:map', 'cofa')
     assert b'{"lat": -30.72' in test_out
 
 
 def test_other_redis():
     snap_info = 'e2>SNPC000008'
-    host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, rsession=None)
+    host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=None)
     assert host == 'SNPC000008'
     assert adc == 1
 
