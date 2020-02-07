@@ -75,24 +75,17 @@ def cminfo_redis_snap(cminfo, redis_info=None):
     ant_to_snap = {}
     for antn, ant in enumerate(cminfo['antenna_numbers']):
         name = cminfo['antenna_names'][antn]
-        e_pol = None
-        n_pol = None
-        for pol in cminfo['correlator_inputs'][antn]:
-            if pol.lower().startswith('e') and '>' in pol:
-                e_pol = pol
-            if pol.lower().startswith('n') and '>' in pol:
-                n_pol = pol
+        pol_info = {}
+        for pol_snap in cminfo['correlator_inputs'][antn]:
+            pol = pol_snap.lower()[0]
+            if pol in ['e', 'n'] and '>' in pol_snap:
+                pol_info[pol] = pol_snap
         ant_to_snap[ant] = {}
-        if e_pol is not None:
-            snapi_e, channel_e = snap_part_to_host_input(e_pol, redis_info=redis_info)
-            ant_to_snap[ant]['e'] = {'host': snapi_e, 'channel': channel_e}
-            snap_to_ant.setdefault(snapi_e, [None] * 6)
-            snap_to_ant[snapi_e][channel_e] = name + 'E'
-        if n_pol is not None:
-            snapi_n, channel_n = snap_part_to_host_input(n_pol, redis_info=redis_info)
-            ant_to_snap[ant]['n'] = {'host': snapi_n, 'channel': channel_n}
-            snap_to_ant.setdefault(snapi_n, [None] * 6)
-            snap_to_ant[snapi_n][channel_n] = name + 'N'
+        for pol, psnap in six.iteritems(pol_info):
+            snapi, channel = snap_part_to_host_input(psnap, redis_info=redis_info)
+            ant_to_snap[ant][pol] = {'host': snapi, 'channel': channel}
+            snap_to_ant.setdefault(snapi, [None] * 6)
+            snap_to_ant[snapi][channel] = name + pol.upper()
     return snap_to_ant, ant_to_snap
 
 

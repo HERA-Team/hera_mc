@@ -15,7 +15,7 @@ import socket
 import pytest
 
 from hera_mc.utils import get_iterable
-TEST_DEFAULT_REDIS_HOST = 'redishost'
+TEST_DEFAULT_REDIS_HOST = 'localhost'
 
 
 def redis_online():
