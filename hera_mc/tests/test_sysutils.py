@@ -38,10 +38,10 @@ def test_set_redis_cminfo(mcsession):
     assert b'{"lat": -30.72' in test_out
     test_out = rsession.hget('testing_corr:map', 'snap_to_ant')
     assert b'heraNode700Snap700' in test_out
-
-
-def test_other_redis():
     snap_info = 'e2>SNPC000008'
+    redis_info = {'rsession': rsession, 'rhash': 'corr:map', 'rkey': 'not_there'}
+    host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=redis_info)
+    assert host == 'SNPC000008'
     host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=None)
     assert host == 'SNPC000008'
     assert adc == 1
