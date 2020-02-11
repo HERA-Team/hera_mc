@@ -3,9 +3,7 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""
-Holds helpful modules for parts and connections scripts.
-"""
+"""Holds helpful modules for parts and connections scripts."""
 from __future__ import absolute_import, division, print_function
 
 from tabulate import tabulate
@@ -27,6 +25,7 @@ class Handling:
     session : object
         session on current database. If session is None, a new session
         on the default database is created and used.
+
     """
 
     def __init__(self, session=None):
@@ -37,6 +36,7 @@ class Handling:
             self.session = session
 
     def close(self):  # pragma: no cover
+        """Close the session."""
         self.session.close()
 
     def add_cm_version(self, time, git_hash):
@@ -55,7 +55,7 @@ class Handling:
 
     def get_cm_version(self, at_date='now'):
         """
-        Get the cm_version git_hash active at a particular time (default: now)
+        Get the cm_version git_hash active at a particular time.
 
         Parameters
         ----------
@@ -66,7 +66,8 @@ class Handling:
         Returns
         -------
         str
-            Git hash of the cm_version active at 'at_date'
+            Git hash of the cm_version active at 'at_date'.
+
         """
         from .cm_transfer import CMVersion
 
@@ -81,7 +82,7 @@ class Handling:
 
     def get_part_type_for(self, hpn):
         """
-        Provides the signal path part type for a supplied part number.
+        Provide the signal path part type for a supplied part number.
 
         Parameters
         ----------
@@ -92,6 +93,7 @@ class Handling:
         -------
         str
             The associated part type.
+
         """
         part_query = self.session.query(partconn.Parts).filter(
             (func.upper(partconn.Parts.hpn) == hpn.upper())).first()
@@ -99,7 +101,7 @@ class Handling:
 
     def get_part_from_hpnrev(self, hpn, rev):
         """
-        Returns a Part object for the supplied part number and revisions.
+        Return a Part object for the supplied part number and revisions.
 
         Parameters
         ----------
@@ -111,6 +113,7 @@ class Handling:
         Returns
         -------
         Part object
+
         """
         return self.session.query(partconn.Parts).filter(
             (func.upper(partconn.Parts.hpn) == hpn.upper())
@@ -118,7 +121,7 @@ class Handling:
 
     def _get_hpn_list(self, hpn, rev, active, exact_match):
         """
-        Returns hpn,rev zip list to accommodate non-exact matches
+        Return hpn,rev zip list to accommodate non-exact matches.
 
         Parameters
         ----------
@@ -136,6 +139,7 @@ class Handling:
         -------
         zip class
             Contains the hpn, rev pairs
+
         """
         match_list = cm_utils.match_list(hpn, rev, case_type='upper')
         if not exact_match:
@@ -152,12 +156,13 @@ class Handling:
 
     def _set_ports(self, inp):
         """
-        Handles 2 distinct phases of get_dossier:  initialize and get typed ports.
+        Handle 2 distinct phases of get_dossier:  initialize and get typed ports.
 
         Parameters
         ----------
         inp : optional/class PartEntry
             inp parameter, which differs during the process ('init' then PartEntry)
+
         """
         # Initialize port types
         if inp == 'init':  # Initialize
@@ -180,12 +185,13 @@ class Handling:
 
     def _get_allowed_ports(self, ports):
         """
-        Gets the allowed_ports class variable for requested ports.
+        Get the allowed_ports class variable for requested ports.
 
         Parameters
         ----------
         ports : list/str/None
             Desired ports per show_dossier
+
         """
         if isinstance(ports, list):
             self.allowed_ports = [x.upper() for x in ports]
@@ -210,10 +216,10 @@ class Handling:
     def get_dossier(self, hpn, rev=None, at_date='now', active=None,
                     notes_start_date='<', exact_match=True):
         """
-        Return information on a part or parts.
+        Get information on a part or parts.
 
         Parameters
-        -----------
+        ----------
         hpn : str, list
             Hera part number [string or list-of-strings] (whole or first part thereof)
         rev : str, list, None
@@ -236,8 +242,8 @@ class Handling:
         dict
             dictionary keyed on the part_number:rev containing PartEntry
             dossier classes
-        """
 
+        """
         from . import cm_active
 
         at_date = cm_utils.get_astropytime(at_date)
@@ -319,15 +325,13 @@ class Handling:
 
     def get_specific_connection(self, cobj, at_date=None):
         """
-        Finds and returns a list of connections matching the supplied components
-        of the query.
+        Find a list of connections matching the supplied components of the query.
+
         At the very least upstream_part and downstream_part must be included
         -- revisions and ports are ignored unless they are of type string.
         If at_date is of type Time, it will only return connections valid at
         that time.  Otherwise it ignores at_date (i.e. it will return any such
         connection over all time.)
-
-        Returns a list of connections (class)
 
         Parameters
         ----------
@@ -340,6 +344,7 @@ class Handling:
         -------
         list
             List of Connections
+
         """
         fnd = []
         for conn in self.session.query(partconn.Connections).filter(

@@ -134,6 +134,16 @@ class HeraAuto(MCDeclarativeBase):
 
 
 def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
+    """
+    Plot autocorrelations using plotly.
+
+    Parameters
+    ----------
+    session : MCSession object
+        MCSession object to get data from database with.
+    offline_testing : bool
+        Option to return the figure rather than sending it to plotly.
+    """
     if six.PY3:
         from plotly import graph_objects as go
     else:

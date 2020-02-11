@@ -3,9 +3,7 @@
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""
-This finds and displays part hookups.
-"""
+"""Find and display part hookups."""
 from __future__ import absolute_import, division, print_function
 
 from tabulate import tabulate
@@ -30,7 +28,9 @@ class Hookup(object):
     ----------
     session : session object or None
         If None, it will start a new session on the database.
+
     """
+
     hookup_list_to_cache = cm_sysdef.hera_zone_prefixes
     if six.PY2:
         hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_2.json')
@@ -58,7 +58,7 @@ class Hookup(object):
         all active revisions.
 
         Parameters
-        -----------
+        ----------
         hpn : str, list
             List/string of input hera part number(s) (whole or 'startswith')
             If string
@@ -83,6 +83,7 @@ class Hookup(object):
         -------
         dict
             Hookup dossier dictionary as defined in cm_dossier
+
         """
         # Reset at_date
         at_date = cm_utils.get_astropytime(at_date)
@@ -125,7 +126,7 @@ class Hookup(object):
         is a wrapper for get_hookup_from_db to allow for the cache file.
 
         Parameters
-        -----------
+        ----------
         hpn : str, list
             List/string of input hera part number(s) (whole or 'startswith')
             If string
@@ -141,10 +142,11 @@ class Hookup(object):
             is 'now'
         exact_match : bool
             If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
-            would allow 'HH1', 'HH10', 'HH123', etc.  Default is False
+            would allow 'HH1', 'HH10', 'HH123', etc.
         use_cache : bool
-            Flag to force the cache to be read, if present and keys agree.  This is largely
-            deprecated, but kept for archival possibilities for the future. Default is False
+            Flag to force the cache to be read, if present and keys agree.
+            This is largely deprecated, but kept for archival possibilities
+            for the future.
         hookup_type : str or None
             Type of hookup to use.  Default is 'parts_hera'.
             If 'None' it will determine which system it thinks it is based on
@@ -155,6 +157,7 @@ class Hookup(object):
         -------
         dict
             Hookup dossier dictionary as defined in cm_dossier.py
+
         """
         at_date = cm_utils.get_astropytime(at_date)
         self.at_date = at_date
@@ -250,7 +253,7 @@ class Hookup(object):
     # ##################################### Notes ############################################
     def get_notes(self, hookup_dict, state='all'):
         """
-        Retrieves information for hookup.
+        Retrieve information for hookup.
 
         Parameters
         ----------
@@ -263,6 +266,7 @@ class Hookup(object):
         -------
         dict
             hookup notes
+
         """
         if self.active is None:
             self.active = cm_active.ActiveData(self.session, at_date=self.at_date)
@@ -304,6 +308,7 @@ class Hookup(object):
         -------
         str
             Content as a string
+
         """
         hu_notes = self.get_notes(hookup_dict=hookup_dict, state=state)
         full_info_string = ''
@@ -326,8 +331,9 @@ class Hookup(object):
     # ################################ Internal methods ######################################
     def _cull_dict(self, hpn, search_dict, exact_match):
         """
-        Based on the list contained in hpn, determines the complete appropriate set
-        of parts to use within search_dict.
+        Determine the complete appropriate set of parts to use within search_dict.
+
+        Based on the list contained in hpn.
 
         The supplied search_dict has all options, which are culled by the supplied
         hpn and exact_match flag.
@@ -348,7 +354,6 @@ class Hookup(object):
         dict
             Contains the found entries within search_dict
         """
-
         hpn_upper = [x.upper() for x in hpn]
         found_dict = {}
         for key in search_dict.keys():
@@ -368,10 +373,12 @@ class Hookup(object):
 
     def _proc_hpnlist(self, hpn_request, exact_match):
         """
-        This processes the hpn request list.  If the list member is of the
-        form ':xxx.a/b/c' it will call the cm_sysdef.xxx module with [a, b, c]
+        Process the hpn request list.
+
+        If the list member is of the form ':xxx.a/b/c' it will call the
+        cm_sysdef.xxx module with [a, b, c]
         as the argument.  If an ':xxx method' is found, it sets exact_match
-        to True
+        to True.
 
         Parameters
         ----------
@@ -392,6 +399,7 @@ class Hookup(object):
             updated hpn request list
         bool
             updated exact_match setting
+
         """
         hpn_proc = []
         if isinstance(hpn_request, six.string_types) and hpn_request.lower() == 'default':
@@ -412,7 +420,7 @@ class Hookup(object):
 
     def _get_part_types_found(self, hookup_connections):
         """
-        Takes a list of connections, returns the part_types and populates 'self.part_type_cache'
+        Take a list of connections, return the part_types and populate 'self.part_type_cache'.
 
         Parameters
         ----------
@@ -423,6 +431,7 @@ class Hookup(object):
         -------
         list
             List of part_types
+
         """
         if not len(hookup_connections):
             return []
@@ -440,7 +449,7 @@ class Hookup(object):
 
     def _follow_hookup_stream(self, part, rev, port_pol):
         """
-        This follows a list of connections upstream and downstream.
+        Follow a list of connections upstream and downstream.
 
         Parameters
         ----------
@@ -455,6 +464,7 @@ class Hookup(object):
         -------
         list
             List of connections for that hookup.
+
         """
         key = cm_utils.make_part_key(part, rev)
         part_type = self.active.parts[key].hptype
@@ -485,6 +495,7 @@ class Hookup(object):
         ----------
         current : Namespace object
             Namespace containing current information.
+
         """
         conn = self._get_connection(current)
         if conn is None:
@@ -503,6 +514,7 @@ class Hookup(object):
         ----------
         current : Namespace object
             Namespace containing current information.
+
         """
         odir = self.sysdef.opposite_direction[current.direction]
         try:
@@ -582,7 +594,7 @@ class Hookup(object):
 
     def _make_header_row(self, hookup_dict, cols_to_show):
         """
-        Generates the appropriate header row for the displayed hookup.
+        Generate the appropriate header row for the displayed hookup.
 
         Parameters
         ----------
@@ -595,6 +607,7 @@ class Hookup(object):
         -------
         list
             List of header titles.
+
         """
         self.col_list = []
         for h in hookup_dict.values():
@@ -615,7 +628,7 @@ class Hookup(object):
     # ############################### Cache file methods #####################################
     def write_hookup_cache_to_file(self, log_msg='Write.'):
         """
-        Writes the current hookup to the cache file.
+        Write the current hookup to the cache file.
 
         Parameters
         ----------
@@ -623,6 +636,7 @@ class Hookup(object):
             String containing any desired messages for the cm log.
             This should be a short description of wny a new cache file is being written.
             E.g. "Found new antenna." or "Cronjob to ensure cache file up to date."
+
         """
         self.at_date = cm_utils.get_astropytime('now')
         self.hookup_type = 'parts_hera'
@@ -648,9 +662,7 @@ class Hookup(object):
         cm_utils.log('update_cache', log_dict=log_dict)
 
     def read_hookup_cache_from_file(self):
-        """
-        Reads the current cache file into memory.
-        """
+        """Read the current cache file into memory."""
         with open(self.hookup_cache_file, 'r') as outfile:
             cache_dict = json.load(outfile)
         if self.hookup_cache_file_OK(cache_dict):
@@ -675,7 +687,7 @@ class Hookup(object):
 
     def hookup_cache_file_OK(self, cache_dict=None):
         """
-        Determines if the cache file is up-to-date with the cm db and if hookup_type is correct.
+        Determine if the cache file is up-to-date with the cm db and if hookup_type is correct.
 
         There are 4 relevant dates:
             cm_hash_time:  last time the database was updated per CMVersion
@@ -689,6 +701,7 @@ class Hookup(object):
         -------
         bool
             True if the cache file is current.
+
         """
         # Get the relevant dates (checking the cache_file/cm_version up front)
         if cache_dict is None:
@@ -721,12 +734,13 @@ class Hookup(object):
 
     def hookup_cache_file_info(self):
         """
-        Reads in information about the current cache file.
+        Read in information about the current cache file.
 
         Returns
         -------
         str
             String containing the information.
+
         """
         if not os.path.exists(self.hookup_cache_file):  # pragma: no cover
             s = "{} does not exist.\n".format(self.hookup_cache_file)
@@ -754,15 +768,13 @@ class Hookup(object):
         return s
 
     def delete_cache_file(self):
-        """
-        Deletes the local cached hookup file.
-        """
+        """Delete the local cached hookup file."""
         if os.path.exists(self.hookup_cache_file):
             os.remove(self.hookup_cache_file)
 
     def _requested_list_OK_for_cache(self, hpn):
         """
-        Checks that all hookup requests match the cached keys.
+        Check that all hookup requests match the cached keys.
 
         Parameters
         ----------
@@ -773,6 +785,7 @@ class Hookup(object):
         -------
         bool
             True if the part numbers are in the cached keys. Else False
+
         """
         for x in hpn:
             for key_prefix in self.hookup_list_to_cache:

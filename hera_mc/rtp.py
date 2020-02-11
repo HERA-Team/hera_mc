@@ -94,8 +94,8 @@ class RTPStatus(MCDeclarativeBase):
         """
         Create a new rtp_status object.
 
-        Parameters:
-        ------------
+        Parameters
+        ----------
         time : astropy Time object
             time of this status
         status : str
@@ -149,8 +149,8 @@ class RTPProcessEvent(MCDeclarativeBase):
         """
         Create a new rtp_process_event object.
 
-        Parameters:
-        ------------
+        Parameters
+        ----------
         time : astropy Time object
             Time of this event
         obsid : long
@@ -223,8 +223,8 @@ class RTPProcessRecord(MCDeclarativeBase):
         """
         Create a new rtp_process_record object.
 
-        Parameters:
-        ------------
+        Parameters
+        ----------
         time : astropy Time object
             time of this event
         obsid : long
@@ -309,8 +309,8 @@ class RTPTaskResourceRecord(MCDeclarativeBase):
         """
         Create a new rtp_process_record object.
 
-        Parameters:
-        ------------
+        Parameters
+        ----------
         obsid : long
             Observation obsid (Foreign key into Observation).
         task_name : str

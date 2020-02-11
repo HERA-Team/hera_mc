@@ -2,9 +2,7 @@
 # Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Some table info for configuration management.
-
-"""
+"""Some table info for configuration management."""
 
 from __future__ import absolute_import, division, print_function
 
@@ -22,8 +20,10 @@ data_prefix = 'initialization_data_'
 
 def order_the_tables(unordered_tables=None):
     """
-    Tables must be loaded into the database in the proper order to satisfy ForeignKey constraints.
-    This method assures that.
+    Ensure that the tables are loaded into the database in the proper order.
+
+    Tables must be loaded into the database in the proper order to satisfy
+    ForeignKey constraints.
 
     Parameters
     ----------
@@ -34,6 +34,7 @@ def order_the_tables(unordered_tables=None):
     -------
     list
         list of ordered tables
+
     """
     if unordered_tables is None:
         unordered_tables = cm_tables.keys()

@@ -126,7 +126,7 @@ def get_cm_csv_path(mc_config_file=None, testing=False):
     Return the full path to csv files read from the mc config file.
 
     Parameters
-    -------------
+    ----------
     mc_config_file : str
         Pass a different config file if desired.  None goes to default.
 
@@ -152,10 +152,11 @@ def get_cm_csv_path(mc_config_file=None, testing=False):
 
 
 def connect_to_mc_db(args, forced_db_name=None, check_connect=True):
-    """Get a DB object that is connected to the M&C database.
+    """
+    Get a DB object that is connected to the M&C database.
 
     Parameters
-    -------------
+    ----------
     args : arguments
         The result of calling `parse_args` on an `argparse.ArgumentParser`
         instance created by calling `get_mc_argument_parser()`. Alternatively,
@@ -238,10 +239,11 @@ def connect_to_mc_db(args, forced_db_name=None, check_connect=True):
 
 
 def connect_to_mc_testing_db(forced_db_name='testing'):
-    """Get a DB object that is connected to the testing M&C database.
+    """
+    Get a DB object that is connected to the testing M&C database.
 
     Parameters
-    -------------
+    ----------
     forced_db_name : str
         Database name to use.
 

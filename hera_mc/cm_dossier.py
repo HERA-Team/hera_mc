@@ -3,10 +3,7 @@
 # Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""
-This contains the Entry classes which serves as a "dossier" for part entries
-and hookup entries.
-"""
+"""Contains the Entry classes which serves as a "dossier" for part and hookup entries."""
 from __future__ import absolute_import, division, print_function
 
 import six
@@ -22,8 +19,9 @@ if six.PY2:
 
 class PartEntry():
     """
-    This class holds all of the information on a given part:rev, including connections,
-    part_info, and, if applicable, geo_location.
+    Holds all of the information on a given part:rev.
+
+    It includes connections, part_info, and, if applicable, geo_location.
 
     It contains the modules to format the dossier for use in the parts display matrix.
     Full available list is in col_hdr dict below.
@@ -39,7 +37,9 @@ class PartEntry():
         but things like notes, geo etc may exclude on that basis.
     notes_start_date : astropy.Time
         Start date on which to filter notes.  The stop date is at_date above.
+
     """
+
     col_hdr = {'hpn': 'HERA P/N',
                'hpn_rev': 'Rev',
                'hptype': 'Part Type',
@@ -80,16 +80,18 @@ class PartEntry():
         self.geo = None
 
     def __repr__(self):
+        """Define representation."""
         return("{}:{} -- {}".format(self.hpn, self.rev, self.part))
 
     def get_entry(self, active):
         """
-        Gets the part dossier entry.
+        Get the part dossier entry.
 
         Parameters
         ----------
         active : ActiveData class
             Contains the active database entries
+
         """
         self.part = active.parts[self.entry_key]
         self.part.gps2Time()
@@ -99,9 +101,7 @@ class PartEntry():
         self.add_ports()
 
     def add_ports(self):
-        """
-        Pulls out the input_ports and output_ports to a class variable
-        """
+        """Pull out the input_ports and output_ports to a class variable."""
         if self.connections.down is not None:
             self.input_ports = cm_utils.put_keys_in_order(
                 [x.lower() for x in self.connections.down.keys()], 'PNR')
@@ -111,12 +111,13 @@ class PartEntry():
 
     def get_connections(self, active):
         """
-        Retrieves the connection info for the part in self.hpn.
+        Retrieve the connection info for the part in self.hpn.
 
         Parameters
         ----------
         active : ActiveData class
             Contains the active database entries.
+
         """
         if self.entry_key in active.connections['up'].keys():
             self.connections.up = active.connections['up'][self.entry_key]
@@ -125,12 +126,13 @@ class PartEntry():
 
     def get_part_info(self, active):
         """
-        Retrieves the part_info for the part in self.hpn.
+        Retrieve the part_info for the part in self.hpn.
 
         Parameters
         ----------
         active : ActiveData class
             Contains the active database entries.
+
         """
         if self.entry_key in active.info.keys():
             for pi_entry in active.info[self.entry_key]:
@@ -141,12 +143,13 @@ class PartEntry():
 
     def get_geo(self, active):
         """
-        Retrieves the geographical information for the part in self.hpn
+        Retrieve the geographical information for the part in self.hpn.
 
         Parameter
         ---------
         active : ActiveData class
             Contains the active database entries.
+
         """
         key = cm_utils.make_part_key(self.hpn, None)
         if key in active.geo.keys():
@@ -154,8 +157,9 @@ class PartEntry():
 
     def get_headers(self, columns):
         """
-        Generates the header titles for the given columns.  The returned headers are
-        used in the tabulate display.
+        Generate the header titles for the given columns.
+
+        The returned headers are used in the tabulate display.
 
         Parameters
         ----------
@@ -174,7 +178,7 @@ class PartEntry():
 
     def table_row(self, columns, ports):
         """
-        Converts the part_dossier column information to a row for the tabulate display.
+        Convert the part_dossier column information to a row for the tabulate display.
 
         Parameters
         ----------
@@ -261,7 +265,7 @@ class PartEntry():
 
 class HookupEntry(object):
     """
-    This is the structure of the hookup entry.  All are keyed on polarization<port.
+    Holds the structure of the hookup entry.  All are keyed on polarization<port.
 
     Parameters
     ----------
@@ -271,7 +275,9 @@ class HookupEntry(object):
         Name of part type system for the hookup.  Must be None if input_dict is not None.
     input_dict : dict
         Dictionary with seed hookup.  If it is None, entry_key and sysdef must both be provided.
+
     """
+
     def __init__(self, entry_key=None, sysdef=None, input_dict=None):
         if input_dict is not None:
             if entry_key is not None:
@@ -309,6 +315,7 @@ class HookupEntry(object):
             self.sysdef = sysdef
 
     def __repr__(self):
+        """Define representation."""
         s = "<{}:  {}>\n".format(self.entry_key, self.hookup_type)
         s += "{}\n".format(self.hookup)
         s += "{}\n".format(self.fully_connected)
@@ -316,9 +323,7 @@ class HookupEntry(object):
         return s
 
     def _to_dict(self):
-        """
-        Convert this object to a dict (so it can be written to json)
-        """
+        """Convert this object to a dict (so it can be written to json)."""
         hookup_connections_dict = {}
         for port, conn_list in six.iteritems(self.hookup):
             new_conn_list = []
@@ -332,8 +337,10 @@ class HookupEntry(object):
 
     def get_hookup_type_and_column_headers(self, port, part_types_found):
         """
-        The columns in the hookup contain parts in the hookup chain and the column headers are
-        the part types contained in that column.  This returns the headers for the retrieved hookup.
+        Return the headers for the retrieved hookup.
+
+        The columns in the hookup contain parts in the hookup chain and the
+        column headers are the part types contained in that column.
 
         It just checks which hookup_type the parts are in and keeps however many
         parts are used.
@@ -344,6 +351,7 @@ class HookupEntry(object):
             Part port to get, of the form 'POL<port', e.g. 'E<ground'
         part_types_found : list
             List of the part types that were found
+
         """
         self.hookup_type[port] = None
         self.columns[port] = []
@@ -368,12 +376,13 @@ class HookupEntry(object):
 
     def add_timing_and_fully_connected(self, port):
         """
-        Method to add the timing and fully_connected flag for the hookup.
+        Add the timing and fully_connected flag for the hookup.
 
         Parameters
         ----------
         port : str
             Part port to get, of the form 'POL<port', e.g. 'E<ground'
+
         """
         if self.hookup_type[port] is not None:
             full_hookup_length = len(self.sysdef.full_connection_path[self.hookup_type[port]]) - 1
@@ -397,7 +406,7 @@ class HookupEntry(object):
 
     def get_part_from_type(self, part_type, include_revs=False, include_ports=False):
         """
-        Retrieve the part name for a given part_type from a hookup
+        Retrieve the part name for a given part_type from a hookup.
 
         Parameters
         ----------
@@ -415,6 +424,7 @@ class HookupEntry(object):
             specified type within hookup as a string per pol
                 if include_revs part number is e.g. FDV1:A
                 if include_ports they are included as e.g. 'input>FDV:A<terminals'
+
         """
         parts = {}
         extra_cols = ['start', 'stop']
@@ -458,7 +468,7 @@ class HookupEntry(object):
 
     def table_entry_row(self, port, columns, part_types, show):
         """
-        Produces the hookup table row for given parameters.
+        Produce the hookup table row for given parameters.
 
         Parameters
         ----------
@@ -475,6 +485,7 @@ class HookupEntry(object):
         -------
         list
             List containing the table entry.
+
         """
         timing = self.timing[port]
         td = ['-'] * len(columns)
@@ -502,7 +513,7 @@ class HookupEntry(object):
 
     def _build_new_row_entry(self, dip, part, rev, port, show):
         """
-        Formats the hookup row entry.
+        Format the hookup row entry.
 
         Parameters
         ----------
@@ -521,6 +532,7 @@ class HookupEntry(object):
         -------
         str
             String containing that row entry.
+
         """
         new_row_entry = ''
         if show['ports']:

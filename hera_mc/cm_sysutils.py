@@ -2,9 +2,7 @@
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""
-Methods for handling locating correlator and various system aspects.
-"""
+"""Methods for handling locating correlator and various system aspects."""
 
 from __future__ import absolute_import, division, print_function
 
@@ -25,7 +23,9 @@ class SystemInfo:
     stn : None or geo_handling object.  If None, it initializes a class with empty lists.
         Otherwise, it initializes based on the geo_handling object class.
         Anything else will generate an error.
+
     """
+
     sys_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting',
                 'northing', 'lon', 'lat',
                 'elevation', 'antenna_number', 'correlator_input', 'start_date',
@@ -65,13 +65,14 @@ class SystemInfo:
 
 class Handling:
     """
-    Class to allow various manipulations of correlator inputs etc
+    Class to allow various manipulations of correlator inputs etc.
 
     Parameters
     ----------
-        session : object
-            session on current database. If session is None, a new session
-            on the default database is created and used.
+    session : object
+        session on current database. If session is None, a new session
+        on the default database is created and used.
+
     """
 
     def __init__(self, session=None):
@@ -86,26 +87,25 @@ class Handling:
         self.apriori_status_set = None
 
     def close(self):  # pragma: no cover
-        """
-        Close the session
-        """
+        """Close the session."""
         self.session.close()
 
     def cofa(self):
         """
-        Returns the geographic information for the center-of-array.
+        Return the geographic information for the center-of-array.
 
         Returns
         -------
         object
             Geo object for the center-of-array (cofa)
+
         """
         cofa = self.geo.cofa()
         return cofa
 
     def get_connected_stations(self, at_date, hookup_type=None):
         """
-        Returns a list of class SystemInfo of all of the stations connected at_date.
+        Return a list of class SystemInfo of all of the stations connected at_date.
 
         Each location is returned class SystemInfo.  Attributes are:
             'station_name': name of station (string, e.g. 'HH27')
@@ -123,7 +123,7 @@ class Handling:
             'timing': start and stop gps seconds for both pols
 
         Parameters
-        -----------
+        ----------
         at_date : str, int
             Date to check for connections.  Anything intelligible by cm_utils.get_astropytime
         hookup_type : str
@@ -136,8 +136,8 @@ class Handling:
         -------
         list
             List of stations connected.
-        """
 
+        """
         at_date = cm_utils.get_astropytime(at_date)
         HU = cm_hookup.Hookup(self.session)
         hud = HU.get_hookup(hpn=cm_sysdef.hera_zone_prefixes, pol='all', at_date=at_date,
@@ -174,7 +174,7 @@ class Handling:
 
     def get_cminfo_correlator(self, hookup_type=None):
         """
-        Returns a dict with info needed by the correlator.
+        Return a dict with info needed by the correlator.
 
         Note: This method requires pyuvdata
 
@@ -206,6 +206,7 @@ class Handling:
                 'antenna_positions': Antenna positions in standard Miriad coordinates
                     (list of 3-element vectors of floats)
                 'cm_version': CM git hash (string)
+
         """
         from pyuvdata import utils as uvutils
         from . import cm_handling
@@ -245,8 +246,9 @@ class Handling:
     def get_part_at_station_from_type(self, stn, at_date, part_type, include_revs=False,
                                       include_ports=False, hookup_type=None):
         """
-        Gets the part number at a given station of a given part type.  E.g. find the 'post-amp' at
-        station 'HH68'.
+        Get the part number at a given station of a given part type.
+
+        E.g. find the 'post-amp' at station 'HH68'.
 
         Parameters
         ----------
@@ -271,6 +273,7 @@ class Handling:
         -------
         dict
             {pol:(location, #)}
+
         """
         parts = {}
         H = cm_hookup.Hookup(self.session)
@@ -285,7 +288,7 @@ class Handling:
     def publish_summary(self, hlist=['default'], exact_match=False, hookup_cols='all',
                         sortby='node,station'):
         """
-        Publishes the hookup on hera.today.
+        Publish the hookup on hera.today.
 
         Parameters
         ----------
@@ -301,6 +304,7 @@ class Handling:
         -------
         str
             Status string.  "OK" or "Not on 'main'"
+
         """
         import os.path
         if hlist[0].lower() == 'default':
@@ -325,15 +329,13 @@ class Handling:
 
     def get_apriori_status_for_antenna(self, antenna, at_date='now'):
         """
-        This returns the "apriori" status of an antenna station (e.g. HH12) at a date.
+        Get the "apriori" status of an antenna station (e.g. HH12) at a date.
 
         The status enum list may be found by module
         cm_partconnect.get_apriori_antenna_status_enum().
 
-        Returns the apriori antenna status as a string.  Returns None if not in table.
-
-        Parameters:
-        ------------
+        Parameters
+        ----------
         ant : str
             Antenna station designator (e.g. HH12, HA330) it is a single string
         at_date : str or int
@@ -342,7 +344,8 @@ class Handling:
         Returns
         -------
         str
-            apriori status
+            The apriori antenna status as a string.  Returns None if not in table.
+
         """
         ant = antenna.upper()
         at_date = cm_utils.get_astropytime(at_date).gps
@@ -357,9 +360,7 @@ class Handling:
 
     def get_apriori_antennas_with_status(self, status, at_date='now'):
         """
-        This returns a list of all antennas with the provided status query at_date
-
-        Returns a list of the antenna station designators with that status.
+        Get a list of all antennas with the provided status query at_date.
 
         Parameters
         ----------
@@ -371,8 +372,9 @@ class Handling:
 
         Returns
         -------
-        list of strings
-            Contains stations of that status
+        list of str
+            List of the antenna station designators with the specified status.
+
         """
         at_date = cm_utils.get_astropytime(at_date).gps
         ap_ants = []
@@ -400,6 +402,7 @@ class Handling:
         dict
             dictionary of antennas, keyed on the apriori antenna status value
             containing the antennas with that status value
+
         """
         ap_stat = {}
         for _status in cm_partconnect.get_apriori_antenna_status_enum():
@@ -422,5 +425,6 @@ class Handling:
         -------
         str
             csv string of antennas of a given apriori status
+
         """
         return ','.join(self.get_apriori_antennas_with_status(status=status, at_date=at_date))

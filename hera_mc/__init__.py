@@ -2,6 +2,8 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
+"""Define package structure."""
+
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
@@ -21,7 +23,10 @@ DEFAULT_GPS_TOL = {'atol': 1e-3, 'rtol': 0}  # ms
 
 
 class MCDeclarativeBase(object):
+    """Base table object."""
+
     def __repr__(self):
+        """Define standard representation."""
         columns = self.__table__.columns.keys()
         rep_str = '<' + self.__class__.__name__ + '('
         for c in columns:
@@ -31,6 +36,7 @@ class MCDeclarativeBase(object):
         return rep_str
 
     def isclose(self, other):
+        """Test if two objects are nearly equal."""
         if not isinstance(other, self.__class__):
             print('not the same class')
             return False
@@ -85,6 +91,7 @@ logger = logging.getLogger(__name__)
 
 
 def NotNull(kind, **kwargs):
+    """Define a non-nullable column."""
     from sqlalchemy import Column
     return Column(kind, nullable=False, **kwargs)
 

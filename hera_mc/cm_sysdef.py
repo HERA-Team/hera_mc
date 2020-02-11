@@ -2,6 +2,8 @@
 # Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
+"""Defines the system architecture for the telescope array."""
+
 from __future__ import absolute_import, division, print_function
 import six
 from hera_mc import cm_utils
@@ -13,16 +15,23 @@ all_port_types = ['sigpath', 'physical']
 
 class Sysdef:
     """
-    This class defines the system architecture for the telescope array.  The intent is to
-    have all of the specific defining parameters here in one place.  If a new system is required,
-    this may be extended by defining the parameters here.
+    Defines the system architecture for the telescope array.
+
+    The intent is to have all of the specific defining parameters here in one place.
+    If a new system is required, this may be extended by defining the parameters here.
 
     This only defines the signal path ports.
 
     The two-part "meta" assumption is that:
         a) polarized ports start with one of the polarization characters ('e' or 'n')
         b) non polarized ports don't start with either character.
+
+    Attributes
+    ----------
+    This section needs to be filled out.
+
     """
+
     opposite_direction = {'up': 'down', 'down': 'up'}
     port_def = {}
     port_def['parts_hera'] = {
@@ -118,8 +127,9 @@ class Sysdef:
 
     def dict_init(self, v0):
         """
-        Initializes the system dict to v0.  Note that v0 is set by the calling
-        function.
+        Initialize the system dict to v0.
+
+        Note that v0 is set by the calling function.
 
         Parameters
         ----------
@@ -130,6 +140,7 @@ class Sysdef:
         -------
         dict
             Initialized dictionary.
+
         """
         y = {}
         for x in self.checking_order:
@@ -138,12 +149,13 @@ class Sysdef:
 
     def _to_dict(self):
         """
-        Convert this object to a dict (so it can be written to json)
+        Convert this object to a dict (so it can be written to json).
 
         Returns
         -------
         dict
             Dictionary version of object.
+
         """
         return {'hookup_type': self.hookup_type,
                 'corr_index': self.corr_index, 'all_pols': self.all_pols,
@@ -152,6 +164,19 @@ class Sysdef:
                 'full_connection_path': self.full_connection_path}
 
     def get_all_ports(self, hookup_types):
+        """
+        Get all ports for hookup_types.
+
+        Parameters
+        ----------
+        hookup_type : list of str
+            Strings specifying which types of hookup to use, should be in operational_hookup_types.
+
+        Returns
+        -------
+        list of str
+            List of all ports in hookup_types.
+        """
         all_ports = []
         for hut in hookup_types:
             for key in self.port_def[hut].keys():
@@ -164,7 +189,7 @@ class Sysdef:
 
     def handle_redirect_part_types(self, part, active):
         """
-        This handles the "special cases" by feeding a new part list back to hookup.
+        Handle the "special cases" by feeding a new part list back to hookup.
 
         Parameters
         ----------
@@ -177,6 +202,7 @@ class Sysdef:
         -------
         list
             List of redirected parts.
+
         """
         hpn_list = []
         if part.hptype.lower() == 'node':
@@ -188,8 +214,10 @@ class Sysdef:
 
     def find_hookup_type(self, part_type, hookup_type):
         """
-        Returns the relevant hookup_type.  This is almost a complete trivial method, but
-        it does serve a function for supplying a different hookup_type if needed.
+        Return the relevant hookup_type.
+
+        This is almost a complete trivial method, but it does serve a function
+        for supplying a different hookup_type if needed.
 
         Parameters
         ----------
@@ -213,9 +241,13 @@ class Sysdef:
 
     def setup(self, part, pol='all', hookup_type=None):
         """
+        Figure out which pols to do (???).
+
         Given the current part and pol (which is either 'all', 'e', or 'n')
         this figures out which pols to do.  Basically, given the part and query it
         figures out whether to return ['e*'], ['n*'], or ['e*', 'n*']
+
+        This method doesn't return anything, it sets values on self.ppkeys.
 
         Parameter:
         -----------
@@ -226,6 +258,7 @@ class Sysdef:
         hookup_type : str, None
             If not None, will use specified hookup_type otherwise it will look through in order.
             Default is None
+
         """
         self.hookup_type = hookup_type
         if hookup_type is None:
@@ -263,8 +296,9 @@ class Sysdef:
 
     def get_ports(self, pol, part_type):
         """
-        This will return a list of appropriate current ports for a given part-type,
-        direction, and pol request.  The up and down lists are made equal length
+        Get a dict of appropriate current ports given inputs.
+
+        The up and down lists are made equal length
 
         Parameters
         ----------
@@ -277,6 +311,7 @@ class Sysdef:
         -------
         dict
             Dictionary keyed on 'up'/'down' listing appropriate ports
+
         """
         port_dict = {}
         for dir in ['up', 'down']:
@@ -298,6 +333,8 @@ class Sysdef:
 
     def node(self, node_nums):
         """
+        Get the antennas associated with a set of nodes.
+
         Given a list of node_nums, returnes the associated antennas as per the
         data file 'nodes.txt'
 
@@ -310,6 +347,7 @@ class Sysdef:
         -------
         list
             Strings of the antenna hpns within those nodes.
+
         """
         from . import geo_sysdef
         node = geo_sysdef.read_nodes()

@@ -100,7 +100,7 @@ class LibStatus(MCDeclarativeBase):
         Create a new lib_status object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of this status.
         num_files : int
@@ -163,7 +163,7 @@ class LibRAIDStatus(MCDeclarativeBase):
         Create a new lib_raid_status object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of this status.
         hostname : str
@@ -217,7 +217,7 @@ class LibRAIDErrors(MCDeclarativeBase):
         Create a new lib_raid_error object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of this error report.
         hostname : str
@@ -272,7 +272,7 @@ class LibRemoteStatus(MCDeclarativeBase):
         Create a new lib_remote_status object.
 
         Parameters
-        ------------
+        ----------
         time : astropy Time object
             Time of this status.
         remote_name : str
@@ -329,7 +329,7 @@ class LibFiles(MCDeclarativeBase):
         Create a new lib_file object.
 
         Parameters
-        ------------
+        ----------
         filename : str
             Name of file created.
         obsid : long or None

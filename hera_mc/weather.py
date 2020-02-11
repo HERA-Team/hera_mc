@@ -131,8 +131,8 @@ class WeatherData(MCDeclarativeBase):
         """
         Create a new weather object.
 
-        Parameters:
-        ------------
+        Parameters
+        ----------
         time : astropy Time object
             Astropy time object based on a timestamp from the katportal sensor.
         variable : str
@@ -161,8 +161,8 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
     """
     Create a list of weather objects from sensor data using tornado server.
 
-    Parameters:
-    ------------
+    Parameters
+    ----------
     starttime : astropy Time object
         Time to start getting history.
     stoptime : astropy Time object
@@ -171,8 +171,8 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
         Variable to get history for. Must be a key in weather_sensor_dict,
         defaults to all keys in weather_sensor_dict.
 
-    Returns:
-    -----------
+    Returns
+    -------
     A list of WeatherData objects (only accessible via a yield call)
 
     """
@@ -247,8 +247,8 @@ def create_from_sensors(starttime, stoptime, variables=None):
     """
     Return a list of weather objects from sensor data.
 
-    Parameters:
-    ------------
+    Parameters
+    ----------
     starttime : astropy Time object
         Time to start getting history.
     stoptime : astropy Time object
@@ -257,8 +257,8 @@ def create_from_sensors(starttime, stoptime, variables=None):
         Variable to get history for. Must be a key in weather_sensor_dict,
         defaults to all keys in weather_sensor_dict.
 
-    Returns:
-    -----------
+    Returns
+    -------
     A list of WeatherData objects
 
     """

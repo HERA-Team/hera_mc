@@ -3,6 +3,8 @@
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
+"""Specify version information."""
+
 from __future__ import absolute_import, division, print_function
 
 import os
@@ -14,9 +16,7 @@ hera_mc_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def _get_git_output(args, capture_stderr=False):
-    """Get output from Git, ensuring that it is of the ``str`` type,
-    not bytes."""
-
+    """Get output from Git, ensuring that it is of the ``str`` type, not bytes."""
     argv = ['git', '-C', hera_mc_dir] + args
 
     if capture_stderr:
@@ -32,7 +32,7 @@ def _get_git_output(args, capture_stderr=False):
 
 
 def _get_gitinfo_file(git_file=None):
-    """Get saved info from GIT_INFO file that was created when installing package"""
+    """Get saved info from GIT_INFO file that was created when installing package."""
     if git_file is None:
         git_file = os.path.join(hera_mc_dir, 'GIT_INFO')
 
@@ -54,7 +54,7 @@ def _unicode_to_str(u):
 
 
 def construct_version_info():
-
+    """Make version info dict."""
     version_file = os.path.join(hera_mc_dir, 'VERSION')
     with open(version_file) as f:
         version = f.read().strip()
@@ -90,6 +90,7 @@ git_branch = version_info['git_branch']
 
 
 def main():
+    """Print out version info."""
     print('Version = {0}'.format(version))
     print('git origin = {0}'.format(git_origin))
     print('git branch = {0}'.format(git_branch))

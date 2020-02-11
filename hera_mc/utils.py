@@ -38,7 +38,7 @@ def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
     LSTbins run from 0 to 24 hours and step according to LSTbin_size.
 
     Parameters
-    -----
+    ----------
     starttime : astropy.time.Time
         Target schedule time.
     LSTbin_size : float
@@ -47,7 +47,7 @@ def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
         Telescope longitude in degrees.
 
     Returns
-    -----
+    -------
     schedule time :  astropy.time.Time
         Time of next LST bin.
     schedule sidereal time :  astropy.coord.Angle
@@ -92,13 +92,13 @@ def calculate_obsid(starttime):
     """
     Create a new obsid using Astropy to compute the gps second.
 
-    Parameters:
-    ------------
+    Parameters
+    ----------
     starttime : astropy.time.Time
       Observation starttime.
 
-    Returns:
-    --------
+    Returns
+    -------
     long
         obsid
 
