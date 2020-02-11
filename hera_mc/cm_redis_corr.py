@@ -2,9 +2,7 @@
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""
-Methods for handling locating correlator and various system aspects.
-"""
+"""Methods for handling locating correlator and various system aspects."""
 
 from __future__ import absolute_import, division, print_function
 
@@ -20,9 +18,11 @@ REDIS_CORR_HASH = 'corr:map'
 
 def snap_part_to_host_input(part, redis_info=None):
     """
-    Given a part string, eg. 'e2>SNPC000008' it will return the putative hostname
-    and adc number.  If a redis session is supplied and key available it returns the
-    hostname, otherwise it returns the SNAP name.  If None, returns the SNAP name.
+    Parse a part string for the putative hostname and adc number.
+
+    If a redis session is supplied and key available it returns the hostname, otherwise
+    it returns the SNAP name.  If None, returns the SNAP name.  An example part is
+    'e2>SNPC000008'
 
     Parameters
     ----------
@@ -57,8 +57,10 @@ def snap_part_to_host_input(part, redis_info=None):
 
 def cminfo_redis_snap(cminfo, redis_info=None):
     """
+    Build a dictionary of correlator mappings.
+
     Use hera_mc's get_cminfo_correlator method to build a dictionary
-    of correlator mappings
+    of correlator mappings for redis insertion.
 
     Parameters
     ----------
@@ -126,8 +128,7 @@ def cminfo_redis_loc(cminfo):
 
 def set_redis_cminfo(redishost=DEFAULT_REDIS_ADDRESS, session=None, testing=False):
     """
-    Gets the configuration management information and writes to the
-    redis database for the correlator.
+    Write config info to redis database for the correlator.
 
     Parameters
     ----------
@@ -135,6 +136,8 @@ def set_redis_cminfo(redishost=DEFAULT_REDIS_ADDRESS, session=None, testing=Fals
         Hostname for the redis database.  If None uses default
     session : None or hera_mc session
         Session for hera_mc instance.  None uses default
+    testing : bool
+        If True, will use the testing_ hash in redis
     """
     h = cm_sysutils.Handling(session=session)
     cminfo = h.get_cminfo_correlator()
