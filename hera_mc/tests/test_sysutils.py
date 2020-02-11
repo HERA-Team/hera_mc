@@ -260,7 +260,8 @@ def test_correlator_info(sys_handle):
                      'correlator_inputs', 'antenna_utm_datum_vals', 'epoch',
                      'antenna_utm_tiles', 'antenna_utm_eastings',
                      'antenna_utm_northings', 'antenna_positions',
-                     'cm_version', 'cofa_lat', 'cofa_lon', 'cofa_alt']
+                     'cm_version', 'cofa_lat', 'cofa_lon', 'cofa_alt',
+                     'cofa_X', 'cofa_Y', 'cofa_Z']
     assert set(corr_dict.keys()) == set(expected_keys)
 
     cofa = sys_handle.cofa()[0]

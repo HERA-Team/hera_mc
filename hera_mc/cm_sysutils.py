@@ -214,6 +214,9 @@ class Handling:
         cm_h = cm_handling.Handling(session=self.session)
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
+        cofa_xyz = uvutils.XYZ_from_LatLonAlt(cofa_loc.lat * np.pi / 180.,
+                                              cofa_loc.lon * np.pi / 180.,
+                                              cofa_loc.elevation)
         stations_conn = self.get_connected_stations(at_date='now', hookup_type=hookup_type)
         stn_arrays = SystemInfo()
         for stn in stations_conn:
@@ -241,7 +244,10 @@ class Handling:
                 'cm_version': cm_version,
                 'cofa_lat': cofa_loc.lat,
                 'cofa_lon': cofa_loc.lon,
-                'cofa_alt': cofa_loc.elevation}
+                'cofa_alt': cofa_loc.elevation,
+                'cofa_X': cofa_xyz[0],
+                'cofa_Y': cofa_xyz[1],
+                'cofa_Z': cofa_xyz[2]}
 
     def get_part_at_station_from_type(self, stn, at_date, part_type, include_revs=False,
                                       include_ports=False, hookup_type=None):
