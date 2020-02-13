@@ -15,12 +15,13 @@ import socket
 import pytest
 
 from hera_mc.utils import get_iterable
+TEST_DEFAULT_REDIS_HOST = 'redishost'
 
 
 def redis_online():
     try:
         import redis
-        r = redis.Redis()
+        r = redis.Redis(TEST_DEFAULT_REDIS_HOST)
         hera_redis = len([k for k in r.keys() if 'hera' in k.decode()]) > 0
     except:  # noqa
         hera_redis = False

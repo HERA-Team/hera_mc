@@ -214,6 +214,9 @@ class Handling:
         cm_h = cm_handling.Handling(session=self.session)
         cm_version = cm_h.get_cm_version()
         cofa_loc = self.geo.cofa()[0]
+        cofa_xyz = uvutils.XYZ_from_LatLonAlt(cofa_loc.lat * np.pi / 180.,
+                                              cofa_loc.lon * np.pi / 180.,
+                                              cofa_loc.elevation)
         stations_conn = self.get_connected_stations(at_date='now', hookup_type=hookup_type)
         stn_arrays = SystemInfo()
         for stn in stations_conn:
@@ -241,7 +244,10 @@ class Handling:
                 'cm_version': cm_version,
                 'cofa_lat': cofa_loc.lat,
                 'cofa_lon': cofa_loc.lon,
-                'cofa_alt': cofa_loc.elevation}
+                'cofa_alt': cofa_loc.elevation,
+                'cofa_X': cofa_xyz[0],
+                'cofa_Y': cofa_xyz[1],
+                'cofa_Z': cofa_xyz[2]}
 
     def get_part_at_station_from_type(self, stn, at_date, part_type, include_revs=False,
                                       include_ports=False, hookup_type=None):
@@ -316,16 +322,6 @@ class Handling:
         H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols,
                       state='full', ports=True, revs=True,
                       sortby=sortby, filename=output_file, output_format='html')
-
-        from . import cm_transfer
-        if cm_transfer.check_if_main(self.session):  # pragma: no cover
-            import subprocess
-            location_on_web = 'hera.today:/var/www/html/hookup.html'
-            sc_command = 'scp {} {}'.format(output_file, location_on_web)
-            subprocess.call(sc_command, shell=True)
-            return 'OK'
-        else:
-            return 'Not on "main"'
 
     def get_apriori_status_for_antenna(self, antenna, at_date='now'):
         """

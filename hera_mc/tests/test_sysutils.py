@@ -15,12 +15,36 @@ import pytest
 import numpy as np
 
 from .. import (cm_sysutils, cm_partconnect, cm_hookup, cm_utils, utils,
-                cm_sysdef, cm_dossier, cm_active)
+                cm_sysdef, cm_dossier, cm_active, cm_redis_corr)
+from .. tests import requires_redis
+from .. tests import TEST_DEFAULT_REDIS_HOST
+import redis
 
 
 @pytest.fixture(scope='function')
 def sys_handle(mcsession):
     return cm_sysutils.Handling(mcsession)
+
+
+@requires_redis
+def test_set_redis_cminfo(mcsession):
+    redishost = TEST_DEFAULT_REDIS_HOST
+    rsession = redis.Redis(redishost)
+    rsession.hmset('testing_corr:map', {'snap_host': b'{"SNPB000701":"heraNode700Snap700"}'})
+    cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession, testing=True)
+    test_out = rsession.hget('testing_corr:map', 'ant_to_snap')
+    assert b'{"host": "SNPA000700", "channel": 0}' in test_out
+    test_out = rsession.hget('testing_corr:map', 'cofa')
+    assert b'{"lat": -30.72' in test_out
+    test_out = rsession.hget('testing_corr:map', 'snap_to_ant')
+    assert b'heraNode700Snap700' in test_out
+    snap_info = 'e2>SNPC000008'
+    redis_info = {'rsession': rsession, 'rhash': 'corr:map', 'rkey': 'not_there'}
+    host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=redis_info)
+    assert host == 'SNPC000008'
+    host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=None)
+    assert host == 'SNPC000008'
+    assert adc == 1
 
 
 def test_ever_fully_connected(sys_handle):
@@ -31,7 +55,7 @@ def test_ever_fully_connected(sys_handle):
 
 def test_publish_summary(sys_handle):
     msg = sys_handle.publish_summary()
-    assert msg == 'Not on "main"'
+    assert msg is None
 
 
 def test_random_update(sys_handle):
@@ -236,7 +260,8 @@ def test_correlator_info(sys_handle):
                      'correlator_inputs', 'antenna_utm_datum_vals', 'epoch',
                      'antenna_utm_tiles', 'antenna_utm_eastings',
                      'antenna_utm_northings', 'antenna_positions',
-                     'cm_version', 'cofa_lat', 'cofa_lon', 'cofa_alt']
+                     'cm_version', 'cofa_lat', 'cofa_lon', 'cofa_alt',
+                     'cofa_X', 'cofa_Y', 'cofa_Z']
     assert set(corr_dict.keys()) == set(expected_keys)
 
     cofa = sys_handle.cofa()[0]
