@@ -95,6 +95,8 @@ def cminfo_redis_snap(cminfo, redis_info=None):
             snap, adc_num = snap_part_to_host_input(psnap, None)
             all_snap_inputs.setdefault(snap, [])
             all_snap_inputs[snap].append(adc_num)
+    for key, value in all_snap_inputs.items():
+        all_snap_inputs[key] = sorted(value)
     return snap_to_ant, ant_to_snap, all_snap_inputs
 
 
