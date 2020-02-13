@@ -45,6 +45,9 @@ def test_set_redis_cminfo(mcsession):
     host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=None)
     assert host == 'SNPC000008'
     assert adc == 1
+    test_out = rsession.hget('testing_corr:map', 'all_snap_inputs')
+    print(test_out)
+    assert b'SNPC000702": [0, 1, 2, 3, 4, 5]' in test_out
 
 
 def test_ever_fully_connected(sys_handle):
