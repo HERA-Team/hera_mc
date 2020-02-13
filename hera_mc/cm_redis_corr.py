@@ -78,6 +78,7 @@ def cminfo_redis_snap(cminfo, redis_info=None):
     """
     snap_to_ant = {}
     ant_to_snap = {}
+    all_snap_inputs = {}
     for antn, ant in enumerate(cminfo['antenna_numbers']):
         name = cminfo['antenna_names'][antn]
         pol_info = {}
@@ -91,7 +92,12 @@ def cminfo_redis_snap(cminfo, redis_info=None):
             ant_to_snap[ant][pol] = {'host': snapi, 'channel': channel}
             snap_to_ant.setdefault(snapi, [None] * 6)
             snap_to_ant[snapi][channel] = name + pol.upper()
-    return snap_to_ant, ant_to_snap
+            snap, adc_num = snap_part_to_host_input(psnap, None)
+            all_snap_inputs.setdefault(snap, [])
+            all_snap_inputs[snap].append(adc_num)
+    for key, value in all_snap_inputs.items():
+        all_snap_inputs[key] = sorted(value)
+    return snap_to_ant, ant_to_snap, all_snap_inputs
 
 
 def cminfo_redis_loc(cminfo):
@@ -151,13 +157,14 @@ def set_redis_cminfo(redishost=DEFAULT_REDIS_ADDRESS, session=None, testing=Fals
     if testing:
         redis_hash = 'testing_' + REDIS_CORR_HASH
     redis_info = {'rsession': rsession, 'rhash': redis_hash, 'rkey': 'snap_host'}
-    snap_to_ant, ant_to_snap = cminfo_redis_snap(cminfo, redis_info=redis_info)
+    snap_to_ant, ant_to_snap, all_snap_inputs = cminfo_redis_snap(cminfo, redis_info=redis_info)
     locations = cminfo_redis_loc(cminfo)
     redhkey = {}
     for key, value in six.iteritems(locations):
         redhkey[key] = json.dumps(value)
     redhkey['snap_to_ant'] = json.dumps(snap_to_ant)
     redhkey['ant_to_snap'] = json.dumps(ant_to_snap)
+    redhkey['all_snap_inputs'] = json.dumps(all_snap_inputs)
     redhkey['update_time'] = time.time()
     redhkey['update_time_str'] = time.ctime(redhkey['update_time'])
     redhkey['cm_version'] = cminfo['cm_version']
