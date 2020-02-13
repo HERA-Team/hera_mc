@@ -46,7 +46,6 @@ def test_set_redis_cminfo(mcsession):
     assert host == 'SNPC000008'
     assert adc == 1
     test_out = rsession.hget('testing_corr:map', 'all_snap_inputs')
-    print(test_out)
     assert b'SNPC000702": [0, 1, 2, 3, 4, 5]' in test_out
 
 
