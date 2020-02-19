@@ -259,8 +259,8 @@ def test_correlator_info(sys_handle):
     assert corr_dict['cm_version'] == mc_git_hash
 
     expected_keys = ['antenna_numbers', 'antenna_names', 'station_types',
-                     'correlator_inputs', 'antenna_utm_datum_vals', 'epoch',
-                     'antenna_utm_tiles', 'antenna_utm_eastings',
+                     'correlator_inputs', 'utm_datum',
+                     'utm_tile', 'antenna_utm_eastings', 'antenna_alt',
                      'antenna_utm_northings', 'antenna_positions',
                      'cm_version', 'cofa_lat', 'cofa_lon', 'cofa_alt',
                      'cofa_X', 'cofa_Y', 'cofa_Z']

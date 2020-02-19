@@ -233,13 +233,13 @@ class Handling:
                 # but antenna_names is what it's called in pyuvdata
                 'antenna_names': stn_arrays.station_name,
                 'station_types': stn_arrays.station_type_name,
-                'epoch': stn_arrays.epoch,
                 # this is a tuple giving the f-engine names for x, y
                 'correlator_inputs': stn_arrays.correlator_input,
-                'antenna_utm_datum_vals': stn_arrays.datum,
-                'antenna_utm_tiles': stn_arrays.tile,
+                'utm_datum': stn_arrays.datum[0],
+                'utm_tile': stn_arrays.tile[0],
                 'antenna_utm_eastings': stn_arrays.easting,
                 'antenna_utm_northings': stn_arrays.northing,
+                'antenna_alt': stn_arrays.elevation,
                 'antenna_positions': rotecef_positions,
                 'cm_version': cm_version,
                 'cofa_lat': cofa_loc.lat,
