@@ -125,7 +125,7 @@ def cminfo_redis_loc(cminfo):
     locations['antenna_positions'] = antenna_positions
     locations['antenna_utm_eastings'] = cminfo['antenna_utm_eastings']
     locations['antenna_utm_northings'] = cminfo['antenna_utm_northings']
-    locations['antenna_alt'] = cminfo['antenna_alt']
+    locations['antenna_alts'] = cminfo['antenna_alt']
     locations['cofa'] = {'lat': cminfo['cofa_lat'], 'lon': cminfo['cofa_lon'],
                          'alt': cminfo['cofa_alt']}
     locations['cofa_xyz'] = {'X': cminfo['cofa_X'], 'Y': cminfo['cofa_Y'],
