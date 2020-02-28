@@ -44,7 +44,8 @@ command_dict = {'take_data': 'take_data',
                 'noise_diode_off': 'noise_diode_disable',
                 'load_on': 'load_enable',
                 "load_off": 'load_disable',
-                'update_config': 'update_config', 'restart': 'restart'}
+                'update_config': 'update_config',
+                'restart': 'restart'}
 
 command_state_map = {'take_data': {'allowed_when_recording': False},
                      'stop_taking_data': {'state_type': 'taking_data',
