@@ -56,12 +56,27 @@ class MCSession(Session):
         db_time = Time(db_timestamp)
         return db_time
 
-    def add_corr_obj(self):
-        """Add a HeraCorrCM object to self to talk to the correlator."""
+    def add_corr_obj(self, force=False):
+        """
+        Add a HeraCorrCM object to self to talk to the correlator.
+
+        Parameters
+        ----------
+        force : bool
+            Option to force a command that might interfere with observing even
+            if the correlator is currently taking data. This will only have an
+            effect for commands that are not usually allowed while data is being
+            taken (e.g restart, hard_stop, phase switching/load/noise diode
+            state changes). Done by setting the `danger_mode` keyword on the
+            HeraCorrCM object. To avoid unexpected behavior, always set this
+            attribute so it will be False unless specifically set to True.
+        """
         import hera_corr_cm
 
         if not hasattr(self, 'corr_obj'):
             self.corr_obj = hera_corr_cm.HeraCorrCM()
+
+        self.corr_obj.danger_mode = force
 
     def _write_query_to_file(self, query, table_class, filename=None):
         """
@@ -2662,7 +2677,7 @@ class MCSession(Session):
     def correlator_control_command(self, command, starttime=None, duration=None,
                                    acclen_spectra=None, tag=None,
                                    overwrite_take_data=False, config_file=None,
-                                   dryrun=False, testing=False):
+                                   force=False, dryrun=False, testing=False):
         """
         Issue a correlator control command.
 
@@ -2692,6 +2707,12 @@ class MCSession(Session):
             file to command the correlator to use. Must exist in a location the
             correlator can access (this name is passed directly to the
             correlator).
+        force : bool
+            Option to force a command that might interfere with observing even
+            if the correlator is currently taking data. This will only have an
+            effect for commands that are not usually allowed while data is being
+            taken (e.g restart, hard_stop, phase switching/load/noise diode
+            state changes).
         dryrun : bool
             If true, just return the list of CorrelatorControlCommand objects,
             do not issue the commands or log them to the database
@@ -2737,8 +2758,9 @@ class MCSession(Session):
             taking_data = False
 
         if command == 'take_data':
-            if taking_data:
-                raise RuntimeError('Correlator is already taking data.')
+            if taking_data and not force:
+                raise RuntimeError('Correlator is already taking data. Set the '
+                                   'force keyword to True to override this check.')
 
             # Note: correlator can only store one future starttime,
             # if a new command is issued it will overwrite the starttime in the
@@ -2775,11 +2797,6 @@ class MCSession(Session):
                                   + '. Overwriting with ' + starttime.isot)
 
         else:
-            if taking_data and not \
-                    corr.command_state_map[command]['allowed_when_recording']:
-                raise RuntimeError('Correlator is taking data. ' + command
-                                   + ' is not allowed.')
-
             if len(control_state) > 0:
                 if (control_state[0].state
                         == corr.command_state_map[command]['state']):
@@ -2789,6 +2806,14 @@ class MCSession(Session):
                         return []
                     else:  # pragma: no cover
                         return
+
+            if (taking_data
+                    and not corr.command_state_map[command]['allowed_when_recording']
+                    and not force):
+                raise RuntimeError('Correlator is taking data. ' + command
+                                   + ' is not allowed. Set the force keyword '
+                                   'to True to override this check.')
+
 
         # create object(s) first: catch any mistakes
         command_obj = corr.CorrelatorControlCommand.create(
@@ -2910,8 +2935,17 @@ class MCSession(Session):
                                  'is not "update_config"')
 
         if not dryrun:  # pragma: no cover
-            self.add_corr_obj()
+            # This is a real command, so actually call the commands on a
+            # HERACorrCM object instance (which is created in the next line if
+            # it doesn't already exist).
+            self.add_corr_obj(force=force)
             import hera_corr_cm
+            # There are a couple special cases where we need to pass extra
+            # arguments (take_data, update_config). Handle them specifically,
+            # otherwise just call the appropriate method in the `else` clause.
+            # We use the command_dict in correlator.py to map the commands to
+            # specific methods on hera_corr_cm's HERACorrCM object, so the call
+            # to the object is done via a `getattr` call.
             if command == 'take_data':
                 # the correlator starttime can be different from the commanded
                 # time by as much as 134 ms
