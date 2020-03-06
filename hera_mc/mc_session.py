@@ -2814,7 +2814,6 @@ class MCSession(Session):
                                    + ' is not allowed. Set the force keyword '
                                    'to True to override this check.')
 
-
         # create object(s) first: catch any mistakes
         command_obj = corr.CorrelatorControlCommand.create(
             command_time, command)
