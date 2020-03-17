@@ -71,7 +71,8 @@ if __name__ == "__main__":
         pyuvdata_git_hash = split_local[0][1:]
 
     uv = pyuvdata.UVData()
-    uv.read_uvh5(args.file, read_data=False, run_check_acceptability=False)
+    # args.file is a length-1 list
+    uv.read_uvh5(args.file[0], read_data=False, run_check_acceptability=False)
     t0 = Time(np.unique(uv.time_array)[0], scale='utc', format='jd')
     obsid = int(np.floor(t0.gps))
 
