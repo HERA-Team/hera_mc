@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     # special handling for pyuvdata because it uses setuptools_scm
     pyuvdata_version = pyuvdata.__version__
-    parsed_version = (pyuvdata_version)
+    parsed_version = parse_version(pyuvdata_version)
     pyuvdata_tag = parsed_version.base_version
     local = parsed_version.local
 
