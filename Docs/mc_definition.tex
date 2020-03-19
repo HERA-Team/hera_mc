@@ -108,14 +108,25 @@ The databases are structured primarily around {\em parts} and {\em connections}.
 
 All parts and connections are timed in that they have a start and stop time of operation.  If stop is {\tt None}, then it is active (it is given a date in the relatively far future).  There are currently two special parts (one at each end of the signal chain) that are ``geo\_located'' parts and have entries in the geo\_location table: {\bf station} and {\bf node}.
 
-Parts are hooked together via connections of their ports, as defined in the connection table.   There are two types of connections:  (1) "hookup" connections and (2) "physical" connections, discussed below.
+Parts are hooked together via connections of their ports, as defined in the connection table.   There are two types of connections:  (1) ``hookup'' connections and (2) ``physica'' connections, discussed below.
 
 To capture antenna status, an {\em a priori} antenna status table has been defined to facilitate a work flow to incorporate new antennas into the array and capture and known recalcitrant antennas.  The table provides an enumerated status for each antenna station.
 
 
 \subsection{Operation Workflow}
-The work flow in this context relates to antenna migration between one of the {\em a priori} status states above.  It is handled by the operations team, which will review the situation on a roughly monthly cadence.   Initially, all antennas are given a ``not\_connected" status.  When they are connected, they will be moved to the ``needs\_checking" state.  In operation, at each review an antenna may then be moved into one of the states of:  ``needs\_checking", ``known\_bad", or ``passed\_checks".  Ideally, an antenna will not remain in the ``needs\_checking" state for more than one iteration of the review cycle.
-In pipeline operations, the {\em a priori} status state is read by the real-time processing (RTP) system.  Antennas in the ``passed\_checks" (and generally the ``needs\_checking") states are processed and passed on.
+The work flow in this context relates to antenna migration between one of the {\em a priori} status states above.  It is handled by the operations team, which will review the situation on a roughly monthly cadence.
+The enumerated states are:
+\begin{itemize}\setlength\itemsep{-.3em}
+            \item {\bf dish\_maintenance}: dish is either not completed or being repaired
+            \item {\bf dish\_ok}: dish is ready for use
+            \item {\bf RF\_maintenance}:  receiver system is either not installed or being repaired
+            \item {\bf RF\_ok}:  receiver system ready for use
+            \item {\bf digital\_maintenance}:  digital system is either not installed or being repaired
+            \item {\bf digital\_ok}: digital system is ready for use
+            \item {\bf calibration\_maintenance}:  calibration has not been conducted or current
+            \item {\bf calibration\_ok}:  ready to use in analysis
+            \item {\bf calibration\_triage}:  an issue is being worked on
+\end{itemize}
 
 \subsection{Signal Chain Hookup Connections}
 Hookup connections are those that uniquely map the signal chain from the antenna to the node, including the specific correlator input.  These connections are defined in the file {\tt cm\_part\_connect} as the {\tt full\_connection\_path}.  These are the connections used to generate the correlator hookup.
@@ -164,11 +175,11 @@ This section provides a high-level overview of the python configuration manageme
 
 \subsection{Scripts}
 \label{sec:scripts}
-This section provides a high-level overview of the high-level scripts:  {\tt geo.py},  {\tt parts.py} and {\tt hookup.py}.
+This section provides a high-level overview of the high-level scripts:  {\tt geo.py},  {\tt dossier.py} and {\tt hookup.py}.
 
 \subsubsection{Geographical Information:  {\tt geo.py fg\_action --arguments}}
 
-Has various plotting/printing options for station information.  {{\tt fg\_action} is the "foreground action", that is the locations that will get printed and shown on top if plotting.
+Has various plotting/printing options for station information.  {{\tt fg\_action} is the ``foreground action'', that is the locations that will get printed and shown on top if plotting.
 See {\tt geo.py -h} for options.
 Available foregrounds are (note you need the first letter only):
 \begin{itemize}\setlength\itemsep{-.3em}
