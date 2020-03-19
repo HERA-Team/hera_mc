@@ -151,7 +151,7 @@ The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}, show
 \end{figure}
 
 \subsection{Physical Connections}
-Possibly not the most aptly named "physical" connections are other connections that we wish to track for various operational reasons (e.g. tracing a problem to a single PAM chassis etc).  Unlike for hookup connections, these are not defined anywhere and new ones may be included as needs arise.  They are shown in Fig. \ref{fig:hookup} in blue.
+Possibly not the most aptly named ``physical'' connections are other connections that we wish to track for various operational reasons (e.g. tracing a problem to a single PAM chassis etc).  Unlike for hookup connections, these are not defined anywhere and new ones may be included as needs arise.  They are shown in Fig. \ref{fig:hookup} in blue.
 
 \subsection{Package Modules}
 This section provides a high-level overview of the python configuration management package modules within hera\_mc that are called from scripts or used in interactive sessions.
@@ -619,7 +619,7 @@ Commands issued to change the power status for SNAPs, FEMs and PAMs (via the nod
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & time the command was sent in floor(gps seconds)\\ \hline
 \textbf{node} & int & integer identifying the node commanded \\ \hline
-\textbf{part} & string & part commanded, one of" `snap\_relay', `snap0', `snap1', `snap2', `snap3', `pam', `fem'. \\ \hline
+\textbf{part} & string & part commanded, one of `snap\_relay', `snap0', `snap1', `snap2', `snap3', `pam', `fem'. \\ \hline
 command & string & command sent, `on' or `off'. \\\hline
 \end{tabular}
 \end{center}
