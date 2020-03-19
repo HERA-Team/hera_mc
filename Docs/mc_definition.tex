@@ -108,7 +108,7 @@ The databases are structured primarily around {\em parts} and {\em connections}.
 
 All parts and connections are timed in that they have a start and stop time of operation.  If stop is {\tt None}, then it is active (it is given a date in the relatively far future).  There are currently two special parts (one at each end of the signal chain) that are ``geo\_located'' parts and have entries in the geo\_location table: {\bf station} and {\bf node}.
 
-Parts are hooked together via connections of their ports, as defined in the connection table.   There are two types of connections:  (1) ``hookup'' connections and (2) ``physica'' connections, discussed below.
+Parts are hooked together via connections of their ports, as defined in the connection table.   There are two types of connections:  (1) ``hookup'' connections and (2) ``physical'' connections, discussed below.
 
 To capture antenna status, an {\em a priori} antenna status table has been defined to facilitate a work flow to incorporate new antennas into the array and capture and known recalcitrant antennas.  The table provides an enumerated status for each antenna station.
 
