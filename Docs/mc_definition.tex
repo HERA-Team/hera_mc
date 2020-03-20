@@ -108,20 +108,25 @@ The databases are structured primarily around {\em parts} and {\em connections}.
 
 All parts and connections are timed in that they have a start and stop time of operation.  If stop is {\tt None}, then it is active (it is given a date in the relatively far future).  There are currently two special parts (one at each end of the signal chain) that are ``geo\_located'' parts and have entries in the geo\_location table: {\bf station} and {\bf node}.
 
-Parts are hooked together via connections of their ports, as defined in the connection table.   There are two types of connections:  (1) "hookup" connections and (2) "physical" connections, discussed below.
+Parts are hooked together via connections of their ports, as defined in the connection table.   There are two types of connections:  (1) ``hookup'' connections and (2) ``physical'' connections, discussed below.
 
-To capture antenna status, an {\em a priori} antenna status table has been defined to facilitate a work flow to incorporate new antennas into the array and capture and known recalcitrant antennas.  The table provides an enumerated status for each antenna station.  The status is one of:
-\begin{itemize}\setlength\itemsep{-.3em}
-	\item not\_connected
-	\item needs\_checking
-	\item known\_bad
-	\item passed\_checks
-\end{itemize}
+To capture antenna status, an {\em a priori} antenna status table has been defined to facilitate a work flow to incorporate new antennas into the array and capture and known recalcitrant antennas.  The table provides an enumerated status for each antenna station.
 
 
 \subsection{Operation Workflow}
-The work flow in this context relates to antenna migration between one of the {\em a priori} status states above.  It is handled by the operations team, which will review the situation on a roughly monthly cadence.   Initially, all antennas are given a ``not\_connected" status.  When they are connected, they will be moved to the ``needs\_checking" state.  In operation, at each review an antenna may then be moved into one of the states of:  ``needs\_checking", ``known\_bad", or ``passed\_checks".  Ideally, an antenna will not remain in the ``needs\_checking" state for more than one iteration of the review cycle.
-In pipeline operations, the {\em a priori} status state is read by the real-time processing (RTP) system.  Antennas in the ``passed\_checks" (and generally the ``needs\_checking") states are processed and passed on.
+The work flow in this context relates to antenna migration between one of the {\em a priori} status states above.  It is handled by the operations team, which will review the situation on a roughly monthly cadence.
+The enumerated states are:
+\begin{itemize}\setlength\itemsep{-.3em}
+            \item {\bf dish\_maintenance}: dish is either not completed or being repaired
+            \item {\bf dish\_ok}: dish is ready for use
+            \item {\bf RF\_maintenance}:  receiver system is either not installed or being repaired
+            \item {\bf RF\_ok}:  receiver system ready for use
+            \item {\bf digital\_maintenance}:  digital system is either not installed or being repaired
+            \item {\bf digital\_ok}: digital system is ready for use
+            \item {\bf calibration\_maintenance}:  calibration has not been conducted or current
+            \item {\bf calibration\_ok}:  ready to use in analysis
+            \item {\bf calibration\_triage}:  an issue is being worked on
+\end{itemize}
 
 \subsection{Signal Chain Hookup Connections}
 Hookup connections are those that uniquely map the signal chain from the antenna to the node, including the specific correlator input.  These connections are defined in the file {\tt cm\_part\_connect} as the {\tt full\_connection\_path}.  These are the connections used to generate the correlator hookup.
@@ -146,7 +151,7 @@ The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}, show
 \end{figure}
 
 \subsection{Physical Connections}
-Possibly not the most aptly named "physical" connections are other connections that we wish to track for various operational reasons (e.g. tracing a problem to a single PAM chassis etc).  Unlike for hookup connections, these are not defined anywhere and new ones may be included as needs arise.  They are shown in Fig. \ref{fig:hookup} in blue.
+Possibly not the most aptly named ``physical'' connections are other connections that we wish to track for various operational reasons (e.g. tracing a problem to a single PAM chassis etc).  Unlike for hookup connections, these are not defined anywhere and new ones may be included as needs arise.  They are shown in Fig. \ref{fig:hookup} in blue.
 
 \subsection{Package Modules}
 This section provides a high-level overview of the python configuration management package modules within hera\_mc that are called from scripts or used in interactive sessions.
@@ -158,22 +163,24 @@ This section provides a high-level overview of the python configuration manageme
 {\bf cm\_part\_connect.py} & Defines {\tt parts\_paper}, {\tt part\_info}, and {\tt connections}.  Provides update utilities for {\tt parts\_paper} and {\tt connections}. Contains {\tt \_\_get\_part\_revisions}. \\ \hline
 {\bf cm\_table\_info.py} & Has mapping and order of tables and classes for initialization. \\ \hline
 {\bf cm\_handling.py} & Defines the {\tt Handling} class to handle various configuration management functionalities.\\ \hline
-{\bf cm\_health.py} & Contains modules that check for various cm errors or warnings \\ \hline
+{\bf cm\_active.py} & Contains modules that load parts/connections active for given date. \\ \hline
 {\bf cm\_transfer.py} & Contains myriad defs that help package and initialize the cm tables.\\ \hline
 {\bf cm\_part\_revisions.py} & Contains myriad defs that deal with finding revision numbers etc.\\ \hline
 {\bf cm\_hookup.py} & Defines the {\tt Hookup} class to help determine and show the full part hookup.\\ \hline
-{\bf cm\_dataview.py} & Contains various methods to display cm information.\\ \hline
+{\bf cm\_dossier.py} & Contains classes for the part/connection cm information.\\ \hline
 {\bf cm\_utils.py} & Contains various defs called by other modules.\\ \hline
+{\bf cm\_redis\_corr.py} & Modules to get/read relevant cm info from/into redis.\\ \hline
 {\bf cm\_sysutils.py} & Various system-wide modules.
 \end{tabular}
 
 \subsection{Scripts}
 \label{sec:scripts}
-This section provides a high-level overview of the high-level scripts:  {\tt geo.py},  {\tt parts.py} and {\tt hookup.py}.
+This section provides a high-level overview of the high-level scripts:  {\tt geo.py},  {\tt dossier.py} and {\tt hookup.py}.
 
 \subsubsection{Geographical Information:  {\tt geo.py fg\_action --arguments}}
 
-Has various plotting/printing options for station information.  {{\tt fg\_action} is the "foreground action", that is the locations that will get printed and shown on top if plotting.
+Has various plotting/printing options for station information.  {{\tt fg\_action} is the ``foreground action'', that is the locations that will get printed and shown on top if plotting.
+See {\tt geo.py -h} for options.
 Available foregrounds are (note you need the first letter only):
 \begin{itemize}\setlength\itemsep{-.3em}
 \item {\tt a[ctive]}:  those antennas that are shown as fully hooked up through the correlator
@@ -184,62 +191,14 @@ Available foregrounds are (note you need the first letter only):
 \item {\tt n[one]}:  no foreground, will just show the background (or nothing if not plotting)
 \end{itemize}
 
-Arguments are:
-\begin{itemize}\setlength\itemsep{-.3em}
-\item {\tt -b, --background}:  antenna types as background - none, installed, layers, all (note:  layers=all+station-types+foreground)
-\item {\tt -g, --graph}:  show the graph
-\item {\tt -f, --file}: if included, will write out foreground to that filename
-\item {\tt --date, --time}:  date/time to use for foreground
-\item {\tt -x, -y}:  specifiy x and y axes to use (n, e, z)
-\item {\tt -t, --station-types}:  station-types to use in foreground retrieval
-\item {\tt --label}:  what to use as label for plot.
-\end{itemize}
 
-\subsubsection{Part/Connection Information: {\tt parts.py action --arguments}}
-Has various printing options for part information (part info, connections, hookup, types, etc). {\tt parts.py info} will print out some helpful script info. Available actions are (note you only need the first 2 letters only):
-\begin{itemize}\setlength\itemsep{-.3em}
-\item {\tt info}:   provides information on the script
-\item {\tt part\_info}:   provides a summary of given part(s)
-\item {\tt conn\_info}:   provides a summary table of parts connected to given part(s)
-\item {\tt rev\_info}:  provides a summary of revisions to given part(s)
-\item {\tt types}:  prints a summary table of part types
-\item {\tt check\_rev}:  checks whether a given revision of a part exists
-\item {\tt overlap\_check}:  checks that the given part doesn't have overlapping revisions.
-\end{itemize}
-
-Arguments are:
-\begin{itemize}\setlength\itemsep{-.3em}
-\item {\tt -p, --hpn}:  hera part number (hpn), a csv-list of them, or partial hpn
-\item {\tt -r, --revision}: part revision - can be active, last, all or specific (defaults to active)
-\item {\tt --port}: a specific port to find, or all
-\item {\tt -e, --exact-match}: forces an exact match to the hpn (so 'HH1' doesn't return all teens and hundreds
-\item {\tt --notes}: will display part notes as opposed to the part table (only for action=part\_info)
-\item {\tt --sort\_notes\_by}:  if {\tt --notes}, specifies how they are sorted on display, either by part or posting time (post)
-\item {\tt -v, --verbosity}:  how much to show, -v, -vv, -vvv
-\item {\tt --date, --time}:  date/time to use for active parts/connections etc
-\item {\tt --notes\_start\_date, --notes\_start\_time}:  date/time to use for filtering {\tt --notes}
-\end{itemize}
+\subsubsection{Part/Connection Information: {\tt dossier.py view --arguments}}
+Has various printing options for part information (part info, connections, hookup, types, etc).
+The available {\tt views} are (first letter only needed):  parts, connections, notes, revisions.
+See {\tt dossier.py -h} for options.
 
 \subsubsection{Cascaded Connection Information:  {\tt hookup.py --arguments}}
-Displays the signal chain hookup information.
-
-Arguments are:
-\begin{itemize}\setlength\itemsep{-.3em}
-\item {\tt -p, --hpn}:  hera part number (hpn), a csv-list of them, or partial hpn
-\item {\tt -r, --revision}: part revision - can be active, last, all or specific (defaults to active)
-\item {\tt --port}: a specific port to find, or all
-\item {\tt -e, --exact-match}: forces an exact match to the hpn (so 'HH1' doesn't return all teens and hundreds
-\item {\tt --date, --time}:  date/time to use for active connections
-\item {\tt -f, --force-new}:  forces a new hookup cache file to be written for search
-\item {\tt -c, --cache-info}:  display information about the cache file
-\item {\tt --force-specific}:  subtly different than force new, based on the searched for keys
-\item {\tt --state}:  hookup state to show:  full or all
-\item {\tt --hookup-cols}:  specify which columns to print out
-\item {\tt --levels}:  show correlator levels (currently not functional)
-\item {\tt --hide-ports}:  don't show the ports in hookup table
-\item {\tt --revs}:  show the revs in the hookup table
-\item {\tt delete-cache-file}:  deletes the local cache file
-\end{itemize}
+Displays the signal chain hookup information.  See {\tt hookup.py -h} for options.
 
 % --------------------------- Table Definitions ------------------------------------------------------
 \newpage
@@ -660,7 +619,7 @@ Commands issued to change the power status for SNAPs, FEMs and PAMs (via the nod
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & time the command was sent in floor(gps seconds)\\ \hline
 \textbf{node} & int & integer identifying the node commanded \\ \hline
-\textbf{part} & string & part commanded, one of" `snap\_relay', `snap0', `snap1', `snap2', `snap3', `pam', `fem'. \\ \hline
+\textbf{part} & string & part commanded, one of `snap\_relay', `snap0', `snap1', `snap2', `snap3', `pam', `fem'. \\ \hline
 command & string & command sent, `on' or `off'. \\\hline
 \end{tabular}
 \end{center}
