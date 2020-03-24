@@ -9,7 +9,6 @@ import six
 from hera_mc import cm_utils
 
 hera_zone_prefixes = ['HH', 'HA', 'HB']
-operational_hookup_types = ['parts_hera', 'parts_paper']
 all_port_types = ['sigpath', 'physical']
 
 
@@ -53,6 +52,13 @@ class Sysdef:
                  'down': [['rack']], 'position': 6},
         'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 7}
     }
+    port_def['node_hera'] = {
+        'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 2},
+        'node-control-module': {'up': [['mnt1', 'mnt2']], 'down': [['rack']], 'position': 1},
+        'snap': {'up': [[None]], 'down': [['rack']], 'position': 0},
+        'white-rabbit': {'up': [[None]], 'down': [['mnt']], 'position': 0},
+        'arduino': {'up': [[None]], 'down': [['mnt']], 'position': 0}
+    }
     port_def['parts_paper'] = {
         'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
         'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
@@ -78,9 +84,9 @@ class Sysdef:
     port_def['parts_test'] = {
         'vapor': {'up': [[None]], 'down': [[None]], 'position': 0}
     }
-    checking_order = ['parts_hera', 'parts_rfi', 'parts_paper', 'parts_test']
+    checking_order = ['parts_hera', 'node_hera', 'parts_rfi', 'parts_paper', 'parts_test']
 
-    def __init__(self, input_dict=None):
+    def __init__(self, hookup_type=None, input_dict=None):
         if input_dict is not None:
             self.hookup_type = input_dict['hookup_type']
             self.corr_index = input_dict['corr_index']
@@ -89,7 +95,7 @@ class Sysdef:
             self.single_pol_labeled_parts = input_dict['single_pol_labeled_parts']
             self.full_connection_path = input_dict['full_connection_path']
         else:
-            self.hookup_type = None
+            self.hookup_type = hookup_type
 
             # Initialize the dictionaries
             self.corr_index = self.dict_init(None)
@@ -111,6 +117,7 @@ class Sysdef:
                 self.redirect_part_types[hutype] = []
                 self.single_pol_labeled_parts[hutype] = []
             self.redirect_part_types['parts_hera'] = ['node']
+            self.redirect_part_types['node_hera'] = ['node-control-module']
             self.single_pol_labeled_parts['parts_paper'] = [
                 'cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
 
@@ -205,11 +212,15 @@ class Sysdef:
 
         """
         hpn_list = []
-        if part.hptype.lower() == 'node':
-            for conn in active.connections['down'][cm_utils.make_part_key(
-                    part.hpn, part.hpn_rev)].values():
-                if conn.upstream_part.startswith('SNP'):
-                    hpn_list.append(conn.upstream_part)
+        if self.hookup_type == 'parts_hera':
+            if part.hptype.lower() == 'node':
+                for conn in active.connections['down'][cm_utils.make_part_key(
+                        part.hpn, part.hpn_rev)].values():
+                    if conn.upstream_part.startswith('SNP'):
+                        hpn_list.append(conn.upstream_part)
+        if self.hookup_type == 'node_hera':
+            if part.hptype.lower() == 'node-control-module':
+                print("CM_SYSDEF222:  Need to make this work.")
         return hpn_list
 
     def find_hookup_type(self, part_type, hookup_type):

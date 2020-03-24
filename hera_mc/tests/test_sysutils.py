@@ -171,14 +171,15 @@ def test_hookup_dossier(sys_handle, capsys):
 
 
 def test_sysdef(sys_handle, mcsession):
-    sysdef = cm_sysdef.Sysdef()
+    sysdef = cm_sysdef.Sysdef(hookup_type='parts_hera')
     active = cm_active.ActiveData(session=mcsession)
     active.load_parts(at_date=None)
     active.load_connections(at_date=None)
     part = Namespace(hpn='N700', hpn_rev='A', hptype='node')
-    part.connections = Namespace(input_ports=['loc0', '@mars'],
+    part.connections = Namespace(input_ports=['loc0', 'mars'],
                                  output_ports=[])
     hl = sysdef.handle_redirect_part_types(part, active)
+    print(hl)
     assert len(hl), 4
     part.hpn = 'doorknob'
     part.part_type = 'node'

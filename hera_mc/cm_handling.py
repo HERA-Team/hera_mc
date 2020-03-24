@@ -168,7 +168,7 @@ class Handling:
         if inp == 'init':  # Initialize
             self.ports = {}
             sysdef = cm_sysdef.Sysdef()
-            self.all_sigpath_ports = sysdef.get_all_ports(cm_sysdef.operational_hookup_types)
+            self.all_sigpath_ports = sysdef.get_all_ports(sysdef.checking_order)
             for port_type in cm_sysdef.all_port_types:
                 self.ports[port_type.upper()] = set()
             del(sysdef)
