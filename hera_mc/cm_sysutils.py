@@ -424,3 +424,70 @@ class Handling:
 
         """
         return ','.join(self.get_apriori_antennas_with_status(status=status, at_date=at_date))
+
+
+def node_antennas(node_nums, source='file'):
+    """
+    Get the antennas associated with a set of nodes.
+
+    Given a list of node_nums, returnes the associated antennas as per the
+    data file 'nodes.txt'
+
+    Parameters
+    ----------
+    node_nums : list
+        Integers of the desired node numbers.
+    source : str
+        Source of node antennas - either 'file' or 'hookup'
+
+    Returns
+    -------
+    list
+        Strings of the antenna hpns within those nodes.
+
+    """
+    if source.lower().startswith('f'):
+        from . import geo_sysdef
+        node = geo_sysdef.read_nodes()
+        ants = []
+        for nd in node_nums:
+            for ant in node[int(nd)]['ants']:
+                if ant in geo_sysdef.region['heraringa']:
+                    prefix = 'HA'
+                elif ant in geo_sysdef.region['heraringb']:
+                    prefix = 'HB'
+                else:
+                    prefix = 'HH'
+                ants.append("{}{}".format(prefix, ant))
+    elif source.lower().startswith('h'):
+        ants = None
+        print("TODO: Read hookup for antennas per node.")
+    return ants
+
+
+def node_info(node_num):
+    """Print out information per node."""
+    hu = cm_hookup.Hookup()
+    nodes = []
+    snaps = {}
+    wrs = {}
+    arduinos = {}
+    notes = {'snap': {}, 'wr': {}, 'arduino': {}}
+    for n in node_num:
+        node = 'N{:02d}'.format(int(n))
+        nodes.append(node)
+        snaps[node] = hu.get_hookup(node, hookup_type='parts_hera')
+        wrs[node] = hu.get_hookup(node, hookup_type='wr_hera')
+        arduinos[node] = hu.get_hookup(node, hookup_type='arduino_hera')
+        notes['snap'][node] = hu.get_notes(snaps[node], state='all')
+        notes['wr'][node] = hu.get_notes(wrs[node], state='all')
+        notes['arduino'][node] = hu.get_notes(arduinos[node], state='all')
+        print(node)
+        print('---')
+        print(snaps[node])
+        print('---')
+        print(wrs[node])
+        print('---')
+        print(arduinos[node])
+        print('---')
+        print(notes)

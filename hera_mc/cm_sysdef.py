@@ -52,11 +52,14 @@ class Sysdef:
                  'down': [['rack']], 'position': 6},
         'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 7}
     }
-    port_def['node_hera'] = {
-        'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 2},
-        'node-control-module': {'up': [['mnt1', 'mnt2']], 'down': [['rack']], 'position': 1},
-        'snap': {'up': [[None]], 'down': [['rack']], 'position': 0},
+    port_def['wr_hera'] = {
+        'node': {'up': [['middle']], 'down': [[None]], 'position': 2},
+        'node-control-module': {'up': [['mnt1']], 'down': [['rack']], 'position': 1},
         'white-rabbit': {'up': [[None]], 'down': [['mnt']], 'position': 0},
+    }
+    port_def['arduino_hera'] = {
+        'node': {'up': [['middle']], 'down': [[None]], 'position': 2},
+        'node-control-module': {'up': [['mnt2']], 'down': [['rack']], 'position': 1},
         'arduino': {'up': [[None]], 'down': [['mnt']], 'position': 0}
     }
     port_def['parts_paper'] = {
@@ -84,7 +87,8 @@ class Sysdef:
     port_def['parts_test'] = {
         'vapor': {'up': [[None]], 'down': [[None]], 'position': 0}
     }
-    checking_order = ['parts_hera', 'node_hera', 'parts_rfi', 'parts_paper', 'parts_test']
+    checking_order = ['parts_hera', 'wr_hera', 'arduino_hera',
+                      'parts_rfi', 'parts_paper', 'parts_test']
 
     def __init__(self, hookup_type=None, input_dict=None):
         if input_dict is not None:
@@ -112,12 +116,13 @@ class Sysdef:
             self.all_pols['parts_hera'] = ['e', 'n']
             self.all_pols['parts_paper'] = ['e', 'n']
             self.all_pols['parts_rfi'] = ['e', 'n']
+            self.all_pols['arduino_hera'] = ['@']
+            self.all_pols['wr_hera'] = ['@']
             #    Define "special" parts for systems.  These require additional checking/processing
             for hutype in self.port_def.keys():
                 self.redirect_part_types[hutype] = []
                 self.single_pol_labeled_parts[hutype] = []
             self.redirect_part_types['parts_hera'] = ['node']
-            self.redirect_part_types['node_hera'] = ['node-control-module']
             self.single_pol_labeled_parts['parts_paper'] = [
                 'cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
 
@@ -218,12 +223,9 @@ class Sysdef:
                         part.hpn, part.hpn_rev)].values():
                     if conn.upstream_part.startswith('SNP'):
                         hpn_list.append(conn.upstream_part)
-        if self.hookup_type == 'node_hera':
-            if part.hptype.lower() == 'node-control-module':
-                print("CM_SYSDEF222:  Need to make this work.")
         return hpn_list
 
-    def find_hookup_type(self, part_type, hookup_type):
+    def find_hookup_type(self, part_type, hookup_type, set_for_class=True):
         """
         Return the relevant hookup_type.
 
@@ -236,6 +238,8 @@ class Sysdef:
             Part_type to check on, if no hookup_type is provided.
         hookup_type : str
             Hookup_type to return, if supplied.
+        set_for_class : bool
+            If True, set hookup_type as class variable.
 
         Returns
         -------
@@ -243,10 +247,14 @@ class Sysdef:
             String for the hooukp_type
         """
         if hookup_type in self.port_def.keys():
+            if set_for_class:
+                self.hookup_type = hookup_type
             return hookup_type
         if hookup_type is None:
             for hookup_type in self.checking_order:
                 if part_type in self.port_def[hookup_type].keys():
+                    if set_for_class:
+                        self.hookup_type = hookup_type
                     return hookup_type
         raise ValueError("hookup_type {} is not found.".format(hookup_type))
 
@@ -281,8 +289,13 @@ class Sysdef:
             raise ValueError("Invalid port query {}.".format(pol))
         use_pols = all_pols if pol == 'ALL' else [pol]
 
-        port_up = self.port_def[self.hookup_type][part.hptype]['up']
-        port_dn = self.port_def[self.hookup_type][part.hptype]['down']
+        try:
+            port_up = self.port_def[self.hookup_type][part.hptype]['up']
+            port_dn = self.port_def[self.hookup_type][part.hptype]['down']
+        except KeyError:
+            print("Unmatched hookup and part:  {} and {}".format(self.hookup_type, part.hptype))
+            self.ppkeys = []
+            return
         dir2use = port_up if len(port_up) > len(port_dn) else port_dn
         if dir2use[0][0] is None:
             dir2use = port_up
@@ -295,8 +308,8 @@ class Sysdef:
                         ppkey_list.append(port)
                 else:
                     ppkey_list.append(port)
-
         self.ppkeys = []
+
         for _pol in use_pols:
             for _port in ppkey_list:
                 if cm_utils.port_is_polarized(_port, all_pols):
@@ -341,35 +354,3 @@ class Sysdef:
                     elif port[0].lower() == pol[0].lower():
                         port_dict[dir].append(port.upper())
         return port_dict
-
-    def node(self, node_nums):
-        """
-        Get the antennas associated with a set of nodes.
-
-        Given a list of node_nums, returnes the associated antennas as per the
-        data file 'nodes.txt'
-
-        Parameters
-        ----------
-        node_nums : list
-            Integers of the desired node numbers.
-
-        Returns
-        -------
-        list
-            Strings of the antenna hpns within those nodes.
-
-        """
-        from . import geo_sysdef
-        node = geo_sysdef.read_nodes()
-        ants = []
-        for nd in node_nums:
-            for ant in node[int(nd)]['ants']:
-                if ant in geo_sysdef.region['heraringa']:
-                    prefix = 'HA'
-                elif ant in geo_sysdef.region['heraringb']:
-                    prefix = 'HB'
-                else:
-                    prefix = 'HH'
-                ants.append("{}{}".format(prefix, ant))
-        return ants
