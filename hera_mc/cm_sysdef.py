@@ -9,7 +9,6 @@ import six
 from hera_mc import cm_utils
 
 hera_zone_prefixes = ['HH', 'HA', 'HB']
-all_port_types = ['sigpath', 'physical']
 
 
 class Sysdef:
@@ -18,8 +17,6 @@ class Sysdef:
 
     The intent is to have all of the specific defining parameters here in one place.
     If a new system is required, this may be extended by defining the parameters here.
-
-    This only defines the signal path ports.
 
     The two-part "meta" assumption is that:
         a) polarized ports start with one of the polarization characters ('e' or 'n')
@@ -175,14 +172,14 @@ class Sysdef:
                 'single_pol_labeled_parts': self.single_pol_labeled_parts,
                 'full_connection_path': self.full_connection_path}
 
-    def get_all_ports(self, hookup_types):
+    def get_all_ports(self, hookup_types=None):
         """
         Get all ports for hookup_types.
 
         Parameters
         ----------
-        hookup_type : list of str
-            Strings specifying which types of hookup to use, should be in operational_hookup_types.
+        hookup_type : list of str, or None
+            Strings specifying which types of hookup to use.  If None, uses current.
 
         Returns
         -------
@@ -190,6 +187,8 @@ class Sysdef:
             List of all ports in hookup_types.
         """
         all_ports = []
+        if hookup_types is None:
+            hookup_types = [self.hookup_type]
         for hut in hookup_types:
             for key in self.port_def[hut].keys():
                 for dir in ['up', 'down']:

@@ -589,7 +589,7 @@ def print_node(info):
     """Print node info as determined in method node_info above."""
     from tabulate import tabulate
     headers = ['Node', 'SNAPs', 'NCM', 'WR', 'Arduino']
-    spacer = [5 * '-', 40 * '-', 5 * '-', 17 * '-', 17 * '-']
+    spacer = [5 * '-', 44 * '-', 5 * '-', 17 * '-', 17 * '-']
     table_data = []
     for node in info['nodes']:
         is_there = 0
@@ -604,11 +604,15 @@ def print_node(info):
         for i in range(4):
             try:
                 this_snp = info[node]['snaps'][i]
-                snp_notes = _get_macip(info[this_snp])
             except IndexError:
                 this_snp = ''
+            try:
+                note_info = info[this_snp][cm_utils.make_part_key(this_snp, 'A')].values()
+                snp_notes = _get_macip(note_info)
+            except KeyError:
                 snp_notes = []
-            snp_entry = "{}: {}".format(this_snp, ','.join(snp_notes))
+            snp_entry = "{} - {}".format(this_snp, ', '.join(snp_notes))
+            snp_entry = snp_entry.strip().strip('-')
             if i:
                 try:
                     wr_entry = wr_notes[i - 1]

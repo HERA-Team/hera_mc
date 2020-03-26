@@ -76,13 +76,10 @@ def test_find_part_type(parts):
 def test_various_handling_utils(parts, capsys):
     parts.cm_handle._get_allowed_ports(['a'])
     assert parts.cm_handle.allowed_ports[0] == 'A'
-    parts.cm_handle.ports = {'C': 'test'}
     parts.cm_handle._get_allowed_ports('a,b')
-    captured = capsys.readouterr()
-    assert 'A not in' in captured.out.strip()
-    parts.cm_handle.ports = {'A': '[A]'}
-    parts.cm_handle._get_allowed_ports('a,b')
-    assert 'A' in parts.cm_handle.allowed_ports
+    assert parts.cm_handle.allowed_ports[0] == 'A'
+    parts.cm_handle._get_allowed_ports({"a": "A"})
+    assert parts.cm_handle.allowed_ports is None
 
 
 def test_update_part(parts, capsys):

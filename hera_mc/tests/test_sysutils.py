@@ -67,11 +67,6 @@ def test_random_update(sys_handle):
 
 def test_sys_method_notes(mcsession):
     hookup = cm_hookup.Hookup(session=mcsession)
-    hu = hookup.get_hookup('.node:3/4')
-    assert len(hu.keys()) == 0
-    sysu = cm_sysdef.Sysdef()
-    nd = sysu.node([0])
-    assert nd[0] == 'HH0'
     hu = hookup.get_hookup('HH700')
     hu['HH700:A'].hookup['E<ground'] = []
     x = hookup.show_hookup(hu)

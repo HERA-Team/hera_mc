@@ -7,8 +7,7 @@
 Utility scripts to display dossier information.
 
 Actions 'parts', 'connections', and 'notes' differ only by defining a different
-set of columns,
-which may be overridden by instead using the args.columns parameter
+set of columns, which may be overridden by instead using the args.columns parameter
 (--list-all-columns)
 
 """
@@ -35,10 +34,6 @@ parser.add_argument('--columns', help="Custom columns as csv list. "
 parser.add_argument('--list-all-columns', dest='list_columns',
                     help="Show a list of all available columns",
                     action='store_true')
-parser.add_argument('--hide-sigpath', dest='sigpath', help="Hide signal path ports",
-                    action='store_false')
-parser.add_argument('--hide-phys', dest='phys', help="Hide physical ports",
-                    action='store_false')
 parser.add_argument('--ports', help="Include only these ports, csv list",
                     default=None)
 cm_utils.add_verbosity_args(parser)
@@ -133,18 +128,11 @@ else:  # view == 'parts' or view == 'connections' or view == 'notes'
     if args.columns is not None:
         columns = cm_utils.listify(args.columns)
     if args.ports is not None:
-        ports = cm_utils.listify(args.ports)  # specify port names as list.
-    else:
-        ports = []
-        if args.sigpath:
-            ports.append('sigpath')
-        if args.phys:
-            ports.append('physical')
-        ports = ','.join(ports)  # Need to specify as a string for port types.
+        args.ports = cm_utils.listify(args.ports)  # specify port names as list.
 
     dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision,
                                    at_date=date_query, active=None,
                                    notes_start_date=notes_start_date,
                                    exact_match=args.exact_match)
-    print(handling.show_dossier(dossier, columns, ports=ports))
+    print(handling.show_dossier(dossier, columns, ports=args.ports))
 print()

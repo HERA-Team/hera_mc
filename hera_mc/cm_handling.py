@@ -12,7 +12,7 @@ import six
 from astropy.time import Time
 from sqlalchemy import func, desc
 
-from . import mc, cm_utils, cm_sysdef, cm_dossier
+from . import mc, cm_utils, cm_dossier
 from . import cm_partconnect as partconn
 
 
@@ -154,35 +154,6 @@ class Handling:
             match_list = cm_utils.match_list(all_hpn, all_rev, case_type='upper')
         return match_list
 
-    def _set_ports(self, inp):
-        """
-        Handle 2 distinct phases of get_dossier:  initialize and get typed ports.
-
-        Parameters
-        ----------
-        inp : optional/class PartEntry
-            inp parameter, which differs during the process ('init' then PartEntry)
-
-        """
-        # Initialize port types
-        if inp == 'init':  # Initialize
-            self.ports = {}
-            sysdef = cm_sysdef.Sysdef()
-            self.all_sigpath_ports = sysdef.get_all_ports(sysdef.checking_order)
-            for port_type in cm_sysdef.all_port_types:
-                self.ports[port_type.upper()] = set()
-            del(sysdef)
-            return
-
-        # Get port type sets
-        for part_ports in [inp.input_ports, inp.output_ports]:
-            for p in part_ports:
-                if p in self.all_sigpath_ports:
-                    self.ports['SIGPATH'].add(p)
-                else:
-                    self.ports['PHYSICAL'].add(p)
-        return
-
     def _get_allowed_ports(self, ports):
         """
         Get the allowed_ports class variable for requested ports.
@@ -193,25 +164,11 @@ class Handling:
             Desired ports per show_dossier
 
         """
+        self.allowed_ports = None
+        if isinstance(ports, str):
+            ports = ports.split(',')
         if isinstance(ports, list):
             self.allowed_ports = [x.upper() for x in ports]
-            return
-
-        if ports is None:
-            self.allowed_ports = None
-            return
-
-        ports = ports.upper().split(',')
-        port_types = [x.upper() for x in self.ports.keys()]
-        allowed_ports = set()
-        for pt in ports:
-            if pt.upper() not in port_types:
-                print("{} not in {}".format(pt, port_types))
-                continue
-            for prt in self.ports[pt.upper()]:
-                allowed_ports.add(prt)
-        self.allowed_ports = [x.upper() for x in allowed_ports]
-        return
 
     def get_dossier(self, hpn, rev=None, at_date='now', active=None,
                     notes_start_date='<', exact_match=True):
@@ -268,7 +225,6 @@ class Handling:
         part_dossier = {}
 
         hpn_list = self._get_hpn_list(hpn, rev, active, exact_match)
-        self._set_ports('init')
 
         for loop_hpn, loop_rev in hpn_list:
             if loop_rev is None:
@@ -283,7 +239,6 @@ class Handling:
                                                      notes_start_date=notes_start_date)
                     this_part.get_entry(active)
                     part_dossier[key] = this_part
-                    self._set_ports(this_part)
 
         return part_dossier
 
