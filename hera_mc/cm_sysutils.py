@@ -426,68 +426,205 @@ class Handling:
         return ','.join(self.get_apriori_antennas_with_status(status=status, at_date=at_date))
 
 
-def node_antennas(node_nums, source='file'):
+def node_antennas(source='file'):
     """
-    Get the antennas associated with a set of nodes.
+    Get the antennas associated with nodes.
 
-    Given a list of node_nums, returnes the associated antennas as per the
-    data file 'nodes.txt'
+    If source (as string) is 'file' it will use the 'nodes.txt' file of designed nodes.
+    If source (as string) is 'hookup', it will find them via the current hookup.
+    if source is a hookup instance, it will use that instance.
 
     Parameters
     ----------
-    node_nums : list
-        Integers of the desired node numbers.
-    source : str
-        Source of node antennas - either 'file' or 'hookup'
+    source : str or hookup instance
+        Source of node antennas - either 'file' or 'hookup' or a hookup
 
     Returns
     -------
-    list
-        Strings of the antenna hpns within those nodes.
-
+    dict
+        Antennas per node key.
     """
-    if source.lower().startswith('f'):
+    ants_per_node = {}
+    if isinstance(source, str) and source.lower().startswith('f'):
         from . import geo_sysdef
         node = geo_sysdef.read_nodes()
-        ants = []
-        for nd in node_nums:
-            for ant in node[int(nd)]['ants']:
+        for this_node in node.keys():
+            node_hpn = 'N{:02d}'.format(this_node)
+            ants_per_node[node_hpn] = []
+            for ant in node[this_node]['ants']:
                 if ant in geo_sysdef.region['heraringa']:
                     prefix = 'HA'
                 elif ant in geo_sysdef.region['heraringb']:
                     prefix = 'HB'
                 else:
                     prefix = 'HH'
-                ants.append("{}{}".format(prefix, ant))
-    elif source.lower().startswith('h'):
-        ants = None
-        print("TODO: Read hookup for antennas per node.")
-    return ants
+                ants_per_node[node_hpn].append("{}{}".format(prefix, ant))
+    else:
+        if isinstance(source, str) and source.lower().startswith('h'):
+            source = cm_hookup.Hookup()
+        hu_dict = source.get_hookup(cm_sysdef.hera_zone_prefixes, hookup_type='parts_hera')
+        for this_ant, vna in hu_dict.items():
+            key = vna.hookup['E<ground'][-1].downstream_part
+            if key[0] != 'N':
+                continue
+            ants_per_node.setdefault(key, [])
+            ants_per_node[key].append(cm_utils.split_part_key(this_ant)[0])
+    return ants_per_node
+
+
+def _get_dict_elements(npk, hu, ele_a, ele_b):
+    """Return the appropriate hookup elements for node_info."""
+    a = ele_a.lower()
+    b = ele_b.lower()
+    A = ele_a.upper()
+    B = ele_b.upper()
+    e_ret = {a: '', b: ''}
+    try:
+        e_hookup = hu[npk].hookup['@<middle']
+    except KeyError:
+        return e_ret
+    for element in e_hookup:
+        if element.upstream_part.startswith(A):
+            e_ret[a] = element.upstream_part
+            e_ret[b] = element.downstream_part
+            break
+        elif element.upstream_part.startswith(B):
+            e_ret[b] = element.upstream_part
+    return e_ret
 
 
 def node_info(node_num):
-    """Print out information per node."""
+    """
+    Generate information per node.
+
+    Parameters
+    ----------
+    node_num : list of int or str (can be mixed)
+        Node numbers, as int or hera part number
+
+    Returns
+    -------
+    dict
+        Contains node and node component information
+    """
     hu = cm_hookup.Hookup()
-    nodes = []
-    snaps = {}
-    wrs = {}
-    arduinos = {}
-    notes = {'snap': {}, 'wr': {}, 'arduino': {}}
-    for n in node_num:
-        node = 'N{:02d}'.format(int(n))
-        nodes.append(node)
-        snaps[node] = hu.get_hookup(node, hookup_type='parts_hera')
-        wrs[node] = hu.get_hookup(node, hookup_type='wr_hera')
-        arduinos[node] = hu.get_hookup(node, hookup_type='arduino_hera')
-        notes['snap'][node] = hu.get_notes(snaps[node], state='all')
-        notes['wr'][node] = hu.get_notes(wrs[node], state='all')
-        notes['arduino'][node] = hu.get_notes(arduinos[node], state='all')
-        print(node)
-        print('---')
-        print(snaps[node])
-        print('---')
-        print(wrs[node])
-        print('---')
-        print(arduinos[node])
-        print('---')
-        print(notes)
+    na_from_file = node_antennas('file')
+    na_from_hookup = node_antennas(hu)
+    info = {'nodes': []}
+    for node in node_num:
+        # Set up
+        if isinstance(node, int):
+            node = 'N{:02d}'.format(node)
+        npk = cm_utils.make_part_key(node, 'A')
+        info['nodes'].append(node)
+        info[node] = {}
+        # Get antenna info
+        try:
+            info[node]['ants-file'] = na_from_file[node]
+        except KeyError:
+            info[node]['ants-file'] = []
+        try:
+            info[node]['ants-hookup'] = na_from_hookup[node]
+        except KeyError:
+            info[node]['ants-hookup'] = []
+        # Get hookup info
+        snaps = hu.get_hookup(node, hookup_type='parts_hera')
+        wr = hu.get_hookup(node, hookup_type='wr_hera')
+        rd = hu.get_hookup(node, hookup_type='arduino_hera')
+        # Find snaps
+        info[node]['snaps'] = [cm_utils.split_part_key(x)[0] for x in snaps.keys()]
+        # Find white rabbit, arduino and node control module
+        wr_ret = _get_dict_elements(npk, wr, 'wr', 'ncm')
+        info[node]['wr'] = wr_ret['wr']
+        rd_ret = _get_dict_elements(npk, rd, 'rd', 'ncm')
+        info[node]['arduino'] = rd_ret['rd']
+        info[node]['ncm'] = ''
+        if len(wr_ret['ncm']) and len(rd_ret['ncm']) and wr_ret['ncm'] != rd_ret['ncm']:
+            raise ValueError("NCMs don't match for node {}:  {} vs {}"
+                             .format(node, wr_ret['ncm'], rd_ret['ncm']))
+        elif len(wr_ret['ncm']):
+            info[node]['ncm'] = wr_ret['ncm']
+        elif len(rd_ret['ncm']):
+            info[node]['ncm'] = rd_ret['ncm']
+
+        # Get notes
+        notes = hu.get_notes(snaps, state='all')
+        for snp in info[node]['snaps']:
+            spk = cm_utils.make_part_key(snp, 'A')
+            info[snp] = notes[spk]
+        notes = hu.get_notes(wr, state='all')
+        wpk = cm_utils.make_part_key(info[node]['wr'], 'A')
+        try:
+            info[info[node]['wr']] = list(notes[npk][wpk].values())
+        except KeyError:
+            info[info[node]['wr']] = []
+        notes = hu.get_notes(rd, state='all')
+        apk = cm_utils.make_part_key(info[node]['arduino'], 'A')
+        try:
+            info[info[node]['arduino']] = list(notes[npk][apk].values())
+        except KeyError:
+            info[info[node]['arduino']] = []
+    return info
+
+
+def _get_macip(info):
+    data = []
+    for this_note in info:
+        if this_note.startswith('MAC'):
+            data.append(this_note.split('-')[1].strip())
+        elif this_note.startswith('IP'):
+            data.append(this_note.split('-')[1].strip())
+    return data
+
+
+def _convert_ant_list(alist):
+    ants = [int(x.strip('HH').strip('HA').strip('HB')) for x in alist]
+    ants = sorted(ants)
+    ants = [str(x) for x in ants]
+    ants = ','.join(ants)
+    return ants
+
+
+def print_node(info):
+    """Print node info as determined in method node_info above."""
+    from tabulate import tabulate
+    headers = ['Node', 'SNAPs', 'NCM', 'WR', 'Arduino']
+    spacer = [5 * '-', 40 * '-', 5 * '-', 17 * '-', 17 * '-']
+    table_data = []
+    for node in info['nodes']:
+        is_there = 0
+        for hdr in headers[1:]:
+            is_there += len(info[node][hdr.lower()])
+        if not is_there:
+            continue
+        this_wr = info[node]['wr']
+        wr_notes = _get_macip(info[this_wr])
+        this_rd = info[node]['arduino']
+        rd_notes = _get_macip(info[this_rd])
+        for i in range(4):
+            try:
+                this_snp = info[node]['snaps'][i]
+                snp_notes = _get_macip(info[this_snp])
+            except IndexError:
+                this_snp = ''
+                snp_notes = []
+            snp_entry = "{}: {}".format(this_snp, ','.join(snp_notes))
+            if i:
+                try:
+                    wr_entry = wr_notes[i - 1]
+                except IndexError:
+                    wr_entry = ''
+                try:
+                    rd_entry = rd_notes[i - 1]
+                except IndexError:
+                    rd_entry = ''
+                row = ['', snp_entry, '', wr_entry, rd_entry]
+            else:
+                row = [node, snp_entry, info[node]['ncm'], this_wr, this_rd]
+            table_data.append(row)
+        ants = _convert_ant_list(info[node]['ants-file'])
+        table_data.append(['Ants', ants, '', '', ''])
+        ants = _convert_ant_list(info[node]['ants-hookup'])
+        table_data.append(['Conn', ants, '', '', ''])
+        table_data.append(spacer)
+    print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
