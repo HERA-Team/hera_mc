@@ -82,6 +82,12 @@ def test_various_handling_utils(parts, capsys):
     assert parts.cm_handle.allowed_ports is None
 
 
+def test_apriori(mcsession):
+    active = cm_active.ActiveData(mcsession)
+    active.load_apriori()
+    assert active.apriori['HH700:A'].status == 'not_connected'
+
+
 def test_update_part(parts, capsys):
     data = [[parts.test_part, parts.test_rev, 'not_an_attrib', 'Z']]
     cm_partconnect.update_part(parts.test_session, data)
