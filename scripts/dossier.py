@@ -15,13 +15,14 @@ from __future__ import absolute_import, division, print_function
 
 from hera_mc import mc, cm_handling, cm_utils
 
-all_views = {'p': 'parts', 'c': 'connections', 'n': 'notes', 'r': 'revisions'}
+all_views = {'p': 'parts', 'c': 'connections', 'i': 'info', 'r': 'revisions', 'n': 'node'}
 
 parser = mc.get_mc_argument_parser()
 parser.add_argument('view', nargs='?', help="Views are:  {}.  Need first letter only.\
                     ".format(', '.join(all_views.values())), default='parts')
 # set values for 'action' to use
-parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv list.")
+parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv list. "
+                    "If view is 'node', this may be ints or a hyphen-range of ints (e.g. '0-3')")
 parser.add_argument('-r', '--revision',
                     help="Revision for hpn. Typically don't change from default.",
                     default=None)
@@ -48,7 +49,6 @@ args = parser.parse_args()
 
 args.verbosity = cm_utils.parse_verbosity(args.verbosity)
 view = all_views[args.view[0].lower()]
-args.hpn = cm_utils.listify(args.hpn)
 date_query = cm_utils.get_astropytime(args.date, args.time)
 notes_start_date = cm_utils.get_astropytime(args.notes_start_date,
                                             args.notes_start_time)
@@ -69,8 +69,18 @@ if args.list_columns:
         print("\t{:30s}\t{}".format("--------------", "----------"))
         for col in blank.col_hdr.keys():
             print('\t{:30s}\t{}'.format(col, blank.col_hdr[col]))
+elif view == 'node':
+    from hera_mc import cm_sysutils
+    if '-' in args.hpn:
+        start, stop = args.hpn.split('-')
+        args.hpn = range(int(start), int(stop) + 1)
+    else:
+        args.hpn = cm_utils.listify(args.hpn)
+    node_info = cm_sysutils.node_info(args.hpn, session)
+    cm_sysutils.print_node(node_info)
 elif view == 'revisions':
     from hera_mc import cm_active, cm_revisions
+    args.hpn = cm_utils.listify(args.hpn)
     if args.verbosity == 1:
         columns = ['HPN', 'Revision', 'Start', 'Stop']
     elif args.verbosity == 2:
@@ -83,7 +93,8 @@ elif view == 'revisions':
     active.load_parts()
     revs = active.revs(args.hpn)
     print(cm_revisions.show_revisions(revs, columns=columns))
-else:  # view == 'parts' or view == 'connections' or view == 'notes'
+else:  # view == 'parts' or view == 'connections' or view == 'info'
+    args.hpn = cm_utils.listify(args.hpn)
     handling = cm_handling.Handling(session)
     if view == 'parts':
         if args.verbosity == 1:
@@ -117,7 +128,7 @@ else:  # view == 'parts' or view == 'connections' or view == 'notes'
                        'down.upstream_output_port', 'down.downstream_input_port',
                        'down.downstream_part', 'down.down_part_rev',
                        'down.start_gpstime', 'down.stop_gpstime']
-    elif view == 'notes':
+    elif view == 'info':
         if args.verbosity == 1:
             columns = ['hpn', 'comment']
         elif args.verbosity == 2:
