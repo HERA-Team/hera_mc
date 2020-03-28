@@ -241,7 +241,7 @@ def test_sysutil_node(capsys, mcsession):
     assert 'SNPD000703' in xni.keys()
     xni = cm_sysutils.node_info([700], mcsession)
     assert 'SNPA000700' in xni.keys()
-    print(cm_sysutils.print_node(xni))
+    cm_sysutils.print_node(xni)
     captured = capsys.readouterr()
     assert '| Node   |' in captured.out.strip()
     xni['N700']['wr'] = 'notthere'
@@ -249,9 +249,15 @@ def test_sysutil_node(capsys, mcsession):
     xni['N700']['snaps'].append('notthere')
     xni['nodes'].append('NONODE')
     xni['NONODE'] = {'snaps': [], 'ncm': '', 'wr': '', 'arduino': ''}
-    print(cm_sysutils.print_node(xni))
+    cm_sysutils.print_node(xni)
     captured = capsys.readouterr()
     assert 'notthere' in captured.out.strip()
+    cm_sysutils.print_node(xni, output_format='csv')
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith('"Node"')
+    cm_sysutils.print_node(xni, output_format='html')
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith('<html>')
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):

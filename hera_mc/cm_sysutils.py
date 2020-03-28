@@ -591,7 +591,7 @@ def _convert_ant_list(alist):
     return ants
 
 
-def print_node(info):
+def print_node(info, filename=None, output_format='table'):
     """Print node info as determined in method node_info above."""
     from tabulate import tabulate
     headers = ['Node', 'SNAPs', 'NCM', 'WR', 'Arduino']
@@ -645,4 +645,17 @@ def print_node(info):
         ants = _convert_ant_list(info[node]['ants-hookup'])
         table_data.append(['Conn', ants, '', '', ''])
         table_data.append(spacer)
-    print(tabulate(table_data, headers=headers, tablefmt='orgtbl'))
+    if output_format.lower().startswith('htm'):
+        dtime = cm_utils.get_time_for_display('now') + '\n'
+        table = cm_utils.html_table(headers, table_data)
+        table = ('<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime
+                 + '\t\t</pre>\n\t</body>\n</html>\n')
+    elif output_format.lower().startswith('csv'):
+        table = cm_utils.csv_table(headers, table_data)
+    else:
+        table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
+    if filename is not None:  # pragma: no cover
+        with open(filename, 'w') as fp:
+            print(table, file=fp)
+    else:
+        print(table)
