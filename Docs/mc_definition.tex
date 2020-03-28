@@ -108,7 +108,7 @@ The databases are structured primarily around {\em parts} and {\em connections}.
 
 All parts and connections are timed in that they have a start and stop time of operation.  If stop is {\tt None}, then it is active (it is given a date in the relatively far future).  There are currently two special parts (one at each end of the signal chain) that are ``geo\_located'' parts and have entries in the geo\_location table: {\bf station} and {\bf node}.
 
-Parts are hooked together via connections of their ports, as defined in the connection table.   There are two types of connections:  (1) ``hookup'' connections and (2) ``physical'' connections, discussed below.
+Parts are hooked together via connections of their ports, as defined in the connection table.   For the supporting code, architecture dependent parameters are set in the {\tt cm\_sysdef} module.
 
 To capture antenna status, an {\em a priori} antenna status table has been defined to facilitate a work flow to incorporate new antennas into the array and capture and known recalcitrant antennas.  The table provides an enumerated status for each antenna station.
 
@@ -128,9 +128,9 @@ The enumerated states are:
             \item {\bf calibration\_triage}:  an issue is being worked on
 \end{itemize}
 
-\subsection{Signal Chain Hookup Connections}
-Hookup connections are those that uniquely map the signal chain from the antenna to the node, including the specific correlator input.  These connections are defined in the file {\tt cm\_part\_connect} as the {\tt full\_connection\_path}.  These are the connections used to generate the correlator hookup.
-The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}, shown in black.  The list below describes the hookup connections.
+\subsection{Hookup Connections}
+Hookup connections are those that uniquely map the signal chain from the antenna to the node, including the specific correlator input.   These are the connections used to generate the correlator hookup.
+The signal chain hookup for HERA is given below and shown in Fig. \ref{fig:hookup}, shown in black.  The list below describes the hookup connections.
 \begin{itemize}\setlength\itemsep{-.3em}
 	\item {\bf Station}: geo\_located position.  See prefixes in table station\_type ({\em e.g.} {\tt HH} for herahex)
 	\item {\bf Antenna}:  This is also the correlator number which now matches station number.  {\tt{\bf A}\{\#\}}
@@ -146,12 +146,10 @@ The signal chain hook-up is given below and shown in Fig. \ref{fig:hookup}, show
 \begin{figure}[H]
 \includegraphics[width=0.8\textwidth]{hookup.pdf}
 \centering
-\caption{Block diagram of hookup.  The line labels indicate the port names/connections.}
+\caption{Block diagram of hookup.  The line labels indicate the port names/connections.  Black solid lines are the signal chain.}
 \label{fig:hookup}
 \end{figure}
 
-\subsection{Physical Connections}
-Possibly not the most aptly named ``physical'' connections are other connections that we wish to track for various operational reasons (e.g. tracing a problem to a single PAM chassis etc).  Unlike for hookup connections, these are not defined anywhere and new ones may be included as needs arise.  They are shown in Fig. \ref{fig:hookup} in blue.
 
 \subsection{Package Modules}
 This section provides a high-level overview of the python configuration management package modules within hera\_mc that are called from scripts or used in interactive sessions.
@@ -160,17 +158,18 @@ This section provides a high-level overview of the python configuration manageme
 \begin{tabular}{l p{12cm}}
 {\bf geo\_location.py} & Defines {\tt station\_type} and {\tt geo\_location}.  Provides update utility for {\tt geo\_location}.  Contains {\tt is\_in\_geo\_location} and {\tt is\_in\_connections}. \\ \hline
 {\bf geo\_handling.py} & Contains myriad defs that handle various geo functionalities.\\ \hline
-{\bf cm\_part\_connect.py} & Defines {\tt parts\_paper}, {\tt part\_info}, and {\tt connections}.  Provides update utilities for {\tt parts\_paper} and {\tt connections}. Contains {\tt \_\_get\_part\_revisions}. \\ \hline
+{\bf cm\_partconnect.py} & Defines {\tt parts\_paper}, {\tt part\_info}, and {\tt connections}.  Provides update utilities for {\tt parts\_paper} and {\tt connections}. Contains {\tt \_\_get\_part\_revisions}. \\ \hline
 {\bf cm\_table\_info.py} & Has mapping and order of tables and classes for initialization. \\ \hline
 {\bf cm\_handling.py} & Defines the {\tt Handling} class to handle various configuration management functionalities.\\ \hline
 {\bf cm\_active.py} & Contains modules that load parts/connections active for given date. \\ \hline
 {\bf cm\_transfer.py} & Contains myriad defs that help package and initialize the cm tables.\\ \hline
-{\bf cm\_part\_revisions.py} & Contains myriad defs that deal with finding revision numbers etc.\\ \hline
+{\bf cm\_revisions.py} & Contains myriad defs that deal with finding revision numbers etc.\\ \hline
 {\bf cm\_hookup.py} & Defines the {\tt Hookup} class to help determine and show the full part hookup.\\ \hline
 {\bf cm\_dossier.py} & Contains classes for the part/connection cm information.\\ \hline
 {\bf cm\_utils.py} & Contains various defs called by other modules.\\ \hline
 {\bf cm\_redis\_corr.py} & Modules to get/read relevant cm info from/into redis.\\ \hline
-{\bf cm\_sysutils.py} & Various system-wide modules.
+{\bf cm\_sysutils.py} & Various system-wide modules \\ \hline
+{\bf cm\_sysdef} & Architecture dependent definitions.
 \end{tabular}
 
 \subsection{Scripts}
