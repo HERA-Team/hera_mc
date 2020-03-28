@@ -426,7 +426,7 @@ class Handling:
         return ','.join(self.get_apriori_antennas_with_status(status=status, at_date=at_date))
 
 
-def node_antennas(source='file'):
+def node_antennas(source='file', session=None):
     """
     Get the antennas associated with nodes.
 
@@ -461,7 +461,7 @@ def node_antennas(source='file'):
                 ants_per_node[node_hpn].append("{}{}".format(prefix, ant))
     else:
         if isinstance(source, str) and source.lower().startswith('h'):
-            source = cm_hookup.Hookup()
+            source = cm_hookup.Hookup(session=session)
         hu_dict = source.get_hookup(cm_sysdef.hera_zone_prefixes, hookup_type='parts_hera')
         for this_ant, vna in hu_dict.items():
             key = vna.hookup['E<ground'][-1].downstream_part
@@ -493,7 +493,7 @@ def _get_dict_elements(npk, hu, ele_a, ele_b):
     return e_ret
 
 
-def node_info(node_num):
+def node_info(node_num, session=None):
     """
     Generate information per node.
 
@@ -507,9 +507,9 @@ def node_info(node_num):
     dict
         Contains node and node component information
     """
-    hu = cm_hookup.Hookup()
-    na_from_file = node_antennas('file')
-    na_from_hookup = node_antennas(hu)
+    hu = cm_hookup.Hookup(session)
+    na_from_file = node_antennas('file', session=session)
+    na_from_hookup = node_antennas(hu, session=session)
     info = {'nodes': []}
     for node in node_num:
         # Set up
@@ -539,19 +539,23 @@ def node_info(node_num):
         rd_ret = _get_dict_elements(npk, rd, 'rd', 'ncm')
         info[node]['arduino'] = rd_ret['rd']
         info[node]['ncm'] = ''
-        if len(wr_ret['ncm']) and len(rd_ret['ncm']) and wr_ret['ncm'] != rd_ret['ncm']:
+        if len(wr_ret['ncm']) and len(rd_ret['ncm']) \
+                and wr_ret['ncm'] != rd_ret['ncm']:  # pragma: no cover
             raise ValueError("NCMs don't match for node {}:  {} vs {}"
                              .format(node, wr_ret['ncm'], rd_ret['ncm']))
         elif len(wr_ret['ncm']):
             info[node]['ncm'] = wr_ret['ncm']
-        elif len(rd_ret['ncm']):
+        elif len(rd_ret['ncm']):  # pragma: no cover
             info[node]['ncm'] = rd_ret['ncm']
 
         # Get notes
         notes = hu.get_notes(snaps, state='all')
         for snp in info[node]['snaps']:
             spk = cm_utils.make_part_key(snp, 'A')
-            info[snp] = notes[spk]
+            try:
+                info[snp] = list(notes[spk][spk].values())
+            except KeyError:
+                info[snp] = []
         notes = hu.get_notes(wr, state='all')
         wpk = cm_utils.make_part_key(info[node]['wr'], 'A')
         try:
@@ -564,6 +568,8 @@ def node_info(node_num):
             info[info[node]['arduino']] = list(notes[npk][apk].values())
         except KeyError:
             info[info[node]['arduino']] = []
+        if '' in info.keys():
+            del info['']
     return info
 
 
@@ -597,19 +603,27 @@ def print_node(info):
             is_there += len(info[node][hdr.lower()])
         if not is_there:
             continue
+        # ############# WR
         this_wr = info[node]['wr']
-        wr_notes = _get_macip(info[this_wr])
+        try:
+            wr_notes = _get_macip(info[this_wr])
+        except KeyError:
+            wr_notes = []
+        # ############# RD
         this_rd = info[node]['arduino']
-        rd_notes = _get_macip(info[this_rd])
+        try:
+            rd_notes = _get_macip(info[this_rd])
+        except KeyError:
+            rd_notes = []
+        # ############# SNP and entry
         for i in range(4):
             try:
                 this_snp = info[node]['snaps'][i]
+                try:
+                    snp_notes = _get_macip(info[this_snp])
+                except KeyError:
+                    snp_notes = []
             except IndexError:
-                this_snp = ''
-            try:
-                note_info = info[this_snp][cm_utils.make_part_key(this_snp, 'A')].values()
-                snp_notes = _get_macip(note_info)
-            except KeyError:
                 snp_notes = []
             snp_entry = "{} - {}".format(this_snp, ', '.join(snp_notes))
             snp_entry = snp_entry.strip().strip('-')

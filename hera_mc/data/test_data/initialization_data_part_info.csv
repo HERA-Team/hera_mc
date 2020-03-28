@@ -1,3 +1,5 @@
 hpn,hpn_rev,comment,reference,posting_gpstime
 A700,H,Comment 1,,1184444000
 A700,H,Comment 2,,1184445000
+SNPA000700,A,MAC - 123,,1184445000
+SNPA000700,A,IP - 456,,1184445010

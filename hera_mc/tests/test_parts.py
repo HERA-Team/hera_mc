@@ -88,6 +88,14 @@ def test_apriori(mcsession):
     assert active.apriori['HH700:A'].status == 'not_connected'
 
 
+def test_duplicate(mcsession):
+    active = cm_active.ActiveData(mcsession)
+    active.pytest_param = 'up'
+    pytest.raises(ValueError, active.load_connections)
+    active.pytest_param = 'down'
+    pytest.raises(ValueError, active.load_connections)
+
+
 def test_update_part(parts, capsys):
     data = [[parts.test_part, parts.test_rev, 'not_an_attrib', 'Z']]
     cm_partconnect.update_part(parts.test_session, data)
@@ -268,15 +276,15 @@ def test_active_revisions_mixed_start_time(parts):
         active.parts[k].start_gpstime for k in active.parts.keys()
     ])
     key_order = [list(active.parts.keys())[k] for k in key_order]
-    print(active.parts[key_order[-1]])
-    print(active.parts[key_order[-2]])
+    # print(active.parts[key_order[-1]])
+    # print(active.parts[key_order[-2]])
     key_order[-1], key_order[-2] = key_order[-2], key_order[-1]
     active.parts = OrderedDict({
         key: active.parts[key] for key in key_order
     })
-    vals = list(active.parts.values())
-    print(vals[0])
-    print(vals[1])
+    # vals = list(active.parts.values())
+    # print(vals[0])
+    # print(vals[1])
     revs = active.revs('TEST_PART')
 
     assert revs[0].hpn == 'TEST_PART'

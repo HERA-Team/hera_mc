@@ -211,6 +211,47 @@ def test_sysdef(sys_handle, mcsession):
     with pytest.raises(ValueError) as apdup:
         active.load_apriori('now')
     assert str(apdup.value).startswith("HH700:A already has an active apriori state")
+    all_ports = sysdef.get_all_ports()
+    assert 'ground' in all_ports
+    sysdef.hptype = 'not-real'
+    sysdef.setup(sysdef, hookup_type='parts_hera')
+    assert len(sysdef.ppkeys) == 0
+    gprt = sysdef.get_ports('e', 'not-real')
+    assert len(gprt) == 0
+
+
+def test_sysutil_node(capsys, mcsession):
+    apn = cm_sysutils.node_antennas(session=mcsession)
+    assert 'N10' in apn.keys()
+    apn = cm_sysutils.node_antennas(source='hookup', session=mcsession)
+    assert 'N700' in apn.keys()
+    xni = cm_sysutils.node_info([10], mcsession)
+    assert 'nodes' in xni.keys()
+    testns = Namespace(hookup={'not-a-port': None})
+    testhu = {'this-test': testns}
+    eret = cm_sysutils._get_dict_elements('this-test', testhu, 'a', 'b')
+    assert len(eret['a']) == 0
+    testns.hookup['@<middle'] = [Namespace(upstream_part='UP', downstream_part='DN')]
+    testhu = {'this-test': testns}
+    eret = cm_sysutils._get_dict_elements('this-test', testhu, 'dn', 'up')
+    assert eret['up'] == 'UP'
+    eret = cm_sysutils._get_dict_elements('this-test', testhu, 'up', 'dn')
+    assert eret['up'] == 'UP'
+    xni = cm_sysutils.node_info([701], mcsession)
+    assert 'SNPD000703' in xni.keys()
+    xni = cm_sysutils.node_info([700], mcsession)
+    assert 'SNPA000700' in xni.keys()
+    print(cm_sysutils.print_node(xni))
+    captured = capsys.readouterr()
+    assert '| Node   |' in captured.out.strip()
+    xni['N700']['wr'] = 'notthere'
+    xni['N700']['arduino'] = 'notthere'
+    xni['N700']['snaps'].append('notthere')
+    xni['nodes'].append('NONODE')
+    xni['NONODE'] = {'snaps': [], 'ncm': '', 'wr': '', 'arduino': ''}
+    print(cm_sysutils.print_node(xni))
+    captured = capsys.readouterr()
+    assert 'notthere' in captured.out.strip()
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):

@@ -82,6 +82,9 @@ def test_validity_pass():
     except sqlalchemy.exc.NoSuchTableError:
         pass
 
+    base_is_none = is_valid_database(None, session)
+    assert base_is_none
+
     Base.metadata.create_all(engine, tables=[ValidTestModel.__table__])
 
     try:

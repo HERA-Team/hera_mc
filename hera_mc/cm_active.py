@@ -32,6 +32,7 @@ class ActiveData:
         self.info = None
         self.apriori = None
         self.geo = None
+        self.pytest_param = False
 
     def set_times(self, at_date):
         """
@@ -115,6 +116,8 @@ class ActiveData:
         ):
             chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev,
                                          cnn.upstream_output_port)
+            if self.pytest_param:
+                check_keys[self.pytest_param].append(chk)
             if chk in check_keys['up']:
                 raise ValueError("Duplicate active port {}".format(chk))
             check_keys['up'].append(chk)
