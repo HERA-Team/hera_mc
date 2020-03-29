@@ -517,7 +517,7 @@ class Hookup(object):
         options = list(self.active.connections[current.direction][current.key].keys())
         try:
             current.type = self.active.parts[current.key].hptype
-        except KeyError:
+        except KeyError:  # pragma: no cover
             return None
         current.allowed_ports = cm_utils.to_upper(self.sysdef.get_ports(current.pol, current.type))
         current.port = self._get_port(current, options)

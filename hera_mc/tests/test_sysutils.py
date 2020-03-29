@@ -178,9 +178,13 @@ def test_hookup_misc(mcsession):
     hookup.col_list = ['antenna', 'front-end']
     sk_ret = hookup._sort_hookup_display('antenna,front-end', {})
     assert len(sk_ret) == 0
-    # test_current = Namespace(direction='up', key='', part='', rev='', port='', pol='',
-    #                          allowed_ports='', type='')
-    # test_ret = hookup._get_connection(test_current)
+    hookup.hookup_type = 'test-hookup'
+    test_current = Namespace(direction='up', key='', part=['E'], rev='', hptype='type-a',
+                             port='x', pol='E', allowed_ports=['y'], type='')
+    options = ['y']
+    hookup.sysdef.single_pol_labeled_parts['test-hookup'] = ['type-a']
+    test_ret = hookup._get_port(test_current, options)
+    assert test_ret == 'y'
 
 
 def test_sysdef(sys_handle, mcsession):
