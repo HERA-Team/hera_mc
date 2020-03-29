@@ -7,16 +7,18 @@
 from __future__ import absolute_import, division, print_function
 import six
 from hera_mc import cm_utils
+from hera_mc.mc import data_path
+import json
+import os.path
 
-hera_zone_prefixes = ['HH', 'HA', 'HB']
+with open(os.path.join(data_path, 'sysdef.json'), 'r') as fp:
+    system_info = json.load(fp)
+hera_zone_prefixes = system_info['hera_zone_prefixes']
 
 
 class Sysdef:
     """
-    Defines the system architecture for the telescope array.
-
-    The intent is to have all of the specific defining parameters here in one place.
-    If a new system is required, this may be extended by defining the parameters here.
+    Defines the system architecture for the telescope array for given architecture.
 
     The two-part "meta" assumption is that:
         a) polarized ports start with one of the polarization characters ('e' or 'n')
@@ -29,65 +31,11 @@ class Sysdef:
     """
 
     opposite_direction = {'up': 'down', 'down': 'up'}
-    port_def = {}
-    port_def['parts_hera'] = {
-        'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
-        'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
-        'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
-        'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
-        'node-bulkhead': {'up': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7',
-                                  'e8', 'e9', 'e10', 'e11', 'e12'],
-                                 ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7',
-                                  'n8', 'n9', 'n10', 'n11', 'n12']],
-                          'down': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7',
-                                    'e8', 'e9', 'e10', 'e11', 'e12'],
-                                   ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7',
-                                    'n8', 'n9', 'n10', 'n11', 'n12']],
-                          'position': 4},
-        'post-amp': {'up': [['e'], ['n']], 'down': [['e'], ['n']], 'position': 5},
-        'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']],
-                 'down': [['rack']], 'position': 6},
-        'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 7}
-    }
-    port_def['wr_hera'] = {
-        'node': {'up': [['middle']], 'down': [[None]], 'position': 2},
-        'node-control-module': {'up': [['mnt1']], 'down': [['rack']], 'position': 1},
-        'white-rabbit': {'up': [[None]], 'down': [['mnt']], 'position': 0},
-    }
-    port_def['arduino_hera'] = {
-        'node': {'up': [['middle']], 'down': [[None]], 'position': 2},
-        'node-control-module': {'up': [['mnt2']], 'down': [['rack']], 'position': 1},
-        'arduino': {'up': [[None]], 'down': [['mnt']], 'position': 0}
-    }
-    port_def['parts_paper'] = {
-        'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
-        'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
-        'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
-        'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
-        'cable-feed75': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 4},
-        'cable-post-amp(in)': {'up': [['a']], 'down': [['b']], 'position': 5},
-        'post-amp': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 6},
-        'cable-post-amp(out)': {'up': [['a']], 'down': [['b']], 'position': 7},
-        'cable-receiverator': {'up': [['a']], 'down': [['b']], 'position': 8},
-        'cable-container': {'up': [['a']], 'down': [['b']], 'position': 9},
-        'f-engine': {'up': [['input']], 'down': [[None]], 'position': 10}
-    }
-    port_def['parts_rfi'] = {
-        'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
-        'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
-        'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
-        'temp-cable': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 3},
-        'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']],
-                 'down': [['rack']], 'position': 4},
-        'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 5}
-    }
-    port_def['parts_test'] = {
-        'vapor': {'up': [[None]], 'down': [[None]], 'position': 0}
-    }
     checking_order = ['parts_hera', 'wr_hera', 'arduino_hera',
                       'parts_rfi', 'parts_paper', 'parts_test']
 
     def __init__(self, hookup_type=None, input_dict=None):
+        self.port_def = system_info['hookup_types']
         if input_dict is not None:
             self.hookup_type = input_dict['hookup_type']
             self.corr_index = input_dict['corr_index']
