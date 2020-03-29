@@ -60,35 +60,42 @@
             "corr_index": 6,
             "all_pols": ["e", "n"],
             "redirect_part_types": ["node"],
-            "single_pol_labeled_parts": [null]
+            "single_pol_labeled_parts": []
         },
         "parts_paper":
         {
             "corr_index": 10,
             "all_pols": ["e", "n"],
-            "redirect_part_types": [null],
+            "redirect_part_types": [],
             "single_pol_labeled_parts": ["cable-post-amp(in)", "cable-post-amp(out)", "cable-receiverator"]
         },
         "parts_rfi":
         {
             "corr_index": 4,
             "all_pols": ["e", "n"],
-            "redirect_part_types": [null],
-            "single_pol_labeled_parts": [null]
+            "redirect_part_types": [],
+            "single_pol_labeled_parts": []
         },
         "wr_hera":
         {
             "corr_index": null,
             "all_pols": ["@"],
-            "redirect_part_types": [null],
-            "single_pol_labeled_parts": [null]
+            "redirect_part_types": [],
+            "single_pol_labeled_parts": []
         },
         "arduino_hera":
         {
             "corr_index": null,
             "all_pols": ["@"],
-            "redirect_part_types": [null],
-            "single_pol_labeled_parts": [null]
+            "redirect_part_types": [],
+            "single_pol_labeled_parts": []
+        },
+        "parts_test":
+        {
+            "corr_index": null,
+            "all_pols": ["-"],
+            "redirect_part_types": [],
+            "single_pol_labeled_parts": []
         }
     }
 }

@@ -45,64 +45,24 @@ class Sysdef:
             self.full_connection_path = input_dict['full_connection_path']
         else:
             self.hookup_type = hookup_type
-
-            # Initialize the dictionaries
-            self.corr_index = self.dict_init(None)
-            self.all_pols = self.dict_init([])
-            self.redirect_part_types = self.dict_init([])
-            self.single_pol_labeled_parts = self.dict_init([])
-
-            # Redefine dictionary as needed
-            #    Define which component corresponds to the correlator input.
-            self.corr_index['parts_hera'] = 6
-            self.corr_index['parts_paper'] = 10
-            self.corr_index['parts_rfi'] = 4
-            #    Define polarization designations (should be one character)
-            self.all_pols['parts_hera'] = ['e', 'n']
-            self.all_pols['parts_paper'] = ['e', 'n']
-            self.all_pols['parts_rfi'] = ['e', 'n']
-            self.all_pols['arduino_hera'] = ['@']
-            self.all_pols['wr_hera'] = ['@']
-            #    Define "special" parts for systems.  These require additional checking/processing
-            for hutype in self.port_def.keys():
-                self.redirect_part_types[hutype] = []
-                self.single_pol_labeled_parts[hutype] = []
-            self.redirect_part_types['parts_hera'] = ['node']
-            self.single_pol_labeled_parts['parts_paper'] = [
-                'cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
-
-            # This generates the full_connection_path dictionary from port_def
+            self.corr_index = {}
+            self.all_pols = {}
+            self.redirect_part_types = {}
+            self.single_pol_labeled_parts = {}
             self.full_connection_path = {}
-            for _x in self.port_def.keys():
+            for hutype in self.port_def.keys():
+                this_sys = system_info['hookup_parameters'][hutype]
+                self.corr_index[hutype] = this_sys['corr_index']
+                self.all_pols[hutype] = this_sys['all_pols']
+                self.redirect_part_types[hutype] = this_sys['redirect_part_types']
+                self.single_pol_labeled_parts[hutype] = this_sys['single_pol_labeled_parts']
                 ordered_path = {}
-                for k, v in six.iteritems(self.port_def[_x]):
+                for k, v in six.iteritems(self.port_def[hutype]):
                     ordered_path[v['position']] = k
                 sorted_keys = sorted(list(ordered_path.keys()))
-                self.full_connection_path[_x] = []
+                self.full_connection_path[hutype] = []
                 for k in sorted_keys:
-                    self.full_connection_path[_x].append(ordered_path[k])
-
-    def dict_init(self, v0):
-        """
-        Initialize the system dict to v0.
-
-        Note that v0 is set by the calling function.
-
-        Parameters
-        ----------
-        v0 : str
-            Initialization parameter as defined in the calling function.
-
-        Returns
-        -------
-        dict
-            Initialized dictionary.
-
-        """
-        y = {}
-        for x in self.checking_order:
-            y[x] = v0
-        return y
+                    self.full_connection_path[hutype].append(ordered_path[k])
 
     def _to_dict(self):
         """
