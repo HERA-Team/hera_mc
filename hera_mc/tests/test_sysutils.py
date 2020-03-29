@@ -87,7 +87,8 @@ def test_sys_method_notes(mcsession):
 def test_other_hookup(sys_handle, mcsession, capsys):
     hookup = cm_hookup.Hookup(session=mcsession)
     assert hookup.cached_hookup_dict is None
-
+    test_ret = hookup.hookup_cache_file_OK(None)
+    assert not test_ret
     hu = hookup.get_hookup(['A700'], 'all', at_date='now', exact_match=True,
                            hookup_type='parts_hera')
     out = hookup.show_hookup(hu, cols_to_show=['station'], state='all',
@@ -99,6 +100,13 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     hookup.write_hookup_cache_to_file(log_msg='For testing.')
     hu = hookup.get_hookup('HH', 'all', at_date='now', exact_match=True, use_cache=True)
     assert len(hu) == 0
+    hookup.hookup_type = None
+    test_ret = hookup.hookup_cache_file_OK({'hookup_type': 'parts_test', 'at_date_gps': 1269541796})
+    assert not test_ret
+    hookup.hookup_type = 'not this one'
+    hookup.read_hookup_cache_from_file()
+    captured = capsys.readouterr()
+    assert '<<<Cache is NOT' in captured.out.strip()
     hu = hookup.get_hookup('cache', pol='all', hookup_type='parts_hera')
     out = hookup.show_hookup(hu, state='all', sortby='station', output_format='csv')
     out = out.splitlines()[6].strip('"')
@@ -163,6 +171,16 @@ def test_hookup_dossier(sys_handle, capsys):
     pytest.raises(ValueError, cm_dossier.HookupEntry,
                   entry_key='testing:key')
     pytest.raises(ValueError, cm_dossier.HookupEntry, sysdef=sysdef)
+
+
+def test_hookup_misc(mcsession):
+    hookup = cm_hookup.Hookup(mcsession)
+    hookup.col_list = ['antenna', 'front-end']
+    sk_ret = hookup._sort_hookup_display('antenna,front-end', {})
+    assert len(sk_ret) == 0
+    # test_current = Namespace(direction='up', key='', part='', rev='', port='', pol='',
+    #                          allowed_ports='', type='')
+    # test_ret = hookup._get_connection(test_current)
 
 
 def test_sysdef(sys_handle, mcsession):
