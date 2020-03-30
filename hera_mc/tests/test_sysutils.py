@@ -2,7 +2,7 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Testing for `hera_mc.geo_location and geo_handling`."""
+"""Testing for hera_mc.cm_sysutils and hookup."""
 
 from __future__ import absolute_import, division, print_function
 
@@ -185,6 +185,19 @@ def test_hookup_misc(mcsession):
     hookup.sysdef.single_pol_labeled_parts['test-hookup'] = ['type-a']
     test_ret = hookup._get_port(test_current, options)
     assert test_ret == 'y'
+
+
+def test_which_node(mcsession):
+    ant_node = cm_sysutils.which_node(701, mcsession)
+    assert ant_node[701][1] == 'N700'
+    ant_node = cm_sysutils.which_node('1,2,701', mcsession)
+    an_print = cm_sysutils.print_which_node(ant_node)
+    assert 'Not installed (N00)' in an_print
+    ant_node = {700: ['N700', 'N700'], 701: ['N701', 'N700']}
+    an_print = cm_sysutils.print_which_node(ant_node)
+    assert 'Warning:  Antenna 701' in an_print
+    na_dict = {'N700': ['HH700'], 'N701': ['HH700']}
+    pytest.raises(ValueError, cm_sysutils._find_ant_node, 700, na_dict)
 
 
 def test_sysdef(sys_handle, mcsession):

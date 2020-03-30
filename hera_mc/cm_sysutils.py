@@ -557,8 +557,12 @@ def print_which_node(ant_node):
             elif node[1] == node[0]:
                 print_str += 'Antenna {}:  {}\n'.format(ant, node[0])
             else:
-                print_str += 'Warning:  antenna {}\n\tSpecified for {}\n'.format(ant, node[0])
-                print_str += '\t Installed in {}'.format(node[1])
+                print_str += 'Warning:  Antenna {}\n\tSpecified for {}\n'.format(ant, node[0])
+                print_str += '\tInstalled in {}'.format(node[1])
+        else:
+            print_str += 'Warning:  Antenna {} not specified for a node.\n'.format(ant)
+            if node[1] is not None:
+                print_str += '\tBut shown as installed in {}\n'.format(node[1])
     return print_str
 
 
