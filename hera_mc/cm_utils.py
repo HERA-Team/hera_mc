@@ -198,7 +198,13 @@ def listify(X, None_as_list=False):
         else:
             return None
     if isinstance(X, six.string_types):
-        return X.split(',')
+        if ',' in X:
+            return X.split(',')
+        elif '-' in X:
+            start, stop = X.split('-')
+            return list(range(int(start), int(stop) + 1))
+        else:
+            return [X]
     if isinstance(X, list):
         return X
     return [X]

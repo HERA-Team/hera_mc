@@ -71,11 +71,7 @@ if args.list_columns:
             print('\t{:30s}\t{}'.format(col, blank.col_hdr[col]))
 elif view == 'node':
     from hera_mc import cm_sysutils
-    if '-' in args.hpn:
-        start, stop = args.hpn.split('-')
-        args.hpn = range(int(start), int(stop) + 1)
-    else:
-        args.hpn = cm_utils.listify(args.hpn)
+    args.hpn = cm_utils.listify(args.hpn)
     node_info = cm_sysutils.node_info(args.hpn, session)
     cm_sysutils.print_node(node_info)
 elif view == 'revisions':

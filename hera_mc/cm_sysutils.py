@@ -513,7 +513,7 @@ def which_node(ant_num, session=None):
 
     Parameters
     ----------
-    ant_num : int or list of int or csv-list str
+    ant_num : int or list of int or csv-list or hyphen-range str
         Antenna numbers, as int
 
     Returns
@@ -523,10 +523,7 @@ def which_node(ant_num, session=None):
     """
     na_from_file = node_antennas('file', session=session)
     na_from_hookup = node_antennas('hookup', session=session)
-    if isinstance(ant_num, int):
-        ant_num = [ant_num]
-    elif isinstance(ant_num, str):
-        ant_num = ant_num.split(',')
+    ant_num = cm_utils.listify(ant_num)
     ant_node = {}
     for pn in ant_num:
         pnint = cm_utils.peel_key(str(pn), 'NPR')[0]
