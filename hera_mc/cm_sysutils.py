@@ -493,6 +493,75 @@ def _get_dict_elements(npk, hu, ele_a, ele_b):
     return e_ret
 
 
+def _find_ant_node(pnsearch, na_dict):
+    found_node = None
+    for node, antennas in na_dict.items():
+        for ant in antennas:
+            antint = cm_utils.peel_key(ant, 'NPR')[0]
+            if pnsearch == antint:
+                if found_node is not None:
+                    raise ValueError("Antenna {} already listed in node {}"
+                                     .format(pnsearch, found_node))
+                else:
+                    found_node = node
+    return found_node
+
+
+def which_node(ant_num, session=None):
+    """
+    Find node for antenna.
+
+    Parameters
+    ----------
+    ant_num : int or list of int or csv-list str
+        Antenna numbers, as int
+
+    Returns
+    -------
+    dict
+        Contains antenna and node
+    """
+    na_from_file = node_antennas('file', session=session)
+    na_from_hookup = node_antennas('hookup', session=session)
+    if isinstance(ant_num, int):
+        ant_num = [ant_num]
+    elif isinstance(ant_num, str):
+        ant_num = ant_num.split(',')
+    ant_node = {}
+    for pn in ant_num:
+        pnint = cm_utils.peel_key(str(pn), 'NPR')[0]
+        ant_node[pnint] = [_find_ant_node(pnint, na_from_file)]
+        ant_node[pnint].append(_find_ant_node(pnint, na_from_hookup))
+    return ant_node
+
+
+def print_which_node(ant_node):
+    """
+    Return formatted 'which_node' print string.
+
+    Parameter
+    ---------
+    ant_node : dict
+        Dictionary returned from method 'which_node'.
+
+    Returns
+    -------
+    str
+        Formatted print string.
+    """
+    print_str = ''
+    for ant, node in ant_node.items():
+        if node[0] is not None:
+            if node[1] is None:
+                print_str += 'Antenna {}:  Not installed ({})\n'.format(ant, node[0])
+            elif node[1] == node[0]:
+                print_str += 'Antenna {}:  {}\n'.format(ant, node[0])
+            else:
+                print_str += 'Warning:  antenna {}\n\tSpecified for {}\n'.format(ant, node[0])
+                print_str += '\t Installed in {}'.format(node[1])
+    return print_str
+
+
 def node_info(node_num, session=None):
     """
     Generate information per node.
@@ -593,7 +662,6 @@ def _convert_ant_list(alist):
 
 def print_node(info, filename=None, output_format='table'):
     """Print node info as determined in method node_info above."""
-    from tabulate import tabulate
     headers = ['Node', 'SNAPs', 'NCM', 'WR', 'Arduino']
     spacer = [5 * '-', 44 * '-', 5 * '-', 17 * '-', 17 * '-']
     table_data = []
@@ -645,15 +713,7 @@ def print_node(info, filename=None, output_format='table'):
         ants = _convert_ant_list(info[node]['ants-hookup'])
         table_data.append(['Conn', ants, '', '', ''])
         table_data.append(spacer)
-    if output_format.lower().startswith('htm'):
-        dtime = cm_utils.get_time_for_display('now') + '\n'
-        table = cm_utils.html_table(headers, table_data)
-        table = ('<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime
-                 + '\t\t</pre>\n\t</body>\n</html>\n')
-    elif output_format.lower().startswith('csv'):
-        table = cm_utils.csv_table(headers, table_data)
-    else:
-        table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
+    table = cm_utils.table_table(headers, table_data, output_format)
     if filename is not None:  # pragma: no cover
         with open(filename, 'w') as fp:
             print(table, file=fp)

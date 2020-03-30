@@ -11,6 +11,7 @@ import six
 from astropy.time import Time
 from astropy.time import TimeDelta
 import datetime
+from tabulate import tabulate
 
 from . import mc
 
@@ -656,6 +657,19 @@ def csv_table(headers, table):
             s_table += '"{}",'.format(d)
         s_table = s_table.strip(',') + '\n'
     return s_table
+
+
+def table_table(headers, table_data, output_format=None):
+    if output_format.lower().startswith('htm'):
+        dtime = get_time_for_display('now') + '\n'
+        table = html_table(headers, table_data)
+        table = ('<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime
+                 + '\t\t</pre>\n\t</body>\n</html>\n')
+    elif output_format.lower().startswith('csv'):
+        table = csv_table(headers, table_data)
+    else:
+        table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
+    return table
 
 
 def query_default(param, args):

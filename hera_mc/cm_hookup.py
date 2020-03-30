@@ -6,7 +6,6 @@
 """Find and display part hookups."""
 from __future__ import absolute_import, division, print_function
 
-from tabulate import tabulate
 import os
 import six
 import copy
@@ -179,7 +178,7 @@ class Hookup(object):
     def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
                     sortby=None, filename=None, output_format='table'):
         """
-        Print out the hookup table -- uses tabulate package.
+        Generate a printable hookup table.
 
         Parameters
         ----------
@@ -236,15 +235,7 @@ class Hookup(object):
             print("None found for {} (show-state is {})".format(
                 cm_utils.get_time_for_display(self.at_date), state))
             return
-        if output_format.lower().startswith('htm'):
-            dtime = cm_utils.get_time_for_display('now') + '\n'
-            table = cm_utils.html_table(headers, table_data)
-            table = ('<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime
-                     + '\t\t</pre>\n\t</body>\n</html>\n')
-        elif output_format.lower().startswith('csv'):
-            table = cm_utils.csv_table(headers, table_data)
-        else:
-            table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
+        table = cm_utils.table_table(headers, table_data, output_format)
         if filename is not None:
             with open(filename, 'w') as fp:
                 print(table, file=fp)
