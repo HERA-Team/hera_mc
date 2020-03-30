@@ -660,6 +660,7 @@ def csv_table(headers, table):
 
 
 def table_table(headers, table_data, output_format=None):
+    """Return formatted table."""
     if output_format.lower().startswith('htm'):
         dtime = get_time_for_display('now') + '\n'
         table = html_table(headers, table_data)
