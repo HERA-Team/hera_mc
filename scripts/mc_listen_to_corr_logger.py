@@ -24,14 +24,14 @@ parser.add_argument(
     "-r",
     dest="redishost",
     default=DEFAULT_REDIS_ADDRESS,
-    help="The redis db hostname"
+    help="The redis db hostname",
 )
 parser.add_argument(
     "--channel",
     "-c",
     dest="channel",
     default="mc-log-channel",
-    help="The redis channel to listen on."
+    help="The redis channel to listen on.",
 )
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
@@ -41,8 +41,11 @@ redis_pool = redis.ConnectionPool(host=args.redishost)
 
 while True:
     try:
-        with db.sessionmaker() as session, redis.Redis(connection_pool=redis_pool) as redis_db:
+        with db.sessionmaker() as session, redis.Redis(
+            connection_pool=redis_pool
+        ) as redis_db:
             pubsub = redis_db.pubsub()
+            pubsub.ignore_subscribe_messages = True
 
             if not pubsub.subscribed():
                 pubsub.subscribe(args.channel)
@@ -50,8 +53,7 @@ while True:
             # that yields messages in our channel
             for message in pubsub.listen():
                 if (
-                    message["type"] != "subscribe"
-                    and message["channel"] == args.channel
+                    message["channel"] == args.channel
                     # messages come as byte strings, make sure an error didn't occur
                     and message["data"].decode() != "UnicodeDecodeError on emit!"
                 ):
@@ -67,8 +69,21 @@ while True:
                     session.add_daemon_status(
                         "mc_monitor_correlator", hostname, Time.now(), "good"
                     )
-    except Exception:
-        session.add_daemon_status(
-            "mc_monitor_correlator", hostname, Time.now(), "errored"
-        )
+    except KeyboardInterrupt:
+        pubsub.close()
+        exit()
+    except Exception as e:
+        # some common exceptions are this Nonetype being yielded by the iterator
+        # and a forcible connection closure by the server.
+        # Ignore for now and re-attach to the pubsub channel
+        if not any(
+            str(e).startswith(err)
+            for err in [
+                "'NoneType' object has no attribute 'readline'",
+                "Connection closed by server.",
+            ]
+        ):
+            session.add_daemon_status(
+                "mc_monitor_correlator", hostname, Time.now(), "errored"
+            )
         continue
