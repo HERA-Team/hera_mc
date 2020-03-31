@@ -117,6 +117,7 @@ def cminfo_redis_loc(cminfo):
         Dictionary containing the lat, lon, alt of the center-of-array
     """
     locations = {}
+    locations['correlator_inputs'] = cminfo['correlator_inputs']
     locations['antenna_numbers'] = cminfo['antenna_numbers']
     locations['antenna_names'] = cminfo['antenna_names']
     antenna_positions = []
@@ -125,7 +126,7 @@ def cminfo_redis_loc(cminfo):
     locations['antenna_positions'] = antenna_positions
     locations['antenna_utm_eastings'] = cminfo['antenna_utm_eastings']
     locations['antenna_utm_northings'] = cminfo['antenna_utm_northings']
-    locations['antenna_alts'] = cminfo['antenna_alt']
+    locations['antenna_alts'] = cminfo['antenna_alts']
     locations['cofa'] = {'lat': cminfo['cofa_lat'], 'lon': cminfo['cofa_lon'],
                          'alt': cminfo['cofa_alt']}
     locations['cofa_xyz'] = {'X': cminfo['cofa_X'], 'Y': cminfo['cofa_Y'],

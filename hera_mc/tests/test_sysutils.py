@@ -230,13 +230,10 @@ def test_correlator_info(sys_handle):
 
     corr_inputs = corr_dict['correlator_inputs']
 
-    stn_types = corr_dict['station_types']
-
     index = np.where(np.array(ant_names) == 'HH703')[0]
     assert len(index) == 1
     index = index[0]
 
-    assert stn_types[index] == 'herahexw'
     assert corr_inputs[index] == ('e10>SNPA000700', 'n8>SNPA000700')
 
     assert ([int(name.split('HH')[1]) for name in ant_names]
@@ -258,9 +255,8 @@ def test_correlator_info(sys_handle):
 
     assert corr_dict['cm_version'] == mc_git_hash
 
-    expected_keys = ['antenna_numbers', 'antenna_names', 'station_types',
-                     'correlator_inputs', 'utm_datum',
-                     'utm_tile', 'antenna_utm_eastings', 'antenna_alt',
+    expected_keys = ['antenna_numbers', 'antenna_names', 'correlator_inputs',
+                     'utm_datum', 'utm_tile', 'antenna_utm_eastings', 'antenna_alts',
                      'antenna_utm_northings', 'antenna_positions',
                      'cm_version', 'cofa_lat', 'cofa_lon', 'cofa_alt',
                      'cofa_X', 'cofa_Y', 'cofa_Z']
