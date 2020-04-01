@@ -192,21 +192,17 @@ class Handling:
         dict
             cm info formatted for the correlator.
             Dict keys are:
-                'antenna_number': Antenna numbers (list of integers)
+                'antenna_numbers': Antenna numbers (list of integers)
                 'antenna_names': Station names (we use antenna_names because that's
                     what they're called in data files) (list of strings)
-                'station_type': Station type ('herahex', 'paperimaging', etc.)
-                    (list of strings)
                 'correlator_inputs': Correlator input strings for x/y (e/n)
                     polarizations (list of 2 element tuples of strings)
-                'antenna_utm_datum_vals': UTM Datum values (list of strings)
-                'antenna_utm_tiles': UTM Tile values (list of strings)
-                'antenna_utm_eastings': UTM eastings (list of floats)
-                'antenna_utm_northings': UTM northings (list of floats)
-                'antenna_positions': Antenna positions in standard Miriad coordinates
+                'antenna_positions': Antenna positions in relative ECEF coordinates
                     (list of 3-element vectors of floats)
                 'cm_version': CM git hash (string)
-
+                'cofa_lat': latitude of the center-of-array in degrees
+                'cofa_lon': longitude of the center-of-array in degrees
+                'cofa_alt': altitude of center-of-array in meters
         """
         from pyuvdata import utils as uvutils
         from . import cm_handling
