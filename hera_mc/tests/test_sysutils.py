@@ -34,8 +34,8 @@ def test_set_redis_cminfo(mcsession):
     cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession, testing=True)
     test_out = rsession.hget('testing_corr:map', 'ant_to_snap')
     assert b'{"host": "SNPA000700", "channel": 0}' in test_out
-    test_out = rsession.hget('testing_corr:map', 'cofa')
-    assert b'{"lat": -30.72' in test_out
+    test_out = rsession.hget('testing_corr:map', 'cofa_lat')
+    assert b'-30.72' in test_out
     test_out = rsession.hget('testing_corr:map', 'snap_to_ant')
     assert b'heraNode700Snap700' in test_out
     snap_info = 'e2>SNPC000008'
