@@ -34,12 +34,12 @@ def test_set_redis_cminfo(mcsession):
     cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession, testing=True)
     test_out = rsession.hget('testing_corr:map', 'ant_to_snap')
     assert b'{"host": "SNPA000700", "channel": 0}' in test_out
-    test_out = rsession.hget('testing_corr:map', 'cofa')
-    assert b'{"lat": -30.72' in test_out
+    test_out = rsession.hget('testing_cminfo', 'cofa_lat')
+    assert b'-30.72' in test_out
     test_out = rsession.hget('testing_corr:map', 'snap_to_ant')
     assert b'heraNode700Snap700' in test_out
     snap_info = 'e2>SNPC000008'
-    redis_info = {'rsession': rsession, 'rhash': 'corr:map', 'rkey': 'not_there'}
+    redis_info = rsession.hget('corr:map', 'not_there')
     host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=redis_info)
     assert host == 'SNPC000008'
     host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=None)
@@ -255,11 +255,9 @@ def test_correlator_info(sys_handle):
 
     assert corr_dict['cm_version'] == mc_git_hash
 
-    expected_keys = ['antenna_numbers', 'antenna_names', 'correlator_inputs',
-                     'utm_datum', 'utm_tile', 'antenna_utm_eastings', 'antenna_alts',
-                     'antenna_utm_northings', 'antenna_positions',
-                     'cm_version', 'cofa_lat', 'cofa_lon', 'cofa_alt',
-                     'cofa_X', 'cofa_Y', 'cofa_Z']
+    expected_keys = ['antenna_numbers', 'antenna_names', 'antenna_positions',
+                     'correlator_inputs', 'cm_version',
+                     'cofa_lat', 'cofa_lon', 'cofa_alt']
     assert set(corr_dict.keys()) == set(expected_keys)
 
     cofa = sys_handle.cofa()[0]

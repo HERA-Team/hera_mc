@@ -192,21 +192,17 @@ class Handling:
         dict
             cm info formatted for the correlator.
             Dict keys are:
-                'antenna_number': Antenna numbers (list of integers)
+                'antenna_numbers': Antenna numbers (list of integers)
                 'antenna_names': Station names (we use antenna_names because that's
                     what they're called in data files) (list of strings)
-                'station_type': Station type ('herahex', 'paperimaging', etc.)
-                    (list of strings)
                 'correlator_inputs': Correlator input strings for x/y (e/n)
                     polarizations (list of 2 element tuples of strings)
-                'antenna_utm_datum_vals': UTM Datum values (list of strings)
-                'antenna_utm_tiles': UTM Tile values (list of strings)
-                'antenna_utm_eastings': UTM eastings (list of floats)
-                'antenna_utm_northings': UTM northings (list of floats)
-                'antenna_positions': Antenna positions in standard Miriad coordinates
+                'antenna_positions': Antenna positions in relative ECEF coordinates
                     (list of 3-element vectors of floats)
                 'cm_version': CM git hash (string)
-
+                'cofa_lat': latitude of the center-of-array in degrees
+                'cofa_lon': longitude of the center-of-array in degrees
+                'cofa_alt': altitude of center-of-array in meters
         """
         from pyuvdata import utils as uvutils
         from . import cm_handling
@@ -226,27 +222,19 @@ class Handling:
         ecef_positions = uvutils.XYZ_from_LatLonAlt(np.array(stn_arrays.lat) * np.pi / 180.,
                                                     np.array(stn_arrays.lon) * np.pi / 180.,
                                                     stn_arrays.elevation)
-        rotecef_positions = uvutils.rotECEF_from_ECEF(ecef_positions,
-                                                      cofa_loc.lon * np.pi / 180.)
+
+        rel_ecef_positions = ecef_positions - cofa_xyz
         return {'antenna_numbers': stn_arrays.antenna_number,
                 # This is actually station names, not antenna names,
                 # but antenna_names is what it's called in pyuvdata
                 'antenna_names': stn_arrays.station_name,
                 # this is a tuple giving the f-engine names for x, y
                 'correlator_inputs': stn_arrays.correlator_input,
-                'utm_datum': stn_arrays.datum[0],
-                'utm_tile': stn_arrays.tile[0],
-                'antenna_utm_eastings': stn_arrays.easting,
-                'antenna_utm_northings': stn_arrays.northing,
-                'antenna_alts': stn_arrays.elevation,
-                'antenna_positions': rotecef_positions,
+                'antenna_positions': rel_ecef_positions.tolist(),
                 'cm_version': cm_version,
                 'cofa_lat': cofa_loc.lat,
                 'cofa_lon': cofa_loc.lon,
-                'cofa_alt': cofa_loc.elevation,
-                'cofa_X': cofa_xyz[0],
-                'cofa_Y': cofa_xyz[1],
-                'cofa_Z': cofa_xyz[2]}
+                'cofa_alt': cofa_loc.elevation}
 
     def get_part_at_station_from_type(self, stn, at_date, part_type, include_revs=False,
                                       include_ports=False, hookup_type=None):
