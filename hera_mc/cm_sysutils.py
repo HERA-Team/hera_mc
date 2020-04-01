@@ -228,7 +228,6 @@ class Handling:
                                                     stn_arrays.elevation)
 
         rel_ecef_positions = ecef_positions - cofa_xyz
-        return rel_ecef_positions
         return {'antenna_numbers': stn_arrays.antenna_number,
                 # This is actually station names, not antenna names,
                 # but antenna_names is what it's called in pyuvdata
