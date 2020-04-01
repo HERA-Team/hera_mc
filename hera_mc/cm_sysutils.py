@@ -228,13 +228,14 @@ class Handling:
                                                     stn_arrays.elevation)
 
         rel_ecef_positions = ecef_positions - cofa_xyz
+        return rel_ecef_positions
         return {'antenna_numbers': stn_arrays.antenna_number,
                 # This is actually station names, not antenna names,
                 # but antenna_names is what it's called in pyuvdata
                 'antenna_names': stn_arrays.station_name,
                 # this is a tuple giving the f-engine names for x, y
                 'correlator_inputs': stn_arrays.correlator_input,
-                'antenna_positions': rel_ecef_positions,
+                'antenna_positions': rel_ecef_positions.tolist(),
                 'cm_version': cm_version,
                 'cofa_lat': cofa_loc.lat,
                 'cofa_lon': cofa_loc.lon,
