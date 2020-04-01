@@ -66,6 +66,11 @@ def gen_declarative():
     return Base, DeclarativeTestModel
 
 
+def test_argparser():
+    ap = mc.get_mc_argument_parser()
+    assert ap.description is None
+
+
 def test_validity_pass():
     """
     See database validity check completes when tables and columns are created.

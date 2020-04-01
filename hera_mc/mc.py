@@ -41,7 +41,7 @@ class DB(object):
     sessionmaker = sessionmaker(class_=MCSession)
     sqlalchemy_base = None
 
-    def __init__(self, sqlalchemy_base, db_url):
+    def __init__(self, sqlalchemy_base, db_url):  # noqa
         self.sqlalchemy_base = MCDeclarativeBase
         self.engine = create_engine(db_url)
         self.sessionmaker.configure(bind=self.engine)
