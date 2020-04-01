@@ -119,10 +119,13 @@ def set_redis_cminfo(redishost=DEFAULT_REDIS_ADDRESS, session=None, testing=Fals
     # Write cminfo content into redis (cminfo)
     h = cm_sysutils.Handling(session=session)
     cminfo = h.get_cminfo_correlator()
+    redhkey = {}
+    for key, value in cminfo.items():
+        redhkey[key] = json.dumps(value)
     redis_hash = REDIS_CMINFO_HASH
     if testing:
         redis_hash = 'testing_' + REDIS_CMINFO_HASH
-    rsession.hmset(redis_hash, cminfo)
+    rsession.hmset(redis_hash, redhkey)
     if testing:
         rsession.expire(redis_hash, 300)
 
