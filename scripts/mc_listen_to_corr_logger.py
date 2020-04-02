@@ -3,9 +3,7 @@
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Gather correlator status info and log them into M&C
-
-"""
+"""Gather correlator log outputs and log them into M&C."""
 from __future__ import absolute_import, division, print_function
 
 import json
@@ -21,7 +19,6 @@ from hera_mc.correlator import DEFAULT_REDIS_ADDRESS
 
 allowed_levels = ["DEBUG", "INFO", "NOTIFY", "WARNING", "ERROR", "CRITICAL"]
 logging.addLevelName(logging.INFO + 1, "NOTIFY")
-
 
 parser = mc.get_mc_argument_parser()
 parser.add_argument(
@@ -96,7 +93,7 @@ while True:
                         )
 
                     session.add_daemon_status(
-                        "mc_monitor_correlator", hostname, Time.now(), "good"
+                        "mc_listen_to_corr_logger", hostname, Time.now(), "good"
                     )
     except KeyboardInterrupt:
         pubsub.close()
@@ -113,6 +110,6 @@ while True:
             ]
         ):
             session.add_daemon_status(
-                "mc_monitor_correlator", hostname, Time.now(), "errored"
+                "mc_listen_to_corr_logger", hostname, Time.now(), "errored"
             )
         continue
