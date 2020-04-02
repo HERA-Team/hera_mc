@@ -63,7 +63,7 @@ while True:
                     for k in r.scan_iter(
                         "status:script:*:*{daemon:s}".format(daemon=daemon)
                     ):
-                        host, daemon_path = k.split(":")[2:]
+                        host, daemon_path = k.decode().split(":")[2:]
                         state = "good"
                     try:
                         session.add_daemon_status(
