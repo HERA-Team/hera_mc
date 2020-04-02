@@ -6,6 +6,7 @@
 """Gather correlator log outputs and log them into M&C."""
 from __future__ import absolute_import, division, print_function
 
+import sys
 import json
 import redis
 import socket
@@ -65,20 +66,17 @@ while True:
             pubsub = redis_db.pubsub()
             pubsub.ignore_subscribe_messages = True
 
-            if not pubsub.subscribed():
-                pubsub.subscribe(args.channel)
+            pubsub.subscribe(args.channel)
             # pubsub.listen() will create an infinite generator
             # that yields messages in our channel
             for message in pubsub.listen():
                 if (
-                    message["channel"] == args.channel
+                    message["data"].decode() != "UnicodeDecodeError on emit!"
                     # messages come as byte strings, make sure an error didn't occur
-                    and message["data"].decode() != "UnicodeDecodeError on emit!"
                 ):
                     message_dict = json.loads(message["data"])
 
                     msg_level = message_dict['levelno']
-
                     if msg_level >= level:
                         session.add_subsystem_error(
                             Time(message_dict["logtime"], format="unix"),
@@ -91,8 +89,7 @@ while True:
                         "mc_listen_to_corr_logger", hostname, Time.now(), "good"
                     )
     except KeyboardInterrupt:
-        pubsub.close()
-        exit()
+        sys.exit()
     except Exception as e:
         # some common exceptions are this Nonetype being yielded by the iterator
         # and a forcible connection closure by the server.
@@ -104,6 +101,7 @@ while True:
                 "Connection closed by server.",
             ]
         ):
+            print(e)
             session.add_daemon_status(
                 "mc_listen_to_corr_logger", hostname, Time.now(), "errored"
             )
