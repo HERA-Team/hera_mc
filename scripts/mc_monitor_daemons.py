@@ -31,7 +31,9 @@ args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 
 hostname = socket.gethostname()
-script_redis_key = 'status:script:{host:s}:{file:s}'.format(host=hostname, file=__file__)
+script_redis_key = "status:script:{host:s}:{file:s}".format(
+    host=hostname, file=__file__
+)
 
 this_daemon = os.path.basename(__file__)
 
@@ -55,24 +57,27 @@ while True:
             connection_pool=connection_pool
         ) as r:
             while True:
-                    r.set(script_redis_key, "alive", ex=MONITORING_INTERVAL * 2)
-                    for daemon in daemons:
-                        state = "errored"
-                        for k in r.scan_iter("status:script:*:*{daemon:s}".format(daemon=daemon)):
-                            host, daemon_path = k.split(":")[2:]
-                            state = "good"
-                        try:
-                            session.add_daemon_status(
-                                daemon, host, Time.now(), state
-                            )
-                            session.commit()
-                        except Exception:
-                            print("{t} -- error storing daemon status".format(
-                                t=time.asctime()), file=sys.stderr)
-                            traceback.print_exc(file=sys.stderr)
-                            session.rollback()
-                            continue
-                    time.sleep(MONITORING_INTERVAL)
+                r.set(script_redis_key, "alive", ex=MONITORING_INTERVAL * 2)
+                for daemon in daemons:
+                    state = "errored"
+                    for k in r.scan_iter(
+                        "status:script:*:*{daemon:s}".format(daemon=daemon)
+                    ):
+                        host, daemon_path = k.split(":")[2:]
+                        state = "good"
+                    try:
+                        session.add_daemon_status(
+                            daemon, host, Time.now(), state
+                        )
+                        session.commit()
+                    except Exception:
+                        print("{t} -- error storing daemon status".format(
+                            t=time.asctime()), file=sys.stderr
+                        )
+                        traceback.print_exc(file=sys.stderr)
+                        session.rollback()
+                        continue
+                time.sleep(MONITORING_INTERVAL)
     except KeyboardInterrupt:
         sys.exit()
     except Exception:
