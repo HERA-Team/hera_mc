@@ -11,11 +11,16 @@ from __future__ import absolute_import, division, print_function
 import json
 import redis
 import socket
+import logging
 
 from astropy.time import Time
 
 from hera_mc import mc
 from hera_mc.correlator import DEFAULT_REDIS_ADDRESS
+
+
+allowed_levels = ["DEBUG", "INFO", "NOTIFY", "WARNING", "ERROR", "CRITICAL"]
+logging.addLevelName(logging.INFO + 1, "NOTIFY")
 
 
 parser = mc.get_mc_argument_parser()
@@ -26,6 +31,7 @@ parser.add_argument(
     default=DEFAULT_REDIS_ADDRESS,
     help="The redis db hostname",
 )
+
 parser.add_argument(
     "--channel",
     "-c",
@@ -33,11 +39,31 @@ parser.add_argument(
     default="mc-log-channel",
     help="The redis channel to listen on.",
 )
+
+parser.add_argument(
+    "-l",
+    dest="level",
+    type=str,
+    default="NOTIFY",
+    help=(
+        "Don't log messages below this level. "
+        "Allowed values are {vals:}".format(vals=allowed_levels)
+    ),
+    choices=allowed_levels,
+)
+
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 
 hostname = socket.gethostname()
 redis_pool = redis.ConnectionPool(host=args.redishost)
+
+if args.level not in allowed_levels:
+    print("Selected log level not allowed. Allowed levels are:", allowed_levels)
+    print("Defaulting to WARNING")
+    level = logging.WARNING
+else:
+    level = logging.getLevelName(args.level)
 
 while True:
     try:
@@ -59,12 +85,15 @@ while True:
                 ):
                     message_dict = json.loads(message["data"])
 
-                    session.add_subsystem_error(
-                        Time(message_dict["logtime"], format="unix"),
-                        message_dict["subsystem"],
-                        message_dict["severity"],
-                        message_dict["message"],
-                    )
+                    msg_level = message_dict['levelno']
+
+                    if msg_level >= level:
+                        session.add_subsystem_error(
+                            Time(message_dict["logtime"], format="unix"),
+                            message_dict["subsystem"],
+                            message_dict["severity"],
+                            message_dict["message"],
+                        )
 
                     session.add_daemon_status(
                         "mc_monitor_correlator", hostname, Time.now(), "good"
