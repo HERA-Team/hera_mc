@@ -55,12 +55,7 @@ db = mc.connect_to_mc_db(args)
 hostname = socket.gethostname()
 redis_pool = redis.ConnectionPool(host=args.redishost)
 
-if args.level not in allowed_levels:
-    print("Selected log level not allowed. Allowed levels are:", allowed_levels)
-    print("Defaulting to WARNING")
-    level = logging.WARNING
-else:
-    level = logging.getLevelName(args.level)
+level = logging.getLevelName(args.level)
 
 while True:
     try:
