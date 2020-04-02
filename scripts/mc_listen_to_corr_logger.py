@@ -88,6 +88,7 @@ while True:
                     session.add_daemon_status(
                         "mc_listen_to_corr_logger", hostname, Time.now(), "good"
                     )
+                    session.commit()
     except KeyboardInterrupt:
         sys.exit()
     except Exception as e:
@@ -105,4 +106,5 @@ while True:
             session.add_daemon_status(
                 "mc_listen_to_corr_logger", hostname, Time.now(), "errored"
             )
+            session.commit()
         continue
