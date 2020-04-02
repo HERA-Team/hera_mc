@@ -25,7 +25,7 @@ parser.add_argument(
     "--redishost",
     default="redishost",
     type=str,
-    help="The redis server host address."
+    help="The redis server host address.",
 )
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
@@ -65,13 +65,14 @@ while True:
                         host, daemon_path = k.decode().split(":")[2:]
                         state = "good"
                     try:
-                        session.add_daemon_status(
-                            daemon, host, Time.now(), state
-                        )
+                        session.add_daemon_status(daemon, host, Time.now(), state)
                         session.commit()
                     except Exception:
-                        print("{t} -- error storing daemon status".format(
-                            t=time.asctime()), file=sys.stderr
+                        print(
+                            "{t} -- error storing daemon status".format(
+                                t=time.asctime()
+                            ),
+                            file=sys.stderr,
                         )
                         traceback.print_exc(file=sys.stderr)
                         session.rollback()
@@ -82,8 +83,6 @@ while True:
     except Exception:
         traceback.print_exc(file=sys.stderr)
         with db.sessionmaker() as session:
-            session.add_daemon_status(
-                this_daemon, hostname, Time.now(), "errored"
-            )
+            session.add_daemon_status(this_daemon, hostname, Time.now(), "errored")
             session.commit()
         continue
