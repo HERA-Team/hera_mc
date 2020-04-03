@@ -59,10 +59,7 @@ database to the new schema.
     - `HERA_py2` conda environment
   - hera-corr-head machine
     - `hera3` conda environment
-  - hera-corr-head machine
-    - `hera-venv` environment (virtual environment not conda)
-  - hera-snap-head machine
-    - `.venv` environment (virtual environment not conda)
+
 13. Restart the following daemons across the hera correletor computer cluster.
 This is generally done with `systemctl restart <daemon_name>.service`. Some
 machines use upstart instead of systemd, as marked below. In those cases, use
@@ -72,6 +69,8 @@ machines use upstart instead of systemd, as marked below. In those cases, use
     - `hera-corr-status` daemon
     - `hera-node-status` daemon
     - `hera-server-status` daemon
+    - `mc-listen-to-corr-logger` daemon
+    - `mc-monitor-daemons` daemon
   - pot1 machine (upstart)
     - `hera-server-status` daemon
   - pot6 machine
