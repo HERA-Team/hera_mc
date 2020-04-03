@@ -70,7 +70,7 @@ machines use upstart instead of systemd, as marked below. In those cases, use
     - `hera-node-status` daemon
     - `hera-server-status` daemon
     - `mc-listen-to-corr-logger` daemon
-    - `mc-monitor-deamons` daemon
+    - `mc-monitor-daemons` daemon
   - pot1 machine (upstart)
     - `hera-server-status` daemon
   - pot6 machine
