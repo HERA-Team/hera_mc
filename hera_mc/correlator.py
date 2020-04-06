@@ -45,32 +45,50 @@ command_dict = {'take_data': 'take_data',
                 'load_on': 'load_enable',
                 "load_off": 'load_disable',
                 'update_config': 'update_config',
-                'restart': 'restart'}
+                'restart': 'restart',
+                'hard_stop': '_stop'}
 
-command_state_map = {'take_data': {'allowed_when_recording': False},
-                     'stop_taking_data': {'state_type': 'taking_data',
-                                          'state': False,
-                                          'allowed_when_recording': True},
-                     'phase_switching_on': {'state_type': 'phase_switching',
-                                            'state': True,
-                                            'allowed_when_recording': False},
-                     'phase_switching_off': {'state_type': 'phase_switching',
-                                             'state': False,
-                                             'allowed_when_recording': False},
-                     'noise_diode_on': {'state_type': 'noise_diode',
-                                        'state': True,
-                                        'allowed_when_recording': False},
-                     'noise_diode_off': {'state_type': 'noise_diode',
-                                         'state': False,
-                                         'allowed_when_recording': False},
-                     'load_on': {'state_type': 'load',
-                                 'state': True,
-                                 'allowed_when_recording': False},
-                     'load_off': {'state_type': 'load',
-                                  'state': False,
-                                  'allowed_when_recording': False},
-                     'update_config': {'allowed_when_recording': True},
-                     'restart': {'allowed_when_recording': False}}
+command_state_map = {
+    'take_data': {'allowed_when_recording': False},
+    'stop_taking_data': {
+        'state_type': 'taking_data',
+        'state': False,
+        'allowed_when_recording': True
+    },
+    'phase_switching_on': {
+        'state_type': 'phase_switching',
+        'state': True,
+        'allowed_when_recording': False
+    },
+    'phase_switching_off': {
+        'state_type': 'phase_switching',
+        'state': False,
+        'allowed_when_recording': False
+    },
+    'noise_diode_on': {
+        'state_type': 'noise_diode',
+        'state': True,
+        'allowed_when_recording': False
+    },
+    'noise_diode_off': {
+        'state_type': 'noise_diode',
+        'state': False,
+        'allowed_when_recording': False
+    },
+    'load_on': {
+        'state_type': 'load',
+        'state': True,
+        'allowed_when_recording': False
+    },
+    'load_off': {
+        'state_type': 'load',
+        'state': False,
+        'allowed_when_recording': False
+    },
+    'update_config': {'allowed_when_recording': True},
+    'restart': {'allowed_when_recording': False},
+    'hard_stop': {'allowed_when_recording': False}
+}
 
 
 class CorrelatorControlState(MCDeclarativeBase):

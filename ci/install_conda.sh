@@ -12,7 +12,8 @@ if [[ ! $OS == 'macos-latest' ]]; then
   fi
 fi
 conda config --set always_yes yes --set changeps1 no
-conda update -q conda
+# try commenting out the conda update call to see if it fixes issues on python 3.8 tests
+# conda update -q conda
 conda info -a
 conda create --name=${ENV_NAME}  python=$PYTHON --quiet
 

@@ -14,13 +14,20 @@ from hera_mc.utils import LSTScheduler
 from hera_mc import mc, geo_handling
 from hera_mc import correlator as corr
 
-valid_commands = list(sorted(corr.command_dict.keys()))
+valid_commands = sorted(corr.command_dict.keys())
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
     parser.description = """Send correlator control commands"""
     parser.add_argument('command', help="Correlator control command. One of: "
                         + ', '.join(valid_commands) + '.')
+    parser.add_argument(
+        '-f', '--force', help="Option to force a command that might interfere "
+        "with observing even if the correlator is currently taking data. This "
+        "will only have an effect for commands that are not usually allowed "
+        "while data is being taken (e.g restart, hard_stop, phase "
+        "switching/load/noise diode state changes). [False]", action='store_true'
+    )
     parser.add_argument('--address', help="Address for correlator redis. The "
                         "default is used if unspecified.", default=None)
     parser.add_argument('--starttime', help="Required if command is 'take_data', "
@@ -96,6 +103,7 @@ if __name__ == '__main__':
                                                       tag=args.tag,
                                                       overwrite_take_data=args.overwrite_take_data,
                                                       config_file=args.config_file,
+                                                      force=args.force,
                                                       dryrun=args.dryrun,
                                                       testing=args.testing)
     if args.testing or args.dryrun:

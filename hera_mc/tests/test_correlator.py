@@ -689,7 +689,7 @@ def test_take_data_command_no_recent_status(mcsession):
 @pytest.mark.parametrize(
     ("commands_to_test"),
     [list(set(corr.command_dict.keys())
-          - set(['take_data', 'update_config', 'restart']))])
+          - set(['take_data', 'update_config', 'restart', 'hard_stop']))])
 def test_control_command_with_recent_status(mcsession, commands_to_test):
     test_session = mcsession
     # test things on & off with a recent status
