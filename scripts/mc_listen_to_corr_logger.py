@@ -4,7 +4,6 @@
 # Licensed under the 2-clause BSD license.
 
 """Gather correlator log outputs and log them into M&C."""
-from __future__ import absolute_import, division, print_function
 
 import sys
 import json
