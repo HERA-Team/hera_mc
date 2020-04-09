@@ -21,6 +21,21 @@ class ActiveData:
     """
 
     def __init__(self, session=None, at_date='now'):
+        """
+        Initialize ActiveData class attributes for at_date.
+
+        It creates all attributes and sets them to None.  Another attribute
+        'pytest_param' is set within to allow for fine-grained unit testing
+        without the need for an init argument.  It allows for certain keys to
+        be set in the method 'load_connections' to check edge cases.
+
+        Parameters
+        ----------
+        session : session object or None
+            If None, it will start a new session on the database.
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        """
         if session is None:  # pragma: no cover
             from . import mc
             db = mc.connect_to_mc_db(None)
