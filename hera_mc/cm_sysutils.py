@@ -533,6 +533,14 @@ def which_node(ant_num, session=None):
 
 
 def print_which_node(ant_node):
+    """
+    Print formatted 'which_node' print string.
+
+    Parameter
+    ---------
+    ant_node : dict
+        Dictionary returned from method 'which_node'.
+    """
     print(formatted__which_node__string(ant_node))
 
 
