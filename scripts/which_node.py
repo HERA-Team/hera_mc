@@ -16,4 +16,4 @@ parser.add_argument('ants', help="Antennas (csv-list).")
 args = parser.parse_args()
 
 ant_node = cm_sysutils.which_node(args.ants)
-print(cm_sysutils.print_which_node(ant_node))
+cm_sysutils.print_which_node(ant_node)

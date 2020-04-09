@@ -187,15 +187,16 @@ def test_hookup_misc(mcsession):
     assert test_ret == 'y'
 
 
-def test_which_node(mcsession):
+def test_which_node(capsys, mcsession):
     ant_node = cm_sysutils.which_node(701, mcsession)
     assert ant_node[701][1] == 'N700'
     ant_node = cm_sysutils.which_node('1,2,701', mcsession)
-    an_print = cm_sysutils.print_which_node(ant_node)
+    an_print = cm_sysutils.formatted__which_node__string(ant_node)
     assert 'Not installed (N00)' in an_print
     ant_node = {700: ['N700', 'N700'], 701: ['N701', 'N700']}
-    an_print = cm_sysutils.print_which_node(ant_node)
-    assert 'Warning:  Antenna 701' in an_print
+    cm_sysutils.print_which_node(ant_node)
+    captured = capsys.readouterr()
+    assert 'Warning:  Antenna 701' in captured.out.strip()
     na_dict = {'N700': ['HH700'], 'N701': ['HH700']}
     pytest.raises(ValueError, cm_sysutils._find_ant_node, 700, na_dict)
 
