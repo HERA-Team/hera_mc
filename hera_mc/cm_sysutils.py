@@ -646,9 +646,7 @@ def node_info(node_num, session=None):
 def _get_macip(info):
     data = []
     for this_note in info:
-        if this_note.startswith('MAC'):
-            data.append(this_note.split('-')[1].strip())
-        elif this_note.startswith('IP'):
+        if this_note.startswith('MAC') or this_note.startswith('IP'):
             data.append(this_note.split('-')[1].strip())
     return data
 
@@ -714,7 +712,7 @@ def print_node(info, filename=None, output_format='table'):
         ants = _convert_ant_list(info[node]['ants-hookup'])
         table_data.append(['Conn', ants, '', '', ''])
         table_data.append(spacer)
-    table = cm_utils.table_table(headers, table_data, output_format)
+    table = cm_utils.general_table_handler(headers, table_data, output_format)
     if filename is not None:  # pragma: no cover
         with open(filename, 'w') as fp:
             print(table, file=fp)

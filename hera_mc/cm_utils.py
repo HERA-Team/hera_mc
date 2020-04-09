@@ -665,7 +665,7 @@ def csv_table(headers, table):
     return s_table
 
 
-def table_table(headers, table_data, output_format=None):
+def general_table_handler(headers, table_data, output_format=None):
     """Return formatted table."""
     if output_format.lower().startswith('htm'):
         dtime = get_time_for_display('now') + '\n'

@@ -235,7 +235,7 @@ class Hookup(object):
             print("None found for {} (show-state is {})".format(
                 cm_utils.get_time_for_display(self.at_date), state))
             return
-        table = cm_utils.table_table(headers, table_data, output_format)
+        table = cm_utils.general_table_handler(headers, table_data, output_format)
         if filename is not None:
             with open(filename, 'w') as fp:
                 print(table, file=fp)
