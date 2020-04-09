@@ -69,7 +69,8 @@ def test_stringify(input, expected):
                          [('Test', ['Test']),
                           ('a,b', ['a', 'b']),
                           (['Test'], ['Test']),
-                          (1, [1])])
+                          (1, [1]),
+                          ('1-3', [1, 2, 3])])
 def test_listify(input, expected):
     x = cm_utils.listify(input)
     assert x == expected

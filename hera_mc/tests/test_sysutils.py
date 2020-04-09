@@ -2,7 +2,7 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Testing for `hera_mc.geo_location and geo_handling`."""
+"""Testing for hera_mc.cm_sysutils and hookup."""
 
 from __future__ import absolute_import, division, print_function
 
@@ -67,11 +67,6 @@ def test_random_update(sys_handle):
 
 def test_sys_method_notes(mcsession):
     hookup = cm_hookup.Hookup(session=mcsession)
-    hu = hookup.get_hookup('.node:3/4')
-    assert len(hu.keys()) == 0
-    sysu = cm_sysdef.Sysdef()
-    nd = sysu.node([0])
-    assert nd[0] == 'HH0'
     hu = hookup.get_hookup('HH700')
     hu['HH700:A'].hookup['E<ground'] = []
     x = hookup.show_hookup(hu)
@@ -92,7 +87,8 @@ def test_sys_method_notes(mcsession):
 def test_other_hookup(sys_handle, mcsession, capsys):
     hookup = cm_hookup.Hookup(session=mcsession)
     assert hookup.cached_hookup_dict is None
-
+    test_ret = hookup.hookup_cache_file_OK(None)
+    assert not test_ret
     hu = hookup.get_hookup(['A700'], 'all', at_date='now', exact_match=True,
                            hookup_type='parts_hera')
     out = hookup.show_hookup(hu, cols_to_show=['station'], state='all',
@@ -104,6 +100,13 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     hookup.write_hookup_cache_to_file(log_msg='For testing.')
     hu = hookup.get_hookup('HH', 'all', at_date='now', exact_match=True, use_cache=True)
     assert len(hu) == 0
+    hookup.hookup_type = None
+    test_ret = hookup.hookup_cache_file_OK({'hookup_type': 'parts_test', 'at_date_gps': 1269541796})
+    assert not test_ret
+    hookup.hookup_type = 'not this one'
+    hookup.read_hookup_cache_from_file()
+    captured = capsys.readouterr()
+    assert '<<<Cache is NOT' in captured.out.strip()
     hu = hookup.get_hookup('cache', pol='all', hookup_type='parts_hera')
     out = hookup.show_hookup(hu, state='all', sortby='station', output_format='csv')
     out = out.splitlines()[6].strip('"')
@@ -170,15 +173,44 @@ def test_hookup_dossier(sys_handle, capsys):
     pytest.raises(ValueError, cm_dossier.HookupEntry, sysdef=sysdef)
 
 
+def test_hookup_misc(mcsession):
+    hookup = cm_hookup.Hookup(mcsession)
+    hookup.col_list = ['antenna', 'front-end']
+    sk_ret = hookup._sort_hookup_display('antenna,front-end', {})
+    assert len(sk_ret) == 0
+    hookup.hookup_type = 'test-hookup'
+    test_current = Namespace(direction='up', key='', part=['E'], rev='', hptype='type-a',
+                             port='x', pol='E', allowed_ports=['y'], type='')
+    options = ['y']
+    hookup.sysdef.single_pol_labeled_parts['test-hookup'] = ['type-a']
+    test_ret = hookup._get_port(test_current, options)
+    assert test_ret == 'y'
+
+
+def test_which_node(capsys, mcsession):
+    ant_node = cm_sysutils.which_node(701, mcsession)
+    assert ant_node[701][1] == 'N700'
+    ant_node = cm_sysutils.which_node('1,2,701', mcsession)
+    an_print = cm_sysutils.formatted__which_node__string(ant_node)
+    assert 'Not installed (N00)' in an_print
+    ant_node = {700: ['N700', 'N700'], 701: ['N701', 'N700']}
+    cm_sysutils.print_which_node(ant_node)
+    captured = capsys.readouterr()
+    assert 'Warning:  Antenna 701' in captured.out.strip()
+    na_dict = {'N700': ['HH700'], 'N701': ['HH700']}
+    pytest.raises(ValueError, cm_sysutils._find_ant_node, 700, na_dict)
+
+
 def test_sysdef(sys_handle, mcsession):
-    sysdef = cm_sysdef.Sysdef()
+    sysdef = cm_sysdef.Sysdef(hookup_type='parts_hera')
     active = cm_active.ActiveData(session=mcsession)
     active.load_parts(at_date=None)
     active.load_connections(at_date=None)
     part = Namespace(hpn='N700', hpn_rev='A', hptype='node')
-    part.connections = Namespace(input_ports=['loc0', '@mars'],
+    part.connections = Namespace(input_ports=['loc0', 'mars'],
                                  output_ports=[])
     hl = sysdef.handle_redirect_part_types(part, active)
+    print(hl)
     assert len(hl), 4
     part.hpn = 'doorknob'
     part.part_type = 'node'
@@ -215,6 +247,53 @@ def test_sysdef(sys_handle, mcsession):
     with pytest.raises(ValueError) as apdup:
         active.load_apriori('now')
     assert str(apdup.value).startswith("HH700:A already has an active apriori state")
+    all_ports = sysdef.get_all_ports()
+    assert 'ground' in all_ports
+    sysdef.hptype = 'not-real'
+    sysdef.setup(sysdef, hookup_type='parts_hera')
+    assert len(sysdef.ppkeys) == 0
+    gprt = sysdef.get_ports('e', 'not-real')
+    assert len(gprt) == 0
+
+
+def test_sysutil_node(capsys, mcsession):
+    apn = cm_sysutils.node_antennas(session=mcsession)
+    assert 'N10' in apn.keys()
+    apn = cm_sysutils.node_antennas(source='hookup', session=mcsession)
+    assert 'N700' in apn.keys()
+    xni = cm_sysutils.node_info([10], mcsession)
+    assert 'nodes' in xni.keys()
+    testns = Namespace(hookup={'not-a-port': None})
+    testhu = {'this-test': testns}
+    eret = cm_sysutils._get_dict_elements('this-test', testhu, 'a', 'b')
+    assert len(eret['a']) == 0
+    testns.hookup['@<middle'] = [Namespace(upstream_part='UP', downstream_part='DN')]
+    testhu = {'this-test': testns}
+    eret = cm_sysutils._get_dict_elements('this-test', testhu, 'dn', 'up')
+    assert eret['up'] == 'UP'
+    eret = cm_sysutils._get_dict_elements('this-test', testhu, 'up', 'dn')
+    assert eret['up'] == 'UP'
+    xni = cm_sysutils.node_info([701], mcsession)
+    assert 'SNPD000703' in xni.keys()
+    xni = cm_sysutils.node_info([700], mcsession)
+    assert 'SNPA000700' in xni.keys()
+    cm_sysutils.print_node(xni)
+    captured = capsys.readouterr()
+    assert '| Node   |' in captured.out.strip()
+    xni['N700']['wr'] = 'notthere'
+    xni['N700']['arduino'] = 'notthere'
+    xni['N700']['snaps'].append('notthere')
+    xni['nodes'].append('NONODE')
+    xni['NONODE'] = {'snaps': [], 'ncm': '', 'wr': '', 'arduino': ''}
+    cm_sysutils.print_node(xni)
+    captured = capsys.readouterr()
+    assert 'notthere' in captured.out.strip()
+    cm_sysutils.print_node(xni, output_format='csv')
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith('"Node"')
+    cm_sysutils.print_node(xni, output_format='html')
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith('<html>')
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):

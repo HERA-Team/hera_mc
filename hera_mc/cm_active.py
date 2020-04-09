@@ -21,6 +21,21 @@ class ActiveData:
     """
 
     def __init__(self, session=None, at_date='now'):
+        """
+        Initialize ActiveData class attributes for at_date.
+
+        It creates all attributes and sets them to None.  Another attribute
+        'pytest_param' is set within to allow for fine-grained unit testing
+        without the need for an init argument.  It allows for certain keys to
+        be set in the method 'load_connections' to check edge cases.
+
+        Parameters
+        ----------
+        session : session object or None
+            If None, it will start a new session on the database.
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        """
         if session is None:  # pragma: no cover
             from . import mc
             db = mc.connect_to_mc_db(None)
@@ -32,6 +47,7 @@ class ActiveData:
         self.info = None
         self.apriori = None
         self.geo = None
+        self.pytest_param = False
 
     def set_times(self, at_date):
         """
@@ -115,6 +131,8 @@ class ActiveData:
         ):
             chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev,
                                          cnn.upstream_output_port)
+            if self.pytest_param:
+                check_keys[self.pytest_param].append(chk)
             if chk in check_keys['up']:
                 raise ValueError("Duplicate active port {}".format(chk))
             check_keys['up'].append(chk)

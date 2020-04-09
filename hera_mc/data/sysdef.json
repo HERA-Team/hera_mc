@@ -1,0 +1,101 @@
+{
+    "hera_zone_prefixes": ["HH", "HA", "HB"],
+    "hookup_types":
+    {   "parts_hera":
+        {
+            "station": {"up": [[null]], "down": [["ground"]], "position": 0},
+            "antenna": {"up": [["ground"]], "down": [["focus"]], "position": 1},
+            "feed": {"up": [["input"]], "down": [["terminals"]], "position": 2},
+            "front-end": {"up": [["input"]], "down": [["e"], ["n"]], "position": 3},
+            "node-bulkhead": {"up": [["e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "e10", "e11", "e12"], ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8", "n9", "n10", "n11", "n12"]], "down": [["e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "e10", "e11", "e12"], ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8", "n9", "n10", "n11", "n12"]], "position": 4},
+            "post-amp": {"up": [["e"], ["n"]], "down": [["e"], ["n"]], "position": 5},
+            "snap": {"up": [["e2", "e6", "e10"], ["n0", "n4", "n8"]], "down": [["rack"]], "position": 6},
+            "node": {"up": [["loc0", "loc1", "loc2", "loc3"]], "down": [[null]], "position": 7}
+        },
+        "wr_hera":
+        {
+            "node": {"up": [["middle"]], "down": [[null]], "position": 2},
+            "node-control-module": {"up": [["mnt1"]], "down": [["rack"]], "position": 1},
+            "white-rabbit": {"up": [[null]], "down": [["mnt"]], "position": 0}
+            
+        },
+        "arduino_hera":
+        {
+            "node": {"up": [["middle"]], "down": [[null]], "position": 2},
+            "node-control-module": {"up": [["mnt2"]], "down": [["rack"]], "position": 1},
+            "arduino": {"up": [[null]], "down": [["mnt"]], "position": 0}
+            
+        },
+        "parts_paper":
+        {
+            "station": {"up": [[null]], "down": [["ground"]], "position": 0},
+            "antenna": {"up": [["ground"]], "down": [["focus"]], "position": 1},
+            "feed": {"up": [["input"]], "down": [["terminals"]], "position": 2},
+            "front-end": {"up": [["input"]], "down": [["e"], ["n"]], "position": 3},
+            "cable-feed75": {"up": [["ea"], ["na"]], "down": [["eb"], ["nb"]], "position": 4},
+            "cable-post-amp(in)": {"up": [["a"]], "down": [["b"]], "position": 5},
+            "post-amp": {"up": [["ea"], ["na"]], "down": [["eb"], ["nb"]], "position": 6},
+            "cable-post-amp(out)": {"up": [["a"]], "down": [["b"]], "position": 7},
+            "cable-receiverator": {"up": [["a"]], "down": [["b"]], "position": 8},
+            "cable-container": {"up": [["a"]], "down": [["b"]], "position": 9},
+            "f-engine": {"up": [["input"]], "down": [[null]], "position": 10}
+            
+        },
+        "parts_rfi":
+        {
+            "station": {"up": [[null]], "down": [["ground"]], "position": 0},
+            "antenna": {"up": [["ground"]], "down": [["focus"]], "position": 1},
+            "feed": {"up": [["input"]], "down": [["terminals"]], "position": 2},
+            "temp-cable": {"up": [["ea"], ["na"]], "down": [["eb"], ["nb"]], "position": 3},
+            "snap": {"up": [["e2", "e6", "e10"], ["n0", "n4", "n8"]], "down": [["rack"]], "position": 4},
+            "node": {"up": [["loc0", "loc1", "loc2", "loc3"]], "down": [[null]], "position": 5}
+        },
+        "parts_test": {"vapor": {"up": [[null]], "down": [[null]], "position": 0}
+        }
+    },
+    "hookup_parameters":
+    {
+        "parts_hera":
+        {
+            "corr_index": 6,
+            "all_pols": ["e", "n"],
+            "redirect_part_types": ["node"],
+            "single_pol_labeled_parts": []
+        },
+        "parts_paper":
+        {
+            "corr_index": 10,
+            "all_pols": ["e", "n"],
+            "redirect_part_types": [],
+            "single_pol_labeled_parts": ["cable-post-amp(in)", "cable-post-amp(out)", "cable-receiverator"]
+        },
+        "parts_rfi":
+        {
+            "corr_index": 4,
+            "all_pols": ["e", "n"],
+            "redirect_part_types": [],
+            "single_pol_labeled_parts": []
+        },
+        "wr_hera":
+        {
+            "corr_index": null,
+            "all_pols": ["@"],
+            "redirect_part_types": [],
+            "single_pol_labeled_parts": []
+        },
+        "arduino_hera":
+        {
+            "corr_index": null,
+            "all_pols": ["@"],
+            "redirect_part_types": [],
+            "single_pol_labeled_parts": []
+        },
+        "parts_test":
+        {
+            "corr_index": null,
+            "all_pols": ["-"],
+            "redirect_part_types": [],
+            "single_pol_labeled_parts": []
+        }
+    }
+}

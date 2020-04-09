@@ -7,8 +7,7 @@
 Utility scripts to display dossier information.
 
 Actions 'parts', 'connections', and 'notes' differ only by defining a different
-set of columns,
-which may be overridden by instead using the args.columns parameter
+set of columns, which may be overridden by instead using the args.columns parameter
 (--list-all-columns)
 
 """
@@ -16,13 +15,14 @@ from __future__ import absolute_import, division, print_function
 
 from hera_mc import mc, cm_handling, cm_utils
 
-all_views = {'p': 'parts', 'c': 'connections', 'n': 'notes', 'r': 'revisions'}
+all_views = {'p': 'parts', 'c': 'connections', 'i': 'info', 'r': 'revisions', 'n': 'node'}
 
 parser = mc.get_mc_argument_parser()
 parser.add_argument('view', nargs='?', help="Views are:  {}.  Need first letter only.\
                     ".format(', '.join(all_views.values())), default='parts')
 # set values for 'action' to use
-parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv list.")
+parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv list. "
+                    "If view is 'node', this may be ints or a hyphen-range of ints (e.g. '0-3')")
 parser.add_argument('-r', '--revision',
                     help="Revision for hpn. Typically don't change from default.",
                     default=None)
@@ -35,10 +35,6 @@ parser.add_argument('--columns', help="Custom columns as csv list. "
 parser.add_argument('--list-all-columns', dest='list_columns',
                     help="Show a list of all available columns",
                     action='store_true')
-parser.add_argument('--hide-sigpath', dest='sigpath', help="Hide signal path ports",
-                    action='store_false')
-parser.add_argument('--hide-phys', dest='phys', help="Hide physical ports",
-                    action='store_false')
 parser.add_argument('--ports', help="Include only these ports, csv list",
                     default=None)
 cm_utils.add_verbosity_args(parser)
@@ -53,7 +49,6 @@ args = parser.parse_args()
 
 args.verbosity = cm_utils.parse_verbosity(args.verbosity)
 view = all_views[args.view[0].lower()]
-args.hpn = cm_utils.listify(args.hpn)
 date_query = cm_utils.get_astropytime(args.date, args.time)
 notes_start_date = cm_utils.get_astropytime(args.notes_start_date,
                                             args.notes_start_time)
@@ -74,8 +69,14 @@ if args.list_columns:
         print("\t{:30s}\t{}".format("--------------", "----------"))
         for col in blank.col_hdr.keys():
             print('\t{:30s}\t{}'.format(col, blank.col_hdr[col]))
+elif view == 'node':
+    from hera_mc import cm_sysutils
+    args.hpn = cm_utils.listify(args.hpn)
+    node_info = cm_sysutils.node_info(args.hpn, session)
+    cm_sysutils.print_node(node_info)
 elif view == 'revisions':
     from hera_mc import cm_active, cm_revisions
+    args.hpn = cm_utils.listify(args.hpn)
     if args.verbosity == 1:
         columns = ['HPN', 'Revision', 'Start', 'Stop']
     elif args.verbosity == 2:
@@ -88,7 +89,8 @@ elif view == 'revisions':
     active.load_parts()
     revs = active.revs(args.hpn)
     print(cm_revisions.show_revisions(revs, columns=columns))
-else:  # view == 'parts' or view == 'connections' or view == 'notes'
+else:  # view == 'parts' or view == 'connections' or view == 'info'
+    args.hpn = cm_utils.listify(args.hpn)
     handling = cm_handling.Handling(session)
     if view == 'parts':
         if args.verbosity == 1:
@@ -122,7 +124,7 @@ else:  # view == 'parts' or view == 'connections' or view == 'notes'
                        'down.upstream_output_port', 'down.downstream_input_port',
                        'down.downstream_part', 'down.down_part_rev',
                        'down.start_gpstime', 'down.stop_gpstime']
-    elif view == 'notes':
+    elif view == 'info':
         if args.verbosity == 1:
             columns = ['hpn', 'comment']
         elif args.verbosity == 2:
@@ -133,18 +135,11 @@ else:  # view == 'parts' or view == 'connections' or view == 'notes'
     if args.columns is not None:
         columns = cm_utils.listify(args.columns)
     if args.ports is not None:
-        ports = cm_utils.listify(args.ports)  # specify port names as list.
-    else:
-        ports = []
-        if args.sigpath:
-            ports.append('sigpath')
-        if args.phys:
-            ports.append('physical')
-        ports = ','.join(ports)  # Need to specify as a string for port types.
+        args.ports = cm_utils.listify(args.ports)  # specify port names as list.
 
     dossier = handling.get_dossier(hpn=args.hpn, rev=args.revision,
                                    at_date=date_query, active=None,
                                    notes_start_date=notes_start_date,
                                    exact_match=args.exact_match)
-    print(handling.show_dossier(dossier, columns, ports=ports))
+    print(handling.show_dossier(dossier, columns, ports=args.ports))
 print()

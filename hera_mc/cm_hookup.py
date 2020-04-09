@@ -6,7 +6,6 @@
 """Find and display part hookups."""
 from __future__ import absolute_import, division, print_function
 
-from tabulate import tabulate
 import os
 import six
 import copy
@@ -179,7 +178,7 @@ class Hookup(object):
     def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
                     sortby=None, filename=None, output_format='table'):
         """
-        Print out the hookup table -- uses tabulate package.
+        Generate a printable hookup table.
 
         Parameters
         ----------
@@ -236,15 +235,7 @@ class Hookup(object):
             print("None found for {} (show-state is {})".format(
                 cm_utils.get_time_for_display(self.at_date), state))
             return
-        if output_format.lower().startswith('htm'):
-            dtime = cm_utils.get_time_for_display('now') + '\n'
-            table = cm_utils.html_table(headers, table_data)
-            table = ('<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime
-                     + '\t\t</pre>\n\t</body>\n</html>\n')
-        elif output_format.lower().startswith('csv'):
-            table = cm_utils.csv_table(headers, table_data)
-        else:
-            table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
+        table = cm_utils.general_table_handler(headers, table_data, output_format)
         if filename is not None:
             with open(filename, 'w') as fp:
                 print(table, file=fp)
@@ -375,11 +366,6 @@ class Hookup(object):
         """
         Process the hpn request list.
 
-        If the list member is of the form ':xxx.a/b/c' it will call the
-        cm_sysdef.xxx module with [a, b, c]
-        as the argument.  If an ':xxx method' is found, it sets exact_match
-        to True.
-
         Parameters
         ----------
         hpn_request : str, list
@@ -387,8 +373,6 @@ class Hookup(object):
             If string
                 - 'default' uses default station prefixes in cm_sysdef
                 - otherwise converts as csv-list
-            If element of list is of format '.xxx:a/b/c' it finds the appropriate
-                method as cm_sysdef.Sysdef.xxx([a, b, c])
         exact_match : bool
             If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
             would allow 'HH1', 'HH10', 'HH123', etc
@@ -401,22 +385,9 @@ class Hookup(object):
             updated exact_match setting
 
         """
-        hpn_proc = []
         if isinstance(hpn_request, six.string_types) and hpn_request.lower() == 'default':
             return cm_sysdef.hera_zone_prefixes, False
-        for hpn in cm_utils.listify(hpn_request):
-            if hpn.startswith('.'):
-                exact_match = True
-                marg = hpn[1:].split(':')
-                sysdef_method = marg[0]
-                sysdef_arg = []
-                if len(marg) > 1:
-                    sysdef_arg = marg[1].split('/')
-                y = getattr(self.sysdef, sysdef_method)(sysdef_arg)
-                hpn_proc += y
-            else:
-                hpn_proc.append(hpn)
-        return hpn_proc, exact_match
+        return cm_utils.listify(hpn_request), exact_match
 
     def _get_part_types_found(self, hookup_connections):
         """
@@ -537,7 +508,7 @@ class Hookup(object):
         options = list(self.active.connections[current.direction][current.key].keys())
         try:
             current.type = self.active.parts[current.key].hptype
-        except KeyError:
+        except KeyError:  # pragma: no cover
             return None
         current.allowed_ports = cm_utils.to_upper(self.sysdef.get_ports(current.pol, current.type))
         current.port = self._get_port(current, options)

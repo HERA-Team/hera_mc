@@ -7,20 +7,18 @@
 from __future__ import absolute_import, division, print_function
 import six
 from hera_mc import cm_utils
+from hera_mc.mc import data_path
+import json
+import os.path
 
-hera_zone_prefixes = ['HH', 'HA', 'HB']
-operational_hookup_types = ['parts_hera', 'parts_paper']
-all_port_types = ['sigpath', 'physical']
+with open(os.path.join(data_path, 'sysdef.json'), 'r') as fp:
+    system_info = json.load(fp)
+hera_zone_prefixes = system_info['hera_zone_prefixes']
 
 
 class Sysdef:
     """
-    Defines the system architecture for the telescope array.
-
-    The intent is to have all of the specific defining parameters here in one place.
-    If a new system is required, this may be extended by defining the parameters here.
-
-    This only defines the signal path ports.
+    Defines the system architecture for the telescope array for given architecture.
 
     The two-part "meta" assumption is that:
         a) polarized ports start with one of the polarization characters ('e' or 'n')
@@ -33,54 +31,11 @@ class Sysdef:
     """
 
     opposite_direction = {'up': 'down', 'down': 'up'}
-    port_def = {}
-    port_def['parts_hera'] = {
-        'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
-        'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
-        'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
-        'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
-        'node-bulkhead': {'up': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7',
-                                  'e8', 'e9', 'e10', 'e11', 'e12'],
-                                 ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7',
-                                  'n8', 'n9', 'n10', 'n11', 'n12']],
-                          'down': [['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7',
-                                    'e8', 'e9', 'e10', 'e11', 'e12'],
-                                   ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7',
-                                    'n8', 'n9', 'n10', 'n11', 'n12']],
-                          'position': 4},
-        'post-amp': {'up': [['e'], ['n']], 'down': [['e'], ['n']], 'position': 5},
-        'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']],
-                 'down': [['rack']], 'position': 6},
-        'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 7}
-    }
-    port_def['parts_paper'] = {
-        'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
-        'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
-        'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
-        'front-end': {'up': [['input']], 'down': [['e'], ['n']], 'position': 3},
-        'cable-feed75': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 4},
-        'cable-post-amp(in)': {'up': [['a']], 'down': [['b']], 'position': 5},
-        'post-amp': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 6},
-        'cable-post-amp(out)': {'up': [['a']], 'down': [['b']], 'position': 7},
-        'cable-receiverator': {'up': [['a']], 'down': [['b']], 'position': 8},
-        'cable-container': {'up': [['a']], 'down': [['b']], 'position': 9},
-        'f-engine': {'up': [['input']], 'down': [[None]], 'position': 10}
-    }
-    port_def['parts_rfi'] = {
-        'station': {'up': [[None]], 'down': [['ground']], 'position': 0},
-        'antenna': {'up': [['ground']], 'down': [['focus']], 'position': 1},
-        'feed': {'up': [['input']], 'down': [['terminals']], 'position': 2},
-        'temp-cable': {'up': [['ea'], ['na']], 'down': [['eb'], ['nb']], 'position': 3},
-        'snap': {'up': [['e2', 'e6', 'e10'], ['n0', 'n4', 'n8']],
-                 'down': [['rack']], 'position': 4},
-        'node': {'up': [['loc0', 'loc1', 'loc2', 'loc3']], 'down': [[None]], 'position': 5}
-    }
-    port_def['parts_test'] = {
-        'vapor': {'up': [[None]], 'down': [[None]], 'position': 0}
-    }
-    checking_order = ['parts_hera', 'parts_rfi', 'parts_paper', 'parts_test']
+    checking_order = ['parts_hera', 'wr_hera', 'arduino_hera',
+                      'parts_rfi', 'parts_paper', 'parts_test']
 
-    def __init__(self, input_dict=None):
+    def __init__(self, hookup_type=None, input_dict=None):
+        self.port_def = system_info['hookup_types']
         if input_dict is not None:
             self.hookup_type = input_dict['hookup_type']
             self.corr_index = input_dict['corr_index']
@@ -89,63 +44,25 @@ class Sysdef:
             self.single_pol_labeled_parts = input_dict['single_pol_labeled_parts']
             self.full_connection_path = input_dict['full_connection_path']
         else:
-            self.hookup_type = None
-
-            # Initialize the dictionaries
-            self.corr_index = self.dict_init(None)
-            self.all_pols = self.dict_init([])
-            self.redirect_part_types = self.dict_init([])
-            self.single_pol_labeled_parts = self.dict_init([])
-
-            # Redefine dictionary as needed
-            #    Define which component corresponds to the correlator input.
-            self.corr_index['parts_hera'] = 6
-            self.corr_index['parts_paper'] = 10
-            self.corr_index['parts_rfi'] = 4
-            #    Define polarization designations (should be one character)
-            self.all_pols['parts_hera'] = ['e', 'n']
-            self.all_pols['parts_paper'] = ['e', 'n']
-            self.all_pols['parts_rfi'] = ['e', 'n']
-            #    Define "special" parts for systems.  These require additional checking/processing
-            for hutype in self.port_def.keys():
-                self.redirect_part_types[hutype] = []
-                self.single_pol_labeled_parts[hutype] = []
-            self.redirect_part_types['parts_hera'] = ['node']
-            self.single_pol_labeled_parts['parts_paper'] = [
-                'cable-post-amp(in)', 'cable-post-amp(out)', 'cable-receiverator']
-
-            # This generates the full_connection_path dictionary from port_def
+            self.hookup_type = hookup_type
+            self.corr_index = {}
+            self.all_pols = {}
+            self.redirect_part_types = {}
+            self.single_pol_labeled_parts = {}
             self.full_connection_path = {}
-            for _x in self.port_def.keys():
+            for hutype in self.port_def.keys():
+                this_sys = system_info['hookup_parameters'][hutype]
+                self.corr_index[hutype] = this_sys['corr_index']
+                self.all_pols[hutype] = this_sys['all_pols']
+                self.redirect_part_types[hutype] = this_sys['redirect_part_types']
+                self.single_pol_labeled_parts[hutype] = this_sys['single_pol_labeled_parts']
                 ordered_path = {}
-                for k, v in six.iteritems(self.port_def[_x]):
+                for k, v in six.iteritems(self.port_def[hutype]):
                     ordered_path[v['position']] = k
                 sorted_keys = sorted(list(ordered_path.keys()))
-                self.full_connection_path[_x] = []
+                self.full_connection_path[hutype] = []
                 for k in sorted_keys:
-                    self.full_connection_path[_x].append(ordered_path[k])
-
-    def dict_init(self, v0):
-        """
-        Initialize the system dict to v0.
-
-        Note that v0 is set by the calling function.
-
-        Parameters
-        ----------
-        v0 : str
-            Initialization parameter as defined in the calling function.
-
-        Returns
-        -------
-        dict
-            Initialized dictionary.
-
-        """
-        y = {}
-        for x in self.checking_order:
-            y[x] = v0
-        return y
+                    self.full_connection_path[hutype].append(ordered_path[k])
 
     def _to_dict(self):
         """
@@ -163,14 +80,14 @@ class Sysdef:
                 'single_pol_labeled_parts': self.single_pol_labeled_parts,
                 'full_connection_path': self.full_connection_path}
 
-    def get_all_ports(self, hookup_types):
+    def get_all_ports(self, hookup_types=None):
         """
         Get all ports for hookup_types.
 
         Parameters
         ----------
-        hookup_type : list of str
-            Strings specifying which types of hookup to use, should be in operational_hookup_types.
+        hookup_type : list of str, or None
+            Strings specifying which types of hookup to use.  If None, uses current.
 
         Returns
         -------
@@ -178,6 +95,8 @@ class Sysdef:
             List of all ports in hookup_types.
         """
         all_ports = []
+        if hookup_types is None:
+            hookup_types = [self.hookup_type]
         for hut in hookup_types:
             for key in self.port_def[hut].keys():
                 for dir in ['up', 'down']:
@@ -205,14 +124,15 @@ class Sysdef:
 
         """
         hpn_list = []
-        if part.hptype.lower() == 'node':
-            for conn in active.connections['down'][cm_utils.make_part_key(
-                    part.hpn, part.hpn_rev)].values():
-                if conn.upstream_part.startswith('SNP'):
-                    hpn_list.append(conn.upstream_part)
+        if self.hookup_type == 'parts_hera':
+            if part.hptype.lower() == 'node':
+                for conn in active.connections['down'][cm_utils.make_part_key(
+                        part.hpn, part.hpn_rev)].values():
+                    if conn.upstream_part.startswith('SNP'):
+                        hpn_list.append(conn.upstream_part)
         return hpn_list
 
-    def find_hookup_type(self, part_type, hookup_type):
+    def find_hookup_type(self, part_type, hookup_type, set_for_class=True):
         """
         Return the relevant hookup_type.
 
@@ -225,6 +145,8 @@ class Sysdef:
             Part_type to check on, if no hookup_type is provided.
         hookup_type : str
             Hookup_type to return, if supplied.
+        set_for_class : bool
+            If True, set hookup_type as class variable.
 
         Returns
         -------
@@ -232,10 +154,14 @@ class Sysdef:
             String for the hooukp_type
         """
         if hookup_type in self.port_def.keys():
+            if set_for_class:
+                self.hookup_type = hookup_type
             return hookup_type
         if hookup_type is None:
             for hookup_type in self.checking_order:
                 if part_type in self.port_def[hookup_type].keys():
+                    if set_for_class:
+                        self.hookup_type = hookup_type
                     return hookup_type
         raise ValueError("hookup_type {} is not found.".format(hookup_type))
 
@@ -270,8 +196,13 @@ class Sysdef:
             raise ValueError("Invalid port query {}.".format(pol))
         use_pols = all_pols if pol == 'ALL' else [pol]
 
-        port_up = self.port_def[self.hookup_type][part.hptype]['up']
-        port_dn = self.port_def[self.hookup_type][part.hptype]['down']
+        try:
+            port_up = self.port_def[self.hookup_type][part.hptype]['up']
+            port_dn = self.port_def[self.hookup_type][part.hptype]['down']
+        except KeyError:
+            print("Unmatched hookup and part:  {} and {}".format(self.hookup_type, part.hptype))
+            self.ppkeys = []
+            return
         dir2use = port_up if len(port_up) > len(port_dn) else port_dn
         if dir2use[0][0] is None:
             dir2use = port_up
@@ -284,8 +215,8 @@ class Sysdef:
                         ppkey_list.append(port)
                 else:
                     ppkey_list.append(port)
-
         self.ppkeys = []
+
         for _pol in use_pols:
             for _port in ppkey_list:
                 if cm_utils.port_is_polarized(_port, all_pols):
@@ -330,35 +261,3 @@ class Sysdef:
                     elif port[0].lower() == pol[0].lower():
                         port_dict[dir].append(port.upper())
         return port_dict
-
-    def node(self, node_nums):
-        """
-        Get the antennas associated with a set of nodes.
-
-        Given a list of node_nums, returnes the associated antennas as per the
-        data file 'nodes.txt'
-
-        Parameters
-        ----------
-        node_nums : list
-            Integers of the desired node numbers.
-
-        Returns
-        -------
-        list
-            Strings of the antenna hpns within those nodes.
-
-        """
-        from . import geo_sysdef
-        node = geo_sysdef.read_nodes()
-        ants = []
-        for nd in node_nums:
-            for ant in node[int(nd)]['ants']:
-                if ant in geo_sysdef.region['heraringa']:
-                    prefix = 'HA'
-                elif ant in geo_sysdef.region['heraringb']:
-                    prefix = 'HB'
-                else:
-                    prefix = 'HH'
-                ants.append("{}{}".format(prefix, ant))
-        return ants

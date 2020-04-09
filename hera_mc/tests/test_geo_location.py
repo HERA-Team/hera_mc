@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from .. import geo_location, geo_handling, cm_partconnect, geo_sysdef
+from .. import geo_location, geo_handling, cm_partconnect, geo_sysdef, cm_active
 from astropy.time import Time
 
 
@@ -27,6 +27,12 @@ def test_cofa(mcsession, geo_handle):
     # test that function works the same as method
     cofa_func = geo_handling.cofa(session=mcsession)[0]
     assert cofa.isclose(cofa_func)
+
+
+def test_load_geo(mcsession):
+    active = cm_active.ActiveData(mcsession)
+    active.load_geo()
+    assert 'COFA_FAKE' in active.geo.keys()
 
 
 def test_geo_sysdef():
