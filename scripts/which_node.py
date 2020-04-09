@@ -6,7 +6,6 @@
 """
 Finds node for antenna numbers.
 """
-from __future__ import absolute_import, division, print_function
 import argparse
 from hera_mc import cm_sysutils
 
