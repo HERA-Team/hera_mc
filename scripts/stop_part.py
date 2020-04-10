@@ -13,10 +13,6 @@ use 'now' (e.g. in a script), you can specify --date Now;  or just
 use the date.
 """
 
-from __future__ import absolute_import, division, print_function
-
-import six
-
 from hera_mc import mc, cm_utils, cm_partconnect
 
 
@@ -25,9 +21,9 @@ def query_args(args):
     Gets information from user
     """
     if args.part is None:
-        args.part = six.moves.input("Part number:  ")
+        args.part = input("Part number:  ")
     if args.rev is None:
-        args.rev = six.moves.input("Revision:  ")
+        args.rev = input("Revision:  ")
     if args.date == 'now':
         args.date = cm_utils.query_default('date', args)
     return args

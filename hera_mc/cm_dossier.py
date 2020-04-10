@@ -4,17 +4,12 @@
 # Licensed under the 2-clause BSD license.
 
 """Contains the Entry classes which serves as a "dossier" for part and hookup entries."""
-from __future__ import absolute_import, division, print_function
 
-import six
 from argparse import Namespace
 
 from . import cm_sysdef, cm_utils
 from . import cm_partconnect as partconn
-if six.PY3:
-    from itertools import zip_longest
-if six.PY2:
-    from itertools import izip_longest as zip_longest # noqa
+from itertools import zip_longest
 
 
 class PartEntry():
@@ -288,7 +283,7 @@ class HookupEntry(object):
                                  'sysdef and a dict')
             self.entry_key = input_dict['entry_key']
             hookup_connections_dict = {}
-            for port, conn_list in six.iteritems(input_dict['hookup']):
+            for port, conn_list in input_dict['hookup'].items():
                 new_conn_list = []
                 for conn_dict in conn_list:
                     new_conn_list.append(partconn.get_connection_from_dict(conn_dict))
@@ -325,7 +320,7 @@ class HookupEntry(object):
     def _to_dict(self):
         """Convert this object to a dict (so it can be written to json)."""
         hookup_connections_dict = {}
-        for port, conn_list in six.iteritems(self.hookup):
+        for port, conn_list in self.hookup.items():
             new_conn_list = []
             for conn in conn_list:
                 new_conn_list.append(conn._to_dict())
@@ -428,7 +423,7 @@ class HookupEntry(object):
         """
         parts = {}
         extra_cols = ['start', 'stop']
-        for port, names in six.iteritems(self.columns):
+        for port, names in self.columns.items():
             if part_type not in names:
                 parts[port] = None
                 continue

@@ -7,8 +7,6 @@
 Script to generate table initialization files (package from db to csv).
 """
 
-from __future__ import absolute_import, division, print_function
-
 from hera_mc import mc, cm_transfer
 
 parser = mc.get_mc_argument_parser()

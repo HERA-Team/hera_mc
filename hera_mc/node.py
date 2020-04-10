@@ -4,8 +4,6 @@
 
 """Node M&C info from the node's Redis database."""
 
-from __future__ import absolute_import, division, print_function
-
 from math import floor
 
 from astropy.time import Time

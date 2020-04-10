@@ -6,7 +6,6 @@
 """script to control power of node elements (snaps, fem, pam)
 
 """
-from __future__ import absolute_import, division, print_function
 
 from hera_mc import mc, cm_utils, node
 

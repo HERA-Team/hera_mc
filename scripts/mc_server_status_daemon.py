@@ -10,8 +10,6 @@ easiest to provide it by having a long-lived standalone program that's in
 charge of reporting.
 
 """
-from __future__ import absolute_import, division, print_function
-
 import os
 import socket
 import sys

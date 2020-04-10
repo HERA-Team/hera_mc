@@ -3,8 +3,6 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.qm`."""
-from __future__ import absolute_import, division, print_function
-
 import os
 
 import pytest

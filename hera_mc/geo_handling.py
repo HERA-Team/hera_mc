@@ -9,11 +9,8 @@ Top modules are generally called by external (to CM) scripts.
 Bottom part is the class that does the work.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import copy
 import warnings
-import six
 from sqlalchemy import func
 import cartopy.crs as ccrs
 
@@ -361,7 +358,7 @@ class Handling:
 
         """
         self.get_station_types()
-        if isinstance(sttc, six.string_types):
+        if isinstance(sttc, str):
             if sttc.lower() == 'all':
                 return list(self.station_types.keys())
             elif sttc.lower() == 'default':
@@ -373,7 +370,7 @@ class Handling:
             if s.lower() in self.station_types.keys():
                 sttypes.add(s.lower())
             else:
-                for k, st in six.iteritems(self.station_types):
+                for k, st in self.station_types.items():
                     if s.upper() == st['Prefix'][:len(s)].upper():
                         sttypes.add(k.lower())
         return list(sttypes)

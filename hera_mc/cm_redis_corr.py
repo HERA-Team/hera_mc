@@ -4,12 +4,9 @@
 
 """Methods for handling locating correlator and various system aspects."""
 
-from __future__ import absolute_import, division, print_function
-
 import json
 import redis
 import time
-import six
 from . import cm_sysutils
 from .correlator import DEFAULT_REDIS_ADDRESS
 
@@ -84,7 +81,7 @@ def cminfo_redis_snap(cminfo, redis_info=None):
             if pol in ['e', 'n'] and '>' in pol_snap:
                 pol_info[pol] = pol_snap
         ant_to_snap[ant] = {}
-        for pol, psnap in six.iteritems(pol_info):
+        for pol, psnap in pol_info.items():
             snapi, channel = snap_part_to_host_input(psnap, redis_info=redis_info)
             ant_to_snap[ant][pol] = {'host': snapi, 'channel': channel}
             snap_to_ant.setdefault(snapi, [None] * 6)

@@ -4,10 +4,8 @@
 # Licensed under the 2-clause BSD license.
 
 """Find and display part hookups."""
-from __future__ import absolute_import, division, print_function
 
 import os
-import six
 import copy
 import json
 from argparse import Namespace
@@ -31,10 +29,7 @@ class Hookup(object):
     """
 
     hookup_list_to_cache = cm_sysdef.hera_zone_prefixes
-    if six.PY2:
-        hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_2.json')
-    else:
-        hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_3.json')
+    hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_3.json')
 
     def __init__(self, session=None):
         if session is None:  # pragma: no cover
@@ -93,7 +88,7 @@ class Hookup(object):
         hpn, exact_match = self._proc_hpnlist(hpn, exact_match)
         parts = self._cull_dict(hpn, self.active.parts, exact_match)
         hookup_dict = {}
-        for k, part in six.iteritems(parts):
+        for k, part in parts.items():
             self.hookup_type = self.sysdef.find_hookup_type(
                 part_type=part.hptype, hookup_type=hookup_type)
             if part.hptype in self.sysdef.redirect_part_types[self.hookup_type]:
@@ -101,7 +96,7 @@ class Hookup(object):
                 redirect_hookup_dict = self.get_hookup_from_db(
                     hpn=redirect_parts, pol=pol, at_date=self.at_date,
                     exact_match=True, hookup_type=self.hookup_type)
-                for rhdk, vhd in six.iteritems(redirect_hookup_dict):
+                for rhdk, vhd in redirect_hookup_dict.items():
                     hookup_dict[rhdk] = vhd
                 redirect_hookup_dict = None
                 continue
@@ -162,7 +157,7 @@ class Hookup(object):
         self.at_date = at_date
         self.hookup_type = hookup_type
 
-        if isinstance(hpn, six.string_types) and hpn.lower() == 'cache':
+        if isinstance(hpn, str) and hpn.lower() == 'cache':
             self.read_hookup_cache_from_file()
             return self.cached_hookup_dict
 
@@ -385,7 +380,7 @@ class Hookup(object):
             updated exact_match setting
 
         """
-        if isinstance(hpn_request, six.string_types) and hpn_request.lower() == 'default':
+        if isinstance(hpn_request, str) and hpn_request.lower() == 'default':
             return cm_sysdef.hera_zone_prefixes, False
         return cm_utils.listify(hpn_request), exact_match
 
@@ -585,7 +580,7 @@ class Hookup(object):
             for cols in h.columns.values():
                 if len(cols) > len(self.col_list):
                     self.col_list = copy.copy(cols)
-        if isinstance(cols_to_show, six.string_types):
+        if isinstance(cols_to_show, str):
             cols_to_show = cols_to_show.split(',')
         cols_to_show = [x.lower() for x in cols_to_show]
         if 'all' in cols_to_show:
@@ -615,7 +610,7 @@ class Hookup(object):
             self.hookup_list_to_cache, pol='all', at_date=self.at_date,
             exact_match=False, hookup_type=self.hookup_type)
         hookup_dict_for_json = copy.deepcopy(self.cached_hookup_dict)
-        for key, value in six.iteritems(self.cached_hookup_dict):
+        for key, value in self.cached_hookup_dict.items():
             if isinstance(value, cm_dossier.HookupEntry):
                 hookup_dict_for_json[key] = value._to_dict()
 
@@ -644,7 +639,7 @@ class Hookup(object):
         self.cached_hookup_type = cache_dict['hookup_type']
         self.cached_hookup_list = cache_dict['hookup_list']
         hookup_dict = {}
-        for key, value in six.iteritems(cache_dict['hookup_dict']):
+        for key, value in cache_dict['hookup_dict'].items():
             # this should only contain dicts made from HookupEntry
             # add asserts to make sure
             assert(isinstance(value, dict))
@@ -726,7 +721,7 @@ class Hookup(object):
             s += 'Cached hookup list:  {}\n'.format(self.cached_hookup_list)
             s += 'Cached hookup has {} keys.\n'.format(len(self.cached_hookup_dict.keys()))
             hooked_up = 0
-            for k, hu in six.iteritems(self.cached_hookup_dict):
+            for k, hu in self.cached_hookup_dict.items():
                 for pol in hu.fully_connected:
                     if hu.fully_connected[pol]:
                         hooked_up += 1

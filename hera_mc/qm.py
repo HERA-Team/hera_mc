@@ -3,9 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Handling quality metrics of HERA data."""
-from __future__ import absolute_import, division, print_function
 
-import six
 from astropy.time import Time
 from math import floor
 from sqlalchemy import (Column, Integer, BigInteger, Float, ForeignKey,
@@ -86,9 +84,9 @@ class AntMetrics(MCDeclarativeBase):
             value of metric
 
         """
-        if not isinstance(obsid, six.integer_types):
+        if not isinstance(obsid, int):
             raise ValueError('obsid must be an integer.')
-        if not isinstance(ant, six.integer_types):
+        if not isinstance(ant, int):
             raise ValueError('antenna must be an integer.')
         try:
             pol = str(pol)
@@ -97,7 +95,7 @@ class AntMetrics(MCDeclarativeBase):
         pol = pol.lower()
         if pol not in ('x', 'y', 'n', 'e'):
             raise ValueError('pol must be string "x", "y", "n", or "e".')
-        if not isinstance(metric, six.string_types):
+        if not isinstance(metric, str):
             raise ValueError('metric must be string.')
         if not isinstance(db_time, Time):
             raise ValueError('db_time must be an astropy Time object')
@@ -160,9 +158,9 @@ class ArrayMetrics(MCDeclarativeBase):
             value of metric
 
         """
-        if not isinstance(obsid, six.integer_types):
+        if not isinstance(obsid, int):
             raise ValueError('obsid must be an integer.')
-        if not isinstance(metric, six.string_types):
+        if not isinstance(metric, str):
             raise ValueError('metric must be string.')
         if not isinstance(db_time, Time):
             raise ValueError('db_time must be an astropy Time object')
@@ -205,9 +203,9 @@ class MetricList(MCDeclarativeBase):
             description of metric
 
         """
-        if not isinstance(metric, six.string_types):
+        if not isinstance(metric, str):
             raise ValueError('metric must be string.')
-        if not isinstance(desc, six.string_types):
+        if not isinstance(desc, str):
             raise ValueError('metric description must be a string.')
 
         return cls(metric=metric, desc=desc)

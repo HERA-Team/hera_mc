@@ -8,11 +8,9 @@ See INSTALL.md in the Git repository for instructions on how to initialize
 your database and configure M&C to find it.
 
 """
-from __future__ import absolute_import, division, print_function
 
 import os.path as op
 from abc import ABCMeta
-from six import add_metaclass
 from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import sessionmaker
@@ -27,8 +25,7 @@ mc_log_file = op.expanduser('~/.hera_mc/mc_log.txt')
 cm_log_file = op.expanduser('~/.hera_mc/cm_log.txt')
 
 
-@add_metaclass(ABCMeta)
-class DB(object):
+class DB(object, metaclass=ABCMeta):
     """
     Abstract base class for M&C database object.
 

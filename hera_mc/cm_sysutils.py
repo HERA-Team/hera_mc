@@ -4,9 +4,6 @@
 
 """Methods for handling locating correlator and various system aspects."""
 
-from __future__ import absolute_import, division, print_function
-
-import six
 from sqlalchemy import func, and_, or_
 import numpy as np
 
@@ -155,7 +152,7 @@ class Handling:
             corr = {}
             pe = {}
             station_info.timing = {}
-            for ppkey, hu in six.iteritems(current_hookup):
+            for ppkey, hu in current_hookup.items():
                 pol = ppkey[0].lower()
                 pe[pol] = hud[key].hookup_type[ppkey]
                 cind = self.sysdef.corr_index[pe[pol]] - 1  # The '- 1' makes it the downstream_part
@@ -270,10 +267,10 @@ class Handling:
         """
         parts = {}
         H = cm_hookup.Hookup(self.session)
-        if isinstance(stn, six.string_types):
+        if isinstance(stn, str):
             stn = [stn]
         hud = H.get_hookup(hpn=stn, at_date=at_date, exact_match=True, hookup_type=hookup_type)
-        for k, hu in six.iteritems(hud):
+        for k, hu in hud.items():
             parts[k] = hu.get_part_from_type(
                 part_type, include_revs=include_revs, include_ports=include_ports)
         return parts

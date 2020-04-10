@@ -2,9 +2,6 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-from __future__ import absolute_import, division, print_function
-
-import pytest
 import numpy as np
 import numpy.testing as npt
 
@@ -43,26 +40,3 @@ def test_LSTScheduler_multiday():
     starttime2 = Time('2015-9-20T05:00:09.0', format='isot', scale='utc')
     scheduletime2, hour2 = utils.LSTScheduler(starttime2, LSTbin_size)
     assert np.isclose((hour2.hour - hour1.hour) * 3600, 0)
-
-
-def test_reraise_context():
-    with pytest.raises(ValueError) as cm:
-        try:
-            raise ValueError('Initial Exception message.')
-        except ValueError:
-            utils._reraise_context('Add some info')
-    assert str(cm.value).startswith('Add some info: Initial Exception message.')
-
-    with pytest.raises(ValueError) as cm:
-        try:
-            raise ValueError('Initial Exception message.')
-        except ValueError:
-            utils._reraise_context('Add some info %s', 'and then more')
-    assert str(cm.value).startswith('Add some info and then more: Initial Exception message.')
-
-    with pytest.raises(EnvironmentError) as cm:
-        try:
-            raise EnvironmentError(1, 'some bad problem')
-        except EnvironmentError:
-            utils._reraise_context('Add some info')
-    assert 'Add some info: some bad problem' in str(cm.value)

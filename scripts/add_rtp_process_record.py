@@ -4,7 +4,6 @@
 # Licensed under the 2-clause BSD license.
 
 """Add individual processing record to M&C database from RTP."""
-from __future__ import absolute_import, division, print_function
 
 import warnings
 from pkg_resources import parse_version

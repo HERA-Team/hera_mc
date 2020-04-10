@@ -3,7 +3,6 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.autocorrelations`."""
-from __future__ import absolute_import, division, print_function
 
 import pytest
 import datetime
@@ -13,12 +12,7 @@ from hera_mc import autocorrelations
 
 from ..tests import requires_redis
 
-import six
-
-if six.PY3:
-    from plotly import graph_objects as go
-else:
-    from plotly import graph_objs as go
+from plotly import graph_objects as go
 
 
 standard_query_time = Time(

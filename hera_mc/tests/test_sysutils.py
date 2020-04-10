@@ -4,13 +4,10 @@
 
 """Testing for hera_mc.cm_sysutils and hookup."""
 
-from __future__ import absolute_import, division, print_function
-
 import os.path
 import subprocess
 from argparse import Namespace
 
-import six
 import pytest
 import numpy as np
 
@@ -329,7 +326,7 @@ def test_correlator_info(sys_handle):
                                           stderr=subprocess.STDOUT).strip()
 
     # In Python 3, we sometimes get Unicode, sometimes bytes
-    if isinstance(mc_git_hash, six.binary_type):
+    if isinstance(mc_git_hash, bytes):
         mc_git_hash = utils.bytes_to_str(mc_git_hash)
 
     assert corr_dict['cm_version'] == mc_git_hash

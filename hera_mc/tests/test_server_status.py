@@ -5,8 +5,6 @@
 """Testing for `hera_mc.server_status`.
 
 """
-from __future__ import absolute_import, division, print_function
-
 from math import floor
 
 import pytest

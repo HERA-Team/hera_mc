@@ -4,10 +4,7 @@
 
 """Some low-level configuration management utility functions."""
 
-from __future__ import absolute_import, division, print_function
-
 import subprocess
-import six
 from astropy.time import Time
 from astropy.time import TimeDelta
 import datetime
@@ -169,7 +166,7 @@ def stringify(X):
     """
     if X is None:
         return None
-    if isinstance(X, six.string_types):
+    if isinstance(X, str):
         return X
     if isinstance(X, list):
         return ','.join(X)
@@ -197,7 +194,7 @@ def listify(X, None_as_list=False):
             return [None]
         else:
             return None
-    if isinstance(X, six.string_types):
+    if isinstance(X, str):
         if ',' in X:
             return X.split(',')
         elif '-' in X:
@@ -701,7 +698,7 @@ def query_default(param, args):
         v = vargs['unittesting']
     else:  # pragma: no cover
         s = '{} [{}]:  '.format(param, str(default))
-        v = six.moves.input(s)
+        v = input(s)
     if len(v) == 0:
         return default
     if v.lower() == 'none':

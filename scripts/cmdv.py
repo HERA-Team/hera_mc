@@ -7,10 +7,6 @@
 Methods are in cm_dataview.
 """
 
-from __future__ import absolute_import, division, print_function
-
-import six
-
 from hera_mc import mc, cm_utils, cm_dataview
 
 
@@ -32,7 +28,7 @@ if __name__ == '__main__':
                         help='parts_hera or parts_paper', default='parts_hera')
     args = parser.parse_args()
 
-    if isinstance(args.dt, six.string_types):
+    if isinstance(args.dt, str):
         args.dt = float(args.dt)
 
     date_1 = cm_utils.get_astropytime(args.date, args.time)

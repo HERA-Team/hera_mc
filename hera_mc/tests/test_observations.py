@@ -3,8 +3,6 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.observations`."""
-from __future__ import absolute_import, division, print_function
-
 from math import floor
 
 import pytest

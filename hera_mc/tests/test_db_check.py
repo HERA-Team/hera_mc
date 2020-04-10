@@ -1,4 +1,6 @@
-from __future__ import absolute_import, division, print_function
+# -*- mode: python; coding: utf-8 -*-
+# Copyright 2019 the HERA Collaboration
+# Licensed under the 2-clause BSD license.
 
 from sqlalchemy import Column, Integer, String
 import sqlalchemy

@@ -6,9 +6,7 @@
 """script to write M&C records to a CSV file
 
 """
-from __future__ import absolute_import, division, print_function
 
-import six
 from astropy.time import Time, TimeDelta
 
 from hera_mc import mc, cm_utils
@@ -92,7 +90,7 @@ if __name__ == '__main__':
                         help="table to get info from")
 
     list_of_filter_args = []
-    for table, table_dict in six.iteritems(valid_tables):
+    for table, table_dict in valid_tables.items():
         if 'arg_name' in table_dict:
             arg_name = table_dict['arg_name']
             if arg_name not in list_of_filter_args:

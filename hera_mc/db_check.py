@@ -3,8 +3,6 @@
 # Licensed under the 2-clause BSD license.
 """Database consistency checking functions."""
 
-from __future__ import absolute_import, division, print_function
-
 from sqlalchemy import inspect
 from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
 from sqlalchemy.orm import RelationshipProperty

@@ -3,8 +3,6 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.correlator`."""
-from __future__ import absolute_import, division, print_function
-
 import os
 import copy
 import time

@@ -7,9 +7,6 @@
 Script to handle installing a new station into system.
 """
 
-from __future__ import absolute_import, division, print_function
-
-import six
 from hera_mc import mc, geo_location, cm_utils, cm_partconnect, geo_handling, geo_sysdef
 
 
@@ -18,17 +15,17 @@ def query_geo_information(args):
     Gets geo_location information from user
     """
     if args.easting is None:
-        args.easting = float(six.moves.input('Easting:  '))
+        args.easting = float(input('Easting:  '))
     if args.northing is None:
-        args.northing = float(six.moves.input('Northing:  '))
+        args.northing = float(input('Northing:  '))
     if args.elevation is None:
-        args.elevation = float(six.moves.input('Elevation:  '))
+        args.elevation = float(input('Elevation:  '))
     if args.sernum is None:
-        args.sernum = six.moves.input('Serial number:  ')
+        args.sernum = input('Serial number:  ')
     args.datum = cm_utils.query_default('datum', args)
     args.tile = cm_utils.query_default('tile', args)
     if args.station_type_name is None:
-        args.station_type_name = six.moves.input('Station type name: ')
+        args.station_type_name = input('Station type name: ')
     args.date = cm_utils.query_default('date', args)
     return args
 
@@ -100,7 +97,7 @@ if __name__ == '__main__':
         args.northing = antenna[args.station_name]['N']
         args.elevation = antenna[args.station_name]['elevation']
         ant_num = int(args.station_name[2:])
-        for r, v in six.iteritems(geo_sysdef.region):
+        for r, v in geo_sysdef.region.items():
             if ant_num in v:
                 args.station_type_name = r
                 break

@@ -8,7 +8,6 @@ M&C daemon_status table.
 The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
 """
-from __future__ import absolute_import, division, print_function
 
 from math import floor
 from astropy.time import Time

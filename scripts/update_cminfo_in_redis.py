@@ -6,8 +6,9 @@
 """
 Script to generate table initialization files (package from db to csv).
 """
-from __future__ import absolute_import, division, print_function
+
 import argparse
+
 from hera_mc import cm_redis_corr
 from hera_mc.correlator import DEFAULT_REDIS_ADDRESS
 

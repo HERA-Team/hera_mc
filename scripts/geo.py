@@ -6,7 +6,6 @@
 """This is meant to hold utility scripts for geo_location (via geo_handling)
 
 """
-from __future__ import absolute_import, division, print_function
 
 from hera_mc import mc, geo_handling, cm_utils
 

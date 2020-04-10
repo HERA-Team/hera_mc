@@ -4,11 +4,9 @@
 # Licensed under the 2-clause BSD license.
 
 """Holds helpful modules for parts and connections scripts."""
-from __future__ import absolute_import, division, print_function
 
 from tabulate import tabulate
 import copy
-import six
 from astropy.time import Time
 from sqlalchemy import func, desc
 
@@ -229,7 +227,7 @@ class Handling:
         for loop_hpn, loop_rev in hpn_list:
             if loop_rev is None:
                 loop_rev = [x.rev for x in active.revs(loop_hpn)]
-            elif isinstance(loop_rev, six.string_types):
+            elif isinstance(loop_rev, str):
                 loop_rev = [x.strip().upper() for x in loop_rev.split(',')]
             for rev in loop_rev:
                 key = cm_utils.make_part_key(loop_hpn, rev)

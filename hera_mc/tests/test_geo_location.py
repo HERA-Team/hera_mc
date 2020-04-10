@@ -3,9 +3,6 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.geo_location and geo_handling`."""
-
-from __future__ import absolute_import, division, print_function
-
 import pytest
 
 from .. import geo_location, geo_handling, cm_partconnect, geo_sysdef, cm_active

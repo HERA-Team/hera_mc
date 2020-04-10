@@ -8,13 +8,10 @@ Correlator M&C interface.
 Anything tracked in the correlator redis database and accessed via hera_corr_cm.
 Includes many SNAP-related things.
 """
-from __future__ import absolute_import, division, print_function
-
 from math import floor
 import warnings
 
 import numpy as np
-import six
 from astropy.time import Time
 from sqlalchemy import (Column, BigInteger, Integer, Float, Boolean, String,
                         ForeignKey, ForeignKeyConstraint)
@@ -165,7 +162,7 @@ def _get_control_state(corr_cm=None,
         corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
     corr_state_dict = {}
-    for key, value in six.iteritems(state_dict):
+    for key, value in state_dict.items():
         # call each state query method and add to corr_state_dict
         state, timestamp = getattr(corr_cm, value)()
         corr_state_dict[key] = {'timestamp': timestamp, 'state': state}
@@ -1113,7 +1110,7 @@ def create_antenna_status(corr_cm=None,
             corr_cm=corr_cm, correlator_redis_address=correlator_redis_address)
 
     ant_status_list = []
-    for antkey, ant_dict in six.iteritems(ant_status_dict):
+    for antkey, ant_dict in ant_status_dict.items():
         antenna_number, antenna_feed_pol = tuple(antkey.split(':'))
         antenna_number = int(antenna_number)
 
@@ -1121,7 +1118,7 @@ def create_antenna_status(corr_cm=None,
 
         # any entry other than timestamp can be the string 'None'
         # need to convert those to a None type
-        for key, val in six.iteritems(ant_dict):
+        for key, val in ant_dict.items():
             if val == 'None' or (isinstance(val, float) and np.isnan(val)):
                 ant_dict[key] = None
 

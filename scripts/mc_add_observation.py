@@ -3,8 +3,6 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-from __future__ import absolute_import, division, print_function
-
 import os
 import numpy as np
 from astropy.time import Time

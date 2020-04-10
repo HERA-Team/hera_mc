@@ -12,8 +12,6 @@ This script must be run as root since that's what the storcli64 command line
 client requires.
 
 """
-from __future__ import absolute_import, division, print_function
-
 import datetime
 import dateutil.tz
 import errno
@@ -21,7 +19,6 @@ import json
 import socket
 from subprocess import Popen, PIPE
 import sys
-import six
 
 from astropy.time import Time, TimeDelta
 
@@ -113,8 +110,7 @@ show_all = Popen([storcli, '/c%d' % controller, 'show', 'all'],
 item_values = {}
 
 for line in show_all.stdout:
-    if six.PY3:
-        line = line.decode("utf-8")
+    line = line.decode("utf-8")
     for item in show_all_items:
         if line.startswith(item):
             item_values[item] = line.split('=', 1)[1].strip()
@@ -152,8 +148,7 @@ seq_num = None
 cur_event_data = {}
 
 for line in event_log.stdout:
-    if six.PY3:
-        line = line.decode("utf-8")
+    line = line.decode("utf-8")
     if state == NOT_IN_EVENT:
         if line.startswith('seqNum:'):
             # The extra 0 arg here means to guess the numeric base;

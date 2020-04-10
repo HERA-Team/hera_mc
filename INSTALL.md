@@ -19,7 +19,6 @@ Installation steps are:
 ---
 
 The dependencies are:
-- six
 - numpy
 - astropy
 - sqlalchemy

@@ -7,7 +7,6 @@
 Allows various views on the antenna hookup, as well as handle the hookup cache file.
 
 """
-from __future__ import absolute_import, division, print_function
 
 from hera_mc import mc, cm_hookup, cm_utils
 

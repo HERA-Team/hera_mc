@@ -7,10 +7,7 @@
 Script to handle adding a comment to the part_info table.
 """
 
-from __future__ import absolute_import, division, print_function
-
 from hera_mc import mc, cm_utils, cm_partconnect, cm_revisions
-import six
 
 
 def query_args(args):
@@ -18,12 +15,12 @@ def query_args(args):
     Gets information from user
     """
     if args.hpn is None:
-        args.hpn = six.moves.input('HERA part number:  ')
+        args.hpn = input('HERA part number:  ')
     args.rev = cm_utils.query_default('rev', args)
     if args.comment is None:
-        args.comment = six.moves.input('Comment:  ')
+        args.comment = input('Comment:  ')
     if args.reference is None:
-        args.reference = six.moves.input('reference:  ')
+        args.reference = input('reference:  ')
     args.date = cm_utils.query_default('date', args)
     return args
 

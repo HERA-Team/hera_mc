@@ -3,8 +3,6 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-from __future__ import absolute_import, division, print_function
-
 from hera_mc import MCDeclarativeBase, mc
 from hera_mc.db_check import is_valid_database
 

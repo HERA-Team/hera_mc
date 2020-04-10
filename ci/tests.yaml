@@ -19,7 +19,6 @@ dependencies:
   - python-dateutil
   - pyuvdata
   - scipy
-  - six
   - sqlalchemy
   - tabulate
   - pyyaml
