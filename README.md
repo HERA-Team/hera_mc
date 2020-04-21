@@ -56,7 +56,6 @@ database to the new schema.
   - qmaster machine
     - `HERA` conda environment
     - `RTP` conda environment
-    - `HERA_py2` conda environment
   - hera-corr-head machine
     - `hera3` conda environment
 
