@@ -18,13 +18,17 @@ jobs:
        run: |
          wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/miniconda.sh;
          bash $HOME/miniconda.sh -b -p $HOME/miniconda
+
+     - name: Update Path
+       run: |
+         echo "::add-path::$HOME/miniconda"
+         echo "::add-path::$HOME/miniconda/bin"
+
      - name: Setup Environment
        run: |
-         export PATH="$HOME/miniconda/bin:$PATH"
          ./ci/install_conda.sh
      - name: Linting
        run: |
-         export PATH="$HOME/miniconda/bin:$PATH"
          source activate $ENV_NAME
          flake8
   tests:
@@ -76,15 +80,21 @@ jobs:
         run: |
           wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/miniconda.sh;
           bash $HOME/miniconda.sh -b -p $HOME/miniconda
+
+      - name: Update Path
+        run: |
+          echo "::add-path::$HOME/miniconda"
+          echo "::add-path::$HOME/miniconda/bin"
+
       - name: Setup Environment
         run: |
-          export PATH="$HOME/miniconda/bin:$PATH"
           ./ci/install_conda.sh
+
       - name: Install
         run: |
-          export PATH="$HOME/miniconda/bin:$PATH"
           source activate ${ENV_NAME}
           pip install -e .[all]
+
       - name: Setup postgres
         run: |
           export POSTGRES_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
@@ -93,15 +103,16 @@ jobs:
           psql $POSTGRES_URL -c "create user hera with password 'hera';"
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+
       - name: Upgrade Database Schema
         run: |
-          export PATH="$HOME/miniconda/bin:$PSQL_PATH:$PATH"
           source activate $ENV_NAME
           mkdir ~/.hera_mc
           cp ci/example_config.json ~/.hera_mc/mc_config.json
           alembic upgrade head
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+
       - name: Initialize Redis
         # Grab the name of the redis container with bash magic
         # stop the conatiner, replace the dump file with our save file
@@ -114,9 +125,9 @@ jobs:
           /usr/bin/docker start $DOCKER_NAME
           DOCKER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $DOCKER_NAME`
           echo "$DOCKER_IP redishost" | sudo tee -a /etc/hosts
+
       - name: Run Tests
         run: |
-          export PATH="$HOME/miniconda/bin:$PATH"
           source activate $ENV_NAME
           python -m pytest --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
