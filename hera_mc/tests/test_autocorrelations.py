@@ -61,10 +61,10 @@ def auto_dict():
         "timestamp": Time(
             datetime.datetime(2016, 1, 5, 20, 44, 52, 739322), format="datetime"
         ).jd,
-        "400:e": [l - 12.3687 for l in range(-8, 9)],
-        "400:n": [l - 15.5739 for l in range(-8, 9)],
-        "710:e": [l - 44.5873 for l in range(-8, 9)],
-        "710:n": [l - 66.4509 for l in range(-8, 9)],
+        "400:e": [level - 12.3687 for level in range(-8, 9)],
+        "400:n": [level - 15.5739 for level in range(-8, 9)],
+        "710:e": [level - 44.5873 for level in range(-8, 9)],
+        "710:n": [level - 66.4509 for level in range(-8, 9)],
     }
 
 
@@ -155,7 +155,7 @@ def test_ants_in_figure(mcsession, autocorrs):
         test_session, offline_testing=True
     )
 
-    ants_in_fig = sorted([d.name for d in figure.data])
+    ants_in_fig = sorted(d.name for d in figure.data)
 
     assert ants_in_fig == ["31n", "4e"]
 
