@@ -839,6 +839,14 @@ class AntennaStatus(MCDeclarativeBase):
         FEM current sensor reading for this antenna, in Amps.
     fem_id : String Column
         Serial number of this FEM.
+    fem_switch : String Column
+        Switch state for this FEM. Options are: {'antenna', 'load', 'noise'}
+    fem_lna_power : Boolean Column
+        Power state of this FEM (True if powered).
+    fem_imu_theta : Float Column
+        IMU-reported theta, in degrees.
+    fem_imu_phi : Float Column
+        IMU-reported phi, in degrees.
     fem_temp : Float Column
         EM temperature sensor reading for this antenna in degrees Celsius.
     eq_coeffs : String Column
