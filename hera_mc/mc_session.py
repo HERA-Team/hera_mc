@@ -2935,7 +2935,6 @@ class MCSession(Session):
             # HERACorrCM object instance (which is created in the next line if
             # it doesn't already exist).
             self.add_corr_obj(force=force)
-            import hera_corr_cm
             # There are a couple special cases where we need to pass extra
             # arguments (take_data, update_config). Handle them specifically,
             # otherwise just call the appropriate method in the `else` clause.
