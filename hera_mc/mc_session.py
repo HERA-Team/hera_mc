@@ -3472,8 +3472,8 @@ class MCSession(Session):
                            adc_rms, adc_power, pam_atten, pam_power,
                            pam_voltage, pam_current, pam_id, fem_voltage,
                            fem_current, fem_id, fem_switch, fem_lna_power,
-                           fem_imu_theta, fem_imu_phi, fem_temp, eq_coeffs,
-                           histogram_bin_centers, histogram):
+                           fem_imu_theta, fem_imu_phi, fem_temp, fft_overflow,
+                           eq_coeffs, histogram_bin_centers, histogram):
         """
         Add new antenna status data to the M&C database.
 
@@ -3528,6 +3528,8 @@ class MCSession(Session):
             Serial number of this FEM.
         fem_temp : float
             EM temperature sensor reading for this antenna in degrees Celsius.
+        fft_overflow : bool
+            Indicator of an FFT overflow, True if there was an FFT overflow.
         eq_coeffs : list of float
             Digital EQ coefficients, used for keeping the bit occupancy in the
             correct range, for this antenna, list of floats. Note this these
@@ -3545,7 +3547,7 @@ class MCSession(Session):
             snap_channel_number, adc_mean, adc_rms, adc_power, pam_atten,
             pam_power, pam_voltage, pam_current, pam_id, fem_voltage,
             fem_current, fem_id, fem_switch, fem_lna_power, fem_imu_theta,
-            fem_imu_phi, fem_temp, eq_coeffs, histogram_bin_centers,
+            fem_imu_phi, fem_temp, fft_overflow, eq_coeffs, histogram_bin_centers,
             histogram))
 
     def get_antenna_status(self, most_recent=None, starttime=None,
