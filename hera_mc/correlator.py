@@ -17,8 +17,6 @@ from sqlalchemy import (Column, BigInteger, Integer, Float, Boolean, String,
                         ForeignKey, ForeignKeyConstraint)
 
 from . import MCDeclarativeBase
-import hera_mc.utils as mcutils
-
 # default acclen -- corresponds to a bit under 10 seconds (~9.66 seconds)
 DEFAULT_ACCLEN_SPECTRA = 147456
 
