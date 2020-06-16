@@ -151,11 +151,12 @@ def antstatus():
                 'fem_current': 0.5627000000000001,
                 'fem_id': [0, 168, 19, 212, 51, 51, 255, 255],
                 'fem_switch': 'antenna',
-                'fem_e_lna_power': 'True',
-                'fem_n_lna_power': 'True',
+                'fem_e_lna_power': True,
+                'fem_n_lna_power': True,
                 'fem_imu_theta': 1.3621702512711602,
                 'fem_imu_phi': 30.762719534238915,
                 'fem_temp': 26.327341308593752,
+                'fft_of': False,
                 'eq_coeffs': (np.zeros((1024)) + 56.921875).tolist(),
                 'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
                               (np.zeros((256)) + 10).tolist()]},
@@ -175,11 +176,12 @@ def antstatus():
                  'fem_current': float('nan'),
                  'fem_id': [0, 168, 19, 212, 51, 51, 255, 255],
                  'fem_switch': 'noise',
-                 'fem_e_lna_power': 'False',
-                 'fem_n_lna_power': 'False',
+                 'fem_e_lna_power': False,
+                 'fem_n_lna_power': False,
                  'fem_imu_theta': 1.3621702512711602,
                  'fem_imu_phi': 30.762719534238915,
                  'fem_temp': 27.828854980468755,
+                 'fft_of': True,
                  'eq_coeffs': (np.zeros((1024)) + 73.46875).tolist(),
                  'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
                                (np.zeros((256)) + 12).tolist()]}}
@@ -196,7 +198,6 @@ def antstatus_none():
                 'adc_power': 'None',
                 'pam_atten': 'None',
                 'pam_power': 'None',
-                'eq_coeffs': 'None',
                 'pam_voltage': 'None',
                 'pam_current': 'None',
                 'pam_id': 'None',
@@ -209,6 +210,7 @@ def antstatus_none():
                 'fem_imu_theta': 'None',
                 'fem_imu_phi': 'None',
                 'fem_temp': 'None',
+                'fft_of': 'None',
                 'eq_coeffs': 'None',
                 'histogram': 'None'},
         '31:n': {'timestamp':
@@ -232,6 +234,7 @@ def antstatus_none():
                  'fem_imu_theta': 'None',
                  'fem_imu_phi': 'None',
                  'fem_temp': 'None',
+                 'fft_of': 'None',
                  'eq_coeffs': 'None',
                  'histogram': 'None'}}
 
@@ -605,7 +608,7 @@ def test_add_correlator_config_from_corrcm_onsite(mcsession):
 @pytest.mark.parametrize(
     ("command"),
     list(set(corr.command_dict.keys())
-         - set(['take_data', 'update_config'])))
+         - {'take_data', 'update_config'}))
 def test_control_command_no_recent_status(mcsession, command):
     test_session = mcsession
     # test things on & off with no recent status
@@ -687,7 +690,7 @@ def test_take_data_command_no_recent_status(mcsession):
 @pytest.mark.parametrize(
     ("commands_to_test"),
     [list(set(corr.command_dict.keys())
-          - set(['take_data', 'update_config', 'restart', 'hard_stop']))])
+          - {'take_data', 'update_config', 'restart', 'hard_stop'})])
 def test_control_command_with_recent_status(mcsession, commands_to_test):
     test_session = mcsession
     # test things on & off with a recent status
@@ -817,8 +820,7 @@ def test_control_command_errors(mcsession, command, kwargs):
 
 @pytest.mark.parametrize(
     ("command"), list(set(corr.command_dict.keys())
-                      - set(['take_data', 'update_config',
-                             'stop_taking_data'])))
+                      - {'take_data', 'update_config', 'stop_taking_data'}))
 def test_control_command_errors_taking_data(mcsession, command):
     test_session = mcsession
     # test bad commands while taking data
@@ -1236,7 +1238,7 @@ def test_add_corr_snap_versions_from_corrcm(mcsession, snapversion, init_args):
 
     result_most_recent = test_session.get_correlator_software_versions()
     assert len(result_most_recent) == 3
-    most_recent_packages = sorted([res.package for res in result_most_recent])
+    most_recent_packages = sorted(res.package for res in result_most_recent)
     expected_recent_packages = sorted(['udpSender:hera_node_keep_alive.py',
                                        'udpSender:hera_node_cmd_check.py',
                                        'hera_corr_cm'])
@@ -1608,7 +1610,7 @@ def test_add_antenna_status(mcsession):
                                     0.5627000000000001, fem_id,
                                     'antenna', True,
                                     1.3621702512711602, 30.762719534238915,
-                                    26.327341308593752, eq_coeffs,
+                                    26.327341308593752, False, eq_coeffs,
                                     histogram_bins, histogram)
 
     eq_coeffs_string = '[56.921875,56.921875,56.921875,56.921875,56.921875]'
@@ -1633,6 +1635,7 @@ def test_add_antenna_status(mcsession):
                                   fem_imu_theta=1.3621702512711602,
                                   fem_imu_phi=30.762719534238915,
                                   fem_temp=26.327341308593752,
+                                  fft_overflow=False,
                                   eq_coeffs=eq_coeffs_string,
                                   histogram_bin_centers=histogram_bin_string,
                                   histogram=histogram_string)
@@ -1657,7 +1660,7 @@ def test_add_antenna_status(mcsession):
                                     None, None, fem_id,
                                     'noise', False,
                                     1.3621702512711602, 30.762719534238915,
-                                    27.828854980468755, eq_coeffs,
+                                    27.828854980468755, True, eq_coeffs,
                                     histogram_bins, histogram)
 
     result = test_session.get_antenna_status(
@@ -1693,6 +1696,7 @@ def test_add_antenna_status(mcsession):
                                   fem_imu_theta=1.3621702512711602,
                                   fem_imu_phi=30.762719534238915,
                                   fem_temp=27.828854980468755,
+                                  fft_overflow=True,
                                   eq_coeffs=eq_coeffs_string,
                                   histogram_bin_centers=histogram_bin_string,
                                   histogram=histogram_string)
@@ -1766,6 +1770,7 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
                                   fem_imu_theta=1.3621702512711602,
                                   fem_imu_phi=30.762719534238915,
                                   fem_temp=26.327341308593752,
+                                  fft_overflow=False,
                                   eq_coeffs=eq_coeffs_string,
                                   histogram_bin_centers=histogram_bin_string,
                                   histogram=histogram_string)
@@ -1813,6 +1818,7 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
                                   fem_imu_theta=1.3621702512711602,
                                   fem_imu_phi=30.762719534238915,
                                   fem_temp=27.828854980468755,
+                                  fft_overflow=True,
                                   eq_coeffs=eq_coeffs_string,
                                   histogram_bin_centers=histogram_bin_string,
                                   histogram=histogram_string)
@@ -1848,7 +1854,7 @@ def test_add_antenna_status_from_corrcm_with_nones(mcsession, antstatus_none):
                                   fem_id=None, fem_switch=None,
                                   fem_lna_power=None, fem_imu_theta=None,
                                   fem_imu_phi=None,
-                                  fem_temp=None, eq_coeffs=None,
+                                  fem_temp=None, fft_overflow=None, eq_coeffs=None,
                                   histogram_bin_centers=None, histogram=None)
 
     result = test_session.get_antenna_status(antenna_number=4)
@@ -1866,7 +1872,7 @@ def test_add_antenna_status_from_corrcm_with_nones(mcsession, antstatus_none):
                                   fem_id=None, fem_switch=None,
                                   fem_lna_power=None, fem_imu_theta=None,
                                   fem_imu_phi=None,
-                                  fem_temp=None, eq_coeffs=None,
+                                  fem_temp=None, fft_overflow=None, eq_coeffs=None,
                                   histogram_bin_centers=None, histogram=None)
 
     result = test_session.get_antenna_status(antenna_number=31)
@@ -1890,8 +1896,8 @@ def test_antenna_status_errors(mcsession):
                   3.0134560488579285, 9.080917358398438, 0,
                   -13.349140985640002, 10.248, 0.6541, pam_id,
                   6.496, 0.5627000000000001, fem_id,
-                  'antenna', 'True', 1.3621702512711602, 30.762719534238915,
-                  26.327341308593752, eq_coeffs,
+                  'antenna', True, 1.3621702512711602, 30.762719534238915,
+                  26.327341308593752, False, eq_coeffs,
                   histogram_bins, histogram)
 
     pytest.raises(ValueError, test_session.add_antenna_status,
@@ -1899,8 +1905,8 @@ def test_antenna_status_errors(mcsession):
                   3.0134560488579285, 9.080917358398438, 0,
                   -13.349140985640002, 10.248, 0.6541, pam_id,
                   6.496, 0.5627000000000001, fem_id,
-                  'foo', 'True', 1.3621702512711602, 30.762719534238915,
-                  26.327341308593752, eq_coeffs,
+                  'foo', True, 1.3621702512711602, 30.762719534238915,
+                  26.327341308593752, False, eq_coeffs,
                   histogram_bins, histogram)
 
     pytest.raises(ValueError, test_session.add_antenna_status,
@@ -1908,8 +1914,8 @@ def test_antenna_status_errors(mcsession):
                   3.0134560488579285, 9.080917358398438, 0,
                   -13.349140985640002, 10.248, 0.6541, pam_id,
                   6.496, 0.5627000000000001, fem_id,
-                  'load', 'True', 1.3621702512711602, 30.762719534238915,
-                  26.327341308593752, eq_coeffs,
+                  'load', True, 1.3621702512711602, 30.762719534238915,
+                  26.327341308593752, False, eq_coeffs,
                   histogram_bins, histogram)
 
 

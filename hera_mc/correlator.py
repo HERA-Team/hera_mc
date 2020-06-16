@@ -17,8 +17,6 @@ from sqlalchemy import (Column, BigInteger, Integer, Float, Boolean, String,
                         ForeignKey, ForeignKeyConstraint)
 
 from . import MCDeclarativeBase
-import hera_mc.utils as mcutils
-
 # default acclen -- corresponds to a bit under 10 seconds (~9.66 seconds)
 DEFAULT_ACCLEN_SPECTRA = 147456
 
@@ -266,7 +264,6 @@ def _get_config(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
 
     timestamp, config, hash = corr_cm.get_config()
     time = Time(timestamp, format='unix')
-    hash = mcutils.bytes_to_str(hash)
 
     return {'time': time, 'hash': hash, 'config': config}
 
@@ -849,6 +846,8 @@ class AntennaStatus(MCDeclarativeBase):
         IMU-reported phi, in degrees.
     fem_temp : Float Column
         EM temperature sensor reading for this antenna in degrees Celsius.
+    fft_overflow : Boolean Column
+        Indicator of an FFT overflow, True if there was an FFT overflow.
     eq_coeffs : String Column
         Digital EQ coefficients for this antenna, list of floats stored as a
         string.
@@ -881,6 +880,7 @@ class AntennaStatus(MCDeclarativeBase):
     fem_imu_theta = Column(Float)
     fem_imu_phi = Column(Float)
     fem_temp = Column(Float)
+    fft_overflow = Column(Boolean)
     eq_coeffs = Column(String)
     histogram_bin_centers = Column(String)
     histogram = Column(String)
@@ -890,7 +890,7 @@ class AntennaStatus(MCDeclarativeBase):
                snap_channel_number, adc_mean, adc_rms, adc_power, pam_atten,
                pam_power, pam_voltage, pam_current, pam_id, fem_voltage,
                fem_current, fem_id, fem_switch, fem_lna_power, fem_imu_theta,
-               fem_imu_phi, fem_temp, eq_coeffs, histogram_bin_centers,
+               fem_imu_phi, fem_temp, fft_overflow, eq_coeffs, histogram_bin_centers,
                histogram):
         """
         Create a new antenna status object.
@@ -945,6 +945,8 @@ class AntennaStatus(MCDeclarativeBase):
             IMU-reported phi, in degrees.
         fem_temp : float
             EM temperature sensor reading for this antenna in degrees Celsius.
+        fft_overflow : bool
+            Indicator of an FFT overflow, True if there was an FFT overflow.
         eq_coeffs : list of float
             Digital EQ coefficients, used for keeping the bit occupancy in the
             correct range, for this antenna, list of floats. Note this these
@@ -995,7 +997,7 @@ class AntennaStatus(MCDeclarativeBase):
                    fem_id=fem_id, fem_switch=fem_switch,
                    fem_lna_power=fem_lna_power, fem_imu_theta=fem_imu_theta,
                    fem_imu_phi=fem_imu_phi, fem_temp=fem_temp,
-                   eq_coeffs=eq_coeffs_string,
+                   fft_overflow=fft_overflow, eq_coeffs=eq_coeffs_string,
                    histogram_bin_centers=histogram_bin_string,
                    histogram=histogram_string)
 
@@ -1048,6 +1050,7 @@ def _get_ant_status(corr_cm=None,
             fem_imu_phi (float)   : IMU-reported phi (degrees)
             fem_temp (float)      : FEM temperature sensor reading for this
                                     antenna (C)
+            fft_of (bool)         : True if there was an FFT overflow
             eq_coeffs (list of floats) : Digital EQ coefficients for this
                                          antenna
             histogram (list of ints) : Two-dimensional list:
@@ -1161,11 +1164,10 @@ def create_antenna_status(corr_cm=None,
             fem_lna_power = ant_dict['fem_n_lna_power']
         elif antenna_feed_pol == 'e':
             fem_lna_power = ant_dict['fem_e_lna_power']
-        if fem_lna_power is not None:
-            fem_lna_power = fem_lna_power == 'True'
         fem_imu_theta = ant_dict['fem_imu_theta']
         fem_imu_phi = ant_dict['fem_imu_phi']
         fem_temp = ant_dict['fem_temp']
+        fft_overflow = ant_dict['fft_of']
         eq_coeffs = ant_dict['eq_coeffs']
         if ant_dict['histogram'] is not None:
             histogram_bin_centers = ant_dict['histogram'][0]
@@ -1181,7 +1183,7 @@ def create_antenna_status(corr_cm=None,
                                  pam_voltage, pam_current, pam_id, fem_voltage,
                                  fem_current, fem_id, fem_switch,
                                  fem_lna_power, fem_imu_theta, fem_imu_phi,
-                                 fem_temp, eq_coeffs,
+                                 fem_temp, fft_overflow, eq_coeffs,
                                  histogram_bin_centers, histogram))
 
     return ant_status_list
