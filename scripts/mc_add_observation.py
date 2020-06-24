@@ -3,7 +3,6 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-import os
 import numpy as np
 from astropy.time import Time
 
@@ -14,7 +13,7 @@ from hera_mc import mc
 a = mc.get_mc_argument_parser()
 a.description = """Read the obsid from a file and create a record in M&C."""
 a.add_argument('files', metavar='file', type=str, nargs='*', default=[],
-               help='*.uv files to extract')
+               help='*.uvh5 files to add')
 args = a.parse_args()
 db = mc.connect_to_mc_db(args)
 
