@@ -118,6 +118,12 @@ To change environments:  `source activate HERA`
 
 To run psql:  `psql -U hera -h qmaster hera_mc`
 
+# Running psql on NRAO
+
+This runs under the HERA conda environment on herapost-master
+
+To run psql: `psql -h herastore01 -U heramgr hera_mc`
+
 # Restoring a database backup
 
 We are now regularly backing up the database to the Librarian and copying it to NRAO. The database backup files can be found by searching for them on the librarian using `obsid-is-null`. The files are named like `maint.YYYYMMDD.karoo.mandc.dbbackup.pgdump`.
