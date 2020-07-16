@@ -16,7 +16,7 @@ import cartopy.crs as ccrs
 from pyuvdata import utils as uvutils
 from numpy import pi
 
-from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef
+from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef, cm_sysutils
 
 
 def cofa(session=None):
@@ -348,7 +348,7 @@ class Handling:
             if self.file_type == 'csv':
                 return "name,easting,northing,longitude,latitude,elevation,X,Y,Z"
             else:
-                return ("name   easting   northing   longitude latitude  elevation"
+                return ("name  easting   northing   longitude latitude  elevation"
                         "    X              Y               Z")
         is_list = True
         if not isinstance(loc, list):
@@ -358,12 +358,12 @@ class Handling:
         for a in loc:
             if self.file_type == 'csv':
                 s = '{},{},{},{},{},{},{},{},{}'.format(
-                    a.station_name, a.easting, a.northing, a.lon, a.lat, a.elevation,
-                    a.X, a.Y, a.Z)
+                    a.station_name, a.easting, a.northing, a.lon, a.lat,
+                    a.elevation, a.X, a.Y, a.Z)
             else:
                 s = '{:6s} {:.2f} {:.2f} {:.6f} {:.6f} {:.1f} {:.6f} {:.6f} {:.6f}'.format(
-                    a.station_name, a.easting, a.northing, a.lon, a.lat, a.elevation,
-                    a.X, a.Y, a.Z)
+                    a.station_name, a.easting, a.northing, a.lon, a.lat,
+                    a.elevation, a.X, a.Y, a.Z)
             ret.append(s)
         if not is_list:
             ret = ret[0]
