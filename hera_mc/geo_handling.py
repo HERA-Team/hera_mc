@@ -13,6 +13,8 @@ import copy
 import warnings
 from sqlalchemy import func
 import cartopy.crs as ccrs
+from pyuvdata import utils as uvutils
+from numpy import pi
 
 from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef
 
@@ -173,13 +175,18 @@ class Handling:
 
         """
         import os.path as op
+        self.file_type = fname.split('.')[-1]
+        write_header = False
         if op.isfile(fname):
             print("{} exists so appending to it".format(fname))
         else:
+            write_header = True
             print("Writing to new {}".format(fname))
         if self.testing:
             return
         self.fp_out = open(fname, 'a')  # pragma: no cover
+        if write_header:
+            self.fp_out.write("{}\n".format(self._loc_line('header')))
 
     def is_in_database(self, station_name, db_name='geo_location'):
         """
@@ -302,6 +309,7 @@ class Handling:
             GeoLocation objects corresponding to station names.
 
         """
+        pi1 = pi / 180.0
         latlon_p = ccrs.Geodetic()
         utm_p = ccrs.UTM(self.hera_zone[0])
         lat_corr = self.lat_corr[self.hera_zone[1]]
@@ -314,11 +322,52 @@ class Handling:
                 a.gps2Time()
                 a.desc = self.station_types[a.station_type_name]['Description']
                 a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
+                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(a.lat * pi1, a.lon * pi1, a.elevation)
                 locations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:  # pragma: no cover
-                    self.fp_out.write('{:6} {:.2f} {:.2f} {:.4f} {:.4f}\n'.format(
-                        station_name, a.easting, a.northing, a.lon, a.lat))
+                    self.fp_out.write('{}\n'.format(self._loc_line(a)))
         return locations
+
+    def _loc_line(self, loc):
+        """
+        Return a list or str of the given locations, depending if loc is list or not.
+
+        Parameters
+        ----------
+        loc : geo_location class, list of them, or 'header'
+            List of geo_location class (or single)
+        fmt : str
+            Type of format; either 'csv' or not
+
+        Return
+        ------
+        list-of-str or str : a single line containing the data
+            if loc=='header' it returns the header line
+        """
+        if loc == 'header':
+            if self.file_type == 'csv':
+                return "name,easting,northing,longitude,latitude,elevation,X,Y,Z"
+            else:
+                return ("name   easting   northing   longitude latitude  elevation"
+                        "    X              Y               Z")
+        is_list = True
+        if not isinstance(loc, list):
+            loc = [loc]
+            is_list = False
+        ret = []
+        for a in loc:
+            if self.file_type == 'csv':
+                s = '{},{},{},{},{},{},{},{},{}'.format(
+                    a.station_name, a.easting, a.northing, a.lon, a.lat, a.elevation,
+                    a.X, a.Y, a.Z)
+            else:
+                s = '{:6s} {:.2f} {:.2f} {:.6f} {:.6f} {:.1f} {:.6f} {:.6f} {:.6f}'.format(
+                    a.station_name, a.easting, a.northing, a.lon, a.lat, a.elevation,
+                    a.X, a.Y, a.Z)
+            ret.append(s)
+        if not is_list:
+            ret = ret[0]
+        return ret
 
     def print_loc_info(self, loc_list):
         """
@@ -389,15 +438,21 @@ class Handling:
         """
         station_types_to_check = self.parse_station_types_to_check(station_types_to_check)
         dt = query_date.gps
+        pi1 = pi / 180.0
+        latlon_p = ccrs.Geodetic()
+        utm_p = ccrs.UTM(self.hera_zone[0])
+        lat_corr = self.lat_corr[self.hera_zone[1]]
         found_stations = []
         for a in self.session.query(geo_location.GeoLocation).filter(
                 geo_location.GeoLocation.created_gpstime >= dt):
             if a.station_type_name.lower() in station_types_to_check:
-                found_stations.append(a)
+                a.gps2Time()
+                a.desc = self.station_types[a.station_type_name]['Description']
+                a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
+                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(a.lat * pi1, a.lon * pi1, a.elevation)
+                found_stations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:
-                    self.fp_out.write(
-                        '{:6} {:.2f} {:.2f} {:.4f} {:.4f}\n'
-                        .format(a.station_name, a.easting, a.northing, a.lon, a.lat))
+                    self.fp_out.write('{}\n'.format(self._loc_line(a)))
         return found_stations
 
     def get_antenna_label(self, label_to_show, stn, query_date):
