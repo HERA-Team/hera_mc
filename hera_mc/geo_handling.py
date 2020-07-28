@@ -16,7 +16,7 @@ import cartopy.crs as ccrs
 from pyuvdata import utils as uvutils
 from numpy import pi
 
-from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef, cm_sysutils
+from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef
 
 
 def cofa(session=None):
@@ -309,7 +309,7 @@ class Handling:
             GeoLocation objects corresponding to station names.
 
         """
-        pi1 = pi / 180.0
+        d2r = pi / 180.0
         latlon_p = ccrs.Geodetic()
         utm_p = ccrs.UTM(self.hera_zone[0])
         lat_corr = self.lat_corr[self.hera_zone[1]]
@@ -322,7 +322,7 @@ class Handling:
                 a.gps2Time()
                 a.desc = self.station_types[a.station_type_name]['Description']
                 a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
-                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(a.lat * pi1, a.lon * pi1, a.elevation)
+                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(a.lat * d2r, a.lon * d2r, a.elevation)
                 locations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:  # pragma: no cover
                     self.fp_out.write('{}\n'.format(self._loc_line(a)))
@@ -388,6 +388,7 @@ class Handling:
             print('\tnorthing: ', a.northing)
             print('\tlon/lat:  ', a.lon, a.lat)
             print('\televation: ', a.elevation)
+            print('\tX, Y, Z: {}, {}, {}'.format(a.X, a.Y, a.Z))
             print('\tstation description ({}):  {}'.format(a.station_type_name, a.desc))
             print('\tcreated:  ', cm_utils.get_time_for_display(a.created_date))
 
@@ -438,7 +439,7 @@ class Handling:
         """
         station_types_to_check = self.parse_station_types_to_check(station_types_to_check)
         dt = query_date.gps
-        pi1 = pi / 180.0
+        d2r = pi / 180.0
         latlon_p = ccrs.Geodetic()
         utm_p = ccrs.UTM(self.hera_zone[0])
         lat_corr = self.lat_corr[self.hera_zone[1]]
@@ -449,7 +450,7 @@ class Handling:
                 a.gps2Time()
                 a.desc = self.station_types[a.station_type_name]['Description']
                 a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
-                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(a.lat * pi1, a.lon * pi1, a.elevation)
+                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(a.lat * d2r, a.lon * d2r, a.elevation)
                 found_stations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:
                     self.fp_out.write('{}\n'.format(self._loc_line(a)))
