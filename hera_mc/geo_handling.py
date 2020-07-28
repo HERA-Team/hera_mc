@@ -177,16 +177,15 @@ class Handling:
         import os.path as op
         self.file_type = fname.split('.')[-1]
         write_header = False
-        if op.isfile(fname):
+        if op.isfile(fname):  # pragma: no cover
             print("{} exists so appending to it".format(fname))
         else:
             write_header = True
             print("Writing to new {}".format(fname))
-        if self.testing:
-            return
-        self.fp_out = open(fname, 'a')  # pragma: no cover
-        if write_header:
-            self.fp_out.write("{}\n".format(self._loc_line('header')))
+        if not self.testing:  # pragma: no cover
+            self.fp_out = open(fname, 'a')
+            if write_header:
+                self.fp_out.write("{}\n".format(self._loc_line('header')))
 
     def is_in_database(self, station_name, db_name='geo_location'):
         """
@@ -452,7 +451,7 @@ class Handling:
                 a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
                 a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(a.lat * d2r, a.lon * d2r, a.elevation)
                 found_stations.append(copy.copy(a))
-                if self.fp_out is not None and not self.testing:
+                if self.fp_out is not None and not self.testing:  # pragma: no cover
                     self.fp_out.write('{}\n'.format(self._loc_line(a)))
         return found_stations
 

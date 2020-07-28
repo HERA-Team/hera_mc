@@ -140,6 +140,18 @@ def test_antenna_label(geo_handle, label_type, val):
 def test_geo_handling(geo_handle):
     h = geo_handling.get_location(['HH701'], session=geo_handle.session)
     assert h[0].station_name == 'HH701'
+    geo_handle.file_type = 'csv'
+    hdr = geo_handle._loc_line('header')
+    assert hdr.startswith('name')
+    ll = geo_handle._loc_line(h[0])
+    assert ll.startswith('HH701')
+    ll = geo_handle._loc_line(h)
+    assert ll[0].startswith('HH701')
+    geo_handle.file_type = 'txt'
+    hdr = geo_handle._loc_line('header')
+    assert hdr.startswith('name')
+    ll = geo_handle._loc_line(h)
+    assert ll[0].strip().startswith('HH701')
 
 
 def test_parse_station_types(geo_handle):
@@ -178,6 +190,8 @@ def test_find_antenna_station_pair(geo_handle, mcsession):
     cm_partconnect.update_connection(mcsession, data,
                                      add_new_connection=True)
     pytest.raises(ValueError, geo_handle.find_station_of_antenna, 700, 'now')
+    stn = geo_handle.find_station_of_antenna('702', 'now')
+    assert stn == 'HH702'
     stn = geo_handle.find_station_of_antenna('A702', 'now')
     assert stn == 'HH702'
     stn = geo_handle.find_station_of_antenna(1024, 'now')
