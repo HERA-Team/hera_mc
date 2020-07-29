@@ -393,7 +393,7 @@ class Handling:
 
     def parse_station_types_to_check(self, sttc):
         """
-        Parse station strings to list of startions.
+        Parse station strings to list of stations.
 
         Parameters
         ----------
