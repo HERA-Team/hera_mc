@@ -14,7 +14,7 @@ import warnings
 from sqlalchemy import func
 import cartopy.crs as ccrs
 from pyuvdata import utils as uvutils
-from numpy import pi
+from numpy import radians
 
 from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef
 
@@ -308,7 +308,6 @@ class Handling:
             GeoLocation objects corresponding to station names.
 
         """
-        d2r = pi / 180.0
         latlon_p = ccrs.Geodetic()
         utm_p = ccrs.UTM(self.hera_zone[0])
         lat_corr = self.lat_corr[self.hera_zone[1]]
@@ -321,7 +320,8 @@ class Handling:
                 a.gps2Time()
                 a.desc = self.station_types[a.station_type_name]['Description']
                 a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
-                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(a.lat * d2r, a.lon * d2r, a.elevation)
+                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(radians(a.lat), radians(a.lon),
+                                                           a.elevation)
                 locations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:  # pragma: no cover
                     self.fp_out.write('{}\n'.format(self._loc_line(a)))
@@ -438,7 +438,6 @@ class Handling:
         """
         station_types_to_check = self.parse_station_types_to_check(station_types_to_check)
         dt = query_date.gps
-        d2r = pi / 180.0
         latlon_p = ccrs.Geodetic()
         utm_p = ccrs.UTM(self.hera_zone[0])
         lat_corr = self.lat_corr[self.hera_zone[1]]
@@ -449,7 +448,8 @@ class Handling:
                 a.gps2Time()
                 a.desc = self.station_types[a.station_type_name]['Description']
                 a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
-                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(a.lat * d2r, a.lon * d2r, a.elevation)
+                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(radians(a.lat), radians(a.lon),
+                                                           a.elevation)
                 found_stations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:  # pragma: no cover
                     self.fp_out.write('{}\n'.format(self._loc_line(a)))
