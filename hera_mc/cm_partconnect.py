@@ -16,31 +16,24 @@ no_connection_designator = '-X-'
 
 class Rosetta(MCDeclarativeBase):
     """
-    A table logging parts within the HERA system.
-
-    Stations will be considered parts of type='station'
-    Note that ideally install_date would also be a primary key, but that
-    screws up ForeignKey in connections
+    A table of mappings between physical and logical names within the HERA system.
 
     Attributes
     ----------
     hpn : String Column
         HERA part number for each part; part of the primary key.
     logical_part : String Column
-
-
+        Logical part number associated with the hpn; part of the primary key.
     """
 
     __tablename__ = 'rosetta'
 
     hpn = Column(String(64), primary_key=True)
-    logical_part = Column(String(64), primary_key=True)
+    logical_pn = Column(String(64), primary_key=True)
 
     def __repr__(self):
         """Define representation."""
-        return ('<heraPartNumber id={self.hpn}:{self.hpn_rev} '
-                'type={self.hptype} :: {self.start_gpstime} - {self.stop_gpstime}>'
-                .format(self=self))
+        return ('{self.hpn}  -  {self.logical_pn}'.format(self=self))
 
 
 class Parts(MCDeclarativeBase):
