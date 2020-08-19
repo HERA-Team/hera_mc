@@ -42,6 +42,7 @@ class ActiveData:
         self.session = session
         self.at_date = cm_utils.get_astropytime(at_date)
         self.parts = None
+        self.rosetta = None
         self.connections = None
         self.info = None
         self.apriori = None
@@ -94,6 +95,7 @@ class ActiveData:
         ):
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.parts[key] = prt
+            self.parts[key].logical_pn = None
 
     def load_connections(self, at_date=None):
         """
@@ -173,6 +175,17 @@ class ActiveData:
             key = cm_utils.make_part_key(info.hpn, info.hpn_rev)
             self.info.setdefault(key, [])
             self.info[key].append(info)
+
+    def load_rosetta(self):
+        self.rosetta = {}
+        for rose in self.session.query(partconn.Rosetta).all():
+            self.rosetta[rose.hpn] = rose.logical_pn
+        if self.parts is not None:
+            for key, part in self.parts.items():
+                try:
+                    self.parts[key].logical_pn = self.rosetta[part.hpn]
+                except KeyError:
+                    continue
 
     def load_apriori(self, at_date=None, rev='A'):
         """
