@@ -179,11 +179,11 @@ class ActiveData:
     def load_rosetta(self):
         self.rosetta = {}
         for rose in self.session.query(partconn.Rosetta).all():
-            self.rosetta[rose.hpn] = rose.logical_pn
+            self.rosetta[rose.hpn] = rose
         if self.parts is not None:
             for key, part in self.parts.items():
                 try:
-                    self.parts[key].logical_pn = self.rosetta[part.hpn]
+                    self.parts[key].logical_pn = self.rosetta[part.hpn].logical_pn
                 except KeyError:
                     continue
 

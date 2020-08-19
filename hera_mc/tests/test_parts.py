@@ -94,6 +94,16 @@ def test_duplicate(mcsession):
     pytest.raises(ValueError, active.load_connections)
 
 
+def test_rosetta(mcsession, capsys):
+    active = cm_active.ActiveData(mcsession)
+    active.load_parts()
+    active.load_rosetta()
+    assert active.rosetta['SNPC000700'].logical_pn == 'heraNode700Snap700'
+    print(active.rosetta['SNPC000700'])
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith('SNPC000700')
+
+
 def test_update_part(parts, capsys):
     data = [[parts.test_part, parts.test_rev, 'not_an_attrib', 'Z']]
     cm_partconnect.update_part(parts.test_session, data)
