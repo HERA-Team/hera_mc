@@ -102,7 +102,7 @@ def test_rosetta(mcsession, capsys):
     assert active.rosetta['SNPC000700'].syspn == 'heraNode700Snap700'
     print(active.rosetta['SNPC000700'])
     captured = capsys.readouterr()
-    assert captured.out.strip().startswith('SNPC000700')
+    assert captured.out.strip().startswith('<SNPC000700')
     # Add a test part to fail
     rose = cm_partconnect.PartRosetta()
     rose.hpn = 'SNPC000701'

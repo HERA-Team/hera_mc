@@ -42,14 +42,6 @@ class PartRosetta(MCDeclarativeBase):
         return ('<{self.hpn}  -  {self.syspn} :: {self.start_gpstime} - '
                 '{self.stop_gpstime}>'.format(self=self))
 
-    def gps2Time(self):
-        """Make astropy.Time object from gps."""
-        self.start_date = Time(self.start_gpstime, format='gps')
-        if self.stop_gpstime is None:
-            self.stop_date = None
-        else:
-            self.stop_date = Time(self.stop_gpstime, format='gps')
-
 
 class Parts(MCDeclarativeBase):
     """

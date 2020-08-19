@@ -48,6 +48,7 @@ def test_check_if_main(mcsession):
 def test_cm_table_info():
     from hera_mc import cm_table_info
     ot = ','.join(cm_table_info.order_the_tables(None))
-    assert (ot == 'part_info,apriori_antenna,rosetta,connections,parts,geo_location,station_type')
+    t = 'part_info,apriori_antenna,part_rosetta,connections,parts,geo_location,station_type'
+    assert (ot == t)
     ot = ','.join(cm_table_info.order_the_tables(['notthere', 'parts']))
     assert ot == 'parts'
