@@ -178,11 +178,11 @@ class ActiveData:
 
     def load_rosetta(self, at_date=None):
         """
-        Retrieve the current 'rosetta' mappings.
+        Retrieve the current 'part rosetta' mappings.
 
-        Since the mappings are all "current" there is no date.  They also don't
-        include revision numbers.  If current parts are loaded, it adds the 'logical_pn'
-        to the part object.
+        Note that the dictionary keys don't include revision numbers, which differs from others
+        (if this is needed later, it can be added later).  If current parts are loaded, it adds the
+        'syspn' to the part object (which does use the full hpn:rev key).
 
         Writes class dictionary:
             self.rosetta - keyed on part
