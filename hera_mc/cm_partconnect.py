@@ -14,26 +14,41 @@ from . import mc, cm_utils
 no_connection_designator = '-X-'
 
 
-class Rosetta(MCDeclarativeBase):
+class PartRosetta(MCDeclarativeBase):
     """
     A table of mappings between physical and logical names within the HERA system.
 
     Attributes
     ----------
     hpn : String Column
-        HERA part number for each part; part of the primary key.
-    logical_part : String Column
-        Logical part number associated with the hpn; part of the primary key.
+        HERA part number for each part.
+    syspn : String Column
+        System part number associated with the hpn; part of the primary key.
+    start_gpstime : int
+        start time for part name mapping; part of the primary key.
+    stop_gpstime : int
+        stop time for part name mapping.
     """
 
-    __tablename__ = 'rosetta'
+    __tablename__ = 'part_rosetta'
 
     hpn = Column(String(64), nullable=False)
-    logical_pn = Column(String(64), primary_key=True)
+    syspn = Column(String(64), primary_key=True)
+    start_gpstime = Column(BigInteger, primary_key=True)
+    stop_gpstime = Column(BigInteger)
 
     def __repr__(self):
         """Define representation."""
-        return ('{self.hpn}  -  {self.logical_pn}'.format(self=self))
+        return ('<{self.hpn}  -  {self.syspn} :: {self.start_gpstime} - '
+                '{self.stop_gpstime}>'.format(self=self))
+
+    def gps2Time(self):
+        """Make astropy.Time object from gps."""
+        self.start_date = Time(self.start_gpstime, format='gps')
+        if self.stop_gpstime is None:
+            self.stop_date = None
+        else:
+            self.stop_date = Time(self.stop_gpstime, format='gps')
 
 
 class Parts(MCDeclarativeBase):

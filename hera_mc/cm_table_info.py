@@ -9,7 +9,7 @@ from . import cm_partconnect, geo_location
 # Locates the table and specifies the required order of deletion (inverse for creation.)
 cm_tables = {'part_info': [cm_partconnect.PartInfo, 0],
              'apriori_antenna': [cm_partconnect.AprioriAntenna, 1],
-             'rosetta': [cm_partconnect.Rosetta, 2],
+             'part_rosetta': [cm_partconnect.PartRosetta, 2],
              'connections': [cm_partconnect.Connections, 3],
              'parts': [cm_partconnect.Parts, 4],
              'geo_location': [geo_location.GeoLocation, 5],

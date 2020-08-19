@@ -98,7 +98,7 @@ def test_rosetta(mcsession, capsys):
     active = cm_active.ActiveData(mcsession)
     active.load_parts()
     active.load_rosetta()
-    assert active.rosetta['SNPC000700'].logical_pn == 'heraNode700Snap700'
+    assert active.rosetta['SNPC000700'].syspn == 'heraNode700Snap700'
     print(active.rosetta['SNPC000700'])
     captured = capsys.readouterr()
     assert captured.out.strip().startswith('SNPC000700')

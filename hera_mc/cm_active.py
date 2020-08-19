@@ -176,7 +176,7 @@ class ActiveData:
             self.info.setdefault(key, [])
             self.info[key].append(info)
 
-    def load_rosetta(self):
+    def load_rosetta(self, at_date=None):
         """
         Retrieve the current 'rosetta' mappings.
 
@@ -185,15 +185,37 @@ class ActiveData:
         to the part object.
 
         Writes class dictionary:
-            self.rosetts - keyed on part
+            self.rosetta - keyed on part
+
+        Parameters
+        ----------
+        at_date : str, int, float, Time, datetime (optional)
+            The date for which to check as active, given as anything comprehensible
+            to get_astropytime
+
+        Raises
+        ------
+        ValueError
+            If a duplicate logical part name is found.
         """
+        at_date = cm_utils.get_astropytime(at_date)
+        gps_time = self.set_times(at_date)
         self.rosetta = {}
-        for rose in self.session.query(partconn.Rosetta).all():
+        fnd_syspn = []
+        for rose in self.session.query(partconn.PartRosetta).filter(
+            (partconn.PartRosetta.start_gpstime <= gps_time)
+            & ((partconn.PartRosetta.stop_gpstime > gps_time)
+               | (partconn.PartRosetta.stop_gpstime == None))  # noqa
+        ):
+            if rose.syspn in fnd_syspn:
+                raise ValueError("System part number {} already found."
+                                 .format(rose.syspn))
+            fnd_syspn.append(rose.syspn)
             self.rosetta[rose.hpn] = rose
         if self.parts is not None:
             for key, part in self.parts.items():
                 try:
-                    self.parts[key].logical_pn = self.rosetta[part.hpn].logical_pn
+                    self.parts[key].syspn = self.rosetta[part.hpn].syspn
                 except KeyError:
                     continue
 
