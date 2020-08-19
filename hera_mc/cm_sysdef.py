@@ -92,7 +92,7 @@ class Sysdef:
         list of str
             List of all ports in hookup_types.
         """
-        all_ports = []
+        all_ports = set()
         if hookup_types is None:
             hookup_types = [self.hookup_type]
         for hut in hookup_types:
@@ -101,8 +101,8 @@ class Sysdef:
                     for ports in self.port_def[hut][key][dir]:
                         for port in ports:
                             if port is not None:
-                                all_ports.append(port)
-        return all_ports
+                                all_ports.add(port)
+        return list(all_ports)
 
     def handle_redirect_part_types(self, part, active):
         """
