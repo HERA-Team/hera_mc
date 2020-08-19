@@ -36,7 +36,7 @@ def order_the_tables(unordered_tables=None):
 
     """
     if unordered_tables is None:
-        unordered_tables = cm_tables.keys()
+        unordered_tables = list(cm_tables.keys())
     ordered_tables = []
     for i in range(len(cm_tables.keys())):
         ordered_tables.append('NULL')

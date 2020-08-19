@@ -28,7 +28,7 @@ class Rosetta(MCDeclarativeBase):
 
     __tablename__ = 'rosetta'
 
-    hpn = Column(String(64), primary_key=True)
+    hpn = Column(String(64), nullable=False)
     logical_pn = Column(String(64), primary_key=True)
 
     def __repr__(self):
