@@ -177,6 +177,16 @@ class ActiveData:
             self.info[key].append(info)
 
     def load_rosetta(self):
+        """
+        Retrieve the current 'rosetta' mappings.
+
+        Since the mappings are all "current" there is no date.  They also don't
+        include revision numbers.  If current parts are loaded, it adds the 'logical_pn'
+        to the part object.
+
+        Writes class dictionary:
+            self.rosetts - keyed on part
+        """
         self.rosetta = {}
         for rose in self.session.query(partconn.Rosetta).all():
             self.rosetta[rose.hpn] = rose
