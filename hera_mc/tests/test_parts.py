@@ -94,6 +94,32 @@ def test_duplicate(mcsession):
     pytest.raises(ValueError, active.load_connections)
 
 
+def test_rosetta(mcsession, capsys):
+    active = cm_active.ActiveData(mcsession)
+    at_date = Time('2020-07-01 01:00:00', scale='utc')
+    active.load_parts(at_date)
+    active.load_rosetta(at_date)
+    assert active.rosetta['SNPC000700'].syspn == 'heraNode700Snap700'
+    print(active.rosetta['SNPC000700'])
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith('<SNPC000700')
+    cm_partconnect.add_part_rosetta(mcsession, 'SNPC000702', 'heraNode700Snap1', at_date)
+    active.load_rosetta(at_date)
+    assert active.rosetta['SNPC000702'].syspn == 'heraNode700Snap1'
+    stop_at = Time('2020-08-01 01:00:00', scale='utc')
+    cm_partconnect.add_part_rosetta(mcsession, 'SNPC000701', 'heraNode700Snap2', at_date, stop_at)
+    active.load_rosetta(Time('2020-07-15 01:00:00', scale='utc'))
+    assert int(active.rosetta['SNPC000701'].stop_gpstime) == 1280278818
+    # Add a test part to fail
+    rose = cm_partconnect.PartRosetta()
+    rose.hpn = 'SNPC000701'
+    rose.syspn = 'heraNode700Snap700'
+    rose.start_gpstime = Time('2019-07-01 01:00:00', scale='utc').gps
+    mcsession.add(rose)
+    mcsession.commit()
+    pytest.raises(ValueError, active.load_rosetta)
+
+
 def test_update_part(parts, capsys):
     data = [[parts.test_part, parts.test_rev, 'not_an_attrib', 'Z']]
     cm_partconnect.update_part(parts.test_session, data)

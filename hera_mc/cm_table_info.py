@@ -8,11 +8,12 @@ from . import cm_partconnect, geo_location
 
 # Locates the table and specifies the required order of deletion (inverse for creation.)
 cm_tables = {'part_info': [cm_partconnect.PartInfo, 0],
-             'connections': [cm_partconnect.Connections, 1],
-             'parts': [cm_partconnect.Parts, 2],
-             'geo_location': [geo_location.GeoLocation, 3],
-             'station_type': [geo_location.StationType, 4],
-             'apriori_antenna': [cm_partconnect.AprioriAntenna, 5]}
+             'apriori_antenna': [cm_partconnect.AprioriAntenna, 1],
+             'part_rosetta': [cm_partconnect.PartRosetta, 2],
+             'connections': [cm_partconnect.Connections, 3],
+             'parts': [cm_partconnect.Parts, 4],
+             'geo_location': [geo_location.GeoLocation, 5],
+             'station_type': [geo_location.StationType, 6]}
 data_prefix = 'initialization_data_'
 
 
@@ -35,7 +36,7 @@ def order_the_tables(unordered_tables=None):
 
     """
     if unordered_tables is None:
-        unordered_tables = cm_tables.keys()
+        unordered_tables = list(cm_tables.keys())
     ordered_tables = []
     for i in range(len(cm_tables.keys())):
         ordered_tables.append('NULL')

@@ -99,7 +99,8 @@ but they are:
 	part\_info 	         & hera\_mc/cm\_part\_connect.py & PartInfo \\
 	connections 	& hera\_mc/cm\_part\_connect.py & Connections \\
 	cm\_version      & hera\_mc/cm\_transfer.py & CMVersion\\
-	apriori\_antenna & hera\_mc/cm\_part\_connect.py & AprioriAntenna\
+	apriori\_antenna & hera\_mc/cm\_part\_connect.py & AprioriAntenna\\
+	part\_rosetta      & hera\_mc/cm\_part\_connect.py & PartRosetta
 \end{tabular}
 \end{center}
 
@@ -798,6 +799,18 @@ stop\_gpstime & BigInt & GPS second when connection ended \\ \hline
 {\bf start\_gpstime}* & BigInt & GPS second when status change becomes valid \\ \hline
 stop\_gpstime & BigInt & GPS second at end of status.  None for last \\ \hline
 status* & text & status enum message, one of 'passed\_checks', 'needs\_checking', 'known\_bad', 'not\_connected' \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{part\_rosetta}
+\begin{center}
+\begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+{\bf Column} & {\bf Type} & {\bf Description} \\ \hline
+{\bf hpn} & text & HERA part number ({\em e.g.} SNPC000072) \\ \hline
+{\bf syspn}* & text & System-dependent part number ({\em e.g.} heraNode0Snap0) \\ \hline
+{\bf start\_gpstime}* & BigInt & GPS second when started \\ \hline
+stop\_gpstime & BigInt & GPS second when stopped.  None for last \\ \hline
 \end{tabular}
 \end{center}
 

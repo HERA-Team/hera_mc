@@ -103,6 +103,12 @@ def test_update_new(conns, capsys):
     captured = conns.cm_handle.show_dossier(located, ['hpn'], ports=None)
     assert 'NEW_TEST_PART_UP' in captured
 
+    next_conn = cm_partconnect.Connections()
+    conn_list = [[u, r, a, d, r, b]]
+    conn_time = Time('2020-07-01')
+    cm_partconnect.add_new_connections(conns.test_session, next_conn, conn_list, conn_time)
+    assert next_conn.upstream_part == 'new_test_part_up'
+
 
 def test_get_null_connection():
     nc = cm_partconnect.get_null_connection()
