@@ -45,41 +45,6 @@ class PartRosetta(MCDeclarativeBase):
         """Define representation."""
         return ('<{self.hpn}  -  {self.syspn} :: {self.start_gpstime} - '
                 '{self.stop_gpstime}>'.format(self=self))
-# def add_part_rosetta(session, hpn, syspn, start_date, stop_date=None):
-#     """
-#     Add part information into database.
-#
-#     Parameters
-#     ----------
-#     session : object
-#         Database session to use.  If None, it will start a new session, then close.
-#     hpn : str
-#         HERA part number
-#     syspn : str
-#         System part number
-#     start_date : any format that cm_utils.get_astropytime understands
-#         Date to use for the start
-#     stop_date : any format that cm_utils.get_astropytime understands
-#         Date to use for the stop
-#     """
-#     close_session_when_done = False
-#     if session is None:  # pragma: no cover
-#         db = mc.connect_to_mc_db(None)
-#         session = db.sessionmaker()
-#         close_session_when_done = True
-#
-#     rose = PartRosetta()
-#     rose.hpn = hpn
-#     rose.syspn = syspn
-#     rose.start_gpstime = int(cm_utils.get_astropytime(start_date).gps)
-#     if stop_date is None:
-#         rose.stop_gpstime = None
-#     else:
-#         rose.stop_gpstime = int(cm_utils.get_astropytime(stop_date).gps)
-#     session.add(rose)
-#     session.commit()
-#     if close_session_when_done:  # pragma: no cover
-#         session.close()
 
 
 def update_part_rosetta(hpn, syspn, at_date, date2=None, session=None):
