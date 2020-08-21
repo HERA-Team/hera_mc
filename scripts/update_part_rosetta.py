@@ -32,9 +32,15 @@ if __name__ == '__main__':
     parser.add_argument('-q', '--query', help="Set flag if wished to be queried",
                         action='store_true')
     cm_utils.add_date_time_args(parser)
+<<<<<<< HEAD:scripts/add_part_rosetta.py
     parser.add_argument('--date2', help="Stop date (if not None)", default=None)
     parser.add_argument('--time2', help="Stop time (if not None)", default=None)
     parser.add_argument('--verbose', help="Turn verbose mode on.", action='store_true')
+=======
+    parser.add_argument('--date2', help="Stop date (if not None and hpn-syspn not existing)",
+                        default=None)
+    parser.add_argument('--time2', help="Stop time ( '' )", default=None)
+>>>>>>> changed to update rosetta:scripts/update_part_rosetta.py
     args = parser.parse_args()
 
     if args.query:
@@ -48,6 +54,11 @@ if __name__ == '__main__':
     session = db.sessionmaker()
 
     # Check for part
+<<<<<<< HEAD:scripts/add_part_rosetta.py
     if args.verbose:
         print("Adding part_rosetta {}: - {}".format(args.hpn, args.syspn))
     cm_partconnect.add_part_rosetta(session, args.hpn, args.syspn, start_date, stop_date)
+=======
+    print("Adding part_rosetta {}: - {}".format(args.hpn, args.syspn))
+    cm_partconnect.update_part_rosetta(args.hpn, args.syspn, start_date, stop_date, session)
+>>>>>>> changed to update rosetta:scripts/update_part_rosetta.py
