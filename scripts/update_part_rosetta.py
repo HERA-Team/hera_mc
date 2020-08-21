@@ -32,8 +32,9 @@ if __name__ == '__main__':
     parser.add_argument('-q', '--query', help="Set flag if wished to be queried",
                         action='store_true')
     cm_utils.add_date_time_args(parser)
-    parser.add_argument('--date2', help="Stop date (if not None)", default=None)
-    parser.add_argument('--time2', help="Stop time (if not None)", default=None)
+    parser.add_argument('--date2', help="Stop date (if not None and hpn-syspn not existing)",
+                        default=None)
+    parser.add_argument('--time2', help="Stop time ( '' )", default=None)
     args = parser.parse_args()
 
     if args.query:
@@ -48,4 +49,4 @@ if __name__ == '__main__':
 
     # Check for part
     print("Adding part_rosetta {}: - {}".format(args.hpn, args.syspn))
-    cm_partconnect.add_part_rosetta(session, args.hpn, args.syspn, start_date, stop_date)
+    cm_partconnect.update_part_rosetta(args.hpn, args.syspn, start_date, stop_date, session)
