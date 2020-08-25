@@ -8,6 +8,7 @@ import pytest
 import numpy as np
 from astropy.time import Time
 from collections import OrderedDict
+from ..tests import checkWarnings
 
 from hera_mc import cm_partconnect, cm_utils, cm_handling, cm_revisions, cm_dossier, cm_active
 
@@ -132,6 +133,15 @@ def test_rosetta(mcsession, capsys):
     mcsession.add(rose)
     mcsession.commit()
     pytest.raises(ValueError, active.load_rosetta)
+    rose2 = cm_partconnect.PartRosetta()
+    rose2.hpn = 'SNPC000712'
+    rose2.syspn = 'heraNode712Snap712'
+    rose2.start_gpstime = Time('2019-07-01 01:00:00', scale='utc').gps
+    rose2.stop_gpstime = Time('2020-08-01 01:00:00', scale='utc').gps
+    mcsession.add(rose2)
+    mcsession.commit()
+    checkWarnings(cm_partconnect.update_part_rosetta,
+                  ['SNPC000712', 'heraNode712Snap712', '2020/01/02'])
 
 
 def test_update_part(parts, capsys):
