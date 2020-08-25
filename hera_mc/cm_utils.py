@@ -389,10 +389,10 @@ def future_date():
     Returns
     -------
     Time
-        Time 300 days in the future.
+        Time 1000 days in the future.
 
     """
-    return Time.now() + TimeDelta(300, format='jd')
+    return Time.now() + TimeDelta(1000, format='jd')
 
 
 def get_stopdate(stop_date):
