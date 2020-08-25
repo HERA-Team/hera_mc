@@ -83,13 +83,12 @@ def update_part_rosetta(hpn, syspn, at_date, date2=None, session=None):
     old_rose = None
     ctr = 0
     for trial in session.query(PartRosetta).filter(
-            (func.upper(PartRosetta.hpn) == hpn) &  # noqa
             (func.upper(PartRosetta.syspn) == syspn.upper())):
-        if trial.stop_gpstime is None:
+        if cm_utils.is_active(at_date, trial.start_gpstime, trial.stop_gpstime):
             ctr += 1
             old_rose = trial
     if ctr > 1:
-        raise ValueError("Multiple rosetta relationship active for {} - {}".format(hpn, syspn))
+        raise ValueError("Multiple rosetta relationships active for {}".format(syspn))
     if old_rose is None:
         new_rose = PartRosetta()
         new_rose.hpn = hpn
@@ -98,8 +97,13 @@ def update_part_rosetta(hpn, syspn, at_date, date2=None, session=None):
         new_rose.stop_gpstime = date2
         session.add(new_rose)
     else:
-        old_rose.stop_gpstime = at_date
-        session.add(old_rose)
+        if old_rose.stop_gpstime is None:
+            old_rose.stop_gpstime = at_date
+            session.add(old_rose)
+        else:
+            import warnings
+            warnings.warn('No action taken.  {} already has a valid stop date'
+                          .format(old_rose))
 
     session.commit()
     if close_session_when_done:  # pragma: no cover
