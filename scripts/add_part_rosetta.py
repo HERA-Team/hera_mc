@@ -34,6 +34,7 @@ if __name__ == '__main__':
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--date2', help="Stop date (if not None)", default=None)
     parser.add_argument('--time2', help="Stop time (if not None)", default=None)
+    parser.add_argument('--verbose', help="Turn verbose mode on.", action='store_true')
     args = parser.parse_args()
 
     if args.query:
@@ -47,5 +48,6 @@ if __name__ == '__main__':
     session = db.sessionmaker()
 
     # Check for part
-    print("Adding part_rosetta {}: - {}".format(args.hpn, args.syspn))
+    if args.verbose:
+        print("Adding part_rosetta {}: - {}".format(args.hpn, args.syspn))
     cm_partconnect.add_part_rosetta(session, args.hpn, args.syspn, start_date, stop_date)
