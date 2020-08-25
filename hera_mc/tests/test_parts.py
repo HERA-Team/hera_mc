@@ -9,6 +9,7 @@ import warnings
 import numpy as np
 from astropy.time import Time
 from collections import OrderedDict
+from ..tests import checkWarnings
 
 from hera_mc import cm_partconnect, cm_utils, cm_handling, cm_revisions, cm_dossier, cm_active
 
