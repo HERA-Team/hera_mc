@@ -122,8 +122,10 @@ def test_rosetta(mcsession, capsys):
     rose.start_gpstime = Time('2019-07-15 01:00:00', scale='utc').gps
     mcsession.add(rose)
     mcsession.commit()
-    pytest.raises(ValueError, cm_partconnect.update_part_rosetta, 'SNPC000701',
-                  'heraNode0Snap701', stop_at, None, mcsession)
+    with pytest.raises(ValueError, match="Multiple rosetta relationships active"
+                       " for heraNode0Snap701"):
+        cm_partconnect.update_part_rosetta('SNPC000701', 'heraNode0Snap701',
+                                           stop_at, None, mcsession)
     # Add a test part to fail on load active
     rose = cm_partconnect.PartRosetta()
     rose.hpn = 'SNPC000701'
