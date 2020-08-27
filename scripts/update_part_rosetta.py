@@ -27,8 +27,8 @@ def query_args(args):
 
 if __name__ == '__main__':
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-p', '--hpn', help="HERA part number", default=None)
-    parser.add_argument('-s', '--syspn', help="System part number", default=None)
+    parser.add_argument('hpn', nargs='?', help="HERA part number")
+    parser.add_argument('syspn', nargs='?', help="System part number")
     parser.add_argument('-q', '--query', help="Set flag if wished to be queried",
                         action='store_true')
     cm_utils.add_date_time_args(parser)

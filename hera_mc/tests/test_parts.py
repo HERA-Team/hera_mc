@@ -103,14 +103,30 @@ def test_rosetta(mcsession, capsys):
     print(active.rosetta['SNPC000700'])
     captured = capsys.readouterr()
     assert captured.out.strip().startswith('<SNPC000700')
-    cm_partconnect.add_part_rosetta(mcsession, 'SNPC000702', 'heraNode700Snap1', at_date)
+    cm_partconnect.update_part_rosetta('SNPC000702', 'heraNode700Snap1',
+                                       at_date, session=mcsession)
     active.load_rosetta(at_date)
     assert active.rosetta['SNPC000702'].syspn == 'heraNode700Snap1'
     stop_at = Time('2020-08-01 01:00:00', scale='utc')
-    cm_partconnect.add_part_rosetta(mcsession, 'SNPC000701', 'heraNode700Snap2', at_date, stop_at)
+    cm_partconnect.update_part_rosetta('SNPC000701', 'heraNode700Snap2',
+                                       at_date, stop_at, mcsession)
     active.load_rosetta(Time('2020-07-15 01:00:00', scale='utc'))
     assert int(active.rosetta['SNPC000701'].stop_gpstime) == 1280278818
-    # Add a test part to fail
+    cm_partconnect.update_part_rosetta('SNPC000709', 'heraNode700Snap709',
+                                       stop_at, session=mcsession)
+    assert int(active.rosetta['SNPC000709'].stop_gpstime) == 1280278818
+    # Add a test part to fail on update part
+    rose = cm_partconnect.PartRosetta()
+    rose.hpn = 'SNPC000701'
+    rose.syspn = 'heraNode0Snap701'
+    rose.start_gpstime = Time('2019-07-15 01:00:00', scale='utc').gps
+    mcsession.add(rose)
+    mcsession.commit()
+    with pytest.raises(ValueError, match="Multiple rosetta relationships active"
+                       " for heraNode0Snap701"):
+        cm_partconnect.update_part_rosetta('SNPC000701', 'heraNode0Snap701',
+                                           stop_at, None, mcsession)
+    # Add a test part to fail on load active
     rose = cm_partconnect.PartRosetta()
     rose.hpn = 'SNPC000701'
     rose.syspn = 'heraNode700Snap700'
@@ -118,6 +134,18 @@ def test_rosetta(mcsession, capsys):
     mcsession.add(rose)
     mcsession.commit()
     pytest.raises(ValueError, active.load_rosetta)
+    rose2 = cm_partconnect.PartRosetta()
+    rose2.hpn = 'SNPC000712'
+    rose2.syspn = 'heraNode712Snap712'
+    rose2.start_gpstime = Time('2019-07-01 01:00:00', scale='utc').gps
+    rose2.stop_gpstime = Time('2020-08-01 01:00:00', scale='utc').gps
+    mcsession.add(rose2)
+    mcsession.commit()
+    with pytest.warns(UserWarning,
+                      match="No action taken.  <SNPC000712  -  heraNode712Snap712 ::"
+                      " 1245978018 - 1280278818> already has a valid stop date"):
+        cm_partconnect.update_part_rosetta('SNPC000712', 'heraNode712Snap712',
+                                           '2020/01/02', session=mcsession)
 
 
 def test_update_part(parts, capsys):

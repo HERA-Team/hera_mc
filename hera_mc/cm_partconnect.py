@@ -47,38 +47,64 @@ class PartRosetta(MCDeclarativeBase):
                 '{self.stop_gpstime}>'.format(self=self))
 
 
-def add_part_rosetta(session, hpn, syspn, start_date, stop_date=None):
+def update_part_rosetta(hpn, syspn, at_date, date2=None, session=None):
     """
-    Add part information into database.
+    Update rosetta relationship in part_rosetta table.
+
+    If hpn <-> syspn relationship is active, will close it at at_date.
+    If hpn <-> syspn relationship is NOT active, it will start it at at_date.
+    If date2 is None, at_date is used as either start or stop, as appropriate.
+    Note that hpn is cast to upper, but syspn is not modified.
 
     Parameters
     ----------
-    session : object
-        Database session to use.  If None, it will start a new session, then close.
     hpn : str
         HERA part number
     syspn : str
         System part number
-    start_date : any format that cm_utils.get_astropytime understands
-        Date to use for the start
-    stop_date : any format that cm_utils.get_astropytime understands
-        Date to use for the stop
+    at_date : any format that cm_utils.get_astropytime understands
+        Date to use for action: start for new is relationship not active, else stop.
+    date2 : any format that cm_utils.get_astropytime understands
+        If not None, use for stop
+    session : object
+        Database session to use.  If None, it will start a new session, then close.
     """
+    hpn = hpn.upper()
+    at_date = int(cm_utils.get_astropytime(at_date).gps)
+    if date2 is not None:
+        date2 = int(cm_utils.get_astropytime(date2).gps)
+
     close_session_when_done = False
     if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
 
-    rose = PartRosetta()
-    rose.hpn = hpn
-    rose.syspn = syspn
-    rose.start_gpstime = int(cm_utils.get_astropytime(start_date).gps)
-    if stop_date is None:
-        rose.stop_gpstime = None
+    old_rose = None
+    ctr = 0
+    for trial in session.query(PartRosetta).filter(
+            (func.upper(PartRosetta.syspn) == syspn.upper())):
+        if cm_utils.is_active(at_date, trial.start_gpstime, trial.stop_gpstime):
+            ctr += 1
+            old_rose = trial
+    if ctr > 1:
+        raise ValueError("Multiple rosetta relationships active for {}".format(syspn))
+    if old_rose is None:
+        new_rose = PartRosetta()
+        new_rose.hpn = hpn
+        new_rose.syspn = syspn
+        new_rose.start_gpstime = at_date
+        new_rose.stop_gpstime = date2
+        session.add(new_rose)
     else:
-        rose.stop_gpstime = int(cm_utils.get_astropytime(stop_date).gps)
-    session.add(rose)
+        if old_rose.stop_gpstime is None:
+            old_rose.stop_gpstime = at_date
+            session.add(old_rose)
+        else:
+            import warnings
+            warnings.warn('No action taken.  {} already has a valid stop date'
+                          .format(old_rose))
+
     session.commit()
     if close_session_when_done:  # pragma: no cover
         session.close()
