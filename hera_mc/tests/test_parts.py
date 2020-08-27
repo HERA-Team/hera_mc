@@ -139,7 +139,9 @@ def test_rosetta(mcsession, capsys):
     rose2.stop_gpstime = Time('2020-08-01 01:00:00', scale='utc').gps
     mcsession.add(rose2)
     mcsession.commit()
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning,
+                      match="No action taken.  <SNPC000712  -  heraNode712Snap712 ::"
+                      " 1245978018 - 1280278818> already has a valid stop date"):
         cm_partconnect.update_part_rosetta('SNPC000712', 'heraNode712Snap712',
                                            '2020/01/02', session=mcsession)
 
