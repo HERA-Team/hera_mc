@@ -5,6 +5,25 @@
 """Define package structure."""
 
 import numpy as np
+from setuptools_scm import get_version
+from pathlib import Path
+from pkg_resources import get_distribution, DistributionNotFound
+
+from .branch_scheme import branch_scheme
+
+try:  # pragma: nocover
+    # get accurate version for developer installs
+    version_str = get_version(Path(__file__).parent.parent, local_scheme=branch_scheme)
+
+    __version__ = version_str
+
+except (LookupError, ImportError):
+    try:
+        # Set the version automatically from the package details.
+        __version__ = get_distribution(__name__).version
+    except DistributionNotFound:  # pragma: nocover
+        # package is not installed
+        pass
 
 # Before we can do anything else, we need to initialize some core, shared
 # variables.
@@ -93,7 +112,6 @@ def NotNull(kind, **kwargs):
     return Column(kind, nullable=False, **kwargs)
 
 
-from . import version  # noqa
 from . import autocorrelations  # noqa
 from . import cm_transfer  # noqa
 from . import cm_dossier  # noqa
@@ -114,5 +132,3 @@ from . import rtp  # noqa
 from . import qm  # noqa
 from . import weather  # noqa
 from . import mc    # noqa keep this last.
-
-__version__ = version.version

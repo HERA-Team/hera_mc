@@ -31,6 +31,7 @@ The dependencies are:
 - cartopy
 - pyyaml
 - redis-py
+- setuptools_scm
 
 All the dependencies should be available via conda.
 
