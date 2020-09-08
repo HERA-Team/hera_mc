@@ -111,7 +111,7 @@ All parts and connections are timed in that they have a start and stop time of o
 
 Parts are hooked together via connections of their ports, as defined in the connection table.   For the supporting code, architecture dependent parameters are set in the {\tt cm\_sysdef} module.
 
-To capture antenna status, an {\em a priori} antenna status table has been defined to facilitate a work flow to incorporate new antennas into the array and capture and known recalcitrant antennas.  The table provides an enumerated status for each antenna station.
+To capture the known readiness of antennas, an {\em a priori} antenna table has been defined to facilitate a work flow to incorporate new antennas into the array and capture and known recalcitrant antennas.  The table provides an enumerated readiness level for each antenna station.
 
 
 \subsection{Operation Workflow}
@@ -563,17 +563,31 @@ Antenna status information from the SNAP (reported via the correlator redis DB).
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
 \textbf{antenna\_number} & int & antenna number \\ \hline
+\textbf{antenna\_feed\_pol} & string & antenna feed polarization, either `e' or `n'. \\ \hline
 snap\_hostname & string & SNAP hostname \\ \hline
 snap\_channel\_number & int & SNAP ADC channel number (0-7) to which this antenna is connected. \\ \hline
 adc\_mean & float & mean ADC value, in ADC units (raw ADC integer values between -128 and +127). Typically $\sim$ -0.5. \\ \hline
 adc\_rms & float & RMS ADC value, in ADC units (raw ADC integer values between -128 and +127).  Should be $\sim$ 10-20. \\ \hline
 adc\_power & float & mean ADC power, in ADC units squared (raw ADC integer values between -128 and +127, squared). Since mean should be close to zero, this should just be $\text{adc\_rms}^2$. \\ \hline
 pam\_atten & int & PAM attenuation setting for this antenna, in dB \\ \hline
-pam\_power & int & PAM power sensor reading for this antenna, in dBm \\ \hline
-psu\_alert & bool & true if SNAP PSU (aka PMB) controllers have issued an alert, false otherwise. \\ \hline
+pam\_power & float & PAM power sensor reading for this antenna pol, in dBm. \\ \hline
+pam\_voltage & float & PAM voltage sensor reading for this antenna pol, in Volts. \\ \hline
+pam\_current & float & PAM current sensor reading for this antenna pol, in Amps. \\ \hline
+pam\_id & string & Serial number of the PAM for this antenna pol. \\ \hline
+fem\_voltage & float & FEM voltage sensor reading for this antenna pol, in Volts. \\ \hline
+fem\_current & float & FEM current sensor reading for this antenna pol, in Amps. \\ \hline
+fem\_id & string & Serial number of the FEM for this antenna pol. \\ \hline
+fem\_switch & string & Switch state the FEM, one of `antenna', `load' or `noise'. \\ \hline
+fem\_lna\_power & boolean & Power state of the FEM, `True' means it is powered. \\ \hline
+fem\_imu\_theta & float & IMU-reported theta, in degrees. \\ \hline
+fem\_imu\_phi & float & IMU-reported phi, in degrees. \\ \hline
+fem\_temp & float & EM temperature sensor reading for this FEM in degrees Celcius. \\ \hline
+fft\_overflow & boolean & Indicator of an FFT overflow for this antenna pol, set to `True' if there was an overflow. \\ \hline
 eq\_coeffs & string & digital EQ coefficients for this antenna, used for keeping the bit occupancy in the
             correct range. list of floats (one per freq. channel) represented as a string. Note this these are
             not divided out anywhere in the DSP chain (!). \\\hline
+histogram\_bin\_centers & string & ADC histogram bin centers, list of ints stored as a string. \\ \hline
+histogram\_bin\_counts & string & ADC histogram bin counts, list of ints stored as a string. \\ \hline
 \end{tabular}
 \end{center}
 
