@@ -5,20 +5,14 @@
 
 """Module setup."""
 
-import os
 import glob
 import io
-import json
 import sys
 from setuptools import setup
 
+# add hera_mc to our path in order to use the branch_scheme function
 sys.path.append('hera_mc')
-import version  # noqa
-
-
-data = [version.git_origin, version.git_hash, version.git_description, version.git_branch]
-with open(os.path.join('hera_mc', 'GIT_INFO'), 'w') as outfile:
-    json.dump(data, outfile)
+from branch_scheme import branch_scheme  # noqa
 
 with io.open('README.md', 'r', encoding='utf-8') as readme_file:
     readme = readme_file.read()
@@ -31,13 +25,13 @@ setup_args = {
     'license': "BSD",
     'author': "HERA Team",
     'author_email': "hera-sw@lists.berkeley.edu",
-    'version': version.version,
+    "use_scm_version": {"local_scheme": branch_scheme},
     'packages': ['hera_mc', 'hera_mc.tests'],
     'scripts': glob.glob('scripts/*'),
     'include_package_data': True,
     'install_requires': ["numpy", "astropy", "sqlalchemy", "psycopg2",
                          "alembic", "python-dateutil", "tabulate", "pandas",
-                         "psutil", "cartopy", "pyyaml", "redis"],
+                         "psutil", "cartopy", "pyyaml", "redis", "setuptools_scm"],
     'tests_require': ["pyyaml"],
     'classifiers': ["Development Status :: 4 - Beta",
                     "Environment :: Console",
