@@ -245,16 +245,16 @@ Common table structure for server status info. \textbf{Note: There is no table n
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
  \textbf{hostname} & string &  name of server \\ \hline
  \textbf{mc\_time} & long & time report received by \mc\ in floor(gps seconds) \\ \hline
- ip\_address & string & IP address of server (how should we handle multiples?) \\\hline
-mc\_system\_timediff & float & difference between \mc\ time and time report sent by server in seconds \\\hline
-num\_cores & integer & number of cores on server \\\hline
-cpu\_load\_pct & float & CPU load percent = total load / num\_cores, 5 min average  \\\hline
-uptime\_days & float & server uptime in days  \\\hline
-memory\_used\_pct & float & percent of memory used, 5 min average  \\\hline
-memory\_size\_gb & float & amount of memory on server in GB \\\hline
-disk\_space\_pct & float & percent of disk used  \\\hline
-disk\_size\_gb & float & amount of disk space on server in GB \\\hline
-network\_bandwidth\_mps & float & Network bandwidth in MB/s, 5 min average. Can be null \\\hline
+ ip\_address* & string & IP address of server (how should we handle multiples?) \\\hline
+mc\_system\_timediff* & float & difference between \mc\ time and time report sent by server in seconds \\\hline
+num\_cores* & integer & number of cores on server \\\hline
+cpu\_load\_pct* & float & CPU load percent = total load / num\_cores, 5 min average  \\\hline
+uptime\_days* & float & server uptime in days  \\\hline
+memory\_used\_pct* & float & percent of memory used, 5 min average  \\\hline
+memory\_size\_gb* & float & amount of memory on server in GB \\\hline
+disk\_space\_pct* & float & percent of disk used  \\\hline
+disk\_size\_gb* & float & amount of disk space on server in GB \\\hline
+network\_bandwidth\_mps* & float & Network bandwidth in MB/s, 5 min average. Can be null \\\hline
 \end{tabular}
 \end{center}
 
@@ -265,11 +265,11 @@ Subsystem errors/issues
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{id} & long & auto-incrementing error id\\ \hline
-time & long & error report time in floor(gps seconds)\\ \hline
-subsystem & string & name subsystem with error (e.g. `librarian', `rtp')\\ \hline
-mc\_time & long & time report received by \mc\ in floor(gps seconds) \\ \hline
-severity & int & integer indicating severity level, 1 is most severe \\ \hline
-log & text & TBD on format, either a message or a file with the log \\ \hline
+time* & long & error report time in floor(gps seconds)\\ \hline
+subsystem* & string & name subsystem with error (e.g. `librarian', `rtp')\\ \hline
+mc\_time* & long & time report received by \mc\ in floor(gps seconds) \\ \hline
+severity* & int & integer indicating severity level, 1 is most severe \\ \hline
+log* & text & TBD on format, either a message or a file with the log \\ \hline
 \end{tabular}
 \end{center}
 
@@ -301,10 +301,10 @@ High level RTP status
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
-status & string & status string, options TBD (might become an enum) \\\hline
-event\_min\_elapsed & float & minutes elapsed since last event \\\hline
-num\_processes & integer & Number of processes running  \\\hline
-restart\_hours\_elapsed & float & hours elapsed since last restart \\\hline
+status* & string & status string, options TBD (might become an enum) \\\hline
+event\_min\_elapsed* & float & minutes elapsed since last event \\\hline
+num\_processes* & integer & Number of processes running  \\\hline
+restart\_hours\_elapsed* & float & hours elapsed since last restart \\\hline
 \end{tabular}
 \end{center}
 
@@ -316,7 +316,7 @@ RTP Processing events (per obsid)
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & event time in floor(gps seconds) \\ \hline
 \textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
-event & string & one of: queued, started, finished, error  \\\hline
+event* & string & one of: queued, started, finished, error  \\\hline
 \end{tabular}
 \end{center}
 
@@ -328,9 +328,15 @@ RTP record of processed obsids (entry added when processing finished)
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & record time in floor(gps seconds)\\ \hline
 \textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
-pipeline\_list & text & concatenated list of tasks  \\\hline
-git\_version & string & git version of RTP code  \\\hline
-git\_hash & string & git hash of RTP code  \\\hline
+pipeline\_list* & text & concatenated list of tasks  \\\hline
+rtp\_git\_version* & string & git version of RTP code  \\\hline
+rtp\_git\_hash* & string & git hash of RTP code  \\\hline
+hera\_qm\_git\_version* & string & git version of hera\_qm code  \\\hline
+hera\_qm\_git\_hash* & string & git hash of hera\_qm code  \\\hline
+hera\_cal\_git\_version* & string & git version of hera\_cal code  \\\hline
+hera\_cal\_git\_hash* & string & git hash of hera\_cal code  \\\hline
+pyuvdata\_git\_version* & string & git version of pyuvdata code  \\\hline
+pyuvdata\_git\_hash* & string & git hash of pyuvdata code  \\\hline
 \end{tabular}
 \end{center}
 
@@ -342,10 +348,10 @@ RTP record of start and stop times for a task (e.g., omnical) for an obsid, as w
  column & type & description \\ [0.5ex] \hline\hline
 \textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
 \textbf{task\_name} & string & name of specific task (e.g., \verb+OMNICAL+) \\ \hline
-start\_time & long & start time of task in floor(gps seconds) \\ \hline
-stop\_time & long & stop time of task in floor(gps seconds) \\ \hline
-max\_mem & float & maximum memory, in MB, consumed by the task; nullable column \\ \hline
-avg\_cpu\_load & float & average CPU load, in number of CPUs, for task (e.g., 2.00 means 2 CPUs used); nullable column \\ \hline
+start\_time* & long & start time of task in floor(gps seconds) \\ \hline
+stop\_time* & long & stop time of task in floor(gps seconds) \\ \hline
+max\_mem* & float & maximum memory, in MB, consumed by the task; nullable column \\ \hline
+avg\_cpu\_load* & float & average CPU load, in number of CPUs, for task (e.g., 2.00 means 2 CPUs used); nullable column \\ \hline
 \end{tabular}
 \end{center}
 
@@ -738,7 +744,7 @@ List and descriptions of metrics used in antenna or array metrics.
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{metric} & string & name of metric \\ \hline
-desc & string & description of metric \\ \hline
+desc* & string & description of metric \\ \hline
 \end{tabular}
 \end{center}
 
@@ -755,8 +761,8 @@ will flag individual antennas as bad.
 \textbf{ant} & integer & antenna number ($\geq$ 0) \\ \hline
 \textbf{pol} & string & polarization, `x' or `y' \\ \hline
 \textbf{\textit{metric}} & string & name of metric, foreign key into metric\_list table. \\ \hline
-mc\_time & long integer & time report received by \mc\ in floor(gps seconds) \\ \hline
-val & double & value of metric \\ \hline
+mc\_time* & long integer & time report received by \mc\ in floor(gps seconds) \\ \hline
+val* & double & value of metric \\ \hline
 \end{tabular}
 \end{center}
 
@@ -772,7 +778,7 @@ generates an overall decision whether the firstcal solutions were ``good''.
 \textbf{\textit{obsid}} & long integer & observation identifier, foreign key into hera\_obs table. \\ \hline
 \textbf{\textit{metric}} & string & name of metric, foreign key into metric\_list table. \\ \hline
 mc\_time & long integer & time report received by \mc\ in floor(gps seconds) \\ \hline
-val & double & value of metric \\ \hline
+val* & double & value of metric \\ \hline
 \end{tabular}
 \end{center}
 
@@ -790,7 +796,7 @@ Weather data from KAT sensors
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
 \textbf{variable} & string & name of weather variable (e.g. wind\_speed,  wind\_direction, temperature) \\ \hline
-value & float & value of the variable at this time \\\hline
+value* & float & value of the variable at this time \\\hline
 \end{tabular}
 \end{center}
 
