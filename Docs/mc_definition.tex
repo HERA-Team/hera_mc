@@ -111,7 +111,7 @@ All parts and connections are timed in that they have a start and stop time of o
 
 Parts are hooked together via connections of their ports, as defined in the connection table.   For the supporting code, architecture dependent parameters are set in the {\tt cm\_sysdef} module.
 
-To capture antenna status, an {\em a priori} antenna status table has been defined to facilitate a work flow to incorporate new antennas into the array and capture and known recalcitrant antennas.  The table provides an enumerated status for each antenna station.
+To capture the known readiness of antennas, an {\em a priori} antenna table has been defined to facilitate a work flow to incorporate new antennas into the array and capture and known recalcitrant antennas.  The table provides an enumerated readiness level for each antenna station.
 
 
 \subsection{Operation Workflow}
@@ -245,16 +245,16 @@ Common table structure for server status info. \textbf{Note: There is no table n
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
  \textbf{hostname} & string &  name of server \\ \hline
  \textbf{mc\_time} & long & time report received by \mc\ in floor(gps seconds) \\ \hline
- ip\_address & string & IP address of server (how should we handle multiples?) \\\hline
-mc\_system\_timediff & float & difference between \mc\ time and time report sent by server in seconds \\\hline
-num\_cores & integer & number of cores on server \\\hline
-cpu\_load\_pct & float & CPU load percent = total load / num\_cores, 5 min average  \\\hline
-uptime\_days & float & server uptime in days  \\\hline
-memory\_used\_pct & float & percent of memory used, 5 min average  \\\hline
-memory\_size\_gb & float & amount of memory on server in GB \\\hline
-disk\_space\_pct & float & percent of disk used  \\\hline
-disk\_size\_gb & float & amount of disk space on server in GB \\\hline
-network\_bandwidth\_mps & float & Network bandwidth in MB/s, 5 min average. Can be null \\\hline
+ ip\_address* & string & IP address of server (how should we handle multiples?) \\\hline
+mc\_system\_timediff* & float & difference between \mc\ time and time report sent by server in seconds \\\hline
+num\_cores* & integer & number of cores on server \\\hline
+cpu\_load\_pct* & float & CPU load percent = total load / num\_cores, 5 min average  \\\hline
+uptime\_days* & float & server uptime in days  \\\hline
+memory\_used\_pct* & float & percent of memory used, 5 min average  \\\hline
+memory\_size\_gb* & float & amount of memory on server in GB \\\hline
+disk\_space\_pct* & float & percent of disk used  \\\hline
+disk\_size\_gb* & float & amount of disk space on server in GB \\\hline
+network\_bandwidth\_mps* & float & Network bandwidth in MB/s, 5 min average. Can be null \\\hline
 \end{tabular}
 \end{center}
 
@@ -265,11 +265,11 @@ Subsystem errors/issues
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{id} & long & auto-incrementing error id\\ \hline
-time & long & error report time in floor(gps seconds)\\ \hline
-subsystem & string & name subsystem with error (e.g. `librarian', `rtp')\\ \hline
-mc\_time & long & time report received by \mc\ in floor(gps seconds) \\ \hline
-severity & int & integer indicating severity level, 1 is most severe \\ \hline
-log & text & TBD on format, either a message or a file with the log \\ \hline
+time* & long & error report time in floor(gps seconds)\\ \hline
+subsystem* & string & name subsystem with error (e.g. `librarian', `rtp')\\ \hline
+mc\_time* & long & time report received by \mc\ in floor(gps seconds) \\ \hline
+severity* & int & integer indicating severity level, 1 is most severe \\ \hline
+log* & text & TBD on format, either a message or a file with the log \\ \hline
 \end{tabular}
 \end{center}
 
@@ -283,8 +283,8 @@ Status of \mc\ daemons that monitor various subsystems.
 \textbf{name} & string & daemon name\\ \hline
 \textbf{hostname} & string & hostname where daemon is running (the same daemon can run on multiple hosts)\\ \hline
 \textbf{jd} & integer & Julian Date. This allows for some history without keeping all history.\\ \hline
-time & long & most recent status report time in floor(gps seconds)\\ \hline
-status & string & most recent daemon status. One of `good' or `errored'\\ \hline
+time* & long & most recent status report time in floor(gps seconds)\\ \hline
+status* & string & most recent daemon status. One of `good' or `errored'\\ \hline
 \end{tabular}
 \end{center}
 
@@ -301,10 +301,10 @@ High level RTP status
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
-status & string & status string, options TBD (might become an enum) \\\hline
-event\_min\_elapsed & float & minutes elapsed since last event \\\hline
-num\_processes & integer & Number of processes running  \\\hline
-restart\_hours\_elapsed & float & hours elapsed since last restart \\\hline
+status* & string & status string, options TBD (might become an enum) \\\hline
+event\_min\_elapsed* & float & minutes elapsed since last event \\\hline
+num\_processes* & integer & Number of processes running  \\\hline
+restart\_hours\_elapsed* & float & hours elapsed since last restart \\\hline
 \end{tabular}
 \end{center}
 
@@ -316,7 +316,7 @@ RTP Processing events (per obsid)
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & event time in floor(gps seconds) \\ \hline
 \textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
-event & string & one of: queued, started, finished, error  \\\hline
+event* & string & one of: queued, started, finished, error  \\\hline
 \end{tabular}
 \end{center}
 
@@ -328,9 +328,15 @@ RTP record of processed obsids (entry added when processing finished)
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & record time in floor(gps seconds)\\ \hline
 \textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
-pipeline\_list & text & concatenated list of tasks  \\\hline
-git\_version & string & git version of RTP code  \\\hline
-git\_hash & string & git hash of RTP code  \\\hline
+pipeline\_list* & text & concatenated list of tasks  \\\hline
+rtp\_git\_version* & string & git version of RTP code  \\\hline
+rtp\_git\_hash* & string & git hash of RTP code  \\\hline
+hera\_qm\_git\_version* & string & git version of hera\_qm code  \\\hline
+hera\_qm\_git\_hash* & string & git hash of hera\_qm code  \\\hline
+hera\_cal\_git\_version* & string & git version of hera\_cal code  \\\hline
+hera\_cal\_git\_hash* & string & git hash of hera\_cal code  \\\hline
+pyuvdata\_git\_version* & string & git version of pyuvdata code  \\\hline
+pyuvdata\_git\_hash* & string & git hash of pyuvdata code  \\\hline
 \end{tabular}
 \end{center}
 
@@ -342,10 +348,10 @@ RTP record of start and stop times for a task (e.g., omnical) for an obsid, as w
  column & type & description \\ [0.5ex] \hline\hline
 \textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
 \textbf{task\_name} & string & name of specific task (e.g., \verb+OMNICAL+) \\ \hline
-start\_time & long & start time of task in floor(gps seconds) \\ \hline
-stop\_time & long & stop time of task in floor(gps seconds) \\ \hline
-max\_mem & float & maximum memory, in MB, consumed by the task; nullable column \\ \hline
-avg\_cpu\_load & float & average CPU load, in number of CPUs, for task (e.g., 2.00 means 2 CPUs used); nullable column \\ \hline
+start\_time* & long & start time of task in floor(gps seconds) \\ \hline
+stop\_time* & long & stop time of task in floor(gps seconds) \\ \hline
+max\_mem* & float & maximum memory, in MB, consumed by the task; nullable column \\ \hline
+avg\_cpu\_load* & float & average CPU load, in number of CPUs, for task (e.g., 2.00 means 2 CPUs used); nullable column \\ \hline
 \end{tabular}
 \end{center}
 
@@ -364,13 +370,13 @@ High level Librarian status
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds) \\ \hline
-num\_files & long & total number of files in librarian  \\\hline
-data\_volume\_gb & float & total data volume in gigabytes  \\\hline
-free\_space\_gb & float & available space in gigabytes  \\\hline
-upload\_min\_elapsed & float & minutes elapsed since last file upload \\\hline
-num\_processes & integer & number of running background tasks  \\\hline
-git\_version & string & git version of Librarian code  \\\hline
-git\_hash & string & git hash of Librarian code  \\\hline
+num\_files* & long & total number of files in librarian  \\\hline
+data\_volume\_gb* & float & total data volume in gigabytes  \\\hline
+free\_space\_gb* & float & available space in gigabytes  \\\hline
+upload\_min\_elapsed* & float & minutes elapsed since last file upload \\\hline
+num\_processes* & integer & number of running background tasks  \\\hline
+git\_version* & string & git version of Librarian code  \\\hline
+git\_hash* & string & git hash of Librarian code  \\\hline
 \end{tabular}
 \end{center}
 
@@ -382,8 +388,8 @@ RAID controller status
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds) \\ \hline
 \textbf{hostname} & string & name of RAID server \\ \hline
-num\_disks & int & number of disks in RAID server  \\\hline
-info & text & TBD -- various info from megaraid controller, may be several columns \\\hline
+num\_disks* & int & number of disks in RAID server  \\\hline
+info* & text & TBD -- various info from megaraid controller, may be several columns \\\hline
 \end{tabular}
 \end{center}
 
@@ -394,10 +400,10 @@ RAID controller errors/issues
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{id} & long & auto-incrementing error id\\ \hline
-time & long & error report time in floor(gps seconds)\\ \hline
-hostname & string & name of RAID server with error \\ \hline
-disk & string & name of disk with error \\ \hline
-log & text & TBD on format, either a message or a file with the log \\\hline
+time* & long & error report time in floor(gps seconds)\\ \hline
+hostname* & string & name of RAID server with error \\ \hline
+disk* & string & name of disk with error \\ \hline
+log* & text & TBD on format, either a message or a file with the log \\\hline
 \end{tabular}
 \end{center}
 
@@ -409,9 +415,9 @@ Network bandwidth/health to all remote librarians
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
 \textbf{remote\_name} & string & name of remote librarian \\ \hline
-ping\_time & float & ping time in seconds \\\hline
-num\_file\_uploads & int & number of files uploaded in last 15 minutes  \\\hline
-bandwidth\_mps & float & bandwidth to remote in Mb/s, 15 minute average \\\hline
+ping\_time* & float & ping time in seconds \\\hline
+num\_file\_uploads* & int & number of files uploaded in last 15 minutes  \\\hline
+bandwidth\_mps* & float & bandwidth to remote in Mb/s, 15 minute average \\\hline
 \end{tabular}
 \end{center}
 
@@ -423,8 +429,8 @@ File creation log
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{filename} & string & name of file created \\ \hline
 \textit{obsid} & long integer & observation identifier, foreign key into hera\_obs table. Can be null. \\ \hline
-time & long & file creation time in floor(gps seconds)\\ \hline
-size\_gb & float & file size in gigabytes \\ \hline
+time* & long & file creation time in floor(gps seconds)\\ \hline
+size\_gb* & float & file size in gigabytes \\ \hline
 \end{tabular}
 \end{center}
 
@@ -443,7 +449,7 @@ List of correlator config files, which specify detailed correlator settings. All
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{config\_hash} & string & unique hash for the config\\ \hline
-filename & string & name of the config file in the Librarian \\\hline
+filename* & string & name of the config file in the Librarian \\\hline
 \end{tabular}
 \end{center}
 
@@ -467,7 +473,7 @@ State of control knobs in correlator.
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & time of the control state in floor(gps seconds)\\ \hline
 \textbf{state\_type} & string & type of control state, one of: `taking\_data', `phase\_switching',  `noise\_diode'.  \\ \hline
-state & boolean & indicator of whether the state\_type is true or false \\\hline
+state* & boolean & indicator of whether the state\_type is true or false \\\hline
 \end{tabular}
 \end{center}
 
@@ -490,12 +496,12 @@ Records the arguments passed to the correlator `take\_data` command.
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{\textit{time}} & long & time the command was sent in floor(gps seconds), foreign key into correlator\_control\_command table\\ \hline
 \textbf{\textit{command}} & string & command sent, always `take\_data', foreign key into correlator\_control\_command table.  \\ \hline
-starttime\_sec & long & time to start taking data in floor(gps seconds) \\\hline
-starttime\_ms & integer & milliseconds to add to starttime\_sec to set correlator start time\\\hline
-duration & float & duration to take data for in seconds. After this time, the correlator will stop recording\\\hline
-acclen\_spectra & integer & accumulation length in spectra\\\hline
-integration\_time & float & accumulation length in seconds, converted from acclen\_spectra (the conversion is non-trivial and depends on the correlator settings)\\\hline
-tag & string & tag which will end up in data files as a header entry, one of: `engineering', `science'.\\\hline
+starttime*\_sec & long & time to start taking data in floor(gps seconds) \\\hline
+starttime\_ms* & integer & milliseconds to add to starttime\_sec to set correlator start time\\\hline
+duration* & float & duration to take data for in seconds. After this time, the correlator will stop recording\\\hline
+acclen\_spectra* & integer & accumulation length in spectra\\\hline
+integration\_time* & float & accumulation length in seconds, converted from acclen\_spectra (the conversion is non-trivial and depends on the correlator settings)\\\hline
+tag* & string & tag which will end up in data files as a header entry, one of: `engineering', `science'.\\\hline
 \end{tabular}
 \end{center}
 
@@ -507,7 +513,7 @@ Records the config passed to the correlator `update\_config` command.
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{\textit{time}} & long & time the command was sent in floor(gps seconds), foreign key into correlator\_control\_command table\\ \hline
 \textbf{\textit{command}} & string & command sent, always `update\_config', foreign key into correlator\_control\_command table.  \\ \hline
-\textit{config\_hash} & string & hash for the config to use, foreign key into correlator\_config\_file table.\\ \hline
+\textit{config\_hash}* & string & hash for the config to use, foreign key into correlator\_config\_file table.\\ \hline
 \end{tabular}
 \end{center}
 
@@ -519,7 +525,7 @@ Software version numbers for correlator software packages and scripts.
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & time of the version report in floor(gps seconds)\\ \hline
 \textbf{package} & string & name of the correlator software module or $\langle$package$\rangle$:$\langle$script$\rangle$ for daemonized processes (e.g. `hera\_corr\_cm', `udpSender:hera\_node\_keep\_alive.py').  \\ \hline
-version & string & version string for this package or script \\\hline
+version* & string & version string for this package or script \\\hline
 \end{tabular}
 \end{center}
 
@@ -530,9 +536,9 @@ SNAP initialization configuration and software versions.
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{init\_time} & long & time when the SNAPs were last initialized with the `hera\_snap\_feng\_init.py' script in floor(gps seconds)\\ \hline
-version & string & version string for the hera\_corr\_f package \\\hline
-init\_args & string & arguments passed to the initialization script at runtime \\\hline
-config\_hash & string & unique hash for the config, foreign key into correlator\_config\_file table \\\hline
+version* & string & version string for the hera\_corr\_f package \\\hline
+init\_args* & string & arguments passed to the initialization script at runtime \\\hline
+\textit{config\_hash}* & string & unique hash for the config, foreign key into correlator\_config\_file table \\\hline
 \end{tabular}
 \end{center}
 
@@ -558,24 +564,53 @@ last\_programmed\_time & long & last time this FPGA was programmed in floor(gps 
 \subsubsection{antenna\_status}
 Antenna status information from the SNAP (reported via the correlator redis DB).
 \begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
 \textbf{antenna\_number} & int & antenna number \\ \hline
+\textbf{antenna\_feed\_pol} & string & antenna feed polarization, either `e' or `n'. \\ \hline
 snap\_hostname & string & SNAP hostname \\ \hline
 snap\_channel\_number & int & SNAP ADC channel number (0-7) to which this antenna is connected. \\ \hline
 adc\_mean & float & mean ADC value, in ADC units (raw ADC integer values between -128 and +127). Typically $\sim$ -0.5. \\ \hline
 adc\_rms & float & RMS ADC value, in ADC units (raw ADC integer values between -128 and +127).  Should be $\sim$ 10-20. \\ \hline
 adc\_power & float & mean ADC power, in ADC units squared (raw ADC integer values between -128 and +127, squared). Since mean should be close to zero, this should just be $\text{adc\_rms}^2$. \\ \hline
 pam\_atten & int & PAM attenuation setting for this antenna, in dB \\ \hline
-pam\_power & int & PAM power sensor reading for this antenna, in dBm \\ \hline
-psu\_alert & bool & true if SNAP PSU (aka PMB) controllers have issued an alert, false otherwise. \\ \hline
+pam\_power & float & PAM power sensor reading for this antenna pol, in dBm. \\ \hline
+pam\_voltage & float & PAM voltage sensor reading for this antenna pol, in Volts. \\ \hline
+pam\_current & float & PAM current sensor reading for this antenna pol, in Amps. \\ \hline
+pam\_id & string & Serial number of the PAM for this antenna pol. \\ \hline
+fem\_voltage & float & FEM voltage sensor reading for this antenna pol, in Volts. \\ \hline
+fem\_current & float & FEM current sensor reading for this antenna pol, in Amps. \\ \hline
+fem\_id & string & Serial number of the FEM for this antenna pol. \\ \hline
+fem\_switch & string & Switch state the FEM, one of `antenna', `load' or `noise'. \\ \hline
+fem\_lna\_power & boolean & Power state of the FEM, `True' means it is powered. \\ \hline
+fem\_imu\_theta & float & IMU-reported theta, in degrees. \\ \hline
+fem\_imu\_phi & float & IMU-reported phi, in degrees. \\ \hline
+fem\_temp & float & EM temperature sensor reading for this FEM in degrees Celcius. \\ \hline
+fft\_overflow & boolean & Indicator of an FFT overflow for this antenna pol, set to `True' if there was an overflow. \\ \hline
 eq\_coeffs & string & digital EQ coefficients for this antenna, used for keeping the bit occupancy in the
             correct range. list of floats (one per freq. channel) represented as a string. Note this these are
             not divided out anywhere in the DSP chain (!). \\\hline
+histogram\_bin\_centers & string & ADC histogram bin centers, list of ints stored as a string. \\ \hline
+histogram\_bin\_counts & string & ADC histogram bin counts, list of ints stored as a string. \\ \hline
 \end{tabular}
 \end{center}
+
+\subsubsection{hera\_autos}
+Antenna autocorrelation statistics (currently just the median over the frequency axis).
+\begin{center}
+\begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{time} & long & status time in floor(gps seconds)\\ \hline
+\textbf{antenna\_number} & int & antenna number \\ \hline
+\textbf{antenna\_feed\_pol} & string & antenna feed polarization, either `e' or `n'. \\ \hline
+measurement\_type* & string & Currently can only be `median'. \\ \hline
+value* & float & Measured value. \\ \hline
+\end{tabular}
+\end{center}
+
 
 \subsubsection{node\_sensor}
 Node temperature and humidity sensor readings
@@ -601,13 +636,13 @@ Power status for SNAPs, FEMs and PAMs (monitored by nodes)
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & measurement time in floor(gps seconds)\\ \hline
 \textbf{node} & int & integer identifying the node \\ \hline
-snap\_relay\_powered & bool & power status of the snap relay, True = powered \\\hline
-snap0\_powered & bool & power status of the SNAP 0 board, True = powered \\\hline
-snap1\_powered & bool & power status of the SNAP 1 board, True = powered \\\hline
-snap2\_powered & bool & power status of the SNAP 2 board, True = powered \\\hline
-snap3\_powered & bool & power status of the SNAP 3 board, True = powered \\\hline
-fem\_powered & bool & power status of the FEM, True = powered \\\hline
-pam\_powered & bool & power status of the PAM, True = powered \\\hline
+snap\_relay\_powered* & bool & power status of the snap relay, True = powered \\\hline
+snap0\_powered* & bool & power status of the SNAP 0 board, True = powered \\\hline
+snap1\_powered* & bool & power status of the SNAP 1 board, True = powered \\\hline
+snap2\_powered* & bool & power status of the SNAP 2 board, True = powered \\\hline
+snap3\_powered* & bool & power status of the SNAP 3 board, True = powered \\\hline
+fem\_powered* & bool & power status of the FEM, True = powered \\\hline
+pam\_powered* & bool & power status of the PAM, True = powered \\\hline
 \end{tabular}
 \end{center}
 
@@ -620,7 +655,61 @@ Commands issued to change the power status for SNAPs, FEMs and PAMs (via the nod
 \textbf{time} & long & time the command was sent in floor(gps seconds)\\ \hline
 \textbf{node} & int & integer identifying the node commanded \\ \hline
 \textbf{part} & string & part commanded, one of `snap\_relay', `snap0', `snap1', `snap2', `snap3', `pam', `fem'. \\ \hline
-command & string & command sent, `on' or `off'. \\\hline
+command* & string & command sent, `on' or `off'. \\\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{node\_white\_rabbit\_status}
+Node white rabbit status. There are a duplicate set of columns for the two ports which start with `port0' and `port1'.
+We list them jointly below as `port[0,1]'.
+\begin{center}
+ \begin{tabular}{| p{5cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{node\_time} & long & time of the status reported by the node in floor(gps seconds)\\ \hline
+\textbf{node} & int & integer identifying the node. \\ \hline
+board\_info\_str & string & A raw string representing the WR-LEN's response to the `ver` command.
+	Relevant parts of this string are individually unpacked in other entries. \\\hline
+aliases & string & Hostname aliases of this node's WR-LEN (comma separated if more than one). \\\hline
+ip & string & IP address of this node's WR-LEN. \\\hline
+mode & string & WR-LEN operating mode (eg. "WRC\_SLAVE\_WR0"). \\\hline
+serial & string & Canonical HERA hostname (related to serial number) of this node's WR-LEN. \\\hline
+temperature & float & WR-LEN temperature in degrees Celcius. \\\hline
+build\_date & long & Build date of WR-LEN software in floor(gps seconds). \\\hline
+gw\_date & long & WR-LEN gateware build date in floor(gps seconds). \\\hline
+gw\_version & string & WR-LEN gateware version number. \\\hline
+gw\_id & string & WR-LEN gateware ID number. \\\hline
+build\_hash & string & WR-LEN build git hash. \\\hline
+manufacture\_tag & string & Custom manufacturer tag. \\\hline
+manufacture\_device & string & Manufacturer device name designation. \\\hline
+manufacture\_date & long & Manufacturer invoice(?) date in floor(gps seconds). \\\hline
+manufacture\_serial & string & Manufacturer serial number. \\\hline
+manufacture\_vendor& string & Vendor name. \\\hline
+port[0,1]\_ad & int & Meaning unknown. \\\hline
+port[0,1]\_link\_asymmetry\_ps & int & Port [0,1] total link asymmetry in picosec. \\\hline
+port[0,1]\_manual\_phase\_ps & int & Not well understood, believed to be Port [0,1] manual phase adjustment in picosec. \\\hline
+port[0,1]\_clock\_offset\_ps & int & Port [0,1] clock offset in picosec. \\\hline
+port[0,1]\_cable\_rt\_delay\_ps & int & Port [0,1] cable round trip delay in picosec. \\\hline
+port[0,1]\_master\_slave\_delay\_ps & int & Port [0,1] master-slave delay in picosec. \\\hline
+port[0,1]\_master\_rx\_phy\_delay\_ps & int & Port [0,1] master RX PHY delay in picosec. \\\hline
+port[0,1]\_slave\_rx\_phy\_delay\_ps & int & Port [0,1] slave RX PHY delay in picosec. \\\hline
+port[0,1]\_master\_tx\_phy\_delay\_ps & int & Port [0,1] master TX PHY delay in picosec. \\\hline
+port[0,1]\_slave\_tx\_phy\_delay\_ps & int & Port [0,1] slave TX PHY delay in picosec. \\\hline
+port[0,1]\_hd & int & Meaning unknown. \\\hline
+port[0,1]\_link & boolean & Port [0,1] link up state. \\\hline
+port[0,1]\_lock & boolean & Port [0,1] timing lock state. \\\hline
+port[0,1]\_md & int & Meaning unknown. \\\hline
+port[0,1]\_rt\_time\_ps & int & Port [0,1] round-trip time in picosec. \\\hline
+port[0,1]\_nsec & int & Meaning unknown. \\\hline
+port[0,1]\_packets\_received & int & Port [0,1] number of packets received. \\\hline
+port[0,1]\_phase\_setpoint\_ps & int & Port [0,1] phase setpoint in picosec. \\\hline
+port[0,1]\_servo\_state & string & Port [0,1] servo state. \\\hline
+port[0,1]\_sv & int & Meaning unknown. \\\hline
+port[0,1]\_sync\_source & string & Port [0,1] source of synchronization (either `wr0' or `wr1'). \\\hline
+port[0,1]\_packets\_sent & int & Port [0,1] number of packets transmitted. \\\hline
+port[0,1]\_update\_counter& int & Port [0,1] update counter. \\\hline
+port[0,1]\_time & long & Port [0,1] current time in GPS seconds. in floor(gps seconds). \\\hline
+
 \end{tabular}
 \end{center}
 
@@ -655,7 +744,7 @@ List and descriptions of metrics used in antenna or array metrics.
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{metric} & string & name of metric \\ \hline
-desc & string & description of metric \\ \hline
+desc* & string & description of metric \\ \hline
 \end{tabular}
 \end{center}
 
@@ -672,8 +761,8 @@ will flag individual antennas as bad.
 \textbf{ant} & integer & antenna number ($\geq$ 0) \\ \hline
 \textbf{pol} & string & polarization, `x' or `y' \\ \hline
 \textbf{\textit{metric}} & string & name of metric, foreign key into metric\_list table. \\ \hline
-mc\_time & long integer & time report received by \mc\ in floor(gps seconds) \\ \hline
-val & double & value of metric \\ \hline
+mc\_time* & long integer & time report received by \mc\ in floor(gps seconds) \\ \hline
+val* & double & value of metric \\ \hline
 \end{tabular}
 \end{center}
 
@@ -689,7 +778,7 @@ generates an overall decision whether the firstcal solutions were ``good''.
 \textbf{\textit{obsid}} & long integer & observation identifier, foreign key into hera\_obs table. \\ \hline
 \textbf{\textit{metric}} & string & name of metric, foreign key into metric\_list table. \\ \hline
 mc\_time & long integer & time report received by \mc\ in floor(gps seconds) \\ \hline
-val & double & value of metric \\ \hline
+val* & double & value of metric \\ \hline
 \end{tabular}
 \end{center}
 
@@ -707,7 +796,7 @@ Weather data from KAT sensors
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & status time in floor(gps seconds)\\ \hline
 \textbf{variable} & string & name of weather variable (e.g. wind\_speed,  wind\_direction, temperature) \\ \hline
-value & float & value of the variable at this time \\\hline
+value* & float & value of the variable at this time \\\hline
 \end{tabular}
 \end{center}
 

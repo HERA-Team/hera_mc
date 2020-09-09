@@ -4,11 +4,16 @@
 [![codecov](https://codecov.io/gh/HERA-Team/hera_mc/branch/master/graph/badge.svg)](https://codecov.io/gh/HERA-Team/hera_mc)
 
 This is the main repository for HERA's monitor and control subsystems.
+
+# Documentation
+A detailed description of the monitor and control system and all the
+related database tables can be found in our
+[description document](docs/mc_definition.pdf).
+
+# Installation
 Installation instructions may be found in [INSTALL.md](./INSTALL.md).
 
-# CM-only users
-*Note:  if you are only using hera_mc to locally use configuration management (cm) info via sqlite, you may ignore most of this.
-        if this is the case, follow the simplified instructions in INSTALL.md*
+*Note:  if you are only using hera_mc to locally use configuration management (cm) info via sqlite, you may just follow the simplified instructions in INSTALL.md*
 
 
 
