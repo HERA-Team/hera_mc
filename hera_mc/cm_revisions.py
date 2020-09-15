@@ -9,7 +9,6 @@ LAST, ACTIVE, ALL, <specific> are handled (typically) via get_revisions_of_type.
 FULL revisions are called directly (get_full_revision)
 """
 
-from tabulate import tabulate
 from argparse import Namespace
 
 from . import cm_utils, cm_partconnect
@@ -250,6 +249,7 @@ def show_revisions(rev_list, columns='all'):
         Columns to include.  If 'all', include all present.  Can be a csv string list.
 
     """
+    from tabulate import tabulate
     if len(rev_list) == 0:
         return "No revisions found."
 

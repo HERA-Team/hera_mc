@@ -5,7 +5,6 @@
 
 """Holds helpful modules for parts and connections scripts."""
 
-from tabulate import tabulate
 import copy
 from astropy.time import Time
 from sqlalchemy import func, desc
@@ -263,6 +262,7 @@ class Handling:
         str
             String containing the dossier table.
         """
+        from tabulate import tabulate
         self._get_allowed_ports(ports)
         pd_keys = cm_utils.put_keys_in_order(list(dossier.keys()))
         if len(pd_keys) == 0:

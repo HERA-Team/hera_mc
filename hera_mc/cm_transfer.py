@@ -13,7 +13,6 @@ import os.path
 from math import floor
 import subprocess
 from astropy.time import Time
-import pandas as pd
 import csv
 from sqlalchemy import Column, BigInteger, String
 
@@ -91,6 +90,7 @@ def package_db_to_csv(session=None, tables='all'):
         list of filenames written
 
     """
+    import pandas
     if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
@@ -110,7 +110,7 @@ def package_db_to_csv(session=None, tables='all'):
     files_written = []
     for table in tables_to_write:
         data_filename = data_prefix + table + '.csv'
-        table_data = pd.read_sql_table(table, session.get_bind())
+        table_data = pandas.read_sql_table(table, session.get_bind())
         print("\tPackaging:  " + data_filename)
         table_data.to_csv(data_filename, index=False)
         files_written.append(data_filename)

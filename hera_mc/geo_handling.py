@@ -12,7 +12,6 @@ Bottom part is the class that does the work.
 import copy
 import warnings
 from sqlalchemy import func
-import cartopy.crs as ccrs
 from pyuvdata import utils as uvutils
 from numpy import radians
 
@@ -308,6 +307,7 @@ class Handling:
             GeoLocation objects corresponding to station names.
 
         """
+        import cartopy.crs as ccrs
         latlon_p = ccrs.Geodetic()
         utm_p = ccrs.UTM(self.hera_zone[0])
         lat_corr = self.lat_corr[self.hera_zone[1]]
@@ -436,6 +436,7 @@ class Handling:
             Stations types to limit check.
 
         """
+        import cartopy.crs as ccrs
         station_types_to_check = self.parse_station_types_to_check(station_types_to_check)
         dt = query_date.gps
         latlon_p = ccrs.Geodetic()

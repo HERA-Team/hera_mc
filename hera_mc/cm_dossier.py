@@ -9,7 +9,6 @@ from argparse import Namespace
 
 from . import cm_sysdef, cm_utils
 from . import cm_partconnect as partconn
-from itertools import zip_longest
 
 
 class PartEntry():
@@ -187,6 +186,7 @@ class PartEntry():
         list
             A row or rows for the tabulate display.
         """
+        from itertools import zip_longest
         # This section generates the appropriate ports to use, if necessary.
         conns = [[None, None]]
         ports_included = False
