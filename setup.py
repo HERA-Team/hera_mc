@@ -29,9 +29,15 @@ setup_args = {
     'packages': ['hera_mc', 'hera_mc.tests'],
     'scripts': glob.glob('scripts/*'),
     'include_package_data': True,
-    'install_requires': ["numpy", "astropy", "sqlalchemy", "psycopg2",
-                         "alembic", "python-dateutil", "tabulate", "pandas",
-                         "psutil", "cartopy", "pyyaml", "redis", "setuptools_scm"],
+    'install_requires': ["alembic", "astropy", "numpy", "psycopg2",
+                         "pyyaml", "redis", "setuptools_scm", "sqlalchemy"],
+    "extras_require": {
+        "sqlite": ["tabulate", "cartopy", "pyuvdata"],
+        "all": ["cartopy", "h5py", "pandas", "psutil", "python-dateutil", "pyuvdata",
+                "tabulate", "tornado"],
+        "dev": ["cartopy", "h5py", "pandas", "psutil", "python-dateutil", "pyuvdata",
+                "tabulate", "tornado", "pytest", "flake8"]
+    },
     'tests_require': ["pyyaml"],
     'classifiers': ["Development Status :: 4 - Beta",
                     "Environment :: Console",

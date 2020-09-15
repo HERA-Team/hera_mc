@@ -18,22 +18,27 @@ Installation steps are:
 [0.] Optionally install dependencies
 ---
 
-The dependencies are:
-- numpy
-- astropy
-- sqlalchemy
-- psycopg2
+The required dependencies are:
 - alembic
-- python-dateutil
-- tabulate
-- pandas
-- psutil
-- cartopy
+- astropy
+- numpy
+- psycopg2
 - pyyaml
 - redis-py
 - setuptools_scm
+- sqlalchemy
 
-All the dependencies should be available via conda.
+the optional dependencies are:
+- cartopy
+- h5py
+- pandas
+- psutil
+- python-dateutil
+- pyuvdata
+- tabulate
+- tornado
+
+All the dependencies should be available via conda or PyPI.
 
 [1.] Install hera_mc
 ---
@@ -44,15 +49,21 @@ Clone the following two repositories:
 
 Then install by:
 1. within the hera_mc directory type `pip install .`
-[This is preferred over `python setup.py install`]. Note you can add
-`--no-deps` to the pip call if you want to manage dependencies yourself
-(e.g. with conda) and you can add `-e` for a developer style install that will
+[Do not use `python setup.py install`]. 
+
+You can install the optional dependencies via pip by specifying an option
+when you install hera_mc, as in ```pip install .[sqlite]```
+which will install all the required packages for using the lightweight configuration
+management tools. The options that can be passed in this way are:
+[`sqlite`, `all`, `dev`]. The `all` option will install all optional
+dependencies, `dev` adds packages required for testing.
+
+If you prefer to manage dependencies yourself (e.g. with conda), you can add
+`--no-deps` to the pip call. You can also add `-e` for a developer style install that will
 always use the code currently on your machine (so you don't have to reinstall
 every time you change something).
-2. in the hera_cm_db_updates directory type `mc_setup_home.py`
 
-To run hera_mc, you will likely need to install some additional python modules.
-These modules are listed in `setup.py` under `install_requires`.
+2. in the hera_cm_db_updates directory type `mc_setup_home.py`
 
 [2.] Set up database configuration file
 ---
