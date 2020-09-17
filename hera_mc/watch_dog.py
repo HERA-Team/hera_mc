@@ -54,7 +54,8 @@ def node_temperature(at_date=None, temp_threshold=45.0, time_threshold=1.0,
                     for key in active_parts.get_hptype('node')]
 
     active_temps = {}
-    msg_header = 'Over-temperature (>{} C)'.format(temp_threshold)
+    msg_header = ('WARNING: Over-temperature (>{:.1f} C, <{:.2f} days)'
+                  .format(float(temp_threshold), float(time_threshold)))
     msg = '{}'.format(msg_header)
     for node_num in active_nodes:
         if use_last:
@@ -68,12 +69,12 @@ def node_temperature(at_date=None, temp_threshold=45.0, time_threshold=1.0,
         if nds is None or (gps_time - nds.time) / 86400.0 > time_threshold:
             continue
         active_temps[node_num] = []
-        for _t in [nds.top_sensor_temp, nds.middle_sensor_temp,
-                   nds.bottom_sensor_temp, nds.humidity_sensor_temp]:
-            if _t is None:
+        for sensor_temp in [nds.top_sensor_temp, nds.middle_sensor_temp,
+                            nds.bottom_sensor_temp, nds.humidity_sensor_temp]:
+            if sensor_temp is None:
                 active_temps[node_num].append(-99.)
             else:
-                active_temps[node_num].append(_t)
+                active_temps[node_num].append(sensor_temp)
         highest_temp = max(active_temps[node_num])
         if highest_temp > temp_threshold:
             msg += "\t{:02d}:  {}\n".format(node_num, ', '.join(active_temps[node_num]))
