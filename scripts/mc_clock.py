@@ -21,6 +21,6 @@ parser.add_argument(
 args = parser.parse_args()
 
 Time_object = cm_utils.get_astropytime(args.date, args.time)
-print("\tDate    {}".format(str(Time_object.isot)))
-print("\tgps     {}\n".format(Time_object.gps))
-print("\tJulian  {}\n".format(Time_object.jd))
+print("\n\tdate    {}".format(str(Time_object.isot)))
+print("\tgps     {}".format(Time_object.gps))
+print("\tjulian  {}\n".format(Time_object.jd))
