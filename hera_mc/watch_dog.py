@@ -13,8 +13,9 @@ def read_forward_list():
             fwd.append(line.strip())
 
 
-def node_temperature(at_date=None, temp_threshold=45.0, time_threshold=1.0,
-                     To=None, session=None):
+def node_temperature(at_date=None, at_time=0.0,
+                     temp_threshold=45.0, time_threshold=1.0,
+                     To=None, skip_send=False, session=None):
     """
     Check node for over-temperature.
 
@@ -25,12 +26,16 @@ def node_temperature(at_date=None, temp_threshold=45.0, time_threshold=1.0,
     ----------
     at_date : anything understandable by get_astropytime
         If None, use values at latest time.  If valid Time, use nearest value before.
+    at_time : anything understandable by get_astropytime
+        Used for appropriate forms of 'at_date' for get_astropytime
     temp_threshold : float
         Threshold temperature in Celsius
     time_threshold : float
         Time in days for "current" values.
     To : list or None
         List of e-mail addresses.  If None, uses the addresses in ~/.forward
+    skip_send : bool
+        Boolean to skip sending the actual e-mail and return a string (for testing)
     session : session object or None
         If None, it will start a new session on the database
     """
@@ -46,7 +51,7 @@ def node_temperature(at_date=None, temp_threshold=45.0, time_threshold=1.0,
         at_date = cm_utils.get_astropytime('now')
     else:
         use_last = False
-        at_date = cm_utils.get_astropytime(at_date)
+        at_date = cm_utils.get_astropytime(at_date, at_time)
     gps_time = at_date.gps
     active_parts = cm_active.ActiveData()
     active_parts.load_parts(at_date)
@@ -65,7 +70,7 @@ def node_temperature(at_date=None, temp_threshold=45.0, time_threshold=1.0,
                    .order_by(node.NodeSensor.time.desc()).first())
         else:
             nds = (session.query(node.NodeSensor)
-                   .filter(node.NodeSensor.time < gps_time & node.NodeSensor.node == node_num)
+                   .filter(node.NodeSensor.node == node_num & node.NodeSensor.time < gps_time)
                    .order_by(node.NodeSensor.time.desc()).first())
         if nds is None or (gps_time - nds.time) / 86400.0 > time_threshold:
             continue
@@ -73,7 +78,7 @@ def node_temperature(at_date=None, temp_threshold=45.0, time_threshold=1.0,
         for sensor_temp in [nds.top_sensor_temp, nds.middle_sensor_temp,
                             nds.bottom_sensor_temp, nds.humidity_sensor_temp]:
             if sensor_temp is None:
-                active_temps[node_num].append(-99.)
+                active_temps[node_num].append(-99.9)
             else:
                 active_temps[node_num].append(sensor_temp)
         highest_temp = max(active_temps[node_num])
@@ -82,7 +87,7 @@ def node_temperature(at_date=None, temp_threshold=45.0, time_threshold=1.0,
             for this_temp in active_temps[node_num]:
                 if this_temp > temp_threshold:
                     ht = '[{:4.1f}]'.format(this_temp)
-                elif this_temp < -90.0:
+                elif this_temp < -99.0:
                     ht = '  -   '
                 else:
                     ht = ' {:4.1f} '.format(this_temp)
@@ -94,6 +99,9 @@ def node_temperature(at_date=None, temp_threshold=45.0, time_threshold=1.0,
         Subject = msg_header.splitlines()[0]
         if To is None:
             To = read_forward_list()
-        server = smtplib.SMTP('localhost')
         msg_sent = "From: {}\nTo: {}\nSubject: {}\n{}".format(From, ', '.join(To), Subject, msg)
-        server.sendmail(From, To, msg_sent)
+        if skip_send:
+            return msg_sent
+        else:  # pragma: no cover
+            server = smtplib.SMTP('localhost')
+            server.sendmail(From, To, msg_sent)
