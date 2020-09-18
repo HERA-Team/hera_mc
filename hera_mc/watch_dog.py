@@ -50,11 +50,12 @@ def node_temperature(at_date=None, temp_threshold=45.0, time_threshold=1.0,
     gps_time = at_date.gps
     active_parts = cm_active.ActiveData()
     active_parts.load_parts(at_date)
-    active_nodes = [int(cm_utils.split_part_key(key)[0][1:])
-                    for key in active_parts.get_hptype('node')]
-
+    active_nodes = sorted([int(cm_utils.split_part_key(key)[0][1:])
+                          for key in active_parts.get_hptype('node')])
     active_temps = {}
-    msg_header = ('WARNING: Over-temperature (>{:.1f} C, <{:.2f} days)'
+    msg_header = ('WARNING: Over-temperature (>{:.1f} C, <{:.2f} days)\n'
+                  '\n\tNode   Top     Mid     Bot     Hum'
+                  '\n\t----   ----    ----    ----    ----'
                   .format(float(temp_threshold), float(time_threshold)))
     msg = '{}'.format(msg_header)
     for node_num in active_nodes:
@@ -77,11 +78,20 @@ def node_temperature(at_date=None, temp_threshold=45.0, time_threshold=1.0,
                 active_temps[node_num].append(sensor_temp)
         highest_temp = max(active_temps[node_num])
         if highest_temp > temp_threshold:
-            msg += "\t{:02d}:  {}\n".format(node_num, ', '.join(active_temps[node_num]))
+            htlist = []
+            for this_temp in active_temps[node_num]:
+                if this_temp > temp_threshold:
+                    ht = '[{:4.1f}]'.format(this_temp)
+                elif this_temp < -90.0:
+                    ht = '  -   '
+                else:
+                    ht = ' {:4.1f} '.format(this_temp)
+                htlist.append(ht)
+            msg += "\n\t {:02d}   {}".format(node_num, '  '.join(htlist))
     if msg != msg_header:
         import smtplib
         From = 'hera@lists.berkeley.edu'
-        Subject = msg_header
+        Subject = msg_header.splitlines()[0]
         if To is None:
             To = read_forward_list()
         server = smtplib.SMTP('localhost')
