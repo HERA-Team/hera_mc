@@ -286,6 +286,16 @@ class ActiveData:
 
         Note that this assumes that self.load_parts() has been run and will error
         otherwise.  This is to keep the 'at_date' clearer.
+
+        Parameters
+        ----------
+        hptype : str
+            Valid HERA part type name (e.g. node, antenna, fem, ...)
+
+        Returns
+        -------
+        list
+            Contains all part number keys (hpn:rev) of that type.
         """
         hptype_list = []
         for key, partclass in self.parts.items():
