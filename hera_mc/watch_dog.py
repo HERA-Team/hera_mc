@@ -7,6 +7,9 @@
 
 
 def read_forward_list():  # pragma: no cover
+    """
+    Read in emails from .forward file.
+    """
     fwd = []
     with open('~/.forward', 'r') as fp:
         for line in fp:
