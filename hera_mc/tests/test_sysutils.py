@@ -12,7 +12,8 @@ import pytest
 import numpy as np
 
 from .. import (cm_sysutils, cm_partconnect, cm_hookup, cm_utils, utils,
-                cm_sysdef, cm_dossier, cm_active, cm_redis_corr)
+                cm_sysdef, cm_dossier, cm_active, cm_redis_corr,
+                watch_dog, node)
 from .. tests import requires_redis
 from .. tests import TEST_DEFAULT_REDIS_HOST
 import redis
@@ -44,6 +45,31 @@ def test_set_redis_cminfo(mcsession):
     assert adc == 1
     test_out = rsession.hget('testing_corr:map', 'all_snap_inputs')
     assert b'SNPC000702": [0, 1, 2, 3, 4, 5]' in test_out
+
+
+def test_watch_dog(mcsession):
+    ns = node.NodeSensor()
+    ns.time = int(cm_utils.get_astropytime('2020-09-18').gps)
+    ns.node = 700
+    ns.top_sensor_temp = 28.0
+    ns.middle_sensor_temp = None
+    ns.bottom_sensor_temp = 32.0
+    ns.humidity_sensor_temp = 46.0
+    ns.humidity = 80.0
+    mcsession.add(ns)
+    mcsession.commit()
+    msg = watch_dog.node_temperature(at_date=None, at_time=0.0,
+                                     temp_threshold=45.0, time_threshold=10000.0,
+                                     To=['test@hera.edu'], skip_send=True, session=mcsession)
+    assert msg.startswith("From: hera@lists.berkeley.edu")
+    msg = watch_dog.node_temperature(at_date='2020/09/19', at_time=0.0,
+                                     temp_threshold=45.0, time_threshold=10000.0,
+                                     To=['test@hera.edu'], skip_send=True, session=mcsession)
+    assert msg.startswith("From: hera@lists.berkeley.edu")
+    msg = watch_dog.node_temperature(at_date='2020/09/19', at_time=0.0,
+                                     temp_threshold=45.0, time_threshold=0.0,
+                                     To=['test@hera.edu'], skip_send=True, session=mcsession)
+    assert msg is None
 
 
 def test_ever_fully_connected(sys_handle):

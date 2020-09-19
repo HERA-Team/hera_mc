@@ -6,7 +6,7 @@
 """System watch-dogs."""
 
 
-def read_forward_list():
+def read_forward_list():  # pragma: no cover
     fwd = []
     with open('~/.forward', 'r') as fp:
         for line in fp:
@@ -53,7 +53,7 @@ def node_temperature(at_date=None, at_time=0.0,
         use_last = False
         at_date = cm_utils.get_astropytime(at_date, at_time)
     gps_time = at_date.gps
-    active_parts = cm_active.ActiveData()
+    active_parts = cm_active.ActiveData(session=session)
     active_parts.load_parts(at_date)
     active_nodes = sorted([int(cm_utils.split_part_key(key)[0][1:])
                           for key in active_parts.get_hptype('node')])
@@ -70,7 +70,7 @@ def node_temperature(at_date=None, at_time=0.0,
                    .order_by(node.NodeSensor.time.desc()).first())
         else:
             nds = (session.query(node.NodeSensor)
-                   .filter(node.NodeSensor.node == node_num & node.NodeSensor.time < gps_time)
+                   .filter((node.NodeSensor.node == node_num) & (node.NodeSensor.time < gps_time))
                    .order_by(node.NodeSensor.time.desc()).first())
         if nds is None or (gps_time - nds.time) / 86400.0 > time_threshold:
             continue
@@ -97,7 +97,7 @@ def node_temperature(at_date=None, at_time=0.0,
         import smtplib
         From = 'hera@lists.berkeley.edu'
         Subject = msg_header.splitlines()[0]
-        if To is None:
+        if To is None:  # pragma: no cover
             To = read_forward_list()
         msg_sent = "From: {}\nTo: {}\nSubject: {}\n{}".format(From, ', '.join(To), Subject, msg)
         if skip_send:
