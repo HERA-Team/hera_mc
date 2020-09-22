@@ -237,7 +237,7 @@ class Hookup(object):
         return table
 
     # ##################################### Notes ############################################
-    def get_notes(self, hookup_dict, state='all'):
+    def get_notes(self, hookup_dict, state='all', return_dict=False):
         """
         Retrieve information for hookup.
 
@@ -247,6 +247,8 @@ class Hookup(object):
             Hookup dictionary generated in self.get_hookup
         state : str
             String designating whether to show the full hookups only, or all
+        return_dict : bool
+            Flag to return a dictionary with additional information or just the note.
 
         Returns
         -------
@@ -275,9 +277,13 @@ class Hookup(object):
                 if ikey in info_keys:
                     hu_notes[hkey][ikey] = {}
                     for entry in self.active.info[ikey]:
-                        hu_notes[hkey][ikey][entry.posting_gpstime] =\
-                            {"note": entry.comment.replace('\\n', '\n'),
-                             "ref": entry.reference}
+                        if return_dict:
+                            hu_notes[hkey][ikey][entry.posting_gpstime] =\
+                                {"note": entry.comment.replace('\\n', '\n'),
+                                 "ref": entry.reference}
+                        else:
+                            hu_notes[hkey][ikey][entry.posting_gpstime] =\
+                                entry.comment.replace('\\n', '\n')
         return hu_notes
 
     def show_notes(self, hookup_dict, state='all'):
@@ -297,7 +303,7 @@ class Hookup(object):
             Content as a string
 
         """
-        hu_notes = self.get_notes(hookup_dict=hookup_dict, state=state)
+        hu_notes = self.get_notes(hookup_dict=hookup_dict, state=state, return_dict=True)
         full_info_string = ''
         for hkey in cm_utils.put_keys_in_order(list(hu_notes.keys()), sort_order='NPR'):
             hdr = "---{}---".format(hkey)

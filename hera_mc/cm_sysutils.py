@@ -615,20 +615,20 @@ def node_info(node_num, session=None):
             info[node]['ncm'] = rd_ret['ncm']
 
         # Get notes
-        notes = hu.get_notes(snaps, state='all')
+        notes = hu.get_notes(snaps, state='all', return_dict=True)
         for snp in info[node]['snaps']:
             spk = cm_utils.make_part_key(snp, 'A')
             try:
                 info[snp] = [x['note'] for x in notes[spk][spk].values()]
             except KeyError:
                 info[snp] = []
-        notes = hu.get_notes(wr, state='all')
+        notes = hu.get_notes(wr, state='all', return_dict=True)
         wpk = cm_utils.make_part_key(info[node]['wr'], 'A')
         try:
             info[info[node]['wr']] = [x['note'] for x in notes[npk][wpk].values()]
         except KeyError:
             info[info[node]['wr']] = []
-        notes = hu.get_notes(rd, state='all')
+        notes = hu.get_notes(rd, state='all', return_dict=True)
         apk = cm_utils.make_part_key(info[node]['arduino'], 'A')
         try:
             info[info[node]['arduino']] = [x['note'] for x in notes[npk][apk].values()]
