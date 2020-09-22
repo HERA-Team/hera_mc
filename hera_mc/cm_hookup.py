@@ -276,7 +276,8 @@ class Hookup(object):
                     hu_notes[hkey][ikey] = {}
                     for entry in self.active.info[ikey]:
                         hu_notes[hkey][ikey][entry.posting_gpstime] =\
-                            entry.comment.replace('\\n', '\n')
+                            {"note": entry.comment.replace('\\n', '\n'),
+                             "ref": entry.reference}
         return hu_notes
 
     def show_notes(self, hookup_dict, state='all'):
