@@ -619,19 +619,19 @@ def node_info(node_num, session=None):
         for snp in info[node]['snaps']:
             spk = cm_utils.make_part_key(snp, 'A')
             try:
-                info[snp] = list(notes[spk][spk].values())
+                info[snp] = [x['note'] for x in notes[spk][spk].values()]
             except KeyError:
                 info[snp] = []
         notes = hu.get_notes(wr, state='all')
         wpk = cm_utils.make_part_key(info[node]['wr'], 'A')
         try:
-            info[info[node]['wr']] = list(notes[npk][wpk].values())
+            info[info[node]['wr']] = [x['note'] for x in notes[npk][wpk].values()]
         except KeyError:
             info[info[node]['wr']] = []
         notes = hu.get_notes(rd, state='all')
         apk = cm_utils.make_part_key(info[node]['arduino'], 'A')
         try:
-            info[info[node]['arduino']] = list(notes[npk][apk].values())
+            info[info[node]['arduino']] = [x['note'] for x in notes[npk][apk].values()]
         except KeyError:
             info[info[node]['arduino']] = []
         if '' in info.keys():

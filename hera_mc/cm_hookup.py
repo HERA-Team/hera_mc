@@ -310,7 +310,9 @@ class Hookup(object):
                 gps_times = sorted(list(hu_notes[hkey][ikey].keys()))
                 for gtime in gps_times:
                     atime = cm_utils.get_time_for_display(gtime)
-                    entry_info += "\t{} ({})  {}\n".format(ikey, atime, hu_notes[hkey][ikey][gtime])
+                    this_note = ("{} ({})".format(hu_notes[hkey][ikey][gtime]['note'],
+                                                  hu_notes[hkey][ikey][gtime]['ref']))
+                    entry_info += "\t{} ({})  {}\n".format(ikey, atime, this_note)
             if len(entry_info):
                 full_info_string += "{}\n{}\n".format(hdr, entry_info)
         return full_info_string
