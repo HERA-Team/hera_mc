@@ -6,6 +6,7 @@
 """Contains the Entry classes which serves as a "dossier" for part and hookup entries."""
 
 from argparse import Namespace
+from itertools import zip_longest
 
 from . import cm_sysdef, cm_utils
 from . import cm_partconnect as partconn
@@ -186,7 +187,6 @@ class PartEntry():
         list
             A row or rows for the tabulate display.
         """
-        from itertools import zip_longest
         # This section generates the appropriate ports to use, if necessary.
         conns = [[None, None]]
         ports_included = False
