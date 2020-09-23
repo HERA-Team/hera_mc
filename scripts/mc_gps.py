@@ -4,7 +4,7 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Prints Time info for given date/time
+Prints Time info for given date/time.  This is being deprecated for mc_clock.py
 
 """
 from astropy.time import Time
