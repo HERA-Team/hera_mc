@@ -6,10 +6,10 @@
 """Contains the Entry classes which serves as a "dossier" for part and hookup entries."""
 
 from argparse import Namespace
+from itertools import zip_longest
 
 from . import cm_sysdef, cm_utils
 from . import cm_partconnect as partconn
-from itertools import zip_longest
 
 
 class PartEntry():
