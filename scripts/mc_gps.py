@@ -17,6 +17,9 @@ if __name__ == '__main__':
     cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
+print("DEPRECATION WARNING")
+print("mc_gps.py is being deprecated in favor of mc_clock.py, which is more flexible.")
+print("mc_gps.py will be retained until January 2021")
 if args.gps is None:
     Time_object = cm_utils.get_astropytime(args.date, args.time)
     print("\n\tThe supplied date was  {}".format(str(Time_object)))
