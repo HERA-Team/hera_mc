@@ -586,7 +586,7 @@ class PartInfo(MCDeclarativeBase):
     hpn = Column(String(64), nullable=False, primary_key=True)
     hpn_rev = Column(String(32), nullable=False, primary_key=True)
     posting_gpstime = NotNull(BigInteger, primary_key=True)
-    comment = Column(String(2048), primary_key=True)
+    comment = NotNull(String(2048))
     reference = Column(String(256))
 
     def __repr__(self):
