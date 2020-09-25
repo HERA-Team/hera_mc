@@ -8,6 +8,7 @@ Prints Time info for given date/time.  This is being deprecated for mc_clock.py
 
 """
 from astropy.time import Time
+import warnings
 
 from hera_mc import mc, cm_utils
 
@@ -17,9 +18,11 @@ if __name__ == '__main__':
     cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
+warn_msg = "mc_gps.py is deprecated in favor of mc_clock.py "\
+           "- mc_gps.py will be retained until January 2021"
+warnings.warn(warn_msg, DeprecationWarning)
 print("DEPRECATION WARNING")
-print("mc_gps.py is being deprecated in favor of mc_clock.py, which is more flexible.")
-print("mc_gps.py will be retained until January 2021")
+print()
 if args.gps is None:
     Time_object = cm_utils.get_astropytime(args.date, args.time)
     print("\n\tThe supplied date was  {}".format(str(Time_object)))
