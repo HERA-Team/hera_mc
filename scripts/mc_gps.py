@@ -21,8 +21,7 @@ if __name__ == '__main__':
 warn_msg = "mc_gps.py is deprecated in favor of mc_clock.py "\
            "- mc_gps.py will be retained until January 2021"
 warnings.warn(warn_msg, DeprecationWarning)
-print("DEPRECATION WARNING")
-print()
+
 if args.gps is None:
     Time_object = cm_utils.get_astropytime(args.date, args.time)
     print("\n\tThe supplied date was  {}".format(str(Time_object)))
