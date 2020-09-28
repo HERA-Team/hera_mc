@@ -207,7 +207,7 @@ def test_various_dossier(capsys):
     assert len(x) == 0
 
 
-def test_part_info(parts, capsys):
+def test_part_info(parts, mcsession, capsys):
     cm_partconnect.add_part_info(
         parts.test_session, parts.test_part, parts.test_rev,
         Time('2017-07-01 01:00:00'), 'Testing', 'reference')
@@ -222,6 +222,8 @@ def test_part_info(parts, capsys):
     assert 'heraPartNumber id = A:B' in captured.out.strip()
     test_info.gps2Time()
     assert int(test_info.posting_date.gps) == 1172530000
+    with pytest.warns(UserWarning, match="No action taken. Comment is empty."):
+        cm_partconnect.add_part_info(mcsession, 'HH700', 'A', '2020/01/02', '  ')
 
 
 def test_equality():

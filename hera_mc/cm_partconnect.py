@@ -624,6 +624,11 @@ def add_part_info(session, hpn, rev, at_date, comment, reference=None):
         If appropriate, name or link of library file or other information.
 
     """
+    comment = comment.strip()
+    if not len(comment):
+        import warnings
+        warnings.warn('No action taken. Comment is empty.')
+        return
     close_session_when_done = False
     if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
