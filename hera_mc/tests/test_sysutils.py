@@ -292,6 +292,10 @@ def test_sysutil_node(capsys, mcsession):
     testhu = {'this-test': testns}
     eret = cm_sysutils._get_dict_elements('this-test', testhu, 'a', 'b')
     assert len(eret['a']) == 0
+    xa = cm_sysutils.node_info('active', mcsession)
+    assert 'N700' in xa['nodes']
+    xa = cm_sysutils.node_info('all', mcsession)
+    assert 'N00' in xa['nodes']
     testns.hookup['@<middle'] = [Namespace(upstream_part='UP', downstream_part='DN')]
     testhu = {'this-test': testns}
     eret = cm_sysutils._get_dict_elements('this-test', testhu, 'dn', 'up')
