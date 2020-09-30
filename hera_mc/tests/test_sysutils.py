@@ -151,6 +151,8 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     hookup.hookup_list_to_cache = ['A1']
     x = hookup._requested_list_OK_for_cache(['B1'])
     assert x is False
+    x = hookup.get_hookup_from_db('N91', 'N', 'now')
+    assert not len(x)
 
 
 def test_hookup_notes(mcsession, capsys):

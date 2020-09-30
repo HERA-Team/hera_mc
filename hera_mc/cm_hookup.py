@@ -92,7 +92,10 @@ class Hookup(object):
             self.hookup_type = self.sysdef.find_hookup_type(
                 part_type=part.hptype, hookup_type=hookup_type)
             if part.hptype in self.sysdef.redirect_part_types[self.hookup_type]:
-                redirect_parts = self.sysdef.handle_redirect_part_types(part, self.active)
+                try:
+                    redirect_parts = self.sysdef.handle_redirect_part_types(part, self.active)
+                except KeyError:
+                    continue
                 redirect_hookup_dict = self.get_hookup_from_db(
                     hpn=redirect_parts, pol=pol, at_date=self.at_date,
                     exact_match=True, hookup_type=self.hookup_type)

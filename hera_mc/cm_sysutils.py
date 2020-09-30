@@ -559,14 +559,16 @@ def formatted__which_node__string(ant_node):
     return print_str
 
 
-def node_info(node_num, session=None):
+def node_info(node_num='active', session=None):
     """
     Generate information per node.
 
     Parameters
     ----------
-    node_num : list of int or str (can be mixed)
-        Node numbers, as int or hera part number
+    node_num : list of int or str (can be mixed), or str
+        Node numbers, as int or hera part number.
+        If 'active', use list of active nodes.
+        if 'all', use list of all.
 
     Returns
     -------
@@ -576,6 +578,10 @@ def node_info(node_num, session=None):
     hu = cm_hookup.Hookup(session)
     na_from_file = node_antennas('file', session=session)
     na_from_hookup = node_antennas(hu, session=session)
+    if node_num == 'active':
+        node_num = sorted(list(na_from_hookup))
+    elif node_num == 'all':
+        node_num = sorted(list(na_from_file))
     info = {'nodes': []}
     for node in node_num:
         # Set up
