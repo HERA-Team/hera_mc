@@ -184,6 +184,10 @@ def test_hookup_dossier(sys_handle, capsys):
     xret = hude.get_part_from_type('b', include_revs=True,
                                    include_ports=True)
     assert xret['hu'] == 'shoe:testing<screw'
+    test_part = Namespace(hpn='ABC', hpn_rev='X', hptype='node')
+    sysdef.hookup_type = 'parts_hera'
+    hl = sysdef.handle_redirect_part_types(test_part, Namespace(connections={}))
+    assert not len(hl)
 
     # test errors
     hude = cm_dossier.HookupEntry(entry_key='testing:key', sysdef=sysdef)
@@ -282,6 +286,8 @@ def test_sysdef(sys_handle, mcsession):
 
 
 def test_sysutil_node(capsys, mcsession):
+    xni = cm_sysutils.node_info(['N91'], mcsession)
+    assert not len(xni['N91']['ants-file'])
     apn = cm_sysutils.node_antennas(session=mcsession)
     assert 'N10' in apn.keys()
     apn = cm_sysutils.node_antennas(source='hookup', session=mcsession)
