@@ -152,7 +152,7 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     x = hookup._requested_list_OK_for_cache(['B1'])
     assert x is False
     x = hookup.get_hookup_from_db('N91', 'N', 'now')
-    assert not len(x)
+    assert len(x) == 0
 
 
 def test_hookup_notes(mcsession, capsys):
@@ -187,7 +187,7 @@ def test_hookup_dossier(sys_handle, capsys):
     test_part = Namespace(hpn='ABC', hpn_rev='X', hptype='node')
     sysdef.hookup_type = 'parts_hera'
     hl = sysdef.handle_redirect_part_types(test_part, Namespace(connections={}))
-    assert not len(hl)
+    assert len(hl) == 0
 
     # test errors
     hude = cm_dossier.HookupEntry(entry_key='testing:key', sysdef=sysdef)
