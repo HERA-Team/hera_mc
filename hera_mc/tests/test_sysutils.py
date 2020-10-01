@@ -151,6 +151,8 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     hookup.hookup_list_to_cache = ['A1']
     x = hookup._requested_list_OK_for_cache(['B1'])
     assert x is False
+    x = hookup.get_hookup_from_db('N91', 'N', 'now')
+    assert len(x) == 0
 
 
 def test_hookup_notes(mcsession, capsys):
@@ -182,6 +184,10 @@ def test_hookup_dossier(sys_handle, capsys):
     xret = hude.get_part_from_type('b', include_revs=True,
                                    include_ports=True)
     assert xret['hu'] == 'shoe:testing<screw'
+    test_part = Namespace(hpn='ABC', hpn_rev='X', hptype='node')
+    sysdef.hookup_type = 'parts_hera'
+    hl = sysdef.handle_redirect_part_types(test_part, Namespace(connections={}))
+    assert len(hl) == 0
 
     # test errors
     hude = cm_dossier.HookupEntry(entry_key='testing:key', sysdef=sysdef)
@@ -280,6 +286,8 @@ def test_sysdef(sys_handle, mcsession):
 
 
 def test_sysutil_node(capsys, mcsession):
+    xni = cm_sysutils.node_info(['N91'], mcsession)
+    assert not len(xni['N91']['ants-file'])
     apn = cm_sysutils.node_antennas(session=mcsession)
     assert 'N10' in apn.keys()
     apn = cm_sysutils.node_antennas(source='hookup', session=mcsession)
@@ -290,6 +298,10 @@ def test_sysutil_node(capsys, mcsession):
     testhu = {'this-test': testns}
     eret = cm_sysutils._get_dict_elements('this-test', testhu, 'a', 'b')
     assert len(eret['a']) == 0
+    xa = cm_sysutils.node_info('active', mcsession)
+    assert 'N700' in xa['nodes']
+    xa = cm_sysutils.node_info('all', mcsession)
+    assert 'N00' in xa['nodes']
     testns.hookup['@<middle'] = [Namespace(upstream_part='UP', downstream_part='DN')]
     testhu = {'this-test': testns}
     eret = cm_sysutils._get_dict_elements('this-test', testhu, 'dn', 'up')

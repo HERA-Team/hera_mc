@@ -20,7 +20,8 @@ parser.add_argument('view', nargs='?', help="Views are:  {}.  Need first letter 
                     ".format(', '.join(all_views.values())), default='parts')
 # set values for 'action' to use
 parser.add_argument('-p', '--hpn', help="Part number or portion thereof, csv list. "
-                    "If view is 'node', this may be ints or a hyphen-range of ints (e.g. '0-3')")
+                    "If view is 'node', this may be ints or a hyphen-range of ints (e.g. '0-3')"
+                    "or 'active'/'all'", default=None)
 parser.add_argument('-r', '--revision',
                     help="Revision for hpn. Typically don't change from default.",
                     default=None)
@@ -69,7 +70,10 @@ if args.list_columns:
             print('\t{:30s}\t{}'.format(col, blank.col_hdr[col]))
 elif view == 'node':
     from hera_mc import cm_sysutils
-    args.hpn = cm_utils.listify(args.hpn)
+    if args.hpn is None:
+        args.hpn = 'active'
+    elif args.hpn not in ['active', 'all']:
+        args.hpn = cm_utils.listify(args.hpn)
     node_info = cm_sysutils.node_info(args.hpn, session)
     cm_sysutils.print_node(node_info)
 elif view == 'revisions':

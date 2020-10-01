@@ -124,10 +124,13 @@ class Sysdef:
         hpn_list = []
         if self.hookup_type == 'parts_hera':
             if part.hptype.lower() == 'node':
-                for conn in active.connections['down'][cm_utils.make_part_key(
-                        part.hpn, part.hpn_rev)].values():
-                    if conn.upstream_part.startswith('SNP'):
-                        hpn_list.append(conn.upstream_part)
+                try:
+                    for conn in active.connections['down'][cm_utils.make_part_key(
+                            part.hpn, part.hpn_rev)].values():
+                        if conn.upstream_part.startswith('SNP'):
+                            hpn_list.append(conn.upstream_part)
+                except KeyError:
+                    pass
         return hpn_list
 
     def find_hookup_type(self, part_type, hookup_type, set_for_class=True):
