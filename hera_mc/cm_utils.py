@@ -172,38 +172,53 @@ def stringify(X):
     return str(X)
 
 
-def listify(X, None_as_list=False):
+def listify(to_list, None_as_list=False, prefix=None, padding=None):
     """
     "Listify" the input, hopefully sensibly.
 
     Parameters
     ----------
-    X
+    to_list
         Thing to be listified.
     None_as_list : bool
-        If False return None, otherwise return [None]
+        If False return None if to_list is None, otherwise return [None]
+    prefix : str or None
+        If str, it will be prepended to every element in list
+    padding : int or None
+        If int, every integer element will be zero-padded to that length
 
     Returns
     -------
     List or None
 
     """
-    if X is None:
+    if to_list is None:
         if None_as_list:
             return [None]
         else:
             return None
-    if isinstance(X, str):
-        if ',' in X:
-            return X.split(',')
-        elif '-' in X:
-            start, stop = X.split('-')
-            return list(range(int(start), int(stop) + 1))
+    if isinstance(to_list, str):
+        if '-' in to_list:
+            try:
+                start, stop = [int(_x) for _x in to_list.split('-')]
+                this_list = list(range(int(start), int(stop) + 1))
+            except ValueError:
+                this_list = to_list.split(',')
+                padding = None
         else:
-            return [X]
-    if isinstance(X, list):
-        return X
-    return [X]
+            try:
+                this_list = [int(_x) for _x in to_list.split(',')]
+            except ValueError:
+                this_list = to_list.split(',')
+                padding = None
+        if prefix is None:
+            return this_list
+        if isinstance(padding, int):
+            return ['{}{:0{pad}d}'.format(prefix, x, pad=padding) for x in this_list]
+        return ['{}{}'.format(prefix, x) for x in this_list]
+    if isinstance(to_list, list):
+        return to_list
+    return [to_list]
 
 
 def match_list(a_obj, b_obj, case_type=None):

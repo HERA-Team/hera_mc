@@ -73,7 +73,11 @@ elif view == 'node':
     if args.hpn is None:
         args.hpn = 'active'
     elif args.hpn not in ['active', 'all']:
-        args.hpn = cm_utils.listify(args.hpn)
+        if args.hpn[0] == 'N':
+            prefix = None
+        else:
+            prefix = 'N'
+        args.hpn = cm_utils.listify(args.hpn, prefix=prefix, padding=2)
     node_info = cm_sysutils.node_info(args.hpn, session)
     cm_sysutils.print_node(node_info)
 elif view == 'revisions':
