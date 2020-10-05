@@ -76,6 +76,12 @@ def test_listify(input, expected):
     assert x is None
     x = cm_utils.listify(None, None_as_list=True)
     assert x[0] is None
+    x = cm_utils.listify('0-4', prefix='Test')
+    assert x[1] == 'Test1'
+    x = cm_utils.listify('0,3,4', prefix='Test', padding=3)
+    assert x[2] == 'Test004'
+    x = cm_utils.listify('N0-A', prefix='Test', padding=3)
+    assert x[0] == 'TestN0-A'
 
 
 def test_match_list():

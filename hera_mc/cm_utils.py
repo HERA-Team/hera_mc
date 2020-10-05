@@ -172,7 +172,7 @@ def stringify(X):
     return str(X)
 
 
-def listify(X, None_as_list=False):
+def listify(X, None_as_list=False, prefix=None, padding=None):
     """
     "Listify" the input, hopefully sensibly.
 
@@ -182,6 +182,10 @@ def listify(X, None_as_list=False):
         Thing to be listified.
     None_as_list : bool
         If False return None, otherwise return [None]
+    prefix : str or None
+        If str, it will be prepended to every element in list
+    padding : int or None
+        If int, every integer element will be zero-padded to that length
 
     Returns
     -------
@@ -194,13 +198,24 @@ def listify(X, None_as_list=False):
         else:
             return None
     if isinstance(X, str):
-        if ',' in X:
-            return X.split(',')
-        elif '-' in X:
-            start, stop = X.split('-')
-            return list(range(int(start), int(stop) + 1))
+        if '-' in X:
+            try:
+                start, stop = [int(_x) for _x in X.split('-')]
+                this_list = list(range(int(start), int(stop) + 1))
+            except ValueError:
+                this_list = X.split(',')
+                padding = None
         else:
-            return [X]
+            try:
+                this_list = [int(_x) for _x in X.split(',')]
+            except ValueError:
+                this_list = X.split(',')
+                padding = None
+        if prefix is None:
+            return this_list
+        if isinstance(padding, int):
+            return ['{}{:0{pad}d}'.format(prefix, x, pad=padding) for x in this_list]
+        return ['{}{}'.format(prefix, x) for x in this_list]
     if isinstance(X, list):
         return X
     return [X]
