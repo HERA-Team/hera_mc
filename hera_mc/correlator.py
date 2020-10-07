@@ -21,8 +21,6 @@ from . import MCDeclarativeBase
 DEFAULT_ACCLEN_SPECTRA = 147456
 
 DEFAULT_REDIS_ADDRESS = "redishost"
-print("CORRELATOR.PY:  REMOVE DEFAULT_REDIS_ADDRESS")
-DEFAULT_REDIS_ADDRESS = "localhost"
 
 # key is state type, value is method name in hera_corr_cm
 state_dict = {'taking_data': 'is_recording',
