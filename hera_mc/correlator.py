@@ -119,7 +119,6 @@ class CorrelatorConfiguration(MCDeclarativeBase):
         value : str
             Value of parameter
         """
-
         return cls(config_file_hash=config_file_hash, parameter=parameter, value=value)
 
 

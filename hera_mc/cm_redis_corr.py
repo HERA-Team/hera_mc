@@ -16,6 +16,18 @@ REDIS_CORR_HASH = 'corr:map'
 
 def parse_snap_config_to_psql(redishost=correlator.DEFAULT_REDIS_ADDRESS,
                               session=None, testing=False):
+    """
+    Parse out the redis snap_configuration to correlator info in postgres.
+
+    Parameters
+    ----------
+    redishost : str
+        Name of the redis host for connection.
+    session : postgres session or None
+        If None, it will open a new session per mc defaults.
+    testing : bool
+        Allows testing to not interfere with other redis info.
+    """
     if session is None:  # pragma: no cover
         from hera_mc import mc
         db = mc.connect_to_mc_db(None)
