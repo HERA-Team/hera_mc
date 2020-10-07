@@ -21,6 +21,8 @@ from . import MCDeclarativeBase
 DEFAULT_ACCLEN_SPECTRA = 147456
 
 DEFAULT_REDIS_ADDRESS = "redishost"
+print("CORRELATOR.PY:  REMOVE DEFAULT_REDIS_ADDRESS")
+DEFAULT_REDIS_ADDRESS = "localhost"
 
 # key is state type, value is method name in hera_corr_cm
 state_dict = {'taking_data': 'is_recording',
@@ -84,6 +86,43 @@ command_state_map = {
     'restart': {'allowed_when_recording': False},
     'hard_stop': {'allowed_when_recording': False}
 }
+
+
+class CorrelatorConfiguration(MCDeclarativeBase):
+    """
+    Definition of correlator configuration.
+
+    Attributes
+    ----------
+    config_file_hash : String Column
+        MD5 hash of configuration contents
+    parameter : String Column
+        Name of correlator parameter
+    value : String Column
+        Value of parameter
+    """
+
+    __tablename__ = 'correlator_configuration'
+    config_file_hash = Column(String, primary_key=True)
+    parameter = Column(String, primary_key=True)
+    value = Column(String, nullable=False)
+
+    @classmethod
+    def create(cls, config_file_hash, parameter, value):
+        """
+        Create a new CorrelatorConfiguration object.
+
+        Parameters
+        ----------
+        config_file_hash : str
+            MD5 hash of configuration contents
+        parameter : str
+            Name of correlator parameter
+        value : str
+            Value of parameter
+        """
+
+        return cls(config_file_hash=config_file_hash, parameter=parameter, value=value)
 
 
 class CorrelatorControlState(MCDeclarativeBase):

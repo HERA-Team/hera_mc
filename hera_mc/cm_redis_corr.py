@@ -7,11 +7,62 @@
 import json
 import redis
 import time
-from . import cm_sysutils
-from .correlator import DEFAULT_REDIS_ADDRESS
+import yaml
+import hashlib
+from . import cm_sysutils, correlator
 
 REDIS_CMINFO_HASH = 'cminfo'
 REDIS_CORR_HASH = 'corr:map'
+
+
+def parse_snap_config_to_psql(redishost=correlator.DEFAULT_REDIS_ADDRESS,
+                              session=None, testing=False):
+    if session is None:  # pragma: no cover
+        from hera_mc import mc
+        db = mc.connect_to_mc_db(None)
+        session = db.sessionmaker()
+    else:
+        session = session
+
+    if redishost is None:  # pragma: no cover
+        redishost = correlator.DEFAULT_REDIS_ADDRESS
+    redis_pool = redis.ConnectionPool(host=redishost)
+    rsession = redis.Redis(connection_pool=redis_pool)
+
+    configb = rsession.hget('snap_configuration', 'config')
+    config = yaml.safe_load(configb)
+    hmd5 = hashlib.md5(configb).hexdigest()
+    md5 = rsession.hget('snap_configuration', 'md5').decode()
+    if md5 != hmd5:
+        print("md5 in data and redis don't match")
+
+    keys_to_save = ['fft_shift', 'fpgfile', 'dest_port', 'log_walsh_step_size',
+                    'walsh_order', 'walsh_delay']
+    for key in keys_to_save:
+        value = config[key]
+        session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
+                                                              parameter=key, value=value))
+    fengines = sorted(config['fengines'].keys())
+    session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
+                                                          parameter='fengines',
+                                                          value=','.join(fengines)))
+    for key, heraNode in config['fengines'].items():
+        for par in ['ants', 'phase_switch_index']:
+            parameter = '{}:{}'.format(key, par)
+            value = heraNode[par]
+            session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
+                                                                  parameter=parameter, value=value))
+    for key, xeng in config['xengines'].items():
+        parameter = '{}:chan_range'.format(key)
+        value = ','.join([str(_x) for _x in xeng['chan_range']])
+        session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
+                                                              parameter=parameter, value=value))
+        for evod in ['even', 'odd']:
+            parameter = '{}:{}:ip'.format(key, evod)
+            value = xeng[evod]['ip']
+            session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
+                                                                  parameter=parameter, value=value))
+    session.commit()
 
 
 def snap_part_to_host_input(part, redis_info=None):
@@ -94,7 +145,8 @@ def cminfo_redis_snap(cminfo, redis_info=None):
     return snap_to_ant, ant_to_snap, all_snap_inputs
 
 
-def set_redis_cminfo(redishost=DEFAULT_REDIS_ADDRESS, session=None, testing=False):
+def set_redis_cminfo(redishost=correlator.DEFAULT_REDIS_ADDRESS,
+                     session=None, testing=False):
     """
     Write config info to redis database for the correlator.
 
@@ -109,7 +161,7 @@ def set_redis_cminfo(redishost=DEFAULT_REDIS_ADDRESS, session=None, testing=Fals
     """
     # This is retained so that explicitly providing redishost=None has the desired behavior
     if redishost is None:  # pragma: no cover
-        redishost = DEFAULT_REDIS_ADDRESS
+        redishost = correlator.DEFAULT_REDIS_ADDRESS
     redis_pool = redis.ConnectionPool(host=redishost)
     rsession = redis.Redis(connection_pool=redis_pool)
 
