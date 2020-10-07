@@ -14,6 +14,11 @@ import pytest
 
 from hera_mc.utils import get_iterable
 TEST_DEFAULT_REDIS_HOST = 'redishost'
+print("TESTING: CHANGE REDIS_HOST")
+TEST_DEFAULT_REDIS_HOST = 'localhost'
+
+
+TEST_CORR_CONFIG = b'dest_port: 8511\neth: false\nfengines:\n  heraNode0Snap0:\n    ants:\n    - 0\n    - 1\n    - 2\n    phase_switch_index:\n    - 1\n    - 2\n    - 3\n    - 4\n    - 5\n    - 6\n  heraNode0Snap1:\n    ants:\n    - 3\n    - 4\n    - 5\n    phase_switch_index:\n    - 7\n    - 8\n    - 9\n    - 10\n    - 11\n    - 12\n  heraNode0Snap2:\n    ants:\n    - 6\n    - 7\n    - 8\n    phase_switch_index:\n    - 13\n    - 14\n    - 15\n    - 16\n    - 17\n    - 18\n  heraNode0Snap3:\n    ants:\n    - 9\n    - 10\n    - 11\n    phase_switch_index:\n    - 19\n    - 20\n    - 21\n    - 22\n    - 23\n    - 24\nfft_shift: 15086\nfpgfile: redis:snap_fengine_2020-07-16_1253.fpg\ninitialize: false\nlog_walsh_step_size: 3\nnoise: false\nsync: pps\ntvg: false\nwalsh_delay: 600\nwalsh_order: 32\nxengines:\n  0:\n    chan_range:\n    - 1536\n    - 1920\n    even:\n      ip: 10.80.40.197\n      mac: 2207786215621\n    odd:\n      ip: 10.80.40.206\n      mac: 2207786215630\n  1:\n    chan_range:\n    - 1920\n    - 2304\n    even:\n      ip: 10.80.40.229\n      mac: 2207786215653\n    odd:\n      ip: 10.80.40.238\n      mac: 2207786215662\n'  # noqa
 
 
 def redis_online():

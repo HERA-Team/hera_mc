@@ -8,7 +8,6 @@ import json
 import redis
 import time
 import yaml
-import hashlib
 from . import cm_sysutils, correlator
 
 REDIS_CMINFO_HASH = 'cminfo'
@@ -21,47 +20,60 @@ def parse_snap_config_to_psql(redishost=correlator.DEFAULT_REDIS_ADDRESS,
         from hera_mc import mc
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
-    else:
-        session = session
 
-    if redishost is None:  # pragma: no cover
-        redishost = correlator.DEFAULT_REDIS_ADDRESS
     redis_pool = redis.ConnectionPool(host=redishost)
     rsession = redis.Redis(connection_pool=redis_pool)
 
-    configb = rsession.hget('snap_configuration', 'config')
-    config = yaml.safe_load(configb)
-    hmd5 = hashlib.md5(configb).hexdigest()
-    md5 = rsession.hget('snap_configuration', 'md5').decode()
-    if md5 != hmd5:
-        print("md5 in data and redis don't match")
+    snap_configuration = 'snap_configuration'
+    if testing:
+        snap_configuration = 'testing_snap_configuration'
+
+    config = yaml.safe_load(rsession.hget(snap_configuration, 'config'))
+    md5 = rsession.hget(snap_configuration, 'md5').decode()
+
+    existing_par = []
+    for expar in session.query(correlator.CorrelatorConfiguration).filter(
+            correlator.CorrelatorConfiguration.config_file_hash == md5):
+        existing_par.append(expar.parameter)
 
     keys_to_save = ['fft_shift', 'fpgfile', 'dest_port', 'log_walsh_step_size',
                     'walsh_order', 'walsh_delay']
     for key in keys_to_save:
+        if key in existing_par:
+            continue
         value = config[key]
         session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
                                                               parameter=key, value=value))
-    fengines = sorted(config['fengines'].keys())
-    session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
-                                                          parameter='fengines',
-                                                          value=','.join(fengines)))
-    for key, heraNode in config['fengines'].items():
-        for par in ['ants', 'phase_switch_index']:
-            parameter = '{}:{}'.format(key, par)
-            value = heraNode[par]
-            session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
-                                                                  parameter=parameter, value=value))
-    for key, xeng in config['xengines'].items():
-        parameter = '{}:chan_range'.format(key)
-        value = ','.join([str(_x) for _x in xeng['chan_range']])
+    if 'fengines' not in existing_par:
+        fengines = sorted(config['fengines'].keys())
         session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
-                                                              parameter=parameter, value=value))
-        for evod in ['even', 'odd']:
-            parameter = '{}:{}:ip'.format(key, evod)
-            value = xeng[evod]['ip']
+                                                              parameter='fengines',
+                                                              value=','.join(fengines)))
+        for key, heraNode in config['fengines'].items():
+            for par in ['ants', 'phase_switch_index']:
+                parameter = '{}:{}'.format(key, par)
+                value = heraNode[par]
+                session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
+                                                                      parameter=parameter,
+                                                                      value=value))
+    if 'xengines' not in existing_par:
+        xengines = [str(x) for x in sorted(config['xengines'].keys())]
+        session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
+                                                              parameter='xengines',
+                                                              value=','.join(xengines)))
+        for key, xeng in config['xengines'].items():
+            parameter = '{}:chan_range'.format(key)
+            value = ','.join([str(_x) for _x in xeng['chan_range']])
             session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
-                                                                  parameter=parameter, value=value))
+                                                                  parameter=parameter,
+                                                                  value=value))
+            for evod in ['even', 'odd']:
+                for ipma in ['ip', 'mac']:
+                    parameter = '{}:{}:{}'.format(key, evod, ipma)
+                    value = xeng[evod][ipma]
+                    session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
+                                                                          parameter=parameter,
+                                                                          value=value))
     session.commit()
 
 

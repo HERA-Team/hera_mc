@@ -10,18 +10,37 @@ from argparse import Namespace
 
 import pytest
 import numpy as np
+import yaml
 
 from .. import (cm_sysutils, cm_partconnect, cm_hookup, cm_utils, utils,
                 cm_sysdef, cm_dossier, cm_active, cm_redis_corr,
-                watch_dog, node)
+                watch_dog, node, correlator)
 from .. tests import requires_redis
 from .. tests import TEST_DEFAULT_REDIS_HOST
+from .. tests import TEST_CORR_CONFIG
 import redis
 
 
 @pytest.fixture(scope='function')
 def sys_handle(mcsession):
     return cm_sysutils.Handling(mcsession)
+
+
+@requires_redis
+def test_parse_redis_psql(mcsession):
+    redishost = TEST_DEFAULT_REDIS_HOST
+    rsession = redis.Redis(redishost)
+    test_config = yaml.safe_load(TEST_CORR_CONFIG)
+    keys_to_check = ['fft_shift', 'fpgfile', 'dest_port', 'log_walsh_step_size',
+                     'walsh_order', 'walsh_delay']
+    test_md5 = '_test-hash_'
+    rsession.hmset('testing_snap_configuration', {'config': TEST_CORR_CONFIG, 'md5': test_md5})
+    cm_redis_corr.parse_snap_config_to_psql(redishost=redishost, session=mcsession, testing=True)
+    cm_redis_corr.parse_snap_config_to_psql(redishost=redishost, session=mcsession, testing=True)
+    for expar in mcsession.query(correlator.CorrelatorConfiguration).filter(
+            correlator.CorrelatorConfiguration.config_file_hash == test_md5):
+        if expar.parameter in keys_to_check:
+            assert expar.value == str(test_config[expar.parameter])
 
 
 @requires_redis
