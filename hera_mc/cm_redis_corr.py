@@ -198,7 +198,7 @@ def set_redis_cminfo(redishost=correlator.DEFAULT_REDIS_ADDRESS,
     redis_hash = REDIS_CMINFO_HASH
     if testing:
         redis_hash = 'testing_' + REDIS_CMINFO_HASH
-    rsession.hset(redis_hash, redhkey)
+    rsession.hmset(redis_hash, redhkey)
     if testing:
         rsession.expire(redis_hash, 300)
 
@@ -214,6 +214,6 @@ def set_redis_cminfo(redishost=correlator.DEFAULT_REDIS_ADDRESS,
     redhkey['all_snap_inputs'] = json.dumps(all_snap_inputs)
     redhkey['update_time'] = time.time()
     redhkey['update_time_str'] = time.ctime(redhkey['update_time'])
-    rsession.hset(redis_hash, redhkey)
+    rsession.hmset(redis_hash, redhkey)
     if testing:
         rsession.expire(redis_hash, 300)
