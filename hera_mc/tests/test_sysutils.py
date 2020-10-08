@@ -35,6 +35,7 @@ def test_parse_redis_psql(mcsession):
                      'walsh_order', 'walsh_delay']
     test_md5 = '_test-hash_'
     rsession.hmset('testing_snap_configuration', {'config': TEST_CORR_CONFIG, 'md5': test_md5})
+    rsession.expire('testing_snap_configuration', 300)
     cm_redis_corr.parse_snap_config_to_psql(redishost=redishost, session=mcsession, testing=True)
     cm_redis_corr.parse_snap_config_to_psql(redishost=redishost, session=mcsession, testing=True)
     for expar in mcsession.query(correlator.CorrelatorConfiguration).filter(
