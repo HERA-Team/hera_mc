@@ -4,6 +4,41 @@
 # Licensed under the 2-clause BSD license.
 
 """System watch-dogs."""
+import os.path
+
+
+def send_message(subject, msg, to_addr=None, from_addr='hera@lists.berkeley.edu', skip_send=False):
+    """
+    Send an email message, unless skip_send is True (for testing).
+
+    Parameters
+    ----------
+    subject : str
+        Subject of email.
+    msg : str
+        Message to send.
+    to_addr : list or None
+        If None, it will read the list in the .forward file.
+    from_addr : str
+        From address to use
+    skip_send : bool
+        If True, it will just return the composed message and not send it.
+
+    Returns
+    -------
+    str or None
+        If skip_send, will return the composed message.
+    """
+    import smtplib
+    if to_addr is None:  # pragma: no cover
+        to_addr = read_forward_list()
+    msg_to_send = ("From: {}\nTo: {}\nSubject: {}\n{}"
+                   .format(from_addr, ', '.join(to_addr), subject, msg))
+    if skip_send:
+        return msg_to_send
+    else:  # pragma: no cover
+        server = smtplib.SMTP('localhost')
+        server.sendmail(from_addr, to_addr, msg_to_send)
 
 
 def read_forward_list():  # pragma: no cover
@@ -14,9 +49,79 @@ def read_forward_list():  # pragma: no cover
             fwd.append(line.strip())
 
 
+def read_hosts_ethers_file(ftype, host, path='/etc', testing=False):
+    """
+    Read in the hosts or ethers file and send an e-mail on error.
+
+    This returns tw dictionies keyed on either the mac (ethers) or ip (hosts) and the hostnames.
+    The valueis a list of corresponding hostnames (or vice versa).  If an error, the first return
+    dictionary contains the error messaging.
+
+    Parameters
+    ----------
+    ftype : str
+        File-type: either 'hosts' or 'ethers'
+    host : str
+        Hostname of server (included in warning message.)
+    path : str
+        Path to file.
+    testing : bool (False) or dict
+        If dict, will process testing[ftype]
+
+    Returns
+    -------
+    dict
+        Contains the hosts or ethers information.  If error, contains message.
+    """
+    if testing:
+        file_contents = testing[ftype]
+    else:  # pragma: no cover
+        with open(os.path.join(path, ftype), 'r') as fp:
+            file_contents = fp.read()
+
+    hoeth = {}
+    macip = {}
+    for line in file_contents.splitlines():
+        if line[0] == '#' or len(line) < 12:
+            continue
+        data = line.split()
+        if data[0] in macip.keys():
+            return {'Error': True, 'Subject': 'ERROR: Duplicate entry in {}'.format(ftype),
+                    'Message': '{} is duplicated in {} file on {}'.format(data[0], ftype, host)}, {}
+        macip[data[0]] = []
+        for he in data[1:]:
+            if '#' in he:  # Stop if you hit #
+                break
+            if he in hoeth.keys():
+                return {'Error': True, 'Subject': 'ERROR: Duplicate entry in {}'.format(ftype),
+                        'Message': '{} is duplicated in {} file on {}'.format(he, ftype, host)}, {}
+            hoeth[he] = data[0]
+            macip[data[0]].append(he)
+    return macip, hoeth
+
+
+def hosts_ethers(path='/etc', To=None, testing=False):
+    import socket
+
+    hostname = socket.gethostname()
+    if hostname == 'hera-node-head':
+        print("Get arduinos/wr in hera_mc rosetta and part_info")
+    elif hostname == 'hera-snap-head':
+        print("Get snaps in hera_mc rosetta and part_info")
+    elif not testing:
+        raise ValueError("{} not in [hera-node-head, hera-snap-head]".format(hostname))
+    iho, nho = read_hosts_ethers_file('hosts', host=hostname, path=path, testing=testing)
+    if 'Error' in iho.keys():
+        return send_message(iho['Subject'], iho['Message'], to_addr=To, skip_send=testing)
+    meth, neth = read_hosts_ethers_file('ethers', host=hostname, path=path, testing=testing)
+    if 'Error' in meth.keys():
+        return send_message(meth['Subject'], meth['Message'], to_addr=To, skip_send=testing)
+    print("Now need to do the actually checking.")
+
+
 def node_temperature(at_date=None, at_time=0.0,
                      temp_threshold=45.0, time_threshold=1.0,
-                     To=None, skip_send=False, session=None):
+                     To=None, testing=False, session=None):
     """
     Check node for over-temperature.
 
@@ -35,7 +140,7 @@ def node_temperature(at_date=None, at_time=0.0,
         Time in days for "current" values.
     To : list or None
         List of e-mail addresses.  If None, uses the addresses in ~/.forward
-    skip_send : bool
+    testing : bool
         Boolean to skip sending the actual e-mail and return a string (for testing)
     session : session object or None
         If None, it will start a new session on the database
@@ -95,14 +200,4 @@ def node_temperature(at_date=None, at_time=0.0,
                 htlist.append(ht)
             msg += "\n\t {:02d}   {}".format(node_num, '  '.join(htlist))
     if msg != msg_header:
-        import smtplib
-        From = 'hera@lists.berkeley.edu'
-        Subject = msg_header.splitlines()[0]
-        if To is None:  # pragma: no cover
-            To = read_forward_list()
-        msg_sent = "From: {}\nTo: {}\nSubject: {}\n{}".format(From, ', '.join(To), Subject, msg)
-        if skip_send:
-            return msg_sent
-        else:  # pragma: no cover
-            server = smtplib.SMTP('localhost')
-            server.sendmail(From, To, msg_sent)
+        return send_message(msg_header.splitlines()[0], msg, To, skip_send=testing)
