@@ -69,7 +69,6 @@ def update_part_rosetta(hpn, syspn, at_date, date2=None, session=None):
     session : object
         Database session to use.  If None, it will start a new session, then close.
     """
-    hpn = hpn.upper()
     at_date = int(cm_utils.get_astropytime(at_date).gps)
     if date2 is not None:
         date2 = int(cm_utils.get_astropytime(date2).gps)
