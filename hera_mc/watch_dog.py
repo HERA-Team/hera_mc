@@ -116,7 +116,7 @@ def hosts_ethers(path='/etc', To=None, testing=False):
     meth, neth = read_hosts_ethers_file('ethers', host=hostname, path=path, testing=testing)
     if 'Error' in meth.keys():
         return send_message(meth['Subject'], meth['Message'], to_addr=To, skip_send=testing)
-    print("Now need to do the actually checking.")
+    print("Now need to do the actual checking.")
 
 
 def node_temperature(at_date=None, at_time=0.0,
