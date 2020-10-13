@@ -100,6 +100,9 @@ def test_update_new(conns, capsys):
     ckey = located[prkey].output_ports
     assert a in ckey
 
+    no_data = cm_partconnect.update_connection()
+    assert not no_data
+
     captured = conns.cm_handle.show_dossier(located, ['hpn'], ports=None)
     assert 'NEW_TEST_PART_UP' in captured
 

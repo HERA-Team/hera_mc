@@ -50,4 +50,4 @@ if __name__ == '__main__':
     # Check for part
     if args.verbose:
         print("Adding part_rosetta {}: - {}".format(args.hpn, args.syspn))
-    cm_partconnect.add_part_rosetta(session, args.hpn, args.syspn, start_date, stop_date)
+    cm_partconnect.update_part_rosetta(args.hpn, args.syspn, start_date, stop_date, session)
