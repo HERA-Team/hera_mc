@@ -6,6 +6,7 @@
 from sqlalchemy import inspect
 from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
 from sqlalchemy.orm import RelationshipProperty
+from sqlalchemy.exc import OperationalError
 
 from . import logger
 
@@ -24,7 +25,6 @@ def check_connection(session):
     True if database responds to simple SQL query. Otherwise False.
 
     """
-    from sqlalchemy.exc import OperationalError
     result = True
     try:
         session.execute('SELECT 1')
@@ -61,7 +61,16 @@ def is_valid_database(base, session):
         base = MCDeclarativeBase
 
     engine = session.get_bind()
-    iengine = inspect(engine)
+    try:  # This tries thrice with 5sec sleeps in between
+        iengine = inspect(engine)
+    except OperationalError:  # pragma: no cover
+        import time
+        time.sleep(5)
+        try:
+            iengine = inspect(engine)
+        except OperationalError:
+            time.sleep(5)
+            iengine = inspect(engine)
 
     errors = False
 
