@@ -62,7 +62,7 @@ def is_valid_database(base, session):
         base = MCDeclarativeBase
 
     engine = session.get_bind()
-    try:  # This tries twice with 5sec sleeps in between
+    try:  # This tries thrice with 5sec sleeps in between
         iengine = inspect(engine)
     except OperationalError:  # pragma: no cover
         import time
