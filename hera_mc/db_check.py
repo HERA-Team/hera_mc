@@ -6,6 +6,7 @@
 from sqlalchemy import inspect
 from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
 from sqlalchemy.orm import RelationshipProperty
+from sqlalchemy.exc import OperationalError
 
 from . import logger
 
@@ -24,7 +25,6 @@ def check_connection(session):
     True if database responds to simple SQL query. Otherwise False.
 
     """
-    from sqlalchemy.exc import OperationalError
     result = True
     try:
         session.execute('SELECT 1')
@@ -56,7 +56,6 @@ def is_valid_database(base, session):
     True if all declared models have corresponding tables and columns.
 
     """
-    from sqlalchemy.exc import OperationalError
     if base is None:
         from . import MCDeclarativeBase
         base = MCDeclarativeBase
