@@ -56,12 +56,22 @@ def is_valid_database(base, session):
     True if all declared models have corresponding tables and columns.
 
     """
+    from sqlalchemy.exc import OperationalError
     if base is None:
         from . import MCDeclarativeBase
         base = MCDeclarativeBase
 
     engine = session.get_bind()
-    iengine = inspect(engine)
+    try:  # This tries twice with 5sec sleeps in between
+        iengine = inspect(engine)
+    except OperationalError:  # pragma: no cover
+        import time
+        time.sleep(5)
+        try:
+            iengine = inspect(engine)
+        except OperationalError:
+            time.sleep(5)
+            iengine = inspect(engine)
 
     errors = False
 
