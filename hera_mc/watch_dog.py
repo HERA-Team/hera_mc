@@ -4,7 +4,6 @@
 # Licensed under the 2-clause BSD license.
 
 """System watch-dogs."""
-import os.path
 
 
 def send_message(subject, msg, to_addr=None, from_addr='hera@lists.berkeley.edu', skip_send=False):
@@ -47,76 +46,6 @@ def read_forward_list():  # pragma: no cover
     with open('~/.forward', 'r') as fp:
         for line in fp:
             fwd.append(line.strip())
-
-
-def read_hosts_ethers_file(ftype, host, path='/etc', testing=False):
-    """
-    Read in the hosts or ethers file and send an e-mail on error.
-
-    This returns tw dictionies keyed on either the mac (ethers) or ip (hosts) and the hostnames.
-    The valueis a list of corresponding hostnames (or vice versa).  If an error, the first return
-    dictionary contains the error messaging.
-
-    Parameters
-    ----------
-    ftype : str
-        File-type: either 'hosts' or 'ethers'
-    host : str
-        Hostname of server (included in warning message.)
-    path : str
-        Path to file.
-    testing : bool (False) or dict
-        If dict, will process testing[ftype]
-
-    Returns
-    -------
-    dict
-        Contains the hosts or ethers information.  If error, contains message.
-    """
-    if testing:
-        file_contents = testing[ftype]
-    else:  # pragma: no cover
-        with open(os.path.join(path, ftype), 'r') as fp:
-            file_contents = fp.read()
-
-    hoeth = {}
-    macip = {}
-    for line in file_contents.splitlines():
-        if line[0] == '#' or len(line) < 12:
-            continue
-        data = line.split()
-        if data[0] in macip.keys():
-            return {'Error': True, 'Subject': 'ERROR: Duplicate entry in {}'.format(ftype),
-                    'Message': '{} is duplicated in {} file on {}'.format(data[0], ftype, host)}, {}
-        macip[data[0]] = []
-        for he in data[1:]:
-            if '#' in he:  # Stop if you hit #
-                break
-            if he in hoeth.keys():
-                return {'Error': True, 'Subject': 'ERROR: Duplicate entry in {}'.format(ftype),
-                        'Message': '{} is duplicated in {} file on {}'.format(he, ftype, host)}, {}
-            hoeth[he] = data[0]
-            macip[data[0]].append(he)
-    return macip, hoeth
-
-
-def hosts_ethers(path='/etc', To=None, testing=False):
-    import socket
-
-    hostname = socket.gethostname()
-    if hostname == 'hera-node-head':
-        print("Get arduinos/wr in hera_mc rosetta and part_info")
-    elif hostname == 'hera-snap-head':
-        print("Get snaps in hera_mc rosetta and part_info")
-    elif not testing:
-        raise ValueError("{} not in [hera-node-head, hera-snap-head]".format(hostname))
-    iho, nho = read_hosts_ethers_file('hosts', host=hostname, path=path, testing=testing)
-    if 'Error' in iho.keys():
-        return send_message(iho['Subject'], iho['Message'], to_addr=To, skip_send=testing)
-    meth, neth = read_hosts_ethers_file('ethers', host=hostname, path=path, testing=testing)
-    if 'Error' in meth.keys():
-        return send_message(meth['Subject'], meth['Message'], to_addr=To, skip_send=testing)
-    print("Now need to do the actual checking.")
 
 
 def node_temperature(at_date=None, at_time=0.0,
