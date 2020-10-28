@@ -60,15 +60,15 @@ def test_watch_dog(mcsession):
     mcsession.commit()
     msg = watch_dog.node_temperature(at_date=None, at_time=0.0,
                                      temp_threshold=45.0, time_threshold=10000.0,
-                                     To=['test@hera.edu'], skip_send=True, session=mcsession)
+                                     To=['test@hera.edu'], testing=True, session=mcsession)
     assert msg.startswith("From: hera@lists.berkeley.edu")
     msg = watch_dog.node_temperature(at_date='2020/09/19', at_time=0.0,
                                      temp_threshold=45.0, time_threshold=10000.0,
-                                     To=['test@hera.edu'], skip_send=True, session=mcsession)
+                                     To=['test@hera.edu'], testing=True, session=mcsession)
     assert msg.startswith("From: hera@lists.berkeley.edu")
     msg = watch_dog.node_temperature(at_date='2020/09/19', at_time=0.0,
                                      temp_threshold=45.0, time_threshold=0.0,
-                                     To=['test@hera.edu'], skip_send=True, session=mcsession)
+                                     To=['test@hera.edu'], testing=True, session=mcsession)
     assert msg is None
 
 
