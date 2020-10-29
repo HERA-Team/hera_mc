@@ -6,7 +6,7 @@
 """System watch-dogs."""
 
 
-def send_message(subject, msg, to_addr=None, from_addr='hera@lists.berkeley.edu', skip_send=False):
+def send_email(subject, msg, to_addr=None, from_addr='hera@lists.berkeley.edu', skip_send=False):
     """
     Send an email message, unless skip_send is True (for testing).
 
@@ -129,4 +129,4 @@ def node_temperature(at_date=None, at_time=0.0,
                 htlist.append(ht)
             msg += "\n\t {:02d}   {}".format(node_num, '  '.join(htlist))
     if msg != msg_header:
-        return send_message(msg_header.splitlines()[0], msg, To, skip_send=testing)
+        return send_email(msg_header.splitlines()[0], msg, To, skip_send=testing)
