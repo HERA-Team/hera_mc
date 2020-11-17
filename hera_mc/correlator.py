@@ -86,6 +86,158 @@ command_state_map = {
 }
 
 
+class CorrelatorPhaseSwitchIndex(MCDeclarativeBase):
+    """
+    Definition of correlator_phase_switch_index table.
+
+    Attributes
+    ----------
+    config_file_hash : String Column
+        MD5 hash of configuration contents
+    hostname : String Column
+        Hostname of SNAP (typically e.g. heraNode1Snap2)
+    node : Integer Column
+        Node number (0-29)
+    snap_position : Integer Column
+        SNAP position within node (0 - 3)
+    antpol_index_position : Integer Column
+        Antpol index position within SNAP (0 - 5)
+    phase_switch_index : Integer Column
+        Phase switch index value (1 - 24)
+    """
+
+    __tablename__ = 'correlator_phase_switch_index'
+    config_file_hash = Column(String, primary_key=True)
+    hostname = Column(String, primary_key=True)
+    node = Column(Integer, nullable=False)
+    snap_position = Column(Integer, nullable=False)
+    antpol_index_position = Column(Integer, nullable=False)
+    phase_switch_index = Column(Integer, nullable=False)
+
+    @classmethod
+    def create(cls, config_file_hash, hostname, node, snap_position,
+               antpol_index_position, phase_switch_index):
+        """
+        Create a new CorrelatorInputIndex object.
+
+        Parameters
+        ----------
+        config_file_hash : String Column
+            MD5 hash of configuration contents
+        hostname : String Column
+            Hostname of SNAP (typically e.g. heraNode1Snap2)
+        node : Integer Column
+            Node number (0-29)
+        snap_position : Integer Column
+            SNAP position within node (0 - 3)
+        antpol_index_position : Integer Column
+            Antpol ndex position within SNAP (0 - 5)
+        phase_switch_index : Integer Column
+            Phase switch index value (1 - 24)
+        """
+        return cls(config_file_hash=config_file_hash, hostname=hostname,
+                   node=node, snap_position=snap_position,
+                   antpol_index_position=antpol_index_position,
+                   phase_switch_index=phase_switch_index)
+
+
+class CorrelatorInputIndex(MCDeclarativeBase):
+    """
+    Definition of correlator_input_index table.
+
+    Attributes
+    ----------
+    config_file_hash : String Column
+        MD5 hash of configuration contents
+    hostname : String Column
+        Hostname of SNAP (typically e.g. heraNode1Snap2)
+    node : Integer Column
+        Node number (0-29)
+    snap_position : Integer Column
+        SNAP position within node (0 - 3)
+    antenna_index_position : Integer Column
+        Antenna index position within SNAP (0 - 2)
+    correlator_index : Integer Column
+        Correlator index value (0 - 349)
+    """
+
+    __tablename__ = 'correlator_input_index'
+    config_file_hash = Column(String, primary_key=True)
+    hostname = Column(String, primary_key=True)
+    node = Column(Integer, nullable=False)
+    snap_position = Column(Integer, nullable=False)
+    antenna_index_position = Column(Integer, nullable=False)
+    correlator_index = Column(Integer, nullable=False)
+
+    @classmethod
+    def create(cls, config_file_hash, hostname, node, snap_position,
+               antenna_index_position, correlator_index):
+        """
+        Create a new CorrelatorInputIndex object.
+
+        Parameters
+        ----------
+        config_file_hash : String Column
+            MD5 hash of configuration contents
+        hostname : String Column
+            Hostname of SNAP (typically e.g. heraNode1Snap2)
+        node : Integer Column
+            Node number (0-29)
+        snap_position : Integer Column
+            SNAP position within node (0 - 3)
+        antenna_index_position : Integer Column
+            Antenna ndex position within SNAP (0 - 2)
+        correlator_index : Integer Column
+            Correlator index value (0 - 349)
+        """
+        return cls(config_file_hash=config_file_hash, hostname=hostname,
+                   node=node, snap_position=snap_position,
+                   antenna_index_position=antenna_index_position,
+                   correlator_index=correlator_index)
+
+
+class CorrelatorActiveSNAP(MCDeclarativeBase):
+    """
+    Definition of correlator_active_snap table.
+
+    Attributes
+    ----------
+    config_file_hash : String Column
+        MD5 hash of configuration contents
+    hostname : String Column
+        Hostname of SNAP (typically e.g. heraNode1Snap2)
+    node : Integer Column
+        Node number (0-29)
+    snap_position : Integer Column
+        Snap position within node (0-3)
+    """
+
+    __tablename__ = 'correlator_active_snap'
+    config_file_hash = Column(String, primary_key=True)
+    hostname = Column(String, primary_key=True)
+    node = Column(Integer, nullable=False)
+    snap_position = Column(Integer, nullable=False)
+
+    @classmethod
+    def create(cls, config_file_hash, hostname, node, snap_position):
+        """
+        Create a new CorrelatorActiveSNAP object.
+
+        Parameters
+        ----------
+        config_file_hash : String Column
+            MD5 hash of configuration contents
+        hostname : String Column
+            Hostname of SNAP (typically e.g. heraNode1Snap2)
+        node : Integer Column
+            Node number (0-29)
+        snap_position : Integer Column
+            Snap position within node (0-3)
+        """
+        return cls(config_file_hash=config_file_hash, hostname=hostname,
+                   node=node, snap_position=snap_position)
+
+
 class CorrelatorConfiguration(MCDeclarativeBase):
     """
     Definition of correlator configuration.
