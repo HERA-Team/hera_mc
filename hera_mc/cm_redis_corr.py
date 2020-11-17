@@ -74,14 +74,14 @@ def parse_snap_config_to_psql(redishost=correlator.DEFAULT_REDIS_ADDRESS,
                                                               parameter='xengines',
                                                               value=','.join(xengines)))
         for key, xeng in config['xengines'].items():
-            parameter = '{}:chan_range'.format(key)
+            parameter = 'x{}:chan_range'.format(key)
             value = ','.join([str(_x) for _x in xeng['chan_range']])
             session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
                                                                   parameter=parameter,
                                                                   value=value))
             for evod in ['even', 'odd']:
                 for ipma in ['ip', 'mac']:
-                    parameter = '{}:{}:{}'.format(key, evod, ipma)
+                    parameter = 'x{}:{}:{}'.format(key, evod, ipma)
                     value = xeng[evod][ipma]
                     session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
                                                                           parameter=parameter,
