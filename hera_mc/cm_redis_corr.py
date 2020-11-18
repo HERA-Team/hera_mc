@@ -62,12 +62,28 @@ def parse_snap_config_to_psql(redishost=correlator.DEFAULT_REDIS_ADDRESS,
                                                               parameter='fengines',
                                                               value=','.join(fengines)))
         for key, heraNode in config['fengines'].items():
-            for par in ['ants', 'phase_switch_index']:
-                parameter = '{}:{}'.format(key, par)
-                value = heraNode[par]
-                session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
-                                                                      parameter=parameter,
-                                                                      value=value))
+            this_node = int(key.split('S')[0][8:])
+            this_snap = int(key[-1])
+            session.add(correlator.CorrelatorActiveSNAP.create(config_file_hash=md5,
+                                                               hostname=key,
+                                                               node=this_node,
+                                                               snap_position=this_snap))
+            for _i in range(len(heraNode['ants'])):
+                cind = heraNode['ants'][_i]
+                session.add(correlator.CorrelatorInputIndex.create(config_file_hash=md5,
+                                                                   hostname=key,
+                                                                   node=this_node,
+                                                                   snap_position=this_snap,
+                                                                   antenna_index_position=_i,
+                                                                   correlator_index=cind))
+            for _i in range(len(heraNode['phase_switch_index'])):
+                pind = heraNode['phase_switch_index'][_i]
+                session.add(correlator.CorrelatorPhaseSwitchIndex.create(config_file_hash=md5,
+                                                                         hostname=key,
+                                                                         node=this_node,
+                                                                         snap_position=this_snap,
+                                                                         antpol_index_position=_i,
+                                                                         phase_switch_index=pind))
     if 'xengines' not in existing_par:
         xengines = [str(x) for x in sorted(config['xengines'].keys())]
         session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,

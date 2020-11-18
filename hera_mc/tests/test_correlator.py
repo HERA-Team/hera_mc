@@ -18,7 +18,7 @@ from astropy.time import Time, TimeDelta
 from hera_mc import mc, cm_partconnect
 import hera_mc.correlator as corr
 from hera_mc.data import DATA_PATH
-from ..tests import onsite, checkWarnings, requires_redis
+from ..tests import onsite, checkWarnings, requires_redis, TEST_DEFAULT_REDIS_HOST
 
 
 @pytest.fixture(scope='module')
@@ -58,7 +58,7 @@ def corrconfig(config):
 def init_args():
     return ("Namespace(config_file=None, eth=True, initialize=True, "
             + "mansync=False, noise=False, program=False, "
-            + "redishost='redishost', sync=True, tvg=False)")
+            + "redishost='{}', sync=True, tvg=False)".format(TEST_DEFAULT_REDIS_HOST))
 
 
 @pytest.fixture(scope='module')

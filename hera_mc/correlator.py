@@ -112,7 +112,7 @@ class CorrelatorPhaseSwitchIndex(MCDeclarativeBase):
     node = Column(Integer, nullable=False)
     snap_position = Column(Integer, nullable=False)
     antpol_index_position = Column(Integer, nullable=False)
-    phase_switch_index = Column(Integer, nullable=False)
+    phase_switch_index = Column(Integer, primary_key=True)
 
     @classmethod
     def create(cls, config_file_hash, hostname, node, snap_position,
@@ -163,11 +163,11 @@ class CorrelatorInputIndex(MCDeclarativeBase):
 
     __tablename__ = 'correlator_input_index'
     config_file_hash = Column(String, primary_key=True)
-    hostname = Column(String, primary_key=True)
+    hostname = Column(String, nullable=False)
     node = Column(Integer, nullable=False)
     snap_position = Column(Integer, nullable=False)
     antenna_index_position = Column(Integer, nullable=False)
-    correlator_index = Column(Integer, nullable=False)
+    correlator_index = Column(Integer, primary_key=True)
 
     @classmethod
     def create(cls, config_file_hash, hostname, node, snap_position,

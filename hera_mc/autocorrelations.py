@@ -35,6 +35,7 @@ def _get_autos_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
         np.frombuffer(rsession.get("auto:timestamp"), dtype=np.float64).item(),
         format="jd",
     )
+    auto_time = Time(rsession.get("auto:timestamp").decode(), format='jd')
     autos_dict = {"timestamp": auto_time.jd}
 
     keys = [
