@@ -118,7 +118,7 @@ class CorrelatorPhaseSwitchIndex(MCDeclarativeBase):
     def create(cls, config_file_hash, hostname, node, snap_position,
                antpol_index_position, phase_switch_index):
         """
-        Create a new CorrelatorInputIndex object.
+        Create a new CorrelatorPhaseSwitchIndex object.
 
         Parameters
         ----------
