@@ -46,7 +46,7 @@ def parse_snap_config_to_psql(redishost=correlator.DEFAULT_REDIS_ADDRESS,
     #####
     existing_corr_hash = session.query(
         correlator.CorrelatorConfiguration).filter(
-        correlator.CorrelatorConfiguration.config_file_hash == md5)
+        correlator.CorrelatorConfiguration.config_file_hash == md5).all()
     if len(existing_corr_hash):
         return
 
