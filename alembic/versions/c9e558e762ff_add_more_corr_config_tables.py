@@ -22,14 +22,14 @@ def upgrade():
     sa.Column('config_file_hash', sa.String(), nullable=False),
     sa.Column('hostname', sa.String(), nullable=False),
     sa.Column('node', sa.Integer(), nullable=False),
-    sa.Column('snap_position', sa.Integer(), nullable=False),
+    sa.Column('snap_loc_num', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('config_file_hash', 'hostname')
     )
     op.create_table('correlator_input_index',
     sa.Column('config_file_hash', sa.String(), nullable=False),
     sa.Column('hostname', sa.String(), nullable=False),
     sa.Column('node', sa.Integer(), nullable=False),
-    sa.Column('snap_position', sa.Integer(), nullable=False),
+    sa.Column('snap_loc_num', sa.Integer(), nullable=False),
     sa.Column('antenna_index_position', sa.Integer(), nullable=False),
     sa.Column('correlator_index', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('config_file_hash', 'correlator_index')
@@ -38,7 +38,7 @@ def upgrade():
     sa.Column('config_file_hash', sa.String(), nullable=False),
     sa.Column('hostname', sa.String(), nullable=False),
     sa.Column('node', sa.Integer(), nullable=False),
-    sa.Column('snap_position', sa.Integer(), nullable=False),
+    sa.Column('snap_loc_num', sa.Integer(), nullable=False),
     sa.Column('antpol_index_position', sa.Integer(), nullable=False),
     sa.Column('phase_switch_index', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('config_file_hash', 'hostname', 'phase_switch_index')

@@ -43,65 +43,63 @@ def parse_snap_config_to_psql(redishost=correlator.DEFAULT_REDIS_ADDRESS,
     config = yaml.safe_load(rsession.hget(snap_configuration, 'config'))
     md5 = rsession.hget(snap_configuration, 'md5').decode()
 
-    existing_par = []
-    for expar in session.query(correlator.CorrelatorConfiguration).filter(
-            correlator.CorrelatorConfiguration.config_file_hash == md5):
-        existing_par.append(expar.parameter)
+    #####
+    existing_corr_hash = session.query(
+        correlator.CorrelatorConfiguration).filter(
+        correlator.CorrelatorConfiguration.config_file_hash == md5)
+    if len(existing_corr_hash) > 0:
+        return
 
     keys_to_save = ['fft_shift', 'fpgfile', 'dest_port', 'log_walsh_step_size',
                     'walsh_order', 'walsh_delay']
     for key in keys_to_save:
-        if key in existing_par:
-            continue
         value = config[key]
         session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
                                                               parameter=key, value=value))
-    if 'fengines' not in existing_par:
-        fengines = sorted(config['fengines'].keys())
-        session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
-                                                              parameter='fengines',
-                                                              value=','.join(fengines)))
-        for key, heraNode in config['fengines'].items():
-            this_node = int(key.split('S')[0][8:])
-            this_snap = int(key[-1])
-            session.add(correlator.CorrelatorActiveSNAP.create(config_file_hash=md5,
-                                                               hostname=key,
+    fengines = sorted(config['fengines'].keys())
+    session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
+                                                          parameter='fengines',
+                                                          value=','.join(fengines)))
+    for hostname, heraNode in config['fengines'].items():
+        this_node = int(hostname.split('S')[0][8:])
+        this_snap = int(hostname[-1])
+        session.add(correlator.CorrelatorActiveSNAP.create(config_file_hash=md5,
+                                                           hostname=hostname,
+                                                           node=this_node,
+                                                           snap_loc_num=this_snap))
+        for _i in range(len(heraNode['ants'])):
+            cind = heraNode['ants'][_i]
+            session.add(correlator.CorrelatorInputIndex.create(config_file_hash=md5,
+                                                               hostname=hostname,
                                                                node=this_node,
-                                                               snap_position=this_snap))
-            for _i in range(len(heraNode['ants'])):
-                cind = heraNode['ants'][_i]
-                session.add(correlator.CorrelatorInputIndex.create(config_file_hash=md5,
-                                                                   hostname=key,
-                                                                   node=this_node,
-                                                                   snap_position=this_snap,
-                                                                   antenna_index_position=_i,
-                                                                   correlator_index=cind))
-            for _i in range(len(heraNode['phase_switch_index'])):
-                pind = heraNode['phase_switch_index'][_i]
-                session.add(correlator.CorrelatorPhaseSwitchIndex.create(config_file_hash=md5,
-                                                                         hostname=key,
-                                                                         node=this_node,
-                                                                         snap_position=this_snap,
-                                                                         antpol_index_position=_i,
-                                                                         phase_switch_index=pind))
-    if 'xengines' not in existing_par:
-        xengines = [str(x) for x in sorted(config['xengines'].keys())]
+                                                               snap_loc_num=this_snap,
+                                                               antenna_index_position=_i,
+                                                               correlator_index=cind))
+        for _i in range(len(heraNode['phase_switch_index'])):
+            pind = heraNode['phase_switch_index'][_i]
+            session.add(correlator.CorrelatorPhaseSwitchIndex.create(config_file_hash=md5,
+                                                                     hostname=hostname,
+                                                                     node=this_node,
+                                                                     snap_loc_num=this_snap,
+                                                                     antpol_index_position=_i,
+                                                                     phase_switch_index=pind))
+    xengines = [str(x) for x in sorted(config['xengines'].keys())]
+    session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
+                                                          parameter='xengines',
+                                                          value=','.join(xengines)))
+    for xengind, xeng in config['xengines'].items():
+        parameter = 'x{}:chan_range'.format(xengind)
+        value = ','.join([str(_x) for _x in xeng['chan_range']])
         session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
-                                                              parameter='xengines',
-                                                              value=','.join(xengines)))
-        for key, xeng in config['xengines'].items():
-            parameter = 'x{}:chan_range'.format(key)
-            value = ','.join([str(_x) for _x in xeng['chan_range']])
-            session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
-                                                                  parameter=parameter,
-                                                                  value=value))
-            for evod in ['even', 'odd']:
-                for ipma in ['ip', 'mac']:
-                    parameter = 'x{}:{}:{}'.format(key, evod, ipma)
-                    value = xeng[evod][ipma]
-                    session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
-                                                                          parameter=parameter,
-                                                                          value=value))
+                                                              parameter=parameter,
+                                                              value=value))
+        for evod in ['even', 'odd']:
+            for ipma in ['ip', 'mac']:
+                parameter = 'x{}:{}:{}'.format(xengind, evod, ipma)
+                value = xeng[evod][ipma]
+                session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
+                                                                      parameter=parameter,
+                                                                      value=value))
     session.commit()
 
 

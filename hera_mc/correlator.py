@@ -98,7 +98,7 @@ class CorrelatorPhaseSwitchIndex(MCDeclarativeBase):
         Hostname of SNAP (typically e.g. heraNode1Snap2)
     node : Integer Column
         Node number (0-29)
-    snap_position : Integer Column
+    snap_loc_num : Integer Column
         SNAP position within node (0 - 3)
     antpol_index_position : Integer Column
         Antpol index position within SNAP (0 - 5)
@@ -110,12 +110,12 @@ class CorrelatorPhaseSwitchIndex(MCDeclarativeBase):
     config_file_hash = Column(String, primary_key=True)
     hostname = Column(String, primary_key=True)
     node = Column(Integer, nullable=False)
-    snap_position = Column(Integer, nullable=False)
+    snap_loc_num = Column(Integer, nullable=False)
     antpol_index_position = Column(Integer, nullable=False)
     phase_switch_index = Column(Integer, primary_key=True)
 
     @classmethod
-    def create(cls, config_file_hash, hostname, node, snap_position,
+    def create(cls, config_file_hash, hostname, node, snap_loc_num,
                antpol_index_position, phase_switch_index):
         """
         Create a new CorrelatorPhaseSwitchIndex object.
@@ -128,7 +128,7 @@ class CorrelatorPhaseSwitchIndex(MCDeclarativeBase):
             Hostname of SNAP (typically e.g. heraNode1Snap2)
         node : Integer Column
             Node number (0-29)
-        snap_position : Integer Column
+        snap_loc_num : Integer Column
             SNAP position within node (0 - 3)
         antpol_index_position : Integer Column
             Antpol ndex position within SNAP (0 - 5)
@@ -136,7 +136,7 @@ class CorrelatorPhaseSwitchIndex(MCDeclarativeBase):
             Phase switch index value (1 - 24)
         """
         return cls(config_file_hash=config_file_hash, hostname=hostname,
-                   node=node, snap_position=snap_position,
+                   node=node, snap_loc_num=snap_loc_num,
                    antpol_index_position=antpol_index_position,
                    phase_switch_index=phase_switch_index)
 
@@ -153,7 +153,7 @@ class CorrelatorInputIndex(MCDeclarativeBase):
         Hostname of SNAP (typically e.g. heraNode1Snap2)
     node : Integer Column
         Node number (0-29)
-    snap_position : Integer Column
+    snap_loc_num : Integer Column
         SNAP position within node (0 - 3)
     antenna_index_position : Integer Column
         Antenna index position within SNAP (0 - 2)
@@ -165,12 +165,12 @@ class CorrelatorInputIndex(MCDeclarativeBase):
     config_file_hash = Column(String, primary_key=True)
     hostname = Column(String, nullable=False)
     node = Column(Integer, nullable=False)
-    snap_position = Column(Integer, nullable=False)
+    snap_loc_num = Column(Integer, nullable=False)
     antenna_index_position = Column(Integer, nullable=False)
     correlator_index = Column(Integer, primary_key=True)
 
     @classmethod
-    def create(cls, config_file_hash, hostname, node, snap_position,
+    def create(cls, config_file_hash, hostname, node, snap_loc_num,
                antenna_index_position, correlator_index):
         """
         Create a new CorrelatorInputIndex object.
@@ -183,7 +183,7 @@ class CorrelatorInputIndex(MCDeclarativeBase):
             Hostname of SNAP (typically e.g. heraNode1Snap2)
         node : Integer Column
             Node number (0-29)
-        snap_position : Integer Column
+        snap_loc_num : Integer Column
             SNAP position within node (0 - 3)
         antenna_index_position : Integer Column
             Antenna ndex position within SNAP (0 - 2)
@@ -191,7 +191,7 @@ class CorrelatorInputIndex(MCDeclarativeBase):
             Correlator index value (0 - 349)
         """
         return cls(config_file_hash=config_file_hash, hostname=hostname,
-                   node=node, snap_position=snap_position,
+                   node=node, snap_loc_num=snap_loc_num,
                    antenna_index_position=antenna_index_position,
                    correlator_index=correlator_index)
 
@@ -208,7 +208,7 @@ class CorrelatorActiveSNAP(MCDeclarativeBase):
         Hostname of SNAP (typically e.g. heraNode1Snap2)
     node : Integer Column
         Node number (0-29)
-    snap_position : Integer Column
+    snap_loc_num : Integer Column
         Snap position within node (0-3)
     """
 
@@ -216,10 +216,10 @@ class CorrelatorActiveSNAP(MCDeclarativeBase):
     config_file_hash = Column(String, primary_key=True)
     hostname = Column(String, primary_key=True)
     node = Column(Integer, nullable=False)
-    snap_position = Column(Integer, nullable=False)
+    snap_loc_num = Column(Integer, nullable=False)
 
     @classmethod
-    def create(cls, config_file_hash, hostname, node, snap_position):
+    def create(cls, config_file_hash, hostname, node, snap_loc_num):
         """
         Create a new CorrelatorActiveSNAP object.
 
@@ -231,11 +231,11 @@ class CorrelatorActiveSNAP(MCDeclarativeBase):
             Hostname of SNAP (typically e.g. heraNode1Snap2)
         node : Integer Column
             Node number (0-29)
-        snap_position : Integer Column
+        snap_loc_num : Integer Column
             Snap position within node (0-3)
         """
         return cls(config_file_hash=config_file_hash, hostname=hostname,
-                   node=node, snap_position=snap_position)
+                   node=node, snap_loc_num=snap_loc_num)
 
 
 class CorrelatorConfiguration(MCDeclarativeBase):
