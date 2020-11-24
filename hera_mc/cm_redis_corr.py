@@ -43,7 +43,6 @@ def parse_snap_config_to_psql(redishost=correlator.DEFAULT_REDIS_ADDRESS,
     config = yaml.safe_load(rsession.hget(snap_configuration, 'config'))
     md5 = rsession.hget(snap_configuration, 'md5').decode()
 
-    #####
     existing_corr_hash = session.query(
         correlator.CorrelatorConfiguration).filter(
         correlator.CorrelatorConfiguration.config_file_hash == md5).all()
@@ -88,14 +87,14 @@ def parse_snap_config_to_psql(redishost=correlator.DEFAULT_REDIS_ADDRESS,
                                                           parameter='xengines',
                                                           value=','.join(xengines)))
     for xengind, xeng in config['xengines'].items():
-        parameter = 'x{}:chan_range'.format(xengind)
+        parameter = f'x{xengind}:chan_range'
         value = ','.join([str(_x) for _x in xeng['chan_range']])
         session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
                                                               parameter=parameter,
                                                               value=value))
         for evod in ['even', 'odd']:
             for ipma in ['ip', 'mac']:
-                parameter = 'x{}:{}:{}'.format(xengind, evod, ipma)
+                parameter = f'x{xengind}:{evod}:{ipma}'
                 value = xeng[evod][ipma]
                 session.add(correlator.CorrelatorConfiguration.create(config_file_hash=md5,
                                                                       parameter=parameter,
