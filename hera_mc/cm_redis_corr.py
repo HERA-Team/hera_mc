@@ -47,7 +47,7 @@ def parse_snap_config_to_psql(redishost=correlator.DEFAULT_REDIS_ADDRESS,
     existing_corr_hash = session.query(
         correlator.CorrelatorConfiguration).filter(
         correlator.CorrelatorConfiguration.config_file_hash == md5)
-    if len(existing_corr_hash) > 0:
+    if len(existing_corr_hash):
         return
 
     keys_to_save = ['fft_shift', 'fpgfile', 'dest_port', 'log_walsh_step_size',
