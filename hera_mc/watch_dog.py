@@ -6,6 +6,40 @@
 """System watch-dogs."""
 
 
+def send_email(subject, msg, to_addr=None, from_addr='hera@lists.berkeley.edu', skip_send=False):
+    """
+    Send an email message, unless skip_send is True (for testing).
+
+    Parameters
+    ----------
+    subject : str
+        Subject of email.
+    msg : str
+        Message to send.
+    to_addr : list or None
+        If None, it will read the list in the .forward file.
+    from_addr : str
+        From address to use
+    skip_send : bool
+        If True, it will just return the composed message and not send it.
+
+    Returns
+    -------
+    str or None
+        If skip_send, will return the composed message.
+    """
+    import smtplib
+    if to_addr is None:  # pragma: no cover
+        to_addr = read_forward_list()
+    msg_to_send = ("From: {}\nTo: {}\nSubject: {}\n{}"
+                   .format(from_addr, ', '.join(to_addr), subject, msg))
+    if skip_send:
+        return msg_to_send
+    else:  # pragma: no cover
+        server = smtplib.SMTP('localhost')
+        server.sendmail(from_addr, to_addr, msg_to_send)
+
+
 def read_forward_list():  # pragma: no cover
     """Read in emails from .forward file."""
     fwd = []
@@ -16,7 +50,7 @@ def read_forward_list():  # pragma: no cover
 
 def node_temperature(at_date=None, at_time=0.0,
                      temp_threshold=45.0, time_threshold=1.0,
-                     To=None, skip_send=False, session=None):
+                     To=None, testing=False, session=None):
     """
     Check node for over-temperature.
 
@@ -35,7 +69,7 @@ def node_temperature(at_date=None, at_time=0.0,
         Time in days for "current" values.
     To : list or None
         List of e-mail addresses.  If None, uses the addresses in ~/.forward
-    skip_send : bool
+    testing : bool
         Boolean to skip sending the actual e-mail and return a string (for testing)
     session : session object or None
         If None, it will start a new session on the database
@@ -95,14 +129,4 @@ def node_temperature(at_date=None, at_time=0.0,
                 htlist.append(ht)
             msg += "\n\t {:02d}   {}".format(node_num, '  '.join(htlist))
     if msg != msg_header:
-        import smtplib
-        From = 'hera@lists.berkeley.edu'
-        Subject = msg_header.splitlines()[0]
-        if To is None:  # pragma: no cover
-            To = read_forward_list()
-        msg_sent = "From: {}\nTo: {}\nSubject: {}\n{}".format(From, ', '.join(To), Subject, msg)
-        if skip_send:
-            return msg_sent
-        else:  # pragma: no cover
-            server = smtplib.SMTP('localhost')
-            server.sendmail(From, To, msg_sent)
+        return send_email(msg_header.splitlines()[0], msg, To, skip_send=testing)
