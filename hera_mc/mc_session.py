@@ -2307,26 +2307,590 @@ class MCSession(Session):
 
         self.add(CorrelatorConfigFile.create(config_hash, config_file))
 
-    def get_correlator_config_file(self, config_hash):
+    def get_correlator_config_file(self, config_hash=None,
+                                   most_recent=None, starttime=None,
+                                   stoptime=None):
         """
         Get a correlator config file record from the M&C database.
+
+        If a config_hash is provided, the time-related optional keywords are ignored.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
 
         Parameters
         ----------
         config_hash : str
             Unique hash for config file.
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
 
         Returns
         -------
-        list of CorrelatorConfigFile objects
+        list
+            List of CorrelatorConfigFile objects.
+        time_list : list of Astropy Time objects, optional
+            List of start times when the config files were used, same length as the list
+            of CorrelatorConfigFile objects. Only provided if `config_hash` is None.
 
         """
         from .correlator import CorrelatorConfigFile
 
-        query = self.query(CorrelatorConfigFile).filter(
-            CorrelatorConfigFile.config_hash == config_hash)
+        if config_hash is not None:
+            query = self.query(CorrelatorConfigFile).filter(
+                CorrelatorConfigFile.config_hash == config_hash)
 
-        return query.all()
+            return query.all()
+        else:
+            # get the config statuses to get hashes for the times of interest
+            config_status_list = self.get_correlator_config_status(
+                most_recent=most_recent,
+                starttime=starttime, stoptime=stoptime)
+            time_list = []
+            config_file_obj_list = []
+            for config_status in config_status_list:
+                config_file_obj_list.extend(
+                    self.get_correlator_config_file(config_status.config_hash)
+                )
+                time_list.append(Time(config_status.time, format="gps"))
+
+            return config_file_obj_list, time_list
+
+    def get_correlator_config_params(self, config_hash=None, parameter=None,
+                                     most_recent=None, starttime=None,
+                                     stoptime=None):
+        """
+        Get correlator config params record(s) from the M&C database.
+
+        If a config_hash is provided, the time-related optional keywords are ignored.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        Parameters
+        ----------
+        config_hash : str
+            Unique MD5 hash of the config to get records for.
+        parameter : str, optional
+            Parameter to get record for. If None, get all parameters for this hash.
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+
+        Returns
+        -------
+        list
+            List of CorrelatorConfigParams objects.
+        time_list : list of Astropy Time objects, optional
+            List of start times when the config params were used, same length as the list
+            of CorrelatorConfigParams objects. Only provided if `config_hash` is None.
+
+        """
+        from .correlator import CorrelatorConfigParams
+
+        if config_hash is not None:
+            query = self.query(CorrelatorConfigParams).filter(
+                CorrelatorConfigParams.config_hash == config_hash)
+
+            if parameter is not None:
+                query = query.filter(CorrelatorConfigParams.parameter == parameter)
+
+            return query.all()
+        else:
+            # get the config statuses to get hashes for the times of interest
+            config_status_list = self.get_correlator_config_status(
+                most_recent=most_recent,
+                starttime=starttime, stoptime=stoptime)
+            time_list = []
+            config_params_obj_list = []
+            for config_status in config_status_list:
+                this_param_list = self.get_correlator_config_params(
+                    config_hash=config_status.config_hash, parameter=parameter
+                )
+                config_params_obj_list.extend(this_param_list)
+                time_list.extend([Time(config_status.time, format="gps")] * len(this_param_list))
+
+            return config_params_obj_list, time_list
+
+    def get_snap_hostname_from_serial(self, serial_number):
+        """
+        Get SNAP hostname from the SNAP serial number (also called hpn or part number).
+
+        This method first tries to use the PartRosetta table. If the hostname cannot
+        be found there, it falls back on the latest SNAPStatus entry with the given part
+        number.
+
+        Parameters
+        ----------
+        serial_number : str
+            SNAP serial number.
+
+        Returns
+        -------
+        str or None
+            SNAP hostname if serial_number is found in the part_rosetta or snap_status
+            table, None otherwise.
+
+        """
+        from .correlator import SNAPStatus
+        from .cm_active import ActiveData
+
+        active = ActiveData(session=self)
+        active.load_rosetta()
+        if serial_number in active.rosetta.keys():
+            return active.rosetta[serial_number].syspn
+        else:
+            # get most recent entry with this serial number
+            query = self.query(SNAPStatus).filter(
+                SNAPStatus.serial_number == serial_number).order_by(
+                    desc(SNAPStatus.time)).limit(1)
+
+            result = query.all()
+            if len(result) < 1:
+                return None
+
+            return result[0].hostname
+
+    def get_snap_serial_from_hostname(self, hostname, at_date='now'):
+        """
+        Get SNAP serial number (also called hpn or part number) from the SNAP hostname.
+
+        This method first tries to use the PartRosetta table. If the hostname cannot
+        be found there, it falls back on the latest SNAPStatus entry with the hostname.
+
+        Parameters
+        ----------
+        hostname : str
+            SNAP hostname.
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+
+        Returns
+        -------
+        str or None
+            SNAP serial number (also called hpn or part number) if the hostname is found
+            in the part_rosetta or snap_status table, None otherwise.
+
+        """
+        from .correlator import SNAPStatus
+        from .cm_active import ActiveData
+
+        active = ActiveData(session=self, at_date=at_date)
+        active.load_rosetta()
+
+        serial_number = None
+        for hpn, part_rosetta in active.rosetta.items():
+            if part_rosetta.syspn == hostname:
+                serial_number = hpn
+
+        if serial_number is None:
+            # get most recent entry with this serial number
+            query = self.query(SNAPStatus).filter(
+                SNAPStatus.hostname == hostname).order_by(
+                    desc(SNAPStatus.time)).limit(1)
+
+            result = query.all()
+            if len(result) == 1:
+                serial_number = result[0].serial_number
+
+        return serial_number
+
+    def _get_node_snap_from_serial(self, snap_serial, session=None, at_date='now'):
+        """
+        Get SNAP connection information from SNAP serial number.
+
+        Parameters
+        ----------
+        snap_serial : str
+            SNAP serial number (also called hpn or part number).
+        session : Session object
+            Session to pass to cm_handling.Handling. Defaults to self.
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+
+        Returns
+        -------
+        nodeID: int
+            Node number.
+        snap_loc_num : int
+            SNAP location number.
+
+        """
+        from .cm_active import ActiveData
+        from . import cm_utils
+
+        if session is None:
+            session = self
+
+        active = ActiveData(session=self, at_date='now')
+        active.load_parts()
+        active.load_connections()
+        rev_list = active.revs(snap_serial, exact_match=True)
+        if len(rev_list) < 1:
+            warnings.warn(f'No active connections returned for snap serial {snap_serial}. '
+                          'Setting node and snap location numbers to None')
+            return None, None
+        if len(rev_list) > 1:
+            warnings.warn(
+                f"There is more that one active revision for snap serial {snap_serial}. "
+                "Setting node and snap location numbers to None"
+            )
+            return None, None
+
+        this_rev = rev_list[0].rev
+        this_conn_key = cm_utils.make_part_key(snap_serial, this_rev)
+        nodeID = int(
+            active.connections['up'][this_conn_key]['RACK'].downstream_part[1:]
+        )
+        snap_loc_num = int(
+            active.connections['up'][this_conn_key]['RACK'].downstream_input_port[3:]
+        )
+
+        return nodeID, snap_loc_num
+
+    def _get_node_snap_from_snap_hostname(self, hostname, at_date="now"):
+        """
+        Get SNAP connection information from SNAP hostname.
+
+        Parameters
+        ----------
+        hostname : str
+            SNAP hostname.
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+
+        Returns
+        -------
+        nodeID: int
+            Node number.
+        snap_loc_num : int
+            SNAP location number.
+
+        """
+        snap_hpn = self.get_snap_serial_from_hostname(hostname, at_date=at_date)
+        nodeID, snap_loc_num = self._get_node_snap_from_serial(snap_hpn, at_date=at_date)
+
+        return nodeID, snap_loc_num
+
+    def _get_node_snap_lists_for_configs(self, config_obj_list, time_list=None):
+        """
+        Get SNAP connection information for lists of config objects.
+
+        Parameters
+        ----------
+        config_obj_list : list
+            list of instances of CorrelatorConfigActiveSNAP, CorrelatorConfigInputIndex
+            or CorrelatorConfigPhaseSwitchIndex.
+        time_list : list of astropy Time objects
+            Times corresponding to objects in config_obj_list. Use now if None.
+
+        Returns
+        -------
+        node_list: list of int
+            List of node numbers.
+        loc_num_list : list of int
+            List of SNAP location numbers.
+
+        """
+        node_list = []
+        loc_num_list = []
+        for index, obj in enumerate(config_obj_list):
+            if time_list is not None:
+                at_date = "now"
+            else:
+                at_date = time_list(index)
+            node, loc_num = self._get_node_snap_from_snap_hostname(
+                obj.hostname, at_date=at_date
+            )
+            node_list.append(node)
+            loc_num_list.append(loc_num)
+
+        return node_list, loc_num_list
+
+    def get_correlator_config_active_snaps(self, config_hash=None,
+                                           most_recent=None, starttime=None,
+                                           stoptime=None, return_node_loc_num=False):
+        """
+        Get correlator config active SNAP records from the M&C database.
+
+        If a config_hash is provided, the time-related optional keywords are ignored.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        Parameters
+        ----------
+        config_hash : str
+            Unique MD5 hash of the config to get records for.
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        return_node_loc_num : bool
+            If True, return the node and SNAP location numbers for the active SNAPS
+
+        Returns
+        -------
+        list
+            List of CorrelatorConfigActiveSNAP objects.
+        time_list : list of Astropy Time objects, optional
+            List of start times when the config params were used, same length as the list
+            of CorrelatorConfigActiveSNAP objects. Only provided if `config_hash` is None.
+        node_list : list of int, optional
+            List of nodes for each object in the list of CorrelatorConfigActiveSNAP objects.
+        loc_num_list : list of int, optional
+            List of SNAP location numbers for each object in the list of
+            CorrelatorConfigActiveSNAP objects.
+
+        """
+        from .correlator import CorrelatorConfigActiveSNAP
+
+        if config_hash is not None:
+            query = self.query(CorrelatorConfigActiveSNAP).filter(
+                CorrelatorConfigActiveSNAP.config_hash == config_hash)
+
+            retval = [query.all()]
+            time_list = None
+        else:
+            # get the config statuses to get hashes for the times of interest
+            config_status_list = self.get_correlator_config_status(
+                most_recent=most_recent,
+                starttime=starttime, stoptime=stoptime)
+            time_list = []
+            config_active_snap_list = []
+            for config_status in config_status_list:
+                this_active_snap_list = self.get_correlator_config_active_snaps(
+                    config_hash=config_status.config_hash
+                )
+                config_active_snap_list.extend(this_active_snap_list)
+                time_list.extend(
+                    [Time(config_status.time, format="gps")] * len(this_active_snap_list)
+                )
+
+            retval = [config_active_snap_list, time_list]
+
+        if return_node_loc_num:
+            node_list, loc_num_list = self._get_node_snap_lists_for_configs(
+                config_active_snap_list, time_list=time_list
+            )
+            retval.extend([node_list, loc_num_list])
+
+        if len(retval) == 1:
+            return retval[0]
+        else:
+            return tuple(retval)
+
+    def get_correlator_config_input_index(self, config_hash=None, correlator_index=None,
+                                          most_recent=None, starttime=None,
+                                          stoptime=None, return_node_loc_num=False):
+        """
+        Get a correlator config input index records from the M&C database.
+
+        If a config_hash is provided, the time-related optional keywords are ignored.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        Parameters
+        ----------
+        config_hash : str
+            Unique MD5 hash of the config to get records for.
+        correlator_index : int
+            Correlator index to get records for. If None, get all correlator index
+            records for this hash or time.
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        return_node_loc_num : bool
+            If True, return the node and SNAP location numbers for the active SNAPS
+
+        Returns
+        -------
+        list
+            list of CorrelatorConfigInputIndex objects.
+        time_list : list of Astropy Time objects, optional
+            List of start times when the config params were used, same length as the list
+            of CorrelatorConfigInputIndex objects. Only provided if `config_hash` is None.
+        node_list : list of int, optional
+            List of nodes for each object in the list of CorrelatorConfigInputIndex objects.
+        loc_num_list : list of int, optional
+            List of SNAP location numbers for each object in the list of
+            CorrelatorConfigInputIndex objects.
+
+        """
+        from .correlator import CorrelatorConfigInputIndex
+
+        if config_hash is not None:
+            query = self.query(CorrelatorConfigInputIndex).filter(
+                CorrelatorConfigInputIndex.config_hash == config_hash)
+
+            if correlator_index is not None:
+                query = query.filter(
+                    CorrelatorConfigInputIndex.correlator_index == correlator_index
+                )
+
+            retval = [query.all()]
+            time_list = None
+        else:
+            # get the config statuses to get hashes for the times of interest
+            config_status_list = self.get_correlator_config_status(
+                most_recent=most_recent,
+                starttime=starttime, stoptime=stoptime)
+            time_list = []
+            config_input_index_list = []
+            for config_status in config_status_list:
+                this_input_index_list = self.get_correlator_config_input_index(
+                    config_hash=config_status.config_hash, correlator_index=correlator_index
+                )
+                config_input_index_list.extend(this_input_index_list)
+                time_list.extend(
+                    [Time(config_status.time, format="gps")] * len(this_input_index_list)
+                )
+
+            retval = [config_input_index_list, time_list]
+
+        if return_node_loc_num:
+            node_list, loc_num_list = self._get_node_snap_lists_for_configs(
+                config_input_index_list, time_list=time_list
+            )
+            retval.extend([node_list, loc_num_list])
+
+        if len(retval) == 1:
+            return retval[0]
+        else:
+            return tuple(retval)
+
+    def get_correlator_config_phase_switch_index(self, config_hash=None,
+                                                 most_recent=None, starttime=None,
+                                                 stoptime=None, return_node_loc_num=False):
+        """
+        Get a correlator config phase switch index records from the M&C database.
+
+        If a config_hash is provided, the time-related optional keywords are ignored.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        Parameters
+        ----------
+        config_hash : str
+            Unique MD5 hash of the config to get records for.
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        return_node_loc_num : bool
+            If True, return the node and SNAP location numbers for the active SNAPS
+
+        Returns
+        -------
+        list
+            list of CorrelatorConfigPhaseSwitchIndex objects.
+        time_list : list of Astropy Time objects, optional
+            List of start times when the config params were used, same length as the list
+            of CorrelatorConfigPhaseSwitchIndex objects. Only provided if `config_hash` is None.
+        node_list : list of int, optional
+            List of nodes for each object in the list of CorrelatorConfigPhaseSwitchIndex objects.
+        loc_num_list : list of int, optional
+            List of SNAP location numbers for each object in the list of
+            CorrelatorConfigPhaseSwitchIndex objects.
+
+        """
+        from .correlator import CorrelatorConfigPhaseSwitchIndex
+
+        if config_hash is not None:
+            query = self.query(CorrelatorConfigPhaseSwitchIndex).filter(
+                CorrelatorConfigPhaseSwitchIndex.config_hash == config_hash)
+
+            retval = [query.all()]
+            time_list = None
+        else:
+            # get the config statuses to get hashes for the times of interest
+            config_status_list = self.get_correlator_config_status(
+                most_recent=most_recent,
+                starttime=starttime, stoptime=stoptime)
+            time_list = []
+            config_ps_index_list = []
+            for config_status in config_status_list:
+                this_ps_index_list = self.get_correlator_config_phase_switch_index(
+                    config_hash=config_status.config_hash,
+                )
+                config_ps_index_list.extend(this_ps_index_list)
+                time_list.extend(
+                    [Time(config_status.time, format="gps")] * len(this_ps_index_list)
+                )
+
+            retval = [config_ps_index_list, time_list]
+
+        if return_node_loc_num:
+            node_list, loc_num_list = self._get_node_snap_lists_for_configs(
+                config_ps_index_list, time_list=time_list
+            )
+            retval.extend([node_list, loc_num_list])
+
+        if len(retval) == 1:
+            return retval[0]
+        else:
+            return tuple(retval)
 
     def add_correlator_config_status(self, time, config_hash):
         """
@@ -2399,8 +2963,8 @@ class MCSession(Session):
 
         Parameters
         ----------
-        config : str
-            Decoded yaml string (i.e. result of yaml.safe_load(config_file)).
+        config : dict
+            Dict of config info from redis/hera_corr_cm.
         config_hash : str
             Unique hash of the config.
         librarian_filename : str
@@ -2432,9 +2996,12 @@ class MCSession(Session):
 
         This function connects to the correlator and gets the latest config
         using the `corr._get_config` function. If it is a new config file, it
-        connects to the Librarian to upload the config file. For testing
-        purposes, it can optionally accept an input dict instead of connecting
-        to the correlator.
+        connects to the Librarian to upload the config file. It also parses the config
+        information into the config related tables (correlator_config_params,
+        correlator_config_active_snap, correlator_config_input_index,
+        correlator_config_phase_switch_index).
+        For testing purposes, it can optionally accept an input dict instead of
+        connecting to the correlator.
 
         Parameters
         ----------
@@ -2449,11 +3016,13 @@ class MCSession(Session):
         Returns
         -------
         list of objects, optional
-            If testing is True, returns the list of CorrelatorConfigFile and
-            CorrelatorConfigStatus objects based on the config_state_dict.
+            If testing is True, returns the list of CorrelatorConfigStatus,
+            CorrelatorConfigFile, CorrelatorConfigParams, CorrelatorConfigActiveSNAP,
+            CorrelatorConfigInputIndex, and CorrelatorConfigPhaseSwitchIndex objects
+            based on the config_state_dict.
 
         """
-        from .correlator import (_get_config, CorrelatorConfigFile,
+        from .correlator import (_get_config, _parse_config, CorrelatorConfigFile,
                                  CorrelatorConfigStatus)
 
         if config_state_dict is None:
@@ -2470,16 +3039,21 @@ class MCSession(Session):
         same_config_status = self.get_correlator_config_status(
             most_recent=True, config_hash=config_hash)
         if len(same_config_status) == 0:
+            # There's not a status with this config hash.
             # now check to see if a file with this hash (so identical)
             # already exists
             same_config_file = self.get_correlator_config_file(
                 config_hash=config_hash)
 
             if len(same_config_file) == 0:
+                # There's not a file with this config hash.
                 librarian_filename = ('correlator_config_'
                                       + str(int(floor(time.gps))) + '.yaml')
                 config_file_obj = CorrelatorConfigFile.create(
                     config_hash, librarian_filename)
+
+                # parse it get a list of config related objects
+                config_objs = _parse_config(config, config_hash)
 
                 if not testing:  # pragma: no cover
                     # This config is new.
@@ -2489,9 +3063,15 @@ class MCSession(Session):
 
                     # add it to the config file table
                     self.add(config_file_obj)
+
+                    # add the config details to their respective tables
+                    for obj in config_objs:
+                        self.add(obj)
+
                     self.commit()
                 else:
                     config_obj_list.append(config_file_obj)
+                    config_obj_list.extend(config_objs)
 
             # make the config status object
             config_status_obj = CorrelatorConfigStatus.create(time, config_hash)
@@ -3224,80 +3804,6 @@ class MCSession(Session):
                                              corr_version_list)
             self._insert_ignoring_duplicates(SNAPConfigVersion,
                                              snap_version_list)
-
-    def _get_node_snap_from_serial(self, snap_serial, session=None):
-        """
-        Get SNAP connection information from SNAP serial number.
-
-        Parameters
-        ----------
-        snap_serial : str
-            SNAP serial number.
-        session : Session object
-            Session to pass to cm_handling.Handling. Defaults to self.
-
-        Returns
-        -------
-        nodeID: int
-            Node number.
-        snap_loc_num : int
-            SNAP location number.
-
-        """
-        from hera_mc import cm_handling
-        if session is None:
-            session = self
-
-        cmh = cm_handling.Handling(session)
-        conn_dossier = cmh.get_dossier(snap_serial, rev=None, at_date='now')
-
-        if len(conn_dossier.keys()) == 0:
-            warnings.warn('No active dossiers returned for snap serial {snn}. '
-                          'Setting node and snap location numbers to None'
-                          .format(snn=snap_serial))
-            return None, None
-
-        if len(conn_dossier.keys()) > 1:
-            warnings.warn("Multiple {} snaps were found, which shouldn't happen. "
-                          "Setting node and snap location numbers to None"
-                          .format(snap_serial))
-            return None, None
-
-        snap_num_rev = list(conn_dossier.keys())[0]
-        snap_node_conn = conn_dossier[snap_num_rev].connections.up['RACK']
-        nodeID = int(snap_node_conn.downstream_part[1:])
-        snap_loc_num = int(snap_node_conn.downstream_input_port[3:])
-
-        return nodeID, snap_loc_num
-
-    def get_snap_hostname_from_serial(self, serial_number):
-        """
-        Get SNAP hostname from the SNAP serial number.
-
-        Parameters
-        ----------
-        serial_number : str
-            SNAP serial number.
-
-        Returns
-        -------
-        str or None
-            SNAP hostname if serial_number is found in the snap_status table,
-            None otherwise.
-
-        """
-        from .correlator import SNAPStatus
-
-        # get most recent entry with this serial number
-        query = self.query(SNAPStatus).filter(
-            SNAPStatus.serial_number == serial_number).order_by(
-                desc(SNAPStatus.time)).limit(1)
-
-        result = query.all()
-        if len(result) < 1:
-            return None
-
-        return result[0].hostname
 
     def add_snap_status(self, time, hostname, serial_number, psu_alert,
                         pps_count, fpga_temp, uptime_cycles,

@@ -1,0 +1,81 @@
+dest_port: 8511
+eth: false
+fengines:
+  heraNode700Snap0:
+    ants:
+    - 0
+    - 1
+    - 2
+    phase_switch_index:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+  heraNode700Snap1:
+    ants:
+    - 3
+    - 4
+    - 5
+    phase_switch_index:
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+  heraNode700Snap2:
+    ants:
+    - 6
+    - 7
+    - 8
+    phase_switch_index:
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+  heraNode700Snap3:
+    ants:
+    - 9
+    - 10
+    - 11
+    phase_switch_index:
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+fft_shift: 15086
+fpgfile: redis:snap_fengine_2020-07-16_1253.fpg
+initialize: false
+log_walsh_step_size: 3
+noise: false
+sync: pps
+tvg: false
+walsh_delay: 600
+walsh_order: 32
+xengines:
+  0:
+    chan_range:
+    - 1536
+    - 1920
+    even:
+      ip: 10.80.40.197
+      mac: 2207786215621
+    odd:
+      ip: 10.80.40.206
+      mac: 2207786215630
+  1:
+    chan_range:
+    - 1920
+    - 2304
+    even:
+      ip: 10.80.40.229
+      mac: 2207786215653
+    odd:
+      ip: 10.80.40.238
+      mac: 2207786215662

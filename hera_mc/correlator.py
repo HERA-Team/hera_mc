@@ -86,194 +86,6 @@ command_state_map = {
 }
 
 
-class CorrelatorPhaseSwitchIndex(MCDeclarativeBase):
-    """
-    Definition of correlator_phase_switch_index table.
-
-    Attributes
-    ----------
-    config_file_hash : String Column
-        MD5 hash of configuration contents
-    hostname : String Column
-        Hostname of SNAP (typically e.g. heraNode1Snap2)
-    node : Integer Column
-        Node number (0-29)
-    snap_loc_num : Integer Column
-        SNAP position within node (0 - 3)
-    antpol_index_position : Integer Column
-        Antpol index position within SNAP (0 - 5)
-    phase_switch_index : Integer Column
-        Phase switch index value (1 - 24)
-    """
-
-    __tablename__ = 'correlator_phase_switch_index'
-    config_file_hash = Column(String, primary_key=True)
-    hostname = Column(String, primary_key=True)
-    node = Column(Integer, nullable=False)
-    snap_loc_num = Column(Integer, nullable=False)
-    antpol_index_position = Column(Integer, nullable=False)
-    phase_switch_index = Column(Integer, primary_key=True)
-
-    @classmethod
-    def create(cls, config_file_hash, hostname, node, snap_loc_num,
-               antpol_index_position, phase_switch_index):
-        """
-        Create a new CorrelatorPhaseSwitchIndex object.
-
-        Parameters
-        ----------
-        config_file_hash : String Column
-            MD5 hash of configuration contents
-        hostname : String Column
-            Hostname of SNAP (typically e.g. heraNode1Snap2)
-        node : Integer Column
-            Node number (0-29)
-        snap_loc_num : Integer Column
-            SNAP position within node (0 - 3)
-        antpol_index_position : Integer Column
-            Antpol ndex position within SNAP (0 - 5)
-        phase_switch_index : Integer Column
-            Phase switch index value (1 - 24)
-        """
-        return cls(config_file_hash=config_file_hash, hostname=hostname,
-                   node=node, snap_loc_num=snap_loc_num,
-                   antpol_index_position=antpol_index_position,
-                   phase_switch_index=phase_switch_index)
-
-
-class CorrelatorInputIndex(MCDeclarativeBase):
-    """
-    Definition of correlator_input_index table.
-
-    Attributes
-    ----------
-    config_file_hash : String Column
-        MD5 hash of configuration contents
-    hostname : String Column
-        Hostname of SNAP (typically e.g. heraNode1Snap2)
-    node : Integer Column
-        Node number (0-29)
-    snap_loc_num : Integer Column
-        SNAP position within node (0 - 3)
-    antenna_index_position : Integer Column
-        Antenna index position within SNAP (0 - 2)
-    correlator_index : Integer Column
-        Correlator index value (0 - 349)
-    """
-
-    __tablename__ = 'correlator_input_index'
-    config_file_hash = Column(String, primary_key=True)
-    hostname = Column(String, nullable=False)
-    node = Column(Integer, nullable=False)
-    snap_loc_num = Column(Integer, nullable=False)
-    antenna_index_position = Column(Integer, nullable=False)
-    correlator_index = Column(Integer, primary_key=True)
-
-    @classmethod
-    def create(cls, config_file_hash, hostname, node, snap_loc_num,
-               antenna_index_position, correlator_index):
-        """
-        Create a new CorrelatorInputIndex object.
-
-        Parameters
-        ----------
-        config_file_hash : String Column
-            MD5 hash of configuration contents
-        hostname : String Column
-            Hostname of SNAP (typically e.g. heraNode1Snap2)
-        node : Integer Column
-            Node number (0-29)
-        snap_loc_num : Integer Column
-            SNAP position within node (0 - 3)
-        antenna_index_position : Integer Column
-            Antenna ndex position within SNAP (0 - 2)
-        correlator_index : Integer Column
-            Correlator index value (0 - 349)
-        """
-        return cls(config_file_hash=config_file_hash, hostname=hostname,
-                   node=node, snap_loc_num=snap_loc_num,
-                   antenna_index_position=antenna_index_position,
-                   correlator_index=correlator_index)
-
-
-class CorrelatorActiveSNAP(MCDeclarativeBase):
-    """
-    Definition of correlator_active_snap table.
-
-    Attributes
-    ----------
-    config_file_hash : String Column
-        MD5 hash of configuration contents
-    hostname : String Column
-        Hostname of SNAP (typically e.g. heraNode1Snap2)
-    node : Integer Column
-        Node number (0-29)
-    snap_loc_num : Integer Column
-        Snap position within node (0-3)
-    """
-
-    __tablename__ = 'correlator_active_snap'
-    config_file_hash = Column(String, primary_key=True)
-    hostname = Column(String, primary_key=True)
-    node = Column(Integer, nullable=False)
-    snap_loc_num = Column(Integer, nullable=False)
-
-    @classmethod
-    def create(cls, config_file_hash, hostname, node, snap_loc_num):
-        """
-        Create a new CorrelatorActiveSNAP object.
-
-        Parameters
-        ----------
-        config_file_hash : String Column
-            MD5 hash of configuration contents
-        hostname : String Column
-            Hostname of SNAP (typically e.g. heraNode1Snap2)
-        node : Integer Column
-            Node number (0-29)
-        snap_loc_num : Integer Column
-            Snap position within node (0-3)
-        """
-        return cls(config_file_hash=config_file_hash, hostname=hostname,
-                   node=node, snap_loc_num=snap_loc_num)
-
-
-class CorrelatorConfiguration(MCDeclarativeBase):
-    """
-    Definition of correlator configuration.
-
-    Attributes
-    ----------
-    config_file_hash : String Column
-        MD5 hash of configuration contents
-    parameter : String Column
-        Name of correlator parameter
-    value : String Column
-        Value of parameter
-    """
-
-    __tablename__ = 'correlator_configuration'
-    config_file_hash = Column(String, primary_key=True)
-    parameter = Column(String, primary_key=True)
-    value = Column(String, nullable=False)
-
-    @classmethod
-    def create(cls, config_file_hash, parameter, value):
-        """
-        Create a new CorrelatorConfiguration object.
-
-        Parameters
-        ----------
-        config_file_hash : str
-            MD5 hash of configuration contents
-        parameter : str
-            Name of correlator parameter
-        value : str
-            Value of parameter
-        """
-        return cls(config_file_hash=config_file_hash, parameter=parameter, value=value)
-
-
 class CorrelatorControlState(MCDeclarativeBase):
     """
     Definition of correlator control state table.
@@ -363,7 +175,7 @@ class CorrelatorConfigFile(MCDeclarativeBase):
     Attributes
     ----------
     hash : String Column
-        Unique hash for the config. The primary key.
+        Unique MD5 hash for the config. The primary key.
     filename : String Column
         Name of the config file in the Librarian.
 
@@ -381,9 +193,9 @@ class CorrelatorConfigFile(MCDeclarativeBase):
         Parameters
         ----------
         config_hash : str
-            unique hash of the config
+            Unique MD5 hash of the config.
         filename : str
-            name of the config file in the Librarian
+            Name of the config file in the Librarian.
 
         """
         return cls(config_hash=config_hash, filename=filename)
@@ -398,7 +210,7 @@ class CorrelatorConfigStatus(MCDeclarativeBase):
     time : BigInteger Column
         GPS time that the config started, floored. The primary key.
     config_hash : String Column
-        Unique hash for the config. Foreign key into correlator_config_file.
+        Unique MD5 hash for the config. Foreign key into correlator_config_file.
 
     """
 
@@ -454,6 +266,284 @@ def _get_config(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     time = Time(timestamp, format='unix')
 
     return {'time': time, 'hash': hash, 'config': config}
+
+
+class CorrelatorConfigParams(MCDeclarativeBase):
+    """
+    Definition of correlator_config_params table.
+
+    Attributes
+    ----------
+    config_hash : String Column
+        Unique MD5 hash for the config. Part of the primary key. Foreign key into
+        correlator_config_file.
+    parameter : String Column
+        Name of correlator parameter. Part of the primary key.
+    value : String Column
+        Value of parameter.
+    """
+
+    __tablename__ = 'correlator_config_params'
+    config_hash = Column(
+        String,
+        ForeignKey("correlator_config_file.config_hash"),
+        primary_key=True,
+        nullable=False
+    )
+    parameter = Column(String, primary_key=True)
+    value = Column(String, nullable=False)
+
+    @classmethod
+    def create(cls, config_hash, parameter, value):
+        """
+        Create a new CorrelatorConfigParams object.
+
+        Parameters
+        ----------
+        config_hash : str
+            MD5 hash of configuration contents
+        parameter : str
+            Name of correlator parameter
+        value : str
+            Value of parameter
+        """
+        return cls(config_hash=config_hash, parameter=parameter, value=value)
+
+
+class CorrelatorConfigActiveSNAP(MCDeclarativeBase):
+    """
+    Definition of correlator_config_active_snap table.
+
+    Attributes
+    ----------
+    config_hash : String Column
+        Unique MD5 hash for the config. Part of the primary key. Foreign key into
+        correlator_config_file.
+    hostname : String Column
+        Hostname of SNAP (typically e.g. heraNode1Snap2). Part of the primary key.
+    """
+
+    __tablename__ = 'correlator_config_active_snap'
+    config_hash = Column(
+        String,
+        ForeignKey("correlator_config_file.config_hash"),
+        primary_key=True,
+        nullable=False
+    )
+    hostname = Column(String, primary_key=True)
+
+    @classmethod
+    def create(cls, config_hash, hostname):
+        """
+        Create a new CorrelatorConfigActiveSNAP object.
+
+        Parameters
+        ----------
+        config_hash : String Column
+            MD5 hash of configuration contents
+        hostname : String Column
+            Hostname of SNAP (typically e.g. heraNode1Snap2)
+        """
+        return cls(config_hash=config_hash, hostname=hostname)
+
+
+class CorrelatorConfigInputIndex(MCDeclarativeBase):
+    """
+    Definition of correlator_config_input_index table.
+
+    Attributes
+    ----------
+    config_hash : String Column
+        Unique MD5 hash for the config. Part of the primary key. Foreign key into
+        correlator_config_file.
+    correlator_index : Integer Column
+        Correlator index value (0 - 349). Part of the primary key.
+    hostname : String Column
+        Hostname of SNAP (typically e.g. heraNode1Snap2).
+    antenna_index_position : Integer Column
+        Antenna index position within SNAP (0 - 2).
+    """
+
+    __tablename__ = 'correlator_config_input_index'
+    config_hash = Column(
+        String,
+        ForeignKey("correlator_config_file.config_hash"),
+        primary_key=True,
+        nullable=False
+    )
+    correlator_index = Column(Integer, primary_key=True)
+    hostname = Column(String, nullable=False)
+    antenna_index_position = Column(Integer, nullable=False)
+
+    @classmethod
+    def create(cls, config_hash, correlator_index, hostname, antenna_index_position):
+        """
+        Create a new CorrelatorConfigInputIndex object.
+
+        Parameters
+        ----------
+        config_hash : String Column
+            MD5 hash of configuration contents
+        correlator_index : Integer Column
+            Correlator index value (0 - 349)
+        hostname : String Column
+            Hostname of SNAP (typically e.g. heraNode1Snap2)
+        antenna_index_position : Integer Column
+            Antenna ndex position within SNAP (0 - 2)
+        """
+        return cls(config_hash=config_hash,
+                   correlator_index=correlator_index,
+                   hostname=hostname,
+                   antenna_index_position=antenna_index_position)
+
+
+class CorrelatorConfigPhaseSwitchIndex(MCDeclarativeBase):
+    """
+    Definition of correlator_config_phase_switch_index table.
+
+    Attributes
+    ----------
+    config_hash : String Column
+        Unique MD5 hash for the config. Part of the primary key. Foreign key into
+        correlator_config_file.
+    hostname : String Column
+        Hostname of SNAP (typically e.g. heraNode1Snap2). Part of the primary key.
+    phase_switch_index : Integer Column
+        Phase switch index value (1 - 24). Part of the primary key.
+    antpol_index_position : Integer Column
+        Antpol index position within SNAP (0 - 5)
+    """
+
+    __tablename__ = 'correlator_config_phase_switch_index'
+    config_hash = Column(
+        String,
+        ForeignKey("correlator_config_file.config_hash"),
+        primary_key=True,
+        nullable=False
+    )
+    hostname = Column(String, primary_key=True)
+    phase_switch_index = Column(Integer, primary_key=True)
+    antpol_index_position = Column(Integer, nullable=False)
+
+    @classmethod
+    def create(cls, config_hash, hostname, phase_switch_index, antpol_index_position):
+        """
+        Create a new CorrelatorConfigPhaseSwitchIndex object.
+
+        Parameters
+        ----------
+        config_hash : String Column
+            MD5 hash of configuration contents
+        hostname : String Column
+            Hostname of SNAP (typically e.g. heraNode1Snap2)
+        phase_switch_index : Integer Column
+            Phase switch index value (1 - 24)
+        antpol_index_position : Integer Column
+            Antpol ndex position within SNAP (0 - 5)
+        """
+        return cls(
+            config_hash=config_hash,
+            phase_switch_index=phase_switch_index,
+            hostname=hostname,
+            antpol_index_position=antpol_index_position,
+        )
+
+
+def _parse_config(config, config_hash):
+    """
+    Parse the config into all the components required for the various config tables.
+
+    Parameters
+    ----------
+    config : dict
+        Dict of config info from redis/hera_corr_cm.
+    config_hash : str
+        Unique hash of the config.
+
+
+    Returns
+    -------
+    list
+        List of correlator config related objects including CorrelatorConfigParams,
+        CorrelatorConfigActiveSNAP, CorrelatorConfigInputIndex, and
+        CorrelatorConfigPhaseSwitchIndex objects.
+
+    """
+    obj_list = []
+    keys_to_save = ['fft_shift', 'fpgfile', 'dest_port', 'log_walsh_step_size',
+                    'walsh_order', 'walsh_delay']
+    for key in keys_to_save:
+        value = config[key]
+        obj_list.append(
+            CorrelatorConfigParams.create(
+                config_hash=config_hash, parameter=key, value=value
+            )
+        )
+
+    fengines = sorted(config['fengines'].keys())
+    obj_list.append(
+        CorrelatorConfigParams.create(
+            config_hash=config_hash, parameter='fengines', value=','.join(fengines)
+        )
+    )
+    xengines = [str(x) for x in sorted(config['xengines'].keys())]
+    obj_list.append(
+        CorrelatorConfigParams.create(
+            config_hash=config_hash,
+            parameter='xengines',
+            value=','.join(xengines)
+        )
+    )
+    for xengind, xeng in config['xengines'].items():
+        parameter = f'x{xengind}:chan_range'
+        value = ','.join([str(_x) for _x in xeng['chan_range']])
+        obj_list.append(
+            CorrelatorConfigParams.create(
+                config_hash=config_hash,
+                parameter=parameter,
+                value=value
+            )
+        )
+        for evod in ['even', 'odd']:
+            for ipma in ['ip', 'mac']:
+                parameter = f'x{xengind}:{evod}:{ipma}'
+                value = xeng[evod][ipma]
+                obj_list.append(
+                    CorrelatorConfigParams.create(
+                        config_hash=config_hash,
+                        parameter=parameter,
+                        value=value
+                    )
+                )
+    for hostname, entry in config['fengines'].items():
+        obj_list.append(
+            CorrelatorConfigActiveSNAP.create(
+                config_hash=config_hash,
+                hostname=hostname,
+            )
+        )
+        for antind in range(len(entry['ants'])):
+            cind = entry['ants'][antind]
+            obj_list.append(
+                CorrelatorConfigInputIndex.create(
+                    config_hash=config_hash,
+                    correlator_index=cind,
+                    hostname=hostname,
+                    antenna_index_position=antind,
+                )
+            )
+        for psind, pind in enumerate(entry['phase_switch_index']):
+            pind = entry['phase_switch_index'][psind]
+            obj_list.append(
+                CorrelatorConfigPhaseSwitchIndex.create(
+                    config_hash=config_hash,
+                    hostname=hostname,
+                    phase_switch_index=pind,
+                    antpol_index_position=psind,
+                )
+            )
+
+    return obj_list
 
 
 class CorrelatorControlCommand(MCDeclarativeBase):
