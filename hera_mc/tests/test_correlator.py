@@ -844,7 +844,7 @@ def test_add_correlator_config_from_corrcm_onsite(mcsession):
         assert corr.CorrelatorConfigParams in class_list
         assert corr.CorrelatorConfigActiveSNAP in class_list
         assert corr.CorrelatorConfigInputIndex in class_list
-        assert corr.CorrelatorConfigPhaseSwitchIndex in class_list        
+        assert corr.CorrelatorConfigPhaseSwitchIndex in class_list
 
 
 @pytest.mark.parametrize(

@@ -43,7 +43,6 @@ jobs:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     name: Testing
-    needs: [flake8]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
