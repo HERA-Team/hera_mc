@@ -832,11 +832,19 @@ def test_add_correlator_config_from_corrcm_onsite(mcsession):
     result = test_session.add_correlator_config_from_corrcm(testing=True)
 
     assert len(result) > 0
-    if len(result) == 2:
-        assert result[0].__class__ == corr.CorrelatorConfigFile
-        assert result[1].__class__ == corr.CorrelatorConfigStatus
-    else:
+    if len(result) == 1:
+        # should just be a status object because this file already exists
         assert result[0].__class__ == corr.CorrelatorConfigStatus
+    else:
+        # first should be a file object, then a bunch of objects for the various parsed
+        # config tables, then finally a status object.
+        class_list = [obj.__class__ for obj in result]
+        assert class_list[0] == corr.CorrelatorConfigFile
+        assert class_list[-1] == corr.CorrelatorConfigStatus
+        assert corr.CorrelatorConfigParams in class_list
+        assert corr.CorrelatorConfigActiveSNAP in class_list
+        assert corr.CorrelatorConfigInputIndex in class_list
+        assert corr.CorrelatorConfigPhaseSwitchIndex in class_list        
 
 
 @pytest.mark.parametrize(
