@@ -96,7 +96,6 @@ def update_part_rosetta(hpn, syspn, at_date, date2=None, session=None):
         new_rose.stop_gpstime = date2
         session.add(new_rose)
     else:
-        print("CMPC102:  UPDATE",hpn,syspn,at_date)
         if old_rose.stop_gpstime is None:
             old_rose.stop_gpstime = at_date
             session.add(old_rose)
