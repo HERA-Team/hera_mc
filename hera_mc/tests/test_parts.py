@@ -106,12 +106,14 @@ def test_rosetta(mcsession, capsys):
     cm_partconnect.update_part_rosetta('SNPC000702', 'heraNode700Snap1',
                                        at_date, session=mcsession)
     active.load_rosetta(at_date)
-    assert active.rosetta['SNPC000702'].syspn == 'heraNode700Snap1'
+    assert active.rosetta['SNPC000702'].syspn == 'heraNode700Snap2'
     stop_at = Time('2020-08-01 01:00:00', scale='utc')
-    cm_partconnect.update_part_rosetta('SNPC000701', 'heraNode700Snap2',
+    cm_partconnect.update_part_rosetta('SNPC000711', 'heraNode700Snap2',
                                        at_date, stop_at, mcsession)
     active.load_rosetta(Time('2020-07-15 01:00:00', scale='utc'))
-    assert int(active.rosetta['SNPC000701'].stop_gpstime) == 1280278818
+    print(active.rosetta)
+    assert int(active.rosetta['SNPC000711'].stop_gpstime) == 1280278818
+    print("---",active.rosetta['SNPC000711'].stop_gpstime)
     cm_partconnect.update_part_rosetta('SNPC000709', 'heraNode700Snap709',
                                        stop_at, session=mcsession)
     assert int(active.rosetta['SNPC000709'].stop_gpstime) == 1280278818
