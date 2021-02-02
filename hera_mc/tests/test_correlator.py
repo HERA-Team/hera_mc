@@ -60,7 +60,7 @@ def corr_config():
 
 @pytest.fixture(scope='module')
 def corr_config_dict(corr_config):
-    return {'time': Time(1512770942, format='unix'),
+    return {'time': Time(1230372020, format='gps'),
             'hash': 'testhash', 'config': corr_config[1]}
 
 
@@ -531,16 +531,23 @@ def test_add_corr_config(mcsession, corr_config):
     assert result == []
 
 
-def test_add_correlator_config_from_corrcm(mcsession, corr_config_dict):
+@pytest.mark.parametrize("rosetta_exists", (True, False))
+def test_add_correlator_config_from_corrcm(mcsession, corr_config_dict, rosetta_exists):
     test_session = mcsession
+    corr_config_dict_use = copy.deepcopy(corr_config_dict)
+
+    if not rosetta_exists:
+        # use an earlier time before the part_rosetta entries start
+        corr_config_dict_use["time"] = Time(1512770942, format='unix')
+
     corr_config_list = test_session.add_correlator_config_from_corrcm(
-        config_state_dict=corr_config_dict, testing=True)
+        config_state_dict=corr_config_dict_use, testing=True)
 
     for obj in corr_config_list:
         test_session.add(obj)
         test_session.commit()
 
-    t1 = Time(1512770942.726777, format='unix')
+    t1 = corr_config_dict_use["time"]
     status_result = test_session.get_correlator_config_status(
         starttime=t1 - TimeDelta(3.0, format='sec'))
     assert len(status_result) == 1
@@ -639,6 +646,18 @@ def test_add_correlator_config_from_corrcm(mcsession, corr_config_dict):
     ]
     assert len(config_active_snaps_result) == len(active_snaps_list)
 
+    # check that we can also get the nodes & snap loc nums
+    config_active_snaps_result, node_list, snap_loc_list = (
+        test_session.get_correlator_config_active_snaps(
+            config_hash=status_result.config_hash, return_node_loc_num=True,
+        )
+    )
+    assert len(config_active_snaps_result) == len(active_snaps_list)
+    # since the request doesn't specify a time, the rosetta mapping for "now" is used.
+    for index, active_snap in enumerate(config_active_snaps_result):
+        assert node_list[index] == int(active_snap.hostname.split('S')[0][8:])
+        assert snap_loc_list[index] == int(active_snap.hostname[-1])
+
     # check that using the time options works too
     config_active_snaps_result2, time_list, node_list, snap_loc_list = (
         test_session.get_correlator_config_active_snaps(
@@ -648,8 +667,12 @@ def test_add_correlator_config_from_corrcm(mcsession, corr_config_dict):
     assert len(config_active_snaps_result2) == len(active_snaps_list)
     assert len(time_list) == len(active_snaps_list)
     for index, active_snap in enumerate(config_active_snaps_result):
-        assert node_list[index] == int(active_snap.hostname.split('S')[0][8:])
-        assert snap_loc_list[index] == int(active_snap.hostname[-1])
+        if rosetta_exists:
+            assert node_list[index] == int(active_snap.hostname.split('S')[0][8:])
+            assert snap_loc_list[index] == int(active_snap.hostname[-1])
+        else:
+            assert node_list[index] is None
+            assert snap_loc_list[index] is None
 
     for time_obj in time_list[1:]:
         assert time_obj == time_list[0]
@@ -683,6 +706,18 @@ def test_add_correlator_config_from_corrcm(mcsession, corr_config_dict):
     }
     assert len(config_input_index_result) == len(input_index_dict)
 
+    # check that we can also get the nodes & snap loc nums
+    config_input_index_result, node_list, snap_loc_list = (
+        test_session.get_correlator_config_input_index(
+            config_hash=status_result.config_hash, return_node_loc_num=True
+        )
+    )
+    assert len(config_input_index_result) == len(input_index_dict)
+    # since the request doesn't specify a time, the rosetta mapping for "now" is used.
+    for index, input_index in enumerate(config_input_index_result):
+        assert node_list[index] == int(input_index.hostname.split('S')[0][8:])
+        assert snap_loc_list[index] == int(input_index.hostname[-1])
+
     # check that using the time options works too
     config_input_index_result2, time_list, node_list, snap_loc_list = (
         test_session.get_correlator_config_input_index(
@@ -691,9 +726,13 @@ def test_add_correlator_config_from_corrcm(mcsession, corr_config_dict):
     )
     assert len(config_input_index_result2) == len(input_index_dict)
     assert len(time_list) == len(input_index_dict)
-    for index, input_index in enumerate(config_input_index_result):
-        assert node_list[index] == int(input_index.hostname.split('S')[0][8:])
-        assert snap_loc_list[index] == int(input_index.hostname[-1])
+    for index, input_index in enumerate(config_input_index_result2):
+        if rosetta_exists:
+            assert node_list[index] == int(input_index.hostname.split('S')[0][8:])
+            assert snap_loc_list[index] == int(input_index.hostname[-1])
+        else:
+            assert node_list[index] is None
+            assert snap_loc_list[index] is None
 
     for time_obj in time_list[1:]:
         assert time_obj == time_list[0]
@@ -753,6 +792,18 @@ def test_add_correlator_config_from_corrcm(mcsession, corr_config_dict):
     }
     assert len(config_phase_switch_result) == len(phase_switch_dict)
 
+    # check that we can also get the nodes & snap loc nums
+    config_phase_switch_result, node_list, snap_loc_list = (
+        test_session.get_correlator_config_phase_switch_index(
+            config_hash=status_result.config_hash, return_node_loc_num=True
+        )
+    )
+    assert len(config_phase_switch_result) == len(phase_switch_dict)
+    # since the request doesn't specify a time, the rosetta mapping for "now" is used.
+    for index, ps_index in enumerate(config_phase_switch_result):
+        assert node_list[index] == int(ps_index.hostname.split('S')[0][8:])
+        assert snap_loc_list[index] == int(ps_index.hostname[-1])
+
     # check that using the time options works too
     config_phase_switch_result2, time_list, node_list, snap_loc_list = (
         test_session.get_correlator_config_phase_switch_index(
@@ -761,9 +812,13 @@ def test_add_correlator_config_from_corrcm(mcsession, corr_config_dict):
     )
     assert len(config_phase_switch_result2) == len(phase_switch_dict)
     assert len(time_list) == len(phase_switch_dict)
-    for index, input_index in enumerate(config_phase_switch_result2):
-        assert node_list[index] == int(input_index.hostname.split('S')[0][8:])
-        assert snap_loc_list[index] == int(input_index.hostname[-1])
+    for index, ps_index in enumerate(config_phase_switch_result2):
+        if rosetta_exists:
+            assert node_list[index] == int(ps_index.hostname.split('S')[0][8:])
+            assert snap_loc_list[index] == int(ps_index.hostname[-1])
+        else:
+            assert node_list[index] is None
+            assert snap_loc_list[index] is None
 
     for time_obj in time_list[1:]:
         assert time_obj == time_list[0]
@@ -784,7 +839,7 @@ def test_add_correlator_config_from_corrcm(mcsession, corr_config_dict):
 def test_add_correlator_config_from_corrcm_match_prior(mcsession, corr_config_dict):
     test_session = mcsession
     # test behavior when matching config exists at an earlier time
-    t1 = Time(1512770942.726777, format='unix')
+    t1 = Time(1230372020, format='gps')
     t0 = t1 - TimeDelta(30, format='sec')
     config_hash = 'testhash'
     config_filename = 'correlator_config_' + str(int(floor(t1.gps))) + '.yaml'
@@ -805,7 +860,7 @@ def test_add_correlator_config_from_corrcm_match_prior(mcsession, corr_config_di
 def test_add_correlator_config_from_corrcm_duplicate(mcsession, corr_config_dict):
     test_session = mcsession
     # test behavior when duplicate config exists
-    t1 = Time(1512770942.726777, format='unix')
+    t1 = Time(1230372020, format='gps')
     config_hash = 'testhash'
     config_filename = 'correlator_config_' + str(int(floor(t1.gps))) + '.yaml'
     test_session.add_correlator_config_file(config_hash, config_filename)
@@ -1815,6 +1870,12 @@ def test_get_snap_hostname_from_serial(mcsession, snapstatus):
 
     hostname = test_session.get_snap_hostname_from_serial('SNPA000700')
     assert hostname == 'heraNode700Snap0'
+
+    # asking for a hostname from before the part_rosetta was active should give None
+    hostname = test_session.get_snap_hostname_from_serial(
+        'SNPA000700', at_date=Time(1512770942, format='unix')
+    )
+    assert hostname is None
 
     hostname = test_session.get_snap_hostname_from_serial('blah')
     assert hostname is None

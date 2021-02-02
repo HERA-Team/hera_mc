@@ -2437,51 +2437,41 @@ class MCSession(Session):
 
             return config_params_obj_list, time_list
 
-    def get_snap_hostname_from_serial(self, serial_number):
+    def get_snap_hostname_from_serial(self, serial_number, at_date='now'):
         """
         Get SNAP hostname from the SNAP serial number (also called hpn or part number).
 
-        This method first tries to use the PartRosetta table. If the hostname cannot
-        be found there, it falls back on the latest SNAPStatus entry with the given part
-        number.
+        This method uses the PartRosetta table. If the hostname cannot be found there,
+        it returns None.
 
         Parameters
         ----------
         serial_number : str
             SNAP serial number.
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
 
         Returns
         -------
         str or None
-            SNAP hostname if serial_number is found in the part_rosetta or snap_status
-            table, None otherwise.
+            SNAP hostname if serial_number is found in the part_rosetta None otherwise.
 
         """
-        from .correlator import SNAPStatus
         from .cm_active import ActiveData
 
-        active = ActiveData(session=self)
+        active = ActiveData(session=self, at_date=at_date)
         active.load_rosetta()
         if serial_number in active.rosetta.keys():
             return active.rosetta[serial_number].syspn
         else:
-            # get most recent entry with this serial number
-            query = self.query(SNAPStatus).filter(
-                SNAPStatus.serial_number == serial_number).order_by(
-                    desc(SNAPStatus.time)).limit(1)
-
-            result = query.all()
-            if len(result) < 1:
-                return None
-
-            return result[0].hostname
+            return None
 
     def get_snap_serial_from_hostname(self, hostname, at_date='now'):
         """
         Get SNAP serial number (also called hpn or part number) from the SNAP hostname.
 
-        This method first tries to use the PartRosetta table. If the hostname cannot
-        be found there, it falls back on the latest SNAPStatus entry with the hostname.
+        This method uses the PartRosetta table. If the hostname cannot
+        be found there it returns None.
 
         Parameters
         ----------
@@ -2494,10 +2484,9 @@ class MCSession(Session):
         -------
         str or None
             SNAP serial number (also called hpn or part number) if the hostname is found
-            in the part_rosetta or snap_status table, None otherwise.
+            in the part_rosetta, None otherwise.
 
         """
-        from .correlator import SNAPStatus
         from .cm_active import ActiveData
 
         active = ActiveData(session=self, at_date=at_date)
@@ -2507,16 +2496,6 @@ class MCSession(Session):
         for hpn, part_rosetta in active.rosetta.items():
             if part_rosetta.syspn == hostname:
                 serial_number = hpn
-
-        if serial_number is None:
-            # get most recent entry with this serial number
-            query = self.query(SNAPStatus).filter(
-                SNAPStatus.hostname == hostname).order_by(
-                    desc(SNAPStatus.time)).limit(1)
-
-            result = query.all()
-            if len(result) == 1:
-                serial_number = result[0].serial_number
 
         return serial_number
 
@@ -2593,7 +2572,11 @@ class MCSession(Session):
 
         """
         snap_hpn = self.get_snap_serial_from_hostname(hostname, at_date=at_date)
-        nodeID, snap_loc_num = self._get_node_snap_from_serial(snap_hpn, at_date=at_date)
+        if snap_hpn is not None:
+            nodeID, snap_loc_num = self._get_node_snap_from_serial(snap_hpn, at_date=at_date)
+        else:
+            nodeID = None
+            snap_loc_num = None
 
         return nodeID, snap_loc_num
 
@@ -2620,10 +2603,10 @@ class MCSession(Session):
         node_list = []
         loc_num_list = []
         for index, obj in enumerate(config_obj_list):
-            if time_list is not None:
+            if time_list is None:
                 at_date = "now"
             else:
-                at_date = time_list(index)
+                at_date = time_list[index]
             node, loc_num = self._get_node_snap_from_snap_hostname(
                 obj.hostname, at_date=at_date
             )
@@ -2638,7 +2621,9 @@ class MCSession(Session):
         """
         Get correlator config active SNAP records from the M&C database.
 
-        If a config_hash is provided, the time-related optional keywords are ignored.
+        If a config_hash is provided, the time-related optional keywords are ignored and
+        if return_node_loc_num is True, the returned mappings are the ones currently in
+        effect (regardless of when the config hash was last used).
 
         Default behavior is to return the most recent record(s) -- there can be
         more than one if there are multiple records at the same time. If
@@ -2663,7 +2648,9 @@ class MCSession(Session):
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
         return_node_loc_num : bool
-            If True, return the node and SNAP location numbers for the active SNAPS
+            If True, return the node and SNAP location numbers for the active SNAPS.
+            If a config_hash is provided, setting this to True will get the node and
+            SNAP location numbers currently in effect (effectively time="now").
 
         Returns
         -------
@@ -2685,7 +2672,8 @@ class MCSession(Session):
             query = self.query(CorrelatorConfigActiveSNAP).filter(
                 CorrelatorConfigActiveSNAP.config_hash == config_hash)
 
-            retval = [query.all()]
+            config_active_snap_list = query.all()
+            retval = [config_active_snap_list]
             time_list = None
         else:
             # get the config statuses to get hashes for the times of interest
@@ -2722,7 +2710,9 @@ class MCSession(Session):
         """
         Get a correlator config input index records from the M&C database.
 
-        If a config_hash is provided, the time-related optional keywords are ignored.
+        If a config_hash is provided, the time-related optional keywords are ignored and
+        if return_node_loc_num is True, the returned mappings are the ones currently in
+        effect (regardless of when the config hash was last used).
 
         Default behavior is to return the most recent record(s) -- there can be
         more than one if there are multiple records at the same time. If
@@ -2751,6 +2741,8 @@ class MCSession(Session):
             Ignored if most_recent is True.
         return_node_loc_num : bool
             If True, return the node and SNAP location numbers for the active SNAPS
+            If a config_hash is provided, setting this to True will get the node and
+            SNAP location numbers currently in effect (effectively time="now").
 
         Returns
         -------
@@ -2777,7 +2769,8 @@ class MCSession(Session):
                     CorrelatorConfigInputIndex.correlator_index == correlator_index
                 )
 
-            retval = [query.all()]
+            config_input_index_list = query.all()
+            retval = [config_input_index_list]
             time_list = None
         else:
             # get the config statuses to get hashes for the times of interest
@@ -2814,7 +2807,9 @@ class MCSession(Session):
         """
         Get a correlator config phase switch index records from the M&C database.
 
-        If a config_hash is provided, the time-related optional keywords are ignored.
+        If a config_hash is provided, the time-related optional keywords are ignored and
+        if return_node_loc_num is True, the returned mappings are the ones currently in
+        effect (regardless of when the config hash was last used).
 
         Default behavior is to return the most recent record(s) -- there can be
         more than one if there are multiple records at the same time. If
@@ -2840,6 +2835,8 @@ class MCSession(Session):
             Ignored if most_recent is True.
         return_node_loc_num : bool
             If True, return the node and SNAP location numbers for the active SNAPS
+            If a config_hash is provided, setting this to True will get the node and
+            SNAP location numbers currently in effect (effectively time="now").
 
         Returns
         -------
@@ -2861,7 +2858,8 @@ class MCSession(Session):
             query = self.query(CorrelatorConfigPhaseSwitchIndex).filter(
                 CorrelatorConfigPhaseSwitchIndex.config_hash == config_hash)
 
-            retval = [query.all()]
+            config_ps_index_list = query.all()
+            retval = [config_ps_index_list]
             time_list = None
         else:
             # get the config statuses to get hashes for the times of interest
