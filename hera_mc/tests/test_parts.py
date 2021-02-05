@@ -162,7 +162,7 @@ def test_update_part(parts, capsys):
     assert located[list(located.keys())[0]].part.hpn_rev == 'Z'
 
 
-def test_format_and_check_update_part_request(parts):
+def test_format_and_check_update_part_request():
     request = 'test_part:Q:hpn_rev:A'
     x = cm_partconnect.format_and_check_update_part_request(request)
     assert list(x.keys())[0] == 'test_part:Q'
@@ -172,6 +172,16 @@ def test_format_and_check_update_part_request(parts):
     request = 'test_part:Q:hpn_rev:A,test_part:mfg:xxx,nope,another:one'
     x = cm_partconnect.format_and_check_update_part_request(request)
     assert x['test_part:Q'][2][3] == 'one'
+
+
+def test_format_check_update_connection_request(capsys):
+    request = '1,2,3'
+    x = cm_partconnect.format_check_update_connection_request(request)
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith('Invalid')
+    request = '1:2:3:4:5:6:7'
+    x = cm_partconnect.format_check_update_connection_request(request)
+    assert x['1:2:3:4'][0][1] == 'LAST'
 
 
 def test_show_dossier(parts, capsys):
