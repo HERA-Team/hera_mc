@@ -329,6 +329,12 @@ def test_sysutil_node(capsys, mcsession):
     cm_sysutils.print_node(xni, output_format='html')
     captured = capsys.readouterr()
     assert captured.out.strip().startswith('<html>')
+    testni = {"nodes": ['node1'],
+              'node1': {'snaps': ['1'], 'ncm': '2', 'wr': '3', 'arduino': '4',
+                        'ants-file': [], 'ants-hookup': []}}
+    cm_sysutils.print_node(info=testni)
+    captured = capsys.readouterr()
+    assert len(captured.out.strip()) == 953
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):

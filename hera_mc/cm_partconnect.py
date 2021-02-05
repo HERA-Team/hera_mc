@@ -986,7 +986,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
                 connection = None
             else:
                 connection = conn_rec.first()
-        else:
+        else:  # pragma: no cover
             print("Error:  more than one of ", dkey, " exists (which should not happen).")
             connection = None
         if connection:
