@@ -453,6 +453,55 @@ filename* & string & name of the config file in the Librarian \\\hline
 \end{tabular}
 \end{center}
 
+\subsubsection{correlator\_config\_params}
+Parameters in the correlator configuration, parsed from the configuration file, excluding those specifically captured in the correlator\_config\_active\_snap, correlator\_config\_input\_index, and correlator\_config\_phase\_switch\_index tables.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{\textit{config\_hash}} & string & hash for the config in use, foreign key into correlator\_config\_file table.\\ \hline
+\textbf{parameter} & string & Name of the the correlator configuration parameter. \\ \hline
+value* & string & Value of the the correlator configuration parameter. \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{correlator\_config\_active\_snap}
+Active snaps in the correlator configuration, parsed from the configuration file.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{\textit{config\_hash}} & string & hash for the config in use, foreign key into correlator\_config\_file table.\\ \hline
+\textbf{hostname} & string & Hostname of the SNAP (typically e.g. heraNode1Snap2). \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{correlator\_config\_input\_index}
+Mapping of the correlator index to SNAP antenna position for the correlator configuration, parsed from the configuration file.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{\textit{config\_hash}} & string & hash for the config in use, foreign key into correlator\_config\_file table.\\ \hline
+\textbf{correlator\_index} & integer & Correlator index value (in the range 0 - 349). \\ \hline
+hostname* & string & Hostname of the SNAP (typically e.g. heraNode1Snap2). \\ \hline
+antenna\_index\_position* & integer & Antenna index position within the SNAP (in the range 0 - 2). \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{correlator\_config\_input\_index}
+Mapping of the phase switch index to SNAP antpol position for the correlator configuration, parsed from the configuration file.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{\textit{config\_hash}} & string & hash for the config in use, foreign key into correlator\_config\_file table.\\ \hline
+\textbf{hostname} & string & Hostname of the SNAP (typically e.g. heraNode1Snap2). \\ \hline
+phase\_switch\_index* & integer & Phase switch index value (in the range 1 - 24). \\ \hline
+antpol\_index\_position* & integer & Antpol index position within the SNAP (in the range 0 - 5). \\ \hline
+\end{tabular}
+\end{center}
+
 \subsubsection{correlator\_config\_status}
 Config status of the correlator, i.e. which config file is being used by the correlator.
 \begin{center}
@@ -460,7 +509,7 @@ Config status of the correlator, i.e. which config file is being used by the cor
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & time of the config status in floor(gps seconds)\\ \hline
-\textit{config\_hash} & string & hash for the config in use, foreign key into correlator\_config\_file table.\\ \hline
+\textit{config\_hash}* & string & hash for the config in use, foreign key into correlator\_config\_file table.\\ \hline
 \end{tabular}
 \end{center}
 
