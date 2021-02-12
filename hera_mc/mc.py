@@ -17,9 +17,8 @@ from sqlalchemy.orm import sessionmaker
 
 from . import MCDeclarativeBase
 from .mc_session import MCSession
-
-data_path = op.join(op.dirname(__file__), 'data')
-test_data_path = op.join(data_path, 'test_data')
+from .data import DATA_PATH
+test_data_path = op.join(DATA_PATH, 'test_data')
 default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
 mc_log_file = op.expanduser('~/.hera_mc/mc_log.txt')
 cm_log_file = op.expanduser('~/.hera_mc/cm_log.txt')

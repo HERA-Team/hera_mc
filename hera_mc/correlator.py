@@ -532,7 +532,7 @@ def _parse_config(config, config_hash):
                     antenna_index_position=antind,
                 )
             )
-        for psind, pind in enumerate(entry['phase_switch_index']):
+        for psind in range(len(entry["phase_switch_index"])):
             pind = entry['phase_switch_index'][psind]
             obj_list.append(
                 CorrelatorConfigPhaseSwitchIndex.create(

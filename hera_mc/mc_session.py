@@ -9,16 +9,31 @@ your database and configure M&C to find it.
 """
 
 import os
-import numpy as np
+import hashlib
 import warnings
 from math import floor
 
+import yaml
+import numpy as np
 from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from astropy.time import Time, TimeDelta
 
 from .utils import get_iterable
+from .observations import Observation
+from .subsystem_error import SubsystemError
+from .daemon_status import DaemonStatus
+from .librarian import LibStatus, LibRAIDStatus, LibRAIDErrors, LibRemoteStatus, LibFiles
+from .rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord
+from . import node
+from . import correlator as corr
+from .weather import WeatherData, weather_sensor_dict, create_from_sensors
+from .qm import AntMetrics, ArrayMetrics, MetricList
+from .autocorrelations import HeraAuto, _get_autos_from_redis, measurement_func_dict
+from . import geo_handling
+from .cm_active import ActiveData
+from . import cm_utils
 
 
 class MCSession(Session):
@@ -294,9 +309,6 @@ class MCSession(Session):
             floored.
 
         """
-        from .observations import Observation
-        from . import geo_handling
-
         h = geo_handling.Handling(session=self)
         hera_cofa = h.cofa()[0]
 
@@ -318,8 +330,6 @@ class MCSession(Session):
         list of Observation objects
 
         """
-        from .observations import Observation
-
         if obsid is None:
             obs_list = self.query(Observation).all()
         else:
@@ -363,8 +373,6 @@ class MCSession(Session):
         list of Observation objects.
 
         """
-        from .observations import Observation
-
         return self._time_filter(Observation, 'obsid', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  write_to_file=write_to_file, filename=filename)
@@ -584,8 +592,6 @@ class MCSession(Session):
             Option to just return the objects rather than adding them to the DB.
 
         """
-        from .subsystem_error import SubsystemError
-
         db_time = self.get_current_db_time()
 
         error_obj = SubsystemError.create(db_time, time, subsystem, severity,
@@ -637,8 +643,6 @@ class MCSession(Session):
         list of SubsystemError objects
 
         """
-        from .subsystem_error import SubsystemError
-
         return self._time_filter(SubsystemError, 'time',
                                  most_recent=most_recent, starttime=starttime,
                                  stoptime=stoptime, filter_column='subsystem',
@@ -668,8 +672,6 @@ class MCSession(Session):
             Option to just return the objects rather than adding them to the DB.
 
         """
-        from .daemon_status import DaemonStatus
-
         daemon_status_obj = DaemonStatus.create(name, hostname, time, status)
 
         if testing:
@@ -719,8 +721,6 @@ class MCSession(Session):
         list of DaemonStatus objects
 
         """
-        from .daemon_status import DaemonStatus
-
         return self._time_filter(DaemonStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='name', filter_value=daemon_name,
@@ -752,8 +752,6 @@ class MCSession(Session):
             Librarian git hash.
 
         """
-        from .librarian import LibStatus
-
         self.add(LibStatus.create(time, num_files, data_volume_gb,
                                   free_space_gb, upload_min_elapsed,
                                   num_processes, git_version, git_hash))
@@ -798,8 +796,6 @@ class MCSession(Session):
         list of LibStatus objects
 
         """
-        from .librarian import LibStatus
-
         return self._time_filter(LibStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  write_to_file=write_to_file, filename=filename)
@@ -820,8 +816,6 @@ class MCSession(Session):
             TBD info from megaraid controller.
 
         """
-        from .librarian import LibRAIDStatus
-
         self.add(LibRAIDStatus.create(time, hostname, num_disks, info))
 
     def get_lib_raid_status(self, most_recent=None, starttime=None,
@@ -865,8 +859,6 @@ class MCSession(Session):
         list of LibRAIDStatus objects
 
         """
-        from .librarian import LibRAIDStatus
-
         return self._time_filter(LibRAIDStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='hostname',
@@ -889,8 +881,6 @@ class MCSession(Session):
             Error message or log file name (TBD).
 
         """
-        from .librarian import LibRAIDErrors
-
         self.add(LibRAIDErrors.create(time, hostname, disk, log))
 
     def get_lib_raid_error(self, most_recent=None, starttime=None,
@@ -934,8 +924,6 @@ class MCSession(Session):
         list of LibRAIDErrors objects
 
         """
-        from .librarian import LibRAIDErrors
-
         return self._time_filter(LibRAIDErrors, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='hostname',
@@ -961,8 +949,6 @@ class MCSession(Session):
             Bandwidth to remote in Mb/s, 15 minute average.
 
         """
-        from .librarian import LibRemoteStatus
-
         self.add(LibRemoteStatus.create(time, remote_name, ping_time,
                                         num_file_uploads, bandwidth_mbs))
 
@@ -1007,8 +993,6 @@ class MCSession(Session):
         list of LibRemoteStatus objects
 
         """
-        from .librarian import LibRemoteStatus
-
         return self._time_filter(LibRemoteStatus, 'time',
                                  most_recent=most_recent, starttime=starttime,
                                  stoptime=stoptime, filter_column='remote_name',
@@ -1031,8 +1015,6 @@ class MCSession(Session):
             File size in GB.
 
         """
-        from .librarian import LibFiles
-
         self.add(LibFiles.create(filename, obsid, time, size_gb))
 
     def get_lib_files(self, filename=None, obsid=None, most_recent=None,
@@ -1078,8 +1060,6 @@ class MCSession(Session):
         list of LibFiles objects
 
         """
-        from .librarian import LibFiles
-
         if filename is not None:
             query = self.query(LibFiles).filter(
                 LibFiles.filename == filename)
@@ -1124,8 +1104,6 @@ class MCSession(Session):
             Hours since last restart.
 
         """
-        from .rtp import RTPStatus
-
         self.add(RTPStatus.create(time, status, event_min_elapsed,
                                   num_processes, restart_hours_elapsed))
 
@@ -1164,8 +1142,6 @@ class MCSession(Session):
         list of RTPStatus objects
 
         """
-        from .rtp import RTPStatus
-
         return self._time_filter(RTPStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  write_to_file=write_to_file, filename=filename)
@@ -1184,8 +1160,6 @@ class MCSession(Session):
             Event type.
 
         """
-        from .rtp import RTPProcessEvent
-
         self.add(RTPProcessEvent.create(time, obsid, event))
 
     def get_rtp_process_event(self, most_recent=None, starttime=None,
@@ -1228,8 +1202,6 @@ class MCSession(Session):
         list of RTPProcessEvent objects
 
         """
-        from .rtp import RTPProcessEvent
-
         return self._time_filter(RTPProcessEvent, 'time',
                                  most_recent=most_recent, starttime=starttime,
                                  stoptime=stoptime, filter_column='obsid',
@@ -1270,8 +1242,6 @@ class MCSession(Session):
             pyuvdata git hash.
 
         """
-        from .rtp import RTPProcessRecord
-
         self.add(RTPProcessRecord.create(time, obsid, pipeline_list,
                                          rtp_git_version, rtp_git_hash,
                                          hera_qm_git_version, hera_qm_git_hash,
@@ -1320,8 +1290,6 @@ class MCSession(Session):
         list of RTPProcessEvent objects
 
         """
-        from .rtp import RTPProcessRecord
-
         return self._time_filter(RTPProcessRecord, 'time',
                                  most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
@@ -1350,8 +1318,6 @@ class MCSession(Session):
             Average number of CPUs used by task.
 
         """
-        from .rtp import RTPTaskResourceRecord
-
         self.add(RTPTaskResourceRecord.create(
             obsid, task_name, start_time, stop_time, max_memory, avg_cpu_load))
 
@@ -1402,8 +1368,6 @@ class MCSession(Session):
         list of RTPTaskResourceRecord objects
 
         """
-        from .rtp import RTPTaskResourceRecord
-
         if obsid is None and starttime is None:
             if most_recent is None:
                 most_recent = True
@@ -1460,8 +1424,6 @@ class MCSession(Session):
             Value from the sensor associated with the variable
 
         """
-        from .weather import WeatherData
-
         self.add(WeatherData.create(time, variable, value))
 
     def add_weather_data_from_sensors(self, starttime, stoptime,
@@ -1484,7 +1446,6 @@ class MCSession(Session):
             weather.weather_sensor_dict
 
         """
-        from .weather import weather_sensor_dict, create_from_sensors
         if variables is not None:
             if isinstance(variables, (list, tuple)):
                 for var in variables:
@@ -1542,7 +1503,6 @@ class MCSession(Session):
         if write_to_file is False: list of WeatherData objects
 
         """
-        from .weather import weather_sensor_dict, WeatherData
         if variable is not None:
             if variable not in weather_sensor_dict.keys():
                 raise ValueError('variable must be a key in '
@@ -1578,11 +1538,10 @@ class MCSession(Session):
             Percent humidity measurement reported by node.
 
         """
-        from .node import NodeSensor
-
-        self.add(NodeSensor.create(time, nodeID, top_sensor_temp,
-                                   middle_sensor_temp, bottom_sensor_temp,
-                                   humidity_sensor_temp, humidity))
+        self.add(node.NodeSensor.create(
+            time, nodeID, top_sensor_temp, middle_sensor_temp, bottom_sensor_temp,
+            humidity_sensor_temp, humidity)
+        )
 
     def add_node_sensor_readings_from_nodecontrol(self):
         """
@@ -1597,11 +1556,9 @@ class MCSession(Session):
         the node sensor data densely on qmaster.
 
         """
-        from .node import create_sensor_readings, NodeSensor
+        node_sensor_list = node.create_sensor_readings()
 
-        node_sensor_list = create_sensor_readings()
-
-        self._insert_ignoring_duplicates(NodeSensor, node_sensor_list)
+        self._insert_ignoring_duplicates(node.NodeSensor, node_sensor_list)
 
     def get_node_sensor_readings(self, most_recent=None, starttime=None,
                                  stoptime=None, nodeID=None,
@@ -1643,9 +1600,7 @@ class MCSession(Session):
         if write_to_file is False: list of NodeSensor objects
 
         """
-        from .node import NodeSensor
-
-        return self._time_filter(NodeSensor, 'time', most_recent=most_recent,
+        return self._time_filter(node.NodeSensor, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='node', filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
@@ -1678,12 +1633,10 @@ class MCSession(Session):
             Power status of the PAM, True=powered.
 
         """
-        from .node import NodePowerStatus
-
-        self.add(NodePowerStatus.create(time, nodeID, snap_relay_powered,
-                                        snap0_powered, snap1_powered,
-                                        snap2_powered, snap3_powered,
-                                        fem_powered, pam_powered))
+        self.add(node.NodePowerStatus.create(
+            time, nodeID, snap_relay_powered, snap0_powered, snap1_powered,
+            snap2_powered, snap3_powered, fem_powered, pam_powered)
+        )
 
     def add_node_power_status_from_nodecontrol(self):
         """
@@ -1698,11 +1651,9 @@ class MCSession(Session):
         the node power status data densely on qmaster.
 
         """
-        from .node import create_power_status, NodePowerStatus
+        node_power_list = node.create_power_status()
 
-        node_power_list = create_power_status()
-
-        self._insert_ignoring_duplicates(NodePowerStatus, node_power_list)
+        self._insert_ignoring_duplicates(node.NodePowerStatus, node_power_list)
 
     def get_node_power_status(self, most_recent=None, starttime=None,
                               stoptime=None, nodeID=None, write_to_file=False,
@@ -1744,9 +1695,7 @@ class MCSession(Session):
         list of NodePowerStatus objects
 
         """
-        from .node import NodePowerStatus
-
-        return self._time_filter(NodePowerStatus, 'time',
+        return self._time_filter(node.NodePowerStatus, 'time',
                                  most_recent=most_recent, starttime=starttime,
                                  stoptime=stoptime, filter_column='node',
                                  filter_value=nodeID,
@@ -1786,17 +1735,14 @@ class MCSession(Session):
             If the specied node is not in the array and `testing` is False.
 
         """
-        from .node import (NodePowerCommand, power_command_part_dict,
-                           get_node_list, defaultServerAddress)
-
         if nodeServerAddress is None:
-            nodeServerAddress = defaultServerAddress
+            nodeServerAddress = node.defaultServerAddress
 
         if testing:
             node_list = list(range(1, 31))
             dryrun = True
         else:
-            node_list = get_node_list(nodeServerAddress=nodeServerAddress)
+            node_list = node.get_node_list(nodeServerAddress=nodeServerAddress)
         if nodeID not in node_list:
             raise ValueError('node not in list of active nodes: ', node_list)
 
@@ -1807,7 +1753,7 @@ class MCSession(Session):
             part = list(set(part))
 
         if part[0] == 'all':
-            part = list(power_command_part_dict.keys())
+            part = list(node.power_command_part_dict.keys())
 
         if 'snap_relay' in part:
             if command == 'on':
@@ -1817,7 +1763,7 @@ class MCSession(Session):
                 part.insert(0, 'snap_relay')
             else:
                 # make sure all snaps are powered down first
-                for partname in list(power_command_part_dict.keys()):
+                for partname in list(node.power_command_part_dict.keys()):
                     if partname.startswith('snap') and partname not in part:
                         part.insert(0, partname)
                 # move snap_relay to the end of the list.
@@ -1843,10 +1789,10 @@ class MCSession(Session):
             latest_powers = node_powers[-1]
             drop_part = []
             for partname in part:
-                if partname not in list(power_command_part_dict.keys()):
+                if partname not in list(node.power_command_part_dict.keys()):
                     raise ValueError(
                         'part must be one of: '
-                        + ', '.join(list(power_command_part_dict.keys()))
+                        + ', '.join(list(node.power_command_part_dict.keys()))
                         + '. part is actually {}'.format(partname))
                 power_status = getattr(latest_powers, partname + '_powered')
                 if command == 'on':
@@ -1868,16 +1814,17 @@ class MCSession(Session):
         for partname in part:
             command_time = Time.now()
             # create object first to catch any mistakes
-            command_obj = NodePowerCommand.create(command_time, nodeID,
-                                                  partname, command)
+            command_obj = node.NodePowerCommand.create(
+                command_time, nodeID, partname, command
+            )
 
             if not dryrun:  # pragma: no cover
                 import nodeControl
 
-                node_controller = nodeControl.NodeControl(
+                node_controller = nodeControl.node.NodeControl(
                     nodeID, serverAddress=nodeServerAddress)
                 getattr(node_controller,
-                        power_command_part_dict[partname])(command)
+                        node.power_command_part_dict[partname])(command)
 
                 self.add(command_obj)
             else:
@@ -1926,9 +1873,7 @@ class MCSession(Session):
         list of NodePowerCommand objects
 
         """
-        from .node import NodePowerCommand
-
-        return self._time_filter(NodePowerCommand, 'time',
+        return self._time_filter(node.NodePowerCommand, 'time',
                                  most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='node', filter_value=nodeID,
@@ -2080,9 +2025,7 @@ class MCSession(Session):
                 Astropy Time object based on Port 1 current TAI time in seconds from UNIX epoch.
 
         """
-        from .node import NodeWhiteRabbitStatus
-
-        self.add(NodeWhiteRabbitStatus.create(col_dict))
+        self.add(node.NodeWhiteRabbitStatus.create(col_dict))
 
     def add_node_white_rabbit_status_from_nodecontrol(self):
         """
@@ -2097,11 +2040,9 @@ class MCSession(Session):
         the node white rabbit data densely on qmaster.
 
         """
-        from .node import create_wr_status, NodeWhiteRabbitStatus
+        node_wr_status_list = node.create_wr_status()
 
-        node_wr_status_list = create_wr_status()
-
-        self._insert_ignoring_duplicates(NodeWhiteRabbitStatus, node_wr_status_list)
+        self._insert_ignoring_duplicates(node.NodeWhiteRabbitStatus, node_wr_status_list)
 
     def get_node_white_rabbit_status(self, most_recent=None, starttime=None,
                                      stoptime=None, nodeID=None,
@@ -2143,9 +2084,7 @@ class MCSession(Session):
         if write_to_file is False: list of NodeWhiteRabbitStatus objects
 
         """
-        from .node import NodeWhiteRabbitStatus
-
-        return self._time_filter(NodeWhiteRabbitStatus, 'node_time',
+        return self._time_filter(node.NodeWhiteRabbitStatus, 'node_time',
                                  most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='node', filter_value=nodeID,
@@ -2166,9 +2105,7 @@ class MCSession(Session):
             The state.
 
         """
-        from .correlator import CorrelatorControlState
-
-        self.add(CorrelatorControlState.create(time, state_type, state))
+        self.add(corr.CorrelatorControlState.create(time, state_type, state))
 
     def get_correlator_control_state(self, most_recent=None, starttime=None,
                                      stoptime=None, state_type=None,
@@ -2211,9 +2148,7 @@ class MCSession(Session):
         list of CorrelatorControlState objects
 
         """
-        from .correlator import CorrelatorControlState
-
-        return self._time_filter(CorrelatorControlState, 'time',
+        return self._time_filter(corr.CorrelatorControlState, 'time',
                                  most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='state_type',
@@ -2251,11 +2186,9 @@ class MCSession(Session):
             objects based on the corr_state_dict.
 
         """
-        from .correlator import _get_control_state, CorrelatorControlState
-
         if corr_state_dict is None:
             self.add_corr_obj()
-            corr_state_dict = _get_control_state(corr_cm=self.corr_obj)
+            corr_state_dict = corr._get_control_state(corr_cm=self.corr_obj)
 
         corr_state_list = []
         for state_type, dict in corr_state_dict.items():
@@ -2282,13 +2215,13 @@ class MCSession(Session):
                         'got None timestamp for {type} = {state}'.format(
                             type=state_type, state=state))
 
-            corr_state_list.append(CorrelatorControlState.create(
+            corr_state_list.append(corr.CorrelatorControlState.create(
                 time, state_type, state))
 
         if testing:
             return corr_state_list
         else:
-            self._insert_ignoring_duplicates(CorrelatorControlState,
+            self._insert_ignoring_duplicates(corr.CorrelatorControlState,
                                              corr_state_list)
 
     def add_correlator_config_file(self, config_hash, config_file):
@@ -2303,9 +2236,7 @@ class MCSession(Session):
             Name of the config file in the Librarian.
 
         """
-        from .correlator import CorrelatorConfigFile
-
-        self.add(CorrelatorConfigFile.create(config_hash, config_file))
+        self.add(corr.CorrelatorConfigFile.create(config_hash, config_file))
 
     def get_correlator_config_file(self, config_hash=None,
                                    most_recent=None, starttime=None,
@@ -2347,11 +2278,9 @@ class MCSession(Session):
             of CorrelatorConfigFile objects. Only provided if `config_hash` is None.
 
         """
-        from .correlator import CorrelatorConfigFile
-
         if config_hash is not None:
-            query = self.query(CorrelatorConfigFile).filter(
-                CorrelatorConfigFile.config_hash == config_hash)
+            query = self.query(corr.CorrelatorConfigFile).filter(
+                corr.CorrelatorConfigFile.config_hash == config_hash)
 
             return query.all()
         else:
@@ -2411,14 +2340,12 @@ class MCSession(Session):
             of CorrelatorConfigParams objects. Only provided if `config_hash` is None.
 
         """
-        from .correlator import CorrelatorConfigParams
-
         if config_hash is not None:
-            query = self.query(CorrelatorConfigParams).filter(
-                CorrelatorConfigParams.config_hash == config_hash)
+            query = self.query(corr.CorrelatorConfigParams).filter(
+                corr.CorrelatorConfigParams.config_hash == config_hash)
 
             if parameter is not None:
-                query = query.filter(CorrelatorConfigParams.parameter == parameter)
+                query = query.filter(corr.CorrelatorConfigParams.parameter == parameter)
 
             return query.all()
         else:
@@ -2457,8 +2384,6 @@ class MCSession(Session):
             SNAP hostname if serial_number is found in the part_rosetta None otherwise.
 
         """
-        from .cm_active import ActiveData
-
         active = ActiveData(session=self, at_date=at_date)
         active.load_rosetta()
         if serial_number in active.rosetta.keys():
@@ -2487,8 +2412,6 @@ class MCSession(Session):
             in the part_rosetta, None otherwise.
 
         """
-        from .cm_active import ActiveData
-
         active = ActiveData(session=self, at_date=at_date)
         active.load_rosetta()
 
@@ -2520,9 +2443,6 @@ class MCSession(Session):
             SNAP location number.
 
         """
-        from .cm_active import ActiveData
-        from . import cm_utils
-
         if session is None:
             session = self
 
@@ -2666,11 +2586,9 @@ class MCSession(Session):
             CorrelatorConfigActiveSNAP objects.
 
         """
-        from .correlator import CorrelatorConfigActiveSNAP
-
         if config_hash is not None:
-            query = self.query(CorrelatorConfigActiveSNAP).filter(
-                CorrelatorConfigActiveSNAP.config_hash == config_hash)
+            query = self.query(corr.CorrelatorConfigActiveSNAP).filter(
+                corr.CorrelatorConfigActiveSNAP.config_hash == config_hash)
 
             config_active_snap_list = query.all()
             retval = [config_active_snap_list]
@@ -2758,15 +2676,13 @@ class MCSession(Session):
             CorrelatorConfigInputIndex objects.
 
         """
-        from .correlator import CorrelatorConfigInputIndex
-
         if config_hash is not None:
-            query = self.query(CorrelatorConfigInputIndex).filter(
-                CorrelatorConfigInputIndex.config_hash == config_hash)
+            query = self.query(corr.CorrelatorConfigInputIndex).filter(
+                corr.CorrelatorConfigInputIndex.config_hash == config_hash)
 
             if correlator_index is not None:
                 query = query.filter(
-                    CorrelatorConfigInputIndex.correlator_index == correlator_index
+                    corr.CorrelatorConfigInputIndex.correlator_index == correlator_index
                 )
 
             config_input_index_list = query.all()
@@ -2852,11 +2768,9 @@ class MCSession(Session):
             CorrelatorConfigPhaseSwitchIndex objects.
 
         """
-        from .correlator import CorrelatorConfigPhaseSwitchIndex
-
         if config_hash is not None:
-            query = self.query(CorrelatorConfigPhaseSwitchIndex).filter(
-                CorrelatorConfigPhaseSwitchIndex.config_hash == config_hash)
+            query = self.query(corr.CorrelatorConfigPhaseSwitchIndex).filter(
+                corr.CorrelatorConfigPhaseSwitchIndex.config_hash == config_hash)
 
             config_ps_index_list = query.all()
             retval = [config_ps_index_list]
@@ -2902,9 +2816,7 @@ class MCSession(Session):
             Unique hash of the config.
 
         """
-        from .correlator import CorrelatorConfigStatus
-
-        self.add(CorrelatorConfigStatus.create(time, config_hash))
+        self.add(corr.CorrelatorConfigStatus.create(time, config_hash))
 
     def get_correlator_config_status(self, most_recent=None, starttime=None,
                                      config_hash=None, stoptime=None,
@@ -2946,9 +2858,7 @@ class MCSession(Session):
         list of CorrelatorConfigStatus objects
 
         """
-        from .correlator import CorrelatorConfigStatus
-
-        return self._time_filter(CorrelatorConfigStatus, 'time',
+        return self._time_filter(corr.CorrelatorConfigStatus, 'time',
                                  most_recent=most_recent, starttime=starttime,
                                  stoptime=stoptime, filter_column='config_hash',
                                  filter_value=config_hash,
@@ -2969,7 +2879,6 @@ class MCSession(Session):
             Name of the file in the librarian.
 
         """
-        import yaml
         from hera_librarian import LibrarianClient
 
         # write config out to a file
@@ -3020,12 +2929,9 @@ class MCSession(Session):
             based on the config_state_dict.
 
         """
-        from .correlator import (_get_config, _parse_config, CorrelatorConfigFile,
-                                 CorrelatorConfigStatus)
-
         if config_state_dict is None:
             self.add_corr_obj()
-            config_state_dict = _get_config(corr_cm=self.corr_obj)
+            config_state_dict = corr._get_config(corr_cm=self.corr_obj)
 
         time = config_state_dict['time']
         config = config_state_dict['config']
@@ -3047,11 +2953,11 @@ class MCSession(Session):
                 # There's not a file with this config hash.
                 librarian_filename = ('correlator_config_'
                                       + str(int(floor(time.gps))) + '.yaml')
-                config_file_obj = CorrelatorConfigFile.create(
+                config_file_obj = corr.CorrelatorConfigFile.create(
                     config_hash, librarian_filename)
 
                 # parse it get a list of config related objects
-                config_objs = _parse_config(config, config_hash)
+                config_objs = corr._parse_config(config, config_hash)
 
                 if not testing:  # pragma: no cover
                     # This config is new.
@@ -3072,7 +2978,7 @@ class MCSession(Session):
                     config_obj_list.extend(config_objs)
 
             # make the config status object
-            config_status_obj = CorrelatorConfigStatus.create(time, config_hash)
+            config_status_obj = corr.CorrelatorConfigStatus.create(time, config_hash)
             if not testing:  # pragma: no cover
                 self.add(config_status_obj)
                 self.commit()
@@ -3081,7 +2987,7 @@ class MCSession(Session):
         else:
             if same_config_status[0].time != floor(time.gps):
                 # time is different, so need a new row
-                config_status_obj = CorrelatorConfigStatus.create(
+                config_status_obj = corr.CorrelatorConfigStatus.create(
                     time, config_hash)
 
                 if not testing:  # pragma: no cover
@@ -3134,9 +3040,7 @@ class MCSession(Session):
         list of CorrelatorControlCommand objects
 
         """
-        from .correlator import CorrelatorControlCommand
-
-        return self._time_filter(CorrelatorControlCommand, 'time',
+        return self._time_filter(corr.CorrelatorControlCommand, 'time',
                                  most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='command', filter_value=command,
@@ -3187,14 +3091,12 @@ class MCSession(Session):
         list of CorrelatorTakeDataArguments objects
 
         """
-        from .correlator import CorrelatorTakeDataArguments
-
         if use_command_time:
             time_column = 'time'
         else:
             time_column = 'starttime_sec'
 
-        return self._time_filter(CorrelatorTakeDataArguments, time_column,
+        return self._time_filter(corr.CorrelatorTakeDataArguments, time_column,
                                  most_recent=most_recent, starttime=starttime,
                                  stoptime=stoptime, write_to_file=write_to_file,
                                  filename=filename)
@@ -3240,9 +3142,7 @@ class MCSession(Session):
         list of CorrelatorConfigCommand objects
 
         """
-        from .correlator import CorrelatorConfigCommand
-
-        return self._time_filter(CorrelatorConfigCommand, 'time',
+        return self._time_filter(corr.CorrelatorConfigCommand, 'time',
                                  most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='config_hash',
@@ -3296,8 +3196,6 @@ class MCSession(Session):
             (implies dry run).
 
         """
-        from . import correlator as corr
-
         if testing:
             dryrun = True
 
@@ -3431,8 +3329,6 @@ class MCSession(Session):
                     command_time, starttime, duration, acclen_spectra,
                     integration_time, tag)
         elif command == 'update_config':
-            import hashlib
-
             if config_file is None:
                 raise ValueError('config_file must be specified if command is '
                                  '"update_config"')
@@ -3467,7 +3363,6 @@ class MCSession(Session):
                         config_hash, librarian_filename)
 
                     if not dryrun:  # pragma: no cover
-                        import yaml
                         # This config is new.
                         # save it to the Librarian
                         with open(config_file, 'r') as stream:
@@ -3592,9 +3487,7 @@ class MCSession(Session):
             Version string for this package or script.
 
         """
-        from .correlator import CorrelatorSoftwareVersions
-
-        self.add(CorrelatorSoftwareVersions.create(time, package, version))
+        self.add(corr.CorrelatorSoftwareVersions.create(time, package, version))
 
     def get_correlator_software_versions(self, most_recent=None, starttime=None,
                                          stoptime=None, package=None,
@@ -3636,9 +3529,7 @@ class MCSession(Session):
         list of CorrelatorSoftwareVersions objects
 
         """
-        from .correlator import CorrelatorSoftwareVersions
-
-        return self._time_filter(CorrelatorSoftwareVersions, 'time',
+        return self._time_filter(corr.CorrelatorSoftwareVersions, 'time',
                                  most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='package', filter_value=package,
@@ -3663,10 +3554,7 @@ class MCSession(Session):
             table
 
         """
-        from .correlator import SNAPConfigVersion
-
-        self.add(SNAPConfigVersion.create(init_time, version, init_args,
-                                          config_hash))
+        self.add(corr.SNAPConfigVersion.create(init_time, version, init_args, config_hash))
 
     def get_snap_config_version(self, most_recent=None, starttime=None,
                                 stoptime=None, write_to_file=False,
@@ -3706,9 +3594,7 @@ class MCSession(Session):
         list of SNAPConfigVersion objects
 
         """
-        from .correlator import SNAPConfigVersion
-
-        return self._time_filter(SNAPConfigVersion, 'init_time',
+        return self._time_filter(corr.SNAPConfigVersion, 'init_time',
                                  most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  write_to_file=write_to_file, filename=filename)
@@ -3746,12 +3632,9 @@ class MCSession(Session):
             SNAPConfigVersion objects (if testing is True)
 
         """
-        from .correlator import (_get_corr_versions, CorrelatorSoftwareVersions,
-                                 SNAPConfigVersion)
-
         if corr_snap_version_dict is None:
             self.add_corr_obj()
-            corr_snap_version_dict = _get_corr_versions(corr_cm=self.corr_obj)
+            corr_snap_version_dict = corr._get_corr_versions(corr_cm=self.corr_obj)
 
         corr_version_list = []
         snap_version_list = []
@@ -3772,17 +3655,16 @@ class MCSession(Session):
                 if last_version != version:
                     # this is a new version, make a new object
                     corr_version_list.append(
-                        CorrelatorSoftwareVersions.create(
+                        corr.CorrelatorSoftwareVersions.create(
                             time, package, version))
             elif package != 'snap':
                 corr_version_list.append(
-                    CorrelatorSoftwareVersions.create(time, package, version))
+                    corr.CorrelatorSoftwareVersions.create(time, package, version))
             else:
                 init_args = version_dict['init_args']
                 config_hash = version_dict['config_md5']
-                snap_version_list.append(SNAPConfigVersion.create(time, version,
-                                                                  init_args,
-                                                                  config_hash))
+                snap_version_list.append(corr.SNAPConfigVersion.create(
+                    time, version, init_args, config_hash))
 
                 config_time = Time(version_dict['config_timestamp'],
                                    format='datetime')
@@ -3798,9 +3680,9 @@ class MCSession(Session):
         if testing:
             return corr_version_list + config_obj_list + snap_version_list
         else:
-            self._insert_ignoring_duplicates(CorrelatorSoftwareVersions,
+            self._insert_ignoring_duplicates(corr.CorrelatorSoftwareVersions,
                                              corr_version_list)
-            self._insert_ignoring_duplicates(SNAPConfigVersion,
+            self._insert_ignoring_duplicates(corr.SNAPConfigVersion,
                                              snap_version_list)
 
     def add_snap_status(self, time, hostname, serial_number, psu_alert,
@@ -3830,12 +3712,10 @@ class MCSession(Session):
             Astropy time object based on the last time this FPGA was programmed.
 
         """
-        from .correlator import SNAPStatus
-
         # get node & snap location number from config management
         nodeID, snap_loc_num = self._get_node_snap_from_serial(serial_number)
 
-        self.add(SNAPStatus.create(
+        self.add(corr.SNAPStatus.create(
             time, hostname, nodeID, snap_loc_num, serial_number, psu_alert,
             pps_count, fpga_temp, uptime_cycles, last_programmed_time))
 
@@ -3878,9 +3758,7 @@ class MCSession(Session):
         list of SNAPStatus objects
 
         """
-        from .correlator import SNAPStatus
-
-        return self._time_filter(SNAPStatus, 'time', most_recent=most_recent,
+        return self._time_filter(corr.SNAPStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='node', filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
@@ -3917,11 +3795,9 @@ class MCSession(Session):
         Optionally returns the list of SNAPStatus objects (if testing is True)
 
         """
-        from .correlator import _get_snap_status, SNAPStatus
-
         if snap_status_dict is None:
             self.add_corr_obj()
-            snap_status_dict = _get_snap_status(corr_cm=self.corr_obj)
+            snap_status_dict = corr._get_snap_status(corr_cm=self.corr_obj)
 
         snap_status_list = []
         for hostname, snap_dict in snap_status_dict.items():
@@ -3961,14 +3837,14 @@ class MCSession(Session):
                 nodeID = None
                 snap_loc_num = None
 
-            snap_status_list.append(SNAPStatus.create(
+            snap_status_list.append(corr.SNAPStatus.create(
                 time, hostname, nodeID, snap_loc_num, serial_number, psu_alert,
                 pps_count, fpga_temp, uptime_cycles, last_programmed_time))
 
         if testing:
             return snap_status_list
         else:
-            self._insert_ignoring_duplicates(SNAPStatus, snap_status_list)
+            self._insert_ignoring_duplicates(corr.SNAPStatus, snap_status_list)
 
     def add_antenna_status(self, time, antenna_number, antenna_feed_pol,
                            snap_hostname, snap_channel_number, adc_mean,
@@ -4043,9 +3919,7 @@ class MCSession(Session):
             ADC histogram counts.
 
         """
-        from .correlator import AntennaStatus
-
-        self.add(AntennaStatus.create(
+        self.add(corr.AntennaStatus.create(
             time, antenna_number, antenna_feed_pol, snap_hostname,
             snap_channel_number, adc_mean, adc_rms, adc_power, pam_atten,
             pam_power, pam_voltage, pam_current, pam_id, fem_voltage,
@@ -4093,9 +3967,7 @@ class MCSession(Session):
         list of AntennaStatus objects
 
         """
-        from .correlator import AntennaStatus
-
-        return self._time_filter(AntennaStatus, 'time', most_recent=most_recent,
+        return self._time_filter(corr.AntennaStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='antenna_number',
                                  filter_value=antenna_number,
@@ -4131,20 +4003,18 @@ class MCSession(Session):
             on the ant_status_dict.
 
         """
-        from .correlator import create_antenna_status, AntennaStatus
-
         if ant_status_dict is None:
             self.add_corr_obj()
             corr_cm = self.corr_obj
         else:
             corr_cm = None
-        antenna_status_list = create_antenna_status(
+        antenna_status_list = corr.create_antenna_status(
             corr_cm=corr_cm, ant_status_dict=ant_status_dict)
 
         if testing:
             return antenna_status_list
         else:
-            self._insert_ignoring_duplicates(AntennaStatus, antenna_status_list)
+            self._insert_ignoring_duplicates(corr.AntennaStatus, antenna_status_list)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
@@ -4164,8 +4034,6 @@ class MCSession(Session):
             Value of metric.
 
         """
-        from .qm import AntMetrics
-
         db_time = self.get_current_db_time()
 
         self.add(AntMetrics.create(obsid, ant, pol, metric, db_time, val))
@@ -4193,8 +4061,6 @@ class MCSession(Session):
         list of AntMetrics objects
 
         """
-        from .qm import AntMetrics
-
         args = []
         if ant is not None:
             args.append(AntMetrics.ant.in_(get_iterable(ant)))
@@ -4227,8 +4093,6 @@ class MCSession(Session):
             Value of metric.
 
         """
-        from .qm import ArrayMetrics
-
         db_time = self.get_current_db_time()
 
         self.add(ArrayMetrics.create(obsid, metric, db_time, val))
@@ -4251,8 +4115,6 @@ class MCSession(Session):
         list of ArrayMetrics objects
 
         """
-        from .qm import ArrayMetrics
-
         args = []
         if metric is not None:
             args.append(ArrayMetrics.metric.in_(get_iterable(metric)))
@@ -4279,8 +4141,6 @@ class MCSession(Session):
             Description of metric.
 
         """
-        from .qm import MetricList
-
         self.add(MetricList.create(metric, desc))
 
     def update_metric_desc(self, metric, desc):
@@ -4298,8 +4158,6 @@ class MCSession(Session):
             Description of metric.
 
         """
-        from .qm import MetricList
-
         self.query(MetricList).filter(
             MetricList.metric == metric)[0].desc = desc
         self.commit()
@@ -4318,8 +4176,6 @@ class MCSession(Session):
         list of MetricList objects
 
         """
-        from .qm import MetricList
-
         args = []
         if metric is not None:
             args.append(MetricList.metric.in_(get_iterable(metric)))
@@ -4373,7 +4229,6 @@ class MCSession(Session):
 
         """
         from hera_qm.utils import metrics2mc
-        import os
 
         try:
             obsid = self.get_lib_files(
@@ -4409,8 +4264,6 @@ class MCSession(Session):
         value : float
             The median autocorrelation value as a float.
         """
-        from .autocorrelations import HeraAuto
-
         self.add(HeraAuto.create(time, antenna_number, antenna_feed_pol, measurement_type, value))
 
     def add_autocorrelations_from_redis(self, hera_autos_dict=None, testing=False,
@@ -4431,8 +4284,6 @@ class MCSession(Session):
             Available choices are: ['median']
             If None, defaults to median.
         """
-        from .autocorrelations import _get_autos_from_redis, HeraAuto, measurement_func_dict
-
         if hera_autos_dict is None:
             hera_autos_dict = _get_autos_from_redis(redishost=redishost)
         if measurement_type is None:
@@ -4505,8 +4356,6 @@ class MCSession(Session):
         list of Autocorrelation objects
 
         """
-        from .autocorrelations import HeraAuto
-
         return self._time_filter(HeraAuto, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='antenna_number',

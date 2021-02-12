@@ -3,9 +3,9 @@
 # Licensed under the 2-clause BSD license.
 
 """Contains geographic location information and methods."""
-
-from . import mc
 import os.path
+
+from .data import DATA_PATH
 
 region = {'herahexw': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
                        16, 17, 18, 19, 20, 21,
@@ -53,7 +53,7 @@ def read_nodes():
         Contains location and antenna list for all nodes.  Keyed on node number as int.
 
     """
-    node_coord_file_name = os.path.join(mc.data_path, 'nodes.txt')
+    node_coord_file_name = os.path.join(DATA_PATH, 'nodes.txt')
     default_elevation = 1050.0
     nodes = {}
     with open(node_coord_file_name, 'r') as fp:
@@ -78,7 +78,7 @@ def read_antennas():
         Contains location for all antennas.  Keyed on antenna hpn
 
     """
-    antenna_coord_file_name = os.path.join(mc.data_path, 'HERA_350.txt')
+    antenna_coord_file_name = os.path.join(DATA_PATH, 'HERA_350.txt')
     antennas = {}
     with open(antenna_coord_file_name, 'r') as fp:
         for line in fp:
