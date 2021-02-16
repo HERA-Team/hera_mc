@@ -1727,7 +1727,7 @@ class MCSession(Session):
         Returns
         -------
         list of objects, optional
-            If testing is True: list of NodePowerCommand command objects.
+            If dry_run and/or testing is True: list of NodePowerCommand command objects.
 
         Raises
         ------
