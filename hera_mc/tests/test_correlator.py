@@ -18,7 +18,7 @@ from astropy.time import Time, TimeDelta
 from hera_mc import mc, cm_partconnect
 import hera_mc.correlator as corr
 from hera_mc.data import DATA_PATH
-from ..tests import checkWarnings, requires_redis, TEST_DEFAULT_REDIS_HOST
+from ..tests import onsite, checkWarnings, requires_redis, TEST_DEFAULT_REDIS_HOST
 
 
 @pytest.fixture(scope='module')
@@ -1626,8 +1626,10 @@ def test_add_corr_snap_versions_from_corrcm(mcsession, snapversion, init_args):
     assert result[1].isclose(expected)
 
 
-@requires_redis
+@onsite
 def test_onsite_add_corr_snap_versions_from_corrcm(mcsession):
+    # this has to be done onsite, not in CI because it needs to talk to the librarian
+    # as well (to register the config file in the librarian)
     test_session = mcsession
 
     test_session.add_corr_snap_versions_from_corrcm()
