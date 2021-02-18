@@ -25,4 +25,4 @@ watch_dog.node_temperature(at_date=args.date, at_time=args.time,
                            temp_threshold=float(args.temp),
                            time_threshold=float(args.age),
                            To=args.email,
-                           skip_send=False, session=None)
+                           testing=False, session=None)
