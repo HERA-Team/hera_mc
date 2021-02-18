@@ -7,8 +7,7 @@
 import json
 import redis
 import time
-from . import cm_sysutils
-from .correlator import DEFAULT_REDIS_ADDRESS
+from . import cm_sysutils, correlator
 
 REDIS_CMINFO_HASH = 'cminfo'
 REDIS_CORR_HASH = 'corr:map'
@@ -94,7 +93,8 @@ def cminfo_redis_snap(cminfo, redis_info=None):
     return snap_to_ant, ant_to_snap, all_snap_inputs
 
 
-def set_redis_cminfo(redishost=DEFAULT_REDIS_ADDRESS, session=None, testing=False):
+def set_redis_cminfo(redishost=correlator.DEFAULT_REDIS_ADDRESS,
+                     session=None, testing=False):
     """
     Write config info to redis database for the correlator.
 
@@ -109,7 +109,7 @@ def set_redis_cminfo(redishost=DEFAULT_REDIS_ADDRESS, session=None, testing=Fals
     """
     # This is retained so that explicitly providing redishost=None has the desired behavior
     if redishost is None:  # pragma: no cover
-        redishost = DEFAULT_REDIS_ADDRESS
+        redishost = correlator.DEFAULT_REDIS_ADDRESS
     redis_pool = redis.ConnectionPool(host=redishost)
     rsession = redis.Redis(connection_pool=redis_pool)
 

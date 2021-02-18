@@ -1,7 +1,5 @@
 include *.md
 include LICENSE
-include hera_mc/VERSION
-include hera_mc/GIT_INFO
 include scripts/*.sh
 recursive-include hera_mc/data *
 recursive-include docs *

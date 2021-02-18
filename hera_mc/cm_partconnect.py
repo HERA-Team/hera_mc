@@ -986,8 +986,13 @@ def update_connection(session=None, data=None, add_new_connection=False):
                 connection = None
             else:
                 connection = conn_rec.first()
-        else:
-            print("Error:  more than one of ", dkey, " exists (which should not happen).")
+        else:  # pragma: no cover
+            # we don't know how to cause this, thus the no cover. But we want to catch it
+            # if it does happen.
+            raise RuntimeError(
+                "More than one of ", dkey, " exists. This should not happen, please "
+                "make an issue on the repo!"
+            )
             connection = None
         if connection:
             for d in data_dict[dkey]:

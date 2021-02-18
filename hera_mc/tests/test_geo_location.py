@@ -164,7 +164,7 @@ def test_parse_station_types(geo_handle):
 def test_get_active_stations(geo_handle):
     active = geo_handle.get_active_stations(
         'now', ['HH'], hookup_type='parts_hera')
-    assert len(active) == 12
+    assert len(active) == 11
 
 
 def test_is_in_database(geo_handle):

@@ -106,12 +106,12 @@ def test_rosetta(mcsession, capsys):
     cm_partconnect.update_part_rosetta('SNPC000702', 'heraNode700Snap1',
                                        at_date, session=mcsession)
     active.load_rosetta(at_date)
-    assert active.rosetta['SNPC000702'].syspn == 'heraNode700Snap1'
+    assert active.rosetta['SNPC000702'].syspn == 'heraNode700Snap2'
     stop_at = Time('2020-08-01 01:00:00', scale='utc')
-    cm_partconnect.update_part_rosetta('SNPC000701', 'heraNode700Snap2',
-                                       at_date, stop_at, mcsession)
+    cm_partconnect.update_part_rosetta('SNPC000771', 'heraNode771Snap2',
+                                       at_date, stop_at, session=mcsession)
     active.load_rosetta(Time('2020-07-15 01:00:00', scale='utc'))
-    assert int(active.rosetta['SNPC000701'].stop_gpstime) == 1280278818
+    assert int(active.rosetta['SNPC000771'].stop_gpstime) == 1280278818
     cm_partconnect.update_part_rosetta('SNPC000709', 'heraNode700Snap709',
                                        stop_at, session=mcsession)
     assert int(active.rosetta['SNPC000709'].stop_gpstime) == 1280278818
@@ -162,7 +162,7 @@ def test_update_part(parts, capsys):
     assert located[list(located.keys())[0]].part.hpn_rev == 'Z'
 
 
-def test_format_and_check_update_part_request(parts):
+def test_format_and_check_update_part_request():
     request = 'test_part:Q:hpn_rev:A'
     x = cm_partconnect.format_and_check_update_part_request(request)
     assert list(x.keys())[0] == 'test_part:Q'
@@ -172,6 +172,16 @@ def test_format_and_check_update_part_request(parts):
     request = 'test_part:Q:hpn_rev:A,test_part:mfg:xxx,nope,another:one'
     x = cm_partconnect.format_and_check_update_part_request(request)
     assert x['test_part:Q'][2][3] == 'one'
+
+
+def test_format_check_update_connection_request(capsys):
+    request = '1,2,3'
+    x = cm_partconnect.format_check_update_connection_request(request)
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith('Invalid')
+    request = '1:2:3:4:5:6:7'
+    x = cm_partconnect.format_check_update_connection_request(request)
+    assert x['1:2:3:4'][0][1] == 'LAST'
 
 
 def test_show_dossier(parts, capsys):

@@ -75,7 +75,7 @@ def test_watch_dog(mcsession):
 def test_ever_fully_connected(sys_handle):
     now_list = sys_handle.get_connected_stations(
         at_date='now', hookup_type='parts_hera')
-    assert len(now_list) == 12
+    assert len(now_list) == 11
 
 
 def test_publish_summary(sys_handle):
@@ -142,7 +142,7 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     hufc = hookup.get_hookup_from_db(['HH'], 'e', at_date='now')
     assert len(hufc.keys()), 13
     hufc = hookup.get_hookup_from_db(['N700'], 'e', at_date='now')
-    assert len(hufc.keys()) == 3
+    assert len(hufc.keys()) == 4
     assert hookup.hookup_type, 'parts_hera'
     gptf = hookup._get_part_types_found([])
     assert len(gptf) == 0
@@ -159,7 +159,7 @@ def test_hookup_notes(mcsession, capsys):
     hookup = cm_hookup.Hookup(session=mcsession)
     hu = hookup.get_hookup(['HH'])
     notes = hookup.get_notes(hu)
-    assert len(notes) == 13
+    assert len(notes) == 12
     print(hookup.show_notes(hu))
     captured = capsys.readouterr()
     assert '---HH700:A---' in captured.out.strip()
@@ -329,6 +329,12 @@ def test_sysutil_node(capsys, mcsession):
     cm_sysutils.print_node(xni, output_format='html')
     captured = capsys.readouterr()
     assert captured.out.strip().startswith('<html>')
+    testni = {"nodes": ['node1'],
+              'node1': {'snaps': ['1'], 'ncm': '2', 'wr': '3', 'arduino': '4',
+                        'ants-file': [], 'ants-hookup': []}}
+    cm_sysutils.print_node(info=testni)
+    captured = capsys.readouterr()
+    assert len(captured.out.strip()) == 953
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):
@@ -340,20 +346,22 @@ def test_hookup_cache_file_info(sys_handle, mcsession):
 def test_correlator_info(sys_handle):
     corr_dict = sys_handle.get_cminfo_correlator(hookup_type='parts_hera')
     ant_names = corr_dict['antenna_names']
-    assert len(ant_names) == 12
+    assert len(ant_names) == 11
 
     corr_inputs = corr_dict['correlator_inputs']
 
-    index = np.where(np.array(ant_names) == 'HH703')[0]
+    index = np.where(np.array(ant_names) == 'HH701')[0]
     assert len(index) == 1
     index = index[0]
 
-    assert corr_inputs[index] == ('e10>SNPA000700', 'n8>SNPA000700')
+    assert corr_inputs[index] == ('e2>SNPA000700', 'n0>SNPA000700')
 
     assert ([int(name.split('HH')[1]) for name in ant_names]
             == corr_dict['antenna_numbers'])
 
-    assert set(corr_dict['antenna_numbers']) == set(range(701, 713))
+    expected_set = set(range(701, 713))
+    expected_set.remove(703)
+    assert set(corr_dict['antenna_numbers']) == expected_set
 
     assert corr_dict['cm_version'] is not None
 

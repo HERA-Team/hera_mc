@@ -786,6 +786,22 @@ def test_node_power_command(mcsession):
                   command_time, 1, 'fem', 'on')
 
 
+@requires_redis
+def test_node_power_command_redis(mcsession):
+    test_session = mcsession
+
+    node_list = node.get_node_list()
+
+    for node_use in node_list:
+        command_list = test_session.node_power_command(
+            node_use, 'fem', 'on', testing=False, dryrun=True)
+        command_time = command_list[0].time
+        assert Time.now().gps - command_time < 2.
+        expected = node.NodePowerCommand(time=command_time, node=node_use,
+                                         part='fem', command='on')
+        assert command_list[0].isclose(expected)
+
+
 def test_add_white_rabbit_status(mcsession, white_rabbit_status_cleaned, white_rabbit_status_sql):
     test_session = mcsession
     t1 = Time(1512770942.726777, format='unix')

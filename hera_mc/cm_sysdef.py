@@ -3,13 +3,13 @@
 # Licensed under the 2-clause BSD license.
 
 """Defines the system architecture for the telescope array."""
-
-from hera_mc import cm_utils
-from hera_mc.mc import data_path
 import json
 import os.path
 
-with open(os.path.join(data_path, 'sysdef.json'), 'r') as fp:
+from . import cm_utils
+from .data import DATA_PATH
+
+with open(os.path.join(DATA_PATH, 'sysdef.json'), 'r') as fp:
     system_info = json.load(fp)
 hera_zone_prefixes = system_info['hera_zone_prefixes']
 

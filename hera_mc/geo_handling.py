@@ -16,6 +16,7 @@ from pyuvdata import utils as uvutils
 from numpy import radians
 
 from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef
+from .data import DATA_PATH
 
 
 def cofa(session=None):
@@ -536,7 +537,7 @@ class Handling:
         import os.path
         import numpy
         import matplotlib.pyplot as plt
-        p = numpy.loadtxt(os.path.join(mc.data_path, "HERA_350.txt"), usecols=(1, 2, 3))
+        p = numpy.loadtxt(os.path.join(DATA_PATH, "HERA_350.txt"), usecols=(1, 2, 3))
         if not self.testing:  # pragma: no cover
             plt.plot(p[:, 0], p[:, 1], marker='o', color='0.8', linestyle='none')
         return len(p[:, 0])
