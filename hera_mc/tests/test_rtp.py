@@ -449,6 +449,11 @@ def test_add_rtp_task_resource_record(mcsession, observation, task):
     assert len(result_obsid_most_recent) == 2
     assert result == result_obsid_most_recent
 
+    result_task_no_times = test_session.get_rtp_task_resource_record(
+        task_name=task.task_resource_columns['task_name'], most_recent=False)
+    assert len(result_task_no_times) == 1
+    assert result_task_no_times[0].isclose(expected)
+
     result = test_session.get_rtp_task_resource_record(
         starttime=task.task_resource_columns['start_time']
         - TimeDelta(2, format='sec'),
@@ -460,7 +465,7 @@ def test_add_rtp_task_resource_record(mcsession, observation, task):
     assert result.isclose(expected)
 
     result_task_most_recent = test_session.get_rtp_task_resource_record(
-        task_name=task.task_resource_columns['task_name'])
+        task_name=task.task_resource_columns['task_name'], most_recent=True)
     assert len(result_task_most_recent) == 1
     assert result_task_most_recent[0].isclose(expected)
 
@@ -488,8 +493,13 @@ def test_add_rtp_task_resource_record(mcsession, observation, task):
         + TimeDelta(5 * 60, format='sec'))
     assert len(result) == 2
 
+    result_task_no_times = test_session.get_rtp_task_resource_record(
+        task_name=task.task_resource_columns['task_name'], most_recent=False)
+    assert len(result_task_no_times) == 2
+    assert result_task_no_times == result
+
     result_task_most_recent = test_session.get_rtp_task_resource_record(
-        task_name=task.task_resource_columns['task_name'])
+        task_name=task.task_resource_columns['task_name'], most_recent=True)
     assert len(result_task_most_recent) == 1
     assert result_task_most_recent[0].isclose(result[1])
 
@@ -558,10 +568,6 @@ def test_errors_rtp_task_resource_record(mcsession, observation, task):
                   *fake_vals2)
 
     test_session.add_rtp_task_resource_record(*task.task_resource_values)
-
-    pytest.raises(ValueError, test_session.get_rtp_task_resource_record,
-                  task_name=task.task_resource_columns['task_name'],
-                  most_recent=False)
 
     pytest.raises(ValueError, test_session.get_rtp_task_resource_record,
                   most_recent=False)
