@@ -61,7 +61,7 @@ database to the new schema.
   - qmaster machine
     - `HERA` conda environment
     - `RTP` conda environment
-  - hera-corr-head machine
+  - hera-corr-head machine (note: username is `hera`, non-standard pw)
     - `hera3` conda environment (note: this env doesn't have the name set properly, so you need to list the envs and then activate it with the full path to the env)
   - pot1 machine
     - `HERA` conda environment
