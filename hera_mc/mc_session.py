@@ -1832,6 +1832,9 @@ class MCSession(Session):
 
         if dryrun:
             return command_list
+        else:
+            self.commit()
+            return
 
     def get_node_power_command(self, most_recent=None, starttime=None,
                                stoptime=None, nodeID=None,

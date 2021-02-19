@@ -800,7 +800,10 @@ def test_node_power_command_redis(mcsession):
             starttime=starttime, stoptime=stoptime, nodeID=node_use)
         if len(node_powers) > 0:
             latest_powers = node_powers[-1]
-        fem_power_status = latest_powers.fem_powered
+            fem_power_status = latest_powers.fem_powered
+        else:
+            # if there's no recent status, the command is issued anyway
+            fem_power_status = False
 
         command_list = test_session.node_power_command(
             node_use, 'fem', 'on', testing=False, dryrun=True)
