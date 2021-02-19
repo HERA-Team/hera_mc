@@ -62,14 +62,19 @@ database to the new schema.
     - `HERA` conda environment
     - `RTP` conda environment
   - hera-corr-head machine
-    - `hera3` conda environment
+    - `hera3` conda environment (note: this env doesn't have the name set properly, so you need to list the envs and then activate it with the full path to the env)
+  - pot1 machine
+    - `HERA` conda environment
+  - pot6 machine
+    - `HERA` conda environment
+  Note: other machines share the home drive of qmaster, so no need to install on those.
 
 13. Restart the following daemons across the hera correletor computer cluster.
 This is generally done with `systemctl restart <daemon_name>.service`. Some
 machines use upstart instead of systemd, as marked below. In those cases, use
-`initctl restart <daemon_name>`.
+`sudo initctl restart <daemon_name>`.
 
-  - qmaster machine
+  - qmaster machine (note: to avoid having to type the password repeatedly you can run `sudo su root` before restarting all of these)
     - `hera-corr-status` daemon
     - `hera-node-status` daemon
     - `hera-server-status` daemon
@@ -77,7 +82,7 @@ machines use upstart instead of systemd, as marked below. In those cases, use
     - `mc-monitor-daemons` daemon
   - pot1 machine (upstart)
     - `hera-server-status` daemon
-  - pot6 machine
+  - pot6 machine (requires `sudo` before command. Note: uses systemd not upstart like other pots)
     - `hera-server-status` daemon
   - pot7 machine (upstart)
     - `hera-server-status` daemon
