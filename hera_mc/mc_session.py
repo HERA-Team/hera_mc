@@ -1832,7 +1832,7 @@ class MCSession(Session):
 
         if dryrun:
             return command_list
-        else:
+        else:   # pragma: no cover
             self.commit()
             return
 
