@@ -791,10 +791,14 @@ def test_node_power_command_redis(mcsession):
     test_session = mcsession
 
     node_list = node.get_node_list()
+    print(node_list)
 
     for node_use in node_list:
+        print(node_use)
         command_list = test_session.node_power_command(
             node_use, 'fem', 'on', testing=False, dryrun=True)
+        print(command_list)
+        print(len(command_list))
         command_time = command_list[0].time
         assert Time.now().gps - command_time < 2.
         expected = node.NodePowerCommand(time=command_time, node=node_use,
