@@ -1821,7 +1821,7 @@ class MCSession(Session):
             if not dryrun:  # pragma: no cover
                 import nodeControl
 
-                node_controller = nodeControl.node.NodeControl(
+                node_controller = nodeControl.NodeControl(
                     nodeID, serverAddress=nodeServerAddress)
                 getattr(node_controller,
                         node.power_command_part_dict[partname])(command)
