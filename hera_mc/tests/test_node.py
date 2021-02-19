@@ -793,13 +793,30 @@ def test_node_power_command_redis(mcsession):
     node_list = node.get_node_list()
 
     for node_use in node_list:
+        # get current powers so we know what to expect
+        starttime = Time.now() - TimeDelta(120, format='sec')
+        stoptime = Time.now() + TimeDelta(60, format='sec')
+        node_powers = test_session.get_node_power_status(
+            starttime=starttime, stoptime=stoptime, nodeID=node_use)
+        if len(node_powers) > 0:
+            latest_powers = node_powers[-1]
+            fem_power_status = latest_powers.fem_powered
+        else:
+            # if there's no recent status, the command is issued anyway
+            fem_power_status = False
+
         command_list = test_session.node_power_command(
             node_use, 'fem', 'on', testing=False, dryrun=True)
-        command_time = command_list[0].time
-        assert Time.now().gps - command_time < 2.
-        expected = node.NodePowerCommand(time=command_time, node=node_use,
-                                         part='fem', command='on')
-        assert command_list[0].isclose(expected)
+        if fem_power_status:
+            # commands will not be made if the part is already in the desired state
+            assert len(command_list) == 0
+        else:
+            assert len(command_list) == 1
+            command_time = command_list[0].time
+            assert Time.now().gps - command_time < 2.
+            expected = node.NodePowerCommand(time=command_time, node=node_use,
+                                             part='fem', command='on')
+            assert command_list[0].isclose(expected)
 
 
 def test_add_white_rabbit_status(mcsession, white_rabbit_status_cleaned, white_rabbit_status_sql):

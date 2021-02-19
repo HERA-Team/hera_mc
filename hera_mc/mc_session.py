@@ -1832,6 +1832,9 @@ class MCSession(Session):
 
         if dryrun:
             return command_list
+        else:   # pragma: no cover
+            self.commit()
+            return
 
     def get_node_power_command(self, most_recent=None, starttime=None,
                                stoptime=None, nodeID=None,
@@ -2967,6 +2970,9 @@ class MCSession(Session):
 
                     # add it to the config file table
                     self.add(config_file_obj)
+                    # commit to ensure that the hash is in the config file table before
+                    # anything that uses that hash as a Foreign key is added.
+                    self.commit()
 
                     # add the config details to their respective tables
                     for obj in config_objs:
