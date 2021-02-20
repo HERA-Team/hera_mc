@@ -1,7 +1,7 @@
 name: tests
 channels:
-  - defaults
   - conda-forge
+  - defaults
 dependencies:
   - alembic
   - astropy
@@ -13,17 +13,17 @@ dependencies:
   - pandas
   - pip
   - plotly
+  - conda-forge::pyqt
   - psutil
   - psycopg2
   - pytest-cov
   - python-dateutil
   - pyuvdata
+  - pyyaml
+  - redis-py
   - scipy
   - sqlalchemy
   - tabulate
-  - pyyaml
-  - redis-py
-  - conda-forge::pyqt
   - pip:
       - git+https://github.com/HERA-Team/hera_qm.git
       - git+https://github.com/HERA-Team/hera_corr_cm.git

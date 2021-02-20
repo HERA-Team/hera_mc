@@ -5,6 +5,10 @@ jobs:
   flake8:
     name: Flake8
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        # Adding -l {0} helps ensure conda can be found properly.
+        shell: bash -l {0}
     env:
       ENV_NAME: linting
       WITH_SUDO: yes
@@ -14,22 +18,26 @@ jobs:
        with:
          fetch-depth: 1
 
-     - name: Get Miniconda Linux
-       run: |
-         wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/miniconda.sh;
-         bash $HOME/miniconda.sh -b -p $HOME/miniconda
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v2.0.0
+      with:
+        auto-update-conda: true
+        miniconda-version: "latest"
+        python-version: ${{ env.PYTHON }}
+        environment-file: ci/${{ env.ENV_NAME }}.yaml
+        activate-environment: ${{ env.ENV_NAME }}
 
-     - name: Update Path
-       run: |
-         echo "$HOME/miniconda" >> $GITHUB_PATH
-         echo "$HOME/miniconda/bin"  >> $GITHUB_PATH
+    - name: Conda Info
+      run: |
+        conda info -a
+        conda list
+        PYVER=`python -c "import sys; print('{:d}.{:d}'.format(sys.version_info.major, sys.version_info.minor))"`
+        if [[ $PYVER != ${{ env.PYTHON }} ]]; then
+          exit 1;
+        fi
 
-     - name: Setup Environment
-       run: |
-         ./ci/install_conda.sh
      - name: Linting
        run: |
-         source activate $ENV_NAME
          flake8
   tests:
     env:
@@ -44,6 +52,10 @@ jobs:
       POSTGRES_DB: postgres
     name: Testing
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        # Adding -l {0} helps ensure conda can be found properly.
+        shell: bash -l {0}
     strategy:
       fail-fast: false
       matrix:
@@ -75,24 +87,27 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Get Miniconda Linux
-        run: |
-          wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/miniconda.sh;
-          bash $HOME/miniconda.sh -b -p $HOME/miniconda
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2.0.0
+        with:
+          auto-update-conda: true
+          miniconda-version: "latest"
+          python-version: ${{ env.PYTHON }}
+          environment-file: ci/${{ env.ENV_NAME }}.yaml
+          activate-environment: ${{ env.ENV_NAME }}
 
-      - name: Update Path
+      - name: Conda Info
         run: |
-          echo "HOME/miniconda"  >> $GITHUB_PATH
-          echo "$HOME/miniconda/bin"  >> $GITHUB_PATH
-
-      - name: Setup Environment
-        run: |
-          ./ci/install_conda.sh
+          conda info -a
+          conda list
+          PYVER=`python -c "import sys; print('{:d}.{:d}'.format(sys.version_info.major, sys.version_info.minor))"`
+          if [[ $PYVER != ${{ env.PYTHON }} ]]; then
+            exit 1;
+          fi
 
       - name: Install
         run: |
-          source activate ${ENV_NAME}
-          pip install -e .[all]
+          pip install .[all]
 
       - name: Setup postgres
         run: |
@@ -105,7 +120,6 @@ jobs:
 
       - name: Upgrade Database Schema
         run: |
-          source activate $ENV_NAME
           mkdir ~/.hera_mc
           cp ci/example_config.json ~/.hera_mc/mc_config.json
           alembic upgrade head
@@ -127,7 +141,6 @@ jobs:
 
       - name: Run Tests
         run: |
-          source activate $ENV_NAME
           python -m pytest --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
