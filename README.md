@@ -8,7 +8,7 @@ This is the main repository for HERA's monitor and control subsystems.
 # Documentation
 A detailed description of the monitor and control system and all the
 related database tables can be found in our
-[description document](docs/mc_definition.pdf).
+[description document](Docs/mc_definition.pdf).
 
 # Installation
 Installation instructions may be found in [INSTALL.md](./INSTALL.md).
@@ -120,7 +120,7 @@ Option 2) identify which alembic version your database schema corresponds to and
 
 # Running psql on qmaster
 
-This runs under the HERA conda environment on qmaster.  
+This runs under the HERA conda environment on qmaster.
 
 To check environments: `conda info --envs`
 
