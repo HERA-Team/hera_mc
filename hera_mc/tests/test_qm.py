@@ -78,7 +78,7 @@ def test_AntMetrics(mcsession, pol_x, pol_y):
     'ant,pol,metric,val,err_msg',
     [('0', 'x', 'test', 4.5, 'antenna must be an integer.'),
      (0, u'\xff', 'test', 4.5, 'pol='),
-     (0, 'Q', 'test', 4.5, 'pol must be string'),
+     (0, 'Q', 'test', 4.5, 'pol='),
      (0, 'x', 4, 4.5, 'metric must be string.'),
      (0, 'x', 'test', 'value', 'val must be castable as float'),
      ]
