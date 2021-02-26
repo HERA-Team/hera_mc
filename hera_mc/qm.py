@@ -29,7 +29,7 @@ class AntMetrics(MCDeclarativeBase):
     ant : Integer Column
         Antenna number (int >= 0)
     pol : String Column
-        Polarization ('x', 'y', 'n', or 'e')
+        Polarization ('x', 'y', 'n', 'e', 'Jnn', or 'Jee')
     metric : String Column
         Name of metric
     mc_time : BigInteger Column
@@ -73,7 +73,7 @@ class AntMetrics(MCDeclarativeBase):
             observation identification number.
         ant: integer
             antenna number
-        pol: string ('x', 'y', 'n', or 'e')
+        pol: string ('x', 'y', 'n', 'e', 'Jnn', or 'Jee')
             polarization
         metric: string
             metric name
@@ -91,10 +91,10 @@ class AntMetrics(MCDeclarativeBase):
         try:
             pol = str(pol)
         except ValueError:
-            raise ValueError('pol must be string "x", "y", "n", or "e".')
+            raise ValueError(f'pol="{pol}" not a string in ("x", "y", "n", "e", "Jnn", "Jee").')
         pol = pol.lower()
-        if pol not in ('x', 'y', 'n', 'e'):
-            raise ValueError('pol must be string "x", "y", "n", or "e".')
+        if pol not in ('x', 'y', 'n', 'e', 'Jnn', 'Jee'):
+            raise ValueError(f'pol="{pol}" not a string in ("x", "y", "n", "e", "Jnn", "Jee").')
         if not isinstance(metric, str):
             raise ValueError('metric must be string.')
         if not isinstance(db_time, Time):

@@ -4032,7 +4032,7 @@ class MCSession(Session):
             Observation identification number.
         ant : int
             Antenna number.
-        pol : str ('x', 'y', 'n', or 'e')
+        pol : str ('x', 'y', 'n', 'e', 'Jnn', 'Jee')
             Polarization name.
         metric : str
             Metric name, foreign key into `metric_list`.
