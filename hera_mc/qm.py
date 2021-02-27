@@ -88,11 +88,7 @@ class AntMetrics(MCDeclarativeBase):
             raise ValueError('obsid must be an integer.')
         if not isinstance(ant, int):
             raise ValueError('antenna must be an integer.')
-        try:
-            pol = str(pol)
-        except ValueError:
-            raise ValueError(f'pol={pol} not a string in ("x", "y", "n", "e", "jnn", "jee").')
-        pol = pol.lower()
+        pol = str(pol).lower()
         if pol not in ('x', 'y', 'n', 'e', 'jnn', 'jee'):
             raise ValueError(f'pol={pol} not a string in ("x", "y", "n", "e", "jnn", "jee").')
         if not isinstance(metric, str):
