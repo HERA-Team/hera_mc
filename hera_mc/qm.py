@@ -93,7 +93,7 @@ class AntMetrics(MCDeclarativeBase):
         except ValueError:
             raise ValueError(f'pol="{pol}" not a string in ("x", "y", "n", "e", "jnn", "jee").')
         pol = pol.lower()
-        if pol not in ('x', 'y', 'n', 'e', 'Jnn', 'Jee'):
+        if pol not in ('x', 'y', 'n', 'e', 'jnn', 'jee'):
             raise ValueError(f'pol="{pol}" not a string in ("x", "y", "n", "e", "jnn", "jee").')
         if not isinstance(metric, str):
             raise ValueError('metric must be string.')
