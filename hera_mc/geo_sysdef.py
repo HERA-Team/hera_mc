@@ -4,6 +4,7 @@
 
 """Contains geographic location information and methods."""
 import os.path
+from . import cm_utils
 
 from .data import DATA_PATH
 
@@ -41,6 +42,63 @@ region = {'herahexw': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
           'heraringa': [325, 326, 327, 330, 331, 334, 335, 338, 339, 342, 343, 344],
           'heraringb': [320, 321, 322, 323, 324, 328, 329, 332, 333, 336, 337,
                         340, 341, 345, 346, 347, 348, 349]}
+
+
+def _get_region(this_ant):
+    """
+    Properly handle a single entry for finding a region.
+
+    If a full HERA part number is given and is for a ring, it will issue a
+    warning if the prefix given and the ring don't match.
+
+    Parameter
+    ---------
+    this_ant : str or int
+        Antenna number for which to check.
+    """
+    prefix = ''
+    if not isinstance(this_ant, int):
+        peeled = cm_utils.peel_key(this_ant, 'NPR')
+        this_ant = peeled[0]
+        prefix = peeled[1].upper()
+    for this_region, region_list in region.items():
+        if this_ant in region_list:
+            val = this_region[-1].upper()
+            break
+    else:
+        raise ValueError(f"{this_ant} is not valid antenna.")
+    if val in ['A', 'B'] and len(prefix) == 2:
+        if val != prefix[1]:
+            import warnings
+            warnings.warn(f"{prefix} does not match region {val}")
+    return val
+
+
+def ant_region(ants):
+    """
+    Provide the region of an antenna or list of antennas.
+
+    If a list, it will return a list, otherwise it will return a str.
+    Note that the regions are:  N, E, W, A, B for
+        North "tridrant"
+        East  "
+        West  "
+        A ring (inner)
+        B ring (outer)
+
+    Parameter
+    ---------
+    ants : str, int or list
+            Antenna number or HERA part number of antenna.
+    """
+    return_as = 'list'
+    if not isinstance(ants, list):
+        return_as = 'str'
+        ants = [ants]
+    found_regions = [_get_region(_a) for _a in ants]
+    if return_as == 'str':
+        return found_regions[0]
+    return found_regions
 
 
 def read_nodes():
