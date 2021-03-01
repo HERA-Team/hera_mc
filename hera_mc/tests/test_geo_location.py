@@ -39,6 +39,15 @@ def test_geo_sysdef():
     assert int(a['HH123']['E']) == 540945
 
 
+def test_geo_regions():
+    pytest.raises(ValueError, geo_sysdef.ant_region, 1000)
+    with pytest.warns(UserWarning, match="HH does not match region A"):
+        r = geo_sysdef.ant_region('HH325')
+    assert r == 'A'
+    r = geo_sysdef.ant_region(['HH0'])
+    assert r[0] == 'W'
+
+
 def test_update_new(mcsession, geo_handle):
     nte = 'HH_new_test_element'
     data = [[nte, 'station_name', nte],
