@@ -42,10 +42,12 @@ def test_geo_sysdef():
 def test_geo_regions():
     pytest.raises(ValueError, geo_sysdef.ant_region, 1000)
     with pytest.warns(UserWarning, match="HH does not match region A"):
-        r = geo_sysdef.ant_region('HH325')
-    assert r == 'A'
-    r = geo_sysdef.ant_region(['HH0'])
-    assert r[0] == 'W'
+        ret = geo_sysdef.ant_region('HH325')
+    assert ret == 'A'
+    testing = [123, '123', 'HH123', 'A123']
+    ret = geo_sysdef.ant_region(testing)
+    for r in ret:
+        assert r == 'W'
 
 
 def test_update_new(mcsession, geo_handle):

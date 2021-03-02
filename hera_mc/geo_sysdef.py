@@ -57,7 +57,9 @@ def _get_region(this_ant):
         Antenna number for which to check.
     """
     prefix = ''
-    if not isinstance(this_ant, int):
+    try:
+        this_ant = int(this_ant)
+    except ValueError:
         peeled = cm_utils.peel_key(this_ant, 'NPR')
         this_ant = peeled[0]
         prefix = peeled[1].upper()
@@ -78,7 +80,8 @@ def ant_region(ants):
     """
     Provide the region of an antenna or list of antennas.
 
-    If a list, it will return a list, otherwise it will return a str.
+    If a list (list, tuple, set, numpy array), it will return a list,
+    otherwise it will return a str.
     Note that the regions are:  N, E, W, A, B for
         North "tridrant"
         East  "
@@ -88,13 +91,21 @@ def ant_region(ants):
 
     Parameter
     ---------
-    ants : str, int or list
+    ants : str, number or list (list, tuple, set, numpy array)
             Antenna number or HERA part number of antenna.
+
+    Return
+    ------
+    str or list-of-str : single character region designations
     """
-    return_as = 'list'
-    if not isinstance(ants, list):
+    try:
+        ants = [int(ants)]
         return_as = 'str'
+    except ValueError:
         ants = [ants]
+        return_as = 'str'
+    except TypeError:
+        return_as = 'list'
     found_regions = [_get_region(_a) for _a in ants]
     if return_as == 'str':
         return found_regions[0]
