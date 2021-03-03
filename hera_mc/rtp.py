@@ -337,3 +337,73 @@ class RTPTaskResourceRecord(MCDeclarativeBase):
         return cls(obsid=obsid, task_name=task_name, start_time=start_time,
                    stop_time=stop_time, max_memory=max_memory,
                    avg_cpu_load=avg_cpu_load)
+
+
+class RTPLaunchRecord(MCDeclarativeBase):
+    """
+    Define the rtp_launch_record table.
+
+    Attributes
+    ----------
+    obsid : BigInteger Column
+        Observation obsid. Part of primary_key. Foreign key into Observation
+        table.
+    submitted_time : BigInteger Column
+        GPS time of the most recent job launch, floored.
+    rtp_attempts : BigInteger Column
+        Number of times the file has been attempted to run as part of RTP.
+    jd : BigInteger Column
+        The integer Julian Date of the observation. Used for grouping jobs
+        together.
+    obs_tag : String Column
+        The observation tag of the data.
+    """
+    __tablename__ = "rtp_launch_record"
+    obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
+    submitted_time = Column(BigInteger)
+    rtp_attempts = Column(BigInteger, nullable=False)
+    jd = Column(BigInteger, nullable=False)
+    obs_tag = Column(String(32), nullable=False)
+
+    @classmethod
+    def create(cls, obsid, jd, obs_tag, submitted_time=None, rtp_attempts=0):
+        """
+        Create a new rtp_launch_record object.
+
+        Parameters
+        ----------
+        obsid : long
+            Observation obsid (Foreign key into Observation).
+        jd : int
+            Integer Julian Date of the observation.
+        obs_tag : str
+            Observation tag of the data.
+        submitted_time : astropy Time, optional
+            Time of the most recent job submission.
+        rtp_attempts : int, optional
+            The number of times this obsid has been run through RTP.
+
+        Returns
+        -------
+        RTPLaunchRecord object
+        """
+        if not isinstance(obsid, int):
+            raise ValueError("obsid must be an integer.")
+        if not isinstance(jd, int):
+            raise ValueError("jd must be an integer.")
+        if not isinstance(obs_tag, str):
+            raise ValueError("obs_tag must be a string.")
+        if submitted_time is not None:
+            if not isinstance(submitted_time, Time):
+                raise ValueError("submitted_time must be an astropy Time object.")
+            submitted_time = int(floor(submitted_time.gps))
+        if not isinstance(rtp_attempts, int):
+            raise ValueError("rtp_attempts must be an integer.")
+
+        return cls(
+            obsid=obsid,
+            jd=jd,
+            obs_tag=obs_tag,
+            submitted_time=submitted_time,
+            rtp_attempts=rtp_attempts,
+        )

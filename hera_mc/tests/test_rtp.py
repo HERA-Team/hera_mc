@@ -11,7 +11,7 @@ import numpy as np
 from astropy.time import Time, TimeDelta
 
 from ..rtp import (RTPStatus, RTPProcessEvent, RTPProcessRecord,
-                   RTPTaskResourceRecord)
+                   RTPTaskResourceRecord, RTPLaunchRecord)
 from .. import utils
 from hera_mc.data import DATA_PATH
 
@@ -565,3 +565,117 @@ def test_errors_rtp_task_resource_record(mcsession, observation, task):
 
     pytest.raises(ValueError, test_session.get_rtp_task_resource_record,
                   most_recent=False)
+
+def test_add_rtp_launch_record(mcsession, observation):
+    test_session = mcsession
+    test_session.add_obs(*observation.observation_values)
+    obs_result = test_session.get_obs()
+    assert len(obs_result) == 1
+
+    # define properties
+    time = observation.observation_values[0]
+    obsid = observation.observation_values[2]
+    jd = int(floor(time.jd))
+    obs_tag = "engineering"
+    # add entry
+    test_session.add_rtp_launch_record(obsid, jd, obs_tag)
+
+    # fetch entry
+    query = mcsession.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
+    result = query.all()
+    assert len(result) == 1
+    assert result[0].obsid == obsid
+    assert result[0].jd == jd
+    assert result[0].obs_tag == obs_tag
+    assert result[0].submitted_time is None
+    assert result[0].rtp_attempts == 0
+
+    return
+
+
+def test_update_rtp_launch_record(mcsession, observation):
+    test_session = mcsession
+    test_session.add_obs(*observation.observation_values)
+    obs_result = test_session.get_obs()
+    assert len(obs_result) == 1
+
+    # define properties
+    time = observation.observation_values[0]
+    obsid = observation.observation_values[2]
+    jd = int(floor(time.jd))
+    obs_tag = "engineering"
+    submitted_time = time + TimeDelta(60, format="sec")
+    # add entry
+    test_session.add_rtp_launch_record(obsid, jd, obs_tag)
+    # update entry
+    test_session.update_rtp_launch_record(obsid, submitted_time)
+
+    # fetch entry
+    query = mcsession.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
+    result = query.all()
+    assert len(result) == 1
+    assert result[0].obsid == obsid
+    assert result[0].jd == jd
+    assert result[0].obs_tag == obs_tag
+    assert result[0].submitted_time == int(floor(submitted_time.gps))
+    assert result[0].rtp_attempts == 1
+
+    return
+
+
+def test_add_rtp_launch_record_errors(mcsession, observation):
+    test_session = mcsession
+    test_session.add_obs(*observation.observation_values)
+    obs_result = test_session.get_obs()
+    assert len(obs_result) == 1
+
+    # use bogus values for RTPLaunchRecord parameters
+    time = observation.observation_values[0]
+    obsid = observation.observation_values[2]
+    jd = int(floor(time.jd))
+    obs_tag = "engineering"
+    with pytest.raises(ValueError) as cm:
+        mcsession.add_rtp_launch_record("foo", jd, obs_tag)
+    assert str(cm.value).startswith("obsid must be an integer.")
+
+    with pytest.raises(ValueError) as cm:
+        mcsession.add_rtp_launch_record(obsid, "foo", obs_tag)
+    assert str(cm.value).startswith("jd must be an integer.")
+
+    with pytest.raises(ValueError) as cm:
+        mcsession.add_rtp_launch_record(obsid, jd, 7)
+    assert str(cm.value).startswith("obs_tag must be a string.")
+
+    with pytest.raises(ValueError) as cm:
+        mcsession.add_rtp_launch_record(obsid, jd, obs_tag, submitted_time="foo")
+    assert str(cm.value).startswith("submitted_time must be an astropy Time object.")
+
+    with pytest.raises(ValueError) as cm:
+        mcsession.add_rtp_launch_record(
+            obsid, jd, obs_tag, submitted_time=None, rtp_attempts="foo"
+        )
+    assert str(cm.value).startswith("rtp_attempts must be an integer.")
+
+    return
+
+
+def test_update_rtp_launch_record_errors(mcsession, observation):
+    test_session = mcsession
+    test_session.add_obs(*observation.observation_values)
+    obs_result = test_session.get_obs()
+    assert len(obs_result) == 1
+
+    # test trying to update a non-existent entry
+    time = observation.observation_values[0]
+    obsid = observation.observation_values[2]
+    submitted_time = time + TimeDelta(60, format="sec")
+    with pytest.raises(RuntimeError) as cm:
+        mcsession.update_rtp_launch_record(obsid, submitted_time)
+    assert str(cm.value).startswith(f"RTP launch record does not exist for obsid {obsid}")
+
+    # test using something besides an astropy object for submitted_time
+    with pytest.raises(ValueError) as cm:
+        mcsession.update_rtp_launch_record(obsid, "foo")
+    assert str(cm.value).startswith("submitted_time must be an astropy Time object")
+
+    return

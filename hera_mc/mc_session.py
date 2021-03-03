@@ -25,7 +25,9 @@ from .observations import Observation
 from .subsystem_error import SubsystemError
 from .daemon_status import DaemonStatus
 from .librarian import LibStatus, LibRAIDStatus, LibRAIDErrors, LibRemoteStatus, LibFiles
-from .rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord
+from .rtp import (
+    RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord, RTPLaunchRecord
+)
 from . import node
 from . import correlator as corr
 from .weather import WeatherData, weather_sensor_dict, create_from_sensors
@@ -1409,6 +1411,82 @@ class MCSession(Session):
 
             else:
                 return query.all()
+
+    def add_rtp_launch_record(
+            self, obsid, jd, obs_tag, submitted_time=None, rtp_attempts=0
+    ):
+        """
+        Add new rtp_launch_record entry to the M&C database.
+
+        Parameters
+        ----------
+        obsid : long
+            The obsid to add a record for.
+        jd : int
+            The integer Julian Date of the obsid.
+        obs_tag : str
+            The observation tag of the data.
+        submitted_time : astropy Time, optional
+            If not None, an astropy Time object corresponding to job submission
+            time.
+        rtp_attempts : int, optional
+            The number of times the job has been run by RTP.
+
+        Returns
+        -------
+        None
+        """
+        self.add(
+            RTPLaunchRecord.create(
+                obsid, jd, obs_tag, submitted_time, rtp_attempts
+            )
+        )
+        return
+
+    def update_rtp_launch_record(self, obsid, submitted_time):
+        """
+        Update an rtp_launch_record entry in the M&C database.
+
+        This method should be called to update an existing record with the
+        latest start time, and to increment the counter for the number of times
+        a job has been launched.
+
+        Parameters
+        ----------
+        obsid : long
+            The obsid to update a record for.
+        submitted_time : astropy Time object
+            Astropy time object for the timestamp of job submission.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ValueError:
+            This is raised if submitted_time is not an astropy Time object.
+        RuntimeError:
+            This is raised if the obsid does not match exactly one record.
+        """
+        # check type of input data
+        if not isinstance(submitted_time, Time):
+            raise ValueError("submitted_time must be an astropy Time object")
+        submitted_time = int(floor(submitted_time.gps))
+        # query the table for the existing row
+        query = self.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
+        result = query.all()
+        if len(result) != 1:
+            raise RuntimeError(f"RTP launch record does not exist for obsid {obsid}")
+        result = result[0]
+        # get the current number of rtp_attempts and increment
+        rtp_attempts = result.rtp_attempts
+        rtp_attempts += 1
+        # update result
+        result.rtp_attempts = rtp_attempts
+        result.submitted_time = submitted_time
+        self.commit()
+        return
 
     def add_weather_data(self, time, variable, value):
         """
