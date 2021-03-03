@@ -359,6 +359,7 @@ class RTPLaunchRecord(MCDeclarativeBase):
         The observation tag of the data.
 
     """
+
     __tablename__ = "rtp_launch_record"
     obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
     submitted_time = Column(BigInteger)
