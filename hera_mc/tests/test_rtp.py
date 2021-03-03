@@ -566,6 +566,7 @@ def test_errors_rtp_task_resource_record(mcsession, observation, task):
     pytest.raises(ValueError, test_session.get_rtp_task_resource_record,
                   most_recent=False)
 
+
 def test_add_rtp_launch_record(mcsession, observation):
     test_session = mcsession
     test_session.add_obs(*observation.observation_values)
