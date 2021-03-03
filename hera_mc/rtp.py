@@ -387,6 +387,7 @@ class RTPLaunchRecord(MCDeclarativeBase):
         Returns
         -------
         RTPLaunchRecord object
+
         """
         if not isinstance(obsid, int):
             raise ValueError("obsid must be an integer.")
