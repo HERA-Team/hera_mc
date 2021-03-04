@@ -594,6 +594,34 @@ def test_add_rtp_launch_record(mcsession, observation):
     return
 
 
+def test_add_rtp_launch_record_non_null_submitted_time(mcsession, observation):
+    test_session = mcsession
+    test_session.add_obs(*observation.observation_values)
+    obs_result = test_session.get_obs()
+    assert len(obs_result) == 1
+
+    # define properties
+    time = observation.observation_values[0]
+    obsid = observation.observation_values[2]
+    jd = int(floor(time.jd))
+    obs_tag = "engineering"
+    submitted_time = time + TimeDelta(60, format="sec")
+    # add entry
+    test_session.add_rtp_launch_record(obsid, jd, obs_tag, submitted_time=submitted_time)
+
+    # fetch entry
+    query = mcsession.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
+    result = query.all()
+    assert len(result) == 1
+    assert result[0].obsid == obsid
+    assert result[0].jd == jd
+    assert result[0].obs_tag == obs_tag
+    assert result[0].submitted_time == int(floor(submitted_time.gps))
+    assert result[0].rtp_attempts == 0
+
+    return
+
+
 def test_update_rtp_launch_record(mcsession, observation):
     test_session = mcsession
     test_session.add_obs(*observation.observation_values)
