@@ -100,7 +100,7 @@ class Handling:
         cofa = self.geo.cofa()
         return cofa
 
-    def get_connected_stations(self, at_date, hookup_type=None):
+    def get_connected_stations(self, at_date, snap_name_change=False, hookup_type=None):
         """
         Return a list of class SystemInfo of all of the stations connected at_date.
 
@@ -123,6 +123,8 @@ class Handling:
         ----------
         at_date : str, int
             Date to check for connections.  Anything intelligible by cm_utils.get_astropytime
+        snap_name_change : bool
+            If True, will change SNAP name in correlator input from SNPA000... to heraNodeXSnapY
         hookup_type : str
             Type of hookup to use (current observing system is 'parts_hera').
             If 'None' it will determine which system it thinks it is based on
@@ -159,9 +161,16 @@ class Handling:
                 pe[pol] = hud[key].hookup_type[ppkey]
                 cind = self.sysdef.corr_index[pe[pol]] - 1  # The '- 1' makes it the downstream_part
                 try:
-                    corr[pol] = "{}>{}".format(
-                        hu[cind].downstream_input_port, hu[cind].downstream_part)
-                except IndexError:  # pragma: no cover
+                    snap_part = hu[cind].downstream_part
+                    snap_port = hu[cind].downstream_input_port
+                    node = int(hu[cind + 1].downstream_part[1:])
+                    loc = int(hu[cind + 1].downstream_input_port[3:])
+                    if snap_name_change:
+                        feng = f"heraNode{node}Snap{loc}"
+                    else:
+                        feng = snap_part
+                    corr[pol] = "{}>{}".format(snap_port, feng)
+                except (IndexError, ValueError):  # pragma: no cover
                     corr[pol] = 'None'
                 station_info.timing[pol] = hud[key].timing[ppkey]
             if corr['e'] == 'None' and corr['n'] == 'None':
@@ -212,7 +221,9 @@ class Handling:
         cofa_xyz = uvutils.XYZ_from_LatLonAlt(cofa_loc.lat * np.pi / 180.,
                                               cofa_loc.lon * np.pi / 180.,
                                               cofa_loc.elevation)
-        stations_conn = self.get_connected_stations(at_date='now', hookup_type=hookup_type)
+        stations_conn = self.get_connected_stations(at_date='now',
+                                                    snap_name_change=True,
+                                                    hookup_type=hookup_type)
         stn_arrays = SystemInfo()
         for stn in stations_conn:
             stn_arrays.update_arrays(stn)
