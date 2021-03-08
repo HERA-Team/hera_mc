@@ -578,8 +578,10 @@ def test_add_rtp_launch_record(mcsession, observation):
     obsid = observation.observation_values[2]
     jd = int(floor(time.jd))
     obs_tag = "engineering"
+    filename = "zen.2457000.12345.sum.uvh5"
+    prefix = "/mnt/sn1"
     # add entry
-    test_session.add_rtp_launch_record(obsid, jd, obs_tag)
+    test_session.add_rtp_launch_record(obsid, jd, obs_tag, filename, prefix)
 
     # fetch entry
     query = mcsession.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
@@ -588,6 +590,8 @@ def test_add_rtp_launch_record(mcsession, observation):
     assert result[0].obsid == obsid
     assert result[0].jd == jd
     assert result[0].obs_tag == obs_tag
+    assert result[0].filename == filename
+    assert result[0].prefix == prefix
     assert result[0].submitted_time is None
     assert result[0].rtp_attempts == 0
 
@@ -605,9 +609,13 @@ def test_add_rtp_launch_record_non_null_submitted_time(mcsession, observation):
     obsid = observation.observation_values[2]
     jd = int(floor(time.jd))
     obs_tag = "engineering"
+    filename = "zen.2457000.12345.sum.uvh5"
+    prefix = "/mnt/sn1"
     submitted_time = time + TimeDelta(60, format="sec")
     # add entry
-    test_session.add_rtp_launch_record(obsid, jd, obs_tag, submitted_time=submitted_time)
+    test_session.add_rtp_launch_record(
+        obsid, jd, obs_tag, filename, prefix, submitted_time=submitted_time
+    )
 
     # fetch entry
     query = mcsession.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
@@ -616,6 +624,8 @@ def test_add_rtp_launch_record_non_null_submitted_time(mcsession, observation):
     assert result[0].obsid == obsid
     assert result[0].jd == jd
     assert result[0].obs_tag == obs_tag
+    assert result[0].filename == filename
+    assert result[0].prefix == prefix
     assert result[0].submitted_time == int(floor(submitted_time.gps))
     assert result[0].rtp_attempts == 0
 
@@ -633,9 +643,11 @@ def test_update_rtp_launch_record(mcsession, observation):
     obsid = observation.observation_values[2]
     jd = int(floor(time.jd))
     obs_tag = "engineering"
+    filename = "zen.2457000.12345.sum.uvh5"
+    prefix = "/mnt/sn1"
     submitted_time = time + TimeDelta(60, format="sec")
     # add entry
-    test_session.add_rtp_launch_record(obsid, jd, obs_tag)
+    test_session.add_rtp_launch_record(obsid, jd, obs_tag, filename, prefix)
     # update entry
     test_session.update_rtp_launch_record(obsid, submitted_time)
 
@@ -646,6 +658,8 @@ def test_update_rtp_launch_record(mcsession, observation):
     assert result[0].obsid == obsid
     assert result[0].jd == jd
     assert result[0].obs_tag == obs_tag
+    assert result[0].filename == filename
+    assert result[0].prefix == prefix
     assert result[0].submitted_time == int(floor(submitted_time.gps))
     assert result[0].rtp_attempts == 1
 
@@ -663,25 +677,43 @@ def test_add_rtp_launch_record_errors(mcsession, observation):
     obsid = observation.observation_values[2]
     jd = int(floor(time.jd))
     obs_tag = "engineering"
+    filename = "zen.2457000.12345.sum.uvh5"
+    prefix = "/mnt/sn1"
     with pytest.raises(ValueError) as cm:
-        mcsession.add_rtp_launch_record("foo", jd, obs_tag)
+        mcsession.add_rtp_launch_record("foo", jd, obs_tag, filename, prefix)
     assert str(cm.value).startswith("obsid must be an integer.")
 
     with pytest.raises(ValueError) as cm:
-        mcsession.add_rtp_launch_record(obsid, "foo", obs_tag)
+        mcsession.add_rtp_launch_record(obsid, "foo", obs_tag, filename, prefix)
     assert str(cm.value).startswith("jd must be an integer.")
 
     with pytest.raises(ValueError) as cm:
-        mcsession.add_rtp_launch_record(obsid, jd, 7)
+        mcsession.add_rtp_launch_record(obsid, jd, 7, filename, prefix)
     assert str(cm.value).startswith("obs_tag must be a string.")
 
     with pytest.raises(ValueError) as cm:
-        mcsession.add_rtp_launch_record(obsid, jd, obs_tag, submitted_time="foo")
+        mcsession.add_rtp_launch_record(obsid, jd, obs_tag, 7, prefix)
+    assert str(cm.value).startswith("filename must be a string.")
+
+    with pytest.raises(ValueError) as cm:
+        mcsession.add_rtp_launch_record(obsid, jd, obs_tag, filename, 7)
+    assert str(cm.value).startswith("prefix must be a string.")
+
+    with pytest.raises(ValueError) as cm:
+        mcsession.add_rtp_launch_record(
+            obsid, jd, obs_tag, filename, prefix, submitted_time="foo"
+        )
     assert str(cm.value).startswith("submitted_time must be an astropy Time object.")
 
     with pytest.raises(ValueError) as cm:
         mcsession.add_rtp_launch_record(
-            obsid, jd, obs_tag, submitted_time=None, rtp_attempts="foo"
+            obsid,
+            jd,
+            obs_tag,
+            filename,
+            prefix,
+            submitted_time=None,
+            rtp_attempts="foo",
         )
     assert str(cm.value).startswith("rtp_attempts must be an integer.")
 

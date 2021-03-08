@@ -1413,7 +1413,14 @@ class MCSession(Session):
                 return query.all()
 
     def add_rtp_launch_record(
-            self, obsid, jd, obs_tag, submitted_time=None, rtp_attempts=0
+            self,
+            obsid,
+            jd,
+            obs_tag,
+            filename,
+            prefix,
+            submitted_time=None,
+            rtp_attempts=0,
     ):
         """
         Add new rtp_launch_record entry to the M&C database.
@@ -1426,6 +1433,10 @@ class MCSession(Session):
             The integer Julian Date of the obsid.
         obs_tag : str
             The observation tag of the data.
+        filename : str
+            The filename of the corresponding raw data.
+        prefix : str
+            The path to the directory where the data file is stored.
         submitted_time : astropy Time, optional
             If not None, an astropy Time object corresponding to job submission
             time.
@@ -1438,7 +1449,7 @@ class MCSession(Session):
         """
         self.add(
             RTPLaunchRecord.create(
-                obsid, jd, obs_tag, submitted_time, rtp_attempts
+                obsid, jd, obs_tag, filename, prefix, submitted_time, rtp_attempts
             )
         )
         return
