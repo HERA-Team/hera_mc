@@ -7,13 +7,14 @@
 import json
 import redis
 import time
+import warnings
 from . import cm_sysutils, correlator
 
 REDIS_CMINFO_HASH = 'cminfo'
 REDIS_CORR_HASH = 'corr:map'
 
 
-def snap_part_to_host_input(part, redis_info=None):
+def snap_part_to_host_input(part):
     """
     Parse a part string for the putative hostname and adc number.
 
@@ -36,19 +37,12 @@ def snap_part_to_host_input(part, redis_info=None):
     adc_num : str
         port ADC number, as parsed from input 'part'
     """
-    adc, name = part.split('>')
+    adc, hostname = part.split('>')
     adc_num = int(adc[1:]) // 2  # divide by 2 because ADC is in demux 2
-    if redis_info is None:
-        hostname = name
-    else:
-        try:
-            hostname = json.loads(redis_info)[name]
-        except KeyError:
-            hostname = name
     return hostname, adc_num
 
 
-def cminfo_redis_snap(cminfo, redis_info=None):
+def cminfo_redis_snap(cminfo):
     """
     Build a dictionary of correlator mappings.
 
@@ -59,8 +53,6 @@ def cminfo_redis_snap(cminfo, redis_info=None):
     ----------
     cminfo : dict
         Dictionary as returned from get_cminfo_correlator()
-    redis_info : None or str
-        Pass through of redis information to retrieve snap hostname
 
     Returns
     -------
@@ -72,25 +64,28 @@ def cminfo_redis_snap(cminfo, redis_info=None):
     snap_to_ant = {}
     ant_to_snap = {}
     all_snap_inputs = {}
-    for antn, ant in enumerate(cminfo['antenna_numbers']):
-        name = cminfo['antenna_names'][antn]
-        pol_info = {}
-        for pol_snap in cminfo['correlator_inputs'][antn]:
-            pol = pol_snap.lower()[0]
-            if pol in ['e', 'n'] and '>' in pol_snap:
-                pol_info[pol] = pol_snap
+    snap_to_serial = {}
+    for _n, ant in enumerate(cminfo['antenna_numbers']):
+        name = cminfo['antenna_names'][_n]
+        corr_inp = cminfo['correlator_inputs'][_n]
+        snap_snr = cminfo['snap_serial_numbers'][_n]
         ant_to_snap[ant] = {}
-        for pol, psnap in pol_info.items():
-            snapi, channel = snap_part_to_host_input(psnap, redis_info=redis_info)
-            ant_to_snap[ant][pol] = {'host': snapi, 'channel': channel}
-            snap_to_ant.setdefault(snapi, [None] * 6)
-            snap_to_ant[snapi][channel] = name + pol.upper()
-            snap, adc_num = snap_part_to_host_input(psnap, None)
-            all_snap_inputs.setdefault(snap, [])
-            all_snap_inputs[snap].append(adc_num)
+        for _i, psnap in enumerate(corr_inp):
+            pol = psnap.lower()[0]
+            if pol not in ['e', 'n'] or '>' not in psnap:
+                warnings.warn(f"{psnap} is not an allowed correlator input")
+                continue
+            snap_input, snap_hostname = psnap.split('>')
+            channel = int(snap_input[1:]) // 2  # divide by 2 because ADC is in demux 2
+            ant_to_snap[ant][pol] = {'host': snap_hostname, 'channel': channel}
+            snap_to_ant.setdefault(snap_hostname, [None] * 6)
+            snap_to_ant[snap_hostname][channel] = name + pol.upper()
+            snap_to_serial[snap_hostname] = snap_snr[_i]  # This can/does overwrite per pol
+            all_snap_inputs.setdefault(snap_hostname, [])
+            all_snap_inputs[snap_hostname].append(snap_input)
     for key, value in all_snap_inputs.items():
         all_snap_inputs[key] = sorted(value)
-    return snap_to_ant, ant_to_snap, all_snap_inputs
+    return snap_to_ant, ant_to_snap, all_snap_inputs, snap_to_serial
 
 
 def set_redis_cminfo(redishost=correlator.DEFAULT_REDIS_ADDRESS,
@@ -130,12 +125,12 @@ def set_redis_cminfo(redishost=correlator.DEFAULT_REDIS_ADDRESS,
     redis_hash = REDIS_CORR_HASH
     if testing:
         redis_hash = 'testing_' + REDIS_CORR_HASH
-    redis_info = rsession.hget(redis_hash, 'snap_host')
-    snap_to_ant, ant_to_snap, all_snap_inputs = cminfo_redis_snap(cminfo, redis_info=redis_info)
+    snap_to_ant, ant_to_snap, all_snap_inputs, snap_to_serial = cminfo_redis_snap(cminfo)
     redhkey = {}
     redhkey['snap_to_ant'] = json.dumps(snap_to_ant)
     redhkey['ant_to_snap'] = json.dumps(ant_to_snap)
     redhkey['all_snap_inputs'] = json.dumps(all_snap_inputs)
+    redhkey['snap_to_serial'] = json.dumps(snap_to_serial)
     redhkey['update_time'] = time.time()
     redhkey['update_time_str'] = time.ctime(redhkey['update_time'])
     rsession.hmset(redis_hash, redhkey)
