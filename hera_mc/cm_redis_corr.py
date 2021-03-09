@@ -14,34 +14,6 @@ REDIS_CMINFO_HASH = 'cminfo'
 REDIS_CORR_HASH = 'corr:map'
 
 
-def snap_part_to_host_input(part):
-    """
-    Parse a part string for the putative hostname and adc number.
-
-    If a redis session is supplied and key available it returns the hostname, otherwise
-    it returns the SNAP name.  If None, returns the SNAP name.  An example part is
-    'e2>SNPC000008'
-
-    Parameters
-    ----------
-    part : str
-        port>snap part string as returned by cminfo
-    redis_info : None or str
-        If str and the key is available it returns the hostname, otherwise SNAP name
-        If None, returns the SNAP name
-
-    Returns
-    -------
-    hostname : str
-        hostname as parsed from input 'part' and redis
-    adc_num : str
-        port ADC number, as parsed from input 'part'
-    """
-    adc, hostname = part.split('>')
-    adc_num = int(adc[1:]) // 2  # divide by 2 because ADC is in demux 2
-    return hostname, adc_num
-
-
 def cminfo_redis_snap(cminfo):
     """
     Build a dictionary of correlator mappings.
