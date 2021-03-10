@@ -1359,7 +1359,6 @@ class MCSession(Session):
             task_name to get records for. If none, all tasks will be included.
         write_to_file : bool
             Option to write records to a CSV file.
-
         filename : str
             Name of file to write to. If not provided, defaults to a file in the
             current directory named based on the table name.
@@ -1453,6 +1452,101 @@ class MCSession(Session):
             )
         )
         return
+
+    def get_rtp_launch_record(self, obsid):
+        """
+        Fetch rtp_launch_record entries for a given obsid.
+
+        Parameters
+        ----------
+        obsid : long
+            The obsid to fetch a record for.
+
+        Returns
+        -------
+        list of RTPLaunchRecord objects
+        """
+        query = self.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
+        return query.all()
+
+    def get_rtp_launch_record_by_time(
+        self,
+        most_recent=None,
+        starttime=None,
+        stoptime=None,
+        write_to_file=False,
+        filename=None,
+    ):
+        """
+        Fetch rtp_launch_record entries based on their submitted_time.
+
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime,
+            obsid and task_name are all None.
+        starttime : astropy Time object
+            Time to look for records after; applies to start_time column.
+            Ignored if both obsid and task_name are set or if most_recent is
+            True.
+        stoptime : astropy Time object
+            last time to get records for, only used if starttime is used.
+            If none, only the first record after starttime will be returned.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        list of RTPLaunchRecord objects
+        """
+        return self._time_filter(
+            RTPLaunchRecord,
+            "submitted_time",
+            most_recent=most_recent,
+            starttime=starttime,
+            stoptime=stoptime,
+            write_to_file=write_to_file,
+            filename=filename,
+        )
+
+    def get_rtp_launch_record_by_jd(self, jd):
+        """
+        Fetch rtp_launch_record entries based on their jd.
+
+        Parameters
+        ----------
+        jd : int
+            The integer JD of the corresponding records.
+
+        Returns
+        -------
+        list of RTPLaunchRecord objects
+        """
+        query = self.query(RTPLaunchRecord).filter(RTPLaunchRecord.jd == jd)
+        return query.all()
+
+    def get_rtp_launch_record_by_rtp_attempts(self, rtp_attempts):
+        """
+        Fetch rtp_launch_record entries based on their number of RTP attempts.
+
+        Parameters
+        ----------
+        rtp_attempts : int
+            The number of times a file has been submitted to RTP.
+
+        Returns
+        -------
+        list of RTPLaunchRecord objects
+        """
+        query = self.query(RTPLaunchRecord).filter(
+            RTPLaunchRecord.rtp_attempts == rtp_attempts
+        )
+        return query.all()
 
     def update_rtp_launch_record(self, obsid, submitted_time):
         """
