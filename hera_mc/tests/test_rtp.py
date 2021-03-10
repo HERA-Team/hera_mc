@@ -764,6 +764,7 @@ def test_get_rtp_launch_record(mcsession, observation):
 
     return
 
+
 def test_get_rtp_launch_record_by_time(mcsession, observation):
     test_session = mcsession
     test_session.add_obs(*observation.observation_values)
@@ -788,6 +789,7 @@ def test_get_rtp_launch_record_by_time(mcsession, observation):
     assert rtp_launch_records[0].submitted_time == int(np.floor(submitted_time.gps))
 
     return
+
 
 def test_get_rtp_launch_record_by_jd(mcsession, observation):
     test_session = mcsession
