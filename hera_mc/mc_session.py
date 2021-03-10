@@ -1548,6 +1548,24 @@ class MCSession(Session):
         )
         return query.all()
 
+    def get_rtp_launch_record_by_obs_tag(self, obs_tag):
+        """
+        Fetch rtp_launch_record entries based on their observation tag.
+
+        Parameters
+        ----------
+        obs_tag : str
+            The observation tag to search for.
+
+        Returns
+        -------
+        list of RTPLaunchRecord objects
+        """
+        query = self.query(RTPLaunchRecord).filter(
+            RTPLaunchRecord.obs_tag == obs_tag
+        )
+        return query.all()
+
     def update_rtp_launch_record(self, obsid, submitted_time):
         """
         Update an rtp_launch_record entry in the M&C database.
