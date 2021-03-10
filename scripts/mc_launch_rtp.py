@@ -6,6 +6,7 @@
 import os
 import sys
 import shutil
+import warnings
 import subprocess
 from hera_mc import mc
 from hera_mc.rtp import RTPLaunchRecord
@@ -107,14 +108,14 @@ for jd in jd_list:
                 uvd = UVData()
                 uvd.read(filename, read_data=False)
             except (KeyError, OSError, ValueError):
-                bad_meadata_files.append(filename)
+                bad_metadata_files.append(filename)
                 filelist.remove(filename)
                 if args.rename_bad_files:
                     os.rename(filename, filename + args.bad_suffix)
 
     # go to working directory
     os.chdir(args.working_directory)
-    jd_folder = os.path.join(os.getcwd(), f"{d:jd}")
+    jd_folder = os.path.join(os.getcwd(), f"{jd:d}")
     if not os.path.isdir(jd_folder):
         os.makedirs(jd_folder)
     os.chdir(jd_folder)
@@ -143,6 +144,6 @@ for jd in jd_list:
     except subprocess.CalledProcessError as e:
         raise ValueError(
             f"Error spawning tmux session; command was {e.cmd}; "
-            f"returncode was {d:e.returncode}; output was {e.output}; "
+            f"returncode was {e.returncode:d}; output was {e.output}; "
             f"stderr was {e.stderr}"
         )
