@@ -1480,7 +1480,6 @@ class MCSession(Session):
         """
         Fetch rtp_launch_record entries based on their submitted_time.
 
-
         Parameters
         ----------
         most_recent : bool
