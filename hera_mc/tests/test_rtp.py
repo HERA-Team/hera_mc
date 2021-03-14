@@ -291,14 +291,25 @@ def test_add_rtp_status(mcsession, status):
 
 def test_errors_rtp_status(mcsession, status):
     test_session = mcsession
-    pytest.raises(ValueError, test_session.add_rtp_status, 'foo',
-                  *status.status_values[1:])
+    with pytest.raises(ValueError, match="time must be an astropy Time objec"):
+        test_session.add_rtp_status('foo', *status.status_values[1:])
 
     test_session.add_rtp_status(*status.status_values)
-    pytest.raises(ValueError, test_session.get_rtp_status, most_recent=False)
-    pytest.raises(ValueError, test_session.get_rtp_status, starttime='unhappy')
-    pytest.raises(ValueError, test_session.get_rtp_status,
-                  starttime=status.status_columns['time'], stoptime='unhappy')
+    with pytest.raises(
+        ValueError,
+        match='starttime must be specified if most_recent is False'
+    ):
+        test_session.get_rtp_status(most_recent=False)
+    with pytest.raises(
+        ValueError,
+        match='starttime must be an astropy time object'
+    ):
+        test_session.get_rtp_status(starttime='unhappy')
+    with pytest.raises(
+        ValueError,
+        match='stoptime must be an astropy time object'
+    ):
+        test_session.get_rtp_status(starttime=status.status_columns['time'], stoptime='unhappy')
 
 
 def test_add_rtp_process_event(mcsession, observation, event):
@@ -382,14 +393,14 @@ def test_errors_rtp_process_event(mcsession, observation, event):
     obs_result = test_session.get_obs()
     assert len(obs_result) == 1
 
-    pytest.raises(ValueError, test_session.add_rtp_process_event, 'foo',
-                  *event.event_values[1:])
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        test_session.add_rtp_process_event('foo', *event.event_values[1:])
 
     test_session.add_rtp_process_event(*event.event_values)
-    pytest.raises(ValueError, test_session.get_rtp_process_event,
-                  starttime='foo')
-    pytest.raises(ValueError, test_session.get_rtp_process_event,
-                  starttime=event.event_columns['time'], stoptime='bar')
+    with pytest.raises(ValueError, match="starttime must be an astropy time object"):
+        test_session.get_rtp_process_event(starttime='foo')
+    with pytest.raises(ValueError, match="stoptime must be an astropy time object"):
+        test_session.get_rtp_process_event(starttime=event.event_columns['time'], stoptime='bar')
 
 
 def test_classes_not_equal(mcsession, status, observation, event):
@@ -496,14 +507,14 @@ def test_errors_rtp_process_record(mcsession, observation, record):
     assert len(obs_result) == 1
 
     fake_vals = [1., 'a', 2., 'b', 3., 'c', 4., 'd', 5., 'e']
-    pytest.raises(ValueError, test_session.add_rtp_process_record, 'foo',
-                  *fake_vals)
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        test_session.add_rtp_process_record('foo', *fake_vals)
 
     test_session.add_rtp_process_record(*record.record_values)
-    pytest.raises(ValueError, test_session.get_rtp_process_record,
-                  starttime='foo')
-    pytest.raises(ValueError, test_session.get_rtp_process_record,
-                  starttime=record.record_columns['time'], stoptime='bar')
+    with pytest.raises(ValueError, match="starttime must be an astropy time object"):
+        test_session.get_rtp_process_record(starttime='foo')
+    with pytest.raises(ValueError, match="stoptime must be an astropy time object"):
+        test_session.get_rtp_process_record(starttime=record.record_columns['time'], stoptime='bar')
 
 
 @pytest.mark.parametrize("multiple", [False, True])
