@@ -1599,7 +1599,7 @@ class MCSession(Session):
             Job ID of the task.
 
         """
-        self.add(rtp.RTPTaskJobID.create(obsid_start, task_name, start_time, job_id))
+        self.add(rtp.RTPTaskMultipleJobID.create(obsid_start, task_name, start_time, job_id))
 
     def get_rtp_task_multiple_jobid(self, most_recent=None, starttime=None,
                                     stoptime=None, obsid_start=None, task_name=None,
@@ -1653,7 +1653,7 @@ class MCSession(Session):
                 most_recent = True
             elif most_recent is False:
                 raise ValueError(
-                    'If most_recent is set to False, at least one of obsid, task_name '
+                    'If most_recent is set to False, at least one of obsid_start, task_name '
                     'or starttime must be specified.'
                 )
 
@@ -1779,7 +1779,7 @@ class MCSession(Session):
 
         query = self.query(rtp.RTPTaskMultipleResourceRecord)
         if obsid_start is not None:
-            query = query.filter(rtp.RTPTaskMultipleResourceRecord.obsid == obsid_start)
+            query = query.filter(rtp.RTPTaskMultipleResourceRecord.obsid_start == obsid_start)
         if task_name is not None:
             query = query.filter(rtp.RTPTaskMultipleResourceRecord.task_name == task_name)
 
