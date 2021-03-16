@@ -357,6 +357,10 @@ class RTPLaunchRecord(MCDeclarativeBase):
         together.
     obs_tag : String Column
         The observation tag of the data.
+    filename : String Column
+        The filename of the observation.
+    prefix : String Column
+        The full path to the directory where the data file is stored.
 
     """
 
