@@ -355,6 +355,21 @@ avg\_cpu\_load* & float & average CPU load, in number of CPUs, for task (e.g., 2
 \end{tabular}
 \end{center}
 
+\subsubsection{rtp\_launch\_record}
+RTP record of the most recent time a particular observation was launched in RTP
+\begin{center}
+  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+    \hline
+    column & type & description \\ [0.5ex] \hline\hline
+    \textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
+    submitted\_time & long integer & record time in floor(gps seconds); should be \verb+NULL+ if job has not yet been submitted to RTP \\ \hline
+    rtp\_attempts* & long integer & number of times the observation has been attempted in RTP; should be 0 if submitted\_time is \verb+NULL+ \\ \hline
+    jd* & long integer & integer Julian Date of the observation \\ \hline
+    obs\_tag* & string & ``observation tag'' of the observation file, saved as the \verb+tag+ in the metadata \\ \hline
+    filename* & string & the full filename of the observation file \\ \hline
+    prefix* & string & the prefix of the observation file, on \verb+qmaster+ \\ \hline
+  \end{tabular}
+\end{center}
 
 
 % --------------------------- Librarian ------------------------------------------------------
