@@ -73,8 +73,7 @@ db = mc.connect_to_mc_db(args)
 if args.jd is None:
     # launch a separate job for each un-launched day
     jd_list = []
-    query = mc.query(RTPLaunchRecord).filter(RTPLaunchRecord.rtp_attempts == 0)
-    results = query.all()
+    results = mc.get_rtp_launch_record_by_rtp_attempts(0)
     for result in results:
         if result.jd not in jd_list:
             jd_list.append(result.jd)
@@ -83,8 +82,7 @@ else:
 
 for jd in jd_list:
     filelist = []
-    query = mc.query(RTPLaunchRecord).filter(RTPLaunchRecord.jd == jd)
-    results = query.all()
+    results = mc.get_rtp_launch_record_by_jd(jd)
     if len(results) == 0:
         warnings.warn(f"No RTP launch records found for JD {jd}, skipping")
         continue

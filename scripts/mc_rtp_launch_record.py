@@ -39,8 +39,7 @@ for uvfile in args.files:
         if len(obs) == 0:
             print(f"observation {obsid} not in M&C, skipping")
             continue
-        query = mc.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
-        result = query.all()
+        result = mc.get_rtp_launch_record(obsid)
         if len(query) == 0:
             # add a new launch record
             mc.add_rtp_launch_record(obsid, int_jd, obs_tag)
