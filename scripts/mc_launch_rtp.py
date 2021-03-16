@@ -2,6 +2,15 @@
 # -*- mode: python; coding: utf-8 -*-
 # Copyright 2021 The HERA Collaboration
 # Licensed under the 2-clause BSD License
+"""
+Launch an RTP workflow for the JD specified.
+
+This script uses the RTPLaunchRecord database to determine observations for
+which to launch an RTP workflow. If `jd` is specified, an RTP workflow is
+launched for that day. Otherwise, it scans through all days for which a workflow
+has not been launched and launches one for each day. For each observation
+included in a launched workflow, the corresponding RTPLaunchRecord is updated.
+"""
 
 import os
 import sys
@@ -23,6 +32,7 @@ try:
     import hera_opm.mf_tools as mt
 except ImportError:
     sys.exit("hera_opm must be installed to use this script")
+
 
 def _get_obsids(filelist):
     """
@@ -56,13 +66,15 @@ ap = mc.get_mc_argument_parser()
 ap.description = """Launch an RTP workflow for the JD specified"""
 ap.add_argument("jd", type=int, default=None, help="JD to launch an RTP job for")
 ap.add_argument(
-    "workflow_config",
+    "-c",
+    "--workflow_config",
     type=str,
     default="/home/obs/src/hera_pipelines/pipelines/pipelines/h4c/rtp/v1/h4c_rtp_stage_1.toml",
     help="hera_opm configuration to use for workflow",
 )
 ap.add_argument(
-    "working_directory",
+    "-d",
+    "--working_directory",
     type=str,
     default="/home/obs/rtp_makeflow",
     help="working directory for RTP",
@@ -95,7 +107,8 @@ ap.add_argument(
     ),
 )
 ap.add_argument(
-    "conda_env",
+    "-e",
+    "--conda_env",
     default="RTP",
     type=str,
     help=(
