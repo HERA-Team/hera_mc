@@ -2,7 +2,18 @@
 # -*- mode: python; coding: utf-8 -*-
 # Copyright 2021 The HERA Collaboration
 # Licensed under the 2-clause BSD license.
+"""
+Add or update the RTP Launch Record for an observation.
 
+This script takes a list of observations and either adds new RTP Launch Records
+into the M&C database (if they do not yet exist) or updates them with the latest
+launch time if they are. It is assumed that files corresponding to new
+observations are added by the correlator as they are taken using this script,
+and then updated when RTP launches a job containing them.
+"""
+
+import os
+import socket
 import numpy as np
 from astropy.time import Time
 
@@ -33,6 +44,16 @@ for uvfile in args.files:
     int_jd = int(np.floor(starttime.jd))
     obsid = int(np.floor(starttime.gps))
     obs_tag = uv.extra_keywords["tag"]
+    # get appropriate filename and prefix information
+    filename = os.path.basename(uvfile)
+    hostname = socket.gethostname()
+    if "hera-sn1" in hostname:
+        prefix = "/mnt/sn1"
+    elif "hera-sn2" in hostname:
+        prefix = "/mnt/sn2"
+    else:
+        # default
+        prefix = "unknown"
 
     with db.sessionmaker() as session:
         obs = session.get_obs(obsid)
@@ -42,7 +63,7 @@ for uvfile in args.files:
         result = mc.get_rtp_launch_record(obsid)
         if len(query) == 0:
             # add a new launch record
-            mc.add_rtp_launch_record(obsid, int_jd, obs_tag)
+            mc.add_rtp_launch_record(obsid, int_jd, obs_tag, filename, prefix)
         else:
             # update existing record
             t0 = Time.now()
