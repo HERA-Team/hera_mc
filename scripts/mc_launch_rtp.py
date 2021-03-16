@@ -9,7 +9,6 @@ import shutil
 import warnings
 import subprocess
 from hera_mc import mc
-from hera_mc.rtp import RTPLaunchRecord
 
 try:
     import hera_opm.mf_tools as mt

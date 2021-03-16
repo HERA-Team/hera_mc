@@ -18,9 +18,7 @@ import numpy as np
 from astropy.time import Time
 
 from pyuvdata import UVData
-
 from hera_mc import mc
-from hera_mc.rtp import RTPLaunchRecord
 
 ap = mc.get_mc_argument_parser()
 ap.description = """Add or update the RTP Launch Record for an observation."""
@@ -61,7 +59,7 @@ for uvfile in args.files:
             print(f"observation {obsid} not in M&C, skipping")
             continue
         result = mc.get_rtp_launch_record(obsid)
-        if len(query) == 0:
+        if len(result) == 0:
             # add a new launch record
             mc.add_rtp_launch_record(obsid, int_jd, obs_tag, filename, prefix)
         else:
