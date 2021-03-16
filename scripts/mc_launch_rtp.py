@@ -8,12 +8,49 @@ import sys
 import shutil
 import warnings
 import subprocess
+
+import numpy as np
+from astropy.time import Time
+
 from hera_mc import mc
+
+try:
+    import h5py
+except ImportError:
+    sys.exit("h5py must be installed to use this script")
 
 try:
     import hera_opm.mf_tools as mt
 except ImportError:
     sys.exit("hera_opm must be installed to use this script")
+
+def _get_obsids(filelist):
+    """
+    Compute the obsids for a list of files.
+
+    Parameters
+    ----------
+    filelist : list of str
+        The list of UVH5 files for which to infer obsids.
+
+    Returns
+    -------
+    obsids : list of int
+        The corresponding list of obsids for the files.
+
+    """
+    obsids = []
+    for filename in filelist:
+        try:
+            with h5py.File(filename, "r") as h5f:
+                time_array = h5f["Header/time_array"][()]
+        except KeyError:
+            raise ValueError("input files must be UVH5")
+        starttime = Time(np.unique(time_array)[0], scale="utc", format="jd")
+        obsids.append(int(np.floor(starttime.gps)))
+
+    return obsids
+
 
 ap = mc.get_mc_argument_parser()
 ap.description = """Launch an RTP workflow for the JD specified"""
@@ -95,11 +132,12 @@ for jd in jd_list:
 
     # scan files if desired
     if args.scan_files:
-        bad_metadata_files = []
         try:
             from pyuvdata import UVData
         except ImportError:
-            sys.exit("pyuvdata must be installed to use --scan-files option")
+            sys.exit("pyuvdata must be installed to use the --scan-files option")
+
+        bad_metadata_files = []
         for filename in filelist:
             try:
                 uvd = UVData()
@@ -129,6 +167,17 @@ for jd in jd_list:
         filelist, args.workflow_config, mf_filename, jd_folder
     )
 
+    # update RTP launch records
+    obsids = _get_obsids(filelist)
+    t0 = Time.now()
+    for filename, obsid in zip(filelist, obsids):
+        try:
+            mc.update_rtp_launch_record(obsid, t0)
+        except RuntimeError:
+            sys.exit(
+                f"could not update RTP Launch Record for file {filename}; aborting"
+            )
+
     # launch workflow inside of tmux
     cmd = (
         f"conda deactivate; conda activate {args.conda_env}; "
@@ -139,7 +188,7 @@ for jd in jd_list:
     try:
         subprocess.check_call(tmux_cmd)
     except subprocess.CalledProcessError as e:
-        raise ValueError(
+        sys.exit(
             f"Error spawning tmux session; command was {e.cmd}; "
             f"returncode was {e.returncode:d}; output was {e.output}; "
             f"stderr was {e.stderr}"
