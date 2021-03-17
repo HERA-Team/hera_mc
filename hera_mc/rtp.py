@@ -10,7 +10,7 @@ the documentation needs to be kept up to date with any changes.
 """
 from math import floor
 from astropy.time import Time
-from sqlalchemy import (Column, ForeignKey, ForeignKeyConstraint, Integer, BigInteger,
+from sqlalchemy import (Column, ForeignKey, Integer, BigInteger,
                         String, Text, Float, Enum)
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -494,6 +494,56 @@ class RTPLaunchRecord(MCDeclarativeBase):
         )
 
 
+class RTPTaskMultipleTrack(MCDeclarativeBase):
+    """
+    Definition of rtp_task_multiple_track table.
+
+    Tracks which obsids are included in an rtp task that includes multiple obsids. This
+    is a many-to-one mapping table with a row per obsid that is included in the task.
+
+    Attributes
+    ----------
+    obsid_start : BigInteger Column
+        Starting obsid for the set of obsids included in the task. Used along with the
+        task_name as the unique identifier in the `rtp_task_resource_record_multiple` table.
+        Part of primary_key. Foreign key into Observation table.
+    task_name : String Column
+        Name of task in pipeline (e.g., OMNICAL). Part of primary_key.
+    obsid : BigInteger Column
+        Start time of the job in floor(gps_seconds). Part of primary_key. Foreign key into
+        Observation table.
+
+    """
+
+    __tablename__ = 'rtp_task_multiple_track'
+    obsid_start = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    task_name = Column(Text, primary_key=True)
+    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+
+    @classmethod
+    def create(cls, obsid_start, task_name, obsid):
+        """
+        Create a new RTPTaskMultipleTrack object.
+
+        Parameters
+        ----------
+        obsid_start : long
+            Starting obsid for the set of obsids included in the task. Used along with
+            the task_name as the unique identifier in the `rtp_task_resource_record_multiple`
+            table (Foreign key into Observation).
+        task_name : str
+            Name of the task in the pipeline (e.g., OMNICAL).
+        obsid : long
+            Observation obsid included in this task (Foreign key into Observation).
+
+        Returns
+        -------
+        RTPTaskMultipleTrack object
+
+        """
+        return cls(obsid_start=obsid_start, task_name=task_name, obsid=obsid)
+
+
 class RTPTaskMultipleJobID(MCDeclarativeBase):
     """
     Definition of rtp_task_multiple_jobid table.
@@ -625,62 +675,3 @@ class RTPTaskMultipleResourceRecord(MCDeclarativeBase):
         return cls(obsid_start=obsid_start, task_name=task_name, start_time=start_time,
                    stop_time=stop_time, max_memory=max_memory,
                    avg_cpu_load=avg_cpu_load)
-
-
-class RTPTaskMultipleTrack(MCDeclarativeBase):
-    """
-    Definition of rtp_task_multiple_track table.
-
-    Tracks which obsids are included in an rtp task that includes multiple obsids. This
-    is a many-to-one mapping table with a row per obsid that is included in the task.
-
-    Attributes
-    ----------
-    obsid_start : BigInteger Column
-        Starting obsid for the set of obsids included in the task. Used along with the
-        task_name as the unique identifier in the `rtp_task_resource_record_multiple` table.
-        Part of primary_key. Foreign key into Observation table.
-    task_name : String Column
-        Name of task in pipeline (e.g., OMNICAL). Part of primary_key.
-    obsid : BigInteger Column
-        Start time of the job in floor(gps_seconds). Part of primary_key. Foreign key into
-        Observation table.
-
-    """
-
-    __tablename__ = 'rtp_task_multiple_track'
-    obsid_start = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
-    task_name = Column(Text, primary_key=True)
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
-
-    __table_args__ = (ForeignKeyConstraint(
-        ['obsid_start', 'task_name'],
-        [
-            'rtp_task_multiple_resource_record.obsid_start',
-            'rtp_task_multiple_resource_record.task_name'
-        ]),
-        {}
-    )
-
-    @classmethod
-    def create(cls, obsid_start, task_name, obsid):
-        """
-        Create a new RTPTaskMultipleTrack object.
-
-        Parameters
-        ----------
-        obsid_start : long
-            Starting obsid for the set of obsids included in the task. Used along with
-            the task_name as the unique identifier in the `rtp_task_resource_record_multiple`
-            table (Foreign key into Observation).
-        task_name : str
-            Name of the task in the pipeline (e.g., OMNICAL).
-        obsid : long
-            Observation obsid included in this task (Foreign key into Observation).
-
-        Returns
-        -------
-        RTPTaskMultipleTrack object
-
-        """
-        return cls(obsid_start=obsid_start, task_name=task_name, obsid=obsid)

@@ -52,7 +52,6 @@ def upgrade():
         sa.Column('task_name', sa.Text(), nullable=False),
         sa.Column('obsid', sa.BigInteger(), nullable=False),
         sa.ForeignKeyConstraint(['obsid'], ['hera_obs.obsid'], ),
-        sa.ForeignKeyConstraint(['obsid_start', 'task_name'], ['rtp_task_multiple_resource_record.obsid_start', 'rtp_task_multiple_resource_record.task_name'], ),
         sa.ForeignKeyConstraint(['obsid_start'], ['hera_obs.obsid'], ),
         sa.PrimaryKeyConstraint('obsid_start', 'task_name', 'obsid')
     )
