@@ -66,7 +66,7 @@ def _reduce_time_vals(times, vals, period, strategy='decimate'):
         Strategy for data reduction.
 
     """
-    if not isinstance(period, (int, np.int)):
+    if not isinstance(period, (int, np.int_)):
         raise ValueError('period must be an integer')
 
     # the // operator is a floored divide.

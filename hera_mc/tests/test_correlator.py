@@ -168,7 +168,7 @@ def antstatus():
                 'fem_temp': 26.327341308593752,
                 'fft_of': False,
                 'eq_coeffs': (np.zeros((1024)) + 56.921875).tolist(),
-                'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
+                'histogram': [np.arange(-128, 182, dtype=np.int_).tolist(),
                               (np.zeros((256)) + 10).tolist()]},
         '31:n': {'timestamp':
                  datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
@@ -193,7 +193,7 @@ def antstatus():
                  'fem_temp': 27.828854980468755,
                  'fft_of': True,
                  'eq_coeffs': (np.zeros((1024)) + 73.46875).tolist(),
-                 'histogram': [np.arange(-128, 182, dtype=np.int).tolist(),
+                 'histogram': [np.arange(-128, 182, dtype=np.int_).tolist(),
                                (np.zeros((256)) + 12).tolist()]}}
 
 
@@ -2051,7 +2051,7 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
     eq_coeffs_string = '[' + ','.join(eq_coeffs_str) + ']'
 
     histogram_bin_str = [str(val) for val
-                         in np.arange(-128, 182, dtype=np.int).tolist()]
+                         in np.arange(-128, 182, dtype=np.int_).tolist()]
     histogram_bin_string = '[' + ','.join(histogram_bin_str) + ']'
     histogram_str = [str(val) for val in (np.zeros((256)) + 10).tolist()]
     histogram_string = '[' + ','.join(histogram_str) + ']'
@@ -2100,7 +2100,7 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
                      (np.zeros((1024)) + 73.46875).tolist()]
     eq_coeffs_string = '[' + ','.join(eq_coeffs_str) + ']'
     histogram_bin_str = [str(val) for val
-                         in np.arange(-128, 182, dtype=np.int).tolist()]
+                         in np.arange(-128, 182, dtype=np.int_).tolist()]
     histogram_bin_string = '[' + ','.join(histogram_bin_str) + ']'
     histogram_str = [str(val) for val in (np.zeros((256)) + 12).tolist()]
     histogram_string = '[' + ','.join(histogram_str) + ']'

@@ -25,7 +25,9 @@ from .observations import Observation
 from .subsystem_error import SubsystemError
 from .daemon_status import DaemonStatus
 from .librarian import LibStatus, LibRAIDStatus, LibRAIDErrors, LibRemoteStatus, LibFiles
-from .rtp import RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord
+from .rtp import (
+    RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord, RTPLaunchRecord
+)
 from . import node
 from . import correlator as corr
 from .weather import WeatherData, weather_sensor_dict, create_from_sensors
@@ -1357,7 +1359,6 @@ class MCSession(Session):
             task_name to get records for. If none, all tasks will be included.
         write_to_file : bool
             Option to write records to a CSV file.
-
         filename : str
             Name of file to write to. If not provided, defaults to a file in the
             current directory named based on the table name.
@@ -1409,6 +1410,205 @@ class MCSession(Session):
 
             else:
                 return query.all()
+
+    def add_rtp_launch_record(
+            self,
+            obsid,
+            jd,
+            obs_tag,
+            filename,
+            prefix,
+            submitted_time=None,
+            rtp_attempts=0,
+    ):
+        """
+        Add new rtp_launch_record entry to the M&C database.
+
+        Parameters
+        ----------
+        obsid : long
+            The obsid to add a record for.
+        jd : int
+            The integer Julian Date of the obsid.
+        obs_tag : str
+            The observation tag of the data.
+        filename : str
+            The filename of the corresponding raw data.
+        prefix : str
+            The path to the directory where the data file is stored.
+        submitted_time : astropy Time, optional
+            If not None, an astropy Time object corresponding to job submission
+            time.
+        rtp_attempts : int, optional
+            The number of times the job has been run by RTP.
+
+        Returns
+        -------
+        None
+        """
+        self.add(
+            RTPLaunchRecord.create(
+                obsid, jd, obs_tag, filename, prefix, submitted_time, rtp_attempts
+            )
+        )
+        return
+
+    def get_rtp_launch_record(self, obsid):
+        """
+        Fetch rtp_launch_record entries for a given obsid.
+
+        Parameters
+        ----------
+        obsid : long
+            The obsid to fetch a record for.
+
+        Returns
+        -------
+        list of RTPLaunchRecord objects
+        """
+        query = self.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
+        return query.all()
+
+    def get_rtp_launch_record_by_time(
+        self,
+        most_recent=None,
+        starttime=None,
+        stoptime=None,
+        write_to_file=False,
+        filename=None,
+    ):
+        """
+        Fetch rtp_launch_record entries based on their submitted_time.
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime,
+            obsid and task_name are all None.
+        starttime : astropy Time object
+            Time to look for records after; applies to start_time column.
+            Ignored if both obsid and task_name are set or if most_recent is
+            True.
+        stoptime : astropy Time object
+            last time to get records for, only used if starttime is used.
+            If none, only the first record after starttime will be returned.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        list of RTPLaunchRecord objects
+        """
+        return self._time_filter(
+            RTPLaunchRecord,
+            "submitted_time",
+            most_recent=most_recent,
+            starttime=starttime,
+            stoptime=stoptime,
+            write_to_file=write_to_file,
+            filename=filename,
+        )
+
+    def get_rtp_launch_record_by_jd(self, jd):
+        """
+        Fetch rtp_launch_record entries based on their jd.
+
+        Parameters
+        ----------
+        jd : int
+            The integer JD of the corresponding records.
+
+        Returns
+        -------
+        list of RTPLaunchRecord objects
+        """
+        query = self.query(RTPLaunchRecord).filter(RTPLaunchRecord.jd == jd)
+        return query.all()
+
+    def get_rtp_launch_record_by_rtp_attempts(self, rtp_attempts):
+        """
+        Fetch rtp_launch_record entries based on their number of RTP attempts.
+
+        Parameters
+        ----------
+        rtp_attempts : int
+            The number of times a file has been submitted to RTP.
+
+        Returns
+        -------
+        list of RTPLaunchRecord objects
+        """
+        query = self.query(RTPLaunchRecord).filter(
+            RTPLaunchRecord.rtp_attempts == rtp_attempts
+        )
+        return query.all()
+
+    def get_rtp_launch_record_by_obs_tag(self, obs_tag):
+        """
+        Fetch rtp_launch_record entries based on their observation tag.
+
+        Parameters
+        ----------
+        obs_tag : str
+            The observation tag to search for.
+
+        Returns
+        -------
+        list of RTPLaunchRecord objects
+        """
+        query = self.query(RTPLaunchRecord).filter(
+            RTPLaunchRecord.obs_tag == obs_tag
+        )
+        return query.all()
+
+    def update_rtp_launch_record(self, obsid, submitted_time):
+        """
+        Update an rtp_launch_record entry in the M&C database.
+
+        This method should be called to update an existing record with the
+        latest start time, and to increment the counter for the number of times
+        a job has been launched.
+
+        Parameters
+        ----------
+        obsid : long
+            The obsid to update a record for.
+        submitted_time : astropy Time object
+            Astropy time object for the timestamp of job submission.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ValueError:
+            This is raised if submitted_time is not an astropy Time object.
+        RuntimeError:
+            This is raised if the obsid does not match exactly one record.
+        """
+        # check type of input data
+        if not isinstance(submitted_time, Time):
+            raise ValueError("submitted_time must be an astropy Time object")
+        submitted_time = int(floor(submitted_time.gps))
+        # query the table for the existing row
+        query = self.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
+        result = query.all()
+        if len(result) != 1:
+            raise RuntimeError(f"RTP launch record does not exist for obsid {obsid}")
+        result = result[0]
+        # get the current number of rtp_attempts and increment
+        rtp_attempts = result.rtp_attempts
+        rtp_attempts += 1
+        # update result
+        result.rtp_attempts = rtp_attempts
+        result.submitted_time = submitted_time
+        self.commit()
+        return
 
     def add_weather_data(self, time, variable, value):
         """
