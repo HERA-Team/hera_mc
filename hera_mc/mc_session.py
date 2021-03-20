@@ -1369,7 +1369,6 @@ class MCSession(Session):
             task_name to get records for. If none, all tasks will be included.
         write_to_file : bool
             Option to write records to a CSV file.
-
         filename : str
             Name of file to write to. If not provided, defaults to a file in the
             current directory named based on the table name.
@@ -1378,6 +1377,11 @@ class MCSession(Session):
         Returns
         -------
         list of RTPTaskJobID objects
+
+        Raises
+        ------
+        ValueError
+            If `most_recent` is False and all of obsid, task_name, and starttime are None.
 
         """
         if obsid is None and task_name is None and starttime is None:
@@ -1483,6 +1487,11 @@ class MCSession(Session):
         -------
         list of RTPTaskResourceRecord objects
 
+        Raises
+        ------
+        ValueError
+            If `most_recent` is False and all of obsid, task_name, and starttime are None.
+
         """
         if obsid is None and task_name is None and starttime is None:
             if most_recent is None:
@@ -1557,7 +1566,6 @@ class MCSession(Session):
             obsid to get records for. If none, all obsids will be included.
         write_to_file : bool
             Option to write records to a CSV file.
-
         filename : str
             Name of file to write to. If not provided, defaults to a file in the
             current directory named based on the table name.
@@ -1637,7 +1645,6 @@ class MCSession(Session):
             task_name to get records for. If none, all tasks will be included.
         write_to_file : bool
             Option to write records to a CSV file.
-
         filename : str
             Name of file to write to. If not provided, defaults to a file in the
             current directory named based on the table name.
@@ -1646,6 +1653,11 @@ class MCSession(Session):
         Returns
         -------
         list of RTPTaskMultipleJobID objects
+
+        Raises
+        ------
+        ValueError
+            If `most_recent` is False and all of obsid_start, task_name, and starttime are None.
 
         """
         if obsid_start is None and task_name is None and starttime is None:
@@ -1744,7 +1756,6 @@ class MCSession(Session):
             task_name to get records for. If none, all tasks will be included.
         write_to_file : bool
             Option to write records to a CSV file.
-
         filename : str
             Name of file to write to. If not provided, defaults to a file in the
             current directory named based on the table name.
@@ -1753,6 +1764,11 @@ class MCSession(Session):
         Returns
         -------
         list of RTPTaskMultipleResourceRecord objects
+
+        Raises
+        ------
+        ValueError
+            If `most_recent` is False and all of obsid_start, task_name, and starttime are None.
 
         """
         if obsid_start is None and task_name is None and starttime is None:

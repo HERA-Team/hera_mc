@@ -15,7 +15,6 @@ from ..rtp import (RTPStatus, RTPProcessEvent, RTPProcessRecord,
                    RTPTaskJobID, RTPTaskMultipleJobID,
                    RTPTaskMultipleResourceRecord, RTPTaskMultipleTrack)
 from .. import utils
-from hera_mc.data import DATA_PATH
 
 
 @pytest.fixture(scope='module')
@@ -518,7 +517,7 @@ def test_errors_rtp_process_record(mcsession, observation, record):
 
 
 @pytest.mark.parametrize("multiple", [False, True])
-def test_rtp_task_jobid(mcsession, observation, multiple, jobid, multiple_jobid):
+def test_rtp_task_jobid(tmpdir, mcsession, observation, multiple, jobid, multiple_jobid):
     test_session = mcsession
     test_session.add_obs(*observation.observation_values)
     obs_result = test_session.get_obs()
@@ -653,7 +652,7 @@ def test_rtp_task_jobid(mcsession, observation, multiple, jobid, multiple_jobid)
     result = result[0]
     assert result.isclose(expected)
 
-    filename = os.path.join(DATA_PATH, 'test_rtp_task_record_file.csv')
+    filename = os.path.join(tmpdir, 'test_rtp_task_record_file.csv')
     get_keywords = {
         obsid_name: data_obj.task_jobid_columns[obsid_name],
         "task_name": data_obj.task_jobid_columns['task_name'],
@@ -701,7 +700,9 @@ def test_errors_rtp_task_jobid(mcsession, observation, multiple, jobid, multiple
 
 
 @pytest.mark.parametrize("multiple", [False, True])
-def test_add_rtp_task_resource_record(mcsession, observation, multiple, task, task_multiple):
+def test_add_rtp_task_resource_record(
+    tmpdir, mcsession, observation, multiple, task, task_multiple
+):
     test_session = mcsession
     test_session.add_obs(*observation.observation_values)
     obs_result = test_session.get_obs()
@@ -834,7 +835,7 @@ def test_add_rtp_task_resource_record(mcsession, observation, multiple, task, ta
     result = result[0]
     assert result.isclose(expected)
 
-    filename = os.path.join(DATA_PATH, 'test_rtp_task_record_file.csv')
+    filename = os.path.join(tmpdir, 'test_rtp_task_record_file.csv')
     get_keywords = {
         obsid_name: data_obj.task_resource_columns[obsid_name],
         "task_name": data_obj.task_resource_columns['task_name'],
@@ -1222,7 +1223,7 @@ def test_get_rtp_launch_record_by_obs_tag(mcsession, observation):
     return
 
 
-def test_add_rtp_task_multiple_track(mcsession, observation, task_multiple, multiple_track):
+def test_add_rtp_task_multiple_track(tmpdir, mcsession, observation, task_multiple, multiple_track):
     test_session = mcsession
 
     # add obsids:
@@ -1261,7 +1262,7 @@ def test_add_rtp_task_multiple_track(mcsession, observation, task_multiple, mult
     assert len(result_obsid) == 1
     assert result_obsid[0].isclose(exp_list[0])
 
-    filename = os.path.join(DATA_PATH, 'test_rtp_track_multiple_file.csv')
+    filename = os.path.join(tmpdir, 'test_rtp_track_multiple_file.csv')
     test_session.get_rtp_task_multiple_track(
         obsid_start=multiple_track.track_columns[0]["obsid_start"],
         write_to_file=True,
