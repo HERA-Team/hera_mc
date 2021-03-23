@@ -44,11 +44,21 @@ def test_AntMetrics(mcsession, pol_x, pol_y):
 
     # now the tests
     test_session.add_ant_metric(obsid, 0, pol_x, 'test', 4.5)
+    test_session.commit()
     r = test_session.get_ant_metric(metric='test')
     assert len(r) == 1
     assert r[0].antpol == (0, pol_x)
     assert r[0].metric == 'test'
     assert r[0].val == 4.5
+
+    # test that updating works
+    test_session.add_ant_metric(obsid, 0, pol_x, 'test', 4.3)
+    test_session.commit()
+    r = test_session.get_ant_metric(metric='test')
+    assert len(r) == 1
+    assert r[0].antpol == (0, pol_x)
+    assert r[0].metric == 'test'
+    assert r[0].val == 4.3
 
     # Test more exciting queries
     test_session.add_ant_metric(obsid, 0, pol_y, 'test', 2.5)
@@ -152,9 +162,17 @@ def test_ArrayMetrics(mcsession):
 
     # now the tests
     test_session.add_array_metric(obsid, 'test', 6.2)
+    test_session.commit()
     r = test_session.get_array_metric()
     assert r[0].metric == 'test'
     assert r[0].val == 6.2
+
+    # test that updating works
+    test_session.add_array_metric(obsid, 'test', 6.5)
+    test_session.commit()
+    r = test_session.get_array_metric()
+    assert r[0].metric == 'test'
+    assert r[0].val == 6.5
 
     # Test more exciting queries
     test_session.add_array_metric(obsid + 10, 'test', 2.5)
