@@ -4618,7 +4618,7 @@ class MCSession(Session):
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
         """
-        Add a new antenna metric to the M&C database.
+        Add a new antenna metric or update an existing metric.
 
         Parameters
         ----------
@@ -4636,7 +4636,8 @@ class MCSession(Session):
         """
         db_time = self.get_current_db_time()
 
-        self.add(AntMetrics.create(obsid, ant, pol, metric, db_time, val))
+        obj_list = [AntMetrics.create(obsid, ant, pol, metric, db_time, val)]
+        self._insert_ignoring_duplicates(AntMetrics, obj_list, update=True)
 
     def get_ant_metric(self, ant=None, pol=None, metric=None, starttime=None,
                        stoptime=None):
@@ -4681,7 +4682,7 @@ class MCSession(Session):
 
     def add_array_metric(self, obsid, metric, val):
         """
-        Add a new array metric to the M&C database.
+        Add a new array metric or update an existing metric.
 
         Parameters
         ----------
@@ -4695,7 +4696,8 @@ class MCSession(Session):
         """
         db_time = self.get_current_db_time()
 
-        self.add(ArrayMetrics.create(obsid, metric, db_time, val))
+        obj_list = [ArrayMetrics.create(obsid, metric, db_time, val)]
+        self._insert_ignoring_duplicates(ArrayMetrics, obj_list, update=True)
 
     def get_array_metric(self, metric=None, starttime=None, stoptime=None):
         """
