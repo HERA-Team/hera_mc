@@ -25,9 +25,7 @@ from .observations import Observation
 from .subsystem_error import SubsystemError
 from .daemon_status import DaemonStatus
 from .librarian import LibStatus, LibRAIDStatus, LibRAIDErrors, LibRemoteStatus, LibFiles
-from .rtp import (
-    RTPStatus, RTPProcessEvent, RTPProcessRecord, RTPTaskResourceRecord, RTPLaunchRecord
-)
+from . import rtp
 from . import node
 from . import correlator as corr
 from .weather import WeatherData, weather_sensor_dict, create_from_sensors
@@ -154,12 +152,12 @@ class MCSession(Session):
             If none, only the first record(s) after starttime will be returned
             (can be more than one record if multiple records share the same
             time). Ignored if most_recent is True.
-        filter_column : str
-            Column name to use as an additional filter (often a part of the
+        filter_column : str or list of str
+            Column name(s) to use as an additional filter (often a part of the
             primary key).
-        filter_value : str or int
-            Type coresponds to filter_column, usually a string value to require
-            that the filter_column is equal to.
+        filter_value : str or int or list of str or int
+            Type coresponds to filter_column(s), value(s) to require
+            that the filter_column(s) are equal to.
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -193,12 +191,29 @@ class MCSession(Session):
                                  'value was: {t}'.format(t=stoptime))
 
         time_attr = getattr(table_class, time_column)
+
         if filter_value is not None:
-            filter_attr = getattr(table_class, filter_column)
+            if isinstance(filter_column, (list)):
+                assert isinstance(filter_value, (list)), (
+                    f'Inconsistent filtering keywords for {table_class.__tablename__} '
+                    'table. This is a bug, please report it in the issue log.'
+                )
+                assert len(filter_column) == len(filter_value), (
+                    f'Inconsistent filtering keywords for {table_class.__tablename__} '
+                    'table. This is a bug, please report it in the issue log.'
+                )
+            else:
+                filter_column = [filter_column]
+                filter_value = [filter_value]
+            filter_attr = []
+            for col in filter_column:
+                filter_attr.append(getattr(table_class, col))
 
         query = self.query(table_class)
         if filter_value is not None:
-            query = query.filter(filter_attr == filter_value)
+            for index, val in enumerate(filter_value):
+                if val is not None:
+                    query = query.filter(filter_attr[index] == val)
 
         if most_recent or stoptime is None:
             if most_recent:
@@ -222,13 +237,15 @@ class MCSession(Session):
                 # then get all results at that time
                 query = query.filter(time_attr == first_time)
                 if filter_value is not None:
-                    query = query.order_by(asc(filter_attr))
+                    for attr in filter_attr:
+                        query = query.order_by(asc(attr))
 
         else:
             query = query.filter(time_attr.between(starttime.gps, stoptime.gps))
             query = query.order_by(time_attr)
             if filter_value is not None:
-                query = query.order_by(asc(filter_attr))
+                for attr in filter_attr:
+                    query = query.order_by(asc(attr))
 
         if write_to_file:
             self._write_query_to_file(query, table_class, filename=filename)
@@ -1106,8 +1123,9 @@ class MCSession(Session):
             Hours since last restart.
 
         """
-        self.add(RTPStatus.create(time, status, event_min_elapsed,
-                                  num_processes, restart_hours_elapsed))
+        self.add(rtp.RTPStatus.create(
+            time, status, event_min_elapsed, num_processes, restart_hours_elapsed)
+        )
 
     def get_rtp_status(self, most_recent=None, starttime=None, stoptime=None,
                        write_to_file=False, filename=None):
@@ -1144,7 +1162,7 @@ class MCSession(Session):
         list of RTPStatus objects
 
         """
-        return self._time_filter(RTPStatus, 'time', most_recent=most_recent,
+        return self._time_filter(rtp.RTPStatus, 'time', most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  write_to_file=write_to_file, filename=filename)
 
@@ -1162,7 +1180,7 @@ class MCSession(Session):
             Event type.
 
         """
-        self.add(RTPProcessEvent.create(time, obsid, event))
+        self.add(rtp.RTPProcessEvent.create(time, obsid, event))
 
     def get_rtp_process_event(self, most_recent=None, starttime=None,
                               stoptime=None, obsid=None,
@@ -1204,7 +1222,7 @@ class MCSession(Session):
         list of RTPProcessEvent objects
 
         """
-        return self._time_filter(RTPProcessEvent, 'time',
+        return self._time_filter(rtp.RTPProcessEvent, 'time',
                                  most_recent=most_recent, starttime=starttime,
                                  stoptime=stoptime, filter_column='obsid',
                                  filter_value=obsid,
@@ -1244,13 +1262,13 @@ class MCSession(Session):
             pyuvdata git hash.
 
         """
-        self.add(RTPProcessRecord.create(time, obsid, pipeline_list,
-                                         rtp_git_version, rtp_git_hash,
-                                         hera_qm_git_version, hera_qm_git_hash,
-                                         hera_cal_git_version,
-                                         hera_cal_git_hash,
-                                         pyuvdata_git_version,
-                                         pyuvdata_git_hash))
+        self.add(rtp.RTPProcessRecord.create(time, obsid, pipeline_list,
+                                             rtp_git_version, rtp_git_hash,
+                                             hera_qm_git_version, hera_qm_git_hash,
+                                             hera_cal_git_version,
+                                             hera_cal_git_hash,
+                                             pyuvdata_git_version,
+                                             pyuvdata_git_hash))
 
     def get_rtp_process_record(self, most_recent=None, starttime=None,
                                stoptime=None, obsid=None, write_to_file=False,
@@ -1289,14 +1307,116 @@ class MCSession(Session):
 
         Returns
         -------
-        list of RTPProcessEvent objects
+        list of RTPProcessRecord objects
 
         """
-        return self._time_filter(RTPProcessRecord, 'time',
+        return self._time_filter(rtp.RTPProcessRecord, 'time',
                                  most_recent=most_recent,
                                  starttime=starttime, stoptime=stoptime,
                                  filter_column='obsid', filter_value=obsid,
                                  write_to_file=write_to_file, filename=filename)
+
+    def add_rtp_task_jobid(self, obsid, task_name, start_time, job_id):
+        """
+        Add a new rtp_task_jobid row.
+
+        Parameters
+        ----------
+        obsid : long
+            Observation obsid, Foreign key into observation.
+        task_name : str
+            Name of the task (e.g., OMNICAL).
+        start_time : astropy Time object
+            GPS time of job start.
+        job_id : int
+            Job ID of the task.
+
+        """
+        self.add(rtp.RTPTaskJobID.create(obsid, task_name, start_time, job_id))
+
+    def get_rtp_task_jobid(self, most_recent=None, starttime=None,
+                           stoptime=None, obsid=None, task_name=None,
+                           write_to_file=False, filename=None):
+        """
+        Get rtp_task_jobid record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        If either or both of obsid & task_name are set, then all records that match
+        those are returned unless most_recent or starttime is set.
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime,
+            obsid and task_name are all None.
+        starttime : astropy Time object
+            Time to look for records after; applies to start_time column.
+            Ignored if both obsid and task_name are set or if most_recent is
+            True.
+        stoptime : astropy Time object
+            last time to get records for, only used if starttime is used.
+            If none, only the first record after starttime will be returned.
+        obsid : long
+            obsid to get records for. If none, all obsids will be included.
+        task_name : str
+            task_name to get records for. If none, all tasks will be included.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        list of RTPTaskJobID objects
+
+        Raises
+        ------
+        ValueError
+            If `most_recent` is False and all of obsid, task_name, and starttime are None.
+
+        """
+        if obsid is None and task_name is None and starttime is None:
+            if most_recent is None:
+                most_recent = True
+            elif most_recent is False:
+                raise ValueError(
+                    'If most_recent is set to False, at least one of obsid, task_name '
+                    'or starttime must be specified.'
+                )
+
+        if most_recent is True or starttime is not None:
+            return self._time_filter(
+                rtp.RTPTaskJobID,
+                'start_time',
+                most_recent=most_recent,
+                starttime=starttime,
+                stoptime=stoptime,
+                filter_column=['obsid', 'task_name'],
+                filter_value=[obsid, task_name],
+                write_to_file=write_to_file,
+                filename=filename
+            )
+
+        query = self.query(rtp.RTPTaskJobID)
+        if obsid is not None:
+            query = query.filter(rtp.RTPTaskJobID.obsid == obsid)
+        if task_name is not None:
+            query = query.filter(rtp.RTPTaskJobID.task_name == task_name)
+
+        if write_to_file:
+            self._write_query_to_file(query, rtp.RTPTaskJobID, filename=filename)
+
+        else:
+            return query.all()
 
     def add_rtp_task_resource_record(self, obsid, task_name, start_time,
                                      stop_time, max_memory=None,
@@ -1320,7 +1440,7 @@ class MCSession(Session):
             Average number of CPUs used by task.
 
         """
-        self.add(RTPTaskResourceRecord.create(
+        self.add(rtp.RTPTaskResourceRecord.create(
             obsid, task_name, start_time, stop_time, max_memory, avg_cpu_load))
 
     def get_rtp_task_resource_record(self, most_recent=None, starttime=None,
@@ -1328,8 +1448,6 @@ class MCSession(Session):
                                      write_to_file=False, filename=None):
         """
         Get rtp_task_resource_record from the M&C database.
-
-        If both obsid and task_name are set, all other keywords are ignored.
 
         Default behavior is to return the most recent record(s) -- there can be
         more than one if there are multiple records at the same time. If
@@ -1339,7 +1457,8 @@ class MCSession(Session):
         times you need to set both startime and stoptime. If most_recent is set,
         startime and stoptime are ignored.
 
-        At least one of obsid, starttime or most_recent must be specified.
+        If either or both of obsid & task_name are set, then all records that match
+        those are returned unless most_recent or starttime is set.
 
         Parameters
         ----------
@@ -1368,48 +1487,323 @@ class MCSession(Session):
         -------
         list of RTPTaskResourceRecord objects
 
+        Raises
+        ------
+        ValueError
+            If `most_recent` is False and all of obsid, task_name, and starttime are None.
+
         """
-        if obsid is None and starttime is None:
+        if obsid is None and task_name is None and starttime is None:
             if most_recent is None:
                 most_recent = True
             elif most_recent is False:
-                raise ValueError('At least one of obsid, starttime or '
-                                 'most_recent must be specified.')
+                raise ValueError(
+                    'If most_recent is set to False, at least one of obsid, task_name '
+                    'or starttime must be specified.'
+                )
 
-        if task_name is None:
-            if most_recent is True or starttime is not None:
-                return self._time_filter(RTPTaskResourceRecord, 'start_time',
-                                         most_recent=most_recent,
-                                         starttime=starttime,
-                                         stoptime=stoptime,
-                                         filter_column='obsid',
-                                         filter_value=obsid,
-                                         write_to_file=write_to_file,
-                                         filename=filename)
-            elif obsid is not None:
-                return self.query(RTPTaskResourceRecord).filter(
-                    RTPTaskResourceRecord.obsid == obsid).all()
+        if most_recent is True or starttime is not None:
+            return self._time_filter(
+                rtp.RTPTaskResourceRecord,
+                'start_time',
+                most_recent=most_recent,
+                starttime=starttime,
+                stoptime=stoptime,
+                filter_column=['obsid', 'task_name'],
+                filter_value=[obsid, task_name],
+                write_to_file=write_to_file,
+                filename=filename
+            )
 
-        elif obsid is None:
-            return self._time_filter(RTPTaskResourceRecord, 'start_time',
-                                     most_recent=most_recent,
-                                     starttime=starttime,
-                                     stoptime=stoptime,
-                                     filter_column='task_name',
-                                     filter_value=task_name,
-                                     write_to_file=write_to_file,
-                                     filename=filename)
+        query = self.query(rtp.RTPTaskResourceRecord)
+        if obsid is not None:
+            query = query.filter(rtp.RTPTaskResourceRecord.obsid == obsid)
+        if task_name is not None:
+            query = query.filter(rtp.RTPTaskResourceRecord.task_name == task_name)
+
+        if write_to_file:
+            self._write_query_to_file(query, rtp.RTPTaskResourceRecord, filename=filename)
+
         else:
-            query = self.query(RTPTaskResourceRecord).filter(
-                RTPTaskResourceRecord.obsid == obsid,
-                RTPTaskResourceRecord.task_name == task_name)
+            return query.all()
 
-            if write_to_file:
-                self._write_query_to_file(query, RTPTaskResourceRecord,
-                                          filename=filename)
+    def add_rtp_task_multiple_track(self, obsid_start, task_name, obsid):
+        """
+        Add a new rtp_task_multiple_track row.
 
-            else:
-                return query.all()
+        This table tracks which obsids are included in an rtp task that includes
+        multiple obsids. This is a many-to-one mapping table with a row per obsid that
+        is included in the task.
+
+        Parameters
+        ----------
+        obsid_start : BigInteger Column
+            Starting obsid for the set of obsids included in the task. Used along with the
+            task_name as the unique identifier in the `rtp_task_resource_record_multiple` table.
+            Part of primary_key. Foreign key into Observation table.
+        task_name : String Column
+            Name of task in pipeline (e.g., OMNICAL). Part of primary_key.
+        obsid : BigInteger Column
+            Start time of the job in floor(gps_seconds). Part of primary_key. Foreign key into
+            Observation table.
+
+        """
+        self.add(rtp.RTPTaskMultipleTrack.create(obsid_start, task_name, obsid))
+
+    def get_rtp_task_multiple_track(self, obsid_start=None, task_name=None, obsid=None,
+                                    write_to_file=False, filename=None):
+        """
+        Get rtp_task_multiple_track record(s) from the M&C database.
+
+        Parameters
+        ----------
+        obsid_start : long
+            Starting obsids for tasks with multiple obsids to get records for.
+            If none, all starting obsids will be included.
+        task_name : str
+            task_name to get records for. If none, all tasks will be included.
+        obsid : long
+            obsid to get records for. If none, all obsids will be included.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        list of RTPTaskMultipleTrack objects
+
+        """
+        query = self.query(rtp.RTPTaskMultipleTrack)
+        if obsid_start is not None:
+            query = query.filter(rtp.RTPTaskMultipleTrack.obsid_start == obsid_start)
+        if task_name is not None:
+            query = query.filter(rtp.RTPTaskMultipleTrack.task_name == task_name)
+        if obsid is not None:
+            query = query.filter(rtp.RTPTaskMultipleTrack.obsid == obsid)
+
+        if write_to_file:
+            self._write_query_to_file(query, rtp.RTPTaskMultipleTrack, filename=filename)
+
+        else:
+            return query.all()
+
+    def add_rtp_task_multiple_jobid(self, obsid_start, task_name, start_time, job_id):
+        """
+        Add a new rtp_task_jobid row.
+
+        Parameters
+        ----------
+        obsid_start : long
+            Starting obsid for the set of obsids included in the task.
+            (Foreign key into Observation).
+        task_name : str
+            Name of the task (e.g., OMNICAL).
+        start_time : astropy Time object
+            GPS time of job start.
+        job_id : int
+            Job ID of the task.
+
+        """
+        self.add(rtp.RTPTaskMultipleJobID.create(obsid_start, task_name, start_time, job_id))
+
+    def get_rtp_task_multiple_jobid(self, most_recent=None, starttime=None,
+                                    stoptime=None, obsid_start=None, task_name=None,
+                                    write_to_file=False, filename=None):
+        """
+        Get rtp_task_multiple_jobid record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        If either or both of obsid & task_name are set, then all records that match
+        those are returned unless most_recent or starttime is set.
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime,
+            obsid and task_name are all None.
+        starttime : astropy Time object
+            Time to look for records after; applies to start_time column.
+            Ignored if both obsid and task_name are set or if most_recent is
+            True.
+        stoptime : astropy Time object
+            last time to get records for, only used if starttime is used.
+            If none, only the first record after starttime will be returned.
+        obsid_start : long
+            Starting obsid for the set of obsids included in the task to get records for.
+            If none, all obsids will be included.
+        task_name : str
+            task_name to get records for. If none, all tasks will be included.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        list of RTPTaskMultipleJobID objects
+
+        Raises
+        ------
+        ValueError
+            If `most_recent` is False and all of obsid_start, task_name, and starttime are None.
+
+        """
+        if obsid_start is None and task_name is None and starttime is None:
+            if most_recent is None:
+                most_recent = True
+            elif most_recent is False:
+                raise ValueError(
+                    'If most_recent is set to False, at least one of obsid_start, task_name '
+                    'or starttime must be specified.'
+                )
+
+        if most_recent is True or starttime is not None:
+            return self._time_filter(
+                rtp.RTPTaskMultipleJobID,
+                'start_time',
+                most_recent=most_recent,
+                starttime=starttime,
+                stoptime=stoptime,
+                filter_column=['obsid_start', 'task_name'],
+                filter_value=[obsid_start, task_name],
+                write_to_file=write_to_file,
+                filename=filename
+            )
+
+        query = self.query(rtp.RTPTaskMultipleJobID)
+        if task_name is not None:
+            query = query.filter(rtp.RTPTaskMultipleJobID.task_name == task_name)
+        if obsid_start is not None:
+            query = query.filter(rtp.RTPTaskMultipleJobID.obsid_start == obsid_start)
+
+        if write_to_file:
+            self._write_query_to_file(query, rtp.RTPTaskMultipleJobID, filename=filename)
+
+        else:
+            return query.all()
+
+    def add_rtp_task_multiple_resource_record(self, obsid_start, task_name, start_time,
+                                              stop_time, max_memory=None,
+                                              avg_cpu_load=None):
+        """
+        Add a new rtp_task_multiple_resource_record row.
+
+        Parameters
+        ----------
+        obsid_start : long
+            Starting obsid for the set of obsids included in the task, Foreign key into
+            observation table
+        task_name : str
+            Name of the task (e.g., OMNICAL).
+        start_time : astropy Time object
+            GPS time of task start.
+        stop_time : astropy Time object
+            Time of task end.
+        max_memory : float
+            Maximum amount of memory used by the task, in MB.
+        avg_cpu_load : float
+            Average number of CPUs used by task.
+
+        """
+        self.add(rtp.RTPTaskMultipleResourceRecord.create(
+            obsid_start, task_name, start_time, stop_time, max_memory, avg_cpu_load))
+
+    def get_rtp_task_multiple_resource_record(self, most_recent=None, starttime=None,
+                                              stoptime=None, obsid_start=None, task_name=None,
+                                              write_to_file=False, filename=None):
+        """
+        Get rtp_task_multiple_resource_record from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        If either or both of obsid & task_name are set, then all records that match
+        those are returned unless most_recent or starttime is set.
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime,
+            obsid and task_name are all None.
+        starttime : astropy Time object
+            Time to look for records after; applies to start_time column.
+            Ignored if both obsid and task_name are set or if most_recent is
+            True.
+        stoptime : astropy Time object
+            last time to get records for, only used if starttime is used.
+            If none, only the first record after starttime will be returned.
+        obsid_start : long
+            Starting obsid for the set of obsids included in the task to get records for.
+            If none, all obsids will be included.
+        task_name : str
+            task_name to get records for. If none, all tasks will be included.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        list of RTPTaskMultipleResourceRecord objects
+
+        Raises
+        ------
+        ValueError
+            If `most_recent` is False and all of obsid_start, task_name, and starttime are None.
+
+        """
+        if obsid_start is None and task_name is None and starttime is None:
+            if most_recent is None:
+                most_recent = True
+            elif most_recent is False:
+                raise ValueError(
+                    'If most_recent is set to False, at least one of obsid_start, task_name '
+                    'or starttime must be specified.'
+                )
+
+        if most_recent is True or starttime is not None:
+            return self._time_filter(
+                rtp.RTPTaskMultipleResourceRecord,
+                'start_time',
+                most_recent=most_recent,
+                starttime=starttime,
+                stoptime=stoptime,
+                filter_column=['obsid_start', 'task_name'],
+                filter_value=[obsid_start, task_name],
+                write_to_file=write_to_file,
+                filename=filename
+            )
+
+        query = self.query(rtp.RTPTaskMultipleResourceRecord)
+        if obsid_start is not None:
+            query = query.filter(rtp.RTPTaskMultipleResourceRecord.obsid_start == obsid_start)
+        if task_name is not None:
+            query = query.filter(rtp.RTPTaskMultipleResourceRecord.task_name == task_name)
+
+        if write_to_file:
+            self._write_query_to_file(query, rtp.RTPTaskMultipleResourceRecord, filename=filename)
+
+        else:
+            return query.all()
 
     def add_rtp_launch_record(
             self,
@@ -1447,7 +1841,7 @@ class MCSession(Session):
         None
         """
         self.add(
-            RTPLaunchRecord.create(
+            rtp.RTPLaunchRecord.create(
                 obsid, jd, obs_tag, filename, prefix, submitted_time, rtp_attempts
             )
         )
@@ -1466,7 +1860,7 @@ class MCSession(Session):
         -------
         list of RTPLaunchRecord objects
         """
-        query = self.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
+        query = self.query(rtp.RTPLaunchRecord).filter(rtp.RTPLaunchRecord.obsid == obsid)
         return query.all()
 
     def get_rtp_launch_record_by_time(
@@ -1504,7 +1898,7 @@ class MCSession(Session):
         list of RTPLaunchRecord objects
         """
         return self._time_filter(
-            RTPLaunchRecord,
+            rtp.RTPLaunchRecord,
             "submitted_time",
             most_recent=most_recent,
             starttime=starttime,
@@ -1526,7 +1920,7 @@ class MCSession(Session):
         -------
         list of RTPLaunchRecord objects
         """
-        query = self.query(RTPLaunchRecord).filter(RTPLaunchRecord.jd == jd)
+        query = self.query(rtp.RTPLaunchRecord).filter(rtp.RTPLaunchRecord.jd == jd)
         return query.all()
 
     def get_rtp_launch_record_by_rtp_attempts(self, rtp_attempts):
@@ -1542,8 +1936,8 @@ class MCSession(Session):
         -------
         list of RTPLaunchRecord objects
         """
-        query = self.query(RTPLaunchRecord).filter(
-            RTPLaunchRecord.rtp_attempts == rtp_attempts
+        query = self.query(rtp.RTPLaunchRecord).filter(
+            rtp.RTPLaunchRecord.rtp_attempts == rtp_attempts
         )
         return query.all()
 
@@ -1560,8 +1954,8 @@ class MCSession(Session):
         -------
         list of RTPLaunchRecord objects
         """
-        query = self.query(RTPLaunchRecord).filter(
-            RTPLaunchRecord.obs_tag == obs_tag
+        query = self.query(rtp.RTPLaunchRecord).filter(
+            rtp.RTPLaunchRecord.obs_tag == obs_tag
         )
         return query.all()
 
@@ -1596,7 +1990,7 @@ class MCSession(Session):
             raise ValueError("submitted_time must be an astropy Time object")
         submitted_time = int(floor(submitted_time.gps))
         # query the table for the existing row
-        query = self.query(RTPLaunchRecord).filter(RTPLaunchRecord.obsid == obsid)
+        query = self.query(rtp.RTPLaunchRecord).filter(rtp.RTPLaunchRecord.obsid == obsid)
         result = query.all()
         if len(result) != 1:
             raise RuntimeError(f"RTP launch record does not exist for obsid {obsid}")

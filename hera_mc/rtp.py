@@ -10,8 +10,8 @@ the documentation needs to be kept up to date with any changes.
 """
 from math import floor
 from astropy.time import Time
-from sqlalchemy import (Column, ForeignKey, Integer, BigInteger, String, Text,
-                        Float, Enum)
+from sqlalchemy import (Column, ForeignKey, Integer, BigInteger,
+                        String, Text, Float, Enum)
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from . import MCDeclarativeBase, DEFAULT_MIN_TOL, DEFAULT_HOUR_TOL
@@ -265,6 +265,63 @@ class RTPProcessRecord(MCDeclarativeBase):
                    pyuvdata_git_hash=pyuvdata_git_hash)
 
 
+class RTPTaskJobID(MCDeclarativeBase):
+    """
+    Definition of rtp_task_jobid table.
+
+    Holds the SLURM job id associated with each obsid/task so statistics can be
+    associated with that obsid/task after the run completes (to fill out the
+    rtp_task_resource_record table).
+
+    Attributes
+    ----------
+    obsid : BigInteger Column
+        Observation obsid.  Part of primary_key. Foreign key into
+        Observation table.
+    task_name : String Column
+        Name of task in pipeline (e.g., OMNICAL). Part of primary_key.
+    start_time : BigInteger Column
+        Start time of the job in floor(gps_seconds). Part of primary_key.
+    job_id : BigInteger Column
+        Job ID of the task.
+
+    """
+
+    __tablename__ = 'rtp_task_jobid'
+    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    task_name = Column(Text, primary_key=True)
+    start_time = Column(BigInteger, nullable=False, primary_key=True)
+    job_id = Column(BigInteger, nullable=False)
+
+    @classmethod
+    def create(cls, obsid, task_name, start_time, job_id):
+        """
+        Create a new RTPTaskJobID object.
+
+        Parameters
+        ----------
+        obsid : long
+            Observation obsid (Foreign key into Observation).
+        task_name : str
+            Name of the task in the pipeline (e.g., OMNICAL).
+        start_time : astropy Time object
+            Start time of the task.
+        job_id : int
+            Job ID of the task
+
+        Returns
+        -------
+        RTPTaskJobID object
+
+        """
+        if not isinstance(start_time, Time):
+            raise ValueError('start_time must be an astropy Time object')
+        start_time = floor(start_time.gps)
+
+        return cls(obsid=obsid, task_name=task_name, start_time=start_time,
+                   job_id=job_id)
+
+
 class RTPTaskResourceRecord(MCDeclarativeBase):
     """
     Definition of rtp_task_resource_record table.
@@ -305,7 +362,7 @@ class RTPTaskResourceRecord(MCDeclarativeBase):
     def create(cls, obsid, task_name, start_time, stop_time, max_memory=None,
                avg_cpu_load=None):
         """
-        Create a new rtp_process_record object.
+        Create a new RTPTaskResourceRecord object.
 
         Parameters
         ----------
@@ -435,3 +492,186 @@ class RTPLaunchRecord(MCDeclarativeBase):
             submitted_time=submitted_time,
             rtp_attempts=rtp_attempts,
         )
+
+
+class RTPTaskMultipleTrack(MCDeclarativeBase):
+    """
+    Definition of rtp_task_multiple_track table.
+
+    Tracks which obsids are included in an rtp task that includes multiple obsids. This
+    is a many-to-one mapping table with a row per obsid that is included in the task.
+
+    Attributes
+    ----------
+    obsid_start : BigInteger Column
+        Starting obsid for the set of obsids included in the task. Used along with the
+        task_name as the unique identifier in the `rtp_task_resource_record_multiple` table.
+        Part of primary_key. Foreign key into Observation table.
+    task_name : String Column
+        Name of task in pipeline (e.g., OMNICAL). Part of primary_key.
+    obsid : BigInteger Column
+        Start time of the job in floor(gps_seconds). Part of primary_key. Foreign key into
+        Observation table.
+
+    """
+
+    __tablename__ = 'rtp_task_multiple_track'
+    obsid_start = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    task_name = Column(Text, primary_key=True)
+    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+
+    @classmethod
+    def create(cls, obsid_start, task_name, obsid):
+        """
+        Create a new RTPTaskMultipleTrack object.
+
+        Parameters
+        ----------
+        obsid_start : long
+            Starting obsid for the set of obsids included in the task. Used along with
+            the task_name as the unique identifier in the `rtp_task_resource_record_multiple`
+            table (Foreign key into Observation).
+        task_name : str
+            Name of the task in the pipeline (e.g., OMNICAL).
+        obsid : long
+            Observation obsid included in this task (Foreign key into Observation).
+
+        Returns
+        -------
+        RTPTaskMultipleTrack object
+
+        """
+        return cls(obsid_start=obsid_start, task_name=task_name, obsid=obsid)
+
+
+class RTPTaskMultipleJobID(MCDeclarativeBase):
+    """
+    Definition of rtp_task_multiple_jobid table.
+
+    Holds the SLURM job id associated with each obsid_start/task for tasks that use
+    multiple obsids so statistics can be associated with that obsid_start/task after
+    the run completes (to fill out the rtp_task_multiple_resource_record table).
+
+    Attributes
+    ----------
+    obsid_start : BigInteger Column
+        Starting obsid for the set of obsids included in the task. Part of primary_key.
+        Foreign key into Observation table.
+    task_name : String Column
+        Name of task in pipeline (e.g., OMNICAL). Part of primary_key.
+    start_time : BigInteger Column
+        Start time of the job in floor(gps_seconds). Part of primary_key.
+    job_id : BigInteger Column
+        Job ID of the task.
+
+    """
+
+    __tablename__ = 'rtp_task_multiple_jobid'
+    obsid_start = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    task_name = Column(Text, primary_key=True)
+    start_time = Column(BigInteger, nullable=False, primary_key=True)
+    job_id = Column(BigInteger, nullable=False)
+
+    @classmethod
+    def create(cls, obsid_start, task_name, start_time, job_id):
+        """
+        Create a new RTPTaskMultipleJobID object.
+
+        Parameters
+        ----------
+        obsid_start : long
+            Starting obsid for the set of obsids included in the task.
+            (Foreign key into Observation).
+        task_name : str
+            Name of the task in the pipeline (e.g., OMNICAL).
+        start_time : astropy Time object
+            Start time of the task.
+        job_id : int
+            Job ID of the task
+
+        Returns
+        -------
+        RTPTaskMultipleJobID object
+
+        """
+        if not isinstance(start_time, Time):
+            raise ValueError('start_time must be an astropy Time object')
+        start_time = floor(start_time.gps)
+
+        return cls(obsid_start=obsid_start, task_name=task_name, start_time=start_time,
+                   job_id=job_id)
+
+
+class RTPTaskMultipleResourceRecord(MCDeclarativeBase):
+    """
+    Definition of rtp_task_multiple_resource_record table.
+
+    Attributes
+    ----------
+    obsid_start : BigInteger Column
+        Starting obsid for the set of obsids included in the task. Part of primary_key.
+        Foreign key into Observation table.
+    task_name : String Column
+        Name of task in pipeline (e.g., OMNICAL). Part of primary_key
+    start_time : BigInteger Column
+        Start time of the task in floor(gps_seconds).
+    stop_time : BigInteger Column
+        Stop time of the task in floor(gps_seconds).
+    max_memory : Float Column
+        The maximum amount of memory consumed by a task, in MB.
+    avg_cpu_load : Float Column
+        The average amount of CPU used by the task, as number of cores
+        (e.g., 2.00 means 2 CPUs used).
+
+    """
+
+    __tablename__ = 'rtp_task_multiple_resource_record'
+    obsid_start = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    task_name = Column(Text, primary_key=True)
+    start_time = Column(BigInteger, nullable=False)
+    stop_time = Column(BigInteger, nullable=False)
+    max_memory = Column(Float, nullable=True)
+    avg_cpu_load = Column(Float, nullable=True)
+
+    @hybrid_property
+    def elapsed(self):
+        """Time elapsed for this task."""
+        return self.stop_time - self.start_time
+
+    @classmethod
+    def create(cls, obsid_start, task_name, start_time, stop_time, max_memory=None,
+               avg_cpu_load=None):
+        """
+        Create a new RTPTaskMultipleResourceRecord object.
+
+        Parameters
+        ----------
+        obsid_start : long
+            Starting obsid for the set of obsids included in the task
+            (Foreign key into Observation).
+        task_name : str
+            Name of the task in the pipeline (e.g., OMNICAL).
+        start_time : astropy Time object
+            Start time of the task.
+        stop_time : astropy Time object
+            Stop time of the task.
+        max_memory : float
+            Max amount of memory used, in MB.
+        avg_cpu_load : float
+            Average cpu load, in number of cores.
+
+        Returns
+        -------
+        RTPTaskMultipleResourceRecord object
+
+        """
+        if not isinstance(start_time, Time):
+            raise ValueError('start_time must be an astropy Time object')
+        if not isinstance(stop_time, Time):
+            raise ValueError('stop_time must be an astropy Time object')
+        start_time = floor(start_time.gps)
+        stop_time = floor(stop_time.gps)
+
+        return cls(obsid_start=obsid_start, task_name=task_name, start_time=start_time,
+                   stop_time=stop_time, max_memory=max_memory,
+                   avg_cpu_load=avg_cpu_load)

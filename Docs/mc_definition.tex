@@ -340,6 +340,20 @@ pyuvdata\_git\_hash* & string & git hash of pyuvdata code  \\\hline
 \end{tabular}
 \end{center}
 
+\subsubsection{rtp\_task\_jobid}
+Holds the Slurm job id associated with each obsid/task so statistics can be associated with
+that obsid/task after the run completes (to fill out the rtp\_task\_resource\_record table).
+\begin{center}
+  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex] \hline\hline
+\textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
+\textbf{task\_name} & string & name of specific task (e.g., \verb+OMNICAL+) \\ \hline
+\textbf{start\_time} & long & start time of task in floor(gps seconds) \\ \hline
+job\_id* & long &  Slurm job ID for the obsid and task. \\ \hline
+\end{tabular}
+\end{center}
+
 \subsubsection{rtp\_task\_resource\_record}
 RTP record of start and stop times for a task (e.g., omnical) for an obsid, as well as CPU and memory used (if available)
 \begin{center}
@@ -350,8 +364,49 @@ RTP record of start and stop times for a task (e.g., omnical) for an obsid, as w
 \textbf{task\_name} & string & name of specific task (e.g., \verb+OMNICAL+) \\ \hline
 start\_time* & long & start time of task in floor(gps seconds) \\ \hline
 stop\_time* & long & stop time of task in floor(gps seconds) \\ \hline
-max\_mem* & float & maximum memory, in MB, consumed by the task; nullable column \\ \hline
-avg\_cpu\_load* & float & average CPU load, in number of CPUs, for task (e.g., 2.00 means 2 CPUs used); nullable column \\ \hline
+max\_mem & float & maximum memory, in MB, consumed by the task; nullable column \\ \hline
+avg\_cpu\_load & float & average CPU load, in number of CPUs, for task (e.g., 2.00 means 2 CPUs used); nullable column \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{rtp\_task\_multiple\_track}
+A many to one mapping table that tracks which obsids are included in multiple obsid RTP tasks.
+\begin{center}
+  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex] \hline\hline
+\textit{\textbf{obsid\_start}} & long integer & First obsid in the set of obsids included in the task, foreign key into hera\_obs table \\ \hline
+\textbf{task\_name} & string & name of specific task (e.g., \verb+rfi\_notebook+) \\ \hline
+\textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{rtp\_task\_multiple\_jobid}
+Holds the Slurm job id associated with multiple obsid tasks so statistics can be associated with
+that obsid set and task after the run completes (to fill out the rtp\_task\_multiple\_resource\_record table).
+\begin{center}
+  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex] \hline\hline
+\textit{\textbf{obsid\_start}} & long integer & First obsid in the set of obsids included in the task, foreign key into hera\_obs table \\ \hline
+\textbf{task\_name} & string & name of specific task (e.g., \verb+rfi\_notebook+) \\ \hline
+\textbf{start\_time} & long & start time of task in floor(gps seconds) \\ \hline
+job\_id* & long &  Slurm job ID for the obsid set and task. \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{rtp\_task\_multiple\_resource\_record}
+RTP record of start and stop times for a multiple obsid task (e.g., rfi\_notebook), as well as CPU and memory used (if available)
+\begin{center}
+  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ column & type & description \\ [0.5ex] \hline\hline
+\textit{\textbf{obsid\_start}} & long integer & First obsid in the set of obsids included in the task, foreign key into hera\_obs table \\ \hline
+\textbf{task\_name} & string & name of specific task (e.g., \verb+rfi\_notebook+) \\ \hline
+start\_time* & long & start time of task in floor(gps seconds) \\ \hline
+stop\_time* & long & stop time of task in floor(gps seconds) \\ \hline
+max\_mem & float & maximum memory, in MB, consumed by the task; nullable column \\ \hline
+avg\_cpu\_load & float & average CPU load, in number of CPUs, for task (e.g., 2.00 means 2 CPUs used); nullable column \\ \hline
 \end{tabular}
 \end{center}
 
@@ -370,7 +425,6 @@ RTP record of the most recent time a particular observation was launched in RTP
     prefix* & string & the prefix of the observation file, on \verb+qmaster+ \\ \hline
   \end{tabular}
 \end{center}
-
 
 % --------------------------- Librarian ------------------------------------------------------
 
