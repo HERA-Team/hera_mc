@@ -198,7 +198,10 @@ for jd in jd_list:
     #         f"returncode was {e.returncode:d}; output was {e.output}; "
     #         f"stderr was {e.stderr}"
     #     )
-    cmd = f"conda deactivate; conda activate {args.conda_env}; makeflow -T slurm {mf_filename}"
+    cmd = (
+        f"conda deactivate; conda activate {args.conda_env}; "
+        f"makeflow -T slurm {mf_filename}"
+    )
     screen_name = f"rtp_{jd}"
     screen_cmd1 = ["screen", "-d", "-m", "-S", screen_name]
     screen_cmd2 = ["screen", "-S", screen_name, "-p", "0", "-X", "stuff", cmd]
@@ -207,7 +210,8 @@ for jd in jd_list:
         subprocess.check_call(screen_cmd2)
     except subprocess.CalledProcessError as e:
         sys.exit(
-            f"Error spawning screen session; command was {e.cmd}; return code was {e.returncode:d}; "
+            f"Error spawning screen session; "
+            f"command was {e.cmd}; return code was {e.returncode:d}; "
             f"output was {e.output}; stderr was {e.stderr}"
         )
 
