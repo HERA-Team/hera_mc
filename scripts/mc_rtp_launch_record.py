@@ -46,9 +46,9 @@ for uvfile in args.files:
     filename = os.path.basename(uvfile)
     hostname = socket.gethostname()
     if "hera-sn1" in hostname:
-        prefix = "/mnt/sn1"
+        prefix = os.path.join("/mnt/sn1", f"{int_jd:d}")
     elif "hera-sn2" in hostname:
-        prefix = "/mnt/sn2"
+        prefix = os.path.join("/mnt/sn2", f"{int_jd:d}")
     else:
         # default
         prefix = "unknown"
@@ -58,13 +58,13 @@ for uvfile in args.files:
         if len(obs) == 0:
             print(f"observation {obsid} not in M&C, skipping")
             continue
-        result = mc.get_rtp_launch_record(obsid)
+        result = session.get_rtp_launch_record(obsid)
         if len(result) == 0:
             # add a new launch record
-            mc.add_rtp_launch_record(obsid, int_jd, obs_tag, filename, prefix)
+            session.add_rtp_launch_record(obsid, int_jd, obs_tag, filename, prefix)
         else:
             # update existing record
             t0 = Time.now()
-            mc.update_rtp_launch_record(obsid, t0)
+            session.update_rtp_launch_record(obsid, t0)
 
     session.commit()

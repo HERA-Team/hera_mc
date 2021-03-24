@@ -64,12 +64,12 @@ def _get_obsids(filelist):
 
 ap = mc.get_mc_argument_parser()
 ap.description = """Launch an RTP workflow for the JD specified"""
-ap.add_argument("jd", type=int, default=None, help="JD to launch an RTP job for")
+ap.add_argument("jd", type=int, default=None, nargs="?", help="JD to launch an RTP job for")
 ap.add_argument(
     "-c",
     "--workflow_config",
     type=str,
-    default="/home/obs/src/hera_pipelines/pipelines/pipelines/h4c/rtp/v1/h4c_rtp_stage_1.toml",
+    default="/home/obs/src/hera_pipelines/pipelines/h4c/rtp/v1/h4c_rtp_stage_1.toml",
     help="hera_opm configuration to use for workflow",
 )
 ap.add_argument(
@@ -85,7 +85,7 @@ ap.add_argument(
     default=False,
     help=(
         "Scan metadata of HERA data files before including in workflow. "
-        "Requires pyuvdata",
+        "Requires pyuvdata"
     ),
 )
 ap.add_argument(
@@ -94,7 +94,7 @@ ap.add_argument(
     default=False,
     help=(
         "Rename files with bad metadata (found with --scan-files) with suffix "
-        "set by --bad-suffix.",
+        "set by --bad-suffix."
     ),
 )
 ap.add_argument(
@@ -122,23 +122,25 @@ db = mc.connect_to_mc_db(args)
 if args.jd is None:
     # launch a separate job for each un-launched day
     jd_list = []
-    results = mc.get_rtp_launch_record_by_rtp_attempts(0)
-    for result in results:
-        if result.jd not in jd_list:
-            jd_list.append(result.jd)
+    with db.sessionmaker() as session:
+        results = session.get_rtp_launch_record_by_rtp_attempts(0)
+        for result in results:
+            if result.jd not in jd_list:
+                jd_list.append(result.jd)
 else:
     jd_list = [args.jd]
 
 for jd in jd_list:
     filelist = []
-    results = mc.get_rtp_launch_record_by_jd(jd)
-    if len(results) == 0:
-        warnings.warn(f"No RTP launch records found for JD {jd}, skipping")
-        continue
-    for result in results:
-        # build full filename
-        filename = os.path.join(result.prefix, result.filename)
-        filelist.append(filename)
+    with db.sessionmaker() as session:
+        results = session.get_rtp_launch_record_by_jd(jd)
+        if len(results) == 0:
+            warnings.warn(f"No RTP launch records found for JD {jd}, skipping")
+            continue
+        for result in results:
+            # build full filename
+            filename = os.path.join(result.prefix, result.filename)
+            filelist.append(filename)
 
     # sort list
     filelist = sorted(filelist)
@@ -180,29 +182,44 @@ for jd in jd_list:
         filelist, args.workflow_config, mf_filename, jd_folder
     )
 
+    # launch workflow inside of tmux
+    # use screen instead of tmux until we can update tmux
+    # cmd = (
+    #     f"conda deactivate; conda activate {args.conda_env}; "
+    #     f"makeflow -T slurm {mf_filename}"
+    # )
+    # session_name = f"rtp_{jd}"
+    # tmux_cmd = ["tmux", "-d", "-s", session_name, cmd]
+    # try:
+    #     subprocess.check_call(tmux_cmd)
+    # except subprocess.CalledProcessError as e:
+    #     sys.exit(
+    #         f"Error spawning tmux session; command was {e.cmd}; "
+    #         f"returncode was {e.returncode:d}; output was {e.output}; "
+    #         f"stderr was {e.stderr}"
+    #     )
+    cmd = f"conda deactivate; conda activate {args.conda_env}; makeflow -T slurm {mf_filename}"
+    screen_name = f"rtp_{jd}"
+    screen_cmd1 = ["screen", "-d", "-m", "-S", screen_name]
+    screen_cmd2 = ["screen", "-S", screen_name, "-p", "0", "-X", "stuff", cmd]
+    try:
+        subprocess.check_call(screen_cmd1)
+        subprocess.check_call(screen_cmd2)
+    except subprocess.CalledProcessError as e:
+        sys.exit(
+            f"Error spawning screen session; command was {e.cmd}; return code was {e.returncode:d}; "
+            f"output was {e.output}; stderr was {e.stderr}"
+        )
+
     # update RTP launch records
     obsids = _get_obsids(filelist)
     t0 = Time.now()
-    for filename, obsid in zip(filelist, obsids):
-        try:
-            mc.update_rtp_launch_record(obsid, t0)
-        except RuntimeError:
-            sys.exit(
-                f"could not update RTP Launch Record for file {filename}; aborting"
-            )
-
-    # launch workflow inside of tmux
-    cmd = (
-        f"conda deactivate; conda activate {args.conda_env}; "
-        f"makeflow -T slurm {mf_filename}"
-    )
-    session_name = f"rtp_{jd}"
-    tmux_cmd = ["tmux", "-d", "-s", session_name, cmd]
-    try:
-        subprocess.check_call(tmux_cmd)
-    except subprocess.CalledProcessError as e:
-        sys.exit(
-            f"Error spawning tmux session; command was {e.cmd}; "
-            f"returncode was {e.returncode:d}; output was {e.output}; "
-            f"stderr was {e.stderr}"
-        )
+    with db.sessionmaker() as session:
+        for filename, obsid in zip(filelist, obsids):
+            try:
+                session.update_rtp_launch_record(obsid, t0)
+            except RuntimeError:
+                sys.exit(
+                    f"could not update RTP Launch Record for file {filename}; aborting"
+                )
+    session.commit()
