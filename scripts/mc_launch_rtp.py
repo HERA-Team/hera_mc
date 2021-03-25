@@ -200,7 +200,7 @@ for jd in jd_list:
     #     )
     cmd = (
         f"conda deactivate; conda activate {args.conda_env}; "
-        f"makeflow -T slurm {mf_filename}"
+        f"makeflow -T slurm {mf_filename}\n"
     )
     screen_name = f"rtp_{jd}"
     screen_cmd1 = ["screen", "-d", "-m", "-S", screen_name]
