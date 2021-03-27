@@ -55,7 +55,7 @@ def _get_obsids(filelist):
             with h5py.File(filename, "r") as h5f:
                 time_array = h5f["Header/time_array"][()]
         except KeyError:
-            raise ValueError("input files must be UVH5")
+            raise ValueError(f"error reading file {filename}")
         starttime = Time(np.unique(time_array)[0], scale="utc", format="jd")
         obsids.append(int(np.floor(starttime.gps)))
 
@@ -146,6 +146,7 @@ for jd in jd_list:
     filelist = sorted(filelist)
 
     # scan files if desired
+    obsids = []
     if args.scan_files:
         try:
             from pyuvdata import UVData
@@ -162,6 +163,10 @@ for jd in jd_list:
                 filelist.remove(filename)
                 if args.rename_bad_files:
                     os.rename(filename, filename + args.bad_suffix)
+            else:
+                # if file is valid, add obsid to running list
+                starttime = Time(np.unique(uvd.time_array)[0], scale="utc", format="jd")
+                obsids.append(int(np.floor(starttime.gps)))
 
     # go to working directory
     os.chdir(args.working_directory)
@@ -216,7 +221,8 @@ for jd in jd_list:
         )
 
     # update RTP launch records
-    obsids = _get_obsids(filelist)
+    if len(obsids) == 0:
+        obsids = _get_obsids(filelist)
     t0 = Time.now()
     with db.sessionmaker() as session:
         for filename, obsid in zip(filelist, obsids):
