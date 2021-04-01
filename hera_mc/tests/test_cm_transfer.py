@@ -16,7 +16,7 @@ def test_classTime():
 
 
 def test_gen_sqlite():
-    test_hash_file = 'test_hash_file.csv'
+    test_hash_file = 'test_hash_file.json'
     test_hash_dict = {'initialization_data_station_type.csv': 'abc123'}
     cm_gen_sqlite.write_table_hash_info(test_hash_dict, hash_file=test_hash_file)
     hash_dict = cm_gen_sqlite.get_table_hash_info(['station_type'])

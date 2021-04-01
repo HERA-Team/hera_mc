@@ -1,10 +1,11 @@
 """Methods to check and update the database files for csv and sqlite."""
 from . import mc, cm_table_info
 import os.path
+import json
 
 CM_CSV_PATH = mc.get_cm_csv_path(None)
 CM_TABLE_LIST = cm_table_info.cm_tables.keys()
-CM_TABLE_HASH_FILE = 'cm_table_file_hash.csv'
+CM_TABLE_HASH_FILE = 'cm_table_file_hash.json'
 
 
 def same_table_hash_info(hash_dict, previous_hash_file=CM_TABLE_HASH_FILE):
@@ -23,20 +24,15 @@ def same_table_hash_info(hash_dict, previous_hash_file=CM_TABLE_HASH_FILE):
     bool
         True if they are the same
     """
-    previous_hash_dict = {}
-    fnfp = os.path.join(CM_CSV_PATH, previous_hash_file)
-    if not os.path.exists(fnfp):
+    hash_json = os.path.join(CM_CSV_PATH, previous_hash_file)
+    if not os.path.exists(hash_json):
         return False
-    with open(fnfp, 'r') as fp:
-        for line in fp:
-            data = line.strip().split(',')
-            if len(data) == 2:
-                previous_hash_dict[data[0]] = data[1]
-    current_set = set(hash_dict.keys())
-    if current_set != set(previous_hash_dict.keys()):
+    with open(hash_json, 'r') as fp:
+        previous_hash_dict = json.load(fp)
+    if set(hash_dict.keys()) != set(previous_hash_dict.keys()):
         return False
-    for key in current_set:
-        if hash_dict[key] != previous_hash_dict[key]:
+    for key, val in hash_dict.items():
+        if val != previous_hash_dict[key]:
             return False
     return True
 
@@ -58,8 +54,8 @@ def get_table_hash_info(table_list=CM_TABLE_LIST):
     hash_dict = {}
     for table in table_list:
         fn = "{}{}.csv".format(cm_table_info.data_prefix, table)
-        fnfp = os.path.join(CM_CSV_PATH, fn)
-        hash_dict[fn] = hash_file(fnfp)
+        csv_file = os.path.join(CM_CSV_PATH, fn)
+        hash_dict[fn] = hash_file(csv_file)
     return hash_dict
 
 
@@ -75,8 +71,7 @@ def write_table_hash_info(hash_dict, hash_file=CM_TABLE_HASH_FILE):
         file containing previous table hash information
     """
     with open(os.path.join(CM_CSV_PATH, hash_file), 'w') as fp:
-        for fn, hsh in hash_dict.items():
-            print("{},{}".format(fn, hsh), file=fp)
+        json.dump(hash_dict, fp, indent=4)
 
 
 def hash_file(filename):
