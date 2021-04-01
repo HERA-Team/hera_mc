@@ -5,11 +5,11 @@ from . import mc, cm_table_info
 import os.path
 
 CM_CSV_PATH = mc.get_cm_csv_path(None)
-table_list = cm_table_info.cm_tables.keys()
-cm_table_hash_filename = 'cm_table_file_hash.csv'
+CM_TABLE_LIST = cm_table_info.cm_tables.keys()
+CM_TABLE_HASH_FILE = 'cm_table_file_hash.csv'
 
 
-def same_table_hash_info(hash_dict, hash_filename=cm_table_hash_filename):
+def same_table_hash_info(hash_dict, previous_hash_file=CM_TABLE_HASH_FILE):
     """
     Check that the current and previous table file hashes are the same.
 
@@ -17,7 +17,7 @@ def same_table_hash_info(hash_dict, hash_filename=cm_table_hash_filename):
     ----------
     hash_dict : dict
         current table hash information as read from csv files
-    hash_filename : str
+    previous_hash_file : str
         file containing previous table hash information
 
     Return
@@ -25,9 +25,8 @@ def same_table_hash_info(hash_dict, hash_filename=cm_table_hash_filename):
     bool
         True if they are the same
     """
-    current_hash_dict = get_table_hash_info(table_list=table_list)
     previous_hash_dict = {}
-    fnfp = os.path.join(CM_CSV_PATH, hash_filename)
+    fnfp = os.path.join(CM_CSV_PATH, previous_hash_file)
     if not os.path.exists(fnfp):
         return False
     with open(fnfp, 'r') as fp:
@@ -35,16 +34,16 @@ def same_table_hash_info(hash_dict, hash_filename=cm_table_hash_filename):
             data = line.strip().split(',')
             if len(data) == 2:
                 previous_hash_dict[data[0]] = data[1]
-    current_set = set(current_hash_dict.keys())
+    current_set = set(hash_dict.keys())
     if current_set != set(previous_hash_dict.keys()):
         return False
     for key in current_set:
-        if current_hash_dict[key] != previous_hash_dict[key]:
+        if hash_dict[key] != previous_hash_dict[key]:
             return False
     return True
 
 
-def get_table_hash_info(table_list=table_list):
+def get_table_hash_info(table_list=CM_TABLE_LIST):
     """
     Compute the hash_dict for the data csv files.
 
@@ -66,18 +65,18 @@ def get_table_hash_info(table_list=table_list):
     return hash_dict
 
 
-def write_table_hash_info(hash_dict, hash_filename=cm_table_hash_filename):
+def write_table_hash_info(hash_dict, hash_file=CM_TABLE_HASH_FILE):
     """
-    Write the hash of the csv data-files to hash_filename.
+    Write the hash of the csv data-files to hash_file.
 
     Parameters
     ----------
     hash_dict : dict
         current table hash information
-    hash_filename : str
+    hash_file : str
         file containing previous table hash information
     """
-    with open(os.path.join(CM_CSV_PATH, hash_filename), 'w') as fp:
+    with open(os.path.join(CM_CSV_PATH, hash_file), 'w') as fp:
         for fn, hsh in hash_dict.items():
             print("{},{}".format(fn, hsh), file=fp)
 
@@ -98,6 +97,8 @@ def hash_file(filename):
     """
     import hashlib
     h = hashlib.md5()
+    if not os.path.exists(filename):
+        return None
     with open(filename, 'rb') as file:
         chunk = 0
         while chunk != b'':
@@ -106,7 +107,7 @@ def hash_file(filename):
     return h.hexdigest()
 
 
-def update_sqlite(table_dump_list=table_list):
+def update_sqlite(table_dump_list=CM_TABLE_LIST):
     """
     Dump psql database to sqlite file.
 

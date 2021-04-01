@@ -12,7 +12,6 @@ args = ap.parse_args()
 
 
 hash_dict = cm_gen_sqlite.get_table_hash_info()
-
 if args.force:
     write_database = True
 else:

@@ -8,11 +8,32 @@ import os
 
 import pytest
 
-from .. import cm_transfer, mc
+from .. import cm_transfer, mc, cm_gen_sqlite
 
 
 def test_classTime():
     pytest.raises(ValueError, cm_transfer.CMVersion.create, None, None)
+
+
+def test_gen_sqlite():
+    test_hash_file = 'test_hash_file.csv'
+    test_hash_dict = {'initialization_data_station_type.csv': 'abc123'}
+    cm_gen_sqlite.write_table_hash_info(test_hash_dict, hash_file=test_hash_file)
+    hash_dict = cm_gen_sqlite.get_table_hash_info(['station_type'])
+    assert 'initialization_data_station_type.csv' in hash_dict.keys()
+    same_hash = cm_gen_sqlite.same_table_hash_info(test_hash_dict, test_hash_file)
+    assert same_hash is True
+    same_hash = cm_gen_sqlite.same_table_hash_info(hash_dict, test_hash_file)
+    assert same_hash is False
+    same_hash = cm_gen_sqlite.same_table_hash_info({'notthisone': 'noway'}, test_hash_file)
+    assert same_hash is False
+    same_hash = cm_gen_sqlite.same_table_hash_info(test_hash_dict, 'nosuchfile')
+    assert same_hash is False
+    this_hash = cm_gen_sqlite.hash_file('nosuchfile')
+    assert this_hash is None
+    cm_gen_sqlite.update_sqlite()
+    CM_CSV_PATH = mc.get_cm_csv_path()
+    os.remove(os.path.join(CM_CSV_PATH, test_hash_file))
 
 
 def test_db_to_csv():
