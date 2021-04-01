@@ -31,9 +31,10 @@ def test_gen_sqlite():
     assert same_hash is False
     this_hash = cm_gen_sqlite.hash_file('nosuchfile')
     assert this_hash is None
-    cm_gen_sqlite.update_sqlite()
+    cm_gen_sqlite.update_sqlite(['station_type'], 'test_hera_mc.db')
     CM_CSV_PATH = mc.get_cm_csv_path()
     os.remove(os.path.join(CM_CSV_PATH, test_hash_file))
+    os.remove(os.path.join(CM_CSV_PATH, 'test_hera_mc.db'))
 
 
 def test_db_to_csv():

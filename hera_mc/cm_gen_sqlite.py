@@ -105,7 +105,7 @@ def hash_file(filename):
     return h.hexdigest()
 
 
-def update_sqlite(table_dump_list=CM_TABLE_LIST):
+def update_sqlite(table_dump_list=CM_TABLE_LIST, db_file='hera_mc.db'):
     """
     Dump the psql database to sqlite file.
 
@@ -147,7 +147,7 @@ def update_sqlite(table_dump_list=CM_TABLE_LIST):
                 inserts += modline
 
     sqlfile = os.path.join(CM_CSV_PATH, 'cm_hera.sql')
-    dbfile = os.path.join(CM_CSV_PATH, 'hera_mc.db')
+    dbfile = os.path.join(CM_CSV_PATH, db_file)
     with open(sqlfile, 'w') as f:
         f.write(schema)
         f.write(inserts)
