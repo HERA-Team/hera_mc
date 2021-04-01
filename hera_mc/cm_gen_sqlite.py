@@ -147,11 +147,11 @@ def update_sqlite(table_dump_list=CM_TABLE_LIST, db_file='hera_mc.db'):
                 inserts += modline
 
     sqlfile = os.path.join(CM_CSV_PATH, 'cm_hera.sql')
-    dbfile = os.path.join(CM_CSV_PATH, db_file)
+    dbfile_full = os.path.join(CM_CSV_PATH, db_file)
     with open(sqlfile, 'w') as f:
         f.write(schema)
         f.write(inserts)
-        f.write(".save {}\n".format(dbfile))
+        f.write(".save {}\n".format(dbfile_full))
     subprocess.call('sqlite3 < {}'.format(sqlfile), shell=True)
 
     subprocess.call('rm -f schema.sql', shell=True)
