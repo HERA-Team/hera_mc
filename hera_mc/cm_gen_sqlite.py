@@ -11,7 +11,7 @@ CM_TABLE_HASH_FILE = 'cm_table_file_hash.csv'
 
 def same_table_hash_info(hash_dict, previous_hash_file=CM_TABLE_HASH_FILE):
     """
-    Check that the current and previous table file hashes are the same.
+    Checks that the current and previous table file hashes are the same.
 
     Parameters
     ----------
@@ -45,7 +45,7 @@ def same_table_hash_info(hash_dict, previous_hash_file=CM_TABLE_HASH_FILE):
 
 def get_table_hash_info(table_list=CM_TABLE_LIST):
     """
-    Compute the hash_dict for the data csv files.
+    Computes the hash_dict for the data csv files.
 
     Parameter
     ---------
@@ -67,7 +67,7 @@ def get_table_hash_info(table_list=CM_TABLE_LIST):
 
 def write_table_hash_info(hash_dict, hash_file=CM_TABLE_HASH_FILE):
     """
-    Write the hash of the csv data-files to hash_file.
+    Writes the hash of the csv data-files to hash_file.
 
     Parameters
     ----------
@@ -83,7 +83,7 @@ def write_table_hash_info(hash_dict, hash_file=CM_TABLE_HASH_FILE):
 
 def hash_file(filename):
     """
-    This function returns the MD5 hash of the file passed into it.
+    Computes and returns the MD5 hash of the file passed into it.
 
     Parameter
     ---------
@@ -109,7 +109,7 @@ def hash_file(filename):
 
 def update_sqlite(table_dump_list=CM_TABLE_LIST):
     """
-    Dump psql database to sqlite file.
+    Dumps the psql database to sqlite file.
 
     Parameter
     ---------
