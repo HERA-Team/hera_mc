@@ -4,8 +4,6 @@
 """Database consistency checking functions."""
 
 from sqlalchemy import inspect
-from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
-from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.exc import OperationalError
 
 from . import logger
@@ -77,13 +75,9 @@ def is_valid_database(base, session):
     tables = iengine.get_table_names()
 
     # Go through all SQLAlchemy models
-    for name, klass in base._decl_class_registry.items():
 
-        if isinstance(klass, _ModuleMarker):
-            # Not a model
-            continue
+    for table, klass in base.metadata.tables.items():
 
-        table = klass.__tablename__
         if table in tables:
             # Check all columns are found
             # Looks like [{'default':
@@ -94,18 +88,15 @@ def is_valid_database(base, session):
             columns = [c["name"] for c in iengine.get_columns(table)]
             mapper = inspect(klass)
 
-            for column_prop in mapper.attrs:
-                if isinstance(column_prop, RelationshipProperty):
-                    # TODO: Add validity checks for relations
-                    pass
-                else:
-                    for column in column_prop.columns:
-                        # Assume normal flat column
-                        if column.key not in columns:
-                            logger.error("Model %s declares column %s "
-                                         "which does not exist in database %s",
-                                         klass, column.key, engine)
-                            errors = True
+            for column in mapper.columns:
+                # Assume normal flat column
+                if column.key not in columns:
+                    logger.error(
+                        f"Model {klass} declares column {column.key} which does not "
+                        "exist in database {engine}"
+                    )
+                    errors = True
+            # TODO: Add validity checks for relations
         else:
             logger.error("Model %s declares table %s which does not exist "
                          "in database %s", klass, table, engine)
