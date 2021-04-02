@@ -10,14 +10,8 @@ ap = argparse.ArgumentParser()
 ap.add_argument('--force', help='Force sqlite db write.', action='store_true')
 args = ap.parse_args()
 
+sqlu = cm_gen_sqlite.SqliteHandling()
 
-hash_dict = cm_gen_sqlite.get_table_hash_info()
-if args.force:
-    write_database = True
-else:
-    write_database = not cm_gen_sqlite.same_table_hash_info(hash_dict)
-
-
-if write_database:
-    cm_gen_sqlite.update_sqlite()
-    cm_gen_sqlite.write_table_hash_info(hash_dict)
+if args.force or sqlu.different_table_hash_dict():
+    sqlu.update_sqlite()
+    sqlu.write_table_hash_dict()

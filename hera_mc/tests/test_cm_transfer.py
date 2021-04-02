@@ -16,25 +16,31 @@ def test_classTime():
 
 
 def test_gen_sqlite():
+#        def __init__(self, cm_csv_path=None, cm_table_list=None,
+#                     cm_table_hash_file='cm_table_file_hash.json', testing=False):
+#testsqlite.hash_dict = {'initialization_data_station_type.csv': 'abc123'}
     test_hash_file = 'test_hash_file.json'
-    test_hash_dict = {'initialization_data_station_type.csv': 'abc123'}
-    cm_gen_sqlite.write_table_hash_info(test_hash_dict, hash_file=test_hash_file)
-    hash_dict = cm_gen_sqlite.get_table_hash_info(['station_type'])
-    assert 'initialization_data_station_type.csv' in hash_dict.keys()
-    same_hash = cm_gen_sqlite.same_table_hash_info(test_hash_dict, test_hash_file)
-    assert same_hash is True
+    testsqlite = cm_gen_sqlite.SqliteHandling(cm_table_hash_file=test_hash_file,
+                                              testing=True)
+
+    testsqlite.cm_table_list = ['station_type']
+    testsqlite.write_table_hash_dict()
+    hash_dict = cm_gen_sqlite.get_table_hash_info()
+    same_hash = cm_gen_sqlite.different_table_hash_info()
+    assert same_hash is False
+
     same_hash = cm_gen_sqlite.same_table_hash_info(hash_dict, test_hash_file)
     assert same_hash is False
     same_hash = cm_gen_sqlite.same_table_hash_info({'notthisone': 'noway'}, test_hash_file)
     assert same_hash is False
     same_hash = cm_gen_sqlite.same_table_hash_info(test_hash_dict, 'nosuchfile')
     assert same_hash is False
+
     this_hash = cm_gen_sqlite.hash_file('nosuchfile')
     assert this_hash is None
     cm_gen_sqlite.update_sqlite(['station_type'], 'test_hera_mc.db')
-    CM_CSV_PATH = mc.get_cm_csv_path()
-    os.remove(os.path.join(CM_CSV_PATH, test_hash_file))
-    os.remove(os.path.join(CM_CSV_PATH, 'test_hera_mc.db'))
+    os.remove(testsqlite.cm_table_hash_file)
+    os.remove(os.path.join(testsqlite.cm_csv_path, 'test_hera_mc.db'))
 
 
 def test_db_to_csv():
