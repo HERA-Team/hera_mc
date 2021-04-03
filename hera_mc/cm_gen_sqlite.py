@@ -102,7 +102,7 @@ class SqliteHandling():
 
         subprocess.call('pg_dump -s hera_mc > schema.sql', shell=True)
         dump = ('pg_dump --inserts --data-only hera_mc -t {} > inserts.sql'
-                .format(' -t '.join(self.table_list)))
+                .format(' -t '.join(self.cm_table_list)))
         subprocess.call(dump, shell=True)
 
         schema = ''
