@@ -37,7 +37,8 @@ def test_gen_sqlite():
     this_hash = cm_gen_sqlite.hash_file('nosuchfile')
     assert this_hash is None
     os.remove(os.path.join(testsqlite.cm_csv_path, test_hash_file))
-    testsqlite.update_sqlite('nofile')
+    testsqlite.update_sqlite('test_hera_mc.db')
+    os.remove(os.path.join(testsqlite.cm_csv_path, 'test_hera_mc.db'))
 
 
 def test_db_to_csv():
