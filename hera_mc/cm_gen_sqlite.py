@@ -18,6 +18,8 @@ class SqliteHandling():
         Name of json file that archives the previous hash set.
     hash_dict : dict
         Dictionary containing the current hashes.
+    testing : bool
+        Flag to denote testing or not.
     """
 
     def __init__(self, cm_csv_path=None, cm_table_list=None,
@@ -43,6 +45,7 @@ class SqliteHandling():
             cm_table_list = cm_table_info.cm_tables.keys()
         self.cm_table_list = cm_table_list
         self.cm_table_hash_file = os.path.join(self.cm_csv_path, cm_table_hash_file)
+        self.testing = testing
         self.hash_dict = None
 
     def different_table_hash_dict(self):
@@ -89,7 +92,7 @@ class SqliteHandling():
         with open(self.cm_table_hash_file, 'w') as fp:
             json.dump(self.hash_dict, fp, indent=4)
 
-    def update_sqlite(self, db_file='hera_mc.db'):  # pragma: no cover
+    def update_sqlite(self, db_file='hera_mc.db'):
         """
         Dump the psql database to sqlite file.
 
@@ -98,16 +101,18 @@ class SqliteHandling():
         table_dump_list : list of str
             List containing name of tables to dump to sqlite.
         """
-        import subprocess
-
-        subprocess.call('pg_dump -s hera_mc > schema.sql', shell=True)
-        dump = ('pg_dump --inserts --data-only hera_mc -t {} > inserts.sql'
-                .format(' -t '.join(self.cm_table_list)))
-        subprocess.call(dump, shell=True)
+        schema_file = os.path.join(self.cm_csv_path, 'schema.sql')
+        inserts_file = os.path.join(self.cm_csv_path, 'inserts.sql')
+        if not self.testing:  # pragma: no cover
+            import subprocess
+            subprocess.call(f'pg_dump -s hera_mc > {schema_file}', shell=True)
+            dump = ('pg_dump --inserts --data-only hera_mc -t {} > {}'
+                    .format(' -t '.join(self.cm_table_list), inserts_file)
+            subprocess.call(dump, shell=True)
 
         schema = ''
         creating_table = False
-        with open('schema.sql', 'r') as f:
+        with open(schema_file, 'r') as f:
             for line in f:
                 modline = line.replace('public.', '')
                 if 'CREATE TABLE' in modline:
@@ -123,23 +128,23 @@ class SqliteHandling():
                     if ');' in modline:
                         creating_table = False
         inserts = ''
-        with open('inserts.sql', 'r') as f:
+        with open(inserts_file, 'r') as f:
             for line in f:
                 modline = line.replace('public.', '')
                 if 'INSERT' in modline:
                     inserts += modline
 
-        sqlfile = os.path.join(self.cm_csv_path, 'cm_hera.sql')
-        dbfile_full = os.path.join(self.cm_csv_path, db_file)
-        with open(sqlfile, 'w') as f:
-            f.write(schema)
-            f.write(inserts)
-            f.write(".save {}\n".format(dbfile_full))
-        subprocess.call('sqlite3 < {}'.format(sqlfile), shell=True)
-
-        subprocess.call('rm -f schema.sql', shell=True)
-        subprocess.call('rm -f inserts.sql', shell=True)
-        subprocess.call('rm -f {}'.format(sqlfile), shell=True)
+        if not self.testing:  # pragma: no cover
+            sqlfile = os.path.join(self.cm_csv_path, 'cm_hera.sql')
+            dbfile_full = os.path.join(self.cm_csv_path, db_file)
+            with open(sqlfile, 'w') as f:
+                f.write(schema)
+                f.write(inserts)
+                f.write(".save {}\n".format(dbfile_full))
+            subprocess.call('sqlite3 < {}'.format(sqlfile), shell=True)
+            subprocess.call(f'rm -f {schema_file}', shell=True)
+            subprocess.call(f'rm -f {inserts_file}', shell=True)
+            subprocess.call(f'rm -f {sqlfile}', shell=True)
 
 
 def hash_file(filename):
