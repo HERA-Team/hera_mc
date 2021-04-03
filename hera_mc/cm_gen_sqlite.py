@@ -89,7 +89,7 @@ class SqliteHandling():
         with open(self.cm_table_hash_file, 'w') as fp:
             json.dump(self.hash_dict, fp, indent=4)
 
-    def update_sqlite(self, db_file='hera_mc.db'):
+    def update_sqlite(self, db_file='hera_mc.db'):  # pragma: no cover
         """
         Dump the psql database to sqlite file.
 
@@ -122,7 +122,6 @@ class SqliteHandling():
                         schema += modline
                     if ');' in modline:
                         creating_table = False
-
         inserts = ''
         with open('inserts.sql', 'r') as f:
             for line in f:
