@@ -134,17 +134,17 @@ class SqliteHandling():
                 if 'INSERT' in modline:
                     inserts += modline
 
-        # if not self.testing:  # pragma: no cover
-        #     sqlfile = os.path.join(self.cm_csv_path, 'cm_hera.sql')
-        #     dbfile_full = os.path.join(self.cm_csv_path, db_file)
-        #     with open(sqlfile, 'w') as f:
-        #         f.write(schema)
-        #         f.write(inserts)
-        #         f.write(".save {}\n".format(dbfile_full))
-        #     subprocess.call('sqlite3 < {}'.format(sqlfile), shell=True)
-        #     subprocess.call(f'rm -f {schema_file}', shell=True)
-        #     subprocess.call(f'rm -f {inserts_file}', shell=True)
-        #     subprocess.call(f'rm -f {sqlfile}', shell=True)
+        if not self.testing:  # pragma: no cover
+            sqlfile = os.path.join(self.cm_csv_path, 'cm_hera.sql')
+            dbfile_full = os.path.join(self.cm_csv_path, db_file)
+            with open(sqlfile, 'w') as f:
+                f.write(schema)
+                f.write(inserts)
+                f.write(".save {}\n".format(dbfile_full))
+            subprocess.call('sqlite3 < {}'.format(sqlfile), shell=True)
+            subprocess.call(f'rm -f {schema_file}', shell=True)
+            subprocess.call(f'rm -f {inserts_file}', shell=True)
+            subprocess.call(f'rm -f {sqlfile}', shell=True)
 
 
 def hash_file(filename):
