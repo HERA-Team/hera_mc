@@ -36,7 +36,7 @@ class SqliteHandling():
         cm_table_hash_file : str
             Name of json file that archives the previous hash set.
         testing : bool
-            Flag to use test directory or not (only if cm_csv_path is None).
+            Flag to denote testing (sets directory and sql file generation)
         """
         if cm_csv_path is None:
             cm_csv_path = mc.get_cm_csv_path(testing=testing)
