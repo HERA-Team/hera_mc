@@ -8,11 +8,37 @@ import os
 
 import pytest
 
-from .. import cm_transfer, mc
+from .. import cm_transfer, mc, cm_gen_sqlite
 
 
 def test_classTime():
     pytest.raises(ValueError, cm_transfer.CMVersion.create, None, None)
+
+
+def test_gen_sqlite():
+    test_hash_file = 'test_hash_file.json'
+    testsqlite = cm_gen_sqlite.SqliteHandling(cm_table_hash_file=test_hash_file,
+                                              testing=True)
+    testsqlite.cm_table_list = ['station_type']
+    testsqlite.write_table_hash_dict()
+    testsqlite.get_table_hash_dict()
+    testsqlite.hash_dict = None
+    same_hash = testsqlite.different_table_hash_dict()
+    assert same_hash is False
+    testsqlite.hash_dict = {'initialization_data_station_type.csv': 'abc123'}
+    same_hash = testsqlite.different_table_hash_dict()
+    assert same_hash is True
+    testsqlite.hash_dict = {'notthisone': 'noway'}
+    same_hash = testsqlite.different_table_hash_dict()
+    assert same_hash is True
+    testsqlite.cm_table_hash_file = 'nosuchfile'
+    same_hash = testsqlite.different_table_hash_dict()
+    assert same_hash is True
+    this_hash = cm_gen_sqlite.hash_file('nosuchfile')
+    assert this_hash is None
+    os.remove(os.path.join(testsqlite.cm_csv_path, test_hash_file))
+    testsqlite.update_sqlite('test_hera_mc.db')
+    os.remove(os.path.join(testsqlite.cm_csv_path, 'test_hera_mc.db'))
 
 
 def test_db_to_csv():
