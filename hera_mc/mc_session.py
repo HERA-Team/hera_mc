@@ -2788,9 +2788,9 @@ class MCSession(Session):
             corr_state_dict = corr._get_control_state(corr_cm=self.corr_obj)
 
         corr_state_list = []
-        for state_type, dict in corr_state_dict.items():
-            unix_timestamp = dict['timestamp']
-            state = dict['state']
+        for state_type, state_dict in corr_state_dict.items():
+            unix_timestamp = state_dict['timestamp']
+            state = state_dict['state']
             if unix_timestamp is not None:
                 time = Time(unix_timestamp, format='unix')
             else:

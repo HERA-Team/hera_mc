@@ -18,7 +18,7 @@ from hera_mc.data import DATA_PATH
 
 @pytest.fixture(scope='module')
 def nodelist():
-    return [nodeID for nodeID in range(1, 4)]
+    return list(range(1, 4))
 
 
 @pytest.fixture(scope='module')

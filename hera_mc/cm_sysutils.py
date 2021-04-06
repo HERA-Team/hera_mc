@@ -136,9 +136,11 @@ class Handling:
 
         """
         at_date = cm_utils.get_astropytime(at_date)
-        HU = cm_hookup.Hookup(self.session)
-        hud = HU.get_hookup(hpn=cm_sysdef.hera_zone_prefixes, pol='all', at_date=at_date,
-                            exact_match=False, use_cache=False, hookup_type=hookup_type)
+        hookup_obj = cm_hookup.Hookup(self.session)
+        hud = hookup_obj.get_hookup(
+            hpn=cm_sysdef.hera_zone_prefixes, pol='all', at_date=at_date,
+            exact_match=False, use_cache=False, hookup_type=hookup_type
+        )
         station_conn = []
         found_keys = list(hud.keys())
         found_stations = [x.split(':')[0] for x in found_keys]
@@ -266,10 +268,12 @@ class Handling:
 
         """
         parts = {}
-        H = cm_hookup.Hookup(self.session)
+        hookup_obj = cm_hookup.Hookup(self.session)
         if isinstance(stn, str):
             stn = [stn]
-        hud = H.get_hookup(hpn=stn, at_date=at_date, exact_match=True, hookup_type=hookup_type)
+        hud = hookup_obj.get_hookup(
+            hpn=stn, at_date=at_date, exact_match=True, hookup_type=hookup_type
+        )
         for k, hu in hud.items():
             parts[k] = hu.get_part_from_type(
                 part_type, include_revs=include_revs, include_ports=include_ports)
@@ -300,12 +304,15 @@ class Handling:
         if hlist[0].lower() == 'default':
             hlist = cm_sysdef.hera_zone_prefixes
         output_file = os.path.expanduser('~/.hera_mc/sys_conn_tmp.html')
-        H = cm_hookup.Hookup(self.session)
-        hookup_dict = H.get_hookup(hpn=hlist, pol='all', at_date='now',
-                                   exact_match=exact_match, hookup_type=None)
-        H.show_hookup(hookup_dict=hookup_dict, cols_to_show=hookup_cols,
-                      state='full', ports=True, revs=True,
-                      sortby=sortby, filename=output_file, output_format='html')
+        hookup_obj = cm_hookup.Hookup(self.session)
+        hookup_dict = hookup_obj.get_hookup(
+            hpn=hlist, pol='all', at_date='now', exact_match=exact_match, hookup_type=None
+        )
+        hookup_obj.show_hookup(
+            hookup_dict=hookup_dict, cols_to_show=hookup_cols,
+            state='full', ports=True, revs=True,
+            sortby=sortby, filename=output_file, output_format='html'
+        )
 
     def get_apriori_status_for_antenna(self, antenna, at_date='now'):
         """
@@ -458,22 +465,18 @@ def node_antennas(source='file', session=None):
 
 def _get_dict_elements(npk, hu, ele_a, ele_b):
     """Return the appropriate hookup elements for node_info."""
-    a = ele_a.lower()
-    b = ele_b.lower()
-    A = ele_a.upper()
-    B = ele_b.upper()
-    e_ret = {a: '', b: ''}
+    e_ret = {ele_a.lower(): '', ele_b.lower(): ''}
     try:
         e_hookup = hu[npk].hookup['@<middle']
     except KeyError:
         return e_ret
     for element in e_hookup:
-        if element.upstream_part.startswith(A):
-            e_ret[a] = element.upstream_part
-            e_ret[b] = element.downstream_part
+        if element.upstream_part.startswith(ele_a.upper()):
+            e_ret[ele_a.lower()] = element.upstream_part
+            e_ret[ele_b.lower()] = element.downstream_part
             break
-        elif element.upstream_part.startswith(B):
-            e_ret[b] = element.upstream_part
+        elif element.upstream_part.startswith(ele_b.upper()):
+            e_ret[ele_b.lower()] = element.upstream_part
     return e_ret
 
 
@@ -579,9 +582,9 @@ def node_info(node_num='active', session=None):
     na_from_file = node_antennas('file', session=session)
     na_from_hookup = node_antennas(hu, session=session)
     if node_num == 'active':
-        node_num = sorted(list(na_from_hookup))
+        node_num = sorted(na_from_hookup)
     elif node_num == 'all':
-        node_num = sorted(list(na_from_file))
+        node_num = sorted(na_from_file)
     info = {'nodes': []}
     for node in node_num:
         # Set up

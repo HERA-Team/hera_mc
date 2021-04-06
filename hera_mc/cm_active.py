@@ -350,7 +350,7 @@ class ActiveData:
                                 or part.stop_gpstime > rev_dict[hloop][prup].ended):
                             rev_dict[hloop][prup].ended = part.stop_gpstime
         hpn_rev = []
-        for hloop in sorted(list(rev_dict.keys())):
-            for rev in sorted(list(rev_dict[hloop].keys())):
+        for hloop in sorted(rev_dict.keys()):
+            for rev in sorted(rev_dict[hloop].keys()):
                 hpn_rev.append(rev_dict[hloop][rev])
         return hpn_rev

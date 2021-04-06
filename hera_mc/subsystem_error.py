@@ -37,7 +37,7 @@ class SubsystemError(MCDeclarativeBase):
     """
 
     __tablename__ = 'subsystem_error'
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(BigInteger, primary_key=True, autoincrement=True)  # noqa A003
     time = Column(BigInteger, nullable=False)
     subsystem = Column(String(32), nullable=False)
     mc_time = Column(BigInteger, nullable=False)

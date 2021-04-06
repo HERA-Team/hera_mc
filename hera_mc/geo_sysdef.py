@@ -128,11 +128,11 @@ def read_nodes():
     with open(node_coord_file_name, 'r') as fp:
         for line in fp:
             node_num = int(line.split(':')[0])
-            node_E = float(line.split(':')[1].split(',')[0])
-            node_N = float(line.split(':')[1].split(',')[1])
+            node_e = float(line.split(':')[1].split(',')[0])
+            node_n = float(line.split(':')[1].split(',')[1])
             ants = line.split(':')[2].split(',')
             ants = [int(x) for x in ants]
-            nodes[node_num] = {'E': node_E, 'N': node_N,
+            nodes[node_num] = {'E': node_e, 'N': node_n,
                                'elevation': default_elevation, 'ants': ants}
     return nodes
 

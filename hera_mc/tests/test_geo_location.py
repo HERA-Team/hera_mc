@@ -16,7 +16,7 @@ def geo_handle(mcsession):
 
 def test_cofa(mcsession, geo_handle):
     geo_handle.get_station_types()
-    station_types = [type.lower() for type in geo_handle.station_types.keys()]
+    station_types = [stn_type.lower() for stn_type in geo_handle.station_types.keys()]
     assert 'cofa' in station_types
 
     cofa = geo_handle.cofa()[0]

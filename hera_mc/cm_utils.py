@@ -149,13 +149,13 @@ def split_part_key(key):
     return split_key[0], split_key[1], split_key[2]
 
 
-def stringify(X):
+def stringify(inp):
     """
     "Stringify" the input, hopefully sensibly.
 
     Parameters
     ----------
-    X
+    inp
         Thing to be stringified.
 
     Returns
@@ -163,13 +163,13 @@ def stringify(X):
     str
 
     """
-    if X is None:
+    if inp is None:
         return None
-    if isinstance(X, str):
-        return X
-    if isinstance(X, list):
-        return ','.join(X)
-    return str(X)
+    if isinstance(inp, str):
+        return inp
+    if isinstance(inp, list):
+        return ','.join(inp)
+    return str(inp)
 
 
 def listify(to_list, None_as_list=False, prefix=None, padding=None):
@@ -266,13 +266,13 @@ def match_list(a_obj, b_obj, case_type=None):
     raise ValueError("Invalid case_type.")
 
 
-def to_upper(X):
+def to_upper(inp):
     """
-    Recursively convert objects to uppercase strings, except if None.
+    Recursively convert inputs to uppercase strings, except if None.
 
     Parameters
     ----------
-    X
+    inp : str or list of str
         Object to be converted to upper.
 
     Returns
@@ -280,20 +280,20 @@ def to_upper(X):
     str, list or None
 
     """
-    if X is None:
+    if inp is None:
         return None
-    if isinstance(X, list):
-        return [to_upper(s) for s in X]
-    return str(X).upper()
+    if isinstance(inp, list):
+        return [to_upper(s) for s in inp]
+    return str(inp).upper()
 
 
-def to_lower(X):
+def to_lower(inp):
     """
-    Recursively convert objects to lowercase strings, except if None.
+    Recursively convert inputs to lowercase strings, except if None.
 
     Parameters
     ----------
-    X
+    inp : str or list of str
         Object to be converted to lower.
 
     Returns
@@ -301,11 +301,11 @@ def to_lower(X):
     str, list or None
 
     """
-    if X is None:
+    if inp is None:
         return None
-    if isinstance(X, list):
-        return [to_lower(s) for s in X]
-    return str(X).lower()
+    if isinstance(inp, list):
+        return [to_lower(s) for s in inp]
+    return str(inp).lower()
 
 
 def add_verbosity_args(parser):

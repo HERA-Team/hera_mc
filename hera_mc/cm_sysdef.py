@@ -57,7 +57,7 @@ class Sysdef:
                 ordered_path = {}
                 for k, v in self.port_def[hutype].items():
                     ordered_path[v['position']] = k
-                sorted_keys = sorted(list(ordered_path.keys()))
+                sorted_keys = sorted(ordered_path.keys())
                 self.full_connection_path[hutype] = []
                 for k in sorted_keys:
                     self.full_connection_path[hutype].append(ordered_path[k])
@@ -97,8 +97,8 @@ class Sysdef:
             hookup_types = [self.hookup_type]
         for hut in hookup_types:
             for key in self.port_def[hut].keys():
-                for dir in ['up', 'down']:
-                    for ports in self.port_def[hut][key][dir]:
+                for direction in ['up', 'down']:
+                    for ports in self.port_def[hut][key][direction]:
                         for port in ports:
                             if port is not None:
                                 all_ports.add(port)
@@ -246,19 +246,19 @@ class Sysdef:
 
         """
         port_dict = {}
-        for dir in ['up', 'down']:
-            port_dict[dir] = []
+        for direction in ['up', 'down']:
+            port_dict[direction] = []
             try:
                 oports = self.port_def[self.hookup_type][part_type]
             except KeyError:
                 return {}
-            for port_list in oports[dir]:
+            for port_list in oports[direction]:
                 for port in port_list:
                     if port is None:
-                        port_dict[dir].append(None)
+                        port_dict[direction].append(None)
                     elif (port[0].lower() not in self.all_pols[self.hookup_type]
                           or pol.lower() == 'all'):
-                        port_dict[dir].append(port.upper())
+                        port_dict[direction].append(port.upper())
                     elif port[0].lower() == pol[0].lower():
-                        port_dict[dir].append(port.upper())
+                        port_dict[direction].append(port.upper())
         return port_dict

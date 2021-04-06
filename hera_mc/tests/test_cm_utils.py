@@ -53,24 +53,24 @@ def test_various():
     assert c[0] == '1:A:Z'
 
 
-@pytest.mark.parametrize(("input", "expected"),
+@pytest.mark.parametrize(("inp", "expected"),
                          [(None, None), ('Test', 'Test'), (['a', 'b'], 'a,b'), (1, '1')])
-def test_stringify(input, expected):
-    x = cm_utils.stringify(input)
+def test_stringify(inp, expected):
+    x = cm_utils.stringify(inp)
     if expected is not None:
         assert x == expected
     else:
         assert x is expected
 
 
-@pytest.mark.parametrize(("input", "expected"),
+@pytest.mark.parametrize(("inp", "expected"),
                          [('Test', ['Test']),
                           ('a,b', ['a', 'b']),
                           (['Test'], ['Test']),
                           (1, [1]),
                           ('1-3', [1, 2, 3])])
-def test_listify(input, expected):
-    x = cm_utils.listify(input)
+def test_listify(inp, expected):
+    x = cm_utils.listify(inp)
     assert x == expected
     x = cm_utils.listify(None, None_as_list=False)
     assert x is None

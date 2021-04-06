@@ -313,7 +313,7 @@ class Hookup(object):
                 part_hu_hpn.remove(hkey)
                 part_hu_hpn = [hkey] + part_hu_hpn
             for ikey in part_hu_hpn:
-                gps_times = sorted(list(hu_notes[hkey][ikey].keys()))
+                gps_times = sorted(hu_notes[hkey][ikey].keys())
                 for gtime in gps_times:
                     atime = cm_utils.get_time_for_display(gtime)
                     this_note = ("{} ({})".format(hu_notes[hkey][ikey][gtime]['note'],
