@@ -38,4 +38,3 @@ INSERT INTO public.station_type VALUES ('herahexn', 'HH', 'HERA hex locations N 
 --
 -- PostgreSQL database dump complete
 --
-

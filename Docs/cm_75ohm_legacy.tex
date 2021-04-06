@@ -14,8 +14,8 @@
 \maketitle
 
 \section{Introduction}
-The HERA array/part configuration management database is a set of five tables within the larger hera\_mc database, which is maintained on-site in the Karoo.  The tables are detailed in the Appendix, 
-but they are: 
+The HERA array/part configuration management database is a set of five tables within the larger hera\_mc database, which is maintained on-site in the Karoo.  The tables are detailed in the Appendix,
+but they are:
 
 \begin{center}
 \begin{tabular}{l l l}
@@ -30,7 +30,7 @@ but they are:
 
 Software is contained in the repository https://github.com/HERA-Team/hera\_mc.
 
-The databases are structured primarily around {\em parts} and {\em connections}.  {\em Parts} are meant to be single items that, in theory at least, are a thing than can be replaced as a unit.  
+The databases are structured primarily around {\em parts} and {\em connections}.  {\em Parts} are meant to be single items that, in theory at least, are a thing than can be replaced as a unit.
 {\em Connections} define {\em ports} on a given parts and connect two ports together.  Parts are all upper case and ports are all lower case.
 
 All parts and connections are timed in that they have a start and stop time of operation.  If stop is {\tt None}, then it is active (it is given a date in the relatively far future).  There are currently two special parts (one at each end of the signal chain):
@@ -54,7 +54,7 @@ Parts are hooked together via connections of their ports.   For parts in the PAP
 	\item {\bf F-engine}:  {\tt\{R2\}} Roach-2 input {\tt {\bf DF}\{R2\}\{"A"-"H"\}\{\#\}}
 \end{itemize}
 The {\tt E} and {\tt N} refer to the polarizations (for East and North) -- this replaces any X/Y or H/V designation.
-Summarizing with prefixes, we have 
+Summarizing with prefixes, we have
 
 \vspace{.15in}
 \begin{center}
@@ -88,7 +88,7 @@ This section provides a high-level overview of the python configuration manageme
 \end{tabular}
 
 \section{Scripts}
-This section provides a high-level overview of the high-level scripts:  geo.py, parts.py, cmdv.py.  Note that info you type {\tt info} after them, it presents information on them.  The structure is 
+This section provides a high-level overview of the high-level scripts:  geo.py, parts.py, cmdv.py.  Note that info you type {\tt info} after them, it presents information on them.  The structure is
 
 {\tt geo.py {\it action} --arguments}
 
@@ -146,7 +146,7 @@ Three use cases are identified:
 This is the ``operational'' mode, where inputs to the on-site database are done via scripts (command-line and/or web), which update the database directly.  These scripts will be documented under the repository software.
 
 \subsection{Remote user}
-Remote use is the case when a remote user initializes and uses the tables outside of the main database.  This assumes that postgresql etc is configured on the remote computer.  Note that this mode supports both offline use (essentially steps 3-5 below, which are in bold) and development (probably all steps).  The process is as follows: 
+Remote use is the case when a remote user initializes and uses the tables outside of the main database.  This assumes that postgresql etc is configured on the remote computer.  Note that this mode supports both offline use (essentially steps 3-5 below, which are in bold) and development (probably all steps).  The process is as follows:
 \begin{enumerate}\setlength\itemsep{-.3em}
 	\item Generate ascii files of the tables in the main database (in the Karoo) {\tt (cm\_pack.py [--tables table1,table2,...)}
 	\item Push to GitHub
@@ -159,11 +159,11 @@ Remote use is the case when a remote user initializes and uses the tables outsid
 Note that generally you should leave off the {\tt --tables} option, since you should use all the tables so as to not break foreign keys (it is left there for ``expert'' users).  Steps 3-5 are bolded, since if you just want to pull down the latest and use it assuming things are up-to-date they are all that are needed (i.e., leave the ``packaging to the experts'').
 
 This has another option of {\tt --base}, so that you can set up a base copy to which you can revert if need be by including {\tt --base} on both commands (step 6).
-	
+
 \subsection{Main database updates}
 This is effectively the opposite of the remote user case, bringing an updated set of table(s) back into the main database.  The process is as follows:
 \begin{enumerate}\setlength\itemsep{-.3em}
-	\item  Generate ascii files of the desired tables from the remote database: 
+	\item  Generate ascii files of the desired tables from the remote database:
 		({\tt cm\_pack.py --maindb \$key [--tables table1,table2,...]})
 	\item Push to GitHub
 	\item Pull down to site computer
@@ -173,11 +173,11 @@ This is effectively the opposite of the remote user case, bringing an updated se
 
 Note that {\tt \$key} is a user supplied string to just make sure you meant to do the main database update.  It can be anything, you
 just need to remember it when you reload it on the main database computer qmaster.
-As per above, you should generally leave off the {\tt --tables} option so as to do them all.  
+As per above, you should generally leave off the {\tt --tables} option so as to do them all.
 
 \section{Tables}
 As mentioned above, there are five tables in the configuration management section of the database:  (1) geo\_location, (2) station\_meta,
-(3) parts\_paper, (4) part\_info, (5) connections.  The following tables summarize them with the following key:  
+(3) parts\_paper, (4) part\_info, (5) connections.  The following tables summarize them with the following key:
 \begin{itemize}\setlength\itemsep{-.3em}
 	\item {\bf Bold font} = primary key
 	\item {\em Italics} = foreign\_key.

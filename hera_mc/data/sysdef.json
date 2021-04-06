@@ -17,14 +17,14 @@
             "node": {"up": [["middle"]], "down": [[null]], "position": 2},
             "node-control-module": {"up": [["mnt1"]], "down": [["rack"]], "position": 1},
             "white-rabbit": {"up": [[null]], "down": [["mnt"]], "position": 0}
-            
+
         },
         "arduino_hera":
         {
             "node": {"up": [["middle"]], "down": [[null]], "position": 2},
             "node-control-module": {"up": [["mnt2"]], "down": [["rack"]], "position": 1},
             "arduino": {"up": [[null]], "down": [["mnt"]], "position": 0}
-            
+
         },
         "parts_paper":
         {
@@ -39,7 +39,7 @@
             "cable-receiverator": {"up": [["a"]], "down": [["b"]], "position": 8},
             "cable-container": {"up": [["a"]], "down": [["b"]], "position": 9},
             "f-engine": {"up": [["input"]], "down": [[null]], "position": 10}
-            
+
         },
         "parts_rfi":
         {
