@@ -36,7 +36,7 @@ setup_args = {
         "all": ["cartopy", "h5py", "pandas", "psutil", "python-dateutil", "pyuvdata",
                 "tabulate", "tornado"],
         "dev": ["cartopy", "h5py", "pandas", "psutil", "python-dateutil", "pyuvdata",
-                "tabulate", "tornado", "pytest", "flake8"]
+                "tabulate", "tornado", "pytest", "pre-commit"]
     },
     'tests_require': ["pyyaml"],
     'classifiers': ["Development Status :: 4 - Beta",

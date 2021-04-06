@@ -38,7 +38,8 @@ jobs:
 
       - name: Linting
         run: |
-          flake8
+          pre-commit install
+          pre-commit run -a
   tests:
     env:
       ENV_NAME: tests

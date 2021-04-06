@@ -4,7 +4,7 @@ HERA M&C Installation
 HERA M&C requires downloading two repositories `hera_mc` and `hera_cm_db_updates`.  The online database uses `PostgreSQL`
 which requires installing that, however local users may wish to use `SQLITE` instead, as it eliminates the need to install
 PostgreSQL on your local machine (SQLITE is pre-installed on Macs).  If you are developing code under `hera_mc`, you'll
-need to install PostgreSQL.  If you are just viewing configuration management (CM) information, SQLITE is much easier.
+need to install PostgreSQL and `pre-commit`.  If you are just viewing configuration management (CM) information, SQLITE is much easier.
 Use of PostgreSQL vs SQLITE is determined by the `"default_db_name"` set below in the database configuration file described
 below.
 
@@ -49,14 +49,16 @@ Clone the following two repositories:
 
 Then install by:
 1. within the hera_mc directory type `pip install .`
-[Do not use `python setup.py install`]. 
+[Do not use `python setup.py install`].
 
 You can install the optional dependencies via pip by specifying an option
 when you install hera_mc, as in ```pip install .[sqlite]```
 which will install all the required packages for using the lightweight configuration
 management tools. The options that can be passed in this way are:
 [`sqlite`, `all`, `dev`]. The `all` option will install all optional
-dependencies, `dev` adds packages required for testing.
+dependencies, `dev` adds packages required for testing
+and also requires pre-commit to check for code style.
+Make sure to run `pre-commit install` to initilized the pre-commit hooks in the git repo.
 
 If you prefer to manage dependencies yourself (e.g. with conda), you can add
 `--no-deps` to the pip call. You can also add `-e` for a developer style install that will
@@ -207,7 +209,7 @@ psql: could not connect to server: No such file or directory
   Is the server running locally and accepting
   connections on Unix domain socket "/tmp/.s.PGSQL.5432"?
 
-you can try the following:  
+you can try the following:
     rm /usr/local/var/postgres/postmaster.pid
 then try restarting
     brew services restart postgresql
