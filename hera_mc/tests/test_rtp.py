@@ -213,11 +213,11 @@ def multiple_track(observation):
         # make more obsids
         starttimes = [observation.observation_columns['starttime']] + [
             observation.observation_columns['starttime']
-            + TimeDelta(min * 60, format='sec') for min in [10, 20]
+            + TimeDelta(min_time * 60, format='sec') for min_time in [10, 20]
         ]
         stoptimes = [observation.observation_columns['stoptime']] + [
             observation.observation_columns['stoptime']
-            + TimeDelta(min * 60, format='sec') for min in [10, 20]
+            + TimeDelta(min_time * 60, format='sec') for min_time in [10, 20]
         ]
 
         obsid_list = [observation.observation_columns['obsid']] + [
