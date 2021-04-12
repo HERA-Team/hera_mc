@@ -13,7 +13,6 @@ import pytest
 
 from .. import node
 from ..tests import requires_redis
-from hera_mc.data import DATA_PATH
 
 
 @pytest.fixture(scope='module')
@@ -334,7 +333,7 @@ def white_rabbit_status_sql(white_rabbit_status_cleaned):
     return sql_dict
 
 
-def test_add_node_sensor_readings(mcsession, sensor):
+def test_add_node_sensor_readings(mcsession, sensor, tmpdir):
     test_session = mcsession
     t1 = Time('2016-01-10 01:15:23', scale='utc')
 
@@ -383,7 +382,7 @@ def test_add_node_sensor_readings(mcsession, sensor):
     assert len(result) == 2
     assert result_most_recent == result
 
-    filename = os.path.join(DATA_PATH, 'test_node_sensor_file.csv')
+    filename = os.path.join(tmpdir, 'test_node_sensor_file.csv')
     test_session.get_node_sensor_readings(
         starttime=t1 - TimeDelta(3.0, format='sec'), stoptime=t1,
         write_to_file=True, filename=filename)
@@ -819,7 +818,12 @@ def test_node_power_command_redis(mcsession):
             assert command_list[0].isclose(expected)
 
 
-def test_add_white_rabbit_status(mcsession, white_rabbit_status_cleaned, white_rabbit_status_sql):
+def test_add_white_rabbit_status(
+    mcsession,
+    white_rabbit_status_cleaned,
+    white_rabbit_status_sql,
+    tmpdir,
+):
     test_session = mcsession
     t1 = Time(1512770942.726777, format='unix')
 
@@ -849,7 +853,7 @@ def test_add_white_rabbit_status(mcsession, white_rabbit_status_cleaned, white_r
     assert len(result) == 2
     assert result_most_recent == result
 
-    filename = os.path.join(DATA_PATH, 'test_node_white_rabbit_status_file.csv')
+    filename = os.path.join(tmpdir, 'test_node_white_rabbit_status_file.csv')
     test_session.get_node_white_rabbit_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), stoptime=t1,
         write_to_file=True, filename=filename)
