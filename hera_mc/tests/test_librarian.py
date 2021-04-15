@@ -11,7 +11,6 @@ from astropy.time import Time, TimeDelta
 
 from ..librarian import (LibStatus, LibRAIDStatus, LibRAIDErrors,
                          LibRemoteStatus, LibFiles)
-from hera_mc.data import DATA_PATH
 from .. import utils
 
 
@@ -371,7 +370,7 @@ def test_errors_lib_remote_status(mcsession, remote):
                   stoptime='foo')
 
 
-def test_add_lib_file(mcsession, file):
+def test_add_lib_file(mcsession, file, tmpdir):
     test_session = mcsession
 
     test_session.add_obs(*file.observation_values)
@@ -410,7 +409,7 @@ def test_add_lib_file(mcsession, file):
         obsid=file.file_columns['obsid'])
     assert len(result_obsid) == 2
 
-    filename = os.path.join(DATA_PATH, 'test_lib_file_record_file.csv')
+    filename = os.path.join(tmpdir, 'test_lib_file_record_file.csv')
     test_session.get_lib_files(obsid=file.file_columns['obsid'],
                                write_to_file=True, write_filename=filename)
     os.remove(filename)

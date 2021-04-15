@@ -151,8 +151,10 @@ def plot_HERA_autocorrelations_for_plotly(session, offline_testing=False):
     data = []
     all_autos = session.get_autocorrelation(most_recent=True)
 
-    antennas = set(['{ant}{pol}'.format(ant=item.antenna_number, pol=item.antenna_feed_pol)
-                    for item in all_autos])
+    antennas = {
+        '{ant}{pol}'.format(ant=item.antenna_number, pol=item.antenna_feed_pol)
+        for item in all_autos
+    }
     data = {}
     for ant in antennas:
         data[ant] = []

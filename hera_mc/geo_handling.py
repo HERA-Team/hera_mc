@@ -513,14 +513,14 @@ class Handling:
         import matplotlib.pyplot as plt
         for a in locations:
             pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
-            X = pt[self.coord[kwargs['xgraph']]]
-            Y = pt[self.coord[kwargs['ygraph']]]
-            plt.plot(X, Y, color=kwargs['marker_color'], label=a.station_name,
+            x_vals = pt[self.coord[kwargs['xgraph']]]
+            y_vals = pt[self.coord[kwargs['ygraph']]]
+            plt.plot(x_vals, y_vals, color=kwargs['marker_color'], label=a.station_name,
                      marker=kwargs['marker_shape'], markersize=kwargs['marker_size'])
             if displaying_label:
                 labeling = self.get_antenna_label(label_to_show, a, self.query_date)
                 if labeling:
-                    plt.annotate(labeling, xy=(X, Y), xytext=(X + 2, Y))
+                    plt.annotate(labeling, xy=(x_vals, y_vals), xytext=(x_vals + 2, y_vals))
         if not self.axes_set:
             self.axes_set = True
             if kwargs['xgraph'].upper() != 'Z' and kwargs['ygraph'].upper() != 'Z':

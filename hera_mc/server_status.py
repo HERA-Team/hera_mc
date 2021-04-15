@@ -133,8 +133,8 @@ def plot_host_status_for_plotly(session):
 
     from chart_studio import plotly as chart_plotly
 
-    THIRTY_DAYS = 24 * 3600 * 30
-    gps_time_cutoff = Time.now().gps - THIRTY_DAYS
+    thirty_days = 24 * 3600 * 30
+    gps_time_cutoff = Time.now().gps - thirty_days
     plot_items = []
 
     # Gather data about Librarian servers

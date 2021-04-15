@@ -204,7 +204,7 @@ class LibRAIDErrors(MCDeclarativeBase):
     """
 
     __tablename__ = 'lib_raid_errors'
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(BigInteger, primary_key=True, autoincrement=True)  # noqa A003
     time = Column(BigInteger, nullable=False)
     hostname = Column(String(32), nullable=False)
     disk = Column(String, nullable=False)

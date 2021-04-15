@@ -1765,4 +1765,3 @@ ALTER TABLE ONLY public.snap_config_version
 --
 -- PostgreSQL database dump complete
 --
-

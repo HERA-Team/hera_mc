@@ -59,7 +59,7 @@ class MCDeclarativeBase(object):
 
         self_columns = self.__table__.columns
         other_columns = other.__table__.columns
-        if set(c.name for c in self_columns) != set(c.name for c in other_columns):
+        if {c.name for c in self_columns} != {c.name for c in other_columns}:
             print('set of columns are not the same')
             return False
 

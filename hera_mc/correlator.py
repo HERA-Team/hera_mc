@@ -262,10 +262,10 @@ def _get_config(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     if corr_cm is None:
         corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
 
-    timestamp, config, hash = corr_cm.get_config()
+    timestamp, config, config_hash = corr_cm.get_config()
     time = Time(timestamp, format='unix')
 
-    return {'time': time, 'hash': hash, 'config': config}
+    return {'time': time, 'hash': config_hash, 'config': config}
 
 
 class CorrelatorConfigParams(MCDeclarativeBase):

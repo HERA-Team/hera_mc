@@ -24,7 +24,7 @@ def gen_test_model():
         __tablename__ = "validity_check_test"
 
         #: Running counter used in foreign key references
-        id = Column(Integer, primary_key=True)
+        id_ = Column(Integer, primary_key=True)
 
     return Base, ValidTestModel
 
@@ -35,16 +35,16 @@ def gen_relation_models():
 
     class RelationTestModel(Base):
         __tablename__ = "validity_check_test_2"
-        id = Column(Integer, primary_key=True)
+        id_ = Column(Integer, primary_key=True)
 
     class RelationTestModel2(Base):
         __tablename__ = "validity_check_test_3"
-        id = Column(Integer, primary_key=True)
+        id_ = Column(Integer, primary_key=True)
 
-        test_relationship_id = Column(ForeignKey("validity_check_test_2.id"))
+        test_relationship_id = Column(ForeignKey("validity_check_test_2.id_"))
         test_relationship = relationship(RelationTestModel,
                                          primaryjoin=test_relationship_id
-                                         == RelationTestModel.id)
+                                         == RelationTestModel.id_)
 
     return Base, RelationTestModel, RelationTestModel2
 
@@ -55,7 +55,7 @@ def gen_declarative():
 
     class DeclarativeTestModel(Base):
         __tablename__ = "validity_check_test_4"
-        id = Column(Integer, primary_key=True)
+        id_ = Column(Integer, primary_key=True)
 
         @declared_attr
         def _password(self):
@@ -134,7 +134,7 @@ def test_validity_column_missing():
     Base.metadata.create_all(engine, tables=[ValidTestModel.__table__])
 
     # Delete one of the columns
-    engine.execute("ALTER TABLE validity_check_test DROP COLUMN id")
+    engine.execute("ALTER TABLE validity_check_test DROP COLUMN id_")
 
     assert is_valid_database(Base, session) is False
 

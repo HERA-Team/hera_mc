@@ -16,7 +16,6 @@ Installation instructions may be found in [INSTALL.md](./INSTALL.md).
 *Note:  if you are only using hera_mc to locally use configuration management (cm) info via sqlite, you may just follow the simplified instructions in INSTALL.md*
 
 
-
 # Adding a new table
 
 To add a new table into the M&C database:
