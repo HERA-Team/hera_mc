@@ -67,4 +67,4 @@ for uvfile in args.files:
             t0 = Time.now()
             session.update_rtp_launch_record(obsid, t0)
 
-    session.commit()
+        session.commit()

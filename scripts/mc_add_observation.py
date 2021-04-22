@@ -35,4 +35,4 @@ for uvfile in args.files:
         print("Inserting obsid into M&C:" + str(obsid))
 
         session.add_obs(starttime, stoptime, obsid)
-    session.commit()
+        session.commit()

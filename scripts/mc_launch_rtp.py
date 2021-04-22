@@ -232,4 +232,4 @@ for jd in jd_list:
                 sys.exit(
                     f"could not update RTP Launch Record for file {filename}; aborting"
                 )
-    session.commit()
+        session.commit()
