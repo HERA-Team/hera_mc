@@ -354,7 +354,7 @@ def test_correlator_info(sys_handle):
     assert len(index) == 1
     index = index[0]
 
-    assert corr_inputs[index] == ('e2>SNPA000700', 'n0>SNPA000700')
+    assert corr_inputs[index] == ('e2>heraNode700Snap0', 'n0>heraNode700Snap0')
 
     assert ([int(name.split('HH')[1]) for name in ant_names]
             == corr_dict['antenna_numbers'])
@@ -378,7 +378,7 @@ def test_correlator_info(sys_handle):
     assert corr_dict['cm_version'] == mc_git_hash
 
     expected_keys = ['antenna_numbers', 'antenna_names', 'antenna_positions',
-                     'correlator_inputs', 'cm_version',
+                     'correlator_inputs', 'cm_version', 'snap_serial_numbers',
                      'cofa_lat', 'cofa_lon', 'cofa_alt']
     assert set(corr_dict.keys()) == set(expected_keys)
 
