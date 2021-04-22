@@ -28,23 +28,15 @@ def sys_handle(mcsession):
 def test_set_redis_cminfo(mcsession):
     redishost = TEST_DEFAULT_REDIS_HOST
     rsession = redis.Redis(redishost)
-    rsession.hmset('testing_corr:map', {'snap_host': b'{"SNPB000701":"heraNode700Snap700"}'})
     cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession, testing=True)
     test_out = rsession.hget('testing_corr:map', 'ant_to_snap')
-    assert b'{"host": "SNPA000700", "channel": 0}' in test_out
+    assert b'{"host": "heraNode700Snap0", "channel": 0}' in test_out
     test_out = rsession.hget('testing_cminfo', 'cofa_lat')
     assert b'-30.72' in test_out
     test_out = rsession.hget('testing_corr:map', 'snap_to_ant')
-    assert b'heraNode700Snap700' in test_out
-    snap_info = 'e2>SNPC000008'
-    redis_info = rsession.hget('corr:map', 'not_there')
-    host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=redis_info)
-    assert host == 'SNPC000008'
-    host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=None)
-    assert host == 'SNPC000008'
-    assert adc == 1
+    assert b'heraNode700Snap0' in test_out
     test_out = rsession.hget('testing_corr:map', 'all_snap_inputs')
-    assert b'SNPC000702": [0, 1, 2, 3, 4, 5]' in test_out
+    assert b'heraNode700Snap0' in test_out
 
 
 def test_watch_dog(mcsession):
