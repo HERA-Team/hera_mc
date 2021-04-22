@@ -14,23 +14,52 @@ MCSession object.
 
 """
 
+import h5py
+import numpy as np
 from astropy.time import Time
 
 import hera_mc.mc as mc
 
 
+def get_obsid_from_file(filename):
+    """
+    Extract obsid from a UVH5 file.
+
+    Parameters
+    ----------
+    filename : str
+        The full path to the file.
+
+    Returns
+    -------
+    obsid : int
+        The obsid of the file.
+
+    """
+    with h5py.File(filename, "r") as h5f:
+        time_array = h5f["Header/time_array"][()]
+    t0 = np.unique(time_array)[0]
+    time0 = Time(t0, format="jd", scale="utc")
+    obsid = int(np.floor(time0.gps))
+
+    return obsid
+
+
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
     parser.add_argument(
-        "obsid", dest="obsid",
+        "obsid",
         type=int,
-        help="obsid processed by RTP, or obsid_start for multiple obsid tasks."
+        help=(
+            "file processed by RTP corresponding to obsid, or obsid_start for "
+            "multiple obsid tasks."
+        ),
     )
     parser.add_argument(
-        "task_name", dest="task_name", type=str, help="RTP task name"
+        "task_name", type=str, help="RTP task name"
     )
     parser.add_argument(
-        "job_id", dest="job_id", type=int, help="Slurm Job ID of the RTP task."
+        "job_id", type=int, help="Slurm Job ID of the RTP task."
     )
     parser.add_argument(
         "--obsid_list",
@@ -38,35 +67,42 @@ if __name__ == "__main__":
         nargs='+',
         type=int,
         default=None,
-        help="List of obsids included in this task, only used for multiple obsid tasks. "
+        help="List of files included in this task, only used for multiple obsid tasks. "
         "Will add entries to the `rtp_task_multiple_track` and "
         "`rtp_task_multiple_resource_record` tables rather than to the "
         "`rtp_task_jobid` table."
     )
-    parser.add_argument(
-
-    )
     args = parser.parse_args()
+
+    # extract obsid from input file
+    obsid = get_obsid_from_file(args.obsid)
+
+    if args.obsid_list is not None:
+        # extract obsid for each file
+        obsid_list = []
+        for filename in args.obsid_list:
+            oid = get_obsid_from_file(filename)
+            obsid_list.append(oid)
 
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
         if args.obsid_list is not None:
-            for obsid in args.obsid_list:
+            for oid in obsid_list:
                 session.add_rtp_task_multiple_track(
-                    obsid_start=args.obsid,
+                    obsid_start=obsid,
                     task_name=args.task_name,
-                    obsid=obsid,
+                    obsid=oid,
                 )
 
             session.add_rtp_task_multiple_jobid(
-                obsid_start=args.obsid,
+                obsid_start=obsid,
                 task_name=args.task_name,
                 start_time=Time.now(),
                 job_id=args.job_id,
             )
         else:
             session.add_rtp_task_jobid(
-                obsid=args.obsid,
+                obsid=obsid,
                 task_name=args.task_name,
                 start_time=Time.now(),
                 job_id=args.job_id,
