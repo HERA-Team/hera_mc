@@ -37,6 +37,11 @@ def test_set_redis_cminfo(mcsession):
     assert b'heraNode700Snap0' in test_out
     test_out = rsession.hget('testing_corr:map', 'all_snap_inputs')
     assert b'heraNode700Snap0' in test_out
+    cmitest = {'antenna_numbers': [1], 'antenna_names': ['Fred'],
+               'correlator_inputs': [['abc']], 'snap_serial_numbers': ['0']}
+    aa, bb, cc, dd = cm_redis_corr.cminfo_redis_snap(cmitest)
+    with pytest.warns(UserWarning, match='abc is not an allowed correlator input'):
+        aa, bb, cc, dd = cm_redis_corr.cminfo_redis_snap(cmitest)
 
 
 def test_watch_dog(mcsession):
