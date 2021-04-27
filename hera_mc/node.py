@@ -117,12 +117,12 @@ def get_node_list(nodeServerAddress=defaultServerAddress):
         Node redis address.
 
     """
-    import nodeControl
+    import node_control
 
     if nodeServerAddress is None:
         nodeServerAddress = defaultServerAddress
 
-    return nodeControl.get_valid_nodes(serverAddress=nodeServerAddress)
+    return node_control.get_valid_nodes(serverAddress=nodeServerAddress)
 
 
 class NodeSensor(MCDeclarativeBase):
@@ -198,7 +198,7 @@ class NodeSensor(MCDeclarativeBase):
 
 def _get_sensor_dict(node, nodeServerAddress=defaultServerAddress):
     """
-    Get node sensor information from a nodeControl object.
+    Get node sensor information from a node_control object.
 
     Parameters
     ----------
@@ -215,9 +215,9 @@ def _get_sensor_dict(node, nodeServerAddress=defaultServerAddress):
         keys are values in `sensor_key_dict`, values are sensor readings.
 
     """
-    import nodeControl
+    import node_control
 
-    node_controller = nodeControl.NodeControl(
+    node_controller = node_control.NodeControl(
         node, serverAddress=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
@@ -360,7 +360,7 @@ class NodePowerStatus(MCDeclarativeBase):
 
 def _get_power_dict(node, nodeServerAddress=defaultServerAddress):
     """
-    Get node sensor information from a nodeControl object.
+    Get node sensor information from a node_control object.
 
     Parameters
     ----------
@@ -377,9 +377,9 @@ def _get_power_dict(node, nodeServerAddress=defaultServerAddress):
         keys are values in `power_status_key_dict`, values are power states.
 
     """
-    import nodeControl
+    import node_control
 
-    node_controller = nodeControl.NodeControl(node, serverAddress=nodeServerAddress)
+    node_controller = node_control.NodeControl(node, serverAddress=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
     return node_controller.get_power_status()
@@ -493,6 +493,67 @@ class NodePowerCommand(MCDeclarativeBase):
             raise ValueError('command must be one of: on, off')
 
         return cls(time=node_time, node=node, part=part, command=command)
+
+
+def _get_power_command_dict(node, nodeServerAddress=defaultServerAddress):
+    """
+    Get node sensor information from a node_control object.
+
+    Parameters
+    ----------
+    node : int
+        Node number.
+    nodeServerAddress : str
+        Node redis address.
+
+    Returns
+    -------
+    datetime timestamp
+        Time of the status
+    dict
+        keys are values in `power_status_key_dict`, values are power states.
+
+    """
+    import node_control
+
+    node_controller = node_control.NodeControl(node, serverAddress=nodeServerAddress)
+
+    # Get the sensor data for this node, returned as a dict
+    return node_controller.get_power_command_list()
+
+
+def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list=None,
+                              power_dict=None):
+    """
+    Return a list of node power status objects with data from the nodes.
+
+    Parameters
+    ----------
+    nodeServerAddress : str
+        Address of server where the node redis database can be accessed.
+    node_list : list of int
+        A list of integers specifying which nodes to get data for,
+        primarily for testing purposes. If None, get_node_list() is called.
+    power_dict : dict
+        A dict containing info as in the return dict from _get_power_command_dict()
+        for testing purposes. If None, _get_power_command_dict() is called.
+
+    Returns
+    -------
+    A list of NodePowerCommand objects
+
+    """
+    if node_list is None:
+        node_list = get_node_list(nodeServerAddress=nodeServerAddress)
+    node_power_list = []
+    for node in node_list:
+        if power_dict is None:
+            power_dict = _get_power_command_dict(node, nodeServerAddress=nodeServerAddress)
+        time = Time(power_dict[str(node)]['timestamp'], format='xxxtime', scale='utc')
+        prt = power_dict[str(node)]['part']
+        cmd = power_dict[str(node)]['cmd']
+        node_power_list.append(NodePowerCommand.create(time, node, prt, cmd))
+    return node_power_list
 
 
 class NodeWhiteRabbitStatus(MCDeclarativeBase):
@@ -880,7 +941,7 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
 
 def _get_wr_status_dict(node, nodeServerAddress=defaultServerAddress):
     """
-    Get node white rabbit status information from a nodeControl object.
+    Get node white rabbit status information from a node_control object.
 
     Parameters
     ----------
@@ -895,7 +956,7 @@ def _get_wr_status_dict(node, nodeServerAddress=defaultServerAddress):
         Time of the status
     dict
         keys are values in `wr_key_dict`, values are sensor readings.
-        from hera_node_mc nodeControl.get_wr_status docstring:
+        from hera_node_mc node_control.get_wr_status docstring:
 
         If no stats exist for this White Rabbit endpoint, returns `None`.
         Otherwise Returns a tuple `(timestamp, statii)`, where `timestamp` is a
@@ -955,9 +1016,9 @@ def _get_wr_status_dict(node, nodeServerAddress=defaultServerAddress):
             'wr[0|1]_ucnt'  (int)  : Update counter
             'wr[0|1]_sec'   (int)  : Current TAI time in seconds from UNIX epoch
     """
-    import nodeControl
+    import node_control
 
-    node_controller = nodeControl.NodeControl(
+    node_controller = node_control.NodeControl(
         node, serverAddress=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict

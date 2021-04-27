@@ -18,7 +18,7 @@ import numpy as np
 from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
-from astropy.time import Time, TimeDelta
+from astropy.time import Time
 
 from .observations import Observation
 from .subsystem_error import SubsystemError
@@ -253,7 +253,7 @@ class MCSession(Session):
 
     def _insert_ignoring_duplicates(self, table_class, obj_list, update=False):
         """
-        Insert record regardless of duplication.
+        Insert record handling duplication based on update flag.
 
         If the current database is PostgreSQL, this function will use a
         special insertion method that will ignore or update records that are
@@ -2508,140 +2508,22 @@ class MCSession(Session):
                                  filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
 
-    def node_power_command(self, nodeID, part, command, nodeServerAddress=None,
-                           dryrun=False, testing=False):
+    def add_node_power_command_from_nodecontrol(self):
         """
-        Issue a power command (on/off) to a particular node & part.
+        Get and add node power command information using a node_control object.
 
-        Parameters
-        ----------
-        nodeID : int
-            Node number (integer running from 0 to 30).
-        part : str or list of strings
-            Part name(s) (e.g. fem, snap0) or 'all', allowed values are keys to
-            node.power_command_part_dict.
-        command : {'on', 'off'}
-            Power command to send.
-        nodeServerAddress : str
-            Address for node server. Defaults to node.defaultServerAddress.
-        dryrun : bool
-            If true, just return the list of NodePowerCommand objects, do not
-            issue the power commands or log them to the database.
-        testing : bool
-            If true, do not use anything that requires connection to nodes
-            (implies dry run).
+        This function connects to the node and gets the latest data using the
+        `create_power_command_list` function.
 
-        Returns
-        -------
-        list of objects, optional
-            If dry_run and/or testing is True: list of NodePowerCommand command objects.
-
-        Raises
-        ------
-        ValueError
-            If the specied node is not in the array and `testing` is False.
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the node power command data densely on qmaster.
 
         """
-        if nodeServerAddress is None:
-            nodeServerAddress = node.defaultServerAddress
+        node_power_list = node.create_power_command_list()
 
-        if testing:
-            node_list = list(range(1, 31))
-            dryrun = True
-        else:
-            node_list = node.get_node_list(nodeServerAddress=nodeServerAddress)
-        if nodeID not in node_list:
-            raise ValueError('node not in list of active nodes: ', node_list)
-
-        if isinstance(part, str):
-            part = [part]
-        else:
-            # ensure no duplicates
-            part = list(set(part))
-
-        if part[0] == 'all':
-            part = list(node.power_command_part_dict.keys())
-
-        if 'snap_relay' in part:
-            if command == 'on':
-                # move snap_relay to the start of the list (it needs to be
-                # powered before the snaps)
-                part.remove('snap_relay')
-                part.insert(0, 'snap_relay')
-            else:
-                # make sure all snaps are powered down first
-                for partname in list(node.power_command_part_dict.keys()):
-                    if partname.startswith('snap') and partname not in part:
-                        part.insert(0, partname)
-                # move snap_relay to the end of the list.
-                part.remove('snap_relay')
-                part.append('snap_relay')
-        elif command == 'on':
-            # check if any snaps in part. If so, need to power snap_relay first
-            for partname in part:
-                if partname.startswith('snap'):
-                    part.insert(0, 'snap_relay')
-                    break
-
-        # Check whether parts are already in desired state. If so, omit them
-        # from command. make sure we have most recent power status info
-        if not testing:
-            self.add_node_power_status_from_nodecontrol()
-        # Get recent power status
-        starttime = Time.now() - TimeDelta(120, format='sec')
-        stoptime = Time.now() + TimeDelta(60, format='sec')
-        node_powers = self.get_node_power_status(
-            starttime=starttime, stoptime=stoptime, nodeID=nodeID)
-        if len(node_powers) > 0:
-            latest_powers = node_powers[-1]
-            drop_part = []
-            for partname in part:
-                if partname not in list(node.power_command_part_dict.keys()):
-                    raise ValueError(
-                        'part must be one of: '
-                        + ', '.join(list(node.power_command_part_dict.keys()))
-                        + '. part is actually {}'.format(partname))
-                power_status = getattr(latest_powers, partname + '_powered')
-                if command == 'on':
-                    if power_status:
-                        # already on, take it out of the list
-                        drop_part.append(partname)
-                else:
-                    if not power_status:
-                        # already off, take it out of the list
-                        drop_part.append(partname)
-            for partname in drop_part:
-                # do this after earlier loop so the list doesn't change during
-                # iteration
-                part.remove(partname)
-
-        if dryrun:
-            command_list = []
-
-        for partname in part:
-            command_time = Time.now()
-            # create object first to catch any mistakes
-            command_obj = node.NodePowerCommand.create(
-                command_time, nodeID, partname, command
-            )
-
-            if not dryrun:  # pragma: no cover
-                import nodeControl
-
-                node_controller = nodeControl.NodeControl(
-                    nodeID, serverAddress=nodeServerAddress)
-                getattr(node_controller,
-                        node.power_command_part_dict[partname])(command)
-
-                self.add(command_obj)
-            else:
-                command_list.append(command_obj)
-
-        if dryrun:
-            return command_list
-        else:   # pragma: no cover
-            self.commit()
-            return
+        self._insert_ignoring_duplicates(node.NodePowerCommand, node_power_list)
 
     def get_node_power_command(self, most_recent=None, starttime=None,
                                stoptime=None, nodeID=None,
