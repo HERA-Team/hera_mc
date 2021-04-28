@@ -489,7 +489,7 @@ class NodePowerCommand(MCDeclarativeBase):
                              + ', '.join(list(power_command_part_dict.keys()))
                              + '. part is actually {}'.format(part))
 
-        if command not in ['on', 'off']:
+        if command not in ['on', 'off', 'reset']:
             raise ValueError('command must be one of: on, off')
 
         return cls(time=node_time, node=node, part=part, command=command)
@@ -549,10 +549,10 @@ def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list=
     for node in node_list:
         if power_dict is None:
             power_dict = _get_power_command_dict(node, nodeServerAddress=nodeServerAddress)
-        time = Time(power_dict[str(node)]['timestamp'], format='xxxtime', scale='utc')
-        prt = power_dict[str(node)]['part']
-        cmd = power_dict[str(node)]['cmd']
-        node_power_list.append(NodePowerCommand.create(time, node, prt, cmd))
+        for prt, val in power_dict[str(node)].items():
+            cmd = val[0]
+            time = Time(val[1], format='unix', scale='utc')
+            node_power_list.append(NodePowerCommand.create(time, node, prt, cmd))
     return node_power_list
 
 
