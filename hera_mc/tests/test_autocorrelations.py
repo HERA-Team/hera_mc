@@ -12,23 +12,9 @@ from hera_mc import autocorrelations
 
 from ..tests import requires_redis
 
-from plotly import graph_objects as go
-
-
 standard_query_time = Time(
     datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format="datetime"
 )
-
-
-@pytest.fixture(scope="function")
-def test_figure(mcsession):
-    test_session = mcsession
-    figure = autocorrelations.plot_HERA_autocorrelations_for_plotly(
-        test_session, offline_testing=True
-    )
-    yield figure
-
-    del figure
 
 
 @pytest.fixture(scope="module")
@@ -131,33 +117,6 @@ def test_add_autocorrelations_errors(mcsession, args, err_type, err_msg):
     with pytest.raises(err_type) as cm:
         test_session.add_autocorrelation(*args)
     assert str(cm.value).startswith(err_msg)
-
-
-def test_figure_is_created(test_figure):
-    assert isinstance(test_figure, go.Figure)
-
-
-def test_ants_in_figure(mcsession, autocorrs):
-    test_session = mcsession
-    for ant in autocorrs:
-        corr = autocorrs[ant]
-        test_session.add_autocorrelation(
-            time=corr["time"],
-            antenna_number=corr["antenna_number"],
-            antenna_feed_pol=corr["antenna_feed_pol"],
-            measurement_type=corr["measurement_type"],
-            value=corr["value"],
-        )
-    # This test is a little tautological however it does check that all
-    # antennas we "think" are connected have autocorrelations.
-    # the test session has no entries in this table so it should be null
-    figure = figure = autocorrelations.plot_HERA_autocorrelations_for_plotly(
-        test_session, offline_testing=True
-    )
-
-    ants_in_fig = sorted(d.name for d in figure.data)
-
-    assert ants_in_fig == ["31n", "4e"]
 
 
 # check all four HeraAuto objects which should be created
