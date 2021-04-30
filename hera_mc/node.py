@@ -108,22 +108,23 @@ wr_datetime_keys = ['build_date', 'gw_date', 'manufacture_date']
 wr_tai_sec_keys = ['port0_time', 'port1_time']
 
 
-def get_node_list(nodeServerAddress=defaultServerAddress):
+def get_node_list(nodeServerAddress=defaultServerAddress, count=None):
     """
     Get the list of active nodes from redis.
 
     Parameters
     ----------
     nodeServerAddress : str
-        Node redis address.
-
+        Node redis address
+    count : int or None
+        Number of status terms in redis to make active node
     """
     import node_control
 
     if nodeServerAddress is None:
         nodeServerAddress = defaultServerAddress
 
-    return node_control.get_valid_nodes(serverAddress=nodeServerAddress)
+    return node_control.get_redis_nodes(serverAddress=nodeServerAddress, count=count)
 
 
 class NodeSensor(MCDeclarativeBase):
