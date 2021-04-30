@@ -34,7 +34,8 @@ power_status_key_dict = {'snap_relay_powered': 'power_snap_relay',
 power_command_part_dict = {'snap_relay': 'power_snap_relay',
                            'snap0': 'power_snap_0', 'snap1': 'power_snap_1',
                            'snap2': 'power_snap_2', 'snap3': 'power_snap_3',
-                           'pam': 'power_pam', 'fem': 'power_fem'}
+                           'pam': 'power_pam', 'fem': 'power_fem',
+                           'reset': 'reset'}
 
 wr_key_dict = {
     'board_info_str': 'board_info_str',
