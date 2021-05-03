@@ -11,6 +11,7 @@ import numpy as np
 from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String
 
 from . import MCDeclarativeBase
+from . import cm_utils
 
 # the address of a redis database being used as a clearing house for meta-data
 # and message passing which the node server has access to and watches
@@ -124,7 +125,7 @@ def get_node_list(nodeServerAddress=defaultServerAddress, count=None):
     if nodeServerAddress is None:
         nodeServerAddress = defaultServerAddress
 
-    return node_control.get_redis_nodes(serverAddress=nodeServerAddress, count=count)
+    return node_control.node_control.get_redis_nodes(serverAddress=nodeServerAddress, count=count)
 
 
 class NodeSensor(MCDeclarativeBase):
@@ -188,7 +189,7 @@ class NodeSensor(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError(f'time must be an astropy Time object not {type(time)}')
         node_time = floor(time.gps)
 
         return cls(time=node_time, node=node, top_sensor_temp=top_sensor_temp,
@@ -219,7 +220,7 @@ def _get_sensor_dict(node, nodeServerAddress=defaultServerAddress):
     """
     import node_control
 
-    node_controller = node_control.NodeControl(
+    node_controller = node_control.node_control.NodeControl(
         node, serverAddress=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
@@ -258,8 +259,7 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress,
         else:
             sensor_data = sensor_dict[str(node)]
             timestamp = sensor_data.pop('timestamp')
-
-        time = Time(timestamp, format='datetime', scale='utc')
+        time = cm_utils.get_astropytime(timestamp, format_is_floatable='unix')
 
         top_sensor_temp = sensor_data.get(
             sensor_key_dict['top_sensor_temp'], None)
@@ -419,7 +419,7 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
             power_data = power_dict[str(node)]
             timestamp = power_data.pop('timestamp')
 
-        time = Time(timestamp, format='datetime', scale='utc')
+        time = cm_utils.get_astropytime(timestamp, format_is_floatable='unix')
 
         # All items in this dictionary are strings.
         snap_relay_powered = power_data[power_status_key_dict['snap_relay_powered']]
@@ -553,7 +553,7 @@ def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list=
             power_dict = _get_power_command_dict(node, nodeServerAddress=nodeServerAddress)
         for prt, val in power_dict[str(node)].items():
             cmd = val[0]
-            time = Time(val[1], format='unix', scale='utc')
+            time = cm_utils.get_astropytime(val[1], format_is_floatable='unix')
             node_power_list.append(NodePowerCommand.create(time, node, prt, cmd))
     return node_power_list
 
@@ -1063,8 +1063,7 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
         else:
             wr_data = wr_status_dict[str(node)]
             timestamp = wr_data.pop('timestamp')
-
-        node_time = Time(timestamp, format='datetime', scale='utc')
+        node_time = cm_utils.get_astropytime(timestamp, format_is_floatable='unix')
 
         col_dict = {'node_time': node_time, 'node': node}
         for key, value in wr_key_dict.items():

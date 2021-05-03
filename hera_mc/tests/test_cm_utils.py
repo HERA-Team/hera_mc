@@ -158,7 +158,7 @@ def test_datetime():
     import datetime
     tout = cm_utils.get_astropytime(datetime.datetime.now())
     assert type(tout) == Time
-    tout = cm_utils.get_astropytime(2400001.0)
+    tout = cm_utils.get_astropytime(2462500.5)
     assert type(tout) == Time
     pytest.raises(ValueError, cm_utils.get_astropytime, 0.0)
     tout = cm_utils.get_astropytime('none')
