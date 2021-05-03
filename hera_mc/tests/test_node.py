@@ -288,7 +288,7 @@ def white_rabbit_status_cleaned(white_rabbit_status):
     for node_str, node_dict in white_rabbit_status.items():
         nodeID = int(node_str)
         cleaned_dict[node_str] = {
-            'node_time': Time(node_dict['timestamp'], format='datetime', scale='utc'),
+            'node_time': Time(node_dict['timestamp'], format='unix', scale='utc'),
             'node': nodeID
         }
         for key, value in node.wr_key_dict.items():

@@ -12,6 +12,9 @@ import datetime
 from . import mc
 
 PAST_DATE = '2000-01-01'
+bound_lower_gps = 946339215  # 2010-01-01
+bound_lower_jd = 2455197.5  # 2010-01-01
+bound_upper_jd = 2462501.5  # 2029-12-31
 
 
 def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
@@ -456,7 +459,7 @@ def get_time_for_display(display):
     return d
 
 
-def get_astropytime(adate, atime=0):
+def get_astropytime(adate, atime=0, format_is_floatable=None):
     """
     Get an astropy time object based on provided string.
 
@@ -472,7 +475,8 @@ def get_astropytime(adate, atime=0):
                     astropy Time:  just gets returned
                     datetime: just gets converted
                     int, long, float:  interpreted as gps_second or julian date
-                                       depending on appropriate range
+                                       depending on appropriate range.  Or unix
+                                       if format_is_floatable is set to 'unix'
                     string:  '<' - PAST_DATE
                              '>' - future_date()
                              'now' or 'current'
@@ -483,6 +487,8 @@ def get_astropytime(adate, atime=0):
     atime : a time in various formats, ignored if time information is provided in adate
                 float, int:  hours in decimal time
                 string:  HH[:MM[:SS]] or hours in decimal time
+    format_is_floatable : str or None
+                            force to unix if adate is convertable to a float
 
     Returns
     -------
@@ -500,12 +506,14 @@ def get_astropytime(adate, atime=0):
     except ValueError:
         pass
     if isinstance(adate, float):
-        if adate > 1000000000.0:
+        if format_is_floatable == 'unix':
+            return Time(adate, format='unix')
+        if adate > bound_lower_gps:
             return Time(adate, format='gps')
-        if adate > 2400000.0 and adate < 2500000.0:
+        if adate > bound_lower_jd and adate < bound_upper_jd:
             return Time(adate, format='jd')
         raise ValueError('Invalid format:  date as a number should be gps time '
-                         'or julian date, not {}.'.format(adate))
+                         'or julian date or unix/"unix", not {}.'.format(adate))
     if isinstance(adate, str):
         if adate == '<':
             return Time(PAST_DATE, scale='utc')
