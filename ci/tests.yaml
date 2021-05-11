@@ -13,7 +13,7 @@ dependencies:
   - pandas
   - pip
   - plotly
-  - conda-forge::pyqt
+  - pyqt
   - psutil
   - psycopg2
   - pytest-cov
