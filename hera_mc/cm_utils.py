@@ -488,7 +488,8 @@ def get_astropytime(adate, atime=0, format_is_floatable=None):
                 float, int:  hours in decimal time
                 string:  HH[:MM[:SS]] or hours in decimal time
     format_is_floatable : str or None
-                            force to unix if adate is convertable to a float
+                            force to format if adate is convertable to a float
+                            one of unix, gps, jd
 
     Returns
     -------
@@ -508,9 +509,9 @@ def get_astropytime(adate, atime=0, format_is_floatable=None):
     if isinstance(adate, float):
         if format_is_floatable == 'unix':
             return Time(adate, format='unix')
-        if adate > bound_lower_gps:
+        if adate > bound_lower_gps or format_is_floatable == 'gps':
             return Time(adate, format='gps')
-        if adate > bound_lower_jd and adate < bound_upper_jd:
+        if adate > bound_lower_jd and adate < bound_upper_jd or format_is_floatable == 'jd':
             return Time(adate, format='jd')
         raise ValueError('Invalid format:  date as a number should be gps time '
                          'or julian date or unix/"unix", not {}.'.format(adate))
