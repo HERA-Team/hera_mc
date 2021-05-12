@@ -2513,7 +2513,7 @@ class MCSession(Session):
         Get and add node power command information using a node_control object.
 
         This function connects to the node and gets the latest data using the
-        `create_power_command_list` function.
+        `create_power_command_list` function which gets value from redis.
 
         If the current database is PostgreSQL, this function will use a
         special insertion method that will ignore records that are redundant

@@ -381,7 +381,7 @@ def _get_power_dict(node, nodeServerAddress=defaultServerAddress):
     """
     import node_control
 
-    node_controller = node_control.NodeControl(node, serverAddress=nodeServerAddress)
+    node_controller = node_control.node_control.NodeControl(node, serverAddress=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
     return node_controller.get_power_status()
@@ -414,12 +414,12 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
     for node in node_list:
 
         if power_dict is None:
-            timestamp, power_data = _get_power_dict(node, nodeServerAddress=nodeServerAddress)
+            power_data = _get_power_dict(node, nodeServerAddress=nodeServerAddress)
         else:
             power_data = power_dict[str(node)]
-            timestamp = power_data.pop('timestamp')
 
-        time = cm_utils.get_astropytime(timestamp, format_is_floatable='unix')
+        time = cm_utils.get_astropytime(power_data[node]['timestamp'],
+                                        format_is_floatable='unix')
 
         # All items in this dictionary are strings.
         snap_relay_powered = power_data[power_status_key_dict['snap_relay_powered']]
@@ -552,8 +552,8 @@ def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list=
         if power_dict is None:
             power_dict = _get_power_command_dict(node, nodeServerAddress=nodeServerAddress)
         for prt, val in power_dict[str(node)].items():
-            cmd = val[0]
-            time = cm_utils.get_astropytime(val[1], format_is_floatable='unix')
+            cmd = val['command']
+            time = cm_utils.get_astropytime(val['timestamp'], format_is_floatable='unix')
             node_power_list.append(NodePowerCommand.create(time, node, prt, cmd))
     return node_power_list
 
