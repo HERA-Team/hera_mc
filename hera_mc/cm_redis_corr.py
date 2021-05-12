@@ -54,9 +54,11 @@ def cminfo_redis_snap(cminfo):
             snap_to_ant[snap_hostname][channel] = name + pol.upper()
             all_snap_inputs.setdefault(snap_hostname, [])
             all_snap_inputs[snap_hostname].append(snap_input)
-            try:  # if present, check if hostnames are the same between polarizations.
+            try:  # if already present make sure it agrees
                 if snap_to_serial[snap_hostname] != snap_snr[_i]:
-                    warnings.warn(f"snap_hostname {snap_hostname} differs between inputs")
+                    msg = "{} inconsistent: {}  !=  {}".format(
+                          snap_hostname, snap_to_serial[snap_hostname], snap_snr[_i])
+                    raise ValueError(msg)
             except KeyError:  # if not present, add it
                 snap_to_serial[snap_hostname] = snap_snr[_i]
 

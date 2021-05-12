@@ -44,8 +44,7 @@ def test_set_redis_cminfo(mcsession):
     cmitest = {'antenna_numbers': [1], 'antenna_names': ['Fred'],
                'correlator_inputs': [['e0>snapx', 'n2>snapx']],
                'snap_serial_numbers': [['0', '1']]}
-    with pytest.warns(UserWarning, match='snap_hostname snapx differs between inputs'):
-        aa, bb, cc, dd = cm_redis_corr.cminfo_redis_snap(cmitest)
+    pytest.raises(ValueError, cm_redis_corr.cminfo_redis_snap, cminfo=cmitest)
 
 
 def test_watch_dog(mcsession):
