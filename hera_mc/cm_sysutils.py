@@ -25,8 +25,8 @@ class SystemInfo:
 
     sys_info = ['station_name', 'station_type_name', 'tile', 'datum', 'easting',
                 'northing', 'lon', 'lat',
-                'elevation', 'antenna_number', 'correlator_input', 'start_date',
-                'stop_date', 'epoch']
+                'elevation', 'antenna_number', 'correlator_input', 'snap_serial',
+                'start_date', 'stop_date', 'epoch']
 
     def __init__(self, stn=None):
         if stn is None:
@@ -152,22 +152,29 @@ class Handling:
             station_info.antenna_number = ant_num
             current_hookup = hud[key].hookup
             corr = {}
-            pe = {}
+            snap_serial_number = {}
+            hutype = {}
             station_info.timing = {}
             for ppkey, hu in current_hookup.items():
                 pol = ppkey[0].lower()
-                pe[pol] = hud[key].hookup_type[ppkey]
-                cind = self.sysdef.corr_index[pe[pol]] - 1  # The '- 1' makes it the downstream_part
+                hutype[pol] = hud[key].hookup_type[ppkey]
+                cind = self.sysdef.corr_index[hutype[pol]] - 1
                 try:
-                    corr[pol] = "{}>{}".format(
-                        hu[cind].downstream_input_port, hu[cind].downstream_part)
-                except IndexError:  # pragma: no cover
+                    snap_port = hu[cind].downstream_input_port
+                    node = int(hu[cind + 1].downstream_part[1:])
+                    loc = int(hu[cind + 1].downstream_input_port[3:])
+                    feng = f"heraNode{node}Snap{loc}"
+                    corr[pol] = "{}>{}".format(snap_port, feng)
+                    snap_serial_number[pol] = hu[cind].downstream_part
+                except (IndexError, ValueError):  # pragma: no cover
                     corr[pol] = 'None'
+                    snap_serial_number[pol] = 'None'
                 station_info.timing[pol] = hud[key].timing[ppkey]
             if corr['e'] == 'None' and corr['n'] == 'None':
                 continue
-            station_info.correlator_input = (str(corr['e']), str(corr['n']))
-            station_info.epoch = 'e:{}, n:{}'.format(pe['e'], pe['n'])
+            station_info.correlator_input = (corr['e'], corr['n'])
+            station_info.snap_serial = (snap_serial_number['e'], snap_serial_number['n'])
+            station_info.epoch = f"e:{hutype['e']}, n:{hutype['n']}"
             station_conn.append(station_info)
         return station_conn
 
@@ -227,8 +234,10 @@ class Handling:
                 # This is actually station names, not antenna names,
                 # but antenna_names is what it's called in pyuvdata
                 'antenna_names': stn_arrays.station_name,
-                # this is a tuple giving the f-engine names for x, y
+                # this is a tuple giving the f-engine names for e, n
                 'correlator_inputs': stn_arrays.correlator_input,
+                # this is a tuple giving the corresponding snap serial numbers for e, n
+                'snap_serial_numbers': stn_arrays.snap_serial,
                 'antenna_positions': rel_ecef_positions.tolist(),
                 'cm_version': cm_version,
                 'cofa_lat': cofa_loc.lat,

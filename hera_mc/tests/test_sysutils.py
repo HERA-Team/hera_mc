@@ -28,23 +28,23 @@ def sys_handle(mcsession):
 def test_set_redis_cminfo(mcsession):
     redishost = TEST_DEFAULT_REDIS_HOST
     rsession = redis.Redis(redishost)
-    rsession.hmset('testing_corr:map', {'snap_host': b'{"SNPB000701":"heraNode700Snap700"}'})
     cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession, testing=True)
     test_out = rsession.hget('testing_corr:map', 'ant_to_snap')
-    assert b'{"host": "SNPA000700", "channel": 0}' in test_out
+    assert b'{"host": "heraNode700Snap0", "channel": 0}' in test_out
     test_out = rsession.hget('testing_cminfo', 'cofa_lat')
     assert b'-30.72' in test_out
     test_out = rsession.hget('testing_corr:map', 'snap_to_ant')
-    assert b'heraNode700Snap700' in test_out
-    snap_info = 'e2>SNPC000008'
-    redis_info = rsession.hget('corr:map', 'not_there')
-    host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=redis_info)
-    assert host == 'SNPC000008'
-    host, adc = cm_redis_corr.snap_part_to_host_input(part=snap_info, redis_info=None)
-    assert host == 'SNPC000008'
-    assert adc == 1
+    assert b'heraNode700Snap0' in test_out
     test_out = rsession.hget('testing_corr:map', 'all_snap_inputs')
-    assert b'SNPC000702": [0, 1, 2, 3, 4, 5]' in test_out
+    assert b'heraNode700Snap0' in test_out
+    cmitest = {'antenna_numbers': [1], 'antenna_names': ['Fred'],
+               'correlator_inputs': [['abc']], 'snap_serial_numbers': ['0']}
+    with pytest.warns(UserWarning, match='abc is not an allowed correlator input'):
+        aa, bb, cc, dd = cm_redis_corr.cminfo_redis_snap(cmitest)
+    cmitest = {'antenna_numbers': [1], 'antenna_names': ['Fred'],
+               'correlator_inputs': [['e0>snapx', 'n2>snapx']],
+               'snap_serial_numbers': [['0', '1']]}
+    pytest.raises(ValueError, cm_redis_corr.cminfo_redis_snap, cminfo=cmitest)
 
 
 def test_watch_dog(mcsession):
@@ -354,7 +354,7 @@ def test_correlator_info(sys_handle):
     assert len(index) == 1
     index = index[0]
 
-    assert corr_inputs[index] == ('e2>SNPA000700', 'n0>SNPA000700')
+    assert corr_inputs[index] == ('e2>heraNode700Snap0', 'n0>heraNode700Snap0')
 
     assert ([int(name.split('HH')[1]) for name in ant_names]
             == corr_dict['antenna_numbers'])
@@ -378,7 +378,7 @@ def test_correlator_info(sys_handle):
     assert corr_dict['cm_version'] == mc_git_hash
 
     expected_keys = ['antenna_numbers', 'antenna_names', 'antenna_positions',
-                     'correlator_inputs', 'cm_version',
+                     'correlator_inputs', 'cm_version', 'snap_serial_numbers',
                      'cofa_lat', 'cofa_lon', 'cofa_alt']
     assert set(corr_dict.keys()) == set(expected_keys)
 
