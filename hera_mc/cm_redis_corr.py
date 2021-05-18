@@ -56,9 +56,11 @@ def cminfo_redis_snap(cminfo):
             all_snap_inputs[snap_hostname].append(snap_input)
             try:  # if already present make sure it agrees
                 if snap_to_serial[snap_hostname] != snap_snr[_i]:
-                    msg = "{} inconsistent for antpol {}{}: {}  !=  {}".format(
-                          snap_hostname, ant, pol,
-                          snap_to_serial[snap_hostname], snap_snr[_i])
+                    msg = 'Snap hostname-to-serial inconsistent:\n'
+                    msg += '\tCurrent for antpol {}{} -> hostname={}, serial={}\n'.format(
+                        ant, pol, snap_hostname, snap_snr[_i])
+                    msg += '\tStored -> hostname={}, serial={}'.format(
+                        snap_hostname, snap_to_serial[snap_hostname])
                     raise ValueError(msg)
             except KeyError:  # if not present, add it
                 snap_to_serial[snap_hostname] = snap_snr[_i]
