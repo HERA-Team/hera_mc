@@ -224,7 +224,7 @@ def _get_sensor_dict(node, nodeServerAddress=defaultServerAddress):
         node, serverAddress=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
-    return node_controller.get_sensors()
+    return node_controller.get_sensors()[node]
 
 
 def create_sensor_readings(nodeServerAddress=defaultServerAddress,
@@ -254,12 +254,10 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress,
     for node in node_list:
 
         if sensor_dict is None:
-            timestamp, sensor_data = _get_sensor_dict(
-                node, nodeServerAddress=nodeServerAddress)
+            sensor_data = _get_sensor_dict(node, nodeServerAddress=nodeServerAddress)
         else:
             sensor_data = sensor_dict[str(node)]
-            timestamp = sensor_data.pop('timestamp')
-        time = cm_utils.get_astropytime(timestamp, format_is_floatable='unix')
+        time = cm_utils.get_astropytime(sensor_data['timestamp'], format_is_floatable='unix')
 
         top_sensor_temp = sensor_data.get(
             sensor_key_dict['top_sensor_temp'], None)
@@ -384,7 +382,7 @@ def _get_power_dict(node, nodeServerAddress=defaultServerAddress):
     node_controller = node_control.node_control.NodeControl(node, serverAddress=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
-    return node_controller.get_power_status()
+    return node_controller.get_power_status()[node]
 
 
 def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
@@ -418,8 +416,7 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
         else:
             power_data = power_dict[str(node)]
 
-        time = cm_utils.get_astropytime(power_data[node]['timestamp'],
-                                        format_is_floatable='unix')
+        time = cm_utils.get_astropytime(power_data['timestamp'], format_is_floatable='unix')
 
         # All items in this dictionary are strings.
         snap_relay_powered = power_data[power_status_key_dict['snap_relay_powered']]
@@ -1020,11 +1017,11 @@ def _get_wr_status_dict(node, nodeServerAddress=defaultServerAddress):
     """
     import node_control
 
-    node_controller = node_control.NodeControl(
+    node_controller = node_control.node_control.NodeControl(
         node, serverAddress=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
-    return node_controller.get_wr_status()
+    return node_controller.get_wr_status()[node]
 
 
 def create_wr_status(nodeServerAddress=defaultServerAddress,
@@ -1052,18 +1049,18 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
         node_list = get_node_list(nodeServerAddress=nodeServerAddress)
     wr_status_list = []
     for node in node_list:
-
         if wr_status_dict is None:
             wr_retval = _get_wr_status_dict(node, nodeServerAddress=nodeServerAddress)
             if wr_retval is not None:
-                timestamp, wr_data = wr_retval
+                wr_data = wr_retval
             else:
                 # No info for this node.
                 continue
         else:
             wr_data = wr_status_dict[str(node)]
-            timestamp = wr_data.pop('timestamp')
-        node_time = cm_utils.get_astropytime(timestamp, format_is_floatable='unix')
+        node_time = cm_utils.get_astropytime(wr_data['timestamp'], format_is_floatable='unix')
+        if node_time is None:
+            print(wr_data)
 
         col_dict = {'node_time': node_time, 'node': node}
         for key, value in wr_key_dict.items():
