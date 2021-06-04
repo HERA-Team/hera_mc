@@ -48,6 +48,61 @@ def read_forward_list():  # pragma: no cover
             fwd.append(line.strip())
 
 
+def node_verdict(age_out=3800, To=None, testing=False):
+    """
+    Check redis for latest node power command results.
+
+    This will check redis for the results from the latest node power command
+    (see hera_node_mc repo) and send an email if update is less than age_out
+    seconds.
+
+    Parameters
+    ----------
+    age_out : int
+        Number of seconds under which to send an update email.
+    To : str
+        csv-list of email accounts to use.  None uses .forward
+    testing : bool
+        Flag for testing, so won't send email.
+
+    Return
+    ------
+    The return dictionary contains the results keyed on node.
+    """
+    import redis
+    import time
+    connection_pool = redis.ConnectionPool(host='redishost', decode_responses=True)
+    r = redis.StrictRedis(connection_pool=connection_pool, charset='utf-8')
+    node_info = {}
+    for key in r.keys():
+        if 'valid:node' in key:
+            node = int(key.split(':')[2])
+            node_info.setdefault(node, {})
+            node_info[node]['valid'] = True if int(r[key]) else False
+        elif 'verdict:node' in key:
+            node = int(key.split(':')[2])
+            node_info.setdefault(node, {})
+            hw = key.split(':')[3]
+            node_info[node][hw] = r.hgetall(key)
+    param = r.hgetall('verdict')
+    msg_header = "Node verdict:  mode '{}', timeout {}, time {}\n".format(
+        param['mode'], param['timeout'], int(float(param['time'])))
+    msg = '{}'.format(msg_header)
+    if int(time.time() - float(param['time'])) < age_out:
+        for node in sorted(node_info.keys()):
+            s = "Node {} is{}valid\n".format(
+                node, ' ' if node_info[node]['valid'] else ' not ')
+            for hw, val in node_info[node].items():
+                if hw != 'valid':
+                    s += "\t{}: {}\n".format(hw, val)
+            s += '\n'
+            msg += s
+    node_info['param'] = param
+    if msg != msg_header:
+        return send_email(msg_header.splitlines()[0], msg, To, skip_send=testing)
+    return node_info
+
+
 def node_temperature(at_date=None, at_time=0.0,
                      temp_threshold=45.0, time_threshold=1.0,
                      To=None, testing=False, session=None):
