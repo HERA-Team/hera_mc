@@ -9,6 +9,10 @@
 
 from astropy.time import Time, TimeDelta
 from astropy.units import Quantity
+from astropy.coordinates import EarthLocation, AltAz, SkyCoord, TETE
+from astropy import units as u
+from scipy import signal
+
 from hera_mc.utils import LSTScheduler
 from hera_mc import mc, geo_handling
 from hera_mc import correlator as corr
@@ -37,6 +41,9 @@ if __name__ == '__main__':
                         "string for interpreting starttime (string).", default=None)
     parser.add_argument('--starttime_scale', help="Astropy Time object scale "
                         "string for interpreting starttime (string).", default=None)
+    parser.add_argument('--center_ra_deg', help="Center Right Ascention (RA) in degrees"
+                        "this argument is in act with starttime is None.", 
+                        default=None)
     parser.add_argument('--duration',
                         help="Required if command is 'take_data', "
                         "ignored otherwise. Length of time to take data for, "
@@ -83,6 +90,24 @@ if __name__ == '__main__':
     elif args.now:
         # now + 60s buffer for correlator to collect itself
         starttime_obj = Time.now() + TimeDelta(Quantity(60, 'second'))
+    elif center_ra_deg is not None:
+        #Hard-coded numbers
+        hera_lat=-30.72152612068946*u.deg,
+        hera_lon=21.428303826863036*u.deg, 
+        hera_height=1051.6900000208989*u.m
+        gc_ra_deg = 266.42
+        gc_dec_deg = -29.01
+        #Calculation
+        hera_site = EarthLocation(hera_lon, hera_lat, hera_height)
+        now = Time.now()
+        time_arr = Time(now.jd + np.linspace(0, 1, 24*60+1), format='jd') #every minute
+        aa = AltAz(location=hera_site, obstime=time_arr)
+        c_equ = SkyCoord(gc_ra_deg, gc_dec_deg, frame=TETE, unit='deg')
+        c_hor = c_equ.transform_to(aa)
+        c_hor.az.wrap_angle = 180*u.deg
+        idx_peak = signal.find_peaks(c_hor.alt.degree)[0][0]
+        time_peak = time_arr[idx_peak]
+        starttime_obj = time_peak - duration/2.        
     else:
         starttime_obj = None
     if args.lstlock and starttime_obj is not None:
