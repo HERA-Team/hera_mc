@@ -9,14 +9,10 @@
 
 from astropy.time import Time, TimeDelta
 from astropy.units import Quantity
-from astropy.coordinates import EarthLocation, AltAz, SkyCoord, TETE
-from astropy import units as u
-from scipy import signal
-import numpy as np
-
 from hera_mc.utils import LSTScheduler
 from hera_mc import mc, geo_handling
 from hera_mc import correlator as corr
+import hera_cal
 
 valid_commands = sorted(corr.command_dict.keys())
 
@@ -42,8 +38,8 @@ if __name__ == '__main__':
                         "string for interpreting starttime (string).", default=None)
     parser.add_argument('--starttime_scale', help="Astropy Time object scale "
                         "string for interpreting starttime (string).", default=None)
-    parser.add_argument('--center_ra_deg', help="Center Right Ascention (RA) in degrees"
-                        "this argument is in act with starttime is None.",
+    parser.add_argument('--center_ra_rad', help="Center Right Ascention (RA) in radians"
+                        "this argument is in act when starttime is None.",
                         default=None)
     parser.add_argument('--duration',
                         help="Required if command is 'take_data', "
@@ -91,22 +87,11 @@ if __name__ == '__main__':
     elif args.now:
         # now + 60s buffer for correlator to collect itself
         starttime_obj = Time.now() + TimeDelta(Quantity(60, 'second'))
-    elif args.center_ra_deg is not None:
-        # Hard-coded numbers
-        hera_lat = -30.72152612068946 * u.deg
-        hera_lon = 21.428303826863036 * u.deg
-        hera_height = 1051.6900000208989 * u.m
-        # Calculation
-        hera_site = EarthLocation(hera_lon, hera_lat, hera_height)
+    elif args.center_ra_rad is not None:
         now = Time.now()
-        time_arr = Time(now.jd + np.linspace(0, 1, 24 * 60 + 1), format='jd')  # every minute
-        aa = AltAz(location=hera_site, obstime=time_arr)
-        c_equ = SkyCoord(args.center_ra_deg, hera_lat, frame=TETE, unit='deg')
-        c_hor = c_equ.transform_to(aa)
-        c_hor.az.wrap_angle = 180 * u.deg
-        idx_peak = signal.find_peaks(c_hor.alt.degree)[0][0]
-        time_peak = time_arr[idx_peak]
-        starttime_obj = time_peak - args.duration / 2.      
+        jd_center = hera_cal.utils.LST2JD(args.center_ra_rad, now.jd)
+        time_center = Time(jd_center, format='jd')
+        starttime_obj = time_center - args.duration / 2.     
     else:
         starttime_obj = None
     if args.lstlock and starttime_obj is not None:
