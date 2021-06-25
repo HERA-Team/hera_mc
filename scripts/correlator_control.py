@@ -12,6 +12,7 @@ from astropy.units import Quantity
 from astropy.coordinates import EarthLocation, AltAz, SkyCoord, TETE
 from astropy import units as u
 from scipy import signal
+import numpy as np
 
 from hera_mc.utils import LSTScheduler
 from hera_mc import mc, geo_handling
@@ -90,22 +91,22 @@ if __name__ == '__main__':
     elif args.now:
         # now + 60s buffer for correlator to collect itself
         starttime_obj = Time.now() + TimeDelta(Quantity(60, 'second'))
-    elif center_ra_deg is not None:
-        #Hard-coded numbers
-        hera_lat=-30.72152612068946*u.deg,
-        hera_lon=21.428303826863036*u.deg, 
-        hera_height=1051.6900000208989*u.m
-        #Calculation
+    elif args.center_ra_deg is not None:
+        # Hard-coded numbers
+        hera_lat = -30.72152612068946 * u.deg,
+        hera_lon = 21.428303826863036 * u.deg, 
+        hera_height = 1051.6900000208989 * u.m
+        # Calculation
         hera_site = EarthLocation(hera_lon, hera_lat, hera_height)
         now = Time.now()
-        time_arr = Time(now.jd + np.linspace(0, 1, 24*60+1), format='jd') #every minute
+        time_arr = Time(now.jd + np.linspace(0, 1, 24 * 60 + 1), format='jd') # every minute
         aa = AltAz(location=hera_site, obstime=time_arr)
-        c_equ = SkyCoord(center_ra_deg, hera_lat, frame=TETE, unit='deg')
+        c_equ = SkyCoord(args.center_ra_deg, hera_lat, frame=TETE, unit='deg')
         c_hor = c_equ.transform_to(aa)
-        c_hor.az.wrap_angle = 180*u.deg
+        c_hor.az.wrap_angle = 180 * u.deg
         idx_peak = signal.find_peaks(c_hor.alt.degree)[0][0]
         time_peak = time_arr[idx_peak]
-        starttime_obj = time_peak - duration/2.        
+        starttime_obj = time_peak - args.duration / 2.        
     else:
         starttime_obj = None
     if args.lstlock and starttime_obj is not None:
