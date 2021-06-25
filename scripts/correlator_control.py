@@ -43,7 +43,7 @@ if __name__ == '__main__':
     parser.add_argument('--starttime_scale', help="Astropy Time object scale "
                         "string for interpreting starttime (string).", default=None)
     parser.add_argument('--center_ra_deg', help="Center Right Ascention (RA) in degrees"
-                        "this argument is in act with starttime is None.", 
+                        "this argument is in act with starttime is None.",
                         default=None)
     parser.add_argument('--duration',
                         help="Required if command is 'take_data', "
@@ -93,8 +93,8 @@ if __name__ == '__main__':
         starttime_obj = Time.now() + TimeDelta(Quantity(60, 'second'))
     elif args.center_ra_deg is not None:
         # Hard-coded numbers
-        hera_lat = -30.72152612068946 * u.deg,
-        hera_lon = 21.428303826863036 * u.deg, 
+        hera_lat = -30.72152612068946 * u.deg
+        hera_lon = 21.428303826863036 * u.deg
         hera_height = 1051.6900000208989 * u.m
         # Calculation
         hera_site = EarthLocation(hera_lon, hera_lat, hera_height)
@@ -106,7 +106,7 @@ if __name__ == '__main__':
         c_hor.az.wrap_angle = 180 * u.deg
         idx_peak = signal.find_peaks(c_hor.alt.degree)[0][0]
         time_peak = time_arr[idx_peak]
-        starttime_obj = time_peak - args.duration / 2.        
+        starttime_obj = time_peak - args.duration / 2.      
     else:
         starttime_obj = None
     if args.lstlock and starttime_obj is not None:
