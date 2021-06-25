@@ -99,7 +99,7 @@ if __name__ == '__main__':
         # Calculation
         hera_site = EarthLocation(hera_lon, hera_lat, hera_height)
         now = Time.now()
-        time_arr = Time(now.jd + np.linspace(0, 1, 24 * 60 + 1), format='jd') # every minute
+        time_arr = Time(now.jd + np.linspace(0, 1, 24 * 60 + 1), format='jd')  # every minute
         aa = AltAz(location=hera_site, obstime=time_arr)
         c_equ = SkyCoord(args.center_ra_deg, hera_lat, frame=TETE, unit='deg')
         c_hor = c_equ.transform_to(aa)
