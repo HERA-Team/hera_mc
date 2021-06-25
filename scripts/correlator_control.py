@@ -95,14 +95,12 @@ if __name__ == '__main__':
         hera_lat=-30.72152612068946*u.deg,
         hera_lon=21.428303826863036*u.deg, 
         hera_height=1051.6900000208989*u.m
-        gc_ra_deg = 266.42
-        gc_dec_deg = -29.01
         #Calculation
         hera_site = EarthLocation(hera_lon, hera_lat, hera_height)
         now = Time.now()
         time_arr = Time(now.jd + np.linspace(0, 1, 24*60+1), format='jd') #every minute
         aa = AltAz(location=hera_site, obstime=time_arr)
-        c_equ = SkyCoord(gc_ra_deg, gc_dec_deg, frame=TETE, unit='deg')
+        c_equ = SkyCoord(center_ra_deg, hera_lat, frame=TETE, unit='deg')
         c_hor = c_equ.transform_to(aa)
         c_hor.az.wrap_angle = 180*u.deg
         idx_peak = signal.find_peaks(c_hor.alt.degree)[0][0]
