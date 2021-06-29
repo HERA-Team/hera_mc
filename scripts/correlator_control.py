@@ -91,7 +91,7 @@ if __name__ == '__main__':
         now = Time.now()
         jd_center = hera_cal.utils.LST2JD(args.center_ra_rad, now.jd)
         time_center = Time(jd_center, format='jd')
-        starttime_obj = time_center - args.duration / 2.     
+        starttime_obj = time_center - args.duration / 2.
     else:
         starttime_obj = None
     if args.lstlock and starttime_obj is not None:
