@@ -4670,10 +4670,12 @@ class MCSession(Session):
             starttime = Time(0, format='gps')
         elif not isinstance(starttime, Time):
             starttime = Time(starttime, format='gps')
+
         if stoptime is None:
-            stoptime = Time(0, format='gps')
-        elif not isinstance(starttime, Time):
+            stoptime = Time.now()
+        elif not isinstance(stoptime, Time):
             stoptime = Time(stoptime, format='gps')
+
         return starttime, stoptime
 
     def get_ant_metric(self, ant=None, pol=None, metric=None, starttime=None,
