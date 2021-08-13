@@ -1,0 +1,17 @@
+# "upstart" configuration file that keeps the M&C server status daemon running
+#
+# Copy this file to /etc/init/hera-server-status.conf and edit the "UNDEF" below
+# to the subsystem for this machine: either "lib" or "rtp". You may also need
+# to remove the "envs/HERA/" from the path if this machine doesn't use Anaconda
+# environments.
+#
+# For netboot machines that share an image but belong to different subsystems,
+# change the UNDEF to something like `$(cat /persistent/etc/hera-subsystem.txt)`.
+
+respawn
+respawn limit 15 5
+
+start on runlevel [2345]
+stop on runlevel [06]
+
+exec su -c "/home/obs/anaconda/envs/HERA/bin/mc_server_status_daemon.py UNDEF" obs

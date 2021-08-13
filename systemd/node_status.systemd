@@ -1,0 +1,21 @@
+# Configuration file for systemd that keeps the node status monitoring
+# daemon running.
+#
+# Copy this file to /etc/systemd/system/hera-node-status.service . Then run
+# `systemctl enable hera-node-status` and `systemctl start hera-node-status`.
+#
+# This service is meant to be run on qmaster.
+
+[Unit]
+Description=HERA Node Status Daemon
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=60
+User=obs
+Group=obs
+ExecStart=/home/obs/anaconda/envs/HERA/bin/mc_monitor_nodes.py
+
+[Install]
+WantedBy=multi-user.target

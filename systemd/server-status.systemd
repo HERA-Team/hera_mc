@@ -1,0 +1,22 @@
+# Configuration file for systemd that keeps the M&C server status daemon running
+#
+# Copy this file to /etc/systemd/system/hera-server-status.service and
+# edit the "UNDEF" below to correspond to the subsystem that this
+# machine is part of: either "lib" or "rtp". You may also need to
+# remove the "envs/HERA/" from the path if this machine doesn't use
+# Anaconda environments. Then run `systemctl enable hera-server-status`
+# and `systemctl start hera-server-status`.
+
+[Unit]
+Description=HERA Server Status Daemon
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=60
+User=obs
+Group=obs
+ExecStart=/home/obs/anaconda/envs/HERA/bin/mc_server_status_daemon.py UNDEF
+
+[Install]
+WantedBy=multi-user.target
