@@ -2412,9 +2412,9 @@ class MCSession(Session):
                                  filter_column='node', filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_node_power_status(self, time, nodeID, snap_relay_powered,
-                              snap0_powered, snap1_powered, snap2_powered,
-                              snap3_powered, fem_powered, pam_powered):
+    def _status(self, time, nodeID, snap_relay_powered,
+                snap0_powered, snap1_powered, snap2_powered,
+                snap3_powered, fem_powered, pam_powered):
         """
         Add new node power status data to the M&C database.
 
