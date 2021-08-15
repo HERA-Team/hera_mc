@@ -517,7 +517,7 @@ def _get_power_command_dict(node, nodeServerAddress=defaultServerAddress):
 
     node_controller = node_control.NodeControl(node, serverAddress=nodeServerAddress)
 
-    # Get the sensor data for this node, returned as a dict
+    # Get the power command data for this node, returned as a dict
     return node_controller.get_power_command_list()
 
 
