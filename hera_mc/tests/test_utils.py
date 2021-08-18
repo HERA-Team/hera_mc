@@ -4,6 +4,7 @@
 
 import numpy as np
 import numpy.testing as npt
+import pytest
 
 from astropy.time import Time
 from astropy.units import Quantity
@@ -26,6 +27,12 @@ def test_LSTScheduler_lstbinsize():
     sidesec = Quantity(1, 'sday').to('day').value
     npt.assert_almost_equal((scheduletime2 - scheduletime1).value * 24 * 3600,
                             LSTbin_size * sidesec, decimal=5)
+
+    with pytest.raises(
+        TypeError,
+        match="starttime is not a valid Astropy Time object"
+    ):
+        utils.LSTScheduler("foo", LSTbin_size)
 
 
 def test_LSTScheduler_multiday():

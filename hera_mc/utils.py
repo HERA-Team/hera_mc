@@ -4,21 +4,13 @@
 """Common utility fuctions."""
 
 from math import floor
+from collections.abc import Iterable
+
 from astropy.time import Time
 from astropy.time import TimeDelta
 from astropy import coordinates as coord
 from astropy import units as u
 import numpy as np
-
-
-def str_to_bytes(s):
-    """Python 3 compliant str to byte conversion."""
-    return s.encode('utf8')
-
-
-def bytes_to_str(b):
-    """Python 3 compliant byte to str conversion."""
-    return b.decode('utf8')
 
 
 def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
@@ -104,8 +96,7 @@ def get_iterable(x):
     if isinstance(x, str):
         return (x,)
     else:
-        try:
-            iter(x)
-        except TypeError:
+        if isinstance(x, Iterable):
+            return x
+        else:
             return (x,)
-    return x

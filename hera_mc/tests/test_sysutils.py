@@ -11,7 +11,7 @@ from argparse import Namespace
 import pytest
 import numpy as np
 
-from .. import (cm_sysutils, cm_partconnect, cm_hookup, cm_utils, utils,
+from .. import (cm_sysutils, cm_partconnect, cm_hookup, cm_utils,
                 cm_sysdef, cm_dossier, cm_active, cm_redis_corr,
                 watch_dog, node)
 from .. tests import requires_redis
@@ -373,7 +373,7 @@ def test_correlator_info(sys_handle):
 
     # In Python 3, we sometimes get Unicode, sometimes bytes
     if isinstance(mc_git_hash, bytes):
-        mc_git_hash = utils.bytes_to_str(mc_git_hash)
+        mc_git_hash = mc_git_hash.decode('utf8')
 
     assert corr_dict['cm_version'] == mc_git_hash
 
