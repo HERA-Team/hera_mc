@@ -4639,46 +4639,50 @@ class MCSession(Session):
         obj_list = [AntMetrics.create(obsid, ant, pol, metric, db_time, val)]
         self._insert_ignoring_duplicates(AntMetrics, obj_list, update=True)
 
-    def get_ant_metric(self, ant=None, pol=None, metric=None, starttime=None,
-                       stoptime=None):
+    def get_ant_metric(self, ant=None, pol=None, metric=None, obsid=None,
+                       write_to_file=False, filename=None):
         """
         Get antenna metric(s) from the M&C database.
 
         Parameters
         ----------
-        ant : int or list of integers
-            Antenna number. Defaults to returning all antennas.
-        pol : str ('x', 'y', 'n', 'e', 'jnn', or 'jee'), or list
-            Polarization. Defaults to returning all pols.
-        metric : str or list of strings
-            Metric name. Defaults to returning all metrics.
-        starttime : astropy Time object OR gps second.
-            Beginning of query time interval. Defaults to gps=0 (6 Jan, 1980)
-        stoptime : astropy Time object OR gps second.
-            End of query time interval. Defaults to now.
+        ant : int
+            Antenna number to get records for. If none, all antennas will be included.
+        pol : str
+            Polarization to get records for, one of ['x', 'y', 'n', 'e', 'jnn', or
+            'jee']. If none, all polarizations will be included.
+        metric : str
+            Metric name to get records for. If none, all metrics will beincluded.
+        obsid : int
+            obsid to get records for. If none, all obsids will be included.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
 
         Returns
         -------
         list of AntMetrics objects
 
         """
-        args = []
+        query = self.query(AntMetrics)
+
         if ant is not None:
-            args.append(AntMetrics.ant.in_(get_iterable(ant)))
+            query = query.filter(AntMetrics.ant == ant)
         if pol is not None:
-            args.append(AntMetrics.pol.in_(get_iterable(pol)))
+            query = query.filter(AntMetrics.pol == pol)
         if metric is not None:
-            args.append(AntMetrics.metric.in_(get_iterable(metric)))
-        if starttime is None:
-            starttime = 0
-        elif isinstance(starttime, Time):
-            starttime = starttime.gps
-        if stoptime is None:
-            stoptime = Time.now().gps
-        elif isinstance(stoptime, Time):
-            stoptime = stoptime.gps
-        args.append(AntMetrics.obsid.between(starttime, stoptime))
-        return self.query(AntMetrics).filter(*args).all()
+            query = query.filter(AntMetrics.metric == metric)
+        if obsid is not None:
+            query = query.filter(AntMetrics.obsid == obsid)
+
+        if write_to_file:
+            self._write_query_to_file(query, AntMetrics, filename=filename)
+
+        else:
+            return query.all()
 
     def add_array_metric(self, obsid, metric, val):
         """
@@ -4699,37 +4703,42 @@ class MCSession(Session):
         obj_list = [ArrayMetrics.create(obsid, metric, db_time, val)]
         self._insert_ignoring_duplicates(ArrayMetrics, obj_list, update=True)
 
-    def get_array_metric(self, metric=None, starttime=None, stoptime=None):
+    def get_array_metric(
+        self, metric=None, obsid=None, write_to_file=False, filename=None
+    ):
         """
         Get array metric(s) from the M&C database.
 
         Parameters
         ----------
-        metric : str or list of strings
-            Metric name. Defaults to returning all metrics.
-        starttime : astropy Time object OR gps second.
-            Beginning of query time interval. Defaults to gps=0 (6 Jan, 1980)
-        stoptime : astropy Time object OR gps second.
-            End of query time interval. Defaults to now.
+        metric : str
+            Metric name to get records for. If none, all metrics will beincluded.
+        obsid : int
+            obsid to get records for. If none, all obsids will be included.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
 
         Returns
         -------
         list of ArrayMetrics objects
 
         """
-        args = []
+        query = self.query(ArrayMetrics)
+
         if metric is not None:
-            args.append(ArrayMetrics.metric.in_(get_iterable(metric)))
-        if starttime is None:
-            starttime = 0
-        elif isinstance(starttime, Time):
-            starttime = starttime.gps
-        if stoptime is None:
-            stoptime = Time.now().gps
-        elif isinstance(stoptime, Time):
-            stoptime = stoptime.gps
-        args.append(ArrayMetrics.obsid.between(starttime, stoptime))
-        return self.query(ArrayMetrics).filter(*args).all()
+            query = query.filter(ArrayMetrics.metric == metric)
+        if obsid is not None:
+            query = query.filter(ArrayMetrics.obsid == obsid)
+
+        if write_to_file:
+            self._write_query_to_file(query, ArrayMetrics, filename=filename)
+
+        else:
+            return query.all()
 
     def add_metric_desc(self, metric, desc):
         """

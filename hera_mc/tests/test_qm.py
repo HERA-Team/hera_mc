@@ -74,14 +74,12 @@ def test_AntMetrics(mcsession, pol_x, pol_y):
     assert len(r) == 2
     for ri in r:
         assert ri.pol == pol_x
-    r = test_session.get_ant_metric(starttime=obsid - 10, stoptime=obsid + 4)
+    r = test_session.get_ant_metric(obsid=obsid)
     assert len(r) == 4
-    t1 = Time(obsid - 10, format='gps')
-    t2 = Time(obsid + 4, format='gps')
-    r = test_session.get_ant_metric(starttime=t1, stoptime=t2)
-    assert len(r) == 4
-    r = test_session.get_ant_metric(ant=[0, 3], pol=[pol_x, pol_y])
-    assert len(r) == 4
+    r = test_session.get_ant_metric(ant=3, pol=pol_y)
+    assert len(r) == 1
+    assert r[0].ant == 3
+    assert r[0].pol == pol_y
 
 
 @pytest.mark.parametrize(
@@ -154,8 +152,10 @@ def test_ArrayMetrics(mcsession):
     obsid = utils.calculate_obsid(t1)
     # Create obs to satifsy foreign key constraints
     test_session.add_obs(t1, t2, obsid)
-    test_session.add_obs(t1 - TimeDelta(10.0, format='sec'), t2, obsid - 10)
-    test_session.add_obs(t1 + TimeDelta(10.0, format='sec'), t2, obsid + 10)
+    obsid0 = obsid - 10
+    obsid2 = obsid + 10
+    test_session.add_obs(t1 - TimeDelta(10.0, format='sec'), t2, obsid0)
+    test_session.add_obs(t1 + TimeDelta(10.0, format='sec'), t2, obsid2)
     # Same for metric description
     test_session.add_metric_desc('test', 'Test metric')
     test_session.commit()
@@ -175,18 +175,14 @@ def test_ArrayMetrics(mcsession):
     assert r[0].val == 6.5
 
     # Test more exciting queries
-    test_session.add_array_metric(obsid + 10, 'test', 2.5)
-    test_session.add_array_metric(obsid - 10, 'test', 2.5)
+    test_session.add_array_metric(obsid2, 'test', 2.5)
+    test_session.add_array_metric(obsid0, 'test', 2.5)
     r = test_session.get_array_metric(metric='test')
     assert len(r) == 3
-    r = test_session.get_array_metric(starttime=obsid)
-    assert len(r) == 2
-    r = test_session.get_array_metric(stoptime=obsid)
-    assert len(r) == 2
-    t1 = Time(obsid - 20, format='gps')
-    t2 = Time(obsid + 20, format='gps')
-    r = test_session.get_array_metric(starttime=t1, stoptime=t2)
-    assert len(r) == 3
+    r = test_session.get_array_metric(obsid=obsid)
+    assert len(r) == 1
+    r = test_session.get_array_metric(obsid=obsid0)
+    assert len(r) == 1
 
     # Test exceptions
     pytest.raises(ValueError, test_session.add_array_metric, 'obs', 'test', 4.5)
