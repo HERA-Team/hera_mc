@@ -90,8 +90,15 @@ def test_AntMetrics(mcsession, tmpdir, pol_x, pol_y):
     assert r[0].pol == pol_y
 
     filename = os.path.join(tmpdir, 'test_ant_metric.csv')
-    test_session.get_ant_metric(write_to_file=True, filename=filename)
+    test_session.get_ant_metric(metric='test', write_to_file=True, filename=filename)
     os.remove(filename)
+
+    with pytest.raises(
+        ValueError,
+        match='If most_recent is set to False, at least one of ant, pol, metric, '
+        'obsid, or starttime must be specified.'
+    ):
+        test_session.get_ant_metric(most_recent=False)
 
 
 @pytest.mark.parametrize(
@@ -122,9 +129,8 @@ def test_add_AntMetrics_errors(mcsession, ant, pol, metric, val, err_msg):
     test_session.commit()
 
     # Test exceptions
-    with pytest.raises(ValueError) as cm:
+    with pytest.raises(ValueError, match=err_msg):
         test_session.add_ant_metric(obsid, ant, pol, metric, val)
-    assert str(cm.value).startswith(err_msg)
 
 
 def test_add_AntMetrics_bad_obsid(mcsession):
@@ -204,6 +210,13 @@ def test_ArrayMetrics(mcsession, tmpdir):
     test_session.get_array_metric(metric='test', write_to_file=True, filename=filename)
     os.remove(filename)
 
+    with pytest.raises(
+        ValueError,
+        match='If most_recent is set to False, at least one of metric, obsid, or '
+        'starttime must be specified.'
+    ):
+        test_session.get_array_metric(most_recent=False)
+
     # Test exceptions
     with pytest.raises(
         ValueError,
@@ -249,7 +262,7 @@ def test_MetricList(mcsession, tmpdir):
     assert r[0].desc == 'new desc'
 
     filename = os.path.join(tmpdir, 'test_metric_desc.csv')
-    test_session.get_array_metric(metric='test', write_to_file=True, filename=filename)
+    test_session.get_metric_desc(metric='test', write_to_file=True, filename=filename)
     os.remove(filename)
 
     # Test exceptions

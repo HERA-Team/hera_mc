@@ -47,3 +47,12 @@ def test_LSTScheduler_multiday():
     starttime2 = Time('2015-9-20T05:00:09.0', format='isot', scale='utc')
     scheduletime2, hour2 = utils.LSTScheduler(starttime2, LSTbin_size)
     assert np.isclose((hour2.hour - hour1.hour) * 3600, 0)
+
+
+def test_get_iterable():
+    assert utils.get_iterable(2) == (2,)
+    assert utils.get_iterable([2]) == [2]
+    assert utils.get_iterable([2, 3]) == [2, 3]
+    assert utils.get_iterable("foo") == ("foo",)
+    assert utils.get_iterable(["foo"]) == ["foo"]
+    assert utils.get_iterable(["foo", "bar"]) == ["foo", "bar"]

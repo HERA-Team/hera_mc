@@ -4795,8 +4795,8 @@ class MCSession(Session):
                 most_recent = True
             elif most_recent is False:
                 raise ValueError(
-                    'If most_recent is set to False, at least one of ant, pol, metric, '
-                    'obsid, or starttime must be specified.'
+                    'If most_recent is set to False, at least one of metric, obsid, or '
+                    'starttime must be specified.'
                 )
 
         if most_recent is True or starttime is not None:
