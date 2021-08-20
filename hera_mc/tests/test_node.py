@@ -467,12 +467,12 @@ def test_sensor_reading_errors(mcsession, sensor):
 
 
 @requires_redis
-def test_add_node_sensor_readings_from_nodecontrol(mcsession):
+def test_add_node_sensor_readings_from_node_control(mcsession):
     test_session = mcsession
 
     node_list = node.get_node_list()
 
-    test_session.add_node_sensor_readings_from_nodecontrol()
+    test_session.add_node_sensor_readings()
     result = test_session.get_node_sensor_readings(
         starttime=Time.now() - TimeDelta(120.0, format='sec'),
         stoptime=Time.now() + TimeDelta(120.0, format='sec'))
@@ -499,10 +499,10 @@ def test_add_node_power_status(mcsession, power):
     snap3_powered = power['1']['power_snap_3']
     pam_powered = power['1']['power_pam']
     fem_powered = power['1']['power_fem']
-    test_session.add_node_power_status(t1, 1, snap_relay_powered,
-                                       snap0_powered, snap1_powered,
-                                       snap2_powered, snap3_powered,
-                                       fem_powered, pam_powered)
+    test_session.add_node_power_status_from_node_control(t1, 1, snap_relay_powered,
+                                                         snap0_powered, snap1_powered,
+                                                         snap2_powered, snap3_powered,
+                                                         fem_powered, pam_powered)
 
     expected = node.NodePowerStatus(time=int(floor(t1.gps)), node=1,
                                     snap_relay_powered=True,
@@ -526,6 +526,7 @@ def test_add_node_power_status(mcsession, power):
     test_session.add_node_power_status(
         t1, 2, snap_relay_powered, snap0_powered, snap1_powered, snap2_powered,
         snap3_powered, fem_powered, pam_powered)
+    test_session.add_node_power_status_from_node_control()
 
     result = test_session.get_node_power_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=1)
@@ -599,18 +600,18 @@ def test_node_power_status_errors(mcsession, power):
     snap3_powered = power['1']['power_snap_3']
     pam_powered = power['1']['power_pam']
     fem_powered = power['1']['power_fem']
-    pytest.raises(ValueError, test_session.add_node_power_status,
+    pytest.raises(ValueError, test_session.add_node_power_status_from_node_control,
                   'foo', 1, snap_relay_powered, snap0_powered, snap1_powered,
                   snap2_powered, snap3_powered, fem_powered, pam_powered)
 
 
 @requires_redis
-def test_add_node_power_status_from_nodecontrol(mcsession):
+def test_add_node_power_status_from_node_control(mcsession):
     test_session = mcsession
 
     node_list = node.get_node_list()
 
-    test_session.add_node_power_status_from_nodecontrol()
+    test_session.add_node_power_status_from_node_control()
     result = test_session.get_node_power_status(
         starttime=Time.now() - TimeDelta(120.0, format='sec'),
         stoptime=Time.now() + TimeDelta(120.0, format='sec'))
@@ -740,7 +741,7 @@ def test_add_white_rabbit_status_from_nodecontrol(mcsession):
 
     node_list = node.get_node_list()
 
-    test_session.add_node_white_rabbit_status_from_nodecontrol()
+    test_session.add_node_white_rabbit_status_from_node_control()
     result = test_session.get_node_white_rabbit_status(
         starttime=Time.now() - TimeDelta(120.0, format='sec'),
         stoptime=Time.now() + TimeDelta(120.0, format='sec'))

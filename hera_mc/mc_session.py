@@ -2350,7 +2350,7 @@ class MCSession(Session):
             humidity_sensor_temp, humidity)
         )
 
-    def add_node_sensor_readings_from_nodecontrol(self):
+    def add_node_sensor_readings_from_node_control(self):
         """
         Get and add node sensor information using a nodeControl object.
 
@@ -2445,7 +2445,24 @@ class MCSession(Session):
             snap2_powered, snap3_powered, fem_powered, pam_powered)
         )
 
-    def add_node_power_status_from_nodecontrol(self):
+    def add_node_power_status(self):
+        """
+        Get and add node power status information using a nodeControl object.
+
+        This function connects to the node and gets the latest data using the
+        `create_power_status` function.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the node power status data densely on qmaster.
+
+        """
+        node_power_list = node.create_power_status()
+
+        self._insert_ignoring_duplicates(node.NodePowerStatus, node_power_list)
+
+    def add_node_power_status_from_node_control(self):
         """
         Get and add node power status information using a nodeControl object.
 
@@ -2508,7 +2525,24 @@ class MCSession(Session):
                                  filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_node_power_command_from_nodecontrol(self):
+    def add_node_power_command(self):
+        """
+        Get and add node power command information using a node_control object.
+
+        This function connects to the node and gets the latest data using the
+        `create_power_command_list` function which gets value from redis.
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the node power command data densely on qmaster.
+
+        """
+        node_power_list = node.create_power_command_list()
+
+        self._insert_ignoring_duplicates(node.NodePowerCommand, node_power_list)
+
+    def add_node_power_command_from_node_control(self):
         """
         Get and add node power command information using a node_control object.
 
@@ -2719,7 +2753,7 @@ class MCSession(Session):
         """
         self.add(node.NodeWhiteRabbitStatus.create(col_dict))
 
-    def add_node_white_rabbit_status_from_nodecontrol(self):
+    def add_node_white_rabbit_status_from_node_control(self):
         """
         Get and add node white rabbit information using a nodeControl object.
 
