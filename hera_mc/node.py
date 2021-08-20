@@ -125,7 +125,7 @@ def get_node_list(nodeServerAddress=defaultServerAddress, count=None):
     if nodeServerAddress is None:
         nodeServerAddress = defaultServerAddress
 
-    return node_control.node_control.get_redis_nodes(serverAddress=nodeServerAddress, count=count)
+    return node_control.node_control.get_redis_nodes(redisServer=nodeServerAddress, count=count)
 
 
 class NodeSensor(MCDeclarativeBase):
@@ -221,7 +221,7 @@ def _get_sensor_dict(node, nodeServerAddress=defaultServerAddress):
     import node_control
 
     node_controller = node_control.node_control.NodeControl(
-        node, serverAddress=nodeServerAddress)
+        node, redisServer=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
     return node_controller.get_sensors()[node]
@@ -379,7 +379,7 @@ def _get_power_dict(node, nodeServerAddress=defaultServerAddress):
     """
     import node_control
 
-    node_controller = node_control.node_control.NodeControl(node, serverAddress=nodeServerAddress)
+    node_controller = node_control.node_control.NodeControl(node, redisServer=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
     return node_controller.get_power_status()[node]
@@ -515,7 +515,7 @@ def _get_power_command_dict(node, nodeServerAddress=defaultServerAddress):
     """
     import node_control
 
-    node_controller = node_control.NodeControl(node, serverAddress=nodeServerAddress)
+    node_controller = node_control.NodeControl(node, redisServer=nodeServerAddress)
 
     # Get the power command data for this node, returned as a dict
     return node_controller.get_power_command_list()
@@ -1018,7 +1018,7 @@ def _get_wr_status_dict(node, nodeServerAddress=defaultServerAddress):
     import node_control
 
     node_controller = node_control.node_control.NodeControl(
-        node, serverAddress=nodeServerAddress)
+        node, redisServer=nodeServerAddress)
 
     # Get the sensor data for this node, returned as a dict
     return node_controller.get_wr_status()[node]

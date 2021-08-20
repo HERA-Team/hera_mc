@@ -29,10 +29,10 @@ db = mc.connect_to_mc_db(args)
 hostname = socket.gethostname()
 
 # List of commands (methods) to run on each iteration
-commands_to_run = ['add_node_sensor_readings_from_nodecontrol',
-                   'add_node_power_status_from_nodecontrol',
-                   'add_node_power_command_from_nodecontrol',
-                   'add_node_white_rabbit_status_from_nodecontrol']
+commands_to_run = ['add_node_sensor_readings_from_node_control',
+                   'add_node_power_status_from_node_control',
+                   'add_node_power_command_from_node_control',
+                   'add_node_white_rabbit_status_from_node_control']
 
 while True:
     try:
