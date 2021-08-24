@@ -131,6 +131,8 @@ class RTPProcessEvent(MCDeclarativeBase):
     obsid : BigInteger Column
         Observation obsid.  Part of primary_key. Foreign key into
         Observation table.
+    task_name : String Column
+        Name of task in pipeline (e.g., OMNICAL). Part of primary_key.
     event : Enum Column
         One of ["queued", "started", "finished", "error"] (rtp_process_enum).
 
@@ -139,11 +141,12 @@ class RTPProcessEvent(MCDeclarativeBase):
     __tablename__ = 'rtp_process_event'
     time = Column(BigInteger, primary_key=True)
     obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    task_name = Column(String, primary_key=True)
     event = Column(Enum(*rtp_process_enum, name='rtp_process_enum'),
                    nullable=False)
 
     @classmethod
-    def create(cls, time, obsid, event):
+    def create(cls, time, obsid, task_name, event):
         """
         Create a new rtp_process_event object.
 
@@ -153,6 +156,8 @@ class RTPProcessEvent(MCDeclarativeBase):
             Time of this event
         obsid : long
             Observation obsid (Foreign key into Observation)
+        task_name : str
+            Name of the task in the pipeline (e.g., OMNICAL).
         event : {"queued", "started", "finished", "error"}
             Process event type.
 
@@ -165,7 +170,7 @@ class RTPProcessEvent(MCDeclarativeBase):
             raise ValueError('time must be an astropy Time object')
         time = floor(time.gps)
 
-        return cls(time=time, obsid=obsid, event=event)
+        return cls(time=time, obsid=obsid, task_name=task_name, event=event)
 
 
 class RTPProcessRecord(MCDeclarativeBase):

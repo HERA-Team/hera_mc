@@ -1165,7 +1165,7 @@ class MCSession(Session):
                                  starttime=starttime, stoptime=stoptime,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_rtp_process_event(self, time, obsid, event):
+    def add_rtp_process_event(self, time, obsid, task_name, event):
         """
         Add a new rtp_process_event row.
 
@@ -1175,14 +1175,16 @@ class MCSession(Session):
             Time of event.
         obsid : long
             Observation obsid (Foreign key into observation).
+        task_name : str
+            Name of the task in the pipeline (e.g., OMNICAL).
         event : {"queued", "started", "finished", "error"}
             Event type.
 
         """
-        self.add(rtp.RTPProcessEvent.create(time, obsid, event))
+        self.add(rtp.RTPProcessEvent.create(time, obsid, task_name, event))
 
     def get_rtp_process_event(self, most_recent=None, starttime=None,
-                              stoptime=None, obsid=None,
+                              stoptime=None, obsid=None, task_name=None,
                               write_to_file=False, filename=None):
         """
         Get rtp_process_event record(s) from the M&C database.
@@ -1194,6 +1196,9 @@ class MCSession(Session):
         there are multiple records at the same time. If you want a range of
         times you need to set both startime and stoptime. If most_recent is set,
         startime and stoptime are ignored.
+
+        If either or both of obsid & task_name are set, then all records that match
+        those are returned unless most_recent or startime is set.
 
         Parameters
         ----------
@@ -1209,6 +1214,8 @@ class MCSession(Session):
             Ignored if most_recent is True.
         obsid : long
             obsid to get records for. If none, all obsid will be included.
+        task_name : str
+            task_name to get records for. If none, all tasks will be included.
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -1221,11 +1228,38 @@ class MCSession(Session):
         list of RTPProcessEvent objects
 
         """
-        return self._time_filter(rtp.RTPProcessEvent, 'time',
-                                 most_recent=most_recent, starttime=starttime,
-                                 stoptime=stoptime, filter_column='obsid',
-                                 filter_value=obsid,
-                                 write_to_file=write_to_file, filename=filename)
+        if obsid is None and task_name is None and starttime is None:
+            if most_recent is None:
+                most_recent = True
+            elif most_recent is False:
+                raise ValueError(
+                    "If most_recent is set to False, at least one of obsid, task_name, "
+                    "or starttime must be specified."
+                )
+
+        if most_recent is True or starttime is not None:
+            return self._time_filter(
+                rtp.RTPProcessEvent,
+                "time",
+                most_recent=most_recent,
+                starttime=starttime,
+                stoptime=stoptime,
+                filter_column=["obsid", "task_name"],
+                filter_value=[obsid, task_name],
+                write_to_file=write_to_file,
+                filename=filename,
+            )
+
+        query = self.query(rtp.RTPProcessEvent)
+        if obsid is not None:
+            query = query.filter(rtp.RTPProcessEvent.obsid == obsid)
+        if task_name is not None:
+            query = query.filter(rtp.RTPProcessEvent.task_name == task_name)
+
+        if write_to_file:
+            self._write_query_to_file(query, rtp.RTPProcessEvent, filename=filename)
+        else:
+            return query.all()
 
     def add_rtp_process_record(self, time, obsid, pipeline_list,
                                rtp_git_version, rtp_git_hash,

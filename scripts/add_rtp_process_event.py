@@ -17,6 +17,9 @@ parser.add_argument(
     "filename", metavar="FILE", type=str, help="Name of the file to add an event for."
 )
 parser.add_argument(
+    "task_name", metavar="TASK_NAME", type=str, help="task_name to add an event for."
+)
+parser.add_argument(
     "event",
     metavar="EVENT",
     type=str,
@@ -38,4 +41,6 @@ obsid = int(np.floor(t0.gps))
 # add the process event
 db = mc.connect_to_mc_db(args)
 with db.sessionmaker() as session:
-    session.add_rtp_process_event(time=Time.now(), obsid=obsid, event=args.event)
+    session.add_rtp_process_event(
+        time=Time.now(), obsid=obsid, task_name=args.task_name, event=args.event
+    )
