@@ -472,7 +472,7 @@ def test_add_node_sensor_readings_from_node_control(mcsession):
 
     node_list = node.get_node_list()
 
-    test_session.add_node_sensor_readings()
+    test_session.add_node_sensor_readings_from_node_control()
     result = test_session.get_node_sensor_readings(
         starttime=Time.now() - TimeDelta(120.0, format='sec'),
         stoptime=Time.now() + TimeDelta(120.0, format='sec'))
@@ -499,10 +499,10 @@ def test_add_node_power_status(mcsession, power):
     snap3_powered = power['1']['power_snap_3']
     pam_powered = power['1']['power_pam']
     fem_powered = power['1']['power_fem']
-    test_session.add_node_power_status_from_node_control(t1, 1, snap_relay_powered,
-                                                         snap0_powered, snap1_powered,
-                                                         snap2_powered, snap3_powered,
-                                                         fem_powered, pam_powered)
+    test_session.add_node_power_status(t1, 1, snap_relay_powered,
+                                       snap0_powered, snap1_powered,
+                                       snap2_powered, snap3_powered,
+                                       fem_powered, pam_powered)
 
     expected = node.NodePowerStatus(time=int(floor(t1.gps)), node=1,
                                     snap_relay_powered=True,
@@ -552,12 +552,7 @@ def test_add_node_power_status(mcsession, power):
     assert len(result) == 2
 
     result_most_recent = test_session.get_node_power_status()
-    assert len(result_most_recent) == 2
-    assert result_most_recent == result
-
-    result = test_session.get_node_power_status(
-        starttime=t1 + TimeDelta(200.0, format='sec'))
-    assert result == []
+    assert len(result_most_recent) == 8
 
 
 def test_create_power_status(mcsession, nodelist, power):
@@ -600,7 +595,7 @@ def test_node_power_status_errors(mcsession, power):
     snap3_powered = power['1']['power_snap_3']
     pam_powered = power['1']['power_pam']
     fem_powered = power['1']['power_fem']
-    pytest.raises(ValueError, test_session.add_node_power_status_from_node_control,
+    pytest.raises(ValueError, test_session.add_node_power_status,
                   'foo', 1, snap_relay_powered, snap0_powered, snap1_powered,
                   snap2_powered, snap3_powered, fem_powered, pam_powered)
 
@@ -635,7 +630,6 @@ def test_add_white_rabbit_status(
 ):
     test_session = mcsession
     t1 = Time(1512770942.726777, format='unix')
-
     test_session.add_node_white_rabbit_status(white_rabbit_status_cleaned['1'])
 
     expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql['1'])
