@@ -48,10 +48,10 @@ def get_obsid_from_file(filename):
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
     parser.add_argument(
-        "filename",
-        type=str,
+        "obsid",
+        type=int,
         help=(
-            "file processed by RTP from which to extract obsid, or obsid_start for "
+            "file processed by RTP corresponding to obsid, or obsid_start for "
             "multiple obsid tasks."
         ),
     )
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # extract obsid from input file
-    obsid = get_obsid_from_file(args.filename)
+    obsid = get_obsid_from_file(args.obsid)
 
     if args.obsid_list is not None:
         # extract obsid for each file
