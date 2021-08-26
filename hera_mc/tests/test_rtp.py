@@ -10,10 +10,18 @@ import pytest
 import numpy as np
 from astropy.time import Time, TimeDelta
 
-from ..rtp import (RTPStatus, RTPProcessEvent, RTPProcessRecord,
-                   RTPTaskResourceRecord, RTPLaunchRecord,
-                   RTPTaskJobID, RTPTaskMultipleJobID,
-                   RTPTaskMultipleResourceRecord, RTPTaskMultipleTrack)
+from ..rtp import (
+    RTPStatus,
+    RTPProcessEvent,
+    RTPTaskProcessEvent,
+    RTPProcessRecord,
+    RTPTaskResourceRecord,
+    RTPLaunchRecord,
+    RTPTaskJobID,
+    RTPTaskMultipleJobID,
+    RTPTaskMultipleResourceRecord,
+    RTPTaskMultipleTrack,
+)
 from .. import utils
 
 
@@ -70,6 +78,27 @@ def event(observation):
         time = t0 - TimeDelta(30 * 60, format='sec')
         event_names = ['time', 'obsid', 'event']
         event_values = [time, observation.obsid, 'queued']
+        event_columns = dict(zip(event_names, event_values))
+
+    data = DataHolder()
+
+    # yields the data we need but will continue to the del call after tests
+    yield data
+
+    # some post-test object cleanup
+    del(data)
+
+    return
+
+
+@pytest.fixture(scope="module")
+def task_event(observation):
+    class DataHolder(object):
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(30 * 60, format="sec")
+        event_names = ["time", "obsid", "task_name", "event"]
+        event_values = [time, observation.obsid, "OMNICAL", "started"]
         event_columns = dict(zip(event_names, event_values))
 
     data = DataHolder()
@@ -400,6 +429,122 @@ def test_errors_rtp_process_event(mcsession, observation, event):
         test_session.get_rtp_process_event(starttime='foo')
     with pytest.raises(ValueError, match="stoptime must be an astropy time object"):
         test_session.get_rtp_process_event(starttime=event.event_columns['time'], stoptime='bar')
+
+
+def test_add_rtp_task_process_event(mcsession, observation, task_event):
+    test_session = mcsession
+
+    test_session.add_obs(*observation.observation_values)
+    obs_result = test_session.get_obs()
+    assert len(obs_result) == 1
+
+    test_session.add_rtp_task_process_event(*task_event.event_values)
+
+    exp_columns = task_event.event_columns.copy()
+    exp_columns['time'] = int(floor(exp_columns['time'].gps))
+    expected = RTPTaskProcessEvent(**exp_columns)
+
+    result = test_session.get_rtp_task_process_event(
+        starttime=task_event.event_columns['time'] - TimeDelta(2, format='sec')
+    )
+    assert len(result) == 1
+    result = result[0]
+    result_obsid = test_session.get_rtp_task_process_event(
+        starttime=task_event.event_columns['time'] - TimeDelta(2, format='sec'),
+        obsid=task_event.event_columns['obsid'],
+    )
+    assert len(result_obsid) == 1
+    result_obsid = result_obsid[0]
+    assert result.isclose(expected)
+
+    new_obsid_time = (
+        task_event.event_columns['time'] + TimeDelta(3 * 60, format='sec')
+    )
+    new_obsid = utils.calculate_obsid(new_obsid_time)
+    test_session.add_obs(
+        Time(new_obsid_time),
+        Time(new_obsid_time + TimeDelta(10 * 60, format='sec')), new_obsid)
+    obs_result = test_session.get_obs(obsid=new_obsid)
+    assert obs_result[0].obsid == new_obsid
+
+    test_session.add_rtp_task_process_event(
+        new_obsid_time,
+        new_obsid,
+        task_event.event_columns["task_name"],
+        task_event.event_columns['event'],
+    )
+    result_obsid = test_session.get_rtp_task_process_event(
+        starttime=task_event.event_columns['time'] - TimeDelta(2, format='sec'),
+        obsid=task_event.event_columns['obsid'],
+        task_name=task_event.event_columns["task_name"],
+    )
+    assert len(result_obsid) == 1
+    result_obsid = result_obsid[0]
+    assert result_obsid.isclose(expected)
+
+    new_event_time = (
+        task_event.event_columns['time'] + TimeDelta(5 * 60, format='sec')
+    )
+    new_event = 'finished'
+    test_session.add_rtp_task_process_event(
+        new_event_time,
+        task_event.event_columns['obsid'],
+        task_event.event_columns["task_name"],
+        new_event,
+    )
+
+    result_mult = test_session.get_rtp_task_process_event(
+        starttime=task_event.event_columns['time'] - TimeDelta(2, format='sec'),
+        stoptime=new_event_time,
+    )
+    assert len(result_mult) == 3
+
+    result_most_recent = test_session.get_rtp_task_process_event()
+    assert len(result_most_recent) == 1
+    assert result_most_recent[0] == result_mult[2]
+
+    result_mult_obsid = test_session.get_rtp_task_process_event(
+        starttime=task_event.event_columns['time'] - TimeDelta(2, format='sec'),
+        stoptime=new_event_time,
+        obsid=task_event.event_columns['obsid'],
+    )
+    assert len(result_mult_obsid) == 2
+
+    result_obsid_most_recent = test_session.get_rtp_task_process_event(
+        obsid=task_event.event_columns['obsid']
+    )
+    assert len(result_most_recent) == 1
+    assert result_obsid_most_recent[0] == result_mult_obsid[0]
+
+    result_new_obsid = test_session.get_rtp_task_process_event(
+        starttime=task_event.event_columns['time'] - TimeDelta(2, format='sec'),
+        obsid=new_obsid,
+    )
+    assert len(result_new_obsid) == 1
+    result_new_obsid = result_new_obsid[0]
+    assert not result_new_obsid.isclose(expected)
+
+    return
+
+
+def test_errors_rtp_task_process_event(mcsession, observation, task_event):
+    test_session = mcsession
+    test_session.add_obs(*observation.observation_values)
+    obs_result = test_session.get_obs()
+    assert len(obs_result) == 1
+
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        test_session.add_rtp_task_process_event('foo', *task_event.event_values[1:])
+
+    test_session.add_rtp_task_process_event(*task_event.event_values)
+    with pytest.raises(ValueError, match="starttime must be an astropy time object"):
+        test_session.get_rtp_task_process_event(starttime='foo')
+    with pytest.raises(ValueError, match="stoptime must be an astropy time object"):
+        test_session.get_rtp_task_process_event(
+            starttime=task_event.event_columns['time'], stoptime='bar'
+        )
+
+    return
 
 
 def test_classes_not_equal(mcsession, status, observation, event):

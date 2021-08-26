@@ -1227,6 +1227,111 @@ class MCSession(Session):
                                  filter_value=obsid,
                                  write_to_file=write_to_file, filename=filename)
 
+    def add_rtp_task_process_event(self, time, obsid, task_name, event):
+        """
+        Add a new rtp_task_process_event row.
+
+        Parameters
+        ----------
+        time : astropy Time object
+            Time of event.
+        obsid : long
+            Observation obsid (Foreign key into observation).
+        task_name : str
+            Name of task in pipeline (e.g., OMNICAL).
+        event : {"queued", "started", "finished", "error"}
+            Event type.
+
+        """
+        self.add(rtp.RTPTaskProcessEvent.create(time, obsid, task_name, event))
+
+    def get_rtp_task_process_event(
+        self,
+        most_recent=None,
+        starttime=None,
+        stoptime=None,
+        obsid=None,
+        task_name=None,
+        write_to_file=False,
+        filename=None,
+    ):
+        """
+        Get rtp_task_process_event record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both starttime and stoptime. If most_recent is
+        set, starttime and stoptime are ignored.
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None. If
+            None, only the first record after starttime will be
+            returned. Ignored if most_recent is True.
+        obsid : long
+            obsid to get records for. If None, all obsids will be included.
+        task_name : str
+            task_name to get records for. If None, all task_names will be included.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name. Ignored if
+            write_to_file is False.
+
+        Returns
+        -------
+        list of RTPTaskProcessEvent objects
+
+        Raises
+        ------
+        ValueError
+            If `most_recent` is False and all of obsid, task_name, and starttime are None.
+
+        """
+        if obsid is None and task_name is None and starttime is None:
+            if most_recent is None:
+                most_recent = True
+            elif most_recent is False:
+                raise ValueError(
+                    "If most_recent is set to False, at least one of obsid, "
+                    "task_name, or starttime must be specified."
+                )
+
+        if most_recent is True or starttime is not None:
+            return self._time_filter(
+                rtp.RTPTaskProcessEvent,
+                "time",
+                most_recent=most_recent,
+                starttime=starttime,
+                stoptime=stoptime,
+                filter_column=["obsid", "task_name"],
+                filter_value=[obsid, task_name],
+                write_to_file=write_to_file,
+                filename=filename,
+            )
+
+        query = self.query(rtp.RTPTaskProcessEvent)
+        if obsid is not None:
+            query = query.filter(rtp.RTPTaskProcessEvent.obsid == obsid)
+        if task_name is not None:
+            query = query.filter(rtp.RTPTaskProcessEvent.task_name == task_name)
+
+        if write_to_file:
+            self._write_query_to_file(query, rtp.RTPTaskProcessEvent, filename=filename)
+        else:
+            return query.all()
+
     def add_rtp_process_record(self, time, obsid, pipeline_list,
                                rtp_git_version, rtp_git_hash,
                                hera_qm_git_version, hera_qm_git_hash,

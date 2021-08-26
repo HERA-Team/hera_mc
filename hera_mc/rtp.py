@@ -18,6 +18,7 @@ from . import MCDeclarativeBase, DEFAULT_MIN_TOL, DEFAULT_HOUR_TOL
 from .server_status import ServerStatus
 
 rtp_process_enum = ['queued', 'started', 'finished', 'error']
+rtp_task_process_enum = ["started", "finished", "error"]
 
 
 class RTPServerStatus(ServerStatus):
@@ -166,6 +167,61 @@ class RTPProcessEvent(MCDeclarativeBase):
         time = floor(time.gps)
 
         return cls(time=time, obsid=obsid, event=event)
+
+
+class RTPTaskProcessEvent(MCDeclarativeBase):
+    """
+    Definition of rtp_task_process_event table.
+
+    Attributes
+    ----------
+    time : BigInteger Column
+        GPS time of this status, floored. The primary key.
+    obsid : BigInteger Column
+        Observation obsid.  Part of primary_key. Foreign key into
+        Observation table.
+    task_name : String Column
+        Name of task in pipeline (e.g., OMNICAL). Part of primary key.
+    event : Enum Column
+        One of ["queued", "started", "finished", "error"] (rtp_process_enum).
+
+    """
+
+    __tablename__ = 'rtp_task_process_event'
+    time = Column(BigInteger, primary_key=True)
+    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    task_name = Column(Text, primary_key=True)
+    event = Column(
+        Enum(*rtp_task_process_enum, name="rtp_task_process_enum"),
+        nullable=False,
+    )
+
+    @classmethod
+    def create(cls, time, obsid, task_name, event):
+        """
+        Create a new rtp_task_process_event object.
+
+        Parameters
+        ----------
+        time : astropy Time object
+            Time of this event
+        obsid : long
+            Observation obsid (Foreign key into Observation)
+        task_name : str
+            Name of task in pipeline (e.g., OMNICAL).
+        event : {"queued", "started", "finished", "error"}
+            Process event type.
+
+        Returns
+        -------
+        RTPTaskProcessEvent object
+
+        """
+        if not isinstance(time, Time):
+            raise ValueError('time must be an astropy Time object')
+        time = floor(time.gps)
+
+        return cls(time=time, obsid=obsid, task_name=task_name, event=event)
 
 
 class RTPProcessRecord(MCDeclarativeBase):
