@@ -796,9 +796,9 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
                 Canonical HERA hostname (~= serial number) of this node's WR-LEN
             temperature : float
                 WR-LEN temperature in degrees C
-            build_date : astropy Time object
+            build_date : int
                 Build date of WR-LEN software in floored GPS seconds.
-            gw_date : astropy Time object
+            gw_date : int
                 WR-LEN gateware build date in floored GPS seconds.
             gw_version : str
                 WR-LEN gateware version number
@@ -810,7 +810,7 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
                 Custom manufacturer tag
             manufacture_device : str
                 Manufacturer device name designation
-            manufacture_date : astropy Time object
+            manufacture_date : int
                 Manufacturer invoice(?) date
             manufacture_partnum : str
                 Manufacturer part number
@@ -864,8 +864,8 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
                 Port 0 number of packets transmitted
             port0_update_counter : int
                 Port 0 update counter
-            port0_time : astropy Time object
-                Astropy Time object based on Port 0 current TAI time in seconds from UNIX epoch.
+            port0_time : int
+                object based on Port 0 current TAI time in seconds from UNIX epoch.
             port1_ad : int
                 ???
             port1_link_asymmetry_ps : int
@@ -912,8 +912,8 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
                 Port 1 number of packets transmitted
             port1_update_counter : int
                 Port 1 update counter
-            port1_time : astropy Time object
-                Astropy Time object based on Port 1 current TAI time in seconds from UNIX epoch.
+            port1_time : int
+                object based on Port 1 current TAI time in seconds from UNIX epoch.
 
         Returns
         -------
@@ -1064,8 +1064,10 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
 
             if key in wr_datetime_keys and wr_data_value is not None:
                 col_dict[key] = Time(wr_data_value, format='datetime', scale='utc')
+                col_dict[key] = floor(col_dict[key].gps)
             elif key in wr_tai_sec_keys and wr_data_value is not None:
                 col_dict[key] = Time(wr_data_value, format='unix', scale='tai')
+                col_dict[key] = floor(col_dict[key].gps)
             elif key == 'aliases' and wr_data_value is not None:
                 if len(wr_data_value) == 0:
                     col_dict[key] = None
