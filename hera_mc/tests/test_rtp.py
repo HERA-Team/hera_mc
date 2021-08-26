@@ -68,8 +68,8 @@ def event(observation):
         # pick a date far in the past just in case IERS is down
         t0 = Time(2457000, format="jd")
         time = t0 - TimeDelta(30 * 60, format='sec')
-        event_names = ['time', 'obsid', 'task_name', 'event']
-        event_values = [time, observation.obsid, 'OMNICAL', 'queued']
+        event_names = ['time', 'obsid', 'event']
+        event_values = [time, observation.obsid, 'queued']
         event_columns = dict(zip(event_names, event_values))
 
     data = DataHolder()
@@ -344,7 +344,7 @@ def test_add_rtp_process_event(mcsession, observation, event):
     obs_result = test_session.get_obs(obsid=new_obsid)
     assert obs_result[0].obsid == new_obsid
 
-    test_session.add_rtp_process_event(new_obsid_time, new_obsid, "OMNICAL",
+    test_session.add_rtp_process_event(new_obsid_time, new_obsid,
                                        event.event_columns['event'])
     result_obsid = test_session.get_rtp_process_event(
         starttime=event.event_columns['time'] - TimeDelta(2, format='sec'),
@@ -357,7 +357,7 @@ def test_add_rtp_process_event(mcsession, observation, event):
                       + TimeDelta(5 * 60, format='sec'))
     new_event = 'started'
     test_session.add_rtp_process_event(
-        new_event_time, event.event_columns['obsid'], "OMNICAL", new_event)
+        new_event_time, event.event_columns['obsid'], new_event)
 
     result_mult = test_session.get_rtp_process_event(
         starttime=event.event_columns['time'] - TimeDelta(2, format='sec'),
@@ -376,7 +376,7 @@ def test_add_rtp_process_event(mcsession, observation, event):
     result_obsid_most_recent = test_session.get_rtp_process_event(
         obsid=event.event_columns['obsid'])
     assert len(result_most_recent) == 1
-    assert result_obsid_most_recent[0] == result_mult_obsid[0]
+    assert result_obsid_most_recent[0] == result_mult_obsid[1]
 
     result_new_obsid = test_session.get_rtp_process_event(
         starttime=event.event_columns['time'] - TimeDelta(2, format='sec'),
