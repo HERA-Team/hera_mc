@@ -2445,22 +2445,37 @@ class MCSession(Session):
             snap2_powered, snap3_powered, fem_powered, pam_powered)
         )
 
-    def add_node_power_status(self):
+    def add_node_power_status(self, time, nodeID, snap_relay_powered,
+                              snap0_powered, snap1_powered, snap2_powered,
+                              snap3_powered, fem_powered, pam_powered):
         """
-        Get and add node power status information using a nodeControl object.
+        Add new node power status data to the M&C database.
 
-        This function connects to the node and gets the latest data using the
-        `create_power_status` function.
-
-        If the current database is PostgreSQL, this function will use a
-        special insertion method that will ignore records that are redundant
-        with ones already in the database. This makes it convenient to sample
-        the node power status data densely on qmaster.
+        Parameters
+        ----------
+        time : astropy Time object
+            Astropy time object based on a timestamp reported by node.
+        nodeID : int
+            Node number (integer running from 0 to 30).
+        snap_relay_powered : bool
+            Power status of the snap relay, True=powered.
+        snap0_powered : bool
+            Power status of the SNAP 0 board, True=powered.
+        snap1_powered : bool
+            Power status of the SNAP 1 board, True=powered.
+        snap2_powered : bool
+            Power status of the SNAP 2 board, True=powered.
+        snap3_powered : bool
+            Power status of the SNAP 3 board, True=powered.
+        fem_powered : bool
+            Power status of the FEM, True=powered.
+        pam_powered : bool
+            Power status of the PAM, True=powered.
 
         """
-        node_power_list = node.create_power_status()
-
-        self._insert_ignoring_duplicates(node.NodePowerStatus, node_power_list)
+        self._status(
+            time, nodeID, snap_relay_powered, snap0_powered, snap1_powered,
+            snap2_powered, snap3_powered, fem_powered, pam_powered)
 
     def add_node_power_status_from_node_control(self):
         """
