@@ -22,7 +22,7 @@ def upgrade():
         sa.Column('time', sa.BigInteger(), nullable=False),
         sa.Column('obsid', sa.BigInteger(), nullable=False),
         sa.Column('task_name', sa.Text(), nullable=False),
-        sa.Column('event', sa.Enum('queued', 'started', 'finished', 'error', name='rtp_task_process_enum'), nullable=False),
+        sa.Column('event', sa.Enum('started', 'finished', 'error', name='rtp_task_process_enum'), nullable=False),
         sa.ForeignKeyConstraint(['obsid'], ['hera_obs.obsid'], ),
         sa.PrimaryKeyConstraint('time', 'obsid', 'task_name'),
     )
