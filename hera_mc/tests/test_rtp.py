@@ -431,7 +431,7 @@ def test_errors_rtp_process_event(mcsession, observation, event):
         test_session.get_rtp_process_event(starttime=event.event_columns['time'], stoptime='bar')
 
 
-def test_add_rtp_task_process_event(mcsession, observation, task_event):
+def test_add_rtp_task_process_event(tmpdir, mcsession, observation, task_event):
     test_session = mcsession
 
     test_session.add_obs(*observation.observation_values)
@@ -511,7 +511,8 @@ def test_add_rtp_task_process_event(mcsession, observation, task_event):
     assert len(result_mult_obsid) == 2
 
     result_obsid_most_recent = test_session.get_rtp_task_process_event(
-        obsid=task_event.event_columns['obsid']
+        obsid=task_event.event_columns['obsid'],
+        task_name=task_event.event_columns["task_name"],
     )
     assert len(result_most_recent) == 1
     assert result_obsid_most_recent[0] == result_mult_obsid[0]
@@ -523,6 +524,15 @@ def test_add_rtp_task_process_event(mcsession, observation, task_event):
     assert len(result_new_obsid) == 1
     result_new_obsid = result_new_obsid[0]
     assert not result_new_obsid.isclose(expected)
+
+    filename = os.path.join(tmpdir, 'test_rtp_task_process_event_file.csv')
+    test_session.get_rtp_task_process_event(
+        obsid=task_event.event_columns["obsid"],
+        task_name=task_event.event_columns["task_name"],
+        write_to_file=True,
+        filename=filename,
+    )
+    os.remove(filename)
 
     return
 
@@ -543,6 +553,10 @@ def test_errors_rtp_task_process_event(mcsession, observation, task_event):
         test_session.get_rtp_task_process_event(
             starttime=task_event.event_columns['time'], stoptime='bar'
         )
+    with pytest.raises(
+            ValueError, match="If most_recent is set to False, at least one of"
+    ):
+        test_session.get_rtp_task_process_event(most_recent=False)
 
     return
 
