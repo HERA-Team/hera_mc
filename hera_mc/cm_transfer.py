@@ -16,7 +16,7 @@ from astropy.time import Time
 import csv
 from sqlalchemy import Column, BigInteger, String
 
-from . import MCDeclarativeBase, mc, cm_table_info, cm_utils, utils
+from . import MCDeclarativeBase, mc, cm_table_info, cm_utils
 
 
 class CMVersion(MCDeclarativeBase):
@@ -65,7 +65,7 @@ class CMVersion(MCDeclarativeBase):
 
         # In Python 3, we sometimes get Unicode, sometimes bytes
         if isinstance(git_hash, bytes):
-            git_hash = utils.bytes_to_str(git_hash)
+            git_hash = git_hash.decode('utf8')
 
         return cls(update_time=time, git_hash=git_hash)
 
@@ -219,7 +219,7 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     hostname = socket.gethostname()
     is_main_host = (hostname == expected_hostname)
 
-    session_db_url = session.bind.engine.url.__to_string__(hide_password=False)
+    session_db_url = session.bind.engine.url.render_as_string(hide_password=False)
 
     if config_path is None:
         config_path = mc.default_config_file

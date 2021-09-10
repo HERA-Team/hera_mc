@@ -20,7 +20,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 from astropy.time import Time, TimeDelta
 
-from .utils import get_iterable
 from .observations import Observation
 from .subsystem_error import SubsystemError
 from .daemon_status import DaemonStatus
@@ -4639,46 +4638,95 @@ class MCSession(Session):
         obj_list = [AntMetrics.create(obsid, ant, pol, metric, db_time, val)]
         self._insert_ignoring_duplicates(AntMetrics, obj_list, update=True)
 
-    def get_ant_metric(self, ant=None, pol=None, metric=None, starttime=None,
-                       stoptime=None):
+    def get_ant_metric(self, most_recent=None, starttime=None, stoptime=None,
+                       ant=None, pol=None, metric=None, obsid=None,
+                       write_to_file=False, filename=None):
         """
         Get antenna metric(s) from the M&C database.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        If any of obsid, ant, pol, metric are set, then all records that match
+        those are returned unless most_recent or starttime is set.
+
         Parameters
         ----------
-        ant : int or list of integers
-            Antenna number. Defaults to returning all antennas.
-        pol : str ('x', 'y', 'n', 'e', 'jnn', or 'jee'), or list
-            Polarization. Defaults to returning all pols.
-        metric : str or list of strings
-            Metric name. Defaults to returning all metrics.
-        starttime : astropy Time object OR gps second.
-            Beginning of query time interval. Defaults to gps=0 (6 Jan, 1980)
-        stoptime : astropy Time object OR gps second.
-            End of query time interval. Defaults to now.
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        ant : int
+            Antenna number to get records for. If none, all antennas will be included.
+        pol : str
+            Polarization to get records for, one of ['x', 'y', 'n', 'e', 'jnn', or
+            'jee']. If none, all polarizations will be included.
+        metric : str
+            Metric name to get records for. If none, all metrics will beincluded.
+        obsid : int
+            obsid to get records for. If none, all obsids will be included.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
 
         Returns
         -------
         list of AntMetrics objects
 
         """
-        args = []
+        if (
+            ant is None and pol is None and metric is None and obsid is None
+            and starttime is None
+        ):
+            if most_recent is None:
+                most_recent = True
+            elif most_recent is False:
+                raise ValueError(
+                    'If most_recent is set to False, at least one of ant, pol, metric, '
+                    'obsid, or starttime must be specified.'
+                )
+
+        if most_recent is True or starttime is not None:
+            return self._time_filter(
+                AntMetrics,
+                'mc_time',
+                most_recent=most_recent,
+                starttime=starttime,
+                stoptime=stoptime,
+                filter_column=['ant', 'pol', 'metric', 'obsid'],
+                filter_value=[ant, pol, metric, obsid],
+                write_to_file=write_to_file,
+                filename=filename)
+
+        query = self.query(AntMetrics)
         if ant is not None:
-            args.append(AntMetrics.ant.in_(get_iterable(ant)))
+            query = query.filter(AntMetrics.ant == ant)
         if pol is not None:
-            args.append(AntMetrics.pol.in_(get_iterable(pol)))
+            query = query.filter(AntMetrics.pol == pol)
         if metric is not None:
-            args.append(AntMetrics.metric.in_(get_iterable(metric)))
-        if starttime is None:
-            starttime = 0
-        elif isinstance(starttime, Time):
-            starttime = starttime.gps
-        if stoptime is None:
-            stoptime = Time.now().gps
-        elif isinstance(stoptime, Time):
-            stoptime = stoptime.gps
-        args.append(AntMetrics.obsid.between(starttime, stoptime))
-        return self.query(AntMetrics).filter(*args).all()
+            query = query.filter(AntMetrics.metric == metric)
+        if obsid is not None:
+            query = query.filter(AntMetrics.obsid == obsid)
+
+        if write_to_file:
+            self._write_query_to_file(query, AntMetrics, filename=filename)
+
+        else:
+            return query.all()
 
     def add_array_metric(self, obsid, metric, val):
         """
@@ -4699,37 +4747,81 @@ class MCSession(Session):
         obj_list = [ArrayMetrics.create(obsid, metric, db_time, val)]
         self._insert_ignoring_duplicates(ArrayMetrics, obj_list, update=True)
 
-    def get_array_metric(self, metric=None, starttime=None, stoptime=None):
+    def get_array_metric(
+        self, most_recent=None, starttime=None, stoptime=None, metric=None, obsid=None,
+        write_to_file=False, filename=None
+    ):
         """
         Get array metric(s) from the M&C database.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
         Parameters
         ----------
-        metric : str or list of strings
-            Metric name. Defaults to returning all metrics.
-        starttime : astropy Time object OR gps second.
-            Beginning of query time interval. Defaults to gps=0 (6 Jan, 1980)
-        stoptime : astropy Time object OR gps second.
-            End of query time interval. Defaults to now.
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        metric : str
+            Metric name to get records for. If none, all metrics will beincluded.
+        obsid : int
+            obsid to get records for. If none, all obsids will be included.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
 
         Returns
         -------
         list of ArrayMetrics objects
 
         """
-        args = []
+        if metric is None and obsid is None and starttime is None:
+            if most_recent is None:
+                most_recent = True
+            elif most_recent is False:
+                raise ValueError(
+                    'If most_recent is set to False, at least one of metric, obsid, or '
+                    'starttime must be specified.'
+                )
+
+        if most_recent is True or starttime is not None:
+            return self._time_filter(
+                ArrayMetrics,
+                'mc_time',
+                most_recent=most_recent,
+                starttime=starttime,
+                stoptime=stoptime,
+                filter_column=['metric', 'obsid'],
+                filter_value=[metric, obsid],
+                write_to_file=write_to_file,
+                filename=filename)
+
+        query = self.query(ArrayMetrics)
         if metric is not None:
-            args.append(ArrayMetrics.metric.in_(get_iterable(metric)))
-        if starttime is None:
-            starttime = 0
-        elif isinstance(starttime, Time):
-            starttime = starttime.gps
-        if stoptime is None:
-            stoptime = Time.now().gps
-        elif isinstance(stoptime, Time):
-            stoptime = stoptime.gps
-        args.append(ArrayMetrics.obsid.between(starttime, stoptime))
-        return self.query(ArrayMetrics).filter(*args).all()
+            query = query.filter(ArrayMetrics.metric == metric)
+        if obsid is not None:
+            query = query.filter(ArrayMetrics.obsid == obsid)
+
+        if write_to_file:
+            self._write_query_to_file(query, ArrayMetrics, filename=filename)
+
+        else:
+            return query.all()
 
     def add_metric_desc(self, metric, desc):
         """
@@ -4764,25 +4856,35 @@ class MCSession(Session):
             MetricList.metric == metric)[0].desc = desc
         self.commit()
 
-    def get_metric_desc(self, metric=None):
+    def get_metric_desc(self, metric=None, write_to_file=False, filename=None):
         """
         Get metric description(s) from the M&C database.
 
         Parameters
         ----------
-        metric : str or list of strings
+        metric : str
             Metric name. Defaults to returning all metrics.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
 
         Returns
         -------
         list of MetricList objects
 
         """
-        args = []
-        if metric is not None:
-            args.append(MetricList.metric.in_(get_iterable(metric)))
+        query = self.query(MetricList)
 
-        return self.query(MetricList).filter(*args).all()
+        if metric is not None:
+            query = query.filter(MetricList.metric == metric)
+
+        if write_to_file:
+            self._write_query_to_file(query, MetricList, filename=filename)
+        else:
+            return query.all()
 
     def check_metric_desc(self, metric):
         """
@@ -4836,7 +4938,7 @@ class MCSession(Session):
             obsid = self.get_lib_files(
                 filename=os.path.basename(filename))[0].obsid
         except IndexError:
-            raise ValueError('File ' + filename + ' has not been logged in '
+            raise ValueError(f'File {filename} has not been logged in '
                              'Librarian, so we cannot add to M&C.')
         d = metrics2mc(filename, ftype)
         for metric, dd in d['ant_metrics'].items():

@@ -26,7 +26,7 @@ def metrics_dict():
                                          ('n', 'e')
                                          ]
                          )
-def test_AntMetrics(mcsession, pol_x, pol_y):
+def test_AntMetrics(mcsession, tmpdir, pol_x, pol_y):
     test_session = mcsession
     # Initialize
     t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -43,6 +43,7 @@ def test_AntMetrics(mcsession, pol_x, pol_y):
     test_session.commit()
 
     # now the tests
+    ant_metric_time = Time.now()
     test_session.add_ant_metric(obsid, 0, pol_x, 'test', 4.5)
     test_session.commit()
     r = test_session.get_ant_metric(metric='test')
@@ -50,6 +51,8 @@ def test_AntMetrics(mcsession, pol_x, pol_y):
     assert r[0].antpol == (0, pol_x)
     assert r[0].metric == 'test'
     assert r[0].val == 4.5
+    r_recent = test_session.get_ant_metric()
+    assert r == r_recent
 
     # test that updating works
     test_session.add_ant_metric(obsid, 0, pol_x, 'test', 4.3)
@@ -74,14 +77,28 @@ def test_AntMetrics(mcsession, pol_x, pol_y):
     assert len(r) == 2
     for ri in r:
         assert ri.pol == pol_x
-    r = test_session.get_ant_metric(starttime=obsid - 10, stoptime=obsid + 4)
-    assert len(r) == 4
-    t1 = Time(obsid - 10, format='gps')
-    t2 = Time(obsid + 4, format='gps')
+    t1 = ant_metric_time - TimeDelta(10.0, format='sec')
+    t2 = ant_metric_time + TimeDelta(4.0, format='sec')
     r = test_session.get_ant_metric(starttime=t1, stoptime=t2)
     assert len(r) == 4
-    r = test_session.get_ant_metric(ant=[0, 3], pol=[pol_x, pol_y])
+
+    r = test_session.get_ant_metric(obsid=obsid)
     assert len(r) == 4
+    r = test_session.get_ant_metric(ant=3, pol=pol_y)
+    assert len(r) == 1
+    assert r[0].ant == 3
+    assert r[0].pol == pol_y
+
+    filename = os.path.join(tmpdir, 'test_ant_metric.csv')
+    test_session.get_ant_metric(metric='test', write_to_file=True, filename=filename)
+    os.remove(filename)
+
+    with pytest.raises(
+        ValueError,
+        match='If most_recent is set to False, at least one of ant, pol, metric, '
+        'obsid, or starttime must be specified.'
+    ):
+        test_session.get_ant_metric(most_recent=False)
 
 
 @pytest.mark.parametrize(
@@ -112,9 +129,8 @@ def test_add_AntMetrics_errors(mcsession, ant, pol, metric, val, err_msg):
     test_session.commit()
 
     # Test exceptions
-    with pytest.raises(ValueError) as cm:
+    with pytest.raises(ValueError, match=err_msg):
         test_session.add_ant_metric(obsid, ant, pol, metric, val)
-    assert str(cm.value).startswith(err_msg)
 
 
 def test_add_AntMetrics_bad_obsid(mcsession):
@@ -132,21 +148,19 @@ def test_add_AntMetrics_bad_obsid(mcsession):
     # Same for metric description
     test_session.add_metric_desc('test', 'Test metric')
     test_session.commit()
-    with pytest.raises(ValueError) as cm:
+    with pytest.raises(ValueError, match='obsid must be an integer'):
         test_session.add_ant_metric('obs', 0, 'x', 'test', 4.5)
-    assert str(cm.value).startswith('obsid must be an integer')
 
 
 def test_create_AntMetrics_bad_mc_time(mcsession):
     # # Initialize a time
     t1 = Time('2016-01-10 01:15:23', scale='utc')
     obsid = utils.calculate_obsid(t1)
-    with pytest.raises(ValueError) as cm:
+    with pytest.raises(ValueError, match='db_time must be an astropy Time object'):
         AntMetrics.create(obsid, 0, 'x', 'test', obsid, 4.5)
-    assert str(cm.value).startswith('db_time must be an astropy Time object')
 
 
-def test_ArrayMetrics(mcsession):
+def test_ArrayMetrics(mcsession, tmpdir):
     test_session = mcsession
     # Initialize
     t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -154,13 +168,16 @@ def test_ArrayMetrics(mcsession):
     obsid = utils.calculate_obsid(t1)
     # Create obs to satifsy foreign key constraints
     test_session.add_obs(t1, t2, obsid)
-    test_session.add_obs(t1 - TimeDelta(10.0, format='sec'), t2, obsid - 10)
-    test_session.add_obs(t1 + TimeDelta(10.0, format='sec'), t2, obsid + 10)
+    obsid0 = obsid - 10
+    obsid2 = obsid + 10
+    test_session.add_obs(t1 - TimeDelta(10.0, format='sec'), t2, obsid0)
+    test_session.add_obs(t1 + TimeDelta(10.0, format='sec'), t2, obsid2)
     # Same for metric description
     test_session.add_metric_desc('test', 'Test metric')
     test_session.commit()
 
     # now the tests
+    array_metric_time = Time.now()
     test_session.add_array_metric(obsid, 'test', 6.2)
     test_session.commit()
     r = test_session.get_array_metric()
@@ -175,28 +192,55 @@ def test_ArrayMetrics(mcsession):
     assert r[0].val == 6.5
 
     # Test more exciting queries
-    test_session.add_array_metric(obsid + 10, 'test', 2.5)
-    test_session.add_array_metric(obsid - 10, 'test', 2.5)
-    r = test_session.get_array_metric(metric='test')
-    assert len(r) == 3
-    r = test_session.get_array_metric(starttime=obsid)
-    assert len(r) == 2
-    r = test_session.get_array_metric(stoptime=obsid)
-    assert len(r) == 2
-    t1 = Time(obsid - 20, format='gps')
-    t2 = Time(obsid + 20, format='gps')
+    test_session.add_array_metric(obsid2, 'test', 2.5)
+    test_session.add_array_metric(obsid0, 'test', 2.5)
+    t1 = array_metric_time - TimeDelta(10.0, format='sec')
+    t2 = array_metric_time + TimeDelta(4.0, format='sec')
     r = test_session.get_array_metric(starttime=t1, stoptime=t2)
     assert len(r) == 3
 
+    r = test_session.get_array_metric(metric='test')
+    assert len(r) == 3
+    r = test_session.get_array_metric(obsid=obsid)
+    assert len(r) == 1
+    r = test_session.get_array_metric(obsid=obsid0)
+    assert len(r) == 1
+
+    filename = os.path.join(tmpdir, 'test_array_metric.csv')
+    test_session.get_array_metric(metric='test', write_to_file=True, filename=filename)
+    os.remove(filename)
+
+    with pytest.raises(
+        ValueError,
+        match='If most_recent is set to False, at least one of metric, obsid, or '
+        'starttime must be specified.'
+    ):
+        test_session.get_array_metric(most_recent=False)
+
     # Test exceptions
-    pytest.raises(ValueError, test_session.add_array_metric, 'obs', 'test', 4.5)
-    pytest.raises(ValueError, test_session.add_array_metric, obsid, 4, 4.5)
-    pytest.raises(ValueError, test_session.add_array_metric, obsid,
-                  'test', 'value')
-    pytest.raises(ValueError, ArrayMetrics.create, obsid, 'test', obsid, 4.5)
+    with pytest.raises(
+        ValueError,
+        match='obsid must be an integer.'
+    ):
+        test_session.add_array_metric('obs', 'test', 4.5)
+    with pytest.raises(
+        ValueError,
+        match='metric must be string.'
+    ):
+        test_session.add_array_metric(obsid, 4, 4.5)
+    with pytest.raises(
+        ValueError,
+        match='val must be castable as float.'
+    ):
+        test_session.add_array_metric(obsid, 'test', 'value')
+    with pytest.raises(
+        ValueError,
+        match='db_time must be an astropy Time object'
+    ):
+        ArrayMetrics.create(obsid, 'test', obsid, 4.5)
 
 
-def test_MetricList(mcsession):
+def test_MetricList(mcsession, tmpdir):
     test_session = mcsession
     # Initialize
     t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -217,9 +261,21 @@ def test_MetricList(mcsession):
     r = test_session.get_metric_desc(metric='test')
     assert r[0].desc == 'new desc'
 
+    filename = os.path.join(tmpdir, 'test_metric_desc.csv')
+    test_session.get_metric_desc(metric='test', write_to_file=True, filename=filename)
+    os.remove(filename)
+
     # Test exceptions
-    pytest.raises(ValueError, test_session.add_metric_desc, 4, 'desc')
-    pytest.raises(ValueError, test_session.add_metric_desc, 'test', 5)
+    with pytest.raises(
+        ValueError,
+        match='metric must be string.',
+    ):
+        test_session.add_metric_desc(4, 'desc')
+    with pytest.raises(
+        ValueError,
+        match='metric description must be a string.',
+    ):
+        test_session.add_metric_desc('test', 5)
 
     # Test check_metric_desc function to auto-fill descriptions
     test_session.check_metric_desc('test')
@@ -261,8 +317,12 @@ def test_ingest_metrics_file(mcsession):
     test_session.commit()
     filename = os.path.join(mc.test_data_path, 'example_firstcal_metrics.hdf5')
     filebase = os.path.basename(filename)
-    pytest.raises(ValueError, test_session.ingest_metrics_file,
-                  filename, 'firstcal')
+    with pytest.raises(
+        ValueError,
+        match=f'File {filename} has not been logged in Librarian, '
+        'so we cannot add to M&C.'
+    ):
+        test_session.ingest_metrics_file(filename, 'firstcal')
     test_session.add_lib_file(filebase, obsid, t2, 0.1)
     test_session.commit()
     test_session.update_qm_list()

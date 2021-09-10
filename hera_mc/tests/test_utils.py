@@ -4,6 +4,7 @@
 
 import numpy as np
 import numpy.testing as npt
+import pytest
 
 from astropy.time import Time
 from astropy.units import Quantity
@@ -27,6 +28,12 @@ def test_LSTScheduler_lstbinsize():
     npt.assert_almost_equal((scheduletime2 - scheduletime1).value * 24 * 3600,
                             LSTbin_size * sidesec, decimal=5)
 
+    with pytest.raises(
+        TypeError,
+        match="starttime is not a valid Astropy Time object"
+    ):
+        utils.LSTScheduler("foo", LSTbin_size)
+
 
 def test_LSTScheduler_multiday():
     """
@@ -40,3 +47,12 @@ def test_LSTScheduler_multiday():
     starttime2 = Time('2015-9-20T05:00:09.0', format='isot', scale='utc')
     scheduletime2, hour2 = utils.LSTScheduler(starttime2, LSTbin_size)
     assert np.isclose((hour2.hour - hour1.hour) * 3600, 0)
+
+
+def test_get_iterable():
+    assert utils.get_iterable(2) == (2,)
+    assert utils.get_iterable([2]) == [2]
+    assert utils.get_iterable([2, 3]) == [2, 3]
+    assert utils.get_iterable("foo") == ("foo",)
+    assert utils.get_iterable(["foo"]) == ["foo"]
+    assert utils.get_iterable(["foo", "bar"]) == ["foo", "bar"]
