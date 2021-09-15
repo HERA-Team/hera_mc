@@ -719,7 +719,7 @@ def test_create_white_rabbit_status(mcsession, nodelist, white_rabbit_status,
 
 
 @pytest.mark.parametrize(
-    ("key"), ['node_time'] + node.wr_datetime_keys + node.wr_tai_sec_keys
+    ("key"), node.wr_Time_keys
 )
 def test_white_rabbit_status_errors(mcsession, white_rabbit_status_cleaned, key):
     wr_dict_use = copy.deepcopy(white_rabbit_status_cleaned['1'])

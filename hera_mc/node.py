@@ -110,7 +110,7 @@ wr_key_dict = {
 }
 wr_datetime_keys = ['build_date', 'gw_date', 'manufacture_date']
 wr_tai_sec_keys = ['port0_time', 'port1_time']
-wr_Time = ['node_time']
+wr_Time_keys = ['node_time']
 
 
 def get_node_list(nodeServerAddress=defaultServerAddress, count=None):
@@ -922,7 +922,7 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
         """
         params_dict = {}
         for col, value in col_dict.items():
-            if col in wr_Time:  # Must be Time
+            if col in wr_Time_keys:  # Must be Time
                 if isinstance(value, Time):
                     params_dict[col] = floor(value.gps)
                 else:
