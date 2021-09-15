@@ -66,10 +66,13 @@ class MCDeclarativeBase(object):
         for c in self_columns:
             self_c = getattr(self, c.name)
             other_c = getattr(other, c.name)
-            if isinstance(self_c, (str, int)):
+            if isinstance(self_c, int):
                 if self_c != other_c:
-                    print('column {col} is string-like or int-like, values are not '
-                          'equal'.format(col=c))
+                    print('column {col} is int, values are not equal'.format(col=c))
+                    return False
+            elif isinstance(self_c, str):
+                if self_c.replace(' ', '') != other_c.replace(' ', ''):
+                    print('column {col} is str, values are not non-space equal'.format(col=c))
                     return False
             elif isinstance(self_c, np.ndarray) and self_c.dtype.kind == 'i':
                 if not np.all(self_c == other_c):
