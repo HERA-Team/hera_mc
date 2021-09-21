@@ -107,29 +107,10 @@ wr_key_dict = {
     'port1_packets_sent': 'wr1_tx',
     'port1_update_counter': 'wr1_ucnt',
     'port1_time': 'wr1_sec',
+    'node_time': 'timestamp'
 }
-wr_datetime_keys = ['build_date', 'gw_date', 'manufacture_date']
+wr_timestamp_keys = ['build_date', 'gw_date', 'manufacture_date', 'node_time']
 wr_tai_sec_keys = ['port0_time', 'port1_time']
-wr_Time_keys = ['node_time']
-
-
-def get_node_list(nodeServerAddress=defaultServerAddress, count=None):
-    """
-    Get the list of active nodes from redis.
-
-    Parameters
-    ----------
-    nodeServerAddress : str
-        Node redis address
-    count : int or None
-        Number of status terms in redis to make active node
-    """
-    from node_control.node_control import get_redis_nodes
-
-    if nodeServerAddress is None:
-        nodeServerAddress = defaultServerAddress
-
-    return get_redis_nodes(redisServer=nodeServerAddress, count=count)
 
 
 class NodeSensor(MCDeclarativeBase):
@@ -172,10 +153,10 @@ class NodeSensor(MCDeclarativeBase):
 
         Parameters
         ----------
-        time : astropy Time object
-            Astropy time object based on a timestamp reported by node
+        time : int
+            GPS time based on a timestamp reported by node
         node : int
-            Node number (within 1 to 30).
+            Node number (within 0 to 29).
         top_sensor_temp : float
             Temperature of top sensor reported by node in Celsius.
         middle_sensor_temp : float
@@ -190,44 +171,12 @@ class NodeSensor(MCDeclarativeBase):
         Returns
         -------
         NodeSensor object
-
         """
-        if not isinstance(time, Time):
-            raise ValueError(f'time must be an astropy Time object not {type(time)}')
-        node_time = floor(time.gps)
-
-        return cls(time=node_time, node=node, top_sensor_temp=top_sensor_temp,
+        return cls(time=time, node=node, top_sensor_temp=top_sensor_temp,
                    middle_sensor_temp=middle_sensor_temp,
                    bottom_sensor_temp=bottom_sensor_temp,
                    humidity_sensor_temp=humidity_sensor_temp,
                    humidity=humidity)
-
-
-def _get_sensor_dict(node, nodeServerAddress=defaultServerAddress):
-    """
-    Get node sensor information from a node_control object.
-
-    Parameters
-    ----------
-    node : int
-        Node number.
-    nodeServerAddress : str
-        Node redis address.
-
-    Returns
-    -------
-    datetime timestamp
-        Time of the status
-    dict
-        keys are values in `sensor_key_dict`, values are sensor readings.
-
-    """
-    from node_control import node_control
-
-    node_controller = node_control.NodeControl(node, redisServer=nodeServerAddress)
-
-    # Get the sensor data for this node, returned as a dict
-    return node_controller.get_sensors()[node]
 
 
 def create_sensor_readings(nodeServerAddress=defaultServerAddress,
@@ -241,26 +190,30 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress,
         Address of server where the node redis database can be accessed.
     node_list : list of int
         A list of integers specifying which nodes to get data for,
-        primarily for testing purposes. If None, get_node_list() is called.
+        primarily for testing purposes.  If None, use nodes_in_redis.
     sensor_dict : dict
-        A dict spoofing the return dict from _get_sensor_dict for testing
-        purposes.
+        A dict spoofing the return dict from node_control for testing
+        purposes.  If None, calls node_control.get_sensors()
 
     Returns
     -------
     A list of NodeSensor objects
 
     """
-    if node_list is None:
-        node_list = get_node_list(nodeServerAddress=nodeServerAddress)
     node_sensor_list = []
-    for node in node_list:
-        if sensor_dict is None:
-            sensor_data = _get_sensor_dict(node, nodeServerAddress=nodeServerAddress)
-        else:
-            sensor_data = sensor_dict[str(node)]
-        time = cm_utils.get_astropytime(sensor_data['timestamp'], format_is_floatable='unix')
+    if sensor_dict is None:
+        from node_control import node_control
+        node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
+        sensor_dict = node_controller.get_sensors()
+        if node_list is None:
+            node_list = node_controller.nodes_in_redis
+    elif node_list is None:
+        node_list = list(sensor_dict.keys())
 
+    for node in node_list:
+        sensor_data = sensor_dict[node]
+        time = int(floor(cm_utils.get_astropytime(sensor_data['timestamp'],
+                                                  format_is_floatable='unix').gps))
         top_sensor_temp = sensor_data.get(
             sensor_key_dict['top_sensor_temp'], None)
         middle_sensor_temp = sensor_data.get(
@@ -302,7 +255,6 @@ class NodePowerStatus(MCDeclarativeBase):
         Power status of the FEM, True=powered.
     pam_powered : Boolean Column
         Power status of the PAM, True=powered.
-
     """
 
     __tablename__ = 'node_power_status'
@@ -325,10 +277,10 @@ class NodePowerStatus(MCDeclarativeBase):
 
         Parameters
         ----------
-        time : astropy Time object
-            Astropy time object based on a timestamp reported by node.
+        time : int
+            GPS second based on a timestamp reported by node.
         node : int
-            Node number (within 1 to 30).
+            Node number (within 0 to 29).
         snap_relay_powered: boolean
             Power status of the snap relay, True=powered.
         snap0_powered: boolean
@@ -349,42 +301,11 @@ class NodePowerStatus(MCDeclarativeBase):
         NodePowerStatus object
 
         """
-        if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
-        node_time = floor(time.gps)
-
-        return cls(time=node_time, node=node,
+        return cls(time=time, node=node,
                    snap_relay_powered=snap_relay_powered,
                    snap0_powered=snap0_powered, snap1_powered=snap1_powered,
                    snap2_powered=snap2_powered, snap3_powered=snap3_powered,
                    fem_powered=fem_powered, pam_powered=pam_powered)
-
-
-def _get_power_dict(node, nodeServerAddress=defaultServerAddress):
-    """
-    Get node sensor information from a node_control object.
-
-    Parameters
-    ----------
-    node : int
-        Node number.
-    nodeServerAddress : str
-        Node redis address.
-
-    Returns
-    -------
-    datetime timestamp
-        Time of the status
-    dict
-        keys are values in `power_status_key_dict`, values are power states.
-
-    """
-    from node_control import node_control
-
-    node_controller = node_control.NodeControl(node, redisServer=nodeServerAddress)
-
-    # Get the sensor data for this node, returned as a dict
-    return node_controller.get_power_status()[node]
 
 
 def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
@@ -398,26 +319,29 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
         Address of server where the node redis database can be accessed.
     node_list : list of int
         A list of integers specifying which nodes to get data for,
-        primarily for testing purposes. If None, get_node_list() is called.
+        primarily for testing purposes. If None, nodes_in_redis is used.
     power_dict : dict
-        A dict containing info as in the return dict from _get_power_dict()
-        for testing purposes. If None, _get_power_dict() is called.
+        A dict containing info as in the return dict from node_control
+        for testing purposes. If None, node_control.get_power_status() is called.
 
     Returns
     -------
     A list of NodePowerStatus objects
 
     """
-    if node_list is None:
-        node_list = get_node_list(nodeServerAddress=nodeServerAddress)
     node_power_list = []
+    if power_dict is None:
+        from node_control import node_control
+        node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
+        power_dict = node_controller.get_power_status()
+        if node_list is None:
+            node_list = node_controller.nodes_in_redis
+    elif node_list is None:
+        node_list = list(power_dict.keys())
     for node in node_list:
-        if power_dict is None:
-            power_data = _get_power_dict(node, nodeServerAddress=nodeServerAddress)
-        else:
-            power_data = power_dict[str(node)]
-
-        time = cm_utils.get_astropytime(power_data['timestamp'], format_is_floatable='unix')
+        power_data = power_dict[node]
+        time = int(floor(cm_utils.get_astropytime(power_data['timestamp'],
+                                                  format_is_floatable='unix').gps))
 
         # All items in this dictionary are strings.
         snap_relay_powered = power_data[power_status_key_dict['snap_relay_powered']]
@@ -432,7 +356,6 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
                                                       snap0_powered, snap1_powered,
                                                       snap2_powered, snap3_powered,
                                                       fem_powered, pam_powered))
-
     return node_power_list
 
 
@@ -450,7 +373,6 @@ class NodePowerCommand(MCDeclarativeBase):
         Part to be powered on/off. Part of the primary key.
     command : String Column
         Command, one of 'on' or 'off'.
-
     """
 
     __tablename__ = 'node_power_command'
@@ -466,10 +388,10 @@ class NodePowerCommand(MCDeclarativeBase):
 
         Parameters
         ----------
-        time : astropy Time object
-            Astropy time object for time command was sent.
+        time : int
+            GPS second for time command was sent.
         node : int
-            Node number (within 1 to 30).
+            Node number (within 0 to 29).
         part : str
             One of the keys in power_command_part_dict.
         command : {'on', 'off'}
@@ -480,10 +402,6 @@ class NodePowerCommand(MCDeclarativeBase):
         NodePowerCommand object
 
         """
-        if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
-        node_time = floor(time.gps)
-
         if part not in list(power_command_part_dict.keys()):
             raise ValueError('part must be one of: '
                              + ', '.join(list(power_command_part_dict.keys()))
@@ -492,34 +410,7 @@ class NodePowerCommand(MCDeclarativeBase):
         if command not in ['on', 'off', 'reset']:
             raise ValueError('command must be one of: on, off')
 
-        return cls(time=node_time, node=node, part=part, command=command)
-
-
-def _get_power_command_dict(node, nodeServerAddress=defaultServerAddress):
-    """
-    Get node sensor information from a node_control object.
-
-    Parameters
-    ----------
-    node : int
-        Node number.
-    nodeServerAddress : str
-        Node redis address.
-
-    Returns
-    -------
-    datetime timestamp
-        Time of the status
-    dict
-        keys are values in `power_status_key_dict`, values are power states.
-
-    """
-    from node_control import node_control
-
-    node_controller = node_control.NodeControl(node, redisServer=nodeServerAddress)
-
-    # Get the power command data for this node, returned as a dict
-    return node_controller.get_power_command_list()
+        return cls(time=time, node=node, part=part, command=command)
 
 
 def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list=None,
@@ -533,25 +424,30 @@ def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list=
         Address of server where the node redis database can be accessed.
     node_list : list of int
         A list of integers specifying which nodes to get data for,
-        primarily for testing purposes. If None, get_node_list() is called.
+        primarily for testing purposes.
     power_dict : dict
-        A dict containing info as in the return dict from _get_power_command_dict()
-        for testing purposes. If None, _get_power_command_dict() is called.
+        A dict containing info as in the return dict from node_control
+        for testing purposes. If None, node_control.get_power_command_list is called.
 
     Returns
     -------
     A list of NodePowerCommand objects
 
     """
-    if node_list is None:
-        node_list = get_node_list(nodeServerAddress=nodeServerAddress)
+    if power_dict is None:
+        from node_control import node_control
+        node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
+        power_dict = node_controller.get_power_command_list()
+        if node_list is None:
+            node_list = node_controller.nodes_in_redis
+    elif node_list is None:
+        node_list = list(power_dict.keys())
     node_power_list = []
     for node in node_list:
-        if power_dict is None:
-            power_dict = _get_power_command_dict(node, nodeServerAddress=nodeServerAddress)
-        for prt, val in power_dict[str(node)].items():
+        for prt, val in power_dict[node].items():
+            time = int(floor(cm_utils.get_astropytime(val['timestamp'],
+                                                      format_is_floatable='unix').gps))
             cmd = val['command']
-            time = cm_utils.get_astropytime(val['timestamp'], format_is_floatable='unix')
             node_power_list.append(NodePowerCommand.create(time, node, prt, cmd))
     return node_power_list
 
@@ -697,7 +593,7 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
         Port 1 update counter
     port1_time : BigInteger Column
         Port 1 current time in GPS seconds.
-
+    timestamp : int
     """
 
     __tablename__ = 'node_white_rabbit_status'
@@ -779,10 +675,10 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
         col_dict : dict
             dictionary that must contain the following entries:
 
-            node_time : astropy Time object
-                Astropy time object based on a timestamp reported by node.
+            node_time : int
+                GPS seconds based on a timestamp reported by node.
             node : int
-                Node number (within 1 to 30).
+                Node number (within 0 to 29).
             board_info_str : str
                 A raw string representing the WR-LEN's response to the `ver` command.
                 Relevant parts of this string are individually unpacked in other entries.
@@ -920,103 +816,7 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
         NodeWhiteRabbitStatus object
 
         """
-        params_dict = {}
-        for col, value in col_dict.items():
-            if col in wr_Time_keys:  # Must be Time
-                if isinstance(value, Time):
-                    params_dict[col] = floor(value.gps)
-                else:
-                    raise ValueError(col + ' must be an astropy Time object')
-            elif isinstance(value, Time):
-                params_dict[col] = floor(value.gps)
-            else:
-                params_dict[col] = value
-        return cls(**params_dict)
-
-
-def _get_wr_status_dict(node, nodeServerAddress=defaultServerAddress):
-    """
-    Get node white rabbit status information from a node_control object.
-
-    Parameters
-    ----------
-    node: int
-        Node number.
-    nodeServerAddress: str
-        Node redis address.
-
-    Returns
-    -------
-    datetime timestamp
-        Time of the status
-    dict
-        keys are values in `wr_key_dict`, values are sensor readings.
-        from hera_node_mc node_control.get_wr_status docstring:
-
-        If no stats exist for this White Rabbit endpoint, returns `None`.
-        Otherwise Returns a tuple `(timestamp, statii)`, where `timestamp` is a
-        python `datetime` object describing when the values were last updated
-        in redis, and `statii` is a dictionary of status values.
-
-        If a status value is not available it will be `None`
-
-        Valid status keywords are:
-            'board_info_str' (str)      : A raw string representing the WR-LEN's
-                                          response to the `ver` command.
-                                          Relevant parts of this string are
-                                          individually unpacked in other entries.
-            'aliases' (list of strings) : Hostname aliases of this node's WR-LEN
-            'ip' (str)                  : IP address of this node's WR-LEN
-            'mode' (str)                : WR-LEN operating mode (eg. "WRC_SLAVE_WR0")
-            'serial' (str)              : Canonical HERA hostname (~= serial number)
-                                          of this node's WR-LEN
-            'temp' (float)              : WR-LEN temperature in degrees C
-            'sw_build_date' (datetime)  : Build date of WR-LEN software
-            'wr_gw_date' (datetime)     : WR-LEN gateware build date
-            'wr_gw_version' (str)       : WR-LEN gateware version number
-            'wr_gw_id' (str)            : WR-LEN gateware ID number
-            'wr_build' (str)            : WR-LEN build git hash
-            'wr_fru_custom' (str)   : Custom manufacturer tag'
-            'wr_fru_device' (str)   : Manufacturer device name designation
-            'wr_fru_fid' (datetime) : Manufacturer invoice(?) date
-            'wr_fru_partnum' (str)  : Manufacturer part number
-            'wr_fru_serial' (str)   : Manufacturer serial number
-            'wr_fru_vendor' (str)   : Vendor name
-
-            The following entries are prefixed `wr0` or `wr1` for WR-LEN
-            ports 0 and 1, respectively.
-            Most values will only be not None for one of the two ports.
-            'wr[0|1]_ad'    (int)  : ???
-            'wr[0|1]_asym'  (int)  : Total link asymmetry (ps)
-            'wr[0|1]_aux'   (int)  : ??? Manual phase adjustment (ps)
-            'wr[0|1]_cko'   (int)  : Clock offset (ps)
-            'wr[0|1]_crtt'  (int)  : Cable round-trip delay (ps)
-            'wr[0|1]_dms'   (int)  : Master-Slave delay in (ps)
-            'wr[0|1]_drxm'  (int)  : Master RX PHY delay (ps)
-            'wr[0|1]_drxs'  (int)  : Slave RX PHY delay (ps)
-            'wr[0|1]_dtxm'  (int)  : Master TX PHY delay (ps)
-            'wr[0|1]_dtxs'  (int)  : Slave TX PHY delay (ps)
-            'wr[0|1]_hd'    (int)  : ???
-            'wr[0|1]_lnk'   (bool) : Link up state
-            'wr[0|1]_lock'  (bool) : Timing lock state
-            'wr[0|1]_md'    (int)  : ???
-            'wr[0|1]_mu'    (int)  : Round-trip time (ps)
-            'wr[0|1]_nsec'  (int)  : ???
-            'wr[0|1]_rx'    (int)  : Number of packets received
-            'wr[0|1]_setp'  (int)  : Phase setpoint (ps)
-            'wr[0|1]_ss'    (str)  : Servo state
-            'wr[0|1]_sv'    (int)  : ???
-            'wr[0|1]_syncs' (str)  : Source of synchronization (either 'wr0' or 'wr1')
-            'wr[0|1]_tx'    (int)  : Number of packets transmitted
-            'wr[0|1]_ucnt'  (int)  : Update counter
-            'wr[0|1]_sec'   (int)  : Current TAI time in seconds from UNIX epoch
-    """
-    from node_control import node_control
-
-    node_controller = node_control.NodeControl(node, redisServer=nodeServerAddress)
-
-    # Get the sensor data for this node, returned as a dict
-    return node_controller.get_wr_status()[node]
+        return cls(**col_dict)
 
 
 def create_wr_status(nodeServerAddress=defaultServerAddress,
@@ -1030,44 +830,40 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
         Address of server where the node redis database can be accessed.
     node_list: list of int
         A list of integers specifying which nodes to get data for,
-        primarily for testing purposes. If None, get_node_list() is called.
+        primarily for testing purposes. If None, nodes_in_redis is used.
     wr_status_dict: dict
-        A dict spoofing the return dict from _get_wr_status_dict for testing
-        purposes.
+        A dict spoofing the return dict from node_controller for testing
+        purposes.  If None, calls node_controller.get_wr_status()
 
     Returns
     -------
     A list of NodeWhiteRabbitStatus objects
 
     """
-    if node_list is None:
-        node_list = get_node_list(nodeServerAddress=nodeServerAddress)
     wr_status_list = []
-    for node in node_list:
-        if wr_status_dict is None:
-            wr_retval = _get_wr_status_dict(node, nodeServerAddress=nodeServerAddress)
-            if wr_retval is not None:
-                wr_data = wr_retval
-            else:
-                # No info for this node.
-                continue
-        else:
-            wr_data = wr_status_dict[str(node)]
-        node_time = cm_utils.get_astropytime(wr_data['timestamp'], format_is_floatable='unix')
+    if wr_status_dict is None:
+        from node_control import node_control
+        node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
+        wr_status_dict = node_controller.get_wr_status()
+        if node_list is None:
+            node_list = node_controller.nodes_in_redis
+    elif node_list is None:
+        node_list = list(wr_status_dict.keys())
 
-        col_dict = {'node_time': node_time, 'node': node}
+    for node in node_list:
+        wr_data = wr_status_dict[node]
+        col_dict = {'node': node}
         for key, value in wr_key_dict.items():
             # key is column name, value is related key into wr_data
             wr_data_value = wr_data[value]
-            if isinstance(wr_data_value, float) and np.isnan(wr_data_value):
+            if key == 'node_time':
+                col_dict[key] = int(floor(cm_utils.get_astropytime(wr_data_value,
+                                          format_is_floatable='unix').gps))
+            elif isinstance(wr_data_value, float) and np.isnan(wr_data_value):
                 wr_data_value = None
-
-            if key in wr_datetime_keys and wr_data_value is not None:
-                col_dict[key] = Time(wr_data_value, format='datetime', scale='utc')
-                col_dict[key] = floor(col_dict[key].gps)
             elif key in wr_tai_sec_keys and wr_data_value is not None:
                 col_dict[key] = Time(wr_data_value, format='unix', scale='tai')
-                col_dict[key] = floor(col_dict[key].gps)
+                col_dict[key] = int(floor(col_dict[key].gps))
             elif key == 'aliases' and wr_data_value is not None:
                 if len(wr_data_value) == 0:
                     col_dict[key] = None

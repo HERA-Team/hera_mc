@@ -2412,9 +2412,9 @@ class MCSession(Session):
                                  filter_column='node', filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
 
-    def _status(self, time, nodeID, snap_relay_powered,
-                snap0_powered, snap1_powered, snap2_powered,
-                snap3_powered, fem_powered, pam_powered):
+    def add_node_power_status(self, time, nodeID, snap_relay_powered,
+                              snap0_powered, snap1_powered, snap2_powered,
+                              snap3_powered, fem_powered, pam_powered):
         """
         Add new node power status data to the M&C database.
 
@@ -2444,38 +2444,6 @@ class MCSession(Session):
             time, nodeID, snap_relay_powered, snap0_powered, snap1_powered,
             snap2_powered, snap3_powered, fem_powered, pam_powered)
         )
-
-    def add_node_power_status(self, time, nodeID, snap_relay_powered,
-                              snap0_powered, snap1_powered, snap2_powered,
-                              snap3_powered, fem_powered, pam_powered):
-        """
-        Add new node power status data to the M&C database.
-
-        Parameters
-        ----------
-        time : astropy Time object
-            Astropy time object based on a timestamp reported by node.
-        nodeID : int
-            Node number (integer running from 0 to 30).
-        snap_relay_powered : bool
-            Power status of the snap relay, True=powered.
-        snap0_powered : bool
-            Power status of the SNAP 0 board, True=powered.
-        snap1_powered : bool
-            Power status of the SNAP 1 board, True=powered.
-        snap2_powered : bool
-            Power status of the SNAP 2 board, True=powered.
-        snap3_powered : bool
-            Power status of the SNAP 3 board, True=powered.
-        fem_powered : bool
-            Power status of the FEM, True=powered.
-        pam_powered : bool
-            Power status of the PAM, True=powered.
-
-        """
-        self._status(
-            time, nodeID, snap_relay_powered, snap0_powered, snap1_powered,
-            snap2_powered, snap3_powered, fem_powered, pam_powered)
 
     def add_node_power_status_from_node_control(self):
         """
@@ -2540,22 +2508,22 @@ class MCSession(Session):
                                  filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_node_power_command(self):
+    def add_node_power_command(self, time, node, part, command):
         """
-        Get and add node power command information using a node_control object.
+        Add new node sensor data to the M&C database.
 
-        This function connects to the node and gets the latest data using the
-        `create_power_command_list` function which gets value from redis.
-
-        If the current database is PostgreSQL, this function will use a
-        special insertion method that will ignore records that are redundant
-        with ones already in the database. This makes it convenient to sample
-        the node power command data densely on qmaster.
-
+        Parameters
+        ----------
+        time : int
+            GPS time of the command, floored. Part of the primary key.
+        node : int
+            Node number. Part of the primary key.
+        part : str
+            Part to be powered on/off. Part of the primary key.
+        command : str
+            Command, one of 'on' or 'off'.
         """
-        node_power_list = node.create_power_command_list()
-
-        self._insert_ignoring_duplicates(node.NodePowerCommand, node_power_list)
+        self.add(node.NodePowerCommand.create(time, node, part, command))
 
     def add_node_power_command_from_node_control(self):
         """
