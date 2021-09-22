@@ -2345,9 +2345,10 @@ class MCSession(Session):
             Percent humidity measurement reported by node.
 
         """
+        sens_time = int(floor(time.gps))
         self.add(node.NodeSensor.create(
-            time, nodeID, top_sensor_temp, middle_sensor_temp, bottom_sensor_temp,
-            humidity_sensor_temp, humidity)
+            sens_time, nodeID, top_sensor_temp, middle_sensor_temp,
+            bottom_sensor_temp, humidity_sensor_temp, humidity)
         )
 
     def add_node_sensor_readings_from_node_control(self):
@@ -2440,8 +2441,9 @@ class MCSession(Session):
             Power status of the PAM, True=powered.
 
         """
+        stat_time = int(floor(time.gps))
         self.add(node.NodePowerStatus.create(
-            time, nodeID, snap_relay_powered, snap0_powered, snap1_powered,
+            stat_time, nodeID, snap_relay_powered, snap0_powered, snap1_powered,
             snap2_powered, snap3_powered, fem_powered, pam_powered)
         )
 
@@ -2514,8 +2516,8 @@ class MCSession(Session):
 
         Parameters
         ----------
-        time : int
-            GPS time of the command, floored. Part of the primary key.
+        time : Astropy.Time object
+            Time. Part of the primary key.
         node : int
             Node number. Part of the primary key.
         part : str
@@ -2523,7 +2525,8 @@ class MCSession(Session):
         command : str
             Command, one of 'on' or 'off'.
         """
-        self.add(node.NodePowerCommand.create(time, node, part, command))
+        comm_time = int(floor(time.gps))
+        self.add(node.NodePowerCommand.create(comm_time, node, part, command))
 
     def add_node_power_command_from_node_control(self):
         """

@@ -3,7 +3,6 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.node`."""
-import copy
 import os
 from math import floor
 
@@ -12,6 +11,7 @@ import numpy as np
 import pytest
 
 from .. import node
+from .. import cm_utils
 from ..tests import requires_redis
 
 
@@ -23,36 +23,36 @@ def nodelist():
 @pytest.fixture(scope='module')
 def sensor():
     return {
-        '1': {'temp_top': 30., 'temp_mid': 31.98, 'temp_bot': 41,
-              'temp_humid': 33.89, 'humid': 32.5,
-              'timestamp': Time(1512770942.726777, format='unix').to_datetime()},
-        '2': {'temp_top': None, 'temp_mid': None, 'temp_bot': None,
-              'temp_humid': 33, 'humid': 40.,
-              'timestamp': Time(1512770942.995268, format='unix').to_datetime()},
-        '3': {'temp_top': 29.1, 'temp_mid': 33.8, 'temp_bot': 41.6,
-              'temp_humid': None, 'humid': None,
-              'timestamp': Time(1512770942.861526, format='unix').to_datetime()}
+        1: {'temp_top': 30., 'temp_mid': 31.98, 'temp_bot': 41,
+            'temp_humid': 33.89, 'humid': 32.5,
+            'timestamp': 1512770942.726777},
+        2: {'temp_top': None, 'temp_mid': None, 'temp_bot': None,
+            'temp_humid': 33, 'humid': 40.,
+            'timestamp': 1512770942.995268},
+        3: {'temp_top': 29.1, 'temp_mid': 33.8, 'temp_bot': 41.6,
+            'temp_humid': None, 'humid': None,
+            'timestamp': 1512770942.861526}
     }
 
 
 @pytest.fixture(scope='module')
 def power():
     return {
-        '1': {'power_snap_relay': True, 'power_snap_0': False,
-              'power_snap_1': True, 'power_snap_2': False,
-              'power_snap_3': False, 'power_pam': True,
-              'power_fem': True,
-              'timestamp': Time(1512770942.726777, format='unix').to_datetime()},
-        '2': {'power_snap_relay': False, 'power_snap_0': True,
-              'power_snap_1': False,
-              'power_snap_2': True, 'power_snap_3': True, 'power_pam': False,
-              'power_fem': False,
-              'timestamp': Time(1512770942.995268, format='unix').to_datetime()},
-        '3': {'power_snap_relay': False, 'power_snap_0': False,
-              'power_snap_1': False,
-              'power_snap_2': False, 'power_snap_3': False, 'power_pam': False,
-              'power_fem': False,
-              'timestamp': Time(1512770942.861526, format='unix').to_datetime()}
+        1: {'power_snap_relay': True, 'power_snap_0': False,
+            'power_snap_1': True, 'power_snap_2': False,
+            'power_snap_3': False, 'power_pam': True,
+            'power_fem': True,
+            'timestamp': 1512770942.726777},
+        2: {'power_snap_relay': False, 'power_snap_0': True,
+            'power_snap_1': False,
+            'power_snap_2': True, 'power_snap_3': True, 'power_pam': False,
+            'power_fem': False,
+            'timestamp': 1512770942.995268},
+        3: {'power_snap_relay': False, 'power_snap_0': False,
+            'power_snap_1': False,
+            'power_snap_2': False, 'power_snap_3': False, 'power_pam': False,
+            'power_fem': False,
+            'timestamp': 1512770942.861526}
     }
 
 
@@ -81,204 +81,204 @@ board_info_str = 'some very long string\n blah blah blah'
 @pytest.fixture(scope='module')
 def white_rabbit_status():
     return {
-        '1': {'timestamp': Time(1512770942.726777, format='unix').to_datetime(),
-              'board_info_str': (board_info_str),
-              'aliases': ['heraNode0wr'],
-              'ip': '10.80.2.138',
-              'mode': 'WRC_SLAVE_WR0',
-              'serial': 'wr-len4p0',
-              'temp': 46.0,
-              'sw_build_date': Time('2017-01-24 16:38:15').to_datetime(),
-              'wr_gw_date': Time('2017-03-29 17:18:00').to_datetime(),
-              'wr_gw_version': '3.9.29',
-              'wr_gw_id': '0x751e41c0',
-              'wr_build': '064c608-dirty',
-              'wr_fru_custom': 'tag',
-              'wr_fru_device': 'WRLEN',
-              'wr_fru_fid': Time('2017-12-13 10:25:23.617560').to_datetime(),
-              'wr_fru_partnum': '7SWRLENv?.0-S08',
-              'wr_fru_serial': '7SWRLENv?.0-S08_313',
-              'wr_fru_vendor': '7S',
-              'wr0_ad': 65000,
-              'wr1_ad': None,
-              'wr0_asym': 9541,
-              'wr1_asym': None,
-              'wr0_aux': 0,
-              'wr1_aux': None,
-              'wr0_cko': -1,
-              'wr1_cko': None,
-              'wr0_crtt': 3322243,
-              'wr1_crtt': None,
-              'wr0_dms': 1889158,
-              'wr1_dms': None,
-              'wr0_drxm': 237577,
-              'wr1_drxm': None,
-              'wr0_drxs': 4000,
-              'wr1_drxs': None,
-              'wr0_dtxm': 224037,
-              'wr1_dtxm': None,
-              'wr0_dtxs': 0,
-              'wr1_dtxs': None,
-              'wr0_hd': 59195,
-              'wr1_hd': None,
-              'wr0_lnk': True,
-              'wr1_lnk': True,
-              'wr0_lock': True,
-              'wr1_lock': True,
-              'wr0_md': 49807,
-              'wr1_md': None,
-              'wr0_mu': 3787857,
-              'wr1_mu': None,
-              'wr0_nsec': 515715728,
-              'wr1_nsec': None,
-              'wr0_rx': 157265,
-              'wr1_rx': 0,
-              'wr0_setp': 311,
-              'wr1_setp': None,
-              'wr0_ss': "'TRACK_PHASE'",
-              'wr1_ss': None,
-              'wr0_sv': 1,
-              'wr1_sv': None,
-              'wr0_syncs': 'wr0',
-              'wr1_syncs': None,
-              'wr0_tx': 34791,
-              'wr1_tx': 86437,
-              'wr0_ucnt': 31814,
-              'wr1_ucnt': None,
-              'wr0_sec': 1575578672,
-              'wr1_sec': None},
-        '2': {'timestamp': Time(1512770942.995268, format='unix').to_datetime(),
-              'board_info_str': None,
-              'aliases': ['heraNode7wr', 'heraNode7wr_alias'],
-              'ip': '10.80.2.144',
-              'mode': 'WRC_SLAVE_WR0',
-              'serial': 'wr-len7p0',
-              'temp': 47.812,
-              'sw_build_date': None,
-              'wr_gw_date': None,
-              'wr_gw_version': None,
-              'wr_gw_id': None,
-              'wr_build': None,
-              'wr_fru_custom': None,
-              'wr_fru_device': None,
-              'wr_fru_fid': None,
-              'wr_fru_partnum': None,
-              'wr_fru_serial': None,
-              'wr_fru_vendor': None,
-              'wr0_ad': 65000,
-              'wr1_ad': None,
-              'wr0_asym': 2158,
-              'wr1_asym': None,
-              'wr0_aux': 0,
-              'wr1_aux': None,
-              'wr0_cko': 2,
-              'wr1_cko': None,
-              'wr0_crtt': 1525938,
-              'wr1_crtt': None,
-              'wr0_dms': 990482,
-              'wr1_dms': None,
-              'wr0_drxm': 229671,
-              'wr1_drxm': None,
-              'wr0_drxs': 3200,
-              'wr1_drxs': None,
-              'wr0_dtxm': 224313,
-              'wr1_dtxm': None,
-              'wr0_dtxs': 0,
-              'wr1_dtxs': None,
-              'wr0_hd': 59391,
-              'wr1_hd': None,
-              'wr0_lnk': True,
-              'wr1_lnk': False,
-              'wr0_lock': True,
-              'wr1_lock': False,
-              'wr0_md': 48721,
-              'wr1_md': None,
-              'wr0_mu': 1983122,
-              'wr1_mu': None,
-              'wr0_nsec': 73300560,
-              'wr1_nsec': None,
-              'wr0_rx': 157982,
-              'wr1_rx': 0,
-              'wr0_setp': 13582,
-              'wr1_setp': None,
-              'wr0_ss': "'TRACK_PHASE'",
-              'wr1_ss': None,
-              'wr0_sv': 1,
-              'wr1_sv': None,
-              'wr0_syncs': 'wr0',
-              'wr1_syncs': None,
-              'wr0_tx': 34916,
-              'wr1_tx': 86795,
-              'wr0_ucnt': 31935,
-              'wr1_ucnt': None,
-              'wr0_sec': 1575578804,
-              'wr1_sec': None},
-        '3': {'timestamp': Time(1512770942.995268, format='unix').to_datetime(),
-              'board_info_str': None,
-              'aliases': [],
-              'ip': None,
-              'mode': None,
-              'serial': None,
-              'temp': np.nan,
-              'sw_build_date': None,
-              'wr_gw_date': None,
-              'wr_gw_version': None,
-              'wr_gw_id': None,
-              'wr_build': None,
-              'wr_fru_custom': None,
-              'wr_fru_device': None,
-              'wr_fru_fid': None,
-              'wr_fru_partnum': None,
-              'wr_fru_serial': None,
-              'wr_fru_vendor': None,
-              'wr0_ad': 65000,
-              'wr1_ad': None,
-              'wr0_asym': 2158,
-              'wr1_asym': None,
-              'wr0_aux': 0,
-              'wr1_aux': None,
-              'wr0_cko': 2,
-              'wr1_cko': None,
-              'wr0_crtt': 1525938,
-              'wr1_crtt': None,
-              'wr0_dms': 990482,
-              'wr1_dms': None,
-              'wr0_drxm': 229671,
-              'wr1_drxm': None,
-              'wr0_drxs': 3200,
-              'wr1_drxs': None,
-              'wr0_dtxm': 224313,
-              'wr1_dtxm': None,
-              'wr0_dtxs': 0,
-              'wr1_dtxs': None,
-              'wr0_hd': 59391,
-              'wr1_hd': None,
-              'wr0_lnk': True,
-              'wr1_lnk': True,
-              'wr0_lock': None,
-              'wr1_lock': True,
-              'wr0_md': 48721,
-              'wr1_md': None,
-              'wr0_mu': 1983122,
-              'wr1_mu': None,
-              'wr0_nsec': 73300560,
-              'wr1_nsec': None,
-              'wr0_rx': 157982,
-              'wr1_rx': 0,
-              'wr0_setp': 13582,
-              'wr1_setp': None,
-              'wr0_ss': "'TRACK_PHASE'",
-              'wr1_ss': None,
-              'wr0_sv': 1,
-              'wr1_sv': None,
-              'wr0_syncs': 'wr0',
-              'wr1_syncs': None,
-              'wr0_tx': 34916,
-              'wr1_tx': 86795,
-              'wr0_ucnt': 31935,
-              'wr1_ucnt': None,
-              'wr0_sec': 1575578804,
-              'wr1_sec': None}
+        1: {'timestamp': 1512770943,
+            'board_info_str': (board_info_str),
+            'aliases': ['heraNode0wr'],
+            'ip': '10.80.2.138',
+            'mode': 'WRC_SLAVE_WR0',
+            'serial': 'wr-len4p0',
+            'temperature': 46.0,
+            'sw_build_date': 1485304695,
+            'wr_gw_date': 1490833080,
+            'wr_gw_version': '3.9.29',
+            'wr_gw_id': '0x751e41c0',
+            'wr_build': '064c608-dirty',
+            'wr_fru_custom': 'tag',
+            'wr_fru_device': 'WRLEN',
+            'wr_fru_fid': 1513189523,
+            'wr_fru_partnum': '7SWRLENv?.0-S08',
+            'wr_fru_serial': '7SWRLENv?.0-S08_313',
+            'wr_fru_vendor': '7S',
+            'wr0_ad': 65000,
+            'wr1_ad': None,
+            'wr0_asym': 9541,
+            'wr1_asym': None,
+            'wr0_aux': 0,
+            'wr1_aux': None,
+            'wr0_cko': -1,
+            'wr1_cko': None,
+            'wr0_crtt': 3322243,
+            'wr1_crtt': None,
+            'wr0_dms': 1889158,
+            'wr1_dms': None,
+            'wr0_drxm': 237577,
+            'wr1_drxm': None,
+            'wr0_drxs': 4000,
+            'wr1_drxs': None,
+            'wr0_dtxm': 224037,
+            'wr1_dtxm': None,
+            'wr0_dtxs': 0,
+            'wr1_dtxs': None,
+            'wr0_hd': 59195,
+            'wr1_hd': None,
+            'wr0_lnk': True,
+            'wr1_lnk': True,
+            'wr0_lock': True,
+            'wr1_lock': True,
+            'wr0_md': 49807,
+            'wr1_md': None,
+            'wr0_mu': 3787857,
+            'wr1_mu': None,
+            'wr0_nsec': 515715728,
+            'wr1_nsec': None,
+            'wr0_rx': 157265,
+            'wr1_rx': 0,
+            'wr0_setp': 311,
+            'wr1_setp': None,
+            'wr0_ss': "'TRACK_PHASE'",
+            'wr1_ss': None,
+            'wr0_sv': 1,
+            'wr1_sv': None,
+            'wr0_syncs': 'wr0',
+            'wr1_syncs': None,
+            'wr0_tx': 34791,
+            'wr1_tx': 86437,
+            'wr0_ucnt': 31814,
+            'wr1_ucnt': None,
+            'wr0_sec': 1575578672,
+            'wr1_sec': None},
+        2: {'timestamp': 1512770942.995268,
+            'board_info_str': None,
+            'aliases': ['heraNode7wr', 'heraNode7wr_alias'],
+            'ip': '10.80.2.144',
+            'mode': 'WRC_SLAVE_WR0',
+            'serial': 'wr-len7p0',
+            'temperature': 47.812,
+            'sw_build_date': None,
+            'wr_gw_date': None,
+            'wr_gw_version': None,
+            'wr_gw_id': None,
+            'wr_build': None,
+            'wr_fru_custom': None,
+            'wr_fru_device': None,
+            'wr_fru_fid': None,
+            'wr_fru_partnum': None,
+            'wr_fru_serial': None,
+            'wr_fru_vendor': None,
+            'wr0_ad': 65000,
+            'wr1_ad': None,
+            'wr0_asym': 2158,
+            'wr1_asym': None,
+            'wr0_aux': 0,
+            'wr1_aux': None,
+            'wr0_cko': 2,
+            'wr1_cko': None,
+            'wr0_crtt': 1525938,
+            'wr1_crtt': None,
+            'wr0_dms': 990482,
+            'wr1_dms': None,
+            'wr0_drxm': 229671,
+            'wr1_drxm': None,
+            'wr0_drxs': 3200,
+            'wr1_drxs': None,
+            'wr0_dtxm': 224313,
+            'wr1_dtxm': None,
+            'wr0_dtxs': 0,
+            'wr1_dtxs': None,
+            'wr0_hd': 59391,
+            'wr1_hd': None,
+            'wr0_lnk': True,
+            'wr1_lnk': False,
+            'wr0_lock': True,
+            'wr1_lock': False,
+            'wr0_md': 48721,
+            'wr1_md': None,
+            'wr0_mu': 1983122,
+            'wr1_mu': None,
+            'wr0_nsec': 73300560,
+            'wr1_nsec': None,
+            'wr0_rx': 157982,
+            'wr1_rx': 0,
+            'wr0_setp': 13582,
+            'wr1_setp': None,
+            'wr0_ss': "'TRACK_PHASE'",
+            'wr1_ss': None,
+            'wr0_sv': 1,
+            'wr1_sv': None,
+            'wr0_syncs': 'wr0',
+            'wr1_syncs': None,
+            'wr0_tx': 34916,
+            'wr1_tx': 86795,
+            'wr0_ucnt': 31935,
+            'wr1_ucnt': None,
+            'wr0_sec': 1575578804,
+            'wr1_sec': None},
+        3: {'timestamp': 1512770942.995268,
+            'board_info_str': None,
+            'aliases': [],
+            'ip': None,
+            'mode': None,
+            'serial': None,
+            'temperature': np.nan,
+            'sw_build_date': None,
+            'wr_gw_date': None,
+            'wr_gw_version': None,
+            'wr_gw_id': None,
+            'wr_build': None,
+            'wr_fru_custom': None,
+            'wr_fru_device': None,
+            'wr_fru_fid': None,
+            'wr_fru_partnum': None,
+            'wr_fru_serial': None,
+            'wr_fru_vendor': None,
+            'wr0_ad': 65000,
+            'wr1_ad': None,
+            'wr0_asym': 2158,
+            'wr1_asym': None,
+            'wr0_aux': 0,
+            'wr1_aux': None,
+            'wr0_cko': 2,
+            'wr1_cko': None,
+            'wr0_crtt': 1525938,
+            'wr1_crtt': None,
+            'wr0_dms': 990482,
+            'wr1_dms': None,
+            'wr0_drxm': 229671,
+            'wr1_drxm': None,
+            'wr0_drxs': 3200,
+            'wr1_drxs': None,
+            'wr0_dtxm': 224313,
+            'wr1_dtxm': None,
+            'wr0_dtxs': 0,
+            'wr1_dtxs': None,
+            'wr0_hd': 59391,
+            'wr1_hd': None,
+            'wr0_lnk': True,
+            'wr1_lnk': True,
+            'wr0_lock': None,
+            'wr1_lock': True,
+            'wr0_md': 48721,
+            'wr1_md': None,
+            'wr0_mu': 1983122,
+            'wr1_mu': None,
+            'wr0_nsec': 73300560,
+            'wr1_nsec': None,
+            'wr0_rx': 157982,
+            'wr1_rx': 0,
+            'wr0_setp': 13582,
+            'wr1_setp': None,
+            'wr0_ss': "'TRACK_PHASE'",
+            'wr1_ss': None,
+            'wr0_sv': 1,
+            'wr1_sv': None,
+            'wr0_syncs': 'wr0',
+            'wr1_syncs': None,
+            'wr0_tx': 34916,
+            'wr1_tx': 86795,
+            'wr0_ucnt': 31935,
+            'wr1_ucnt': None,
+            'wr0_sec': 1575578804,
+            'wr1_sec': None}
     }
 
 
@@ -287,25 +287,23 @@ def white_rabbit_status_cleaned(white_rabbit_status):
     cleaned_dict = {}
     for node_str, node_dict in white_rabbit_status.items():
         nodeID = int(node_str)
-        cleaned_dict[node_str] = {
-            'node_time': Time(node_dict['timestamp'], format='datetime', scale='utc'),
-            'node': nodeID
-        }
+        cleaned_dict[node_str] = {'node': nodeID}
         for key, value in node.wr_key_dict.items():
             # key is column name, value is related key into wr_data
             wr_data_value = node_dict[value]
-            if isinstance(wr_data_value, float) and np.isnan(wr_data_value):
+            if key == 'node_time':
+                cleaned_dict[node_str][key] = int(floor(cm_utils.get_astropytime(wr_data_value,
+                                                        format_is_floatable='unix').gps))
+            elif isinstance(wr_data_value, float) and np.isnan(wr_data_value):
                 wr_data_value = None
-
-            if key in node.wr_datetime_keys and wr_data_value is not None:
-                cleaned_dict[node_str][key] = Time(wr_data_value, format='datetime', scale='utc')
             elif key in node.wr_tai_sec_keys and wr_data_value is not None:
                 cleaned_dict[node_str][key] = Time(wr_data_value, format='unix', scale='tai')
+                cleaned_dict[node_str][key] = int(floor(cleaned_dict[node_str][key].gps))
             elif key == 'aliases' and wr_data_value is not None:
                 if len(wr_data_value) == 0:
                     cleaned_dict[node_str][key] = None
                 else:
-                    cleaned_dict[node_str][key] = ', '.join(wr_data_value)
+                    cleaned_dict[node_str][key] = ','.join(wr_data_value)
             else:
                 cleaned_dict[node_str][key] = wr_data_value
     return cleaned_dict
@@ -317,19 +315,16 @@ def white_rabbit_status_sql(white_rabbit_status_cleaned):
     for node_str, node_dict in white_rabbit_status_cleaned.items():
         nodeID = int(node_str)
         sql_dict[node_str] = {
-            'node_time': floor(node_dict['node_time'].gps),
+            'node_time': node_dict['node_time'],
             'node': nodeID
         }
         for key in node.wr_key_dict:
+            if key not in node_dict:
+                continue
             wr_data_value = node_dict[key]
             if isinstance(wr_data_value, float) and np.isnan(wr_data_value):
                 wr_data_value = None
-
-            if ((key in node.wr_datetime_keys or key in node.wr_tai_sec_keys)
-                    and wr_data_value is not None):
-                sql_dict[node_str][key] = floor(wr_data_value.gps)
-            else:
-                sql_dict[node_str][key] = wr_data_value
+            sql_dict[node_str][key] = wr_data_value
     return sql_dict
 
 
@@ -337,11 +332,11 @@ def test_add_node_sensor_readings(mcsession, sensor, tmpdir):
     test_session = mcsession
     t1 = Time('2016-01-10 01:15:23', scale='utc')
 
-    top_sensor_temp = sensor['1']['temp_top']
-    middle_sensor_temp = sensor['1']['temp_mid']
-    bottom_sensor_temp = sensor['1']['temp_bot']
-    humidity_sensor_temp = sensor['1']['temp_humid']
-    humidity = sensor['1']['humid']
+    top_sensor_temp = sensor[1]['temp_top']
+    middle_sensor_temp = sensor[1]['temp_mid']
+    bottom_sensor_temp = sensor[1]['temp_bot']
+    humidity_sensor_temp = sensor[1]['temp_humid']
+    humidity = sensor[1]['humid']
     test_session.add_node_sensor_readings(t1, 1, top_sensor_temp,
                                           middle_sensor_temp,
                                           bottom_sensor_temp,
@@ -357,11 +352,11 @@ def test_add_node_sensor_readings(mcsession, sensor, tmpdir):
     result = result[0]
     assert result.isclose(expected)
 
-    top_sensor_temp = sensor['2']['temp_top']
-    middle_sensor_temp = sensor['2']['temp_mid']
-    bottom_sensor_temp = sensor['2']['temp_bot']
-    humidity_sensor_temp = sensor['2']['temp_humid']
-    humidity = sensor['2']['humid']
+    top_sensor_temp = sensor[2]['temp_top']
+    middle_sensor_temp = sensor[2]['temp_mid']
+    bottom_sensor_temp = sensor[2]['temp_bot']
+    humidity_sensor_temp = sensor[2]['temp_humid']
+    humidity = sensor[2]['humid']
     test_session.add_node_sensor_readings(t1, 2, top_sensor_temp,
                                           middle_sensor_temp,
                                           bottom_sensor_temp,
@@ -454,23 +449,21 @@ def test_create_sensor_readings(mcsession, nodelist, sensor):
 
 def test_sensor_reading_errors(mcsession, sensor):
     test_session = mcsession
-    top_sensor_temp = sensor['1']['temp_top']
-    middle_sensor_temp = sensor['1']['temp_mid']
-    bottom_sensor_temp = sensor['1']['temp_bot']
-    humidity_sensor_temp = sensor['1']['temp_humid']
-    humidity = sensor['1']['humid']
-    with pytest.raises(ValueError) as cm:
+    top_sensor_temp = sensor[1]['temp_top']
+    middle_sensor_temp = sensor[1]['temp_mid']
+    bottom_sensor_temp = sensor[1]['temp_bot']
+    humidity_sensor_temp = sensor[1]['temp_humid']
+    humidity = sensor[1]['humid']
+    with pytest.raises(AttributeError) as cm:
         test_session.add_node_sensor_readings(
             'foo', 1, top_sensor_temp, middle_sensor_temp,
             bottom_sensor_temp, humidity_sensor_temp, humidity)
-    assert str(cm.value).startswith('time must be an astropy Time object')
+    assert 'attribute' in str(cm.value)
 
 
 @requires_redis
 def test_add_node_sensor_readings_from_node_control(mcsession):
     test_session = mcsession
-
-    node_list = node.get_node_list()
 
     test_session.add_node_sensor_readings_from_node_control()
     result = test_session.get_node_sensor_readings(
@@ -481,8 +474,6 @@ def test_add_node_sensor_readings_from_node_control(mcsession):
     for sensor_obj in result:
         nodes_with_status.append(sensor_obj.node)
     if len(result) != len(nodes_with_status):
-        print('Nodes that hera_node_mc returns as active:')
-        print(node_list)
         print('Nodes with sensor readings:')
         print(nodes_with_status)
     assert len(result) == len(nodes_with_status)
@@ -492,13 +483,13 @@ def test_add_node_power_status(mcsession, power):
     test_session = mcsession
     t1 = Time('2016-01-10 01:15:23', scale='utc')
 
-    snap_relay_powered = power['1']['power_snap_relay']
-    snap0_powered = power['1']['power_snap_0']
-    snap1_powered = power['1']['power_snap_1']
-    snap2_powered = power['1']['power_snap_2']
-    snap3_powered = power['1']['power_snap_3']
-    pam_powered = power['1']['power_pam']
-    fem_powered = power['1']['power_fem']
+    snap_relay_powered = power[1]['power_snap_relay']
+    snap0_powered = power[1]['power_snap_0']
+    snap1_powered = power[1]['power_snap_1']
+    snap2_powered = power[1]['power_snap_2']
+    snap3_powered = power[1]['power_snap_3']
+    pam_powered = power[1]['power_pam']
+    fem_powered = power[1]['power_fem']
     test_session.add_node_power_status(t1, 1, snap_relay_powered,
                                        snap0_powered, snap1_powered,
                                        snap2_powered, snap3_powered,
@@ -516,13 +507,13 @@ def test_add_node_power_status(mcsession, power):
     result = result[0]
     assert result.isclose(expected)
 
-    snap_relay_powered = power['2']['power_snap_relay']
-    snap0_powered = power['2']['power_snap_0']
-    snap1_powered = power['2']['power_snap_1']
-    snap2_powered = power['2']['power_snap_2']
-    snap3_powered = power['2']['power_snap_3']
-    pam_powered = power['2']['power_pam']
-    fem_powered = power['2']['power_fem']
+    snap_relay_powered = power[2]['power_snap_relay']
+    snap0_powered = power[2]['power_snap_0']
+    snap1_powered = power[2]['power_snap_1']
+    snap2_powered = power[2]['power_snap_2']
+    snap3_powered = power[2]['power_snap_3']
+    pam_powered = power[2]['power_pam']
+    fem_powered = power[2]['power_fem']
     test_session.add_node_power_status(
         t1, 2, snap_relay_powered, snap0_powered, snap1_powered, snap2_powered,
         snap3_powered, fem_powered, pam_powered)
@@ -588,14 +579,14 @@ def test_create_power_status(mcsession, nodelist, power):
 
 def test_node_power_status_errors(mcsession, power):
     test_session = mcsession
-    snap_relay_powered = power['1']['power_snap_relay']
-    snap0_powered = power['1']['power_snap_0']
-    snap1_powered = power['1']['power_snap_1']
-    snap2_powered = power['1']['power_snap_2']
-    snap3_powered = power['1']['power_snap_3']
-    pam_powered = power['1']['power_pam']
-    fem_powered = power['1']['power_fem']
-    pytest.raises(ValueError, test_session.add_node_power_status,
+    snap_relay_powered = power[1]['power_snap_relay']
+    snap0_powered = power[1]['power_snap_0']
+    snap1_powered = power[1]['power_snap_1']
+    snap2_powered = power[1]['power_snap_2']
+    snap3_powered = power[1]['power_snap_3']
+    pam_powered = power[1]['power_pam']
+    fem_powered = power[1]['power_fem']
+    pytest.raises(AttributeError, test_session.add_node_power_status,
                   'foo', 1, snap_relay_powered, snap0_powered, snap1_powered,
                   snap2_powered, snap3_powered, fem_powered, pam_powered)
 
@@ -603,8 +594,6 @@ def test_node_power_status_errors(mcsession, power):
 @requires_redis
 def test_add_node_power_status_from_node_control(mcsession):
     test_session = mcsession
-
-    node_list = node.get_node_list()
 
     test_session.add_node_power_status_from_node_control()
     result = test_session.get_node_power_status(
@@ -615,8 +604,6 @@ def test_add_node_power_status_from_node_control(mcsession):
     for pw_obj in result:
         nodes_with_status.append(pw_obj.node)
     if len(result) != len(nodes_with_status):
-        print('Nodes that hera_node_mc returns as active:')
-        print(node_list)
         print('Nodes with power status info:')
         print(nodes_with_status)
     assert len(result) == len(nodes_with_status)
@@ -630,9 +617,9 @@ def test_add_white_rabbit_status(
 ):
     test_session = mcsession
     t1 = Time(1512770942.726777, format='unix')
-    test_session.add_node_white_rabbit_status(white_rabbit_status_cleaned['1'])
+    test_session.add_node_white_rabbit_status(white_rabbit_status_cleaned[1])
 
-    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql['1'])
+    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[1])
     result = test_session.get_node_white_rabbit_status(
         starttime=t1 - TimeDelta(3.0, format='sec'))
 
@@ -640,7 +627,7 @@ def test_add_white_rabbit_status(
     result = result[0]
     assert result.isclose(expected)
 
-    test_session.add_node_white_rabbit_status(white_rabbit_status_cleaned['2'])
+    test_session.add_node_white_rabbit_status(white_rabbit_status_cleaned[2])
 
     result = test_session.get_node_white_rabbit_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=1)
@@ -687,7 +674,7 @@ def test_create_white_rabbit_status(mcsession, nodelist, white_rabbit_status,
     result = test_session.get_node_white_rabbit_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=1)
 
-    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql['1'])
+    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[1])
     assert len(result) == 1
     result = result[0]
     assert result.isclose(expected)
@@ -695,7 +682,7 @@ def test_create_white_rabbit_status(mcsession, nodelist, white_rabbit_status,
     result = test_session.get_node_white_rabbit_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=2)
 
-    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql['2'])
+    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[2])
     assert len(result) == 1
     result = result[0]
     assert result.isclose(expected)
@@ -703,7 +690,7 @@ def test_create_white_rabbit_status(mcsession, nodelist, white_rabbit_status,
     result = test_session.get_node_white_rabbit_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=3)
 
-    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql['3'])
+    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[3])
     assert len(result) == 1
     result = result[0]
     assert result.isclose(expected)
@@ -716,17 +703,6 @@ def test_create_white_rabbit_status(mcsession, nodelist, white_rabbit_status,
     result_most_recent = test_session.get_node_white_rabbit_status(
         most_recent=True)
     assert result_most_recent == result
-
-
-@pytest.mark.parametrize(
-    ("key"), node.wr_Time_keys
-)
-def test_white_rabbit_status_errors(mcsession, white_rabbit_status_cleaned, key):
-    wr_dict_use = copy.deepcopy(white_rabbit_status_cleaned['1'])
-    wr_dict_use[key] = 'foo'
-    with pytest.raises(ValueError) as cm:
-        mcsession.add_node_white_rabbit_status(wr_dict_use)
-    assert str(cm.value).startswith(key + ' must be an astropy Time object')
 
 
 @requires_redis
