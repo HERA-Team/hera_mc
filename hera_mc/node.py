@@ -47,9 +47,9 @@ wr_key_dict = {
     'ip': 'ip',
     'mode': 'mode',
     'serial': 'serial',
-    'temperature': 'temp',
+    'temperature': 'temperature',
     'build_date': 'sw_build_date',
-    'gw_date': 'wr_gw_date',  # hack!
+    'gw_date': 'wr_gw_date',
     'gw_version': 'wr_gw_version',
     'gw_id': 'wr_gw_id',
     'build_hash': 'wr_build',
