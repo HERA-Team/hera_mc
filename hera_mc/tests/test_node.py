@@ -296,9 +296,6 @@ def white_rabbit_status_cleaned(white_rabbit_status):
                                                         format_is_floatable='unix').gps))
             elif isinstance(wr_data_value, float) and np.isnan(wr_data_value):
                 wr_data_value = None
-            elif key in node.wr_tai_sec_keys and wr_data_value is not None:
-                cleaned_dict[node_str][key] = Time(wr_data_value, format='unix', scale='tai')
-                cleaned_dict[node_str][key] = int(floor(cleaned_dict[node_str][key].gps))
             elif key == 'aliases' and wr_data_value is not None:
                 if len(wr_data_value) == 0:
                     cleaned_dict[node_str][key] = None
@@ -655,71 +652,54 @@ def test_add_white_rabbit_status(
     result = test_session.get_node_white_rabbit_status(
         starttime=t1 + TimeDelta(200.0, format='sec'))
     assert result == []
-#
-#
-# def test_create_white_rabbit_status(mcsession, nodelist, white_rabbit_status,
-#                                     white_rabbit_status_cleaned,
-#                                     white_rabbit_status_sql):
-#     test_session = mcsession
-#     wr_obj_list = node.create_wr_status(
-#         node_list=nodelist, wr_status_dict=white_rabbit_status)
-#
-#     for obj in wr_obj_list:
-#         test_session.add(obj)
-#
-#     t1 = Time(1512770942.726777, format='unix')
-#     result = test_session.get_node_white_rabbit_status(
-#         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=1)
-#
-#     expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[1])
-#     assert len(result) == 1
-#     result = result[0]
-#     print("<<<<")
-#     print(result)
-#     print(">>>><<<<")
-#     print(expected)
-#     print(">>>>")
-#     assert result.isclose(expected)
-#
-#     result = test_session.get_node_white_rabbit_status(
-#         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=2)
-#
-#     expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[2])
-#     assert len(result) == 1
-#     result = result[0]
-#     assert result.isclose(expected)
-#
-#     result = test_session.get_node_white_rabbit_status(
-#         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=3)
-#
-#     expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[3])
-#     assert len(result) == 1
-#     result = result[0]
-#     assert result.isclose(expected)
-#
-#     result = test_session.get_node_white_rabbit_status(
-#         starttime=t1 - TimeDelta(3.0, format='sec'),
-#         stoptime=t1 + TimeDelta(5.0, format='sec'))
-#     assert len(result) == 3
-#
-#     result_most_recent = test_session.get_node_white_rabbit_status(
-#         most_recent=True)
-#     assert result_most_recent == result
-#
-#
-@requires_redis
-def test_add_white_rabbit_status_from_nodecontrol(mcsession):
+
+
+def test_create_white_rabbit_status(mcsession, nodelist, white_rabbit_status,
+                                    white_rabbit_status_cleaned,
+                                    white_rabbit_status_sql):
     test_session = mcsession
+    wr_obj_list = node.create_wr_status(
+        node_list=nodelist, wr_status_dict=white_rabbit_status)
 
-    test_session.add_node_white_rabbit_status_from_node_control()
+    for obj in wr_obj_list:
+        test_session.add(obj)
+
+    t1 = Time(1512770942.726777, format='unix')
     result = test_session.get_node_white_rabbit_status(
-        starttime=Time.now() - TimeDelta(120.0, format='sec'),
-        stoptime=Time.now() + TimeDelta(120.0, format='sec'))
+        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=1)
 
-    nodes_with_status = []
-    for wr_obj in result:
-        nodes_with_status.append(wr_obj.node)
-    if len(result) != len(nodes_with_status):
-        print('Nodes with white rabbit status info:')
-        print(nodes_with_status)
-    assert len(result) == len(nodes_with_status)
+    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[1])
+    assert len(result) == 1
+    result = result[0]
+
+    assert result.isclose(expected)
+
+    result = test_session.get_node_white_rabbit_status(
+        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=2)
+
+    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[2])
+    assert len(result) == 1
+    result = result[0]
+    assert result.isclose(expected)
+
+    result = test_session.get_node_white_rabbit_status(
+        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=3)
+
+    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[3])
+    assert len(result) == 1
+    result = result[0]
+    assert result.isclose(expected)
+
+    result = test_session.get_node_white_rabbit_status(
+        starttime=t1 - TimeDelta(3.0, format='sec'),
+        stoptime=t1 + TimeDelta(5.0, format='sec'))
+    assert len(result) == 3
+
+    # result_most_recent = test_session.get_node_white_rabbit_status(
+    #     most_recent=True)
+    # print("<<<<")
+    # print(result[0])
+    # print(">>>><<<<")
+    # print(result_most_recent[0])
+    # print(">>>>")
+    # assert result[1].isclose(result_most_recent[0])
