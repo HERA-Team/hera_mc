@@ -38,12 +38,12 @@ this_daemon = os.path.basename(__file__)
 
 daemons = [
     this_daemon,
-    "hera_corr_cmd_handler.py",
-    "hera_wr_redis_monitor.py",
-    "hera_node_keep_alive.py",
-    "hera_node_receiver.py",
-    "hera_snap_redis_monitor.py",
-    "hera_cmd_handler.py",  # SNAP command handler
+    "hera_corr_cmd_handler.py",    # hera_corr_cm
+    "hera_wr_redis_monitor.py",    # unknown!
+    "hera_node_keep_alive.py",     # hera_node_mc
+    "hera_node_receiver.py",       # hera_node_mc
+    "hera_snap_redis_monitor.py",  # hera_corr_f
+    "hera_cmd_handler.py",         # hera_corr_f: SNAP command handler
 ]
 
 connection_pool = redis.ConnectionPool(host=args.redishost)

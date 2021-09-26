@@ -5,8 +5,6 @@
 """Node M&C info from the node's Redis database."""
 
 from math import floor
-
-from astropy.time import Time
 import numpy as np
 from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String
 
@@ -17,6 +15,7 @@ from . import cm_utils
 # and message passing which the node server has access to and watches
 defaultServerAddress = 'redishost'
 
+# These four dictionaries convert the keyname in psql to redis - psql-key: redis-key
 sensor_key_dict = {'top_sensor_temp': 'temp_top',
                    'middle_sensor_temp': 'temp_mid',
                    'bottom_sensor_temp': 'temp_bot',
@@ -47,6 +46,7 @@ wr_key_dict = {
     'ip': 'ip',
     'mode': 'mode',
     'serial': 'serial',
+    'node_time': 'timestamp',
     'temperature': 'temperature',
     'build_date': 'sw_build_date',
     'gw_date': 'wr_gw_date',
@@ -106,11 +106,9 @@ wr_key_dict = {
     'port1_sync_source': 'wr1_syncs',
     'port1_packets_sent': 'wr1_tx',
     'port1_update_counter': 'wr1_ucnt',
-    'port1_time': 'wr1_sec',
-    'node_time': 'timestamp'
+    'port1_time': 'wr1_sec'
 }
-wr_timestamp_keys = ['build_date', 'gw_date', 'manufacture_date', 'node_time']
-wr_tai_sec_keys = ['port0_time', 'port1_time']
+wr_timestamp_keys = ['node_time']
 
 
 class NodeSensor(MCDeclarativeBase):
@@ -856,14 +854,11 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
         for key, value in wr_key_dict.items():
             # key is column name, value is related key into wr_data
             wr_data_value = wr_data[value]
-            if key == 'node_time':
+            if key in wr_timestamp_keys and wr_data_value is not None:
                 col_dict[key] = int(floor(cm_utils.get_astropytime(wr_data_value,
                                           format_is_floatable='unix').gps))
             elif isinstance(wr_data_value, float) and np.isnan(wr_data_value):
                 wr_data_value = None
-            elif key in wr_tai_sec_keys and wr_data_value is not None:
-                col_dict[key] = Time(wr_data_value, format='unix', scale='tai')
-                col_dict[key] = int(floor(col_dict[key].gps))
             elif key == 'aliases' and wr_data_value is not None:
                 if len(wr_data_value) == 0:
                     col_dict[key] = None
