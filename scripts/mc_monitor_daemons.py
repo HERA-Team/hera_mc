@@ -39,7 +39,7 @@ this_daemon = os.path.basename(__file__)
 daemons = [
     this_daemon,
     "hera_corr_cmd_handler.py",    # hera_corr_cm
-    "hera_wr_redis_monitor.py",    # unknown!
+    "hera_wr_redis_monitor.py",    # hera_node_mc (moved from hera_wr_cm)
     "hera_node_keep_alive.py",     # hera_node_mc
     "hera_node_receiver.py",       # hera_node_mc
     "hera_snap_redis_monitor.py",  # hera_corr_f
