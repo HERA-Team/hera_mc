@@ -69,7 +69,7 @@ ap.add_argument(
     "-c",
     "--workflow_config",
     type=str,
-    default="/home/obs/src/hera_pipelines/pipelines/h4c/rtp/v1/h4c_rtp_stage_1.toml",
+    default="/home/obs/src/hera_pipelines/pipelines/h5c/rtp/v1/h5c_rtp_stage_1.toml",
     help="hera_opm configuration to use for workflow",
 )
 ap.add_argument(
