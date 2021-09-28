@@ -2510,15 +2510,15 @@ class MCSession(Session):
                                  filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_node_power_command(self, time, node, part, command):
+    def add_node_power_command(self, time, nodeID, part, command):
         """
         Add new node sensor data to the M&C database.
 
         Parameters
         ----------
-        time : Astropy.Time object
+        time : timestamp
             Time. Part of the primary key.
-        node : int
+        nodeID : int
             Node number. Part of the primary key.
         part : str
             Part to be powered on/off. Part of the primary key.
@@ -2526,7 +2526,7 @@ class MCSession(Session):
             Command, one of 'on' or 'off'.
         """
         comm_time = int(floor(time.gps))
-        self.add(node.NodePowerCommand.create(comm_time, node, part, command))
+        self.add(node.NodePowerCommand.create(comm_time, nodeID, part, command))
 
     def add_node_power_command_from_node_control(self):
         """

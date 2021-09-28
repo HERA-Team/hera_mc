@@ -394,8 +394,9 @@ def test_add_node_sensor_readings(mcsession, sensor, tmpdir):
 
 def test_create_sensor_readings(mcsession, nodelist, sensor):
     test_session = mcsession
+
     sensor_obj_list = node.create_sensor_readings(
-        node_list=nodelist, sensor_dict=sensor)
+        node_list=None, sensor_dict=sensor)
 
     for obj in sensor_obj_list:
         test_session.add(obj)
@@ -546,8 +547,9 @@ def test_add_node_power_status(mcsession, power):
 
 def test_create_power_status(mcsession, nodelist, power):
     test_session = mcsession
+
     sensor_obj_list = node.create_power_status(
-        node_list=nodelist, power_dict=power)
+        node_list=None, power_dict=power)
 
     for obj in sensor_obj_list:
         test_session.add(obj)
@@ -607,12 +609,26 @@ def test_add_node_power_status_from_node_control(mcsession):
     assert len(result) == len(nodes_with_status)
 
 
-def test_add_white_rabbit_status(
-    mcsession,
-    white_rabbit_status_cleaned,
-    white_rabbit_status_sql,
-    tmpdir,
-):
+def test_power_command(mcsession):
+    test_session = mcsession
+    npc = {'time': Time.now(), 'nodeID': 1, 'part': 'vapor', 'command': 'on'}
+    with pytest.raises(ValueError) as cm:
+        test_session.add_node_power_command(**npc)
+    assert 'snap_relay' in str(cm.value)
+    npc['part'] = 'snap_relay'
+    npc['command'] = 'nope'
+    with pytest.raises(ValueError) as cm:
+        test_session.add_node_power_command(**npc)
+    assert 'command' in str(cm.value)
+    npc['command'] = 'on'
+    test_session.add_node_power_command(**npc)
+    test_session.add_node_power_command_from_node_control()
+    test_npc = test_session.get_node_power_command()
+    assert len(test_npc) == 1
+
+
+def test_add_white_rabbit_status(mcsession, white_rabbit_status_cleaned,
+                                 white_rabbit_status_sql, tmpdir):
     test_session = mcsession
     t1 = Time(1512770942.726777, format='unix')
     test_session.add_node_white_rabbit_status(white_rabbit_status_cleaned[1])
