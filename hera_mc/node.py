@@ -203,9 +203,7 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress,
         from node_control import node_control
         node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
         sensor_dict = node_controller.get_sensors()
-        if node_list is None:
-            node_list = node_controller.nodes_in_redis
-    elif node_list is None:
+    if node_list is None:
         node_list = list(sensor_dict.keys())
 
     for node in node_list:
@@ -332,9 +330,7 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list=None,
         from node_control import node_control
         node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
         power_dict = node_controller.get_power_status()
-        if node_list is None:
-            node_list = node_controller.nodes_in_redis
-    elif node_list is None:
+    if node_list is None:
         node_list = list(power_dict.keys())
     for node in node_list:
         power_data = power_dict[node]
@@ -436,9 +432,7 @@ def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list=
         from node_control import node_control
         node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
         power_dict = node_controller.get_power_command_list()
-        if node_list is None:
-            node_list = node_controller.nodes_in_redis
-    elif node_list is None:
+    if node_list is None:
         node_list = list(power_dict.keys())
     node_power_list = []
     for node in node_list:
@@ -843,9 +837,7 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
         from node_control import node_control
         node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
         wr_status_dict = node_controller.get_wr_status()
-        if node_list is None:
-            node_list = node_controller.nodes_in_redis
-    elif node_list is None:
+    if node_list is None:
         node_list = list(wr_status_dict.keys())
 
     for node in node_list:

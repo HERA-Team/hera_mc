@@ -2932,7 +2932,7 @@ class MCSession(Session):
 
         if testing:
             return corr_state_list
-        else:
+        else:  # pragma: no cover
             self._insert_ignoring_duplicates(corr.CorrelatorControlState,
                                              corr_state_list)
 
@@ -3919,7 +3919,7 @@ class MCSession(Session):
 
         command_time = Time.now()
 
-        if not testing:
+        if not testing:  # pragma: no cover
             if command == 'update_config':
                 # Check the current config
                 # make sure we have most recent config
@@ -3966,7 +3966,7 @@ class MCSession(Session):
                         starttimes.append(obj.starttime_sec
                                           + obj.starttime_ms / 1000.)
                     next_start_time = np.min(np.array(starttimes))
-            else:
+            else:  # pragma: no cover
                 self.add_corr_obj()
                 next_start_time = corr._get_next_start_time(
                     corr_cm=self.corr_obj)
@@ -4031,7 +4031,7 @@ class MCSession(Session):
                 raise ValueError('config_file cannot be specified if command '
                                  'is not "update_config"')
 
-            if not testing:
+            if not testing:  # pragma: no cover
                 self.add_corr_obj()
                 integration_time = corr._get_integration_time(
                     acclen_spectra, corr_cm=self.corr_obj)
@@ -4394,7 +4394,7 @@ class MCSession(Session):
 
         if testing:
             return corr_version_list + config_obj_list + snap_version_list
-        else:
+        else:  # pragma: no cover
             self._insert_ignoring_duplicates(corr.CorrelatorSoftwareVersions,
                                              corr_version_list)
             self._insert_ignoring_duplicates(corr.SNAPConfigVersion,
@@ -4558,7 +4558,7 @@ class MCSession(Session):
 
         if testing:
             return snap_status_list
-        else:
+        else:  # pragma: no cover
             self._insert_ignoring_duplicates(corr.SNAPStatus, snap_status_list)
 
     def add_antenna_status(self, time, antenna_number, antenna_feed_pol,
@@ -4728,7 +4728,7 @@ class MCSession(Session):
 
         if testing:
             return antenna_status_list
-        else:
+        else:  # pragma: no cover
             self._insert_ignoring_duplicates(corr.AntennaStatus, antenna_status_list)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
@@ -5133,7 +5133,7 @@ class MCSession(Session):
 
         if testing:
             return hera_auto_list
-        else:
+        else:  # pragma: no cover
             self._insert_ignoring_duplicates(HeraAuto, hera_auto_list)
 
     def get_autocorrelation(self, most_recent=None, starttime=None,
