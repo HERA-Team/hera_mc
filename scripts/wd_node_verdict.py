@@ -4,7 +4,7 @@
 # Licensed under the 2-clause BSD license.
 
 """
-Checks for node over-temperature conditions.
+Checks for node failures.
 """
 import argparse
 from hera_mc import watch_dog

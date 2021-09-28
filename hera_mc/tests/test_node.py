@@ -669,13 +669,21 @@ def test_add_white_rabbit_status(mcsession, white_rabbit_status_cleaned,
         starttime=t1 + TimeDelta(200.0, format='sec'))
     assert result == []
 
+    test_session.add_node_white_rabbit_status_from_node_control()
+    ncget = test_session.get_node_white_rabbit_status()
+    print(ncget)
+    assert False
+
 
 def test_create_white_rabbit_status(mcsession, nodelist, white_rabbit_status,
                                     white_rabbit_status_cleaned,
                                     white_rabbit_status_sql):
     test_session = mcsession
+
+    test_none = node.create_wr_status()
+    assert len(test_none) == 8
     wr_obj_list = node.create_wr_status(
-        node_list=nodelist, wr_status_dict=white_rabbit_status)
+        node_list=None, wr_status_dict=white_rabbit_status)
 
     for obj in wr_obj_list:
         test_session.add(obj)
