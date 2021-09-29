@@ -108,7 +108,7 @@ wr_key_dict = {
     'port1_update_counter': 'wr1_ucnt',
     'port1_time': 'wr1_sec'
 }
-wr_timestamp_keys = ['node_time']
+wr_timestamp_keys = ['node_time', 'timestamp']
 
 
 class NodeSensor(MCDeclarativeBase):
@@ -858,7 +858,6 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
                     col_dict[key] = ','.join(wr_data_value)
             else:
                 col_dict[key] = wr_data_value
-
         wr_status_list.append(NodeWhiteRabbitStatus.create(col_dict))
 
     return wr_status_list

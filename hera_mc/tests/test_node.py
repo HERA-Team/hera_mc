@@ -671,8 +671,7 @@ def test_add_white_rabbit_status(mcsession, white_rabbit_status_cleaned,
 
     test_session.add_node_white_rabbit_status_from_node_control()
     ncget = test_session.get_node_white_rabbit_status()
-    print(ncget)
-    assert False
+    assert len(ncget) == 6
 
 
 def test_create_white_rabbit_status(mcsession, nodelist, white_rabbit_status,
@@ -718,12 +717,3 @@ def test_create_white_rabbit_status(mcsession, nodelist, white_rabbit_status,
         starttime=t1 - TimeDelta(3.0, format='sec'),
         stoptime=t1 + TimeDelta(5.0, format='sec'))
     assert len(result) == 3
-
-    # result_most_recent = test_session.get_node_white_rabbit_status(
-    #     most_recent=True)
-    # print("<<<<")
-    # print(result[0])
-    # print(">>>><<<<")
-    # print(result_most_recent[0])
-    # print(">>>>")
-    # assert result[1].isclose(result_most_recent[0])
