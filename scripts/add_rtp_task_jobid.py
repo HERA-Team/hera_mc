@@ -48,8 +48,8 @@ def get_obsid_from_file(filename):
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
     parser.add_argument(
-        "obsid",
-        type=int,
+        "filename",
+        type=str,
         help=(
             "file processed by RTP corresponding to obsid, or obsid_start for "
             "multiple obsid tasks."
@@ -62,10 +62,10 @@ if __name__ == "__main__":
         "job_id", type=int, help="Slurm Job ID of the RTP task."
     )
     parser.add_argument(
-        "--obsid_list",
-        dest="obsid_list",
+        "--file_list",
+        dest="file_list",
         nargs='+',
-        type=int,
+        type=str,
         default=None,
         help="List of files included in this task, only used for multiple obsid tasks. "
         "Will add entries to the `rtp_task_multiple_track` and "
@@ -75,12 +75,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # extract obsid from input file
-    obsid = get_obsid_from_file(args.obsid)
+    obsid = get_obsid_from_file(args.filename)
 
-    if args.obsid_list is not None:
+    if args.file_list is not None:
         # extract obsid for each file
         obsid_list = []
-        for filename in args.obsid_list:
+        for filename in args.file_list:
             oid = get_obsid_from_file(filename)
             obsid_list.append(oid)
 
@@ -88,11 +88,17 @@ if __name__ == "__main__":
     with db.sessionmaker() as session:
         if args.obsid_list is not None:
             for oid in obsid_list:
-                session.add_rtp_task_multiple_track(
-                    obsid_start=obsid,
-                    task_name=args.task_name,
-                    obsid=oid,
+                # check to see if this has already been added
+                rows = session.get_rtp_task_multiple_track(
+                    obsid_start=obsid, task_name=args.task_name, obsid=oid
                 )
+                if len(rows) == 0:
+                    # add the mapping
+                    session.add_rtp_task_multiple_track(
+                        obsid_start=obsid,
+                        task_name=args.task_name,
+                        obsid=oid,
+                    )
 
             session.add_rtp_task_multiple_jobid(
                 obsid_start=obsid,
