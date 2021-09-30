@@ -320,6 +320,32 @@ event* & string & one of: queued, started, finished, error  \\\hline
 \end{tabular}
 \end{center}
 
+\subsubsection{rtp\_task\_process\_events}
+RTP Processing events (per task + per obsid)
+\begin{center}
+  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+    \hline
+    \textbf{Column} & \textbf{Type} & \textbf{Description} \\[0.5ex] \hline\hline
+    \textbf{time} & long & event time in floor(gps seconds) \\ \hline
+    \textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
+    \textbf{task\_name} & string & name of specific task (e.g., \verb+OMNICAL+) \\ \hline
+    event* & string & one of: started, finished, error \\\hline
+  \end{tabular}
+\end{center}
+
+\subsubsection{rtp\_task\_multiple\_process\_events}
+RTP Processing events that include multiple obsids (per task + per starting obsid)
+\begin{center}
+  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+    \hline
+    \textbf{Column} & \textbf{Type} & \textbf{Description} \\[0.5ex] \hline\hline
+    \textbf{time} & long & event time in floor(gps seconds) \\ \hline
+    \textit{\textbf{obsid\_start}} & long integer & observation identifier for the first file in the task, foreign key into hera\_obs table \\ \hline
+    \textbf{task\_name} & string & name of specific task (e.g., \verb+OMNICAL+) \\ \hline
+    event* & string & one of: started, finished, error \\\hline
+  \end{tabular}
+\end{center}
+
 \subsubsection{rtp\_process\_record}
 RTP record of processed obsids (entry added when processing finished)
 \begin{center}
@@ -376,7 +402,7 @@ A many to one mapping table that tracks which obsids are included in multiple ob
 \hline
  column & type & description \\ [0.5ex] \hline\hline
 \textit{\textbf{obsid\_start}} & long integer & First obsid in the set of obsids included in the task, foreign key into hera\_obs table \\ \hline
-\textbf{task\_name} & string & name of specific task (e.g., \verb+rfi\_notebook+) \\ \hline
+\textbf{task\_name} & string & name of specific task (e.g., \verb+rfi_notebook+) \\ \hline
 \textit{\textbf{obsid}} & long integer & observation identifier, foreign key into hera\_obs table \\ \hline
 \end{tabular}
 \end{center}
@@ -389,7 +415,7 @@ that obsid set and task after the run completes (to fill out the rtp\_task\_mult
 \hline
  column & type & description \\ [0.5ex] \hline\hline
 \textit{\textbf{obsid\_start}} & long integer & First obsid in the set of obsids included in the task, foreign key into hera\_obs table \\ \hline
-\textbf{task\_name} & string & name of specific task (e.g., \verb+rfi\_notebook+) \\ \hline
+\textbf{task\_name} & string & name of specific task (e.g., \verb+rfi_notebook+) \\ \hline
 \textbf{start\_time} & long & start time of task in floor(gps seconds) \\ \hline
 job\_id* & long &  Slurm job ID for the obsid set and task. \\ \hline
 \end{tabular}
@@ -402,7 +428,7 @@ RTP record of start and stop times for a multiple obsid task (e.g., rfi\_noteboo
 \hline
  column & type & description \\ [0.5ex] \hline\hline
 \textit{\textbf{obsid\_start}} & long integer & First obsid in the set of obsids included in the task, foreign key into hera\_obs table \\ \hline
-\textbf{task\_name} & string & name of specific task (e.g., \verb+rfi\_notebook+) \\ \hline
+\textbf{task\_name} & string & name of specific task (e.g., \verb+rfi_notebook+) \\ \hline
 start\_time* & long & start time of task in floor(gps seconds) \\ \hline
 stop\_time* & long & stop time of task in floor(gps seconds) \\ \hline
 max\_mem & float & maximum memory, in MB, consumed by the task; nullable column \\ \hline
