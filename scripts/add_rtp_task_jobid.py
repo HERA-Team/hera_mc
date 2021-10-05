@@ -14,35 +14,10 @@ MCSession object.
 
 """
 
-import h5py
-import numpy as np
 from astropy.time import Time
 
 import hera_mc.mc as mc
-
-
-def get_obsid_from_file(filename):
-    """
-    Extract obsid from a UVH5 file.
-
-    Parameters
-    ----------
-    filename : str
-        The full path to the file.
-
-    Returns
-    -------
-    obsid : int
-        The obsid of the file.
-
-    """
-    with h5py.File(filename, "r") as h5f:
-        time_array = h5f["Header/time_array"][()]
-    t0 = np.unique(time_array)[0]
-    time0 = Time(t0, format="jd", scale="utc")
-    obsid = int(np.floor(time0.gps))
-
-    return obsid
+import hera_mc.utils as mcutils
 
 
 if __name__ == "__main__":
@@ -75,13 +50,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # extract obsid from input file
-    obsid = get_obsid_from_file(args.filename)
+    obsid = mcutils.get_obsid_from_file(args.filename)
 
     if args.file_list is not None:
         # extract obsid for each file
         obsid_list = []
         for filename in args.file_list:
-            oid = get_obsid_from_file(filename)
+            oid = mcutils.get_obsid_from_file(filename)
             obsid_list.append(oid)
 
     db = mc.connect_to_mc_db(args)

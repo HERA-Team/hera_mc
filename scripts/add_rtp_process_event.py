@@ -6,35 +6,10 @@
 """
 Script to add an RTP process event record to M&C.
 """
-import numpy as np
-import h5py
 from astropy.time import Time
 
 import hera_mc.mc as mc
-
-
-def get_obsid_from_file(filename):
-    """
-    Extract obsid from a UVH5 file.
-
-    Parameters
-    ----------
-    filename : str
-        The full path to the file.
-
-    Returns
-    -------
-    obsid : int
-        The obsid of the file.
-
-    """
-    with h5py.File(filename, "r") as h5f:
-        time_array = h5f["Header/time_array"][()]
-    t0 = np.unique(time_array)[0]
-    time0 = Time(t0, format="jd", scale="utc")
-    obsid = int(np.floor(time0.gps))
-
-    return obsid
+import hera_mc.utils as mcutils
 
 
 if __name__ == "__main__":
@@ -45,7 +20,12 @@ if __name__ == "__main__":
         type=str,
         help="Name of the file to add an event for.",
     )
-    parser.add_argument("task_name", type=str, help="RTP task name")
+    parser.add_argument(
+        "task_name",
+        metavar="TASK_NAME",
+        type=str,
+        help="RTP task name (e.g., OMNICAL)",
+    )
     parser.add_argument(
         "event",
         metavar="EVENT",
@@ -71,13 +51,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # get the obsid from the file
-    obsid = get_obsid_from_file(args.filename)
+    obsid = mcutils.get_obsid_from_file(args.filename)
 
     if args.file_list is not None:
         # extract obsid for each file
         obsid_list = []
         for filename in args.file_list:
-            oid = get_obsid_from_file(filename)
+            oid = mcutils.get_obsid_from_file(filename)
             obsid_list.append(oid)
 
     # add the process event
