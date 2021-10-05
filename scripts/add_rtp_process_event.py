@@ -83,7 +83,7 @@ if __name__ == "__main__":
     # add the process event
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        if args.obsid_list is not None:
+        if args.file_list is not None:
             for oid in obsid_list:
                 # check to see if this has already been added
                 rows = session.get_rtp_task_multiple_track(
