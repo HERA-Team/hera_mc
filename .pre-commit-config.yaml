@@ -1,5 +1,3 @@
-exclude: '(^docs/conf.py|^user_data/External_tables/*|^docs/references/*|^pyuvdata/data/*|^pyuvdata/uvdata/src/*|^pyuvdata/tests/Line_Profiler_full.out|.codecov.yml)'
-
 repos:
     - repo: git://github.com/pre-commit/pre-commit-hooks
       rev: v2.5.0

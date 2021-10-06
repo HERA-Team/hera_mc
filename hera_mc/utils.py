@@ -100,3 +100,37 @@ def get_iterable(x):
             return x
         else:
             return (x,)
+
+
+def get_obsid_from_file(filename):
+    """
+    Extract obsid from a UVH5 file.
+
+    This method assumes that the file is a UVH5 file, though there is no
+    explicit checking done.
+
+    Parameters
+    ----------
+    filename : str
+        The full path to the file.
+
+    Returns
+    -------
+    obsid : int
+        The obsid of the file.
+
+    """
+    try:
+        import h5py
+    except ImportError:  # pragma: no cover
+        msg = (
+            "h5py is needed for `get_obsid_from_file`. Please install it "
+            "explicitly or run `pip install .[all]` from the top-level of hera_mc."
+        )
+        raise ImportError(msg)
+    with h5py.File(filename, "r") as h5f:
+        time_array = h5f["Header/time_array"][()]
+    t0 = np.unique(time_array)[0]
+    time0 = Time(t0, format="jd", scale="utc")
+    obsid = int(np.floor(time0.gps))
+    return obsid

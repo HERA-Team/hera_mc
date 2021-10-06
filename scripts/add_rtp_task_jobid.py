@@ -17,56 +17,73 @@ MCSession object.
 from astropy.time import Time
 
 import hera_mc.mc as mc
+import hera_mc.utils as mcutils
 
 
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
     parser.add_argument(
-        "obsid", dest="obsid",
-        type=int,
-        help="obsid processed by RTP, or obsid_start for multiple obsid tasks."
+        "filename",
+        type=str,
+        help=(
+            "file processed by RTP corresponding to obsid, or obsid_start for "
+            "multiple obsid tasks."
+        ),
     )
     parser.add_argument(
-        "task_name", dest="task_name", type=str, help="RTP task name"
+        "task_name", type=str, help="RTP task name"
     )
     parser.add_argument(
-        "job_id", dest="job_id", type=int, help="Slurm Job ID of the RTP task."
+        "job_id", type=int, help="Slurm Job ID of the RTP task."
     )
     parser.add_argument(
-        "--obsid_list",
-        dest="obsid_list",
+        "--file_list",
+        dest="file_list",
         nargs='+',
-        type=int,
+        type=str,
         default=None,
-        help="List of obsids included in this task, only used for multiple obsid tasks. "
+        help="List of files included in this task, only used for multiple obsid tasks. "
         "Will add entries to the `rtp_task_multiple_track` and "
         "`rtp_task_multiple_resource_record` tables rather than to the "
         "`rtp_task_jobid` table."
     )
-    parser.add_argument(
-
-    )
     args = parser.parse_args()
+
+    # extract obsid from input file
+    obsid = mcutils.get_obsid_from_file(args.filename)
+
+    if args.file_list is not None:
+        # extract obsid for each file
+        obsid_list = []
+        for filename in args.file_list:
+            oid = mcutils.get_obsid_from_file(filename)
+            obsid_list.append(oid)
 
     db = mc.connect_to_mc_db(args)
     with db.sessionmaker() as session:
-        if args.obsid_list is not None:
-            for obsid in args.obsid_list:
-                session.add_rtp_task_multiple_track(
-                    obsid_start=args.obsid,
-                    task_name=args.task_name,
-                    obsid=obsid,
+        if args.file_list is not None:
+            for oid in obsid_list:
+                # check to see if this has already been added
+                rows = session.get_rtp_task_multiple_track(
+                    obsid_start=obsid, task_name=args.task_name, obsid=oid
                 )
+                if len(rows) == 0:
+                    # add the mapping
+                    session.add_rtp_task_multiple_track(
+                        obsid_start=obsid,
+                        task_name=args.task_name,
+                        obsid=oid,
+                    )
 
             session.add_rtp_task_multiple_jobid(
-                obsid_start=args.obsid,
+                obsid_start=obsid,
                 task_name=args.task_name,
                 start_time=Time.now(),
                 job_id=args.job_id,
             )
         else:
             session.add_rtp_task_jobid(
-                obsid=args.obsid,
+                obsid=obsid,
                 task_name=args.task_name,
                 start_time=Time.now(),
                 job_id=args.job_id,

@@ -56,3 +56,25 @@ def test_get_iterable():
     assert utils.get_iterable("foo") == ("foo",)
     assert utils.get_iterable(["foo"]) == ["foo"]
     assert utils.get_iterable(["foo", "bar"]) == ["foo", "bar"]
+
+
+def test_get_obsid_from_file(tmp_path):
+    """
+    Test the get_obsid_from_file function; requires h5py.
+    """
+    h5py = pytest.importorskip("h5py")
+
+    # make a fake time array
+    jd0 = 2457000
+    t0 = Time(jd0, format="jd", scale="utc")
+    times = np.linspace(jd0, jd0 + 0.5, num=10)
+    output_file = str(tmp_path / "test.uvh5")
+    with h5py.File(output_file, "w") as h5f:
+        header = h5f.create_group("Header")
+        times = header.create_dataset("time_array", data=times)
+
+    # test function
+    obsid = utils.get_obsid_from_file(output_file)
+    assert obsid == int(np.floor(t0.gps))
+
+    return

@@ -10,10 +10,19 @@ import pytest
 import numpy as np
 from astropy.time import Time, TimeDelta
 
-from ..rtp import (RTPStatus, RTPProcessEvent, RTPProcessRecord,
-                   RTPTaskResourceRecord, RTPLaunchRecord,
-                   RTPTaskJobID, RTPTaskMultipleJobID,
-                   RTPTaskMultipleResourceRecord, RTPTaskMultipleTrack)
+from ..rtp import (
+    RTPStatus,
+    RTPProcessEvent,
+    RTPTaskProcessEvent,
+    RTPTaskMultipleProcessEvent,
+    RTPProcessRecord,
+    RTPTaskResourceRecord,
+    RTPLaunchRecord,
+    RTPTaskJobID,
+    RTPTaskMultipleJobID,
+    RTPTaskMultipleResourceRecord,
+    RTPTaskMultipleTrack,
+)
 from .. import utils
 
 
@@ -70,6 +79,48 @@ def event(observation):
         time = t0 - TimeDelta(30 * 60, format='sec')
         event_names = ['time', 'obsid', 'event']
         event_values = [time, observation.obsid, 'queued']
+        event_columns = dict(zip(event_names, event_values))
+
+    data = DataHolder()
+
+    # yields the data we need but will continue to the del call after tests
+    yield data
+
+    # some post-test object cleanup
+    del(data)
+
+    return
+
+
+@pytest.fixture(scope="module")
+def task_event(observation):
+    class DataHolder(object):
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(30 * 60, format="sec")
+        event_names = ["time", "obsid", "task_name", "event"]
+        event_values = [time, observation.obsid, "OMNICAL", "started"]
+        event_columns = dict(zip(event_names, event_values))
+
+    data = DataHolder()
+
+    # yields the data we need but will continue to the del call after tests
+    yield data
+
+    # some post-test object cleanup
+    del(data)
+
+    return
+
+
+@pytest.fixture(scope="module")
+def multiple_task_event(observation):
+    class DataHolder(object):
+        # pick a date far in the past just in case IERS is down
+        t0 = Time(2457000, format="jd")
+        time = t0 - TimeDelta(30 * 60, format="sec")
+        event_names = ["time", "obsid_start", "task_name", "event"]
+        event_values = [time, observation.obsid, "OMNICAL", "started"]
         event_columns = dict(zip(event_names, event_values))
 
     data = DataHolder()
@@ -400,6 +451,170 @@ def test_errors_rtp_process_event(mcsession, observation, event):
         test_session.get_rtp_process_event(starttime='foo')
     with pytest.raises(ValueError, match="stoptime must be an astropy time object"):
         test_session.get_rtp_process_event(starttime=event.event_columns['time'], stoptime='bar')
+
+
+@pytest.mark.parametrize("multiple", [False, True])
+def test_add_rtp_task_process_event(
+    tmpdir, mcsession, observation, multiple, task_event, multiple_task_event
+):
+    test_session = mcsession
+
+    test_session.add_obs(*observation.observation_values)
+    obs_result = test_session.get_obs()
+    assert len(obs_result) == 1
+
+    if multiple:
+        data_obj = multiple_task_event
+        table_obj = RTPTaskMultipleProcessEvent
+        add_method = getattr(test_session, "add_rtp_task_multiple_process_event")
+        get_method = getattr(test_session, "get_rtp_task_multiple_process_event")
+        obsid_name = "obsid_start"
+    else:
+        data_obj = task_event
+        table_obj = RTPTaskProcessEvent
+        add_method = getattr(test_session, "add_rtp_task_process_event")
+        get_method = getattr(test_session, "get_rtp_task_process_event")
+        obsid_name = "obsid"
+
+    add_method(*data_obj.event_values)
+
+    exp_columns = data_obj.event_columns.copy()
+    exp_columns['time'] = int(floor(exp_columns['time'].gps))
+    expected = table_obj(**exp_columns)
+
+    result = get_method(
+        starttime=data_obj.event_columns['time'] - TimeDelta(2, format='sec')
+    )
+    assert len(result) == 1
+    result = result[0]
+    arg_dict = {
+        "starttime": data_obj.event_columns["time"] - TimeDelta(2, format="sec"),
+        obsid_name: data_obj.event_columns[obsid_name],
+    }
+    result_obsid = get_method(**arg_dict)
+    assert len(result_obsid) == 1
+    result_obsid = result_obsid[0]
+    assert result.isclose(expected)
+
+    new_obsid_time = (
+        data_obj.event_columns['time'] + TimeDelta(3 * 60, format='sec')
+    )
+    new_obsid = utils.calculate_obsid(new_obsid_time)
+    test_session.add_obs(
+        Time(new_obsid_time),
+        Time(new_obsid_time + TimeDelta(10 * 60, format='sec')), new_obsid)
+    obs_result = test_session.get_obs(obsid=new_obsid)
+    assert obs_result[0].obsid == new_obsid
+
+    add_method(
+        new_obsid_time,
+        new_obsid,
+        data_obj.event_columns["task_name"],
+        data_obj.event_columns['event'],
+    )
+    arg_dict = {
+        "starttime": data_obj.event_columns['time'] - TimeDelta(2, format='sec'),
+        obsid_name: data_obj.event_columns[obsid_name],
+        "task_name": data_obj.event_columns["task_name"],
+    }
+    result_obsid = get_method(**arg_dict)
+    assert len(result_obsid) == 1
+    result_obsid = result_obsid[0]
+    assert result_obsid.isclose(expected)
+
+    new_event_time = (
+        data_obj.event_columns['time'] + TimeDelta(5 * 60, format='sec')
+    )
+    new_event = 'finished'
+    add_method(
+        new_event_time,
+        data_obj.event_columns[obsid_name],
+        data_obj.event_columns["task_name"],
+        new_event,
+    )
+
+    result_mult = get_method(
+        starttime=data_obj.event_columns['time'] - TimeDelta(2, format='sec'),
+        stoptime=new_event_time,
+    )
+    assert len(result_mult) == 3
+
+    result_most_recent = get_method()
+    assert len(result_most_recent) == 1
+    assert result_most_recent[0] == result_mult[2]
+
+    arg_dict = {
+        "starttime": data_obj.event_columns['time'] - TimeDelta(2, format='sec'),
+        "stoptime": new_event_time,
+        obsid_name: data_obj.event_columns[obsid_name],
+    }
+    result_mult_obsid = get_method(**arg_dict)
+    assert len(result_mult_obsid) == 2
+
+    arg_dict = {
+        obsid_name: data_obj.event_columns[obsid_name],
+        "task_name": data_obj.event_columns["task_name"],
+    }
+    result_obsid_most_recent = get_method(**arg_dict)
+    assert len(result_most_recent) == 1
+    assert result_obsid_most_recent[0] == result_mult_obsid[0]
+
+    arg_dict = {
+        "starttime": data_obj.event_columns['time'] - TimeDelta(2, format='sec'),
+        obsid_name: new_obsid,
+    }
+    result_new_obsid = get_method(**arg_dict)
+    assert len(result_new_obsid) == 1
+    result_new_obsid = result_new_obsid[0]
+    assert not result_new_obsid.isclose(expected)
+
+    filename = os.path.join(tmpdir, 'test_rtp_task_process_event_file.csv')
+    arg_dict = {
+        obsid_name: data_obj.event_columns[obsid_name],
+        "task_name": data_obj.event_columns["task_name"],
+        "write_to_file": True,
+        "filename": filename,
+    }
+    get_method(**arg_dict)
+    os.remove(filename)
+
+    return
+
+
+@pytest.mark.parametrize("multiple", [False, True])
+def test_errors_rtp_task_process_event(
+    mcsession, observation, multiple, task_event, multiple_task_event
+):
+    test_session = mcsession
+    test_session.add_obs(*observation.observation_values)
+    obs_result = test_session.get_obs()
+    assert len(obs_result) == 1
+
+    if multiple:
+        data_obj = multiple_task_event
+        add_method = getattr(test_session, "add_rtp_task_multiple_process_event")
+        get_method = getattr(test_session, "get_rtp_task_multiple_process_event")
+    else:
+        data_obj = task_event
+        add_method = getattr(test_session, "add_rtp_task_process_event")
+        get_method = getattr(test_session, "get_rtp_task_process_event")
+
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        add_method("foo", *data_obj.event_values[1:])
+
+    add_method(*data_obj.event_values)
+    with pytest.raises(ValueError, match="starttime must be an astropy time object"):
+        get_method(starttime="foo")
+    with pytest.raises(ValueError, match="stoptime must be an astropy time object"):
+        get_method(
+            starttime=task_event.event_columns['time'], stoptime='bar'
+        )
+    with pytest.raises(
+            ValueError, match="If most_recent is set to False, at least one of"
+    ):
+        get_method(most_recent=False)
+
+    return
 
 
 def test_classes_not_equal(mcsession, status, observation, event):
