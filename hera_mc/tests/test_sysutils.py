@@ -47,7 +47,7 @@ def test_set_redis_cminfo(mcsession):
     pytest.raises(ValueError, cm_redis_corr.cminfo_redis_snap, cminfo=cmitest)
 
 
-def test_watch_dog(mcsession):
+def test_watch_dog_sensor(mcsession):
     ns = node.NodeSensor()
     ns.time = int(cm_utils.get_astropytime('2020-09-18').gps)
     ns.node = 700
@@ -70,6 +70,28 @@ def test_watch_dog(mcsession):
                                      temp_threshold=45.0, time_threshold=0.0,
                                      To=['test@hera.edu'], testing=True, session=mcsession)
     assert msg is None
+
+
+def test_watch_dog_verdict(mcsession):
+    import time
+    redishost = TEST_DEFAULT_REDIS_HOST
+    rsession = redis.Redis(redishost)
+    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True)
+    assert not len(msg)
+    rsession.set('valid:node:700', '0')
+    this_time = str(int(time.time()))
+    rsession.hset('verdict:node:700:pam', 'time', this_time)
+    rsession.hset('verdict', 'age', '2.1')
+    rsession.hset('verdict', 'cmd', 'off')
+    rsession.hset('verdict', 'hw', 'pam')
+    rsession.hset('verdict', 'mode', 'all')
+    rsession.hset('verdict', 'time', this_time)
+    rsession.hset('verdict', 'timeout', '10')
+    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True)
+    assert msg.startswith('From: hera@lists.berkeley.edu')
+    rsession.hset('verdict', 'time', '0')
+    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True)
+    assert msg[700]['pam']['time'] == this_time
 
 
 def test_ever_fully_connected(sys_handle):
