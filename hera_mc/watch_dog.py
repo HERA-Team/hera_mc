@@ -78,13 +78,15 @@ def node_verdict(age_out=3800, To=None, testing=False):
         if 'valid:node' in key:
             node = int(key.split(':')[2])
             node_info.setdefault(node, {})
-            node_info[node]['valid'] = True if int(r[key]) else False
+            node_info[node]['valid'] = True if int(r.get(key)) else False
         elif 'verdict:node' in key:
             node = int(key.split(':')[2])
             node_info.setdefault(node, {})
             hw = key.split(':')[3]
             node_info[node][hw] = r.hgetall(key)
     param = r.hgetall('verdict')
+    if not param:
+        return {}
     msg_header = "Node verdict:  mode '{}', timeout {}, time {}\n".format(
         param['mode'], param['timeout'], int(float(param['time'])))
     msg = '{}'.format(msg_header)
