@@ -392,7 +392,7 @@ class NodePowerCommand(MCDeclarativeBase):
             Node number (within 0 to 29).
         part : str
             One of the keys in power_command_part_dict.
-        command : {'on', 'off'}
+        command : {'on', 'off', 'start', 'stop', 'reset'}
             The command that was sent.
 
         Returns
@@ -400,13 +400,14 @@ class NodePowerCommand(MCDeclarativeBase):
         NodePowerCommand object
 
         """
+        allowed_cmd_list = ['on', 'off', 'start', 'stop', 'reset']
         if part not in list(power_command_part_dict.keys()):
             raise ValueError('part must be one of: '
                              + ', '.join(list(power_command_part_dict.keys()))
                              + '. part is actually {}'.format(part))
 
-        if command not in ['on', 'off', 'start', 'stop', 'reset']:
-            raise ValueError('command must be one of: on, off, start, stop, reset')
+        if command not in allowed_cmd_list:
+            raise ValueError(f"command '{command}' must be one of: ', '.join(allowed_cmd_list)")
 
         return cls(time=time, node=node, part=part, command=command)
 
