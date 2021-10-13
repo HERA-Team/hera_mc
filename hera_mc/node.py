@@ -208,8 +208,12 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress,
 
     for node in node_list:
         sensor_data = sensor_dict[node]
-        time = int(floor(cm_utils.get_astropytime(sensor_data['timestamp'],
-                                                  format_is_floatable='unix').gps))
+        ts = cm_utils.get_astropytime(sensor_data['timestamp'],
+                                      format_is_floatable='unix')
+        if ts is None:
+            time = -1
+        else:
+            time = int(floor(ts.gps))
         top_sensor_temp = sensor_data.get(
             sensor_key_dict['top_sensor_temp'], None)
         middle_sensor_temp = sensor_data.get(
@@ -401,8 +405,8 @@ class NodePowerCommand(MCDeclarativeBase):
                              + ', '.join(list(power_command_part_dict.keys()))
                              + '. part is actually {}'.format(part))
 
-        if command not in ['on', 'off', 'reset']:
-            raise ValueError('command must be one of: on, off')
+        if command not in ['on', 'off', 'start', 'stop', 'reset']:
+            raise ValueError('command must be one of: on, off, start, stop, reset')
 
         return cls(time=time, node=node, part=part, command=command)
 
