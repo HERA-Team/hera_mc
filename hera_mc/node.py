@@ -442,6 +442,7 @@ def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list=
     node_power_list = []
     for node in node_list:
         for prt, val in power_dict[node].items():
+            print("HERA_MC445: ", prt, val)
             time = int(floor(cm_utils.get_astropytime(val['timestamp'],
                                                       format_is_floatable='unix').gps))
             cmd = val['command']
