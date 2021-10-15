@@ -405,7 +405,8 @@ class NodePowerCommand(MCDeclarativeBase):
             raise ValueError('part must be one of: '
                              + ', '.join(list(power_command_part_dict.keys()))
                              + '. part is actually {}'.format(part))
-
+        if command in ['False', 'None']:
+            return None
         if command not in allowed_cmd_list:
             raise ValueError(f"command '{command}' must be one of: ', '.join(allowed_cmd_list)")
 
@@ -442,11 +443,11 @@ def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list=
     node_power_list = []
     for node in node_list:
         for prt, val in power_dict[node].items():
-            print("HERA_MC445: ", prt, val)
             time = int(floor(cm_utils.get_astropytime(val['timestamp'],
                                                       format_is_floatable='unix').gps))
             cmd = val['command']
-            node_power_list.append(NodePowerCommand.create(time, node, prt, cmd))
+            if cmd is not None:
+                node_power_list.append(NodePowerCommand.create(time, node, prt, cmd))
     return node_power_list
 
 
