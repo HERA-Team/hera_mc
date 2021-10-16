@@ -612,15 +612,6 @@ def test_add_node_power_status_from_node_control(mcsession):
 def test_power_command(mcsession):
     test_session = mcsession
     npc = {'time': Time.now(), 'nodeID': 1, 'part': 'vapor', 'command': 'on'}
-    with pytest.raises(ValueError) as cm:
-        test_session.add_node_power_command(**npc)
-    assert 'snap_relay' in str(cm.value)
-    npc['part'] = 'snap_relay'
-    npc['command'] = 'nope'
-    with pytest.raises(ValueError) as cm:
-        test_session.add_node_power_command(**npc)
-    assert 'command' in str(cm.value)
-    npc['command'] = 'on'
     test_session.add_node_power_command(**npc)
     test_session.add_node_power_command_from_node_control()
     test_npc = test_session.get_node_power_command()
