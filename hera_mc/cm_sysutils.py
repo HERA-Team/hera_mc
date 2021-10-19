@@ -637,19 +637,22 @@ def node_info(node_num='active', session=None):
         for snp in info[node]['snaps']:
             spk = cm_utils.make_part_key(snp, 'A')
             try:
-                info[snp] = [x['note'] for x in notes[spk][spk].values()]
+                snnt = notes[spk][spk]
+                info[snp] = [f"{snnt[x]['note']}|{x}" for x in snnt.keys()]
             except KeyError:
                 info[snp] = []
         notes = hu.get_notes(wr, state='all', return_dict=True)
         wpk = cm_utils.make_part_key(info[node]['wr'], 'A')
         try:
-            info[info[node]['wr']] = [x['note'] for x in notes[npk][wpk].values()]
+            wrnt = notes[npk][wpk]
+            info[info[node]['wr']] = [f"{wrnt[x]['note']}|{x}" for x in wrnt.keys()]
         except KeyError:
             info[info[node]['wr']] = []
         notes = hu.get_notes(rd, state='all', return_dict=True)
         apk = cm_utils.make_part_key(info[node]['arduino'], 'A')
         try:
-            info[info[node]['arduino']] = [x['note'] for x in notes[npk][apk].values()]
+            rdnt = notes[npk][apk]
+            info[info[node]['arduino']] = [f"{rdnt[x]['note']}|{x}" for x in rdnt.keys()]
         except KeyError:
             info[info[node]['arduino']] = []
         if '' in info.keys():
@@ -657,11 +660,20 @@ def node_info(node_num='active', session=None):
     return info
 
 
-def _get_macip(info):
-    data = []
-    for this_note in info:
-        if this_note.startswith('MAC') or this_note.startswith('IP'):
-            data.append(this_note.split('-')[1].strip())
+def _get_macip(info, which_dev, which_id):
+    """Find the last entry (by timestamp) for e.g. arduino and mac."""
+    try:
+        notes = info[which_dev]
+    except KeyError:
+        return 'None'
+    latest_timestamp = 0
+    data = 'None'
+    for this_note in notes:
+        if this_note.strip().lower().startswith(which_id.lower()):
+            this_timestamp = int(this_note.split('|')[1])
+            if this_timestamp > latest_timestamp:
+                latest_timestamp = this_timestamp
+                data = this_note.split('|')[0].split('-')[1].strip()
     return data
 
 
@@ -676,7 +688,7 @@ def _convert_ant_list(alist):
 def print_node(info, filename=None, output_format='table'):
     """Print node info as determined in method node_info above."""
     headers = ['Node', 'SNAPs', 'NCM', 'WR', 'Arduino']
-    spacer = [5 * '-', 44 * '-', 5 * '-', 17 * '-', 17 * '-']
+    spacer = [5 * '-', 47 * '-', 5 * '-', 17 * '-', 17 * '-']
     table_data = []
     for node in info['nodes']:
         is_there = 0
@@ -685,41 +697,36 @@ def print_node(info, filename=None, output_format='table'):
         if not is_there:
             continue
         # ############# WR
-        this_wr = info[node]['wr']
         try:
-            wr_notes = _get_macip(info[this_wr])
+            this_wr = info[node]['wr']
         except KeyError:
-            wr_notes = []
+            this_wr = 'None'
+        wr_mac = _get_macip(info, this_wr, 'mac')
+        wr_ip = _get_macip(info, this_wr, 'ip')
         # ############# RD
-        this_rd = info[node]['arduino']
         try:
-            rd_notes = _get_macip(info[this_rd])
+            this_rd = info[node]['arduino']
         except KeyError:
-            rd_notes = []
+            this_rd = 'None'
+        rd_mac = _get_macip(info, this_rd, 'mac')
+        rd_ip = _get_macip(info, this_rd, 'ip')
         # ############# SNP and entry
         for i in range(4):
             try:
                 this_snp = info[node]['snaps'][i]
-                try:
-                    snp_notes = _get_macip(info[this_snp])
-                except KeyError:
-                    snp_notes = []
             except IndexError:
-                snp_notes = []
-            snp_entry = "{} - {}".format(this_snp, ', '.join(snp_notes))
-            snp_entry = snp_entry.strip().strip('-')
-            if i:
-                try:
-                    wr_entry = wr_notes[i - 1]
-                except IndexError:
-                    wr_entry = ''
-                try:
-                    rd_entry = rd_notes[i - 1]
-                except IndexError:
-                    rd_entry = ''
-                row = ['', snp_entry, '', wr_entry, rd_entry]
-            else:
+                this_snp = 'None'
+            snp_mac = _get_macip(info, this_snp, 'mac')
+            snp_ip = _get_macip(info, this_snp, 'ip')
+            snp_entry = f"{this_snp} - {snp_mac}, {snp_ip}"
+            if i == 0:
                 row = [node, snp_entry, info[node]['ncm'], this_wr, this_rd]
+            elif i == 1:
+                row = ['', snp_entry, '', wr_mac, rd_mac]
+            elif i == 2:
+                row = ['', snp_entry, '', wr_ip, rd_ip]
+            else:
+                row = ['', snp_entry, '', '', '']
             table_data.append(row)
         ants = _convert_ant_list(info[node]['ants-file'])
         table_data.append(['Ants', ants, '', '', ''])
