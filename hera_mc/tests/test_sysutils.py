@@ -77,7 +77,7 @@ def test_watch_dog_verdict(mcsession):
     redishost = TEST_DEFAULT_REDIS_HOST
     rsession = redis.Redis(redishost)
     msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True)
-    assert len(msg) == 2
+    assert not len(msg)
     rsession.set('valid:node:700', '0')
     this_time = str(int(time.time()))
     rsession.hset('verdict:node:700:pam', 'time', this_time)
