@@ -77,7 +77,7 @@ def test_watch_dog_verdict(mcsession):
     redishost = TEST_DEFAULT_REDIS_HOST
     rsession = redis.Redis(redishost)
     msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True)
-    assert not len(msg)
+    assert len(msg) == 2
     rsession.set('valid:node:700', '0')
     this_time = str(int(time.time()))
     rsession.hset('verdict:node:700:pam', 'time', this_time)
@@ -356,7 +356,7 @@ def test_sysutil_node(capsys, mcsession):
                         'ants-file': [], 'ants-hookup': []}}
     cm_sysutils.print_node(info=testni)
     captured = capsys.readouterr()
-    assert len(captured.out.strip()) == 953
+    assert len(captured.out.strip()) == 980
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):
