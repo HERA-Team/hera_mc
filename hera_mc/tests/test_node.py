@@ -445,6 +445,11 @@ def test_create_sensor_readings(mcsession, nodelist, sensor):
         most_recent=True)
     assert result_most_recent == result
 
+    sensor[1]['timestamp'] = None
+    sensor_obj_list = node.create_sensor_readings(
+        node_list=None, sensor_dict=sensor)
+    assert sensor_obj_list[0].time == -1
+
 
 def test_sensor_reading_errors(mcsession, sensor):
     test_session = mcsession
