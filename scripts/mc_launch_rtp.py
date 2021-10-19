@@ -130,6 +130,11 @@ if args.jd is None:
 else:
     jd_list = [args.jd]
 
+
+# We'll accumulate all our errors into a single entry.
+# This way we can try to start every JD in jd_list.
+rtp_error = ""
+
 for jd in jd_list:
     filelist = []
     with db.sessionmaker() as session:
@@ -198,14 +203,16 @@ for jd in jd_list:
     # try:
     #     subprocess.check_call(tmux_cmd)
     # except subprocess.CalledProcessError as e:
-    #     sys.exit(
-    #         f"Error spawning tmux session; command was {e.cmd}; "
+    #     rtp_error += (
+    #         f"Error spawning tmux session: command was {e.cmd}; "
     #         f"returncode was {e.returncode:d}; output was {e.output}; "
-    #         f"stderr was {e.stderr}"
+    #         f"stderr was {e.stderr}.\n"
     #     )
+    #     continue
+
     cmd = (
         f"conda deactivate; conda activate {args.conda_env}; "
-        f"makeflow -T slurm {mf_filename}\n"
+        f"makeflow -T slurm {mf_filename}"
     )
     screen_name = f"rtp_{jd}"
     screen_cmd1 = ["screen", "-d", "-m", "-S", screen_name]
@@ -214,11 +221,12 @@ for jd in jd_list:
         subprocess.check_call(screen_cmd1)
         subprocess.check_call(screen_cmd2)
     except subprocess.CalledProcessError as e:
-        sys.exit(
-            f"Error spawning screen session; "
+        rtp_error += (
+            f"Error spawning screen session: "
             f"command was {e.cmd}; return code was {e.returncode:d}; "
-            f"output was {e.output}; stderr was {e.stderr}"
+            f"output was {e.output}; stderr was {e.stderr}.\n"
         )
+        continue
 
     # update RTP launch records
     if len(obsids) == 0:
@@ -229,7 +237,11 @@ for jd in jd_list:
             try:
                 session.update_rtp_launch_record(obsid, t0)
             except RuntimeError:
-                sys.exit(
-                    f"could not update RTP Launch Record for file {filename}; aborting"
+                rtp_error += (
+                    f"Error updating RTP Launch Record for file {filename}.\n"
                 )
+                continue
         session.commit()
+
+if rtp_error:
+    sys.exit(rtp_error)
