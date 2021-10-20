@@ -697,24 +697,18 @@ def print_node(info, filename=None, output_format='table'):
         if not is_there:
             continue
         # ############# WR
-        try:
-            this_wr = info[node]['wr']
-        except KeyError:
-            this_wr = 'None'
+        this_wr = info[node]['wr']
         wr_mac = _get_macip(info, this_wr, 'mac')
         wr_ip = _get_macip(info, this_wr, 'ip')
         # ############# RD
-        try:
-            this_rd = info[node]['arduino']
-        except KeyError:
-            this_rd = 'None'
+        this_rd = info[node]['arduino']
         rd_mac = _get_macip(info, this_rd, 'mac')
         rd_ip = _get_macip(info, this_rd, 'ip')
         # ############# SNP and entry
         for i in range(4):
             try:
                 this_snp = info[node]['snaps'][i]
-            except IndexError:
+            except (IndexError, KeyError):
                 this_snp = 'None'
             snp_mac = _get_macip(info, this_snp, 'mac')
             snp_ip = _get_macip(info, this_snp, 'ip')
