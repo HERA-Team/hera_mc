@@ -133,7 +133,7 @@ else:
 
 # We'll accumulate all our errors into a single entry.
 # This way we can try to start every JD in jd_list.
-rtp_error = ""
+rtp_error = []
 
 for jd in jd_list:
     filelist = []
@@ -221,10 +221,10 @@ for jd in jd_list:
         subprocess.check_call(screen_cmd1)
         subprocess.check_call(screen_cmd2)
     except subprocess.CalledProcessError as e:
-        rtp_error += (
-            f"Error spawning screen session: "
-            f"command was {e.cmd}; return code was {e.returncode:d}; "
-            f"output was {e.output}; stderr was {e.stderr}.\n"
+        rtp_error.append(
+            f"Error spawning tmux session: command was {e.cmd}; "
+            f"returncode was {e.returncode:d}; output was {e.output}; "
+            f"stderr was {e.stderr}."
         )
         continue
 
@@ -237,11 +237,11 @@ for jd in jd_list:
             try:
                 session.update_rtp_launch_record(obsid, t0)
             except RuntimeError:
-                rtp_error += (
-                    f"Error updating RTP Launch Record for file {filename}.\n"
+                rtp_error.append(
+                    f"Error updating RTP Launch Record for file {filename}."
                 )
                 continue
         session.commit()
 
-if rtp_error:
+if len(rtp_error) > 0:
     sys.exit(rtp_error)
