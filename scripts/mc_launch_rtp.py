@@ -193,33 +193,15 @@ for jd in jd_list:
     )
 
     # launch workflow inside of tmux
-    # use screen instead of tmux until we can update tmux
-    # cmd = (
-    #     f"conda deactivate; conda activate {args.conda_env}; "
-    #     f"makeflow -T slurm {mf_filename}"
-    # )
-    # session_name = f"rtp_{jd}"
-    # tmux_cmd = ["tmux", "-d", "-s", session_name, cmd]
-    # try:
-    #     subprocess.check_call(tmux_cmd)
-    # except subprocess.CalledProcessError as e:
-    #     rtp_error += (
-    #         f"Error spawning tmux session: command was {e.cmd}; "
-    #         f"returncode was {e.returncode:d}; output was {e.output}; "
-    #         f"stderr was {e.stderr}.\n"
-    #     )
-    #     continue
-
     cmd = (
-        f"conda deactivate; conda activate {args.conda_env}; "
-        f"makeflow -T slurm {mf_filename}"
+        "source /home/obs/anaconda/bin/deactivate; "
+        f"source /home/obs/anaconda/bin/activate {args.conda_env}; "
+        f"makeflow -T slurm {mf_filename}; /bin/bash -l"
     )
-    screen_name = f"rtp_{jd}"
-    screen_cmd1 = ["screen", "-d", "-m", "-S", screen_name]
-    screen_cmd2 = ["screen", "-S", screen_name, "-p", "0", "-X", "stuff", cmd]
+    session_name = f"rtp_{jd}"
+    tmux_cmd = ["tmux", "new-session", "-d", "-s", session_name, cmd]
     try:
-        subprocess.check_call(screen_cmd1)
-        subprocess.check_call(screen_cmd2)
+        subprocess.check_call(tmux_cmd)
     except subprocess.CalledProcessError as e:
         rtp_error.append(
             f"Error spawning tmux session: command was {e.cmd}; "
