@@ -696,7 +696,9 @@ def general_table_handler(headers, table_data, output_format=None):
     elif output_format.lower().startswith('csv'):
         table = csv_table(headers, table_data)
     else:
-        table = tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
+        if output_format == 'table':
+            output_format = 'orgtbl'
+        table = tabulate(table_data, headers=headers, tablefmt=output_format) + '\n'
     return table
 
 
