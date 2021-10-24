@@ -616,7 +616,10 @@ def node_info(node_num='active', session=None):
         wr = hu.get_hookup(node, hookup_type='wr_hera')
         rd = hu.get_hookup(node, hookup_type='arduino_hera')
         # Find snaps
-        info[node]['snaps'] = [cm_utils.split_part_key(x)[0] for x in snaps.keys()]
+        info[node]['snaps'] = ['', '', '', '']
+        for snp in snaps.keys():
+            loc = int(snaps[snp].hookup['E<e2'][-1].downstream_input_port[-1])
+            info[node]['snaps'][loc] = cm_utils.split_part_key(snp)[0]
         # Find white rabbit, arduino and node control module
         wr_ret = _get_dict_elements(npk, wr, 'wr', 'ncm')
         info[node]['wr'] = wr_ret['wr']
