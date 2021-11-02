@@ -105,7 +105,7 @@ def node_verdict(age_out=3800, To=None, testing=False):
     return node_info
 
 
-def node_temperature(at_date=None, at_time=0.0,
+def node_temperature(at_date=None, at_time=None, float_format=None,
                      temp_threshold=45.0, time_threshold=1.0,
                      To=None, testing=False, session=None):
     """
@@ -120,6 +120,8 @@ def node_temperature(at_date=None, at_time=0.0,
         If None, use values at latest time.  If valid Time, use nearest value before.
     at_time : anything understandable by get_astropytime
         Used for appropriate forms of 'at_date' for get_astropytime
+    float_format : str or None
+        If at_date is unix or gps.
     temp_threshold : float
         Threshold temperature in Celsius
     time_threshold : float
@@ -143,7 +145,7 @@ def node_temperature(at_date=None, at_time=0.0,
         at_date = cm_utils.get_astropytime('now')
     else:
         use_last = False
-        at_date = cm_utils.get_astropytime(at_date, at_time)
+        at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
     gps_time = at_date.gps
     active_parts = cm_active.ActiveData(session=session)
     active_parts.load_parts(at_date)

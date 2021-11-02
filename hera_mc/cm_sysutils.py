@@ -100,7 +100,7 @@ class Handling:
         cofa = self.geo.cofa()
         return cofa
 
-    def get_connected_stations(self, at_date, hookup_type=None):
+    def get_connected_stations(self, at_date, at_time=None, float_format=None, hookup_type=None):
         """
         Return a list of class SystemInfo of all of the stations connected at_date.
 
@@ -121,8 +121,12 @@ class Handling:
 
         Parameters
         ----------
-        at_date : str, int
-            Date to check for connections.  Anything intelligible by cm_utils.get_astropytime
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
         hookup_type : str
             Type of hookup to use (current observing system is 'parts_hera').
             If 'None' it will determine which system it thinks it is based on
@@ -135,7 +139,7 @@ class Handling:
             List of stations connected.
 
         """
-        at_date = cm_utils.get_astropytime(at_date)
+        at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
         hookup_obj = cm_hookup.Hookup(self.session)
         hud = hookup_obj.get_hookup(
             hpn=cm_sysdef.hera_zone_prefixes, pol='all', at_date=at_date,
@@ -323,7 +327,8 @@ class Handling:
             sortby=sortby, filename=output_file, output_format='html'
         )
 
-    def get_apriori_status_for_antenna(self, antenna, at_date='now'):
+    def get_apriori_status_for_antenna(self, antenna,
+                                       at_date='now', at_time=None, float_format=None):
         """
         Get the "apriori" status of an antenna station (e.g. HH12) at a date.
 
@@ -334,8 +339,12 @@ class Handling:
         ----------
         ant : str
             Antenna station designator (e.g. HH12, HA330) it is a single string
-        at_date : str or int
-            Date to look for. Anything intelligible by cm_utils.get_astropytime.
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
 
         Returns
         -------
@@ -344,7 +353,7 @@ class Handling:
 
         """
         ant = antenna.upper()
-        at_date = cm_utils.get_astropytime(at_date).gps
+        at_date = cm_utils.get_astropytime(at_date, at_time, float_format).gps
         cmapa = cm_partconnect.AprioriAntenna
         apa = self.session.query(cmapa).filter(
             or_(and_(func.upper(cmapa.antenna) == ant, cmapa.start_gpstime <= at_date,
@@ -354,7 +363,8 @@ class Handling:
         if apa is not None:
             return apa.status
 
-    def get_apriori_antennas_with_status(self, status, at_date='now'):
+    def get_apriori_antennas_with_status(self, status,
+                                         at_date='now', at_time=None, float_format=None):
         """
         Get a list of all antennas with the provided status query at_date.
 
@@ -362,9 +372,12 @@ class Handling:
         ----------
         status : str
             Apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
-        at_date : str or int
-            Date for which to get apriori state -- anything
-            cm_utils.get_astropytime can handle.
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
 
         Returns
         -------
@@ -372,7 +385,7 @@ class Handling:
             List of the antenna station designators with the specified status.
 
         """
-        at_date = cm_utils.get_astropytime(at_date).gps
+        at_date = cm_utils.get_astropytime(at_date, at_time, float_format).gps
         ap_ants = []
         cmapa = cm_partconnect.AprioriAntenna
         for apa in self.session.query(cmapa).filter(
@@ -383,15 +396,18 @@ class Handling:
             ap_ants.append(apa.antenna)
         return ap_ants
 
-    def get_apriori_antenna_status_set(self, at_date='now'):
+    def get_apriori_antenna_status_set(self, at_date='now', at_time=None, float_format=None):
         """
         Get a dictionary with the antennas for each apriori status type.
 
         Parameters
         ----------
-        at_date : str or int
-            Date for which to get apriori state -- anything
-            cm_utils.get_astropytime can handle.
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
 
         Returns
         -------
@@ -402,10 +418,13 @@ class Handling:
         """
         ap_stat = {}
         for _status in cm_partconnect.get_apriori_antenna_status_enum():
-            ap_stat[_status] = self.get_apriori_antennas_with_status(_status, at_date=at_date)
+            ap_stat[_status] = self.get_apriori_antennas_with_status(_status, at_date=at_date,
+                                                                     at_time=at_time,
+                                                                     float_format=float_format)
         return ap_stat
 
-    def get_apriori_antenna_status_for_rtp(self, status, at_date='now'):
+    def get_apriori_antenna_status_for_rtp(self, status,
+                                           at_date='now', at_time=None, float_format=None):
         """
         Get a csv-string of all antennas for an apriori status for RTP.
 
@@ -413,9 +432,12 @@ class Handling:
         ----------
         status : str
             Apriori antenna status type (see cm_partconnect.get_apriori_antenna_status_enum())
-        at_date : str or int
-            Date for which to get apriori state -- anything
-            cm_utils.get_astropytime can handle.  Default is 'now'
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
 
         Returns
         -------
@@ -423,7 +445,9 @@ class Handling:
             csv string of antennas of a given apriori status
 
         """
-        return ','.join(self.get_apriori_antennas_with_status(status=status, at_date=at_date))
+        return ','.join(self.get_apriori_antennas_with_status(status=status, at_date=at_date,
+                                                              at_time=at_time,
+                                                              float_format=float_format))
 
 
 def node_antennas(source='file', session=None):

@@ -50,15 +50,18 @@ class Handling:
         from .cm_transfer import CMVersion
         self.session.add(CMVersion.create(time, git_hash))
 
-    def get_cm_version(self, at_date='now'):
+    def get_cm_version(self, at_date='now', at_time=None, float_format=None):
         """
         Get the cm_version git_hash active at a particular time.
 
         Parameters
         ----------
-        at_date : str, int
-            time to get active cm_version for (passed to cm_utils.get_astropytime).
-            Anything intelligible to cm_utils.get_astropytime.
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date for which to check.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Time for with to check.
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
 
         Returns
         -------
@@ -69,7 +72,7 @@ class Handling:
         from .cm_transfer import CMVersion
 
         # make sure at_date is an astropy time object
-        at_date = cm_utils.get_astropytime(at_date)
+        at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
 
         # get last row before at_date
         result = (self.session.query(CMVersion).filter(CMVersion.update_time <= at_date.gps)
@@ -167,8 +170,10 @@ class Handling:
         if isinstance(ports, list):
             self.allowed_ports = [x.upper() for x in ports]
 
-    def get_dossier(self, hpn, rev=None, at_date='now', active=None,
-                    notes_start_date='<', exact_match=True):
+    def get_dossier(self, hpn, rev=None, at_date='now', at_time=None, float_format=None,
+                    active=None, notes_start_date='<', notes_start_time=None,
+                    notes_float_format=None,
+                    exact_match=True):
         """
         Get information on a part or parts.
 
@@ -181,13 +186,20 @@ class Handling:
             match length of hpn.
             Each element of a string may be a csv-list of revisions, which gets
             parsed later.
-        at_date : str, int, datetime, Time, None
-            Reference date of dossier (and stop_date for displaying notes).
-            Can be None if active is supplied
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date for which to check.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
         active : cm_active.ActiveData class or None
             Use supplied ActiveData.  If None, read in.
-        notes_start_date : str, int, datetime, Time
+        notes_start_date : anything interpretable by cm_utils.get_astropytime
             Start_date for displaying notes
+        notes_start_time : anything interpretable by cm_utils.get_astropytime
+            Start time for displaying notes.
+        notes_float_format : str
+            Format if notes_start_date is a number denoting gps or unix seconds.
         exact_match : bool
             Flag to enforce full part number match, or "startswith"
 
@@ -200,8 +212,9 @@ class Handling:
         """
         from . import cm_active
 
-        at_date = cm_utils.get_astropytime(at_date)
-        notes_start_date = cm_utils.get_astropytime(notes_start_date)
+        at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
+        notes_start_date = cm_utils.get_astropytime(notes_start_date, notes_start_time,
+                                                    notes_float_format)
         if active is None:
             active = cm_active.ActiveData(self.session, at_date=at_date)
         elif at_date is not None:

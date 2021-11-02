@@ -46,7 +46,7 @@ if __name__ == '__main__':
     args.background = args.background.lower()
     args.station_types = args.station_types.lower()
     args.label = args.label.lower()
-    at_date = cm_utils.get_astropytime(args.date, args.time)
+    at_date = cm_utils.get_astropytime(args.date, args.time, args.format)
     if args.station_types not in ['default', 'all']:
         args.station_types = cm_utils.listify(args.station_types)
     if args.label == 'false' or args.label == 'none':
@@ -69,7 +69,7 @@ if __name__ == '__main__':
             G.plot_all_stations()
         if not args.fg_action.startswith('i'):
             if args.background == 'installed' or args.background == 'layers':
-                G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
+                G.plot_station_types(station_types_to_use=args.station_types, query_date=at_date,
                                      xgraph=xgraph, ygraph=ygraph, label=args.label)
 
     # Process foreground action.
@@ -78,12 +78,12 @@ if __name__ == '__main__':
         G.start_file(args.file)
 
     if args.fg_action.startswith('a'):
-        located = G.get_active_stations(
-            at_date, station_types_to_use=args.station_types, hookup_type=args.hookup_type)
+        located = G.get_active_stations(station_types_to_use=args.station_types,
+                                        query_date=at_date, hookup_type=args.hookup_type)
         G.plot_stations(located, xgraph=xgraph, ygraph=ygraph, label=args.label,
                         marker_color='k', marker_shape='*', marker_size=fg_markersize)
     elif args.fg_action.startswith('i'):
-        G.plot_station_types(query_date=at_date, station_types_to_use=args.station_types,
+        G.plot_station_types(station_types_to_use=args.station_types, query_date=at_date,
                              xgraph=xgraph, ygraph=ygraph, label=args.label)
     elif args.fg_action.startswith('p'):
         located = G.get_location(position, at_date)

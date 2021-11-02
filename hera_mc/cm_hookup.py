@@ -42,7 +42,8 @@ class Hookup(object):
         self.sysdef = cm_sysdef.Sysdef()
         self.active = None
 
-    def get_hookup_from_db(self, hpn, pol, at_date, exact_match=False, hookup_type=None):
+    def get_hookup_from_db(self, hpn, pol, at_date, at_time=None, float_format=None,
+                           exact_match=False, hookup_type=None):
         """
         Get the hookup dict from the database for the supplied match parameters.
 
@@ -62,8 +63,12 @@ class Hookup(object):
                 method as cm_sysdef.Sysdef.xxx([a, b, c])
         pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all')
-        at_date :  str, int
-            Date for query.  Anything intelligible to cm_utils.get_astropytime
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
         exact_match : bool
             If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
             would allow 'HH1', 'HH10', 'HH123', etc
@@ -80,7 +85,7 @@ class Hookup(object):
 
         """
         # Reset at_date
-        at_date = cm_utils.get_astropytime(at_date)
+        at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
         self.at_date = at_date
         self.active = cm_active.ActiveData(self.session, at_date=at_date)
         self.active.load_parts(at_date=None)
@@ -110,8 +115,8 @@ class Hookup(object):
                 hookup_dict[k].add_timing_and_fully_connected(port_pol)
         return hookup_dict
 
-    def get_hookup(self, hpn, pol='all', at_date='now', exact_match=False,
-                   use_cache=False, hookup_type='parts_hera'):
+    def get_hookup(self, hpn, pol='all', at_date='now', at_time=None, float_format=None,
+                   exact_match=False, use_cache=False, hookup_type='parts_hera'):
         """
         Return the hookup to the supplied part/pol in the form of a dictionary.
 
@@ -131,9 +136,12 @@ class Hookup(object):
                 method as cm_sysdef.Sysdef.xxx([a, b, c])
         pol : str
             A port polarization to follow, or 'all',  ('e', 'n', 'all') Default is 'all'.
-        at_date :  str, int
-            Date for query.  Anything intelligible to cm_utils.get_astropytime. Default
-            is 'now'
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
         exact_match : bool
             If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
             would allow 'HH1', 'HH10', 'HH123', etc.
@@ -153,7 +161,7 @@ class Hookup(object):
             Hookup dossier dictionary as defined in cm_dossier.py
 
         """
-        at_date = cm_utils.get_astropytime(at_date)
+        at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
         self.at_date = at_date
         self.hookup_type = hookup_type
 

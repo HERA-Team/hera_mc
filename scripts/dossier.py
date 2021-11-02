@@ -44,13 +44,17 @@ parser.add_argument('--notes-start-date', dest='notes_start_date',
 parser.add_argument('--notes-start-time', dest='notes_start_time',
                     help="<For notes> start_time for notes",
                     default=0.0)
+parser.add_argument('--notes-float-format', dest='notes_float_format',
+                    help="unix, gps, jd as appropriate for notes-start-date",
+                    default=None)
 args = parser.parse_args()
 
 args.verbosity = cm_utils.parse_verbosity(args.verbosity)
 view = all_views[args.view[0].lower()]
-date_query = cm_utils.get_astropytime(args.date, args.time)
+date_query = cm_utils.get_astropytime(args.date, args.time, args.format)
 notes_start_date = cm_utils.get_astropytime(args.notes_start_date,
-                                            args.notes_start_time)
+                                            args.notes_start_time,
+                                            args.notes_float_format)
 
 # Start session
 db = mc.connect_to_mc_db(args)

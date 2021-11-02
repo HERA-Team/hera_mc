@@ -3076,7 +3076,8 @@ class MCSession(Session):
 
             return config_params_obj_list, time_list
 
-    def get_snap_hostname_from_serial(self, serial_number, at_date='now'):
+    def get_snap_hostname_from_serial(self, serial_number,
+                                      at_date='now', at_time=None, float_format=None):
         """
         Get SNAP hostname from the SNAP serial number (also called hpn or part number).
 
@@ -3089,6 +3090,10 @@ class MCSession(Session):
             SNAP serial number.
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Time at which to intialize.
+        float_format : str or None
+            Format if at_date is gps or unix.
 
         Returns
         -------
@@ -3096,14 +3101,16 @@ class MCSession(Session):
             SNAP hostname if serial_number is found in the part_rosetta None otherwise.
 
         """
-        active = ActiveData(session=self, at_date=at_date)
+        active = ActiveData(session=self,
+                            at_date=at_date, at_time=at_time, float_format=float_format)
         active.load_rosetta()
         if serial_number in active.rosetta.keys():
             return active.rosetta[serial_number].syspn
         else:
             return None
 
-    def get_snap_serial_from_hostname(self, hostname, at_date='now'):
+    def get_snap_serial_from_hostname(self, hostname,
+                                      at_date='now', at_time=None, float_format=None):
         """
         Get SNAP serial number (also called hpn or part number) from the SNAP hostname.
 
@@ -3116,6 +3123,10 @@ class MCSession(Session):
             SNAP hostname.
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Time at which to intialize.
+        float_format : str or None
+            Format if at_date is gps or unix.
 
         Returns
         -------
@@ -3124,7 +3135,8 @@ class MCSession(Session):
             in the part_rosetta, None otherwise.
 
         """
-        active = ActiveData(session=self, at_date=at_date)
+        active = ActiveData(session=self,
+                            at_date=at_date, at_time=at_time, float_format=float_format)
         active.load_rosetta()
 
         serial_number = None
@@ -3134,7 +3146,8 @@ class MCSession(Session):
 
         return serial_number
 
-    def _get_node_snap_from_serial(self, snap_serial, session=None, at_date='now'):
+    def _get_node_snap_from_serial(self, snap_serial, session=None,
+                                   at_date='now', at_time=None, float_format=None):
         """
         Get SNAP connection information from SNAP serial number.
 
@@ -3146,6 +3159,10 @@ class MCSession(Session):
             Session to pass to cm_handling.Handling. Defaults to self.
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Time at which to intialize.
+        float_format : str or None
+            Format if at_date is gps or unix.
 
         Returns
         -------
@@ -3158,7 +3175,8 @@ class MCSession(Session):
         if session is None:
             session = self
 
-        active = ActiveData(session=self, at_date='now')
+        active = ActiveData(session=self,
+                            at_date=at_date, at_time=at_time, float_format=float_format)
         active.load_parts()
         active.load_connections()
         rev_list = active.revs(snap_serial, exact_match=True)
@@ -3184,7 +3202,8 @@ class MCSession(Session):
 
         return nodeID, snap_loc_num
 
-    def _get_node_snap_from_snap_hostname(self, hostname, at_date="now"):
+    def _get_node_snap_from_snap_hostname(self, hostname,
+                                          at_date="now", at_time=None, float_format=None):
         """
         Get SNAP connection information from SNAP hostname.
 
@@ -3194,6 +3213,10 @@ class MCSession(Session):
             SNAP hostname.
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Time at which to intialize.
+        float_format : str or None
+            Format if at_date is gps or unix.
 
         Returns
         -------
@@ -3203,9 +3226,12 @@ class MCSession(Session):
             SNAP location number.
 
         """
-        snap_hpn = self.get_snap_serial_from_hostname(hostname, at_date=at_date)
+        snap_hpn = self.get_snap_serial_from_hostname(hostname, at_date=at_date,
+                                                      at_time=at_time, float_format=float_format)
         if snap_hpn is not None:
-            nodeID, snap_loc_num = self._get_node_snap_from_serial(snap_hpn, at_date=at_date)
+            nodeID, snap_loc_num = self._get_node_snap_from_serial(snap_hpn, at_date=at_date,
+                                                                   at_time=at_time,
+                                                                   float_format=float_format)
         else:
             nodeID = None
             snap_loc_num = None

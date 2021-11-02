@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     # Pre-process the args
-    at_date = cm_utils.get_astropytime(args.date, args.time)
+    at_date = cm_utils.get_astropytime(args.date, args.time, args.format)
     args.hookup_cols = cm_utils.listify(args.hookup_cols)
     state = 'all' if args.all else 'full'
     if args.file is None:

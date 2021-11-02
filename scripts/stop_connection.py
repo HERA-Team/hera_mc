@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     # Pre-process some args
     if args.date is not None:
-        at_date = cm_utils.get_astropytime(args.date, args.time)
+        at_date = cm_utils.get_astropytime(args.date, args.time, args.format)
     c = cm_partconnect.Connections()
     c.connection(upstream_part=args.uppart, up_part_rev=args.uprev,
                  upstream_output_port=args.upport,

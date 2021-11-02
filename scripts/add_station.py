@@ -42,7 +42,7 @@ def entry_OK_to_add(session, station_name, geo_handle):
 def add_entry_to_geo_location(session, args):
     # NotNull
     sname = args.station_name
-    dt = cm_utils.get_astropytime(args.date, args.time)
+    dt = cm_utils.get_astropytime(args.date, args.time, args.format)
     data = [[sname, 'station_name', sname],
             [sname, 'station_type_name', args.station_type_name],
             [sname, 'created_gpstime', dt.gps]]
@@ -64,7 +64,7 @@ def add_entry_to_parts(session, args):
     # NotNull
     hpn = args.station_name
     rev = 'A'
-    dt = cm_utils.get_astropytime(args.date, args.time)
+    dt = cm_utils.get_astropytime(args.date, args.time, args.format)
     data = [[hpn, rev, 'hpn', hpn],
             [hpn, rev, 'hpn_rev', rev],
             [hpn, rev, 'hptype', 'station'],

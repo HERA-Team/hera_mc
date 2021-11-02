@@ -12,9 +12,7 @@ import datetime
 from . import mc
 
 PAST_DATE = '2000-01-01'
-bound_lower_gps = 946339215  # 2010-01-01
-bound_lower_jd = 2455197.5  # 2010-01-01
-bound_upper_jd = 2462501.5  # 2029-12-31
+VALID_FLOAT_FORMAT_FOR_TIME = ['unix', 'gps', 'jd']
 
 
 def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
@@ -369,10 +367,11 @@ def add_date_time_args(parser):
 
     """
     parser.add_argument(
-        '--date', help="UTC YYYY/MM/DD or '<' or '>' or 'n/a' or 'now' [now]",
+        '--date', help="UTC YYYY/MM/DD or '<' or '>' or 'now' or one of jd,unix,gps [now]",
         default='now')
     parser.add_argument(
         '--time', help="UTC hh:mm or float (hours), must include --date if use --time", default=0.0)
+    parser.add_argument('--format', help='Format if date is unix, gps or jd.', default=None)
 
 
 def is_active(at_date, start_date, stop_date):
@@ -381,19 +380,26 @@ def is_active(at_date, start_date, stop_date):
 
     Parameters
     ----------
-    at_date : str, int, Time, None
-        Date to check - anything intelligible by cm_utils.get_astropytime
-    start_date : str, int, Time
-        Start date to use - anything intelligible by cm_utils.get_astropytime
-    stop_date : str, int, Time
-        Stop date to use - anything intelligible by cm_utils.get_astropytime
+    at_date : None, Time, int, float
+        Date to check - must be astropy.time or a number.
+    start_date : Time, int, Time
+        Start date to use - must be astropy.time or a number.
+    stop_date : Time, int, Time
+        Stop date to use - must be astropy.time or a number.
 
     """
     if at_date is None:
         return True
-    at_date = get_astropytime(at_date).gps
-    start_date = get_astropytime(start_date).gps
-    stop_date = get_stopdate(stop_date).gps
+    if isinstance(at_date, Time):
+        at_date = at_date.gps
+        if isinstance(start_date, Time):
+            start_date = start_date.gps
+        else:
+            raise ValueError("Start date must be astropy Time.")
+        if isinstance(stop_date, Time):
+            stop_date = stop_date.gps
+        else:
+            raise ValueError("Stop date must be astropy Time.")
     return at_date >= start_date and at_date <= stop_date
 
 
@@ -412,14 +418,18 @@ def future_date():
     return Time.now() + TimeDelta(1000, format='jd')
 
 
-def get_stopdate(stop_date):
+def get_stopdate(stop_date, stop_time=None, float_format=None):
     """
     Provide an appropriate stop date.
 
     Parameters
     ----------
-    stop_date : str, int, None, Time
-        Anything intelligible by `get_astropytime`. If None, uses `future_date`.
+    stop_date : Anything intelligible by `get_astropytime`.
+        If None, uses `future_date`.
+    stop_date : Anything intelligible by `get_astropytime`.
+        Passed to get_astropytime.
+    float_format : str or None
+        Format if stop_date is unix or gps time.
 
     Returns
     -------
@@ -429,10 +439,10 @@ def get_stopdate(stop_date):
     """
     if stop_date is None:
         return future_date()
-    return get_astropytime(stop_date)
+    return get_astropytime(stop_date, stop_time, float_format)
 
 
-def get_time_for_display(display):
+def get_time_for_display(display, display_time, float_format):
     """
     Provide a reader-friendly time string.
 
@@ -441,8 +451,12 @@ def get_time_for_display(display):
 
     Parameters
     ----------
-    display : str, int, None, Time
-        Time to display.
+    display : Anything intelligible by `get_astropytime`.
+        Date to display.
+    display_time : Anything intelligible by `get_astropytime`.
+        Passed to get_astropytime
+    float_format : str or None
+        Format if display is unix or gps.
 
     Returns
     -------
@@ -450,7 +464,7 @@ def get_time_for_display(display):
         Human readable string of time in display.
 
     """
-    d = get_astropytime(display)
+    d = get_astropytime(display, display_time, float_format)
 
     if d is None:
         d = 'None'
@@ -459,7 +473,30 @@ def get_time_for_display(display):
     return d
 
 
-def get_astropytime(adate, atime=0, format_is_floatable=None):
+# Bound between 10/1/2014 and 9/30/2026
+bounds = {'gps': [1096156816.0, 1474761618.0],
+          'jd': [2456931.5, 2461313.5],
+          'unix': [1412121600.0, 1790726400.0]}
+
+
+def _check_time_as_a_number(val, fmt):
+    if fmt in VALID_FLOAT_FORMAT_FOR_TIME:
+        if val < bounds[fmt][0] or val > bounds[fmt][1]:
+            from warnings import warn
+            warn(f"{val} out of nominal range for {fmt}")
+        return fmt
+    elif fmt is None:
+        if val > bounds['jd'][0] and val < bounds['jd'][1]:
+            from warnings import warn
+            warn(f"No time format given -- assuming jd based on value {val}")
+            return 'jd'
+        else:
+            raise ValueError(f"No time format given for ambiguous value {val}")
+    else:
+        raise ValueError(f"Invalid time format: {fmt}")
+
+
+def get_astropytime(adate, atime=None, float_format=None):
     """
     Get an astropy time object based on provided string.
 
@@ -474,9 +511,7 @@ def get_astropytime(adate, atime=0, format_is_floatable=None):
                 return astropy Time
                     astropy Time:  just gets returned
                     datetime: just gets converted
-                    int, long, float:  interpreted as gps_second or julian date
-                                       depending on appropriate range.  Or unix
-                                       if format_is_floatable is set to 'unix'
+                    int, float:  interpreted per supplied float_format
                     string:  '<' - PAST_DATE
                              '>' - future_date()
                              'now' or 'current'
@@ -487,9 +522,9 @@ def get_astropytime(adate, atime=0, format_is_floatable=None):
     atime : a time in various formats, ignored if time information is provided in adate
                 float, int:  hours in decimal time
                 string:  HH[:MM[:SS]] or hours in decimal time
-    format_is_floatable : str or None
-                            force to format if adate is convertable to a float
-                            one of unix, gps, jd
+    float_format : str or None
+                    force to format if adate is convertable as a number
+                    one of VALID_FLOAT_FORMAT_FOR_TIME above.  Some limited checking if None
 
     Returns
     -------
@@ -507,14 +542,8 @@ def get_astropytime(adate, atime=0, format_is_floatable=None):
     except ValueError:
         pass
     if isinstance(adate, float):
-        if format_is_floatable == 'unix':
-            return Time(adate, format='unix')
-        if adate > bound_lower_gps or format_is_floatable == 'gps':
-            return Time(adate, format='gps')
-        if adate > bound_lower_jd and adate < bound_upper_jd or format_is_floatable == 'jd':
-            return Time(adate, format='jd')
-        raise ValueError('Invalid format:  date as a number should be gps time '
-                         'or julian date or unix/"unix", not {}.'.format(adate))
+        float_format = _check_time_as_a_number(adate, float_format)
+        return Time(adate, format=float_format)
     if isinstance(adate, str):
         if adate == '<':
             return Time(PAST_DATE, scale='utc')
@@ -530,6 +559,8 @@ def get_astropytime(adate, atime=0, format_is_floatable=None):
         except ValueError:
             raise ValueError(
                 'Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(adate))
+        if atime is None:
+            return return_date
         try:
             atime = float(atime)
         except ValueError:
