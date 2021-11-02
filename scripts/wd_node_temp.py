@@ -10,7 +10,7 @@ import argparse
 from hera_mc import watch_dog
 
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser("Script for cronjob monitoring node temperatures.")
 parser.add_argument('--date', help="Date to use (see cm_utils.get_astropytime)", default='now')
 parser.add_argument('--time', help="Time to use (  ''  )", default=0.0)
 parser.add_argument('--temp', help="Temperature threshold in Celsius", default=45.0)

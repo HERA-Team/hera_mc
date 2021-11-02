@@ -41,7 +41,7 @@ if __name__ == '__main__':
         args = query_args(args)
 
     # Pre-process some args
-    at_date = cm_utils.get_astropytime(args.date, args.time)
+    at_date = cm_utils.get_astropytime(args.date, args.time, args.format)
     if type(args.reference) == str and args.reference.lower() == 'none':
         args.reference = None
 
@@ -55,5 +55,5 @@ if __name__ == '__main__':
     # Check for part
     if args.verbose:
         print("Adding info for part {}:{}".format(args.hpn, args.rev))
-    cm_partconnect.add_part_info(session, args.hpn, args.rev, at_date,
-                                 args.comment, args.reference)
+    cm_partconnect.add_part_info(session, args.hpn, args.rev, args.comment,
+                                 at_date=at_date, reference=args.reference)

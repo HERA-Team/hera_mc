@@ -293,7 +293,7 @@ def white_rabbit_status_cleaned(white_rabbit_status):
             wr_data_value = node_dict[value]
             if key == 'node_time':
                 cleaned_dict[node_str][key] = int(floor(cm_utils.get_astropytime(wr_data_value,
-                                                        format_is_floatable='unix').gps))
+                                                        float_format='unix').gps))
             elif isinstance(wr_data_value, float) and np.isnan(wr_data_value):
                 wr_data_value = None
             elif key == 'aliases' and wr_data_value is not None:

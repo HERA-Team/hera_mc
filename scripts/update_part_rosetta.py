@@ -34,6 +34,8 @@ if __name__ == '__main__':
     cm_utils.add_date_time_args(parser)
     parser.add_argument('--date2', help="Stop date (if not None)", default=None)
     parser.add_argument('--time2', help="Stop time (if not None)", default=None)
+    parser.add_argument('--time2float_format', help="Format is date2 is unix, gps, jd",
+                        default=None)
     parser.add_argument('--verbose', help="Turn verbose mode on.", action='store_true')
     args = parser.parse_args()
 
@@ -41,8 +43,8 @@ if __name__ == '__main__':
         args = query_args(args)
 
     # Pre-process some args
-    start_date = cm_utils.get_astropytime(args.date, args.time)
-    stop_date = cm_utils.get_astropytime(args.date2, args.time2)
+    start_date = cm_utils.get_astropytime(args.date, args.time, args.format)
+    stop_date = cm_utils.get_astropytime(args.date2, args.time2, args.time2float_format)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()

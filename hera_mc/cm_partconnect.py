@@ -47,7 +47,8 @@ class PartRosetta(MCDeclarativeBase):
                 '{self.stop_gpstime}>'.format(self=self))
 
 
-def update_part_rosetta(hpn, syspn, at_date, date2=None, session=None):
+def update_part_rosetta(hpn, syspn, at_date, at_time=None, float_format=None,
+                        date2=None, date2time=None, date2float_format=None, session=None):
     """
     Update rosetta relationship in part_rosetta table.
 
@@ -62,16 +63,24 @@ def update_part_rosetta(hpn, syspn, at_date, date2=None, session=None):
         HERA part number
     syspn : str
         System part number
-    at_date : any format that cm_utils.get_astropytime understands
-        Date to use for action: start for new is relationship not active, else stop.
-    date2 : any format that cm_utils.get_astropytime understands
-        If not None, use for stop
+    at_date : anything interpretable by cm_utils.get_astropytime
+        Date at which to initialize.
+    at_time : anything interpretable by cm_utils.get_astropytime
+        Date at which to initialize
+    float_format : str
+        Format if at_date is a number denoting gps or unix seconds.
+    date2 : anything interpretable by cm_utils.get_astropytime
+        If not None, Date at which to stop.
+    date2time : anything interpretable by cm_utils.get_astropytime
+        Time at which to stop.
+    date2float_format : str
+        Format if at_date is a number denoting gps or unix seconds.
     session : object
         Database session to use.  If None, it will start a new session, then close.
     """
-    at_date = int(cm_utils.get_astropytime(at_date).gps)
+    at_date = int(cm_utils.get_astropytime(at_date, at_time, float_format).gps)
     if date2 is not None:
-        date2 = int(cm_utils.get_astropytime(date2).gps)
+        date2 = int(cm_utils.get_astropytime(date2, date2time, date2float_format).gps)
 
     close_session_when_done = False
     if session is None:  # pragma: no cover
@@ -265,8 +274,8 @@ def add_new_parts(session, part_list, at_date, allow_restart=False):
                 print_out = 're' + print_out
                 this_data.append([hpnr[0], hpnr[1], 'stop_gpstime', None])
                 comment = 'Restarting part.  Previous data {}'.format(existing)
-                add_part_info(session, hpn=hpnr[0], rev=hpnr[1], at_date=at_date,
-                              comment=comment, reference=None)
+                add_part_info(session, hpn=hpnr[0], rev=hpnr[1], comment=comment,
+                              at_date=at_date, reference=None)
             else:
                 print_out = "No action. The request {} not an allowed part restart.".format(hpnr)
                 this_data = None
@@ -603,7 +612,8 @@ class PartInfo(MCDeclarativeBase):
             setattr(self, key, value)
 
 
-def add_part_info(session, hpn, rev, at_date, comment, reference=None):
+def add_part_info(session, hpn, rev, comment, at_date, at_time=None, float_format=None,
+                  reference=None):
     """
     Add part information into database.
 
@@ -617,6 +627,10 @@ def add_part_info(session, hpn, rev, at_date, comment, reference=None):
         Part revision number
     at_date : any format that cm_utils.get_astropytime understands
         Date to use for the log entry
+    at_time : any format that cm_utils.get_astropytime understands
+        Time to use for the log entry
+    float_format : str
+        Format if at_date is unix or gps
     comment : str
         String containing the comment to be logged.
     reference : str, None
@@ -637,7 +651,7 @@ def add_part_info(session, hpn, rev, at_date, comment, reference=None):
     pi = PartInfo()
     pi.hpn = hpn
     pi.hpn_rev = rev
-    pi.posting_gpstime = int(cm_utils.get_astropytime(at_date).gps)
+    pi.posting_gpstime = int(cm_utils.get_astropytime(at_date, at_time, float_format).gps)
     pi.comment = comment
     pi.reference = reference
     session.add(pi)

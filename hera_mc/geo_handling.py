@@ -34,7 +34,8 @@ def cofa(session=None):
     return located
 
 
-def get_location(location_names, query_date='now', session=None):
+def get_location(location_names,
+                 query_date='now', query_time=None, float_format=None, session=None):
     """
     Get a GeoLocation object with lon/lat attributes for a location name.
 
@@ -44,8 +45,12 @@ def get_location(location_names, query_date='now', session=None):
     ----------
     location_names : list of str
         location names, either a station (geo_location key) or an antenna
-    query_date :  str
-        Date for query. Anything that `get_astropytime` can translate.
+    query_date :  Anything that `get_astropytime` can translate.
+        Date for query.
+    query_time : Anything that `get_astropytime` can translate.
+        Time for query.
+    float_format : str or None
+        Format if query_date is unix or gps.
     session : Session object
         Session to use.
 
@@ -55,7 +60,7 @@ def get_location(location_names, query_date='now', session=None):
         objects corresponding to location_names, wtih lon/lat attributes added.
 
     """
-    query_date = cm_utils.get_astropytime(query_date)
+    query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
     h = Handling(session)
     located = h.get_location(location_names, query_date)
     h.close()
@@ -218,7 +223,7 @@ class Handling:
             station_present = False
         return station_present
 
-    def find_antenna_at_station(self, station, query_date):
+    def find_antenna_at_station(self, station, query_date, query_time=None, float_format=None):
         """
         Get antenna details for a station.
 
@@ -226,8 +231,12 @@ class Handling:
         ----------
         station :  str
             station name
-        query_date : string, int, Time, datetime
-            Date to get information for, anything that can be parsed by `get_astropytime`.
+        query_date :  Anything that `get_astropytime` can translate.
+            Date for query.
+        query_time : Anything that `get_astropytime` can translate.
+            Time for query.
+        float_format : str or None
+            Format if query_date is unix or gps.
 
         Returns
         -------
@@ -238,7 +247,7 @@ class Handling:
             connections at the station at query_date.
 
         """
-        query_date = cm_utils.get_astropytime(query_date)
+        query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
         connected_antenna = self.session.query(cm_partconnect.Connections).filter(
             (func.upper(cm_partconnect.Connections.upstream_part) == station.upper())
             & (cm_partconnect.Connections.start_gpstime <= query_date.gps))
@@ -255,7 +264,7 @@ class Handling:
             return None, None
         return antenna_connected[0].downstream_part, antenna_connected[0].down_part_rev
 
-    def find_station_of_antenna(self, antenna, query_date):
+    def find_station_of_antenna(self, antenna, query_date, query_time=None, float_format=None):
         """
         Get station for an antenna.
 
@@ -263,8 +272,12 @@ class Handling:
         ----------
         antenna : float, int, str
             antenna number as float, int, or string. If needed, it prepends the 'A'
-        query_date : string, int, Time, datetime
-            Date to get information for, anything that can be parsed by `get_astropytime`.
+        query_date :  Anything that `get_astropytime` can translate.
+            Date for query.
+        query_time : Anything that `get_astropytime` can translate.
+            Time for query.
+        float_format : str or None
+            Format if query_date is unix or gps.
 
         Returns
         -------
@@ -272,7 +285,7 @@ class Handling:
             station the antenna is connected to at query date.
 
         """
-        query_date = cm_utils.get_astropytime(query_date)
+        query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
         if isinstance(antenna, (int, float)):
             antenna = 'A' + str(int(antenna))
         elif antenna[0].upper() != 'A':
@@ -291,7 +304,7 @@ class Handling:
             raise ValueError('More than one active connection between station and antenna')
         return antenna_connected.upstream_part
 
-    def get_location(self, to_find_list, query_date):
+    def get_location(self, to_find_list, query_date, query_time=None, float_format=None):
         """
         Get GeoLocation objects for a list of station_names.
 
@@ -299,8 +312,12 @@ class Handling:
         ----------
         to_find_list :  list of str
             station names to find
-        query_date : string, int, Time, datetime
-            Date to get information for, anything that can be parsed by `get_astropytime`.
+        query_date :  Anything that `get_astropytime` can translate.
+            Date for query.
+        query_time : Anything that `get_astropytime` can translate.
+            Time for query.
+        float_format : str or None
+            Format if query_date is unix or gps.
 
         Returns
         -------
@@ -313,7 +330,7 @@ class Handling:
         utm_p = ccrs.UTM(self.hera_zone[0])
         lat_corr = self.lat_corr[self.hera_zone[1]]
         locations = []
-        self.query_date = cm_utils.get_astropytime(query_date)
+        self.query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
         for station_name in to_find_list:
             for a in self.session.query(geo_location.GeoLocation).filter(
                     (func.upper(geo_location.GeoLocation.station_name) == station_name.upper())
@@ -457,7 +474,7 @@ class Handling:
                     self.fp_out.write('{}\n'.format(self._loc_line(a)))
         return found_stations
 
-    def get_antenna_label(self, label_to_show, stn, query_date):
+    def get_antenna_label(self, label_to_show, stn, query_date, query_time=None, float_format=None):
         """
         Get a label for a station.
 
@@ -467,17 +484,23 @@ class Handling:
             Specify label type, one of ["name", "num", "ser"]
         stn : GeoLocation object
             station to get label for.
-        query_date : string, int, Time, datetime
-            Date to get information for, anything that can be parsed by `get_astropytime`.
+        query_date :  Anything that `get_astropytime` can translate.
+            Date for query.
+        query_time : Anything that `get_astropytime` can translate.
+            Time for query.
+        float_format : str or None
+            Format if query_date is unix or gps.
 
         Returns
         -------
         str
             station label
+
         """
         if label_to_show == 'name':
             return stn.station_name
-        ant, rev = self.find_antenna_at_station(stn.station_name, query_date)
+        ant, rev = self.find_antenna_at_station(stn.station_name,
+                                                query_date, query_time, float_format)
         if ant is None:
             return None
         if label_to_show == 'num':
@@ -542,16 +565,21 @@ class Handling:
             plt.plot(p[:, 0], p[:, 1], marker='o', color='0.8', linestyle='none')
         return len(p[:, 0])
 
-    def get_active_stations(self, query_date, station_types_to_use, hookup_type=None):
+    def get_active_stations(self, station_types_to_use,
+                            query_date, query_time=None, float_format=None, hookup_type=None):
         """
         Get active stations.
 
         Parameters
         ----------
-        query_date : string, int, Time, datetime
-            Date to get avtive stations for, anything that can be parsed by `get_astropytime`.
         station_types_to_use : str or list of str
             Stations to use, can be a list of stations or "all" or "default".
+        query_date :  Anything that `get_astropytime` can translate.
+            Date for query.
+        query_time : Anything that `get_astropytime` can translate.
+            Time for query.
+        float_format : str or None
+            Format if query_date is unix or gps.
         hookup_type : str
             hookup_type to use
 
@@ -562,7 +590,7 @@ class Handling:
 
         """
         from . import cm_hookup, cm_revisions
-        query_date = cm_utils.get_astropytime(query_date)
+        query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
         hookup = cm_hookup.Hookup(self.session)
         hookup_dict = hookup.get_hookup(
             hookup.hookup_list_to_cache, at_date=query_date,
@@ -578,16 +606,21 @@ class Handling:
             print("{:12s}  {:3d}".format('active', len(active_stations)))
         return self.get_location(active_stations, query_date)
 
-    def plot_station_types(self, query_date, station_types_to_use, **kwargs):
+    def plot_station_types(self, station_types_to_use,
+                           query_date, query_time=None, float_format=None, **kwargs):
         """
         Plot the various sub-array types.
 
         Parameters
         ----------
-        query_date : string, int, Time, datetime
-            Date to get avtive stations for, anything that can be parsed by `get_astropytime`.
         station_types_to_use : str or list of str
             station_types or prefixes to plot.
+        query_date :  Anything that `get_astropytime` can translate.
+            Date for query.
+        query_time : Anything that `get_astropytime` can translate.
+            Time for query.
+        float_format : str or None
+            Format if query_date is unix or gps.
         kwargs :  dict
             matplotlib arguments for marker_color, marker_shape, marker_size, label, xgraph, ygraph
 
@@ -602,7 +635,8 @@ class Handling:
             kwargs['marker_color'] = self.station_types[st]['Marker'][0]
             kwargs['marker_shape'] = self.station_types[st]['Marker'][1]
             kwargs['marker_size'] = 5
-            stations_to_plot = self.get_location(self.station_types[st]['Stations'], query_date)
+            stations_to_plot = self.get_location(self.station_types[st]['Stations'],
+                                                 query_date, query_time, float_format)
             self.plot_stations(stations_to_plot, **kwargs)
             if len(stations_to_plot):
                 print("{:12s}  {:3d}".format(st, len(stations_to_plot)))

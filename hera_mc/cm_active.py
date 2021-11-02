@@ -19,7 +19,7 @@ class ActiveData:
 
     """
 
-    def __init__(self, session=None, at_date='now'):
+    def __init__(self, session=None, at_date='now', at_time=None, float_format=None):
         """
         Initialize ActiveData class attributes for at_date.
 
@@ -34,29 +34,44 @@ class ActiveData:
             If None, it will start a new session on the database.
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
         """
         if session is None:  # pragma: no cover
             from . import mc
             db = mc.connect_to_mc_db(None)
             session = db.sessionmaker()
         self.session = session
-        self.at_date = cm_utils.get_astropytime(at_date)
+        self.at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
+        self.reset_all()
+        self.pytest_param = False
+
+    def reset_all(self):
+        """Reset all active attributes to None."""
         self.parts = None
         self.rosetta = None
         self.connections = None
         self.info = None
         self.apriori = None
         self.geo = None
-        self.pytest_param = False
 
-    def set_times(self, at_date):
+    def set_active_time(self, at_date, at_time=None, float_format=None):
         """
         Make sure that at_date and self.at_date are synced and supplies gps time.
 
+        This utility function just checks that the Class date hasn't changed.  If so,
+        then it will reset all of the Attributes.
+
         Parameters
         ----------
-        at_date : astropytime.Time or None
-            Date for which to check.  If none, assumes self.at_date
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date for which to check.  If none, returns self.at_date.gps
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
 
         Returns
         -------
@@ -65,10 +80,13 @@ class ActiveData:
 
         """
         if at_date is not None:
-            self.at_date = at_date
+            this_date = cm_utils.get_astropytime(at_date, at_time, float_format)
+            if abs(this_date.gps - self.at_date.gps) > 1:
+                self.at_date = this_date
+                self.reset_all()
         return self.at_date.gps
 
-    def load_parts(self, at_date=None):
+    def load_parts(self, at_date=None, at_time=None, float_format=None):
         """
         Retrieve all active parts for a given at_date.
 
@@ -80,13 +98,15 @@ class ActiveData:
 
         Parameters
         ----------
-        at_date : str, int, float, Time, datetime (optional)
-            The date for which to check as active, given as anything comprehensible
-            to get_astropytime.  If not present uses self.at_date
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
 
         """
-        at_date = cm_utils.get_astropytime(at_date)
-        gps_time = self.set_times(at_date)
+        gps_time = self.set_active_time(at_date, at_time, float_format)
         self.parts = {}
         for prt in self.session.query(partconn.Parts).filter(
             (partconn.Parts.start_gpstime <= gps_time)
@@ -97,7 +117,7 @@ class ActiveData:
             self.parts[key] = prt
             self.parts[key].logical_pn = None
 
-    def load_connections(self, at_date=None):
+    def load_connections(self, at_date=None, at_time=None, float_format=None):
         """
         Retrieve all active connections for a given at_date.
 
@@ -111,9 +131,12 @@ class ActiveData:
 
         Parameters
         ----------
-        at_date : str, int, float, Time, datetime (optional)
-            The date for which to check as active, given as anything comprehensible
-            to get_astropytime.  If not present uses self.at_date
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
 
         Raises
         ------
@@ -121,8 +144,7 @@ class ActiveData:
             If a duplicate is found.
 
         """
-        at_date = cm_utils.get_astropytime(at_date)
-        gps_time = self.set_times(at_date)
+        gps_time = self.set_active_time(at_date, at_time, float_format)
         self.connections = {'up': {}, 'down': {}}
         check_keys = {'up': [], 'down': []}
         for cnn in self.session.query(partconn.Connections).filter(
@@ -149,7 +171,7 @@ class ActiveData:
             self.connections['down'].setdefault(key, {})
             self.connections['down'][key][cnn.downstream_input_port.upper()] = cnn
 
-    def load_info(self, at_date=None):
+    def load_info(self, at_date=None, at_time=None, float_format=None):
         """
         Retrieve all current part infomation (ie. before date).
 
@@ -161,13 +183,15 @@ class ActiveData:
 
         Parameters
         ----------
-        at_date : str, int, float, Time, datetime (optional)
-            The date for which to check as active, given as anything comprehensible
-            to get_astropytime
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
 
         """
-        at_date = cm_utils.get_astropytime(at_date)
-        gps_time = self.set_times(at_date)
+        gps_time = self.set_active_time(at_date, at_time, float_format)
         self.info = {}
         for info in self.session.query(partconn.PartInfo).filter(
                 (partconn.PartInfo.posting_gpstime <= gps_time)
@@ -176,7 +200,7 @@ class ActiveData:
             self.info.setdefault(key, [])
             self.info[key].append(info)
 
-    def load_rosetta(self, at_date=None):
+    def load_rosetta(self, at_date=None, at_time=None, float_format=None):
         """
         Retrieve the current 'part rosetta' mappings.
 
@@ -189,17 +213,20 @@ class ActiveData:
 
         Parameters
         ----------
-        at_date : str, int, float, Time, datetime (optional)
-            The date for which to check as active, given as anything comprehensible
-            to get_astropytime
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
 
         Raises
         ------
         ValueError
             If a duplicate logical part name is found.
+
         """
-        at_date = cm_utils.get_astropytime(at_date)
-        gps_time = self.set_times(at_date)
+        gps_time = self.set_active_time(at_date, at_time, float_format)
         self.rosetta = {}
         fnd_syspn = []
         for rose in self.session.query(partconn.PartRosetta).filter(
@@ -219,7 +246,7 @@ class ActiveData:
                 except KeyError:
                     continue
 
-    def load_apriori(self, at_date=None, rev='A'):
+    def load_apriori(self, at_date=None, at_time=None, float_format=None, rev='A'):
         """
         Retrieve all active apriori status for a given at_date.
 
@@ -231,15 +258,17 @@ class ActiveData:
 
         Parameters
         ----------
-        at_date : str, int, float, Time, datetime (optional)
-            The date for which to check as active, given as anything comprehensible
-            to get_astropytime.  If not present uses self.at_date
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
         rev : str
             Revision of antenna-station (always A)
 
         """
-        at_date = cm_utils.get_astropytime(at_date)
-        gps_time = self.set_times(at_date)
+        gps_time = self.set_active_time(at_date, at_time, float_format)
         self.apriori = {}
         apriori_keys = []
         for astat in self.session.query(partconn.AprioriAntenna).filter(
@@ -253,7 +282,7 @@ class ActiveData:
             apriori_keys.append(key)
             self.apriori[key] = astat
 
-    def load_geo(self, at_date=None):
+    def load_geo(self, at_date=None, at_time=None, float_format=None):
         """
         Retrieve all current geo_location data (ie. before date).
 
@@ -265,14 +294,16 @@ class ActiveData:
 
         Parameters
         ----------
-        at_date : str, int, float, Time, datetime (optional)
-            The date for which to check as active, given as anything comprehensible
-            to get_astropytime
+        at_date : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize.
+        at_time : anything interpretable by cm_utils.get_astropytime
+            Date at which to initialize
+        float_format : str
+            Format if at_date is a number denoting gps or unix seconds.
 
         """
         from . import geo_location
-        at_date = cm_utils.get_astropytime(at_date)
-        gps_time = self.set_times(at_date)
+        gps_time = self.set_active_time(at_date, at_time, float_format)
         self.geo = {}
         for ageo in self.session.query(geo_location.GeoLocation).filter(
                 geo_location.GeoLocation.created_gpstime <= gps_time

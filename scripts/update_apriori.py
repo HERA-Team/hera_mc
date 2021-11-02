@@ -33,7 +33,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Pre-process some args
-    at_date = cm_utils.get_astropytime(args.date, args.time)
+    at_date = cm_utils.get_astropytime(args.date, args.time, args.format)
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()

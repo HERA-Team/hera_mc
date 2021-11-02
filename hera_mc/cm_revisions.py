@@ -17,7 +17,8 @@ from . import cm_utils, cm_partconnect
 revision_categories = ['last', 'active', 'all', 'full', 'none']
 
 
-def get_revisions_of_type(hpn, rev_type, at_date='now', session=None):
+def get_revisions_of_type(hpn, rev_type, at_date='now', at_time=None, float_format=None,
+                          session=None):
     """
     Return namespace of revisions of rev_query.
 
@@ -31,6 +32,10 @@ def get_revisions_of_type(hpn, rev_type, at_date='now', session=None):
         Revision type/value.  One of LAST, ACTIVE, ALL, <specific>
     at_date : anything understandable to cm_utils.get_astropytime
         Relevant date to check for.
+    at_time : anything understandable to cm_utils.get_astropytime
+        Relevant time to check for.
+    float_format : str or None
+        Format for gps or unix at_date times.
     session : object
         Database session to use.  If None, it will start a new session, then close.
 
@@ -45,9 +50,7 @@ def get_revisions_of_type(hpn, rev_type, at_date='now', session=None):
         return get_last_revision(hpn, session)
 
     if rq.startswith('ACTIVE'):
-        if at_date is None:
-            at_date = cm_utils.get_astropytime('now')
-        return get_active_revision(hpn, at_date, session)
+        return get_active_revision(hpn, at_date, at_time, float_format, session)
 
     if rq.startswith('ALL') or rq.startswith('NONE'):
         return get_all_revisions(hpn, session)
@@ -161,7 +164,7 @@ def get_specific_revision(hpn, rq, session=None):
     return this_rev
 
 
-def get_active_revision(hpn, at_date, session=None):
+def get_active_revision(hpn, at_date, at_time=None, float_format=None, session=None):
     """
     Return list of active revisions as Namespace(hpn,rev,started,ended).
 
@@ -171,6 +174,10 @@ def get_active_revision(hpn, at_date, session=None):
         HERA part number
     at_date : anything understandable to cm_utils.get_astropytime
         Relevant date to check for.
+    at_time : anything understandable to cm_utils.get_astropytime
+        Relevant time to check for.
+    float_format : str or None
+        Format for gps or unix at_date times.
     session : object
         Database session to use.  If None, it will start a new session, then close.
 
@@ -183,11 +190,12 @@ def get_active_revision(hpn, at_date, session=None):
     revisions = cm_partconnect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
+    active_date = cm_utils.get_astropytime(at_date, at_time, float_format)
     return_active = []
     for rev in sorted(revisions.keys()):
         started = revisions[rev]['started']
         ended = revisions[rev]['ended']
-        if cm_utils.is_active(at_date, started, ended):
+        if cm_utils.is_active(active_date, started, ended):
             return_active.append(Namespace(hpn=hpn, rev=rev, rev_query='ACTIVE',
                                            started=started, ended=ended))
 
