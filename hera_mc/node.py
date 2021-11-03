@@ -46,7 +46,7 @@ wr_key_dict = {
     'mode': 'mode',
     'serial': 'serial',
     'node_time': 'timestamp',
-    'temperature': 'temperature',
+    'temperature': 'temp',
     'build_date': 'sw_build_date',
     'gw_date': 'wr_gw_date',
     'gw_version': 'wr_gw_version',
@@ -107,7 +107,7 @@ wr_key_dict = {
     'port1_update_counter': 'wr1_ucnt',
     'port1_time': 'wr1_sec'
 }
-wr_timestamp_keys = ['node_time', 'timestamp']
+wr_timestamp_keys = {'node_time': 'unix'}
 
 
 class NodeSensor(MCDeclarativeBase):
@@ -150,8 +150,8 @@ class NodeSensor(MCDeclarativeBase):
 
         Parameters
         ----------
-        time : int
-            GPS time based on a timestamp reported by node
+        time : Time
+            Time based on a timestamp reported by node
         node : int
             Node number (within 0 to 29).
         top_sensor_temp : float
@@ -169,7 +169,8 @@ class NodeSensor(MCDeclarativeBase):
         -------
         NodeSensor object
         """
-        return cls(time=time, node=node, top_sensor_temp=top_sensor_temp,
+        sens_time = int(np.floor(time.gps))
+        return cls(time=sens_time, node=node, top_sensor_temp=top_sensor_temp,
                    middle_sensor_temp=middle_sensor_temp,
                    bottom_sensor_temp=bottom_sensor_temp,
                    humidity_sensor_temp=humidity_sensor_temp,
@@ -204,14 +205,11 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress,
 
     for node in sensor_dict.keys():
         sensor_data = sensor_dict[node]
-        ts = cm_utils.get_astropytime(sensor_data['timestamp'],
-                                      float_format='unix')
-        if ts is None:
+        time = cm_utils.get_astropytime(sensor_data['timestamp'], float_format='unix')
+        if time is None:
             from warning import warn
             warn("No timestamp given for node sensor reading -- using current time.")
-            time = int(np.floor(cm_utils.get_astropytime('now').gps))
-        else:
-            time = int(np.floor(ts.gps))
+            time = cm_utils.get_astropytime('now')
         top_sensor_temp = sensor_data.get(
             sensor_key_dict['top_sensor_temp'], None)
         middle_sensor_temp = sensor_data.get(
@@ -275,8 +273,8 @@ class NodePowerStatus(MCDeclarativeBase):
 
         Parameters
         ----------
-        time : int
-            GPS second based on a timestamp reported by node.
+        time : Time
+            Timestamp reported by node.
         node : int
             Node number (within 0 to 29).
         snap_relay_powered: boolean
@@ -299,7 +297,8 @@ class NodePowerStatus(MCDeclarativeBase):
         NodePowerStatus object
 
         """
-        return cls(time=time, node=node,
+        stat_time = int(np.floor(time.gps))
+        return cls(time=stat_time, node=node,
                    snap_relay_powered=snap_relay_powered,
                    snap0_powered=snap0_powered, snap1_powered=snap1_powered,
                    snap2_powered=snap2_powered, snap3_powered=snap3_powered,
@@ -333,8 +332,7 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list='all',
         power_dict = node_controller.get_power_status()
     for node in power_dict.keys():
         power_data = power_dict[node]
-        time = int(np.floor(cm_utils.get_astropytime(power_data['timestamp'],
-                                                     float_format='unix').gps))
+        time = cm_utils.get_astropytime(power_data['timestamp'], float_format='unix')
 
         # All items in this dictionary are strings.
         snap_relay_powered = power_data[power_status_key_dict['snap_relay_powered']]
@@ -382,8 +380,8 @@ class NodePowerCommand(MCDeclarativeBase):
 
         Parameters
         ----------
-        time : int
-            GPS second for time command was sent.
+        time : astropy Time
+            When time command was sent.
         node : int
             Node number (within 0 to 29).
         part : str
@@ -396,7 +394,8 @@ class NodePowerCommand(MCDeclarativeBase):
         NodePowerCommand object
 
         """
-        return cls(time=time, node=node, part=part, command=command)
+        comm_time = int(np.floor(time.gps))
+        return cls(time=comm_time, node=node, part=part, command=command)
 
 
 def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list='all',
@@ -426,8 +425,7 @@ def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list=
     node_power_list = []
     for node in power_dict.keys():
         for prt, val in power_dict[node].items():
-            time = int(np.floor(cm_utils.get_astropytime(val['timestamp'],
-                                                         float_format='unix').gps))
+            time = cm_utils.get_astropytime(val['timestamp'], float_format='unix')
             cmd = val['command']
             if cmd is not None:
                 node_power_list.append(NodePowerCommand.create(time, node, prt, cmd))
@@ -657,8 +655,8 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
         col_dict : dict
             dictionary that must contain the following entries:
 
-            node_time : int
-                GPS seconds based on a timestamp reported by node.
+            node_time : Time
+                Timestamp reported by node.
             node : int
                 Node number (within 0 to 29).
             board_info_str : str
@@ -798,6 +796,8 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
         NodeWhiteRabbitStatus object
 
         """
+        for key in wr_timestamp_keys:
+            col_dict[key] = int(np.floor(col_dict[key].gps))
         return cls(**col_dict)
 
 
@@ -834,8 +834,8 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
             # key is column name, value is related key into wr_data
             wr_data_value = wr_data[value]
             if key in wr_timestamp_keys and wr_data_value is not None:
-                col_dict[key] = int(np.floor(cm_utils.get_astropytime(wr_data_value,
-                                             float_format='unix').gps))
+                fmt = wr_timestamp_keys[key]
+                col_dict[key] = cm_utils.get_astropytime(wr_data_value, float_format=fmt)
             elif isinstance(wr_data_value, float) and np.isnan(wr_data_value):
                 wr_data_value = None
             elif key == 'aliases' and wr_data_value is not None:
