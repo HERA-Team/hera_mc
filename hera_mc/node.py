@@ -842,7 +842,7 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
                 if len(wr_data_value) == 0:
                     col_dict[key] = None
                 else:
-                    col_dict[key] = ','.join(wr_data_value)
+                    col_dict[key] = ', '.join(wr_data_value)
             else:
                 col_dict[key] = wr_data_value
         wr_status_list.append(NodeWhiteRabbitStatus.create(col_dict))
