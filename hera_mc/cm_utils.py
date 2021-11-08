@@ -374,7 +374,7 @@ def add_date_time_args(parser):
     parser.add_argument('--format', help='Format if date is unix, gps or jd.', default=None)
 
 
-def is_active(at_date, start_date, stop_date):
+def is_active(at_date, start_date=None, stop_date=None):
     """
     Check to see if at_date is within start/stop.
 
@@ -382,24 +382,30 @@ def is_active(at_date, start_date, stop_date):
     ----------
     at_date : None, Time, int, float
         Date to check - must be astropy.time or a number.
-    start_date : Time, int, Time
+    start_date : Time, int, None
         Start date to use - must be astropy.time or a number.
-    stop_date : Time, int, Time
+    stop_date : Time, int, None
         Stop date to use - must be astropy.time or a number.
 
     """
     if at_date is None:
         return True
+    if start_date is None and stop_date is None:
+        return True
+    if start_date is None:
+        start_date = 0
+    if stop_date is None:
+        stop_date = 2000000000
     if isinstance(at_date, Time):
         at_date = at_date.gps
         if isinstance(start_date, Time):
             start_date = start_date.gps
-        else:
-            raise ValueError("Start date must be astropy Time.")
+        elif start_date != 0:
+            raise ValueError("Start date must be astropy Time or None.")
         if isinstance(stop_date, Time):
             stop_date = stop_date.gps
-        else:
-            raise ValueError("Stop date must be astropy Time.")
+        elif stop_date != 2000000000:
+            raise ValueError("Stop date must be astropy Time or None.")
     return at_date >= start_date and at_date <= stop_date
 
 
@@ -407,7 +413,7 @@ def future_date():
     """
     Future is defined here.
 
-    Defining a far FUTURE_DATE typically gives a warning about UTC vs UT1 etc.
+    Defining a far future date typically gives a warning about UTC vs UT1 etc.
 
     Returns
     -------
@@ -442,7 +448,7 @@ def get_stopdate(stop_date, stop_time=None, float_format=None):
     return get_astropytime(stop_date, stop_time, float_format)
 
 
-def get_time_for_display(display, display_time, float_format):
+def get_time_for_display(display, display_time=None, float_format=None):
     """
     Provide a reader-friendly time string.
 
@@ -453,7 +459,7 @@ def get_time_for_display(display, display_time, float_format):
     ----------
     display : Anything intelligible by `get_astropytime`.
         Date to display.
-    display_time : Anything intelligible by `get_astropytime`.
+    display_time : Any time intelligible by `get_astropytime`.
         Passed to get_astropytime
     float_format : str or None
         Format if display is unix or gps.

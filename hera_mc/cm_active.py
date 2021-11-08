@@ -61,7 +61,7 @@ class ActiveData:
         """
         Make sure that at_date and self.at_date are synced and supplies gps time.
 
-        This utility function just checks that the Class date hasn't changed.  If so,
+        This utility function checks that the Class date hasn't changed.  If so,
         then it will reset all of the Attributes.
 
         Parameters

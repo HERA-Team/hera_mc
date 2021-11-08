@@ -323,7 +323,7 @@ class Hookup(object):
             for ikey in part_hu_hpn:
                 gps_times = sorted(hu_notes[hkey][ikey].keys())
                 for gtime in gps_times:
-                    atime = cm_utils.get_time_for_display(gtime)
+                    atime = cm_utils.get_time_for_display(gtime, float_format='gps')
                     this_note = ("{} ({})".format(hu_notes[hkey][ikey][gtime]['note'],
                                                   hu_notes[hkey][ikey][gtime]['ref']))
                     entry_info += "\t{} ({})  {}\n".format(ikey, atime, this_note)
