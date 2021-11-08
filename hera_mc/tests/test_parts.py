@@ -116,7 +116,7 @@ def test_rosetta(mcsession, capsys):
                                        stop_at, session=mcsession)
     assert int(active.rosetta['SNPC000709'].stop_gpstime) == 1280278818
     # Add a test part to fail on update part
-    # bad line
+
     # rose = cm_partconnect.PartRosetta()
     # rose.hpn = 'SNPC000701'
     # rose.syspn = 'heraNode0Snap701'
