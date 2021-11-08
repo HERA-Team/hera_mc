@@ -174,7 +174,7 @@ def test_parse_station_types(geo_handle):
 
 def test_get_active_stations(geo_handle):
     active = geo_handle.get_active_stations(
-        'now', ['HH'], hookup_type='parts_hera')
+        ['HH'], 'now', hookup_type='parts_hera')
     assert len(active) == 11
 
 

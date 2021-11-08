@@ -207,7 +207,7 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress,
         sensor_data = sensor_dict[node]
         time = cm_utils.get_astropytime(sensor_data['timestamp'], float_format='unix')
         if time is None:
-            from warning import warn
+            from warnings import warn
             warn("No timestamp given for node sensor reading -- using current time.")
             time = cm_utils.get_astropytime('now')
         top_sensor_temp = sensor_data.get(

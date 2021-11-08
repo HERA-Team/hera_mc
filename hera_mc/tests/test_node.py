@@ -87,7 +87,7 @@ def white_rabbit_status():
             'ip': '10.80.2.138',
             'mode': 'WRC_SLAVE_WR0',
             'serial': 'wr-len4p0',
-            'temperature': 46.0,
+            'temp': 46.0,
             'sw_build_date': 1485304695,
             'wr_gw_date': 1490833080,
             'wr_gw_version': '3.9.29',
@@ -153,7 +153,7 @@ def white_rabbit_status():
             'ip': '10.80.2.144',
             'mode': 'WRC_SLAVE_WR0',
             'serial': 'wr-len7p0',
-            'temperature': 47.812,
+            'temp': 47.812,
             'sw_build_date': None,
             'wr_gw_date': None,
             'wr_gw_version': None,
@@ -219,7 +219,7 @@ def white_rabbit_status():
             'ip': None,
             'mode': None,
             'serial': None,
-            'temperature': np.nan,
+            'temp': np.nan,
             'sw_build_date': None,
             'wr_gw_date': None,
             'wr_gw_version': None,
@@ -292,8 +292,8 @@ def white_rabbit_status_cleaned(white_rabbit_status):
             # key is column name, value is related key into wr_data
             wr_data_value = node_dict[value]
             if key == 'node_time':
-                cleaned_dict[node_str][key] = int(floor(cm_utils.get_astropytime(wr_data_value,
-                                                        float_format='unix').gps))
+                cleaned_dict[node_str][key] = cm_utils.get_astropytime(wr_data_value,
+                                                                       float_format='unix')
             elif isinstance(wr_data_value, float) and np.isnan(wr_data_value):
                 wr_data_value = None
             elif key == 'aliases' and wr_data_value is not None:
@@ -444,11 +444,6 @@ def test_create_sensor_readings(mcsession, nodelist, sensor):
     result_most_recent = test_session.get_node_sensor_readings(
         most_recent=True)
     assert result_most_recent == result
-
-    sensor[1]['timestamp'] = None
-    sensor_obj_list = node.create_sensor_readings(
-        node_list=None, sensor_dict=sensor)
-    assert sensor_obj_list[0].time == -1
 
 
 def test_sensor_reading_errors(mcsession, sensor):
@@ -634,8 +629,7 @@ def test_add_white_rabbit_status(mcsession, white_rabbit_status_cleaned,
         starttime=t1 - TimeDelta(3.0, format='sec'))
 
     assert len(result) == 1
-    result = result[0]
-    assert result.isclose(expected)
+    assert result[0].isclose(expected)
 
     test_session.add_node_white_rabbit_status(white_rabbit_status_cleaned[2])
 

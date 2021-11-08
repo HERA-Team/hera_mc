@@ -77,7 +77,7 @@ def test_watch_dog_verdict(mcsession):
     redishost = TEST_DEFAULT_REDIS_HOST
     rsession = redis.Redis(redishost)
     msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True)
-    assert not len(msg)
+    assert len(msg) == 2
     rsession.set('valid:node:700', '0')
     this_time = str(int(time.time()))
     rsession.hset('verdict:node:700:pam', 'time', this_time)
@@ -285,7 +285,7 @@ def test_sysdef(sys_handle, mcsession):
     part = Namespace(part_type='nope')
     pytest.raises(ValueError, sysdef.setup, part, pol='nope',
                   hookup_type='parts_hera')
-    curr = active.set_times(cm_utils.get_astropytime('2017-07-03'))
+    curr = active.set_active_time(cm_utils.get_astropytime('2017-07-03'))
     assert int(curr) == 1183075218
     active.load_apriori('now')
     assert active.apriori['HH700:A'].status == 'not_connected'

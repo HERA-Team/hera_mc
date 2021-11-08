@@ -158,8 +158,12 @@ def test_datetime():
     import datetime
     tout = cm_utils.get_astropytime(datetime.datetime.now())
     assert type(tout) == Time
-    tout = cm_utils.get_astropytime(2462500.5)
-    assert type(tout) == Time
+    with pytest.warns(UserWarning,
+                      match='No time format given -- assuming jd based on value 2460500.5'):
+        tout = cm_utils.get_astropytime(2460500.5)
+    assert int(tout.gps) == 1404518418
+    tout = cm_utils.get_astropytime(2460500.5, float_format='jd')
+    assert int(tout.gps) == 1404518418
     pytest.raises(ValueError, cm_utils.get_astropytime, 0.0)
     tout = cm_utils.get_astropytime('none')
     assert tout is None
