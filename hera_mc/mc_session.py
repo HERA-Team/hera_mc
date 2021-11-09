@@ -3073,8 +3073,7 @@ class MCSession(Session):
 
             return config_params_obj_list, time_list
 
-    def get_snap_hostname_from_serial(self, serial_number,
-                                      at_date='now', at_time=None, float_format=None):
+    def get_snap_hostname_from_serial(self, serial_number, at_date='now'):
         """
         Get SNAP hostname from the SNAP serial number (also called hpn or part number).
 
@@ -3094,7 +3093,7 @@ class MCSession(Session):
             SNAP hostname if serial_number is found in the part_rosetta None otherwise.
 
         """
-        active = ActiveData(session=self, at_date=at_date)
+        active = ActiveData(session=self, at_date=at_date, float_format='gps')
         active.load_rosetta()
         if serial_number in active.rosetta.keys():
             return active.rosetta[serial_number].syspn
