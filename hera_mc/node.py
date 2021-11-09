@@ -107,7 +107,7 @@ wr_key_dict = {
     'port1_update_counter': 'wr1_ucnt',
     'port1_time': 'wr1_sec'
 }
-wr_timestamp_keys = {'node_time': 'unix'}
+wr_timestamp_keys = {'node_time': 'unix', 'timestamp': 'unix'}
 
 
 class NodeSensor(MCDeclarativeBase):
@@ -797,7 +797,10 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
 
         """
         for key in wr_timestamp_keys:
-            col_dict[key] = int(np.floor(col_dict[key].gps))
+            try:
+                col_dict[key] = int(np.floor(col_dict[key].gps))
+            except KeyError:
+                continue
         return cls(**col_dict)
 
 
@@ -830,21 +833,20 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
     for node in wr_status_dict.keys():
         wr_data = wr_status_dict[node]
         col_dict = {'node': node}
-        for key, value in wr_key_dict.items():
-            # key is column name, value is related key into wr_data
-            wr_data_value = wr_data[value]
-            if key in wr_timestamp_keys and wr_data_value is not None:
-                fmt = wr_timestamp_keys[key]
-                col_dict[key] = cm_utils.get_astropytime(wr_data_value, float_format=fmt)
+        for sql_key, sens_key in wr_key_dict.items():
+            wr_data_value = wr_data[sens_key]
+            if sql_key in wr_timestamp_keys and wr_data_value is not None:
+                fmt = wr_timestamp_keys[sql_key]
+                col_dict[sql_key] = cm_utils.get_astropytime(wr_data_value, float_format=fmt)
             elif isinstance(wr_data_value, float) and np.isnan(wr_data_value):
-                wr_data_value = None
-            elif key == 'aliases' and wr_data_value is not None:
+                col_dict[sql_key] = None
+            elif sql_key == 'aliases' and wr_data_value is not None:
                 if len(wr_data_value) == 0:
-                    col_dict[key] = None
+                    col_dict[sql_key] = None
                 else:
-                    col_dict[key] = ', '.join(wr_data_value)
+                    col_dict[sql_key] = ', '.join(wr_data_value)
             else:
-                col_dict[key] = wr_data_value
+                col_dict[sql_key] = wr_data_value
         wr_status_list.append(NodeWhiteRabbitStatus.create(col_dict))
 
     return wr_status_list

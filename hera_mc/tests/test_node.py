@@ -11,7 +11,6 @@ import numpy as np
 import pytest
 
 from .. import node
-from .. import cm_utils
 from ..tests import requires_redis
 
 
@@ -147,7 +146,7 @@ def white_rabbit_status():
             'wr1_ucnt': None,
             'wr0_sec': 1575578672,
             'wr1_sec': None},
-        2: {'timestamp': 1512770942.995268,
+        2: {'timestamp': 1512770942,
             'board_info_str': None,
             'aliases': ['heraNode7wr', 'heraNode7wr_alias'],
             'ip': '10.80.2.144',
@@ -213,7 +212,7 @@ def white_rabbit_status():
             'wr1_ucnt': None,
             'wr0_sec': 1575578804,
             'wr1_sec': None},
-        3: {'timestamp': 1512770942.995268,
+        3: {'timestamp': 1512770942,
             'board_info_str': None,
             'aliases': [],
             'ip': None,
@@ -280,50 +279,6 @@ def white_rabbit_status():
             'wr0_sec': 1575578804,
             'wr1_sec': None}
     }
-
-
-@pytest.fixture(scope='module')
-def white_rabbit_status_cleaned(white_rabbit_status):
-    cleaned_dict = {}
-    for node_str, node_dict in white_rabbit_status.items():
-        nodeID = int(node_str)
-        cleaned_dict[node_str] = {'node': nodeID}
-        for key, value in node.wr_key_dict.items():
-            # key is column name, value is related key into wr_data
-            wr_data_value = node_dict[value]
-            if key == 'node_time':
-                cleaned_dict[node_str][key] = cm_utils.get_astropytime(wr_data_value,
-                                                                       float_format='unix')
-            elif isinstance(wr_data_value, float) and np.isnan(wr_data_value):
-                cleaned_dict[node_str][key] = None
-            elif key == 'aliases' and wr_data_value is not None:
-                if len(wr_data_value) == 0:
-                    cleaned_dict[node_str][key] = None
-                else:
-                    cleaned_dict[node_str][key] = ','.join(wr_data_value)
-            else:
-                cleaned_dict[node_str][key] = wr_data_value
-    return cleaned_dict
-
-
-@pytest.fixture(scope='module')
-def white_rabbit_status_sql(white_rabbit_status_cleaned):
-    sql_dict = {}
-    for node_str, node_dict in white_rabbit_status_cleaned.items():
-        nodeID = int(node_str)
-        sql_dict[node_str] = {
-            'node_time': node_dict['node_time'],
-            'node': nodeID
-        }
-        for key in node.wr_key_dict:
-            if key not in node_dict:
-                print(f"INFO node {node_str}:  {key} not in node_dict")
-                continue
-            wr_data_value = node_dict[key]
-            if isinstance(wr_data_value, float) and np.isnan(wr_data_value):
-                wr_data_value = None
-            sql_dict[node_str][key] = wr_data_value
-    return sql_dict
 
 
 def test_add_node_sensor_readings(mcsession, sensor, tmpdir):
@@ -618,91 +573,80 @@ def test_power_command(mcsession):
     assert len(test_npc) == 1
 
 
-# def test_add_white_rabbit_status(mcsession, white_rabbit_status_cleaned,
-#                                  white_rabbit_status_sql, tmpdir):
-#     test_session = mcsession
-#     t1 = Time(1512770942.726777, format='unix')
-#     test_session.add_node_white_rabbit_status(white_rabbit_status_cleaned[1])
-#
-#     expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[1])
-#     result = test_session.get_node_white_rabbit_status(
-#         starttime=t1 - TimeDelta(3.0, format='sec'))
-#     #FIX
-#     # assert len(result) == 1
-#     # assert result[0].isclose(expected)
-#
-#     test_session.add_node_white_rabbit_status(white_rabbit_status_cleaned[2])
-#
-#     result = test_session.get_node_white_rabbit_status(
-#         starttime=t1 - TimeDelta(30.0, format='sec'), nodeID=1)
-#     assert len(result) == 1
-#     result = result[0]
-#     assert result.isclose(expected)
-#
-#     result = test_session.get_node_white_rabbit_status(
-#         starttime=t1 - TimeDelta(30.0, format='sec'), stoptime=t1 + TimeDelta(30.0, format='sec'))
-#     assert len(result) == 2
-#
-#     filename = os.path.join(tmpdir, 'test_node_white_rabbit_status_file.csv')
-#     test_session.get_node_white_rabbit_status(
-#         starttime=t1 - TimeDelta(3.0, format='sec'), stoptime=t1,
-#         write_to_file=True, filename=filename)
-#     os.remove(filename)
-#
-#     test_session.get_node_white_rabbit_status(
-#         starttime=t1 - TimeDelta(3.0, format='sec'), stoptime=t1,
-#         write_to_file=True)
-#     default_filename = 'node_white_rabbit_status.csv'
-#     os.remove(default_filename)
-#
-#     result = test_session.get_node_white_rabbit_status(
-#         starttime=t1 + TimeDelta(200.0, format='sec'))
-#     assert result == []
-#
-#     test_session.add_node_white_rabbit_status_from_node_control()
-#     ncget = test_session.get_node_white_rabbit_status()
-#     assert len(ncget) == 6
-#
-#
-def test_create_white_rabbit_status(mcsession, white_rabbit_status,
-                                    white_rabbit_status_cleaned,
-                                    white_rabbit_status_sql):
+def _node_mc_to_hera_mc(nodeID, wr_obj):
+    this_obj = {'node': nodeID}
+    for key, val in wr_obj.items():
+        if key in node.wr_key_dict.keys():
+            this_obj[key] = val
+    this_obj['node_time'] = Time(this_obj['node_time'], format='gps')
+    return this_obj
+
+
+def test_add_white_rabbit_status(mcsession, tmpdir, white_rabbit_status):
+    test_session = mcsession
+    t1 = Time(1512770942.5, format='unix')
+    wr_obj_list = node.create_wr_status(wr_status_dict=white_rabbit_status)
+    this_obj = _node_mc_to_hera_mc(1, vars(wr_obj_list[1]))
+    test_session.add_node_white_rabbit_status(this_obj)
+    expected = node.NodeWhiteRabbitStatus(**this_obj)
+    result = test_session.get_node_white_rabbit_status(
+        starttime=t1 - TimeDelta(3.0, format='sec'))
+    assert len(result) == 1
+    assert result[0].isclose(expected)
+
+    this_obj = _node_mc_to_hera_mc(2, vars(wr_obj_list[2]))
+    test_session.add_node_white_rabbit_status(this_obj)
+    result = test_session.get_node_white_rabbit_status(
+        starttime=t1 - TimeDelta(30.0, format='sec'), nodeID=1)
+    assert len(result) == 1
+    assert result[0].isclose(expected)
+
+    result = test_session.get_node_white_rabbit_status(
+        starttime=t1 - TimeDelta(30.0, format='sec'), stoptime=t1 + TimeDelta(30.0, format='sec'))
+    assert len(result) == 2
+
+    filename = os.path.join(tmpdir, 'test_node_white_rabbit_status_file.csv')
+    test_session.get_node_white_rabbit_status(
+        starttime=t1 - TimeDelta(3.0, format='sec'), stoptime=t1,
+        write_to_file=True, filename=filename)
+    os.remove(filename)
+
+    test_session.get_node_white_rabbit_status(
+        starttime=t1 - TimeDelta(3.0, format='sec'), stoptime=t1,
+        write_to_file=True)
+    default_filename = 'node_white_rabbit_status.csv'
+    os.remove(default_filename)
+
+    result = test_session.get_node_white_rabbit_status(
+        starttime=t1 + TimeDelta(200.0, format='sec'))
+    assert result == []
+
+    test_session.add_node_white_rabbit_status_from_node_control()
+    ncget = test_session.get_node_white_rabbit_status()
+    assert len(ncget) == 2
+
+
+def test_create_white_rabbit_status(mcsession, white_rabbit_status):
     test_session = mcsession
 
-    test_redis_db = node.create_wr_status()
-    assert len(test_redis_db) == 8  # Nodes 0, 3, 4, 5, 7, 8, 9, 10
-    # print("TN674: ",white_rabbit_status[1]['temp'])
-    wr_obj_list = node.create_wr_status(
-        node_list=None, wr_status_dict=white_rabbit_status)
+    test_redis_db = node.create_wr_status(None)  # None in there at the start.
+    assert not len(test_redis_db)
+
+    wr_obj_list = node.create_wr_status(wr_status_dict=white_rabbit_status)
 
     for obj in wr_obj_list:
         test_session.add(obj)
 
-    t1 = Time(1512770942.726777, format='unix')
+    t1 = Time(1512770942.5, format='unix')
     result = test_session.get_node_white_rabbit_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=1)
-
-    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[1])
     assert len(result) == 1
-    result = result[0]
-
-    assert result.isclose(expected)
+    assert result[0].isclose(wr_obj_list[0])
 
     result = test_session.get_node_white_rabbit_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=2)
-
-    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[2])
     assert len(result) == 1
-    result = result[0]
-    assert result.isclose(expected)
-
-    result = test_session.get_node_white_rabbit_status(
-        starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=3)
-
-    expected = node.NodeWhiteRabbitStatus(**white_rabbit_status_sql[3])
-    assert len(result) == 1
-    result = result[0]
-    assert result.isclose(expected)
+    assert result[0].isclose(wr_obj_list[1])
 
     result = test_session.get_node_white_rabbit_status(
         starttime=t1 - TimeDelta(3.0, format='sec'),
