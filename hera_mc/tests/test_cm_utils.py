@@ -42,9 +42,17 @@ def test_various():
     assert spk == cm_utils.system_wide_key
     a, b, c = cm_utils.split_part_key('a:b:c')
     assert c == 'c'
-    is_active = cm_utils.is_active(None, None, None)
-    assert is_active
+    assert cm_utils.is_active(None, None, None)
+    assert cm_utils.is_active('now', None, None)
+    assert cm_utils.is_active(10, None, 20)
     t_tst = cm_utils.get_astropytime('now')
+    with pytest.raises(ValueError) as ml:
+        cm_utils.is_active(t_tst, 10)
+    assert str(ml.value).startswith("Start date must be astropy Time or None.")
+    assert cm_utils.is_active(t_tst, None, cm_utils.future_date())
+    with pytest.raises(ValueError) as ml:
+        cm_utils.is_active(t_tst, None, 10)
+    assert str(ml.value).startswith("Stop date must be astropy Time or None.")
     out = cm_utils.get_stopdate(t_tst)
     assert out == t_tst
     d = cm_utils.get_time_for_display(None)
@@ -174,6 +182,12 @@ def test_datetime():
     assert type(tout) == Time
     pytest.raises(ValueError, cm_utils.get_astropytime, '2018/1/1', '0:0:0:0')
     pytest.raises(ValueError, cm_utils.get_astropytime, '2018/1/1', 'x')
+    with pytest.warns(UserWarning,
+                      match='10 out of nominal range for gps'):
+        tout = cm_utils._check_time_as_a_number(10, 'gps')
+    with pytest.raises(ValueError) as ml:
+        cm_utils._check_time_as_a_number(10, 'test')
+    assert str(ml.value).startswith('Invalid time format: test')
 
 
 def test_put_keys_in_order():

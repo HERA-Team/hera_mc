@@ -350,6 +350,11 @@ def test_add_node_sensor_readings(mcsession, sensor, tmpdir):
 def test_create_sensor_readings(mcsession, nodelist, sensor):
     test_session = mcsession
 
+    sensor[1]['timestamp'] = None
+    with pytest.warns(UserWarning,
+                      match="No timestamp given for node sensor reading -- using current time."):
+        node.create_sensor_readings(sensor_dict=sensor)
+    sensor[1]['timestamp'] = 1512770942.7
     sensor_obj_list = node.create_sensor_readings(
         node_list=None, sensor_dict=sensor)
 
