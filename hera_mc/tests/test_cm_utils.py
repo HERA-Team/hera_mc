@@ -59,6 +59,8 @@ def test_various():
     assert d == 'None'
     c = cm_utils.put_keys_in_order(['1:A:Z', '2:B:X'], 'RPN')
     assert c[0] == '1:A:Z'
+    out = cm_utils.get_stopdate(None)
+    assert out.gps > cm_utils.get_astropytime('now').gps + 999 * 3600 * 24
 
 
 @pytest.mark.parametrize(("inp", "expected"),
