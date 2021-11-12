@@ -308,6 +308,8 @@ def test_sysdef(sys_handle, mcsession):
 
 
 def test_sysutil_node(capsys, mcsession):
+    z = cm_sysutils.node_info('active', session=mcsession)
+    assert z['WRA000700'][0].startswith('IP - ABC')
     xni = cm_sysutils.node_info(['N91'], mcsession)
     assert not len(xni['N91']['ants-file'])
     apn = cm_sysutils.node_antennas(session=mcsession)
