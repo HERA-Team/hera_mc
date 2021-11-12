@@ -614,6 +614,7 @@ def node_info(node_num='active', session=None):
     hu = cm_hookup.Hookup(session)
     na_from_file = node_antennas('file', session=session)
     na_from_hookup = node_antennas(hu, session=session)
+
     if node_num == 'active':
         node_num = sorted(na_from_hookup)
     elif node_num == 'all':
@@ -627,18 +628,14 @@ def node_info(node_num='active', session=None):
         info['nodes'].append(node)
         info[node] = {}
         # Get antenna info
-        try:
-            info[node]['ants-file'] = na_from_file[node]
-        except KeyError:
-            info[node]['ants-file'] = []
-        try:
-            info[node]['ants-hookup'] = na_from_hookup[node]
-        except KeyError:
-            info[node]['ants-hookup'] = []
+        info[node]['ants-file'] = na_from_file[node] if node in na_from_file else []
+        info[node]['ants-hookup'] = na_from_hookup[node] if node in na_from_hookup else []
+
         # Get hookup info
         snaps = hu.get_hookup(node, hookup_type='parts_hera')
         wr = hu.get_hookup(node, hookup_type='wr_hera')
         rd = hu.get_hookup(node, hookup_type='arduino_hera')
+
         # Find snaps
         info[node]['snaps'] = ['', '', '', '']
         for snp in snaps.keys():
