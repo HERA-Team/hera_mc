@@ -432,7 +432,7 @@ def get_stopdate(stop_date, stop_time=None, float_format=None):
     ----------
     stop_date : Anything intelligible by `get_astropytime`.
         If None, uses `future_date`.
-    stop_date : Anything intelligible by `get_astropytime`.
+    stop_time : Anything intelligible by `get_astropytime`.
         Passed to get_astropytime.
     float_format : str or None
         Format if stop_date is unix or gps time.
@@ -504,16 +504,20 @@ def _check_time_as_a_number(val, fmt):
 
 def get_astropytime(adate, atime=None, float_format=None):
     """
-    Get an astropy time object based on provided string.
+    Get an astropy.Time object based on provided values.
 
-    Take in various incarnations of adate/atime and return an astropy.Time object or None.
-    No time zone is allowed.
+    Take in various incarnations of adate/atime and return astropy.Time or None.
 
-    Returns:  either astropy Time or None
+    Note that atime is only used if adate is a str (so ignored if adate is a Time
+    or number).  Also, float_format is only used if adate is a number (checked as
+    "float(adate)").
+
+    Returns:  either astropy.Time or None
 
     Parameters
     ----------
-    adate :  a date in various formats:
+    adate : Time, int, float, datetime, str
+            A date in various formats:
                 return astropy Time
                     astropy Time:  just gets returned
                     datetime: just gets converted
@@ -525,7 +529,8 @@ def get_astropytime(adate, atime=None, float_format=None):
                 return None:
                     string:  'none' return None
                     None/False:  return None
-    atime : a time in various formats, ignored if time information is provided in adate
+    atime : float, int, str
+            A time in various formats, ignored unless adate is a str
                 float, int:  hours in decimal time
                 string:  HH[:MM[:SS]] or hours in decimal time
     float_format : str or None

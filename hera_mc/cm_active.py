@@ -37,7 +37,7 @@ class ActiveData:
         at_time : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps or unix seconds or jd day.
         """
         if session is None:  # pragma: no cover
             from . import mc
