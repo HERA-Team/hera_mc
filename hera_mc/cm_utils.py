@@ -383,11 +383,11 @@ def is_active(at_date, start_date=None, stop_date=None):
     Parameters
     ----------
     at_date : Time, int/float, None or 'now'
-        Date to check - must be astropy.time or a number.
+        Date to check - must be astropy.time, number, None or 'now'
     start_date : Time, int/float, None
-        Start date to use - must be astropy.time or a number.
+        Start date to use - must be astropy.time, number or None
     stop_date : Time, int/float, None
-        Stop date to use - must be astropy.time or a number.
+        Stop date to use - must be astropy.time, number or None
 
     """
     if at_date is None:
