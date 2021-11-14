@@ -378,34 +378,40 @@ def is_active(at_date, start_date=None, stop_date=None):
     """
     Check to see if at_date is within start/stop.
 
+    Note that at_date, start_date and stop_date must be of the same type or None.
+
     Parameters
     ----------
-    at_date : None, Time, int, float
+    at_date : Time, int/float, None or 'now'
         Date to check - must be astropy.time or a number.
-    start_date : Time, int, None
+    start_date : Time, int/float, None
         Start date to use - must be astropy.time or a number.
-    stop_date : Time, int, None
+    stop_date : Time, int/float, None
         Stop date to use - must be astropy.time or a number.
 
     """
     if at_date is None:
         return True
+    elif at_date == 'now':
+        at_date = Time.now()
     if start_date is None and stop_date is None:
         return True
-    if start_date is None:
-        start_date = 0
-    if stop_date is None:
-        stop_date = 2000000000
     if isinstance(at_date, Time):
         at_date = at_date.gps
-        if isinstance(start_date, Time):
+        if start_date is None:
+            start_date = 0
+        else:
             start_date = start_date.gps
-        elif start_date != 0:
-            raise ValueError("Start date must be astropy Time or None.")
-        if isinstance(stop_date, Time):
+        if stop_date is None:
+            stop_date = 2000000000
+        else:
             stop_date = stop_date.gps
-        elif stop_date != 2000000000:
-            raise ValueError("Stop date must be astropy Time or None.")
+    else:
+        if start_date is None:
+            start_date = 0
+        if stop_date is None:
+            stop_date = 2000000000
+
     return at_date >= start_date and at_date <= stop_date
 
 
