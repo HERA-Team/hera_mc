@@ -46,13 +46,13 @@ def test_various():
     assert cm_utils.is_active('now', None, None)
     assert cm_utils.is_active(10, None, 20)
     t_tst = cm_utils.get_astropytime('now')
-    with pytest.raises(ValueError) as ml:
+    with pytest.raises(AttributeError) as ml:
         cm_utils.is_active(t_tst, 10)
-    assert str(ml.value).startswith("Start date must be astropy Time or None.")
+    assert str(ml.value).startswith("'int' object has no attribute 'gps'")
     assert cm_utils.is_active(t_tst, None, cm_utils.future_date())
-    with pytest.raises(ValueError) as ml:
+    with pytest.raises(AttributeError) as ml:
         cm_utils.is_active(t_tst, None, 10)
-    assert str(ml.value).startswith("Stop date must be astropy Time or None.")
+    assert str(ml.value).startswith("'int' object has no attribute 'gps'")
     out = cm_utils.get_stopdate(t_tst)
     assert out == t_tst
     d = cm_utils.get_time_for_display(None)
