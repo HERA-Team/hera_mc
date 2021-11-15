@@ -352,7 +352,7 @@ def test_create_sensor_readings(mcsession, nodelist, sensor):
 
     sensor[1]['timestamp'] = None
     with pytest.warns(UserWarning,
-                      match="No timestamp given for node sensor reading -- using current time."):
+                      match="No timestamp given for node sensor reading -- ignoring this entry."):
         node.create_sensor_readings(sensor_dict=sensor)
     sensor[1]['timestamp'] = 1512770942.7
     sensor_obj_list = node.create_sensor_readings(
@@ -482,7 +482,7 @@ def test_add_node_power_status(mcsession, power):
     test_session.add_node_power_status_from_node_control(
         nodeServerAddress=TEST_DEFAULT_REDIS_HOST
     )
-    
+
     result = test_session.get_node_power_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=1)
     assert len(result) == 1
