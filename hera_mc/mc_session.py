@@ -2965,7 +2965,7 @@ class MCSession(Session):
 
         if testing:
             return corr_state_list
-        else:  # pragma: no cover
+        else:
             self._insert_ignoring_duplicates(corr.CorrelatorControlState,
                                              corr_state_list)
 
@@ -4784,7 +4784,7 @@ class MCSession(Session):
 
         if testing:
             return antenna_status_list
-        else:  # pragma: no cover
+        else:
             self._insert_ignoring_duplicates(corr.AntennaStatus, antenna_status_list)
 
     def add_ant_metric(self, obsid, ant, pol, metric, val):
@@ -5189,7 +5189,7 @@ class MCSession(Session):
 
         if testing:
             return hera_auto_list
-        else:  # pragma: no cover
+        else:
             self._insert_ignoring_duplicates(HeraAuto, hera_auto_list)
 
     def get_autocorrelation(self, most_recent=None, starttime=None,
