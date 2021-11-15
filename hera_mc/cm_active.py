@@ -35,7 +35,7 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Time at which to initialize, if needed depending on at_date
+            Time at which to initialize, ignored if at_date is a float or contains time information
         float_format : str
             Format if at_date is a number denoting gps or unix seconds or jd day.
         """
@@ -69,7 +69,7 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date for which to check.  If none, returns self.at_date.gps
         at_time : anything interpretable by cm_utils.get_astropytime
-            Time at which to initialize, if needed depending on at_date
+            Time at which to initialize, ignored if at_date is a float or contains time information
         float_format : str
             Format if at_date is a number denoting gps, unix seconds, or jd
 
@@ -101,7 +101,7 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Time at which to initialize, if needed depending on at_date
+            Time at which to initialize, ignored if at_date is a float or contains time information
         float_format : str
             Format if at_date is a number denoting gps, unix seconds or jd
 
@@ -134,7 +134,7 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Time at which to initialize, if needed depending on at_date
+            Time at which to initialize, ignored if at_date is a float or contains time information
         float_format : str
             Format if at_date is a number denoting gps, unix seconds or jd
 
@@ -186,7 +186,7 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Time at which to initialize, if needed depending on at_date
+            Time at which to initialize, ignored if at_date is a float or contains time information
         float_format : str
             Format if at_date is a number denoting gps, unix seconds or jd
 
@@ -216,7 +216,7 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Time at which to initialize, if needed depending on at_date
+            Time at which to initialize, ignored if at_date is a float or contains time information
         float_format : str
             Format if at_date is a number denoting gps, unix seconds or jd
 
@@ -261,7 +261,7 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Time at which to initialize, if needed depending on at_date
+            Time at which to initialize, ignored if at_date is a float or contains time information
         float_format : str
             Format if at_date is a number denoting gps, unix seconds or jd
         rev : str
@@ -297,7 +297,7 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Time at which to initialize, if needed depending on at_date
+            Time at which to initialize, ignored if at_date is a float or contains time information
         float_format : str
             Format if at_date is a number denoting gps, unix seconds or jd
 
