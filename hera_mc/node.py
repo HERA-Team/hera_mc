@@ -208,21 +208,21 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress,
         time = cm_utils.get_astropytime(sensor_data['timestamp'], float_format='unix')
         if time is None:
             from warnings import warn
-            warn("No timestamp given for node sensor reading -- using current time.")
-            time = cm_utils.get_astropytime('now')
-        top_sensor_temp = sensor_data.get(
-            sensor_key_dict['top_sensor_temp'], None)
-        middle_sensor_temp = sensor_data.get(
-            sensor_key_dict['middle_sensor_temp'], None)
-        bottom_sensor_temp = sensor_data.get(
-            sensor_key_dict['bottom_sensor_temp'], None)
-        humidity_sensor_temp = sensor_data.get(
-            sensor_key_dict['humidity_sensor_temp'], None)
-        humidity = sensor_data.get(sensor_key_dict['humidity'], None)
+            warn("No timestamp given for node sensor reading -- ignoring this entry.")
+        else:
+            top_sensor_temp = sensor_data.get(
+                sensor_key_dict['top_sensor_temp'], None)
+            middle_sensor_temp = sensor_data.get(
+                sensor_key_dict['middle_sensor_temp'], None)
+            bottom_sensor_temp = sensor_data.get(
+                sensor_key_dict['bottom_sensor_temp'], None)
+            humidity_sensor_temp = sensor_data.get(
+                sensor_key_dict['humidity_sensor_temp'], None)
+            humidity = sensor_data.get(sensor_key_dict['humidity'], None)
 
-        node_sensor_list.append(NodeSensor.create(
-            time, node, top_sensor_temp, middle_sensor_temp,
-            bottom_sensor_temp, humidity_sensor_temp, humidity))
+            node_sensor_list.append(NodeSensor.create(
+                time, node, top_sensor_temp, middle_sensor_temp,
+                bottom_sensor_temp, humidity_sensor_temp, humidity))
 
     return node_sensor_list
 
@@ -573,7 +573,7 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
         Port 1 update counter
     port1_time : BigInteger Column
         Port 1 current time in GPS seconds.
-    timestamp : int
+
     """
 
     __tablename__ = 'node_white_rabbit_status'
