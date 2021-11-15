@@ -577,9 +577,9 @@ class Handling:
         query_date :  Anything that `get_astropytime` can translate.
             Date for query.
         query_time : Anything that `get_astropytime` can translate.
-            Time for query.
+            Time for query, ignored if at_date is a float or contains time information.
         float_format : str or None
-            Format if query_date is unix or gps.
+            Format if query_date is unix or gps or jd day.
         hookup_type : str
             hookup_type to use
 
@@ -618,9 +618,9 @@ class Handling:
         query_date :  Anything that `get_astropytime` can translate.
             Date for query.
         query_time : Anything that `get_astropytime` can translate.
-            Time for query.
+            Time for query, ignored if at_date is a float or contains time information.
         float_format : str or None
-            Format if query_date is unix or gps.
+            Format if query_date is unix or gps or jd day.
         kwargs :  dict
             matplotlib arguments for marker_color, marker_shape, marker_size, label, xgraph, ygraph
 

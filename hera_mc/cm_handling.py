@@ -59,9 +59,9 @@ class Handling:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date for which to check.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Time for with to check.
+            Time for with to check, ignored if at_date is a float or contains time information
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps or unix seconds or jd day.
 
         Returns
         -------
@@ -189,17 +189,18 @@ class Handling:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date for which to check.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to check, ignored if at_date is a float or contains time information
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps or unix seconds or jd day
         active : cm_active.ActiveData class or None
             Use supplied ActiveData.  If None, read in.
         notes_start_date : anything interpretable by cm_utils.get_astropytime
             Start_date for displaying notes
         notes_start_time : anything interpretable by cm_utils.get_astropytime
-            Start time for displaying notes.
+            Start time for displaying notes, ignored if notes_start_date is a float or
+            contains time information
         notes_float_format : str
-            Format if notes_start_date is a number denoting gps or unix seconds.
+            Format if notes_start_date is a number denoting gps or unix seconds or jd day.
         exact_match : bool
             Flag to enforce full part number match, or "startswith"
 

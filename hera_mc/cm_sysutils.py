@@ -124,9 +124,9 @@ class Handling:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, ignored if at_date is a float or contains time information.
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps or unix seconds or jd day.
         hookup_type : str
             Type of hookup to use (current observing system is 'parts_hera').
             If 'None' it will determine which system it thinks it is based on
@@ -342,9 +342,9 @@ class Handling:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, ignored if at_date is a float or contains time information.
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps or unix seconds or jd day.
 
         Returns
         -------
@@ -375,9 +375,9 @@ class Handling:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, ignored if at_date is a float or contains time information.
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps or unix seconds or jd day.
 
         Returns
         -------
@@ -405,9 +405,9 @@ class Handling:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, ignored if at_date is a float or contains time information.
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps or unix seconds or jd day.
 
         Returns
         -------
@@ -435,9 +435,9 @@ class Handling:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, ignored if at_date is a float or contains time information.
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps or unix seconds or jd day.
 
         Returns
         -------

@@ -33,9 +33,9 @@ def get_revisions_of_type(hpn, rev_type, at_date='now', at_time=None, float_form
     at_date : anything understandable to cm_utils.get_astropytime
         Relevant date to check for.
     at_time : anything understandable to cm_utils.get_astropytime
-        Relevant time to check for.
+        Relevant time to check for, ignored if at_date is a float or contains time information.
     float_format : str or None
-        Format for gps or unix at_date times.
+        Format if at_date is a number denoting gps or unix seconds or jd day.
     session : object
         Database session to use.  If None, it will start a new session, then close.
 
@@ -175,9 +175,9 @@ def get_active_revision(hpn, at_date, at_time=None, float_format=None, session=N
     at_date : anything understandable to cm_utils.get_astropytime
         Relevant date to check for.
     at_time : anything understandable to cm_utils.get_astropytime
-        Relevant time to check for.
+        Relevant time to check for, ignored if at_date is a float or contains time information.
     float_format : str or None
-        Format for gps or unix at_date times.
+        Format if at_date is a number denoting gps or unix seconds or jd day.
     session : object
         Database session to use.  If None, it will start a new session, then close.
 

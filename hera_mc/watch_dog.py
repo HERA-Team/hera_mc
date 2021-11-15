@@ -121,9 +121,10 @@ def node_temperature(at_date=None, at_time=None, float_format=None,
     at_date : anything understandable by get_astropytime
         If None, use values at latest time.  If valid Time, use nearest value before.
     at_time : anything understandable by get_astropytime
-        Used for appropriate forms of 'at_date' for get_astropytime
+        Used for appropriate forms of 'at_date' for get_astropytime, ignored if at_date
+        is a float or contains time information.
     float_format : str or None
-        If at_date is unix or gps.
+        If at_date is unix or gps or jd day.
     temp_threshold : float
         Threshold temperature in Celsius
     time_threshold : float
@@ -134,6 +135,7 @@ def node_temperature(at_date=None, at_time=None, float_format=None,
         Boolean to skip sending the actual e-mail and return a string (for testing)
     session : session object or None
         If None, it will start a new session on the database
+
     """
     from . import node, cm_utils, cm_active
 
