@@ -67,7 +67,7 @@ class MCSession(Session):
         db_time = Time(db_timestamp)
         return db_time
 
-    def add_corr_obj(self, force=False):
+    def add_corr_obj(self, force=False, redishost=None):
         """
         Add a HeraCorrCM object to self to talk to the correlator.
 
@@ -81,11 +81,14 @@ class MCSession(Session):
             state changes). Done by setting the `danger_mode` keyword on the
             HeraCorrCM object. To avoid unexpected behavior, always set this
             attribute so it will be False unless specifically set to True.
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
+
         """
         import hera_corr_cm
 
         if not hasattr(self, 'corr_obj'):
-            self.corr_obj = hera_corr_cm.HeraCorrCM()
+            self.corr_obj = hera_corr_cm.HeraCorrCM(redishost=redishost)
 
         self.corr_obj.danger_mode = force
 
@@ -2350,7 +2353,7 @@ class MCSession(Session):
             bottom_sensor_temp, humidity_sensor_temp, humidity)
         )
 
-    def add_node_sensor_readings_from_node_control(self):
+    def add_node_sensor_readings_from_node_control(self, nodeServerAddress=None):
         """
         Get and add node sensor information using a nodeControl object.
 
@@ -2362,8 +2365,16 @@ class MCSession(Session):
         with ones already in the database. This makes it convenient to sample
         the node sensor data densely on qmaster.
 
+        Parameters
+        ----------
+        nodeServerAddress : str
+            Address of server where the node redis database can be accessed. Defaults to
+            node.defaultServerAddress
+
         """
-        node_sensor_list = node.create_sensor_readings()
+        node_sensor_list = node.create_sensor_readings(
+            nodeServerAddress=nodeServerAddress
+        )
 
         self._insert_ignoring_duplicates(node.NodeSensor, node_sensor_list)
 
@@ -2445,7 +2456,7 @@ class MCSession(Session):
             snap2_powered, snap3_powered, fem_powered, pam_powered)
         )
 
-    def add_node_power_status_from_node_control(self):
+    def add_node_power_status_from_node_control(self, nodeServerAddress=None):
         """
         Get and add node power status information using a nodeControl object.
 
@@ -2457,8 +2468,14 @@ class MCSession(Session):
         with ones already in the database. This makes it convenient to sample
         the node power status data densely on qmaster.
 
+        Parameters
+        ----------
+        nodeServerAddress : str
+            Address of server where the node redis database can be accessed. Defaults to
+            node.defaultServerAddress
+
         """
-        node_power_list = node.create_power_status()
+        node_power_list = node.create_power_status(nodeServerAddress=nodeServerAddress)
 
         self._insert_ignoring_duplicates(node.NodePowerStatus, node_power_list)
 
@@ -2525,7 +2542,7 @@ class MCSession(Session):
         """
         self.add(node.NodePowerCommand.create(time, nodeID, part, command))
 
-    def add_node_power_command_from_node_control(self):
+    def add_node_power_command_from_node_control(self, nodeServerAddress=None):
         """
         Get and add node power command information using a node_control object.
 
@@ -2537,8 +2554,16 @@ class MCSession(Session):
         with ones already in the database. This makes it convenient to sample
         the node power command data densely on qmaster.
 
+        Parameters
+        ----------
+        nodeServerAddress : str
+            Address of server where the node redis database can be accessed. Defaults to
+            node.defaultServerAddress
+
         """
-        node_power_list = node.create_power_command_list()
+        node_power_list = node.create_power_command_list(
+            nodeServerAddress=nodeServerAddress
+        )
 
         self._insert_ignoring_duplicates(node.NodePowerCommand, node_power_list)
 
@@ -2736,7 +2761,7 @@ class MCSession(Session):
         """
         self.add(node.NodeWhiteRabbitStatus.create(col_dict))
 
-    def add_node_white_rabbit_status_from_node_control(self):
+    def add_node_white_rabbit_status_from_node_control(self, nodeServerAddress=None):
         """
         Get and add node white rabbit information using a nodeControl object.
 
@@ -2748,8 +2773,14 @@ class MCSession(Session):
         with ones already in the database. This makes it convenient to sample
         the node white rabbit data densely on qmaster.
 
+        Parameters
+        ----------
+        nodeServerAddress : str
+            Address of server where the node redis database can be accessed. Defaults to
+            node.defaultServerAddress
+
         """
-        node_wr_status_list = node.create_wr_status()
+        node_wr_status_list = node.create_wr_status(nodeServerAddress=nodeServerAddress)
 
         self._insert_ignoring_duplicates(node.NodeWhiteRabbitStatus, node_wr_status_list)
 
@@ -2864,8 +2895,9 @@ class MCSession(Session):
                                  filter_value=state_type,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_correlator_control_state_from_corrcm(self, corr_state_dict=None,
-                                                 testing=False):
+    def add_correlator_control_state_from_corrcm(
+        self, corr_state_dict=None, testing=False, redishost=None
+    ):
         """
         Get and add correlator control state information using HeraCorrCM.
 
@@ -2887,6 +2919,8 @@ class MCSession(Session):
         testing : bool
             If true, don't add a record of it to the database and return the
             list of CorrelatorControlState objects.
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
 
         Returns
         -------
@@ -2896,8 +2930,10 @@ class MCSession(Session):
 
         """
         if corr_state_dict is None:
-            self.add_corr_obj()
-            corr_state_dict = corr._get_control_state(corr_cm=self.corr_obj)
+            self.add_corr_obj(redishost=redishost)
+            corr_state_dict = corr._get_control_state(
+                corr_cm=self.corr_obj, redishost=redishost
+            )
 
         corr_state_list = []
         for state_type, state_dict in corr_state_dict.items():
@@ -3604,8 +3640,9 @@ class MCSession(Session):
         # delete the file
         os.remove(librarian_filename_full)
 
-    def add_correlator_config_from_corrcm(self, config_state_dict=None,
-                                          testing=False):
+    def add_correlator_config_from_corrcm(
+        self, config_state_dict=None, testing=False, redishost=None
+    ):
         """
         Get and add correlator config information using a HeraCorrCM object.
 
@@ -3627,6 +3664,8 @@ class MCSession(Session):
             If true, don't add config file to the Librarian or add a record of
             it to the database and return the CorrelatorConfigFile and
             CorrelatorConfigStatus objects.
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
 
         Returns
         -------
@@ -3638,8 +3677,8 @@ class MCSession(Session):
 
         """
         if config_state_dict is None:
-            self.add_corr_obj()
-            config_state_dict = corr._get_config(corr_cm=self.corr_obj)
+            self.add_corr_obj(redishost=redishost)
+            config_state_dict = corr._get_config(corr_cm=self.corr_obj, redishost=redishost)
 
         time = config_state_dict['time']
         config = config_state_dict['config']
@@ -3860,10 +3899,20 @@ class MCSession(Session):
                                  filter_value=config_hash,
                                  write_to_file=write_to_file, filename=filename)
 
-    def correlator_control_command(self, command, starttime=None, duration=None,
-                                   acclen_spectra=None, tag=None,
-                                   overwrite_take_data=False, config_file=None,
-                                   force=False, dryrun=False, testing=False):
+    def correlator_control_command(
+        self,
+        command,
+        starttime=None,
+        duration=None,
+        acclen_spectra=None,
+        tag=None,
+        overwrite_take_data=False,
+        config_file=None,
+        force=False,
+        dryrun=False,
+        testing=False,
+        redishost=None
+    ):
         """
         Issue a correlator control command.
 
@@ -3905,6 +3954,8 @@ class MCSession(Session):
         testing : bool
             If true, do not use anything that requires connection to correlator
             (implies dry run).
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
 
         """
         if testing:
@@ -3963,7 +4014,7 @@ class MCSession(Session):
                                           + obj.starttime_ms / 1000.)
                     next_start_time = np.min(np.array(starttimes))
             else:  # pragma: no cover
-                self.add_corr_obj()
+                self.add_corr_obj(redishost=redishost)
                 next_start_time = corr._get_next_start_time(
                     corr_cm=self.corr_obj)
 
@@ -4028,7 +4079,7 @@ class MCSession(Session):
                                  'is not "update_config"')
 
             if not testing:  # pragma: no cover
-                self.add_corr_obj()
+                self.add_corr_obj(redishost=redishost)
                 integration_time = corr._get_integration_time(
                     acclen_spectra, corr_cm=self.corr_obj)
             else:
@@ -4118,7 +4169,7 @@ class MCSession(Session):
             # This is a real command, so actually call the commands on a
             # HERACorrCM object instance (which is created in the next line if
             # it doesn't already exist).
-            self.add_corr_obj(force=force)
+            self.add_corr_obj(force=force, redishost=redishost)
             # There are a couple special cases where we need to pass extra
             # arguments (take_data, update_config). Handle them specifically,
             # otherwise just call the appropriate method in the `else` clause.
@@ -4310,8 +4361,9 @@ class MCSession(Session):
                                  starttime=starttime, stoptime=stoptime,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_corr_snap_versions_from_corrcm(self, corr_snap_version_dict=None,
-                                           testing=False):
+    def add_corr_snap_versions_from_corrcm(
+        self, corr_snap_version_dict=None, testing=False, redishost=None
+    ):
         """
         Get and add correlator and SNAP configuration and version info.
 
@@ -4334,6 +4386,8 @@ class MCSession(Session):
             If true, don't add a record of it to the database and return the
             list of CorrelatorSoftwareVersions, CorrelatorConfigFile,
             CorrelatorConfigStatus and SNAPConfigVersion objects.
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
 
         Returns
         -------
@@ -4344,7 +4398,7 @@ class MCSession(Session):
 
         """
         if corr_snap_version_dict is None:
-            self.add_corr_obj()
+            self.add_corr_obj(redishost=redishost)
             corr_snap_version_dict = corr._get_corr_versions(corr_cm=self.corr_obj)
 
         corr_version_list = []
@@ -4475,7 +4529,7 @@ class MCSession(Session):
                                  write_to_file=write_to_file, filename=filename)
 
     def add_snap_status_from_corrcm(self, snap_status_dict=None, testing=False,
-                                    cm_session=None):
+                                    cm_session=None, redishost=None):
         """Get and add snap status information using a HeraCorrCM object.
 
         This function connects to the correlator and gets the latest data using
@@ -4500,6 +4554,8 @@ class MCSession(Session):
         cm_session:
             Session object to use for the CM queries. Defaults to self, but can
             be set to another session instance (useful for testing).
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
 
         Returns
         -------
@@ -4507,8 +4563,10 @@ class MCSession(Session):
 
         """
         if snap_status_dict is None:
-            self.add_corr_obj()
-            snap_status_dict = corr._get_snap_status(corr_cm=self.corr_obj)
+            self.add_corr_obj(redishost=redishost)
+            snap_status_dict = corr._get_snap_status(
+                corr_cm=self.corr_obj, redishost=redishost
+            )
 
         snap_status_list = []
         for hostname, snap_dict in snap_status_dict.items():
@@ -4685,7 +4743,7 @@ class MCSession(Session):
                                  write_to_file=write_to_file, filename=filename)
 
     def add_antenna_status_from_corrcm(self, ant_status_dict=None,
-                                       testing=False):
+                                       testing=False, redishost=None):
         """Get and add antenna status information using a HeraCorrCM object.
 
         This function connects to the correlator and gets the latest data using
@@ -4706,6 +4764,8 @@ class MCSession(Session):
         testing : bool
             If true, don't add a record of it to the database and return the
             list of AntennaStatus objects.
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
 
         Returns
         -------
@@ -4715,7 +4775,7 @@ class MCSession(Session):
 
         """
         if ant_status_dict is None:
-            self.add_corr_obj()
+            self.add_corr_obj(redishost=redishost)
             corr_cm = self.corr_obj
         else:
             corr_cm = None
@@ -5094,7 +5154,7 @@ class MCSession(Session):
             If true, do not add records to database, instead return list of HeraAuto objects.
         redishost : str, optional
             The hostname of the redis server to connect to if hera_autos_dict is None.
-            Defaults to DEFAULT_REDIS_ADDRESS stored in M&C session object.
+            Defaults to correlator.DEFAULT_REDIS_ADDRESS.
         measurement_type : str, optional
             The type of measurement to take from the autos.
             Available choices are: ['median']

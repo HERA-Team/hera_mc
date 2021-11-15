@@ -440,7 +440,9 @@ def test_control_state_errors(mcsession):
 def test_add_corr_control_state_from_corrcm(mcsession):
     test_session = mcsession
 
-    test_session.add_correlator_control_state_from_corrcm()
+    test_session.add_correlator_control_state_from_corrcm(
+        redishost=TEST_DEFAULT_REDIS_HOST
+    )
     result = test_session.get_correlator_control_state(
         state_type='taking_data', most_recent=True)
     assert len(result) == 1
@@ -1130,7 +1132,7 @@ def test_get_integration_time():
 
 @requires_redis
 def test_get_next_start_time():
-    corr._get_next_start_time()
+    corr._get_next_start_time(redishost=TEST_DEFAULT_REDIS_HOST)
 
 
 def test_corr_config_command_no_recent_config(mcsession, corr_config):
@@ -1185,7 +1187,10 @@ def test_corr_config_command_with_recent_config(mcsession, corr_config, corr_con
     test_session = mcsession
     # test commanding a config with a recent (different) config status
     corr_config_list = test_session.add_correlator_config_from_corrcm(
-        config_state_dict=corr_config_dict, testing=True)
+        config_state_dict=corr_config_dict,
+        testing=True,
+        redishost=TEST_DEFAULT_REDIS_HOST
+    )
 
     for obj in corr_config_list:
         test_session.add(obj)
@@ -1870,7 +1875,7 @@ def test_site_add_snap_status_from_corrcm(mcsession):
     test_session = mcsession
 
     # get the snap status dict from the correlator redis
-    snap_status_dict = corr._get_snap_status()
+    snap_status_dict = corr._get_snap_status(redishost=TEST_DEFAULT_REDIS_HOST)
     assert len(snap_status_dict) >= 1
 
     # use the real (not test) database to get the node & snap location number
