@@ -35,7 +35,7 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, if needed depending on at_date
         float_format : str
             Format if at_date is a number denoting gps or unix seconds or jd day.
         """
@@ -69,9 +69,9 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date for which to check.  If none, returns self.at_date.gps
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, if needed depending on at_date
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps, unix seconds, or jd
 
         Returns
         -------
@@ -101,9 +101,9 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, if needed depending on at_date
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps, unix seconds or jd
 
         """
         gps_time = self.set_active_time(at_date, at_time, float_format)
@@ -134,9 +134,9 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, if needed depending on at_date
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps, unix seconds or jd
 
         Raises
         ------
@@ -186,9 +186,9 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, if needed depending on at_date
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps, unix seconds or jd
 
         """
         gps_time = self.set_active_time(at_date, at_time, float_format)
@@ -216,9 +216,9 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, if needed depending on at_date
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps, unix seconds or jd
 
         Raises
         ------
@@ -261,9 +261,9 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, if needed depending on at_date
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps, unix seconds or jd
         rev : str
             Revision of antenna-station (always A)
 
@@ -297,9 +297,9 @@ class ActiveData:
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, if needed depending on at_date
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps, unix seconds or jd
 
         """
         from . import geo_location
