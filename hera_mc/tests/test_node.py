@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from .. import node
-from ..tests import requires_redis
+from ..tests import TEST_DEFAULT_REDIS_HOST, requires_redis
 
 
 @pytest.fixture(scope='module')
@@ -424,7 +424,9 @@ def test_sensor_reading_errors(mcsession, sensor):
 def test_add_node_sensor_readings_from_node_control(mcsession):
     test_session = mcsession
 
-    test_session.add_node_sensor_readings_from_node_control()
+    test_session.add_node_sensor_readings_from_node_control(
+        nodeServerAddress=TEST_DEFAULT_REDIS_HOST
+    )
     result = test_session.get_node_sensor_readings(
         starttime=Time.now() - TimeDelta(120.0, format='sec'),
         stoptime=Time.now() + TimeDelta(120.0, format='sec'))
@@ -438,6 +440,7 @@ def test_add_node_sensor_readings_from_node_control(mcsession):
     assert len(result) == len(nodes_with_status)
 
 
+@requires_redis
 def test_add_node_power_status(mcsession, power):
     test_session = mcsession
     t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -476,8 +479,10 @@ def test_add_node_power_status(mcsession, power):
     test_session.add_node_power_status(
         t1, 2, snap_relay_powered, snap0_powered, snap1_powered, snap2_powered,
         snap3_powered, fem_powered, pam_powered)
-    test_session.add_node_power_status_from_node_control()
-
+    test_session.add_node_power_status_from_node_control(
+        nodeServerAddress=TEST_DEFAULT_REDIS_HOST
+    )
+    
     result = test_session.get_node_power_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=1)
     assert len(result) == 1
@@ -555,7 +560,9 @@ def test_node_power_status_errors(mcsession, power):
 def test_add_node_power_status_from_node_control(mcsession):
     test_session = mcsession
 
-    test_session.add_node_power_status_from_node_control()
+    test_session.add_node_power_status_from_node_control(
+        nodeServerAddress=TEST_DEFAULT_REDIS_HOST
+    )
     result = test_session.get_node_power_status(
         starttime=Time.now() - TimeDelta(120.0, format='sec'),
         stoptime=Time.now() + TimeDelta(120.0, format='sec'))
@@ -573,9 +580,18 @@ def test_power_command(mcsession):
     test_session = mcsession
     npc = {'time': Time.now(), 'nodeID': 1, 'part': 'vapor', 'command': 'on'}
     test_session.add_node_power_command(**npc)
-    test_session.add_node_power_command_from_node_control()
     test_npc = test_session.get_node_power_command()
     assert len(test_npc) == 1
+
+
+def test_power_command_from_node_control(mcsession):
+    test_session = mcsession
+    pytest.importorskip('node_control')
+    test_session.add_node_power_command_from_node_control(
+        nodeServerAddress=TEST_DEFAULT_REDIS_HOST
+    )
+    test_npc = test_session.get_node_power_command()
+    assert len(test_npc) == 74
 
 
 def _node_mc_to_hera_mc(nodeID, wr_obj):
@@ -625,13 +641,22 @@ def test_add_white_rabbit_status(mcsession, tmpdir, white_rabbit_status):
     result = test_session.get_node_white_rabbit_status(
         starttime=t1 + TimeDelta(200.0, format='sec'))
     assert result == []
-
-    test_session.add_node_white_rabbit_status_from_node_control()
     ncget = test_session.get_node_white_rabbit_status()
     assert len(ncget) == 2
 
 
+def test_add_white_rabbit_status_from_node_control(mcsession):
+    pytest.importorskip('node_control')
+    test_session = mcsession
+    test_session.add_node_white_rabbit_status_from_node_control(
+        nodeServerAddress=TEST_DEFAULT_REDIS_HOST
+    )
+    ncget = test_session.get_node_white_rabbit_status()
+    assert len(ncget) == 0
+
+
 def test_create_white_rabbit_status(mcsession, white_rabbit_status):
+    pytest.importorskip('node_control')
     test_session = mcsession
 
     test_redis_db = node.create_wr_status(None)  # None in there at the start.

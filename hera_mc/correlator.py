@@ -135,8 +135,7 @@ class CorrelatorControlState(MCDeclarativeBase):
         return cls(time=corr_time, state_type=state_type, state=state)
 
 
-def _get_control_state(corr_cm=None,
-                       correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_control_state(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     """
     Get the latest states and associated timestamp from the correlator.
 
@@ -144,7 +143,7 @@ def _get_control_state(corr_cm=None,
     ----------
     corr_cm : hera_corr_cm.HeraCorrCM object
         HeraCorrCM object to use. If None, this function will make a new one.
-    correlator_redis_address : str
+    redishost : str
         Address of redis database (only used if corr_cm is None).
 
     Returns
@@ -157,7 +156,7 @@ def _get_control_state(corr_cm=None,
     import hera_corr_cm
 
     if corr_cm is None:
-        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=redishost)
 
     corr_state_dict = {}
     for key, value in state_dict.items():
@@ -240,7 +239,7 @@ class CorrelatorConfigStatus(MCDeclarativeBase):
         return cls(time=corr_time, config_hash=config_hash)
 
 
-def _get_config(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_config(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     """
     Get the latest config, hash and associated timestamp from the correlator.
 
@@ -248,7 +247,7 @@ def _get_config(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     ----------
     corr_cm : hera_corr_cm.HeraCorrCM object
         HeraCorrCM object to use. If None, this function will make a new one.
-    correlator_redis_address : str
+    redishost : str
         Address of redis database (only used if corr_cm is None)
 
     Returns
@@ -260,7 +259,7 @@ def _get_config(corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS):
     import hera_corr_cm
 
     if corr_cm is None:
-        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=redishost)
 
     timestamp, config, config_hash = corr_cm.get_config()
     time = Time(timestamp, format='unix')
@@ -617,8 +616,7 @@ def _get_integration_time(acclen_spectra, corr_cm=None,
     return corr_cm.n_spectra_to_secs(acclen_spectra)
 
 
-def _get_next_start_time(corr_cm=None,
-                         correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_next_start_time(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     """
     Get the next start time from the correlator, in gps seconds.
 
@@ -626,7 +624,7 @@ def _get_next_start_time(corr_cm=None,
     ----------
     corr_cm : hera_corr_cm.HeraCorrCM object
         HeraCorrCM object to use. If None, this function will make a new one.
-    correlator_redis_address : str
+    redishost : str
         Address of redis database (only used if corr_cm is None).
 
     Returns
@@ -638,7 +636,7 @@ def _get_next_start_time(corr_cm=None,
     import hera_corr_cm
 
     if corr_cm is None:
-        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=redishost)
 
     starttime_unix_timestamp = corr_cm.next_start_time()
     if starttime_unix_timestamp == 0.0:
@@ -1032,8 +1030,7 @@ class SNAPStatus(MCDeclarativeBase):
                    last_programmed_time=last_programmed_time_gps)
 
 
-def _get_snap_status(corr_cm=None,
-                     correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_snap_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     """
     Get the snap status dict from the correlator.
 
@@ -1041,7 +1038,7 @@ def _get_snap_status(corr_cm=None,
     ----------
     corr_cm : hera_corr_cm.HeraCorrCM object
         HeraCorrCM object to use. If None, this function will make a new one.
-    correlator_redis_address : str
+    redishost : str
         Address of redis database (only used if corr_cm is None)
 
     Returns
@@ -1071,7 +1068,7 @@ def _get_snap_status(corr_cm=None,
     import hera_corr_cm
 
     if corr_cm is None:
-        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=redishost)
 
     return corr_cm.get_f_status()
 

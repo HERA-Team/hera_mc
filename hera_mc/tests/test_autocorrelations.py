@@ -10,7 +10,7 @@ from math import floor
 from astropy.time import Time, TimeDelta
 from hera_mc import autocorrelations
 
-from ..tests import requires_redis
+from ..tests import requires_redis, TEST_DEFAULT_REDIS_HOST
 
 standard_query_time = Time(
     datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format="datetime"
@@ -203,6 +203,6 @@ def test_add_autos_from_redis_errors(mcsession, auto_dict):
 def test_with_redis_add_autos_from_redis_errors(mcsession):
     test_session = mcsession
 
-    test_session.add_autocorrelations_from_redis()
+    test_session.add_autocorrelations_from_redis(redishost=TEST_DEFAULT_REDIS_HOST)
     result = test_session.get_autocorrelation(most_recent=True)
     assert len(result) >= 1

@@ -48,7 +48,7 @@ def read_forward_list():  # pragma: no cover
             fwd.append(line.strip())
 
 
-def node_verdict(age_out=3800, To=None, testing=False):
+def node_verdict(age_out=3800, To=None, testing=False, redishost='redishost'):
     """
     Check redis for latest node power command results.
 
@@ -64,6 +64,8 @@ def node_verdict(age_out=3800, To=None, testing=False):
         csv-list of email accounts to use.  None uses .forward
     testing : bool
         Flag for testing, so won't send email.
+    redishost :  str
+        Name of redis server to connect to.
 
     Return
     ------
@@ -71,7 +73,7 @@ def node_verdict(age_out=3800, To=None, testing=False):
     """
     import redis
     import time
-    connection_pool = redis.ConnectionPool(host='redishost', decode_responses=True)
+    connection_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
     r = redis.StrictRedis(connection_pool=connection_pool, charset='utf-8')
     node_info = {}
     for key in r.keys():

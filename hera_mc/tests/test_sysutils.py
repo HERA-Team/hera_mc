@@ -72,11 +72,12 @@ def test_watch_dog_sensor(mcsession):
     assert msg is None
 
 
+@requires_redis
 def test_watch_dog_verdict(mcsession):
     import time
     redishost = TEST_DEFAULT_REDIS_HOST
     rsession = redis.Redis(redishost)
-    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True)
+    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True, redishost=redishost)
     assert not len(msg)
     rsession.set('valid:node:700', '0')
     this_time = str(int(time.time()))
@@ -87,10 +88,10 @@ def test_watch_dog_verdict(mcsession):
     rsession.hset('verdict', 'mode', 'all')
     rsession.hset('verdict', 'time', this_time)
     rsession.hset('verdict', 'timeout', '10')
-    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True)
+    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True, redishost=redishost)
     assert msg.startswith('From: hera@lists.berkeley.edu')
     rsession.hset('verdict', 'time', '0')
-    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True)
+    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True, redishost=redishost)
     assert msg[700]['pam']['time'] == this_time
 
 
