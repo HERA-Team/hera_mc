@@ -66,9 +66,9 @@ class Hookup(object):
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, ignored if at_date is a float or contains time information
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps or unix seconds or jd day.
         exact_match : bool
             If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
             would allow 'HH1', 'HH10', 'HH123', etc
@@ -139,9 +139,9 @@ class Hookup(object):
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
-            Date at which to initialize
+            Time at which to initialize, ignored if at_date is a float or contains time information
         float_format : str
-            Format if at_date is a number denoting gps or unix seconds.
+            Format if at_date is a number denoting gps or unix seconds or jd day.
         exact_match : bool
             If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
             would allow 'HH1', 'HH10', 'HH123', etc.

@@ -66,17 +66,18 @@ def update_part_rosetta(hpn, syspn, at_date, at_time=None, float_format=None,
     at_date : anything interpretable by cm_utils.get_astropytime
         Date at which to initialize.
     at_time : anything interpretable by cm_utils.get_astropytime
-        Date at which to initialize
+        Time at which to initialize, ignored if at_date is a float or contains time information
     float_format : str
-        Format if at_date is a number denoting gps or unix seconds.
+        Format if at_date is a number denoting gps or unix seconds or jd day.
     date2 : anything interpretable by cm_utils.get_astropytime
         If not None, Date at which to stop.
     date2time : anything interpretable by cm_utils.get_astropytime
-        Time at which to stop.
+        Time at which to stop, ignored if date2 is a float or contains time information
     date2float_format : str
-        Format if at_date is a number denoting gps or unix seconds.
+        Format if at_date is a number denoting gps or unix seconds or jd day.
     session : object
         Database session to use.  If None, it will start a new session, then close.
+
     """
     at_date = int(cm_utils.get_astropytime(at_date, at_time, float_format).gps)
     if date2 is not None:
@@ -628,9 +629,9 @@ def add_part_info(session, hpn, rev, comment, at_date, at_time=None, float_forma
     at_date : any format that cm_utils.get_astropytime understands
         Date to use for the log entry
     at_time : any format that cm_utils.get_astropytime understands
-        Time to use for the log entry
+        Time to use for the log entry, ignored if at_date is a float or contains time information
     float_format : str
-        Format if at_date is unix or gps
+        Format if at_date is unix or gps or jd day.
     comment : str
         String containing the comment to be logged.
     reference : str, None

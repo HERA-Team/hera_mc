@@ -439,9 +439,9 @@ def get_stopdate(stop_date, stop_time=None, float_format=None):
     stop_date : Anything intelligible by `get_astropytime`.
         If None, uses `future_date`.
     stop_time : Anything intelligible by `get_astropytime`.
-        Passed to get_astropytime.
+        Passed to get_astropytime, ignored if at_date is a float or contains time information.
     float_format : str or None
-        Format if stop_date is unix or gps time.
+        Format if stop_date is unix or gps time or jd day.
 
     Returns
     -------
@@ -466,9 +466,9 @@ def get_time_for_display(display, display_time=None, float_format=None):
     display : Anything intelligible by `get_astropytime`.
         Date to display.
     display_time : Any time intelligible by `get_astropytime`.
-        Passed to get_astropytime
+        Passed to get_astropytime, ignored if at_date is a float or contains time information.
     float_format : str or None
-        Format if display is unix or gps.
+        Format if display is unix or gps or jd day.
 
     Returns
     -------
