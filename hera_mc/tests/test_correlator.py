@@ -440,18 +440,43 @@ def test_control_state_errors(mcsession):
 def test_add_corr_control_state_from_corrcm(mcsession):
     test_session = mcsession
 
+    redis_corr_state_dict = corr._get_control_state(redishost=TEST_DEFAULT_REDIS_HOST)
+
     test_session.add_correlator_control_state_from_corrcm(
         redishost=TEST_DEFAULT_REDIS_HOST
     )
     result = test_session.get_correlator_control_state(
         state_type='taking_data', most_recent=True)
     assert len(result) == 1
+    result = result[0]
+    assert result.state == redis_corr_state_dict['taking_data']['state']
+
     result = test_session.get_correlator_control_state(
         state_type='phase_switching', most_recent=True)
     assert len(result) == 1
+    result = result[0]
+    assert result.time == int(Time(
+        redis_corr_state_dict['phase_switching']['timestamp'], format="unix"
+    ).gps)
+    assert result.state == redis_corr_state_dict['phase_switching']['state']
+
     result = test_session.get_correlator_control_state(
         state_type='noise_diode', most_recent=True)
     assert len(result) == 1
+    result = result[0]
+    assert result.time == int(Time(
+        redis_corr_state_dict['noise_diode']['timestamp'], format="unix"
+    ).gps)
+    assert result.state == redis_corr_state_dict['noise_diode']['state']
+
+    result = test_session.get_correlator_control_state(
+        state_type='load', most_recent=True)
+    assert len(result) == 1
+    result = result[0]
+    assert result.time == int(Time(
+        redis_corr_state_dict['load']['timestamp'], format="unix"
+    ).gps)
+    assert result.state == redis_corr_state_dict['load']['state']
 
 
 def test_add_corr_config(mcsession, corr_config):
@@ -865,21 +890,28 @@ def test_config_errors(mcsession):
 
 
 @requires_redis
-def test_add_correlator_config_from_corrcm_onsite(mcsession):
+def test_add_correlator_config_from_corrcm_redis(mcsession):
     test_session = mcsession
 
-    result = test_session.add_correlator_config_from_corrcm(testing=True)
+    config_dict = corr._get_config(redishost=TEST_DEFAULT_REDIS_HOST)
+    print(config_dict)
+
+    result = test_session.add_correlator_config_from_corrcm(
+        testing=True, redishost=TEST_DEFAULT_REDIS_HOST
+    )
 
     assert len(result) > 0
     if len(result) == 1:
         # should just be a status object because this file already exists
         assert result[0].__class__ == corr.CorrelatorConfigStatus
+        assert result[0].time == int(Time(config_dict['time'], format='unix').gps)
     else:
         # first should be a file object, then a bunch of objects for the various parsed
         # config tables, then finally a status object.
         class_list = [obj.__class__ for obj in result]
         assert class_list[0] == corr.CorrelatorConfigFile
         assert class_list[-1] == corr.CorrelatorConfigStatus
+        assert result[-1].time == int(Time(config_dict['time'], format='unix').gps)
         assert corr.CorrelatorConfigParams in class_list
         assert corr.CorrelatorConfigActiveSNAP in class_list
         assert corr.CorrelatorConfigInputIndex in class_list
@@ -1611,6 +1643,23 @@ def test_add_corr_snap_versions_from_corrcm(mcsession, snapversion, init_args):
 
     assert len(result) == 2
     assert result[1].isclose(expected)
+
+
+@requires_redis
+def test_redis_add_corr_snap_versions_from_corrcm(mcsession):
+    test_session = mcsession
+
+    version_dict = corr._get_corr_versions(redishost=TEST_DEFAULT_REDIS_HOST)
+    result = test_session.add_corr_snap_versions_from_corrcm(
+        testing=True, redishost=TEST_DEFAULT_REDIS_HOST
+    )
+
+    assert len(result) >= 1
+    for obj in result:
+        if isinstance(obj, corr.CorrelatorSoftwareVersions):
+            assert obj.version == version_dict[obj.package]["version"]
+        elif isinstance(obj, corr.SNAPConfigVersion):
+            assert obj.version == version_dict["snap"]["version"]
 
 
 @onsite

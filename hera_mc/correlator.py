@@ -888,8 +888,7 @@ class SNAPConfigVersion(MCDeclarativeBase):
                    init_args=init_args, config_hash=config_hash)
 
 
-def _get_corr_versions(corr_cm=None,
-                       correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_corr_versions(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     """
     Get the versions dict from the correlator.
 
@@ -897,7 +896,7 @@ def _get_corr_versions(corr_cm=None,
     ----------
     corr_cm : hera_corr_cm.HeraCorrCM object
         HeraCorrCM object to use. If None, this function will make a new one.
-    correlator_redis_address : str
+    redishost : str
         Address of redis database (only used if corr_cm is None)
 
     Returns
@@ -931,7 +930,7 @@ def _get_corr_versions(corr_cm=None,
     import hera_corr_cm
 
     if corr_cm is None:
-        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=redishost)
 
     return corr_cm.get_version()
 
