@@ -107,7 +107,8 @@ wr_key_dict = {
     'port1_update_counter': 'wr1_ucnt',
     'port1_time': 'wr1_sec'
 }
-wr_timestamp_keys = {'node_time': 'unix', 'timestamp': 'unix'}
+wr_timestamp_keys = {'node_time': 'unix', 'build_date': 'unix', 'gw_date': 'unix',
+                     'manufacture_date': 'unix'}
 
 
 class NodeSensor(MCDeclarativeBase):
@@ -672,10 +673,10 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
                 Canonical HERA hostname (~= serial number) of this node's WR-LEN
             temperature : float
                 WR-LEN temperature in degrees C
-            build_date : int
-                Build date of WR-LEN software in floored GPS seconds.
-            gw_date : int
-                WR-LEN gateware build date in floored GPS seconds.
+            build_date : Time
+                Build date of WR-LEN software.
+            gw_date : Time
+                WR-LEN gateware build date.
             gw_version : str
                 WR-LEN gateware version number
             gw_id : str
@@ -686,7 +687,7 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
                 Custom manufacturer tag
             manufacture_device : str
                 Manufacturer device name designation
-            manufacture_date : int
+            manufacture_date : Time
                 Manufacturer invoice(?) date
             manufacture_partnum : str
                 Manufacturer part number
@@ -740,8 +741,8 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
                 Port 0 number of packets transmitted
             port0_update_counter : int
                 Port 0 update counter
-            port0_time : int
-                object based on Port 0 current TAI time in seconds from UNIX epoch.
+            port0_time : Time
+                Time based on Port 0 current TAI time in seconds from UNIX epoch.
             port1_ad : int
                 ???
             port1_link_asymmetry_ps : int
@@ -788,8 +789,8 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
                 Port 1 number of packets transmitted
             port1_update_counter : int
                 Port 1 update counter
-            port1_time : int
-                object based on Port 1 current TAI time in seconds from UNIX epoch.
+            port1_time : Time
+                Time based on Port 1 current TAI time in seconds from UNIX epoch.
 
         Returns
         -------
@@ -799,7 +800,7 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
         for key in wr_timestamp_keys:
             try:
                 col_dict[key] = int(np.floor(col_dict[key].gps))
-            except KeyError:
+            except (KeyError, AttributeError):
                 continue
         return cls(**col_dict)
 
