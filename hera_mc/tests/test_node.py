@@ -422,6 +422,7 @@ def test_sensor_reading_errors(mcsession, sensor):
 
 @requires_redis
 def test_add_node_sensor_readings_from_node_control(mcsession):
+    pytest.importorskip("node_control")
     test_session = mcsession
 
     test_session.add_node_sensor_readings_from_node_control(
@@ -440,7 +441,6 @@ def test_add_node_sensor_readings_from_node_control(mcsession):
     assert len(result) == len(nodes_with_status)
 
 
-@requires_redis
 def test_add_node_power_status(mcsession, power):
     test_session = mcsession
     t1 = Time('2016-01-10 01:15:23', scale='utc')
@@ -479,9 +479,6 @@ def test_add_node_power_status(mcsession, power):
     test_session.add_node_power_status(
         t1, 2, snap_relay_powered, snap0_powered, snap1_powered, snap2_powered,
         snap3_powered, fem_powered, pam_powered)
-    test_session.add_node_power_status_from_node_control(
-        nodeServerAddress=TEST_DEFAULT_REDIS_HOST
-    )
 
     result = test_session.get_node_power_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), nodeID=1)
@@ -505,6 +502,15 @@ def test_add_node_power_status(mcsession, power):
     result = test_session.get_node_power_status(
         starttime=t1 - TimeDelta(3.0, format='sec'), stoptime=t1)
     assert len(result) == 2
+
+
+@requires_redis
+def test_add_node_power_status_from_node_control_redis(mcsession):
+    pytest.importorskip("node_control")
+    test_session = mcsession
+    test_session.add_node_power_status_from_node_control(
+        nodeServerAddress=TEST_DEFAULT_REDIS_HOST
+    )
 
     result_most_recent = test_session.get_node_power_status()
 
@@ -562,6 +568,7 @@ def test_node_power_status_errors(mcsession, power):
 
 @requires_redis
 def test_add_node_power_status_from_node_control(mcsession):
+    pytest.importorskip("node_control")
     test_session = mcsession
 
     test_session.add_node_power_status_from_node_control(
@@ -589,8 +596,8 @@ def test_power_command(mcsession):
 
 
 def test_power_command_from_node_control(mcsession):
+    pytest.importorskip("node_control")
     test_session = mcsession
-    pytest.importorskip('node_control')
     test_session.add_node_power_command_from_node_control(
         nodeServerAddress=TEST_DEFAULT_REDIS_HOST
     )

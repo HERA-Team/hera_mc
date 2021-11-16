@@ -6,6 +6,7 @@ dependencies:
   - alembic
   - astropy
   - cartopy
+  - coverage
   - h5py
   - matplotlib
   - numpy
@@ -14,11 +15,13 @@ dependencies:
   - pyqt
   - psutil
   - psycopg2
+  - pytest
   - pytest-cov
   - python-dateutil
   - pyuvdata
   - pyyaml
   - redis-py
+  - setuptools_scm
   - scipy
   - sqlalchemy
   - tabulate
