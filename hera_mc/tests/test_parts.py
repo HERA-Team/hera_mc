@@ -186,6 +186,7 @@ def test_format_check_update_connection_request(capsys):
 
 
 def test_show_dossier(parts, capsys):
+    pytest.importorskip("tabulate")
     cm_partconnect.add_part_info(
         parts.test_session, parts.test_part, parts.test_rev, 'Testing',
         parts.start_time, reference='reference')
@@ -472,6 +473,7 @@ def test_active_revisions_mixed_stop_one_none(parts):
 
 
 def test_get_revisions_of_type(parts, capsys):
+    pytest.importorskip("tabulate")
     at_date = None
     rev_types = ['LAST', 'ACTIVE', 'ALL', 'A']
     for rq in rev_types:

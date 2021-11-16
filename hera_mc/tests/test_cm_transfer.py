@@ -42,6 +42,7 @@ def test_gen_sqlite():
 
 
 def test_db_to_csv():
+    pytest.importorskip("pandas")
     files_written = cm_transfer.package_db_to_csv(tables='parts')
     assert len(files_written) == 1
     files_written = cm_transfer.package_db_to_csv(tables='all')

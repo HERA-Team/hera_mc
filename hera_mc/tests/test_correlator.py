@@ -444,6 +444,7 @@ def test_control_state_errors(mcsession):
 
 @requires_redis
 def test_add_corr_control_state_from_corrcm(mcsession):
+    pytest.importorskip("hera_corr_cm")
     test_session = mcsession
 
     redis_corr_state_dict = corr._get_control_state(redishost=TEST_DEFAULT_REDIS_HOST)
@@ -566,6 +567,7 @@ def test_add_corr_config(mcsession, corr_config):
 
 @pytest.mark.parametrize("rosetta_exists", (True, False))
 def test_add_correlator_config_from_corrcm(mcsession, corr_config_dict, rosetta_exists):
+    pytest.importorskip("hera_corr_cm")
     test_session = mcsession
     corr_config_dict_use = copy.deepcopy(corr_config_dict)
 
@@ -911,6 +913,7 @@ def test_config_errors(mcsession):
 
 @requires_redis
 def test_add_correlator_config_from_corrcm_redis(mcsession):
+    pytest.importorskip("hera_corr_cm")
     test_session = mcsession
 
     config_dict = corr._get_config(redishost=TEST_DEFAULT_REDIS_HOST)
@@ -1176,6 +1179,7 @@ def test_control_command_errors_other():
 
 @requires_redis
 def test_get_integration_time():
+    pytest.importorskip("hera_corr_cm")
     n_spectra = 147456
     int_time = corr._get_integration_time(n_spectra)
 
@@ -1184,6 +1188,7 @@ def test_get_integration_time():
 
 @requires_redis
 def test_get_next_start_time():
+    pytest.importorskip("hera_corr_cm")
     corr._get_next_start_time(redishost=TEST_DEFAULT_REDIS_HOST)
 
 
@@ -1667,6 +1672,7 @@ def test_add_corr_snap_versions_from_corrcm(mcsession, snapversion, init_args):
 
 @requires_redis
 def test_redis_add_corr_snap_versions_from_corrcm(mcsession):
+    pytest.importorskip("hera_corr_cm")
     test_session = mcsession
 
     version_dict = corr._get_corr_versions(redishost=TEST_DEFAULT_REDIS_HOST)
@@ -1954,7 +1960,8 @@ def test_get_snap_hostname_from_serial(mcsession, snapstatus):
 
 @requires_redis
 @pytest.mark.filterwarnings("ignore:No active connections returned for snap")
-def test_site_add_snap_status_from_corrcm(mcsession):
+def test_redis_add_snap_status_from_corrcm(mcsession):
+    pytest.importorskip("hera_corr_cm")
     test_session = mcsession
     test_session.add_corr_obj(redishost=TEST_DEFAULT_REDIS_HOST)
 
@@ -2350,7 +2357,8 @@ def test_antenna_status_errors(mcsession):
 @requires_redis
 @pytest.mark.filterwarnings("ignore:fem_switch value is Unknown mode")
 @pytest.mark.filterwarnings("ignore:fem_switch value is null")
-def test_site_add_antenna_status_from_corrcm(mcsession):
+def test_redis_add_antenna_status_from_corrcm(mcsession):
+    pytest.importorskip("hera_corr_cm")
     test_session = mcsession
 
     result_test1 = corr._get_ant_status(redishost=TEST_DEFAULT_REDIS_HOST)

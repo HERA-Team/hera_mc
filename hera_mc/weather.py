@@ -3,15 +3,28 @@
 # Licensed under the 2-clause BSD license.
 
 """Handle weather data sourced from meerkat's katportalclient."""
-
-import numpy as np
-from astropy.time import Time
 from math import floor, isnan
+
+from astropy.time import Time
+import numpy as np
 from sqlalchemy import Column, BigInteger, Float, String
 
-import tornado.gen
-
 from . import MCDeclarativeBase
+
+no_tornado_message = (
+    "tornado is not installed but is required for to get weather data from katportalclient"
+)
+
+tornado_present = True
+try:
+    import tornado
+    from tornado.gen import coroutine as tornado_coroutine
+except ImportError as error:
+    def tornado_coroutine(func):
+        pass
+    tornado_present = False
+    tornado_error = error
+
 
 katportal_url = 'http://portal.mkat.karoo.kat.ac.za/api/client'
 
@@ -154,7 +167,7 @@ class WeatherData(MCDeclarativeBase):
         return cls(time=weather_time, variable=variable, value=value)
 
 
-@tornado.gen.coroutine
+@tornado_coroutine
 def _helper_create_from_sensors(starttime, stoptime, variables=None):
     """
     Create a list of weather objects from sensor data using tornado server.
@@ -260,6 +273,10 @@ def create_from_sensors(starttime, stoptime, variables=None):
     A list of WeatherData objects
 
     """
+    if not tornado_present:  # pragma: no cover
+        assert False
+        raise ImportError(no_tornado_message) from tornado_error
+
     io_loop = tornado.ioloop.IOLoop.current()
     return io_loop.run_sync(lambda: _helper_create_from_sensors(starttime, stoptime,
                                                                 variables=variables))

@@ -109,6 +109,7 @@ def test_ever_fully_connected(sys_handle):
 
 
 def test_publish_summary(sys_handle):
+    pytest.importorskip("tabulate")
     msg = sys_handle.publish_summary()
     assert msg is None
 
@@ -138,6 +139,7 @@ def test_sys_method_notes(mcsession):
 
 
 def test_other_hookup(sys_handle, mcsession, capsys):
+    pytest.importorskip("tabulate")
     hookup = cm_hookup.Hookup(session=mcsession)
     assert hookup.cached_hookup_dict is None
     test_ret = hookup.hookup_cache_file_OK(None)
@@ -316,6 +318,7 @@ def test_sysdef(sys_handle, mcsession):
 
 
 def test_sysutil_node(capsys, mcsession):
+    pytest.importorskip("tabulate")
     z = cm_sysutils.node_info('active', session=mcsession)
     assert z['WRA000700'][0].startswith('IP - ABC')
     xni = cm_sysutils.node_info(['N91'], mcsession)

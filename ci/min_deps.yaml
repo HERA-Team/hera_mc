@@ -1,0 +1,19 @@
+name: min_deps
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - alembic
+  - astropy
+  - cartopy
+  - coverage
+  - numpy
+  - psycopg2
+  - pytest
+  - pyuvdata
+  - pyyaml
+  - pytest
+  - pytest-cov
+  - redis-py
+  - setuptools_scm
+  - sqlalchemy

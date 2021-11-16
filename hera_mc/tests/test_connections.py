@@ -70,6 +70,7 @@ def conns(mcsession):
 
 
 def test_update_new(conns, capsys):
+    pytest.importorskip("tabulate")
     u = 'new_test_part_up'
     d = 'new_test_part_down'
     r = 'A'
