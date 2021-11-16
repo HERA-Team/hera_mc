@@ -894,7 +894,6 @@ def test_add_correlator_config_from_corrcm_redis(mcsession):
     test_session = mcsession
 
     config_dict = corr._get_config(redishost=TEST_DEFAULT_REDIS_HOST)
-    print(config_dict)
 
     result = test_session.add_correlator_config_from_corrcm(
         testing=True, redishost=TEST_DEFAULT_REDIS_HOST
