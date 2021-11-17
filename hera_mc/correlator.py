@@ -1276,8 +1276,7 @@ class AntennaStatus(MCDeclarativeBase):
                    histogram=histogram_string)
 
 
-def _get_ant_status(corr_cm=None,
-                    correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_ant_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     """
     Get the antenna status dict from the correlator.
 
@@ -1339,7 +1338,7 @@ def _get_ant_status(corr_cm=None,
     import hera_corr_cm
 
     if corr_cm is None:
-        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
+        corr_cm = hera_corr_cm.HeraCorrCM(redishost=redishost)
 
     return corr_cm.get_ant_status()
 
@@ -1373,7 +1372,7 @@ def _pam_fem_serial_list_to_string(serial_number_list):
 
 
 def create_antenna_status(corr_cm=None,
-                          correlator_redis_address=DEFAULT_REDIS_ADDRESS,
+                          redishost=DEFAULT_REDIS_ADDRESS,
                           ant_status_dict=None):
     """
     Return a list of antenna status objects with data from the correlator.
@@ -1391,8 +1390,7 @@ def create_antenna_status(corr_cm=None,
 
     """
     if ant_status_dict is None:
-        ant_status_dict = _get_ant_status(
-            corr_cm=corr_cm, correlator_redis_address=correlator_redis_address)
+        ant_status_dict = _get_ant_status(corr_cm=corr_cm, redishost=redishost)
 
     ant_status_list = []
     for antkey, ant_dict in ant_status_dict.items():

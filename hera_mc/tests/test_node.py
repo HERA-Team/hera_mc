@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from .. import node
-from ..tests import TEST_DEFAULT_REDIS_HOST, requires_redis
+from ..tests import TEST_DEFAULT_REDIS_HOST, is_onsite, requires_redis
 
 
 @pytest.fixture(scope='module')
@@ -507,7 +507,11 @@ def test_add_node_power_status(mcsession, power):
     assert len(result) == 2
 
     result_most_recent = test_session.get_node_power_status()
-    assert len(result_most_recent) == 8
+
+    if is_onsite():
+        assert len(result_most_recent) >= 1
+    else:
+        assert len(result_most_recent) == 8
 
 
 def test_create_power_status(mcsession, nodelist, power):
@@ -591,7 +595,11 @@ def test_power_command_from_node_control(mcsession):
         nodeServerAddress=TEST_DEFAULT_REDIS_HOST
     )
     test_npc = test_session.get_node_power_command()
-    assert len(test_npc) == 74
+
+    if is_onsite():
+        assert len(test_npc) >= 1
+    else:
+        assert len(test_npc) == 74
 
 
 def _node_mc_to_hera_mc(nodeID, wr_obj):
@@ -652,7 +660,10 @@ def test_add_white_rabbit_status_from_node_control(mcsession):
         nodeServerAddress=TEST_DEFAULT_REDIS_HOST
     )
     ncget = test_session.get_node_white_rabbit_status()
-    assert len(ncget) == 0
+    if is_onsite():
+        assert len(ncget) >= 1
+    else:
+        assert len(ncget) == 0
 
 
 def test_create_white_rabbit_status(mcsession, white_rabbit_status):
