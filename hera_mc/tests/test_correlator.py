@@ -1663,6 +1663,7 @@ def test_redis_add_corr_snap_versions_from_corrcm(mcsession):
 
 
 @onsite
+@pytest.mark.filterwarnings("ignore:fem_switch value is null")
 def test_onsite_add_corr_snap_versions_from_corrcm(mcsession):
     # this has to be done onsite, not in CI because it needs to talk to the librarian
     # as well (to register the config file in the librarian)
