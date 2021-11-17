@@ -1672,11 +1672,14 @@ def test_onsite_add_corr_snap_versions_from_corrcm(mcsession):
     corr_versions_dict = corr._get_corr_versions(
         corr_cm=test_session.corr_obj, redishost=TEST_DEFAULT_REDIS_HOST
     )
+    assert len(corr_versions_dict) >= 1
 
     test_results = test_session.add_corr_snap_versions_from_corrcm(
         redishost=TEST_DEFAULT_REDIS_HOST, testing=True
     )
-    assert len(corr_versions_dict) == len(test_results)
+    assert len(corr_versions_dict) >= 1
+
+    assert len(test_results) >= len(corr_versions_dict)
 
     test_session.add_corr_snap_versions_from_corrcm(redishost=TEST_DEFAULT_REDIS_HOST)
 
