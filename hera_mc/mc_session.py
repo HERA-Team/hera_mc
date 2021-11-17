@@ -87,7 +87,7 @@ class MCSession(Session):
         """
         import hera_corr_cm
 
-        if not hasattr(self, 'corr_obj'):
+        if not hasattr(self, 'corr_obj') or redishost not in self.corr_obj.redis_connections:
             self.corr_obj = hera_corr_cm.HeraCorrCM(redishost=redishost)
 
         self.corr_obj.danger_mode = force
@@ -4612,7 +4612,7 @@ class MCSession(Session):
 
         if testing:
             return snap_status_list
-        else:  # pragma: no cover
+        else:
             self._insert_ignoring_duplicates(corr.SNAPStatus, snap_status_list)
 
     def add_antenna_status(self, time, antenna_number, antenna_feed_pol,

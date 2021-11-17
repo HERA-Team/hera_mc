@@ -357,6 +357,7 @@ def test_active_revisions_mixed_start_time(parts):
     assert revs[0].started == start_time.gps
 
 
+@pytest.mark.filterwarnings('ignore:ERFA function')
 def test_active_revisions_mixed_stop_time(parts):
     test_part = 'new_part2'
     test_rev = 'Q'
@@ -414,6 +415,7 @@ def test_active_revisions_mixed_stop_time(parts):
     assert revs[0].ended == stop_time.gps
 
 
+@pytest.mark.filterwarnings('ignore:ERFA function')
 def test_active_revisions_mixed_stop_one_none(parts):
     test_part = 'new_part2'
     test_rev = 'Q'

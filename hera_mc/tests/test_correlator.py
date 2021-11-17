@@ -999,6 +999,7 @@ def test_take_data_command_no_recent_status(mcsession):
     assert command_list[1].isclose(expected_args)
 
 
+@pytest.mark.filterwarnings("ignore:transaction already deassociated from connection")
 @pytest.mark.parametrize(
     ("commands_to_test"),
     [list(set(corr.command_dict.keys())
@@ -1919,6 +1920,7 @@ def test_get_snap_hostname_from_serial(mcsession, snapstatus):
 
 
 @requires_redis
+@pytest.mark.filterwarnings("ignore:No active connections returned for snap")
 def test_site_add_snap_status_from_corrcm(mcsession):
     test_session = mcsession
 
@@ -1930,8 +1932,14 @@ def test_site_add_snap_status_from_corrcm(mcsession):
     real_db = mc.connect_to_mc_db(None)
     real_session = real_db.sessionmaker()
 
+    result_test1 = corr._get_snap_status(redishost=TEST_DEFAULT_REDIS_HOST)
+    result_test2 = test_session.add_snap_status_from_corrcm(cm_session=real_session, testing=True)
+
+    assert len(result_test1) == len(result_test2)
+
     test_session.add_snap_status_from_corrcm(cm_session=real_session)
     result = test_session.get_snap_status(most_recent=True)
+
     assert len(result) >= 1
 
 
@@ -2264,9 +2272,22 @@ def test_antenna_status_errors(mcsession):
 
 
 @requires_redis
+@pytest.mark.filterwarnings("ignore:fem_switch value is Unknown mode")
 def test_site_add_antenna_status_from_corrcm(mcsession):
     test_session = mcsession
 
-    test_session.add_antenna_status_from_corrcm()
+    result_test1 = corr._get_ant_status(redishost=TEST_DEFAULT_REDIS_HOST)
+    result_test2 = corr.create_antenna_status(redishost=TEST_DEFAULT_REDIS_HOST)
+
+    assert len(result_test1) == len(result_test2)
+
+    result_test3 = test_session.add_antenna_status_from_corrcm(
+        redishost=TEST_DEFAULT_REDIS_HOST, testing=True
+    )
+
+    assert len(result_test3) == len(result_test2)
+
+    test_session.add_antenna_status_from_corrcm(redishost=TEST_DEFAULT_REDIS_HOST)
     result = test_session.get_antenna_status(most_recent=True)
+
     assert len(result) >= 1
