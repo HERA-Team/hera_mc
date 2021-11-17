@@ -1923,21 +1923,34 @@ def test_get_snap_hostname_from_serial(mcsession, snapstatus):
 @pytest.mark.filterwarnings("ignore:No active connections returned for snap")
 def test_site_add_snap_status_from_corrcm(mcsession):
     test_session = mcsession
+    test_session.add_corr_obj(redishost=TEST_DEFAULT_REDIS_HOST)
 
     # get the snap status dict from the correlator redis
-    snap_status_dict = corr._get_snap_status(redishost=TEST_DEFAULT_REDIS_HOST)
+    snap_status_dict = corr._get_snap_status(
+        corr_cm=test_session.corr_obj, redishost=TEST_DEFAULT_REDIS_HOST
+    )
     assert len(snap_status_dict) >= 1
 
+    # get result using just the test db, check it matches snap_status_dict
+    result_test2 = test_session.add_snap_status_from_corrcm(
+        testing=True, redishost=TEST_DEFAULT_REDIS_HOST
+    )
+    assert len(snap_status_dict) == len(result_test2)
+
     # use the real (not test) database to get the node & snap location number
+    # check the length is the same
     real_db = mc.connect_to_mc_db(None)
     real_session = real_db.sessionmaker()
 
-    result_test1 = corr._get_snap_status(redishost=TEST_DEFAULT_REDIS_HOST)
-    result_test2 = test_session.add_snap_status_from_corrcm(cm_session=real_session, testing=True)
+    result_test3 = test_session.add_snap_status_from_corrcm(
+        cm_session=real_session, testing=True, redishost=TEST_DEFAULT_REDIS_HOST
+    )
+    assert len(result_test3) == len(result_test2)
 
-    assert len(result_test1) == len(result_test2)
-
-    test_session.add_snap_status_from_corrcm(cm_session=real_session)
+    # actually add them to the db and get most recent, check there's at least one
+    test_session.add_snap_status_from_corrcm(
+        cm_session=real_session, redishost=TEST_DEFAULT_REDIS_HOST
+    )
     result = test_session.get_snap_status(most_recent=True)
 
     assert len(result) >= 1
