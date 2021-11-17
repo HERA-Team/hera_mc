@@ -67,7 +67,7 @@ class MCSession(Session):
         db_time = Time(db_timestamp)
         return db_time
 
-    def add_corr_obj(self, force=False, redishost=None):
+    def add_corr_obj(self, force=False, redishost=corr.DEFAULT_REDIS_ADDRESS):
         """
         Add a HeraCorrCM object to self to talk to the correlator.
 

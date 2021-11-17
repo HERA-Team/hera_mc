@@ -1667,8 +1667,18 @@ def test_onsite_add_corr_snap_versions_from_corrcm(mcsession):
     # this has to be done onsite, not in CI because it needs to talk to the librarian
     # as well (to register the config file in the librarian)
     test_session = mcsession
+    test_session.add_corr_obj(redishost=TEST_DEFAULT_REDIS_HOST)
 
-    test_session.add_corr_snap_versions_from_corrcm()
+    corr_versions_dict = corr._get_corr_versions(
+        corr_cm=test_session.corr_obj, redishost=TEST_DEFAULT_REDIS_HOST
+    )
+
+    test_results = test_session.add_corr_snap_versions_from_corrcm(
+        redishost=TEST_DEFAULT_REDIS_HOST, testing=True
+    )
+    assert len(corr_versions_dict) == len(test_results)
+
+    test_session.add_corr_snap_versions_from_corrcm(redishost=TEST_DEFAULT_REDIS_HOST)
 
     result = test_session.get_correlator_software_versions(
         package='hera_corr_cm', most_recent=True)
