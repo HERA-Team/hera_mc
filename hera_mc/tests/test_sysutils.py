@@ -27,16 +27,16 @@ def sys_handle(mcsession):
 @requires_redis
 def test_set_redis_cminfo(mcsession):
     redishost = TEST_DEFAULT_REDIS_HOST
-    rsession = redis.Redis(redishost)
+    rsession = redis.Redis(redishost, decode_responses=True)
     cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession, testing=True)
     test_out = rsession.hget('testing_corr:map', 'ant_to_snap')
-    assert b'{"host": "heraNode700Snap0", "channel": 0}' in test_out
+    assert '{"host": "heraNode700Snap0", "channel": 0}' in test_out
     test_out = rsession.hget('testing_cminfo', 'cofa_lat')
-    assert b'-30.72' in test_out
+    assert '-30.72' in test_out
     test_out = rsession.hget('testing_corr:map', 'snap_to_ant')
-    assert b'heraNode700Snap0' in test_out
+    assert 'heraNode700Snap0' in test_out
     test_out = rsession.hget('testing_corr:map', 'all_snap_inputs')
-    assert b'heraNode700Snap0' in test_out
+    assert 'heraNode700Snap0' in test_out
     cmitest = {'antenna_numbers': [1], 'antenna_names': ['Fred'],
                'correlator_inputs': [['abc']], 'snap_serial_numbers': ['0']}
     with pytest.warns(UserWarning, match='abc is not an allowed correlator input'):
@@ -61,11 +61,11 @@ def test_watch_dog_sensor(mcsession):
     msg = watch_dog.node_temperature(at_date=None, at_time=0.0,
                                      temp_threshold=45.0, time_threshold=10000.0,
                                      To=['test@hera.edu'], testing=True, session=mcsession)
-    assert msg.startswith("From: hera@lists.berkeley.edu")
+    assert msg.get('from') == "hera@lists.berkeley.edu"
     msg = watch_dog.node_temperature(at_date='2020/09/19', at_time=0.0,
                                      temp_threshold=45.0, time_threshold=10000.0,
                                      To=['test@hera.edu'], testing=True, session=mcsession)
-    assert msg.startswith("From: hera@lists.berkeley.edu")
+    assert msg.get_content().startswith("WARNING: Over-temperature")
     msg = watch_dog.node_temperature(at_date='2020/09/19', at_time=0.0,
                                      temp_threshold=45.0, time_threshold=0.0,
                                      To=['test@hera.edu'], testing=True, session=mcsession)
@@ -81,8 +81,8 @@ def test_watch_dog_verdict():
     import time
     redishost = TEST_DEFAULT_REDIS_HOST
     rsession = redis.Redis(redishost)
-    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True, redishost=redishost)
-    assert not len(msg)
+    nodeinfo = watch_dog.node_verdict(To=['test@hera.edu'], testing=True, redishost=redishost)
+    assert 'time' in nodeinfo[700]['pam']
     rsession.set('valid:node:700', '0')
     this_time = str(int(time.time()))
     rsession.hset('verdict:node:700:pam', 'time', this_time)
@@ -92,11 +92,14 @@ def test_watch_dog_verdict():
     rsession.hset('verdict', 'mode', 'all')
     rsession.hset('verdict', 'time', this_time)
     rsession.hset('verdict', 'timeout', '10')
-    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True, redishost=redishost)
-    assert msg.startswith('From: hera@lists.berkeley.edu')
+    msg = watch_dog.node_verdict(To=['test@hera.edu'], return_as='email',
+                                 testing=True, redishost=redishost)
+    assert msg.get('From') == "hera@lists.berkeley.edu"
     rsession.hset('verdict', 'time', '0')
-    msg = watch_dog.node_verdict(To=['test@hera.edu'], testing=True, redishost=redishost)
-    assert msg[700]['pam']['time'] == this_time
+    nodeinfo = watch_dog.node_verdict(To=['test@hera.edu'], testing=True, redishost=redishost)
+    assert nodeinfo[700]['pam']['time'] == this_time
+    pytest.raises(ValueError, watch_dog.node_verdict,
+                  To=['test@hera.edu'], return_as='nope', testing=True, redishost=redishost)
 
     rsession.delete('valid:node:700')
     rsession.delete('verdict')

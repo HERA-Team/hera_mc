@@ -25,19 +25,23 @@ def send_email(subject, msg, to_addr=None, from_addr='hera@lists.berkeley.edu', 
 
     Returns
     -------
-    str or None
-        If skip_send, will return the composed message.
+    EmailMessage
+
     """
     import smtplib
+    from email.message import EmailMessage
     if to_addr is None:  # pragma: no cover
         to_addr = read_forward_list()
-    msg_to_send = ("From: {}\nTo: {}\nSubject: {}\n{}"
-                   .format(from_addr, ', '.join(to_addr), subject, msg))
-    if skip_send:
-        return msg_to_send
-    else:  # pragma: no cover
+    email = EmailMessage()
+    email.set_content(msg)
+    email['From'] = from_addr
+    email['To'] = to_addr
+    email['Subject'] = subject
+    if not skip_send:  # pragma: no cover
         server = smtplib.SMTP('localhost')
-        server.sendmail(from_addr, to_addr, msg_to_send)
+        server.send_message(email)
+        server.quit()
+    return email
 
 
 def read_forward_list():  # pragma: no cover
@@ -48,7 +52,8 @@ def read_forward_list():  # pragma: no cover
             fwd.append(line.strip())
 
 
-def node_verdict(age_out=3800, To=None, testing=False, redishost='redishost'):
+def node_verdict(age_out=3800, To=None, return_as='node_info',
+                 testing=False, redishost='redishost'):
     """
     Check redis for latest node power command results.
 
@@ -86,25 +91,34 @@ def node_verdict(age_out=3800, To=None, testing=False, redishost='redishost'):
             node_info.setdefault(node, {})
             hw = key.split(':')[3]
             node_info[node][hw] = r.hgetall(key)
-    param = r.hgetall('verdict')
-    if not param:
-        return {}
-    msg_header = "Node verdict:  mode '{}', timeout {}, time {}\n".format(
-        param['mode'], param['timeout'], int(float(param['time'])))
-    msg = '{}'.format(msg_header)
-    if int(time.time() - float(param['time'])) < age_out:
-        for node in sorted(node_info.keys()):
-            s = "Node {} is{}valid\n".format(
-                node, ' ' if node_info[node]['valid'] else ' not ')
-            for hw, val in node_info[node].items():
-                if hw != 'valid':
-                    s += "\t{}: {}\n".format(hw, val)
-            s += '\n'
-            msg += s
-    node_info['param'] = param
-    if msg != msg_header:
-        return send_email(msg_header.splitlines()[0], msg, To, skip_send=testing)
-    return node_info
+    node_list = sorted(node_info.keys())
+    node_info['param'] = r.hgetall('verdict')
+    this_email = None
+    if node_info['param']:
+        this_time = float(node_info['param']['time'])
+        subject = "Node verdict:  mode '{}', timeout {}, time {}".format(
+            node_info['param']['mode'],
+            node_info['param']['timeout'],
+            int(this_time))
+        msg = ''
+        if int(time.time() - this_time) < age_out:
+            for node in node_list:
+                s = "Node {} is{}valid\n".format(
+                    node, ' ' if node_info[node]['valid'] else ' not ')
+                for hw, val in node_info[node].items():
+                    if hw != 'valid':
+                        s += "\t{}: {}\n".format(hw, val)
+                s += '\n'
+                msg += s
+        if len(msg):
+            msg = subject + '\n\n' + msg
+            this_email = send_email(subject, msg, To, skip_send=testing)
+    if return_as == 'node_info':
+        return node_info
+    elif return_as == 'email':
+        return this_email
+    else:
+        raise ValueError("Must be returned as 'node_info' or 'email'")
 
 
 def node_temperature(at_date=None, at_time=None, float_format=None,
@@ -192,4 +206,5 @@ def node_temperature(at_date=None, at_time=None, float_format=None,
                 htlist.append(ht)
             msg += "\n\t {:02d}   {}".format(node_num, '  '.join(htlist))
     if msg != msg_header:
-        return send_email(msg_header.splitlines()[0], msg, To, skip_send=testing)
+        subject = msg_header.splitlines()[0]
+        return send_email(subject, msg, To, skip_send=testing)
