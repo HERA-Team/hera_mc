@@ -692,6 +692,20 @@ def test_add_correlator_config_from_corrcm(mcsession, corr_config_dict, rosetta_
         assert snap_loc_list[index] == int(active_snap.hostname[-1])
 
     # check that using the time options works too
+    # with return_node_loc_num
+    if not rosetta_exists:
+        # this tests that Nones are returned if there's not mapping info
+        config_active_snaps_result2, time_list, node_list, snap_loc_list = (
+            test_session.get_correlator_config_active_snaps(
+                starttime=t1 - TimeDelta(30.0, format='sec'), return_node_loc_num=True
+            )
+        )
+        assert len(config_active_snaps_result2) == len(active_snaps_list)
+        for index, active_snap in enumerate(config_active_snaps_result):
+            assert node_list[index] is None
+            assert snap_loc_list[index] is None
+
+    # and without return_node_loc_num
     config_active_snaps_result2, time_list = (
         test_session.get_correlator_config_active_snaps(
             starttime=t1 - TimeDelta(30.0, format='sec'), return_node_loc_num=False
