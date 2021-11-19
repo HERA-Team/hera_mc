@@ -2,8 +2,8 @@ name: Run Tests
 on: [push, pull_request]
 
 jobs:
-  flake8:
-    name: Flake8
+  linting:
+    name: linting
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -12,7 +12,7 @@ jobs:
     env:
       ENV_NAME: linting
       WITH_SUDO: yes
-      PYTHON: 3.7
+      PYTHON: 3.9
     steps:
       - uses: actions/checkout@master
         with:
@@ -61,7 +61,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9, "3.10"]
     services:
       postgres:
         image: postgres:10.8
@@ -163,7 +163,7 @@ jobs:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
-    name: Testing
+    name: min_deps testing
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -173,7 +173,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.8]
+        python-version: [3.9]
     services:
       postgres:
         image: postgres:10.8
