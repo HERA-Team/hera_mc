@@ -208,6 +208,7 @@ def test_with_redis_add_autos_from_redis_errors(mcsession):
     assert len(result) >= 1
 
 
+@requires_redis
 @requires_default_redis
 def test_add_autos_from_redis_default_redishost(mcsession):
     test_session = mcsession

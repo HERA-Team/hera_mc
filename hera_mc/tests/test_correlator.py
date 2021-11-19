@@ -1996,6 +1996,7 @@ def test_redis_add_snap_status_from_corrcm(mcsession):
     assert len(result) >= 1
 
 
+@requires_redis
 @requires_default_redis
 @pytest.mark.filterwarnings("ignore:No active connections returned for snap")
 def test_site_add_snap_status_from_corrcm_default_redishost(mcsession):

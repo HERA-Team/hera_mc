@@ -35,8 +35,12 @@ def default_redishost():
     return (TEST_DEFAULT_REDIS_HOST == DEFAULT_REDIS_ADDRESS)
 
 
+# In practice, tests marked with `requires_default_redis` should also be marked with
+# `requires_redis`. I don't want to add a `redis_online()` call to this decorator
+# definition, though, because `redis_online()` take a long time to run if there's no
+# redis online (because it waits a long time for a time out).
 requires_default_redis = pytest.mark.skipif(
-    not (requires_redis and default_redishost()),
+    not default_redishost(),
     reason="This test requires that the redis database used for testing has the default hostname."
 )
 

@@ -21,6 +21,7 @@ try:
     from tornado.gen import coroutine as tornado_coroutine
 except ImportError as error:
     def tornado_coroutine(func):
+        """Spoof this function to avoid name errors with the minimum dependencies."""
         pass
     tornado_present = False
     tornado_error = error
