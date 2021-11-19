@@ -2896,7 +2896,7 @@ class MCSession(Session):
                                  write_to_file=write_to_file, filename=filename)
 
     def add_correlator_control_state_from_corrcm(
-        self, corr_state_dict=None, testing=False, redishost=None
+        self, corr_state_dict=None, testing=False, redishost=corr.DEFAULT_REDIS_ADDRESS
     ):
         """
         Get and add correlator control state information using HeraCorrCM.
@@ -3641,7 +3641,7 @@ class MCSession(Session):
         os.remove(librarian_filename_full)
 
     def add_correlator_config_from_corrcm(
-        self, config_state_dict=None, testing=False, redishost=None
+        self, config_state_dict=None, testing=False, redishost=corr.DEFAULT_REDIS_ADDRESS
     ):
         """
         Get and add correlator config information using a HeraCorrCM object.
@@ -3911,7 +3911,7 @@ class MCSession(Session):
         force=False,
         dryrun=False,
         testing=False,
-        redishost=None
+        redishost=corr.DEFAULT_REDIS_ADDRESS,
     ):
         """
         Issue a correlator control command.
@@ -4362,7 +4362,7 @@ class MCSession(Session):
                                  write_to_file=write_to_file, filename=filename)
 
     def add_corr_snap_versions_from_corrcm(
-        self, corr_snap_version_dict=None, testing=False, redishost=None
+        self, corr_snap_version_dict=None, testing=False, redishost=corr.DEFAULT_REDIS_ADDRESS
     ):
         """
         Get and add correlator and SNAP configuration and version info.
@@ -4528,8 +4528,13 @@ class MCSession(Session):
                                  filter_column='node', filter_value=nodeID,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_snap_status_from_corrcm(self, snap_status_dict=None, testing=False,
-                                    cm_session=None, redishost=None):
+    def add_snap_status_from_corrcm(
+        self,
+        snap_status_dict=None,
+        testing=False,
+        cm_session=None,
+        redishost=corr.DEFAULT_REDIS_ADDRESS,
+    ):
         """Get and add snap status information using a HeraCorrCM object.
 
         This function connects to the correlator and gets the latest data using
@@ -4742,8 +4747,9 @@ class MCSession(Session):
                                  filter_value=antenna_number,
                                  write_to_file=write_to_file, filename=filename)
 
-    def add_antenna_status_from_corrcm(self, ant_status_dict=None,
-                                       testing=False, redishost=None):
+    def add_antenna_status_from_corrcm(
+        self, ant_status_dict=None, testing=False, redishost=corr.DEFAULT_REDIS_ADDRESS
+    ):
         """Get and add antenna status information using a HeraCorrCM object.
 
         This function connects to the correlator and gets the latest data using
@@ -5142,8 +5148,13 @@ class MCSession(Session):
         """
         self.add(HeraAuto.create(time, antenna_number, antenna_feed_pol, measurement_type, value))
 
-    def add_autocorrelations_from_redis(self, hera_autos_dict=None, testing=False,
-                                        redishost=None, measurement_type=None):
+    def add_autocorrelations_from_redis(
+        self,
+        hera_autos_dict=None,
+        testing=False,
+        redishost=corr.DEFAULT_REDIS_ADDRESS,
+        measurement_type=None,
+    ):
         """Get current autocorrelations from redis and insert into M&C.
 
         hera_autos_dict : dict, optional
