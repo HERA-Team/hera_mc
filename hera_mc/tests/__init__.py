@@ -13,6 +13,7 @@ import socket
 import pytest
 
 from hera_mc.utils import get_iterable
+from hera_mc.correlator import DEFAULT_REDIS_ADDRESS
 TEST_DEFAULT_REDIS_HOST = 'redishost'
 
 
@@ -28,6 +29,16 @@ def redis_online():
 
 requires_redis = pytest.mark.skipif(not redis_online(),
                                     reason='This test requires a working redis database.')
+
+
+def default_redishost():
+    return (TEST_DEFAULT_REDIS_HOST == DEFAULT_REDIS_ADDRESS)
+
+
+requires_default_redis = pytest.mark.skipif(
+    requires_redis and default_redishost,
+    reason="This test requires that the redis database used for testing has the default hostname."    
+)
 
 
 def is_onsite():

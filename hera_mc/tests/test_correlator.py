@@ -18,7 +18,13 @@ from astropy.time import Time, TimeDelta
 from hera_mc import mc, cm_partconnect
 import hera_mc.correlator as corr
 from hera_mc.data import DATA_PATH
-from ..tests import onsite, checkWarnings, requires_redis, TEST_DEFAULT_REDIS_HOST
+from ..tests import (
+    onsite,
+    checkWarnings,
+    requires_redis,
+    requires_default_redis,
+    TEST_DEFAULT_REDIS_HOST
+)
 
 
 @pytest.fixture(scope='module')
@@ -1964,6 +1970,36 @@ def test_site_add_snap_status_from_corrcm(mcsession):
     test_session.add_snap_status_from_corrcm(
         cm_session=real_session, redishost=TEST_DEFAULT_REDIS_HOST
     )
+    result = test_session.get_snap_status(most_recent=True)
+
+    assert len(result) >= 1
+
+
+@requires_default_redis
+@pytest.mark.filterwarnings("ignore:No active connections returned for snap")
+def test_site_add_snap_status_from_corrcm_default_redishost(mcsession):
+    test_session = mcsession
+
+    # get the snap status dict from the correlator redis
+    snap_status_dict = corr._get_snap_status()
+    assert len(snap_status_dict) >= 1
+
+    # get result using just the test db, check it matches snap_status_dict
+    result_test2 = test_session.add_snap_status_from_corrcm(testing=True)
+    assert len(snap_status_dict) == len(result_test2)
+
+    # use the real (not test) database to get the node & snap location number
+    # check the length is the same
+    real_db = mc.connect_to_mc_db(None)
+    real_session = real_db.sessionmaker()
+
+    result_test3 = test_session.add_snap_status_from_corrcm(
+        cm_session=real_session, testing=True
+    )
+    assert len(result_test3) == len(result_test2)
+
+    # actually add them to the db and get most recent, check there's at least one
+    test_session.add_snap_status_from_corrcm(cm_session=real_session)
     result = test_session.get_snap_status(most_recent=True)
 
     assert len(result) >= 1
