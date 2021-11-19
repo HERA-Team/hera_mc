@@ -36,7 +36,7 @@ def default_redishost():
 
 
 requires_default_redis = pytest.mark.skipif(
-    requires_redis and default_redishost,
+    requires_redis and default_redishost(),
     reason="This test requires that the redis database used for testing has the default hostname."
 )
 
