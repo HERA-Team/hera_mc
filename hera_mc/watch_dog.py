@@ -6,6 +6,14 @@
 """System watch-dogs."""
 
 
+def read_forward_list():  # pragma: no cover
+    """Read in emails from .forward file."""
+    fwd = []
+    with open('~/.forward', 'r') as fp:
+        for line in fp:
+            fwd.append(line.strip())
+
+
 def send_email(subject, msg, to_addr=None, from_addr='hera@lists.berkeley.edu', skip_send=False):
     """
     Send an email message, unless skip_send is True (for testing).
@@ -44,14 +52,6 @@ def send_email(subject, msg, to_addr=None, from_addr='hera@lists.berkeley.edu', 
     return email
 
 
-def read_forward_list():  # pragma: no cover
-    """Read in emails from .forward file."""
-    fwd = []
-    with open('~/.forward', 'r') as fp:
-        for line in fp:
-            fwd.append(line.strip())
-
-
 def node_verdict(age_out=3800, To=None, return_as='node_info',
                  testing=False, redishost='redishost'):
     """
@@ -64,18 +64,22 @@ def node_verdict(age_out=3800, To=None, return_as='node_info',
     Parameters
     ----------
     age_out : int
-        Number of seconds under which to send an update email.
+        Number of seconds under which to send an update email
     To : str
         csv-list of email accounts to use.  None uses .forward
+    return_as : str
+        Either 'node_info' or 'email' to specify which value to return
     testing : bool
         Flag for testing, so won't send email.
     redishost :  str
-        Name of redis server to connect to.
+        Name of redis server to connect to
 
     Return
     ------
     The return dictionary contains the results keyed on node.
     """
+    if return_as not in ['node_info', 'email']:
+        raise ValueError("Must be returned as 'node_info' or 'email'")
     import redis
     import time
     connection_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
@@ -117,8 +121,6 @@ def node_verdict(age_out=3800, To=None, return_as='node_info',
         return node_info
     elif return_as == 'email':
         return this_email
-    else:
-        raise ValueError("Must be returned as 'node_info' or 'email'")
 
 
 def node_temperature(at_date=None, at_time=None, float_format=None,
