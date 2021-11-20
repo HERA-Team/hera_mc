@@ -19,7 +19,9 @@ tornado_present = True
 try:
     import tornado
     from tornado.gen import coroutine as tornado_coroutine
-except ImportError as error:
+except ImportError as error:  # pragma: no cover
+    # It is not currently possible to cover this because tornado is apparently a
+    # dependency of one of our required dependencies.
     def tornado_coroutine(func):
         """Spoof this function to avoid name errors with the minimum dependencies."""
         pass
@@ -275,7 +277,8 @@ def create_from_sensors(starttime, stoptime, variables=None):
 
     """
     if not tornado_present:  # pragma: no cover
-        assert False
+        # It is not currently possible to cover this because tornado is apparently a
+        # dependency of one of our required dependencies.
         raise ImportError(no_tornado_message) from tornado_error
 
     io_loop = tornado.ioloop.IOLoop.current()
