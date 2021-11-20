@@ -82,7 +82,7 @@ def test_watch_dog_verdict():
     redishost = TEST_DEFAULT_REDIS_HOST
     rsession = redis.Redis(redishost)
     nodeinfo = watch_dog.node_verdict(To=['test@hera.edu'], testing=True, redishost=redishost)
-    assert 'time' in nodeinfo[700]['pam']
+    assert 'param' in nodeinfo
     rsession.set('valid:node:700', '0')
     this_time = str(int(time.time()))
     rsession.hset('verdict:node:700:pam', 'time', this_time)
