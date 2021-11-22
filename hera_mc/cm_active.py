@@ -113,8 +113,8 @@ class ActiveData:
             (partconn.Parts.start_gpstime <= gps_time)
             & (
                 (partconn.Parts.stop_gpstime > gps_time)
-                | (partconn.Parts.stop_gpstime is None)
-            )  # noqa
+                | (partconn.Parts.stop_gpstime == None)  # noqa
+            )
         ):
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.parts[key] = prt
@@ -154,8 +154,8 @@ class ActiveData:
             (partconn.Connections.start_gpstime <= gps_time)
             & (
                 (partconn.Connections.stop_gpstime > gps_time)
-                | (partconn.Connections.stop_gpstime is None)
-            )  # noqa
+                | (partconn.Connections.stop_gpstime == None)  # noqa
+            )
         ):
             chk = cm_utils.make_part_key(
                 cnn.upstream_part, cnn.up_part_rev, cnn.upstream_output_port
@@ -240,8 +240,8 @@ class ActiveData:
             (partconn.PartRosetta.start_gpstime <= gps_time)
             & (
                 (partconn.PartRosetta.stop_gpstime > gps_time)
-                | (partconn.PartRosetta.stop_gpstime is None)
-            )  # noqa
+                | (partconn.PartRosetta.stop_gpstime == None)  # noqa
+            )
         ):
             if rose.syspn in fnd_syspn:
                 raise ValueError(
@@ -285,8 +285,8 @@ class ActiveData:
             (partconn.AprioriAntenna.start_gpstime <= gps_time)
             & (
                 (partconn.AprioriAntenna.stop_gpstime > gps_time)
-                | (partconn.AprioriAntenna.stop_gpstime is None)
-            )  # noqa
+                | (partconn.AprioriAntenna.stop_gpstime == None)  # noqa
+            )
         ):
             key = cm_utils.make_part_key(astat.antenna, rev)
             if key in apriori_keys:
