@@ -1,6 +1,6 @@
 repos:
     - repo: git://github.com/pre-commit/pre-commit-hooks
-      rev: v2.5.0
+      rev: v4.0.1
       hooks:
           - id: trailing-whitespace
           - id: check-added-large-files
@@ -14,7 +14,7 @@ repos:
           - id: mixed-line-ending
             args: ['--fix=no']
     -   repo: https://gitlab.com/pycqa/flake8
-        rev: '3.7.9'
+        rev: '3.9.2'
         hooks:
         -   id: flake8
             additional_dependencies:
@@ -25,6 +25,6 @@ repos:
               - flake8-rst-docstrings
 
     - repo: https://github.com/psf/black
-      rev: 21.4b1
+      rev: 21.11b1
       hooks:
           - id: black
