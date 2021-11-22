@@ -120,8 +120,9 @@ class HeraAuto(MCDeclarativeBase):
         if measurement_type not in allowed_measurement_types:
             raise ValueError(
                 "Autocorrelation type {0} not supported. "
-                "Only the following types are supported: {1}"
-                .format(measurement_type, allowed_measurement_types)
+                "Only the following types are supported: {1}".format(
+                    measurement_type, allowed_measurement_types
+                )
             )
 
         return cls(
@@ -129,5 +130,5 @@ class HeraAuto(MCDeclarativeBase):
             antenna_number=antenna_number,
             antenna_feed_pol=antenna_feed_pol,
             measurement_type=measurement_type,
-            value=value
+            value=value,
         )

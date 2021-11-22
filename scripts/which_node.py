@@ -11,7 +11,7 @@ from hera_mc import cm_sysutils
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('ants', help="Antennas (csv-list).")
+parser.add_argument("ants", help="Antennas (csv-list).")
 args = parser.parse_args()
 
 ant_node = cm_sysutils.which_node(args.ants)

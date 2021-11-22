@@ -15,30 +15,30 @@ def query_args(args):
     Gets information from user
     """
     if args.uppart is None:
-        args.uppart = input('Upstream part number:  ')
+        args.uppart = input("Upstream part number:  ")
     if args.uprev is None:
-        args.uprev = input('Upstream part revision:  ')
+        args.uprev = input("Upstream part revision:  ")
     if args.upport is None:
-        args.upport = input('Upstream output port:  ')
+        args.upport = input("Upstream output port:  ")
     if args.dnpart is None:
-        args.dnpart = input('Downstream part number:  ')
+        args.dnpart = input("Downstream part number:  ")
     if args.dnrev is None:
-        args.dnrev = input('Downstream part revision:  ')
+        args.dnrev = input("Downstream part revision:  ")
     if args.dnport is None:
-        args.dnport = input('Downstream input port:  ')
-    if args.date == 'now':  # note that 'now' is the current default.
-        args.date = cm_utils.query_default('date', args)
+        args.dnport = input("Downstream input port:  ")
+    if args.date == "now":  # note that 'now' is the current default.
+        args.date = cm_utils.query_default("date", args)
     return args
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-u', '--uppart', help="Upstream part number", default=None)
-    parser.add_argument('--uprev', help='Upstream part revision', default=None)
-    parser.add_argument('--upport', help='Upstream output port', default=None)
-    parser.add_argument('-d', '--dnpart', help="Downstream part number", default=None)
-    parser.add_argument('--dnrev', help='Downstream part revision', default=None)
-    parser.add_argument('--dnport', help='Downstream input port', default=None)
+    parser.add_argument("-u", "--uppart", help="Upstream part number", default=None)
+    parser.add_argument("--uprev", help="Upstream part revision", default=None)
+    parser.add_argument("--upport", help="Upstream output port", default=None)
+    parser.add_argument("-d", "--dnpart", help="Downstream part number", default=None)
+    parser.add_argument("--dnrev", help="Downstream part revision", default=None)
+    parser.add_argument("--dnport", help="Downstream input port", default=None)
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
@@ -55,10 +55,14 @@ if __name__ == '__main__':
 
     # Check for connection
     c = cm_partconnect.Connections()
-    c.connection(upstream_part=args.uppart, up_part_rev=args.uprev,
-                 upstream_output_port=args.upport,
-                 downstream_part=args.dnpart, down_part_rev=args.dnrev,
-                 downstream_input_port=args.dnport)
+    c.connection(
+        upstream_part=args.uppart,
+        up_part_rev=args.uprev,
+        upstream_output_port=args.upport,
+        downstream_part=args.dnpart,
+        down_part_rev=args.dnrev,
+        downstream_input_port=args.dnport,
+    )
     chk = handling.get_specific_connection(c, at_date)
     if len(chk) == 0:
         go_ahead = True
@@ -69,9 +73,18 @@ if __name__ == '__main__':
 
     if go_ahead:
         if args.verbosity > 1:
-            print('Adding connection {}:{}:{} <-> {}:{}:{}'
-                  .format(args.uppart, args.uprev, args.upport, args.dnpart,
-                          args.dnrev, args.dnport))
+            print(
+                "Adding connection {}:{}:{} <-> {}:{}:{}".format(
+                    args.uppart,
+                    args.uprev,
+                    args.upport,
+                    args.dnpart,
+                    args.dnrev,
+                    args.dnport,
+                )
+            )
         # Connect parts
-        npc = [[args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport]]
+        npc = [
+            [args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport]
+        ]
         cm_partconnect.add_new_connections(session, connect, npc, at_date)

@@ -70,12 +70,13 @@ while True:
             # that yields messages in our channel
             for message in pubsub.listen():
                 if (
-                    message["data"].decode() != "UnicodeDecodeError on emit!"
+                    message["data"].decode()
+                    != "UnicodeDecodeError on emit!"
                     # messages come as byte strings, make sure an error didn't occur
                 ):
                     message_dict = json.loads(message["data"])
 
-                    msg_level = message_dict['levelno']
+                    msg_level = message_dict["levelno"]
                     if msg_level >= level:
                         session.add_subsystem_error(
                             Time(message_dict["logtime"], format="unix"),

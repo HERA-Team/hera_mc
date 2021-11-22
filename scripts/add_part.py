@@ -15,26 +15,31 @@ def query_args(args):
     Gets information from user
     """
     if args.hpn is None:
-        args.hpn = input('HERA part number:  ')
+        args.hpn = input("HERA part number:  ")
     if args.rev is None:
-        args.rev = input('HERA part revision:  ')
+        args.rev = input("HERA part revision:  ")
     if args.hptype is None:
-        args.hptype = input('HERA part type:  ')
+        args.hptype = input("HERA part type:  ")
     if args.mfg is None:
-        args.mfg = input('Manufacturers number for part:  ')
-    args.date = cm_utils.query_default('date', args)
+        args.mfg = input("Manufacturers number for part:  ")
+    args.date = cm_utils.query_default("date", args)
     return args
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-p', '--hpn', help="HERA part number", default=None)
-    parser.add_argument('-r', '--rev', help="Revision number of part", default=None)
-    parser.add_argument('-t', '--hptype', help="HERA part type", default=None)
-    parser.add_argument('-m', '--mfg', help="Manufacturers number for part", default=None)
-    parser.add_argument('--disallow_restart', dest='allow_restart',
-                        help="Flag to disallow restarting an "
-                        "existing and stopped part", action='store_false')
+    parser.add_argument("-p", "--hpn", help="HERA part number", default=None)
+    parser.add_argument("-r", "--rev", help="Revision number of part", default=None)
+    parser.add_argument("-t", "--hptype", help="HERA part type", default=None)
+    parser.add_argument(
+        "-m", "--mfg", help="Manufacturers number for part", default=None
+    )
+    parser.add_argument(
+        "--disallow_restart",
+        dest="allow_restart",
+        help="Flag to disallow restarting an " "existing and stopped part",
+        action="store_false",
+    )
     cm_utils.add_date_time_args(parser)
     cm_utils.add_verbosity_args(parser)
     args = parser.parse_args()
@@ -52,5 +57,6 @@ if __name__ == '__main__':
     if args.verbosity > 1:
         print("Trying to add new part {}:{}".format(args.hpn, args.rev))
     new_part = [[args.hpn, args.rev, args.hptype, args.mfg]]
-    cm_partconnect.add_new_parts(session, part_list=new_part, at_date=at_date,
-                                 allow_restart=args.allow_restart)
+    cm_partconnect.add_new_parts(
+        session, part_list=new_part, at_date=at_date, allow_restart=args.allow_restart
+    )

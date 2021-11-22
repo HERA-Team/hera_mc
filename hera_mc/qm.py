@@ -6,8 +6,7 @@
 
 from astropy.time import Time
 from math import floor
-from sqlalchemy import (Column, Integer, BigInteger, Float, ForeignKey,
-                        String)
+from sqlalchemy import Column, Integer, BigInteger, Float, ForeignKey, String
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from . import MCDeclarativeBase, DEFAULT_GPS_TOL
@@ -39,16 +38,16 @@ class AntMetrics(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'ant_metrics'
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    __tablename__ = "ant_metrics"
+    obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
     ant = Column(Integer, primary_key=True)
     pol = Column(String, primary_key=True)
-    metric = Column(String, ForeignKey('metric_list.metric'), primary_key=True)
+    metric = Column(String, ForeignKey("metric_list.metric"), primary_key=True)
     mc_time = Column(BigInteger, nullable=False)
     val = Column(Float, nullable=False)
 
     # tolerances set to 1ms
-    tols = {'mc_time': DEFAULT_GPS_TOL}
+    tols = {"mc_time": DEFAULT_GPS_TOL}
 
     @hybrid_property
     def antpol(self):
@@ -85,24 +84,27 @@ class AntMetrics(MCDeclarativeBase):
 
         """
         if not isinstance(obsid, int):
-            raise ValueError('obsid must be an integer.')
+            raise ValueError("obsid must be an integer.")
         if not isinstance(ant, int):
-            raise ValueError('antenna must be an integer.')
+            raise ValueError("antenna must be an integer.")
         pol = str(pol).lower()
-        if pol not in ('x', 'y', 'n', 'e', 'jnn', 'jee'):
-            raise ValueError(f'pol={pol} not a string in ("x", "y", "n", "e", "jnn", "jee").')
+        if pol not in ("x", "y", "n", "e", "jnn", "jee"):
+            raise ValueError(
+                f'pol={pol} not a string in ("x", "y", "n", "e", "jnn", "jee").'
+            )
         if not isinstance(metric, str):
-            raise ValueError('metric must be string.')
+            raise ValueError("metric must be string.")
         if not isinstance(db_time, Time):
-            raise ValueError('db_time must be an astropy Time object')
+            raise ValueError("db_time must be an astropy Time object")
         mc_time = floor(db_time.gps)
         try:
             val = float(val)
         except ValueError:
-            raise ValueError('val must be castable as float.')
+            raise ValueError("val must be castable as float.")
 
-        return cls(obsid=obsid, ant=ant, pol=pol, metric=metric,
-                   mc_time=mc_time, val=val)
+        return cls(
+            obsid=obsid, ant=ant, pol=pol, metric=metric, mc_time=mc_time, val=val
+        )
 
 
 class ArrayMetrics(MCDeclarativeBase):
@@ -127,14 +129,14 @@ class ArrayMetrics(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'array_metrics'
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
-    metric = Column(String, ForeignKey('metric_list.metric'), primary_key=True)
+    __tablename__ = "array_metrics"
+    obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
+    metric = Column(String, ForeignKey("metric_list.metric"), primary_key=True)
     mc_time = Column(BigInteger, nullable=False)
     val = Column(Float, nullable=False)
 
     # tolerances set to 1ms
-    tols = {'mc_time': DEFAULT_GPS_TOL}
+    tols = {"mc_time": DEFAULT_GPS_TOL}
 
     @classmethod
     def create(cls, obsid, metric, db_time, val):
@@ -155,16 +157,16 @@ class ArrayMetrics(MCDeclarativeBase):
 
         """
         if not isinstance(obsid, int):
-            raise ValueError('obsid must be an integer.')
+            raise ValueError("obsid must be an integer.")
         if not isinstance(metric, str):
-            raise ValueError('metric must be string.')
+            raise ValueError("metric must be string.")
         if not isinstance(db_time, Time):
-            raise ValueError('db_time must be an astropy Time object')
+            raise ValueError("db_time must be an astropy Time object")
         mc_time = floor(db_time.gps)
         try:
             val = float(val)
         except ValueError:
-            raise ValueError('val must be castable as float.')
+            raise ValueError("val must be castable as float.")
 
         return cls(obsid=obsid, metric=metric, mc_time=mc_time, val=val)
 
@@ -182,7 +184,7 @@ class MetricList(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'metric_list'
+    __tablename__ = "metric_list"
     metric = Column(String, primary_key=True)
     desc = Column(String, nullable=False)
 
@@ -200,8 +202,8 @@ class MetricList(MCDeclarativeBase):
 
         """
         if not isinstance(metric, str):
-            raise ValueError('metric must be string.')
+            raise ValueError("metric must be string.")
         if not isinstance(desc, str):
-            raise ValueError('metric description must be a string.')
+            raise ValueError("metric description must be a string.")
 
         return cls(metric=metric, desc=desc)

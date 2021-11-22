@@ -34,8 +34,9 @@ def cofa(session=None):
     return located
 
 
-def get_location(location_names,
-                 query_date='now', query_time=None, float_format=None, session=None):
+def get_location(
+    location_names, query_date="now", query_time=None, float_format=None, session=None
+):
     """
     Get a GeoLocation object with lon/lat attributes for a location name.
 
@@ -79,6 +80,7 @@ def show_it_now(fignm=None):  # pragma: no cover
 
     """
     import matplotlib.pyplot as plt
+
     if fignm is not None:
         plt.figure(fignm)
     plt.show()
@@ -96,9 +98,9 @@ class Handling:
 
     """
 
-    coord = {'E': 'easting', 'N': 'northing', 'Z': 'elevation'}
-    hera_zone = [34, 'J']
-    lat_corr = {'J': 10000000}
+    coord = {"E": "easting", "N": "northing", "Z": "elevation"}
+    hera_zone = [34, "J"]
+    lat_corr = {"J": 10000000}
 
     def __init__(self, session=None, testing=False):
         if session is None:  # pragma: no cover
@@ -127,8 +129,8 @@ class Handling:
         GeoLocation object
             GeoLocation object for the center of the array.
         """
-        current_cofa = self.station_types['cofa']['Stations']
-        located = self.get_location(current_cofa, 'now')
+        current_cofa = self.station_types["cofa"]["Stations"]
+        located = self.get_location(current_cofa, "now")
         if len(located) > 1:  # pragma: no cover
             s = "{} has multiple cofa values.".format(str(current_cofa))
             warnings.warn(s)
@@ -144,17 +146,21 @@ class Handling:
         self.station_types = {}
         for sta in self.session.query(geo_location.StationType):
             self.station_types[sta.station_type_name.lower()] = {
-                'Prefix': sta.prefix.upper(),
-                'Description': sta.description,
-                'Marker': sta.plot_marker,
-                'Stations': set()}
+                "Prefix": sta.prefix.upper(),
+                "Description": sta.description,
+                "Marker": sta.plot_marker,
+                "Stations": set(),
+            }
         for loc in self.session.query(geo_location.GeoLocation):
-            self.station_types[loc.station_type_name]['Stations'].add(loc.station_name)
-            expected_prefix = self.station_types[loc.station_type_name]['Prefix'].upper()
-            actual_prefix = loc.station_name[:len(expected_prefix)].upper()
+            self.station_types[loc.station_type_name]["Stations"].add(loc.station_name)
+            expected_prefix = self.station_types[loc.station_type_name][
+                "Prefix"
+            ].upper()
+            actual_prefix = loc.station_name[: len(expected_prefix)].upper()
             if expected_prefix != actual_prefix:  # pragma: no cover
-                s = ("Prefixes don't match: expected {} but got {} for {}"
-                     .format(expected_prefix, actual_prefix, loc.station_name))
+                s = "Prefixes don't match: expected {} but got {} for {}".format(
+                    expected_prefix, actual_prefix, loc.station_name
+                )
                 warnings.warn(s)
 
     def set_graph(self, graph_it):
@@ -180,7 +186,8 @@ class Handling:
 
         """
         import os.path as op
-        self.file_type = fname.split('.')[-1]
+
+        self.file_type = fname.split(".")[-1]
         write_header = False
         if op.isfile(fname):  # pragma: no cover
             print("{} exists so appending to it".format(fname))
@@ -188,11 +195,11 @@ class Handling:
             write_header = True
             print("Writing to new {}".format(fname))
         if not self.testing:  # pragma: no cover
-            self.fp_out = open(fname, 'a')
+            self.fp_out = open(fname, "a")
             if write_header:
-                self.fp_out.write("{}\n".format(self._loc_line('header')))
+                self.fp_out.write("{}\n".format(self._loc_line("header")))
 
-    def is_in_database(self, station_name, db_name='geo_location'):
+    def is_in_database(self, station_name, db_name="geo_location"):
         """
         Check to see if a station_name is in the specified database table.
 
@@ -209,21 +216,27 @@ class Handling:
             True if station_name is present in specified table, False otherwise.
 
         """
-        if db_name == 'geo_location':
+        if db_name == "geo_location":
             station = self.session.query(geo_location.GeoLocation).filter(
-                func.upper(geo_location.GeoLocation.station_name) == station_name.upper())
-        elif db_name == 'connections':
+                func.upper(geo_location.GeoLocation.station_name)
+                == station_name.upper()
+            )
+        elif db_name == "connections":
             station = self.session.query(cm_partconnect.Connections).filter(
-                func.upper(cm_partconnect.Connections.upstream_part) == station_name.upper())
+                func.upper(cm_partconnect.Connections.upstream_part)
+                == station_name.upper()
+            )
         else:
-            raise ValueError('db not found.')
+            raise ValueError("db not found.")
         if station.count() > 0:
             station_present = True
         else:
             station_present = False
         return station_present
 
-    def find_antenna_at_station(self, station, query_date, query_time=None, float_format=None):
+    def find_antenna_at_station(
+        self, station, query_date, query_time=None, float_format=None
+    ):
         """
         Get antenna details for a station.
 
@@ -250,7 +263,8 @@ class Handling:
         query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
         connected_antenna = self.session.query(cm_partconnect.Connections).filter(
             (func.upper(cm_partconnect.Connections.upstream_part) == station.upper())
-            & (cm_partconnect.Connections.start_gpstime <= query_date.gps))
+            & (cm_partconnect.Connections.start_gpstime <= query_date.gps)
+        )
         antenna_connected = []
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
@@ -258,13 +272,16 @@ class Handling:
         if len(antenna_connected) == 0:
             return None, None
         elif len(antenna_connected) > 1:
-            warning_string = 'More than one active connection for {}'.format(
-                antenna_connected[0].upstream_part)
+            warning_string = "More than one active connection for {}".format(
+                antenna_connected[0].upstream_part
+            )
             warnings.warn(warning_string)
             return None, None
         return antenna_connected[0].downstream_part, antenna_connected[0].down_part_rev
 
-    def find_station_of_antenna(self, antenna, query_date, query_time=None, float_format=None):
+    def find_station_of_antenna(
+        self, antenna, query_date, query_time=None, float_format=None
+    ):
         """
         Get station for an antenna.
 
@@ -287,12 +304,13 @@ class Handling:
         """
         query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
         if isinstance(antenna, (int, float)):
-            antenna = 'A' + str(int(antenna))
-        elif antenna[0].upper() != 'A':
-            antenna = 'A' + antenna
+            antenna = "A" + str(int(antenna))
+        elif antenna[0].upper() != "A":
+            antenna = "A" + antenna
         connected_antenna = self.session.query(cm_partconnect.Connections).filter(
             (func.upper(cm_partconnect.Connections.downstream_part) == antenna.upper())
-            & (cm_partconnect.Connections.start_gpstime <= query_date.gps))
+            & (cm_partconnect.Connections.start_gpstime <= query_date.gps)
+        )
         ctr = 0
         for conn in connected_antenna:
             if conn.stop_gpstime is None or query_date.gps <= conn.stop_gpstime:
@@ -301,10 +319,14 @@ class Handling:
         if ctr == 0:
             return None
         elif ctr > 1:
-            raise ValueError('More than one active connection between station and antenna')
+            raise ValueError(
+                "More than one active connection between station and antenna"
+            )
         return antenna_connected.upstream_part
 
-    def get_location(self, to_find_list, query_date, query_time=None, float_format=None):
+    def get_location(
+        self, to_find_list, query_date, query_time=None, float_format=None
+    ):
         """
         Get GeoLocation objects for a list of station_names.
 
@@ -326,6 +348,7 @@ class Handling:
 
         """
         import cartopy.crs as ccrs
+
         latlon_p = ccrs.Geodetic()
         utm_p = ccrs.UTM(self.hera_zone[0])
         lat_corr = self.lat_corr[self.hera_zone[1]]
@@ -333,16 +356,23 @@ class Handling:
         self.query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
         for station_name in to_find_list:
             for a in self.session.query(geo_location.GeoLocation).filter(
-                    (func.upper(geo_location.GeoLocation.station_name) == station_name.upper())
-                    & (geo_location.GeoLocation.created_gpstime < self.query_date.gps)):
+                (
+                    func.upper(geo_location.GeoLocation.station_name)
+                    == station_name.upper()
+                )
+                & (geo_location.GeoLocation.created_gpstime < self.query_date.gps)
+            ):
                 a.gps2Time()
-                a.desc = self.station_types[a.station_type_name]['Description']
-                a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
-                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(radians(a.lat), radians(a.lon),
-                                                           a.elevation)
+                a.desc = self.station_types[a.station_type_name]["Description"]
+                a.lon, a.lat = latlon_p.transform_point(
+                    a.easting, a.northing - lat_corr, utm_p
+                )
+                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(
+                    radians(a.lat), radians(a.lon), a.elevation
+                )
                 locations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:  # pragma: no cover
-                    self.fp_out.write('{}\n'.format(self._loc_line(a)))
+                    self.fp_out.write("{}\n".format(self._loc_line(a)))
         return locations
 
     def _loc_line(self, loc):
@@ -361,26 +391,44 @@ class Handling:
         list-of-str or str : a single line containing the data
             if loc=='header' it returns the header line
         """
-        if loc == 'header':
-            if self.file_type == 'csv':
+        if loc == "header":
+            if self.file_type == "csv":
                 return "name,easting,northing,longitude,latitude,elevation,X,Y,Z"
             else:
-                return ("name  easting   northing   longitude latitude  elevation"
-                        "    X              Y               Z")
+                return (
+                    "name  easting   northing   longitude latitude  elevation"
+                    "    X              Y               Z"
+                )
         is_list = True
         if not isinstance(loc, list):
             loc = [loc]
             is_list = False
         ret = []
         for a in loc:
-            if self.file_type == 'csv':
-                s = '{},{},{},{},{},{},{},{},{}'.format(
-                    a.station_name, a.easting, a.northing, a.lon, a.lat,
-                    a.elevation, a.X, a.Y, a.Z)
+            if self.file_type == "csv":
+                s = "{},{},{},{},{},{},{},{},{}".format(
+                    a.station_name,
+                    a.easting,
+                    a.northing,
+                    a.lon,
+                    a.lat,
+                    a.elevation,
+                    a.X,
+                    a.Y,
+                    a.Z,
+                )
             else:
-                s = '{:6s} {:.2f} {:.2f} {:.6f} {:.6f} {:.1f} {:.6f} {:.6f} {:.6f}'.format(
-                    a.station_name, a.easting, a.northing, a.lon, a.lat,
-                    a.elevation, a.X, a.Y, a.Z)
+                s = "{:6s} {:.2f} {:.2f} {:.6f} {:.6f} {:.1f} {:.6f} {:.6f} {:.6f}".format(
+                    a.station_name,
+                    a.easting,
+                    a.northing,
+                    a.lon,
+                    a.lat,
+                    a.elevation,
+                    a.X,
+                    a.Y,
+                    a.Z,
+                )
             ret.append(s)
         if not is_list:
             ret = ret[0]
@@ -400,14 +448,14 @@ class Handling:
             print("No locations found.")
             return
         for a in loc_list:
-            print('station_name: ', a.station_name)
-            print('\teasting: ', a.easting)
-            print('\tnorthing: ', a.northing)
-            print('\tlon/lat:  ', a.lon, a.lat)
-            print('\televation: ', a.elevation)
-            print('\tX, Y, Z: {}, {}, {}'.format(a.X, a.Y, a.Z))
-            print('\tstation description ({}):  {}'.format(a.station_type_name, a.desc))
-            print('\tcreated:  ', cm_utils.get_time_for_display(a.created_date))
+            print("station_name: ", a.station_name)
+            print("\teasting: ", a.easting)
+            print("\tnorthing: ", a.northing)
+            print("\tlon/lat:  ", a.lon, a.lat)
+            print("\televation: ", a.elevation)
+            print("\tX, Y, Z: {}, {}, {}".format(a.X, a.Y, a.Z))
+            print("\tstation description ({}):  {}".format(a.station_type_name, a.desc))
+            print("\tcreated:  ", cm_utils.get_time_for_display(a.created_date))
 
     def parse_station_types_to_check(self, sttc):
         """
@@ -426,9 +474,9 @@ class Handling:
         """
         self.get_station_types()
         if isinstance(sttc, str):
-            if sttc.lower() == 'all':
+            if sttc.lower() == "all":
                 return list(self.station_types.keys())
-            elif sttc.lower() == 'default':
+            elif sttc.lower() == "default":
                 sttc = cm_sysdef.hera_zone_prefixes
             else:
                 sttc = [sttc]
@@ -438,11 +486,11 @@ class Handling:
                 sttypes.add(s.lower())
             else:
                 for k, st in self.station_types.items():
-                    if s.upper() == st['Prefix'][:len(s)].upper():
+                    if s.upper() == st["Prefix"][: len(s)].upper():
                         sttypes.add(k.lower())
         return list(sttypes)
 
-    def get_ants_installed_since(self, query_date, station_types_to_check='all'):
+    def get_ants_installed_since(self, query_date, station_types_to_check="all"):
         """
         Get list of antennas installed since query_date.
 
@@ -455,26 +503,35 @@ class Handling:
 
         """
         import cartopy.crs as ccrs
-        station_types_to_check = self.parse_station_types_to_check(station_types_to_check)
+
+        station_types_to_check = self.parse_station_types_to_check(
+            station_types_to_check
+        )
         dt = query_date.gps
         latlon_p = ccrs.Geodetic()
         utm_p = ccrs.UTM(self.hera_zone[0])
         lat_corr = self.lat_corr[self.hera_zone[1]]
         found_stations = []
         for a in self.session.query(geo_location.GeoLocation).filter(
-                geo_location.GeoLocation.created_gpstime >= dt):
+            geo_location.GeoLocation.created_gpstime >= dt
+        ):
             if a.station_type_name.lower() in station_types_to_check:
                 a.gps2Time()
-                a.desc = self.station_types[a.station_type_name]['Description']
-                a.lon, a.lat = latlon_p.transform_point(a.easting, a.northing - lat_corr, utm_p)
-                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(radians(a.lat), radians(a.lon),
-                                                           a.elevation)
+                a.desc = self.station_types[a.station_type_name]["Description"]
+                a.lon, a.lat = latlon_p.transform_point(
+                    a.easting, a.northing - lat_corr, utm_p
+                )
+                a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(
+                    radians(a.lat), radians(a.lon), a.elevation
+                )
                 found_stations.append(copy.copy(a))
                 if self.fp_out is not None and not self.testing:  # pragma: no cover
-                    self.fp_out.write('{}\n'.format(self._loc_line(a)))
+                    self.fp_out.write("{}\n".format(self._loc_line(a)))
         return found_stations
 
-    def get_antenna_label(self, label_to_show, stn, query_date, query_time=None, float_format=None):
+    def get_antenna_label(
+        self, label_to_show, stn, query_date, query_time=None, float_format=None
+    ):
         """
         Get a label for a station.
 
@@ -497,22 +554,24 @@ class Handling:
             station label
 
         """
-        if label_to_show == 'name':
+        if label_to_show == "name":
             return stn.station_name
-        ant, rev = self.find_antenna_at_station(stn.station_name,
-                                                query_date, query_time, float_format)
+        ant, rev = self.find_antenna_at_station(
+            stn.station_name, query_date, query_time, float_format
+        )
         if ant is None:
             return None
-        if label_to_show == 'num':
-            return ant.strip('A')
-        if label_to_show == 'ser':
+        if label_to_show == "num":
+            return ant.strip("A")
+        if label_to_show == "ser":
             p = self.session.query(cm_partconnect.Parts).filter(
                 (cm_partconnect.Parts.hpn == ant)
-                & (cm_partconnect.Parts.hpn_rev == rev))
+                & (cm_partconnect.Parts.hpn_rev == rev)
+            )
             if p.count() == 1:
-                return p.first().manufacturer_number.replace('S/N', '')
+                return p.first().manufacturer_number.replace("S/N", "")
             else:
-                return '-'
+                return "-"
         return None
 
     def plot_stations(self, locations, **kwargs):  # pragma: no cover
@@ -529,27 +588,42 @@ class Handling:
         """
         if not len(locations) or not self.graph or self.testing:
             return
-        displaying_label = bool(kwargs['label'])
+        displaying_label = bool(kwargs["label"])
         if displaying_label:
-            label_to_show = kwargs['label'].lower()
-        fig_label = "{} vs {} Antenna Positions".format(kwargs['xgraph'], kwargs['ygraph'])
+            label_to_show = kwargs["label"].lower()
+        fig_label = "{} vs {} Antenna Positions".format(
+            kwargs["xgraph"], kwargs["ygraph"]
+        )
         import matplotlib.pyplot as plt
+
         for a in locations:
-            pt = {'easting': a.easting, 'northing': a.northing, 'elevation': a.elevation}
-            x_vals = pt[self.coord[kwargs['xgraph']]]
-            y_vals = pt[self.coord[kwargs['ygraph']]]
-            plt.plot(x_vals, y_vals, color=kwargs['marker_color'], label=a.station_name,
-                     marker=kwargs['marker_shape'], markersize=kwargs['marker_size'])
+            pt = {
+                "easting": a.easting,
+                "northing": a.northing,
+                "elevation": a.elevation,
+            }
+            x_vals = pt[self.coord[kwargs["xgraph"]]]
+            y_vals = pt[self.coord[kwargs["ygraph"]]]
+            plt.plot(
+                x_vals,
+                y_vals,
+                color=kwargs["marker_color"],
+                label=a.station_name,
+                marker=kwargs["marker_shape"],
+                markersize=kwargs["marker_size"],
+            )
             if displaying_label:
                 labeling = self.get_antenna_label(label_to_show, a, self.query_date)
                 if labeling:
-                    plt.annotate(labeling, xy=(x_vals, y_vals), xytext=(x_vals + 2, y_vals))
+                    plt.annotate(
+                        labeling, xy=(x_vals, y_vals), xytext=(x_vals + 2, y_vals)
+                    )
         if not self.axes_set:
             self.axes_set = True
-            if kwargs['xgraph'].upper() != 'Z' and kwargs['ygraph'].upper() != 'Z':
-                plt.axis('equal')
-            plt.xlabel(kwargs['xgraph'] + ' [m]')
-            plt.ylabel(kwargs['ygraph'] + ' [m]')
+            if kwargs["xgraph"].upper() != "Z" and kwargs["ygraph"].upper() != "Z":
+                plt.axis("equal")
+            plt.xlabel(kwargs["xgraph"] + " [m]")
+            plt.ylabel(kwargs["ygraph"] + " [m]")
             plt.title(fig_label)
         return
 
@@ -560,13 +634,20 @@ class Handling:
         import os.path
         import numpy
         import matplotlib.pyplot as plt
+
         p = numpy.loadtxt(os.path.join(DATA_PATH, "HERA_350.txt"), usecols=(1, 2, 3))
         if not self.testing:  # pragma: no cover
-            plt.plot(p[:, 0], p[:, 1], marker='o', color='0.8', linestyle='none')
+            plt.plot(p[:, 0], p[:, 1], marker="o", color="0.8", linestyle="none")
         return len(p[:, 0])
 
-    def get_active_stations(self, station_types_to_use,
-                            query_date, query_time=None, float_format=None, hookup_type=None):
+    def get_active_stations(
+        self,
+        station_types_to_use,
+        query_date,
+        query_time=None,
+        float_format=None,
+        hookup_type=None,
+    ):
         """
         Get active stations.
 
@@ -590,24 +671,33 @@ class Handling:
 
         """
         from . import cm_hookup, cm_revisions
+
         query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
         hookup = cm_hookup.Hookup(self.session)
         hookup_dict = hookup.get_hookup(
-            hookup.hookup_list_to_cache, at_date=query_date,
-            hookup_type=hookup_type)
-        self.station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
+            hookup.hookup_list_to_cache, at_date=query_date, hookup_type=hookup_type
+        )
+        self.station_types_to_use = self.parse_station_types_to_check(
+            station_types_to_use
+        )
         active_stations = []
         for st in self.station_types_to_use:
-            for loc in self.station_types[st]['Stations']:
+            for loc in self.station_types[st]["Stations"]:
                 if cm_revisions.get_full_revision(loc, hookup_dict):
                     active_stations.append(loc)
         if len(active_stations):
-            print("{}.....".format(12 * '.'))
-            print("{:12s}  {:3d}".format('active', len(active_stations)))
+            print("{}.....".format(12 * "."))
+            print("{:12s}  {:3d}".format("active", len(active_stations)))
         return self.get_location(active_stations, query_date)
 
-    def plot_station_types(self, station_types_to_use,
-                           query_date, query_time=None, float_format=None, **kwargs):
+    def plot_station_types(
+        self,
+        station_types_to_use,
+        query_date,
+        query_time=None,
+        float_format=None,
+        **kwargs
+    ):
         """
         Plot the various sub-array types.
 
@@ -632,14 +722,15 @@ class Handling:
         station_types_to_use = self.parse_station_types_to_check(station_types_to_use)
         total_plotted = 0
         for st in sorted(station_types_to_use):
-            kwargs['marker_color'] = self.station_types[st]['Marker'][0]
-            kwargs['marker_shape'] = self.station_types[st]['Marker'][1]
-            kwargs['marker_size'] = 5
-            stations_to_plot = self.get_location(self.station_types[st]['Stations'],
-                                                 query_date, query_time, float_format)
+            kwargs["marker_color"] = self.station_types[st]["Marker"][0]
+            kwargs["marker_shape"] = self.station_types[st]["Marker"][1]
+            kwargs["marker_size"] = 5
+            stations_to_plot = self.get_location(
+                self.station_types[st]["Stations"], query_date, query_time, float_format
+            )
             self.plot_stations(stations_to_plot, **kwargs)
             if len(stations_to_plot):
                 print("{:12s}  {:3d}".format(st, len(stations_to_plot)))
                 total_plotted += len(stations_to_plot)
-        print("{:12s}  ---".format(' '))
-        print("{:12s}  {:3d}".format('Total', total_plotted))
+        print("{:12s}  ---".format(" "))
+        print("{:12s}  {:3d}".format("Total", total_plotted))

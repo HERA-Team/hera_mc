@@ -15,11 +15,11 @@ from .. import utils
 
 
 def test_new_obs(mcsession):
-    t1 = Time('2016-01-10 01:15:23', scale='utc')
-    t2 = t1 + TimeDelta(120.0, format='sec')
+    t1 = Time("2016-01-10 01:15:23", scale="utc")
+    t2 = t1 + TimeDelta(120.0, format="sec")
 
-    t3 = t1 + TimeDelta(1e-3, format='sec')
-    t4 = t2 + TimeDelta(1e-3, format='sec')
+    t3 = t1 + TimeDelta(1e-3, format="sec")
+    t4 = t2 + TimeDelta(1e-3, format="sec")
 
     h = geo_handling.Handling(session=mcsession)
     hera_cofa = h.cofa()[0]
@@ -31,8 +31,8 @@ def test_new_obs(mcsession):
 
 def test_add_obs(mcsession):
     test_session = mcsession
-    t1 = Time('2016-01-10 01:15:23', scale='utc')
-    t2 = t1 + TimeDelta(120.0, format='sec')
+    t1 = Time("2016-01-10 01:15:23", scale="utc")
+    t2 = t1 + TimeDelta(120.0, format="sec")
 
     # generated test hera_lat, hera_lon using the output of geo.py -c
     # with this website:
@@ -43,9 +43,13 @@ def test_add_obs(mcsession):
     assert obsid_calc == obsid
     t1.location = EarthLocation.from_geodetic(21.4283038269, -30.7215261207)
 
-    expected = Observation(obsid=obsid, starttime=t1.gps, stoptime=t2.gps,
-                           jd_start=t1.jd,
-                           lst_start_hr=t1.sidereal_time('apparent').hour)
+    expected = Observation(
+        obsid=obsid,
+        starttime=t1.gps,
+        stoptime=t2.gps,
+        jd_start=t1.jd,
+        lst_start_hr=t1.sidereal_time("apparent").hour,
+    )
 
     test_session.add_obs(t1, t2, obsid)
     result = test_session.get_obs()
@@ -54,8 +58,8 @@ def test_add_obs(mcsession):
     assert result.length == 120.0
     assert result.isclose(expected)
 
-    t3 = t1 + TimeDelta(10 * 60., format='sec')
-    t4 = t2 + TimeDelta(10 * 60., format='sec')
+    t3 = t1 + TimeDelta(10 * 60.0, format="sec")
+    t4 = t2 + TimeDelta(10 * 60.0, format="sec")
     test_session.add_obs(t3, t4, utils.calculate_obsid(t3))
 
     result_mult = test_session.get_obs_by_time(starttime=t1, stoptime=t4)
@@ -72,15 +76,18 @@ def test_add_obs(mcsession):
 
 def test_error_obs(mcsession):
     test_session = mcsession
-    t1 = Time('2016-01-10 01:15:23', scale='utc')
-    t2 = t1 + TimeDelta(120.0, format='sec')
-    pytest.raises(ValueError, test_session.add_obs, 'foo', t2,
-                  utils.calculate_obsid(t1))
-    pytest.raises(ValueError, test_session.add_obs, t1, 'foo',
-                  utils.calculate_obsid(t1))
-    pytest.raises(ValueError, test_session.add_obs, t1, t2, 'foo')
-    pytest.raises(ValueError, utils.calculate_obsid, 'foo')
-    pytest.raises(ValueError, test_session.add_obs, t1, t2,
-                  utils.calculate_obsid(t1) + 2)
+    t1 = Time("2016-01-10 01:15:23", scale="utc")
+    t2 = t1 + TimeDelta(120.0, format="sec")
+    pytest.raises(
+        ValueError, test_session.add_obs, "foo", t2, utils.calculate_obsid(t1)
+    )
+    pytest.raises(
+        ValueError, test_session.add_obs, t1, "foo", utils.calculate_obsid(t1)
+    )
+    pytest.raises(ValueError, test_session.add_obs, t1, t2, "foo")
+    pytest.raises(ValueError, utils.calculate_obsid, "foo")
+    pytest.raises(
+        ValueError, test_session.add_obs, t1, t2, utils.calculate_obsid(t1) + 2
+    )
     pytest.raises(TypeError, test_session.get_obs_by_time, most_recent=t1)
     pytest.raises(TypeError, test_session.get_obs_by_time, t1)

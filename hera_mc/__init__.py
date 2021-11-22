@@ -32,10 +32,10 @@ from sqlalchemy.ext.declarative import declarative_base
 
 
 # define some default tolerances for various units
-DEFAULT_DAY_TOL = {'atol': 1e-3 / (3600. * 24.), 'rtol': 0}  # ms
-DEFAULT_HOUR_TOL = {'atol': 1e-3 / (3600), 'rtol': 0}  # ms
-DEFAULT_MIN_TOL = {'atol': 1e-3 / (3600), 'rtol': 0}  # ms
-DEFAULT_GPS_TOL = {'atol': 1e-3, 'rtol': 0}  # ms
+DEFAULT_DAY_TOL = {"atol": 1e-3 / (3600.0 * 24.0), "rtol": 0}  # ms
+DEFAULT_HOUR_TOL = {"atol": 1e-3 / (3600), "rtol": 0}  # ms
+DEFAULT_MIN_TOL = {"atol": 1e-3 / (3600), "rtol": 0}  # ms
+DEFAULT_GPS_TOL = {"atol": 1e-3, "rtol": 0}  # ms
 
 
 class MCDeclarativeBase(object):
@@ -44,23 +44,23 @@ class MCDeclarativeBase(object):
     def __repr__(self):
         """Define standard representation."""
         columns = self.__table__.columns.keys()
-        rep_str = '<' + self.__class__.__name__ + '('
+        rep_str = "<" + self.__class__.__name__ + "("
         for c in columns:
-            rep_str += str(getattr(self, c)) + ', '
+            rep_str += str(getattr(self, c)) + ", "
         rep_str = rep_str[0:-2]
-        rep_str += ')>'
+        rep_str += ")>"
         return rep_str
 
     def isclose(self, other):
         """Test if two objects are nearly equal."""
         if not isinstance(other, self.__class__):
-            print('not the same class')
+            print("not the same class")
             return False
 
         self_columns = self.__table__.columns
         other_columns = other.__table__.columns
         if {c.name for c in self_columns} != {c.name for c in other_columns}:
-            print('set of columns are not the same')
+            print("set of columns are not the same")
             return False
 
         for c in self_columns:
@@ -68,34 +68,43 @@ class MCDeclarativeBase(object):
             other_c = getattr(other, c.name)
             if isinstance(self_c, int):
                 if self_c != other_c:
-                    print('column {col} is int, values are not equal'.format(col=c))
+                    print("column {col} is int, values are not equal".format(col=c))
                     return False
             elif isinstance(self_c, str):
                 if self_c != other_c:
-                    print('column {col} is str, values are not equal'.format(col=c))
+                    print("column {col} is str, values are not equal".format(col=c))
                     return False
-            elif isinstance(self_c, np.ndarray) and self_c.dtype.kind == 'i':
+            elif isinstance(self_c, np.ndarray) and self_c.dtype.kind == "i":
                 if not np.all(self_c == other_c):
-                    print('column {col} is an int-like array, values are not equal'.format(col=c))
+                    print(
+                        "column {col} is an int-like array, values are not equal".format(
+                            col=c
+                        )
+                    )
                     return False
             elif self_c is None:
                 if other_c is None:
                     pass  # nullable columns, both null
                 else:
-                    print('column {col} is None in first object and {val} in the second.'
-                          .format(col=c, val=other_c))
+                    print(
+                        "column {col} is None in first object and {val} in the second.".format(
+                            col=c, val=other_c
+                        )
+                    )
                     return False
             else:
-                if hasattr(self, 'tols') and c.name in self.tols.keys():
-                    atol = self.tols[c.name]['atol']
-                    rtol = self.tols[c.name]['rtol']
+                if hasattr(self, "tols") and c.name in self.tols.keys():
+                    atol = self.tols[c.name]["atol"]
+                    rtol = self.tols[c.name]["rtol"]
                 else:
                     # use numpy defaults
                     atol = 1e-08
                     rtol = 1e-05
                 if not np.isclose(self_c, other_c, atol=atol, rtol=rtol):
-                    print('column {col} is float-like or a float-like array, values are not equal'
-                          .format(col=c))
+                    print(
+                        "column {col} is float-like or a float-like array, "
+                        "values are not equal".format(col=c)
+                    )
                     return False
         return True
 
@@ -103,6 +112,7 @@ class MCDeclarativeBase(object):
 MCDeclarativeBase = declarative_base(cls=MCDeclarativeBase)
 
 import logging  # noqa
+
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
@@ -112,6 +122,7 @@ logger = logging.getLogger(__name__)
 def NotNull(kind, **kwargs):
     """Define a non-nullable column."""
     from sqlalchemy import Column
+
     return Column(kind, nullable=False, **kwargs)
 
 
@@ -134,4 +145,4 @@ from . import node  # noqa
 from . import rtp  # noqa
 from . import qm  # noqa
 from . import weather  # noqa
-from . import mc    # noqa keep this last.
+from . import mc  # noqa keep this last.

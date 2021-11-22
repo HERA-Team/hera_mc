@@ -19,7 +19,7 @@ def gen_test_model():
     Base = declarative_base()
 
     class ValidTestModel(Base):
-        """A sample SQLAlchemy model to demostrate db conflicts. """
+        """A sample SQLAlchemy model to demostrate db conflicts."""
 
         __tablename__ = "validity_check_test"
 
@@ -42,9 +42,9 @@ def gen_relation_models():
         id_ = Column(Integer, primary_key=True)
 
         test_relationship_id = Column(ForeignKey("validity_check_test_2.id_"))
-        test_relationship = relationship(RelationTestModel,
-                                         primaryjoin=test_relationship_id
-                                         == RelationTestModel.id_)
+        test_relationship = relationship(
+            RelationTestModel, primaryjoin=test_relationship_id == RelationTestModel.id_
+        )
 
     return Base, RelationTestModel, RelationTestModel2
 
@@ -59,7 +59,7 @@ def gen_declarative():
 
         @declared_attr
         def _password(self):
-            return Column('password', String(256), nullable=False)
+            return Column("password", String(256), nullable=False)
 
         @hybrid_property
         def password(self):
@@ -153,13 +153,15 @@ def test_validity_pass_relationship():
 
     Base, RelationTestModel, RelationTestModel2 = gen_relation_models()
     try:
-        Base.metadata.drop_all(engine, tables=[RelationTestModel.__table__,
-                                               RelationTestModel2.__table__])
+        Base.metadata.drop_all(
+            engine, tables=[RelationTestModel.__table__, RelationTestModel2.__table__]
+        )
     except sqlalchemy.exc.NoSuchTableError:
         pass
 
-    Base.metadata.create_all(engine, tables=[RelationTestModel.__table__,
-                                             RelationTestModel2.__table__])
+    Base.metadata.create_all(
+        engine, tables=[RelationTestModel.__table__, RelationTestModel2.__table__]
+    )
 
     try:
         assert is_valid_database(Base, session) is True
@@ -196,6 +198,6 @@ def test_validity_pass_declarative():
 def test_check_connection():
     """Check that a missing database raises appropriate exception."""
     # Create database connection with fake url
-    db = mc.DeclarativeDB('postgresql://hera@localhost/foo')
+    db = mc.DeclarativeDB("postgresql://hera@localhost/foo")
     with db.sessionmaker() as s:
         assert check_connection(s) is False

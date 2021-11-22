@@ -25,7 +25,7 @@ def check_connection(session):
     """
     result = True
     try:
-        session.execute('SELECT 1')
+        session.execute("SELECT 1")
     except OperationalError:
         result = False
     return result
@@ -56,6 +56,7 @@ def is_valid_database(base, session):
     """
     if base is None:
         from . import MCDeclarativeBase
+
         base = MCDeclarativeBase
 
     engine = session.get_bind()
@@ -63,6 +64,7 @@ def is_valid_database(base, session):
         iengine = inspect(engine)
     except OperationalError:  # pragma: no cover
         import time
+
         time.sleep(5)
         try:
             iengine = inspect(engine)
@@ -98,8 +100,12 @@ def is_valid_database(base, session):
                     errors = True
             # TODO: Add validity checks for relations
         else:
-            logger.error("Model %s declares table %s which does not exist "
-                         "in database %s", klass, table, engine)
+            logger.error(
+                "Model %s declares table %s which does not exist " "in database %s",
+                klass,
+                table,
+                engine,
+            )
             errors = True
 
     return not errors

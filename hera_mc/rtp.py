@@ -10,14 +10,22 @@ the documentation needs to be kept up to date with any changes.
 """
 from math import floor
 from astropy.time import Time
-from sqlalchemy import (Column, ForeignKey, Integer, BigInteger,
-                        String, Text, Float, Enum)
+from sqlalchemy import (
+    Column,
+    ForeignKey,
+    Integer,
+    BigInteger,
+    String,
+    Text,
+    Float,
+    Enum,
+)
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from . import MCDeclarativeBase, DEFAULT_MIN_TOL, DEFAULT_HOUR_TOL
 from .server_status import ServerStatus
 
-rtp_process_enum = ['queued', 'started', 'finished', 'error']
+rtp_process_enum = ["queued", "started", "finished", "error"]
 rtp_task_process_enum = ["started", "finished", "error"]
 rtp_task_multiple_process_enum = ["started", "finished", "error"]
 
@@ -55,7 +63,7 @@ class RTPServerStatus(ServerStatus):
 
     """
 
-    __tablename__ = 'rtp_server_status'
+    __tablename__ = "rtp_server_status"
 
 
 class RTPStatus(MCDeclarativeBase):
@@ -77,7 +85,7 @@ class RTPStatus(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'rtp_status'
+    __tablename__ = "rtp_status"
     time = Column(BigInteger, primary_key=True, autoincrement=False)
     # should this be an enum? or text?
     status = Column(String(64), nullable=False)
@@ -85,12 +93,15 @@ class RTPStatus(MCDeclarativeBase):
     num_processes = Column(Integer, nullable=False)
     restart_hours_elapsed = Column(Float, nullable=False)
 
-    tols = {'event_min_elapsed': DEFAULT_MIN_TOL,
-            'restart_hours_elapsed': DEFAULT_HOUR_TOL}
+    tols = {
+        "event_min_elapsed": DEFAULT_MIN_TOL,
+        "restart_hours_elapsed": DEFAULT_HOUR_TOL,
+    }
 
     @classmethod
-    def create(cls, time, status, event_min_elapsed, num_processes,
-               restart_hours_elapsed):
+    def create(
+        cls, time, status, event_min_elapsed, num_processes, restart_hours_elapsed
+    ):
         """
         Create a new rtp_status object.
 
@@ -113,13 +124,16 @@ class RTPStatus(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         time = floor(time.gps)
 
-        return cls(time=time, status=status,
-                   event_min_elapsed=event_min_elapsed,
-                   num_processes=num_processes,
-                   restart_hours_elapsed=restart_hours_elapsed)
+        return cls(
+            time=time,
+            status=status,
+            event_min_elapsed=event_min_elapsed,
+            num_processes=num_processes,
+            restart_hours_elapsed=restart_hours_elapsed,
+        )
 
 
 class RTPProcessEvent(MCDeclarativeBase):
@@ -138,11 +152,10 @@ class RTPProcessEvent(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'rtp_process_event'
+    __tablename__ = "rtp_process_event"
     time = Column(BigInteger, primary_key=True)
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
-    event = Column(Enum(*rtp_process_enum, name='rtp_process_enum'),
-                   nullable=False)
+    obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
+    event = Column(Enum(*rtp_process_enum, name="rtp_process_enum"), nullable=False)
 
     @classmethod
     def create(cls, time, obsid, event):
@@ -164,7 +177,7 @@ class RTPProcessEvent(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         time = floor(time.gps)
 
         return cls(time=time, obsid=obsid, event=event)
@@ -188,9 +201,9 @@ class RTPTaskProcessEvent(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'rtp_task_process_event'
+    __tablename__ = "rtp_task_process_event"
     time = Column(BigInteger, primary_key=True)
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
     task_name = Column(Text, primary_key=True)
     event = Column(
         Enum(*rtp_task_process_enum, name="rtp_task_process_enum"),
@@ -219,7 +232,7 @@ class RTPTaskProcessEvent(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         time = floor(time.gps)
 
         return cls(time=time, obsid=obsid, task_name=task_name, event=event)
@@ -311,9 +324,9 @@ class RTPProcessRecord(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'rtp_process_record'
+    __tablename__ = "rtp_process_record"
     time = Column(BigInteger, primary_key=True)
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
     pipeline_list = Column(Text, nullable=False)
     rtp_git_version = Column(String(32), nullable=False)
     rtp_git_hash = Column(String(64), nullable=False)
@@ -325,10 +338,20 @@ class RTPProcessRecord(MCDeclarativeBase):
     pyuvdata_git_hash = Column(String(64), nullable=False)
 
     @classmethod
-    def create(cls, time, obsid, pipeline_list, rtp_git_version, rtp_git_hash,
-               hera_qm_git_version, hera_qm_git_hash,
-               hera_cal_git_version, hera_cal_git_hash,
-               pyuvdata_git_version, pyuvdata_git_hash):
+    def create(
+        cls,
+        time,
+        obsid,
+        pipeline_list,
+        rtp_git_version,
+        rtp_git_hash,
+        hera_qm_git_version,
+        hera_qm_git_hash,
+        hera_cal_git_version,
+        hera_cal_git_hash,
+        pyuvdata_git_version,
+        pyuvdata_git_hash,
+    ):
         """
         Create a new rtp_process_record object.
 
@@ -363,17 +386,22 @@ class RTPProcessRecord(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         time = floor(time.gps)
 
-        return cls(time=time, obsid=obsid, pipeline_list=pipeline_list,
-                   rtp_git_version=rtp_git_version, rtp_git_hash=rtp_git_hash,
-                   hera_qm_git_version=hera_qm_git_version,
-                   hera_qm_git_hash=hera_qm_git_hash,
-                   hera_cal_git_version=hera_cal_git_version,
-                   hera_cal_git_hash=hera_cal_git_hash,
-                   pyuvdata_git_version=pyuvdata_git_version,
-                   pyuvdata_git_hash=pyuvdata_git_hash)
+        return cls(
+            time=time,
+            obsid=obsid,
+            pipeline_list=pipeline_list,
+            rtp_git_version=rtp_git_version,
+            rtp_git_hash=rtp_git_hash,
+            hera_qm_git_version=hera_qm_git_version,
+            hera_qm_git_hash=hera_qm_git_hash,
+            hera_cal_git_version=hera_cal_git_version,
+            hera_cal_git_hash=hera_cal_git_hash,
+            pyuvdata_git_version=pyuvdata_git_version,
+            pyuvdata_git_hash=pyuvdata_git_hash,
+        )
 
 
 class RTPTaskJobID(MCDeclarativeBase):
@@ -398,8 +426,8 @@ class RTPTaskJobID(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'rtp_task_jobid'
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    __tablename__ = "rtp_task_jobid"
+    obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
     task_name = Column(Text, primary_key=True)
     start_time = Column(BigInteger, nullable=False, primary_key=True)
     job_id = Column(BigInteger, nullable=False)
@@ -426,11 +454,12 @@ class RTPTaskJobID(MCDeclarativeBase):
 
         """
         if not isinstance(start_time, Time):
-            raise ValueError('start_time must be an astropy Time object')
+            raise ValueError("start_time must be an astropy Time object")
         start_time = floor(start_time.gps)
 
-        return cls(obsid=obsid, task_name=task_name, start_time=start_time,
-                   job_id=job_id)
+        return cls(
+            obsid=obsid, task_name=task_name, start_time=start_time, job_id=job_id
+        )
 
 
 class RTPTaskResourceRecord(MCDeclarativeBase):
@@ -456,8 +485,8 @@ class RTPTaskResourceRecord(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'rtp_task_resource_record'
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    __tablename__ = "rtp_task_resource_record"
+    obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
     task_name = Column(Text, primary_key=True)
     start_time = Column(BigInteger, nullable=False)
     stop_time = Column(BigInteger, nullable=False)
@@ -470,8 +499,9 @@ class RTPTaskResourceRecord(MCDeclarativeBase):
         return self.stop_time - self.start_time
 
     @classmethod
-    def create(cls, obsid, task_name, start_time, stop_time, max_memory=None,
-               avg_cpu_load=None):
+    def create(
+        cls, obsid, task_name, start_time, stop_time, max_memory=None, avg_cpu_load=None
+    ):
         """
         Create a new RTPTaskResourceRecord object.
 
@@ -496,15 +526,20 @@ class RTPTaskResourceRecord(MCDeclarativeBase):
 
         """
         if not isinstance(start_time, Time):
-            raise ValueError('start_time must be an astropy Time object')
+            raise ValueError("start_time must be an astropy Time object")
         if not isinstance(stop_time, Time):
-            raise ValueError('stop_time must be an astropy Time object')
+            raise ValueError("stop_time must be an astropy Time object")
         start_time = floor(start_time.gps)
         stop_time = floor(stop_time.gps)
 
-        return cls(obsid=obsid, task_name=task_name, start_time=start_time,
-                   stop_time=stop_time, max_memory=max_memory,
-                   avg_cpu_load=avg_cpu_load)
+        return cls(
+            obsid=obsid,
+            task_name=task_name,
+            start_time=start_time,
+            stop_time=stop_time,
+            max_memory=max_memory,
+            avg_cpu_load=avg_cpu_load,
+        )
 
 
 class RTPLaunchRecord(MCDeclarativeBase):
@@ -543,14 +578,14 @@ class RTPLaunchRecord(MCDeclarativeBase):
 
     @classmethod
     def create(
-            cls,
-            obsid,
-            jd,
-            obs_tag,
-            filename,
-            prefix,
-            submitted_time=None,
-            rtp_attempts=0,
+        cls,
+        obsid,
+        jd,
+        obs_tag,
+        filename,
+        prefix,
+        submitted_time=None,
+        rtp_attempts=0,
     ):
         """
         Create a new rtp_launch_record object.
@@ -626,10 +661,10 @@ class RTPTaskMultipleTrack(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'rtp_task_multiple_track'
-    obsid_start = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    __tablename__ = "rtp_task_multiple_track"
+    obsid_start = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
     task_name = Column(Text, primary_key=True)
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
 
     @classmethod
     def create(cls, obsid_start, task_name, obsid):
@@ -677,8 +712,8 @@ class RTPTaskMultipleJobID(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'rtp_task_multiple_jobid'
-    obsid_start = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    __tablename__ = "rtp_task_multiple_jobid"
+    obsid_start = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
     task_name = Column(Text, primary_key=True)
     start_time = Column(BigInteger, nullable=False, primary_key=True)
     job_id = Column(BigInteger, nullable=False)
@@ -706,11 +741,15 @@ class RTPTaskMultipleJobID(MCDeclarativeBase):
 
         """
         if not isinstance(start_time, Time):
-            raise ValueError('start_time must be an astropy Time object')
+            raise ValueError("start_time must be an astropy Time object")
         start_time = floor(start_time.gps)
 
-        return cls(obsid_start=obsid_start, task_name=task_name, start_time=start_time,
-                   job_id=job_id)
+        return cls(
+            obsid_start=obsid_start,
+            task_name=task_name,
+            start_time=start_time,
+            job_id=job_id,
+        )
 
 
 class RTPTaskMultipleResourceRecord(MCDeclarativeBase):
@@ -736,8 +775,8 @@ class RTPTaskMultipleResourceRecord(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'rtp_task_multiple_resource_record'
-    obsid_start = Column(BigInteger, ForeignKey('hera_obs.obsid'), primary_key=True)
+    __tablename__ = "rtp_task_multiple_resource_record"
+    obsid_start = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
     task_name = Column(Text, primary_key=True)
     start_time = Column(BigInteger, nullable=False)
     stop_time = Column(BigInteger, nullable=False)
@@ -750,8 +789,15 @@ class RTPTaskMultipleResourceRecord(MCDeclarativeBase):
         return self.stop_time - self.start_time
 
     @classmethod
-    def create(cls, obsid_start, task_name, start_time, stop_time, max_memory=None,
-               avg_cpu_load=None):
+    def create(
+        cls,
+        obsid_start,
+        task_name,
+        start_time,
+        stop_time,
+        max_memory=None,
+        avg_cpu_load=None,
+    ):
         """
         Create a new RTPTaskMultipleResourceRecord object.
 
@@ -777,12 +823,17 @@ class RTPTaskMultipleResourceRecord(MCDeclarativeBase):
 
         """
         if not isinstance(start_time, Time):
-            raise ValueError('start_time must be an astropy Time object')
+            raise ValueError("start_time must be an astropy Time object")
         if not isinstance(stop_time, Time):
-            raise ValueError('stop_time must be an astropy Time object')
+            raise ValueError("stop_time must be an astropy Time object")
         start_time = floor(start_time.gps)
         stop_time = floor(stop_time.gps)
 
-        return cls(obsid_start=obsid_start, task_name=task_name, start_time=start_time,
-                   stop_time=stop_time, max_memory=max_memory,
-                   avg_cpu_load=avg_cpu_load)
+        return cls(
+            obsid_start=obsid_start,
+            task_name=task_name,
+            start_time=start_time,
+            stop_time=stop_time,
+            max_memory=max_memory,
+            avg_cpu_load=avg_cpu_load,
+        )

@@ -9,10 +9,20 @@ Script to add quality metrics file to M&C database.
 import hera_mc.mc as mc
 
 parser = mc.get_mc_argument_parser()
-parser.add_argument('files', metavar='files', type=str, nargs='+',
-                    help='json files to read and enter into db.')
-parser.add_argument('--type', dest='type', type=str, default=None,
-                    help='File type to add to db. Options = ["ant", "firstcal", "omnical"]')
+parser.add_argument(
+    "files",
+    metavar="files",
+    type=str,
+    nargs="+",
+    help="json files to read and enter into db.",
+)
+parser.add_argument(
+    "--type",
+    dest="type",
+    type=str,
+    default=None,
+    help='File type to add to db. Options = ["ant", "firstcal", "omnical"]',
+)
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 session = db.sessionmaker()

@@ -10,14 +10,14 @@ config = context.config
 
 # this will overwrite the init file sqlalchemy.url
 # path with the path from ~/.hera_mc/mc_config.json
-config_path = op.expanduser('~/.hera_mc/mc_config.json')
+config_path = op.expanduser("~/.hera_mc/mc_config.json")
 with open(config_path) as f:
     config_data = json.load(f)
-db_name = config_data.get('default_db_name')
-db_data = config_data.get('databases')
+db_name = config_data.get("default_db_name")
+db_data = config_data.get("databases")
 db_data = db_data.get(db_name)
-db_url = db_data.get('url')
-config.set_main_option('sqlalchemy.url', db_url)
+db_url = db_data.get("url")
+config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -25,6 +25,7 @@ fileConfig(config.config_file_name)
 
 # for 'autogenerate' support
 from hera_mc import mc  # noqa
+
 target_metadata = mc.MCDeclarativeBase.metadata
 
 
@@ -47,8 +48,7 @@ def run_migrations_offline():
 
     """
     url = config.get_main_option("sqlalchemy.url")
-    context.configure(
-        url=url, target_metadata=target_metadata, literal_binds=True)
+    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
 
     with context.begin_transaction():
         context.run_migrations()
@@ -63,14 +63,12 @@ def run_migrations_online():
     """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
-        prefix='sqlalchemy.',
-        poolclass=pool.NullPool)
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

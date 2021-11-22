@@ -10,8 +10,8 @@ import time
 import warnings
 from . import cm_sysutils, correlator
 
-REDIS_CMINFO_HASH = 'cminfo'
-REDIS_CORR_HASH = 'corr:map'
+REDIS_CMINFO_HASH = "cminfo"
+REDIS_CORR_HASH = "corr:map"
 
 
 def cminfo_redis_snap(cminfo):
@@ -37,30 +37,34 @@ def cminfo_redis_snap(cminfo):
     ant_to_snap = {}
     all_snap_inputs = {}
     snap_to_serial = {}
-    for _n, ant in enumerate(cminfo['antenna_numbers']):
-        name = cminfo['antenna_names'][_n]
-        corr_inp = cminfo['correlator_inputs'][_n]
-        snap_snr = cminfo['snap_serial_numbers'][_n]
+    for _n, ant in enumerate(cminfo["antenna_numbers"]):
+        name = cminfo["antenna_names"][_n]
+        corr_inp = cminfo["correlator_inputs"][_n]
+        snap_snr = cminfo["snap_serial_numbers"][_n]
         ant_to_snap[ant] = {}
         for _i, psnap in enumerate(corr_inp):
             pol = psnap.lower()[0]
-            if pol not in ['e', 'n'] or '>' not in psnap:
+            if pol not in ["e", "n"] or ">" not in psnap:
                 warnings.warn(f"{psnap} is not an allowed correlator input")
                 continue
-            snap_input, snap_hostname = psnap.split('>')
+            snap_input, snap_hostname = psnap.split(">")
             channel = int(snap_input[1:]) // 2  # divide by 2 because ADC is in demux 2
-            ant_to_snap[ant][pol] = {'host': snap_hostname, 'channel': channel}
+            ant_to_snap[ant][pol] = {"host": snap_hostname, "channel": channel}
             snap_to_ant.setdefault(snap_hostname, [None] * 6)
             snap_to_ant[snap_hostname][channel] = name + pol.upper()
             all_snap_inputs.setdefault(snap_hostname, [])
             all_snap_inputs[snap_hostname].append(snap_input)
             try:  # if already present make sure it agrees
                 if snap_to_serial[snap_hostname] != snap_snr[_i]:
-                    msg = 'Snap hostname-to-serial inconsistent:\n'
-                    msg += '\tCurrent for antpol {}{} -> hostname={}, serial={}\n'.format(
-                        ant, pol, snap_hostname, snap_snr[_i])
-                    msg += '\tStored -> hostname={}, serial={}'.format(
-                        snap_hostname, snap_to_serial[snap_hostname])
+                    msg = "Snap hostname-to-serial inconsistent:\n"
+                    msg += (
+                        "\tCurrent for antpol {}{} -> hostname={}, serial={}\n".format(
+                            ant, pol, snap_hostname, snap_snr[_i]
+                        )
+                    )
+                    msg += "\tStored -> hostname={}, serial={}".format(
+                        snap_hostname, snap_to_serial[snap_hostname]
+                    )
                     raise ValueError(msg)
             except KeyError:  # if not present, add it
                 snap_to_serial[snap_hostname] = snap_snr[_i]
@@ -70,8 +74,9 @@ def cminfo_redis_snap(cminfo):
     return snap_to_ant, ant_to_snap, all_snap_inputs, snap_to_serial
 
 
-def set_redis_cminfo(redishost=correlator.DEFAULT_REDIS_ADDRESS,
-                     session=None, testing=False):
+def set_redis_cminfo(
+    redishost=correlator.DEFAULT_REDIS_ADDRESS, session=None, testing=False
+):
     """
     Write config info to redis database for the correlator.
 
@@ -98,7 +103,7 @@ def set_redis_cminfo(redishost=correlator.DEFAULT_REDIS_ADDRESS,
         redhkey[key] = json.dumps(value)
     redis_hash = REDIS_CMINFO_HASH
     if testing:
-        redis_hash = 'testing_' + REDIS_CMINFO_HASH
+        redis_hash = "testing_" + REDIS_CMINFO_HASH
     rsession.hset(redis_hash, mapping=redhkey)
     if testing:
         rsession.expire(redis_hash, 300)
@@ -106,15 +111,17 @@ def set_redis_cminfo(redishost=correlator.DEFAULT_REDIS_ADDRESS,
     # Write correlator mappings to redis (corr:map)
     redis_hash = REDIS_CORR_HASH
     if testing:
-        redis_hash = 'testing_' + REDIS_CORR_HASH
-    snap_to_ant, ant_to_snap, all_snap_inputs, snap_to_serial = cminfo_redis_snap(cminfo)
+        redis_hash = "testing_" + REDIS_CORR_HASH
+    snap_to_ant, ant_to_snap, all_snap_inputs, snap_to_serial = cminfo_redis_snap(
+        cminfo
+    )
     redhkey = {}
-    redhkey['snap_to_ant'] = json.dumps(snap_to_ant)
-    redhkey['ant_to_snap'] = json.dumps(ant_to_snap)
-    redhkey['all_snap_inputs'] = json.dumps(all_snap_inputs)
-    redhkey['snap_to_serial'] = json.dumps(snap_to_serial)
-    redhkey['update_time'] = time.time()
-    redhkey['update_time_str'] = time.ctime(redhkey['update_time'])
+    redhkey["snap_to_ant"] = json.dumps(snap_to_ant)
+    redhkey["ant_to_snap"] = json.dumps(ant_to_snap)
+    redhkey["all_snap_inputs"] = json.dumps(all_snap_inputs)
+    redhkey["snap_to_serial"] = json.dumps(snap_to_serial)
+    redhkey["update_time"] = time.time()
+    redhkey["update_time_str"] = time.ctime(redhkey["update_time"])
     rsession.hset(redis_hash, mapping=redhkey)
     if testing:
         rsession.expire(redis_hash, 300)

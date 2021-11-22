@@ -7,7 +7,7 @@ import argparse
 from hera_mc import cm_gen_sqlite
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--force', help='Force sqlite db write.', action='store_true')
+ap.add_argument("--force", help="Force sqlite db write.", action="store_true")
 args = ap.parse_args()
 
 sqlu = cm_gen_sqlite.SqliteHandling()

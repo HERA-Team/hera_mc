@@ -38,7 +38,7 @@ class CMVersion(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'cm_version'
+    __tablename__ = "cm_version"
     update_time = Column(BigInteger, primary_key=True, autoincrement=False)
     git_hash = Column(String(64), nullable=False)
 
@@ -60,17 +60,17 @@ class CMVersion(MCDeclarativeBase):
             cm_version object with time/git_hash
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         time = int(floor(time.gps))
 
         # In Python 3, we sometimes get Unicode, sometimes bytes
         if isinstance(git_hash, bytes):
-            git_hash = git_hash.decode('utf8')
+            git_hash = git_hash.decode("utf8")
 
         return cls(update_time=time, git_hash=git_hash)
 
 
-def package_db_to_csv(session=None, tables='all'):
+def package_db_to_csv(session=None, tables="all"):
     """
     Get the configuration management tables and package them to csv files.
 
@@ -91,6 +91,7 @@ def package_db_to_csv(session=None, tables='all'):
 
     """
     import pandas
+
     if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
@@ -98,18 +99,20 @@ def package_db_to_csv(session=None, tables='all'):
     data_prefix = cm_table_info.data_prefix
     cm_tables = cm_table_info.cm_tables
 
-    if tables == 'all':
+    if tables == "all":
         tables_to_write = cm_tables.keys()
     else:
-        tables_to_write = tables.split(',')
+        tables_to_write = tables.split(",")
 
     print("Writing packaged files to current directory.")
-    print("--> If packing from qmaster, be sure to use 'cm_pack.py --go' to "
-          "copy, commit and log the change.")
+    print(
+        "--> If packing from qmaster, be sure to use 'cm_pack.py --go' to "
+        "copy, commit and log the change."
+    )
     print("    Note:  this works via the hera_cm_db_updates repo.")
     files_written = []
     for table in tables_to_write:
-        data_filename = data_prefix + table + '.csv'
+        data_filename = data_prefix + table + ".csv"
         table_data = pandas.read_sql_table(table, session.get_bind())
         print("\tPackaging:  " + data_filename)
         table_data.to_csv(data_filename, index=False)
@@ -145,8 +148,9 @@ def pack_n_go(session, cm_csv_path):  # pragma: no cover
     session.commit()
 
 
-def initialize_db_from_csv(session=None, tables='all', maindb=False,
-                           testing=False, cm_csv_path=None):  # pragma: no cover
+def initialize_db_from_csv(
+    session=None, tables="all", maindb=False, testing=False, cm_csv_path=None
+):  # pragma: no cover
     """
     Read the csv files and repopulate the configuration management database.
 
@@ -176,17 +180,23 @@ def initialize_db_from_csv(session=None, tables='all', maindb=False,
     """
     print("This will erase and rewrite the configuration management tables.")
     you_are_sure = input("Are you sure you want to do this (y/n)? ")
-    if you_are_sure == 'y':
-        success = _initialization(session=session, cm_csv_path=cm_csv_path,
-                                  tables=tables, maindb=maindb, testing=testing)
+    if you_are_sure == "y":
+        success = _initialization(
+            session=session,
+            cm_csv_path=cm_csv_path,
+            tables=tables,
+            maindb=maindb,
+            testing=testing,
+        )
     else:
         print("Exit with no rewrite.")
         success = False
     return success
 
 
-def check_if_main(session, config_path=None, expected_hostname='qmaster',
-                  test_db_name='testing'):
+def check_if_main(
+    session, config_path=None, expected_hostname="qmaster", test_db_name="testing"
+):
     """
     Determine if the code is running on the site main computer or not.
 
@@ -211,13 +221,13 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     import socket
     import json
 
-    if isinstance(session, str) and session == 'testing_not_main':
+    if isinstance(session, str) and session == "testing_not_main":
         return False
-    if isinstance(session, str) and session == 'testing_main':
+    if isinstance(session, str) and session == "testing_main":
         return True
 
     hostname = socket.gethostname()
-    is_main_host = (hostname == expected_hostname)
+    is_main_host = hostname == expected_hostname
 
     session_db_url = session.bind.engine.url.render_as_string(hide_password=False)
 
@@ -227,8 +237,8 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
     with open(config_path) as f:
         config_data = json.load(f)
 
-    testing_db_url = config_data.get('databases').get(test_db_name).get('url')
-    is_test_db = (session_db_url == testing_db_url)
+    testing_db_url = config_data.get("databases").get(test_db_name).get("url")
+    is_test_db = session_db_url == testing_db_url
 
     if is_main_host:  # pragma: no cover
         if is_test_db:
@@ -239,7 +249,11 @@ def check_if_main(session, config_path=None, expected_hostname='qmaster',
         is_main_db = False
 
     if is_main_db:  # pragma: no cover
-        print('Found main db at hostname {} and DB url {}'.format(hostname, session_db_url))
+        print(
+            "Found main db at hostname {} and DB url {}".format(
+                hostname, session_db_url
+            )
+        )
     return is_main_db
 
 
@@ -266,14 +280,16 @@ def db_validation(maindb_pw, session):
         return True
 
     if maindb_pw is False:
-        raise ValueError('Error:  attempting access to main db without a password')
-    if maindb_pw != 'pw4maindb':
-        raise ValueError('Error:  incorrect password for main db')
+        raise ValueError("Error:  attempting access to main db without a password")
+    if maindb_pw != "pw4maindb":
+        raise ValueError("Error:  incorrect password for main db")
 
     return True
 
 
-def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, testing=False):
+def _initialization(
+    session=None, cm_csv_path=None, tables="all", maindb=False, testing=False
+):
     """
     Initialize the database.
 
@@ -307,24 +323,26 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, 
         print("cm_init not allowed.")
         return False
 
-    cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path, testing=testing)
+    cm_git_hash = cm_utils.get_cm_repo_git_hash(
+        cm_csv_path=cm_csv_path, testing=testing
+    )
 
-    if tables != 'all':  # pragma: no cover
+    if tables != "all":  # pragma: no cover
         print("You may encounter foreign_key issues by not using 'all' tables.")
         print("If it doesn't complain though you should be ok.")
 
     # Get tables to deal with in proper order
     cm_tables = cm_table_info.cm_tables
-    if tables == 'all':
+    if tables == "all":
         tables_to_read_unordered = cm_tables.keys()
     else:  # pragma: no cover
-        tables_to_read_unordered = tables.split(',')
+        tables_to_read_unordered = tables.split(",")
     tables_to_read = cm_table_info.order_the_tables(tables_to_read_unordered)
     data_prefix = cm_table_info.data_prefix
 
     use_table = []
     for table in tables_to_read:
-        csv_table_name = data_prefix + table + '.csv'
+        csv_table_name = data_prefix + table + ".csv"
         use_table.append([table, os.path.join(cm_csv_path, csv_table_name)])
 
     # add this cm git hash to cm_version table
@@ -337,9 +355,9 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, 
 
     # Initialize tables in reversed order
     for table, data_filename in reversed(use_table):
-        cm_utils.log('cm_initialization: ' + data_filename)
+        cm_utils.log("cm_initialization: " + data_filename)
         field_row = True  # This is the first row
-        with open(data_filename, 'rt') as csvfile:
+        with open(data_filename, "rt") as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 table_inst = cm_tables[table][0]()
@@ -348,9 +366,9 @@ def _initialization(session=None, cm_csv_path=None, tables='all', maindb=False, 
                     field_row = False
                 else:
                     for i, r in enumerate(row):
-                        if r == '':
+                        if r == "":
                             r = None
-                        elif 'gpstime' in field_name[i]:
+                        elif "gpstime" in field_name[i]:
                             # Needed since pandas does not have an integer representation
                             #  of NaN, so it outputs a float, which the database won't allow
                             r = int(float(r))

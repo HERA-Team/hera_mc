@@ -34,36 +34,40 @@ from hera_mc import mc
 # If `num_recent_events` gets too big, the relevant storcli call can start taking
 # incredibly long to complete.
 
-storcli = '/opt/MegaRAID/storcli/storcli64'
-event_ticker = '/home/obs/.hera_mc/megaraid_last_event_id_%s.txt' % (socket.gethostname(), )
+storcli = "/opt/MegaRAID/storcli/storcli64"
+event_ticker = "/home/obs/.hera_mc/megaraid_last_event_id_%s.txt" % (
+    socket.gethostname(),
+)
 controller = 0
-num_recent_events = 32  # if more than this many events occur between runs, some won't get logged
+num_recent_events = (
+    32  # if more than this many events occur between runs, some won't get logged
+)
 hostname = socket.gethostname()
 
 show_all_items = [
-    'Controller Status',
-    'Memory Correctable Errors',
-    'Memory Uncorrectable Errors',
-    'BBU Status',
-    'Physical Drives',
+    "Controller Status",
+    "Memory Correctable Errors",
+    "Memory Uncorrectable Errors",
+    "BBU Status",
+    "Physical Drives",
 ]
 
-event_header_keep_keys = frozenset(['Code', 'Class', 'Locale', 'Event Description'])
+event_header_keep_keys = frozenset(["Code", "Class", "Locale", "Event Description"])
 
 
 _months = {
-    'Jan': 1,
-    'Feb': 2,
-    'Mar': 3,
-    'Apr': 4,
-    'May': 5,
-    'Jun': 6,
-    'Jul': 7,
-    'Aug': 8,
-    'Sep': 9,
-    'Oct': 10,
-    'Nov': 11,
-    'Dec': 12,
+    "Jan": 1,
+    "Feb": 2,
+    "Mar": 3,
+    "Apr": 4,
+    "May": 5,
+    "Jun": 6,
+    "Jul": 7,
+    "Aug": 8,
+    "Sep": 9,
+    "Oct": 10,
+    "Nov": 11,
+    "Dec": 12,
 }
 
 
@@ -77,7 +81,7 @@ def parse_storcli_datetime(text):
     month = _months[month]
     day = int(day)
     year = int(year)
-    hour, minute, second = [int(s) for s in hhmmss.split(':')]
+    hour, minute, second = [int(s) for s in hhmmss.split(":")]
     local_tz = dateutil.tz.tzlocal()
     t = datetime.datetime(year, month, day, hour, minute, second, tzinfo=local_tz)
     return Time(t)  # auto-converts to UTC timescale
@@ -93,7 +97,7 @@ db = mc.connect_to_mc_db(args)
 # Get the seqNum of the last event that we've noticed
 
 try:
-    ticker_file = open(event_ticker, 'r')
+    ticker_file = open(event_ticker, "r")
 except IOError as e:
     if e.errno != errno.ENOENT:
         raise
@@ -105,15 +109,16 @@ else:
 
 # Parse '/c0 show all'
 
-show_all = Popen([storcli, '/c%d' % controller, 'show', 'all'],
-                 shell=False, stdout=PIPE)
+show_all = Popen(
+    [storcli, "/c%d" % controller, "show", "all"], shell=False, stdout=PIPE
+)
 item_values = {}
 
 for line in show_all.stdout:
     line = line.decode("utf-8")
     for item in show_all_items:
         if line.startswith(item):
-            item_values[item] = line.split('=', 1)[1].strip()
+            item_values[item] = line.split("=", 1)[1].strip()
             break
 
     # This is not at all scalable, but ... meh. We're looking for:
@@ -124,22 +129,34 @@ for line in show_all.stdout:
     # 0/0   RAID60 Optl  RW     Yes     RWBD  -   ON  196.475 TB
     # ----------------------------------------------------------------
 
-    if line.startswith('0/0'):
-        item_values['VD 0/0 State'] = line.split()[2]
+    if line.startswith("0/0"):
+        item_values["VD 0/0 State"] = line.split()[2]
 
 if show_all.wait() != 0:
-    print('error: storcli exited with an error code', file=sys.stderr)
-    print('unfortunately this script may have swallowed its error message', file=sys.stderr)
+    print("error: storcli exited with an error code", file=sys.stderr)
+    print(
+        "unfortunately this script may have swallowed its error message",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
-num_disks = int(item_values.pop('Physical Drives', 0))
+num_disks = int(item_values.pop("Physical Drives", 0))
 status_info = json.dumps(item_values, sort_keys=True)
 
 # Parse the recent events
 
-event_log = Popen([storcli, '/c%d' % controller, 'show', 'events',
-                   'type=latest=%d' % num_recent_events, 'filter=warning,critical,fatal'],
-                  shell=False, stdout=PIPE)
+event_log = Popen(
+    [
+        storcli,
+        "/c%d" % controller,
+        "show",
+        "events",
+        "type=latest=%d" % num_recent_events,
+        "filter=warning,critical,fatal",
+    ],
+    shell=False,
+    stdout=PIPE,
+)
 events = []
 
 NOT_IN_EVENT, IN_EVENT = 0, 1
@@ -150,36 +167,36 @@ cur_event_data = {}
 for line in event_log.stdout:
     line = line.decode("utf-8")
     if state == NOT_IN_EVENT:
-        if line.startswith('seqNum:'):
+        if line.startswith("seqNum:"):
             # The extra 0 arg here means to guess the numeric base;
             # seqnum is in hex with a 0x prefix.
-            seq_num = int(line.split(':', 1)[1].strip(), 0)
+            seq_num = int(line.split(":", 1)[1].strip(), 0)
             state = IN_EVENT
     elif state == IN_EVENT:
         line = line.strip()
         if not len(line):
             continue
 
-        if line.startswith('======='):
+        if line.startswith("======="):
             continue
 
-        if line.startswith('Event Data:'):  # just a separator
+        if line.startswith("Event Data:"):  # just a separator
             continue
 
-        if line == 'None':  # appears for events with no data after the ====== divider
+        if line == "None":  # appears for events with no data after the ====== divider
             continue
 
-        if line.startswith('seqNum:'):  # new event, finishing old one
+        if line.startswith("seqNum:"):  # new event, finishing old one
             if seq_num is not None:
                 events.append((seq_num, cur_event_data))
                 seq_num = None
                 cur_event_data = {}
 
-            seq_num = int(line.split(':', 1)[1].strip(), 0)
+            seq_num = int(line.split(":", 1)[1].strip(), 0)
             state = IN_EVENT
             continue
 
-        if line.startswith('Controller ='):  # we've reached the footer
+        if line.startswith("Controller ="):  # we've reached the footer
             if seq_num is not None:
                 events.append((seq_num, cur_event_data))
                 seq_num = None
@@ -189,15 +206,18 @@ for line in event_log.stdout:
             continue
 
         try:
-            key, value = line.split(':', 1)
+            key, value = line.split(":", 1)
         except ValueError:
-            print('severe: unexpected event data line: %r' % (line,))
+            print("severe: unexpected event data line: %r" % (line,))
         else:
             cur_event_data[key] = value.strip()
 
 if event_log.wait() != 0:
-    print('error: storcli exited with an error code', file=sys.stderr)
-    print('unfortunately this script may have swallowed its error message', file=sys.stderr)
+    print("error: storcli exited with an error code", file=sys.stderr)
+    print(
+        "unfortunately this script may have swallowed its error message",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 if seq_num is not None:
@@ -223,18 +243,19 @@ with db.sessionmaker() as session:
         # key. But on boot, it doesn't know the time and can
         # only report a delta against boot.
 
-        abs_time_str = data.pop('Time', None)
+        abs_time_str = data.pop("Time", None)
         if abs_time_str is not None:
             time = parse_storcli_datetime(abs_time_str)
         else:
-            boot_rel_time = int(data.pop('Seconds since last reboot'))
+            boot_rel_time = int(data.pop("Seconds since last reboot"))
             import psutil
+
             boot = datetime.datetime.fromtimestamp(psutil.boot_time())
-            delta = TimeDelta(boot_rel_time, format='sec')
+            delta = TimeDelta(boot_rel_time, format="sec")
             time = Time(boot) + delta
 
-        disk = data.pop('Device ID', '?')
-        data['seqNum'] = seqnum
+        disk = data.pop("Device ID", "?")
+        data["seqNum"] = seqnum
         info = json.dumps(data)
         session.add_lib_raid_error(time, hostname, disk, info)
 
@@ -243,5 +264,5 @@ with db.sessionmaker() as session:
 
 # Remember the biggest seqnum that we've seen.
 
-with open(event_ticker, 'w') as f:
+with open(event_ticker, "w") as f:
     print(biggest_seqnum, file=f)

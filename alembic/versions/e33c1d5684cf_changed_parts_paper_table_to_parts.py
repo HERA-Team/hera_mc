@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'e33c1d5684cf'
-down_revision = '3d3c72ecbc0d'
+revision = "e33c1d5684cf"
+down_revision = "3d3c72ecbc0d"
 branch_labels = None
 depends_on = None
 
@@ -20,11 +20,11 @@ depends_on = None
 
 def upgrade():
     # ### commands hand-edited to only rename_table ###
-    op.rename_table('parts_paper', 'parts')
+    op.rename_table("parts_paper", "parts")
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands hand-edited to apply rename_table ###
-    op.rename_table('parts', 'parts_paper')
+    op.rename_table("parts", "parts_paper")
     # ### end Alembic commands ###

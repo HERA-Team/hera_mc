@@ -13,76 +13,81 @@ import warnings
 
 import numpy as np
 from astropy.time import Time
-from sqlalchemy import (Column, BigInteger, Integer, Float, Boolean, String,
-                        ForeignKey, ForeignKeyConstraint)
+from sqlalchemy import (
+    Column,
+    BigInteger,
+    Integer,
+    Float,
+    Boolean,
+    String,
+    ForeignKey,
+    ForeignKeyConstraint,
+)
 
 from . import MCDeclarativeBase
+
 # default acclen -- corresponds to a bit under 10 seconds (~9.66 seconds)
 DEFAULT_ACCLEN_SPECTRA = 147456
 
 DEFAULT_REDIS_ADDRESS = "redishost"
 
 # key is state type, value is method name in hera_corr_cm
-state_dict = {'taking_data': 'is_recording',
-              'phase_switching': 'phase_switch_is_on',
-              'noise_diode': 'noise_diode_is_on',
-              'load': 'load_is_on'}
+state_dict = {
+    "taking_data": "is_recording",
+    "phase_switching": "phase_switch_is_on",
+    "noise_diode": "noise_diode_is_on",
+    "load": "load_is_on",
+}
 
-tag_list = ['science', 'engineering']
+tag_list = ["science", "engineering"]
 
 # key is command, value is method name in hera_corr_cm
-command_dict = {'take_data': 'take_data',
-                'stop_taking_data': 'stop_taking_data',
-                'phase_switching_on': 'phase_switch_enable',
-                'phase_switching_off': 'phase_switch_disable',
-                'noise_diode_on': 'noise_diode_enable',
-                'noise_diode_off': 'noise_diode_disable',
-                'load_on': 'load_enable',
-                "load_off": 'load_disable',
-                'update_config': 'update_config',
-                'restart': 'restart',
-                'hard_stop': '_stop'}
+command_dict = {
+    "take_data": "take_data",
+    "stop_taking_data": "stop_taking_data",
+    "phase_switching_on": "phase_switch_enable",
+    "phase_switching_off": "phase_switch_disable",
+    "noise_diode_on": "noise_diode_enable",
+    "noise_diode_off": "noise_diode_disable",
+    "load_on": "load_enable",
+    "load_off": "load_disable",
+    "update_config": "update_config",
+    "restart": "restart",
+    "hard_stop": "_stop",
+}
 
 command_state_map = {
-    'take_data': {'allowed_when_recording': False},
-    'stop_taking_data': {
-        'state_type': 'taking_data',
-        'state': False,
-        'allowed_when_recording': True
+    "take_data": {"allowed_when_recording": False},
+    "stop_taking_data": {
+        "state_type": "taking_data",
+        "state": False,
+        "allowed_when_recording": True,
     },
-    'phase_switching_on': {
-        'state_type': 'phase_switching',
-        'state': True,
-        'allowed_when_recording': False
+    "phase_switching_on": {
+        "state_type": "phase_switching",
+        "state": True,
+        "allowed_when_recording": False,
     },
-    'phase_switching_off': {
-        'state_type': 'phase_switching',
-        'state': False,
-        'allowed_when_recording': False
+    "phase_switching_off": {
+        "state_type": "phase_switching",
+        "state": False,
+        "allowed_when_recording": False,
     },
-    'noise_diode_on': {
-        'state_type': 'noise_diode',
-        'state': True,
-        'allowed_when_recording': False
+    "noise_diode_on": {
+        "state_type": "noise_diode",
+        "state": True,
+        "allowed_when_recording": False,
     },
-    'noise_diode_off': {
-        'state_type': 'noise_diode',
-        'state': False,
-        'allowed_when_recording': False
+    "noise_diode_off": {
+        "state_type": "noise_diode",
+        "state": False,
+        "allowed_when_recording": False,
     },
-    'load_on': {
-        'state_type': 'load',
-        'state': True,
-        'allowed_when_recording': False
-    },
-    'load_off': {
-        'state_type': 'load',
-        'state': False,
-        'allowed_when_recording': False
-    },
-    'update_config': {'allowed_when_recording': True},
-    'restart': {'allowed_when_recording': False},
-    'hard_stop': {'allowed_when_recording': False}
+    "load_on": {"state_type": "load", "state": True, "allowed_when_recording": False},
+    "load_off": {"state_type": "load", "state": False, "allowed_when_recording": False},
+    "update_config": {"allowed_when_recording": True},
+    "restart": {"allowed_when_recording": False},
+    "hard_stop": {"allowed_when_recording": False},
 }
 
 
@@ -102,7 +107,7 @@ class CorrelatorControlState(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'correlator_control_state'
+    __tablename__ = "correlator_control_state"
     time = Column(BigInteger, primary_key=True)
     state_type = Column(String, primary_key=True)
     state = Column(Boolean, nullable=False)
@@ -124,13 +129,15 @@ class CorrelatorControlState(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         corr_time = floor(time.gps)
 
         if state_type not in list(state_dict.keys()):
-            raise ValueError('state_type must be one of: '
-                             + ', '.join(list(state_dict.keys()))
-                             + '. state_type is actually {}'.format(state_type))
+            raise ValueError(
+                "state_type must be one of: "
+                + ", ".join(list(state_dict.keys()))
+                + ". state_type is actually {}".format(state_type)
+            )
 
         return cls(time=corr_time, state_type=state_type, state=state)
 
@@ -162,7 +169,7 @@ def _get_control_state(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     for key, value in state_dict.items():
         # call each state query method and add to corr_state_dict
         state, timestamp = getattr(corr_cm, value)()
-        corr_state_dict[key] = {'timestamp': timestamp, 'state': state}
+        corr_state_dict[key] = {"timestamp": timestamp, "state": state}
 
     return corr_state_dict
 
@@ -180,7 +187,7 @@ class CorrelatorConfigFile(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'correlator_config_file'
+    __tablename__ = "correlator_config_file"
     config_hash = Column(String, primary_key=True)
     filename = Column(String, nullable=False)
 
@@ -213,11 +220,11 @@ class CorrelatorConfigStatus(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'correlator_config_status'
+    __tablename__ = "correlator_config_status"
     time = Column(BigInteger, primary_key=True)
-    config_hash = Column(String,
-                         ForeignKey("correlator_config_file.config_hash"),
-                         nullable=False)
+    config_hash = Column(
+        String, ForeignKey("correlator_config_file.config_hash"), nullable=False
+    )
 
     @classmethod
     def create(cls, time, config_hash):
@@ -233,7 +240,7 @@ class CorrelatorConfigStatus(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         corr_time = floor(time.gps)
 
         return cls(time=corr_time, config_hash=config_hash)
@@ -262,9 +269,9 @@ def _get_config(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
         corr_cm = hera_corr_cm.HeraCorrCM(redishost=redishost)
 
     timestamp, config, config_hash = corr_cm.get_config()
-    time = Time(timestamp, format='unix')
+    time = Time(timestamp, format="unix")
 
-    return {'time': time, 'hash': config_hash, 'config': config}
+    return {"time": time, "hash": config_hash, "config": config}
 
 
 class CorrelatorConfigParams(MCDeclarativeBase):
@@ -282,12 +289,12 @@ class CorrelatorConfigParams(MCDeclarativeBase):
         Value of parameter.
     """
 
-    __tablename__ = 'correlator_config_params'
+    __tablename__ = "correlator_config_params"
     config_hash = Column(
         String,
         ForeignKey("correlator_config_file.config_hash"),
         primary_key=True,
-        nullable=False
+        nullable=False,
     )
     parameter = Column(String, primary_key=True)
     value = Column(String, nullable=False)
@@ -322,12 +329,12 @@ class CorrelatorConfigActiveSNAP(MCDeclarativeBase):
         Hostname of SNAP (typically e.g. heraNode1Snap2). Part of the primary key.
     """
 
-    __tablename__ = 'correlator_config_active_snap'
+    __tablename__ = "correlator_config_active_snap"
     config_hash = Column(
         String,
         ForeignKey("correlator_config_file.config_hash"),
         primary_key=True,
-        nullable=False
+        nullable=False,
     )
     hostname = Column(String, primary_key=True)
 
@@ -363,12 +370,12 @@ class CorrelatorConfigInputIndex(MCDeclarativeBase):
         Antenna index position within SNAP (0 - 2).
     """
 
-    __tablename__ = 'correlator_config_input_index'
+    __tablename__ = "correlator_config_input_index"
     config_hash = Column(
         String,
         ForeignKey("correlator_config_file.config_hash"),
         primary_key=True,
-        nullable=False
+        nullable=False,
     )
     correlator_index = Column(Integer, primary_key=True)
     hostname = Column(String, nullable=False)
@@ -390,10 +397,12 @@ class CorrelatorConfigInputIndex(MCDeclarativeBase):
         antenna_index_position : Integer Column
             Antenna ndex position within SNAP (0 - 2)
         """
-        return cls(config_hash=config_hash,
-                   correlator_index=correlator_index,
-                   hostname=hostname,
-                   antenna_index_position=antenna_index_position)
+        return cls(
+            config_hash=config_hash,
+            correlator_index=correlator_index,
+            hostname=hostname,
+            antenna_index_position=antenna_index_position,
+        )
 
 
 class CorrelatorConfigPhaseSwitchIndex(MCDeclarativeBase):
@@ -413,12 +422,12 @@ class CorrelatorConfigPhaseSwitchIndex(MCDeclarativeBase):
         Antpol index position within SNAP (0 - 5)
     """
 
-    __tablename__ = 'correlator_config_phase_switch_index'
+    __tablename__ = "correlator_config_phase_switch_index"
     config_hash = Column(
         String,
         ForeignKey("correlator_config_file.config_hash"),
         primary_key=True,
-        nullable=False
+        nullable=False,
     )
     hostname = Column(String, primary_key=True)
     phase_switch_index = Column(Integer, primary_key=True)
@@ -469,8 +478,14 @@ def _parse_config(config, config_hash):
 
     """
     obj_list = []
-    keys_to_save = ['fft_shift', 'fpgfile', 'dest_port', 'log_walsh_step_size',
-                    'walsh_order', 'walsh_delay']
+    keys_to_save = [
+        "fft_shift",
+        "fpgfile",
+        "dest_port",
+        "log_walsh_step_size",
+        "walsh_order",
+        "walsh_delay",
+    ]
     for key in keys_to_save:
         value = config[key]
         obj_list.append(
@@ -479,50 +494,44 @@ def _parse_config(config, config_hash):
             )
         )
 
-    fengines = sorted(config['fengines'].keys())
+    fengines = sorted(config["fengines"].keys())
     obj_list.append(
         CorrelatorConfigParams.create(
-            config_hash=config_hash, parameter='fengines', value=','.join(fengines)
+            config_hash=config_hash, parameter="fengines", value=",".join(fengines)
         )
     )
-    xengines = [str(x) for x in sorted(config['xengines'].keys())]
+    xengines = [str(x) for x in sorted(config["xengines"].keys())]
     obj_list.append(
         CorrelatorConfigParams.create(
-            config_hash=config_hash,
-            parameter='xengines',
-            value=','.join(xengines)
+            config_hash=config_hash, parameter="xengines", value=",".join(xengines)
         )
     )
-    for xengind, xeng in config['xengines'].items():
-        parameter = f'x{xengind}:chan_range'
-        value = ','.join([str(_x) for _x in xeng['chan_range']])
+    for xengind, xeng in config["xengines"].items():
+        parameter = f"x{xengind}:chan_range"
+        value = ",".join([str(_x) for _x in xeng["chan_range"]])
         obj_list.append(
             CorrelatorConfigParams.create(
-                config_hash=config_hash,
-                parameter=parameter,
-                value=value
+                config_hash=config_hash, parameter=parameter, value=value
             )
         )
-        for evod in ['even', 'odd']:
-            for ipma in ['ip', 'mac']:
-                parameter = f'x{xengind}:{evod}:{ipma}'
+        for evod in ["even", "odd"]:
+            for ipma in ["ip", "mac"]:
+                parameter = f"x{xengind}:{evod}:{ipma}"
                 value = xeng[evod][ipma]
                 obj_list.append(
                     CorrelatorConfigParams.create(
-                        config_hash=config_hash,
-                        parameter=parameter,
-                        value=value
+                        config_hash=config_hash, parameter=parameter, value=value
                     )
                 )
-    for hostname, entry in config['fengines'].items():
+    for hostname, entry in config["fengines"].items():
         obj_list.append(
             CorrelatorConfigActiveSNAP.create(
                 config_hash=config_hash,
                 hostname=hostname,
             )
         )
-        for antind in range(len(entry['ants'])):
-            cind = entry['ants'][antind]
+        for antind in range(len(entry["ants"])):
+            cind = entry["ants"][antind]
             obj_list.append(
                 CorrelatorConfigInputIndex.create(
                     config_hash=config_hash,
@@ -532,7 +541,7 @@ def _parse_config(config, config_hash):
                 )
             )
         for psind in range(len(entry["phase_switch_index"])):
-            pind = entry['phase_switch_index'][psind]
+            pind = entry["phase_switch_index"][psind]
             obj_list.append(
                 CorrelatorConfigPhaseSwitchIndex.create(
                     config_hash=config_hash,
@@ -558,7 +567,7 @@ class CorrelatorControlCommand(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'correlator_control_command'
+    __tablename__ = "correlator_control_command"
     time = Column(BigInteger, primary_key=True)
     command = Column(String, primary_key=True)
 
@@ -577,19 +586,22 @@ class CorrelatorControlCommand(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         corr_time = floor(time.gps)
 
         if command not in list(command_dict.keys()):
-            raise ValueError('command must be one of: '
-                             + ', '.join(list(command_dict.keys()))
-                             + '. command is actually {}'.format(command))
+            raise ValueError(
+                "command must be one of: "
+                + ", ".join(list(command_dict.keys()))
+                + ". command is actually {}".format(command)
+            )
 
         return cls(time=corr_time, command=command)
 
 
-def _get_integration_time(acclen_spectra, corr_cm=None,
-                          correlator_redis_address=DEFAULT_REDIS_ADDRESS):
+def _get_integration_time(
+    acclen_spectra, corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS
+):
     """
     Get the integration time in seconds for a given acclen in spectra.
 
@@ -642,7 +654,7 @@ def _get_next_start_time(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     if starttime_unix_timestamp == 0.0:
         return None
 
-    return Time(starttime_unix_timestamp, format='unix').gps
+    return Time(starttime_unix_timestamp, format="unix").gps
 
 
 class CorrelatorTakeDataArguments(MCDeclarativeBase):
@@ -675,7 +687,7 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'correlator_take_data_arguments'
+    __tablename__ = "correlator_take_data_arguments"
     time = Column(BigInteger, primary_key=True)
     command = Column(String, primary_key=True)
     starttime_sec = Column(BigInteger, nullable=False)
@@ -687,13 +699,16 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
 
     # the command column isn't really needed to define the table (it's always
     # 'take_data'), but it's required for the Foreign key to work properly
-    __table_args__ = (ForeignKeyConstraint(
-        ['time', 'command'], ['correlator_control_command.time',
-                              'correlator_control_command.command']), {})
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["time", "command"],
+            ["correlator_control_command.time", "correlator_control_command.command"],
+        ),
+        {},
+    )
 
     @classmethod
-    def create(cls, time, starttime, duration, acclen_spectra, integration_time,
-               tag):
+    def create(cls, time, starttime, duration, acclen_spectra, integration_time, tag):
         """
         Create a new correlator take data arguments object.
 
@@ -716,25 +731,29 @@ class CorrelatorTakeDataArguments(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         corr_time = floor(time.gps)
 
         if not isinstance(starttime, Time):
-            raise ValueError('starttime must be an astropy Time object')
+            raise ValueError("starttime must be an astropy Time object")
         starttime_gps = starttime.gps
         starttime_sec = floor(starttime_gps)
 
-        starttime_ms = floor((starttime_gps - starttime_sec) * 1000.)
+        starttime_ms = floor((starttime_gps - starttime_sec) * 1000.0)
 
         if tag not in tag_list:
-            raise ValueError('tag must be one of: ', tag_list)
+            raise ValueError("tag must be one of: ", tag_list)
 
-        return cls(time=corr_time, command='take_data',
-                   starttime_sec=starttime_sec,
-                   starttime_ms=starttime_ms, duration=duration,
-                   acclen_spectra=acclen_spectra,
-                   integration_time=integration_time,
-                   tag=tag)
+        return cls(
+            time=corr_time,
+            command="take_data",
+            starttime_sec=starttime_sec,
+            starttime_ms=starttime_ms,
+            duration=duration,
+            acclen_spectra=acclen_spectra,
+            integration_time=integration_time,
+            tag=tag,
+        )
 
 
 class CorrelatorConfigCommand(MCDeclarativeBase):
@@ -752,18 +771,22 @@ class CorrelatorConfigCommand(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'correlator_config_command'
+    __tablename__ = "correlator_config_command"
     time = Column(BigInteger, primary_key=True)
     command = Column(String, primary_key=True)
-    config_hash = Column(String,
-                         ForeignKey("correlator_config_file.config_hash"),
-                         nullable=False)
+    config_hash = Column(
+        String, ForeignKey("correlator_config_file.config_hash"), nullable=False
+    )
 
     # the command column isn't really needed to define the table (it's always
     # 'update_config'), but it's required for the Foreign key to work properly
-    __table_args__ = (ForeignKeyConstraint(
-        ['time', 'command'], ['correlator_control_command.time',
-                              'correlator_control_command.command']), {})
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["time", "command"],
+            ["correlator_control_command.time", "correlator_control_command.command"],
+        ),
+        {},
+    )
 
     @classmethod
     def create(cls, time, config_hash):
@@ -780,11 +803,10 @@ class CorrelatorConfigCommand(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         command_time = floor(time.gps)
 
-        return cls(time=command_time, command='update_config',
-                   config_hash=config_hash)
+        return cls(time=command_time, command="update_config", config_hash=config_hash)
 
 
 class CorrelatorSoftwareVersions(MCDeclarativeBase):
@@ -804,7 +826,7 @@ class CorrelatorSoftwareVersions(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'correlator_software_versions'
+    __tablename__ = "correlator_software_versions"
     time = Column(BigInteger, primary_key=True)
     package = Column(String, primary_key=True)
     version = Column(String, nullable=False)
@@ -827,7 +849,7 @@ class CorrelatorSoftwareVersions(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         corr_time = floor(time.gps)
 
         return cls(time=corr_time, package=package, version=version)
@@ -853,13 +875,13 @@ class SNAPConfigVersion(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'snap_config_version'
+    __tablename__ = "snap_config_version"
     init_time = Column(BigInteger, primary_key=True)
     version = Column(String, nullable=False)
     init_args = Column(String, nullable=False)
-    config_hash = Column(String,
-                         ForeignKey("correlator_config_file.config_hash"),
-                         nullable=False)
+    config_hash = Column(
+        String, ForeignKey("correlator_config_file.config_hash"), nullable=False
+    )
 
     @classmethod
     def create(cls, init_time, version, init_args, config_hash):
@@ -881,11 +903,15 @@ class SNAPConfigVersion(MCDeclarativeBase):
 
         """
         if not isinstance(init_time, Time):
-            raise ValueError('init_time must be an astropy Time object')
+            raise ValueError("init_time must be an astropy Time object")
         init_time_gps = floor(init_time.gps)
 
-        return cls(init_time=init_time_gps, version=version,
-                   init_args=init_args, config_hash=config_hash)
+        return cls(
+            init_time=init_time_gps,
+            version=version,
+            init_args=init_args,
+            config_hash=config_hash,
+        )
 
 
 def _get_corr_versions(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
@@ -965,7 +991,7 @@ class SNAPStatus(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'snap_status'
+    __tablename__ = "snap_status"
     time = Column(BigInteger, primary_key=True)
     hostname = Column(String, primary_key=True)
     node = Column(Integer)
@@ -978,9 +1004,19 @@ class SNAPStatus(MCDeclarativeBase):
     last_programmed_time = Column(BigInteger)
 
     @classmethod
-    def create(cls, time, hostname, node, snap_loc_num, serial_number,
-               psu_alert, pps_count, fpga_temp, uptime_cycles,
-               last_programmed_time):
+    def create(
+        cls,
+        time,
+        hostname,
+        node,
+        snap_loc_num,
+        serial_number,
+        psu_alert,
+        pps_count,
+        fpga_temp,
+        uptime_cycles,
+        last_programmed_time,
+    ):
         """
         Create a new SNAP status object.
 
@@ -1010,23 +1046,30 @@ class SNAPStatus(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         snap_time = floor(time.gps)
 
         if last_programmed_time is not None:
             if not isinstance(last_programmed_time, Time):
-                raise ValueError('last_programmed_time must be an astropy '
-                                 'Time object')
+                raise ValueError(
+                    "last_programmed_time must be an astropy " "Time object"
+                )
             last_programmed_time_gps = floor(last_programmed_time.gps)
         else:
             last_programmed_time_gps = None
 
-        return cls(time=snap_time, hostname=hostname, node=node,
-                   snap_loc_num=snap_loc_num,
-                   serial_number=serial_number, psu_alert=psu_alert,
-                   pps_count=pps_count, fpga_temp=fpga_temp,
-                   uptime_cycles=uptime_cycles,
-                   last_programmed_time=last_programmed_time_gps)
+        return cls(
+            time=snap_time,
+            hostname=hostname,
+            node=node,
+            snap_loc_num=snap_loc_num,
+            serial_number=serial_number,
+            psu_alert=psu_alert,
+            pps_count=pps_count,
+            fpga_temp=fpga_temp,
+            uptime_cycles=uptime_cycles,
+            last_programmed_time=last_programmed_time_gps,
+        )
 
 
 def _get_snap_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
@@ -1132,7 +1175,7 @@ class AntennaStatus(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'antenna_status'
+    __tablename__ = "antenna_status"
     time = Column(BigInteger, primary_key=True)
     antenna_number = Column(Integer, primary_key=True)
     antenna_feed_pol = Column(String, primary_key=True)
@@ -1160,12 +1203,34 @@ class AntennaStatus(MCDeclarativeBase):
     histogram = Column(String)
 
     @classmethod
-    def create(cls, time, antenna_number, antenna_feed_pol, snap_hostname,
-               snap_channel_number, adc_mean, adc_rms, adc_power, pam_atten,
-               pam_power, pam_voltage, pam_current, pam_id, fem_voltage,
-               fem_current, fem_id, fem_switch, fem_lna_power, fem_imu_theta,
-               fem_imu_phi, fem_temp, fft_overflow, eq_coeffs, histogram_bin_centers,
-               histogram):
+    def create(
+        cls,
+        time,
+        antenna_number,
+        antenna_feed_pol,
+        snap_hostname,
+        snap_channel_number,
+        adc_mean,
+        adc_rms,
+        adc_power,
+        pam_atten,
+        pam_power,
+        pam_voltage,
+        pam_current,
+        pam_id,
+        fem_voltage,
+        fem_current,
+        fem_id,
+        fem_switch,
+        fem_lna_power,
+        fem_imu_theta,
+        fem_imu_phi,
+        fem_temp,
+        fft_overflow,
+        eq_coeffs,
+        histogram_bin_centers,
+        histogram,
+    ):
         """
         Create a new antenna status object.
 
@@ -1232,48 +1297,60 @@ class AntennaStatus(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         snap_time = floor(time.gps)
 
-        if antenna_feed_pol not in ['e', 'n']:
+        if antenna_feed_pol not in ["e", "n"]:
             raise ValueError('antenna_feed_pol must be "e" or "n".')
 
-        if (fem_switch is not None
-                and fem_switch not in ['antenna', 'load', 'noise']):
+        if fem_switch is not None and fem_switch not in ["antenna", "load", "noise"]:
             raise ValueError('fem_switch must be "antenna", "load", "noise"')
 
         if eq_coeffs is not None:
             eq_coeffs_str = [str(val) for val in eq_coeffs]
-            eq_coeffs_string = '[' + ','.join(eq_coeffs_str) + ']'
+            eq_coeffs_string = "[" + ",".join(eq_coeffs_str) + "]"
         else:
             eq_coeffs_string = None
 
         if histogram_bin_centers is not None:
             histogram_bin_string = [str(val) for val in histogram_bin_centers]
-            histogram_bin_string = '[' + ','.join(histogram_bin_string) + ']'
+            histogram_bin_string = "[" + ",".join(histogram_bin_string) + "]"
         else:
             histogram_bin_string = None
 
         if histogram is not None:
             histogram_string = [str(val) for val in histogram]
-            histogram_string = '[' + ','.join(histogram_string) + ']'
+            histogram_string = "[" + ",".join(histogram_string) + "]"
         else:
             histogram_string = None
 
-        return cls(time=snap_time, antenna_number=antenna_number,
-                   antenna_feed_pol=antenna_feed_pol,
-                   snap_hostname=snap_hostname,
-                   snap_channel_number=snap_channel_number, adc_mean=adc_mean,
-                   adc_rms=adc_rms, adc_power=adc_power, pam_atten=pam_atten,
-                   pam_power=pam_power, pam_voltage=pam_voltage,
-                   pam_current=pam_current, pam_id=pam_id,
-                   fem_voltage=fem_voltage, fem_current=fem_current,
-                   fem_id=fem_id, fem_switch=fem_switch,
-                   fem_lna_power=fem_lna_power, fem_imu_theta=fem_imu_theta,
-                   fem_imu_phi=fem_imu_phi, fem_temp=fem_temp,
-                   fft_overflow=fft_overflow, eq_coeffs=eq_coeffs_string,
-                   histogram_bin_centers=histogram_bin_string,
-                   histogram=histogram_string)
+        return cls(
+            time=snap_time,
+            antenna_number=antenna_number,
+            antenna_feed_pol=antenna_feed_pol,
+            snap_hostname=snap_hostname,
+            snap_channel_number=snap_channel_number,
+            adc_mean=adc_mean,
+            adc_rms=adc_rms,
+            adc_power=adc_power,
+            pam_atten=pam_atten,
+            pam_power=pam_power,
+            pam_voltage=pam_voltage,
+            pam_current=pam_current,
+            pam_id=pam_id,
+            fem_voltage=fem_voltage,
+            fem_current=fem_current,
+            fem_id=fem_id,
+            fem_switch=fem_switch,
+            fem_lna_power=fem_lna_power,
+            fem_imu_theta=fem_imu_theta,
+            fem_imu_phi=fem_imu_phi,
+            fem_temp=fem_temp,
+            fft_overflow=fft_overflow,
+            eq_coeffs=eq_coeffs_string,
+            histogram_bin_centers=histogram_bin_string,
+            histogram=histogram_string,
+        )
 
 
 def _get_ant_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
@@ -1359,7 +1436,7 @@ def _pam_fem_serial_list_to_string(serial_number_list):
 
     """
     try:
-        serial_str = ''
+        serial_str = ""
         for int_val in serial_number_list:
             hex_val = hex(int_val)[2:]
             # str_val = bytes.fromhex(hex_val).decode('ascii')
@@ -1371,9 +1448,9 @@ def _pam_fem_serial_list_to_string(serial_number_list):
         return None
 
 
-def create_antenna_status(corr_cm=None,
-                          redishost=DEFAULT_REDIS_ADDRESS,
-                          ant_status_dict=None):
+def create_antenna_status(
+    corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS, ant_status_dict=None
+):
     """
     Return a list of antenna status objects with data from the correlator.
 
@@ -1394,68 +1471,89 @@ def create_antenna_status(corr_cm=None,
 
     ant_status_list = []
     for antkey, ant_dict in ant_status_dict.items():
-        antenna_number, antenna_feed_pol = tuple(antkey.split(':'))
+        antenna_number, antenna_feed_pol = tuple(antkey.split(":"))
         antenna_number = int(antenna_number)
 
-        time = Time(ant_dict['timestamp'], format='datetime')
+        time = Time(ant_dict["timestamp"], format="datetime")
 
         # any entry other than timestamp can be the string 'None'
         # need to convert those to a None type
         for key, val in ant_dict.items():
-            if val == 'None' or (isinstance(val, float) and np.isnan(val)):
+            if val == "None" or (isinstance(val, float) and np.isnan(val)):
                 ant_dict[key] = None
 
-        snap_hostname = ant_dict['f_host']
-        snap_channel_number = ant_dict['host_ant_id']
-        adc_mean = ant_dict['adc_mean']
-        adc_rms = ant_dict['adc_rms']
-        adc_power = ant_dict['adc_power']
-        pam_atten = ant_dict['pam_atten']
-        pam_power = ant_dict['pam_power']
-        pam_voltage = ant_dict['pam_voltage']
-        pam_current = ant_dict['pam_current']
-        if ant_dict['pam_id'] is not None and ant_dict['pam_id'] != -1:
-            pam_id = _pam_fem_serial_list_to_string(ant_dict['pam_id'])
+        snap_hostname = ant_dict["f_host"]
+        snap_channel_number = ant_dict["host_ant_id"]
+        adc_mean = ant_dict["adc_mean"]
+        adc_rms = ant_dict["adc_rms"]
+        adc_power = ant_dict["adc_power"]
+        pam_atten = ant_dict["pam_atten"]
+        pam_power = ant_dict["pam_power"]
+        pam_voltage = ant_dict["pam_voltage"]
+        pam_current = ant_dict["pam_current"]
+        if ant_dict["pam_id"] is not None and ant_dict["pam_id"] != -1:
+            pam_id = _pam_fem_serial_list_to_string(ant_dict["pam_id"])
         else:
             pam_id = None
-        fem_voltage = ant_dict['fem_voltage']
-        fem_current = ant_dict['fem_current']
-        if ant_dict['fem_id'] is not None and ant_dict['fem_id'] != -1:
-            fem_id = _pam_fem_serial_list_to_string(ant_dict['fem_id'])
+        fem_voltage = ant_dict["fem_voltage"]
+        fem_current = ant_dict["fem_current"]
+        if ant_dict["fem_id"] is not None and ant_dict["fem_id"] != -1:
+            fem_id = _pam_fem_serial_list_to_string(ant_dict["fem_id"])
         else:
             fem_id = None
-        fem_switch = ant_dict['fem_switch']
-        if (fem_switch is not None
-                and fem_switch not in ['antenna', 'load', 'noise']):
-            warnings.warn('fem_switch value is {}, should be one of: '
-                          '"antenna", "load", "noise" or "None". '
-                          'Setting to None.'.format(fem_switch))
+        fem_switch = ant_dict["fem_switch"]
+        if fem_switch is not None and fem_switch not in ["antenna", "load", "noise"]:
+            warnings.warn(
+                "fem_switch value is {}, should be one of: "
+                '"antenna", "load", "noise" or "None". '
+                "Setting to None.".format(fem_switch)
+            )
             fem_switch = None
 
-        if antenna_feed_pol == 'n':
-            fem_lna_power = ant_dict['fem_n_lna_power']
-        elif antenna_feed_pol == 'e':
-            fem_lna_power = ant_dict['fem_e_lna_power']
-        fem_imu_theta = ant_dict['fem_imu_theta']
-        fem_imu_phi = ant_dict['fem_imu_phi']
-        fem_temp = ant_dict['fem_temp']
-        fft_overflow = ant_dict['fft_of']
-        eq_coeffs = ant_dict['eq_coeffs']
-        if ant_dict['histogram'] is not None:
-            histogram_bin_centers = ant_dict['histogram'][0]
-            histogram = ant_dict['histogram'][1]
+        if antenna_feed_pol == "n":
+            fem_lna_power = ant_dict["fem_n_lna_power"]
+        elif antenna_feed_pol == "e":
+            fem_lna_power = ant_dict["fem_e_lna_power"]
+        fem_imu_theta = ant_dict["fem_imu_theta"]
+        fem_imu_phi = ant_dict["fem_imu_phi"]
+        fem_temp = ant_dict["fem_temp"]
+        fft_overflow = ant_dict["fft_of"]
+        eq_coeffs = ant_dict["eq_coeffs"]
+        if ant_dict["histogram"] is not None:
+            histogram_bin_centers = ant_dict["histogram"][0]
+            histogram = ant_dict["histogram"][1]
         else:
             histogram_bin_centers = None
             histogram = None
 
         ant_status_list.append(
-            AntennaStatus.create(time, antenna_number, antenna_feed_pol,
-                                 snap_hostname, snap_channel_number, adc_mean,
-                                 adc_rms, adc_power, pam_atten, pam_power,
-                                 pam_voltage, pam_current, pam_id, fem_voltage,
-                                 fem_current, fem_id, fem_switch,
-                                 fem_lna_power, fem_imu_theta, fem_imu_phi,
-                                 fem_temp, fft_overflow, eq_coeffs,
-                                 histogram_bin_centers, histogram))
+            AntennaStatus.create(
+                time,
+                antenna_number,
+                antenna_feed_pol,
+                snap_hostname,
+                snap_channel_number,
+                adc_mean,
+                adc_rms,
+                adc_power,
+                pam_atten,
+                pam_power,
+                pam_voltage,
+                pam_current,
+                pam_id,
+                fem_voltage,
+                fem_current,
+                fem_id,
+                fem_switch,
+                fem_lna_power,
+                fem_imu_theta,
+                fem_imu_phi,
+                fem_temp,
+                fft_overflow,
+                eq_coeffs,
+                histogram_bin_centers,
+                histogram,
+            )
+        )
 
     return ant_status_list

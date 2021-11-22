@@ -20,13 +20,20 @@ import pyuvdata
 
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('file', metavar='file', type=str, nargs=1,
-                        help='Basename of file processed by RTP')
-    parser.add_argument('--pipeline_list', dest='pipeline_list', type=str,
-                        required=True,
-                        help=('List of actions taken on '
-                              'file concatenated as a string')
-                        )
+    parser.add_argument(
+        "file",
+        metavar="file",
+        type=str,
+        nargs=1,
+        help="Basename of file processed by RTP",
+    )
+    parser.add_argument(
+        "--pipeline_list",
+        dest="pipeline_list",
+        type=str,
+        required=True,
+        help=("List of actions taken on " "file concatenated as a string"),
+    )
     args = parser.parse_args()
 
     # get version info for relevant repos
@@ -72,7 +79,7 @@ if __name__ == "__main__":
     uv = pyuvdata.UVData()
     # args.file is a length-1 list
     uv.read_uvh5(args.file[0], read_data=False, run_check_acceptability=False)
-    t0 = Time(np.unique(uv.time_array)[0], scale='utc', format='jd')
+    t0 = Time(np.unique(uv.time_array)[0], scale="utc", format="jd")
     obsid = int(np.floor(t0.gps))
 
     db = mc.connect_to_mc_db(args)
@@ -81,12 +88,12 @@ if __name__ == "__main__":
             time=Time.now(),
             obsid=obsid,
             pipeline_list=args.pipeline_list,
-            rtp_git_version=hera_opm_version_info['version'],
-            rtp_git_hash=hera_opm_version_info['git_hash'],
-            hera_qm_git_version=hera_qm_version_info['version'],
-            hera_qm_git_hash=hera_qm_version_info['git_hash'],
-            hera_cal_git_version=hera_cal_version_info['version'],
-            hera_cal_git_hash=hera_cal_version_info['git_hash'],
+            rtp_git_version=hera_opm_version_info["version"],
+            rtp_git_hash=hera_opm_version_info["git_hash"],
+            hera_qm_git_version=hera_qm_version_info["version"],
+            hera_qm_git_hash=hera_qm_version_info["git_hash"],
+            hera_cal_git_version=hera_cal_version_info["version"],
+            hera_cal_git_hash=hera_cal_version_info["git_hash"],
             pyuvdata_git_version=pyuvdata_tag,
             pyuvdata_git_hash=pyuvdata_git_hash,
         )

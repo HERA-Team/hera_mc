@@ -12,7 +12,8 @@ from sqlalchemy import Column, BigInteger, Float, String
 from . import MCDeclarativeBase
 
 no_tornado_message = (
-    "tornado is not installed but is required for to get weather data from katportalclient"
+    "tornado is not installed but is required for to get "
+    "weather data from katportalclient"
 )
 
 tornado_present = True
@@ -20,14 +21,16 @@ try:
     import tornado
     from tornado.gen import coroutine as tornado_coroutine
 except ImportError as error:
+
     def tornado_coroutine(func):
         """Spoof this function to avoid name errors with the minimum dependencies."""
         pass
+
     tornado_present = False
     tornado_error = error
 
 
-katportal_url = 'http://portal.mkat.karoo.kat.ac.za/api/client'
+katportal_url = "http://portal.mkat.karoo.kat.ac.za/api/client"
 
 # These are the weather measurements that can be added to the M&C database.
 # To add a sensor, add a similar entry in this dict (paying particular attention
@@ -35,36 +38,63 @@ katportal_url = 'http://portal.mkat.karoo.kat.ac.za/api/client'
 # You can get the needed information using the katportal example scripts at:
 #   https://github.com/ska-sa/katportalclient/tree/master/examples
 weather_sensor_dict = {
-    'wind_speed': {'sensor_name': 'anc_mean_wind_speed', 'units': 'm/s',
-                   'reduction': 'mean', 'period': 300,
-                   'description': "Mean of ['wind.wind-speed', "
-                   "'weather.wind-speed'] in (600 * 1.0s) window "
-                   "(report period: 1s)"},
-    'wind_gust': {'sensor_name': 'anc_gust_wind_speed', 'units': 'm/s',
-                  'reduction': 'max', 'period': 120,
-                  'description': "Max of ['wind.wind-speed', "
-                  "'weather.wind-speed'] in (3 * 1.0s) window "
-                  "(report period: 1s)"},
-    'wind_direction': {'sensor_name': 'anc_wind_wind_direction', 'units': 'deg',
-                       'reduction': 'mean', 'period': 30,
-                       'description': "Wind direction angle "
-                       "(report period: 10s)"},
-    'temperature': {'sensor_name': 'anc_weather_temperature',
-                    'units': 'deg Celsius',
-                    'reduction': 'decimate', 'period': 30,
-                    'description': "Air temperature (report period: 10s)"},
-    'humidity': {'sensor_name': 'anc_weather_humidity', 'units': 'percent',
-                 'reduction': 'mean', 'period': 60,
-                 'description': "Air humidity (report period: 10s)"},
-    'pressure': {'sensor_name': 'anc_weather_pressure', 'units': 'mbar',
-                 'reduction': 'mean', 'period': 60,
-                 'description': "Barometric pressure (report period: 10s)"},
-    'rain': {'sensor_name': 'anc_weather_rain', 'units': 'mm',
-             'reduction': 'sum', 'period': 60,
-             'description': "Rainfall (report period: 10s)"}}
+    "wind_speed": {
+        "sensor_name": "anc_mean_wind_speed",
+        "units": "m/s",
+        "reduction": "mean",
+        "period": 300,
+        "description": "Mean of ['wind.wind-speed', "
+        "'weather.wind-speed'] in (600 * 1.0s) window "
+        "(report period: 1s)",
+    },
+    "wind_gust": {
+        "sensor_name": "anc_gust_wind_speed",
+        "units": "m/s",
+        "reduction": "max",
+        "period": 120,
+        "description": "Max of ['wind.wind-speed', "
+        "'weather.wind-speed'] in (3 * 1.0s) window "
+        "(report period: 1s)",
+    },
+    "wind_direction": {
+        "sensor_name": "anc_wind_wind_direction",
+        "units": "deg",
+        "reduction": "mean",
+        "period": 30,
+        "description": "Wind direction angle " "(report period: 10s)",
+    },
+    "temperature": {
+        "sensor_name": "anc_weather_temperature",
+        "units": "deg Celsius",
+        "reduction": "decimate",
+        "period": 30,
+        "description": "Air temperature (report period: 10s)",
+    },
+    "humidity": {
+        "sensor_name": "anc_weather_humidity",
+        "units": "percent",
+        "reduction": "mean",
+        "period": 60,
+        "description": "Air humidity (report period: 10s)",
+    },
+    "pressure": {
+        "sensor_name": "anc_weather_pressure",
+        "units": "mbar",
+        "reduction": "mean",
+        "period": 60,
+        "description": "Barometric pressure (report period: 10s)",
+    },
+    "rain": {
+        "sensor_name": "anc_weather_rain",
+        "units": "mm",
+        "reduction": "sum",
+        "period": 60,
+        "description": "Rainfall (report period: 10s)",
+    },
+}
 
 
-def _reduce_time_vals(times, vals, period, strategy='decimate'):
+def _reduce_time_vals(times, vals, period, strategy="decimate"):
     """
     Reduce the number of values.
 
@@ -81,7 +111,7 @@ def _reduce_time_vals(times, vals, period, strategy='decimate'):
 
     """
     if not isinstance(period, (int, np.int_)):
-        raise ValueError('period must be an integer')
+        raise ValueError("period must be an integer")
 
     # the // operator is a floored divide.
     times_keep, inds = np.unique((times // period) * period, return_index=True)
@@ -91,28 +121,28 @@ def _reduce_time_vals(times, vals, period, strategy='decimate'):
 
     if len(inds) < 2:
         return None, None
-    if strategy == 'decimate':
+    if strategy == "decimate":
         vals_keep = vals[inds]  # Could keep with len(inds) == 1, but oh well
-    elif strategy == 'max':
+    elif strategy == "max":
         vals_keep = []
         times_keep = times_keep[:-1]
         for count in range(len(inds) - 1):
-            vals_keep.append(np.max(vals[inds[count]:inds[count + 1]]))
+            vals_keep.append(np.max(vals[inds[count] : inds[count + 1]]))
         vals_keep = np.array(vals_keep)
-    elif strategy == 'mean':
+    elif strategy == "mean":
         vals_keep = []
         times_keep = times_keep[:-1]
         for count in range(len(inds) - 1):
-            vals_keep.append(np.mean(vals[inds[count]:inds[count + 1]]))
+            vals_keep.append(np.mean(vals[inds[count] : inds[count + 1]]))
         vals_keep = np.array(vals_keep)
-    elif strategy == 'sum':
+    elif strategy == "sum":
         vals_keep = []
         times_keep = times_keep[:-1]
         for count in range(len(inds) - 1):
-            vals_keep.append(np.sum(vals[inds[count]:inds[count + 1]]))
+            vals_keep.append(np.sum(vals[inds[count] : inds[count + 1]]))
         vals_keep = np.array(vals_keep)
     else:
-        raise ValueError('unknown reduction strategy')
+        raise ValueError("unknown reduction strategy")
 
     return times_keep, vals_keep
 
@@ -133,7 +163,7 @@ class WeatherData(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'weather_data'
+    __tablename__ = "weather_data"
     time = Column(BigInteger, primary_key=True)
     variable = Column(String, nullable=False, primary_key=True)
     value = Column(Float, nullable=False)
@@ -158,11 +188,11 @@ class WeatherData(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         if variable not in weather_sensor_dict.keys():
-            raise ValueError('variable must be a key in weather_sensor_dict.')
+            raise ValueError("variable must be a key in weather_sensor_dict.")
         if not isinstance(value, float):
-            raise ValueError('value must be a float.')
+            raise ValueError("value must be a float.")
         weather_time = floor(time.gps)
 
         return cls(time=weather_time, variable=variable, value=value)
@@ -191,10 +221,10 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
     from katportalclient import KATPortalClient
 
     if not isinstance(starttime, Time):
-        raise ValueError('starttime must be an astropy Time object')
+        raise ValueError("starttime must be an astropy Time object")
 
     if not isinstance(stoptime, Time):
-        raise ValueError('stoptime must be an astropy Time object')
+        raise ValueError("stoptime must be an astropy Time object")
 
     if variables is None:
         variables = weather_sensor_dict.keys()
@@ -205,14 +235,15 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
     sensor_var_dict = {}
     for var in variables:
         if var not in weather_sensor_dict.keys():
-            raise ValueError('variable must be a key in weather_sensor_dict')
-        sensor_names.append(weather_sensor_dict[var]['sensor_name'])
-        sensor_var_dict[weather_sensor_dict[var]['sensor_name']] = var
+            raise ValueError("variable must be a key in weather_sensor_dict")
+        sensor_names.append(weather_sensor_dict[var]["sensor_name"])
+        sensor_var_dict[weather_sensor_dict[var]["sensor_name"]] = var
 
     portal_client = KATPortalClient(katportal_url, on_update_callback=None)
 
-    histories = yield portal_client.sensors_histories(sensor_names, starttime.unix,
-                                                      stoptime.unix, timeout_sec=120)
+    histories = yield portal_client.sensors_histories(
+        sensor_names, starttime.unix, stoptime.unix, timeout_sec=120
+    )
 
     weather_obj_list = []
     for sensor_name, history in histories.items():
@@ -222,7 +253,7 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
         for item in history:
             # status is usually nominal, but can indicate sensor errors.
             # Since we can't do anything about those and the data might be bad, ignore them
-            if item.status != 'nominal':
+            if item.status != "nominal":
                 continue
             # skip it if nan is supplied
             if isnan(float(item.value)):
@@ -231,26 +262,30 @@ def _helper_create_from_sensors(starttime, stoptime, variables=None):
             # the value_time is the sensor timestamp, while the other is
             # when the recording system got it. The value_time isn't always
             # present, so test for it
-            if 'value_time' in item._fields:
+            if "value_time" in item._fields:
                 timestamp = item.value_time
             else:
                 timestamp = item.sample_time
             if timestamp > sensor_times[-1]:
                 sensor_times.append(timestamp)
                 sensor_data.append(float(item.value))
-        del(sensor_times[0])
+        del sensor_times[0]
         if len(sensor_data):
-            reduction = weather_sensor_dict[variable]['reduction']
-            period = weather_sensor_dict[variable]['period']
+            reduction = weather_sensor_dict[variable]["reduction"]
+            period = weather_sensor_dict[variable]["period"]
 
-            times_use, values_use = _reduce_time_vals(np.array(sensor_times),
-                                                      np.array(sensor_data),
-                                                      period, strategy=reduction)
+            times_use, values_use = _reduce_time_vals(
+                np.array(sensor_times),
+                np.array(sensor_data),
+                period,
+                strategy=reduction,
+            )
             if times_use is not None:
                 for count, timestamp in enumerate(times_use.tolist()):
-                    time_obj = Time(timestamp, format='unix')
-                    weather_obj_list.append(WeatherData.create(time_obj, variable,
-                                                               values_use[count]))
+                    time_obj = Time(timestamp, format="unix")
+                    weather_obj_list.append(
+                        WeatherData.create(time_obj, variable, values_use[count])
+                    )
 
     raise tornado.gen.Return(weather_obj_list)
 
@@ -278,5 +313,6 @@ def create_from_sensors(starttime, stoptime, variables=None):
         raise ImportError(no_tornado_message) from tornado_error
 
     io_loop = tornado.ioloop.IOLoop.current()
-    return io_loop.run_sync(lambda: _helper_create_from_sensors(starttime, stoptime,
-                                                                variables=variables))
+    return io_loop.run_sync(
+        lambda: _helper_create_from_sensors(starttime, stoptime, variables=variables)
+    )

@@ -10,15 +10,17 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = 'c4c88519fb71'
-down_revision = '68041e36e11b'
+revision = "c4c88519fb71"
+down_revision = "68041e36e11b"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-    op.add_column('antenna_status', sa.Column('fft_overflow', sa.Boolean(), nullable=True))
+    op.add_column(
+        "antenna_status", sa.Column("fft_overflow", sa.Boolean(), nullable=True)
+    )
 
 
 def downgrade():
-    op.drop_column('antenna_status', 'fft_overflow')
+    op.drop_column("antenna_status", "fft_overflow")

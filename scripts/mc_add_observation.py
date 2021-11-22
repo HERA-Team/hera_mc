@@ -12,8 +12,9 @@ from hera_mc import mc
 
 a = mc.get_mc_argument_parser()
 a.description = """Read the obsid from a file and create a record in M&C."""
-a.add_argument('files', metavar='file', type=str, nargs='*', default=[],
-               help='*.uvh5 files to add')
+a.add_argument(
+    "files", metavar="file", type=str, nargs="*", default=[], help="*.uvh5 files to add"
+)
 args = a.parse_args()
 db = mc.connect_to_mc_db(args)
 
@@ -23,8 +24,8 @@ for uvfile in args.files:
     uv = UVData()
     uv.read_uvh5(uvfile, read_data=False)
     times = np.unique(uv.time_array)
-    starttime = Time(times[0], scale='utc', format='jd')
-    stoptime = Time(times[-1], scale='utc', format='jd')
+    starttime = Time(times[0], scale="utc", format="jd")
+    stoptime = Time(times[-1], scale="utc", format="jd")
     obsid = int(np.floor(starttime.gps))
 
     with db.sessionmaker() as session:

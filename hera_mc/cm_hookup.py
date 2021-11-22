@@ -29,7 +29,7 @@ class Hookup(object):
     """
 
     hookup_list_to_cache = cm_sysdef.hera_zone_prefixes
-    hookup_cache_file = os.path.expanduser('~/.hera_mc/hookup_cache_3.json')
+    hookup_cache_file = os.path.expanduser("~/.hera_mc/hookup_cache_3.json")
 
     def __init__(self, session=None):
         if session is None:  # pragma: no cover
@@ -42,8 +42,16 @@ class Hookup(object):
         self.sysdef = cm_sysdef.Sysdef()
         self.active = None
 
-    def get_hookup_from_db(self, hpn, pol, at_date, at_time=None, float_format=None,
-                           exact_match=False, hookup_type=None):
+    def get_hookup_from_db(
+        self,
+        hpn,
+        pol,
+        at_date,
+        at_time=None,
+        float_format=None,
+        exact_match=False,
+        hookup_type=None,
+    ):
         """
         Get the hookup dict from the database for the supplied match parameters.
 
@@ -95,12 +103,19 @@ class Hookup(object):
         hookup_dict = {}
         for k, part in parts.items():
             self.hookup_type = self.sysdef.find_hookup_type(
-                part_type=part.hptype, hookup_type=hookup_type)
+                part_type=part.hptype, hookup_type=hookup_type
+            )
             if part.hptype in self.sysdef.redirect_part_types[self.hookup_type]:
-                redirect_parts = self.sysdef.handle_redirect_part_types(part, self.active)
+                redirect_parts = self.sysdef.handle_redirect_part_types(
+                    part, self.active
+                )
                 redirect_hookup_dict = self.get_hookup_from_db(
-                    hpn=redirect_parts, pol=pol, at_date=self.at_date,
-                    exact_match=True, hookup_type=self.hookup_type)
+                    hpn=redirect_parts,
+                    pol=pol,
+                    at_date=self.at_date,
+                    exact_match=True,
+                    hookup_type=self.hookup_type,
+                )
                 for rhdk, vhd in redirect_hookup_dict.items():
                     hookup_dict[rhdk] = vhd
                 redirect_hookup_dict = None
@@ -109,14 +124,28 @@ class Hookup(object):
             hookup_dict[k] = cm_dossier.HookupEntry(entry_key=k, sysdef=self.sysdef)
             for port_pol in self.sysdef.ppkeys:
                 hookup_dict[k].hookup[port_pol] = self._follow_hookup_stream(
-                    part=part.hpn, rev=part.hpn_rev, port_pol=port_pol)
-                part_types_found = self._get_part_types_found(hookup_dict[k].hookup[port_pol])
-                hookup_dict[k].get_hookup_type_and_column_headers(port_pol, part_types_found)
+                    part=part.hpn, rev=part.hpn_rev, port_pol=port_pol
+                )
+                part_types_found = self._get_part_types_found(
+                    hookup_dict[k].hookup[port_pol]
+                )
+                hookup_dict[k].get_hookup_type_and_column_headers(
+                    port_pol, part_types_found
+                )
                 hookup_dict[k].add_timing_and_fully_connected(port_pol)
         return hookup_dict
 
-    def get_hookup(self, hpn, pol='all', at_date='now', at_time=None, float_format=None,
-                   exact_match=False, use_cache=False, hookup_type='parts_hera'):
+    def get_hookup(
+        self,
+        hpn,
+        pol="all",
+        at_date="now",
+        at_time=None,
+        float_format=None,
+        exact_match=False,
+        use_cache=False,
+        hookup_type="parts_hera",
+    ):
         """
         Return the hookup to the supplied part/pol in the form of a dictionary.
 
@@ -165,7 +194,7 @@ class Hookup(object):
         self.at_date = at_date
         self.hookup_type = hookup_type
 
-        if isinstance(hpn, str) and hpn.lower() == 'cache':
+        if isinstance(hpn, str) and hpn.lower() == "cache":
             self.read_hookup_cache_from_file()
             return self.cached_hookup_dict
 
@@ -175,11 +204,25 @@ class Hookup(object):
                 self.read_hookup_cache_from_file()
                 return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
 
-        return self.get_hookup_from_db(hpn=hpn, pol=pol, at_date=at_date,
-                                       exact_match=exact_match, hookup_type=hookup_type)
+        return self.get_hookup_from_db(
+            hpn=hpn,
+            pol=pol,
+            at_date=at_date,
+            exact_match=exact_match,
+            hookup_type=hookup_type,
+        )
 
-    def show_hookup(self, hookup_dict, cols_to_show='all', state='full', ports=False, revs=False,
-                    sortby=None, filename=None, output_format='table'):
+    def show_hookup(
+        self,
+        hookup_dict,
+        cols_to_show="all",
+        state="full",
+        ports=False,
+        revs=False,
+        sortby=None,
+        filename=None,
+        output_format="table",
+    ):
         """
         Generate a printable hookup table.
 
@@ -214,38 +257,48 @@ class Hookup(object):
             Table as a string
 
         """
-        show = {'ports': ports, 'revs': revs}
+        show = {"ports": ports, "revs": revs}
         headers = self._make_header_row(hookup_dict, cols_to_show)
         table_data = []
         total_shown = 0
-        sorted_hukeys = self._sort_hookup_display(sortby, hookup_dict, def_sort_order='NRP')
+        sorted_hukeys = self._sort_hookup_display(
+            sortby, hookup_dict, def_sort_order="NRP"
+        )
         for hukey in sorted_hukeys:
-            for pol in cm_utils.put_keys_in_order(hookup_dict[hukey].hookup.keys(),
-                                                  sort_order='PNR'):
+            for pol in cm_utils.put_keys_in_order(
+                hookup_dict[hukey].hookup.keys(), sort_order="PNR"
+            ):
                 if not len(hookup_dict[hukey].hookup[pol]):
                     continue
                 use_this_row = False
-                if state.lower() == 'all':
+                if state.lower() == "all":
                     use_this_row = True
-                elif state.lower() == 'full' and hookup_dict[hukey].fully_connected[pol]:
+                elif (
+                    state.lower() == "full" and hookup_dict[hukey].fully_connected[pol]
+                ):
                     use_this_row = True
                 if not use_this_row:
                     continue
                 total_shown += 1
-                td = hookup_dict[hukey].table_entry_row(pol, headers, self.part_type_cache, show)
+                td = hookup_dict[hukey].table_entry_row(
+                    pol, headers, self.part_type_cache, show
+                )
                 table_data.append(td)
         if total_shown == 0:
-            print("None found for {} (show-state is {})".format(
-                cm_utils.get_time_for_display(self.at_date), state))
+            print(
+                "None found for {} (show-state is {})".format(
+                    cm_utils.get_time_for_display(self.at_date), state
+                )
+            )
             return
         table = cm_utils.general_table_handler(headers, table_data, output_format)
         if filename is not None:
-            with open(filename, 'w') as fp:
+            with open(filename, "w") as fp:
                 print(table, file=fp)
         return table
 
     # ##################################### Notes ############################################
-    def get_notes(self, hookup_dict, state='all', return_dict=False):
+    def get_notes(self, hookup_dict, state="all", return_dict=False):
         """
         Retrieve information for hookup.
 
@@ -274,27 +327,34 @@ class Hookup(object):
             all_hu_hpn = set()
             for pol in hookup_dict[hkey].hookup.keys():
                 for hpn in hookup_dict[hkey].hookup[pol]:
-                    if (state == 'all'
-                            or (state == 'full' and hookup_dict[hkey].fully_connected[pol])):
+                    if state == "all" or (
+                        state == "full" and hookup_dict[hkey].fully_connected[pol]
+                    ):
                         all_hu_hpn.add(
-                            cm_utils.make_part_key(hpn.upstream_part, hpn.up_part_rev))
+                            cm_utils.make_part_key(hpn.upstream_part, hpn.up_part_rev)
+                        )
                         all_hu_hpn.add(
-                            cm_utils.make_part_key(hpn.downstream_part, hpn.down_part_rev))
+                            cm_utils.make_part_key(
+                                hpn.downstream_part, hpn.down_part_rev
+                            )
+                        )
             hu_notes[hkey] = {}
             for ikey in all_hu_hpn:
                 if ikey in info_keys:
                     hu_notes[hkey][ikey] = {}
                     for entry in self.active.info[ikey]:
                         if return_dict:
-                            hu_notes[hkey][ikey][entry.posting_gpstime] =\
-                                {"note": entry.comment.replace('\\n', '\n'),
-                                 "ref": entry.reference}
+                            hu_notes[hkey][ikey][entry.posting_gpstime] = {
+                                "note": entry.comment.replace("\\n", "\n"),
+                                "ref": entry.reference,
+                            }
                         else:
-                            hu_notes[hkey][ikey][entry.posting_gpstime] =\
-                                entry.comment.replace('\\n', '\n')
+                            hu_notes[hkey][ikey][
+                                entry.posting_gpstime
+                            ] = entry.comment.replace("\\n", "\n")
         return hu_notes
 
-    def show_notes(self, hookup_dict, state='all'):
+    def show_notes(self, hookup_dict, state="all"):
         """
         Print out the information for hookup.
 
@@ -311,21 +371,27 @@ class Hookup(object):
             Content as a string
 
         """
-        hu_notes = self.get_notes(hookup_dict=hookup_dict, state=state, return_dict=True)
-        full_info_string = ''
-        for hkey in cm_utils.put_keys_in_order(list(hu_notes.keys()), sort_order='NPR'):
+        hu_notes = self.get_notes(
+            hookup_dict=hookup_dict, state=state, return_dict=True
+        )
+        full_info_string = ""
+        for hkey in cm_utils.put_keys_in_order(list(hu_notes.keys()), sort_order="NPR"):
             hdr = "---{}---".format(hkey)
-            entry_info = ''
-            part_hu_hpn = cm_utils.put_keys_in_order(list(hu_notes[hkey].keys()), sort_order='PNR')
+            entry_info = ""
+            part_hu_hpn = cm_utils.put_keys_in_order(
+                list(hu_notes[hkey].keys()), sort_order="PNR"
+            )
             if hkey in part_hu_hpn:  # Do the hkey first
                 part_hu_hpn.remove(hkey)
                 part_hu_hpn = [hkey] + part_hu_hpn
             for ikey in part_hu_hpn:
                 gps_times = sorted(hu_notes[hkey][ikey].keys())
                 for gtime in gps_times:
-                    atime = cm_utils.get_time_for_display(gtime, float_format='gps')
-                    this_note = ("{} ({})".format(hu_notes[hkey][ikey][gtime]['note'],
-                                                  hu_notes[hkey][ikey][gtime]['ref']))
+                    atime = cm_utils.get_time_for_display(gtime, float_format="gps")
+                    this_note = "{} ({})".format(
+                        hu_notes[hkey][ikey][gtime]["note"],
+                        hu_notes[hkey][ikey][gtime]["ref"],
+                    )
                     entry_info += "\t{} ({})  {}\n".format(ikey, atime, this_note)
             if len(entry_info):
                 full_info_string += "{}\n{}\n".format(hdr, entry_info)
@@ -372,7 +438,7 @@ class Hookup(object):
                         break
             if use_this_one:
                 found_dict[key] = copy.copy(search_dict[key])
-        return(found_dict)
+        return found_dict
 
     def _proc_hpnlist(self, hpn_request, exact_match):
         """
@@ -397,7 +463,7 @@ class Hookup(object):
             updated exact_match setting
 
         """
-        if isinstance(hpn_request, str) and hpn_request.lower() == 'default':
+        if isinstance(hpn_request, str) and hpn_request.lower() == "default":
             return cm_sysdef.hera_zone_prefixes, False
         return cm_utils.listify(hpn_request), exact_match
 
@@ -451,17 +517,31 @@ class Hookup(object):
         """
         key = cm_utils.make_part_key(part, rev)
         part_type = self.active.parts[key].hptype
-        pol, port = port_pol.split('<')
+        pol, port = port_pol.split("<")
         port_list = cm_utils.to_upper(self.sysdef.get_ports(pol, part_type))
         self.upstream = []
         self.downstream = []
-        current = Namespace(direction='up', part=part.upper(), rev=rev.upper(),
-                            key=key, pol=pol.upper(),
-                            hptype=part_type, port=port.upper(), allowed_ports=port_list)
+        current = Namespace(
+            direction="up",
+            part=part.upper(),
+            rev=rev.upper(),
+            key=key,
+            pol=pol.upper(),
+            hptype=part_type,
+            port=port.upper(),
+            allowed_ports=port_list,
+        )
         self._recursive_connect(current)
-        current = Namespace(direction='down', part=part.upper(), rev=rev.upper(),
-                            key=key, pol=pol.upper(),
-                            hptype=part_type, port=port.upper(), allowed_ports=port_list)
+        current = Namespace(
+            direction="down",
+            part=part.upper(),
+            rev=rev.upper(),
+            key=key,
+            pol=pol.upper(),
+            hptype=part_type,
+            port=port.upper(),
+            allowed_ports=port_list,
+        )
         self._recursive_connect(current)
         hu = []
         for pn in reversed(self.upstream):
@@ -483,9 +563,9 @@ class Hookup(object):
         conn = self._get_connection(current)
         if conn is None:
             return None
-        if current.direction == 'up':
+        if current.direction == "up":
             self.upstream.append(conn)
-        elif current.direction == 'down':
+        elif current.direction == "down":
             self.downstream.append(conn)
         self._recursive_connect(current)
 
@@ -508,11 +588,11 @@ class Hookup(object):
         if this_port is None:
             return None
         this_conn = self.active.connections[odir][current.key][this_port]
-        if current.direction == 'up':
+        if current.direction == "up":
             current.part = this_conn.upstream_part.upper()
             current.rev = this_conn.up_part_rev.upper()
             current.port = this_conn.upstream_output_port.upper()
-        elif current.direction == 'down':
+        elif current.direction == "down":
             current.part = this_conn.downstream_part.upper()
             current.rev = this_conn.down_part_rev.upper()
             current.port = this_conn.downstream_input_port.upper()
@@ -522,7 +602,9 @@ class Hookup(object):
             current.type = self.active.parts[current.key].hptype
         except KeyError:  # pragma: no cover
             return None
-        current.allowed_ports = cm_utils.to_upper(self.sysdef.get_ports(current.pol, current.type))
+        current.allowed_ports = cm_utils.to_upper(
+            self.sysdef.get_ports(current.pol, current.type)
+        )
         current.port = self._get_port(current, options)
         return this_conn
 
@@ -545,29 +627,31 @@ class Hookup(object):
             if p[0] == current.pol[0]:
                 return p
 
-    def _sort_hookup_display(self, sortby, hookup_dict, def_sort_order='NRP'):
+    def _sort_hookup_display(self, sortby, hookup_dict, def_sort_order="NRP"):
         if sortby is None:
-            return cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order='NPR')
+            return cm_utils.put_keys_in_order(hookup_dict.keys(), sort_order="NPR")
         if isinstance(sortby, str):
-            sortby = sortby.split(',')
+            sortby = sortby.split(",")
         sort_order_dict = {}
         for stmp in sortby:
-            ss = stmp.split(':')
+            ss = stmp.split(":")
             if ss[0] in self.col_list:
                 if len(ss) == 1:
                     ss.append(def_sort_order)
                 sort_order_dict[ss[0]] = ss[1]
-        if 'station' not in sort_order_dict.keys():
-            sortby.append('station')
-            sort_order_dict['station'] = 'NPR'
+        if "station" not in sort_order_dict.keys():
+            sortby.append("station")
+            sort_order_dict["station"] = "NPR"
         key_bucket = {}
-        show = {'revs': True, 'ports': False}
+        show = {"revs": True, "ports": False}
         for this_key, this_hu in hookup_dict.items():
             pk = list(this_hu.hookup.keys())[0]
             this_entry = this_hu.table_entry_row(pk, sortby, self.part_type_cache, show)
             ekey = []
-            for eee in [cm_utils.peel_key(x, sort_order_dict[sortby[i]])
-                        for i, x in enumerate(this_entry)]:
+            for eee in [
+                cm_utils.peel_key(x, sort_order_dict[sortby[i]])
+                for i, x in enumerate(this_entry)
+            ]:
                 ekey += eee
             key_bucket[tuple(ekey)] = this_key
         sorted_keys = []
@@ -598,9 +682,9 @@ class Hookup(object):
                 if len(cols) > len(self.col_list):
                     self.col_list = copy.copy(cols)
         if isinstance(cols_to_show, str):
-            cols_to_show = cols_to_show.split(',')
+            cols_to_show = cols_to_show.split(",")
         cols_to_show = [x.lower() for x in cols_to_show]
-        if 'all' in cols_to_show:
+        if "all" in cols_to_show:
             return self.col_list
         headers = []
         for col in self.col_list:
@@ -609,7 +693,7 @@ class Hookup(object):
         return headers
 
     # ############################### Cache file methods #####################################
-    def write_hookup_cache_to_file(self, log_msg='Write.'):
+    def write_hookup_cache_to_file(self, log_msg="Write."):
         """
         Write the current hookup to the cache file.
 
@@ -621,51 +705,69 @@ class Hookup(object):
             E.g. "Found new antenna." or "Cronjob to ensure cache file up to date."
 
         """
-        self.at_date = cm_utils.get_astropytime('now')
-        self.hookup_type = 'parts_hera'
+        self.at_date = cm_utils.get_astropytime("now")
+        self.hookup_type = "parts_hera"
         self.cached_hookup_dict = self.get_hookup_from_db(
-            self.hookup_list_to_cache, pol='all', at_date=self.at_date,
-            exact_match=False, hookup_type=self.hookup_type)
+            self.hookup_list_to_cache,
+            pol="all",
+            at_date=self.at_date,
+            exact_match=False,
+            hookup_type=self.hookup_type,
+        )
         hookup_dict_for_json = copy.deepcopy(self.cached_hookup_dict)
         for key, value in self.cached_hookup_dict.items():
             if isinstance(value, cm_dossier.HookupEntry):
                 hookup_dict_for_json[key] = value._to_dict()
 
-        save_dict = {'at_date_gps': self.at_date.gps,
-                     'hookup_type': self.hookup_type,
-                     'hookup_list': self.hookup_list_to_cache,
-                     'hookup_dict': hookup_dict_for_json,
-                     'part_type_cache': self.part_type_cache}
-        with open(self.hookup_cache_file, 'w') as outfile:
+        save_dict = {
+            "at_date_gps": self.at_date.gps,
+            "hookup_type": self.hookup_type,
+            "hookup_list": self.hookup_list_to_cache,
+            "hookup_dict": hookup_dict_for_json,
+            "part_type_cache": self.part_type_cache,
+        }
+        with open(self.hookup_cache_file, "w") as outfile:
             json.dump(save_dict, outfile)
 
         cf_info = self.hookup_cache_file_info()
-        log_dict = {'hu-list': cm_utils.stringify(self.hookup_list_to_cache),
-                    'log_msg': log_msg, 'cache_file_info': cf_info}
-        cm_utils.log('update_cache', log_dict=log_dict)
+        log_dict = {
+            "hu-list": cm_utils.stringify(self.hookup_list_to_cache),
+            "log_msg": log_msg,
+            "cache_file_info": cf_info,
+        }
+        cm_utils.log("update_cache", log_dict=log_dict)
 
     def read_hookup_cache_from_file(self):
         """Read the current cache file into memory."""
-        with open(self.hookup_cache_file, 'r') as outfile:
+        with open(self.hookup_cache_file, "r") as outfile:
             cache_dict = json.load(outfile)
         if self.hookup_cache_file_OK(cache_dict):
             print("<<<Cache IS current with database>>>")
         else:
             print("<<<Cache is NOT current with database>>>")
-        self.cached_at_date = Time(cache_dict['at_date_gps'], format='gps')
-        self.cached_hookup_type = cache_dict['hookup_type']
-        self.cached_hookup_list = cache_dict['hookup_list']
+        self.cached_at_date = Time(cache_dict["at_date_gps"], format="gps")
+        self.cached_hookup_type = cache_dict["hookup_type"]
+        self.cached_hookup_list = cache_dict["hookup_list"]
         hookup_dict = {}
-        for key, value in cache_dict['hookup_dict'].items():
+        for key, value in cache_dict["hookup_dict"].items():
             # this should only contain dicts made from HookupEntry
             # add asserts to make sure
-            assert(isinstance(value, dict))
-            assert(sorted(value.keys()) == sorted(['entry_key', 'hookup', 'fully_connected',
-                                                   'hookup_type', 'columns', 'timing', 'sysdef']))
+            assert isinstance(value, dict)
+            assert sorted(value.keys()) == sorted(
+                [
+                    "entry_key",
+                    "hookup",
+                    "fully_connected",
+                    "hookup_type",
+                    "columns",
+                    "timing",
+                    "sysdef",
+                ]
+            )
             hookup_dict[key] = cm_dossier.HookupEntry(input_dict=value)
 
         self.cached_hookup_dict = hookup_dict
-        self.part_type_cache = cache_dict['part_type_cache']
+        self.part_type_cache = cache_dict["part_type_cache"]
         self.hookup_type = self.cached_hookup_type
 
     def hookup_cache_file_OK(self, cache_dict=None):
@@ -690,18 +792,25 @@ class Hookup(object):
         if cache_dict is None:
             return False
         stats = os.stat(self.hookup_cache_file)
-        result = self.session.query(cm_transfer.CMVersion).order_by(
-            cm_transfer.CMVersion.update_time).all()
-        cm_hash_time = Time(result[-1].update_time, format='gps')
-        file_mod_time = Time(stats.st_mtime, format='unix')
+        result = (
+            self.session.query(cm_transfer.CMVersion)
+            .order_by(cm_transfer.CMVersion.update_time)
+            .all()
+        )
+        cm_hash_time = Time(result[-1].update_time, format="gps")
+        file_mod_time = Time(stats.st_mtime, format="unix")
         # If CMVersion changed since file was written, don't know so fail...
         if file_mod_time < cm_hash_time:  # pragma: no cover
-            log_dict = {'file_mod_time': cm_utils.get_time_for_display(file_mod_time),
-                        'cm_hash_time': cm_utils.get_time_for_display(cm_hash_time)}
-            cm_utils.log('__hookup_cache_file_date_OK:  out of date.', log_dict=log_dict)
+            log_dict = {
+                "file_mod_time": cm_utils.get_time_for_display(file_mod_time),
+                "cm_hash_time": cm_utils.get_time_for_display(cm_hash_time),
+            }
+            cm_utils.log(
+                "__hookup_cache_file_date_OK:  out of date.", log_dict=log_dict
+            )
             return False
-        cached_at_date = Time(cache_dict['at_date_gps'], format='gps')
-        cached_hookup_type = cache_dict['hookup_type']
+        cached_at_date = Time(cache_dict["at_date_gps"], format="gps")
+        cached_hookup_type = cache_dict["hookup_type"]
 
         if self.hookup_type is None:
             self.hookup_type = cached_hookup_type
@@ -729,25 +838,35 @@ class Hookup(object):
             s = "{} does not exist.\n".format(self.hookup_cache_file)
         else:
             self.read_hookup_cache_from_file()
-            s = 'Cache file:  {}\n'.format(self.hookup_cache_file)
-            s += 'Cache hookup type:  {}\n'.format(self.cached_hookup_type)
-            s += 'Cached_at_date:  {}\n'.format(cm_utils.get_time_for_display(self.cached_at_date))
+            s = "Cache file:  {}\n".format(self.hookup_cache_file)
+            s += "Cache hookup type:  {}\n".format(self.cached_hookup_type)
+            s += "Cached_at_date:  {}\n".format(
+                cm_utils.get_time_for_display(self.cached_at_date)
+            )
             stats = os.stat(self.hookup_cache_file)
-            file_mod_time = Time(stats.st_mtime, format='unix')
-            s += 'Cache file_mod_time:  {}\n'.format(cm_utils.get_time_for_display(file_mod_time))
-            s += 'Cached hookup list:  {}\n'.format(self.cached_hookup_list)
-            s += 'Cached hookup has {} keys.\n'.format(len(self.cached_hookup_dict.keys()))
+            file_mod_time = Time(stats.st_mtime, format="unix")
+            s += "Cache file_mod_time:  {}\n".format(
+                cm_utils.get_time_for_display(file_mod_time)
+            )
+            s += "Cached hookup list:  {}\n".format(self.cached_hookup_list)
+            s += "Cached hookup has {} keys.\n".format(
+                len(self.cached_hookup_dict.keys())
+            )
             hooked_up = 0
             for k, hu in self.cached_hookup_dict.items():
                 for pol in hu.fully_connected:
                     if hu.fully_connected[pol]:
                         hooked_up += 1
             s += "Number of ant-pols hooked up is {}\n".format(hooked_up)
-        result = self.session.query(cm_transfer.CMVersion).order_by(
-            cm_transfer.CMVersion.update_time).all()
-        cm_hash_time = Time(result[-1].update_time, format='gps')
-        s += '\nCM Version latest cm_hash_time:  {}\n'.format(
-            cm_utils.get_time_for_display(cm_hash_time))
+        result = (
+            self.session.query(cm_transfer.CMVersion)
+            .order_by(cm_transfer.CMVersion.update_time)
+            .all()
+        )
+        cm_hash_time = Time(result[-1].update_time, format="gps")
+        s += "\nCM Version latest cm_hash_time:  {}\n".format(
+            cm_utils.get_time_for_display(cm_hash_time)
+        )
         return s
 
     def delete_cache_file(self):
@@ -772,7 +891,7 @@ class Hookup(object):
         """
         for x in hpn:
             for key_prefix in self.hookup_list_to_cache:
-                if x[:len(key_prefix)].upper() == key_prefix.upper():
+                if x[: len(key_prefix)].upper() == key_prefix.upper():
                     break
             else:
                 return False

@@ -19,7 +19,7 @@ class ActiveData:
 
     """
 
-    def __init__(self, session=None, at_date='now', at_time=None, float_format=None):
+    def __init__(self, session=None, at_date="now", at_time=None, float_format=None):
         """
         Initialize ActiveData class attributes for at_date.
 
@@ -41,6 +41,7 @@ class ActiveData:
         """
         if session is None:  # pragma: no cover
             from . import mc
+
             db = mc.connect_to_mc_db(None)
             session = db.sessionmaker()
         self.session = session
@@ -110,8 +111,10 @@ class ActiveData:
         self.parts = {}
         for prt in self.session.query(partconn.Parts).filter(
             (partconn.Parts.start_gpstime <= gps_time)
-            & ((partconn.Parts.stop_gpstime > gps_time)
-               | (partconn.Parts.stop_gpstime == None))  # noqa
+            & (
+                (partconn.Parts.stop_gpstime > gps_time)
+                | (partconn.Parts.stop_gpstime is None)
+            )  # noqa
         ):
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
             self.parts[key] = prt
@@ -145,31 +148,35 @@ class ActiveData:
 
         """
         gps_time = self.set_active_time(at_date, at_time, float_format)
-        self.connections = {'up': {}, 'down': {}}
-        check_keys = {'up': [], 'down': []}
+        self.connections = {"up": {}, "down": {}}
+        check_keys = {"up": [], "down": []}
         for cnn in self.session.query(partconn.Connections).filter(
             (partconn.Connections.start_gpstime <= gps_time)
-            & ((partconn.Connections.stop_gpstime > gps_time)
-               | (partconn.Connections.stop_gpstime == None))  # noqa
+            & (
+                (partconn.Connections.stop_gpstime > gps_time)
+                | (partconn.Connections.stop_gpstime is None)
+            )  # noqa
         ):
-            chk = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev,
-                                         cnn.upstream_output_port)
+            chk = cm_utils.make_part_key(
+                cnn.upstream_part, cnn.up_part_rev, cnn.upstream_output_port
+            )
             if self.pytest_param:
                 check_keys[self.pytest_param].append(chk)
-            if chk in check_keys['up']:
+            if chk in check_keys["up"]:
                 raise ValueError("Duplicate active port {}".format(chk))
-            check_keys['up'].append(chk)
-            chk = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev,
-                                         cnn.downstream_input_port)
-            if chk in check_keys['down']:
+            check_keys["up"].append(chk)
+            chk = cm_utils.make_part_key(
+                cnn.downstream_part, cnn.down_part_rev, cnn.downstream_input_port
+            )
+            if chk in check_keys["down"]:
                 raise ValueError("Duplicate active port {}".format(chk))
-            check_keys['down'].append(chk)
+            check_keys["down"].append(chk)
             key = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev)
-            self.connections['up'].setdefault(key, {})
-            self.connections['up'][key][cnn.upstream_output_port.upper()] = cnn
+            self.connections["up"].setdefault(key, {})
+            self.connections["up"][key][cnn.upstream_output_port.upper()] = cnn
             key = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev)
-            self.connections['down'].setdefault(key, {})
-            self.connections['down'][key][cnn.downstream_input_port.upper()] = cnn
+            self.connections["down"].setdefault(key, {})
+            self.connections["down"][key][cnn.downstream_input_port.upper()] = cnn
 
     def load_info(self, at_date=None, at_time=None, float_format=None):
         """
@@ -194,7 +201,7 @@ class ActiveData:
         gps_time = self.set_active_time(at_date, at_time, float_format)
         self.info = {}
         for info in self.session.query(partconn.PartInfo).filter(
-                (partconn.PartInfo.posting_gpstime <= gps_time)
+            (partconn.PartInfo.posting_gpstime <= gps_time)
         ):
             key = cm_utils.make_part_key(info.hpn, info.hpn_rev)
             self.info.setdefault(key, [])
@@ -231,12 +238,15 @@ class ActiveData:
         fnd_syspn = []
         for rose in self.session.query(partconn.PartRosetta).filter(
             (partconn.PartRosetta.start_gpstime <= gps_time)
-            & ((partconn.PartRosetta.stop_gpstime > gps_time)
-               | (partconn.PartRosetta.stop_gpstime == None))  # noqa
+            & (
+                (partconn.PartRosetta.stop_gpstime > gps_time)
+                | (partconn.PartRosetta.stop_gpstime is None)
+            )  # noqa
         ):
             if rose.syspn in fnd_syspn:
-                raise ValueError("System part number {} already found."
-                                 .format(rose.syspn))
+                raise ValueError(
+                    "System part number {} already found.".format(rose.syspn)
+                )
             fnd_syspn.append(rose.syspn)
             self.rosetta[rose.hpn] = rose
         if self.parts is not None:
@@ -246,7 +256,7 @@ class ActiveData:
                 except KeyError:
                     continue
 
-    def load_apriori(self, at_date=None, at_time=None, float_format=None, rev='A'):
+    def load_apriori(self, at_date=None, at_time=None, float_format=None, rev="A"):
         """
         Retrieve all active apriori status for a given at_date.
 
@@ -273,8 +283,10 @@ class ActiveData:
         apriori_keys = []
         for astat in self.session.query(partconn.AprioriAntenna).filter(
             (partconn.AprioriAntenna.start_gpstime <= gps_time)
-            & ((partconn.AprioriAntenna.stop_gpstime > gps_time)
-               | (partconn.AprioriAntenna.stop_gpstime == None))  # noqa
+            & (
+                (partconn.AprioriAntenna.stop_gpstime > gps_time)
+                | (partconn.AprioriAntenna.stop_gpstime is None)
+            )  # noqa
         ):
             key = cm_utils.make_part_key(astat.antenna, rev)
             if key in apriori_keys:
@@ -303,10 +315,11 @@ class ActiveData:
 
         """
         from . import geo_location
+
         gps_time = self.set_active_time(at_date, at_time, float_format)
         self.geo = {}
         for ageo in self.session.query(geo_location.GeoLocation).filter(
-                geo_location.GeoLocation.created_gpstime <= gps_time
+            geo_location.GeoLocation.created_gpstime <= gps_time
         ):
             key = cm_utils.make_part_key(ageo.station_name, None)
             self.geo[key] = ageo
@@ -360,25 +373,36 @@ class ActiveData:
 
         """
         from argparse import Namespace
+
         hpn = [x.upper() for x in cm_utils.listify(hpn)]
         rev_dict = {}
         for hloop in hpn:
             rev_dict[hloop] = {}
             for part in self.parts.values():
                 phup = part.hpn.upper()
-                use_this_one = (phup == hloop) if exact_match else phup.startswith(hloop)
+                use_this_one = (
+                    (phup == hloop) if exact_match else phup.startswith(hloop)
+                )
                 if use_this_one:
                     prup = part.hpn_rev.upper()
                     rev_dict[hloop].setdefault(
-                        prup, Namespace(hpn=hloop, rev=prup, number=0,
-                                        started=part.start_gpstime,
-                                        ended=part.stop_gpstime))
+                        prup,
+                        Namespace(
+                            hpn=hloop,
+                            rev=prup,
+                            number=0,
+                            started=part.start_gpstime,
+                            ended=part.stop_gpstime,
+                        ),
+                    )
                     rev_dict[hloop][prup].number += 1
                     if part.start_gpstime < rev_dict[hloop][prup].started:
                         rev_dict[hloop][prup].started = part.start_gpstime
                     if rev_dict[hloop][prup].ended is not None:
-                        if (part.stop_gpstime is None
-                                or part.stop_gpstime > rev_dict[hloop][prup].ended):
+                        if (
+                            part.stop_gpstime is None
+                            or part.stop_gpstime > rev_dict[hloop][prup].ended
+                        ):
                             rev_dict[hloop][prup].ended = part.stop_gpstime
         hpn_rev = []
         for hloop in sorted(rev_dict.keys()):

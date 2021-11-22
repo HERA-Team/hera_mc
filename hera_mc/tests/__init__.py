@@ -14,25 +14,28 @@ import pytest
 
 from hera_mc.utils import get_iterable
 from hera_mc.correlator import DEFAULT_REDIS_ADDRESS
-TEST_DEFAULT_REDIS_HOST = 'redishost'
+
+TEST_DEFAULT_REDIS_HOST = "redishost"
 
 
 def redis_online():
     try:
         import redis
+
         r = redis.Redis(TEST_DEFAULT_REDIS_HOST)
-        hera_redis = any(k for k in r.keys() if 'hera' in k.decode()) > 0
+        hera_redis = any(k for k in r.keys() if "hera" in k.decode()) > 0
     except:  # noqa
         hera_redis = False
-    return (socket.gethostname() == 'qmaster') or hera_redis
+    return (socket.gethostname() == "qmaster") or hera_redis
 
 
-requires_redis = pytest.mark.skipif(not redis_online(),
-                                    reason='This test requires a working redis database.')
+requires_redis = pytest.mark.skipif(
+    not redis_online(), reason="This test requires a working redis database."
+)
 
 
 def default_redishost():
-    return (TEST_DEFAULT_REDIS_HOST == DEFAULT_REDIS_ADDRESS)
+    return TEST_DEFAULT_REDIS_HOST == DEFAULT_REDIS_ADDRESS
 
 
 # In practice, tests marked with `requires_default_redis` should also be marked with
@@ -41,16 +44,15 @@ def default_redishost():
 # redis online (because it waits a long time for a time out).
 requires_default_redis = pytest.mark.skipif(
     not default_redishost(),
-    reason="This test requires that the redis database used for testing has the default hostname."
+    reason="This test requires that the redis database used for testing has the default hostname.",
 )
 
 
 def is_onsite():
-    return (socket.gethostname() == 'qmaster')
+    return socket.gethostname() == "qmaster"
 
 
-onsite = pytest.mark.skipif(not is_onsite(),
-                            reason='This test only works on site')
+onsite = pytest.mark.skipif(not is_onsite(), reason="This test only works on site")
 
 
 # Functions that are useful for testing:
@@ -65,9 +67,15 @@ def clearWarnings():
             reg.clear()
 
 
-def checkWarnings(func, func_args=[], func_kwargs={},
-                  category=UserWarning,
-                  nwarnings=1, message=None, known_warning=None):
+def checkWarnings(
+    func,
+    func_args=[],
+    func_kwargs={},
+    category=UserWarning,
+    nwarnings=1,
+    message=None,
+    known_warning=None,
+):
     """
     Check expected warnings.
 
@@ -125,18 +133,20 @@ def checkWarnings(func, func_args=[], func_kwargs={},
         retval = func(*func_args, **func_kwargs)  # Run function
         # Verify
         if len(w) != nwarnings:
-            print('wrong number of warnings. Expected number was {nexp}, '
-                  'actual number was {nact}.'.format(nexp=nwarnings, nact=len(w)))
+            print(
+                "wrong number of warnings. Expected number was {nexp}, "
+                "actual number was {nact}.".format(nexp=nwarnings, nact=len(w))
+            )
             for idx, wi in enumerate(w):
-                print('warning {i} is: {w}'.format(i=idx, w=wi))
-            assert(False)
+                print("warning {i} is: {w}".format(i=idx, w=wi))
+            assert False
         else:
             for i, w_i in enumerate(w):
                 if w_i.category is not category[i]:
-                    assert(False)
+                    assert False
                 if message[i] is not None:
                     if message[i] not in str(w_i.message):
-                        print('expected message ' + str(i) + ' was: ', message[i])
-                        print('message ' + str(i) + ' was: ', str(w_i.message))
-                        assert(False)
+                        print("expected message " + str(i) + " was: ", message[i])
+                        print("message " + str(i) + " was: ", str(w_i.message))
+                        assert False
         return retval

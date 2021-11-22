@@ -64,7 +64,9 @@ def _get_obsids(filelist):
 
 ap = mc.get_mc_argument_parser()
 ap.description = """Launch an RTP workflow for the JD specified"""
-ap.add_argument("jd", type=int, default=None, nargs="?", help="JD to launch an RTP job for")
+ap.add_argument(
+    "jd", type=int, default=None, nargs="?", help="JD to launch an RTP job for"
+)
 ap.add_argument(
     "-c",
     "--workflow_config",
@@ -111,9 +113,7 @@ ap.add_argument(
     "--conda_env",
     default="RTP",
     type=str,
-    help=(
-        "The conda environment to activate before launching RTP workflow."
-    ),
+    help=("The conda environment to activate before launching RTP workflow."),
 )
 
 args = ap.parse_args()

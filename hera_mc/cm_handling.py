@@ -48,9 +48,10 @@ class Handling:
             Git hash of the hera_cm_db_updates repo
         """
         from .cm_transfer import CMVersion
+
         self.session.add(CMVersion.create(time, git_hash))
 
-    def get_cm_version(self, at_date='now', at_time=None, float_format=None):
+    def get_cm_version(self, at_date="now", at_time=None, float_format=None):
         """
         Get the cm_version git_hash active at a particular time.
 
@@ -75,9 +76,13 @@ class Handling:
         at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
 
         # get last row before at_date
-        result = (self.session.query(CMVersion).filter(CMVersion.update_time <= at_date.gps)
-                  .order_by(desc(CMVersion.update_time)).limit(1).all()
-                  )
+        result = (
+            self.session.query(CMVersion)
+            .filter(CMVersion.update_time <= at_date.gps)
+            .order_by(desc(CMVersion.update_time))
+            .limit(1)
+            .all()
+        )
         return result[0].git_hash
 
     def get_part_type_for(self, hpn):
@@ -95,8 +100,11 @@ class Handling:
             The associated part type.
 
         """
-        part_query = self.session.query(partconn.Parts).filter(
-            (func.upper(partconn.Parts.hpn) == hpn.upper())).first()
+        part_query = (
+            self.session.query(partconn.Parts)
+            .filter((func.upper(partconn.Parts.hpn) == hpn.upper()))
+            .first()
+        )
         return part_query.hptype
 
     def get_part_from_hpnrev(self, hpn, rev):
@@ -115,9 +123,14 @@ class Handling:
         Part object
 
         """
-        return self.session.query(partconn.Parts).filter(
-            (func.upper(partconn.Parts.hpn) == hpn.upper())
-            & (func.upper(partconn.Parts.hpn_rev) == rev.upper())).first()
+        return (
+            self.session.query(partconn.Parts)
+            .filter(
+                (func.upper(partconn.Parts.hpn) == hpn.upper())
+                & (func.upper(partconn.Parts.hpn_rev) == rev.upper())
+            )
+            .first()
+        )
 
     def _get_hpn_list(self, hpn, rev, active, exact_match):
         """
@@ -141,7 +154,7 @@ class Handling:
             Contains the hpn, rev pairs
 
         """
-        match_list = cm_utils.match_list(hpn, rev, case_type='upper')
+        match_list = cm_utils.match_list(hpn, rev, case_type="upper")
         if not exact_match:
             all_hpn = []
             all_rev = []
@@ -151,7 +164,7 @@ class Handling:
                         k_hpn, k_rev = cm_utils.split_part_key(key)
                         all_hpn.append(k_hpn.upper())
                         all_rev.append(h_rev)
-            match_list = cm_utils.match_list(all_hpn, all_rev, case_type='upper')
+            match_list = cm_utils.match_list(all_hpn, all_rev, case_type="upper")
         return match_list
 
     def _get_allowed_ports(self, ports):
@@ -166,14 +179,23 @@ class Handling:
         """
         self.allowed_ports = None
         if isinstance(ports, str):
-            ports = ports.split(',')
+            ports = ports.split(",")
         if isinstance(ports, list):
             self.allowed_ports = [x.upper() for x in ports]
 
-    def get_dossier(self, hpn, rev=None, at_date='now', at_time=None, float_format=None,
-                    active=None, notes_start_date='<', notes_start_time=None,
-                    notes_float_format=None,
-                    exact_match=True):
+    def get_dossier(
+        self,
+        hpn,
+        rev=None,
+        at_date="now",
+        at_time=None,
+        float_format=None,
+        active=None,
+        notes_start_date="<",
+        notes_start_time=None,
+        notes_float_format=None,
+        exact_match=True,
+    ):
         """
         Get information on a part or parts.
 
@@ -214,15 +236,18 @@ class Handling:
         from . import cm_active
 
         at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
-        notes_start_date = cm_utils.get_astropytime(notes_start_date, notes_start_time,
-                                                    notes_float_format)
+        notes_start_date = cm_utils.get_astropytime(
+            notes_start_date, notes_start_time, notes_float_format
+        )
         if active is None:
             active = cm_active.ActiveData(self.session, at_date=at_date)
         elif at_date is not None:
             date_diff = abs(at_date - active.at_date).sec
             if date_diff > 1.0:
-                raise ValueError("Supplied date and active date do not agree "
-                                 "({}sec)".format(date_diff))
+                raise ValueError(
+                    "Supplied date and active date do not agree "
+                    "({}sec)".format(date_diff)
+                )
         else:
             at_date = active.at_date
         if active.parts is None:
@@ -241,13 +266,16 @@ class Handling:
             if loop_rev is None:
                 loop_rev = [x.rev for x in active.revs(loop_hpn)]
             elif isinstance(loop_rev, str):
-                loop_rev = [x.strip().upper() for x in loop_rev.split(',')]
+                loop_rev = [x.strip().upper() for x in loop_rev.split(",")]
             for rev in loop_rev:
                 key = cm_utils.make_part_key(loop_hpn, rev)
                 if key in active.parts.keys():
-                    this_part = cm_dossier.PartEntry(hpn=loop_hpn, rev=rev,
-                                                     at_date=at_date,
-                                                     notes_start_date=notes_start_date)
+                    this_part = cm_dossier.PartEntry(
+                        hpn=loop_hpn,
+                        rev=rev,
+                        at_date=at_date,
+                        notes_start_date=notes_start_date,
+                    )
                     this_part.get_entry(active)
                     part_dossier[key] = this_part
 
@@ -277,18 +305,20 @@ class Handling:
             String containing the dossier table.
         """
         from tabulate import tabulate
+
         self._get_allowed_ports(ports)
         pd_keys = cm_utils.put_keys_in_order(list(dossier.keys()))
         if len(pd_keys) == 0:
-            return 'Part not found'
+            return "Part not found"
         table_data = []
         headers = dossier[pd_keys[0]].get_headers(columns=columns)
         for hpnr in pd_keys:
-            new_rows = dossier[hpnr].table_row(columns=columns,
-                                               ports=self.allowed_ports)
+            new_rows = dossier[hpnr].table_row(
+                columns=columns, ports=self.allowed_ports
+            )
             for nr in new_rows:
                 table_data.append(nr)
-        return '\n' + tabulate(table_data, headers=headers, tablefmt='orgtbl') + '\n'
+        return "\n" + tabulate(table_data, headers=headers, tablefmt="orgtbl") + "\n"
 
     def get_specific_connection(self, cobj, at_date=None):
         """
@@ -315,26 +345,42 @@ class Handling:
         """
         fnd = []
         for conn in self.session.query(partconn.Connections).filter(
-            (func.upper(partconn.Connections.upstream_part) == cobj.upstream_part.upper())
-            & (func.upper(partconn.Connections.downstream_part)
-               == cobj.downstream_part.upper())
+            (
+                func.upper(partconn.Connections.upstream_part)
+                == cobj.upstream_part.upper()
+            )
+            & (
+                func.upper(partconn.Connections.downstream_part)
+                == cobj.downstream_part.upper()
+            )
         ):
             conn.gps2Time()
             include_this_one = True
-            if isinstance(cobj.up_part_rev, str) and \
-                    cobj.up_part_rev.lower() != conn.up_part_rev.lower():
+            if (
+                isinstance(cobj.up_part_rev, str)
+                and cobj.up_part_rev.lower() != conn.up_part_rev.lower()
+            ):
                 include_this_one = False
-            if isinstance(cobj.down_part_rev, str) and \
-                    cobj.down_part_rev.lower() != conn.down_part_rev.lower():
+            if (
+                isinstance(cobj.down_part_rev, str)
+                and cobj.down_part_rev.lower() != conn.down_part_rev.lower()
+            ):
                 include_this_one = False
-            if isinstance(cobj.upstream_output_port, str) and \
-                    cobj.upstream_output_port.lower() != conn.upstream_output_port.lower():
+            if (
+                isinstance(cobj.upstream_output_port, str)
+                and cobj.upstream_output_port.lower()
+                != conn.upstream_output_port.lower()
+            ):
                 include_this_one = False
-            if isinstance(cobj.downstream_input_port, str) and \
-                    cobj.downstream_input_port.lower() != conn.downstream_input_port.lower():
+            if (
+                isinstance(cobj.downstream_input_port, str)
+                and cobj.downstream_input_port.lower()
+                != conn.downstream_input_port.lower()
+            ):
                 include_this_one = False
-            if isinstance(at_date, Time) and \
-                    not cm_utils.is_active(at_date, conn.start_date, conn.stop_date):
+            if isinstance(at_date, Time) and not cm_utils.is_active(
+                at_date, conn.start_date, conn.stop_date
+            ):
                 include_this_one = False
             if include_this_one:
                 fnd.append(copy.copy(conn))

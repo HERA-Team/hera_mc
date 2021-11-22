@@ -36,7 +36,7 @@ class SubsystemError(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'subsystem_error'
+    __tablename__ = "subsystem_error"
     id = Column(BigInteger, primary_key=True, autoincrement=True)  # noqa A003
     time = Column(BigInteger, nullable=False)
     subsystem = Column(String(32), nullable=False)
@@ -69,12 +69,13 @@ class SubsystemError(MCDeclarativeBase):
 
         """
         if not isinstance(db_time, Time):
-            raise ValueError('db_time must be an astropy Time object')
+            raise ValueError("db_time must be an astropy Time object")
         mc_time = floor(db_time.gps)
 
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         time = floor(time.gps)
 
-        return cls(time=time, subsystem=subsystem, mc_time=mc_time,
-                   severity=severity, log=log)
+        return cls(
+            time=time, subsystem=subsystem, mc_time=mc_time, severity=severity, log=log
+        )

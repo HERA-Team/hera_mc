@@ -62,13 +62,24 @@ class ServerStatus(MCDeclarativeBase):
     disk_size_gb = Column(Float, nullable=False)
     network_bandwidth_mbs = Column(Float)
 
-    tols = {'mc_system_timediff': DEFAULT_GPS_TOL,
-            'uptime_days': DEFAULT_DAY_TOL}
+    tols = {"mc_system_timediff": DEFAULT_GPS_TOL, "uptime_days": DEFAULT_DAY_TOL}
 
     @classmethod
-    def create(cls, db_time, hostname, ip_address, system_time, num_cores,
-               cpu_load_pct, uptime_days, memory_used_pct, memory_size_gb,
-               disk_space_pct, disk_size_gb, network_bandwidth_mbs=None):
+    def create(
+        cls,
+        db_time,
+        hostname,
+        ip_address,
+        system_time,
+        num_cores,
+        cpu_load_pct,
+        uptime_days,
+        memory_used_pct,
+        memory_size_gb,
+        disk_space_pct,
+        disk_size_gb,
+        network_bandwidth_mbs=None,
+    ):
         """
         Create a new server_status object.
 
@@ -103,16 +114,24 @@ class ServerStatus(MCDeclarativeBase):
 
         """
         if not isinstance(db_time, Time):
-            raise ValueError('db_time must be an astropy Time object')
+            raise ValueError("db_time must be an astropy Time object")
         mc_time = floor(db_time.gps)
 
         if not isinstance(system_time, Time):
-            raise ValueError('system_time must be an astropy Time object')
+            raise ValueError("system_time must be an astropy Time object")
         mc_system_timediff = db_time.gps - system_time.gps
 
-        return cls(hostname=hostname, mc_time=mc_time, ip_address=ip_address,
-                   mc_system_timediff=mc_system_timediff, num_cores=num_cores,
-                   cpu_load_pct=cpu_load_pct, uptime_days=uptime_days,
-                   memory_used_pct=memory_used_pct, memory_size_gb=memory_size_gb,
-                   disk_space_pct=disk_space_pct, disk_size_gb=disk_size_gb,
-                   network_bandwidth_mbs=network_bandwidth_mbs)
+        return cls(
+            hostname=hostname,
+            mc_time=mc_time,
+            ip_address=ip_address,
+            mc_system_timediff=mc_system_timediff,
+            num_cores=num_cores,
+            cpu_load_pct=cpu_load_pct,
+            uptime_days=uptime_days,
+            memory_used_pct=memory_used_pct,
+            memory_size_gb=memory_size_gb,
+            disk_space_pct=disk_space_pct,
+            disk_size_gb=disk_size_gb,
+            network_bandwidth_mbs=network_bandwidth_mbs,
+        )
