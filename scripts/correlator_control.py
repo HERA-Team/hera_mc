@@ -12,6 +12,7 @@ from astropy.units import Quantity
 from hera_mc.utils import LSTScheduler
 from hera_mc import mc, geo_handling
 from hera_mc import correlator as corr
+import hera_cal
 
 valid_commands = sorted(corr.command_dict.keys())
 
@@ -37,6 +38,9 @@ if __name__ == '__main__':
                         "string for interpreting starttime (string).", default=None)
     parser.add_argument('--starttime_scale', help="Astropy Time object scale "
                         "string for interpreting starttime (string).", default=None)
+    parser.add_argument('--center_ra_rad', help="Center Right Ascention (RA) in radians"
+                        "this argument is in act when starttime is None.",
+                        default=None)
     parser.add_argument('--duration',
                         help="Required if command is 'take_data', "
                         "ignored otherwise. Length of time to take data for, "
@@ -83,6 +87,11 @@ if __name__ == '__main__':
     elif args.now:
         # now + 60s buffer for correlator to collect itself
         starttime_obj = Time.now() + TimeDelta(Quantity(60, 'second'))
+    elif args.center_ra_rad is not None:
+        now = Time.now()
+        jd_center = hera_cal.utils.LST2JD(args.center_ra_rad, now.jd)
+        time_center = Time(jd_center, format='jd')
+        starttime_obj = time_center - args.duration / 2.
     else:
         starttime_obj = None
     if args.lstlock and starttime_obj is not None:
