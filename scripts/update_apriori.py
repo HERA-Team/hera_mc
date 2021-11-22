@@ -26,7 +26,7 @@ if __name__ == "__main__":
             "digital_ok",
             "calibration_maintenance",
             "calibration_ok",
-            "calibration_triage"
+            "calibration_triage",
         ],
     )
     cm_utils.add_date_time_args(parser)
@@ -38,5 +38,9 @@ if __name__ == "__main__":
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
     cm_partconnect.update_apriori_antenna(
-        antenna=args.hpn, status=args.status, start_gpstime=at_date.gps,
-        stop_gpstime=None, session=session)
+        antenna=args.hpn,
+        status=args.status,
+        start_gpstime=at_date.gps,
+        stop_gpstime=None,
+        session=session,
+    )

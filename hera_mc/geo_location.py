@@ -31,7 +31,7 @@ class StationType(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'station_type'
+    __tablename__ = "station_type"
 
     station_type_name = Column(String(64), primary_key=True)
     prefix = NotNull(String(64))
@@ -40,9 +40,12 @@ class StationType(MCDeclarativeBase):
 
     def __repr__(self):
         """Define representation."""
-        return ('<subarray {self.station_type_name}: prefix={self.prefix} '
-                'description={self.description} marker={self.plot_marker}>'
-                .format(self=self))
+        return (
+            "<subarray {self.station_type_name}: prefix={self.prefix} "
+            "description={self.description} marker={self.plot_marker}>".format(
+                self=self
+            )
+        )
 
 
 class GeoLocation(MCDeclarativeBase):
@@ -72,34 +75,37 @@ class GeoLocation(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'geo_location'
+    __tablename__ = "geo_location"
 
     station_name = Column(String(64), primary_key=True)
-    station_type_name = Column(String(64), ForeignKey(StationType.station_type_name),
-                               nullable=False)
+    station_type_name = Column(
+        String(64), ForeignKey(StationType.station_type_name), nullable=False
+    )
     datum = Column(String(64))
     tile = Column(String(64))
-    northing = Column(Float(precision='53'))
-    easting = Column(Float(precision='53'))
+    northing = Column(Float(precision="53"))
+    easting = Column(Float(precision="53"))
     elevation = Column(Float)
     created_gpstime = NotNull(BigInteger)
 
     def gps2Time(self):
         """Add a created_date attribute -- an astropy Time object based on created_gpstime."""
-        self.created_date = Time(self.created_gpstime, format='gps')
+        self.created_date = Time(self.created_gpstime, format="gps")
 
     def geo(self, **kwargs):
         """Add arbitrary attributes to object based on dict."""
         for key, value in kwargs.items():
-            if key == 'station_name':
+            if key == "station_name":
                 value = value.upper()
             setattr(self, key, value)
 
     def __repr__(self):
         """Define representation."""
-        return '<station_name={self.station_name} station_type={self.station_type_name} \
+        return "<station_name={self.station_name} station_type={self.station_type_name} \
         northing={self.northing} easting={self.easting} \
-        elevation={self.elevation}>'.format(self=self)
+        elevation={self.elevation}>".format(
+            self=self
+        )
 
 
 def update(session=None, data=None, add_new_geo=False):
@@ -130,7 +136,7 @@ def update(session=None, data=None, add_new_geo=False):
     """
     data_dict = format_check_update_request(data)
     if data_dict is None:
-        print('No update - doing nothing.')
+        print("No update - doing nothing.")
         return False
 
     close_session_when_done = False
@@ -141,7 +147,8 @@ def update(session=None, data=None, add_new_geo=False):
 
     for station_name in data_dict.keys():
         geo_rec = session.query(GeoLocation).filter(
-            func.upper(GeoLocation.station_name) == station_name.upper())
+            func.upper(GeoLocation.station_name) == station_name.upper()
+        )
         num_rec = geo_rec.count()
         make_update = False
         if num_rec == 0:
@@ -149,12 +156,16 @@ def update(session=None, data=None, add_new_geo=False):
                 gr = GeoLocation()
                 make_update = True
             else:
-                raise ValueError("{} does not exist and add_new_geo not enabled."
-                                 .format(station_name))
+                raise ValueError(
+                    "{} does not exist and add_new_geo not enabled.".format(
+                        station_name
+                    )
+                )
         elif num_rec == 1:
             if add_new_geo:
-                raise ValueError("{} exists and and_new_geo is enabled."
-                                 .format(station_name))
+                raise ValueError(
+                    "{} exists and and_new_geo is enabled.".format(station_name)
+                )
             else:
                 gr = geo_rec.first()
                 make_update = True
@@ -163,7 +174,7 @@ def update(session=None, data=None, add_new_geo=False):
                 setattr(gr, d[1], d[2])
             session.add(gr)
             session.commit()
-    cm_utils.log('geo_location update', data_dict=data_dict)
+    cm_utils.log("geo_location update", data_dict=data_dict)
     if close_session_when_done:  # pragma: no cover
         session.close()
 
@@ -194,10 +205,10 @@ def format_check_update_request(request):
         return None
     data = {}
     if type(request) == str:
-        tmp = request.split(',')
+        tmp = request.split(",")
         data_to_proc = []
         for d in tmp:
-            data_to_proc.append(d.split(':'))
+            data_to_proc.append(d.split(":"))
     else:
         data_to_proc = request
     if len(data_to_proc[0]) == 3:
@@ -206,11 +217,13 @@ def format_check_update_request(request):
             if len(d) == 2:
                 d.insert(0, station_name0)
             elif len(d) != 3:
-                raise ValueError('Invalid format for update request.')
+                raise ValueError("Invalid format for update request.")
             if d[0] in data.keys():
                 data[d[0]].append(d)
             else:
                 data[d[0]] = [d]
     else:
-        raise ValueError('Invalid parse request - need 3 parameters for at least first one.')
+        raise ValueError(
+            "Invalid parse request - need 3 parameters for at least first one."
+        )
     return data

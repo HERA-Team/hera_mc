@@ -25,12 +25,14 @@ db = mc.connect_to_mc_db(args)
 hostname = socket.gethostname()
 
 # List of commands (methods) to run on each iteration
-commands_to_run = ['add_correlator_control_state_from_corrcm',
-                   'add_correlator_config_from_corrcm',
-                   'add_snap_status_from_corrcm',
-                   'add_corr_snap_versions_from_corrcm',
-                   'add_antenna_status_from_corrcm',
-                   "add_autocorrelations_from_redis"]
+commands_to_run = [
+    "add_correlator_control_state_from_corrcm",
+    "add_correlator_config_from_corrcm",
+    "add_snap_status_from_corrcm",
+    "add_corr_snap_versions_from_corrcm",
+    "add_antenna_status_from_corrcm",
+    "add_autocorrelations_from_redis",
+]
 
 while True:
     try:
@@ -45,29 +47,35 @@ while True:
                         getattr(session, command)()
                         session.commit()
                         session.add_daemon_status(
-                            'mc_monitor_correlator',
-                            hostname, Time.now(), 'good')
+                            "mc_monitor_correlator", hostname, Time.now(), "good"
+                        )
                         session.commit()
                     except Exception:
-                        print('{t} -- error calling command {c}'.format(
-                            t=time.asctime(), c=command), file=sys.stderr)
+                        print(
+                            "{t} -- error calling command {c}".format(
+                                t=time.asctime(), c=command
+                            ),
+                            file=sys.stderr,
+                        )
                         traceback.print_exc(file=sys.stderr)
                         traceback_str = traceback.format_exc()
                         session.rollback()
                         try:
                             # try to update the daemon_status table and add an
                             # error message to the subsystem_error table
-                            session.add_daemon_status('mc_monitor_correlator',
-                                                      hostname, Time.now(), 'errored')
-                            session.add_subsystem_error(Time.now(),
-                                                        'mc_correlator_monitor',
-                                                        2, traceback_str)
+                            session.add_daemon_status(
+                                "mc_monitor_correlator", hostname, Time.now(), "errored"
+                            )
+                            session.add_subsystem_error(
+                                Time.now(), "mc_correlator_monitor", 2, traceback_str
+                            )
                         except Exception as e:
                             # if we can't log error messages to the session,
                             # need a new session
                             raise RuntimeError(
-                                'error logging to subsystem_error table after '
-                                'command' + command) from e
+                                "error logging to subsystem_error table after "
+                                "command" + command
+                            ) from e
                         continue
     except Exception:
         # Try to log an error with a new session
@@ -76,13 +84,16 @@ while True:
             try:
                 # try to update the daemon_status table and add an
                 # error message to the subsystem_error table
-                session.add_daemon_status('mc_monitor_correlator',
-                                          hostname, Time.now(), 'errored')
+                session.add_daemon_status(
+                    "mc_monitor_correlator", hostname, Time.now(), "errored"
+                )
                 session.add_subsystem_error(
-                    Time.now(), 'mc_correlator_monitor', 2, traceback_str)
+                    Time.now(), "mc_correlator_monitor", 2, traceback_str
+                )
             except Exception as e:
                 # if we can't log error messages to the new session we're in real trouble
-                raise RuntimeError('error logging to subsystem_error with a '
-                                   'new session') from e
+                raise RuntimeError(
+                    "error logging to subsystem_error with a " "new session"
+                ) from e
         # logging with a new session worked, so restart to get a new session
         continue

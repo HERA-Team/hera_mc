@@ -8,6 +8,7 @@ from . import cm_utils
 
 from .data import DATA_PATH
 
+# fmt: off
 region = {'herahexw': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
                        16, 17, 18, 19, 20, 21,
                        23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 36, 37, 38,
@@ -43,6 +44,8 @@ region = {'herahexw': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
           'heraringb': [320, 321, 322, 323, 324, 328, 329, 332, 333, 336, 337,
                         340, 341, 345, 346, 347, 348, 349]}
 
+# fmt: on
+
 
 def _get_region(this_ant):
     """
@@ -56,11 +59,11 @@ def _get_region(this_ant):
     this_ant : str or int
         Antenna number for which to check.
     """
-    prefix = ''
+    prefix = ""
     try:
         this_ant = int(this_ant)
     except ValueError:
-        peeled = cm_utils.peel_key(this_ant, 'NPR')
+        peeled = cm_utils.peel_key(this_ant, "NPR")
         this_ant = peeled[0]
         prefix = peeled[1].upper()
     for this_region, region_list in region.items():
@@ -69,9 +72,10 @@ def _get_region(this_ant):
             break
     else:
         raise ValueError(f"{this_ant} is not valid antenna.")
-    if val in ['A', 'B'] and len(prefix) == 2:
+    if val in ["A", "B"] and len(prefix) == 2:
         if val != prefix[1]:
             import warnings
+
             warnings.warn(f"{prefix} does not match region {val}")
     return val
 
@@ -100,14 +104,14 @@ def ant_region(ants):
     """
     try:
         ants = [int(ants)]
-        return_as = 'str'
+        return_as = "str"
     except ValueError:
         ants = [ants]
-        return_as = 'str'
+        return_as = "str"
     except TypeError:
-        return_as = 'list'
+        return_as = "list"
     found_regions = [_get_region(_a) for _a in ants]
-    if return_as == 'str':
+    if return_as == "str":
         return found_regions[0]
     return found_regions
 
@@ -122,18 +126,22 @@ def read_nodes():
         Contains location and antenna list for all nodes.  Keyed on node number as int.
 
     """
-    node_coord_file_name = os.path.join(DATA_PATH, 'nodes.txt')
+    node_coord_file_name = os.path.join(DATA_PATH, "nodes.txt")
     default_elevation = 1050.0
     nodes = {}
-    with open(node_coord_file_name, 'r') as fp:
+    with open(node_coord_file_name, "r") as fp:
         for line in fp:
-            node_num = int(line.split(':')[0])
-            node_e = float(line.split(':')[1].split(',')[0])
-            node_n = float(line.split(':')[1].split(',')[1])
-            ants = line.split(':')[2].split(',')
+            node_num = int(line.split(":")[0])
+            node_e = float(line.split(":")[1].split(",")[0])
+            node_n = float(line.split(":")[1].split(",")[1])
+            ants = line.split(":")[2].split(",")
             ants = [int(x) for x in ants]
-            nodes[node_num] = {'E': node_e, 'N': node_n,
-                               'elevation': default_elevation, 'ants': ants}
+            nodes[node_num] = {
+                "E": node_e,
+                "N": node_n,
+                "elevation": default_elevation,
+                "ants": ants,
+            }
     return nodes
 
 
@@ -147,11 +155,15 @@ def read_antennas():
         Contains location for all antennas.  Keyed on antenna hpn
 
     """
-    antenna_coord_file_name = os.path.join(DATA_PATH, 'HERA_350.txt')
+    antenna_coord_file_name = os.path.join(DATA_PATH, "HERA_350.txt")
     antennas = {}
-    with open(antenna_coord_file_name, 'r') as fp:
+    with open(antenna_coord_file_name, "r") as fp:
         for line in fp:
             data = line.split()
             coords = [data[0], float(data[1]), float(data[2]), float(data[3])]
-            antennas[coords[0]] = {'E': coords[1], 'N': coords[2], 'elevation': coords[3]}
+            antennas[coords[0]] = {
+                "E": coords[1],
+                "N": coords[2],
+                "elevation": coords[3],
+            }
     return antennas

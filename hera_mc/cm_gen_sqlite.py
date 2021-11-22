@@ -4,7 +4,7 @@ import os.path
 import json
 
 
-class SqliteHandling():
+class SqliteHandling:
     """
     Database csv table hash info handler.
 
@@ -22,8 +22,13 @@ class SqliteHandling():
         Flag to denote testing or not.
     """
 
-    def __init__(self, cm_csv_path=None, cm_table_list=None,
-                 cm_table_hash_file='cm_table_file_hash.json', testing=False):
+    def __init__(
+        self,
+        cm_csv_path=None,
+        cm_table_list=None,
+        cm_table_hash_file="cm_table_file_hash.json",
+        testing=False,
+    ):
         """
         Initialize class by setting the class attributes to supplied or defaults.
 
@@ -68,7 +73,7 @@ class SqliteHandling():
             return True
         if self.hash_dict is None:
             self.get_table_hash_dict()
-        with open(self.cm_table_hash_file, 'r') as fp:
+        with open(self.cm_table_hash_file, "r") as fp:
             previous_hash_dict = json.load(fp)
         if set(self.hash_dict.keys()) != set(previous_hash_dict.keys()):
             return True
@@ -89,10 +94,10 @@ class SqliteHandling():
         """Write the hash of the csv data-files to json hash_file."""
         if self.hash_dict is None:
             self.get_table_hash_dict()
-        with open(self.cm_table_hash_file, 'w') as fp:
+        with open(self.cm_table_hash_file, "w") as fp:
             json.dump(self.hash_dict, fp, indent=4)
 
-    def update_sqlite(self, db_file='hera_mc.db'):
+    def update_sqlite(self, db_file="hera_mc.db"):
         """
         Dump the psql database to sqlite file.
 
@@ -102,51 +107,53 @@ class SqliteHandling():
             List containing name of tables to dump to sqlite.
         """
         import subprocess
-        schema_file = os.path.join(self.cm_csv_path, 'schema.sql')
-        inserts_file = os.path.join(self.cm_csv_path, 'inserts.sql')
-        testtag = ''
-        if self.testing:
-            testtag = 'tst'
 
-        subprocess.call(f'pg_dump -s hera_mc > {schema_file}{testtag}', shell=True)
-        dump = ('pg_dump --inserts --data-only hera_mc -t {} > {}{}'
-                .format(' -t '.join(self.cm_table_list), inserts_file, testtag))
+        schema_file = os.path.join(self.cm_csv_path, "schema.sql")
+        inserts_file = os.path.join(self.cm_csv_path, "inserts.sql")
+        testtag = ""
+        if self.testing:
+            testtag = "tst"
+
+        subprocess.call(f"pg_dump -s hera_mc > {schema_file}{testtag}", shell=True)
+        dump = "pg_dump --inserts --data-only hera_mc -t {} > {}{}".format(
+            " -t ".join(self.cm_table_list), inserts_file, testtag
+        )
         subprocess.call(dump, shell=True)
 
-        schema = ''
+        schema = ""
         creating_table = False
-        with open(schema_file, 'r') as f:
+        with open(schema_file, "r") as f:
             for line in f:
-                modline = line.replace('public.', '')
-                if 'CREATE TABLE' in modline:
+                modline = line.replace("public.", "")
+                if "CREATE TABLE" in modline:
                     creating_table = True
                     schema += modline
                     continue
                 if creating_table:
-                    if 'DEFAULT' in modline:
+                    if "DEFAULT" in modline:
                         dat = modline.split()
-                        schema += (dat[0] + ' ' + dat[1] + '\n')
+                        schema += dat[0] + " " + dat[1] + "\n"
                     else:
                         schema += modline
-                    if ');' in modline:
+                    if ");" in modline:
                         creating_table = False
-        inserts = ''
-        with open(inserts_file, 'r') as f:
+        inserts = ""
+        with open(inserts_file, "r") as f:
             for line in f:
-                modline = line.replace('public.', '')
-                if 'INSERT' in modline:
+                modline = line.replace("public.", "")
+                if "INSERT" in modline:
                     inserts += modline
 
-        sqlfile = os.path.join(self.cm_csv_path, 'cm_hera.sql')
+        sqlfile = os.path.join(self.cm_csv_path, "cm_hera.sql")
         dbfile_full = os.path.join(self.cm_csv_path, db_file)
-        with open(sqlfile, 'w') as f:
+        with open(sqlfile, "w") as f:
             f.write(schema)
             f.write(inserts)
             f.write(".save {}\n".format(dbfile_full))
-        subprocess.call('sqlite3 < {}'.format(sqlfile), shell=True)
-        subprocess.call(f'rm -f {schema_file}{testtag}', shell=True)
-        subprocess.call(f'rm -f {inserts_file}{testtag}', shell=True)
-        subprocess.call(f'rm -f {sqlfile}', shell=True)
+        subprocess.call("sqlite3 < {}".format(sqlfile), shell=True)
+        subprocess.call(f"rm -f {schema_file}{testtag}", shell=True)
+        subprocess.call(f"rm -f {inserts_file}{testtag}", shell=True)
+        subprocess.call(f"rm -f {sqlfile}", shell=True)
 
 
 def hash_file(filename):
@@ -164,12 +171,13 @@ def hash_file(filename):
         string containing the hexdigest of the hash for the file
     """
     import hashlib
+
     h = hashlib.md5()
     if not os.path.exists(filename):
         return None
-    with open(filename, 'rb') as file:
+    with open(filename, "rb") as file:
         chunk = 0
-        while chunk != b'':
+        while chunk != b"":
             chunk = file.read(1024)
             h.update(chunk)
     return h.hexdigest()

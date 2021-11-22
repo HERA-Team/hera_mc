@@ -35,16 +35,22 @@ class Observation(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'hera_obs'
+    __tablename__ = "hera_obs"
     obsid = Column(BigInteger, primary_key=True, autoincrement=False)
-    starttime = Column(Float, nullable=False)  # Float is mapped to DOUBLE PRECISION in postgresql
+    starttime = Column(
+        Float, nullable=False
+    )  # Float is mapped to DOUBLE PRECISION in postgresql
     stoptime = Column(Float, nullable=False)
     jd_start = Column(Float, nullable=False)
     lst_start_hr = Column(Float, nullable=False)
 
     # tolerances set to 1ms
-    tols = {'starttime': DEFAULT_GPS_TOL, 'stoptime': DEFAULT_GPS_TOL,
-            'jd_start': DEFAULT_DAY_TOL, 'lst_start_hr': DEFAULT_HOUR_TOL}
+    tols = {
+        "starttime": DEFAULT_GPS_TOL,
+        "stoptime": DEFAULT_GPS_TOL,
+        "jd_start": DEFAULT_DAY_TOL,
+        "lst_start_hr": DEFAULT_HOUR_TOL,
+    }
 
     @hybrid_property
     def length(self):
@@ -67,20 +73,23 @@ class Observation(MCDeclarativeBase):
 
         """
         if not isinstance(starttime, Time):
-            raise ValueError('starttime must be an astropy Time object')
+            raise ValueError("starttime must be an astropy Time object")
         if not isinstance(stoptime, Time):
-            raise ValueError('starttime must be an astropy Time object')
+            raise ValueError("starttime must be an astropy Time object")
         if not isinstance(obsid, int):
-            raise ValueError('obsid must be an integer')
+            raise ValueError("obsid must be an integer")
         if abs(float(obsid) - starttime.gps) > 1.5:
-            raise ValueError('obsid should be close to the starttime in gps seconds')
+            raise ValueError("obsid should be close to the starttime in gps seconds")
 
         # for jd need to ensure that we're in utc
         starttime = starttime.utc
 
-        starttime.location = EarthLocation.from_geodetic(
-            hera_cofa.lon, hera_cofa.lat)
+        starttime.location = EarthLocation.from_geodetic(hera_cofa.lon, hera_cofa.lat)
 
-        return cls(obsid=obsid, starttime=starttime.gps, stoptime=stoptime.gps,
-                   jd_start=starttime.jd,
-                   lst_start_hr=starttime.sidereal_time('apparent').hour)
+        return cls(
+            obsid=obsid,
+            starttime=starttime.gps,
+            stoptime=stoptime.gps,
+            jd_start=starttime.jd,
+            lst_start_hr=starttime.sidereal_time("apparent").hour,
+        )

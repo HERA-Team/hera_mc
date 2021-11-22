@@ -27,7 +27,7 @@ def setup_and_teardown_package():
     try:
         t1 = Time.now()
         t1.ut1
-    except(urllib.error.URLError, IOError, iers.IERSRangeError):
+    except (urllib.error.URLError, IOError, iers.IERSRangeError):
         iers.conf.auto_max_age = None
 
     test_db = mc.connect_to_mc_testing_db()
@@ -41,7 +41,7 @@ def setup_and_teardown_package():
     test_db.drop_tables()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def mcsession(setup_and_teardown_package):
     test_db = setup_and_teardown_package
     test_conn = test_db.engine.connect()
@@ -61,5 +61,6 @@ def mcsession(setup_and_teardown_package):
 
     # delete the hookup cache file
     from .. import cm_hookup
+
     hookup = cm_hookup.Hookup(session=test_session)
     hookup.delete_cache_file()

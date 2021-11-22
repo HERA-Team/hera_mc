@@ -29,8 +29,11 @@ MONITORING_INTERVAL = 60  # seconds
 REPORTING_CADENCE = 5  # number of MONITORING_INTERVALS between reports to M&C
 
 if REPORTING_CADENCE * MONITORING_INTERVAL != 300:
-    print('warning: averaging time should be 300s but it will be %ds' %
-          (REPORTING_CADENCE * MONITORING_INTERVAL), file=sys.stderr)
+    print(
+        "warning: averaging time should be 300s but it will be %ds"
+        % (REPORTING_CADENCE * MONITORING_INTERVAL),
+        file=sys.stderr,
+    )
 
 
 def get_ip_address():
@@ -44,23 +47,26 @@ def get_ip_address():
 
     """
     import netifaces
+
     try:
-        addrs = netifaces.ifaddresses('eth0')
+        addrs = netifaces.ifaddresses("eth0")
     except ValueError:
         for ifname in sorted(netifaces.interfaces()):
-            if ifname != 'lo':
+            if ifname != "lo":
                 addrs = netifaces.ifaddresses(ifname)
                 break
         else:  # triggered if we never did the 'break'
-            return '?.?.?.?'
+            return "?.?.?.?"
 
-    return addrs[netifaces.AF_INET][0]['addr']
+    return addrs[netifaces.AF_INET][0]["addr"]
 
 
 # Connect up to the database
 
 parser = mc.get_mc_argument_parser()
-parser.add_argument('subsystem', help='The name of the subsystem that this machine is part of.')
+parser.add_argument(
+    "subsystem", help="The name of the subsystem that this machine is part of."
+)
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
 
@@ -98,11 +104,11 @@ with db.sessionmaker() as session:
             net = psutil.net_io_counters()
 
             if net.bytes_sent < tx_buf[prev_index]:  # have we wrapped?
-                net_tx_offset += (int(1) << 32)  # assuming wraparound only affects 32-bit
+                net_tx_offset += int(1) << 32  # assuming wraparound only affects 32-bit
             tx_buf[index] = net.bytes_sent + net_tx_offset
 
             if net.bytes_recv < rx_buf[prev_index]:
-                net_rx_offset += (int(1) << 32)
+                net_rx_offset += int(1) << 32
             rx_buf[index] = net.bytes_recv + net_rx_offset
 
             prev_index = index
@@ -117,11 +123,11 @@ with db.sessionmaker() as session:
                 hostname = socket.gethostname()
                 ip_address = get_ip_address()
                 system_time = Time.now()
-                num_cores = os.sysconf('SC_NPROCESSORS_ONLN')
-                cpu_load_pct = os.getloadavg()[1] / num_cores * 100.
-                uptime_days = (time.time() - psutil.boot_time()) / 86400.
+                num_cores = os.sysconf("SC_NPROCESSORS_ONLN")
+                cpu_load_pct = os.getloadavg()[1] / num_cores * 100.0
+                uptime_days = (time.time() - psutil.boot_time()) / 86400.0
 
-                memory_size_gb = vmem.total / 1024**3  # bytes => GiB
+                memory_size_gb = vmem.total / 1024 ** 3  # bytes => GiB
 
                 # We only track disk usage on the root filesystem partition. We could
                 # potentially use `psutil.disk_partitions(all=False)` to try to track
@@ -129,30 +135,44 @@ with db.sessionmaker() as session:
                 # are the pots, and the Librarian reports their status to M&C through
                 # specialized channels.
 
-                disk = psutil.disk_usage('/')
-                disk_size_gb = disk.total / 1024**3  # bytes => GiB
-                disk_space_pct = disk.percent  # note, this is misnamed a bit - it's the % used
+                disk = psutil.disk_usage("/")
+                disk_size_gb = disk.total / 1024 ** 3  # bytes => GiB
+                disk_space_pct = (
+                    disk.percent
+                )  # note, this is misnamed a bit - it's the % used
 
                 # Compute the longer averages. We have advanced `index` and
                 # `prev_index` so that the differences below give the total number
                 # of bytes transferred since the last report.
 
-                memory_used_pct = (mem_buf.mean() / 1024**3) * 100. / memory_size_gb
+                memory_used_pct = (mem_buf.mean() / 1024 ** 3) * 100.0 / memory_size_gb
 
                 tx_bytes = tx_buf[prev_index] - tx_buf[index]
                 rx_bytes = rx_buf[prev_index] - rx_buf[index]
-                network_bandwidth_mbs = (tx_bytes + rx_bytes) / 1024**2 / (now - last_report)
+                network_bandwidth_mbs = (
+                    (tx_bytes + rx_bytes) / 1024 ** 2 / (now - last_report)
+                )
 
                 # Submit
 
-                session.add_server_status(args.subsystem, hostname, ip_address,
-                                          system_time, num_cores, cpu_load_pct,
-                                          uptime_days, memory_used_pct,
-                                          memory_size_gb, disk_space_pct,
-                                          disk_size_gb, network_bandwidth_mbs)
+                session.add_server_status(
+                    args.subsystem,
+                    hostname,
+                    ip_address,
+                    system_time,
+                    num_cores,
+                    cpu_load_pct,
+                    uptime_days,
+                    memory_used_pct,
+                    memory_size_gb,
+                    disk_space_pct,
+                    disk_size_gb,
+                    network_bandwidth_mbs,
+                )
                 session.commit()
-                session.add_daemon_status('mc_server_status_daemon',
-                                          hostname, Time.now(), 'good')
+                session.add_daemon_status(
+                    "mc_server_status_daemon", hostname, Time.now(), "good"
+                )
                 session.commit()
 
                 last_report = now
@@ -161,7 +181,8 @@ with db.sessionmaker() as session:
     except KeyboardInterrupt:
         pass
     except Exception:
-        session.add_daemon_status('mc_server_status_daemon',
-                                  hostname, Time.now(), 'errored')
+        session.add_daemon_status(
+            "mc_server_status_daemon", hostname, Time.now(), "errored"
+        )
         session.commit()
         raise

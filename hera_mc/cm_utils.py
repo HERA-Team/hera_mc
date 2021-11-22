@@ -11,8 +11,8 @@ import datetime
 
 from . import mc
 
-PAST_DATE = '2000-01-01'
-VALID_FLOAT_FORMAT_FOR_TIME = ['unix', 'gps', 'jd']
+PAST_DATE = "2000-01-01"
+VALID_FLOAT_FORMAT_FOR_TIME = ["unix", "gps", "jd"]
 
 
 def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
@@ -37,10 +37,11 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
     if cm_csv_path is None or testing:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_path)
         if cm_csv_path is None:
-            raise ValueError('No cm_csv_path defined in mc_config file.')
+            raise ValueError("No cm_csv_path defined in mc_config file.")
 
-    git_hash = subprocess.check_output(['git', '-C', cm_csv_path, 'rev-parse', 'HEAD'],
-                                       stderr=subprocess.STDOUT).strip()
+    git_hash = subprocess.check_output(
+        ["git", "-C", cm_csv_path, "rev-parse", "HEAD"], stderr=subprocess.STDOUT
+    ).strip()
     return git_hash
 
 
@@ -56,32 +57,37 @@ def log(msg, **kwargs):
         keywords and arguments to log.
 
     """
-    fp = open(mc.cm_log_file, 'a')
+    fp = open(mc.cm_log_file, "a")
     dt = Time.now()
-    fp.write('-------------------' + str(dt.datetime) + '  ' + msg
-             + '-------------------\n\n')
+    fp.write(
+        "-------------------"
+        + str(dt.datetime)
+        + "  "
+        + msg
+        + "-------------------\n\n"
+    )
     for key, value in kwargs.items():
-        if key == 'args':
-            fp.write('--args\n\t')
+        if key == "args":
+            fp.write("--args\n\t")
             vargs = vars(value)
             for k, v in vargs.items():
-                fp.write(str(k) + ':  ' + str(v) + ';  ')
-            fp.write('\n\n')
-        elif key == 'data_dict':
-            fp.write('--data\n\t')
+                fp.write(str(k) + ":  " + str(v) + ";  ")
+            fp.write("\n\n")
+        elif key == "data_dict":
+            fp.write("--data\n\t")
             for k, v in value.items():
-                fp.write('    ' + k + '  ')
+                fp.write("    " + k + "  ")
                 for d in v:
-                    fp.write(str(d) + ';  ')
-                fp.write('\n\n')
+                    fp.write(str(d) + ";  ")
+                fp.write("\n\n")
         else:
-            fp.write('--other\n\t')
-            fp.write(str(key) + ':  ' + str(value) + '\n\n')
+            fp.write("--other\n\t")
+            fp.write(str(key) + ":  " + str(value) + "\n\n")
     fp.close()
 
 
 # #######################################Key stuff
-system_wide_key = '__Sys__'
+system_wide_key = "__Sys__"
 
 
 def port_is_polarized(port, pol_list):
@@ -169,7 +175,7 @@ def stringify(inp):
     if isinstance(inp, str):
         return inp
     if isinstance(inp, list):
-        return ','.join(inp)
+        return ",".join(inp)
     return str(inp)
 
 
@@ -199,24 +205,24 @@ def listify(to_list, None_as_list=False, prefix=None, padding=None):
         else:
             return None
     if isinstance(to_list, str):
-        if '-' in to_list:
+        if "-" in to_list:
             try:
-                start, stop = [int(_x) for _x in to_list.split('-')]
+                start, stop = [int(_x) for _x in to_list.split("-")]
                 this_list = list(range(int(start), int(stop) + 1))
             except ValueError:
-                this_list = to_list.split(',')
+                this_list = to_list.split(",")
                 padding = None
         else:
             try:
-                this_list = [int(_x) for _x in to_list.split(',')]
+                this_list = [int(_x) for _x in to_list.split(",")]
             except ValueError:
-                this_list = to_list.split(',')
+                this_list = to_list.split(",")
                 padding = None
         if prefix is None:
             return this_list
         if isinstance(padding, int):
-            return ['{}{:0{pad}d}'.format(prefix, x, pad=padding) for x in this_list]
-        return ['{}{}'.format(prefix, x) for x in this_list]
+            return ["{}{:0{pad}d}".format(prefix, x, pad=padding) for x in this_list]
+        return ["{}{}".format(prefix, x) for x in this_list]
     if isinstance(to_list, list):
         return to_list
     return [to_list]
@@ -260,9 +266,9 @@ def match_list(a_obj, b_obj, case_type=None):
     if case_type is None:
         return zip(a_obj, b_obj)
     case_type = case_type[0].lower()
-    if case_type == 'u':
+    if case_type == "u":
         return zip(to_upper(a_obj), to_upper(b_obj))
-    elif case_type == 'l':
+    elif case_type == "l":
         return zip(to_lower(a_obj), to_lower(b_obj))
     raise ValueError("Invalid case_type.")
 
@@ -322,8 +328,13 @@ def add_verbosity_args(parser):
         Parser object
 
     """
-    parser.add_argument('-v', '--verbosity', help="Verbosity level -v -vv -vvv. [-vv].",
-                        nargs='?', default=2)
+    parser.add_argument(
+        "-v",
+        "--verbosity",
+        help="Verbosity level -v -vv -vvv. [-vv].",
+        nargs="?",
+        default=2,
+    )
 
 
 def parse_verbosity(vargs):
@@ -347,8 +358,8 @@ def parse_verbosity(vargs):
         pass
     if vargs is None:
         return 1
-    if vargs.count('v'):
-        return vargs.count('v') + 1
+    if vargs.count("v"):
+        return vargs.count("v") + 1
     raise ValueError("Invalid argument to verbosity.")
 
 
@@ -367,11 +378,18 @@ def add_date_time_args(parser):
 
     """
     parser.add_argument(
-        '--date', help="UTC YYYY/MM/DD or '<' or '>' or 'now' or one of jd,unix,gps [now]",
-        default='now')
+        "--date",
+        help="UTC YYYY/MM/DD or '<' or '>' or 'now' or one of jd,unix,gps [now]",
+        default="now",
+    )
     parser.add_argument(
-        '--time', help="UTC hh:mm or float (hours), must include --date if use --time", default=0.0)
-    parser.add_argument('--format', help='Format if date is unix, gps or jd.', default=None)
+        "--time",
+        help="UTC hh:mm or float (hours), must include --date if use --time",
+        default=0.0,
+    )
+    parser.add_argument(
+        "--format", help="Format if date is unix, gps or jd.", default=None
+    )
 
 
 def is_active(at_date, start_date=None, stop_date=None):
@@ -392,7 +410,7 @@ def is_active(at_date, start_date=None, stop_date=None):
     """
     if at_date is None:
         return True
-    elif at_date == 'now':
+    elif at_date == "now":
         at_date = Time.now()
     if start_date is None and stop_date is None:
         return True
@@ -427,7 +445,7 @@ def future_date():
         Time 1000 days in the future.
 
     """
-    return Time.now() + TimeDelta(1000, format='jd')
+    return Time.now() + TimeDelta(1000, format="jd")
 
 
 def get_stopdate(stop_date, stop_time=None, float_format=None):
@@ -479,29 +497,33 @@ def get_time_for_display(display, display_time=None, float_format=None):
     d = get_astropytime(display, display_time, float_format)
 
     if d is None:
-        d = 'None'
+        d = "None"
     elif isinstance(d, Time):
         d = "{:%Y-%m-%d %H:%M:%S}".format(d.datetime)
     return d
 
 
 # Bound between 10/1/2014 and 9/30/2026
-bounds = {'gps': [1096156816.0, 1474761618.0],
-          'jd': [2456931.5, 2461313.5],
-          'unix': [1412121600.0, 1790726400.0]}
+bounds = {
+    "gps": [1096156816.0, 1474761618.0],
+    "jd": [2456931.5, 2461313.5],
+    "unix": [1412121600.0, 1790726400.0],
+}
 
 
 def _check_time_as_a_number(val, fmt):
     if fmt in VALID_FLOAT_FORMAT_FOR_TIME:
         if val < bounds[fmt][0] or val > bounds[fmt][1]:
             from warnings import warn
+
             warn(f"{val} out of nominal range for {fmt}")
         return fmt
     elif fmt is None:
-        if val > bounds['jd'][0] and val < bounds['jd'][1]:
+        if val > bounds["jd"][0] and val < bounds["jd"][1]:
             from warnings import warn
+
             warn(f"No time format given -- assuming jd based on value {val}")
-            return 'jd'
+            return "jd"
         else:
             raise ValueError(f"No time format given for ambiguous value {val}")
     else:
@@ -551,7 +573,7 @@ def get_astropytime(adate, atime=None, float_format=None):
     if isinstance(adate, Time):
         return adate
     if isinstance(adate, datetime.datetime):
-        return Time(adate, format='datetime')
+        return Time(adate, format="datetime")
     if adate is None or adate is False:
         return None
     try:
@@ -562,20 +584,23 @@ def get_astropytime(adate, atime=None, float_format=None):
         float_format = _check_time_as_a_number(adate, float_format)
         return Time(adate, format=float_format)
     if isinstance(adate, str):
-        if adate == '<':
-            return Time(PAST_DATE, scale='utc')
-        if adate == '>':
+        if adate == "<":
+            return Time(PAST_DATE, scale="utc")
+        if adate == ">":
             return future_date()
-        if adate.lower() == 'now' or adate.lower() == 'current':
+        if adate.lower() == "now" or adate.lower() == "current":
             return Time.now()
-        if adate.lower() == 'none':
+        if adate.lower() == "none":
             return None
-        adate = adate.replace('/', '-')
+        adate = adate.replace("/", "-")
         try:
-            return_date = Time(adate, scale='utc')
+            return_date = Time(adate, scale="utc")
         except ValueError:
             raise ValueError(
-                'Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}'.format(adate))
+                "Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}".format(
+                    adate
+                )
+            )
         if atime is None:
             return return_date
         try:
@@ -583,17 +608,22 @@ def get_astropytime(adate, atime=None, float_format=None):
         except ValueError:
             pass
         if isinstance(atime, float):
-            return return_date + TimeDelta(atime * 3600.0, format='sec')
+            return return_date + TimeDelta(atime * 3600.0, format="sec")
         if isinstance(atime, str):
-            if ':' not in atime:
-                raise ValueError('Invalid format:  time should be H[:M[:S]] (ints or floats)')
+            if ":" not in atime:
+                raise ValueError(
+                    "Invalid format:  time should be H[:M[:S]] (ints or floats)"
+                )
             add_time = 0.0
-            for i, d in enumerate(atime.split(':')):
+            for i, d in enumerate(atime.split(":")):
                 if i > 2:
-                    raise ValueError('Time can only be hours[:minutes[:seconds]], not {}.'
-                                     .format(atime))
-                add_time += (float(d)) * 3600.0 / (60.0**i)
-            return return_date + TimeDelta(add_time, format='sec')
+                    raise ValueError(
+                        "Time can only be hours[:minutes[:seconds]], not {}.".format(
+                            atime
+                        )
+                    )
+                add_time += (float(d)) * 3600.0 / (60.0 ** i)
+            return return_date + TimeDelta(add_time, format="sec")
 
 
 def peel_key(key, sort_order):
@@ -608,11 +638,11 @@ def peel_key(key, sort_order):
         String specifying how to sort the key parts.
 
     """
-    rev = ''
-    if ':' not in key:
-        rev = ':A'
+    rev = ""
+    if ":" not in key:
+        rev = ":A"
     c = key + rev
-    colon = c.find(':')
+    colon = c.find(":")
     for i in range(len(c)):
         try:
             n = int(c[i:colon])
@@ -621,23 +651,23 @@ def peel_key(key, sort_order):
             n = 0
             continue
     prefix = c[:i]
-    rev = c[colon + 1:]
+    rev = c[colon + 1 :]
     sort_order = sort_order.upper()
-    if sort_order == 'NPR':
+    if sort_order == "NPR":
         return (n, prefix, rev)
-    if sort_order == 'PNR':
+    if sort_order == "PNR":
         return (prefix, n, rev)
-    if sort_order == 'RPN':
+    if sort_order == "RPN":
         return (rev, prefix, n)
-    if sort_order == 'NRP':
+    if sort_order == "NRP":
         return (n, rev, prefix)
-    if sort_order == 'RNP':
+    if sort_order == "RNP":
         return (rev, n, prefix)
-    if sort_order == 'PRN':
+    if sort_order == "PRN":
         return (prefix, rev, n)
 
 
-def put_keys_in_order(keys, sort_order='NPR'):
+def put_keys_in_order(keys, sort_order="NPR"):
     """
     Order hookup keys by alpha+number order.
 
@@ -689,16 +719,16 @@ def html_table(headers, table):
     """
     s_table = '<table border="1">\n<tr>'
     for h in headers:
-        s_table += '<th>{}</th>'.format(h)
-    s_table += '</tr>\n'
+        s_table += "<th>{}</th>".format(h)
+    s_table += "</tr>\n"
     for tr in table:
-        s_table += '<tr>'
+        s_table += "<tr>"
         for d in tr:
-            f = str(d).replace('<', '&lt ')
-            f = f.replace('>', '&gt ')
-            s_table += '<td>{}</td>'.format(f)
-        s_table += '</tr>\n'
-    s_table += '</table>'
+            f = str(d).replace("<", "&lt ")
+            f = f.replace(">", "&gt ")
+            s_table += "<td>{}</td>".format(f)
+        s_table += "</tr>\n"
+    s_table += "</table>"
     return s_table
 
 
@@ -722,31 +752,37 @@ def csv_table(headers, table):
         String containing the full csv table.
 
     """
-    s_table = ''
+    s_table = ""
     for h in headers:
         s_table += '"{}",'.format(h)
-    s_table = s_table.strip(',') + '\n'
+    s_table = s_table.strip(",") + "\n"
     for tr in table:
         for d in tr:
             s_table += '"{}",'.format(d)
-        s_table = s_table.strip(',') + '\n'
+        s_table = s_table.strip(",") + "\n"
     return s_table
 
 
 def general_table_handler(headers, table_data, output_format=None):
     """Return formatted table."""
     from tabulate import tabulate
-    if output_format.lower().startswith('htm'):
-        dtime = get_time_for_display('now') + '\n'
+
+    if output_format.lower().startswith("htm"):
+        dtime = get_time_for_display("now") + "\n"
         table = html_table(headers, table_data)
-        table = ('<html>\n\t<body>\n\t\t<pre>\n' + dtime + table + dtime
-                 + '\t\t</pre>\n\t</body>\n</html>\n')
-    elif output_format.lower().startswith('csv'):
+        table = (
+            "<html>\n\t<body>\n\t\t<pre>\n"
+            + dtime
+            + table
+            + dtime
+            + "\t\t</pre>\n\t</body>\n</html>\n"
+        )
+    elif output_format.lower().startswith("csv"):
         table = csv_table(headers, table_data)
     else:
-        if output_format == 'table':
-            output_format = 'orgtbl'
-        table = tabulate(table_data, headers=headers, tablefmt=output_format) + '\n'
+        if output_format == "table":
+            output_format = "orgtbl"
+        table = tabulate(table_data, headers=headers, tablefmt=output_format) + "\n"
     return table
 
 
@@ -768,17 +804,17 @@ def query_default(param, args):
     """
     vargs = vars(args)
     default = vargs[param]
-    if 'unittesting' in vargs.keys():
-        v = vargs['unittesting']
+    if "unittesting" in vargs.keys():
+        v = vargs["unittesting"]
     else:  # pragma: no cover
-        s = '{} [{}]:  '.format(param, str(default))
+        s = "{} [{}]:  ".format(param, str(default))
         v = input(s)
     if len(v) == 0:
         return default
-    if v.lower() == 'none':
+    if v.lower() == "none":
         return None
-    if v.lower() == 'false':
+    if v.lower() == "false":
         return False
-    if v.lower() == 'true':
+    if v.lower() == "true":
         return True
     return v

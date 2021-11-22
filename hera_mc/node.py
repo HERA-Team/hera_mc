@@ -12,103 +12,113 @@ from . import cm_utils
 
 # the address of a redis database being used as a clearing house for meta-data
 # and message passing which the node server has access to and watches
-defaultServerAddress = 'redishost'
+defaultServerAddress = "redishost"
 
 # These four dictionaries convert the keyname in psql to redis - psql-key: redis-key
-sensor_key_dict = {'top_sensor_temp': 'temp_top',
-                   'middle_sensor_temp': 'temp_mid',
-                   'bottom_sensor_temp': 'temp_bot',
-                   'humidity_sensor_temp': 'temp_humid',
-                   'humidity': 'humid'}
+sensor_key_dict = {
+    "top_sensor_temp": "temp_top",
+    "middle_sensor_temp": "temp_mid",
+    "bottom_sensor_temp": "temp_bot",
+    "humidity_sensor_temp": "temp_humid",
+    "humidity": "humid",
+}
 
-power_status_key_dict = {'snap_relay_powered': 'power_snap_relay',
-                         'snap0_powered': 'power_snap_0',
-                         'snap1_powered': 'power_snap_1',
-                         'snap2_powered': 'power_snap_2',
-                         'snap3_powered': 'power_snap_3',
-                         'pam_powered': 'power_pam',
-                         'fem_powered': 'power_fem'}
+power_status_key_dict = {
+    "snap_relay_powered": "power_snap_relay",
+    "snap0_powered": "power_snap_0",
+    "snap1_powered": "power_snap_1",
+    "snap2_powered": "power_snap_2",
+    "snap3_powered": "power_snap_3",
+    "pam_powered": "power_pam",
+    "fem_powered": "power_fem",
+}
 
 # key is part to command, value is function name in hera_node_mc
-power_command_part_dict = {'snap_relay': 'power_snap_relay',
-                           'snap0': 'power_snap_0',
-                           'snap1': 'power_snap_1',
-                           'snap2': 'power_snap_2',
-                           'snap3': 'power_snap_3',
-                           'pam': 'power_pam',
-                           'fem': 'power_fem',
-                           'reset': 'reset'}
+power_command_part_dict = {
+    "snap_relay": "power_snap_relay",
+    "snap0": "power_snap_0",
+    "snap1": "power_snap_1",
+    "snap2": "power_snap_2",
+    "snap3": "power_snap_3",
+    "pam": "power_pam",
+    "fem": "power_fem",
+    "reset": "reset",
+}
 
 wr_key_dict = {
-    'board_info_str': 'board_info_str',
-    'aliases': 'aliases',
-    'ip': 'ip',
-    'mode': 'mode',
-    'serial': 'serial',
-    'node_time': 'timestamp',
-    'temperature': 'temp',
-    'build_date': 'sw_build_date',
-    'gw_date': 'wr_gw_date',
-    'gw_version': 'wr_gw_version',
-    'gw_id': 'wr_gw_id',
-    'build_hash': 'wr_build',
-    'manufacture_tag': 'wr_fru_custom',
-    'manufacture_device': 'wr_fru_device',
-    'manufacture_date': 'wr_fru_fid',
-    'manufacture_partnum': 'wr_fru_partnum',
-    'manufacture_serial': 'wr_fru_serial',
-    'manufacture_vendor': 'wr_fru_vendor',
-    'port0_ad': 'wr0_ad',
-    'port0_link_asymmetry_ps': 'wr0_asym',
-    'port0_manual_phase_ps': 'wr0_aux',
-    'port0_clock_offset_ps': 'wr0_cko',
-    'port0_cable_rt_delay_ps': 'wr0_crtt',
-    'port0_master_slave_delay_ps': 'wr0_dms',
-    'port0_master_rx_phy_delay_ps': 'wr0_drxm',
-    'port0_slave_rx_phy_delay_ps': 'wr0_drxs',
-    'port0_master_tx_phy_delay_ps': 'wr0_dtxm',
-    'port0_slave_tx_phy_delay_ps': 'wr0_dtxs',
-    'port0_hd': 'wr0_hd',
-    'port0_link': 'wr0_lnk',
-    'port0_lock': 'wr0_lock',
-    'port0_md': 'wr0_md',
-    'port0_rt_time_ps': 'wr0_mu',
-    'port0_nsec': 'wr0_nsec',
-    'port0_packets_received': 'wr0_rx',
-    'port0_phase_setpoint_ps': 'wr0_setp',
-    'port0_servo_state': 'wr0_ss',
-    'port0_sv': 'wr0_sv',
-    'port0_sync_source': 'wr0_syncs',
-    'port0_packets_sent': 'wr0_tx',
-    'port0_update_counter': 'wr0_ucnt',
-    'port0_time': 'wr0_sec',
-    'port1_ad': 'wr1_ad',
-    'port1_link_asymmetry_ps': 'wr1_asym',
-    'port1_manual_phase_ps': 'wr1_aux',
-    'port1_clock_offset_ps': 'wr1_cko',
-    'port1_cable_rt_delay_ps': 'wr1_crtt',
-    'port1_master_slave_delay_ps': 'wr1_dms',
-    'port1_master_rx_phy_delay_ps': 'wr1_drxm',
-    'port1_slave_rx_phy_delay_ps': 'wr1_drxs',
-    'port1_master_tx_phy_delay_ps': 'wr1_dtxm',
-    'port1_slave_tx_phy_delay_ps': 'wr1_dtxs',
-    'port1_hd': 'wr1_hd',
-    'port1_link': 'wr1_lnk',
-    'port1_lock': 'wr1_lock',
-    'port1_md': 'wr1_md',
-    'port1_rt_time_ps': 'wr1_mu',
-    'port1_nsec': 'wr1_nsec',
-    'port1_packets_received': 'wr1_rx',
-    'port1_phase_setpoint_ps': 'wr1_setp',
-    'port1_servo_state': 'wr1_ss',
-    'port1_sv': 'wr1_sv',
-    'port1_sync_source': 'wr1_syncs',
-    'port1_packets_sent': 'wr1_tx',
-    'port1_update_counter': 'wr1_ucnt',
-    'port1_time': 'wr1_sec'
+    "board_info_str": "board_info_str",
+    "aliases": "aliases",
+    "ip": "ip",
+    "mode": "mode",
+    "serial": "serial",
+    "node_time": "timestamp",
+    "temperature": "temp",
+    "build_date": "sw_build_date",
+    "gw_date": "wr_gw_date",
+    "gw_version": "wr_gw_version",
+    "gw_id": "wr_gw_id",
+    "build_hash": "wr_build",
+    "manufacture_tag": "wr_fru_custom",
+    "manufacture_device": "wr_fru_device",
+    "manufacture_date": "wr_fru_fid",
+    "manufacture_partnum": "wr_fru_partnum",
+    "manufacture_serial": "wr_fru_serial",
+    "manufacture_vendor": "wr_fru_vendor",
+    "port0_ad": "wr0_ad",
+    "port0_link_asymmetry_ps": "wr0_asym",
+    "port0_manual_phase_ps": "wr0_aux",
+    "port0_clock_offset_ps": "wr0_cko",
+    "port0_cable_rt_delay_ps": "wr0_crtt",
+    "port0_master_slave_delay_ps": "wr0_dms",
+    "port0_master_rx_phy_delay_ps": "wr0_drxm",
+    "port0_slave_rx_phy_delay_ps": "wr0_drxs",
+    "port0_master_tx_phy_delay_ps": "wr0_dtxm",
+    "port0_slave_tx_phy_delay_ps": "wr0_dtxs",
+    "port0_hd": "wr0_hd",
+    "port0_link": "wr0_lnk",
+    "port0_lock": "wr0_lock",
+    "port0_md": "wr0_md",
+    "port0_rt_time_ps": "wr0_mu",
+    "port0_nsec": "wr0_nsec",
+    "port0_packets_received": "wr0_rx",
+    "port0_phase_setpoint_ps": "wr0_setp",
+    "port0_servo_state": "wr0_ss",
+    "port0_sv": "wr0_sv",
+    "port0_sync_source": "wr0_syncs",
+    "port0_packets_sent": "wr0_tx",
+    "port0_update_counter": "wr0_ucnt",
+    "port0_time": "wr0_sec",
+    "port1_ad": "wr1_ad",
+    "port1_link_asymmetry_ps": "wr1_asym",
+    "port1_manual_phase_ps": "wr1_aux",
+    "port1_clock_offset_ps": "wr1_cko",
+    "port1_cable_rt_delay_ps": "wr1_crtt",
+    "port1_master_slave_delay_ps": "wr1_dms",
+    "port1_master_rx_phy_delay_ps": "wr1_drxm",
+    "port1_slave_rx_phy_delay_ps": "wr1_drxs",
+    "port1_master_tx_phy_delay_ps": "wr1_dtxm",
+    "port1_slave_tx_phy_delay_ps": "wr1_dtxs",
+    "port1_hd": "wr1_hd",
+    "port1_link": "wr1_lnk",
+    "port1_lock": "wr1_lock",
+    "port1_md": "wr1_md",
+    "port1_rt_time_ps": "wr1_mu",
+    "port1_nsec": "wr1_nsec",
+    "port1_packets_received": "wr1_rx",
+    "port1_phase_setpoint_ps": "wr1_setp",
+    "port1_servo_state": "wr1_ss",
+    "port1_sv": "wr1_sv",
+    "port1_sync_source": "wr1_syncs",
+    "port1_packets_sent": "wr1_tx",
+    "port1_update_counter": "wr1_ucnt",
+    "port1_time": "wr1_sec",
 }
-wr_timestamp_keys = {'node_time': 'unix', 'build_date': 'unix', 'gw_date': 'unix',
-                     'manufacture_date': 'unix'}
+wr_timestamp_keys = {
+    "node_time": "unix",
+    "build_date": "unix",
+    "gw_date": "unix",
+    "manufacture_date": "unix",
+}
 
 
 class NodeSensor(MCDeclarativeBase):
@@ -134,7 +144,7 @@ class NodeSensor(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'node_sensor'
+    __tablename__ = "node_sensor"
     time = Column(BigInteger, primary_key=True)
     node = Column(Integer, primary_key=True)
     top_sensor_temp = Column(Float)
@@ -144,8 +154,16 @@ class NodeSensor(MCDeclarativeBase):
     humidity = Column(Float)
 
     @classmethod
-    def create(cls, time, node, top_sensor_temp, middle_sensor_temp,
-               bottom_sensor_temp, humidity_sensor_temp, humidity):
+    def create(
+        cls,
+        time,
+        node,
+        top_sensor_temp,
+        middle_sensor_temp,
+        bottom_sensor_temp,
+        humidity_sensor_temp,
+        humidity,
+    ):
         """
         Create a new node sensor object.
 
@@ -171,15 +189,20 @@ class NodeSensor(MCDeclarativeBase):
         NodeSensor object
         """
         sens_time = int(np.floor(time.gps))
-        return cls(time=sens_time, node=node, top_sensor_temp=top_sensor_temp,
-                   middle_sensor_temp=middle_sensor_temp,
-                   bottom_sensor_temp=bottom_sensor_temp,
-                   humidity_sensor_temp=humidity_sensor_temp,
-                   humidity=humidity)
+        return cls(
+            time=sens_time,
+            node=node,
+            top_sensor_temp=top_sensor_temp,
+            middle_sensor_temp=middle_sensor_temp,
+            bottom_sensor_temp=bottom_sensor_temp,
+            humidity_sensor_temp=humidity_sensor_temp,
+            humidity=humidity,
+        )
 
 
-def create_sensor_readings(nodeServerAddress=defaultServerAddress,
-                           node_list='all', sensor_dict=None):
+def create_sensor_readings(
+    nodeServerAddress=defaultServerAddress, node_list="all", sensor_dict=None
+):
     """
     Return a list of node sensor objects with data from the nodes.
 
@@ -201,29 +224,43 @@ def create_sensor_readings(nodeServerAddress=defaultServerAddress,
     node_sensor_list = []
     if sensor_dict is None:
         from node_control import node_control
-        node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
+
+        node_controller = node_control.NodeControl(
+            node_list, redisServer=nodeServerAddress
+        )
         sensor_dict = node_controller.get_sensors()
 
     for node in sensor_dict.keys():
         sensor_data = sensor_dict[node]
-        time = cm_utils.get_astropytime(sensor_data['timestamp'], float_format='unix')
+        time = cm_utils.get_astropytime(sensor_data["timestamp"], float_format="unix")
         if time is None:
             from warnings import warn
+
             warn("No timestamp given for node sensor reading -- ignoring this entry.")
         else:
-            top_sensor_temp = sensor_data.get(
-                sensor_key_dict['top_sensor_temp'], None)
+            top_sensor_temp = sensor_data.get(sensor_key_dict["top_sensor_temp"], None)
             middle_sensor_temp = sensor_data.get(
-                sensor_key_dict['middle_sensor_temp'], None)
+                sensor_key_dict["middle_sensor_temp"], None
+            )
             bottom_sensor_temp = sensor_data.get(
-                sensor_key_dict['bottom_sensor_temp'], None)
+                sensor_key_dict["bottom_sensor_temp"], None
+            )
             humidity_sensor_temp = sensor_data.get(
-                sensor_key_dict['humidity_sensor_temp'], None)
-            humidity = sensor_data.get(sensor_key_dict['humidity'], None)
+                sensor_key_dict["humidity_sensor_temp"], None
+            )
+            humidity = sensor_data.get(sensor_key_dict["humidity"], None)
 
-            node_sensor_list.append(NodeSensor.create(
-                time, node, top_sensor_temp, middle_sensor_temp,
-                bottom_sensor_temp, humidity_sensor_temp, humidity))
+            node_sensor_list.append(
+                NodeSensor.create(
+                    time,
+                    node,
+                    top_sensor_temp,
+                    middle_sensor_temp,
+                    bottom_sensor_temp,
+                    humidity_sensor_temp,
+                    humidity,
+                )
+            )
 
     return node_sensor_list
 
@@ -254,7 +291,7 @@ class NodePowerStatus(MCDeclarativeBase):
         Power status of the PAM, True=powered.
     """
 
-    __tablename__ = 'node_power_status'
+    __tablename__ = "node_power_status"
     time = Column(BigInteger, primary_key=True)
     node = Column(Integer, primary_key=True)
     snap_relay_powered = Column(Boolean, nullable=False)
@@ -266,9 +303,18 @@ class NodePowerStatus(MCDeclarativeBase):
     pam_powered = Column(Boolean, nullable=False)
 
     @classmethod
-    def create(cls, time, node, snap_relay_powered, snap0_powered,
-               snap1_powered, snap2_powered, snap3_powered,
-               fem_powered, pam_powered):
+    def create(
+        cls,
+        time,
+        node,
+        snap_relay_powered,
+        snap0_powered,
+        snap1_powered,
+        snap2_powered,
+        snap3_powered,
+        fem_powered,
+        pam_powered,
+    ):
         """
         Create a new node power status object.
 
@@ -299,15 +345,22 @@ class NodePowerStatus(MCDeclarativeBase):
 
         """
         stat_time = int(np.floor(time.gps))
-        return cls(time=stat_time, node=node,
-                   snap_relay_powered=snap_relay_powered,
-                   snap0_powered=snap0_powered, snap1_powered=snap1_powered,
-                   snap2_powered=snap2_powered, snap3_powered=snap3_powered,
-                   fem_powered=fem_powered, pam_powered=pam_powered)
+        return cls(
+            time=stat_time,
+            node=node,
+            snap_relay_powered=snap_relay_powered,
+            snap0_powered=snap0_powered,
+            snap1_powered=snap1_powered,
+            snap2_powered=snap2_powered,
+            snap3_powered=snap3_powered,
+            fem_powered=fem_powered,
+            pam_powered=pam_powered,
+        )
 
 
-def create_power_status(nodeServerAddress=defaultServerAddress, node_list='all',
-                        power_dict=None):
+def create_power_status(
+    nodeServerAddress=defaultServerAddress, node_list="all", power_dict=None
+):
     """
     Return a list of node power status objects with data from the nodes.
 
@@ -329,25 +382,37 @@ def create_power_status(nodeServerAddress=defaultServerAddress, node_list='all',
     node_power_list = []
     if power_dict is None:
         from node_control import node_control
-        node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
+
+        node_controller = node_control.NodeControl(
+            node_list, redisServer=nodeServerAddress
+        )
         power_dict = node_controller.get_power_status()
     for node in power_dict.keys():
         power_data = power_dict[node]
-        time = cm_utils.get_astropytime(power_data['timestamp'], float_format='unix')
+        time = cm_utils.get_astropytime(power_data["timestamp"], float_format="unix")
 
         # All items in this dictionary are strings.
-        snap_relay_powered = power_data[power_status_key_dict['snap_relay_powered']]
-        snap0_powered = power_data[power_status_key_dict['snap0_powered']]
-        snap1_powered = power_data[power_status_key_dict['snap1_powered']]
-        snap2_powered = power_data[power_status_key_dict['snap2_powered']]
-        snap3_powered = power_data[power_status_key_dict['snap3_powered']]
-        pam_powered = power_data[power_status_key_dict['pam_powered']]
-        fem_powered = power_data[power_status_key_dict['fem_powered']]
+        snap_relay_powered = power_data[power_status_key_dict["snap_relay_powered"]]
+        snap0_powered = power_data[power_status_key_dict["snap0_powered"]]
+        snap1_powered = power_data[power_status_key_dict["snap1_powered"]]
+        snap2_powered = power_data[power_status_key_dict["snap2_powered"]]
+        snap3_powered = power_data[power_status_key_dict["snap3_powered"]]
+        pam_powered = power_data[power_status_key_dict["pam_powered"]]
+        fem_powered = power_data[power_status_key_dict["fem_powered"]]
 
-        node_power_list.append(NodePowerStatus.create(time, node, snap_relay_powered,
-                                                      snap0_powered, snap1_powered,
-                                                      snap2_powered, snap3_powered,
-                                                      fem_powered, pam_powered))
+        node_power_list.append(
+            NodePowerStatus.create(
+                time,
+                node,
+                snap_relay_powered,
+                snap0_powered,
+                snap1_powered,
+                snap2_powered,
+                snap3_powered,
+                fem_powered,
+                pam_powered,
+            )
+        )
     return node_power_list
 
 
@@ -368,7 +433,7 @@ class NodePowerCommand(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'node_power_command'
+    __tablename__ = "node_power_command"
     time = Column(BigInteger, primary_key=True)
     node = Column(Integer, primary_key=True)
     part = Column(String, primary_key=True)
@@ -399,8 +464,9 @@ class NodePowerCommand(MCDeclarativeBase):
         return cls(time=comm_time, node=node, part=part, command=command)
 
 
-def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list='all',
-                              power_dict=None):
+def create_power_command_list(
+    nodeServerAddress=defaultServerAddress, node_list="all", power_dict=None
+):
     """
     Return a list of node power status objects with data from the nodes.
 
@@ -421,13 +487,16 @@ def create_power_command_list(nodeServerAddress=defaultServerAddress, node_list=
     """
     if power_dict is None:
         from node_control import node_control
-        node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
+
+        node_controller = node_control.NodeControl(
+            node_list, redisServer=nodeServerAddress
+        )
         power_dict = node_controller.get_power_command_list()
     node_power_list = []
     for node in power_dict.keys():
         for prt, val in power_dict[node].items():
-            time = cm_utils.get_astropytime(val['timestamp'], float_format='unix')
-            cmd = val['command']
+            time = cm_utils.get_astropytime(val["timestamp"], float_format="unix")
+            cmd = val["command"]
             if cmd is not None:
                 node_power_list.append(NodePowerCommand.create(time, node, prt, cmd))
     return node_power_list
@@ -577,7 +646,7 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'node_white_rabbit_status'
+    __tablename__ = "node_white_rabbit_status"
     node_time = Column(BigInteger, primary_key=True)
     node = Column(Integer, primary_key=True)
     board_info_str = Column(String)
@@ -805,8 +874,9 @@ class NodeWhiteRabbitStatus(MCDeclarativeBase):
         return cls(**col_dict)
 
 
-def create_wr_status(nodeServerAddress=defaultServerAddress,
-                     node_list='all', wr_status_dict=None):
+def create_wr_status(
+    nodeServerAddress=defaultServerAddress, node_list="all", wr_status_dict=None
+):
     """
     Return a list of node white rabbit status objects with data from the nodes.
 
@@ -828,24 +898,29 @@ def create_wr_status(nodeServerAddress=defaultServerAddress,
     wr_status_list = []
     if wr_status_dict is None:
         from node_control import node_control
-        node_controller = node_control.NodeControl(node_list, redisServer=nodeServerAddress)
+
+        node_controller = node_control.NodeControl(
+            node_list, redisServer=nodeServerAddress
+        )
         wr_status_dict = node_controller.get_wr_status()
 
     for node in wr_status_dict.keys():
         wr_data = wr_status_dict[node]
-        col_dict = {'node': node}
+        col_dict = {"node": node}
         for sql_key, sens_key in wr_key_dict.items():
             wr_data_value = wr_data[sens_key]
             if sql_key in wr_timestamp_keys and wr_data_value is not None:
                 fmt = wr_timestamp_keys[sql_key]
-                col_dict[sql_key] = cm_utils.get_astropytime(wr_data_value, float_format=fmt)
+                col_dict[sql_key] = cm_utils.get_astropytime(
+                    wr_data_value, float_format=fmt
+                )
             elif isinstance(wr_data_value, float) and np.isnan(wr_data_value):
                 col_dict[sql_key] = None
-            elif sql_key == 'aliases' and wr_data_value is not None:
+            elif sql_key == "aliases" and wr_data_value is not None:
                 if len(wr_data_value) == 0:
                     col_dict[sql_key] = None
                 else:
-                    col_dict[sql_key] = ', '.join(wr_data_value)
+                    col_dict[sql_key] = ", ".join(wr_data_value)
             else:
                 col_dict[sql_key] = wr_data_value
         wr_status_list.append(NodeWhiteRabbitStatus.create(col_dict))

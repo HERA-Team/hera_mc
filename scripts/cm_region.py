@@ -11,10 +11,10 @@ import argparse
 from hera_mc import geo_sysdef
 
 parser = argparse.ArgumentParser()
-parser.add_argument('ants', help="Antenna or list of antennas.")
+parser.add_argument("ants", help="Antenna or list of antennas.")
 args = parser.parse_args()
 
-args.ants = args.ants.split(',')
+args.ants = args.ants.split(",")
 regions = geo_sysdef.ant_region(args.ants)
 
 for this_ant, this_region in zip(args.ants, regions):

@@ -50,7 +50,7 @@ class LibServerStatus(ServerStatus):
 
     """
 
-    __tablename__ = 'lib_server_status'
+    __tablename__ = "lib_server_status"
 
 
 class LibStatus(MCDeclarativeBase):
@@ -78,7 +78,7 @@ class LibStatus(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'lib_status'
+    __tablename__ = "lib_status"
     time = Column(BigInteger, primary_key=True, autoincrement=False)
     num_files = Column(BigInteger, nullable=False)
     data_volume_gb = Column(Float, nullable=False)
@@ -88,13 +88,24 @@ class LibStatus(MCDeclarativeBase):
     git_version = Column(String(32), nullable=False)
     git_hash = Column(String(64), nullable=False)
 
-    tols = {'data_volume_gb': {'atol': 1e-3, 'rtol': 0},
-            'free_space_gb': {'atol': 1e-3, 'rtol': 0},
-            'upload_min_elapsed': DEFAULT_MIN_TOL}
+    tols = {
+        "data_volume_gb": {"atol": 1e-3, "rtol": 0},
+        "free_space_gb": {"atol": 1e-3, "rtol": 0},
+        "upload_min_elapsed": DEFAULT_MIN_TOL,
+    }
 
     @classmethod
-    def create(cls, time, num_files, data_volume_gb, free_space_gb,
-               upload_min_elapsed, num_processes, git_version, git_hash):
+    def create(
+        cls,
+        time,
+        num_files,
+        data_volume_gb,
+        free_space_gb,
+        upload_min_elapsed,
+        num_processes,
+        git_version,
+        git_hash,
+    ):
         """
         Create a new lib_status object.
 
@@ -123,14 +134,19 @@ class LibStatus(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         time = floor(time.gps)
 
         return cls(
-            time=time, num_files=num_files, data_volume_gb=data_volume_gb,
-            free_space_gb=free_space_gb, upload_min_elapsed=upload_min_elapsed,
-            num_processes=num_processes, git_version=git_version,
-            git_hash=git_hash)
+            time=time,
+            num_files=num_files,
+            data_volume_gb=data_volume_gb,
+            free_space_gb=free_space_gb,
+            upload_min_elapsed=upload_min_elapsed,
+            num_processes=num_processes,
+            git_version=git_version,
+            git_hash=git_hash,
+        )
 
 
 class LibRAIDStatus(MCDeclarativeBase):
@@ -150,7 +166,7 @@ class LibRAIDStatus(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'lib_raid_status'
+    __tablename__ = "lib_raid_status"
     time = Column(BigInteger, primary_key=True)
     hostname = Column(String(32), primary_key=True)
     num_disks = Column(Integer, nullable=False)
@@ -178,7 +194,7 @@ class LibRAIDStatus(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         time = floor(time.gps)
 
         return cls(time=time, hostname=hostname, num_disks=num_disks, info=info)
@@ -203,7 +219,7 @@ class LibRAIDErrors(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'lib_raid_errors'
+    __tablename__ = "lib_raid_errors"
     id = Column(BigInteger, primary_key=True, autoincrement=True)  # noqa A003
     time = Column(BigInteger, nullable=False)
     hostname = Column(String(32), nullable=False)
@@ -232,7 +248,7 @@ class LibRAIDErrors(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         time = floor(time.gps)
 
         return cls(time=time, hostname=hostname, disk=disk, log=log)
@@ -257,7 +273,7 @@ class LibRemoteStatus(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'lib_remote_status'
+    __tablename__ = "lib_remote_status"
     time = Column(BigInteger, primary_key=True)
     remote_name = Column(String(32), primary_key=True)
     ping_time = Column(Float, primary_key=True)
@@ -265,8 +281,7 @@ class LibRemoteStatus(MCDeclarativeBase):
     bandwidth_mbs = Column(Float, nullable=False)
 
     @classmethod
-    def create(cls, time, remote_name, ping_time, num_file_uploads,
-               bandwidth_mbs):
+    def create(cls, time, remote_name, ping_time, num_file_uploads, bandwidth_mbs):
         """
         Create a new lib_remote_status object.
 
@@ -289,12 +304,16 @@ class LibRemoteStatus(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         time = floor(time.gps)
 
         return cls(
-            time=time, remote_name=remote_name, ping_time=ping_time,
-            num_file_uploads=num_file_uploads, bandwidth_mbs=bandwidth_mbs)
+            time=time,
+            remote_name=remote_name,
+            ping_time=ping_time,
+            num_file_uploads=num_file_uploads,
+            bandwidth_mbs=bandwidth_mbs,
+        )
 
 
 class LibFiles(MCDeclarativeBase):
@@ -316,9 +335,9 @@ class LibFiles(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'lib_files'
+    __tablename__ = "lib_files"
     filename = Column(String(256), primary_key=True)
-    obsid = Column(BigInteger, ForeignKey('hera_obs.obsid'), nullable=True)
+    obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), nullable=True)
     time = Column(BigInteger, nullable=False)
     size_gb = Column(Float, nullable=False)
 
@@ -346,7 +365,7 @@ class LibFiles(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         time = floor(time.gps)
 
         return cls(filename=filename, obsid=obsid, time=time, size_gb=size_gb)

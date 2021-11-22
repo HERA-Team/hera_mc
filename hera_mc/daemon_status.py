@@ -16,7 +16,7 @@ from sqlalchemy import Column, String, BigInteger
 from . import MCDeclarativeBase
 
 
-status_list = ['good', 'errored']
+status_list = ["good", "errored"]
 
 
 class DaemonStatus(MCDeclarativeBase):
@@ -38,7 +38,7 @@ class DaemonStatus(MCDeclarativeBase):
 
     """
 
-    __tablename__ = 'daemon_status'
+    __tablename__ = "daemon_status"
     name = Column(String(32), primary_key=True)
     hostname = Column(String(32), primary_key=True)
     jd = Column(BigInteger, primary_key=True)
@@ -63,13 +63,15 @@ class DaemonStatus(MCDeclarativeBase):
 
         """
         if not isinstance(time, Time):
-            raise ValueError('time must be an astropy Time object')
+            raise ValueError("time must be an astropy Time object")
         jd = floor(time.jd)
         time = floor(time.gps)
 
         if status not in status_list:
-            raise ValueError('Status must be one of: [{statlist}]'.format(
-                statlist=', '.join(status_list)))
+            raise ValueError(
+                "Status must be one of: [{statlist}]".format(
+                    statlist=", ".join(status_list)
+                )
+            )
 
-        return cls(name=name, hostname=hostname, jd=jd, time=time,
-                   status=status)
+        return cls(name=name, hostname=hostname, jd=jd, time=time, status=status)

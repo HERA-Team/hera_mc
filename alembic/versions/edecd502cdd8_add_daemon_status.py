@@ -11,22 +11,23 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = 'edecd502cdd8'
-down_revision = 'a42f5c04610f'
+revision = "edecd502cdd8"
+down_revision = "a42f5c04610f"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-    op.create_table('daemon_status',
-                    sa.Column('name', sa.String(length=32), nullable=False),
-                    sa.Column('hostname', sa.String(length=32), nullable=False),
-                    sa.Column('jd', sa.BigInteger(), nullable=False),
-                    sa.Column('time', sa.BigInteger(), nullable=False),
-                    sa.Column('status', sa.String(length=32), nullable=False),
-                    sa.PrimaryKeyConstraint('name', 'hostname', 'jd')
-                    )
+    op.create_table(
+        "daemon_status",
+        sa.Column("name", sa.String(length=32), nullable=False),
+        sa.Column("hostname", sa.String(length=32), nullable=False),
+        sa.Column("jd", sa.BigInteger(), nullable=False),
+        sa.Column("time", sa.BigInteger(), nullable=False),
+        sa.Column("status", sa.String(length=32), nullable=False),
+        sa.PrimaryKeyConstraint("name", "hostname", "jd"),
+    )
 
 
 def downgrade():
-    op.drop_table('daemon_status')
+    op.drop_table("daemon_status")

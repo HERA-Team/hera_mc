@@ -15,25 +15,26 @@ def query_args(args):
     Gets information from user
     """
     if args.hpn is None:
-        args.hpn = input('HERA part number:  ')
-    args.rev = cm_utils.query_default('rev', args)
+        args.hpn = input("HERA part number:  ")
+    args.rev = cm_utils.query_default("rev", args)
     if args.comment is None:
-        args.comment = input('Comment:  ')
+        args.comment = input("Comment:  ")
     if args.reference is None:
-        args.reference = input('reference:  ')
-    args.date = cm_utils.query_default('date', args)
+        args.reference = input("reference:  ")
+    args.date = cm_utils.query_default("date", args)
     return args
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
-    parser.add_argument('-p', '--hpn', help="HERA part number", default=None)
-    parser.add_argument('-r', '--rev', help="Revision of part", default='last')
-    parser.add_argument('-c', '--comment', help="Comment on part", default=None)
-    parser.add_argument('-l', '--reference', help="Library filename", default=None)
-    parser.add_argument('-q', '--query', help="Set flag if wished to be queried",
-                        action='store_true')
-    parser.add_argument('--verbose', help="Turn verbose mode on.", action='store_true')
+    parser.add_argument("-p", "--hpn", help="HERA part number", default=None)
+    parser.add_argument("-r", "--rev", help="Revision of part", default="last")
+    parser.add_argument("-c", "--comment", help="Comment on part", default=None)
+    parser.add_argument("-l", "--reference", help="Library filename", default=None)
+    parser.add_argument(
+        "-q", "--query", help="Set flag if wished to be queried", action="store_true"
+    )
+    parser.add_argument("--verbose", help="Turn verbose mode on.", action="store_true")
     cm_utils.add_date_time_args(parser)
     args = parser.parse_args()
 
@@ -42,12 +43,12 @@ if __name__ == '__main__':
 
     # Pre-process some args
     at_date = cm_utils.get_astropytime(args.date, args.time, args.format)
-    if type(args.reference) == str and args.reference.lower() == 'none':
+    if type(args.reference) == str and args.reference.lower() == "none":
         args.reference = None
 
     db = mc.connect_to_mc_db(args)
     session = db.sessionmaker()
-    if args.rev.lower() == 'last':
+    if args.rev.lower() == "last":
         args.rev = cm_revisions.get_last_revision(args.hpn, session)[0].rev
         if args.verbose:
             print("Using last revision: {}".format(args.rev))
@@ -55,5 +56,11 @@ if __name__ == '__main__':
     # Check for part
     if args.verbose:
         print("Adding info for part {}:{}".format(args.hpn, args.rev))
-    cm_partconnect.add_part_info(session, args.hpn, args.rev, args.comment,
-                                 at_date=at_date, reference=args.reference)
+    cm_partconnect.add_part_info(
+        session,
+        args.hpn,
+        args.rev,
+        args.comment,
+        at_date=at_date,
+        reference=args.reference,
+    )

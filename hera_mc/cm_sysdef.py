@@ -9,9 +9,9 @@ import os.path
 from . import cm_utils
 from .data import DATA_PATH
 
-with open(os.path.join(DATA_PATH, 'sysdef.json'), 'r') as fp:
+with open(os.path.join(DATA_PATH, "sysdef.json"), "r") as fp:
     system_info = json.load(fp)
-hera_zone_prefixes = system_info['hera_zone_prefixes']
+hera_zone_prefixes = system_info["hera_zone_prefixes"]
 
 
 class Sysdef:
@@ -28,19 +28,25 @@ class Sysdef:
 
     """
 
-    opposite_direction = {'up': 'down', 'down': 'up'}
-    checking_order = ['parts_hera', 'wr_hera', 'arduino_hera',
-                      'parts_rfi', 'parts_paper', 'parts_test']
+    opposite_direction = {"up": "down", "down": "up"}
+    checking_order = [
+        "parts_hera",
+        "wr_hera",
+        "arduino_hera",
+        "parts_rfi",
+        "parts_paper",
+        "parts_test",
+    ]
 
     def __init__(self, hookup_type=None, input_dict=None):
-        self.port_def = system_info['hookup_types']
+        self.port_def = system_info["hookup_types"]
         if input_dict is not None:
-            self.hookup_type = input_dict['hookup_type']
-            self.corr_index = input_dict['corr_index']
-            self.all_pols = input_dict['all_pols']
-            self.redirect_part_types = input_dict['redirect_part_types']
-            self.single_pol_labeled_parts = input_dict['single_pol_labeled_parts']
-            self.full_connection_path = input_dict['full_connection_path']
+            self.hookup_type = input_dict["hookup_type"]
+            self.corr_index = input_dict["corr_index"]
+            self.all_pols = input_dict["all_pols"]
+            self.redirect_part_types = input_dict["redirect_part_types"]
+            self.single_pol_labeled_parts = input_dict["single_pol_labeled_parts"]
+            self.full_connection_path = input_dict["full_connection_path"]
         else:
             self.hookup_type = hookup_type
             self.corr_index = {}
@@ -49,14 +55,16 @@ class Sysdef:
             self.single_pol_labeled_parts = {}
             self.full_connection_path = {}
             for hutype in self.port_def.keys():
-                this_sys = system_info['hookup_parameters'][hutype]
-                self.corr_index[hutype] = this_sys['corr_index']
-                self.all_pols[hutype] = this_sys['all_pols']
-                self.redirect_part_types[hutype] = this_sys['redirect_part_types']
-                self.single_pol_labeled_parts[hutype] = this_sys['single_pol_labeled_parts']
+                this_sys = system_info["hookup_parameters"][hutype]
+                self.corr_index[hutype] = this_sys["corr_index"]
+                self.all_pols[hutype] = this_sys["all_pols"]
+                self.redirect_part_types[hutype] = this_sys["redirect_part_types"]
+                self.single_pol_labeled_parts[hutype] = this_sys[
+                    "single_pol_labeled_parts"
+                ]
                 ordered_path = {}
                 for k, v in self.port_def[hutype].items():
-                    ordered_path[v['position']] = k
+                    ordered_path[v["position"]] = k
                 sorted_keys = sorted(ordered_path.keys())
                 self.full_connection_path[hutype] = []
                 for k in sorted_keys:
@@ -72,11 +80,14 @@ class Sysdef:
             Dictionary version of object.
 
         """
-        return {'hookup_type': self.hookup_type,
-                'corr_index': self.corr_index, 'all_pols': self.all_pols,
-                'redirect_part_types': self.redirect_part_types,
-                'single_pol_labeled_parts': self.single_pol_labeled_parts,
-                'full_connection_path': self.full_connection_path}
+        return {
+            "hookup_type": self.hookup_type,
+            "corr_index": self.corr_index,
+            "all_pols": self.all_pols,
+            "redirect_part_types": self.redirect_part_types,
+            "single_pol_labeled_parts": self.single_pol_labeled_parts,
+            "full_connection_path": self.full_connection_path,
+        }
 
     def get_all_ports(self, hookup_types=None):
         """
@@ -97,7 +108,7 @@ class Sysdef:
             hookup_types = [self.hookup_type]
         for hut in hookup_types:
             for key in self.port_def[hut].keys():
-                for direction in ['up', 'down']:
+                for direction in ["up", "down"]:
                     for ports in self.port_def[hut][key][direction]:
                         for port in ports:
                             if port is not None:
@@ -122,12 +133,13 @@ class Sysdef:
 
         """
         hpn_list = []
-        if self.hookup_type == 'parts_hera':
-            if part.hptype.lower() == 'node':
+        if self.hookup_type == "parts_hera":
+            if part.hptype.lower() == "node":
                 try:
-                    for conn in active.connections['down'][cm_utils.make_part_key(
-                            part.hpn, part.hpn_rev)].values():
-                        if conn.upstream_part.startswith('SNP'):
+                    for conn in active.connections["down"][
+                        cm_utils.make_part_key(part.hpn, part.hpn_rev)
+                    ].values():
+                        if conn.upstream_part.startswith("SNP"):
                             hpn_list.append(conn.upstream_part)
                 except KeyError:
                     pass
@@ -166,7 +178,7 @@ class Sysdef:
                     return hookup_type
         raise ValueError("hookup_type {} is not found.".format(hookup_type))
 
-    def setup(self, part, pol='all', hookup_type=None):
+    def setup(self, part, pol="all", hookup_type=None):
         """
         Figure out which pols to do (???).
 
@@ -193,15 +205,19 @@ class Sysdef:
 
         all_pols = [x.upper() for x in self.all_pols[self.hookup_type]]
         pol = cm_utils.to_upper(pol)
-        if pol not in all_pols + ['ALL']:
+        if pol not in all_pols + ["ALL"]:
             raise ValueError("Invalid port query {}.".format(pol))
-        use_pols = all_pols if pol == 'ALL' else [pol]
+        use_pols = all_pols if pol == "ALL" else [pol]
 
         try:
-            port_up = self.port_def[self.hookup_type][part.hptype]['up']
-            port_dn = self.port_def[self.hookup_type][part.hptype]['down']
+            port_up = self.port_def[self.hookup_type][part.hptype]["up"]
+            port_dn = self.port_def[self.hookup_type][part.hptype]["down"]
         except KeyError:
-            print("Unmatched hookup and part:  {} and {}".format(self.hookup_type, part.hptype))
+            print(
+                "Unmatched hookup and part:  {} and {}".format(
+                    self.hookup_type, part.hptype
+                )
+            )
             self.ppkeys = []
             return
         dir2use = port_up if len(port_up) > len(port_dn) else port_dn
@@ -222,9 +238,9 @@ class Sysdef:
             for _port in ppkey_list:
                 if cm_utils.port_is_polarized(_port, all_pols):
                     if cm_utils.port_is_polarized(_port, [_pol]):
-                        self.ppkeys.append('{}<{}'.format(_pol, _port))
+                        self.ppkeys.append("{}<{}".format(_pol, _port))
                 else:
-                    self.ppkeys.append('{}<{}'.format(_pol, _port))
+                    self.ppkeys.append("{}<{}".format(_pol, _port))
 
     def get_ports(self, pol, part_type):
         """
@@ -246,7 +262,7 @@ class Sysdef:
 
         """
         port_dict = {}
-        for direction in ['up', 'down']:
+        for direction in ["up", "down"]:
             port_dict[direction] = []
             try:
                 oports = self.port_def[self.hookup_type][part_type]
@@ -256,8 +272,10 @@ class Sysdef:
                 for port in port_list:
                     if port is None:
                         port_dict[direction].append(None)
-                    elif (port[0].lower() not in self.all_pols[self.hookup_type]
-                          or pol.lower() == 'all'):
+                    elif (
+                        port[0].lower() not in self.all_pols[self.hookup_type]
+                        or pol.lower() == "all"
+                    ):
                         port_dict[direction].append(port.upper())
                     elif port[0].lower() == pol[0].lower():
                         port_dict[direction].append(port.upper())

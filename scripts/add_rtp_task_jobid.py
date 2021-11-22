@@ -30,22 +30,18 @@ if __name__ == "__main__":
             "multiple obsid tasks."
         ),
     )
-    parser.add_argument(
-        "task_name", type=str, help="RTP task name"
-    )
-    parser.add_argument(
-        "job_id", type=int, help="Slurm Job ID of the RTP task."
-    )
+    parser.add_argument("task_name", type=str, help="RTP task name")
+    parser.add_argument("job_id", type=int, help="Slurm Job ID of the RTP task.")
     parser.add_argument(
         "--file_list",
         dest="file_list",
-        nargs='+',
+        nargs="+",
         type=str,
         default=None,
         help="List of files included in this task, only used for multiple obsid tasks. "
         "Will add entries to the `rtp_task_multiple_track` and "
         "`rtp_task_multiple_resource_record` tables rather than to the "
-        "`rtp_task_jobid` table."
+        "`rtp_task_jobid` table.",
     )
     args = parser.parse_args()
 

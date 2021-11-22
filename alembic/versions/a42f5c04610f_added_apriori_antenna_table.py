@@ -10,21 +10,22 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a42f5c04610f'
-down_revision = '5fbb4d08569a'
+revision = "a42f5c04610f"
+down_revision = "5fbb4d08569a"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-    op.create_table('apriori_antenna',
-    sa.Column('antenna', sa.Text(), nullable=False),
-    sa.Column('start_gpstime', sa.BigInteger(), nullable=False),
-    sa.Column('stop_gpstime', sa.BigInteger()),
-    sa.Column('status', sa.Text(), nullable=False),
-    sa.PrimaryKeyConstraint('antenna', 'start_gpstime')
+    op.create_table(
+        "apriori_antenna",
+        sa.Column("antenna", sa.Text(), nullable=False),
+        sa.Column("start_gpstime", sa.BigInteger(), nullable=False),
+        sa.Column("stop_gpstime", sa.BigInteger()),
+        sa.Column("status", sa.Text(), nullable=False),
+        sa.PrimaryKeyConstraint("antenna", "start_gpstime"),
     )
 
 
 def downgrade():
-    op.drop_table('apriori_antenna')
+    op.drop_table("apriori_antenna")

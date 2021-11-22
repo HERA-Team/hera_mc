@@ -18,10 +18,11 @@ from sqlalchemy.orm import sessionmaker
 from . import MCDeclarativeBase
 from .mc_session import MCSession
 from .data import DATA_PATH
-test_data_path = op.join(DATA_PATH, 'test_data')
-default_config_file = op.expanduser('~/.hera_mc/mc_config.json')
-mc_log_file = op.expanduser('~/.hera_mc/mc_log.txt')
-cm_log_file = op.expanduser('~/.hera_mc/cm_log.txt')
+
+test_data_path = op.join(DATA_PATH, "test_data")
+default_config_file = op.expanduser("~/.hera_mc/mc_config.json")
+mc_log_file = op.expanduser("~/.hera_mc/mc_log.txt")
+cm_log_file = op.expanduser("~/.hera_mc/cm_log.txt")
 
 
 class DB(object, metaclass=ABCMeta):
@@ -88,8 +89,9 @@ class AutomappedDB(DB):
 
         with self.sessionmaker() as session:
             if not is_valid_database(MCDeclarativeBase, session):
-                raise RuntimeError('database {0} does not match expected schema'
-                                   .format(db_url))
+                raise RuntimeError(
+                    "database {0} does not match expected schema".format(db_url)
+                )
 
 
 def get_mc_argument_parser():
@@ -108,12 +110,20 @@ def get_mc_argument_parser():
     import argparse
 
     p = argparse.ArgumentParser()
-    p.add_argument('--config', dest='mc_config_path', type=str,
-                   default=default_config_file,
-                   help='Path to the mc_config.json configuration file.')
-    p.add_argument('--db', dest='mc_db_name', type=str,
-                   help='Name of the database to connect to. The default is '
-                   'used if unspecified.')
+    p.add_argument(
+        "--config",
+        dest="mc_config_path",
+        type=str,
+        default=default_config_file,
+        help="Path to the mc_config.json configuration file.",
+    )
+    p.add_argument(
+        "--db",
+        dest="mc_db_name",
+        type=str,
+        help="Name of the database to connect to. The default is "
+        "used if unspecified.",
+    )
     return p
 
 
@@ -139,11 +149,13 @@ def get_cm_csv_path(mc_config_file=None, testing=False):
         return test_data_path
 
     try:
-        cm_csv_path = '/{}'.format(config_data.get(
-            'databases')['hera_mc_sqlite']['url'].lstrip(
-                'sqlite:////').rstrip('/hera_mc.db'))
+        cm_csv_path = "/{}".format(
+            config_data.get("databases")["hera_mc_sqlite"]["url"]
+            .lstrip("sqlite:////")
+            .rstrip("/hera_mc.db")
+        )
     except KeyError:
-        cm_csv_path = config_data.get('cm_csv_path')
+        cm_csv_path = config_data.get("cm_csv_path")
     return cm_csv_path
 
 
@@ -185,56 +197,67 @@ def connect_to_mc_db(args, forced_db_name=None, check_connect=True):
         config_data = json.load(f)
 
     if db_name is None:
-        db_name = config_data.get('default_db_name')
+        db_name = config_data.get("default_db_name")
         if db_name is None:
-            raise RuntimeError('cannot connect to M&C database: no DB name '
-                               'provided, and no default listed in {0!r}'
-                               .format(config_path))
+            raise RuntimeError(
+                "cannot connect to M&C database: no DB name "
+                "provided, and no default listed in {0!r}".format(config_path)
+            )
 
-    db_data = config_data.get('databases')
+    db_data = config_data.get("databases")
     if db_data is None:
-        raise RuntimeError('cannot connect to M&C database: no "databases" '
-                           'section in {0!r}'.format(config_path))
+        raise RuntimeError(
+            'cannot connect to M&C database: no "databases" '
+            "section in {0!r}".format(config_path)
+        )
 
     db_data = db_data.get(db_name)
     if db_data is None:
-        raise RuntimeError('cannot connect to M&C database: no DB named {0!r} '
-                           'in the "databases" section of {1!r}'.format(
-                               db_name, config_path))
+        raise RuntimeError(
+            "cannot connect to M&C database: no DB named {0!r} "
+            'in the "databases" section of {1!r}'.format(db_name, config_path)
+        )
 
-    db_url = db_data.get('url')
+    db_url = db_data.get("url")
     if db_url is None:
-        raise RuntimeError('cannot connect to M&C database: no "url" item for '
-                           'the DB named {0!r} in {1!r}'.format(
-                               db_name, config_path))
+        raise RuntimeError(
+            'cannot connect to M&C database: no "url" item for '
+            "the DB named {0!r} in {1!r}".format(db_name, config_path)
+        )
 
-    db_mode = db_data.get('mode')
+    db_mode = db_data.get("mode")
     if db_mode is None:
-        raise RuntimeError('cannot connect to M&C database: no "mode" item for '
-                           'the DB named {0!r} in {1!r}'.format(
-                               db_name, config_path))
+        raise RuntimeError(
+            'cannot connect to M&C database: no "mode" item for '
+            "the DB named {0!r} in {1!r}".format(db_name, config_path)
+        )
 
-    if db_mode == 'testing':
+    if db_mode == "testing":
         db = DeclarativeDB(db_url)
-    elif db_mode == 'production':
+    elif db_mode == "production":
         db = AutomappedDB(db_url)
     else:
-        raise RuntimeError('cannot connect to M&C database: unrecognized mode '
-                           '{0!r} for the DB named {1!r} in {2!r}'.format(
-                               db_mode, db_name, config_path))
+        raise RuntimeError(
+            "cannot connect to M&C database: unrecognized mode "
+            "{0!r} for the DB named {1!r} in {2!r}".format(
+                db_mode, db_name, config_path
+            )
+        )
 
     if check_connect:
         # Test database connection
         with db.sessionmaker() as session:
             from . import db_check
+
             if not db_check.check_connection(session):
-                raise RuntimeError('Could not establish valid connection to '
-                                   'database.')
+                raise RuntimeError(
+                    "Could not establish valid connection to " "database."
+                )
 
     return db
 
 
-def connect_to_mc_testing_db(forced_db_name='testing'):
+def connect_to_mc_testing_db(forced_db_name="testing"):
     """
     Get a DB object that is connected to the testing M&C database.
 

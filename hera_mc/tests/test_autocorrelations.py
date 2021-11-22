@@ -172,16 +172,22 @@ def test_add_autocorrelations_errors(mcsession, args, err_type, err_msg):
     ],
 )
 @pytest.mark.parametrize(
-    "starttime", [standard_query_time - TimeDelta(3.0, format="sec"), None],
+    "starttime",
+    [standard_query_time - TimeDelta(3.0, format="sec"), None],
 )
-def test_add_autos_from_redis(mcsession, starttime, auto_dict, antnum, antpol, expected):
+def test_add_autos_from_redis(
+    mcsession, starttime, auto_dict, antnum, antpol, expected
+):
     test_session = mcsession
     hera_auto_list = test_session.add_autocorrelations_from_redis(
-        hera_autos_dict=auto_dict, testing=True,
+        hera_autos_dict=auto_dict,
+        testing=True,
     )
     for obj in hera_auto_list:
         test_session.add(obj)
-    result = test_session.get_autocorrelation(starttime=starttime, antenna_number=antnum)
+    result = test_session.get_autocorrelation(
+        starttime=starttime, antenna_number=antnum
+    )
     assert len(result) == 2
 
     result = [res for res in result if res.antenna_feed_pol == antpol][0]
@@ -191,10 +197,11 @@ def test_add_autos_from_redis(mcsession, starttime, auto_dict, antnum, antpol, e
 
 def test_add_autos_from_redis_errors(mcsession, auto_dict):
     test_session = mcsession
-    auto_dict.pop('timestamp')
+    auto_dict.pop("timestamp")
     with pytest.raises(ValueError) as cm:
         test_session.add_autocorrelations_from_redis(
-            hera_autos_dict=auto_dict, testing=True,
+            hera_autos_dict=auto_dict,
+            testing=True,
         )
     assert str(cm.value).startswith("No timestamp found in hera_autos_dict. ")
 

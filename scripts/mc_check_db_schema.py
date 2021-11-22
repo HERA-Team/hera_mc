@@ -20,4 +20,6 @@ except RuntimeError as e:
 
 with db.sessionmaker() as session:
     if not is_valid_database(MCDeclarativeBase, session):
-        raise SystemExit('database {0} does not match expected schema'.format(db.engine.url))
+        raise SystemExit(
+            "database {0} does not match expected schema".format(db.engine.url)
+        )
