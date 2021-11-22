@@ -4,7 +4,9 @@ HERA M&C Installation
 HERA M&C requires downloading two repositories `hera_mc` and `hera_cm_db_updates`.  The online database uses `PostgreSQL`
 which requires installing that, however local users may wish to use `SQLITE` instead, as it eliminates the need to install
 PostgreSQL on your local machine (SQLITE is pre-installed on Macs).  If you are developing code under `hera_mc`, you'll
-need to install PostgreSQL and `pre-commit`.  If you are just viewing configuration management (CM) information, SQLITE is much easier.
+need to install PostgreSQL and `pre-commit`. We use the [black](https://github.com/psf/black) codestyle in this repo. Among other checks, this is enforced by the `pre-commit` configuration.
+
+  If you are just viewing configuration management (CM) information, SQLITE is much easier.
 Use of PostgreSQL vs SQLITE is determined by the `"default_db_name"` set below in the database configuration file described
 below.
 
@@ -58,7 +60,7 @@ management tools. The options that can be passed in this way are:
 [`sqlite`, `all`, `dev`]. The `all` option will install all optional
 dependencies, `dev` adds packages required for testing
 and also requires pre-commit to check for code style.
-Make sure to run `pre-commit install` to initilized the pre-commit hooks in the git repo.
+Make sure to run `pre-commit install` to initialized the pre-commit hooks in the git repo.
 
 If you prefer to manage dependencies yourself (e.g. with conda), you can add
 `--no-deps` to the pip call. You can also add `-e` for a developer style install that will
