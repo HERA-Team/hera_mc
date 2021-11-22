@@ -233,5 +233,5 @@ def test_tornado_import_error(mcsession):
     t2 = t1 + TimeDelta(280.0, format='sec')
 
     if weather.tornado_present:
-        with pytest.errors(ImportError, match="tornado is not installed"):
+        with pytest.raises(ImportError, match="tornado is not installed"):
             test_session.add_weather_data_from_sensors(t1, t2)
