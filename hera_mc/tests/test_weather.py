@@ -225,3 +225,13 @@ def test_dump_weather_table(mcsession):
     os.remove('wind_speed.txt')
     os.remove('wind_direction.txt')
     os.remove('temperature.txt')
+
+
+def test_tornado_import_error(mcsession):
+    test_session = mcsession
+    t1 = Time('2019-11-10 01:15:23', scale='utc')
+    t2 = t1 + TimeDelta(280.0, format='sec')
+
+    if weather.tornado_present:
+        with pytest.errors(ImportError, match="tornado is not installed"):
+            test_session.add_weather_data_from_sensors(t1, t2)
