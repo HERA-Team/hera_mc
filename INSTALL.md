@@ -60,7 +60,7 @@ management tools. The options that can be passed in this way are:
 [`sqlite`, `all`, `dev`]. The `all` option will install all optional
 dependencies, `dev` adds packages required for testing
 and also requires pre-commit to check for code style.
-Make sure to run `pre-commit install` to initialized the pre-commit hooks in the git repo.
+Make sure to run `pre-commit install` to initialize the pre-commit hooks in the git repo.
 
 If you prefer to manage dependencies yourself (e.g. with conda), you can add
 `--no-deps` to the pip call. You can also add `-e` for a developer style install that will
