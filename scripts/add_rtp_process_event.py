@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
             session.add_rtp_task_multiple_process_event(
                 time=Time.now(),
-                obsid_start=obsid,
+                obsid=obsid,
                 task_name=args.task_name,
                 event=args.event,
             )

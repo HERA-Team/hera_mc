@@ -1572,7 +1572,7 @@ class MCSession(Session):
         ----------
         time : astropy Time object
             Time of event.
-        obsid_start : long
+        obsid : long
             Observation obsid for the first obsid (Foreign key into observation).
         task_name : str
             Name of task in pipeline (e.g., OMNICAL)
