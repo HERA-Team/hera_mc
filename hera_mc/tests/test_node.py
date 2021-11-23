@@ -723,6 +723,7 @@ def test_power_command(mcsession):
     assert len(test_npc) == 1
 
 
+@requires_redis
 def test_power_command_from_node_control(mcsession):
     pytest.importorskip("node_control")
     test_session = mcsession
@@ -796,6 +797,7 @@ def test_add_white_rabbit_status(mcsession, tmpdir, white_rabbit_status):
     assert len(ncget) == 2
 
 
+@requires_redis
 def test_add_white_rabbit_status_from_node_control(mcsession):
     pytest.importorskip("node_control")
     test_session = mcsession
