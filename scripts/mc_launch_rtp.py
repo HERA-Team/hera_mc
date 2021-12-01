@@ -194,8 +194,9 @@ for jd in jd_list:
 
     # launch workflow inside of tmux
     cmd = (
-        "source /home/obs/anaconda/bin/deactivate; "
-        f"source /home/obs/anaconda/bin/activate {args.conda_env}; "
+        "source /home/obs/.bashrc; "
+        "conda deactivate; "
+        f"conda activate {args.conda_env}; "
         f"makeflow -T slurm {mf_filename}; /bin/bash -l"
     )
     session_name = f"rtp_{jd}"
