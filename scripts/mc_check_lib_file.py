@@ -12,12 +12,6 @@ NOTE: Assumes that lib_files is a faithful list of files uploaded to the Librari
 """
 
 import os
-import sys
-import shutil
-import warnings
-
-import numpy as np
-from astropy.time import Time
 
 from hera_mc import mc
 
@@ -37,4 +31,5 @@ for pathname in args.files:
     filename = os.path.basename(pathname)
     with db.sessionmaker() as session:
         out = session.get_lib_files(filename)
-        if len(out) >0: print(pathname) #if we have a file, say so
+        if len(out) > 0:
+            print(pathname)  # if we have a file, say so
