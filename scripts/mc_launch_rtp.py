@@ -197,7 +197,7 @@ for jd in jd_list:
         "source /home/obs/.bashrc; "
         "conda deactivate; "
         f"conda activate {args.conda_env}; "
-        f"makeflow -T slurm {mf_filename}; /bin/bash -l"
+        f"makeflow -T slurm {mf_filename} -J 100; /bin/bash -l"
     )
     session_name = f"rtp_{jd}"
     tmux_cmd = ["tmux", "new-session", "-d", "-s", session_name, cmd]
