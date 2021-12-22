@@ -1510,10 +1510,7 @@ def create_antenna_status(
             )
             fem_switch = None
 
-        if antenna_feed_pol == "n":
-            fem_lna_power = ant_dict["fem_n_lna_power"]
-        elif antenna_feed_pol == "e":
-            fem_lna_power = ant_dict["fem_e_lna_power"]
+        fem_lna_power = ant_dict["fem_lna_power"]
         fem_imu_theta = ant_dict["fem_imu_theta"]
         fem_imu_phi = ant_dict["fem_imu_phi"]
         fem_temp = ant_dict["fem_temp"]
