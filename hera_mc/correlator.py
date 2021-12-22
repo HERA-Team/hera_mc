@@ -1394,8 +1394,7 @@ def _get_ant_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
             fem_id (list)         : Bytewise serial number of this FEM
             fem_switch(str)       : Switch state for this FEM ('antenna',
                                     'load', or 'noise')
-            fem_e_lna_power(bool) : True if East-pol LNA is powered
-            fem_n_lna_power(bool) : True if North-pol LNA is powered
+            fem_lna_power(bool)   : True if LNA is powered
             fem_imu_theta (float) : IMU-reported theta (degrees)
             fem_imu_phi (float)   : IMU-reported phi (degrees)
             fem_temp (float)      : FEM temperature sensor reading for this
