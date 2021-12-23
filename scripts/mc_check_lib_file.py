@@ -25,9 +25,9 @@ args = ap.parse_args()
 db = mc.connect_to_mc_db(args)
 
 found_files = []
-for pathname in args.files:
-    filename = os.path.basename(pathname)
-    with db.sessionmaker() as session:
+with db.sessionmaker() as session:
+    for pathname in args.files:
+        filename = os.path.basename(pathname)
         out = session.get_lib_files(filename)
         if len(out) > 0:
             print(pathname)  # if we have a file, say so
