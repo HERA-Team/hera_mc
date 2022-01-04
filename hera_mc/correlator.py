@@ -1485,7 +1485,7 @@ def create_antenna_status(
         snap_channel_number = ant_dict["host_ant_id"]
         adc_mean = ant_dict["adc_mean"]
         adc_rms = ant_dict["adc_rms"]
-        adc_power = ant_dict["adc_power"]
+        adc_power = float(ant_dict["adc_power"])
         pam_atten = ant_dict["pam_atten"]
         pam_power = ant_dict["pam_power"]
         pam_voltage = ant_dict["pam_voltage"]
