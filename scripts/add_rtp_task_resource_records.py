@@ -3,7 +3,7 @@
 # Copyright 2021 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Add RTP task records to the M&C database.
+"""Add RTP task resource records to the M&C database.
 
 This script finds all entries in RTPTaskJobID (RTPTaskMultipleJobID) that
 have no corresponding entry in RTPTaskResourceRecord
@@ -26,7 +26,27 @@ from hera_mc.rtp import (
 
 
 def cpu_time_to_seconds(time_str):
-    # convert time_str from HH:MM:SS to seconds
+    """
+    Convert `time_str` from 'D-HH:MM:SS' (format of CPUTime from SLURM) to
+    seconds.
+
+    Parameters
+    ----------
+    time_str : str
+        String with format 'D-HH:MM:SS' or 'HH:MM:SS'.
+
+    Returns
+    -------
+    secs : float
+        Number of seconds.
+
+    """
+    if "-" in time_str:
+        days = float(time_str.split("-")[0])
+        time_str = time_str.split("-")[1]
+    else:
+        days = 0.0
+
     if len(time_str.split(":")) == 2:
         mins, secs = time_str.split(":")
         mins = float(mins)
@@ -37,7 +57,7 @@ def cpu_time_to_seconds(time_str):
         mins = float(mins)
         secs = float(secs)
         secs += hours * 3600.0
-    secs += mins * 60
+    secs += mins * 60 + days * 24 * 60 * 60
     return secs
 
 
@@ -49,7 +69,7 @@ def query_slurm_db(jobid):
 
     Parameters
     ----------
-    jobid: int
+    jobid : int
         SLURM JobID to query.
 
     Returns
