@@ -503,11 +503,11 @@ def get_time_for_display(display, display_time=None, float_format=None):
     return d
 
 
-# Bound between 10/1/2014 and 9/30/2026
+# Bound between 1/1/2010 and 12/31/2029
 bounds = {
-    "gps": [1096156816.0, 1474761618.0],
-    "jd": [2456931.5, 2461313.5],
-    "unix": [1412121600.0, 1790726400.0],
+    "gps": [946339215.0, 1577404818.0],
+    "jd": [2455197.5, 2462501.5],
+    "unix": [1262332800.0, 1893398400.0],
 }
 
 
