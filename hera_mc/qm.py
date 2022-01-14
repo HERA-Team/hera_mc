@@ -40,9 +40,11 @@ class AntMetrics(MCDeclarativeBase):
 
     __tablename__ = "ant_metrics"
     obsid = Column(BigInteger, ForeignKey("hera_obs.obsid"), primary_key=True)
-    ant = Column(Integer, primary_key=True)
-    pol = Column(String, primary_key=True)
-    metric = Column(String, ForeignKey("metric_list.metric"), primary_key=True)
+    ant = Column(Integer, primary_key=True, index=True)
+    pol = Column(String, primary_key=True, index=True)
+    metric = Column(
+        String, ForeignKey("metric_list.metric"), primary_key=True, index=True
+    )
     mc_time = Column(BigInteger, nullable=False)
     val = Column(Float, nullable=False)
 
