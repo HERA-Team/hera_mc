@@ -27,8 +27,7 @@ from hera_mc.rtp import (
 
 def cpu_time_to_seconds(time_str):
     """
-    Convert `time_str` from 'D-HH:MM:SS' (format of CPUTime from SLURM) to
-    seconds.
+    Convert `time_str` from 'D-HH:MM:SS' (format of CPUTime from SLURM) to seconds.
 
     Parameters
     ----------
@@ -63,9 +62,10 @@ def cpu_time_to_seconds(time_str):
 
 def query_slurm_db(jobid):
     """
-    Query the SLURM database using `sacct` and the `--format` flag
-    with the desired columns specifiec by `format_cols`.  For
-    available columns see `sacct --helpformat`.
+    Query the SLURM database using `sacct` and the `--format` flag.
+
+    Only the columns specified by `format_cols` are included in the query.
+    For all available columns see `sacct --helpformat`.
 
     Parameters
     ----------
@@ -110,6 +110,7 @@ def query_slurm_db(jobid):
         slurm_dict["stop_time"] = stop_time
 
         max_memory = float(output[4][:-1])
+        # SLURM provides the MaxRSS in bytes, but we choose to record in kilobytes
         slurm_dict["max_memory"] = max_memory / 1e3
 
         totalcpu = cpu_time_to_seconds(output[5])
