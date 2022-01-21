@@ -10,6 +10,7 @@ Includes many SNAP-related things.
 """
 from math import floor
 import warnings
+import json
 
 import numpy as np
 from astropy.time import Time
@@ -1419,32 +1420,29 @@ def _get_ant_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     return corr_cm.get_ant_status()
 
 
-def _pam_fem_serial_list_to_string(serial_number_list):
+def _pam_fem_id_to_string(idno):
     """
-    Convert the native FEM/PAM Bytewise serial number to a string.
+    Convert the id number to a string.
 
     Parameters
     ----------
-    serial_number_list : list of ints
-        Bytewise serial number of a FEM or PAM
+    idno : str
+        value from hera_corr_f id function via redis
 
     Returns
     -------
     str
-        decoded string serial number
+        decoded id number
 
     """
     try:
-        serial_str = ""
-        for int_val in serial_number_list:
-            hex_val = hex(int_val)[2:]
-            # str_val = bytes.fromhex(hex_val).decode('ascii')
-            str_val = hex_val
-            serial_str += str_val
-
-        return serial_str
-    except Exception:
-        return None
+        val = json.loads(idno)
+        if isinstance(val, list):
+            return ":".join([str(x) for x in val])
+        else:
+            return str(idno)
+    except json.JSONDecodeError:
+        return str(idno)
 
 
 def create_antenna_status(
@@ -1493,16 +1491,10 @@ def create_antenna_status(
         pam_power = ant_dict["pam_power"]
         pam_voltage = ant_dict["pam_voltage"]
         pam_current = ant_dict["pam_current"]
-        if ant_dict["pam_id"] is not None and ant_dict["pam_id"] != -1:
-            pam_id = _pam_fem_serial_list_to_string(ant_dict["pam_id"])
-        else:
-            pam_id = None
+        pam_id = _pam_fem_id_to_string(ant_dict["pam_id"])
         fem_voltage = ant_dict["fem_voltage"]
         fem_current = ant_dict["fem_current"]
-        if ant_dict["fem_id"] is not None and ant_dict["fem_id"] != -1:
-            fem_id = _pam_fem_serial_list_to_string(ant_dict["fem_id"])
-        else:
-            fem_id = None
+        fem_id = _pam_fem_id_to_string(ant_dict["fem_id"])
         fem_switch = ant_dict["fem_switch"]
         if fem_switch is not None and fem_switch not in ["antenna", "load", "noise"]:
             warnings.warn(
