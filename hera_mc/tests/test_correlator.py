@@ -2341,10 +2341,8 @@ def test_add_antenna_status(mcsession):
     histogram = [0, 3, 6, 10, 12, 8, 4, 0]
     pam_id_list = [112, 217, 32, 59, 1, 0, 0, 14]
     pam_id = ":".join([str(i) for i in pam_id_list])
-    ####
     fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
     fem_id = ":".join([str(i) for i in fem_id_list])
-    fem_id = "UNKNOWN"
     test_session.add_antenna_status(
         t1,
         4,
@@ -2513,6 +2511,13 @@ def test_add_antenna_status(mcsession):
         starttime=t1 + TimeDelta(200.0, format="sec")
     )
     assert result == []
+
+
+def test_edge_pam_fem_id():
+    test_id = "UNKNOWN"
+    assert corr._pam_fem_id_to_string(test_id) == test_id
+    test_id = '"UNKNOWN"'
+    assert corr._pam_fem_id_to_string(test_id) == test_id
 
 
 def test_add_antenna_status_from_corrcm(mcsession, antstatus):
