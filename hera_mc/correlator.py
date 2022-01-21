@@ -1435,14 +1435,20 @@ def _pam_fem_id_to_string(idno):
         decoded id number
 
     """
+    if isinstance(idno, list):
+        return ":".join([str(x) for x in idno])
     try:
         val = json.loads(idno)
         if isinstance(val, list):
             return ":".join([str(x) for x in val])
         else:
-            return str(idno)
-    except json.JSONDecodeError:
-        return str(idno)
+            retval = str(idno)
+    except (TypeError, json.JSONDecodeError):
+        retval = str(idno)
+
+    if not len(retval) or retval.lower() == "none" or retval.lower() == "null":
+        return None
+    return retval
 
 
 def create_antenna_status(
