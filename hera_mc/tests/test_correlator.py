@@ -176,10 +176,10 @@ def antstatus():
             "pam_power": -13.349140985640002,
             "pam_voltage": 10.248,
             "pam_current": 0.6541,
-            "pam_id": [112, 217, 32, 59, 1, 0, 0, 14],
+            "pam_id": "[112, 217, 32, 59, 1, 0, 0, 14]",
             "fem_voltage": 6.496,
             "fem_current": 0.5627000000000001,
-            "fem_id": [0, 168, 19, 212, 51, 51, 255, 255],
+            "fem_id": "[0, 168, 19, 212, 51, 51, 255, 255]",
             "fem_switch": "antenna",
             "fem_lna_power": True,
             "fem_imu_theta": 1.3621702512711602,
@@ -203,10 +203,10 @@ def antstatus():
             "pam_power": -32.03119784856,
             "pam_voltage": 10.268,
             "pam_current": 0.6695000000000001,
-            "pam_id": [112, 84, 143, 59, 1, 0, 0, 242],
+            "pam_id": "[112, 84, 143, 59, 1, 0, 0, 242]",
             "fem_voltage": float("nan"),
             "fem_current": float("nan"),
-            "fem_id": [0, 168, 19, 212, 51, 51, 255, 255],
+            "fem_id": "[0, 168, 19, 212, 51, 51, 255, 255]",
             "fem_switch": "noise",
             "fem_lna_power": False,
             "fem_imu_theta": 1.3621702512711602,
@@ -2340,9 +2340,9 @@ def test_add_antenna_status(mcsession):
     histogram_bins = [-4, -3, -2, -1, 0, 1, 2, 3]
     histogram = [0, 3, 6, 10, 12, 8, 4, 0]
     pam_id_list = [112, 217, 32, 59, 1, 0, 0, 14]
-    pam_id = "".join([hex(i)[2:] for i in pam_id_list])
+    pam_id = ":".join([str(i) for i in pam_id_list])
     fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
-    fem_id = "".join([hex(i)[2:] for i in fem_id_list])
+    fem_id = ":".join([str(i) for i in fem_id_list])
     test_session.add_antenna_status(
         t1,
         4,
@@ -2413,9 +2413,9 @@ def test_add_antenna_status(mcsession):
     histogram_bins = [-4, -3, -2, -1, 0, 1, 2, 3]
     histogram = [0, 3, 6, 10, 12, 8, 4, 0]
     pam_id_list = [112, 84, 143, 59, 1, 0, 0, 242]
-    pam_id = "".join([hex(i)[2:] for i in pam_id_list])
+    pam_id = ":".join([str(i) for i in pam_id_list])
     fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
-    fem_id = "".join([hex(i)[2:] for i in fem_id_list])
+    fem_id = ":".join([str(i) for i in fem_id_list])
     test_session.add_antenna_status(
         t2,
         31,
@@ -2537,9 +2537,9 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
     histogram_str = [str(val) for val in (np.zeros((256)) + 10).tolist()]
     histogram_string = "[" + ",".join(histogram_str) + "]"
     pam_id_list = [112, 217, 32, 59, 1, 0, 0, 14]
-    pam_id = "".join([hex(i)[2:] for i in pam_id_list])
+    pam_id = ":".join([str(i) for i in pam_id_list])
     fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
-    fem_id = "".join([hex(i)[2:] for i in fem_id_list])
+    fem_id = ":".join([str(i) for i in fem_id_list])
     expected = corr.AntennaStatus(
         time=int(floor(t1.gps)),
         antenna_number=4,
@@ -2590,9 +2590,9 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
     histogram_str = [str(val) for val in (np.zeros((256)) + 12).tolist()]
     histogram_string = "[" + ",".join(histogram_str) + "]"
     pam_id_list = [112, 84, 143, 59, 1, 0, 0, 242]
-    pam_id = "".join([hex(i)[2:] for i in pam_id_list])
+    pam_id = ":".join([str(i) for i in pam_id_list])
     fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
-    fem_id = "".join([hex(i)[2:] for i in fem_id_list])
+    fem_id = ":".join([str(i) for i in fem_id_list])
     expected = corr.AntennaStatus(
         time=int(floor(t1.gps)),
         antenna_number=31,
@@ -2716,9 +2716,9 @@ def test_antenna_status_errors(mcsession):
     histogram_bins = [-4, -3, -2, -1, 0, 1, 2, 3]
     histogram = [0, 3, 6, 10, 12, 8, 4, 0]
     pam_id_list = [112, 217, 32, 59, 1, 0, 0, 14]
-    pam_id = "".join([hex(i)[2:] for i in pam_id_list])
+    pam_id = ":".join([str(i) for i in pam_id_list])
     fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
-    fem_id = "".join([hex(i)[2:] for i in fem_id_list])
+    fem_id = ":".join([str(i) for i in fem_id_list])
     pytest.raises(
         ValueError,
         test_session.add_antenna_status,
