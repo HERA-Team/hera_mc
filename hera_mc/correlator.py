@@ -1420,8 +1420,12 @@ def _get_ant_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     return corr_cm.get_ant_status()
 
 
-def _get_histogram_bin_centers():
-    return np.arange(-128, 128)
+def _get_histogram_data(hist):
+    print(type(hist), hist)
+    if hist is None:
+        return None, None
+    rng = int(len(hist) / 2)
+    return np.arange(-rng, rng), hist
 
 
 def _pam_fem_id_to_string(idno):
@@ -1520,12 +1524,7 @@ def create_antenna_status(
         fem_temp = ant_dict["fem_temp"]
         fft_overflow = ant_dict["fft_of"]
         eq_coeffs = ant_dict["eq_coeffs"]
-        if ant_dict["histogram"] is not None:
-            histogram_bin_centers = _get_histogram_bin_centers()
-            histogram = ant_dict["histogram"]
-        else:
-            histogram_bin_centers = None
-            histogram = None
+        histogram_bin_centers, histogram = _get_histogram_data(ant_dict["histogram"])
 
         ant_status_list.append(
             AntennaStatus.create(
