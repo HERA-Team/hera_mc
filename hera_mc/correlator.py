@@ -1421,7 +1421,6 @@ def _get_ant_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
 
 
 def _get_histogram_data(hist):
-    print(type(hist), hist)
     if hist is None:
         return None, None
     rng = int(len(hist) / 2)
