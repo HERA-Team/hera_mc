@@ -110,8 +110,8 @@ def query_slurm_db(jobid):
         slurm_dict["stop_time"] = stop_time
 
         max_memory = float(output[4][:-1])
-        # SLURM provides the MaxRSS in bytes, but we choose to record in kilobytes
-        slurm_dict["max_memory"] = max_memory / 1e3
+        # SLURM provides the MaxRSS in bytes, but we choose to record in megabytes
+        slurm_dict["max_memory"] = max_memory / 1e6
 
         totalcpu = cpu_time_to_seconds(output[5])
         cputime = cpu_time_to_seconds(output[6])
