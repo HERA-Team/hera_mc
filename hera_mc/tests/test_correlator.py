@@ -2331,7 +2331,6 @@ def test_add_antenna_status(mcsession):
     t2 = t1 + TimeDelta(120.0, format="sec")
 
     eq_coeffs = (np.zeros((5)) + 56.921875).tolist()
-    histogram_bins = [-4, -3, -2, -1, 0, 1, 2, 3]
     histogram = [0, 3, 6, 10, 12, 8, 4, 0]
     pam_id_list = [112, 217, 32, 59, 1, 0, 0, 14]
     pam_id = ":".join([str(i) for i in pam_id_list])
@@ -2361,12 +2360,10 @@ def test_add_antenna_status(mcsession):
         26.327341308593752,
         False,
         eq_coeffs,
-        histogram_bins,
         histogram,
     )
 
     eq_coeffs_string = "[56.921875,56.921875,56.921875,56.921875,56.921875]"
-    histogram_bin_string = "[-4,-3,-2,-1,0,1,2,3]"
     histogram_string = "[0,3,6,10,12,8,4,0]"
     expected = corr.AntennaStatus(
         time=int(floor(t1.gps)),
@@ -2392,7 +2389,6 @@ def test_add_antenna_status(mcsession):
         fem_temp=26.327341308593752,
         fft_overflow=False,
         eq_coeffs=eq_coeffs_string,
-        histogram_bin_centers=histogram_bin_string,
         histogram=histogram_string,
     )
 
@@ -2404,7 +2400,6 @@ def test_add_antenna_status(mcsession):
     assert result.isclose(expected)
 
     eq_coeffs = (np.zeros((5)) + 73.46875).tolist()
-    histogram_bins = [-4, -3, -2, -1, 0, 1, 2, 3]
     histogram = [0, 3, 6, 10, 12, 8, 4, 0]
     pam_id_list = [112, 84, 143, 59, 1, 0, 0, 242]
     pam_id = ":".join([str(i) for i in pam_id_list])
@@ -2434,7 +2429,6 @@ def test_add_antenna_status(mcsession):
         27.828854980468755,
         True,
         eq_coeffs,
-        histogram_bins,
         histogram,
     )
 
@@ -2451,7 +2445,6 @@ def test_add_antenna_status(mcsession):
     assert result_most_recent.isclose(expected)
 
     eq_coeffs_string = "[73.46875,73.46875,73.46875,73.46875,73.46875]"
-    histogram_bin_string = "[-4,-3,-2,-1,0,1,2,3]"
     histogram_string = "[0,3,6,10,12,8,4,0]"
     expected = corr.AntennaStatus(
         time=int(floor(t2.gps)),
@@ -2477,7 +2470,6 @@ def test_add_antenna_status(mcsession):
         fem_temp=27.828854980468755,
         fft_overflow=True,
         eq_coeffs=eq_coeffs_string,
-        histogram_bin_centers=histogram_bin_string,
         histogram=histogram_string,
     )
 
@@ -2531,10 +2523,6 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
     eq_coeffs_str = [str(val) for val in (np.zeros((1024)) + 56.921875).tolist()]
     eq_coeffs_string = "[" + ",".join(eq_coeffs_str) + "]"
 
-    histogram_bin_str = [
-        str(val) for val in np.arange(-128, 128, dtype=np.int_).tolist()
-    ]
-    histogram_bin_string = "[" + ",".join(histogram_bin_str) + "]"
     histogram_str = [str(val) for val in (np.zeros((256)) + 10).tolist()]
     histogram_string = "[" + ",".join(histogram_str) + "]"
     pam_id_list = [112, 217, 32, 59, 1, 0, 0, 14]
@@ -2565,7 +2553,6 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
         fem_temp=26.327341308593752,
         fft_overflow=False,
         eq_coeffs=eq_coeffs_string,
-        histogram_bin_centers=histogram_bin_string,
         histogram=histogram_string,
     )
 
@@ -2584,10 +2571,6 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
 
     eq_coeffs_str = [str(val) for val in (np.zeros((1024)) + 73.46875).tolist()]
     eq_coeffs_string = "[" + ",".join(eq_coeffs_str) + "]"
-    histogram_bin_str = [
-        str(val) for val in np.arange(-128, 128, dtype=np.int_).tolist()
-    ]
-    histogram_bin_string = "[" + ",".join(histogram_bin_str) + "]"
     histogram_str = [str(val) for val in (np.zeros((256)) + 12).tolist()]
     histogram_string = "[" + ",".join(histogram_str) + "]"
     pam_id_list = [112, 84, 143, 59, 1, 0, 0, 242]
@@ -2618,7 +2601,6 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
         fem_temp=27.828854980468755,
         fft_overflow=True,
         eq_coeffs=eq_coeffs_string,
-        histogram_bin_centers=histogram_bin_string,
         histogram=histogram_string,
     )
 
@@ -2668,7 +2650,6 @@ def test_add_antenna_status_from_corrcm_with_nones(mcsession, antstatus_none):
         fem_temp=None,
         fft_overflow=None,
         eq_coeffs=None,
-        histogram_bin_centers=None,
         histogram=None,
     )
 
@@ -2700,7 +2681,6 @@ def test_add_antenna_status_from_corrcm_with_nones(mcsession, antstatus_none):
         fem_temp=None,
         fft_overflow=None,
         eq_coeffs=None,
-        histogram_bin_centers=None,
         histogram=None,
     )
 
@@ -2714,7 +2694,6 @@ def test_antenna_status_errors(mcsession):
     t1 = Time("2016-01-10 01:15:23", scale="utc")
 
     eq_coeffs = (np.zeros((5)) + 56.921875).tolist()
-    histogram_bins = [-4, -3, -2, -1, 0, 1, 2, 3]
     histogram = [0, 3, 6, 10, 12, 8, 4, 0]
     pam_id_list = [112, 217, 32, 59, 1, 0, 0, 14]
     pam_id = ":".join([str(i) for i in pam_id_list])
@@ -2746,7 +2725,6 @@ def test_antenna_status_errors(mcsession):
         26.327341308593752,
         False,
         eq_coeffs,
-        histogram_bins,
         histogram,
     )
 
@@ -2776,7 +2754,6 @@ def test_antenna_status_errors(mcsession):
         26.327341308593752,
         False,
         eq_coeffs,
-        histogram_bins,
         histogram,
     )
 
@@ -2806,7 +2783,6 @@ def test_antenna_status_errors(mcsession):
         26.327341308593752,
         False,
         eq_coeffs,
-        histogram_bins,
         histogram,
     )
 

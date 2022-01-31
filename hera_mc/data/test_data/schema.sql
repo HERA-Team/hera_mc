@@ -82,7 +82,6 @@ CREATE TABLE public.antenna_status (
     fem_temp double precision,
     fem_voltage double precision,
     histogram character varying,
-    histogram_bin_centers character varying,
     pam_current double precision,
     pam_id character varying,
     pam_voltage double precision,

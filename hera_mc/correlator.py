@@ -1169,8 +1169,6 @@ class AntennaStatus(MCDeclarativeBase):
     eq_coeffs : String Column
         Digital EQ coefficients for this antenna, list of floats stored as a
         string.
-    histogram_bin_centers : String Column
-        ADC histogram bin centers, list of ints stored as a string.
     histogram : String Column
         ADC histogram counts, list of ints stored as a string.
 
@@ -1200,7 +1198,6 @@ class AntennaStatus(MCDeclarativeBase):
     fem_temp = Column(Float)
     fft_overflow = Column(Boolean)
     eq_coeffs = Column(String)
-    histogram_bin_centers = Column(String)
     histogram = Column(String)
 
     @classmethod
@@ -1229,7 +1226,6 @@ class AntennaStatus(MCDeclarativeBase):
         fem_temp,
         fft_overflow,
         eq_coeffs,
-        histogram_bin_centers,
         histogram,
     ):
         """
@@ -1291,8 +1287,6 @@ class AntennaStatus(MCDeclarativeBase):
             Digital EQ coefficients, used for keeping the bit occupancy in the
             correct range, for this antenna, list of floats. Note this these
             are not divided out anywhere in the DSP chain (!).
-        histogram_bin_centers : list of int
-            ADC histogram bin centers.
         histogram : list of int
             ADC histogram counts.
 
@@ -1312,12 +1306,6 @@ class AntennaStatus(MCDeclarativeBase):
             eq_coeffs_string = "[" + ",".join(eq_coeffs_str) + "]"
         else:
             eq_coeffs_string = None
-
-        if histogram_bin_centers is not None:
-            histogram_bin_string = [str(val) for val in histogram_bin_centers]
-            histogram_bin_string = "[" + ",".join(histogram_bin_string) + "]"
-        else:
-            histogram_bin_string = None
 
         if histogram is not None:
             histogram_string = [str(val) for val in histogram]
@@ -1349,7 +1337,6 @@ class AntennaStatus(MCDeclarativeBase):
             fem_temp=fem_temp,
             fft_overflow=fft_overflow,
             eq_coeffs=eq_coeffs_string,
-            histogram_bin_centers=histogram_bin_string,
             histogram=histogram_string,
         )
 
@@ -1523,7 +1510,7 @@ def create_antenna_status(
         fem_temp = ant_dict["fem_temp"]
         fft_overflow = ant_dict["fft_of"]
         eq_coeffs = ant_dict["eq_coeffs"]
-        histogram_bin_centers, histogram = _get_histogram_data(ant_dict["histogram"])
+        histogram = ant_dict["histogram"]
 
         ant_status_list.append(
             AntennaStatus.create(
@@ -1550,7 +1537,6 @@ def create_antenna_status(
                 fem_temp,
                 fft_overflow,
                 eq_coeffs,
-                histogram_bin_centers,
                 histogram,
             )
         )
