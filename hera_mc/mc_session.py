@@ -5286,7 +5286,6 @@ class MCSession(Session):
         fem_temp,
         fft_overflow,
         eq_coeffs,
-        histogram_bin_centers,
         histogram,
     ):
         """
@@ -5349,8 +5348,6 @@ class MCSession(Session):
             Digital EQ coefficients, used for keeping the bit occupancy in the
             correct range, for this antenna, list of floats. Note this these
             are not divided out anywhere in the DSP chain (!).
-        histogram_bin_centers : list of int
-            ADC histogram bin centers.
         histogram : list of int
             ADC histogram counts.
 
@@ -5380,7 +5377,6 @@ class MCSession(Session):
                 fem_temp,
                 fft_overflow,
                 eq_coeffs,
-                histogram_bin_centers,
                 histogram,
             )
         )
