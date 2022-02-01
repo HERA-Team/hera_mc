@@ -1407,13 +1407,6 @@ def _get_ant_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     return corr_cm.get_ant_status()
 
 
-def _get_histogram_data(hist):
-    if hist is None:
-        return None, None
-    rng = int(len(hist) / 2)
-    return np.arange(-rng, rng), hist
-
-
 def _pam_fem_id_to_string(idno):
     """
     Convert the id number to a string.
