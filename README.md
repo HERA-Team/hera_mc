@@ -62,8 +62,6 @@ database to the new schema.
     - `RTP` conda environment
   - hera-corr-head machine (note: username is `hera`, non-standard pw)
     - `hera` conda environment
-  - pot1 machine
-    - `HERA` conda environment
   - pot6 machine
     - `HERA` conda environment
   Note: other machines share the home drive of qmaster, so no need to install on those.
