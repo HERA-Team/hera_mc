@@ -91,6 +91,10 @@ machines use upstart instead of systemd, as marked below. In those cases, use
     - `hera-server-status` daemon
   - bigmem[1-2] machines (upstart)
     - `hera-server-status` daemon
+14. Update heranow M&C installation.
+Heranow also uses M&C to ingest data for its own databases. 
+Rebuilding the container for the website is required on any schema change.
+Please ping the hera_dashboards channel whenever a schema change occurs.
 
 # Deleting all the tables in a database (in psql shell)
 This can be useful to do on your local machine if your database is in a weird state. Never do this on site!!!
