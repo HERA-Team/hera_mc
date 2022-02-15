@@ -92,7 +92,7 @@ machines use upstart instead of systemd, as marked below. In those cases, use
   - bigmem[1-2] machines (upstart)
     - `hera-server-status` daemon
 14. Update heranow M&C installation.
-Heranow also uses M&C to ingest data for its own databases. 
+Heranow also uses M&C to ingest data for its own databases.
 Rebuilding the container for the website is required on any schema change.
 Please ping the hera_dashboards channel whenever a schema change occurs.
 
