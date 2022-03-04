@@ -110,10 +110,14 @@ def query_slurm_db(jobid):
         slurm_dict["stop_time"] = stop_time
 
         memory_field = output[4]
-        # might be "0" or end in "K"
+        # MaxRSS might have a suffix like "K", "M", "G", etc.;
+        # we record the value in megabytes.
         if memory_field[-1].lower() == "k":
-            # SLURM provides the MaxRSS in kilobytes, but we choose to record in megabytes
             max_memory = float(memory_field[:-1]) / 1e3
+        elif memory_field[-1].lower() == "m":
+            max_memory = float(memory_field[:-1])
+        elif memory_field[-1].lower() == "g":
+            max_memory = float(memory_field[:-1]) * 1e3
         else:
             max_memory = float(memory_field)
         slurm_dict["max_memory"] = max_memory
