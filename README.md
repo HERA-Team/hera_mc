@@ -8,7 +8,7 @@ This is the main repository for HERA's monitor and control subsystems.
 # Documentation
 A detailed description of the monitor and control system and all the
 related database tables can be found in our
-[description document](Docs/mc_definition.pdf).
+[description document](docs/mc_definition.pdf).
 
 # Installation
 Installation instructions may be found in [INSTALL.md](./INSTALL.md).
