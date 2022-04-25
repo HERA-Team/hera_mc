@@ -622,7 +622,7 @@ def get_astropytime(adate, atime=None, float_format=None):
                             atime
                         )
                     )
-                add_time += (float(d)) * 3600.0 / (60.0 ** i)
+                add_time += (float(d)) * 3600.0 / (60.0**i)
             return return_date + TimeDelta(add_time, format="sec")
 
 

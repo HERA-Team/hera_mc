@@ -127,7 +127,7 @@ with db.sessionmaker() as session:
                 cpu_load_pct = os.getloadavg()[1] / num_cores * 100.0
                 uptime_days = (time.time() - psutil.boot_time()) / 86400.0
 
-                memory_size_gb = vmem.total / 1024 ** 3  # bytes => GiB
+                memory_size_gb = vmem.total / 1024**3  # bytes => GiB
 
                 # We only track disk usage on the root filesystem partition. We could
                 # potentially use `psutil.disk_partitions(all=False)` to try to track
@@ -136,7 +136,7 @@ with db.sessionmaker() as session:
                 # specialized channels.
 
                 disk = psutil.disk_usage("/")
-                disk_size_gb = disk.total / 1024 ** 3  # bytes => GiB
+                disk_size_gb = disk.total / 1024**3  # bytes => GiB
                 disk_space_pct = (
                     disk.percent
                 )  # note, this is misnamed a bit - it's the % used
@@ -145,12 +145,12 @@ with db.sessionmaker() as session:
                 # `prev_index` so that the differences below give the total number
                 # of bytes transferred since the last report.
 
-                memory_used_pct = (mem_buf.mean() / 1024 ** 3) * 100.0 / memory_size_gb
+                memory_used_pct = (mem_buf.mean() / 1024**3) * 100.0 / memory_size_gb
 
                 tx_bytes = tx_buf[prev_index] - tx_buf[index]
                 rx_bytes = rx_buf[prev_index] - rx_buf[index]
                 network_bandwidth_mbs = (
-                    (tx_bytes + rx_bytes) / 1024 ** 2 / (now - last_report)
+                    (tx_bytes + rx_bytes) / 1024**2 / (now - last_report)
                 )
 
                 # Submit

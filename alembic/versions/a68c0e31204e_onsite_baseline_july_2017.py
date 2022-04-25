@@ -138,7 +138,7 @@ def upgrade():
         sa.Column("created_date", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(
             ["station_type_name"],
-            [u"station_type.station_type_name"],
+            ["station_type.station_type_name"],
         ),
         sa.PrimaryKeyConstraint("station_name"),
     )
