@@ -2809,3 +2809,10 @@ def test_redis_add_antenna_status_from_corrcm(mcsession):
     result = test_session.get_antenna_status(most_recent=True)
 
     assert len(result) >= 1
+
+
+def test_pam_fem_id_to_string_list():
+    idno = ["fem0", "fem1"]
+    assert corr._pam_fem_id_to_string(idno) == "fem0:fem1"
+
+    return
