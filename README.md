@@ -108,7 +108,7 @@ To use pre-commit to prevent committing code that does not follow our style, you
 need to run `pre-commit install` in the top level `hera_mc` directory.
 
 For more instructions for developers, especially related to working with the database
-and schema changes, see the [Developer Instructions](docs/developer.md).
+and schema changes, see the [Developer Instructions](./docs/developer.md).
 
 # Tests
 
