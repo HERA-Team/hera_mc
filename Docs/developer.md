@@ -9,7 +9,7 @@ First, ensure that the database is configured correctly by running
 `alembic upgrade head`. If this fails, refer to the directions in
 [Database setup](../database_setup.md).
 
-Be sure to do all your work on a branch off of master.
+Be sure to do all your work on a branch off of main.
 
 1. If appropriate, create a new module under `hera_mc`, basing on e.g.
 `subsystem_error.py` or `observation.py`.
@@ -23,10 +23,10 @@ before the next step (unless you've done a developer install: `pip install -e .`
 new alembic revision file that will reflect the changes to the database schema
 you just introduced. Inspect the resulting file carefully -- alembic's
 autogeneration is very clever but it's certainly not perfect. It tends to make
-more mistakes with table or column alterations than with table creations. Also
+more mistakes with table or column alterations than with table creations. **Also
 be sure to remove any dropped tables in the upgrade section (and corresponding
 table creation commands in the downgrade portion) -- we have some old tables
-that we no longer use but don't want to drop on site.
+that we no longer use but don't want to drop on site.**
 6. Run `alembic upgrade head` to apply your schema changes -- be sure to
 `pip install .` if you didn't do a developer install. At this point it's a very
 good idea to inspect the database table (using the psql command line) to make
@@ -39,9 +39,9 @@ get back to where you meant to be.)
 9. When you're satisfied that everything works as expected, add a description
 of your new table to the documentation in docs/mc_definition.tex.
 10. Create a pull request on github to ask for a code review and to get your
-changes integrated into master.
-11. Once the changes have been incorporated into master, you can log onto site,
-pull the master branch and run `alembic upgrade head` to update the onsite
+changes integrated into main.
+11. Once the changes have been incorporated into main, you can log onto site,
+pull the main branch and run `alembic upgrade head` to update the onsite
 database to the new schema.
 12. Follow **all** the steps detailed in [Site operations](./site_operations.md) under
 "Updating the site after schema or code changes" to ensure that all the machines on
