@@ -1,148 +1,116 @@
-# hera_mc
+hera_mc
+=======
 
 ![](https://github.com/HERA-Team/hera_mc/workflows/Run%20Tests/badge.svg?branch=master)
 [![codecov](https://codecov.io/gh/HERA-Team/hera_mc/branch/master/graph/badge.svg)](https://codecov.io/gh/HERA-Team/hera_mc)
 
 This is the main repository for HERA's monitor and control subsystems.
 
+The HERA M&C system contains two primary types of tables and data:
+
+- **Configuration Management**: This is the information about how all the hardware in
+the telescope is connected together. This is a fairly small dataset and is only updated
+when people change things. This data can be useful for users to have locally to be
+able to identify how things are connected together. The actual data is stored in a
+separate repository, `hera_cm_db_updates`. If you only need configuration management
+data, you can do a relatively light-weight install of `hera_mc` and import the data
+from that repo using SQLITE (which comes installed on many operating systems including
+Macs).
+- **Real-time monitoring**: This is the information about how the telescope is
+operating. It includes information about commanded and actual settings of the various
+systems as well as telemetry like temperatures. This is fairly large data and is
+available onsite or at NRAO (based on a copy of the database that is refreshed weekly)
+in an online PostgreSQL server. Much of this data can also be viewed in various
+dashboards (including via grafana) linked from https://heranow.reionization.org.
+
 # Documentation
-A detailed description of the monitor and control system and all the
-related database tables can be found in our
-[description document](docs/mc_definition.pdf).
+
+A detailed description of the monitor and control system and the database schema can be
+found in our [description document](docs/mc_definition.pdf).
 
 # Installation
-Installation instructions may be found in [INSTALL.md](./INSTALL.md).
 
-*Note:  if you are only using hera_mc to locally use configuration management (cm) info via sqlite, you may just follow the simplified instructions in INSTALL.md*
+Simple installation via pip is available for users, developers should follow
+the directions under [Developer Installation](#developer-installation) below.
+
+For simple installation, the latest stable version is available via pip
+(```pip install hera_mc```).
+
+There are some optional dependencies that are required for specific functionality,
+which will not be installed automatically by pip.
+See [Dependencies](#dependencies) for details on installing optional dependencies.
+
+If you want to use the configuration management information and connect to either an
+SQLITE or PostgreSQL database, follow the detailed installation
+instructions in [database_setup.md](./database_setup.md).
 
 
-# Adding a new table
+## Dependencies
+The required dependencies are:
+- alembic
+- astropy
+- numpy
+- psycopg2
+- pyyaml
+- redis-py
+- setuptools_scm
+- sqlalchemy
 
-To add a new table into the M&C database:
+the optional dependencies are:
+- cartopy
+- h5py
+- pandas
+- psutil
+- python-dateutil
+- pyuvdata
+- tabulate
+- tornado
 
-First, ensure that the database is configured correctly by running `alembic upgrade head`. If this fails, refer to the direction in [INSTALL.md](./INSTALL.md).
+We suggest using conda to install all the dependencies.
 
-Be sure to do all your work on a branch off of master.
+If you do not want to use conda, the packages are also available on PyPI. You can
+install the optional dependencies via pip by specifying an option
+when you install hera_mc, as in ```pip install hera_mc[sqlite]```
+which will install all the required packages for using the lightweight configuration
+management tools. The options that can be passed in this way are:
+[`sqlite`, `all`, `dev`]. The `all` option will install all optional
+dependencies, `dev` adds packages that may be useful for developers.
 
-1. Create a new module under `hera_mc`, basing on e.g. `subsystem_error.py` or `observation.py`.
-2. Add `from . import my_new_module` line in `__init__.py`.
-3. Add methods to interact with your new table. This is most commonly done in
-`mc_session.py`, and there are many examples there to refer to.
-4. Add testing code to cover these methods. -- Be sure to `pip install .` before
-the next step (unless you've done a developer install: `pip install -e .`).
-5. Run `alembic revision --autogenerate -m 'version description'` to create a
-new alembic revision file that will reflect the changes to the database schema
-you just introduced. Inspect the resulting file carefully -- alembic's
-autogeneration is very clever but it's certainly not perfect. It tends to make
-more mistakes with table or column alterations than with table creations. Also
-be sure to remove any dropped tables in the upgrade section (and corresponding
-  table creation commands in the downgrade portion) -- we have some old tables
-  that we no longer use but don't want to drop on site.
-6. Run `alembic upgrade head` to apply your schema changes -- be sure to
-`pip install .` if you didn't do a developer install. At this point it's a very
-good idea to inspect the database table (using the psql command line) to make
-sure the right thing happened. It's also a very good idea to run
-`alembic downgrade -1` to back up to before your revision and check that the
-database looks right (of course you then need to re-run the upgrade command to
-  get back to where you meant to be.)
-7. Run `pytest` to check that all the tests pass.
-8. git add the alembic/version that was created and commit your work.
-9. When you're satisfied that everything works as expected, add a description
-of your new table to the documentation in docs/mc_definition.tex.
-10. Create a pull request on github to ask for a code review and to get your
-changes integrated into master.
-11. Once the changes have been incorporated into master, you can log onto site,
-pull the master branch and run `alembic upgrade head` to update the onsite
-database to the new schema.
-12. Pull and reinstall in *all* of the following machines & environments
-(this is a critical step!):
+## Developer Installation
 
-  - qmaster machine
-    - `HERA` conda environment
-    - `RTP` conda environment
-  - hera-corr-head machine (note: username is `hera`, non-standard pw)
-    - `hera` conda environment
-  - pot6 machine
-    - `HERA` conda environment
-  Note: other machines share the home drive of qmaster, so no need to install on those.
+Clone the repository using
+```git clone https://github.com/HERA-Team/hera_mc```
 
-13. Restart the following daemons across the hera correletor computer cluster.
-This is generally done with `systemctl restart <daemon_name>.service`. Some
-machines use upstart instead of systemd, as marked below. In those cases, use
-`sudo initctl restart <daemon_name>`.
+Navigate into the hera_mc directory and run `pip install .`
+(note that `python setup.py install` does not work).
+Note that this will attempt to automatically install any missing dependencies.
+If you use conda or another package manager you might prefer to first install
+the dependencies as described in [Dependencies](#dependencies).
 
-  - qmaster machine (note: to avoid having to type the password repeatedly you can run `sudo su root` before restarting all of these)
-    - `hera-corr-status` daemon
-    - `hera-node-status` daemon
-    - `hera-server-status` daemon
-    - `mc-listen-to-corr-logger` daemon
-    - `mc-monitor-daemons` daemon
-  - pot1 machine (upstart)
-    - `hera-server-status` daemon
-  - pot6 machine (requires `sudo` before command. Note: uses systemd not upstart like other pots)
-    - `hera-server-status` daemon
-  - pot7 machine (upstart)
-    - `hera-server-status` daemon
-  - pot8 machine (upstart)
-    - `hera-server-status` daemon
-  - still[1-4] machines (upstart)
-    - `hera-server-status` daemon
-  - gpu[1-8] machines (upstart)
-    - `hera-server-status` daemon
-  - bigmem[1-2] machines (upstart)
-    - `hera-server-status` daemon
-14. Update heranow M&C installation.
-Heranow also uses M&C to ingest data for its own databases.
-Rebuilding the container for the website is required on any schema change.
-Please ping the hera_dashboards channel whenever a schema change occurs.
+To install without dependencies, run `pip install --no-deps .`
 
-# Deleting all the tables in a database (in psql shell)
-This can be useful to do on your local machine if your database is in a weird state. Never do this on site!!!
-```
-DROP SCHEMA public CASCADE;
-CREATE SCHEMA public;
-```
-If you get an error like `no schema has been selected to create in...` it means that you need to fix permissions like this:
-```
-grant usage on schema public to public;
-grant create on schema public to public;
-```
+If you want to do development on hera_mc, in addition to the other dependencies
+you will need the following packages:
 
-# Deleting a database
-This can be useful to do on your local machine if your database is in a weird state. Never do this on site!!!
-`dropdb hera_mc`
+* pytest
+* pytest-cov
+* coverage
+* pre-commit
 
-# Using alembic for the first time with an existing (non-empty) database
-If you already have a database filled out with tables but have never run alembic before, you have two choices to start using alembic:
+One way to ensure you have all the needed packages is to use the included
+`environment.yaml` file to create a new environment that will contain all the optional
+dependencies along with dependencies required development
+(```conda env create -f environment.yaml```). Alternatively, you can specify `dev` when
+installing hera_mc (as in `pip install hera_mc[dev]`) to install the packages needed
+for development.
 
-Option 1) Drop all the tables (if you don't care about the data in the database this is easiest, see instructions above) and then run `alembic upgrade head`.
+To use pre-commit to prevent committing code that does not follow our style, you'll
+need to run `pre-commit install` in the top level `hera_mc` directory.
 
-Option 2) identify which alembic version your database schema corresponds to and add a new table to your database called `alembic_version` with one column called 'version_num'. Fill this table with one row with the alembic version number that corresponds to your schema version to tell alembic where to start trying to upgrade from. Then run `alembic upgrade head`.
+For more instructions for developers, especially related to working with the database
+and schema changes, see the [Developer Instructions](docs/developer.md).
 
-# Running psql on qmaster
+# Tests
 
-This runs under the HERA conda environment on qmaster.
-
-To check environments: `conda info --envs`
-
-To change environments:  `source activate HERA`
-
-To run psql:  `psql -U hera -h qmaster hera_mc`
-
-# Running psql on NRAO
-
-This runs under the HERA conda environment on herapost-master
-
-To run psql: `psql -h herastore01 -U heramgr hera_mc`
-
-# Restoring a database backup
-
-We are now regularly backing up the database to the Librarian and copying it to NRAO. The database backup files can be found by searching for them on the librarian using `obsid-is-null`. The files are named like `maint.YYYYMMDD.karoo.mandc.dbbackup.pgdump`.
-
-Once you've downloaded the files, you can create the database (using postgres) like this:
-
-`pg_restore -cCOx  -d hera_mc  maint.20180213.karoo.mandc.dbbackup.pgdump`
-
-# Adding new features and testing
-
-`hera_mc` uses redis during testing to check that values read from redis in the live version can be correctly added to the databases and retrieved again. When adding new features which require data being read from redis, or through any hera correlator code, a new redis.rdb file must be created on `redishost` on site which contains an example of the new data and added to the repository by overwriting the existing redis.rdb in the `test_data` folder.
+Uses the `pytest` package to execute test suite. From the source hera_mc directory run
+``pytest``.
