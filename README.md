@@ -26,7 +26,7 @@ dashboards (including via grafana) linked from https://heranow.reionization.org.
 # Documentation
 
 A detailed description of the monitor and control system and the database schema can be
-found in our [description document](docs/mc_definition.pdf).
+found in our [description document](https://github.com/HERA-Team/hera_mc/blob/main/docs/mc_definition.pdf).
 
 # Installation
 
@@ -42,7 +42,7 @@ See [Dependencies](#dependencies) for details on installing optional dependencie
 
 If you want to use the configuration management information and connect to either an
 SQLITE or PostgreSQL database, follow the detailed installation
-instructions in [database_setup.md](./database_setup.md).
+instructions in [database_setup.md](https://github.com/HERA-Team/hera_mc/blob/main/database_setup.md).
 
 
 ## Dependencies
@@ -108,7 +108,7 @@ To use pre-commit to prevent committing code that does not follow our style, you
 need to run `pre-commit install` in the top level `hera_mc` directory.
 
 For more instructions for developers, especially related to working with the database
-and schema changes, see the [Developer Instructions](./docs/developer.md).
+and schema changes, see the [Developer Instructions](https://github.com/HERA-Team/hera_mc/blob/main/docs/developer.md).
 
 # Tests
 
