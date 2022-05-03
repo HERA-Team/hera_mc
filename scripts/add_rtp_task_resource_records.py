@@ -123,7 +123,7 @@ def query_slurm_db(jobid):
     elif memory_field[-1].lower() == "g":
         max_memory = float(memory_field[:-1]) * 1e3
     else:
-        max_memory = float(memory_field)
+        max_memory = float(memory_field) / 1e6
     slurm_dict["max_memory"] = max_memory
 
     totalcpu = cpu_time_to_seconds(output[4])
