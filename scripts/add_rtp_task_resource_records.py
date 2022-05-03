@@ -83,7 +83,7 @@ def query_slurm_db(jobid):
     """
     query_state = ["sacct", "-j", "{}".format(jobid), "--format=state"]
     output_state = check_output(query_state).decode("utf-8")
-    if not "completed" in output_state.lower():
+    if "completed" not in output_state.lower():
         return None
 
     format_cols = [
