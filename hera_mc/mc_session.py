@@ -3170,7 +3170,9 @@ class MCSession(Session):
         """
         self.add(node.NodeWhiteRabbitStatus.create(col_dict))
 
-    def add_node_white_rabbit_status_from_node_control(self, nodeServerAddress=None):
+    def add_node_white_rabbit_status_from_node_control(
+        self, nodeServerAddress=node.defaultServerAddress
+    ):
         """
         Get and add node white rabbit information using a nodeControl object.
 
