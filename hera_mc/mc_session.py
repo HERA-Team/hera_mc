@@ -2707,7 +2707,9 @@ class MCSession(Session):
             )
         )
 
-    def add_node_sensor_readings_from_node_control(self, nodeServerAddress=None):
+    def add_node_sensor_readings_from_node_control(
+        self, nodeServerAddress=node.defaultServerAddress
+    ):
         """
         Get and add node sensor information using a nodeControl object.
 
@@ -2841,7 +2843,9 @@ class MCSession(Session):
             )
         )
 
-    def add_node_power_status_from_node_control(self, nodeServerAddress=None):
+    def add_node_power_status_from_node_control(
+        self, nodeServerAddress=node.defaultServerAddress
+    ):
         """
         Get and add node power status information using a nodeControl object.
 
@@ -2939,7 +2943,9 @@ class MCSession(Session):
         """
         self.add(node.NodePowerCommand.create(time, nodeID, part, command))
 
-    def add_node_power_command_from_node_control(self, nodeServerAddress=None):
+    def add_node_power_command_from_node_control(
+        self, nodeServerAddress=node.defaultServerAddress
+    ):
         """
         Get and add node power command information using a node_control object.
 
