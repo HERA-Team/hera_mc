@@ -5217,7 +5217,7 @@ class MCSession(Session):
             # first check if the timestamp is the string 'None'
             # if it is, skip this snap
             timestamp = snap_dict["timestamp"]
-            if timestamp == "None":
+            if timestamp is None or timestamp == "None":
                 continue
             else:
                 time = Time(timestamp, format="datetime")
