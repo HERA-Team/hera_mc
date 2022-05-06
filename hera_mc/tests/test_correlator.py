@@ -453,6 +453,13 @@ def test_add_correlator_control_state_from_corrcm_nonetime_priorfalse(
     )
     assert len(result) == 1
     result = result[0]
+    assert not result.isclose(expected)  # because the time is a float
+
+    expected = corr.CorrelatorControlState(
+        time=int(Time(1512770942, format="unix").gps),
+        state_type="taking_data",
+        state=False,
+    )
     assert result.isclose(expected)
 
 
@@ -1212,7 +1219,7 @@ def test_take_data_command_with_recent_status(mcsession):
         func_args=["take_data"],
         func_kwargs={
             "starttime": starttime,
-            "duration": 100,
+            "duration": 100.0,
             "tag": "engineering",
             "testing": True,
             "overwrite_take_data": True,
@@ -1231,7 +1238,7 @@ def test_take_data_command_with_recent_status(mcsession):
     expected_args = corr.CorrelatorTakeDataArguments.create(
         command_time_obj,
         starttime,
-        100,
+        100.0,
         corr.DEFAULT_ACCLEN_SPECTRA,
         int_time,
         "engineering",
@@ -1240,7 +1247,7 @@ def test_take_data_command_with_recent_status(mcsession):
 
     for obj in command_list:
         test_session.add(obj)
-        test_session.commit()
+    test_session.commit()
 
     result_args = test_session.get_correlator_take_data_arguments(
         most_recent=True, use_command_time=True
@@ -2717,92 +2724,91 @@ def test_antenna_status_errors(mcsession):
     pam_id = ":".join([str(i) for i in pam_id_list])
     fem_id_list = [0, 168, 19, 212, 51, 51, 255, 255]
     fem_id = ":".join([str(i) for i in fem_id_list])
-    pytest.raises(
-        ValueError,
-        test_session.add_antenna_status,
-        "foo",
-        4,
-        "e",
-        "heraNode700Snap0",
-        3,
-        -0.5308380126953125,
-        3.0134560488579285,
-        9.080917358398438,
-        0,
-        -13.349140985640002,
-        10.248,
-        0.6541,
-        pam_id,
-        6.496,
-        0.5627000000000001,
-        fem_id,
-        "antenna",
-        True,
-        1.3621702512711602,
-        30.762719534238915,
-        26.327341308593752,
-        False,
-        eq_coeffs,
-        histogram,
-    )
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        test_session.add_antenna_status(
+            "foo",
+            4,
+            "e",
+            "heraNode700Snap0",
+            3,
+            -0.5308380126953125,
+            3.0134560488579285,
+            9.080917358398438,
+            0,
+            -13.349140985640002,
+            10.248,
+            0.6541,
+            pam_id,
+            6.496,
+            0.5627000000000001,
+            fem_id,
+            "antenna",
+            True,
+            1.3621702512711602,
+            30.762719534238915,
+            26.327341308593752,
+            False,
+            eq_coeffs,
+            histogram,
+        )
 
-    pytest.raises(
-        ValueError,
-        test_session.add_antenna_status,
-        t1,
-        4,
-        "e",
-        "heraNode700Snap0",
-        3,
-        -0.5308380126953125,
-        3.0134560488579285,
-        9.080917358398438,
-        0,
-        -13.349140985640002,
-        10.248,
-        0.6541,
-        pam_id,
-        6.496,
-        0.5627000000000001,
-        fem_id,
-        "foo",
-        True,
-        1.3621702512711602,
-        30.762719534238915,
-        26.327341308593752,
-        False,
-        eq_coeffs,
-        histogram,
-    )
+    with pytest.raises(
+        ValueError, match='fem_switch must be "antenna", "load", "noise"'
+    ):
+        test_session.add_antenna_status(
+            t1,
+            4,
+            "e",
+            "heraNode700Snap0",
+            3,
+            -0.5308380126953125,
+            3.0134560488579285,
+            9.080917358398438,
+            0,
+            -13.349140985640002,
+            10.248,
+            0.6541,
+            pam_id,
+            6.496,
+            0.5627000000000001,
+            fem_id,
+            "foo",
+            True,
+            1.3621702512711602,
+            30.762719534238915,
+            26.327341308593752,
+            False,
+            eq_coeffs,
+            histogram,
+        )
 
-    pytest.raises(
-        ValueError,
-        test_session.add_antenna_status,
-        t1,
-        4,
-        "x",
-        "heraNode700Snap0",
-        3,
-        -0.5308380126953125,
-        3.0134560488579285,
-        9.080917358398438,
-        0,
-        -13.349140985640002,
-        10.248,
-        0.6541,
-        pam_id,
-        6.496,
-        0.5627000000000001,
-        fem_id,
-        "load",
-        True,
-        1.3621702512711602,
-        30.762719534238915,
-        26.327341308593752,
-        False,
-        eq_coeffs,
-        histogram,
-    )
+    with pytest.raises(ValueError, match='antenna_feed_pol must be "e" or "n".'):
+        test_session.add_antenna_status(
+            t1,
+            4,
+            "x",
+            "heraNode700Snap0",
+            3,
+            -0.5308380126953125,
+            3.0134560488579285,
+            9.080917358398438,
+            0,
+            -13.349140985640002,
+            10.248,
+            0.6541,
+            pam_id,
+            6.496,
+            0.5627000000000001,
+            fem_id,
+            "load",
+            True,
+            1.3621702512711602,
+            30.762719534238915,
+            26.327341308593752,
+            False,
+            eq_coeffs,
+            histogram,
+        )
 
 
 @requires_redis
