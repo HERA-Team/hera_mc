@@ -66,13 +66,19 @@ class MCDeclarativeBase(object):
         for c in self_columns:
             self_c = getattr(self, c.name)
             other_c = getattr(other, c.name)
+            if not isinstance(other_c, type(self_c)):
+                print(
+                    f"column {c} has different types, left is {type(self_c)}, "
+                    f"right is {type(other_c)}."
+                )
+                return False
             if isinstance(self_c, int):
                 if self_c != other_c:
-                    print("column {col} is int, values are not equal".format(col=c))
+                    print(f"column {c} is int, values are not equal")
                     return False
             elif isinstance(self_c, str):
                 if self_c != other_c:
-                    print("column {col} is str, values are not equal".format(col=c))
+                    print(f"column {c} is str, values are not equal")
                     return False
             elif isinstance(self_c, np.ndarray) and self_c.dtype.kind == "i":
                 if not np.all(self_c == other_c):

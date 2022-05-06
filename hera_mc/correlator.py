@@ -1469,7 +1469,9 @@ def create_antenna_status(
         # any entry other than timestamp can be the string 'None'
         # need to convert those to a None type
         for key, val in ant_dict.items():
-            if val == "None" or (isinstance(val, float) and np.isnan(val)):
+            if (isinstance(val, str) and val == "None") or (
+                isinstance(val, float) and np.isnan(val)
+            ):
                 ant_dict[key] = None
 
         snap_hostname = ant_dict["f_host"]

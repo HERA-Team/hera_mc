@@ -404,7 +404,7 @@ def test_add_node_sensor_readings(mcsession, sensor, tmpdir):
     assert result == []
 
 
-def test_create_sensor_readings(mcsession, nodelist, sensor):
+def test_create_sensor_readings(mcsession, sensor):
     test_session = mcsession
 
     sensor[1]["timestamp"] = None
@@ -418,6 +418,8 @@ def test_create_sensor_readings(mcsession, nodelist, sensor):
 
     for obj in sensor_obj_list:
         test_session.add(obj)
+
+    test_session.commit()
 
     t1 = Time(1512770942.726777, format="unix")
     result = test_session.get_node_sensor_readings(
@@ -447,7 +449,7 @@ def test_create_sensor_readings(mcsession, nodelist, sensor):
         top_sensor_temp=None,
         middle_sensor_temp=None,
         bottom_sensor_temp=None,
-        humidity_sensor_temp=33,
+        humidity_sensor_temp=33.0,
         humidity=40.0,
     )
     assert len(result) == 1
