@@ -38,7 +38,7 @@ setup_args = {
         "psycopg2",
         "pyuvdata",
         "pyyaml",
-        "redis",
+        "redis",  # Note that this gets redis-py, which is named "redis" on pypi
         "setuptools_scm",
         "sqlalchemy",
     ],
