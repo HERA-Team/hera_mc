@@ -2273,7 +2273,7 @@ def test_redis_add_snap_status_from_corrcm(mcsession):
     # skipped when updloaded into the DB, which will make the lengths different.
     # Count them here so we can test for the same lengths.
     count_bad_timestamp = 0
-    for status in snap_status_dict:
+    for _, status in snap_status_dict.items():
         if status["timestamp"] is None or status["timestamp"] == "None":
             count_bad_timestamp += 1
     n_good_statuses = len(snap_status_dict) - count_bad_timestamp
@@ -2317,7 +2317,7 @@ def test_site_add_snap_status_from_corrcm_default_redishost(mcsession):
     # skipped when updloaded into the DB, which will make the lengths different.
     # Count them here so we can test for the same lengths.
     count_bad_timestamp = 0
-    for status in snap_status_dict:
+    for _, status in snap_status_dict.items():
         if status["timestamp"] is None or status["timestamp"] == "None":
             count_bad_timestamp += 1
     n_good_statuses = len(snap_status_dict) - count_bad_timestamp
