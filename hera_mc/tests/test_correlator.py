@@ -2269,11 +2269,20 @@ def test_redis_add_snap_status_from_corrcm(mcsession):
     )
     assert len(snap_status_dict) >= 1
 
+    # sometimes we get some statuses that have a timestamp that is a None, those are
+    # skipped when updloaded into the DB, which will make the lengths different.
+    # Count them here so we can test for the same lengths.
+    count_bad_timestamp = 0
+    for status in snap_status_dict:
+        if status["timestamp"] is None or status["timestamp"] == "None":
+            count_bad_timestamp += 1
+    n_good_statuses = len(snap_status_dict) - count_bad_timestamp
+
     # get result using just the test db, check it matches snap_status_dict
     result_test2 = test_session.add_snap_status_from_corrcm(
         testing=True, redishost=TEST_DEFAULT_REDIS_HOST
     )
-    assert len(snap_status_dict) == len(result_test2)
+    assert n_good_statuses == len(result_test2)
 
     # use the real (not test) database to get the node & snap location number
     # check the length is the same
@@ -2304,9 +2313,18 @@ def test_site_add_snap_status_from_corrcm_default_redishost(mcsession):
     snap_status_dict = corr._get_snap_status()
     assert len(snap_status_dict) >= 1
 
+    # sometimes we get some statuses that have a timestamp that is a None, those are
+    # skipped when updloaded into the DB, which will make the lengths different.
+    # Count them here so we can test for the same lengths.
+    count_bad_timestamp = 0
+    for status in snap_status_dict:
+        if status["timestamp"] is None or status["timestamp"] == "None":
+            count_bad_timestamp += 1
+    n_good_statuses = len(snap_status_dict) - count_bad_timestamp
+
     # get result using just the test db, check it matches snap_status_dict
     result_test2 = test_session.add_snap_status_from_corrcm(testing=True)
-    assert len(snap_status_dict) == len(result_test2)
+    assert n_good_statuses == len(result_test2)
 
     # use the real (not test) database to get the node & snap location number
     # check the length is the same
