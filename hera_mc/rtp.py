@@ -13,7 +13,6 @@ from astropy.time import Time
 from sqlalchemy import (
     Column,
     ForeignKey,
-    Integer,
     BigInteger,
     String,
     Text,
@@ -22,7 +21,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from . import MCDeclarativeBase, DEFAULT_MIN_TOL, DEFAULT_HOUR_TOL
+from . import MCDeclarativeBase
 from .server_status import ServerStatus
 
 rtp_process_enum = ["queued", "started", "finished", "error"]
@@ -64,76 +63,6 @@ class RTPServerStatus(ServerStatus):
     """
 
     __tablename__ = "rtp_server_status"
-
-
-class RTPStatus(MCDeclarativeBase):
-    """
-    Definition of rtp_status table.
-
-    Attributes
-    ----------
-    time : BigInteger Column
-        GPS time of this status, floored. The primary key.
-    status : String Column
-        status (options TBD).
-    event_min_elapsed : Float Column
-        Minutes elapsed since last event.
-    num_processes : Integer Column
-        Number of processes running.
-    restart_hours_elapsed : Float Column
-        Hours elapsed since last restart.
-
-    """
-
-    __tablename__ = "rtp_status"
-    time = Column(BigInteger, primary_key=True, autoincrement=False)
-    # should this be an enum? or text?
-    status = Column(String(64), nullable=False)
-    event_min_elapsed = Column(Float, nullable=False)
-    num_processes = Column(Integer, nullable=False)
-    restart_hours_elapsed = Column(Float, nullable=False)
-
-    tols = {
-        "event_min_elapsed": DEFAULT_MIN_TOL,
-        "restart_hours_elapsed": DEFAULT_HOUR_TOL,
-    }
-
-    @classmethod
-    def create(
-        cls, time, status, event_min_elapsed, num_processes, restart_hours_elapsed
-    ):
-        """
-        Create a new rtp_status object.
-
-        Parameters
-        ----------
-        time : astropy Time object
-            time of this status
-        status : str
-            status (options TBD)
-        event_min_elapsed : float
-            minutes since last event
-        num_processes : int
-            number of processes running
-        restart_hours_elapsed : float
-            hours since last restart
-
-        Returns
-        -------
-        RTPStatus object
-
-        """
-        if not isinstance(time, Time):
-            raise ValueError("time must be an astropy Time object")
-        time = floor(time.gps)
-
-        return cls(
-            time=time,
-            status=status,
-            event_min_elapsed=event_min_elapsed,
-            num_processes=num_processes,
-            restart_hours_elapsed=restart_hours_elapsed,
-        )
 
 
 class RTPProcessEvent(MCDeclarativeBase):
