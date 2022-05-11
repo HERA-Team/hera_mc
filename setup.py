@@ -44,7 +44,15 @@ setup_args = {
     ],
     "extras_require": {
         "sqlite": ["tabulate"],
-        "all": ["h5py", "pandas", "psutil", "python-dateutil", "tabulate", "tornado"],
+        "all": [
+            "h5py",
+            "katportalclient",
+            "pandas",
+            "psutil",
+            "python-dateutil",
+            "tabulate",
+            "tornado",
+        ],
         "dev": [
             "h5py",
             "pandas",
