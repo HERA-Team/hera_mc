@@ -12,6 +12,7 @@
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] Schema change (any change to the SQL tables)
 - [ ] New feature without schema change (non-breaking change which adds functionality)
+- [ ] Change associated with a change in redis structure
 - [ ] Breaking change (fix or feature that would cause existing functionality to change)
 - [ ] Version change
 - [ ] Build or continuous integration change
@@ -25,6 +26,8 @@
 Bug fix checklist:
 - [ ] My code follows the code style of this project.
 - [ ] My fix includes a new test that breaks as a result of the bug (if possible).
+- [ ] I understand the updates required onsite (detailed in the readme) and I will make those
+changes when this is merged.
 - [ ] Unit tests pass **on site** (This is a critical check, CI can differ from site).
 - [ ] I have updated the [CHANGELOG](https://github.com/HERA-Team/hera_mc/blob/main/CHANGELOG.md).
 
@@ -46,6 +49,14 @@ New feature without schema change checklist:
 - [ ] I understand the updates required onsite (detailed in the readme) and I will make those
 changes when this is merged.
 - [ ] I have added tests to cover my new feature.
+- [ ] Unit tests pass **on site** (This is a critical check, CI can differ from site).
+- [ ] I have updated the [CHANGELOG](https://github.com/HERA-Team/hera_mc/blob/main/CHANGELOG.md).
+
+Change associated with a change in redis structure:
+- [ ] My code follows the code style of this project.
+- [ ] I have updated the redis dump in our test data to reflect the most recent structure onsite.
+- [ ] I understand the updates required onsite (detailed in the readme) and I will make those
+changes when this is merged.
 - [ ] Unit tests pass **on site** (This is a critical check, CI can differ from site).
 - [ ] I have updated the [CHANGELOG](https://github.com/HERA-Team/hera_mc/blob/main/CHANGELOG.md).
 
