@@ -15,7 +15,7 @@ from pyuvdata import UVData, uvutils
 from astropy.time import Time, TimeDelta
 
 from hera_mc import mc
-from hera_corr_cm.redis_cm import read_maps_from_redis
+from hera_corr_cm.redis_cm import read_maps_from_redis, read_cminfo_from_redis
 
 MAX_DOWNTIME = 3600
 MAX_FILE_LEN = 3600
@@ -142,28 +142,71 @@ while True:
 
                     time_array = np.asarray(time_array)
                     ant_array = np.asarray(ant_array)
+                    if time_array.size == 0:
+                        # No Data was taken
+                        continue
+
                     uvd = UVData()
 
                     # let's us not have to Spectral windows
                     uvd._set_future_array_shapes()
 
-                    uvd.Nblts = time_array.shape[0]
-                    uvd.Nfreqs = time_array.shape[1]
-                    uvd.Npols = 2
-
                     uvd.data_array = data_array
+                    uvd.vis_units = "UNCALIB"
+                    uvd.time_array = time_array
+
+                    uvd.Nblts = time_array.shape[0]
+                    uvd.Ntimes = np.unique(uvd.time_array).size
+                    uvd.Nfreqs = time_array.shape[1]
+                    uvd.freq_array = np.linspace(0, 256, uvd.Ntimes) * 1e6
+                    uvd.channel_width = np.full_like(
+                        uvd.freq_array, np.diff(uvd.freq_array)[0]
+                    )
+                    uvd.Nants_data = np.unique(ant_array).size
+                    uvd.Nblts = uvd.Nants_data
+                    uvd.Nspws = 1
+                    uvd.Npols = 2
 
                     uvd.ant_1_array = ant_array
                     uvd.ant_2_array = ant_array
+                    uvd.baseline_array = uvd.antnums_to_baseline(
+                        uvd.ant_1_array, uvd.ant_2_array
+                    )
 
-                    uvd.integration_time = np.ones((uvd.Nblts), np.float32)
                     uvd.nsample_array = np.ones_like(uvd.data_array, np.float32)
-                    uvd.time_array = time_array
+                    uvd.integration_time = np.ones((uvd.Nblts), np.float32)
+                    uvd.flag_array = np.zeros_like(uvd.data_array, dtype=bool)
                     uvd.x_orientation = "north"
                     uvd.Nants_data = len(set(ant_array))
                     uvd.polarization_arrary = uvutils.polstr2num(
                         ["ee", "nn"], x_orientation=uvd.x_orientation
                     )
+                    uvd.spw_array = np.array([0])
+
+                    cminfo = read_cminfo_from_redis(return_as="dict")
+
+                    uvd.antenna_position = cminfo["antenna_positions"]
+                    uvd.antenna_names = cminfo["antenna_names"]
+                    uvd.antenna_numbers = cminfo["antenna_numbers"]
+                    uvd.Nants_telescope = len(uvd.antenna_numbers)
+                    lat, lon, alt = (
+                        cminfo["cofa_lat"],
+                        cminfo["cofa_lon"],
+                        cminfo["cofa_alt"],
+                    )
+                    uvd.telescope_location_lat_lon_alt_degrees = (lat, lon, alt)
+                    uvd.set_uvws_from_antenna_positions()
+                    uvd.set_lsts_from_time_array()
+
+                    uvd.object_name = ""
+                    uvd.multi_phase_center = False
+                    uvd.telescope_name = "HERA"
+                    uvd.instrument = "HERA"
+                    uvd.history = f"Created by {__file__}."
+                    uvd.phase_type = "drift"
+
+                    uvd.reorder_blts("time", "baseline")
+                    uvd.write_uvh5(f"zen.{Time.now().jd:.6f}.snap_autos.uvh5")
 
                     session.add_daemon_status(daemon_name, hostname, Time.now(), "good")
                     session.commit()
