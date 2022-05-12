@@ -1,0 +1,220 @@
+#!/usr/bin/env python
+# -*- mode: python; coding: utf-8 -*-
+# Copyright 2022 the HERA Collaboration
+# Licensed under the 2-clause BSD license.
+"""Accumulate SNAP spectra from redis and write to a UVH5 file."""
+import sys
+import time
+import socket
+import traceback
+
+import numpy as np
+from pyuvdata import UVData, uvutils
+
+# from astropy import units
+from astropy.time import Time, TimeDelta
+
+from hera_mc import mc
+from hera_corr_cm.redis_cm import read_maps_from_redis
+
+MAX_DOWNTIME = 3600
+MAX_FILE_LEN = 3600
+daemon_name = "mini_snap_correlator"
+
+
+parser = mc.get_mc_argument_parser()
+args = parser.parse_args()
+db = mc.connect_to_mc_db(args)
+
+hostname = socket.gethostname()
+
+
+def get_blt_index(antnum, time, ant_array, time_array) -> int | None:
+    indices = np.nonzero(np.asarray(ant_array == antnum))[0]
+
+    if indices.size != 0:
+        sub_inds = np.nonzero(np.array(time_array)[indices] == time)[0]
+        if sub_inds.size != 0:
+            return indices[sub_inds]
+        else:
+            return None
+    else:
+        return None
+
+
+while True:
+    try:
+
+        with db.sessionmaker() as session:
+            session.add_corr_obj()
+            corr_cm = session.corr_obj
+            while True:
+                try:
+
+                    # use future_array_shapes
+                    # Nblts, Nfreqs, Npols
+                    data_array = np.zeros((0, 0, 2), dtype=np.float32)
+                    # nsample_array = np.array((), dtype=np.float64)
+                    # Nblts
+                    time_array = []
+                    ant_array = []
+
+                    mapping = read_maps_from_redis()
+                    snap_to_ant_mapping = mapping["snap_to_ant"]
+                    if mapping is None:
+                        raise ValueError(
+                            "None value encountered for antenna/snap mappings in redis."
+                        )
+
+                    last_time_mapping = {}
+
+                    downtime = 0
+                    file_len = 0
+
+                    while downtime < MAX_DOWNTIME and file_len < MAX_FILE_LEN:
+                        time.sleep(0.01)
+                        # do the thing
+                        # get integrations from HeraCorrCM.get_snaprf_status()
+                        # compare to the last time for each snap
+
+                        for (
+                            snap_hostname,
+                            status,
+                        ) in corr_cm.get_snaprf_status().items():
+
+                            if (
+                                status["timestamp"] is None
+                                or status["timestamp"] == "None"
+                            ):
+                                continue
+
+                            snap, stream = snap_hostname.split(":")
+                            stream = int(stream)
+
+                            hera_ant_num = mapping[snap][stream]
+                            if hera_ant_num is None:
+                                continue
+
+                            # arbitrarily assign east as polarization 0
+                            pol = hera_ant_num[-1].lower()
+                            pol_ind = 0 if pol == "e" else 1
+
+                            # trim off the HH and the Polarization
+                            hera_ant_num = int(hera_ant_num[2:-1])
+
+                            timestamp = status["timestamp"]
+
+                            if snap_hostname not in last_time_mapping:
+                                last_time_mapping[snap_hostname] = timestamp
+                            else:
+                                if timestamp <= last_time_mapping[snap_hostname]:
+                                    # Time has not progressed yet.
+                                    # Just sit tight
+                                    continue
+
+                            auto_corr = status["autocorrelation"]
+                            data_index = get_blt_index(
+                                hera_ant_num, timestamp, ant_array, time_array
+                            )
+                            if data_index is not None:
+                                # this baseline is already in the time array
+                                # insert into the correct polarization
+                                # at the given index
+                                data_array[data_index, :, pol_ind] = auto_corr
+
+                            else:
+                                # otherwise append the data array and insert the meta-data
+                                data_insert = np.zeros(
+                                    (1, auto_corr.shape[0], 2), dtype=np.float32
+                                )
+                                data_insert[..., pol_ind] = auto_corr
+
+                                data_array = np.append(data_array, data_insert, axis=0)
+                                time_array.append(Time(timestamp).jd)
+                                ant_array.append(hera_ant_num)
+
+                        downtime = (
+                            Time.now() - Time(time_array[-1], format="jd")
+                        ).to_value("s")
+                        file_len = TimeDelta(
+                            time_array[-1] - time_array[0], format="jd"
+                        ).to_value("s")
+
+                    time_array = np.asarray(time_array)
+                    ant_array = np.asarray(ant_array)
+                    uvd = UVData()
+
+                    # let's us not have to Spectral windows
+                    uvd._set_future_array_shapes()
+
+                    uvd.Nblts = time_array.shape[0]
+                    uvd.Nfreqs = time_array.shape[1]
+                    uvd.Npols = 2
+
+                    uvd.data_array = data_array
+
+                    uvd.ant_1_array = ant_array
+                    uvd.ant_2_array = ant_array
+
+                    uvd.integration_time = np.ones((uvd.Nblts), np.float32)
+                    uvd.nsample_array = np.ones_like(uvd.data_array, np.float32)
+                    uvd.time_array = time_array
+                    uvd.x_orientation = "north"
+                    uvd.Nants_data = len(set(ant_array))
+                    uvd.polarization_arrary = uvutils.polstr2num(
+                        ["ee", "nn"], x_orientation=uvd.x_orientation
+                    )
+
+                    session.add_daemon_status(daemon_name, hostname, Time.now(), "good")
+                    session.commit()
+                except Exception:
+                    print(
+                        "{t} -- error while accumulating datafile".format(
+                            t=time.asctime()
+                        ),
+                        file=sys.stderr,
+                    )
+                    traceback.print_exc(file=sys.stderr)
+                    traceback_str = traceback.format_exc()
+
+                    try:
+                        # try to update the daemon_status table and add an
+                        # error message to the subsystem_error table
+                        session.add_daemon_status(
+                            daemon_name, hostname, Time.now(), "errored"
+                        )
+                        session.add_subsystem_error(
+                            Time.now(), daemon_name, 2, traceback_str
+                        )
+                        session.commit()
+
+                    except Exception as e:
+                        # if we can't log error messages to the session,
+                        # need a new session
+                        raise RuntimeError(
+                            "error logging to subsystem_error table."
+                        ) from e
+                    continue
+
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+        traceback_str = traceback.format_exc()
+
+        with db.sessionmaker() as new_session:
+            try:
+                # try to update the daemon_status table and add an
+                # error message to the subsystem_error table
+                new_session.add_daemon_status(
+                    daemon_name, hostname, Time.now(), "errored"
+                )
+                new_session.add_subsystem_error(
+                    Time.now(), daemon_name, 2, traceback_str
+                )
+                new_session.commit()
+            except Exception as e:
+                # if we can't log error messages to the new session we're in real trouble
+                raise RuntimeError(
+                    "error logging to subsystem_error with a new session"
+                ) from e
+        # logging with a new session worked, so restart to get a new session
+        continue
