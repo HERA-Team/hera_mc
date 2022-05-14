@@ -3,7 +3,6 @@
 # Copyright 2022 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 """Accumulate SNAP spectra from redis and write to a UVH5 file."""
-import sys
 import time
 import socket
 import logging
@@ -20,13 +19,13 @@ from hera_mc import mc
 from hera_corr_cm.redis_cm import read_maps_from_redis, read_cminfo_from_redis
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 logger = logging.getLogger(__name__)
-
-h2 = logging.StreamHandler(sys.stderr)
-h2.setLevel(logging.WARNING)
-h2.addFilter(lambda record: record.levelno >= logging.WARNING)
-logger.addHandler(h2)
+logger.setLevel(logging.INFO)
 
 MAX_DOWNTIME = 60
 MAX_FILE_LEN = 60
