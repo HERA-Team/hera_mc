@@ -141,12 +141,14 @@ while True:
                                 time_array.append(timestamp)
                                 ant_array.append(hera_ant_num)
 
-                        downtime = (
-                            Time.now() - Time(time_array[-1], format="jd")
-                        ).to_value("s")
-                        file_len = TimeDelta(
-                            time_array[-1] - time_array[0], format="jd"
-                        ).to_value("s")
+                        last_time = max(last_time_mapping.values())
+                        downtime = (Time.now() - Time(last_time, format="jd")).to_value(
+                            "s"
+                        )
+                        if len(time_array) > 0:
+                            file_len = TimeDelta(
+                                time_array[-1] - time_array[0], format="jd"
+                            ).to_value("s")
 
                     time_array = np.asarray(time_array)
                     ant_array = np.asarray(ant_array)
