@@ -49,26 +49,27 @@ while True:
         with db.sessionmaker() as session:
             session.add_corr_obj()
             corr_cm = session.corr_obj
+
+            mapping = read_maps_from_redis()
+            snap_to_ant_mapping = mapping["snap_to_ant"]
+            if mapping is None:
+                raise ValueError(
+                    "None value encountered for antenna/snap mappings in redis."
+                )
+
+            last_time_mapping = {}
+
             while True:
                 try:
 
                     # use future_array_shapes
                     # Nblts, Nfreqs, Npols
-                    #data_array = np.zeros((0, 0, 2), dtype=np.float32)
+                    # data_array = np.zeros((0, 0, 2), dtype=np.float32)
                     data_array = None
                     # nsample_array = np.array((), dtype=np.float64)
                     # Nblts
                     time_array = []
                     ant_array = []
-
-                    mapping = read_maps_from_redis()
-                    snap_to_ant_mapping = mapping["snap_to_ant"]
-                    if mapping is None:
-                        raise ValueError(
-                            "None value encountered for antenna/snap mappings in redis."
-                        )
-
-                    last_time_mapping = {}
 
                     downtime = 0
                     file_len = 0
@@ -113,11 +114,13 @@ while True:
                                     # Time has not progressed yet.
                                     # Just sit tight
                                     continue
-                            
+
                             auto_corr = status["autocorrelation"]
 
                             if data_array is None:
-                                data_array = np.zeros((0, auto_corr.shape[0], 2), dtype=np.float32)
+                                data_array = np.zeros(
+                                    (0, auto_corr.shape[0], 2), dtype=np.float32
+                                )
                             data_index = get_blt_index(
                                 hera_ant_num, timestamp, ant_array, time_array
                             )
@@ -162,10 +165,10 @@ while True:
 
                     uvd.Nblts = time_array.shape[0]
                     uvd.Ntimes = np.unique(uvd.time_array).size
-                    
+
                     uvd.Nfreqs = data_array.shape[1]
                     uvd.freq_array = np.linspace(0, 256, uvd.Nfreqs) * 1e6
-                    
+
                     uvd.channel_width = np.full_like(
                         uvd.freq_array, np.diff(uvd.freq_array)[0]
                     )
@@ -211,7 +214,7 @@ while True:
                     uvd.instrument = "HERA"
                     uvd.history = f"Created by {__file__}."
                     uvd.phase_type = "drift"
-                    
+
                     uvd.reorder_blts("time", "baseline")
                     uvd.write_uvh5(f"zen.{Time.now().jd:.6f}.snap_autos.uvh5")
 
@@ -227,7 +230,7 @@ while True:
                     traceback.print_exc(file=sys.stderr)
                     traceback_str = traceback.format_exc()
 
-                    #try:
+                    # try:
                     #    # try to update the daemon_status table and add an
                     #    # error message to the subsystem_error table
                     #    session.add_daemon_status(
@@ -238,19 +241,19 @@ while True:
                     #    )
                     #    session.commit()
 
-                    #except Exception as e:
+                    # except Exception as e:
                     #    # if we can't log error messages to the session,
                     #    # need a new session
                     #    raise RuntimeError(
                     #        "error logging to subsystem_error table."
                     #    ) from e
-                    #continue
+                    # continue
 
     except Exception:
         traceback.print_exc(file=sys.stderr)
         traceback_str = traceback.format_exc()
 
-        #with db.sessionmaker() as new_session:
+        # with db.sessionmaker() as new_session:
         #    try:
         #        # try to update the daemon_status table and add an
         #        # error message to the subsystem_error table
