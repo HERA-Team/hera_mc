@@ -6,6 +6,7 @@
 import sys
 import time
 import socket
+import logging
 import traceback
 
 import numpy as np
@@ -17,6 +18,15 @@ from astropy.time import Time, TimeDelta
 
 from hera_mc import mc
 from hera_corr_cm.redis_cm import read_maps_from_redis, read_cminfo_from_redis
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+h2 = logging.StreamHandler(sys.stderr)
+h2.setLevel(logging.WARNING)
+h2.addFilter(lambda record: record.levelno >= logging.WARNING)
+logger.addHandler(h2)
 
 MAX_DOWNTIME = 60
 MAX_FILE_LEN = 60
@@ -154,6 +164,9 @@ while True:
                     ant_array = np.asarray(ant_array)
                     if time_array.size == 0:
                         # No Data was taken
+                        logger.info(
+                            f"Downtime Timeout. No New Data recieved since {last_time}."
+                        )
                         continue
 
                     uvd = UVData()
@@ -218,18 +231,19 @@ while True:
                     uvd.phase_type = "drift"
 
                     uvd.reorder_blts("time", "baseline")
-                    uvd.write_uvh5(f"zen.{Time.now().jd:.6f}.snap_autos.uvh5")
+                    fname = f"zen.{Time.now().jd:.6f}.snap_autos.uvh5"
+                    logger.info(f"Writing output file {fname}.")
+                    uvd.write_uvh5(fname)
 
                     # session.add_daemon_status(daemon_name, hostname, Time.now(), "good")
                     # session.commit()
                 except Exception:
-                    print(
+                    logger.error(
                         "{t} -- error while accumulating datafile".format(
                             t=time.asctime()
                         ),
-                        file=sys.stderr,
                     )
-                    traceback.print_exc(file=sys.stderr)
+                    logger.error(traceback.print_exc())
                     traceback_str = traceback.format_exc()
 
                     # try:
@@ -252,7 +266,7 @@ while True:
                     # continue
 
     except Exception:
-        traceback.print_exc(file=sys.stderr)
+        logger.error(traceback.print_exc())
         traceback_str = traceback.format_exc()
 
         # with db.sessionmaker() as new_session:
