@@ -9,7 +9,8 @@ import socket
 import traceback
 
 import numpy as np
-from pyuvdata import UVData, uvutils
+from pyuvdata import UVData
+from pyuvdata import utils as uvutils
 
 # from astropy import units
 from astropy.time import Time, TimeDelta
@@ -17,8 +18,8 @@ from astropy.time import Time, TimeDelta
 from hera_mc import mc
 from hera_corr_cm.redis_cm import read_maps_from_redis, read_cminfo_from_redis
 
-MAX_DOWNTIME = 3600
-MAX_FILE_LEN = 3600
+MAX_DOWNTIME = 60
+MAX_FILE_LEN = 60
 daemon_name = "mini_snap_correlator"
 
 
@@ -29,11 +30,11 @@ db = mc.connect_to_mc_db(args)
 hostname = socket.gethostname()
 
 
-def get_blt_index(antnum, time, ant_array, time_array) -> int | None:
-    indices = np.nonzero(np.asarray(ant_array == antnum))[0]
+def get_blt_index(antnum, time, ant_array, time_array):
+    indices = np.nonzero(np.asarray(ant_array) == antnum)[0]
 
     if indices.size != 0:
-        sub_inds = np.nonzero(np.array(time_array)[indices] == time)[0]
+        sub_inds = np.nonzero(np.asarray(time_array)[indices] == time)[0]
         if sub_inds.size != 0:
             return indices[sub_inds]
         else:
@@ -53,7 +54,8 @@ while True:
 
                     # use future_array_shapes
                     # Nblts, Nfreqs, Npols
-                    data_array = np.zeros((0, 0, 2), dtype=np.float32)
+                    #data_array = np.zeros((0, 0, 2), dtype=np.float32)
+                    data_array = None
                     # nsample_array = np.array((), dtype=np.float64)
                     # Nblts
                     time_array = []
@@ -91,7 +93,7 @@ while True:
                             snap, stream = snap_hostname.split(":")
                             stream = int(stream)
 
-                            hera_ant_num = mapping[snap][stream]
+                            hera_ant_num = snap_to_ant_mapping[snap][stream]
                             if hera_ant_num is None:
                                 continue
 
@@ -102,7 +104,7 @@ while True:
                             # trim off the HH and the Polarization
                             hera_ant_num = int(hera_ant_num[2:-1])
 
-                            timestamp = status["timestamp"]
+                            timestamp = Time(status["timestamp"]).jd
 
                             if snap_hostname not in last_time_mapping:
                                 last_time_mapping[snap_hostname] = timestamp
@@ -111,8 +113,11 @@ while True:
                                     # Time has not progressed yet.
                                     # Just sit tight
                                     continue
-
+                            
                             auto_corr = status["autocorrelation"]
+
+                            if data_array is None:
+                                data_array = np.zeros((0, auto_corr.shape[0], 2), dtype=np.float32)
                             data_index = get_blt_index(
                                 hera_ant_num, timestamp, ant_array, time_array
                             )
@@ -130,7 +135,7 @@ while True:
                                 data_insert[..., pol_ind] = auto_corr
 
                                 data_array = np.append(data_array, data_insert, axis=0)
-                                time_array.append(Time(timestamp).jd)
+                                time_array.append(timestamp)
                                 ant_array.append(hera_ant_num)
 
                         downtime = (
@@ -151,19 +156,21 @@ while True:
                     # let's us not have to Spectral windows
                     uvd._set_future_array_shapes()
 
-                    uvd.data_array = data_array
+                    uvd.data_array = data_array.astype(np.complex64)
                     uvd.vis_units = "UNCALIB"
                     uvd.time_array = time_array
 
                     uvd.Nblts = time_array.shape[0]
                     uvd.Ntimes = np.unique(uvd.time_array).size
-                    uvd.Nfreqs = time_array.shape[1]
-                    uvd.freq_array = np.linspace(0, 256, uvd.Ntimes) * 1e6
+                    
+                    uvd.Nfreqs = data_array.shape[1]
+                    uvd.freq_array = np.linspace(0, 256, uvd.Nfreqs) * 1e6
+                    
                     uvd.channel_width = np.full_like(
                         uvd.freq_array, np.diff(uvd.freq_array)[0]
                     )
                     uvd.Nants_data = np.unique(ant_array).size
-                    uvd.Nblts = uvd.Nants_data
+                    uvd.Nbls = uvd.Nants_data
                     uvd.Nspws = 1
                     uvd.Npols = 2
 
@@ -178,16 +185,16 @@ while True:
                     uvd.flag_array = np.zeros_like(uvd.data_array, dtype=bool)
                     uvd.x_orientation = "north"
                     uvd.Nants_data = len(set(ant_array))
-                    uvd.polarization_arrary = uvutils.polstr2num(
+                    uvd.polarization_array = uvutils.polstr2num(
                         ["ee", "nn"], x_orientation=uvd.x_orientation
                     )
                     uvd.spw_array = np.array([0])
 
                     cminfo = read_cminfo_from_redis(return_as="dict")
 
-                    uvd.antenna_position = cminfo["antenna_positions"]
-                    uvd.antenna_names = cminfo["antenna_names"]
-                    uvd.antenna_numbers = cminfo["antenna_numbers"]
+                    uvd.antenna_positions = np.asarray(cminfo["antenna_positions"])
+                    uvd.antenna_names = np.asarray(cminfo["antenna_names"])
+                    uvd.antenna_numbers = np.asarray(cminfo["antenna_numbers"])
                     uvd.Nants_telescope = len(uvd.antenna_numbers)
                     lat, lon, alt = (
                         cminfo["cofa_lat"],
@@ -204,12 +211,12 @@ while True:
                     uvd.instrument = "HERA"
                     uvd.history = f"Created by {__file__}."
                     uvd.phase_type = "drift"
-
+                    
                     uvd.reorder_blts("time", "baseline")
                     uvd.write_uvh5(f"zen.{Time.now().jd:.6f}.snap_autos.uvh5")
 
-                    session.add_daemon_status(daemon_name, hostname, Time.now(), "good")
-                    session.commit()
+                    # session.add_daemon_status(daemon_name, hostname, Time.now(), "good")
+                    # session.commit()
                 except Exception:
                     print(
                         "{t} -- error while accumulating datafile".format(
@@ -220,44 +227,44 @@ while True:
                     traceback.print_exc(file=sys.stderr)
                     traceback_str = traceback.format_exc()
 
-                    try:
-                        # try to update the daemon_status table and add an
-                        # error message to the subsystem_error table
-                        session.add_daemon_status(
-                            daemon_name, hostname, Time.now(), "errored"
-                        )
-                        session.add_subsystem_error(
-                            Time.now(), daemon_name, 2, traceback_str
-                        )
-                        session.commit()
+                    #try:
+                    #    # try to update the daemon_status table and add an
+                    #    # error message to the subsystem_error table
+                    #    session.add_daemon_status(
+                    #        daemon_name, hostname, Time.now(), "errored"
+                    #    )
+                    #    session.add_subsystem_error(
+                    #        Time.now(), daemon_name, 2, traceback_str
+                    #    )
+                    #    session.commit()
 
-                    except Exception as e:
-                        # if we can't log error messages to the session,
-                        # need a new session
-                        raise RuntimeError(
-                            "error logging to subsystem_error table."
-                        ) from e
-                    continue
+                    #except Exception as e:
+                    #    # if we can't log error messages to the session,
+                    #    # need a new session
+                    #    raise RuntimeError(
+                    #        "error logging to subsystem_error table."
+                    #    ) from e
+                    #continue
 
     except Exception:
         traceback.print_exc(file=sys.stderr)
         traceback_str = traceback.format_exc()
 
-        with db.sessionmaker() as new_session:
-            try:
-                # try to update the daemon_status table and add an
-                # error message to the subsystem_error table
-                new_session.add_daemon_status(
-                    daemon_name, hostname, Time.now(), "errored"
-                )
-                new_session.add_subsystem_error(
-                    Time.now(), daemon_name, 2, traceback_str
-                )
-                new_session.commit()
-            except Exception as e:
-                # if we can't log error messages to the new session we're in real trouble
-                raise RuntimeError(
-                    "error logging to subsystem_error with a new session"
-                ) from e
+        #with db.sessionmaker() as new_session:
+        #    try:
+        #        # try to update the daemon_status table and add an
+        #        # error message to the subsystem_error table
+        #        new_session.add_daemon_status(
+        #            daemon_name, hostname, Time.now(), "errored"
+        #        )
+        #        new_session.add_subsystem_error(
+        #            Time.now(), daemon_name, 2, traceback_str
+        #        )
+        #        new_session.commit()
+        #    except Exception as e:
+        #        # if we can't log error messages to the new session we're in real trouble
+        #        raise RuntimeError(
+        #            "error logging to subsystem_error with a new session"
+        #        ) from e
         # logging with a new session worked, so restart to get a new session
         continue
