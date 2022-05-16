@@ -26,10 +26,16 @@ logging.basicConfig(
     force=True,
 )
 logger = logging.getLogger(__file__)
+logger.ident = "hera_mini_snap_catcher"
 
-syslog_handler = logging.handlers.SysLogHandler(address="/var/log")
-syslog_handler.setLevel(logging.INFO)
-syslog_handler.setFormatter(formatter)
+syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
+#syslog_handler.setLevel(logging.INFO)
+syslog_handler.setFormatter(
+    logging.Formatter(
+        "%(module)s %(message)s",
+        "%FT%H:%m:%s%z",
+    )
+)
 logger.addHandler(syslog_handler)
 
 
@@ -177,11 +183,11 @@ while True:
                             time_array.append(timestamp)
                             ant_array.append(hera_ant_num)
 
-                    last_time = max(last_time_mapping.values())
+                    last_time = Time(max(last_time_mapping.values()), format="jd")
                     # Take the least time between the last snap update
                     # and the last time a file was written
                     downtime = min(
-                        (Time.now() - Time(last_time, format="jd")).to_value("s"),
+                        (Time.now() - last_time).to_value("s"),
                         (Time.now() - last_loop_completion).to_value("s"),
                     )
                     if len(time_array) > 0:
@@ -193,8 +199,8 @@ while True:
                 if time_array.size == 0:
                     # No Data was taken
                     logger.info(
-                        f"Downtime timeout. No new data recieved since {last_time} "
-                        f"({last_time.iso})."
+                        f"Downtime timeout. No new data recieved since {last_time.jd} "
+                        f"({last_time.iso} UTC)."
                     )
                     continue
 
