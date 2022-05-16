@@ -80,25 +80,16 @@ class Handling:
     Parameters
     ----------
     session : object
-        session on current database. If session is None, a new session
-        on the default database is created and used.
+        session on current database.
 
     """
 
-    def __init__(self, session=None):
-        if session is None:  # pragma: no cover
-            db = mc.connect_to_mc_db(None)
-            self.session = db.sessionmaker()
-        else:
-            self.session = session
+    def __init__(self, session):
+        self.session = session
         self.geo = geo_handling.Handling(self.session)
         self.H = None
         self.sysdef = cm_sysdef.Sysdef()
         self.apriori_status_set = None
-
-    def close(self):  # pragma: no cover
-        """Close the session."""
-        self.session.close()
 
     def cofa(self):
         """
@@ -155,8 +146,9 @@ class Handling:
 
         """
         at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
-        hookup_obj = cm_hookup.Hookup(self.session)
+        hookup_obj = cm_hookup.Hookup()
         hud = hookup_obj.get_hookup(
+            self.session,
             hpn=cm_sysdef.hera_zone_prefixes,
             pol="all",
             at_date=at_date,
@@ -318,11 +310,15 @@ class Handling:
 
         """
         parts = {}
-        hookup_obj = cm_hookup.Hookup(self.session)
+        hookup_obj = cm_hookup.Hookup()
         if isinstance(stn, str):
             stn = [stn]
         hud = hookup_obj.get_hookup(
-            hpn=stn, at_date=at_date, exact_match=True, hookup_type=hookup_type
+            session=self.session,
+            hpn=stn,
+            at_date=at_date,
+            exact_match=True,
+            hookup_type=hookup_type,
         )
         for k, hu in hud.items():
             parts[k] = hu.get_part_from_type(
@@ -361,8 +357,9 @@ class Handling:
         if hlist[0].lower() == "default":
             hlist = cm_sysdef.hera_zone_prefixes
         output_file = os.path.expanduser("~/.hera_mc/sys_conn_tmp.html")
-        hookup_obj = cm_hookup.Hookup(self.session)
+        hookup_obj = cm_hookup.Hookup()
         hookup_dict = hookup_obj.get_hookup(
+            session=self.session,
             hpn=hlist,
             pol="all",
             at_date="now",
@@ -570,10 +567,16 @@ def node_antennas(source="file", session=None):
                     prefix = "HH"
                 ants_per_node[node_hpn].append("{}{}".format(prefix, ant))
     else:
+        if session is None:
+            db = mc.connect_to_mc_db()
+            session = db.sessionmaker()
+            close_session_when_done = True
+        else:
+            close_session_when_done = False
         if isinstance(source, str) and source.lower().startswith("h"):
-            source = cm_hookup.Hookup(session=session)
+            source = cm_hookup.Hookup()
         hu_dict = source.get_hookup(
-            cm_sysdef.hera_zone_prefixes, hookup_type="parts_hera"
+            session, cm_sysdef.hera_zone_prefixes, hookup_type="parts_hera"
         )
         for this_ant, vna in hu_dict.items():
             key = vna.hookup["E<ground"][-1].downstream_part
@@ -581,6 +584,8 @@ def node_antennas(source="file", session=None):
                 continue
             ants_per_node.setdefault(key, [])
             ants_per_node[key].append(cm_utils.split_part_key(this_ant)[0])
+        if close_session_when_done:
+            session.close()
     return ants_per_node
 
 
@@ -632,6 +637,12 @@ def which_node(ant_num, session=None):
     dict
         Contains antenna and node
     """
+    if session is None:
+        db = mc.connect_to_mc_db()
+        session = db.sessionmaker()
+        close_session_when_done = True
+    else:
+        close_session_when_done = False
     na_from_file = node_antennas("file", session=session)
     na_from_hookup = node_antennas("hookup", session=session)
     ant_num = cm_utils.listify(ant_num)
@@ -640,6 +651,8 @@ def which_node(ant_num, session=None):
         pnint = cm_utils.peel_key(str(pn), "NPR")[0]
         ant_node[pnint] = [_find_ant_node(pnint, na_from_file)]
         ant_node[pnint].append(_find_ant_node(pnint, na_from_hookup))
+    if close_session_when_done:
+        session.close()
     return ant_node
 
 
@@ -704,7 +717,14 @@ def node_info(node_num="active", session=None):
     dict
         Contains node and node component information
     """
-    hu = cm_hookup.Hookup(session)
+    if session is None:
+        db = mc.connect_to_mc_db()
+        session = db.sessionmaker()
+        close_session_when_done = True
+    else:
+        close_session_when_done = False
+
+    hu = cm_hookup.Hookup()
     na_from_file = node_antennas("file", session=session)
     na_from_hookup = node_antennas(hu, session=session)
 
@@ -727,9 +747,9 @@ def node_info(node_num="active", session=None):
         )
 
         # Get hookup info
-        snaps = hu.get_hookup(node, hookup_type="parts_hera")
-        wr = hu.get_hookup(node, hookup_type="wr_hera")
-        rd = hu.get_hookup(node, hookup_type="arduino_hera")
+        snaps = hu.get_hookup(session, node, hookup_type="parts_hera")
+        wr = hu.get_hookup(session, node, hookup_type="wr_hera")
+        rd = hu.get_hookup(session, node, hookup_type="arduino_hera")
 
         # Find snaps
         info[node]["snaps"] = ["", "", "", ""]
@@ -782,6 +802,8 @@ def node_info(node_num="active", session=None):
             info[info[node]["arduino"]] = []
         if "" in info.keys():
             del info[""]
+    if close_session_when_done:
+        session.close()
     return info
 
 
