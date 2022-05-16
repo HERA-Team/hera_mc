@@ -106,6 +106,7 @@ while True:
 
                 downtime = 0
                 file_len = 0
+                last_loop_completion = Time.now()
 
                 while downtime < args.max_downtime and file_len < args.max_file_len:
                     time.sleep(0.01)
@@ -138,7 +139,7 @@ while True:
                         timestamp = Time(status["timestamp"]).jd
 
                         if snap_hostname not in last_time_mapping:
-                            last_time_mapping[snap_hostname] = timestamp
+                            last_time_mapping[snap_hostname] = Time.now().jd
                         else:
                             if timestamp <= last_time_mapping[snap_hostname]:
                                 # Time has not progressed yet.
@@ -172,7 +173,12 @@ while True:
                             ant_array.append(hera_ant_num)
 
                     last_time = max(last_time_mapping.values())
-                    downtime = (Time.now() - Time(last_time, format="jd")).to_value("s")
+                    # Take the least time between the last snap update
+                    # and the last time a file was written
+                    downtime = min(
+                        (Time.now() - Time(last_time, format="jd")).to_value("s"),
+                        (Time.now() - last_loop_completion).to_value("s"),
+                    )
                     if len(time_array) > 0:
                         file_len = TimeDelta(
                             time_array[-1] - time_array[0], format="jd"
@@ -253,6 +259,8 @@ while True:
                 fname = f"zen.{Time.now().jd:.6f}.snap_autos.uvh5"
                 logger.info(f"Writing output file {fname}.")
                 uvd.write_uvh5(fname)
+
+                last_loop_completion = Time.now()
 
             except Exception:
                 logger.error(
