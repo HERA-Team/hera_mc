@@ -19,24 +19,16 @@ from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef
 from .data import DATA_PATH
 
 
-def cofa(session=None):
-    """
-    Return location class of current COFA.
-
-    Parameters
-    ----------
-    session:  db session to use
-
-    """
-    h = Handling(session)
-    located = h.cofa()
-    h.close()
+def cofa():
+    """Return location class of current COFA."""
+    db = mc.connect_to_mc_db(None)
+    with db.sessionmaker() as session:
+        h = Handling(session)
+        located = h.cofa()
     return located
 
 
-def get_location(
-    location_names, query_date="now", query_time=None, float_format=None, session=None
-):
+def get_location(location_names, query_date="now", query_time=None, float_format=None):
     """
     Get a GeoLocation object with lon/lat attributes for a location name.
 
@@ -52,8 +44,6 @@ def get_location(
         Time for query.
     float_format : str or None
         Format if query_date is unix or gps.
-    session : Session object
-        Session to use.
 
     Returns
     -------
@@ -62,9 +52,10 @@ def get_location(
 
     """
     query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
-    h = Handling(session)
-    located = h.get_location(location_names, query_date)
-    h.close()
+    db = mc.connect_to_mc_db(None)
+    with db.sessionmaker() as session:
+        h = Handling(session)
+        located = h.get_location(location_names, query_date)
     return located
 
 
@@ -93,8 +84,7 @@ class Handling:
     Parameters
     ----------
     session : Session object
-        session on current database. If session is None, a new session
-        on the default database is created and used.
+        session on current database.
 
     """
 
@@ -102,12 +92,8 @@ class Handling:
     hera_zone = [34, "J"]
     lat_corr = {"J": 10000000}
 
-    def __init__(self, session=None, testing=False):
-        if session is None:  # pragma: no cover
-            db = mc.connect_to_mc_db(None)
-            self.session = db.sessionmaker()
-        else:
-            self.session = session
+    def __init__(self, session, testing=False):
+        self.session = session
 
         self.get_station_types()
         self.testing = testing
@@ -115,10 +101,6 @@ class Handling:
         self.fp_out = None
         self.graph = False
         self.station_types_plotted = False
-
-    def close(self):
-        """Close the session."""
-        self.session.close()
 
     def cofa(self):
         """
