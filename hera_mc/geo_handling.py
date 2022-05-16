@@ -655,9 +655,12 @@ class Handling:
         from . import cm_hookup, cm_revisions
 
         query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
-        hookup = cm_hookup.Hookup(self.session)
+        hookup = cm_hookup.Hookup()
         hookup_dict = hookup.get_hookup(
-            hookup.hookup_list_to_cache, at_date=query_date, hookup_type=hookup_type
+            self.session,
+            hookup.hookup_list_to_cache,
+            at_date=query_date,
+            hookup_type=hookup_type,
         )
         self.station_types_to_use = self.parse_station_types_to_check(
             station_types_to_use
