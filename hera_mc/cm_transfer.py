@@ -95,6 +95,9 @@ def package_db_to_csv(session=None, tables="all"):
     if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
+        close_session_when_done = True
+    else:
+        close_session_when_done = False
 
     data_prefix = cm_table_info.data_prefix
     cm_tables = cm_table_info.cm_tables
@@ -117,6 +120,8 @@ def package_db_to_csv(session=None, tables="all"):
         print("\tPackaging:  " + data_filename)
         table_data.to_csv(data_filename, index=False)
         files_written.append(data_filename)
+    if close_session_when_done:
+        session.close()
     return files_written
 
 
@@ -316,6 +321,10 @@ def _initialization(
     if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
+        close_session_when_done = True
+    else:
+        close_session_when_done = False
+
     if cm_csv_path is None:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=None, testing=testing)
 
@@ -375,3 +384,5 @@ def _initialization(
                         setattr(table_inst, field_name[i], r)
                     session.add(table_inst)
                     session.commit()
+    if close_session_when_done:
+        session.close()
