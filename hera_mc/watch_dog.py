@@ -183,6 +183,9 @@ def node_temperature(
 
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
+        close_session_when_done = True
+    else:
+        close_session_when_done = False
 
     if at_date is None:
         use_last = True
@@ -251,6 +254,8 @@ def node_temperature(
                     ht = " {:4.1f} ".format(this_temp)
                 htlist.append(ht)
             msg += "\n\t {:02d}   {}".format(node_num, "  ".join(htlist))
+    if close_session_when_done:
+        session.close()
     if msg != msg_header:
         subject = msg_header.splitlines()[0]
         return send_email(subject, msg, To, skip_send=testing)
