@@ -170,8 +170,8 @@ def test_random_update(sys_handle):
 
 
 def test_sys_method_notes(mcsession):
-    hookup = cm_hookup.Hookup(session=mcsession)
-    hu = hookup.get_hookup("HH700")
+    hookup = cm_hookup.Hookup()
+    hu = hookup.get_hookup(mcsession, "HH700")
     hu["HH700:A"].hookup["E<ground"] = []
     x = hookup.show_hookup(hu)
     assert x is None
@@ -192,23 +192,35 @@ def test_sys_method_notes(mcsession):
 
 def test_other_hookup(sys_handle, mcsession, capsys):
     pytest.importorskip("tabulate")
-    hookup = cm_hookup.Hookup(session=mcsession)
+    hookup = cm_hookup.Hookup()
     assert hookup.cached_hookup_dict is None
     test_ret = hookup.hookup_cache_file_OK(None)
     assert not test_ret
     hu = hookup.get_hookup(
-        ["A700"], "all", at_date="now", exact_match=True, hookup_type="parts_hera"
+        mcsession,
+        ["A700"],
+        "all",
+        at_date="now",
+        exact_match=True,
+        hookup_type="parts_hera",
     )
     out = hookup.show_hookup(
         hu, cols_to_show=["station"], state="all", revs=True, ports=True
     )
     assert "HH700:A <ground" in out
     hu = hookup.get_hookup(
-        "A700,A701", "all", at_date="now", exact_match=True, hookup_type="parts_hera"
+        mcsession,
+        "A700,A701",
+        "all",
+        at_date="now",
+        exact_match=True,
+        hookup_type="parts_hera",
     )
     assert "A700:H" in hu.keys()
     hookup.write_hookup_cache_to_file(log_msg="For testing.")
-    hu = hookup.get_hookup("HH", "all", at_date="now", exact_match=True, use_cache=True)
+    hu = hookup.get_hookup(
+        mcsession, "HH", "all", at_date="now", exact_match=True, use_cache=True
+    )
     assert len(hu) == 0
     hookup.hookup_type = None
     test_ret = hookup.hookup_cache_file_OK(
@@ -219,7 +231,7 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     hookup.read_hookup_cache_from_file()
     captured = capsys.readouterr()
     assert "<<<Cache is NOT" in captured.out.strip()
-    hu = hookup.get_hookup("cache", pol="all", hookup_type="parts_hera")
+    hu = hookup.get_hookup(mcsession, "cache", pol="all", hookup_type="parts_hera")
     out = hookup.show_hookup(hu, state="all", sortby="station", output_format="csv")
     out = out.splitlines()[6].strip('"')
     assert out.startswith("HH702")
@@ -229,9 +241,9 @@ def test_other_hookup(sys_handle, mcsession, capsys):
         {}, cols_to_show=["station"], state="all", revs=True, ports=True
     )
     assert out is None
-    hufc = hookup.get_hookup_from_db(["HH"], "e", at_date="now")
+    hufc = hookup.get_hookup_from_db(mcsession, ["HH"], "e", at_date="now")
     assert len(hufc.keys()), 13
-    hufc = hookup.get_hookup_from_db(["N700"], "e", at_date="now")
+    hufc = hookup.get_hookup_from_db(mcsession, ["N700"], "e", at_date="now")
     assert len(hufc.keys()) == 4
     assert hookup.hookup_type, "parts_hera"
     gptf = hookup._get_part_types_found([])
@@ -241,13 +253,13 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     hookup.hookup_list_to_cache = ["A1"]
     x = hookup._requested_list_OK_for_cache(["B1"])
     assert x is False
-    x = hookup.get_hookup_from_db("N91", "N", "now")
+    x = hookup.get_hookup_from_db(mcsession, "N91", "N", "now")
     assert len(x) == 0
 
 
 def test_hookup_notes(mcsession, capsys):
-    hookup = cm_hookup.Hookup(session=mcsession)
-    hu = hookup.get_hookup(["HH"])
+    hookup = cm_hookup.Hookup()
+    hu = hookup.get_hookup(mcsession, ["HH"])
     notes = hookup.get_notes(hu)
     assert len(notes) == 12
     print(hookup.show_notes(hu))
@@ -299,8 +311,8 @@ def test_hookup_dossier(sys_handle, capsys):
     pytest.raises(ValueError, cm_dossier.HookupEntry, sysdef=sysdef)
 
 
-def test_hookup_misc(mcsession):
-    hookup = cm_hookup.Hookup(mcsession)
+def test_hookup_misc():
+    hookup = cm_hookup.Hookup()
     hookup.col_list = ["antenna", "front-end"]
     sk_ret = hookup._sort_hookup_display("antenna,front-end", {})
     assert len(sk_ret) == 0
@@ -524,9 +536,13 @@ def test_correlator_info(sys_handle):
 
 
 def test_get_pam_from_hookup(sys_handle, mcsession):
-    hookup = cm_hookup.Hookup(mcsession)
+    hookup = cm_hookup.Hookup()
     hud = hookup.get_hookup(
-        ["HH701"], at_date="2019-07-03", exact_match=True, hookup_type="parts_hera"
+        mcsession,
+        ["HH701"],
+        at_date="2019-07-03",
+        exact_match=True,
+        hookup_type="parts_hera",
     )
     pams = hud[list(hud.keys())[0]].get_part_from_type(
         "post-amp", include_ports=True, include_revs=True
