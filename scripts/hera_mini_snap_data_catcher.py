@@ -178,6 +178,7 @@ while True:
                             time_array[-1] - time_array[0], format="jd"
                         ).to_value("s")
 
+                time_array = np.asarray(time_array)
                 if time_array.size == 0:
                     # No Data was taken
                     logger.info(
@@ -185,7 +186,6 @@ while True:
                     )
                     continue
 
-                time_array = np.asarray(time_array)
                 ant_array = np.asarray(ant_array)
 
                 uvd = UVData()
