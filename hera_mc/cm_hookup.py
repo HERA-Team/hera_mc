@@ -14,6 +14,69 @@ from astropy.time import Time
 from . import mc, cm_utils, cm_transfer, cm_sysdef, cm_dossier, cm_active
 
 
+def get_hookup(
+    hpn,
+    pol="all",
+    at_date="now",
+    at_time=None,
+    float_format=None,
+    exact_match=False,
+    hookup_type="parts_hera",
+):
+    """
+    Return a single hookup dossier.
+
+    This allows for a simple way to get a part hookup, however if more
+    transactions are needed, please use the structure to generate a session
+    and pass that session to the methods.
+
+    Parameters
+    ----------
+    hpn : str, list
+        List/string of input hera part number(s) (whole or 'startswith')
+        If string
+            - 'default' uses default station prefixes in cm_sysdef
+            - otherwise converts as csv-list
+        If element of list is of format '.xxx:a/b/c' it finds the appropriate
+            method as cm_sysdef.Sysdef.xxx([a, b, c])
+    pol : str
+        A port polarization to follow, or 'all',  ('e', 'n', 'all')
+    at_date : anything interpretable by cm_utils.get_astropytime
+        Date at which to initialize.
+    at_time : anything interpretable by cm_utils.get_astropytime
+        Time at which to initialize, ignored if at_date is a float or contains time information
+    float_format : str
+        Format if at_date is a number denoting gps or unix seconds or jd day.
+    exact_match : bool
+        If False, will only check the first characters in each hpn entry.  E.g. 'HH1'
+        would allow 'HH1', 'HH10', 'HH123', etc
+    hookup_type : str or None
+        Type of hookup to use (current observing system is 'parts_hera').
+        If 'None' it will determine which system it thinks it is based on
+        the part-type.  The order in which it checks is specified in cm_sysdef.
+        Only change if you know you want a different system (like 'parts_paper').
+
+    Returns
+    -------
+    dict
+        Hookup dossier dictionary as defined in cm_dossier
+
+    """
+    hookup = Hookup()
+    db = mc.connect_to_mc_db(None)
+    with db.sessionmaker() as session:
+        return hookup.get_hookup_from_db(
+            session=session,
+            hpn=hpn,
+            pol=pol,
+            at_date=at_date,
+            at_time=at_time,
+            float_format=float_format,
+            exact_match=exact_match,
+            hookup_type=hookup_type,
+        )
+
+
 class Hookup(object):
     """
     Class to find and display the signal path hookup information.
@@ -21,22 +84,12 @@ class Hookup(object):
     Hookup traces parts and connections through the signal path (as defined
     by the connections in cm_sysdef).
 
-    Parameters
-    ----------
-    session : session object or None
-        If None, it will start a new session on the database.
-
     """
 
     hookup_list_to_cache = cm_sysdef.hera_zone_prefixes
     hookup_cache_file = os.path.expanduser("~/.hera_mc/hookup_cache_3.json")
 
-    def __init__(self, session=None):
-        if session is None:  # pragma: no cover
-            db = mc.connect_to_mc_db(None)
-            self.session = db.sessionmaker()
-        else:
-            self.session = session
+    def __init__(self):
         self.part_type_cache = {}
         self.cached_hookup_dict = None
         self.sysdef = cm_sysdef.Sysdef()
@@ -44,6 +97,7 @@ class Hookup(object):
 
     def get_hookup_from_db(
         self,
+        session,
         hpn,
         pol,
         at_date,
@@ -62,6 +116,8 @@ class Hookup(object):
 
         Parameters
         ----------
+        session : sqalchemy session object
+            Session generated via db.sessionmaker
         hpn : str, list
             List/string of input hera part number(s) (whole or 'startswith')
             If string
@@ -95,7 +151,7 @@ class Hookup(object):
         # Reset at_date
         at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
         self.at_date = at_date
-        self.active = cm_active.ActiveData(self.session, at_date=at_date)
+        self.active = cm_active.ActiveData(session, at_date=at_date)
         self.active.load_parts(at_date=None)
         self.active.load_connections(at_date=None)
         hpn, exact_match = self._proc_hpnlist(hpn, exact_match)
@@ -137,6 +193,7 @@ class Hookup(object):
 
     def get_hookup(
         self,
+        session,
         hpn,
         pol="all",
         at_date="now",
@@ -155,6 +212,8 @@ class Hookup(object):
 
         Parameters
         ----------
+        session : sqalchemy session object
+            Session generated via db.sessionmaker
         hpn : str, list
             List/string of input hera part number(s) (whole or 'startswith')
             If string
@@ -205,9 +264,12 @@ class Hookup(object):
                 return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
 
         return self.get_hookup_from_db(
+            session=session,
             hpn=hpn,
             pol=pol,
             at_date=at_date,
+            at_time=at_time,
+            float_format=float_format,
             exact_match=exact_match,
             hookup_type=hookup_type,
         )
