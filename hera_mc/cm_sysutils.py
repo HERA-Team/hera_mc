@@ -568,7 +568,7 @@ def node_antennas(source="file", session=None):
                 ants_per_node[node_hpn].append("{}{}".format(prefix, ant))
     else:
         if session is None:
-            db = mc.connect_to_mc_db()
+            db = mc.connect_to_mc_db(None)
             session = db.sessionmaker()
             close_session_when_done = True
         else:
@@ -638,7 +638,7 @@ def which_node(ant_num, session=None):
         Contains antenna and node
     """
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
     else:
@@ -718,7 +718,7 @@ def node_info(node_num="active", session=None):
         Contains node and node component information
     """
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
     else:

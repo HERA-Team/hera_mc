@@ -47,7 +47,7 @@ def get_revisions_of_type(
 
     """
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
     else:
@@ -88,7 +88,7 @@ def get_last_revision(hpn, session=None):
 
     """
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
     else:
@@ -141,7 +141,7 @@ def get_all_revisions(hpn, session=None):
 
     """
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
     else:
@@ -186,7 +186,7 @@ def get_specific_revision(hpn, rq, session=None):
 
     """
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
     else:
@@ -237,7 +237,7 @@ def get_active_revision(hpn, at_date, at_time=None, float_format=None, session=N
 
     """
     if session is None:
-        db = mc.connect_to_mc_db()
+        db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
     else:
