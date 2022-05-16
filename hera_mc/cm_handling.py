@@ -9,7 +9,7 @@ import copy
 from astropy.time import Time
 from sqlalchemy import func, desc
 
-from . import mc, cm_utils, cm_dossier
+from . import cm_utils, cm_dossier
 from . import cm_partconnect as partconn
 
 
@@ -20,21 +20,12 @@ class Handling:
     Parameters
     ----------
     session : object
-        session on current database. If session is None, a new session
-        on the default database is created and used.
+        session on current database via db.sessionmaker
 
     """
 
-    def __init__(self, session=None):
-        if session is None:  # pragma: no cover
-            db = mc.connect_to_mc_db(None)
-            self.session = db.sessionmaker()
-        else:
-            self.session = session
-
-    def close(self):  # pragma: no cover
-        """Close the session."""
-        self.session.close()
+    def __init__(self, session):
+        self.session = session
 
     def add_cm_version(self, time, git_hash):
         """
