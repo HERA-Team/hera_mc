@@ -22,7 +22,7 @@ from hera_corr_cm.redis_cm import read_maps_from_redis, read_cminfo_from_redis
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s.%(msecs)03d %(levelname)s - %(funcName)s: %(message)s",
+    format="%(asctime)s.%(msecs)03d %(levelname)s - %(module)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     force=True,
 )
