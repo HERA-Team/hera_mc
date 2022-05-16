@@ -4,7 +4,6 @@
 # Licensed under the 2-clause BSD license.
 """Accumulate SNAP spectra from redis and write to a UVH5 file."""
 import time
-import socket
 import logging
 import argparse
 import traceback
@@ -19,16 +18,19 @@ from astropy.time import Time, TimeDelta
 from hera_corr_cm import HeraCorrCM
 from hera_corr_cm.redis_cm import read_maps_from_redis, read_cminfo_from_redis
 
-
+formatter = "%(asctime)s.%(msecs)03d %(levelname)s - %(module)s: %(message)s"
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s.%(msecs)03d %(levelname)s - %(module)s: %(message)s",
+    format=formatter,
     datefmt="%Y-%m-%d %H:%M:%S",
     force=True,
 )
 logger = logging.getLogger(__file__)
 
-hostname = socket.gethostname()
+syslog_handler = logging.handlers.SysLogHandler(address="/var/log")
+syslog_handler.setLevel(logging.INFO)
+syslog_handler.setFormatter(formatter)
+logger.addHandler(syslog_handler)
 
 
 def get_blt_index(antnum, time, ant_array, time_array):
@@ -60,7 +62,10 @@ parser.add_argument(
     dest="max_downtime",
     type=float,
     default=60.0,
-    help="Seconds between to wait between redis updates before restarting with new file.",
+    help=(
+        "Seconds between to wait between redis updates "
+        "before restarting with new file."
+    ),
 )
 
 parser.add_argument(
@@ -97,7 +102,7 @@ while True:
 
                 # use future_array_shapes
                 # Nblts, Nfreqs, Npols
-                # a little rough but we don't necessarily know how many freqs we'll have.
+                # we don't necessarily know how many freqs we'll have.
                 # it is most likely 1024 but this will guard against X-Engine changes.
                 data_array = None
                 # Nblts
@@ -188,7 +193,8 @@ while True:
                 if time_array.size == 0:
                     # No Data was taken
                     logger.info(
-                        f"Downtime Timeout. No New Data recieved since {last_time}."
+                        f"Downtime timeout. No new data recieved since {last_time} "
+                        f"({last_time.iso})."
                     )
                     continue
 
