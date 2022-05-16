@@ -19,7 +19,7 @@ class ActiveData:
 
     """
 
-    def __init__(self, session=None, at_date="now", at_time=None, float_format=None):
+    def __init__(self, session, at_date="now", at_time=None, float_format=None):
         """
         Initialize ActiveData class attributes for at_date.
 
@@ -30,8 +30,8 @@ class ActiveData:
 
         Parameters
         ----------
-        session : session object or None
-            If None, it will start a new session on the database.
+        session : sqlalchemy session object
+            Session as generated from db.sessionmaker
         at_date : anything interpretable by cm_utils.get_astropytime
             Date at which to initialize.
         at_time : anything interpretable by cm_utils.get_astropytime
@@ -39,11 +39,6 @@ class ActiveData:
         float_format : str
             Format if at_date is a number denoting gps or unix seconds or jd day.
         """
-        if session is None:  # pragma: no cover
-            from . import mc
-
-            db = mc.connect_to_mc_db(None)
-            session = db.sessionmaker()
         self.session = session
         self.at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
         self.reset_all()
