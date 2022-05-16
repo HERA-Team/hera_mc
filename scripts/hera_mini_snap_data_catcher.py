@@ -21,11 +21,11 @@ from hera_corr_cm.redis_cm import read_maps_from_redis, read_cminfo_from_redis
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s",
+    format="%(asctime)s.%(msecs)03d %(levelname)s - %(funcName)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
+    force=True
 )
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger = logging.getLogger(__file__)
 
 MAX_DOWNTIME = 60
 MAX_FILE_LEN = 60
@@ -51,11 +51,12 @@ def get_blt_index(antnum, time, ant_array, time_array):
     else:
         return None
 
-
+logger.info("Starting HERA snap mini data catcher.")
 while True:
     try:
 
         with db.sessionmaker() as session:
+            logger.info("HERA M&C database connection established.")
             session.add_corr_obj()
             corr_cm = session.corr_obj
 
@@ -69,6 +70,7 @@ while True:
             last_time_mapping = {}
 
             while True:
+                logger.info("Beginning data catching.")
                 try:
 
                     # use future_array_shapes
@@ -159,14 +161,15 @@ while True:
                                 time_array[-1] - time_array[0], format="jd"
                             ).to_value("s")
 
-                    time_array = np.asarray(time_array)
-                    ant_array = np.asarray(ant_array)
                     if time_array.size == 0:
                         # No Data was taken
                         logger.info(
                             f"Downtime Timeout. No New Data recieved since {last_time}."
                         )
                         continue
+
+                    time_array = np.asarray(time_array)
+                    ant_array = np.asarray(ant_array)
 
                     uvd = UVData()
 
