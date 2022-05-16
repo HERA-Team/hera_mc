@@ -91,8 +91,8 @@ while True:
 
         last_time_mapping = {}
 
+        logger.info("Beginning data catching.")
         while True:
-            logger.info("Beginning data catching.")
             try:
 
                 # use future_array_shapes
