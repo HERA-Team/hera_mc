@@ -776,7 +776,7 @@ def node_info(node_num="active", session=None):
             info[node]["ncm"] = rd_ret["ncm"]
 
         # Get notes
-        notes = hu.get_notes(snaps, state="all", return_dict=True)
+        notes = hu.get_notes(session, snaps, state="all", return_dict=True)
         for snp in info[node]["snaps"]:
             spk = cm_utils.make_part_key(snp, "A")
             try:
@@ -784,14 +784,14 @@ def node_info(node_num="active", session=None):
                 info[snp] = [f"{snnt[x]['note']}|{x}" for x in snnt.keys()]
             except KeyError:
                 info[snp] = []
-        notes = hu.get_notes(wr, state="all", return_dict=True)
+        notes = hu.get_notes(session, wr, state="all", return_dict=True)
         wpk = cm_utils.make_part_key(info[node]["wr"], "A")
         try:
             wrnt = notes[npk][wpk]
             info[info[node]["wr"]] = [f"{wrnt[x]['note']}|{x}" for x in wrnt.keys()]
         except KeyError:
             info[info[node]["wr"]] = []
-        notes = hu.get_notes(rd, state="all", return_dict=True)
+        notes = hu.get_notes(session, rd, state="all", return_dict=True)
         apk = cm_utils.make_part_key(info[node]["arduino"], "A")
         try:
             rdnt = notes[npk][apk]
