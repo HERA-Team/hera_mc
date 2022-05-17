@@ -477,7 +477,7 @@ def test_sysutil_node(capsys, mcsession):
 
 def test_hookup_cache_file_info(sys_handle, mcsession):
     hookup = cm_hookup.Hookup()
-    cfi = hookup.hookup_cache_file_info()
+    cfi = hookup.hookup_cache_file_info(mcsession)
     assert "json does not exist" in cfi
 
 
