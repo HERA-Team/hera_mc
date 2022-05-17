@@ -56,6 +56,8 @@ def get_hookup(
         If 'None' it will determine which system it thinks it is based on
         the part-type.  The order in which it checks is specified in cm_sysdef.
         Only change if you know you want a different system (like 'parts_paper').
+    testing : bool
+        Flag to set to testing db.
 
     Returns
     -------
