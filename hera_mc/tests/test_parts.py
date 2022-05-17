@@ -130,6 +130,7 @@ def test_rosetta(mcsession, capsys):
     cm_partconnect.update_part_rosetta(
         "SNPC000709", "heraNode700Snap709", stop_at, session=mcsession
     )
+    active.load_rosetta(at_date)
     assert int(active.rosetta["SNPC000709"].stop_gpstime) == 1280278818
     # Add a test part to fail on update part
 
