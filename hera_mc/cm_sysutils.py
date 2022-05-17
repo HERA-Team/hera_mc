@@ -146,9 +146,8 @@ class Handling:
 
         """
         at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
-        hookup_obj = cm_hookup.Hookup()
+        hookup_obj = cm_hookup.Hookup(self.session)
         hud = hookup_obj.get_hookup(
-            self.session,
             hpn=cm_sysdef.hera_zone_prefixes,
             pol="all",
             at_date=at_date,
@@ -310,11 +309,10 @@ class Handling:
 
         """
         parts = {}
-        hookup_obj = cm_hookup.Hookup()
+        hookup_obj = cm_hookup.Hookup(self.session)
         if isinstance(stn, str):
             stn = [stn]
         hud = hookup_obj.get_hookup(
-            session=self.session,
             hpn=stn,
             at_date=at_date,
             exact_match=True,
@@ -357,9 +355,8 @@ class Handling:
         if hlist[0].lower() == "default":
             hlist = cm_sysdef.hera_zone_prefixes
         output_file = os.path.expanduser("~/.hera_mc/sys_conn_tmp.html")
-        hookup_obj = cm_hookup.Hookup()
+        hookup_obj = cm_hookup.Hookup(self.session)
         hookup_dict = hookup_obj.get_hookup(
-            session=self.session,
             hpn=hlist,
             pol="all",
             at_date="now",
@@ -574,9 +571,9 @@ def node_antennas(source="file", session=None):
         else:
             close_session_when_done = False
         if isinstance(source, str) and source.lower().startswith("h"):
-            source = cm_hookup.Hookup()
+            source = cm_hookup.Hookup(session)
         hu_dict = source.get_hookup(
-            session, cm_sysdef.hera_zone_prefixes, hookup_type="parts_hera"
+            cm_sysdef.hera_zone_prefixes, hookup_type="parts_hera"
         )
         for this_ant, vna in hu_dict.items():
             key = vna.hookup["E<ground"][-1].downstream_part
@@ -724,7 +721,7 @@ def node_info(node_num="active", session=None):
     else:
         close_session_when_done = False
 
-    hu = cm_hookup.Hookup()
+    hu = cm_hookup.Hookup(session)
     na_from_file = node_antennas("file", session=session)
     na_from_hookup = node_antennas(hu, session=session)
 
@@ -747,9 +744,9 @@ def node_info(node_num="active", session=None):
         )
 
         # Get hookup info
-        snaps = hu.get_hookup(session, node, hookup_type="parts_hera")
-        wr = hu.get_hookup(session, node, hookup_type="wr_hera")
-        rd = hu.get_hookup(session, node, hookup_type="arduino_hera")
+        snaps = hu.get_hookup(node, hookup_type="parts_hera")
+        wr = hu.get_hookup(node, hookup_type="wr_hera")
+        rd = hu.get_hookup(node, hookup_type="arduino_hera")
 
         # Find snaps
         info[node]["snaps"] = ["", "", "", ""]
@@ -776,7 +773,7 @@ def node_info(node_num="active", session=None):
             info[node]["ncm"] = rd_ret["ncm"]
 
         # Get notes
-        notes = hu.get_notes(session, snaps, state="all", return_dict=True)
+        notes = hu.get_notes(snaps, state="all", return_dict=True)
         for snp in info[node]["snaps"]:
             spk = cm_utils.make_part_key(snp, "A")
             try:
@@ -784,14 +781,14 @@ def node_info(node_num="active", session=None):
                 info[snp] = [f"{snnt[x]['note']}|{x}" for x in snnt.keys()]
             except KeyError:
                 info[snp] = []
-        notes = hu.get_notes(session, wr, state="all", return_dict=True)
+        notes = hu.get_notes(wr, state="all", return_dict=True)
         wpk = cm_utils.make_part_key(info[node]["wr"], "A")
         try:
             wrnt = notes[npk][wpk]
             info[info[node]["wr"]] = [f"{wrnt[x]['note']}|{x}" for x in wrnt.keys()]
         except KeyError:
             info[info[node]["wr"]] = []
-        notes = hu.get_notes(session, rd, state="all", return_dict=True)
+        notes = hu.get_notes(rd, state="all", return_dict=True)
         apk = cm_utils.make_part_key(info[node]["arduino"], "A")
         try:
             rdnt = notes[npk][apk]
