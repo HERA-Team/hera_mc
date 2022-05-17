@@ -91,94 +91,93 @@ if __name__ == "__main__":
 
     # start session and instances
     db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
-    G = geo_handling.Handling(session)
+    with db.sessionmaker() as session:
+        G = geo_handling.Handling(session)
 
-    # If args.graph is set, apply background
-    if args.graph:
-        G.set_graph(True)
-        if args.background == "all" or args.background == "layers":
-            G.plot_all_stations()
-        if not args.fg_action.startswith("i"):
-            if args.background == "installed" or args.background == "layers":
-                G.plot_station_types(
-                    station_types_to_use=args.station_types,
-                    query_date=at_date,
-                    xgraph=xgraph,
-                    ygraph=ygraph,
-                    label=args.label,
-                )
+        # If args.graph is set, apply background
+        if args.graph:
+            G.set_graph(True)
+            if args.background == "all" or args.background == "layers":
+                G.plot_all_stations()
+            if not args.fg_action.startswith("i"):
+                if args.background == "installed" or args.background == "layers":
+                    G.plot_station_types(
+                        station_types_to_use=args.station_types,
+                        query_date=at_date,
+                        xgraph=xgraph,
+                        ygraph=ygraph,
+                        label=args.label,
+                    )
 
-    # Process foreground action.
-    fg_markersize = 10
-    if args.file is not None:
-        G.start_file(args.file)
+        # Process foreground action.
+        fg_markersize = 10
+        if args.file is not None:
+            G.start_file(args.file)
 
-    if args.fg_action.startswith("a"):
-        located = G.get_active_stations(
-            station_types_to_use=args.station_types,
-            query_date=at_date,
-            hookup_type=args.hookup_type,
-        )
-        G.plot_stations(
-            located,
-            xgraph=xgraph,
-            ygraph=ygraph,
-            label=args.label,
-            marker_color="k",
-            marker_shape="*",
-            marker_size=fg_markersize,
-        )
-    elif args.fg_action.startswith("i"):
-        G.plot_station_types(
-            station_types_to_use=args.station_types,
-            query_date=at_date,
-            xgraph=xgraph,
-            ygraph=ygraph,
-            label=args.label,
-        )
-    elif args.fg_action.startswith("p"):
-        located = G.get_location(position, at_date)
-        G.print_loc_info(located)
-        G.plot_stations(
-            located,
-            xgraph=xgraph,
-            ygraph=ygraph,
-            label=args.label,
-            marker_color="k",
-            marker_shape="*",
-            marker_size=fg_markersize,
-        )
-    elif args.fg_action.startswith("c"):
-        cofa = G.cofa()
-        G.print_loc_info(cofa)
-        G.plot_stations(
-            cofa,
-            xgraph=xgraph,
-            ygraph=ygraph,
-            label="name",
-            marker_color="k",
-            marker_shape="*",
-            marker_size=fg_markersize,
-        )
-    elif args.fg_action.startswith("s"):
-        new_antennas = G.get_ants_installed_since(cutoff, args.station_types)
-        G.plot_stations(
-            new_antennas,
-            xgraph=xgraph,
-            ygraph=ygraph,
-            label=args.label,
-            marker_color="b",
-            marker_shape="*",
-            marker_size=fg_markersize,
-        )
-        print("{} new antennas since {}".format(len(new_antennas), cutoff))
-        s = ""
-        for na in new_antennas:
-            s += na.station_name + ", "
-        s = s.strip().strip(",") + "\n"
-        print(s)
+        if args.fg_action.startswith("a"):
+            located = G.get_active_stations(
+                station_types_to_use=args.station_types,
+                query_date=at_date,
+                hookup_type=args.hookup_type,
+            )
+            G.plot_stations(
+                located,
+                xgraph=xgraph,
+                ygraph=ygraph,
+                label=args.label,
+                marker_color="k",
+                marker_shape="*",
+                marker_size=fg_markersize,
+            )
+        elif args.fg_action.startswith("i"):
+            G.plot_station_types(
+                station_types_to_use=args.station_types,
+                query_date=at_date,
+                xgraph=xgraph,
+                ygraph=ygraph,
+                label=args.label,
+            )
+        elif args.fg_action.startswith("p"):
+            located = G.get_location(position, at_date)
+            G.print_loc_info(located)
+            G.plot_stations(
+                located,
+                xgraph=xgraph,
+                ygraph=ygraph,
+                label=args.label,
+                marker_color="k",
+                marker_shape="*",
+                marker_size=fg_markersize,
+            )
+        elif args.fg_action.startswith("c"):
+            cofa = G.cofa()
+            G.print_loc_info(cofa)
+            G.plot_stations(
+                cofa,
+                xgraph=xgraph,
+                ygraph=ygraph,
+                label="name",
+                marker_color="k",
+                marker_shape="*",
+                marker_size=fg_markersize,
+            )
+        elif args.fg_action.startswith("s"):
+            new_antennas = G.get_ants_installed_since(cutoff, args.station_types)
+            G.plot_stations(
+                new_antennas,
+                xgraph=xgraph,
+                ygraph=ygraph,
+                label=args.label,
+                marker_color="b",
+                marker_shape="*",
+                marker_size=fg_markersize,
+            )
+            print("{} new antennas since {}".format(len(new_antennas), cutoff))
+            s = ""
+            for na in new_antennas:
+                s += na.station_name + ", "
+            s = s.strip().strip(",") + "\n"
+            print(s)
 
-    if args.graph:
-        geo_handling.show_it_now()
-    G.close()
+        if args.graph:
+            geo_handling.show_it_now()

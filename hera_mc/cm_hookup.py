@@ -63,14 +63,13 @@ def get_hookup(
         Hookup dossier dictionary as defined in cm_dossier
 
     """
-    hookup = Hookup()
     if testing:
         db = mc.connect_to_mc_testing_db()
     else:
         db = mc.connect_to_mc_db(None)
     with db.sessionmaker() as session:
+        hookup = Hookup(session)
         return hookup.get_hookup_from_db(
-            session=session,
             hpn=hpn,
             pol=pol,
             at_date=at_date,
@@ -88,12 +87,17 @@ class Hookup(object):
     Hookup traces parts and connections through the signal path (as defined
     by the connections in cm_sysdef).
 
+    Parameters
+    ----------
+    session : sqalchemy session object
+        Session generated via db.sessionmaker
     """
 
     hookup_list_to_cache = cm_sysdef.hera_zone_prefixes
     hookup_cache_file = os.path.expanduser("~/.hera_mc/hookup_cache_3.json")
 
-    def __init__(self):
+    def __init__(self, session):
+        self.session = session
         self.part_type_cache = {}
         self.cached_hookup_dict = None
         self.sysdef = cm_sysdef.Sysdef()
@@ -101,7 +105,6 @@ class Hookup(object):
 
     def get_hookup_from_db(
         self,
-        session,
         hpn,
         pol,
         at_date,
@@ -120,8 +123,6 @@ class Hookup(object):
 
         Parameters
         ----------
-        session : sqalchemy session object
-            Session generated via db.sessionmaker
         hpn : str, list
             List/string of input hera part number(s) (whole or 'startswith')
             If string
@@ -155,7 +156,7 @@ class Hookup(object):
         # Reset at_date
         at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
         self.at_date = at_date
-        self.active = cm_active.ActiveData(session, at_date=at_date)
+        self.active = cm_active.ActiveData(self.session, at_date=at_date)
         self.active.load_parts(at_date=None)
         self.active.load_connections(at_date=None)
         hpn, exact_match = self._proc_hpnlist(hpn, exact_match)
@@ -170,7 +171,6 @@ class Hookup(object):
                     part, self.active
                 )
                 redirect_hookup_dict = self.get_hookup_from_db(
-                    session=session,
                     hpn=redirect_parts,
                     pol=pol,
                     at_date=self.at_date,
@@ -198,7 +198,6 @@ class Hookup(object):
 
     def get_hookup(
         self,
-        session,
         hpn,
         pol="all",
         at_date="now",
@@ -217,8 +216,6 @@ class Hookup(object):
 
         Parameters
         ----------
-        session : sqalchemy session object
-            Session generated via db.sessionmaker
         hpn : str, list
             List/string of input hera part number(s) (whole or 'startswith')
             If string
@@ -259,17 +256,16 @@ class Hookup(object):
         self.hookup_type = hookup_type
 
         if isinstance(hpn, str) and hpn.lower() == "cache":
-            self.read_hookup_cache_from_file(session)
+            self.read_hookup_cache_from_file()
             return self.cached_hookup_dict
 
         if use_cache:
             hpn, exact_match = self._proc_hpnlist(hpn, exact_match)
             if self._requested_list_OK_for_cache(hpn):
-                self.read_hookup_cache_from_file(session)
+                self.read_hookup_cache_from_file()
                 return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
 
         return self.get_hookup_from_db(
-            session=session,
             hpn=hpn,
             pol=pol,
             at_date=at_date,
@@ -365,14 +361,12 @@ class Hookup(object):
         return table
 
     # ##################################### Notes ############################################
-    def get_notes(self, session, hookup_dict, state="all", return_dict=False):
+    def get_notes(self, hookup_dict, state="all", return_dict=False):
         """
         Retrieve information for hookup.
 
         Parameters
         ----------
-        session : sqalchemy session object
-            Session generated via db.sessionmaker
         hookup_dict : dict
             Hookup dictionary generated in self.get_hookup
         state : str
@@ -387,7 +381,7 @@ class Hookup(object):
 
         """
         if self.active is None:
-            self.active = cm_active.ActiveData(session, at_date=self.at_date)
+            self.active = cm_active.ActiveData(self.session, at_date=self.at_date)
         if self.active.info is None:
             self.active.load_info(self.at_date)
         info_keys = list(self.active.info.keys())
@@ -423,14 +417,12 @@ class Hookup(object):
                             ] = entry.comment.replace("\\n", "\n")
         return hu_notes
 
-    def show_notes(self, session, hookup_dict, state="all"):
+    def show_notes(self, hookup_dict, state="all"):
         """
         Print out the information for hookup.
 
         Parameters
         ----------
-        session : sqalchemy session object
-            Session generated via db.sessionmaker
         hookup_dict : dict
             Hookup dictionary generated in self.get_hookup
         state : str
@@ -443,7 +435,7 @@ class Hookup(object):
 
         """
         hu_notes = self.get_notes(
-            session, hookup_dict=hookup_dict, state=state, return_dict=True
+            hookup_dict=hookup_dict, state=state, return_dict=True
         )
         full_info_string = ""
         for hkey in cm_utils.put_keys_in_order(list(hu_notes.keys()), sort_order="NPR"):
@@ -764,14 +756,12 @@ class Hookup(object):
         return headers
 
     # ############################### Cache file methods #####################################
-    def write_hookup_cache_to_file(self, session, log_msg="Write."):
+    def write_hookup_cache_to_file(self, log_msg="Write."):
         """
         Write the current hookup to the cache file.
 
         Parameters
         ----------
-        session : sqalchemy session object
-            Session generated via db.sessionmaker
         log_msg : str
             String containing any desired messages for the cm log.
             This should be a short description of wny a new cache file is being written.
@@ -781,7 +771,6 @@ class Hookup(object):
         self.at_date = cm_utils.get_astropytime("now")
         self.hookup_type = "parts_hera"
         self.cached_hookup_dict = self.get_hookup_from_db(
-            session,
             self.hookup_list_to_cache,
             pol="all",
             at_date=self.at_date,
@@ -803,7 +792,7 @@ class Hookup(object):
         with open(self.hookup_cache_file, "w") as outfile:
             json.dump(save_dict, outfile)
 
-        cf_info = self.hookup_cache_file_info(session)
+        cf_info = self.hookup_cache_file_info()
         log_dict = {
             "hu-list": cm_utils.stringify(self.hookup_list_to_cache),
             "log_msg": log_msg,
@@ -811,11 +800,13 @@ class Hookup(object):
         }
         cm_utils.log("update_cache", log_dict=log_dict)
 
-    def read_hookup_cache_from_file(self, session):
+    def read_hookup_cache_from_file(
+        self,
+    ):
         """Read the current cache file into memory."""
         with open(self.hookup_cache_file, "r") as outfile:
             cache_dict = json.load(outfile)
-        if self.hookup_cache_file_OK(session, cache_dict):
+        if self.hookup_cache_file_OK(cache_dict):
             print("<<<Cache IS current with database>>>")
         else:
             print("<<<Cache is NOT current with database>>>")
@@ -844,7 +835,7 @@ class Hookup(object):
         self.part_type_cache = cache_dict["part_type_cache"]
         self.hookup_type = self.cached_hookup_type
 
-    def hookup_cache_file_OK(self, session, cache_dict=None):
+    def hookup_cache_file_OK(self, cache_dict=None):
         """
         Determine if the cache file is up-to-date with the cm db and if hookup_type is correct.
 
@@ -898,7 +889,7 @@ class Hookup(object):
         # If not returned above, return False to regenerate
         return False
 
-    def hookup_cache_file_info(self, session):
+    def hookup_cache_file_info(self):
         """
         Read in information about the current cache file.
 
@@ -911,7 +902,7 @@ class Hookup(object):
         if not os.path.exists(self.hookup_cache_file):  # pragma: no cover
             s = "{} does not exist.\n".format(self.hookup_cache_file)
         else:
-            self.read_hookup_cache_from_file(session)
+            self.read_hookup_cache_from_file()
             s = "Cache file:  {}\n".format(self.hookup_cache_file)
             s += "Cache hookup type:  {}\n".format(self.cached_hookup_type)
             s += "Cached_at_date:  {}\n".format(
@@ -933,7 +924,7 @@ class Hookup(object):
                         hooked_up += 1
             s += "Number of ant-pols hooked up is {}\n".format(hooked_up)
         result = (
-            session.query(cm_transfer.CMVersion)
+            self.session.query(cm_transfer.CMVersion)
             .order_by(cm_transfer.CMVersion.update_time)
             .all()
         )

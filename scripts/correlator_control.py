@@ -135,31 +135,31 @@ if __name__ == "__main__":
         starttime_obj = Time.now() + TimeDelta(Quantity(60, "second"))
     else:
         starttime_obj = None
-    if args.lstlock and starttime_obj is not None:
-        LSTbin_size = 16  # seconds
-        geo = geo_handling.Handling(session)  # get the geo part of CM
-        cofa = geo.cofa()  # center of array (COFA yo)
-        longitude = cofa[0].lon  # the longitude in _degrees_
-        starttime_obj, LSTbin = LSTScheduler(
-            starttime_obj, LSTbin_size, longitude=longitude
+    with db.sessionmaker() as session:
+        if args.lstlock and starttime_obj is not None:
+            LSTbin_size = 16  # seconds
+            geo = geo_handling.Handling(session)  # get the geo part of CM
+            cofa = geo.cofa()  # center of array (COFA yo)
+            longitude = cofa[0].lon  # the longitude in _degrees_
+            starttime_obj, LSTbin = LSTScheduler(
+                starttime_obj, LSTbin_size, longitude=longitude
+            )
+            print(
+                "locking to {s}s LST grid. Next bin at".format(s=LSTbin_size),
+                starttime_obj.iso,
+            )
+        command_list = session.correlator_control_command(
+            args.command,
+            starttime=starttime_obj,
+            duration=args.duration,
+            acclen_spectra=args.acclen_spectra,
+            tag=args.tag,
+            overwrite_take_data=args.overwrite_take_data,
+            config_file=args.config_file,
+            force=args.force,
+            dryrun=args.dryrun,
+            testing=args.testing,
         )
-        print(
-            "locking to {s}s LST grid. Next bin at".format(s=LSTbin_size),
-            starttime_obj.iso,
-        )
-    command_list = session.correlator_control_command(
-        args.command,
-        starttime=starttime_obj,
-        duration=args.duration,
-        acclen_spectra=args.acclen_spectra,
-        tag=args.tag,
-        overwrite_take_data=args.overwrite_take_data,
-        config_file=args.config_file,
-        force=args.force,
-        dryrun=args.dryrun,
-        testing=args.testing,
-    )
-    if args.testing or args.dryrun:
-        for cmd in command_list:
-            print(cmd)
-    session.commit()
+        if args.testing or args.dryrun:
+            for cmd in command_list:
+                print(cmd)

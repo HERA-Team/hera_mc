@@ -25,9 +25,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
-session = db.sessionmaker()
 
-for f in args.files:
-    session.ingest_metrics_file(f, args.type)
-
-session.commit()
+with db.sessionmaker() as session:
+    for f in args.files:
+        session.ingest_metrics_file(f, args.type)

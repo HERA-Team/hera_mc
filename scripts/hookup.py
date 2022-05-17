@@ -112,40 +112,40 @@ if __name__ == "__main__":
 
     # Start session
     db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
-    hookup = cm_hookup.Hookup(session)
-    if args.cache_info:
-        print(hookup.hookup_cache_file_info())
-    elif args.delete_cache_file:
-        hookup.delete_cache_file()
-    else:
-        hookup_dict = hookup.get_hookup(
-            hpn=args.hpn,
-            pol=args.pol,
-            at_date=at_date,
-            exact_match=args.exact_match,
-            use_cache=args.use_cache,
-            hookup_type=args.hookup_type,
-        )
-        show = hookup.show_hookup(
-            hookup_dict=hookup_dict,
-            cols_to_show=args.hookup_cols,
-            ports=args.ports,
-            revs=args.revs,
-            sortby=args.sortby,
-            state=state,
-            filename=args.file,
-            output_format=output_format,
-        )
-        if output_format == "display":
-            print(show)
-        if args.notes:
-            print(
-                "\nNotes:\n---------------------------------------------------------------"
+    with db.sessionmaker() as session:
+        hookup = cm_hookup.Hookup(session)
+        if args.cache_info:
+            print(hookup.hookup_cache_file_info())
+        elif args.delete_cache_file:
+            hookup.delete_cache_file()
+        else:
+            hookup_dict = hookup.get_hookup(
+                hpn=args.hpn,
+                pol=args.pol,
+                at_date=at_date,
+                exact_match=args.exact_match,
+                use_cache=args.use_cache,
+                hookup_type=args.hookup_type,
             )
-            print(hookup.show_notes(hookup_dict=hookup_dict, state=state))
-            print(
-                "-------------------------------------------------------------------------"
+            show = hookup.show_hookup(
+                hookup_dict=hookup_dict,
+                cols_to_show=args.hookup_cols,
+                ports=args.ports,
+                revs=args.revs,
+                sortby=args.sortby,
+                state=state,
+                filename=args.file,
+                output_format=output_format,
             )
-        if args.write_cache_file:
-            hookup.write_cache_file(args.cache_log)
+            if output_format == "display":
+                print(show)
+            if args.notes:
+                print(
+                    "\nNotes:\n---------------------------------------------------------------"
+                )
+                print(hookup.show_notes(hookup_dict=hookup_dict, state=state))
+                print(
+                    "-------------------------------------------------------------------------"
+                )
+            if args.write_cache_file:
+                hookup.write_cache_file(args.cache_log)

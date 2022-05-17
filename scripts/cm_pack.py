@@ -30,7 +30,7 @@ files_written = cm_transfer.package_db_to_csv(tables=args.tables)
 
 if args.go:
     db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
     if args.cm_csv_path is None:
         args.cm_csv_path = mc.get_cm_csv_path(None)
-    cm_transfer.pack_n_go(session, args.cm_csv_path)
+    with db.sessionmaker() as session:
+        cm_transfer.pack_n_go(session, args.cm_csv_path)
