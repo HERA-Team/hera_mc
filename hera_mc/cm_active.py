@@ -7,6 +7,7 @@
 
 from . import mc, cm_utils
 from . import cm_partconnect as partconn
+from copy import copy
 
 
 def get_active(
@@ -41,7 +42,7 @@ def get_active(
         )
         for param in loading:
             getattr(active, f"load_{param}")()
-    return active
+        return active
 
 
 class ActiveData:
@@ -147,7 +148,7 @@ class ActiveData:
             )
         ):
             key = cm_utils.make_part_key(prt.hpn, prt.hpn_rev)
-            self.parts[key] = prt
+            self.parts[key] = copy(prt)
             self.parts[key].logical_pn = None
 
     def load_connections(self, at_date=None, at_time=None, float_format=None):
@@ -203,10 +204,10 @@ class ActiveData:
             check_keys["down"].append(chk)
             key = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev)
             self.connections["up"].setdefault(key, {})
-            self.connections["up"][key][cnn.upstream_output_port.upper()] = cnn
+            self.connections["up"][key][cnn.upstream_output_port.upper()] = copy(cnn)
             key = cm_utils.make_part_key(cnn.downstream_part, cnn.down_part_rev)
             self.connections["down"].setdefault(key, {})
-            self.connections["down"][key][cnn.downstream_input_port.upper()] = cnn
+            self.connections["down"][key][cnn.downstream_input_port.upper()] = copy(cnn)
 
     def load_info(self, at_date=None, at_time=None, float_format=None):
         """
@@ -235,7 +236,7 @@ class ActiveData:
         ):
             key = cm_utils.make_part_key(info.hpn, info.hpn_rev)
             self.info.setdefault(key, [])
-            self.info[key].append(info)
+            self.info[key].append(copy(info))
 
     def load_rosetta(self, at_date=None, at_time=None, float_format=None):
         """
@@ -278,7 +279,7 @@ class ActiveData:
                     "System part number {} already found.".format(rose.syspn)
                 )
             fnd_syspn.append(rose.syspn)
-            self.rosetta[rose.hpn] = rose
+            self.rosetta[rose.hpn] = copy(rose)
         if self.parts is not None:
             for key, part in self.parts.items():
                 try:
@@ -322,7 +323,7 @@ class ActiveData:
             if key in apriori_keys:
                 raise ValueError("{} already has an active apriori state.".format(key))
             apriori_keys.append(key)
-            self.apriori[key] = astat
+            self.apriori[key] = copy(astat)
 
     def load_geo(self, at_date=None, at_time=None, float_format=None):
         """
@@ -352,7 +353,7 @@ class ActiveData:
             geo_location.GeoLocation.created_gpstime <= gps_time
         ):
             key = cm_utils.make_part_key(ageo.station_name, None)
-            self.geo[key] = ageo
+            self.geo[key] = copy(ageo)
 
     def get_hptype(self, hptype):
         """
