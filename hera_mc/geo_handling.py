@@ -667,9 +667,8 @@ class Handling:
         from . import cm_hookup, cm_revisions
 
         query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
-        hookup = cm_hookup.Hookup()
+        hookup = cm_hookup.Hookup(self.session)
         hookup_dict = hookup.get_hookup(
-            self.session,
             hookup.hookup_list_to_cache,
             at_date=query_date,
             hookup_type=hookup_type,
