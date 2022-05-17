@@ -166,6 +166,7 @@ class Hookup(object):
                     part, self.active
                 )
                 redirect_hookup_dict = self.get_hookup_from_db(
+                    session=session,
                     hpn=redirect_parts,
                     pol=pol,
                     at_date=self.at_date,
@@ -360,12 +361,14 @@ class Hookup(object):
         return table
 
     # ##################################### Notes ############################################
-    def get_notes(self, hookup_dict, state="all", return_dict=False):
+    def get_notes(self, session, hookup_dict, state="all", return_dict=False):
         """
         Retrieve information for hookup.
 
         Parameters
         ----------
+        session : sqalchemy session object
+            Session generated via db.sessionmaker
         hookup_dict : dict
             Hookup dictionary generated in self.get_hookup
         state : str
@@ -380,7 +383,7 @@ class Hookup(object):
 
         """
         if self.active is None:
-            self.active = cm_active.ActiveData(self.session, at_date=self.at_date)
+            self.active = cm_active.ActiveData(session, at_date=self.at_date)
         if self.active.info is None:
             self.active.load_info(self.at_date)
         info_keys = list(self.active.info.keys())
@@ -416,12 +419,14 @@ class Hookup(object):
                             ] = entry.comment.replace("\\n", "\n")
         return hu_notes
 
-    def show_notes(self, hookup_dict, state="all"):
+    def show_notes(self, session, hookup_dict, state="all"):
         """
         Print out the information for hookup.
 
         Parameters
         ----------
+        session : sqalchemy session object
+            Session generated via db.sessionmaker
         hookup_dict : dict
             Hookup dictionary generated in self.get_hookup
         state : str
@@ -755,12 +760,14 @@ class Hookup(object):
         return headers
 
     # ############################### Cache file methods #####################################
-    def write_hookup_cache_to_file(self, log_msg="Write."):
+    def write_hookup_cache_to_file(self, session, log_msg="Write."):
         """
         Write the current hookup to the cache file.
 
         Parameters
         ----------
+        session : sqalchemy session object
+            Session generated via db.sessionmaker
         log_msg : str
             String containing any desired messages for the cm log.
             This should be a short description of wny a new cache file is being written.
@@ -770,6 +777,7 @@ class Hookup(object):
         self.at_date = cm_utils.get_astropytime("now")
         self.hookup_type = "parts_hera"
         self.cached_hookup_dict = self.get_hookup_from_db(
+            session,
             self.hookup_list_to_cache,
             pol="all",
             at_date=self.at_date,

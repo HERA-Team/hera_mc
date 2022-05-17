@@ -181,10 +181,10 @@ def test_sys_method_notes(mcsession):
             hpn="HH700", hpn_rev="A", comment="Comment3", posting_gpstime=1232532198
         )
     ]
-    x = hookup.show_notes(hu)
+    x = hookup.show_notes(mcsession, hu)
     assert x.splitlines()[1].strip().startswith("HH700:A")
     hookup.active = None
-    notes = hookup.get_notes(hu)
+    notes = hookup.get_notes(mcsession, hu)
     assert list(notes.keys())[0] == "HH700:A"
     prf = hookup._proc_hpnlist("default", True)
     assert prf[0][1] == "HA"
@@ -217,7 +217,7 @@ def test_other_hookup(sys_handle, mcsession, capsys):
         hookup_type="parts_hera",
     )
     assert "A700:H" in hu.keys()
-    hookup.write_hookup_cache_to_file(log_msg="For testing.")
+    hookup.write_hookup_cache_to_file(mcsession, log_msg="For testing.")
     hu = hookup.get_hookup(
         mcsession, "HH", "all", at_date="now", exact_match=True, use_cache=True
     )
@@ -260,9 +260,9 @@ def test_other_hookup(sys_handle, mcsession, capsys):
 def test_hookup_notes(mcsession, capsys):
     hookup = cm_hookup.Hookup()
     hu = hookup.get_hookup(mcsession, ["HH"])
-    notes = hookup.get_notes(hu)
+    notes = hookup.get_notes(mcsession, hu)
     assert len(notes) == 12
-    print(hookup.show_notes(hu))
+    print(hookup.show_notes(mcsession, hu))
     captured = capsys.readouterr()
     assert "---HH700:A---" in captured.out.strip()
 
@@ -476,7 +476,7 @@ def test_sysutil_node(capsys, mcsession):
 
 
 def test_hookup_cache_file_info(sys_handle, mcsession):
-    hookup = cm_hookup.Hookup(session=mcsession)
+    hookup = cm_hookup.Hookup()
     cfi = hookup.hookup_cache_file_info()
     assert "json does not exist" in cfi
 
