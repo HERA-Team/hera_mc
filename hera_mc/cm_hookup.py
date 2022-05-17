@@ -259,13 +259,13 @@ class Hookup(object):
         self.hookup_type = hookup_type
 
         if isinstance(hpn, str) and hpn.lower() == "cache":
-            self.read_hookup_cache_from_file()
+            self.read_hookup_cache_from_file(session)
             return self.cached_hookup_dict
 
         if use_cache:
             hpn, exact_match = self._proc_hpnlist(hpn, exact_match)
             if self._requested_list_OK_for_cache(hpn):
-                self.read_hookup_cache_from_file()
+                self.read_hookup_cache_from_file(session)
                 return self._cull_dict(hpn, self.cached_hookup_dict, exact_match)
 
         return self.get_hookup_from_db(
@@ -811,11 +811,11 @@ class Hookup(object):
         }
         cm_utils.log("update_cache", log_dict=log_dict)
 
-    def read_hookup_cache_from_file(self):
+    def read_hookup_cache_from_file(self, session):
         """Read the current cache file into memory."""
         with open(self.hookup_cache_file, "r") as outfile:
             cache_dict = json.load(outfile)
-        if self.hookup_cache_file_OK(cache_dict):
+        if self.hookup_cache_file_OK(session, cache_dict):
             print("<<<Cache IS current with database>>>")
         else:
             print("<<<Cache is NOT current with database>>>")
@@ -844,7 +844,7 @@ class Hookup(object):
         self.part_type_cache = cache_dict["part_type_cache"]
         self.hookup_type = self.cached_hookup_type
 
-    def hookup_cache_file_OK(self, cache_dict=None):
+    def hookup_cache_file_OK(self, session, cache_dict=None):
         """
         Determine if the cache file is up-to-date with the cm db and if hookup_type is correct.
 
@@ -911,7 +911,7 @@ class Hookup(object):
         if not os.path.exists(self.hookup_cache_file):  # pragma: no cover
             s = "{} does not exist.\n".format(self.hookup_cache_file)
         else:
-            self.read_hookup_cache_from_file()
+            self.read_hookup_cache_from_file(session)
             s = "Cache file:  {}\n".format(self.hookup_cache_file)
             s += "Cache hookup type:  {}\n".format(self.cached_hookup_type)
             s += "Cached_at_date:  {}\n".format(
@@ -933,7 +933,7 @@ class Hookup(object):
                         hooked_up += 1
             s += "Number of ant-pols hooked up is {}\n".format(hooked_up)
         result = (
-            self.session.query(cm_transfer.CMVersion)
+            session.query(cm_transfer.CMVersion)
             .order_by(cm_transfer.CMVersion.update_time)
             .all()
         )

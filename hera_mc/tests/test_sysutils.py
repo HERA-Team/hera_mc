@@ -228,7 +228,7 @@ def test_other_hookup(sys_handle, mcsession, capsys):
     )
     assert not test_ret
     hookup.hookup_type = "not this one"
-    hookup.read_hookup_cache_from_file()
+    hookup.read_hookup_cache_from_file(mcsession)
     captured = capsys.readouterr()
     assert "<<<Cache is NOT" in captured.out.strip()
     hu = hookup.get_hookup(mcsession, "cache", pol="all", hookup_type="parts_hera")
