@@ -5,8 +5,43 @@
 
 """Methods to load all active data for a given date."""
 
-from . import cm_utils
+from . import mc, cm_utils
 from . import cm_partconnect as partconn
+
+
+def get_active(
+    at_date="now", at_time=None, float_format=None, loading=["apriori"], testing=False
+):
+    """
+    Return an ActiveData object with specified loading.
+
+    Parameters
+    ----------
+    at_date : anything interpretable by cm_utils.get_astropytime
+        Date at which to initialize.
+    at_time : anything interpretable by cm_utils.get_astropytime
+        Time at which to initialize, ignored if at_date is a float or contains time information
+    float_format : str
+        Format if at_date is a number denoting gps or unix seconds or jd day.
+    testing : bool
+        Flag to set to testing db.
+
+    Returns
+    -------
+    active : ActiveData object
+        ActiveData objects with loading parameters as specified.
+    """
+    if testing:
+        db = mc.connect_to_mc_testing_db()
+    else:
+        db = mc.connect_to_mc_db(None)
+    with db.sessionmaker() as session:
+        active = ActiveData(
+            session, at_date=at_date, at_time=at_time, float_format=float_format
+        )
+        for param in loading:
+            getattr(active, f"load_{param}")()
+    return active
 
 
 class ActiveData:
