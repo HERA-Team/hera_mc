@@ -19,16 +19,25 @@ from . import mc, cm_partconnect, cm_utils, geo_location, cm_sysdef
 from .data import DATA_PATH
 
 
-def cofa():
+def cofa(testing=False):
     """Return location class of current COFA."""
-    db = mc.connect_to_mc_db(None)
+    if testing:
+        db = mc.connect_to_mc_testing_db()
+    else:
+        db = mc.connect_to_mc_db(None)
     with db.sessionmaker() as session:
         h = Handling(session)
         located = h.cofa()
     return located
 
 
-def get_location(location_names, query_date="now", query_time=None, float_format=None):
+def get_location(
+    location_names,
+    query_date="now",
+    query_time=None,
+    float_format=None,
+    testing=False,
+):
     """
     Get a GeoLocation object with lon/lat attributes for a location name.
 
@@ -52,7 +61,10 @@ def get_location(location_names, query_date="now", query_time=None, float_format
 
     """
     query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
-    db = mc.connect_to_mc_db(None)
+    if testing:
+        db = mc.connect_to_mc_testing_db()
+    else:
+        db = mc.connect_to_mc_db(None)
     with db.sessionmaker() as session:
         h = Handling(session)
         located = h.get_location(location_names, query_date)

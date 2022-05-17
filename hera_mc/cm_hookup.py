@@ -22,6 +22,7 @@ def get_hookup(
     float_format=None,
     exact_match=False,
     hookup_type="parts_hera",
+    testing=False,
 ):
     """
     Return a single hookup dossier.
@@ -63,7 +64,10 @@ def get_hookup(
 
     """
     hookup = Hookup()
-    db = mc.connect_to_mc_db(None)
+    if testing:
+        db = mc.connect_to_mc_testing_db()
+    else:
+        db = mc.connect_to_mc_db(None)
     with db.sessionmaker() as session:
         return hookup.get_hookup_from_db(
             session=session,
@@ -799,7 +803,7 @@ class Hookup(object):
         with open(self.hookup_cache_file, "w") as outfile:
             json.dump(save_dict, outfile)
 
-        cf_info = self.hookup_cache_file_info()
+        cf_info = self.hookup_cache_file_info(session)
         log_dict = {
             "hu-list": cm_utils.stringify(self.hookup_list_to_cache),
             "log_msg": log_msg,
@@ -894,7 +898,7 @@ class Hookup(object):
         # If not returned above, return False to regenerate
         return False
 
-    def hookup_cache_file_info(self):
+    def hookup_cache_file_info(self, session):
         """
         Read in information about the current cache file.
 
