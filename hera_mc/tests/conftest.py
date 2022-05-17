@@ -62,5 +62,5 @@ def mcsession(setup_and_teardown_package):
     # delete the hookup cache file
     from .. import cm_hookup
 
-    hookup = cm_hookup.Hookup()
+    hookup = cm_hookup.Hookup(None)
     hookup.delete_cache_file()
