@@ -22,7 +22,7 @@ def test_cofa(mcsession, geo_handle):
     cofa = geo_handle.cofa()[0]
 
     # test that function works the same as method
-    cofa_func = geo_handling.cofa()[0]
+    cofa_func = geo_handling.cofa(testing=True)[0]
     assert cofa.isclose(cofa_func)
 
 
@@ -184,7 +184,7 @@ def test_antenna_label(geo_handle, label_type, val):
 
 
 def test_geo_handling(geo_handle):
-    h = geo_handling.get_location(["HH701"])
+    h = geo_handling.get_location(["HH701"], testing=True)
     assert h[0].station_name == "HH701"
     geo_handle.file_type = "csv"
     hdr = geo_handle._loc_line("header")

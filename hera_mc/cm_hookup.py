@@ -443,7 +443,7 @@ class Hookup(object):
 
         """
         hu_notes = self.get_notes(
-            hookup_dict=hookup_dict, state=state, return_dict=True
+            session, hookup_dict=hookup_dict, state=state, return_dict=True
         )
         full_info_string = ""
         for hkey in cm_utils.put_keys_in_order(list(hu_notes.keys()), sort_order="NPR"):
