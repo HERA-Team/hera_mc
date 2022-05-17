@@ -50,13 +50,15 @@ if __name__ == "__main__":
     # Pre-process some args
     at_date = cm_utils.get_astropytime(args.date, args.time, args.format)
     args.verbosity = cm_utils.parse_verbosity(args.verbosity)
-
-    db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
-
     if args.verbosity > 1:
         print("Trying to add new part {}:{}".format(args.hpn, args.rev))
-    new_part = [[args.hpn, args.rev, args.hptype, args.mfg]]
-    cm_partconnect.add_new_parts(
-        session, part_list=new_part, at_date=at_date, allow_restart=args.allow_restart
-    )
+
+    db = mc.connect_to_mc_db(args)
+    with db.sessionmaker() as session:
+        new_part = [[args.hpn, args.rev, args.hptype, args.mfg]]
+        cm_partconnect.add_new_parts(
+            session,
+            part_list=new_part,
+            at_date=at_date,
+            allow_restart=args.allow_restart,
+        )

@@ -47,20 +47,20 @@ if __name__ == "__main__":
         args.reference = None
 
     db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
-    if args.rev.lower() == "last":
-        args.rev = cm_revisions.get_last_revision(args.hpn, session)[0].rev
-        if args.verbose:
-            print("Using last revision: {}".format(args.rev))
+    with db.sessionmaker() as session:
+        if args.rev.lower() == "last":
+            args.rev = cm_revisions.get_last_revision(args.hpn, session=session)[0].rev
+            if args.verbose:
+                print("Using last revision: {}".format(args.rev))
 
-    # Check for part
-    if args.verbose:
-        print("Adding info for part {}:{}".format(args.hpn, args.rev))
-    cm_partconnect.add_part_info(
-        session,
-        args.hpn,
-        args.rev,
-        args.comment,
-        at_date=at_date,
-        reference=args.reference,
-    )
+        # Check for part
+        if args.verbose:
+            print("Adding info for part {}:{}".format(args.hpn, args.rev))
+        cm_partconnect.add_part_info(
+            session,
+            args.hpn,
+            args.rev,
+            args.comment,
+            at_date=at_date,
+            reference=args.reference,
+        )

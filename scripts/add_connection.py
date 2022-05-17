@@ -49,9 +49,7 @@ if __name__ == "__main__":
     at_date = cm_utils.get_astropytime(args.date, args.time, args.format)
 
     db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
     connect = cm_partconnect.Connections()
-    handling = cm_handling.Handling(session)
 
     # Check for connection
     c = cm_partconnect.Connections()
@@ -63,28 +61,37 @@ if __name__ == "__main__":
         down_part_rev=args.dnrev,
         downstream_input_port=args.dnport,
     )
-    chk = handling.get_specific_connection(c, at_date)
-    if len(chk) == 0:
-        go_ahead = True
-    elif len(chk) == 1 and chk[0].stop_gpstime is not None:
-        go_ahead = True
-    else:
-        go_ahead = False
+    with db.sessionmaker() as session:
+        handling = cm_handling.Handling(session)
+        chk = handling.get_specific_connection(c, at_date)
+        if len(chk) == 0:
+            go_ahead = True
+        elif len(chk) == 1 and chk[0].stop_gpstime is not None:
+            go_ahead = True
+        else:
+            go_ahead = False
 
-    if go_ahead:
-        if args.verbosity > 1:
-            print(
-                "Adding connection {}:{}:{} <-> {}:{}:{}".format(
+        if go_ahead:
+            if args.verbosity > 1:
+                print(
+                    "Adding connection {}:{}:{} <-> {}:{}:{}".format(
+                        args.uppart,
+                        args.uprev,
+                        args.upport,
+                        args.dnpart,
+                        args.dnrev,
+                        args.dnport,
+                    )
+                )
+            # Connect parts
+            npc = [
+                [
                     args.uppart,
                     args.uprev,
                     args.upport,
                     args.dnpart,
                     args.dnrev,
                     args.dnport,
-                )
-            )
-        # Connect parts
-        npc = [
-            [args.uppart, args.uprev, args.upport, args.dnpart, args.dnrev, args.dnport]
-        ]
-        cm_partconnect.add_new_connections(session, connect, npc, at_date)
+                ]
+            ]
+            cm_partconnect.add_new_connections(session, connect, npc, at_date)

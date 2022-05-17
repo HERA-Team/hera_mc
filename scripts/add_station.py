@@ -133,10 +133,10 @@ if __name__ == "__main__":
         args = query_geo_information(args)
 
     db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
-    geo_handle = geo_handling.Handling(session)
+    with db.sessionmaker() as session:
+        geo_handle = geo_handling.Handling(session)
 
-    if entry_OK_to_add(session, args.station_name, geo_handle):
-        cm_utils.log("add_station", args=args)
-        add_entry_to_geo_location(session, args)
-        add_entry_to_parts(session, args)
+        if entry_OK_to_add(session, args.station_name, geo_handle):
+            cm_utils.log("add_station", args=args)
+            add_entry_to_geo_location(session, args)
+            add_entry_to_parts(session, args)
