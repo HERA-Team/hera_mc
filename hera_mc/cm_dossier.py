@@ -315,6 +315,7 @@ class HookupEntry(object):
             self.columns = input_dict["columns"]
             self.timing = input_dict["timing"]
             self.sysdef = cm_sysdef.Sysdef(input_dict=input_dict["sysdef"])
+            self.apriori = None
         else:
             if entry_key is None:
                 raise ValueError(
@@ -331,6 +332,7 @@ class HookupEntry(object):
             self.columns = {}  # list with the actual column headers in hookup
             self.timing = {}  # aggregate hookup start and stop
             self.sysdef = sysdef
+            self.apriori = None
 
     def __repr__(self):
         """Define representation."""
