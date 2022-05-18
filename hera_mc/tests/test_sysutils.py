@@ -258,7 +258,7 @@ def test_other_hookup(sys_handle, mcsession, capsys):
 
 def test_hookup_convenience():
     hookup = cm_hookup.get_hookup(testing=True)
-    assert "HH700:A" in hookup.keys()
+    assert "HH700:A" in hookup.keys("HH")
 
 
 def test_hookup_notes(mcsession, capsys):

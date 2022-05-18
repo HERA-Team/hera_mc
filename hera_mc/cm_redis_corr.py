@@ -97,7 +97,7 @@ def set_redis_cminfo(
 
     # Write cminfo content into redis (cminfo)
     if session is None:
-        import mc
+        from hera_mc import mc
 
         if testing:
             db = mc.connect_to_mc_testing_db()
