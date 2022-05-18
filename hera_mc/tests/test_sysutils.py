@@ -37,6 +37,9 @@ def sys_handle(mcsession):
 def test_set_redis_cminfo(mcsession):
     redishost = TEST_DEFAULT_REDIS_HOST
     rsession = redis.Redis(redishost, decode_responses=True)
+    cm_redis_corr.set_redis_cminfo(redishost=redishost, session=None, testing=True)
+    test_out = rsession.hget("testing_corr:map", "ant_to_snap")
+    assert '{"host": "heraNode700Snap0", "channel": 0}' in test_out
     cm_redis_corr.set_redis_cminfo(redishost=redishost, session=mcsession, testing=True)
     test_out = rsession.hget("testing_corr:map", "ant_to_snap")
     assert '{"host": "heraNode700Snap0", "channel": 0}' in test_out
