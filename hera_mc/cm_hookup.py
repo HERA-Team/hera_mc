@@ -197,8 +197,8 @@ class Hookup(object):
                     port_pol, part_types_found
                 )
                 hookup_dict[k].add_timing_and_fully_connected(port_pol)
-            if k in self.active.keys():
-                hookup_dict[k].apriori = self.active[k].apriori.status
+            if k in self.active.apriori.keys():
+                hookup_dict[k].apriori = self.active.apriori[k].status
 
         return hookup_dict
 
