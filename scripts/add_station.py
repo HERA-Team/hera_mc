@@ -35,7 +35,6 @@ def entry_OK_to_add(session, station_name, geo_handle):
     if geo_handle.is_in_database(station_name):
         print(station_name, " already present.")
         OK = False
-    geo_handle.close()
     return OK
 
 

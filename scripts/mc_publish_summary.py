@@ -46,11 +46,10 @@ if __name__ == "__main__":
 
     # Start session
     db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
-
-    system = cm_sysutils.Handling(session)
-    system.publish_summary(
-        hlist=args.hpn,
-        exact_match=args.exact_match,
-        hookup_cols=args.hookup_cols,
-    )
+    with db.sessionmaker() as session:
+        system = cm_sysutils.Handling(session)
+        system.publish_summary(
+            hlist=args.hpn,
+            exact_match=args.exact_match,
+            hookup_cols=args.hookup_cols,
+        )

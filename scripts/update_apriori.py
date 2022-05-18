@@ -36,11 +36,11 @@ if __name__ == "__main__":
     at_date = cm_utils.get_astropytime(args.date, args.time, args.format)
 
     db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
-    cm_partconnect.update_apriori_antenna(
-        antenna=args.hpn,
-        status=args.status,
-        start_gpstime=at_date.gps,
-        stop_gpstime=None,
-        session=session,
-    )
+    with db.sessionmaker() as session:
+        cm_partconnect.update_apriori_antenna(
+            antenna=args.hpn,
+            status=args.status,
+            start_gpstime=at_date.gps,
+            stop_gpstime=None,
+            session=session,
+        )

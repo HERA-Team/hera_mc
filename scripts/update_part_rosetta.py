@@ -49,11 +49,10 @@ if __name__ == "__main__":
     stop_date = cm_utils.get_astropytime(args.date2, args.time2, args.time2float_format)
 
     db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
-
-    # Check for part
-    if args.verbose:
-        print("Adding part_rosetta {}: - {}".format(args.hpn, args.syspn))
-    cm_partconnect.update_part_rosetta(
-        args.hpn, args.syspn, start_date, stop_date, session
-    )
+    with db.sessionmaker() as session:
+        # Check for part
+        if args.verbose:
+            print("Adding part_rosetta {}: - {}".format(args.hpn, args.syspn))
+        cm_partconnect.update_part_rosetta(
+            args.hpn, args.syspn, start_date, stop_date, session
+        )

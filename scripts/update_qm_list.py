@@ -8,8 +8,5 @@ import hera_mc.mc as mc
 parser = mc.get_mc_argument_parser()
 args = parser.parse_args()
 db = mc.connect_to_mc_db(args)
-session = db.sessionmaker()
-
-session.update_qm_list()
-
-session.commit()
+with db.sessionmaker() as session:
+    session.update_qm_list()
