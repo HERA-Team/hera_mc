@@ -5,6 +5,8 @@
 
 """System watch-dogs."""
 
+from redis import ResponseError
+
 
 def read_forward_list():  # pragma: no cover
     """Read in emails from .forward file."""
@@ -101,7 +103,10 @@ def node_verdict(
             hw = key.split(":")[3]
             node_info[node][hw] = r.hgetall(key)
     node_list = sorted(node_info.keys())
-    node_info["param"] = r.hgetall("verdict")
+    try:
+        node_info["param"] = r.hgetall("verdict")
+    except ResponseError:
+        node_info[node][hw] = r.get(key)
     this_email = None
     if node_info["param"]:
         this_time = float(node_info["param"]["time"])
