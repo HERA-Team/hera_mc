@@ -58,48 +58,48 @@ if __name__ == "__main__":
     )
 
     db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
-    handling = cm_handling.Handling(session)
-    chk = handling.get_specific_connection(c, at_date)
-    if len(chk) == 1 and chk[0].stop_gpstime is None:
-        connection_start_was = chk[0].start_gpstime
-        print(
-            "Stopping connection {}:{}:{} <-> {}:{}:{} : {}".format(
-                args.uppart,
-                args.uprev,
-                args.upport,
-                args.dnpart,
-                args.dnrev,
-                args.dnport,
-                connection_start_was,
+    with db.sessionmaker() as session:
+        handling = cm_handling.Handling(session)
+        chk = handling.get_specific_connection(c, at_date)
+        if len(chk) == 1 and chk[0].stop_gpstime is None:
+            connection_start_was = chk[0].start_gpstime
+            print(
+                "Stopping connection {}:{}:{} <-> {}:{}:{} : {}".format(
+                    args.uppart,
+                    args.uprev,
+                    args.upport,
+                    args.dnpart,
+                    args.dnrev,
+                    args.dnport,
+                    connection_start_was,
+                )
             )
-        )
-        go_ahead = True
-    else:
-        print("Error:  Connection to stop is not valid.  Quitting.")
-        print(
-            "{}:{}:{} <X> {}:{}:{}".format(
-                args.uppart,
-                args.uprev,
-                args.upport,
-                args.dnpart,
-                args.dnrev,
-                args.dnport,
+            go_ahead = True
+        else:
+            print("Error:  Connection to stop is not valid.  Quitting.")
+            print(
+                "{}:{}:{} <X> {}:{}:{}".format(
+                    args.uppart,
+                    args.uprev,
+                    args.upport,
+                    args.dnpart,
+                    args.dnrev,
+                    args.dnport,
+                )
             )
-        )
-        go_ahead = False
+            go_ahead = False
 
-    if go_ahead:
-        # Connect parts
-        npc = [
-            [
-                args.uppart,
-                args.uprev,
-                args.dnpart,
-                args.dnrev,
-                args.upport,
-                args.dnport,
-                connection_start_was,
+        if go_ahead:
+            # Connect parts
+            npc = [
+                [
+                    args.uppart,
+                    args.uprev,
+                    args.dnpart,
+                    args.dnrev,
+                    args.upport,
+                    args.dnport,
+                    connection_start_was,
+                ]
             ]
-        ]
-        cm_partconnect.stop_connections(session, npc, at_date)
+            cm_partconnect.stop_connections(session, npc, at_date)

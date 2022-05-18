@@ -47,13 +47,12 @@ if __name__ == "__main__":
     at_date = cm_utils.get_astropytime(args.date, args.time, args.format)
 
     db = mc.connect_to_mc_db(args)
-    session = db.sessionmaker()
-
-    # Stop parts
-    np = [[args.part, args.rev]]
-    cm_partconnect.stop_existing_parts(
-        session=session,
-        hpnr_list=np,
-        at_date=at_date,
-        allow_override=args.allow_override,
-    )
+    with db.sessionmaker() as session:
+        # Stop parts
+        np = [[args.part, args.rev]]
+        cm_partconnect.stop_existing_parts(
+            session=session,
+            hpnr_list=np,
+            at_date=at_date,
+            allow_override=args.allow_override,
+        )
