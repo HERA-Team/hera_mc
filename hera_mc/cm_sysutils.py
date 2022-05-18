@@ -541,6 +541,8 @@ def node_antennas(source="file", session=None):
     ----------
     source : str or hookup instance
         Source of node antennas - either 'file' or 'hookup' or a hookup
+    session : sqalchemy session object
+        Session generated via db.sessionmaker
 
     Returns
     -------
@@ -620,7 +622,7 @@ def _find_ant_node(pnsearch, na_dict):
     return found_node
 
 
-def which_node(ant_num, session=None):
+def which_node(ant_num, session):
     """
     Find node for antenna.
 
@@ -628,18 +630,14 @@ def which_node(ant_num, session=None):
     ----------
     ant_num : int or list of int or csv-list or hyphen-range str
         Antenna numbers, as int
+    session : sqalchemy session object
+        Session generated via db.sessionmaker
 
     Returns
     -------
     dict
         Contains antenna and node
     """
-    if session is None:
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-    else:
-        close_session_when_done = False
     na_from_file = node_antennas("file", session=session)
     na_from_hookup = node_antennas("hookup", session=session)
     ant_num = cm_utils.listify(ant_num)
@@ -648,8 +646,6 @@ def which_node(ant_num, session=None):
         pnint = cm_utils.peel_key(str(pn), "NPR")[0]
         ant_node[pnint] = [_find_ant_node(pnint, na_from_file)]
         ant_node[pnint].append(_find_ant_node(pnint, na_from_hookup))
-    if close_session_when_done:
-        session.close()
     return ant_node
 
 
@@ -708,6 +704,8 @@ def node_info(node_num="active", session=None):
         Node numbers, as int or hera part number.
         If 'active', use list of active nodes.
         if 'all', use list of all.
+    session : sqalchemy session object
+        Session generated via db.sessionmaker
 
     Returns
     -------

@@ -93,6 +93,11 @@ def test_various_handling_utils(parts, capsys):
     assert parts.cm_handle.allowed_ports is None
 
 
+def test_active_convenience():
+    active = cm_active.get_active(loading=["apriori"], testing=True)
+    assert active.apriori["HH700:A"].status == "not_connected"
+
+
 def test_apriori(mcsession):
     active = cm_active.ActiveData(mcsession)
     active.load_apriori()

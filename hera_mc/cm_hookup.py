@@ -28,8 +28,8 @@ def get_hookup(
     Return a single hookup dossier.
 
     This allows for a simple way to get a part hookup, however if more
-    transactions are needed, please use the structure to generate a session
-    and pass that session to the methods.
+    transactions are needed, please use the the sessionmaker in mc to
+    generate a context managed session and pass that session to the class.
 
     Parameters
     ----------
@@ -67,7 +67,7 @@ def get_hookup(
     """
     if testing:
         db = mc.connect_to_mc_testing_db()
-    else:
+    else:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
     with db.sessionmaker() as session:
         hookup = Hookup(session)
@@ -806,9 +806,7 @@ class Hookup(object):
         }
         cm_utils.log("update_cache", log_dict=log_dict)
 
-    def read_hookup_cache_from_file(
-        self,
-    ):
+    def read_hookup_cache_from_file(self):
         """Read the current cache file into memory."""
         with open(self.hookup_cache_file, "r") as outfile:
             cache_dict = json.load(outfile)

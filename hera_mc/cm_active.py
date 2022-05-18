@@ -4,10 +4,10 @@
 # Licensed under the 2-clause BSD license.
 
 """Methods to load all active data for a given date."""
+from copy import copy
 
 from . import mc, cm_utils
 from . import cm_partconnect as partconn
-from copy import copy
 
 
 def get_active(
@@ -15,6 +15,10 @@ def get_active(
 ):
     """
     Return an ActiveData object with specified loading.
+
+    This allows for a simple way to get the active data, however if more
+    transactions are needed, please use the sessionmaker in mc to generate a
+    context managed session and pass that session to the class.
 
     Parameters
     ----------
@@ -24,6 +28,8 @@ def get_active(
         Time at which to initialize, ignored if at_date is a float or contains time information
     float_format : str
         Format if at_date is a number denoting gps or unix seconds or jd day.
+    loading : list
+        List of active components to load: parts, connections, apriori, rosetta, info, geo
     testing : bool
         Flag to set to testing db.
 
@@ -34,7 +40,7 @@ def get_active(
     """
     if testing:
         db = mc.connect_to_mc_testing_db()
-    else:
+    else:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
     with db.sessionmaker() as session:
         active = ActiveData(
