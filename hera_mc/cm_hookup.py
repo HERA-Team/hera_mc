@@ -161,6 +161,7 @@ class Hookup(object):
         self.active = cm_active.ActiveData(self.session, at_date=at_date)
         self.active.load_parts(at_date=None)
         self.active.load_connections(at_date=None)
+        self.active.load_apriori(at_date=None)
         hpn, exact_match = self._proc_hpnlist(hpn, exact_match)
         parts = self._cull_dict(hpn, self.active.parts, exact_match)
         hookup_dict = {}
@@ -196,6 +197,9 @@ class Hookup(object):
                     port_pol, part_types_found
                 )
                 hookup_dict[k].add_timing_and_fully_connected(port_pol)
+            if k in self.active.keys():
+                hookup_dict[k].apriori = self.active[k].apriori.status
+
         return hookup_dict
 
     def get_hookup(
