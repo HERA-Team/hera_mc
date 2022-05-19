@@ -105,8 +105,8 @@ def node_verdict(
     node_list = sorted(node_info.keys())
     try:
         node_info["param"] = r.hgetall("verdict")
-    except ResponseError:
-        node_info[node][hw] = r.get(key)
+    except ResponseError:  # pragma: no cover
+        node_info[node][hw] = r.get(key)  # pragma: no cover
     this_email = None
     if node_info["param"]:
         this_time = float(node_info["param"]["time"])
