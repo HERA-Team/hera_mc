@@ -101,7 +101,7 @@ def set_redis_cminfo(
 
         if testing:
             db = mc.connect_to_mc_testing_db()
-        else:  # pragma: no cover
+        else:
             db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
