@@ -67,7 +67,7 @@ def get_hookup(
     """
     if testing:
         db = mc.connect_to_mc_testing_db()
-    else:  # pragma: no cover
+    else:
         db = mc.connect_to_mc_db(None)
     with db.sessionmaker() as session:
         hookup = Hookup(session)
