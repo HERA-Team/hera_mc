@@ -23,7 +23,7 @@ def cofa(testing=False):
     """Return location class of current COFA."""
     if testing:
         db = mc.connect_to_mc_testing_db()
-    else:
+    else:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
     with db.sessionmaker() as session:
         h = Handling(session)
@@ -63,7 +63,7 @@ def get_location(
     query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
     if testing:
         db = mc.connect_to_mc_testing_db()
-    else:
+    else:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
     with db.sessionmaker() as session:
         h = Handling(session)
