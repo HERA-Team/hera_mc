@@ -29,7 +29,6 @@ logger = logging.getLogger(__file__)
 logger.ident = "hera_mini_snap_catcher"
 
 syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
-#syslog_handler.setLevel(logging.INFO)
 syslog_handler.setFormatter(
     logging.Formatter(
         "%(module)s %(message)s",
@@ -150,7 +149,7 @@ while True:
                         timestamp = Time(status["timestamp"]).jd
 
                         if snap_hostname not in last_time_mapping:
-                            last_time_mapping[snap_hostname] = Time.now().jd
+                            last_time_mapping[snap_hostname] = timestamp
                         else:
                             if timestamp <= last_time_mapping[snap_hostname]:
                                 # Time has not progressed yet.
