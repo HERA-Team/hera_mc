@@ -11,7 +11,6 @@ import numpy as np
 from astropy.time import Time, TimeDelta
 
 from ..rtp import (
-    RTPStatus,
     RTPProcessEvent,
     RTPTaskProcessEvent,
     RTPTaskMultipleProcessEvent,
@@ -24,33 +23,6 @@ from ..rtp import (
     RTPTaskMultipleTrack,
 )
 from .. import utils
-
-
-@pytest.fixture(scope="module")
-def status():
-    class DataHolder(object):
-        # pick a date far in the past just in case IERS is down
-        t0 = Time(2457000, format="jd")
-        time = t0 - TimeDelta(30 * 60, format="sec")
-        status_names = [
-            "time",
-            "status",
-            "event_min_elapsed",
-            "num_processes",
-            "restart_hours_elapsed",
-        ]
-        status_values = [time, "happy", 3.6, 8, 10.2]
-        status_columns = dict(zip(status_names, status_values))
-
-    data = DataHolder()
-
-    # yields the data we need but will continue to the del call after tests
-    yield data
-
-    # some post-test object cleanup
-    del data
-
-    return
 
 
 @pytest.fixture(scope="module")
@@ -342,69 +314,6 @@ def multiple_track(observation):
     return
 
 
-def test_add_rtp_status(mcsession, status):
-    test_session = mcsession
-    test_session.add_rtp_status(*status.status_values)
-
-    exp_columns = status.status_columns.copy()
-    exp_columns["time"] = int(floor(exp_columns["time"].gps))
-    expected = RTPStatus(**exp_columns)
-
-    result = test_session.get_rtp_status(
-        starttime=status.status_columns["time"] - TimeDelta(2, format="sec")
-    )
-    assert len(result) == 1
-    result = result[0]
-
-    assert result.isclose(expected)
-
-    new_status_time = status.status_columns["time"] + TimeDelta(5 * 60, format="sec")
-    new_status = "unhappy"
-    test_session.add_rtp_status(
-        new_status_time,
-        new_status,
-        status.status_columns["event_min_elapsed"] + 5,
-        status.status_columns["num_processes"],
-        status.status_columns["restart_hours_elapsed"] + 5.0 / 60.0,
-    )
-
-    result_mult = test_session.get_rtp_status(
-        starttime=status.status_columns["time"] - TimeDelta(2, format="sec"),
-        stoptime=new_status_time,
-    )
-    assert len(result_mult) == 2
-
-    result2 = test_session.get_rtp_status(
-        starttime=new_status_time - TimeDelta(2, format="sec")
-    )
-    assert len(result2) == 1
-    result2 = result2[0]
-    assert not result2.isclose(expected)
-
-    result_most_recent = test_session.get_rtp_status()
-    assert len(result_most_recent) == 1
-    result_most_recent = result_most_recent[0]
-    assert result2.isclose(result_most_recent)
-
-
-def test_errors_rtp_status(mcsession, status):
-    test_session = mcsession
-    with pytest.raises(ValueError, match="time must be an astropy Time objec"):
-        test_session.add_rtp_status("foo", *status.status_values[1:])
-
-    test_session.add_rtp_status(*status.status_values)
-    with pytest.raises(
-        ValueError, match="starttime must be specified if most_recent is False"
-    ):
-        test_session.get_rtp_status(most_recent=False)
-    with pytest.raises(ValueError, match="starttime must be an astropy time object"):
-        test_session.get_rtp_status(starttime="unhappy")
-    with pytest.raises(ValueError, match="stoptime must be an astropy time object"):
-        test_session.get_rtp_status(
-            starttime=status.status_columns["time"], stoptime="unhappy"
-        )
-
-
 def test_add_rtp_process_event(mcsession, observation, event):
     test_session = mcsession
 
@@ -668,24 +577,24 @@ def test_errors_rtp_task_process_event(
     return
 
 
-def test_classes_not_equal(mcsession, status, observation, event):
+def test_classes_not_equal(mcsession, record, observation, event):
     test_session = mcsession
     test_session.add_obs(*observation.observation_values)
     obs_result = test_session.get_obs()
     assert len(obs_result) == 1
 
     test_session.add_rtp_process_event(*event.event_values)
-    test_session.add_rtp_status(*status.status_values)
+    test_session.add_rtp_process_record(*record.record_values)
 
-    status_result = test_session.get_rtp_status(
-        starttime=status.status_columns["time"] - TimeDelta(2, format="sec")
+    record_result = test_session.get_rtp_process_record(
+        starttime=record.record_columns["time"] - TimeDelta(2, format="sec")
     )
-    assert len(status_result) == 1
-    status_result = status_result[0]
+    assert len(record_result) == 1
+    record_result = record_result[0]
     event_result = test_session.get_rtp_process_event(
         starttime=event.event_columns["time"] - TimeDelta(2, format="sec")
     )
-    assert not status_result.isclose(event_result)
+    assert not record_result.isclose(event_result)
 
 
 def test_add_rtp_process_record(mcsession, observation, record):
