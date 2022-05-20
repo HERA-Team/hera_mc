@@ -2812,8 +2812,8 @@ def test_antenna_status_errors(mcsession):
 
 
 @requires_redis
-@pytest.mark.filterwarnings("ignore:fem_switch value is Unknown mode")
-@pytest.mark.filterwarnings("ignore:fem_switch value is null")
+@pytest.mark.filterwarnings("ignore:fem_switch value is UNKNOWN")
+@pytest.mark.filterwarnings("ignore:fem_switch value is Unknown")
 def test_redis_add_antenna_status_from_corrcm(mcsession):
     pytest.importorskip("hera_corr_cm")
     test_session = mcsession
@@ -2821,6 +2821,7 @@ def test_redis_add_antenna_status_from_corrcm(mcsession):
     result_test1 = corr._get_ant_status(redishost=TEST_DEFAULT_REDIS_HOST)
     result_test2 = corr.create_antenna_status(redishost=TEST_DEFAULT_REDIS_HOST)
 
+    assert len(result_test1) > 0
     assert len(result_test1) == len(result_test2)
 
     result_test3 = test_session.add_antenna_status_from_corrcm(
