@@ -254,7 +254,7 @@ def node_temperature(
                     ht = " {:4.1f} ".format(this_temp)
                 htlist.append(ht)
             msg += "\n\t {:02d}   {}".format(node_num, "  ".join(htlist))
-    if close_session_when_done:
+    if close_session_when_done:  # pragma: no cover
         session.close()
     if msg != msg_header:
         subject = msg_header.splitlines()[0]

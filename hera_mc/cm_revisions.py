@@ -46,7 +46,7 @@ def get_revisions_of_type(
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
 
     """
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
@@ -66,7 +66,7 @@ def get_revisions_of_type(
         revisions = get_specific_revision(hpn, rev_type, session)
 
     if close_session_when_done:
-        session.close()
+        session.close()  # pragma: no cover
     return revisions
 
 

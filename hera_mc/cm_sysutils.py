@@ -566,7 +566,7 @@ def node_antennas(source="file", session=None):
                     prefix = "HH"
                 ants_per_node[node_hpn].append("{}{}".format(prefix, ant))
     else:
-        if session is None:
+        if session is None:  # pragma: no cover
             db = mc.connect_to_mc_db(None)
             session = db.sessionmaker()
             close_session_when_done = True
@@ -583,7 +583,7 @@ def node_antennas(source="file", session=None):
                 continue
             ants_per_node.setdefault(key, [])
             ants_per_node[key].append(cm_utils.split_part_key(this_ant)[0])
-        if close_session_when_done:
+        if close_session_when_done:  # pragma: no cover
             session.close()
     return ants_per_node
 
@@ -712,7 +712,7 @@ def node_info(node_num="active", session=None):
     dict
         Contains node and node component information
     """
-    if session is None:
+    if session is None:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
@@ -797,7 +797,7 @@ def node_info(node_num="active", session=None):
             info[info[node]["arduino"]] = []
         if "" in info.keys():
             del info[""]
-    if close_session_when_done:
+    if close_session_when_done:  # pragma: no cover
         session.close()
     return info
 
