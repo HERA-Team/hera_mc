@@ -34,20 +34,22 @@ def sys_handle(mcsession):
     return cm_sysutils.Handling(mcsession)
 
 
-def test_onsite_cm_session():
+def test_production_cm_session_access():
     hu = cm_hookup.get_hookup("HH")
-    assert "HH201:A" in hu
+    keys = list(hu.keys())
+    assert keys[0].startswith("HH")
     a = cm_active.get_active()
-    assert "HH201:A" in a.apriori
-    x = cm_revisions.get_revisions_of_type("HH700", "last")
+    keys = list(a.apriori.keys())
+    assert keys[0].startswith("HH")
+    x = cm_revisions.get_revisions_of_type("HH799", "last")
     assert not len(x)
-    x = cm_revisions.get_last_revision("HH700")
+    x = cm_revisions.get_last_revision("HH799")
     assert not len(x)
-    x = cm_revisions.get_all_revisions("HH700")
+    x = cm_revisions.get_all_revisions("HH799")
     assert not len(x)
-    x = cm_revisions.get_specific_revision("HH700", "A")
+    x = cm_revisions.get_specific_revision("HH799", "A")
     assert not len(x)
-    x = cm_revisions.get_active_revision("HH700", at_date="now")
+    x = cm_revisions.get_active_revision("HH799", at_date="now")
     assert not len(x)
     x = watch_dog.node_temperature()
     assert x is None
