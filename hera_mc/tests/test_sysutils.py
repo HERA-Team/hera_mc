@@ -24,7 +24,7 @@ from .. import (
     watch_dog,
     node,
 )
-from ..tests import requires_redis, is_onsite, onsite
+from ..tests import requires_redis, is_onsite
 from ..tests import TEST_DEFAULT_REDIS_HOST
 import redis
 
@@ -34,7 +34,6 @@ def sys_handle(mcsession):
     return cm_sysutils.Handling(mcsession)
 
 
-@onsite
 def test_onsite_cm_session():
     hu = cm_hookup.get_hookup("HH")
     assert "HH201:A" in hu
