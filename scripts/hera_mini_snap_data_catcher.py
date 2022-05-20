@@ -100,6 +100,7 @@ while True:
             )
 
         last_time_mapping = {}
+        last_loop_completion = Time.now()
 
         logger.info("Beginning data catching.")
         while True:
@@ -116,7 +117,6 @@ while True:
 
                 downtime = 0
                 file_len = 0
-                last_loop_completion = Time.now()
 
                 while downtime < args.max_downtime and file_len < args.max_file_len:
                     time.sleep(0.01)
