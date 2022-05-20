@@ -51,8 +51,7 @@ def test_onsite_cm_session():
     x = cm_revisions.get_active_revision("HH700", at_date="now")
     assert not len(x)
     x = watch_dog.node_temperature()
-    print(x)
-    assert False
+    assert x is None
 
 
 @requires_redis
