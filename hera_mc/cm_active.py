@@ -40,7 +40,7 @@ def get_active(
     """
     if testing:
         db = mc.connect_to_mc_testing_db()
-    else:
+    else:  # pragma: no cover
         db = mc.connect_to_mc_db(None)
     with db.sessionmaker() as session:
         active = ActiveData(
