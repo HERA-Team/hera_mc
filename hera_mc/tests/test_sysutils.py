@@ -24,7 +24,7 @@ from .. import (
     watch_dog,
     node,
 )
-from ..tests import requires_redis, is_onsite
+from ..tests import requires_redis, is_onsite, onsite
 from ..tests import TEST_DEFAULT_REDIS_HOST
 import redis
 
@@ -34,6 +34,7 @@ def sys_handle(mcsession):
     return cm_sysutils.Handling(mcsession)
 
 
+@onsite
 def test_production_cm_session_access():
     hu = cm_hookup.get_hookup("HH")
     keys = list(hu.keys())
@@ -42,14 +43,6 @@ def test_production_cm_session_access():
     keys = list(a.apriori.keys())
     assert keys[0].startswith("HH")
     x = cm_revisions.get_revisions_of_type("HH799", "last")
-    assert not len(x)
-    x = cm_revisions.get_last_revision("HH799")
-    assert not len(x)
-    x = cm_revisions.get_all_revisions("HH799")
-    assert not len(x)
-    x = cm_revisions.get_specific_revision("HH799", "A")
-    assert not len(x)
-    x = cm_revisions.get_active_revision("HH799", at_date="now")
     assert not len(x)
     x = watch_dog.node_temperature()
     assert x is None

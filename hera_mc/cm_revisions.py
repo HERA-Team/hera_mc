@@ -70,7 +70,7 @@ def get_revisions_of_type(
     return revisions
 
 
-def get_last_revision(hpn, session=None):
+def get_last_revision(hpn, session):
     """
     Return list of latest revisions as Namespace(hpn,rev,erv_query,started,ended).
 
@@ -79,7 +79,7 @@ def get_last_revision(hpn, session=None):
     hpn : str
         HERA part number
     session : object
-        Database session to use.  If None, it will start a new session, then close.
+        Database session to use.
 
     Returns
     -------
@@ -87,13 +87,6 @@ def get_last_revision(hpn, session=None):
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
 
     """
-    if session is None:
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-    else:
-        close_session_when_done = False
-
     revisions = cm_partconnect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         return []
@@ -118,12 +111,10 @@ def get_last_revision(hpn, session=None):
         last_rev.append(
             Namespace(hpn=hpn, rev=rev, rev_query="LAST", started=started, ended=ended)
         )
-    if close_session_when_done:
-        session.close()
     return last_rev
 
 
-def get_all_revisions(hpn, session=None):
+def get_all_revisions(hpn, session):
     """
     Return list of all revisions as Namespace(hpn, rev, started, ended).
 
@@ -132,7 +123,7 @@ def get_all_revisions(hpn, session=None):
     hpn : str
         HERA part number
     session : object
-        Database session to use.  If None, it will start a new session, then close.
+        Database session to use.
 
     Returns
     -------
@@ -140,13 +131,6 @@ def get_all_revisions(hpn, session=None):
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
 
     """
-    if session is None:
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-    else:
-        close_session_when_done = False
-
     revisions = cm_partconnect.get_part_revisions(hpn, session)
     if len(revisions.keys()) == 0:
         all_rev = []
@@ -161,12 +145,10 @@ def get_all_revisions(hpn, session=None):
                     hpn=hpn, rev=rev, rev_query="ALL", started=started, ended=ended
                 )
             )
-    if close_session_when_done:
-        session.close()
     return all_rev
 
 
-def get_specific_revision(hpn, rq, session=None):
+def get_specific_revision(hpn, rq, session):
     """
     Return list of a particular revision as Namespace(hpn,rev,started,ended).
 
@@ -185,13 +167,6 @@ def get_specific_revision(hpn, rq, session=None):
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
 
     """
-    if session is None:
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-    else:
-        close_session_when_done = False
-
     revisions = cm_partconnect.get_part_revisions(hpn, session)
     this_rev = []
     if len(revisions.keys()) > 0:
@@ -208,8 +183,6 @@ def get_specific_revision(hpn, rq, session=None):
                         ended=end_date,
                     )
                 ]
-    if close_session_when_done:
-        session.close()
     return this_rev
 
 
@@ -228,7 +201,7 @@ def get_active_revision(hpn, at_date, at_time=None, float_format=None, session=N
     float_format : str or None
         Format if at_date is a number denoting gps or unix seconds or jd day.
     session : object
-        Database session to use.  If None, it will start a new session, then close.
+        Database session to use.  If None, it will error (didn't change for interface reasons)
 
     Returns
     -------
@@ -236,13 +209,6 @@ def get_active_revision(hpn, at_date, at_time=None, float_format=None, session=N
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
 
     """
-    if session is None:
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-    else:
-        close_session_when_done = False
-
     revisions = cm_partconnect.get_part_revisions(hpn, session)
     return_active = []
     if len(revisions.keys()) > 0:
@@ -260,9 +226,6 @@ def get_active_revision(hpn, at_date, at_time=None, float_format=None, session=N
                         ended=ended,
                     )
                 )
-
-    if close_session_when_done:
-        session.close()
     return return_active
 
 
