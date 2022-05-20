@@ -14,6 +14,7 @@ import numpy as np
 from .. import (
     cm_sysutils,
     cm_partconnect,
+    cm_revisions,
     cm_hookup,
     cm_utils,
     cm_sysdef,
@@ -23,7 +24,7 @@ from .. import (
     watch_dog,
     node,
 )
-from ..tests import requires_redis, is_onsite
+from ..tests import requires_redis, is_onsite, onsite
 from ..tests import TEST_DEFAULT_REDIS_HOST
 import redis
 
@@ -31,6 +32,24 @@ import redis
 @pytest.fixture(scope="function")
 def sys_handle(mcsession):
     return cm_sysutils.Handling(mcsession)
+
+
+@onsite
+def test_onsite_cm_session():
+    hu = cm_hookup.get_hookup("HH")
+    assert "HH201:A" in hu
+    a = cm_active.get_active()
+    assert "HH201:A" in a.apriori
+    x = cm_revisions.get_revisions_of_type("HH700", "last")
+    assert not len(x)
+    x = cm_revisions.get_last_revision("HH700")
+    assert not len(x)
+    x = cm_revisions.get_all_revisions("HH700")
+    assert not len(x)
+    x = cm_revisions.get_specific_revision("HH700", "A")
+    assert not len(x)
+    x = cm_revisions.get_active_revision("HH700")
+    assert not len(x)
 
 
 @requires_redis
