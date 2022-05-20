@@ -46,6 +46,10 @@ def test_production_cm_session_access():
     assert not len(x)
     x = watch_dog.node_temperature()
     assert x is None
+    x = cm_sysutils.node_antennas("hera_mc")
+    assert "N00" in x.keys()
+    x = cm_sysutils.node_info()
+    assert "nodes" in x.keys()
 
 
 @requires_redis
