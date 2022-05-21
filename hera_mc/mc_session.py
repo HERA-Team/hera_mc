@@ -5129,10 +5129,9 @@ class MCSession(Session):
             snap_status_dict = corr._get_snap_status(
                 corr_cm=self.corr_obj, redishost=redishost
             )
-
+        print("MCS5213:  ", snap_status_dict)
         snap_status_list = []
         for hostname, snap_dict in snap_status_dict.items():
-
             # first check if the timestamp is the string 'None'
             # if it is, skip this snap
             timestamp = snap_dict["timestamp"]
