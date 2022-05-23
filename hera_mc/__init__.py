@@ -59,57 +59,51 @@ class MCDeclarativeBase(object):
 
         self_columns = self.__table__.columns
         other_columns = other.__table__.columns
-        if {c.name for c in self_columns} != {c.name for c in other_columns}:
+        if {col.name for col in self_columns} != {col.name for col in other_columns}:
             print("set of columns are not the same")
             return False
 
-        for c in self_columns:
-            self_c = getattr(self, c.name)
-            other_c = getattr(other, c.name)
-            if not isinstance(other_c, type(self_c)):
+        for col in self_columns:
+            self_col = getattr(self, col.name)
+            other_col = getattr(other, col.name)
+            if not isinstance(other_col, type(self_col)):
                 print(
-                    f"column {c} has different types, left is {type(self_c)}, "
-                    f"right is {type(other_c)}."
+                    f"column {col} has different types, left is {type(self_col)}, "
+                    f"right is {type(other_col)}."
                 )
                 return False
-            if isinstance(self_c, int):
-                if self_c != other_c:
-                    print(f"column {c} is int, values are not equal")
+            if isinstance(self_col, int):
+                if self_col != other_col:
+                    print(f"column {col} is int, values are not equal")
                     return False
-            elif isinstance(self_c, str):
-                if self_c != other_c:
-                    print(f"column {c} is str, values are not equal")
+            elif isinstance(self_col, str):
+                if self_col != other_col:
+                    print(f"column {col} is str, values are not equal")
                     return False
-            elif isinstance(self_c, np.ndarray) and self_c.dtype.kind == "i":
-                if not np.all(self_c == other_c):
-                    print(
-                        "column {col} is an int-like array, values are not equal".format(
-                            col=c
-                        )
-                    )
+            elif isinstance(self_col, np.ndarray) and self_col.dtype.kind == "i":
+                if not np.all(self_col == other_col):
+                    print(f"column {col} is an int-like array, values are not equal")
                     return False
-            elif self_c is None:
-                if other_c is None:
+            elif self_col is None:
+                if other_col is None:
                     pass  # nullable columns, both null
                 else:
                     print(
-                        "column {col} is None in first object and {val} in the second.".format(
-                            col=c, val=other_c
-                        )
+                        "column {col} is None in first object and {other_col} in the second."
                     )
                     return False
             else:
-                if hasattr(self, "tols") and c.name in self.tols.keys():
-                    atol = self.tols[c.name]["atol"]
-                    rtol = self.tols[c.name]["rtol"]
+                if hasattr(self, "tols") and col.name in self.tols.keys():
+                    atol = self.tols[col.name]["atol"]
+                    rtol = self.tols[col.name]["rtol"]
                 else:
                     # use numpy defaults
                     atol = 1e-08
                     rtol = 1e-05
-                if not np.isclose(self_c, other_c, atol=atol, rtol=rtol):
+                if not np.isclose(self_col, other_col, atol=atol, rtol=rtol):
                     print(
-                        "column {col} is float-like or a float-like array, "
-                        "values are not equal".format(col=c)
+                        f"column {col} is float-like or a float-like array, "
+                        "values are not equal"
                     )
                     return False
         return True
