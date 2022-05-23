@@ -48,13 +48,51 @@ database to the new schema.
 site are in a self-consistent state.
 
 # Adding new features and testing
-
 `hera_mc` uses redis during testing to check that values read from redis in the live
 version can be correctly added to the databases and retrieved again. When adding new
 features which require data being read from redis, or through any hera correlator code,
 a new redis.rdb file must be created on `redishost` on site which contains an example
 of the new data and added to the repository by overwriting the existing redis.rdb in
 the `test_data` folder.
+
+## Hosting a redis server for testing
+
+Developers interested in running redis on their own development machines
+have multiple options for hosting.
+ - Using native platform redis-server programs. These can be installed from any package manager.
+ - Docker can be used to run a redis server as well. But this requires mounting a volume on the docker container so the new dumps can be loaded into the server.
+
+## Updating the redis dump
+
+A redis backup can be initiated by calling `redis-cli bgsave`.
+The default dump location is `/var/lib/redis/dump.rdb`.
+For safety, move this dump off of the production server and perform any remaining manipulations in a controlled environment.
+With the growing size of redis, it is sometimes necessary to prune large keys to keep the git repo reasonably sized.
+If multiple FPGA bit files (`fpg:*` keys in redis) are present, it is recommended to remove some or most of these first since they can be a few MB worth of data.
+
+When loading a dump into a redis server:
+- stop the server from running.
+- replace the `dump.rdb` for the running server with your new dump.
+- restart the redis server.
+
+
+Additionally, some keys in redis are set to expire after a certain amount of time is passed. To remove the time to live (TTL) on all keys, a few lines in python can be used to loop over the keys.
+
+
+```python
+import redis
+
+r = redis.Redis("uri_to_redis")
+
+for key in r.keys():
+    r.persist(key)
+
+r.save()
+```
+Once the save is complete, re-run hera_mc tests to ensure compatibility.
+If all the tests pass and this dump is read to be committed, copy this dump back to overwrite `hera_mc/hera_mc/data/test_data/dump.rdb`.
+Add and commit the file through git to finilize the update on your branch.
+
 
 # Using alembic for the first time with an existing (non-empty) database
 If you already have a database filled out with tables but have never run alembic before,
