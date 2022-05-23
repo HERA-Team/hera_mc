@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/home/obs/anaconda/envs/hera_mc_rtp/bin/python3.1
 # -*- mode: python; coding: utf-8 -*-
 # Copyright 2021 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
@@ -134,6 +134,60 @@ def query_slurm_db(jobid):
     return slurm_dict
 
 
+def get_jobid_from_finished_tasks(event_query, jobid_query, jobid_table, event_table):
+    """
+    Find the SLURM JobID associated with the most recent finished task.
+
+    For all jobs with matching obsid and task_name values, determines the
+    SLURM JobID from `jobid_query` with the closest start time to the
+    start time of the most recent finished task in `event_query`.
+    `jobid_query` and `event_query` must only contain entries for tasks
+    with a given obsid and task_name.  If no job for a given obsid and task_name
+    is marked as finished, that obsid and task_name pair is ignored.
+
+    Parameters
+    ----------
+    event_query : query
+        Query containing all task process events with a matching obsid and
+        task_name.
+    jobid_query : query
+        Query containing all SLURM tasks with a matching obsid and task_name.
+    jobid_table : class
+        Class specifying the SLURM JobID table to query, i.e. RTPTaskJobID
+        or RTPTaskMultipleJobID.
+    event_table : class
+        Class specifying the event table to query, i.e. RTPTaskProcessEvent
+        or RTPTaskMultipleProcessEvent.
+
+    Returns
+    -------
+    task : object
+        `jobid_table` entry with a start time closest to the most recent
+        finished task in `event_table`.  If no finished tasks found, returns
+        None.
+
+    """
+    finished_tasks = event_query.filter(event_table.event == "finished")
+    if finished_tasks.count() > 0:
+        finish_time = finished_tasks[-1].time
+        started_tasks = event_query.filter(event_table.event == "started")
+        start_times = started_tasks.with_entities(event_table.time)
+        start_times = start_times.order_by(event_table.time)
+        start_times = np.array([t[0] for t in start_times.all()], dtype=int)
+        start_time_ind = np.argmin(np.abs(finish_time - start_times))
+        start_time_tpe = start_times[start_time_ind]
+        mult_times = jobid_query.with_entities(jobid_table.start_time)
+        mult_times = mult_times.order_by(jobid_table.start_time)
+        mult_times = np.array([t[0] for t in mult_times.all()], dtype=int)
+        closest_time_ind = np.argmin(np.abs(start_time_tpe - mult_times))
+        closest_time = int(mult_times[closest_time_ind])
+        task = jobid_query.filter(jobid_table.start_time == closest_time)
+        task = task[0]
+        return task
+    else:
+        return None
+
+
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
     parser.add_argument(
@@ -157,6 +211,7 @@ if __name__ == "__main__":
             isouter=True,
         )
         task_objs = task_objs.filter(RTPTaskResourceRecord.obsid.is_(None))
+        task_objs = task_objs.order_by(RTPTaskJobID.obsid.desc())
         for task in task_objs.limit(args.nrows):
             trr_query = session.query(RTPTaskResourceRecord)
             trr_query = trr_query.filter(
@@ -181,45 +236,11 @@ if __name__ == "__main__":
                         # If a JD is missing, use the last attempt
                         task = mult_attempts.order_by(RTPTaskJobID.start_time)[-1]
                     else:
-                        tpe_tasks = tpe_query.filter(
-                            (RTPTaskProcessEvent.obsid == task.obsid)
-                            & (RTPTaskProcessEvent.task_name == task.task_name)
+                        chosen_task = get_jobid_from_finished_tasks(
+                            tpe_query, mult_attempts, RTPTaskJobID, RTPTaskProcessEvent
                         )
-                        finished_tasks = tpe_tasks.filter(
-                            RTPTaskProcessEvent.event == "finished"
-                        )
-                        if finished_tasks.count() > 0:
-                            # Only add rows for finished tasks
-                            finish_time = finished_tasks[-1].time
-                            started_tasks = tpe_tasks.filter(
-                                RTPTaskProcessEvent.event == "started"
-                            )
-                            start_times = started_tasks.with_entities(
-                                RTPTaskProcessEvent.time
-                            )
-                            start_times = start_times.order_by(RTPTaskProcessEvent.time)
-                            start_times = np.array(
-                                [t[0] for t in start_times.all()], dtype=int
-                            )
-                            start_time_ind = np.argmin(
-                                np.abs(finish_time - start_times)
-                            )
-                            start_time_tpe = start_times[start_time_ind]
-                            mult_times = mult_attempts.with_entities(
-                                RTPTaskJobID.start_time
-                            )
-                            mult_times = mult_times.order_by(RTPTaskJobID.start_time)
-                            mult_times = np.array(
-                                [t[0] for t in mult_times.all()], dtype=int
-                            )
-                            closest_time_ind = np.argmin(
-                                np.abs(start_time_tpe - mult_times)
-                            )
-                            closest_time = int(mult_times[closest_time_ind])
-                            task = mult_attempts.filter(
-                                RTPTaskJobID.start_time == closest_time
-                            )
-                            task = task[0]
+                        if chosen_task is not None:
+                            task = chosen_task
                 slurm_dict = query_slurm_db(task.job_id)
                 if slurm_dict is not None:
                     session.add_rtp_task_resource_record(
@@ -242,6 +263,9 @@ if __name__ == "__main__":
         )
         task_mult_objs = task_mult_objs.filter(
             RTPTaskMultipleResourceRecord.obsid_start.is_(None)
+        )
+        task_mult_objs = task_mult_objs.order_by(
+            RTPTaskMultipleJobID.obsid_start.desc()
         )
         for task in task_mult_objs.limit(args.nrows):
             mtrr_query = session.query(RTPTaskMultipleResourceRecord)
@@ -269,52 +293,14 @@ if __name__ == "__main__":
                             -1
                         ]
                     else:
-                        tpe_tasks = tpe_query.filter(
-                            (
-                                RTPTaskMultipleProcessEvent.obsid_start
-                                == task.obsid_start
-                            )
-                            & (RTPTaskMultipleProcessEvent.task_name == task.task_name)
+                        chosen_task = get_jobid_from_finished_tasks(
+                            tpe_query,
+                            mult_attempts,
+                            RTPTaskMultipleJobID,
+                            RTPTaskMultipleProcessEvent,
                         )
-                        finished_tasks = tpe_tasks.filter(
-                            RTPTaskMultipleProcessEvent.event == "finished"
-                        )
-                        if finished_tasks.count() > 0:
-                            # Only add rows for finished tasks
-                            finish_time = finished_tasks[-1].time
-                            started_tasks = tpe_tasks.filter(
-                                RTPTaskMultipleProcessEvent.event == "started"
-                            )
-                            start_times = started_tasks.with_entities(
-                                RTPTaskMultipleProcessEvent.time
-                            )
-                            start_times = start_times.order_by(
-                                RTPTaskMultipleProcessEvent.time
-                            )
-                            start_times = np.array(
-                                [t[0] for t in start_times.all()], dtype=int
-                            )
-                            start_time_ind = np.argmin(
-                                np.abs(finish_time - start_times)
-                            )
-                            start_time_tpe = start_times[start_time_ind]
-                            mult_times = mult_attempts.with_entities(
-                                RTPTaskMultipleJobID.start_time
-                            )
-                            mult_times = mult_times.order_by(
-                                RTPTaskMultipleJobID.start_time
-                            )
-                            mult_times = np.array(
-                                [t[0] for t in mult_times.all()], dtype=int
-                            )
-                            closest_time_ind = np.argmin(
-                                np.abs(start_time_tpe - mult_times)
-                            )
-                            closest_time = int(mult_times[closest_time_ind])
-                            task = mult_attempts.filter(
-                                RTPTaskMultipleJobID.start_time == closest_time
-                            )
-                            task = task[0]
+                        if chosen_task is not None:
+                            task = chosen_task
                 slurm_dict = query_slurm_db(task.job_id)
                 if slurm_dict is not None:
                     session.add_rtp_task_multiple_resource_record(
