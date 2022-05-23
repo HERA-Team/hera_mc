@@ -98,10 +98,16 @@ def node_verdict(
             node_info.setdefault(node, {})
             node_info[node]["valid"] = True if int(r.get(key)) else False
         elif "verdict:node" in key:
-            node = int(key.split(":")[2])
+            try:
+                node = int(key.split(":")[2])
+            except ValueError:  # pragma: no cover
+                continue  # pragma: no cover
             node_info.setdefault(node, {})
             hw = key.split(":")[3]
-            node_info[node][hw] = r.hgetall(key)
+            try:
+                node_info[node][hw] = r.hgetall(key)
+            except ResponseError:  # pragma: no cover
+                node_info[node][hw] = r.get(key)  # pragma: no cover
     node_list = sorted(node_info.keys())
     try:
         node_info["param"] = r.hgetall("verdict")
