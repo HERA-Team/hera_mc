@@ -199,9 +199,7 @@ class MCSession(Session):
 
         if not most_recent:
             if starttime is None:
-                raise ValueError(
-                    "starttime must be specified if most_recent " "is False"
-                )
+                raise ValueError("starttime must be specified if most_recent is False")
             if not isinstance(starttime, Time):
                 raise ValueError(
                     "starttime must be an astropy time object. "
@@ -2509,13 +2507,11 @@ class MCSession(Session):
                 for var in variables:
                     if var not in weather_sensor_dict.keys():
                         raise ValueError(
-                            "variables must be a key in " "weather_sensor_dict."
+                            "variables must be a key in weather_sensor_dict."
                         )
             else:
                 if variables not in weather_sensor_dict.keys():
-                    raise ValueError(
-                        "variables must be a key in " "weather_sensor_dict."
-                    )
+                    raise ValueError("variables must be a key in weather_sensor_dict.")
 
         weather_data_list = create_from_sensors(
             starttime, stoptime, variables=variables
@@ -2573,7 +2569,7 @@ class MCSession(Session):
         """
         if variable is not None:
             if variable not in weather_sensor_dict.keys():
-                raise ValueError("variable must be a key in " "weather_sensor_dict.")
+                raise ValueError("variable must be a key in weather_sensor_dict.")
 
         return self._time_filter(
             WeatherData,
@@ -4491,9 +4487,9 @@ class MCSession(Session):
             if next_start_time is not None:
                 if not overwrite_take_data:
                     raise RuntimeError(
-                        "Correlator is already commanded to " "take data starting at: ",
+                        "Correlator is already commanded to take data starting at: ",
                         Time(next_start_time, format="gps").isot,
-                        ". Use the overwrite_take_data keyword " "to overwrite.",
+                        ". Use the overwrite_take_data keyword to overwrite.",
                     )
                 else:
                     warnings.warn(

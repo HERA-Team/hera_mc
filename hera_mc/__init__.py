@@ -59,10 +59,14 @@ class MCDeclarativeBase(object):
 
         self_columns = self.__table__.columns
         other_columns = other.__table__.columns
-        if {col.name for col in self_columns} != {col.name for col in other_columns}:
-            print("set of columns are not the same")
-            return False
-
+        # the following is structured as an assert because I cannot make it fail but
+        # think it should be checked.
+        assert {col.name for col in self_columns} == {
+            col.name for col in other_columns
+        }, (
+            "Set of columns are not the same. This should not happen, please make an "
+            "issue in our repo."
+        )
         for col in self_columns:
             self_col = getattr(self, col.name)
             other_col = getattr(other, col.name)
@@ -80,18 +84,8 @@ class MCDeclarativeBase(object):
                 if self_col != other_col:
                     print(f"column {col} is str, values are not equal")
                     return False
-            elif isinstance(self_col, np.ndarray) and self_col.dtype.kind == "i":
-                if not np.all(self_col == other_col):
-                    print(f"column {col} is an int-like array, values are not equal")
-                    return False
             elif self_col is None:
-                if other_col is None:
-                    pass  # nullable columns, both null
-                else:
-                    print(
-                        "column {col} is None in first object and {other_col} in the second."
-                    )
-                    return False
+                pass  # nullable columns, both null (otherwise caught as different types)
             else:
                 if hasattr(self, "tols") and col.name in self.tols.keys():
                     atol = self.tols[col.name]["atol"]

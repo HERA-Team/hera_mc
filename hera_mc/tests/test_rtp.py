@@ -4,6 +4,7 @@
 
 """Testing for `hera_mc.rtp`."""
 import os
+from copy import deepcopy
 from math import floor
 
 import pytest
@@ -415,6 +416,11 @@ def test_errors_rtp_process_event(mcsession, observation, event):
         test_session.get_rtp_process_event(
             starttime=event.event_columns["time"], stoptime="bar"
         )
+
+    with pytest.raises(
+        ValueError, match="starttime must be specified if most_recent is False"
+    ):
+        test_session.get_rtp_process_event(most_recent=False)
 
 
 @pytest.mark.parametrize("multiple", [False, True])
@@ -950,6 +956,11 @@ def test_add_rtp_task_resource_record(
     result = result[0]
     assert result.isclose(expected)
 
+    # change a value, test not close
+    expected2 = deepcopy(expected)
+    expected2.max_memory = 14.2
+    assert not result.isclose(expected2)
+
     new_task_time = data_obj.task_resource_columns["start_time"] + TimeDelta(
         60, format="sec"
     )
@@ -1082,7 +1093,7 @@ def test_add_rtp_task_resource_record(
 
 @pytest.mark.parametrize("multiple", [False, True])
 def test_add_rtp_task_resource_record_nulls(
-    mcsession, observation, record, multiple, task, task_multiple
+    mcsession, observation, multiple, task, task_multiple
 ):
     test_session = mcsession
     test_session.add_obs(*observation.observation_values)
