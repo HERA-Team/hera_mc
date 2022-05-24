@@ -541,8 +541,8 @@ def node_antennas(source="file", session=None):
     ----------
     source : str or hookup instance
         Source of node antennas - either 'file' or 'hookup' or a hookup
-    session : sqalchemy session object
-        Session generated via db.sessionmaker
+    session : sqalchemy session object or None
+        Session generated via db.sessionmaker.  If None, establishes a new one.
 
     Returns
     -------
@@ -566,25 +566,19 @@ def node_antennas(source="file", session=None):
                     prefix = "HH"
                 ants_per_node[node_hpn].append("{}{}".format(prefix, ant))
     else:
-        if session is None:  # pragma: no cover
-            db = mc.connect_to_mc_db(None)
-            session = db.sessionmaker()
-            close_session_when_done = True
-        else:
-            close_session_when_done = False
-        if isinstance(source, str) and source.lower().startswith("h"):
-            source = cm_hookup.Hookup(session)
-        hu_dict = source.get_hookup(
-            cm_sysdef.hera_zone_prefixes, hookup_type="parts_hera"
-        )
-        for this_ant, vna in hu_dict.items():
-            key = vna.hookup["E<ground"][-1].downstream_part
-            if key[0] != "N":
-                continue
-            ants_per_node.setdefault(key, [])
-            ants_per_node[key].append(cm_utils.split_part_key(this_ant)[0])
-        if close_session_when_done:  # pragma: no cover
-            session.close()
+        with mc.MCSessionWrapper(session) as session:
+            if isinstance(source, str) and source.lower().startswith("h"):
+                source = cm_hookup.Hookup(session)
+            hu_dict = source.get_hookup(
+                cm_sysdef.hera_zone_prefixes, hookup_type="parts_hera"
+            )
+            for this_ant, vna in hu_dict.items():
+                key = vna.hookup["E<ground"][-1].downstream_part
+                if key[0] != "N":
+                    continue
+                ants_per_node.setdefault(key, [])
+                ants_per_node[key].append(cm_utils.split_part_key(this_ant)[0])
+
     return ants_per_node
 
 
@@ -622,7 +616,7 @@ def _find_ant_node(pnsearch, na_dict):
     return found_node
 
 
-def which_node(ant_num, session):
+def which_node(ant_num, session=None):
     """
     Find node for antenna.
 
@@ -630,16 +624,17 @@ def which_node(ant_num, session):
     ----------
     ant_num : int or list of int or csv-list or hyphen-range str
         Antenna numbers, as int
-    session : sqalchemy session object
-        Session generated via db.sessionmaker
+    session : sqalchemy session object or None
+        Session generated via db.sessionmaker.  If None, establishes a new one.
 
     Returns
     -------
     dict
         Contains antenna and node
     """
-    na_from_file = node_antennas("file", session=session)
-    na_from_hookup = node_antennas("hookup", session=session)
+    with mc.MCSessionWrapper(session) as session:
+        na_from_file = node_antennas("file", session=session)
+        na_from_hookup = node_antennas("hookup", session=session)
     ant_num = cm_utils.listify(ant_num)
     ant_node = {}
     for pn in ant_num:
@@ -704,24 +699,18 @@ def node_info(node_num="active", session=None):
         Node numbers, as int or hera part number.
         If 'active', use list of active nodes.
         if 'all', use list of all.
-    session : sqalchemy session object
-        Session generated via db.sessionmaker
+    session : sqalchemy session object or None
+        Session generated via db.sessionmaker.  If None, establishes a new one.
 
     Returns
     -------
     dict
         Contains node and node component information
     """
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-    else:
-        close_session_when_done = False
-
-    hu = cm_hookup.Hookup(session)
-    na_from_file = node_antennas("file", session=session)
-    na_from_hookup = node_antennas(hu, session=session)
+    with mc.MCSessionWrapper(session) as session:
+        hu = cm_hookup.Hookup(session)
+        na_from_file = node_antennas("file", session=session)
+        na_from_hookup = node_antennas(hu, session=session)
 
     if node_num == "active":
         node_num = sorted(na_from_hookup)
@@ -797,8 +786,7 @@ def node_info(node_num="active", session=None):
             info[info[node]["arduino"]] = []
         if "" in info.keys():
             del info[""]
-    if close_session_when_done:  # pragma: no cover
-        session.close()
+
     return info
 
 
