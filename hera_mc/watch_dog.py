@@ -176,16 +176,7 @@ def node_temperature(
         If None, it will start a new session on the database
 
     """
-    from . import node, cm_utils, cm_active
-
-    if session is None:  # pragma: no cover
-        from . import mc
-
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-    else:
-        close_session_when_done = False
+    from . import mc, node, cm_utils, cm_active
 
     if at_date is None:
         use_last = True
@@ -194,68 +185,68 @@ def node_temperature(
         use_last = False
         at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
     gps_time = at_date.gps
-    active_parts = cm_active.ActiveData(session=session)
-    active_parts.load_parts(at_date)
-    active_nodes = sorted(
-        [
-            int(cm_utils.split_part_key(key)[0][1:])
-            for key in active_parts.get_hptype("node")
-        ]
-    )
-    active_temps = {}
-    msg_header = (
-        "WARNING: Over-temperature (>{:.1f} C, <{:.2f} days)\n"
-        "\n\tNode   Top     Mid     Bot     Hum"
-        "\n\t----   ----    ----    ----    ----".format(
-            float(temp_threshold), float(time_threshold)
+    with mc.MCSessionWrapper(session) as session:
+        active_parts = cm_active.ActiveData(session=session)
+        active_parts.load_parts(at_date)
+        active_nodes = sorted(
+            [
+                int(cm_utils.split_part_key(key)[0][1:])
+                for key in active_parts.get_hptype("node")
+            ]
         )
-    )
-    msg = "{}".format(msg_header)
-    for node_num in active_nodes:
-        if use_last:
-            nds = (
-                session.query(node.NodeSensor)
-                .filter(node.NodeSensor.node == node_num)
-                .order_by(node.NodeSensor.time.desc())
-                .first()
+        active_temps = {}
+        msg_header = (
+            "WARNING: Over-temperature (>{:.1f} C, <{:.2f} days)\n"
+            "\n\tNode   Top     Mid     Bot     Hum"
+            "\n\t----   ----    ----    ----    ----".format(
+                float(temp_threshold), float(time_threshold)
             )
-        else:
-            nds = (
-                session.query(node.NodeSensor)
-                .filter(
-                    (node.NodeSensor.node == node_num)
-                    & (node.NodeSensor.time < gps_time)
+        )
+        msg = "{}".format(msg_header)
+        for node_num in active_nodes:
+            if use_last:
+                nds = (
+                    session.query(node.NodeSensor)
+                    .filter(node.NodeSensor.node == node_num)
+                    .order_by(node.NodeSensor.time.desc())
+                    .first()
                 )
-                .order_by(node.NodeSensor.time.desc())
-                .first()
-            )
-        if nds is None or (gps_time - nds.time) / 86400.0 > time_threshold:
-            continue
-        active_temps[node_num] = []
-        for sensor_temp in [
-            nds.top_sensor_temp,
-            nds.middle_sensor_temp,
-            nds.bottom_sensor_temp,
-            nds.humidity_sensor_temp,
-        ]:
-            if sensor_temp is None:
-                active_temps[node_num].append(-99.9)
             else:
-                active_temps[node_num].append(sensor_temp)
-        highest_temp = max(active_temps[node_num])
-        if highest_temp > temp_threshold:
-            htlist = []
-            for this_temp in active_temps[node_num]:
-                if this_temp > temp_threshold:
-                    ht = "[{:4.1f}]".format(this_temp)
-                elif this_temp < -99.0:
-                    ht = "  -   "
+                nds = (
+                    session.query(node.NodeSensor)
+                    .filter(
+                        (node.NodeSensor.node == node_num)
+                        & (node.NodeSensor.time < gps_time)
+                    )
+                    .order_by(node.NodeSensor.time.desc())
+                    .first()
+                )
+            if nds is None or (gps_time - nds.time) / 86400.0 > time_threshold:
+                continue
+            active_temps[node_num] = []
+            for sensor_temp in [
+                nds.top_sensor_temp,
+                nds.middle_sensor_temp,
+                nds.bottom_sensor_temp,
+                nds.humidity_sensor_temp,
+            ]:
+                if sensor_temp is None:
+                    active_temps[node_num].append(-99.9)
                 else:
-                    ht = " {:4.1f} ".format(this_temp)
-                htlist.append(ht)
-            msg += "\n\t {:02d}   {}".format(node_num, "  ".join(htlist))
-    if close_session_when_done:  # pragma: no cover
-        session.close()
+                    active_temps[node_num].append(sensor_temp)
+            highest_temp = max(active_temps[node_num])
+            if highest_temp > temp_threshold:
+                htlist = []
+                for this_temp in active_temps[node_num]:
+                    if this_temp > temp_threshold:
+                        ht = "[{:4.1f}]".format(this_temp)
+                    elif this_temp < -99.0:
+                        ht = "  -   "
+                    else:
+                        ht = " {:4.1f} ".format(this_temp)
+                    htlist.append(ht)
+                msg += "\n\t {:02d}   {}".format(node_num, "  ".join(htlist))
+
     if msg != msg_header:
         subject = msg_header.splitlines()[0]
         return send_email(subject, msg, To, skip_send=testing)
