@@ -139,44 +139,37 @@ def update(session=None, data=None, add_new_geo=False):
         print("No update - doing nothing.")
         return False
 
-    close_session_when_done = False
-    if session is None:  # pragma: no cover
-        db = mc.connect_mc_db()
-        session = db.sessionmaker()
-        close_session_when_done = True
-
-    for station_name in data_dict.keys():
-        geo_rec = session.query(GeoLocation).filter(
-            func.upper(GeoLocation.station_name) == station_name.upper()
-        )
-        num_rec = geo_rec.count()
-        make_update = False
-        if num_rec == 0:
-            if add_new_geo:
-                gr = GeoLocation()
-                make_update = True
-            else:
-                raise ValueError(
-                    "{} does not exist and add_new_geo not enabled.".format(
-                        station_name
+    with mc.MCSessionWrapper(session) as session:
+        for station_name in data_dict.keys():
+            geo_rec = session.query(GeoLocation).filter(
+                func.upper(GeoLocation.station_name) == station_name.upper()
+            )
+            num_rec = geo_rec.count()
+            make_update = False
+            if num_rec == 0:
+                if add_new_geo:
+                    gr = GeoLocation()
+                    make_update = True
+                else:
+                    raise ValueError(
+                        "{} does not exist and add_new_geo not enabled.".format(
+                            station_name
+                        )
                     )
-                )
-        elif num_rec == 1:
-            if add_new_geo:
-                raise ValueError(
-                    "{} exists and and_new_geo is enabled.".format(station_name)
-                )
-            else:
-                gr = geo_rec.first()
-                make_update = True
-        if make_update:
-            for d in data_dict[station_name]:
-                setattr(gr, d[1], d[2])
-            session.add(gr)
-            session.commit()
+            elif num_rec == 1:
+                if add_new_geo:
+                    raise ValueError(
+                        "{} exists and and_new_geo is enabled.".format(station_name)
+                    )
+                else:
+                    gr = geo_rec.first()
+                    make_update = True
+            if make_update:
+                for d in data_dict[station_name]:
+                    setattr(gr, d[1], d[2])
+                session.add(gr)
+                session.commit()
     cm_utils.log("geo_location update", data_dict=data_dict)
-    if close_session_when_done:  # pragma: no cover
-        session.close()
 
     return True
 
