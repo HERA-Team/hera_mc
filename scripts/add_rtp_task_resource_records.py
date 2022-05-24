@@ -1,4 +1,4 @@
-#!/home/obs/anaconda/envs/hera_mc_rtp/bin/python3.1
+#! /usr/bin/env python
 # -*- mode: python; coding: utf-8 -*-
 # Copyright 2021 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
