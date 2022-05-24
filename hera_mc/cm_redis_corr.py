@@ -8,7 +8,7 @@ import json
 import redis
 import time
 import warnings
-from . import cm_sysutils, correlator
+from . import cm_sysutils, correlator, mc
 
 REDIS_CMINFO_HASH = "cminfo"
 REDIS_CORR_HASH = "corr:map"
@@ -96,21 +96,9 @@ def set_redis_cminfo(
     rsession = redis.Redis(connection_pool=redis_pool)
 
     # Write cminfo content into redis (cminfo)
-    if session is None:
-        from hera_mc import mc
-
-        if testing:
-            db = mc.connect_to_mc_testing_db()
-        else:  # pragma: no cover
-            db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-    else:
-        close_session_when_done = False
-    h = cm_sysutils.Handling(session=session)
-    cminfo = h.get_cminfo_correlator()
-    if close_session_when_done:
-        session.close()
+    with mc.MCSessionWrapper(session, testing=testing) as session:
+        h = cm_sysutils.Handling(session=session)
+        cminfo = h.get_cminfo_correlator()
 
     redhkey = {}
     for key, value in cminfo.items():
