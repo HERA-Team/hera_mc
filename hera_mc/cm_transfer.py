@@ -96,7 +96,7 @@ def package_db_to_csv(session=None, tables="all"):
         db = mc.connect_to_mc_db(None)
         session = db.sessionmaker()
         close_session_when_done = True
-    else:
+    else:  # pragma: no cover
         close_session_when_done = False
 
     data_prefix = cm_table_info.data_prefix
@@ -384,5 +384,5 @@ def _initialization(
                         setattr(table_inst, field_name[i], r)
                     session.add(table_inst)
                     session.commit()
-    if close_session_when_done:
+    if close_session_when_done:  # pragma: no cover
         session.close()
