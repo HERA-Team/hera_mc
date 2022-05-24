@@ -314,7 +314,7 @@ def _initialization(
     if cm_csv_path is None:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=None, testing=testing)
 
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session, testing=testing) as session:
         if not db_validation(maindb, session):
             print("cm_init not allowed.")
             return False

@@ -65,11 +65,7 @@ def get_hookup(
         Hookup dossier dictionary as defined in cm_dossier
 
     """
-    if testing:
-        db = mc.connect_to_mc_testing_db()
-    else:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-    with db.sessionmaker() as session:
+    with mc.MCSessionWrapper(None, testing=testing) as session:
         hookup = Hookup(session)
         return hookup.get_hookup_from_db(
             hpn=hpn,
