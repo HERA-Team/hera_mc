@@ -46,27 +46,21 @@ def get_revisions_of_type(
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
 
     """
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-    else:
-        close_session_when_done = False
-
     rq = rev_type.upper()
-    if rq.startswith("LAST"):
-        revisions = get_last_revision(hpn, session)
-    elif rq.startswith("ACTIVE"):
-        revisions = get_active_revision(hpn, at_date, at_time, float_format, session)
-    elif rq.startswith("ALL") or rq.startswith("NONE"):
-        revisions = get_all_revisions(hpn, session)
-    elif rq.startswith("FULL"):
-        raise ValueError("FULL revisions called with get_full_revision directly")
-    else:
-        revisions = get_specific_revision(hpn, rev_type, session)
 
-    if close_session_when_done:
-        session.close()  # pragma: no cover
+    with mc.MCSessionWrapper(session) as session:
+        if rq.startswith("LAST"):
+            revisions = get_last_revision(hpn, session)
+        elif rq.startswith("ACTIVE"):
+            revisions = get_active_revision(
+                hpn, at_date, at_time, float_format, session
+            )
+        elif rq.startswith("ALL") or rq.startswith("NONE"):
+            revisions = get_all_revisions(hpn, session)
+        elif rq.startswith("FULL"):
+            raise ValueError("FULL revisions called with get_full_revision directly")
+        else:
+            revisions = get_specific_revision(hpn, rev_type, session)
     return revisions
 
 
@@ -209,23 +203,24 @@ def get_active_revision(hpn, at_date, at_time=None, float_format=None, session=N
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
 
     """
-    revisions = cm_partconnect.get_part_revisions(hpn, session)
-    return_active = []
-    if len(revisions.keys()) > 0:
-        active_date = cm_utils.get_astropytime(at_date, at_time, float_format)
-        for rev in sorted(revisions.keys()):
-            started = revisions[rev]["started"]
-            ended = revisions[rev]["ended"]
-            if cm_utils.is_active(active_date, started, ended):
-                return_active.append(
-                    Namespace(
-                        hpn=hpn,
-                        rev=rev,
-                        rev_query="ACTIVE",
-                        started=started,
-                        ended=ended,
+    with mc.MCSessionWrapper(session) as session:
+        revisions = cm_partconnect.get_part_revisions(hpn, session)
+        return_active = []
+        if len(revisions.keys()) > 0:
+            active_date = cm_utils.get_astropytime(at_date, at_time, float_format)
+            for rev in sorted(revisions.keys()):
+                started = revisions[rev]["started"]
+                ended = revisions[rev]["ended"]
+                if cm_utils.is_active(active_date, started, ended):
+                    return_active.append(
+                        Namespace(
+                            hpn=hpn,
+                            rev=rev,
+                            rev_query="ACTIVE",
+                            started=started,
+                            ended=ended,
+                        )
                     )
-                )
     return return_active
 
 
