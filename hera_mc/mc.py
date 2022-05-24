@@ -101,7 +101,7 @@ class MCSessionWrapper:
     Parameters
     ----------
     session : object or None
-        Supplied session, or None.  For some tests is a str
+        Supplied session, or None.  For some tests it is a str
     testing : bool
         Flag to have new session be on testing database.
 
