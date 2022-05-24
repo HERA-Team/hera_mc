@@ -92,36 +92,28 @@ def package_db_to_csv(session=None, tables="all"):
     """
     import pandas
 
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-    else:  # pragma: no cover
-        close_session_when_done = False
+    with mc.MCSessionWrapper(session) as session:
+        data_prefix = cm_table_info.data_prefix
+        cm_tables = cm_table_info.cm_tables
 
-    data_prefix = cm_table_info.data_prefix
-    cm_tables = cm_table_info.cm_tables
+        if tables == "all":
+            tables_to_write = cm_tables.keys()
+        else:
+            tables_to_write = tables.split(",")
 
-    if tables == "all":
-        tables_to_write = cm_tables.keys()
-    else:
-        tables_to_write = tables.split(",")
-
-    print("Writing packaged files to current directory.")
-    print(
-        "--> If packing from qmaster, be sure to use 'cm_pack.py --go' to "
-        "copy, commit and log the change."
-    )
-    print("    Note:  this works via the hera_cm_db_updates repo.")
-    files_written = []
-    for table in tables_to_write:
-        data_filename = data_prefix + table + ".csv"
-        table_data = pandas.read_sql_table(table, session.get_bind())
-        print("\tPackaging:  " + data_filename)
-        table_data.to_csv(data_filename, index=False)
-        files_written.append(data_filename)
-    if close_session_when_done:
-        session.close()
+        print("Writing packaged files to current directory.")
+        print(
+            "--> If packing from qmaster, be sure to use 'cm_pack.py --go' to "
+            "copy, commit and log the change."
+        )
+        print("    Note:  this works via the hera_cm_db_updates repo.")
+        files_written = []
+        for table in tables_to_write:
+            data_filename = data_prefix + table + ".csv"
+            table_data = pandas.read_sql_table(table, session.get_bind())
+            print("\tPackaging:  " + data_filename)
+            table_data.to_csv(data_filename, index=False)
+            files_written.append(data_filename)
     return files_written
 
 
@@ -149,8 +141,9 @@ def pack_n_go(session, cm_csv_path):  # pragma: no cover
     cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path)
 
     # add this cm git hash to cm_version table
-    session.add(CMVersion.create(Time.now(), cm_git_hash))
-    session.commit()
+    with mc.MCSessionWrapper(session) as session:
+        session.add(CMVersion.create(Time.now(), cm_git_hash))
+        session.commit()
 
 
 def initialize_db_from_csv(
@@ -318,71 +311,62 @@ def _initialization(
         Success, True or False
 
     """
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-    else:
-        close_session_when_done = False
-
     if cm_csv_path is None:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=None, testing=testing)
 
-    if not db_validation(maindb, session):
-        print("cm_init not allowed.")
-        return False
+    with mc.MCSessionWrapper(session) as session:
+        if not db_validation(maindb, session):
+            print("cm_init not allowed.")
+            return False
 
-    cm_git_hash = cm_utils.get_cm_repo_git_hash(
-        cm_csv_path=cm_csv_path, testing=testing
-    )
+        cm_git_hash = cm_utils.get_cm_repo_git_hash(
+            cm_csv_path=cm_csv_path, testing=testing
+        )
 
-    if tables != "all":  # pragma: no cover
-        print("You may encounter foreign_key issues by not using 'all' tables.")
-        print("If it doesn't complain though you should be ok.")
+        if tables != "all":  # pragma: no cover
+            print("You may encounter foreign_key issues by not using 'all' tables.")
+            print("If it doesn't complain though you should be ok.")
 
-    # Get tables to deal with in proper order
-    cm_tables = cm_table_info.cm_tables
-    if tables == "all":
-        tables_to_read_unordered = cm_tables.keys()
-    else:  # pragma: no cover
-        tables_to_read_unordered = tables.split(",")
-    tables_to_read = cm_table_info.order_the_tables(tables_to_read_unordered)
-    data_prefix = cm_table_info.data_prefix
+        # Get tables to deal with in proper order
+        cm_tables = cm_table_info.cm_tables
+        if tables == "all":
+            tables_to_read_unordered = cm_tables.keys()
+        else:  # pragma: no cover
+            tables_to_read_unordered = tables.split(",")
+        tables_to_read = cm_table_info.order_the_tables(tables_to_read_unordered)
+        data_prefix = cm_table_info.data_prefix
 
-    use_table = []
-    for table in tables_to_read:
-        csv_table_name = data_prefix + table + ".csv"
-        use_table.append([table, os.path.join(cm_csv_path, csv_table_name)])
+        use_table = []
+        for table in tables_to_read:
+            csv_table_name = data_prefix + table + ".csv"
+            use_table.append([table, os.path.join(cm_csv_path, csv_table_name)])
 
-    # add this cm git hash to cm_version table
-    session.add(CMVersion.create(Time.now(), cm_git_hash))
+        # add this cm git hash to cm_version table
+        session.add(CMVersion.create(Time.now(), cm_git_hash))
 
-    # Delete tables in this order
-    for table, data_filename in use_table:
-        num_rows_deleted = session.query(cm_tables[table][0]).delete()
-        print("%d rows deleted in %s" % (num_rows_deleted, table))
+        # Delete tables in this order
+        for table, data_filename in use_table:
+            num_rows_deleted = session.query(cm_tables[table][0]).delete()
+            print("%d rows deleted in %s" % (num_rows_deleted, table))
 
-    # Initialize tables in reversed order
-    for table, data_filename in reversed(use_table):
-        cm_utils.log("cm_initialization: " + data_filename)
-        field_row = True  # This is the first row
-        with open(data_filename, "rt") as csvfile:
-            reader = csv.reader(csvfile)
-            for row in reader:
-                table_inst = cm_tables[table][0]()
-                if field_row:
-                    field_name = row
-                    field_row = False
-                else:
-                    for i, r in enumerate(row):
-                        if r == "":
-                            r = None
-                        elif "gpstime" in field_name[i]:
-                            # Needed since pandas does not have an integer representation
-                            #  of NaN, so it outputs a float, which the database won't allow
-                            r = int(float(r))
-                        setattr(table_inst, field_name[i], r)
-                    session.add(table_inst)
-                    session.commit()
-    if close_session_when_done:  # pragma: no cover
-        session.close()
+        # Initialize tables in reversed order
+        for table, data_filename in reversed(use_table):
+            cm_utils.log("cm_initialization: " + data_filename)
+            field_row = True  # This is the first row
+            with open(data_filename, "rt") as csvfile:
+                reader = csv.reader(csvfile)
+                for row in reader:
+                    table_inst = cm_tables[table][0]()
+                    if field_row:
+                        field_name = row
+                        field_row = False
+                    else:
+                        for i, r in enumerate(row):
+                            if r == "":
+                                r = None
+                            elif "gpstime" in field_name[i]:
+                                # Needed since pandas does not have an integer representation
+                                #  of NaN, so it outputs a float, which the database won't allow
+                                r = int(float(r))
+                            setattr(table_inst, field_name[i], r)
+                        session.add(table_inst)

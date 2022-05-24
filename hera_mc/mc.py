@@ -129,7 +129,7 @@ class MCSessionWrapper:
             self.session.rollback()  # exception raised
         else:
             self.session.commit()  # success
-        self.exit(updated=False)
+        self.wrapup(updated=False)
         return False  # propagate exception if any occurred
 
     def wrapup(self, updated=False):
