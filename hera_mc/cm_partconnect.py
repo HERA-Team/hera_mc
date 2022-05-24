@@ -92,43 +92,38 @@ def update_part_rosetta(
     if date2 is not None:
         date2 = int(cm_utils.get_astropytime(date2, date2time, date2float_format).gps)
 
-    close_session_when_done = False
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-
-    old_rose = None
-    ctr = 0
-    for trial in session.query(PartRosetta).filter(
-        (func.upper(PartRosetta.syspn) == syspn.upper())
-    ):
-        if cm_utils.is_active(at_date, trial.start_gpstime, trial.stop_gpstime):
-            ctr += 1
-            old_rose = trial
-    if ctr > 1:
-        raise ValueError("Multiple rosetta relationships active for {}".format(syspn))
-    if old_rose is None:
-        new_rose = PartRosetta()
-        new_rose.hpn = hpn
-        new_rose.syspn = syspn
-        new_rose.start_gpstime = at_date
-        new_rose.stop_gpstime = date2
-        session.add(new_rose)
-    else:
-        if old_rose.stop_gpstime is None:
-            old_rose.stop_gpstime = at_date
-            session.add(old_rose)
-        else:
-            import warnings
-
-            warnings.warn(
-                "No action taken.  {} already has a valid stop date".format(old_rose)
+    with mc.MCSessionWrapper(session) as session:
+        old_rose = None
+        ctr = 0
+        for trial in session.query(PartRosetta).filter(
+            (func.upper(PartRosetta.syspn) == syspn.upper())
+        ):
+            if cm_utils.is_active(at_date, trial.start_gpstime, trial.stop_gpstime):
+                ctr += 1
+                old_rose = trial
+        if ctr > 1:
+            raise ValueError(
+                "Multiple rosetta relationships active for {}".format(syspn)
             )
+        if old_rose is None:
+            new_rose = PartRosetta()
+            new_rose.hpn = hpn
+            new_rose.syspn = syspn
+            new_rose.start_gpstime = at_date
+            new_rose.stop_gpstime = date2
+            session.add(new_rose)
+        else:
+            if old_rose.stop_gpstime is None:
+                old_rose.stop_gpstime = at_date
+                session.add(old_rose)
+            else:
+                import warnings
 
-    session.commit()
-    if close_session_when_done:  # pragma: no cover
-        session.close()
+                warnings.warn(
+                    "No action taken.  {} already has a valid stop date".format(
+                        old_rose
+                    )
+                )
 
 
 class Parts(MCDeclarativeBase):
@@ -216,42 +211,37 @@ def stop_existing_parts(session, part_list, at_date, allow_override=False):
     """
     stop_at = int(at_date.gps)
     data = []
-    close_session_when_done = False
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
 
-    for hpnr in part_list:
-        existing = (
-            session.query(Parts)
-            .filter(
-                (func.upper(Parts.hpn) == hpnr[0].upper())
-                & (func.upper(Parts.hpn_rev) == hpnr[1].upper())
-            )
-            .first()
-        )
-        if existing is None:
-            print("{}:{} is not found, so can't stop it.".format(hpnr[0], hpnr[1]))
-            continue
-        if existing.stop_gpstime is not None:
-            print(
-                "{}:{} already has a stop time ({})".format(
-                    hpnr[0], hpnr[1], existing.stop_gpstime
+    with mc.MCSessionWrapper(session) as session:
+        for hpnr in part_list:
+            existing = (
+                session.query(Parts)
+                .filter(
+                    (func.upper(Parts.hpn) == hpnr[0].upper())
+                    & (func.upper(Parts.hpn_rev) == hpnr[1].upper())
                 )
+                .first()
             )
-            if allow_override:
-                print("\tOverride enabled.   New value {}".format(stop_at))
-            else:
-                print("\tOverride not enabled.  No action.")
+            if existing is None:
+                print("{}:{} is not found, so can't stop it.".format(hpnr[0], hpnr[1]))
                 continue
-        else:
-            print("Stopping part {}:{} at {}".format(hpnr[0], hpnr[1], str(at_date)))
-        data.append([hpnr[0], hpnr[1], "stop_gpstime", stop_at])
-
-    update_part(session, data)
-    if close_session_when_done:  # pragma: no cover
-        session.close()
+            if existing.stop_gpstime is not None:
+                print(
+                    "{}:{} already has a stop time ({})".format(
+                        hpnr[0], hpnr[1], existing.stop_gpstime
+                    )
+                )
+                if allow_override:
+                    print("\tOverride enabled.   New value {}".format(stop_at))
+                else:
+                    print("\tOverride not enabled.  No action.")
+                    continue
+            else:
+                print(
+                    "Stopping part {}:{} at {}".format(hpnr[0], hpnr[1], str(at_date))
+                )
+            data.append([hpnr[0], hpnr[1], "stop_gpstime", stop_at])
+        update_part(session, data)
 
 
 def add_new_parts(session, part_list, at_date, allow_restart=False):
@@ -275,62 +265,57 @@ def add_new_parts(session, part_list, at_date, allow_restart=False):
     """
     start_at = int(at_date.gps)
     data = []
-    close_session_when_done = False
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
 
-    for hpnr in part_list:
-        existing = (
-            session.query(Parts)
-            .filter(
-                (func.upper(Parts.hpn) == hpnr[0].upper())
-                & (func.upper(Parts.hpn_rev) == hpnr[1].upper())
-            )
-            .first()
-        )
-        if existing is not None and existing.stop_gpstime is None:
-            print(
-                "No action. {}:{} already in database with no stop date".format(
-                    hpnr[0], hpnr[1]
+    with mc.MCSessionWrapper(session) as session:
+        for hpnr in part_list:
+            existing = (
+                session.query(Parts)
+                .filter(
+                    (func.upper(Parts.hpn) == hpnr[0].upper())
+                    & (func.upper(Parts.hpn_rev) == hpnr[1].upper())
                 )
+                .first()
             )
-            continue
-        this_data = []
-        this_data.append([hpnr[0], hpnr[1], "hpn", hpnr[0]])
-        this_data.append([hpnr[0], hpnr[1], "hpn_rev", hpnr[1]])
-        this_data.append([hpnr[0], hpnr[1], "hptype", hpnr[2]])
-        this_data.append([hpnr[0], hpnr[1], "manufacturer_number", hpnr[3]])
-        this_data.append([hpnr[0], hpnr[1], "start_gpstime", start_at])
-        print_out = "starting part {}:{} at {}".format(hpnr[0], hpnr[1], str(at_date))
-        if existing is not None:
-            if allow_restart:
-                print_out = "re" + print_out
-                this_data.append([hpnr[0], hpnr[1], "stop_gpstime", None])
-                comment = "Restarting part.  Previous data {}".format(existing)
-                add_part_info(
-                    session,
-                    hpn=hpnr[0],
-                    rev=hpnr[1],
-                    comment=comment,
-                    at_date=at_date,
-                    reference=None,
-                )
-            else:
-                print_out = (
-                    "No action. The request {} not an allowed part restart.".format(
-                        hpnr
+            if existing is not None and existing.stop_gpstime is None:
+                print(
+                    "No action. {}:{} already in database with no stop date".format(
+                        hpnr[0], hpnr[1]
                     )
                 )
-                this_data = None
-        if this_data is not None:
-            data = data + this_data
-        print(print_out.capitalize())
-
-    update_part(session, data)
-    if close_session_when_done:  # pragma: no cover
-        session.close()
+                continue
+            this_data = []
+            this_data.append([hpnr[0], hpnr[1], "hpn", hpnr[0]])
+            this_data.append([hpnr[0], hpnr[1], "hpn_rev", hpnr[1]])
+            this_data.append([hpnr[0], hpnr[1], "hptype", hpnr[2]])
+            this_data.append([hpnr[0], hpnr[1], "manufacturer_number", hpnr[3]])
+            this_data.append([hpnr[0], hpnr[1], "start_gpstime", start_at])
+            print_out = "starting part {}:{} at {}".format(
+                hpnr[0], hpnr[1], str(at_date)
+            )
+            if existing is not None:
+                if allow_restart:
+                    print_out = "re" + print_out
+                    this_data.append([hpnr[0], hpnr[1], "stop_gpstime", None])
+                    comment = "Restarting part.  Previous data {}".format(existing)
+                    add_part_info(
+                        session,
+                        hpn=hpnr[0],
+                        rev=hpnr[1],
+                        comment=comment,
+                        at_date=at_date,
+                        reference=None,
+                    )
+                else:
+                    print_out = (
+                        "No action. The request {} not an allowed part restart.".format(
+                            hpnr
+                        )
+                    )
+                    this_data = None
+            if this_data is not None:
+                data = data + this_data
+            print(print_out.capitalize())
+        update_part(session, data)
 
 
 def update_part(session=None, data=None):
@@ -361,39 +346,32 @@ def update_part(session=None, data=None):
     if data_dict is None:
         return False
 
-    close_session_when_done = False
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-
-    for dkey, dval in data_dict.items():
-        hpn_to_change = dval[0][0]
-        rev_to_change = dval[0][1]
-        part_rec = session.query(Parts).filter(
-            (func.upper(Parts.hpn) == hpn_to_change.upper())
-            & (func.upper(Parts.hpn_rev) == rev_to_change.upper())
-        )
-        num_part = part_rec.count()
-        if num_part == 0:
-            part = Parts()
-        elif num_part == 1:
-            part = part_rec.first()
-        set_an_attrib = False
-        for d in dval:
-            try:
-                getattr(part, d[2])
-                setattr(part, d[2], d[3])
-                set_an_attrib = True
-            except AttributeError:
-                print(d[2], "does not exist as a field")
-                continue
-        if set_an_attrib:
-            session.add(part)
-            session.commit()
-    cm_utils.log("cm_partconnect part update", data_dict=data_dict)
-    if close_session_when_done:  # pragma: no cover
-        session.close()
+    with mc.MCSessionWrapper(session) as session:
+        for dkey, dval in data_dict.items():
+            hpn_to_change = dval[0][0]
+            rev_to_change = dval[0][1]
+            part_rec = session.query(Parts).filter(
+                (func.upper(Parts.hpn) == hpn_to_change.upper())
+                & (func.upper(Parts.hpn_rev) == rev_to_change.upper())
+            )
+            num_part = part_rec.count()
+            if num_part == 0:
+                part = Parts()
+            elif num_part == 1:
+                part = part_rec.first()
+            set_an_attrib = False
+            for d in dval:
+                try:
+                    getattr(part, d[2])
+                    setattr(part, d[2], d[3])
+                    set_an_attrib = True
+                except AttributeError:
+                    print(d[2], "does not exist as a field")
+                    continue
+            if set_an_attrib:
+                session.add(part)
+                session.commit()
+        cm_utils.log("cm_partconnect part update", data_dict=data_dict)
 
     return True
 
@@ -470,21 +448,14 @@ def get_part_revisions(hpn, session=None):
         return {}
 
     uhpn = hpn.upper()
-    close_session_when_done = False
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-
     revisions = {}
-    for parts_rec in session.query(Parts).filter(func.upper(Parts.hpn) == uhpn):
-        parts_rec.gps2Time()
-        revisions[parts_rec.hpn_rev] = {}
-        revisions[parts_rec.hpn_rev]["hpn"] = hpn  # Just carry this along
-        revisions[parts_rec.hpn_rev]["started"] = parts_rec.start_date
-        revisions[parts_rec.hpn_rev]["ended"] = parts_rec.stop_date
-    if close_session_when_done:  # pragma: no cover
-        session.close()
+    with mc.MCSessionWrapper(session) as session:
+        for parts_rec in session.query(Parts).filter(func.upper(Parts.hpn) == uhpn):
+            parts_rec.gps2Time()
+            revisions[parts_rec.hpn_rev] = {}
+            revisions[parts_rec.hpn_rev]["hpn"] = hpn  # Just carry this along
+            revisions[parts_rec.hpn_rev]["started"] = parts_rec.start_date
+            revisions[parts_rec.hpn_rev]["ended"] = parts_rec.stop_date
     return revisions
 
 
@@ -588,38 +559,27 @@ def update_apriori_antenna(
         raise ValueError(
             "Antenna apriori status must be in {}".format(new_apa.status_enum())
         )
-
-    close_session_when_done = False
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-
     antenna = antenna.upper()
     last_one = 1000
     old_apa = None
-    for trial in session.query(AprioriAntenna).filter(
-        func.upper(AprioriAntenna.antenna) == antenna
-    ):
-        if trial.start_gpstime > last_one:
-            last_one = trial.start_gpstime
-            old_apa = trial
-    if old_apa is not None:
-        if old_apa.stop_gpstime is None:
-            old_apa.stop_gpstime = start_gpstime
-        else:
-            raise ValueError("Stop time must be None to update AprioriAntenna")
-        session.add(old_apa)
-    new_apa.antenna = antenna
-    new_apa.status = status
-    new_apa.start_gpstime = start_gpstime
-    new_apa.stop_gpstime = stop_gpstime
-    session.add(new_apa)
-
-    session.commit()
-
-    if close_session_when_done:  # pragma: no cover
-        session.close()
+    with mc.MCSessionWrapper(session) as session:
+        for trial in session.query(AprioriAntenna).filter(
+            func.upper(AprioriAntenna.antenna) == antenna
+        ):
+            if trial.start_gpstime > last_one:
+                last_one = trial.start_gpstime
+                old_apa = trial
+        if old_apa is not None:
+            if old_apa.stop_gpstime is None:
+                old_apa.stop_gpstime = start_gpstime
+            else:
+                raise ValueError("Stop time must be None to update AprioriAntenna")
+            session.add(old_apa)
+        new_apa.antenna = antenna
+        new_apa.status = status
+        new_apa.start_gpstime = start_gpstime
+        new_apa.stop_gpstime = stop_gpstime
+        session.add(new_apa)
 
 
 class PartInfo(MCDeclarativeBase):
@@ -699,24 +659,16 @@ def add_part_info(
 
         warnings.warn("No action taken. Comment is empty.")
         return
-    close_session_when_done = False
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-
-    pi = PartInfo()
-    pi.hpn = hpn
-    pi.hpn_rev = rev
-    pi.posting_gpstime = int(
-        cm_utils.get_astropytime(at_date, at_time, float_format).gps
-    )
-    pi.comment = comment
-    pi.reference = reference
-    session.add(pi)
-    session.commit()
-    if close_session_when_done:  # pragma: no cover
-        session.close()
+    with mc.MCSessionWrapper(session) as session:
+        pi = PartInfo()
+        pi.hpn = hpn
+        pi.hpn_rev = rev
+        pi.posting_gpstime = int(
+            cm_utils.get_astropytime(at_date, at_time, float_format).gps
+        )
+        pi.comment = comment
+        pi.reference = reference
+        session.add(pi)
 
 
 class Connections(MCDeclarativeBase):
@@ -930,8 +882,8 @@ def stop_existing_connections_to_part(session, handling, conn_list, at_date):
                     stop_at,
                 ]
                 data.append(stopping)
-
-    update_connection(session, data, False)
+    with mc.MCSessionWrapper(session) as session:
+        update_connection(session, data, False)
 
 
 def stop_connections(session, conn_list, at_date):
@@ -962,8 +914,8 @@ def stop_connections(session, conn_list, at_date):
         this_one.append("stop_gpstime")
         this_one.append(stop_at)
         data.append(this_one)
-
-    update_connection(session, data, False)
+    with mc.MCSessionWrapper(session) as session:
+        update_connection(session, data, False)
 
 
 def add_new_connections(session, cobj, conn_list, at_date):
@@ -1091,8 +1043,8 @@ def add_new_connections(session, cobj, conn_list, at_date):
                 cobj.start_gpstime,
             ]
         )
-
-    update_connection(session, data, True)
+    with mc.MCSessionWrapper(session) as session:
+        update_connection(session, data, True)
 
 
 def update_connection(session=None, data=None, add_new_connection=False):
@@ -1122,77 +1074,69 @@ def update_connection(session=None, data=None, add_new_connection=False):
     if data_dict is None:
         print("Error: invalid update")
         return False
-
-    close_session_when_done = False
-    if session is None:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-        session = db.sessionmaker()
-        close_session_when_done = True
-
-    for dkey in data_dict.keys():
-        upcn_to_change = data_dict[dkey][0][0]
-        urev_to_change = data_dict[dkey][0][1]
-        dncn_to_change = data_dict[dkey][0][2]
-        drev_to_change = data_dict[dkey][0][3]
-        boup_to_change = data_dict[dkey][0][4]
-        aodn_to_change = data_dict[dkey][0][5]
-        strt_to_change = data_dict[dkey][0][6]
-        conn_rec = session.query(Connections).filter(
-            (Connections.upstream_part == upcn_to_change)
-            & (Connections.up_part_rev == urev_to_change)
-            & (Connections.downstream_part == dncn_to_change)
-            & (Connections.down_part_rev == drev_to_change)
-            & (Connections.upstream_output_port == boup_to_change)
-            & (Connections.downstream_input_port == aodn_to_change)
-            & (Connections.start_gpstime == strt_to_change)
-        )
-        num_conn = conn_rec.count()
-        if num_conn == 0:
-            if add_new_connection:
-                connection = Connections()
-                connection.connection(
-                    up=upcn_to_change,
-                    up_rev=urev_to_change,
-                    down=dncn_to_change,
-                    down_rev=drev_to_change,
-                    upstream_output_port=boup_to_change,
-                    downstream_input_port=aodn_to_change,
-                    start_gpstime=strt_to_change,
-                )
-            else:
-                print(
-                    "Error:",
-                    dkey,
-                    "does not exist and add_new_connection is " "not enabled.",
-                )
-                connection = None
-        elif num_conn == 1:
-            if add_new_connection:
-                print("Error:", dkey, "exists and and_new_connection is enabled")
-                connection = None
-            else:
-                connection = conn_rec.first()
-        else:  # pragma: no cover
-            # we don't know how to cause this, thus the no cover. But we want to catch it
-            # if it does happen.
-            raise RuntimeError(
-                "More than one of ",
-                dkey,
-                " exists. This should not happen, please " "make an issue on the repo!",
+    with mc.MCSessionWrapper(session) as session:
+        for dkey in data_dict.keys():
+            upcn_to_change = data_dict[dkey][0][0]
+            urev_to_change = data_dict[dkey][0][1]
+            dncn_to_change = data_dict[dkey][0][2]
+            drev_to_change = data_dict[dkey][0][3]
+            boup_to_change = data_dict[dkey][0][4]
+            aodn_to_change = data_dict[dkey][0][5]
+            strt_to_change = data_dict[dkey][0][6]
+            conn_rec = session.query(Connections).filter(
+                (Connections.upstream_part == upcn_to_change)
+                & (Connections.up_part_rev == urev_to_change)
+                & (Connections.downstream_part == dncn_to_change)
+                & (Connections.down_part_rev == drev_to_change)
+                & (Connections.upstream_output_port == boup_to_change)
+                & (Connections.downstream_input_port == aodn_to_change)
+                & (Connections.start_gpstime == strt_to_change)
             )
-            connection = None
-        if connection:
-            for d in data_dict[dkey]:
-                try:
-                    setattr(connection, d[7], d[8])
-                except AttributeError:
-                    print(dkey, "does not exist as a field")
-                    continue
-            session.add(connection)
-            session.commit()
-    cm_utils.log("cm_partconn connection update", data_dict=data_dict)
-    if close_session_when_done:  # pragma: no cover
-        session.close()
+            num_conn = conn_rec.count()
+            if num_conn == 0:
+                if add_new_connection:
+                    connection = Connections()
+                    connection.connection(
+                        up=upcn_to_change,
+                        up_rev=urev_to_change,
+                        down=dncn_to_change,
+                        down_rev=drev_to_change,
+                        upstream_output_port=boup_to_change,
+                        downstream_input_port=aodn_to_change,
+                        start_gpstime=strt_to_change,
+                    )
+                else:
+                    print(
+                        "Error:",
+                        dkey,
+                        "does not exist and add_new_connection is " "not enabled.",
+                    )
+                    connection = None
+            elif num_conn == 1:
+                if add_new_connection:
+                    print("Error:", dkey, "exists and and_new_connection is enabled")
+                    connection = None
+                else:
+                    connection = conn_rec.first()
+            else:  # pragma: no cover
+                # we don't know how to cause this, thus the no cover. But we want to catch it
+                # if it does happen.
+                raise RuntimeError(
+                    "More than one of ",
+                    dkey,
+                    " exists. This should not happen, please "
+                    "make an issue on the repo!",
+                )
+                connection = None
+            if connection:
+                for d in data_dict[dkey]:
+                    try:
+                        setattr(connection, d[7], d[8])
+                    except AttributeError:
+                        print(dkey, "does not exist as a field")
+                        continue
+                session.add(connection)
+        cm_utils.log("cm_partconn connection update", data_dict=data_dict)
 
     return True
 

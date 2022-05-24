@@ -94,6 +94,52 @@ class AutomappedDB(DB):
                 )
 
 
+class MCSessionWrapper:
+    """
+    Class to handle when a session may already exist.
+
+    Parameters
+    ----------
+    session : object or None
+        Supplied session, or None.
+    testing : bool
+        Flag to have new sessions be on testing database.
+
+    """
+
+    def __init__(self, session=None, testing=False):
+        if session is None:
+            if testing:
+                db = connect_to_mc_testing_db()
+            else:
+                db = connect_to_mc_db(None)
+            self.session = db.sessionmaker()
+            self.close_when_done = True
+        else:
+            self.session = session
+            self.close_when_done = False
+
+    def __enter__(self):
+        """Enter the session."""
+        return self.session
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        """Exit the session, rollback if there's an error otherwise commit."""
+        if exception_type is not None:
+            self.session.rollback()  # exception raised
+        else:
+            self.session.commit()  # success
+        self.exit(updated=False)
+        return False  # propagate exception if any occurred
+
+    def wrapup(self, updated=False):
+        """Close out the session in a non-context manner."""
+        if updated:
+            self.session.commit()
+        if self.close_when_done:
+            self.session.close()
+
+
 def get_mc_argument_parser():
     """
     Get an M&C specific `argparse.ArgumentParser` object.
