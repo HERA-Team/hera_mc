@@ -38,11 +38,7 @@ def get_active(
     active : ActiveData object
         ActiveData objects with loading parameters as specified.
     """
-    if testing:
-        db = mc.connect_to_mc_testing_db()
-    else:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-    with db.sessionmaker() as session:
+    with mc.MCSessionWrapper(None, test=testing) as session:
         active = ActiveData(
             session, at_date=at_date, at_time=at_time, float_format=float_format
         )
