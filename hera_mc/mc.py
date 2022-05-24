@@ -101,9 +101,9 @@ class MCSessionWrapper:
     Parameters
     ----------
     session : object or None
-        Supplied session, or None.
+        Supplied session, or None.  For some tests is a str
     testing : bool
-        Flag to have new sessions be on testing database.
+        Flag to have new session be on testing database.
 
     """
 
@@ -125,6 +125,8 @@ class MCSessionWrapper:
 
     def __exit__(self, exception_type, exception_value, traceback):
         """Exit the session, rollback if there's an error otherwise commit."""
+        if isinstance(self.session, str):  # Some tests need this.
+            return None
         if exception_type is not None:
             self.session.rollback()  # exception raised
         else:
@@ -134,6 +136,8 @@ class MCSessionWrapper:
 
     def wrapup(self, updated=False):
         """Close out the session in a non-context manner."""
+        if isinstance(self.session, str):  # Some tests need this.
+            return None
         if updated:
             self.session.commit()
         if self.close_when_done:
