@@ -38,7 +38,7 @@ def get_active(
     active : ActiveData object
         ActiveData objects with loading parameters as specified.
     """
-    with mc.MCSessionWrapper(None, test=testing) as session:
+    with mc.MCSessionWrapper(None, testing=testing) as session:
         active = ActiveData(
             session, at_date=at_date, at_time=at_time, float_format=float_format
         )
