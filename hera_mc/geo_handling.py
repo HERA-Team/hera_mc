@@ -21,11 +21,7 @@ from .data import DATA_PATH
 
 def cofa(testing=False):
     """Return location class of current COFA."""
-    if testing:
-        db = mc.connect_to_mc_testing_db()
-    else:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-    with db.sessionmaker() as session:
+    with mc.MCSessionWrapper(None, testing=testing) as session:
         h = Handling(session)
         located = h.cofa()
     return located
@@ -61,11 +57,8 @@ def get_location(
 
     """
     query_date = cm_utils.get_astropytime(query_date, query_time, float_format)
-    if testing:
-        db = mc.connect_to_mc_testing_db()
-    else:  # pragma: no cover
-        db = mc.connect_to_mc_db(None)
-    with db.sessionmaker() as session:
+
+    with mc.MCSessionWrapper(None, testing=testing) as session:
         h = Handling(session)
         located = h.get_location(location_names, query_date)
     return located
