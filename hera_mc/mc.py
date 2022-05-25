@@ -108,6 +108,7 @@ class MCSessionWrapper:
     """
 
     def __init__(self, session=None, testing=False):
+        self.is_context = False
         if session is None:
             if testing:
                 db = connect_to_mc_testing_db()
@@ -121,24 +122,24 @@ class MCSessionWrapper:
 
     def __enter__(self):
         """Enter the session."""
+        self.is_context = True
         return self.session
 
     def __exit__(self, exception_type, exception_value, traceback):
         """Exit the session, rollback if there's an error otherwise commit."""
-        if isinstance(self.session, str):  # Some tests need this.
-            return None
-        if exception_type is not None:
-            self.session.rollback()  # exception raised
-        else:
-            self.session.commit()  # success
+        if isinstance(self.session, MCSession):
+            if exception_type is not None:
+                self.session.rollback()  # exception raised
+            else:
+                self.session.commit()  # success
         self.wrapup(updated=False)
         return False  # propagate exception if any occurred
 
     def wrapup(self, updated=False):
         """Close out the session in a non-context manner."""
-        if isinstance(self.session, str):  # Some tests need this.
+        if not isinstance(self.session, MCSession):
             return None
-        if updated:
+        if updated and not self.is_context:
             self.session.commit()
         if self.close_when_done:
             self.session.close()
