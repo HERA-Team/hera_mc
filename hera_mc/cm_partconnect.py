@@ -1107,15 +1107,19 @@ def update_connection(session=None, data=None, add_new_connection=False):
                     )
                 else:
                     print(
-                        "Error:",
-                        dkey,
-                        "does not exist and add_new_connection is " "not enabled.",
+                        "Warning: no {} and add_new_connection isn't enabled.".format(
+                            dkey
+                        )
                     )
-                    connection = None
+                    return False
             elif num_conn == 1:
                 if add_new_connection:
-                    print("Error:", dkey, "exists and and_new_connection is enabled")
-                    connection = None
+                    print(
+                        "Warning: {} exists and and_new_connection is enabled".format(
+                            dkey
+                        )
+                    )
+                    return False
                 else:
                     connection = conn_rec.first()
             else:  # pragma: no cover
