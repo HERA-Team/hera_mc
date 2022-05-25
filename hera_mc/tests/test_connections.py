@@ -152,9 +152,9 @@ def test_stop_existing_connections_to_part(conns, capsys):
     captured = capsys.readouterr()
     assert captured.out.strip().startswith("Stopping connection")
     result = cm_partconnect.update_connection(
-        conns.test_session, conn_list, update_new_connection=True
+        conns.test_session, conn_list, add_new_connection=True
     )
-    assert not result
+    assert result
 
 
 def test_various_connection(capsys):
