@@ -112,6 +112,10 @@ def test_update_new(conns, capsys):
         [u, r, d, r, a, b, g, "downstream_input_port", b],
         [u, r, d, r, a, b, g, "start_gpstime", g],
     ]
+    result = cm_partconnect.update_connection(
+        conns.test_session, data, add_new_connection=False
+    )
+    assert not result
     cm_partconnect.update_connection(conns.test_session, data, add_new_connection=True)
     located = conns.cm_handle.get_dossier([u], r, "now", exact_match=True)
     prkey = list(located.keys())[0]
@@ -147,6 +151,10 @@ def test_stop_existing_connections_to_part(conns, capsys):
     )
     captured = capsys.readouterr()
     assert captured.out.strip().startswith("Stopping connection")
+    result = cm_partconnect.update_connection(
+        conns.test_session, conn_list, update_new_connection=True
+    )
+    assert not result
 
 
 def test_various_connection(capsys):
