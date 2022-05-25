@@ -65,6 +65,18 @@ def test_update_new(mcsession, geo_handle):
     geo_location.update(mcsession, data, add_new_geo=True)
     located = geo_handle.get_location([nte], "now")
     assert located[0].station_type_name == "herahex"
+    nte = "HH_another_new_test_element"
+    data = [
+        [nte, "station_name", nte],
+        [nte, "station_type_name", "herahex"],
+        [nte, "datum", "WGS84"],
+        [nte, "tile", "34J"],
+        [nte, "northing", 6600000.0],
+        [nte, "easting", 541000.0],
+        [nte, "elevation", 1050.0],
+        [nte, "created_gpstime", 1172530000],
+    ]
+    pytest.raises(ValueError, geo_location.update, mcsession, data, add_new_geo=False)
 
 
 def test_update_update(mcsession, geo_handle):
@@ -72,6 +84,7 @@ def test_update_update(mcsession, geo_handle):
     geo_location.update(mcsession, data, add_new_geo=False)
     located = geo_handle.get_location(["HH704"], "now")
     assert located[0].elevation == 1100.0
+    pytest.raises(ValueError, geo_location.update, mcsession, data, add_new_geo=True)
 
 
 def test_random(geo_handle, capsys):
