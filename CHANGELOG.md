@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.0.0] - 2022-04-25
+
 ### Added
 - Added `cm_active.get_active` as a courtesy function to return a single ActiveData
 object without setting up an explicit session.  If one wants many, one should
