@@ -139,7 +139,7 @@ def update(session=None, data=None, add_new_geo=False):
         print("No update - doing nothing.")
         return False
 
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         for station_name in data_dict.keys():
             geo_rec = session.query(GeoLocation).filter(
                 func.upper(GeoLocation.station_name) == station_name.upper()

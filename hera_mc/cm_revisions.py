@@ -48,7 +48,7 @@ def get_revisions_of_type(
     """
     rq = rev_type.upper()
 
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         if rq.startswith("LAST"):
             revisions = get_last_revision(hpn, session)
         elif rq.startswith("ACTIVE"):
@@ -203,7 +203,7 @@ def get_active_revision(hpn, at_date, at_time=None, float_format=None, session=N
         (hpn, rev, rev_query, started, ended, [hukey], [pkey])
 
     """
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         revisions = cm_partconnect.get_part_revisions(hpn, session)
         return_active = []
         if len(revisions.keys()) > 0:

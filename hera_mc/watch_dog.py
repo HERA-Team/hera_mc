@@ -185,7 +185,7 @@ def node_temperature(
         use_last = False
         at_date = cm_utils.get_astropytime(at_date, at_time, float_format)
     gps_time = at_date.gps
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         active_parts = cm_active.ActiveData(session=session)
         active_parts.load_parts(at_date)
         active_nodes = sorted(
