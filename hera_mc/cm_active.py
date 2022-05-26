@@ -38,9 +38,9 @@ def get_active(
     active : ActiveData object
         ActiveData objects with loading parameters as specified.
     """
-    with mc.MCSessionWrapper(None, testing=testing) as session:
+    with mc.MCSessionWrapper(session=None, testing=testing) as session:
         active = ActiveData(
-            session, at_date=at_date, at_time=at_time, float_format=float_format
+            session=session, at_date=at_date, at_time=at_time, float_format=float_format
         )
         for param in loading:
             getattr(active, f"load_{param}")()

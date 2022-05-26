@@ -92,7 +92,7 @@ def update_part_rosetta(
     if date2 is not None:
         date2 = int(cm_utils.get_astropytime(date2, date2time, date2float_format).gps)
 
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         old_rose = None
         ctr = 0
         for trial in session.query(PartRosetta).filter(
@@ -212,7 +212,7 @@ def stop_existing_parts(session, part_list, at_date, allow_override=False):
     stop_at = int(at_date.gps)
     data = []
 
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         for hpnr in part_list:
             existing = (
                 session.query(Parts)
@@ -266,7 +266,7 @@ def add_new_parts(session, part_list, at_date, allow_restart=False):
     start_at = int(at_date.gps)
     data = []
 
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         for hpnr in part_list:
             existing = (
                 session.query(Parts)
@@ -346,7 +346,7 @@ def update_part(session=None, data=None):
     if data_dict is None:
         return False
 
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         for dkey, dval in data_dict.items():
             hpn_to_change = dval[0][0]
             rev_to_change = dval[0][1]
@@ -449,7 +449,7 @@ def get_part_revisions(hpn, session=None):
 
     uhpn = hpn.upper()
     revisions = {}
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         for parts_rec in session.query(Parts).filter(func.upper(Parts.hpn) == uhpn):
             parts_rec.gps2Time()
             revisions[parts_rec.hpn_rev] = {}
@@ -562,7 +562,7 @@ def update_apriori_antenna(
     antenna = antenna.upper()
     last_one = 1000
     old_apa = None
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         for trial in session.query(AprioriAntenna).filter(
             func.upper(AprioriAntenna.antenna) == antenna
         ):
@@ -659,7 +659,7 @@ def add_part_info(
 
         warnings.warn("No action taken. Comment is empty.")
         return
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         pi = PartInfo()
         pi.hpn = hpn
         pi.hpn_rev = rev
@@ -882,7 +882,7 @@ def stop_existing_connections_to_part(session, handling, conn_list, at_date):
                     stop_at,
                 ]
                 data.append(stopping)
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         update_connection(session, data, False)
 
 
@@ -914,7 +914,7 @@ def stop_connections(session, conn_list, at_date):
         this_one.append("stop_gpstime")
         this_one.append(stop_at)
         data.append(this_one)
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         update_connection(session, data, False)
 
 
@@ -1043,7 +1043,7 @@ def add_new_connections(session, cobj, conn_list, at_date):
                 cobj.start_gpstime,
             ]
         )
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         update_connection(session, data, True)
 
 
@@ -1074,7 +1074,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
     if data_dict is None:
         print("Error: invalid update")
         return False
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         for dkey in data_dict.keys():
             upcn_to_change = data_dict[dkey][0][0]
             urev_to_change = data_dict[dkey][0][1]

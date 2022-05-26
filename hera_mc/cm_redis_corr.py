@@ -96,7 +96,7 @@ def set_redis_cminfo(
     rsession = redis.Redis(connection_pool=redis_pool)
 
     # Write cminfo content into redis (cminfo)
-    with mc.MCSessionWrapper(session, testing=testing) as session:
+    with mc.MCSessionWrapper(session=session, testing=testing) as session:
         h = cm_sysutils.Handling(session=session)
         cminfo = h.get_cminfo_correlator()
 

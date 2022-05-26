@@ -106,7 +106,7 @@ def package_db_to_csv(session=None, tables="all"):
         "copy, commit and log the change."
     )
     print("    Note:  this works via the hera_cm_db_updates repo.")
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         files_written = []
         for table in tables_to_write:
             data_filename = data_prefix + table + ".csv"
@@ -142,7 +142,7 @@ def pack_n_go(session, cm_csv_path):  # pragma: no cover
     cm_git_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=cm_csv_path)
 
     # add this cm git hash to cm_version table
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         session.add(CMVersion.create(Time.now(), cm_git_hash))
 
 
@@ -311,7 +311,7 @@ def _initialization(
         Success, True or False
 
     """
-    wrapper = mc.MCSessionWrapper(session, testing=testing)
+    wrapper = mc.MCSessionWrapper(session=session, testing=testing)
     if cm_csv_path is None:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=None, testing=testing)
 

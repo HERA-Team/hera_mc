@@ -70,14 +70,14 @@ def test_initialization():
 def test_check_if_main(mcsession):
     result = cm_transfer.check_if_main(mcsession)
     assert not result
-    with mc.MCSessionWrapper("testing_not_main") as session:
+    with mc.MCSessionWrapper(session="testing_not_main") as session:
         result = cm_transfer.check_if_main(session)
     assert not result
-    wrapper = mc.MCSessionWrapper("testing_main")
+    wrapper = mc.MCSessionWrapper(session="testing_main")
     result = cm_transfer.check_if_main(wrapper.session)
     wrapper.wrapup()
     assert result
-    wrapper = mc.MCSessionWrapper(mcsession)
+    wrapper = mc.MCSessionWrapper(session=mcsession)
     wrapper.wrapup(updated=True)
 
 

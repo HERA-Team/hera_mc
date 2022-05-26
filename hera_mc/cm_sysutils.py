@@ -566,7 +566,7 @@ def node_antennas(source="file", session=None):
                     prefix = "HH"
                 ants_per_node[node_hpn].append("{}{}".format(prefix, ant))
     else:
-        with mc.MCSessionWrapper(session) as session:
+        with mc.MCSessionWrapper(session=session) as session:
             if isinstance(source, str) and source.lower().startswith("h"):
                 source = cm_hookup.Hookup(session)
             hu_dict = source.get_hookup(
@@ -632,7 +632,7 @@ def which_node(ant_num, session=None):
     dict
         Contains antenna and node
     """
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         na_from_file = node_antennas("file", session=session)
         na_from_hookup = node_antennas("hookup", session=session)
     ant_num = cm_utils.listify(ant_num)
@@ -707,7 +707,7 @@ def node_info(node_num="active", session=None):
     dict
         Contains node and node component information
     """
-    with mc.MCSessionWrapper(session) as session:
+    with mc.MCSessionWrapper(session=session) as session:
         hu = cm_hookup.Hookup(session)
         na_from_file = node_antennas("file", session=session)
         na_from_hookup = node_antennas(hu, session=session)

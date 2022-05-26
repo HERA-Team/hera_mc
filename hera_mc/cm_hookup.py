@@ -65,7 +65,7 @@ def get_hookup(
         Hookup dossier dictionary as defined in cm_dossier
 
     """
-    with mc.MCSessionWrapper(None, testing=testing) as session:
+    with mc.MCSessionWrapper(session=None, testing=testing) as session:
         hookup = Hookup(session)
         return hookup.get_hookup_from_db(
             hpn=hpn,
