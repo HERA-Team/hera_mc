@@ -137,6 +137,11 @@ def test_update_new(conns, capsys):
     )
     assert next_conn.upstream_part == "new_test_part_up"
 
+    conn_list = [["HH701", "A", "ground"]]
+    cm_partconnect.update_connection(conns.test_session, data, add_new_connection=True)
+    captured = capsys.readouterr()
+    assert captured.out.strip().startswith("Warning: no new_test_part_up:")
+
 
 def test_get_null_connection():
     nc = cm_partconnect.get_null_connection()
