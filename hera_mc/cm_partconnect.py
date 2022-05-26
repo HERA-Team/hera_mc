@@ -1134,11 +1134,7 @@ def update_connection(session=None, data=None, add_new_connection=False):
                 connection = None
             if connection:
                 for d in data_dict[dkey]:
-                    try:
-                        setattr(connection, d[7], d[8])
-                    except AttributeError:
-                        print(dkey, "does not exist as a field")
-                        continue
+                    setattr(connection, d[7], d[8])
                 session.add(connection)
         cm_utils.log("cm_partconn connection update", data_dict=data_dict)
 
