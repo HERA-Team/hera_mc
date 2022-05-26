@@ -40,12 +40,14 @@ def test_geo_sysdef():
 
 
 def test_geo_regions():
-    pytest.raises(ValueError, geo_sysdef.ant_region, 1000)
+    err_msg = "1000 is not valid antenna."
+    with pytest.raises(ValueError, match=err_msg):
+        geo_sysdef.ant_region(ants=1000)
     with pytest.warns(UserWarning, match="HH does not match region A"):
-        ret = geo_sysdef.ant_region("HH325")
+        ret = geo_sysdef.ant_region(ants="HH325")
     assert ret == "A"
     testing = [123, "123", "HH123", "A123"]
-    ret = geo_sysdef.ant_region(testing)
+    ret = geo_sysdef.ant_region(ants=testing)
     for r in ret:
         assert r == "W"
 
@@ -62,7 +64,7 @@ def test_update_new(mcsession, geo_handle):
         [nte, "elevation", 1050.0],
         [nte, "created_gpstime", 1172530000],
     ]
-    geo_location.update(mcsession, data, add_new_geo=True)
+    geo_location.update(session=mcsession, data=data, add_new_geo=True)
     located = geo_handle.get_location([nte], "now")
     assert located[0].station_type_name == "herahex"
     nte = "HH_another_new_test_element"
@@ -76,7 +78,9 @@ def test_update_new(mcsession, geo_handle):
         [nte, "elevation", 1050.0],
         [nte, "created_gpstime", 1172530000],
     ]
-    pytest.raises(ValueError, geo_location.update, mcsession, data, add_new_geo=False)
+    err_msg = "{} does not exist and add_new_geo not enabled.".format(nte)
+    with pytest.raises(ValueError, match=err_msg):
+        geo_location.update(session=mcsession, data=data, add_new_geo=False)
 
 
 def test_update_update(mcsession, geo_handle):
@@ -84,7 +88,9 @@ def test_update_update(mcsession, geo_handle):
     geo_location.update(mcsession, data, add_new_geo=False)
     located = geo_handle.get_location(["HH704"], "now")
     assert located[0].elevation == 1100.0
-    pytest.raises(ValueError, geo_location.update, mcsession, data, add_new_geo=True)
+    err_msg = "HH704 exists and and_new_geo is enabled."
+    with pytest.raises(ValueError, match=err_msg):
+        geo_location.update(session=mcsession, data=data, add_new_geo=True)
 
 
 def test_random(geo_handle, capsys):
@@ -99,13 +105,14 @@ def test_geo_location(mcsession):
     assert g.station_name == "TESTSETATTR"
     rv = geo_location.update()
     assert not rv
-    pytest.raises(ValueError, geo_location.update, mcsession, "HH0:Tile")
-    pytest.raises(
-        ValueError,
-        geo_location.update,
-        mcsession,
-        "HH0:Tile:34J,Elevation:0.0,Northing",
-    )
+    err_msg = "Invalid parse request - need 3 parameters for at least first one."
+    with pytest.raises(ValueError, match=err_msg):
+        geo_location.update(session=mcsession, data="HH0:Tile")
+    err_msg = "Invalid format for update request."
+    with pytest.raises(ValueError, match=err_msg):
+        geo_location.update(
+            session=mcsession, data="HH0:Tile:34J,Elevation:0.0,Northing"
+        )
 
 
 def test_station_types(geo_handle):
@@ -226,10 +233,12 @@ def test_get_active_stations(geo_handle):
 
 
 def test_is_in_database(geo_handle):
-    assert geo_handle.is_in_database("HH700", "geo_location")
-    assert geo_handle.is_in_database("HH700", "connections")
-    assert not geo_handle.is_in_database("BB0", "geo_location")
-    pytest.raises(ValueError, geo_handle.is_in_database, "HH666", "wrong_one")
+    assert geo_handle.is_in_database(station_name="HH700", db_name="geo_location")
+    assert geo_handle.is_in_database(station_name="HH700", db_name="connections")
+    assert not geo_handle.is_in_database(station_name="BB0", db_name="geo_location")
+    err_msg = "db not found."
+    with pytest.raises(ValueError, match=err_msg):
+        geo_handle.is_in_database(station_name="HH666", db_name="wrong_one")
 
 
 def test_find_antenna_station_pair(geo_handle, mcsession):
@@ -248,10 +257,12 @@ def test_find_antenna_station_pair(geo_handle, mcsession):
         u + ["start_gpstime", u[6]],
     ]
     cm_partconnect.update_connection(mcsession, data, add_new_connection=True)
-    pytest.raises(ValueError, geo_handle.find_station_of_antenna, 700, "now")
-    stn = geo_handle.find_station_of_antenna("702", "now")
+    err_msg = "More than one active connection between station and antenna"
+    with pytest.raises(ValueError, match=err_msg):
+        geo_handle.find_station_of_antenna(antenna=700, query_date="now")
+    stn = geo_handle.find_station_of_antenna(antenna="702", query_date="now")
     assert stn == "HH702"
-    stn = geo_handle.find_station_of_antenna("A702", "now")
+    stn = geo_handle.find_station_of_antenna(antenna="A702", query_date="now")
     assert stn == "HH702"
-    stn = geo_handle.find_station_of_antenna(1024, "now")
+    stn = geo_handle.find_station_of_antenna(antenna=1024, query_date="now")
     assert stn is None
