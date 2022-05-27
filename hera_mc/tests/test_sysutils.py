@@ -24,7 +24,7 @@ from .. import (
     watch_dog,
     node,
 )
-from ..tests import requires_redis, is_onsite, onsite
+from ..tests import requires_redis, onsite
 from ..tests import TEST_DEFAULT_REDIS_HOST
 import redis
 
@@ -126,51 +126,6 @@ def test_watch_dog_sensor(mcsession):
         session=mcsession,
     )
     assert msg is None
-
-
-@requires_redis
-# remove this skipif once we're writing to the M&C db not redis
-@pytest.mark.skipif(
-    is_onsite(), reason="This test writes to redis, which is not safe to do onsite."
-)
-def test_watch_dog_verdict():
-    import time
-
-    redishost = TEST_DEFAULT_REDIS_HOST
-    rsession = redis.Redis(redishost)
-    nodeinfo = watch_dog.node_verdict(
-        To=["test@hera.edu"], testing=True, redishost=redishost
-    )
-    assert "param" in nodeinfo
-    rsession.set("valid:node:700", "0")
-    this_time = str(int(time.time()))
-    rsession.hset("verdict:node:700:pam", "time", this_time)
-    rsession.hset("verdict", "age", "2.1")
-    rsession.hset("verdict", "cmd", "off")
-    rsession.hset("verdict", "hw", "pam")
-    rsession.hset("verdict", "mode", "all")
-    rsession.hset("verdict", "time", this_time)
-    rsession.hset("verdict", "timeout", "10")
-    msg = watch_dog.node_verdict(
-        To=["test@hera.edu"], return_as="email", testing=True, redishost=redishost
-    )
-    assert msg.get("From") == "hera@lists.berkeley.edu"
-    rsession.hset("verdict", "time", "0")
-    nodeinfo = watch_dog.node_verdict(
-        To=["test@hera.edu"], testing=True, redishost=redishost
-    )
-    assert nodeinfo[700]["pam"]["time"] == this_time
-    pytest.raises(
-        ValueError,
-        watch_dog.node_verdict,
-        To=["test@hera.edu"],
-        return_as="nope",
-        testing=True,
-        redishost=redishost,
-    )
-
-    rsession.delete("valid:node:700")
-    rsession.delete("verdict")
 
 
 def test_ever_fully_connected(sys_handle):
