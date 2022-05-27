@@ -108,7 +108,6 @@ class MCSessionWrapper:
     """
 
     def __init__(self, session=None, testing=False):
-        self.is_context = False
         if session is None:
             if testing:
                 db = connect_to_mc_testing_db()
@@ -122,7 +121,6 @@ class MCSessionWrapper:
 
     def __enter__(self):
         """Enter the session."""
-        self.is_context = True
         return self.session
 
     def __exit__(self, exception_type, exception_value, traceback):
@@ -139,7 +137,7 @@ class MCSessionWrapper:
         """Close out the session in a non-context manner."""
         if not isinstance(self.session, MCSession):
             return None
-        if updated and not self.is_context:
+        if updated:
             self.session.commit()
         if self.close_when_done:
             self.session.close()
