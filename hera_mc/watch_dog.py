@@ -5,8 +5,6 @@
 
 """System watch-dogs."""
 
-from redis import ResponseError
-
 
 def read_forward_list():  # pragma: no cover
     """Read in emails from .forward file."""
@@ -55,88 +53,6 @@ def send_email(
         server.send_message(email)
         server.quit()
     return email
-
-
-def node_verdict(
-    age_out=3800, To=None, return_as="node_info", testing=False, redishost="redishost"
-):
-    """
-    Check redis for latest node power command results.
-
-    This will check redis for the results from the latest node power command
-    (see hera_node_mc repo) and send an email if update is less than age_out
-    seconds.
-
-    Parameters
-    ----------
-    age_out : int
-        Number of seconds under which to send an update email
-    To : str
-        csv-list of email accounts to use.  None uses .forward
-    return_as : str
-        Either 'node_info' or 'email' to specify which value to return
-    testing : bool
-        Flag for testing, so won't send email.
-    redishost :  str
-        Name of redis server to connect to
-
-    Return
-    ------
-    The return dictionary contains the results keyed on node.
-    """
-    if return_as not in ["node_info", "email"]:
-        raise ValueError("Must be returned as 'node_info' or 'email'")
-    import redis
-    import time
-
-    connection_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
-    r = redis.StrictRedis(connection_pool=connection_pool, charset="utf-8")
-    node_info = {}
-    for key in r.keys():
-        if "valid:node" in key:
-            node = int(key.split(":")[2])
-            node_info.setdefault(node, {})
-            node_info[node]["valid"] = True if int(r.get(key)) else False
-        elif "verdict:node" in key:
-            try:
-                node = int(key.split(":")[2])
-            except ValueError:  # pragma: no cover
-                continue  # pragma: no cover
-            node_info.setdefault(node, {})
-            hw = key.split(":")[3]
-            try:
-                node_info[node][hw] = r.hgetall(key)
-            except ResponseError:  # pragma: no cover
-                node_info[node][hw] = r.get(key)  # pragma: no cover
-    node_list = sorted(node_info.keys())
-    try:
-        node_info["param"] = r.hgetall("verdict")
-    except ResponseError:  # pragma: no cover
-        node_info[node][hw] = r.get(key)  # pragma: no cover
-    this_email = None
-    if node_info["param"]:
-        this_time = float(node_info["param"]["time"])
-        subject = "Node verdict:  mode '{}', timeout {}, time {}".format(
-            node_info["param"]["mode"], node_info["param"]["timeout"], int(this_time)
-        )
-        msg = ""
-        if int(time.time() - this_time) < age_out:
-            for node in node_list:
-                s = "Node {} is{}valid\n".format(
-                    node, " " if node_info[node]["valid"] else " not "
-                )
-                for hw, val in node_info[node].items():
-                    if hw != "valid":
-                        s += "\t{}: {}\n".format(hw, val)
-                s += "\n"
-                msg += s
-        if len(msg):
-            msg = subject + "\n\n" + msg
-            this_email = send_email(subject, msg, To, skip_send=testing)
-    if return_as == "node_info":
-        return node_info
-    elif return_as == "email":
-        return this_email
 
 
 def node_temperature(
