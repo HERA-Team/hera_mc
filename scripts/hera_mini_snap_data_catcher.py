@@ -8,6 +8,7 @@ import json
 import logging
 import argparse
 import traceback
+from pathlib import Path
 
 import numpy as np
 from pyuvdata import UVData
@@ -83,6 +84,15 @@ parser.add_argument(
         "Maximum length of a UVH5 file in seconds. "
         "This is the total time between the first and last entry in the time_array."
     ),
+)
+
+parser.add_argument(
+    "--outdir",
+    "-o",
+    dest="outdir",
+    type=str,
+    default=".",
+    help="The directory to write files to.",
 )
 
 args = parser.parse_args()
@@ -274,7 +284,7 @@ while True:
                 )
                 fname = f"zen.{Time.now().jd:.6f}.snap_autos.uvh5"
                 logger.info(f"Writing output file {fname}.")
-                uvd.write_uvh5(fname)
+                uvd.write_uvh5(Path(args.outdir) / fname)
 
                 last_loop_completion = Time.now()
 
