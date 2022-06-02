@@ -25,7 +25,6 @@ logging.basicConfig(
     level=logging.INFO,
     format=formatter,
     datefmt="%Y-%m-%d %H:%M:%S",
-    force=True,
 )
 logger = logging.getLogger(__file__)
 logger.ident = "hera_mini_snap_catcher"
