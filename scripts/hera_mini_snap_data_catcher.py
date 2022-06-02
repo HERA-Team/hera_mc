@@ -155,6 +155,7 @@ while True:
                                 # Time has not progressed yet.
                                 # Just sit tight
                                 continue
+                            last_time_mapping[snap_hostname] = timestamp
 
                         auto_corr = status["autocorrelation"]
 
