@@ -4,6 +4,7 @@
 # Licensed under the 2-clause BSD license.
 """Accumulate SNAP spectra from redis and write to a UVH5 file."""
 import time
+import json
 import logging
 import argparse
 import traceback
@@ -268,6 +269,9 @@ while True:
                 uvd.phase_type = "drift"
 
                 uvd.reorder_blts("time", "baseline")
+                uvd.extra_keywords["snap_to_ant_mapping"] = json.dumps(
+                    snap_to_ant_mapping
+                )
                 fname = f"zen.{Time.now().jd:.6f}.snap_autos.uvh5"
                 logger.info(f"Writing output file {fname}.")
                 uvd.write_uvh5(fname)
