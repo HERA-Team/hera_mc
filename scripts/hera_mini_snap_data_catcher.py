@@ -218,9 +218,6 @@ while True:
 
                 uvd = UVData()
 
-                # let's us not have to Spectral windows
-                uvd._set_future_array_shapes()
-
                 uvd.data_array = data_array.astype(np.complex64)
                 uvd.vis_units = "UNCALIB"
                 uvd.time_array = time_array
@@ -276,6 +273,9 @@ while True:
                 uvd.instrument = "HERA"
                 uvd.history = f"Created by {__file__}."
                 uvd.phase_type = "drift"
+
+                # lets us not have to spectral windows
+                uvd._set_future_array_shapes()
 
                 uvd.reorder_blts("time", "baseline")
                 uvd.extra_keywords["snap_to_ant_mapping"] = json.dumps(
