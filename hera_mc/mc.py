@@ -140,7 +140,7 @@ class MCSessionWrapper:
         if updated:
             self.session.commit()
         if self.close_when_done:
-            self.session.close()
+            _catcher = self.session.close()  # noqa - need to catch the return
 
 
 def get_mc_argument_parser():
