@@ -32,7 +32,7 @@ logger.ident = "hera_mini_snap_catcher"
 syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
 syslog_handler.setFormatter(
     logging.Formatter(
-        "%(module)s %(message)s",
+        "%(module)s[%(process)s]: %(message)s",
         "%FT%H:%m:%s%z",
     )
 )
