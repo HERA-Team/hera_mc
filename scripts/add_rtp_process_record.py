@@ -6,15 +6,13 @@
 """Add individual processing record to M&C database from RTP."""
 
 import warnings
+import importlib
 from pkg_resources import parse_version
 
 import numpy as np
 from astropy.time import Time
 
 import hera_mc.mc as mc
-import hera_qm
-import hera_opm
-import hera_cal
 import pyuvdata
 
 
@@ -32,49 +30,55 @@ if __name__ == "__main__":
         dest="pipeline_list",
         type=str,
         required=True,
-        help=("List of actions taken on " "file concatenated as a string"),
+        help=("List of actions taken on file concatenated as a string"),
     )
     args = parser.parse_args()
 
-    # get version info for relevant repos
-    hera_qm_version_info = hera_qm.version.construct_version_info()
-    hera_cal_version_info = hera_cal.version.construct_version_info()
-    hera_opm_version_info = hera_opm.version.construct_version_info()
+    version_info = {}
+    for repo_name in ["pyuvdata", "hera_qm", "hera_cal", "hera_opm"]:
 
-    # special handling for pyuvdata because it uses setuptools_scm
-    pyuvdata_version = pyuvdata.__version__
-    parsed_version = parse_version(pyuvdata_version)
-    pyuvdata_tag = parsed_version.base_version
-    local = parsed_version.local
+        version_info[repo_name] = {}
 
-    if local is None:
-        # we're running from a "clean" (tagged/released) repo
-        # get the git info from GitHub directly
-        from subprocess import CalledProcessError, check_output
+        # we're importing things at an odd place here
+        # but this lets us script up the version info
+        local_version_info = importlib.import_module(repo_name).__version__
 
-        gitcmd = [
-            "git",
-            "ls-remote",
-            "https://github.com/RadioAstronomySoftwareGroup/pyuvdata.git",
-            f"v{pyuvdata_tag}",
-        ]
+        parsed_version = parse_version(local_version_info)
+        version_info[repo_name]["tag"] = parsed_version.base_version
+        local = parsed_version.local
 
-        try:
-            output = check_output(gitcmd).decode("utf-8")
-            pyuvdata_git_hash = output.split()[0]
-        except CalledProcessError:
-            pyuvdata_git_hash = "???"
-    else:
-        # check if version has a "dirty" tag
-        split_local = local.split(".")
-        if len(split_local) > 1:
-            warnings.warn(
-                "pyuvdata was installed with uncommited changes. Please commit "
-                "changes and reinstall."
-            )
+        if repo_name == "pyuvdata":
+            url = "RadioAstronomySoftwareGroup"
+        else:
+            url = "HERA-Team"
+        if local is None:
+            # we're running from a "clean" (tagged/released) repo
+            # get the git info from GitHub directly
+            from subprocess import CalledProcessError, check_output
 
-        # get git info from tag -- the hash has a leading "g" that we ignore
-        pyuvdata_git_hash = split_local[0][1:]
+            gitcmd = [
+                "git",
+                "ls-remote",
+                f"https://github.com/{url}/{repo_name}.git",
+                f"v{version_info[repo_name]['tag']}",
+            ]
+
+            try:
+                output = check_output(gitcmd).decode("utf-8")
+                version_info[repo_name]["hash"] = output.split()[0]
+            except CalledProcessError:
+                version_info[repo_name]["hash"] = "???"
+        else:
+            # check if version has a "dirty" tag
+            split_local = local.split(".")
+            if len(split_local) > 1:
+                warnings.warn(
+                    f"{repo_name} was installed with uncommited changes. Please commit "
+                    "changes and reinstall."
+                )
+
+            # get git info from tag -- the hash has a leading "g" that we ignore
+            version_info[repo_name]["hash"] = split_local[0][1:]
 
     uv = pyuvdata.UVData()
     # args.file is a length-1 list
@@ -88,12 +92,12 @@ if __name__ == "__main__":
             time=Time.now(),
             obsid=obsid,
             pipeline_list=args.pipeline_list,
-            rtp_git_version=hera_opm_version_info["version"],
-            rtp_git_hash=hera_opm_version_info["git_hash"],
-            hera_qm_git_version=hera_qm_version_info["version"],
-            hera_qm_git_hash=hera_qm_version_info["git_hash"],
-            hera_cal_git_version=hera_cal_version_info["version"],
-            hera_cal_git_hash=hera_cal_version_info["git_hash"],
-            pyuvdata_git_version=pyuvdata_tag,
-            pyuvdata_git_hash=pyuvdata_git_hash,
+            rtp_git_version=version_info["hera_opm"]["tag"],
+            rtp_git_hash=version_info["hera_opm"]["hash"],
+            hera_qm_git_version=version_info["hera_qm"]["tag"],
+            hera_qm_git_hash=version_info["herq_qm"]["hash"],
+            hera_cal_git_version=version_info["hera_cal"]["tag"],
+            hera_cal_git_hash=version_info["hera_cal"]["hash"],
+            pyuvdata_git_version=version_info["pyuvdata"]["tag"],
+            pyuvdata_git_hash=version_info["pyuvdata"]["hash"],
         )
