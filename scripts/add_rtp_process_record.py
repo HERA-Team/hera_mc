@@ -95,7 +95,7 @@ if __name__ == "__main__":
             rtp_git_version=version_info["hera_opm"]["tag"],
             rtp_git_hash=version_info["hera_opm"]["hash"],
             hera_qm_git_version=version_info["hera_qm"]["tag"],
-            hera_qm_git_hash=version_info["herq_qm"]["hash"],
+            hera_qm_git_hash=version_info["hera_qm"]["hash"],
             hera_cal_git_version=version_info["hera_cal"]["tag"],
             hera_cal_git_hash=version_info["hera_cal"]["hash"],
             pyuvdata_git_version=version_info["pyuvdata"]["tag"],
