@@ -82,24 +82,18 @@ valid_tables = {
         "filter_column": "nodeID",
         "arg_name": "node",
     },
-    "correlator_control_state": {
-        "method": "get_correlator_control_state",
-        "filter_column": "state_type",
-        "arg_name": "state_type",
+    "array_signal_source": {
+        "method": "get_array_signal_source",
+        "filter_column": "source",
+        "arg_name": "source",
+    },
+    "correlator_component_event_time": {
+        "method": "get_correlator_component_event_time",
+        "filter_column": "component_event",
+        "arg_name": "component_event",
     },
     "correlator_config_status": {
         "method": "get_correlator_config_status",
-        "filter_column": "config_hash",
-        "arg_name": "config_hash",
-    },
-    "correlator_control_command": {
-        "method": "get_correlator_control_command",
-        "filter_column": "command",
-        "arg_name": "command",
-    },
-    "correlator_take_data_arguments": {"method": "get_correlator_take_data_arguments"},
-    "correlator_config_command": {
-        "method": "get_correlator_config_command",
         "filter_column": "config_hash",
         "arg_name": "config_hash",
     },

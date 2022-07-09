@@ -9,7 +9,6 @@ your database and configure M&C to find it.
 """
 
 import os
-import hashlib
 import warnings
 from math import floor
 
@@ -3180,34 +3179,70 @@ class MCSession(Session):
             filename=filename,
         )
 
-    def add_correlator_control_state(self, time, state_type, state):
+    def add_array_signal_source(self, time, source):
         """
-        Add new correlator control state data to the M&C database.
+        Add an array signal source to the M&C database.
 
         Parameters
         ----------
         time : astropy Time object
             Astropy time object based on a timestamp reported by the correlator.
-        state_type : str
-            Must be a key in state_dict (e.g. 'taking_data', 'phase_switching',
-            'noise_diode', 'load').
-        state : bool
-            The state.
+        source : str
+            One of "antenna", "load", "noise", "digital_noise_same",
+            "digital_noise_different" (listed in corr.signal_source_list).
 
         """
-        self.add(corr.CorrelatorControlState.create(time, state_type, state))
+        self.add(corr.ArraySignalSource.create(time, source))
 
-    def get_correlator_control_state(
+    def add_array_signal_source_from_redis(
+        self,
+        testing=False,
+        redishost=corr.DEFAULT_REDIS_ADDRESS,
+    ):
+        """
+        Get and add the current array signal source from redis.
+
+        Uses the `correlator._get_array_source_from_redis` function
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the array signal source data densely on qmaster.
+
+        Parameters
+        ----------
+        testing : bool
+            If true, return the ArraySignalSource object and don't add it to the database.
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
+
+        Returns
+        -------
+        ArraySignalSource
+            If testing is True, returns the ArraySignalSource object rather than adding
+            it to the database.
+
+        """
+        time, source = corr._get_array_source_from_redis(redishost=redishost)
+
+        signal_source_obj = corr.ArraySignalSource.create(time, source)
+
+        if testing:
+            return signal_source_obj
+
+        self._insert_ignoring_duplicates(corr.ArraySignalSource, [signal_source_obj])
+
+    def get_array_signal_source(
         self,
         most_recent=None,
         starttime=None,
         stoptime=None,
-        state_type=None,
+        source=None,
         write_to_file=False,
         filename=None,
     ):
         """
-        Get correlator control state record(s) from the M&C database.
+        Get array_signal_source record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
         more than one if there are multiple records at the same time. If
@@ -3229,9 +3264,9 @@ class MCSession(Session):
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
-        state_type : str
-            must be a key in correlator.state_dict (e.g. 'taking_data',
-            'phase_switching', 'noise_diode', 'load')
+        source : str
+            One of "antenna", "load", "noise", "digital_noise_same",
+            "digital_noise_different" (listed in corr.signal_source_list).
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -3241,99 +3276,142 @@ class MCSession(Session):
 
         Returns
         -------
-        list of CorrelatorControlState objects
+        if write_to_file is False: list of ArraySignalSource objects
 
         """
         return self._time_filter(
-            corr.CorrelatorControlState,
+            corr.ArraySignalSource,
             "time",
             most_recent=most_recent,
             starttime=starttime,
             stoptime=stoptime,
-            filter_column="state_type",
-            filter_value=state_type,
+            filter_column="source",
+            filter_value=source,
             write_to_file=write_to_file,
             filename=filename,
         )
 
-    def add_correlator_control_state_from_corrcm(
-        self, corr_state_dict=None, testing=False, redishost=corr.DEFAULT_REDIS_ADDRESS
+    def add_correlator_component_event_time(self, component_event, time):
+        """
+        Add new correlator component event time to the M&C database.
+
+        Parameters
+        ----------
+        component_event : str
+            Correlator component event, one of "f_engine_sync", "x_engine_integration",
+            "catcher_start", "catcher_stop" (listed in corr.corr_component_events).
+        time : astropy Time object
+            Astropy time object based on a timestamp reported by the correlator.
+
+
+        """
+        self.add(corr.CorrelatorComponentEventTime.create(component_event, time))
+
+    def add_correlator_component_event_time_from_redis(
+        self,
+        testing=False,
+        redishost=corr.DEFAULT_REDIS_ADDRESS,
     ):
         """
-        Get and add correlator control state information using HeraCorrCM.
+        Get and add correlator component event times from redis.
 
-        This function connects to the correlator and gets the latest data using
-        the `_get_control_state` function. For testing purposes, it can
-        optionally accept an input dict instead of connecting to the correlator.
+        Uses the `correlator._get_correlator_component_event_times_from_redis` function
 
         If the current database is PostgreSQL, this function will use a
         special insertion method that will ignore records that are redundant
         with ones already in the database. This makes it convenient to sample
-        the data frequently on qmaster.
+        the correlator component event times densely on qmaster.
 
         Parameters
         ----------
-        corr_state_dict : dict
-            A dict containing info as in the return dict from
-            `_get_control_state()` for testing purposes. If None,
-            `_get_control_state()` is called.
         testing : bool
-            If true, don't add a record of it to the database and return the
-            list of CorrelatorControlState objects.
+            If true, return the CorrelatorComponentEventTime object and don't add it to
+            the database.
         redishost : str
             redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
 
         Returns
         -------
-        list of CorrelatorControlState objects, optional
-            If testing is True, returns the list of CorrelatorControlState
-            objects based on the corr_state_dict.
+        list of CorrelatorComponentEventTime
+            If testing is True, returns the list of CorrelatorComponentEventTime objects
+            rather than adding them to the database.
 
         """
-        if corr_state_dict is None:
-            self.add_corr_obj(redishost=redishost)
-            corr_state_dict = corr._get_control_state(
-                corr_cm=self.corr_obj, redishost=redishost
-            )
+        event_dict = corr._get_correlator_component_event_times_from_redis(
+            redishost=redishost
+        )
 
-        corr_state_list = []
-        for state_type, state_dict in corr_state_dict.items():
-            unix_timestamp = state_dict["timestamp"]
-            state = state_dict["state"]
-            if unix_timestamp is not None:
-                time = Time(unix_timestamp, format="unix")
-            else:
-                # None should only happen for `taking_data` = False and it
-                # indicates that the correlator shut down badly. Get the most
-                # recent state information. If it is True, set it to False with
-                # the current time, if it's false use the existing time.
-                if state_type == "taking_data" and state is False:
-                    most_recent_state = self.get_correlator_control_state(
-                        most_recent=True, state_type=state_type
-                    )
-                    if len(most_recent_state) == 0:
-                        time = Time.now()
-                    elif most_recent_state[0].state is True:
-                        time = Time.now()
-                    else:
-                        time = Time(most_recent_state[0].time, format="gps")
-                else:
-                    raise ValueError(
-                        "got None timestamp for {type} = {state}".format(
-                            type=state_type, state=state
-                        )
-                    )
-
-            corr_state_list.append(
-                corr.CorrelatorControlState.create(time, state_type, state)
+        comp_event_list = []
+        for component_event, time in event_dict.items():
+            comp_event_list.append(
+                corr.CorrelatorComponentEventTime.create(component_event, time)
             )
 
         if testing:
-            return corr_state_list
-        else:
-            self._insert_ignoring_duplicates(
-                corr.CorrelatorControlState, corr_state_list
-            )
+            return comp_event_list
+
+        self._insert_ignoring_duplicates(
+            corr.CorrelatorComponentEventTime, comp_event_list
+        )
+
+    def get_correlator_component_event_time(
+        self,
+        most_recent=None,
+        starttime=None,
+        stoptime=None,
+        component_event=None,
+        write_to_file=False,
+        filename=None,
+    ):
+        """
+        Get correlator_component_event_time record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        component_event : str
+            One of "f_engine_sync", "x_engine_integration", "catcher_start",
+            "catcher_stop" (listed in corr.corr_component_events)
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        if write_to_file is False: list of CorrelatorComponentEventTime objects
+
+        """
+        return self._time_filter(
+            corr.CorrelatorComponentEventTime,
+            "time",
+            most_recent=most_recent,
+            starttime=starttime,
+            stoptime=stoptime,
+            filter_column="component_event",
+            filter_value=component_event,
+            write_to_file=write_to_file,
+            filename=filename,
+        )
 
     def add_correlator_config_file(self, config_hash, config_file):
         """
@@ -4176,554 +4254,6 @@ class MCSession(Session):
 
         if testing:
             return config_obj_list
-
-    def get_correlator_control_command(
-        self,
-        most_recent=None,
-        starttime=None,
-        stoptime=None,
-        command=None,
-        write_to_file=False,
-        filename=None,
-    ):
-        """
-        Get correlator control command record(s) from the M&C database.
-
-        Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
-
-        Parameters
-        ----------
-        most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
-        starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
-        stoptime : astropy Time object
-            Last time to get records for, only used if starttime is not None.
-            If none, only the first record after starttime will be returned.
-            Ignored if most_recent is True.
-        command : str
-            must be a key in correlator.command_dict (e.g. 'take_data',
-            'phase_switching_on', 'phase_switching_off', 'restart')
-        write_to_file : bool
-            Option to write records to a CSV file.
-        filename : str
-            Name of file to write to. If not provided, defaults to a file in the
-            current directory named based on the table name.
-            Ignored if write_to_file is False.
-
-        Returns
-        -------
-        list of CorrelatorControlCommand objects
-
-        """
-        return self._time_filter(
-            corr.CorrelatorControlCommand,
-            "time",
-            most_recent=most_recent,
-            starttime=starttime,
-            stoptime=stoptime,
-            filter_column="command",
-            filter_value=command,
-            write_to_file=write_to_file,
-            filename=filename,
-        )
-
-    def get_correlator_take_data_arguments(
-        self,
-        use_command_time=False,
-        most_recent=None,
-        starttime=None,
-        stoptime=None,
-        write_to_file=False,
-        filename=None,
-    ):
-        """
-        Get correlator take_data arguments record(s) from the M&C database.
-
-        Default behavior is to return the most recent record. If starttime
-        is set but stoptime is not, this method will return the first record
-        after the starttime. If you want a range of times you need
-        to set both startime and stoptime. If most_recent is set, startime and
-        stoptime are ignored.
-
-        Parameters
-        ----------
-        use_command_time : bool
-            Controls whether the query uses the time the command is sent to the
-            correlator or the starttime for the take_data command to filter on.
-            This affects the interpretation of the all the other keywords.
-        most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
-        starttime : astropy Time object
-            Time to look for records after. Note that this refers to the time
-            the command was issued, NOT the time the correlator was commanded
-            to start taking data. Ignored if most_recent is True,
-            required if most_recent is False.
-        stoptime : astropy Time object
-            Last time to get records for, only used if starttime is not None.
-            Note that this refers to the time the command was issued, NOT the
-            time the correlator was commanded to start taking data.
-            If none, only the first record after starttime will be returned.
-            Ignored if most_recent is True.
-        write_to_file : bool
-            Option to write records to a CSV file.
-        filename : str
-            Name of file to write to. If not provided, defaults to a file in the
-            current directory named based on the table name.
-            Ignored if write_to_file is False.
-
-        Returns
-        -------
-        list of CorrelatorTakeDataArguments objects
-
-        """
-        if use_command_time:
-            time_column = "time"
-        else:
-            time_column = "starttime_sec"
-
-        return self._time_filter(
-            corr.CorrelatorTakeDataArguments,
-            time_column,
-            most_recent=most_recent,
-            starttime=starttime,
-            stoptime=stoptime,
-            write_to_file=write_to_file,
-            filename=filename,
-        )
-
-    def get_correlator_config_command(
-        self,
-        most_recent=None,
-        starttime=None,
-        config_hash=None,
-        stoptime=None,
-        state_type=None,
-        write_to_file=False,
-        filename=None,
-    ):
-        """
-        Get correlator config command record(s) from the M&C database.
-
-        Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
-
-        Parameters
-        ----------
-        most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
-        starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
-        stoptime : astropy Time object
-            Last time to get records for, only used if starttime is not None.
-            If none, only the first record after starttime will be returned.
-            Ignored if most_recent is True.
-        config_hash : str
-            unique hash for config file
-        write_to_file : bool
-            Option to write records to a CSV file.
-        filename : str
-            Name of file to write to. If not provided, defaults to a file in the
-            current directory named based on the table name.
-            Ignored if write_to_file is False.
-
-        Returns
-        -------
-        list of CorrelatorConfigCommand objects
-
-        """
-        return self._time_filter(
-            corr.CorrelatorConfigCommand,
-            "time",
-            most_recent=most_recent,
-            starttime=starttime,
-            stoptime=stoptime,
-            filter_column="config_hash",
-            filter_value=config_hash,
-            write_to_file=write_to_file,
-            filename=filename,
-        )
-
-    def correlator_control_command(
-        self,
-        command,
-        starttime=None,
-        duration=None,
-        acclen_spectra=None,
-        tag=None,
-        overwrite_take_data=False,
-        config_file=None,
-        force=False,
-        dryrun=False,
-        testing=False,
-        redishost=corr.DEFAULT_REDIS_ADDRESS,
-    ):
-        """
-        Issue a correlator control command.
-
-        Parameters
-        ----------
-        command : str
-            One of the keys in correlator.command_dict (e.g. 'take_data',
-            'phase_switching_on', 'phase_switching_off', 'restart').
-        starttime : astropy Time object
-            Only applies if command is 'take_data': time to start taking data.
-        duration : int
-            Only applies if command is 'take_data': Length of time to take data
-            for, in seconds.
-        acclen_spectra : int
-            Only applies if command is 'take_data': Accumulation length in
-            spectra. Must be an integer divisible by 2048.
-            Default is correlator.DEFAULT_ACCLEN_SPECTRA
-        tag : str
-            Only applies if command is 'take_data': Tag which will end up in
-            data files as a header entry, must be from correlator.tag_list
-            (e.g. 'science', 'engineering').
-        overwrite_take_data : bool
-            Only applies if command is 'take_data': If there is already a take
-            data starttime in the future, overwrite it with this command.
-        config_file : str
-            Only applies if command is 'update_config': full path to the config
-            file to command the correlator to use. Must exist in a location the
-            correlator can access (this name is passed directly to the
-            correlator).
-        force : bool
-            Option to force a command that might interfere with observing even
-            if the correlator is currently taking data. This will only have an
-            effect for commands that are not usually allowed while data is being
-            taken (e.g restart, hard_stop, phase switching/load/noise diode
-            state changes).
-        dryrun : bool
-            If true, just return the list of CorrelatorControlCommand objects,
-            do not issue the commands or log them to the database
-        testing : bool
-            If true, do not use anything that requires connection to correlator
-            (implies dry run).
-        redishost : str
-            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
-
-        """
-        if testing:
-            dryrun = True
-
-        if dryrun:
-            command_list = []
-
-        command_time = Time.now()
-
-        if not testing:  # pragma: no cover
-            if command == "update_config":
-                # Check the current config
-                # make sure we have most recent config
-                self.add_correlator_config_from_corrcm()
-            else:
-                # Check state of controls
-                # make sure we have most recent state info
-                self.add_correlator_control_state_from_corrcm()
-
-        # Get most recent relevant control state
-        control_state = []
-        if (
-            command in corr.command_state_map.keys()
-            and "state_type" in corr.command_state_map[command]
-        ):
-            state_type = corr.command_state_map[command]["state_type"]
-            control_state = self.get_correlator_control_state(
-                most_recent=True, state_type=state_type
-            )
-
-        # Check if the correlator is taking data
-        taking_data_states = self.get_correlator_control_state(
-            most_recent=True, state_type="taking_data"
-        )
-        if len(taking_data_states) > 0:
-            taking_data = taking_data_states[0].state
-        else:
-            taking_data = False
-
-        if command == "take_data":
-            if taking_data and not force:
-                raise RuntimeError(
-                    "Correlator is already taking data. Set the "
-                    "force keyword to True to override this check."
-                )
-
-            # Note: correlator can only store one future starttime,
-            # if a new command is issued it will overwrite the starttime in the
-            # correlator.
-            # So we check for that case and only allow overwriting if the
-            # overwrite_take_data keyword is True (and then issue a warning)
-            if testing:
-                # get next start time from the database instead
-                next_start_time = None
-                take_data_args_objs = self.get_correlator_take_data_arguments(
-                    starttime=Time.now()
-                )
-                if len(take_data_args_objs) > 0:
-                    starttimes = []
-                    for obj in take_data_args_objs:
-                        starttimes.append(obj.starttime_sec + obj.starttime_ms / 1000.0)
-                    next_start_time = np.min(np.array(starttimes))
-            else:  # pragma: no cover
-                self.add_corr_obj(redishost=redishost)
-                next_start_time = corr._get_next_start_time(corr_cm=self.corr_obj)
-
-            if next_start_time is not None:
-                if not overwrite_take_data:
-                    raise RuntimeError(
-                        "Correlator is already commanded to take data starting at: ",
-                        Time(next_start_time, format="gps").isot,
-                        ". Use the overwrite_take_data keyword to overwrite.",
-                    )
-                else:
-                    warnings.warn(
-                        "Correlator was commanded to take data "
-                        "starting at: "
-                        + Time(next_start_time, format="gps").isot
-                        + ". Overwriting with "
-                        + starttime.isot
-                    )
-
-        else:
-            if len(control_state) > 0:
-                if control_state[0].state == corr.command_state_map[command]["state"]:
-                    # Already in desired state. Return
-                    print("Correlator is already in the desired state.")
-                    if dryrun:
-                        return []
-                    else:  # pragma: no cover
-                        return
-
-            if (
-                taking_data
-                and not corr.command_state_map[command]["allowed_when_recording"]
-                and not force
-            ):
-                raise RuntimeError(
-                    "Correlator is taking data. "
-                    + command
-                    + " is not allowed. Set the force keyword "
-                    "to True to override this check."
-                )
-
-        # create object(s) first: catch any mistakes
-        command_obj = corr.CorrelatorControlCommand.create(command_time, command)
-        if command == "take_data":
-            if starttime is None:
-                raise ValueError(
-                    "starttime must be specified if command is " '"take_data"'
-                )
-            if duration is None:
-                raise ValueError(
-                    "duration must be specified if command is " '"take_data"'
-                )
-            if acclen_spectra is None:
-                acclen_spectra = corr.DEFAULT_ACCLEN_SPECTRA
-
-            if not isinstance(acclen_spectra, (int, np.integer)) or (
-                acclen_spectra % 2048 != 0
-            ):
-                raise ValueError(
-                    "acclen_spectra must be an integer type and "
-                    "must be a multiple of 2048."
-                )
-
-            if acclen_spectra != corr.DEFAULT_ACCLEN_SPECTRA:
-                warnings.warn("Using a non-standard acclen_spectra!")
-
-            if tag is None:
-                raise ValueError("tag must be specified if command is " '"take_data"')
-
-            if config_file is not None:
-                raise ValueError(
-                    "config_file cannot be specified if command "
-                    'is not "update_config"'
-                )
-
-            if not testing:  # pragma: no cover
-                self.add_corr_obj(redishost=redishost)
-                integration_time = corr._get_integration_time(
-                    acclen_spectra, corr_cm=self.corr_obj
-                )
-            else:
-                # based on default values in hera_corr_cm
-                integration_time = acclen_spectra * ((2.0 * 16384) / 500e6)
-
-            take_data_args_obj = corr.CorrelatorTakeDataArguments.create(
-                command_time, starttime, duration, acclen_spectra, integration_time, tag
-            )
-        elif command == "update_config":
-            if config_file is None:
-                raise ValueError(
-                    "config_file must be specified if command is " '"update_config"'
-                )
-
-            # construct the file hash in the same way as the correlator does
-            with open(config_file, "r") as fh:
-                config_string = fh.read().encode("utf-8")
-                config_hash = hashlib.md5(config_string).hexdigest()
-
-            # Get most recent config
-            current_config_status = self.get_correlator_config_status(most_recent=True)
-            if len(current_config_status) > 0:
-                different_hash = config_hash != current_config_status[0].config_hash
-            else:
-                different_hash = True
-
-            if different_hash:
-                # now check to see if a file with this hash (so identical)
-                # already exists
-                same_config_file = self.get_correlator_config_file(
-                    config_hash=config_hash
-                )
-
-                if len(same_config_file) == 0:
-                    # This is a new config
-                    # Name it using the existing name. Adding it to the
-                    # Librarian will fail if a file with that name already
-                    # exists in the Librarian.
-                    librarian_filename = config_file
-                    config_file_obj = corr.CorrelatorConfigFile.create(
-                        config_hash, librarian_filename
-                    )
-
-                    if not dryrun:  # pragma: no cover
-                        # This config is new.
-                        # save it to the Librarian
-                        with open(config_file, "r") as stream:
-                            config = yaml.safe_load(stream)
-                        self._add_config_file_to_librarian(
-                            config, config_hash, librarian_filename
-                        )
-
-                        # add it to the config file table
-                        self.add(config_file_obj)
-                        self.commit()
-                    else:
-                        command_list.append(config_file_obj)
-
-                # make the config command object
-                config_command_obj = corr.CorrelatorConfigCommand.create(
-                    command_time, config_hash
-                )
-            else:
-                # config is unchanged. Return
-                print("Correlator already has the desired config.")
-                if dryrun:
-                    return []
-                else:  # pragma: no cover
-                    return
-        else:
-            if starttime is not None:
-                raise ValueError(
-                    "starttime cannot be specified if command is " 'not "take_data"'
-                )
-            if duration is not None:
-                raise ValueError(
-                    "duration cannot be specified if command is " 'not "take_data"'
-                )
-            if acclen_spectra is not None:
-                raise ValueError(
-                    "acclen_spectra cannot be specified if "
-                    'command is not "take_data"'
-                )
-            if tag is not None:
-                raise ValueError(
-                    "tag cannot be specified if command is not " '"take_data"'
-                )
-            if config_file is not None:
-                raise ValueError(
-                    "config_file cannot be specified if command "
-                    'is not "update_config"'
-                )
-
-        if not dryrun:  # pragma: no cover
-            # This is a real command, so actually call the commands on a
-            # HERACorrCM object instance (which is created in the next line if
-            # it doesn't already exist).
-            self.add_corr_obj(force=force, redishost=redishost)
-            # There are a couple special cases where we need to pass extra
-            # arguments (take_data, update_config). Handle them specifically,
-            # otherwise just call the appropriate method in the `else` clause.
-            # We use the command_dict in correlator.py to map the commands to
-            # specific methods on hera_corr_cm's HERACorrCM object, so the call
-            # to the object is done via a `getattr` call.
-            if command == "take_data":
-                # the correlator starttime can be different from the commanded
-                # time by as much as 134 ms
-                # the call to hera_corr_cm returns the actual start time
-                # (in unix format)
-                # input time needs to be unix epoch in ms
-                starttime_ms = int(np.round(starttime.unix * 1000))
-                starttime_used_unix_ms = getattr(
-                    self.corr_obj, corr.command_dict[command]
-                )(starttime_ms, duration, acclen_spectra, tag=tag)
-                if starttime_used_unix_ms is False:
-                    raise RuntimeError(
-                        "take_data correlator command returned a False state, on "
-                        "inputs: {t}, {d}, {acc}, {tag}".format(
-                            t=starttime_ms, d=duration, acc=acclen_spectra, tag=tag
-                        )
-                    )
-                starttime_used = Time(starttime_used_unix_ms / 1000.0, format="unix")
-
-                starttime_diff_sec = starttime.gps - starttime_used.gps
-                if np.abs(starttime_diff_sec) > 0.1:
-                    warnings.warn(
-                        "Time difference between commanded and "
-                        "accepted start time is: {tdiff} sec".format(
-                            tdiff=starttime_diff_sec
-                        )
-                    )
-            elif command == "update_config":
-                getattr(self.corr_obj, corr.command_dict[command])(config_file)
-            else:
-                getattr(self.corr_obj, corr.command_dict[command])()
-
-            self.add(command_obj)
-            self.commit()
-            if command == "take_data":
-                # update the starttime with the actual starttime of the
-                # correlator
-                take_data_args_obj = corr.CorrelatorTakeDataArguments.create(
-                    command_time,
-                    starttime_used,
-                    duration,
-                    acclen_spectra,
-                    integration_time,
-                    tag,
-                )
-                self.add(take_data_args_obj)
-                self.commit()
-            elif command == "update_config":
-                self.add(config_command_obj)
-                self.commit()
-
-        else:
-            command_list.append(command_obj)
-            if command == "take_data":
-                command_list.append(take_data_args_obj)
-            elif command == "update_config":
-                command_list.append(config_command_obj)
-
-        if dryrun:
-            return command_list
 
     def add_correlator_software_versions(self, time, package, version):
         """

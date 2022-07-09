@@ -5,10 +5,10 @@
 """Testing for `hera_mc.correlator`."""
 import os
 import copy
-import time
 import datetime
 import hashlib
 from math import floor
+import re
 
 import pytest
 import yaml
@@ -26,22 +26,8 @@ from ..tests import (
     TEST_DEFAULT_REDIS_HOST,
 )
 
-
-@pytest.fixture(scope="module")
-def corrcommand():
-    return {
-        "taking_data": {"state": True, "timestamp": Time(1512770942, format="unix")},
-        "phase_switching": {
-            "state": False,
-            "timestamp": Time(1512770944, format="unix"),
-        },
-        "noise_diode": {"state": True, "timestamp": Time(1512770946, format="unix")},
-    }
-
-
-@pytest.fixture(scope="module")
-def corrstate_nonetime():
-    return {"taking_data": {"state": False, "timestamp": None}}
+TEST_TIME1 = Time("2016-01-10 01:15:23", scale="utc")
+TEST_TIME2 = TEST_TIME1 + TimeDelta(120.0, format="sec")
 
 
 @pytest.fixture(scope="module")
@@ -282,271 +268,256 @@ def test_py3_hashing(feng_config):
     assert py27_hash == config_hash
 
 
-def test_add_corr_command_state(mcsession):
-    test_session = mcsession
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
+def test_add_array_signal_source(mcsession):
+    t1 = TEST_TIME1.copy()
+    t2 = TEST_TIME2.copy()
 
-    test_session.add_correlator_control_state(t1, "taking_data", True)
+    mcsession.add_array_signal_source(t1, "antenna")
 
-    expected = corr.CorrelatorControlState(
-        time=int(floor(t1.gps)), state_type="taking_data", state=True
-    )
-    result = test_session.get_correlator_control_state(
+    source_expected = corr.ArraySignalSource(time=int(floor(t1.gps)), source="antenna")
+    source_result = mcsession.get_array_signal_source(
         starttime=t1 - TimeDelta(3.0, format="sec")
     )
-    assert len(result) == 1
-    result = result[0]
-    assert result.isclose(expected)
+    assert len(source_result) == 1
+    source_result = source_result[0]
+    assert source_result.isclose(source_expected)
 
-    test_session.add_correlator_control_state(t1, "phase_switching", False)
-
-    result = test_session.get_correlator_control_state(
-        starttime=t1 - TimeDelta(3.0, format="sec"), state_type="taking_data"
-    )
-    assert len(result) == 1
-    result = result[0]
-    assert result.isclose(expected)
-
-    result_most_recent = test_session.get_correlator_control_state(
-        state_type="taking_data"
-    )
-    assert len(result_most_recent), 1
-    result_most_recent = result_most_recent[0]
-    assert result_most_recent.isclose(expected)
-
-    expected = corr.CorrelatorControlState(
-        time=int(floor(t1.gps)), state_type="phase_switching", state=False
+    mcsession.add_array_signal_source(t2, "digital_same_seed")
+    source_expected2 = corr.ArraySignalSource(
+        time=int(floor(t2.gps)), source="digital_same_seed"
     )
 
-    result = test_session.get_correlator_control_state(
-        starttime=t1 - TimeDelta(3.0, format="sec"), state_type="phase_switching"
-    )
-    assert len(result) == 1
-    result = result[0]
-    assert result.isclose(expected)
+    source_result = mcsession.get_array_signal_source(source="antenna")
+    assert len(source_result) == 1
+    source_result = source_result[0]
+    assert source_result.isclose(source_expected)
 
-    result_most_recent = test_session.get_correlator_control_state(
-        state_type="phase_switching"
-    )
-    assert len(result_most_recent) == 1
-    result_most_recent = result_most_recent[0]
-    assert result_most_recent.isclose(expected)
+    # get most recent
+    source_result = mcsession.get_array_signal_source()
+    assert len(source_result) == 1
+    source_result = source_result[0]
+    assert source_result.isclose(source_expected2)
 
-    result = test_session.get_correlator_control_state(
-        starttime=t1 - TimeDelta(3.0, format="sec"), stoptime=t1
-    )
-    assert len(result) == 2
-
-    result_most_recent = test_session.get_correlator_control_state()
-    assert len(result) == 2
-
-    result = test_session.get_correlator_control_state(
-        starttime=t1 + TimeDelta(200.0, format="sec")
-    )
-    assert result == []
-
-
-def test_add_correlator_control_state_from_corrcm(mcsession, corrcommand):
-    test_session = mcsession
-    corr_state_obj_list = test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=corrcommand, testing=True
-    )
-
-    for obj in corr_state_obj_list:
-        test_session.add(obj)
-
-    t1 = Time(1512770942.726777, format="unix")
-    result = test_session.get_correlator_control_state(
-        starttime=t1 - TimeDelta(3.0, format="sec")
-    )
-
-    expected = corr.CorrelatorControlState(
-        time=int(floor(t1.gps)), state_type="taking_data", state=True
-    )
-    assert len(result) == 1
-    result = result[0]
-    assert result.isclose(expected)
-
-    result_most_recent = test_session.get_correlator_control_state(
-        state_type="taking_data"
-    )
-    assert len(result_most_recent) == 1
-    result_most_recent = result_most_recent[0]
-    assert result_most_recent.isclose(expected)
-
-    result_most_recent = test_session.get_correlator_control_state()
-    assert len(result_most_recent) == 1
-    assert result_most_recent[0].state_type == "noise_diode"
-
-    result = test_session.get_correlator_control_state(
+    source_result = mcsession.get_array_signal_source(
         starttime=t1 - TimeDelta(3.0, format="sec"),
-        stoptime=t1 + TimeDelta(5.0, format="sec"),
+        stoptime=t2 + TimeDelta(3.0, format="sec"),
     )
-    assert len(result) == 3
+    assert len(source_result) == 2
+    assert source_result[0].isclose(source_expected)
+
+    assert source_result[1].isclose(source_expected2)
 
 
-def test_add_correlator_control_state_from_corrcm_nonetime_noprior(
-    mcsession, corrstate_nonetime
+@pytest.mark.parametrize(
+    "snap_source,snap_seed,snap_time,fem_switch,fem_time,source,time",
+    [
+        ("adc", "same", TEST_TIME1, "antenna", TEST_TIME2, "antenna", TEST_TIME2),
+        ("adc", "same", TEST_TIME2, "noise", TEST_TIME1, "noise", TEST_TIME2),
+        ("adc", "same", TEST_TIME1, "load", TEST_TIME2, "load", TEST_TIME2),
+        (
+            "noise",
+            "same",
+            TEST_TIME1,
+            "antenna",
+            TEST_TIME2,
+            "digital_same_seed",
+            TEST_TIME1,
+        ),
+        (
+            "noise",
+            "diff",
+            TEST_TIME2,
+            "load",
+            TEST_TIME1,
+            "digital_different_seed",
+            TEST_TIME2,
+        ),
+    ],
+)
+def test_define_array_signal_source(
+    snap_source, snap_seed, snap_time, fem_switch, fem_time, source, time
 ):
-    test_session = mcsession
-    test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=corrstate_nonetime
+    this_time, this_source = corr._define_array_signal_source(
+        snap_source, snap_seed, snap_time, fem_switch, fem_time
     )
 
-    result = test_session.get_correlator_control_state(most_recent=True)
-    res_time = result[0].time
-    assert Time.now().gps - res_time < 2.0
-
-    expected = corr.CorrelatorControlState(
-        time=res_time, state_type="taking_data", state=False
-    )
-
-    assert len(result) == 1
-    result = result[0]
-    assert result.isclose(expected)
+    assert this_source == source
+    assert this_time == time
 
 
-def test_add_correlator_control_state_from_corrcm_nonetime_priortrue(
-    mcsession, corrcommand, corrstate_nonetime
+@pytest.mark.parametrize(
+    "snap_source,snap_seed,snap_time,fem_switch,fem_time,err_msg",
+    [
+        (
+            "foo",
+            "same",
+            TEST_TIME1,
+            "antenna",
+            TEST_TIME2,
+            "SNAP input information is foo, should be 'adc' or 'noise'",
+        ),
+        (
+            "adc",
+            "same",
+            TEST_TIME2,
+            "foo",
+            TEST_TIME1,
+            "On FEM input, FEM switch state is foo, should be one of "
+            f"{corr.signal_source_list[0:3]}.",
+        ),
+        (
+            "noise",
+            "foo",
+            TEST_TIME1,
+            "antenna",
+            TEST_TIME2,
+            "On digital noise, seed type is foo, should be 'same' or 'diff'.",
+        ),
+    ],
+)
+def test_define_array_signal_source_errors(
+    snap_source, snap_seed, snap_time, fem_switch, fem_time, err_msg
 ):
-    test_session = mcsession
-    test_session.add_correlator_control_state_from_corrcm(corr_state_dict=corrcommand)
-
-    test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=corrstate_nonetime
-    )
-
-    result = test_session.get_correlator_control_state(most_recent=True)
-    res_time = result[0].time
-    assert Time.now().gps - res_time < 2.0
-
-    expected = corr.CorrelatorControlState(
-        time=res_time, state_type="taking_data", state=False
-    )
-    assert len(result) == 1
-    result = result[0]
-    assert result.isclose(expected)
-
-
-def test_add_correlator_control_state_from_corrcm_nonetime_priorfalse(
-    mcsession, corrstate_nonetime
-):
-    test_session = mcsession
-    not_taking_data_state_dict = {
-        "taking_data": {"state": False, "timestamp": Time(1512770942, format="unix")}
-    }
-    corr_state_obj_list = test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=not_taking_data_state_dict
-    )
-
-    corr_state_obj_list = test_session.add_correlator_control_state_from_corrcm(
-        corr_state_dict=corrstate_nonetime, testing=True
-    )
-    test_session._insert_ignoring_duplicates(
-        corr.CorrelatorControlState, corr_state_obj_list
-    )
-
-    result = test_session.get_correlator_control_state(most_recent=True)
-
-    expected = corr.CorrelatorControlState(
-        time=Time(1512770942, format="unix").gps, state_type="taking_data", state=False
-    )
-    assert len(result) == 1
-    result = result[0]
-    assert not result.isclose(expected)  # because the time is a float
-
-    expected = corr.CorrelatorControlState(
-        time=int(Time(1512770942, format="unix").gps),
-        state_type="taking_data",
-        state=False,
-    )
-    assert result.isclose(expected)
-
-
-def test_control_state_errors(mcsession):
-    test_session = mcsession
-    pytest.raises(
-        ValueError,
-        test_session.add_correlator_control_state,
-        "foo",
-        "taking_data",
-        True,
-    )
-
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
-    pytest.raises(
-        ValueError, test_session.add_correlator_control_state, t1, "foo", True
-    )
-
-    bad_corr_state_dict = {"taking_data": {"state": True, "timestamp": None}}
-    pytest.raises(
-        ValueError,
-        test_session.add_correlator_control_state_from_corrcm,
-        corr_state_dict=bad_corr_state_dict,
-        testing=True,
-    )
-
-    bad_corr_state_dict = {"phase_switching": {"state": False, "timestamp": None}}
-    pytest.raises(
-        ValueError,
-        test_session.add_correlator_control_state_from_corrcm,
-        corr_state_dict=bad_corr_state_dict,
-        testing=True,
-    )
+    with pytest.raises(ValueError, match=re.escape(err_msg)):
+        corr._define_array_signal_source(
+            snap_source, snap_seed, snap_time, fem_switch, fem_time
+        )
 
 
 @requires_redis
-def test_add_corr_control_state_from_corrcm(mcsession):
-    pytest.importorskip("hera_corr_cm")
-    test_session = mcsession
+def test_add_array_signal_source_from_redis(mcsession):
+    current_array_source = mcsession.add_array_signal_source_from_redis(
+        redishost=TEST_DEFAULT_REDIS_HOST, testing=True
+    )
+    mcsession.add_array_signal_source_from_redis(redishost=TEST_DEFAULT_REDIS_HOST)
 
-    redis_corr_state_dict = corr._get_control_state(redishost=TEST_DEFAULT_REDIS_HOST)
+    # get most recent
+    source_result = mcsession.get_array_signal_source()
+    assert len(source_result) == 1
 
-    test_session.add_correlator_control_state_from_corrcm(
+    assert source_result[0].isclose(current_array_source)
+
+
+def test_add_array_signal_errors(mcsession):
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        mcsession.add_array_signal_source("foo", "antenna")
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "invalid signal source value was passed. Passed value was foo, must be one "
+            f"of: {corr.signal_source_list}"
+        ),
+    ):
+        mcsession.add_array_signal_source(TEST_TIME1, "foo")
+
+
+def test_add_correlator_component_event_time(mcsession):
+    t1 = TEST_TIME1.copy()
+    t2 = TEST_TIME2.copy()
+
+    mcsession.add_correlator_component_event_time("f_engine_sync", t1)
+
+    comp_event_expected = corr.CorrelatorComponentEventTime(
+        component_event="f_engine_sync", time=t1.gps
+    )
+    comp_event_result = mcsession.get_correlator_component_event_time(
+        starttime=t1 - TimeDelta(3.0, format="sec")
+    )
+    assert len(comp_event_result) == 1
+    comp_event_result = comp_event_result[0]
+    assert comp_event_result.isclose(comp_event_expected)
+
+    mcsession.add_correlator_component_event_time("catcher_start", t2)
+    comp_event_expected2 = corr.CorrelatorComponentEventTime(
+        component_event="catcher_start", time=t2.gps
+    )
+
+    comp_event_result = mcsession.get_correlator_component_event_time(
+        component_event="f_engine_sync"
+    )
+    assert len(comp_event_result) == 1
+    comp_event_result = comp_event_result[0]
+    assert comp_event_result.isclose(comp_event_result)
+
+    # get most recent
+    comp_event_result = mcsession.get_correlator_component_event_time()
+    assert len(comp_event_result) == 1
+    comp_event_result = comp_event_result[0]
+    assert comp_event_result.isclose(comp_event_expected2)
+
+    comp_event_result = mcsession.get_correlator_component_event_time(
+        starttime=t1 - TimeDelta(3.0, format="sec"),
+        stoptime=t2 + TimeDelta(3.0, format="sec"),
+    )
+    assert len(comp_event_result) == 2
+    assert comp_event_result[0].isclose(comp_event_expected)
+
+    assert comp_event_result[1].isclose(comp_event_expected2)
+
+
+@requires_redis
+def test_add_correlator_component_event_time_from_redis(mcsession):
+    comp_event_list = mcsession.add_correlator_component_event_time_from_redis(
+        redishost=TEST_DEFAULT_REDIS_HOST, testing=True
+    )
+    assert len(comp_event_list) >= 1
+    assert len(comp_event_list) <= 2
+
+    event_types = []
+    for comp_event_obj in comp_event_list:
+        event_types.append(comp_event_obj.component_event)
+
+    assert "f_engine_sync" in event_types
+    if len(comp_event_list) == 2:
+        assert "catcher_start" in event_types or "catcher_stop" in event_types
+
+    mcsession.add_correlator_component_event_time_from_redis(
         redishost=TEST_DEFAULT_REDIS_HOST
     )
-    result = test_session.get_correlator_control_state(
-        state_type="taking_data", most_recent=True
-    )
-    assert len(result) == 1
-    result = result[0]
-    assert result.state == redis_corr_state_dict["taking_data"]["state"]
 
-    result = test_session.get_correlator_control_state(
-        state_type="phase_switching", most_recent=True
+    # get most recent
+    comp_event_result = mcsession.get_correlator_component_event_time(
+        component_event="f_engine_sync"
     )
-    assert len(result) == 1
-    result = result[0]
-    assert result.time == int(
-        Time(redis_corr_state_dict["phase_switching"]["timestamp"], format="unix").gps
-    )
-    assert result.state == redis_corr_state_dict["phase_switching"]["state"]
+    assert len(comp_event_result) == 1
 
-    result = test_session.get_correlator_control_state(
-        state_type="noise_diode", most_recent=True
-    )
-    assert len(result) == 1
-    result = result[0]
-    assert result.time == int(
-        Time(redis_corr_state_dict["noise_diode"]["timestamp"], format="unix").gps
-    )
-    assert result.state == redis_corr_state_dict["noise_diode"]["state"]
+    f_engine_index = event_types.index("f_engine_sync")
+    assert comp_event_result[0].isclose(comp_event_list[f_engine_index])
 
-    result = test_session.get_correlator_control_state(
-        state_type="load", most_recent=True
-    )
-    assert len(result) == 1
-    result = result[0]
-    assert result.time == int(
-        Time(redis_corr_state_dict["load"]["timestamp"], format="unix").gps
-    )
-    assert result.state == redis_corr_state_dict["load"]["state"]
+    if len(comp_event_list) == 2:
+        if "catcher_start" in event_types:
+            catcher_index = event_types.index("catcher_start")
+            catcher_event = "catcher_start"
+        else:
+            catcher_index = event_types.index("catcher_stop")
+            catcher_event = "catcher_stop"
+
+        comp_event_result = mcsession.get_correlator_component_event_time(
+            component_event=catcher_event
+        )
+        assert len(comp_event_result) == 1
+        assert comp_event_result[0].isclose(comp_event_list[catcher_index])
+
+
+def test_add_correlator_component_event_time_errors(mcsession):
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        mcsession.add_correlator_component_event_time("f_engine_sync", "foo")
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "invalid component event value was passed. Passed value was "
+            f"foo, must be one of: {corr.corr_component_events}"
+        ),
+    ):
+        mcsession.add_correlator_component_event_time("foo", TEST_TIME1)
 
 
 def test_add_corr_config(mcsession, corr_config):
     test_session = mcsession
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
-    t2 = t1 + TimeDelta(120.0, format="sec")
+    t1 = TEST_TIME1.copy()
+    t2 = TEST_TIME2.copy()
 
     config_hash = "testhash"
 
@@ -1040,601 +1011,9 @@ def test_add_correlator_config_from_corrcm_redis(mcsession):
         assert corr.CorrelatorConfigPhaseSwitchIndex in class_list
 
 
-@pytest.mark.parametrize(
-    ("command"), list(set(corr.command_dict.keys()) - {"take_data", "update_config"})
-)
-def test_control_command_no_recent_status(mcsession, command):
-    test_session = mcsession
-    # test things on & off with no recent status
-    command_list = test_session.correlator_control_command(command, testing=True)
-
-    assert len(command_list) == 1
-    command_time = command_list[0].time
-    assert Time.now().gps - command_time < 2.0
-
-    command_time_obj = Time(command_time, format="gps")
-    expected = corr.CorrelatorControlCommand.create(command_time_obj, command)
-
-    assert command_list[0].isclose(expected)
-
-    # test adding the command(s) to the database and retrieving them
-    for cmd in command_list:
-        test_session.add(cmd)
-    result_list = test_session.get_correlator_control_command(
-        starttime=Time.now() - TimeDelta(10, format="sec"),
-        stoptime=Time.now() + TimeDelta(10, format="sec"),
-        command=command,
-    )
-    assert len(result_list) == 1
-    assert command_list[0].isclose(result_list[0])
-
-
-def test_take_data_command_no_recent_status(mcsession):
-    test_session = mcsession
-    # test take_data command with no recent status
-    starttime = Time.now() + TimeDelta(10, format="sec")
-
-    command_list = test_session.correlator_control_command(
-        "take_data", starttime=starttime, duration=100, tag="engineering", testing=True
-    )
-
-    assert len(command_list) == 2
-    command_time = command_list[0].time
-    assert Time.now().gps - command_time < 2.0
-
-    command_time_obj = Time(command_time, format="gps")
-    expected_comm = corr.CorrelatorControlCommand.create(command_time_obj, "take_data")
-
-    assert command_list[0].isclose(expected_comm)
-
-    int_time = corr.DEFAULT_ACCLEN_SPECTRA * ((2.0 * 16384) / 500e6)
-    expected_args = corr.CorrelatorTakeDataArguments.create(
-        command_time_obj,
-        starttime,
-        100,
-        corr.DEFAULT_ACCLEN_SPECTRA,
-        int_time,
-        "engineering",
-    )
-
-    assert command_list[1].isclose(expected_args)
-
-    # check warning with non-standard acclen_spectra
-    command_list = checkWarnings(
-        test_session.correlator_control_command,
-        ["take_data"],
-        {
-            "starttime": starttime,
-            "duration": 100,
-            "acclen_spectra": 2048,
-            "tag": "engineering",
-            "testing": True,
-            "overwrite_take_data": True,
-        },
-        message="Using a non-standard acclen_spectra",
-    )
-
-    assert len(command_list) == 2
-    command_time = command_list[0].time
-    assert Time.now().gps - command_time < 2.0
-
-    command_time_obj = Time(command_time, format="gps")
-    expected_comm = corr.CorrelatorControlCommand.create(command_time_obj, "take_data")
-    assert command_list[0].isclose(expected_comm)
-
-    int_time = 2048 * ((2.0 * 16384) / 500e6)
-    expected_args = corr.CorrelatorTakeDataArguments.create(
-        command_time_obj, starttime, 100, 2048, int_time, "engineering"
-    )
-
-    assert command_list[1].isclose(expected_args)
-
-
-@pytest.mark.filterwarnings("ignore:transaction already deassociated from connection")
-@pytest.mark.parametrize(
-    ("commands_to_test"),
-    [
-        list(
-            set(corr.command_dict.keys())
-            - {"take_data", "update_config", "restart", "hard_stop"}
-        )
-    ],
-)
-def test_control_command_with_recent_status(mcsession, commands_to_test):
-    test_session = mcsession
-    # test things on & off with a recent status
-    for command in commands_to_test:
-        state_type = corr.command_state_map[command]["state_type"]
-        state = corr.command_state_map[command]["state"]
-
-        t1 = Time.now() - TimeDelta(30 + 60, format="sec")
-        test_session.add_correlator_control_state(t1, state_type, state)
-
-        command_list = test_session.correlator_control_command(command, testing=True)
-        assert len(command_list) == 0
-
-        t2 = Time.now() - TimeDelta(30, format="sec")
-        test_session.add_correlator_control_state(t2, state_type, not (state))
-
-        command_list = test_session.correlator_control_command(command, testing=True)
-
-        assert len(command_list) == 1
-        command_time = command_list[0].time
-        assert Time.now().gps - command_time < 2.0
-
-        command_time_obj = Time(command_time, format="gps")
-        expected = corr.CorrelatorControlCommand.create(command_time_obj, command)
-        assert command_list[0].isclose(expected)
-
-        test_session.rollback()
-
-        result = test_session.get_correlator_control_state(
-            most_recent=True, state_type=state_type
-        )
-        assert len(result) == 0
-
-
-def test_take_data_command_with_recent_status(mcsession):
-    test_session = mcsession
-    # test take_data command with recent status
-    t1 = Time.now() - TimeDelta(60, format="sec")
-    test_session.add_correlator_control_state(t1, "taking_data", True)
-
-    pytest.raises(
-        RuntimeError,
-        test_session.correlator_control_command,
-        "take_data",
-        starttime=Time.now() + TimeDelta(10, format="sec"),
-        duration=100,
-        tag="engineering",
-        testing=True,
-    )
-
-    t2 = Time.now() - TimeDelta(30, format="sec")
-    test_session.add_correlator_control_state(t2, "taking_data", False)
-
-    t3 = Time.now() + TimeDelta(10, format="sec")
-    control_command_objs = test_session.correlator_control_command(
-        "take_data", starttime=t3, duration=100, tag="engineering", testing=True
-    )
-    for obj in control_command_objs:
-        test_session.add(obj)
-        test_session.commit()
-
-    time.sleep(1)
-
-    starttime = Time.now() + TimeDelta(10, format="sec")
-    pytest.raises(
-        RuntimeError,
-        test_session.correlator_control_command,
-        "take_data",
-        starttime=starttime + TimeDelta(30, format="sec"),
-        duration=100,
-        tag="engineering",
-        testing=True,
-    )
-
-    command_list = checkWarnings(
-        test_session.correlator_control_command,
-        func_args=["take_data"],
-        func_kwargs={
-            "starttime": starttime,
-            "duration": 100.0,
-            "tag": "engineering",
-            "testing": True,
-            "overwrite_take_data": True,
-        },
-        message="Correlator was commanded to take data",
-    )
-
-    command_time = command_list[0].time
-    assert Time.now().gps - command_time < 2.0
-
-    command_time_obj = Time(command_time, format="gps")
-    expected_comm = corr.CorrelatorControlCommand.create(command_time_obj, "take_data")
-    assert command_list[0].isclose(expected_comm)
-
-    int_time = corr.DEFAULT_ACCLEN_SPECTRA * ((2.0 * 16384) / 500e6)
-    expected_args = corr.CorrelatorTakeDataArguments.create(
-        command_time_obj,
-        starttime,
-        100.0,
-        corr.DEFAULT_ACCLEN_SPECTRA,
-        int_time,
-        "engineering",
-    )
-    assert command_list[1].isclose(expected_args)
-
-    for obj in command_list:
-        test_session.add(obj)
-    test_session.commit()
-
-    result_args = test_session.get_correlator_take_data_arguments(
-        most_recent=True, use_command_time=True
-    )
-    assert len(result_args) == 1
-    assert result_args[0].isclose(expected_args)
-
-    result_args = test_session.get_correlator_take_data_arguments(starttime=Time.now())
-    assert len(result_args) == 1
-    assert not result_args[0].isclose(expected_args)
-
-
-@pytest.mark.parametrize(
-    ("command", "kwargs"),
-    [
-        ("foo", {}),
-        (
-            "take_data",
-            {"starttime": Time.now() + TimeDelta(10, format="sec"), "duration": 100},
-        ),
-        (
-            "take_data",
-            {
-                "starttime": Time.now() + TimeDelta(10, format="sec"),
-                "tag": "engineering",
-            },
-        ),
-        ("take_data", {"duration": 100, "tag": "engineering"}),
-        ("take_data", {"starttime": "foo", "duration": 100, "tag": "engineering"}),
-        (
-            "take_data",
-            {
-                "starttime": Time.now() + TimeDelta(10, format="sec"),
-                "duration": 100,
-                "tag": "foo",
-            },
-        ),
-        (
-            "take_data",
-            {
-                "starttime": Time.now() + TimeDelta(10, format="sec"),
-                "duration": 100,
-                "tag": "foo",
-                "acclen_spectra": 2,
-            },
-        ),
-        ("noise_diode_on", {"starttime": Time.now() + TimeDelta(10, format="sec")}),
-        ("phase_switching_off", {"duration": 100}),
-        ("restart", {"acclen_spectra": corr.DEFAULT_ACCLEN_SPECTRA}),
-        ("noise_diode_off", {"tag": "engineering"}),
-    ],
-)
-def test_control_command_errors(mcsession, command, kwargs):
-    test_session = mcsession
-    pytest.raises(
-        ValueError,
-        test_session.correlator_control_command,
-        command,
-        testing=True,
-        **kwargs,
-    )
-
-
-@pytest.mark.parametrize(
-    ("command"),
-    list(
-        set(corr.command_dict.keys())
-        - {"take_data", "update_config", "stop_taking_data"}
-    ),
-)
-def test_control_command_errors_taking_data(mcsession, command):
-    test_session = mcsession
-    # test bad commands while taking data
-    t1 = Time.now() - TimeDelta(60, format="sec")
-    test_session.add_correlator_control_state(t1, "taking_data", True)
-
-    pytest.raises(
-        RuntimeError, test_session.correlator_control_command, command, testing=True
-    )
-
-
-def test_control_command_errors_other():
-    pytest.raises(ValueError, corr.CorrelatorControlCommand.create, "foo", "take_data")
-
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
-    pytest.raises(
-        ValueError,
-        corr.CorrelatorTakeDataArguments.create,
-        "foo",
-        t1,
-        100,
-        2,
-        2 * ((2.0 * 16384) / 500e6),
-        "engineering",
-    )
-
-
-@requires_redis
-def test_get_integration_time():
-    pytest.importorskip("hera_corr_cm")
-    n_spectra = 147456
-    int_time = corr._get_integration_time(n_spectra)
-
-    assert int_time > 0
-
-
-@requires_redis
-def test_get_next_start_time():
-    pytest.importorskip("hera_corr_cm")
-    corr._get_next_start_time(redishost=TEST_DEFAULT_REDIS_HOST)
-
-
-def test_corr_config_command_no_recent_config(mcsession, corr_config):
-    test_session = mcsession
-    # test commanding a config with no recent config status
-    t1 = Time.now()
-
-    with open(corr_config[0], "r") as fh:
-        config_string = fh.read().encode("utf-8")
-        config_hash = hashlib.md5(config_string).hexdigest()
-
-    command_list = test_session.correlator_control_command(
-        "update_config", config_file=corr_config[0], testing=True
-    )
-    assert len(command_list) == 3
-
-    # test adding the config obj(s) to the database and retrieving them
-    for obj in command_list:
-        test_session.add(obj)
-        test_session.commit()
-
-    file_expected = corr.CorrelatorConfigFile(
-        config_hash=config_hash, filename=corr_config[0]
-    )
-    assert command_list[0].isclose(file_expected)
-
-    file_result = test_session.get_correlator_config_file(config_hash=config_hash)
-    assert len(file_result) == 1
-    file_result = file_result[0]
-    assert file_result.isclose(file_expected)
-
-    command_time = command_list[1].time
-    assert Time.now().gps - command_time < 2.0
-
-    command_time_obj = Time(command_time, format="gps")
-    expected_comm = corr.CorrelatorControlCommand.create(
-        command_time_obj, "update_config"
-    )
-
-    assert command_list[1].isclose(expected_comm)
-
-    config_comm_expected = corr.CorrelatorConfigCommand.create(
-        command_time_obj, config_hash
-    )
-
-    assert command_list[2].isclose(config_comm_expected)
-
-    config_comm_result = test_session.get_correlator_config_command(
-        starttime=t1 - TimeDelta(3.0, format="sec")
-    )
-    assert len(config_comm_result) == 1
-    config_comm_result = config_comm_result[0]
-    assert config_comm_result.isclose(config_comm_expected)
-
-
-def test_corr_config_command_with_recent_config(
-    mcsession, corr_config, corr_config_dict
-):
-    test_session = mcsession
-    # test commanding a config with a recent (different) config status
-    corr_config_list = test_session.add_correlator_config_from_corrcm(
-        config_state_dict=corr_config_dict,
-        testing=True,
-        redishost=TEST_DEFAULT_REDIS_HOST,
-    )
-
-    for obj in corr_config_list:
-        test_session.add(obj)
-        test_session.commit()
-
-    t1 = Time.now()
-
-    with open(corr_config[0], "r") as fh:
-        config_string = fh.read().encode("utf-8")
-        config_hash = hashlib.md5(config_string).hexdigest()
-
-    command_list = test_session.correlator_control_command(
-        "update_config", config_file=corr_config[0], testing=True
-    )
-    assert len(command_list) == 3
-
-    # test adding the config obj(s) to the database and retrieving them
-    for obj in command_list:
-        test_session.add(obj)
-        test_session.commit()
-
-    file_expected = corr.CorrelatorConfigFile(
-        config_hash=config_hash, filename=corr_config[0]
-    )
-    assert command_list[0].isclose(file_expected)
-
-    file_result = test_session.get_correlator_config_file(config_hash=config_hash)
-    assert len(file_result) == 1
-    file_result = file_result[0]
-    assert file_result.isclose(file_expected)
-
-    command_time = command_list[1].time
-    assert Time.now().gps - command_time < 2.0
-
-    command_time_obj = Time(command_time, format="gps")
-    expected_comm = corr.CorrelatorControlCommand.create(
-        command_time_obj, "update_config"
-    )
-
-    assert command_list[1].isclose(expected_comm)
-
-    assert Time.now().gps - command_time < 2.0
-    config_comm_expected = corr.CorrelatorConfigCommand.create(
-        command_time_obj, config_hash
-    )
-
-    assert command_list[2].isclose(config_comm_expected)
-
-    config_comm_result = test_session.get_correlator_config_command(
-        starttime=t1 - TimeDelta(3.0, format="sec")
-    )
-    assert len(config_comm_result) == 1
-    config_comm_result = config_comm_result[0]
-    assert config_comm_result.isclose(config_comm_expected)
-
-
-def test_corr_config_command_with_recent_config_match_prior(
-    mcsession, corr_config, corr_config_dict
-):
-    test_session = mcsession
-    # test commanding a config with a recent (different) config status but a
-    # matching prior one
-    t1 = Time.now()
-    t0 = Time(1512760942, format="unix")
-
-    with open(corr_config[0], "r") as fh:
-        config_string = fh.read().encode("utf-8")
-        config_hash = hashlib.md5(config_string).hexdigest()
-
-    # put in a previous matching config
-    matching_corr_config_dict = {
-        "time": t0,
-        "hash": config_hash,
-        "config": corr_config[1],
-    }
-    corr_config_list = test_session.add_correlator_config_from_corrcm(
-        config_state_dict=matching_corr_config_dict, testing=True
-    )
-
-    for obj in corr_config_list:
-        test_session.add(obj)
-        test_session.commit()
-
-    config_filename = "correlator_config_" + str(int(floor(t0.gps))) + ".yaml"
-    file_expected = corr.CorrelatorConfigFile(
-        config_hash=config_hash, filename=config_filename
-    )
-
-    file_result = test_session.get_correlator_config_file(config_hash=config_hash)
-    assert len(file_result) == 1
-    file_result = file_result[0]
-    assert file_result.isclose(file_expected)
-
-    # make more recent one that doesn't match
-    corr_config_list = test_session.add_correlator_config_from_corrcm(
-        config_state_dict=corr_config_dict, testing=True
-    )
-
-    for obj in corr_config_list:
-        test_session.add(obj)
-        test_session.commit()
-
-    command_list = test_session.correlator_control_command(
-        "update_config", config_file=corr_config[0], testing=True
-    )
-    assert len(command_list) == 2
-
-    # test adding the config obj(s) to the database and retrieving them
-    for obj in command_list:
-        test_session.add(obj)
-        test_session.commit()
-
-    command_time = command_list[0].time
-    assert Time.now().gps - command_time < 2.0
-
-    command_time_obj = Time(command_time, format="gps")
-    expected_comm = corr.CorrelatorControlCommand.create(
-        command_time_obj, "update_config"
-    )
-
-    assert command_list[0].isclose(expected_comm)
-
-    config_comm_expected = corr.CorrelatorConfigCommand.create(
-        command_time_obj, config_hash
-    )
-
-    assert command_list[1].isclose(config_comm_expected)
-
-    config_comm_result = test_session.get_correlator_config_command(
-        starttime=t1 - TimeDelta(3.0, format="sec")
-    )
-    assert len(config_comm_result) == 1
-    config_comm_result = config_comm_result[0]
-    assert config_comm_result.isclose(config_comm_expected)
-
-
-def test_corr_config_command_same_recent_config(mcsession, corr_config):
-    test_session = mcsession
-    # test commanding a config with the same recent config status
-    t0 = Time(1512760942, format="unix")
-
-    with open(corr_config[0], "r") as fh:
-        config_string = fh.read().encode("utf-8")
-        config_hash = hashlib.md5(config_string).hexdigest()
-
-    # put in a previous matching config
-    matching_corr_config_dict = {
-        "time": t0,
-        "hash": config_hash,
-        "config": corr_config[1],
-    }
-    corr_config_list = test_session.add_correlator_config_from_corrcm(
-        config_state_dict=matching_corr_config_dict, testing=True
-    )
-
-    for obj in corr_config_list:
-        test_session.add(obj)
-        test_session.commit()
-
-    config_filename = "correlator_config_" + str(int(floor(t0.gps))) + ".yaml"
-    file_expected = corr.CorrelatorConfigFile(
-        config_hash=config_hash, filename=config_filename
-    )
-
-    file_result = test_session.get_correlator_config_file(config_hash=config_hash)
-    assert len(file_result) == 1
-    file_result = file_result[0]
-    assert file_result.isclose(file_expected)
-
-    command_list = test_session.correlator_control_command(
-        "update_config", config_file=corr_config[0], testing=True
-    )
-    assert len(command_list) == 0
-
-
-def test_config_command_errors(mcsession, corr_config):
-    test_session = mcsession
-    pytest.raises(ValueError, corr.CorrelatorConfigCommand.create, "foo", "testhash")
-
-    # not setting config_file with 'update_config' command
-    pytest.raises(
-        ValueError,
-        test_session.correlator_control_command,
-        "update_config",
-        testing=True,
-    )
-
-    # setting config_file with other commands
-    pytest.raises(
-        ValueError,
-        test_session.correlator_control_command,
-        "restart",
-        config_file=corr_config[0],
-        testing=True,
-    )
-
-    starttime = Time.now() + TimeDelta(10, format="sec")
-    pytest.raises(
-        ValueError,
-        test_session.correlator_control_command,
-        "take_data",
-        starttime=starttime,
-        duration=100,
-        tag="engineering",
-        config_file=corr_config[0],
-        testing=True,
-    )
-
-
 def test_add_correlator_software_versions(mcsession):
     test_session = mcsession
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
+    t1 = TEST_TIME1.copy()
 
     test_session.add_correlator_software_versions(t1, "hera_corr_f", "0.0.1-3c7fdaf6")
 
@@ -1709,8 +1088,8 @@ def test_software_version_errors(mcsession):
 
 def test_add_snap_config_version(mcsession, feng_config, init_args):
     test_session = mcsession
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
-    t2 = t1 + TimeDelta(120.0, format="sec")
+    t1 = TEST_TIME1.copy()
+    t2 = TEST_TIME2.copy()
 
     test_session.add_correlator_config_file("testhash", feng_config[0])
     test_session.commit()
@@ -1974,7 +1353,7 @@ def test_onsite_add_corr_snap_versions_from_corrcm(mcsession):
 
 def test_add_snap_status(mcsession):
     test_session = mcsession
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
+    t1 = TEST_TIME1.copy()
 
     t_prog = Time("2016-01-05 20:00:00", scale="utc")
     test_session.add_snap_status(
@@ -2151,7 +1530,7 @@ def test_add_snap_status_from_corrcm_with_nones(mcsession, snapstatus_none):
 
 def test_snap_status_errors(mcsession):
     test_session = mcsession
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
+    t1 = TEST_TIME1.copy()
 
     pytest.raises(
         ValueError,
@@ -2352,8 +1731,8 @@ def test_site_add_snap_status_from_corrcm_default_redishost(mcsession):
 
 def test_add_antenna_status(mcsession):
     test_session = mcsession
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
-    t2 = t1 + TimeDelta(120.0, format="sec")
+    t1 = TEST_TIME1.copy()
+    t2 = TEST_TIME2.copy()
 
     eq_coeffs = (np.zeros((5)) + 56.921875).tolist()
     histogram = [0, 3, 6, 10, 12, 8, 4, 0]
@@ -2716,7 +2095,7 @@ def test_add_antenna_status_from_corrcm_with_nones(mcsession, antstatus_none):
 
 def test_antenna_status_errors(mcsession):
     test_session = mcsession
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
+    t1 = TEST_TIME1.copy()
 
     eq_coeffs = (np.zeros((5)) + 56.921875).tolist()
     histogram = [0, 3, 6, 10, 12, 8, 4, 0]
