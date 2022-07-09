@@ -13,6 +13,7 @@ import warnings
 import json
 
 import numpy as np
+import redis
 from astropy.time import Time
 from sqlalchemy import (
     Column,
@@ -22,7 +23,6 @@ from sqlalchemy import (
     Boolean,
     String,
     ForeignKey,
-    ForeignKeyConstraint,
 )
 
 from . import MCDeclarativeBase
@@ -32,147 +32,352 @@ DEFAULT_ACCLEN_SPECTRA = 147456
 
 DEFAULT_REDIS_ADDRESS = "redishost"
 
-# key is state type, value is method name in hera_corr_cm
-state_dict = {
-    "taking_data": "is_recording",
-    "phase_switching": "phase_switch_is_on",
-    "noise_diode": "noise_diode_is_on",
-    "load": "load_is_on",
-}
-
+signal_source_list = [
+    "antenna",
+    "load",
+    "noise",
+    "digital_same_seed",
+    "digital_different_seed",
+]
 tag_list = ["science", "engineering"]
-
-# key is command, value is method name in hera_corr_cm
-command_dict = {
-    "take_data": "take_data",
-    "stop_taking_data": "stop_taking_data",
-    "phase_switching_on": "phase_switch_enable",
-    "phase_switching_off": "phase_switch_disable",
-    "noise_diode_on": "noise_diode_enable",
-    "noise_diode_off": "noise_diode_disable",
-    "load_on": "load_enable",
-    "load_off": "load_disable",
-    "update_config": "update_config",
-    "restart": "restart",
-    "hard_stop": "_stop",
-}
-
-command_state_map = {
-    "take_data": {"allowed_when_recording": False},
-    "stop_taking_data": {
-        "state_type": "taking_data",
-        "state": False,
-        "allowed_when_recording": True,
-    },
-    "phase_switching_on": {
-        "state_type": "phase_switching",
-        "state": True,
-        "allowed_when_recording": False,
-    },
-    "phase_switching_off": {
-        "state_type": "phase_switching",
-        "state": False,
-        "allowed_when_recording": False,
-    },
-    "noise_diode_on": {
-        "state_type": "noise_diode",
-        "state": True,
-        "allowed_when_recording": False,
-    },
-    "noise_diode_off": {
-        "state_type": "noise_diode",
-        "state": False,
-        "allowed_when_recording": False,
-    },
-    "load_on": {"state_type": "load", "state": True, "allowed_when_recording": False},
-    "load_off": {"state_type": "load", "state": False, "allowed_when_recording": False},
-    "update_config": {"allowed_when_recording": True},
-    "restart": {"allowed_when_recording": False},
-    "hard_stop": {"allowed_when_recording": False},
-}
+corr_component_events = [
+    "f_engine_sync",
+    "x_engine_integration",
+    "catcher_start",
+    "catcher_stop",
+]
 
 
-class CorrelatorControlState(MCDeclarativeBase):
+class ArraySignalSource(MCDeclarativeBase):
     """
-    Definition of correlator control state table.
+    Definition of array_signal_source table.
 
     Attributes
     ----------
     time : BigInteger Column
-        GPS time of the control state, floored. Part of the primary key.
-    state_type : String Column
-        Type of control state, one of the keys in state_dict. Part of the
-        primary key.
-    state : Boolean Column
-        Boolean indicating whether the state_type is true or false.
+        GPS time that the when the input source was set, floored. The primary key.
+    source : String Column
+        One of "antenna", "load", "noise", "digital_noise_same",
+        "digital_noise_different" (listed in signal_source_list).
 
     """
 
-    __tablename__ = "correlator_control_state"
+    __tablename__ = "array_signal_source"
     time = Column(BigInteger, primary_key=True)
-    state_type = Column(String, primary_key=True)
-    state = Column(Boolean, nullable=False)
+    source = Column(String, nullable=False)
 
     @classmethod
-    def create(cls, time, state_type, state):
+    def create(cls, time, source):
         """
-        Create a new correlator control state object.
+        Create a new correlator config status object.
 
         Parameters
         ----------
         time : astropy Time object
             Astropy time object based on a timestamp reported by the correlator.
-        state_type : str
-            Must be a key in state_dict (e.g. 'taking_data', 'phase_switching',
-            'noise_diode', 'load').
-        state : bool
-            Is the state_type true or false.
+        source : str
+            One of "antenna", "load", "noise", "digital_noise_same",
+            "digital_noise_different" (listed in signal_source_list).
 
         """
         if not isinstance(time, Time):
             raise ValueError("time must be an astropy Time object")
         corr_time = floor(time.gps)
 
-        if state_type not in list(state_dict.keys()):
+        if source not in signal_source_list:
             raise ValueError(
-                "state_type must be one of: "
-                + ", ".join(list(state_dict.keys()))
-                + ". state_type is actually {}".format(state_type)
+                f"invalid signal source value was passed. Passed value was {source}, "
+                f"must be one of: {signal_source_list}"
             )
 
-        return cls(time=corr_time, state_type=state_type, state=state)
+        return cls(time=corr_time, source=source)
 
 
-def _get_control_state(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
+def _get_snap_input_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
     """
-    Get the latest states and associated timestamp from the correlator.
+    Get the SNAP input state from redis ("adc" or "noise").
 
     Parameters
     ----------
-    corr_cm : hera_corr_cm.HeraCorrCM object
-        HeraCorrCM object to use. If None, this function will make a new one.
     redishost : str
-        Address of redis database (only used if corr_cm is None).
+        Address of redis database
 
     Returns
     -------
     dict
-        a 2-level dict, top level key is a key from the state_dict,
-        second level keys are 'timestamp' and 'state' (a boolean)
+        keys are b'source' (either b'adc' or b'noise'), b'seed' (either b'same' or
+        b'diff') and b'time' (a unix time stamp).
 
     """
-    import hera_corr_cm
+    redis_pool = redis.ConnectionPool(host=redishost)
+    rsession = redis.Redis(connection_pool=redis_pool)
 
-    if corr_cm is None:
-        corr_cm = hera_corr_cm.HeraCorrCM(redishost=redishost)
+    snap_input_dict = rsession.hgetall("corr:status:input")
+    snap_source = snap_input_dict[b"source"].decode("utf-8")
+    snap_seed_type = snap_input_dict[b"seed"].decode("utf-8")
+    snap_time = Time(snap_input_dict[b"time"], format="unix")
 
-    corr_state_dict = {}
-    for key, value in state_dict.items():
-        # call each state query method and add to corr_state_dict
-        state, timestamp = getattr(corr_cm, value)()
-        corr_state_dict[key] = {"timestamp": timestamp, "state": state}
+    return snap_source, snap_seed_type, snap_time
 
-    return corr_state_dict
+
+def _get_fem_switch_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+    """
+    Get the FEM switch state from redis ("antenna" or "load" or "noise").
+
+    Parameters
+    ----------
+    redishost : str
+        Address of redis database
+
+    Returns
+    -------
+    dict
+        keys are b'state' (b'antenna' or b'load' or b'noise') and b'time' (a unix time stamp).
+
+    """
+    redis_pool = redis.ConnectionPool(host=redishost)
+    rsession = redis.Redis(connection_pool=redis_pool)
+
+    fem_switch_dict = rsession.hgetall("corr:fem_switch_state")
+    fem_switch = fem_switch_dict[b"state"].decode("utf-8")
+    fem_time = Time(fem_switch_dict[b"time"], format="unix")
+
+    return fem_switch, fem_time
+
+
+def _define_array_signal_source(
+    snap_source, snap_seed, snap_time, fem_switch, fem_time
+):
+    """
+    Define the array signal source based on the snap input and fem switch information.
+
+    Parameters
+    ----------
+    snap_source : str
+        One of "adc" or "noise" (meaning digital noise).
+    snap_seed : str
+        One of "same" or "diff"
+    snap_time : astropy Time object
+        Time of the snap input status.
+    fem_switch : str
+        One of "antenna", "load" or "noise"
+    fem_time : astropy Time object
+        Time of the fem switch status.
+
+    Returns
+    -------
+    time : astropy Time object
+        Time of the array signal source.
+    source : str
+        One of "antenna", "load", "noise", "digital_noise_same",
+        "digital_noise_different" (listed in signal_source_list).
+
+    """
+    if snap_source == "adc":
+        # Using input from FEM, now we need the fem switch info
+        source = fem_switch
+        if source not in signal_source_list[0:3]:
+            raise ValueError(
+                f"On FEM input, FEM switch state is {source}, should be one of "
+                f"{signal_source_list[0:3]}."
+            )
+        # Use the most recent time of when either the snap input or fem input changed
+        time = max(snap_time, fem_time)
+    elif snap_source == "noise":
+        # on digital noise. get the seed and time info
+        if snap_seed == "same":
+            source = "digital_same_seed"
+        elif snap_seed == "diff":
+            source = "digital_different_seed"
+        else:
+            raise ValueError(
+                f"On digital noise, seed type is {snap_seed}, should be 'same' or "
+                "'diff'."
+            )
+        time = snap_time
+    else:
+        raise ValueError(
+            f"SNAP input information is {snap_source}, should be 'adc' or 'noise'."
+        )
+
+    return time, source
+
+
+def _get_array_source_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+    """
+    Get the current array source info from redis.
+
+    Parameters
+    ----------
+    redishost : str
+        Address of redis database
+
+    Returns
+    -------
+    time : astropy Time object
+        Time of this status
+    source : str
+        One of "antenna", "load", "noise", "digital_noise_same",
+        "digital_noise_different" (listed in signal_source_list).
+
+    Raises
+    ------
+    ValueError
+        If values pulled from redis cannot be interpreted properly.
+
+    """
+    snap_source, snap_seed_type, snap_time = _get_snap_input_from_redis(
+        redishost=redishost
+    )
+    fem_switch, fem_time = _get_fem_switch_from_redis(redishost=redishost)
+
+    return _define_array_signal_source(
+        snap_source, snap_seed_type, snap_time, fem_switch, fem_time
+    )
+
+
+class CorrelatorComponentEventTime(MCDeclarativeBase):
+    """
+    Definition of correlator_component_event_time table.
+
+    Specifies when various correlator components had an event related to normal
+    observing (expected to be order one entry per component per day).
+
+    Attributes
+    ----------
+    component_event : String Column
+        Correlator component event, one of "f_engine_sync", "x_engine_integration",
+        "catcher_start", "catcher_stop" (listed in corr_component_events).
+        Part of the primary key.
+    time : BigInteger Column
+        GPS time that the component started (note that unlike other tables this is not
+        floored, it is a float). Part of the primary key.
+
+    """
+
+    __tablename__ = "correlator_component_event_time"
+    component_event = Column(String, primary_key=True)
+    time = Column(Float, primary_key=True)
+
+    @classmethod
+    def create(cls, component_event, time):
+        """
+        Create a new correlator component time object.
+
+        Parameters
+        ----------
+        component_event : str
+            Correlator component event, one of "f_engine_sync", "x_engine_integration",
+            "catcher_start", "catcher_stop" (listed in corr_component_events).
+        time : astropy Time object
+            Astropy time object based on a timestamp reported by the correlator.
+
+        """
+        if not isinstance(time, Time):
+            raise ValueError("time must be an astropy Time object")
+        corr_time = time.gps
+
+        if component_event not in corr_component_events:
+            raise ValueError(
+                "invalid component event value was passed. Passed value was "
+                f"{component_event}, must be one of: {corr_component_events}"
+            )
+
+        return cls(component_event=component_event, time=corr_time)
+
+
+def _get_f_engine_sync_time_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+    """
+    Get the most recent f-engine sync time from redis.
+
+    Parameters
+    ----------
+    redishost : str
+        Address of redis database
+
+    Returns
+    -------
+    time : astropy Time object
+        Time of the most recent f-engine sync
+
+    """
+    redis_pool = redis.ConnectionPool(host=redishost)
+    rsession = redis.Redis(connection_pool=redis_pool)
+
+    # The redis key that is currently being used for this is in unix ms.
+    # In the future, this key will change in redis to "feng:sync_time".
+    # Unclear if that will be in Unix seconds or ms.
+    sync_time_unix_ms = rsession.get("corr:feng_sync_time")
+
+    sync_time_unix = float(sync_time_unix_ms.decode("utf-8")) * 1e-3
+
+    return Time(sync_time_unix, format="unix")
+
+
+def _get_catcher_start_stop_time_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+    """
+    Get the most recent catcher start time from redis.
+
+    Parameters
+    ----------
+    redishost : str
+        Address of redis database
+
+    Returns
+    -------
+    event : str
+        Either "catcher_start" if the catcher is currently taking data or "catcher_stop"
+        if it is not.
+    time : astropy Time object
+        Time when the data taking last started or stopped.
+
+    """
+    redis_pool = redis.ConnectionPool(host=redishost)
+    rsession = redis.Redis(connection_pool=redis_pool)
+
+    taking_data_dict = rsession.hgetall("corr:is_taking_data")
+    if len(taking_data_dict) > 0:
+        if taking_data_dict[b"state"].decode("utf-8") == "True":
+            event = "catcher_start"
+        else:
+            event = "catcher_stop"
+        time = Time(taking_data_dict[b"time"], format="unix")
+
+        return event, time
+    else:
+        return None, None
+
+
+def _get_correlator_component_event_times_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+    """
+    Get the correlator component event times from redis.
+
+    This currently only gets the f-engine sync time and the catcher start/stop times.
+    In the future, when the x-engine integration start time (in Mcounts) is available
+    it will be added to this function as well.
+
+    Parameters
+    ----------
+    redishost : str
+        Address of redis database (only used if corr_cm is None)
+
+    Returns
+    -------
+    dict
+        Keys are correlator component events, values are times as astropy Time objects.
+
+    """
+    outdict = {}
+
+    outdict["f_engine_sync"] = _get_f_engine_sync_time_from_redis(redishost=redishost)
+
+    catcher_event, catcher_time = _get_catcher_start_stop_time_from_redis(
+        redishost=redishost
+    )
+    if catcher_event is not None:
+        outdict[catcher_event] = catcher_time
+
+    return outdict
 
 
 class CorrelatorConfigFile(MCDeclarativeBase):
@@ -261,7 +466,7 @@ def _get_config(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
     Returns
     -------
     dict
-        Keys are 'timestamp', 'hash' and 'config' (a yaml processed string)
+        Keys are 'time', 'hash' and 'config' (a yaml processed string)
 
     """
     import hera_corr_cm
@@ -553,261 +758,6 @@ def _parse_config(config, config_hash):
             )
 
     return obj_list
-
-
-class CorrelatorControlCommand(MCDeclarativeBase):
-    """
-    Definition of correlator control command table.
-
-    Attributes
-    ----------
-    time : BigInteger Column
-        GPS time of the command, floored. Part of primary_key.
-    command : String Column
-        Control command, one of the keys in command_dict. Part of primary_key.
-
-    """
-
-    __tablename__ = "correlator_control_command"
-    time = Column(BigInteger, primary_key=True)
-    command = Column(String, primary_key=True)
-
-    @classmethod
-    def create(cls, time, command):
-        """
-        Create a new correlator control command object.
-
-        Parameters
-        ----------
-        time : astropy Time object
-            Astropy time object for time command was sent.
-        command : str
-            One of the keys in command_dict (e.g. 'take_data',
-            'phase_switching_on', 'phase_switching_off', 'restart')
-
-        """
-        if not isinstance(time, Time):
-            raise ValueError("time must be an astropy Time object")
-        corr_time = floor(time.gps)
-
-        if command not in list(command_dict.keys()):
-            raise ValueError(
-                "command must be one of: "
-                + ", ".join(list(command_dict.keys()))
-                + ". command is actually {}".format(command)
-            )
-
-        return cls(time=corr_time, command=command)
-
-
-def _get_integration_time(
-    acclen_spectra, corr_cm=None, correlator_redis_address=DEFAULT_REDIS_ADDRESS
-):
-    """
-    Get the integration time in seconds for a given acclen in spectra.
-
-    Parameters
-    ----------
-    acclen_spectra : int
-        Accumulation length in number of spectra.
-    corr_cm : hera_corr_cm.HeraCorrCM object
-        HeraCorrCM object to use. If None, this function will make a new one.
-    correlator_redis_address : str
-        Address of redis database (only used if corr_cm is None)
-
-    Returns
-    -------
-    float
-        integration time in seconds
-
-    """
-    import hera_corr_cm
-
-    if corr_cm is None:
-        corr_cm = hera_corr_cm.HeraCorrCM(redishost=correlator_redis_address)
-
-    return corr_cm.n_spectra_to_secs(acclen_spectra)
-
-
-def _get_next_start_time(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
-    """
-    Get the next start time from the correlator, in gps seconds.
-
-    Parameters
-    ----------
-    corr_cm : hera_corr_cm.HeraCorrCM object
-        HeraCorrCM object to use. If None, this function will make a new one.
-    redishost : str
-        Address of redis database (only used if corr_cm is None).
-
-    Returns
-    -------
-    astropy Time object
-        Time of the next start time
-
-    """
-    import hera_corr_cm
-
-    if corr_cm is None:
-        corr_cm = hera_corr_cm.HeraCorrCM(redishost=redishost)
-
-    starttime_unix_timestamp = corr_cm.next_start_time()
-    if starttime_unix_timestamp == 0.0:
-        return None
-
-    return Time(starttime_unix_timestamp, format="unix").gps
-
-
-class CorrelatorTakeDataArguments(MCDeclarativeBase):
-    """
-    Definition of correlator take_data arguments table.
-
-    Records the arguments passed to the correlator `take_data` command.
-
-    Attributes
-    ----------
-    time : BigInteger Column
-        GPS time of the take_datacommand, floored. Part of primary_key.
-    command : String Column
-        Always equal to 'take_data'. Part of primary_key.
-    starttime_sec : BigInteger Column
-        GPS time to start taking data, floored.
-    starttime_ms : Integer Column
-        Milliseconds to add to starttime_sec to set correlator start time.
-    duration : Float Column
-        Duration to take data for in seconds. After this time, the
-        correlator will stop recording.
-    acclen_spectra : Integer Column
-        Accumulation length in spectra.
-    integration_time :  Float Column
-        Accumulation length in seconds, converted from acclen_spectra.
-        The conversion is non-trivial and depends on the correlator settings.
-    tag : String Column
-        Tag which will end up in data files as a header entry. Must be one of
-        the values in tag_list.
-
-    """
-
-    __tablename__ = "correlator_take_data_arguments"
-    time = Column(BigInteger, primary_key=True)
-    command = Column(String, primary_key=True)
-    starttime_sec = Column(BigInteger, nullable=False)
-    starttime_ms = Column(Integer, nullable=False)
-    duration = Column(Float, nullable=False)
-    acclen_spectra = Column(Integer, nullable=False)
-    integration_time = Column(Float, nullable=False)
-    tag = Column(String, nullable=False)
-
-    # the command column isn't really needed to define the table (it's always
-    # 'take_data'), but it's required for the Foreign key to work properly
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["time", "command"],
-            ["correlator_control_command.time", "correlator_control_command.command"],
-        ),
-        {},
-    )
-
-    @classmethod
-    def create(cls, time, starttime, duration, acclen_spectra, integration_time, tag):
-        """
-        Create a new correlator take data arguments object.
-
-        Parameters
-        ----------
-        time : astropy Time object
-            Astropy time object for time the take_data command was sent.
-        starttime : astropy Time object
-            Astropy time object for time to start taking data.
-        duration : float
-            Duration to take data for in seconds. After this time, the
-            correlator will stop recording.
-        acclen_spectra : int
-            Accumulation length in spectra.
-        integration_time : float
-            Integration time in seconds, converted from acclen_spectra.
-        tag : str
-            Tag which will end up in data files as a header entry.
-            Must be one of the values in tag_list.
-
-        """
-        if not isinstance(time, Time):
-            raise ValueError("time must be an astropy Time object")
-        corr_time = floor(time.gps)
-
-        if not isinstance(starttime, Time):
-            raise ValueError("starttime must be an astropy Time object")
-        starttime_gps = starttime.gps
-        starttime_sec = floor(starttime_gps)
-
-        starttime_ms = floor((starttime_gps - starttime_sec) * 1000.0)
-
-        if tag not in tag_list:
-            raise ValueError("tag must be one of: ", tag_list)
-
-        return cls(
-            time=corr_time,
-            command="take_data",
-            starttime_sec=starttime_sec,
-            starttime_ms=starttime_ms,
-            duration=duration,
-            acclen_spectra=acclen_spectra,
-            integration_time=integration_time,
-            tag=tag,
-        )
-
-
-class CorrelatorConfigCommand(MCDeclarativeBase):
-    """
-    Definition of correlator_config_command, for correlator config changes.
-
-    Attributes
-    ----------
-    time : BigInteger Column
-        GPS time that the config command was sent, floored. Part of primary_key.
-    command : String Column
-        Always equal to 'update_config'. Part of primary_key.
-    config_hash : String Column
-        Unique hash for the config. Foreign key into correlator_config_file.
-
-    """
-
-    __tablename__ = "correlator_config_command"
-    time = Column(BigInteger, primary_key=True)
-    command = Column(String, primary_key=True)
-    config_hash = Column(
-        String, ForeignKey("correlator_config_file.config_hash"), nullable=False
-    )
-
-    # the command column isn't really needed to define the table (it's always
-    # 'update_config'), but it's required for the Foreign key to work properly
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["time", "command"],
-            ["correlator_control_command.time", "correlator_control_command.command"],
-        ),
-        {},
-    )
-
-    @classmethod
-    def create(cls, time, config_hash):
-        """
-        Create a new correlator config command object.
-
-        Parameters
-        ----------
-        time : astropy time object
-            Astropy time object based on a timestamp reported by the correlator
-        config_hash : str
-            Unique hash of the config. Foreign key into correlator_config_file
-            table.
-
-        """
-        if not isinstance(time, Time):
-            raise ValueError("time must be an astropy Time object")
-        command_time = floor(time.gps)
-
-        return cls(time=command_time, command="update_config", config_hash=config_hash)
 
 
 class CorrelatorSoftwareVersions(MCDeclarativeBase):
