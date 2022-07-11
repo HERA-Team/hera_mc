@@ -457,6 +457,44 @@ def test_add_correlator_component_event_time(mcsession):
 
 
 @requires_redis
+@pytest.mark.parametrize(
+    "input_dict,event,time",
+    [
+        (
+            {b"state": b"True", b"time": str(int(TEST_TIME1.unix)).encode("utf-8")},
+            "catcher_start",
+            TEST_TIME1,
+        ),
+        (
+            {b"state": b"False", b"time": str(int(TEST_TIME1.unix)).encode("utf-8")},
+            "catcher_stop",
+            TEST_TIME1,
+        ),
+        ({}, None, None),
+    ],
+)
+def test_get_catcher_start_stop_time_from_redis(input_dict, event, time):
+    """Test logic branching by passing in spoofed redis output"""
+    out_event, out_time = corr._get_catcher_start_stop_time_from_redis(
+        taking_data_dict=input_dict
+    )
+
+    assert out_event == event
+    assert out_time == time
+
+    expdict = {}
+    expdict["f_engine_sync"] = corr._get_f_engine_sync_time_from_redis()
+    if event is not None:
+        expdict[event] = time
+
+    outdict = corr._get_correlator_component_event_times_from_redis(
+        taking_data_dict=input_dict
+    )
+
+    assert outdict == expdict
+
+
+@requires_redis
 def test_add_correlator_component_event_time_from_redis(mcsession):
     comp_event_list = mcsession.add_correlator_component_event_time_from_redis(
         redishost=TEST_DEFAULT_REDIS_HOST, testing=True
