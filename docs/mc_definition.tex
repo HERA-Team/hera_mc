@@ -536,6 +536,29 @@ size\_gb* & float & file size in gigabytes \\ \hline
 \subsection{Correlator Tables}
 The correlator tables are not all defined yet. Notes on future plans are in section \ref{sec:corr_future}.
 
+\subsubsection{array\_signal\_source}
+Array-wide information about the commanded signal source.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{time} & long & time of the config status in floor(gps seconds)\\ \hline
+source* & string & Commanded data source, one of: ``antenna", ``load", ``noise", ``digital\_same\_seed", ``digital\_different\_seed".
+\\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{correlator\_component\_event\_time}
+When correlator components had an event (related to normal observing).
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{component\_event} & string & Correlator event, one of :``f\_engine\_sync", ``x\_engine\_integration" (in this case it is calculated from the Mcount) ``catcher\_start", ``catcher\_stop".
+\\ \hline
+\textbf{time} & float & time of the event in gps seconds (not floored)\\ \hline
+\end{tabular}
+\end{center}
 
 \subsubsection{correlator\_config\_file}
 List of correlator config files, which specify detailed correlator settings. All files in this table are in the Librarian.
@@ -605,59 +628,6 @@ Config status of the correlator, i.e. which config file is being used by the cor
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & time of the config status in floor(gps seconds)\\ \hline
 \textit{config\_hash}* & string & hash for the config in use, foreign key into correlator\_config\_file table.\\ \hline
-\end{tabular}
-\end{center}
-
-
-\subsubsection{correlator\_control\_state}
-State of control knobs in correlator.
-\begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
-\hline
- {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
-\textbf{time} & long & time of the control state in floor(gps seconds)\\ \hline
-\textbf{state\_type} & string & type of control state, one of: `taking\_data', `phase\_switching',  `noise\_diode'.  \\ \hline
-state* & boolean & indicator of whether the state\_type is true or false \\\hline
-\end{tabular}
-\end{center}
-
-\subsubsection{correlator\_control\_command}
-Commands issued to the correlator. If the command is `take\_data' or `update\_config', there will be a matching row in the `correlator\_take\_data\_arguments' table or the `correlator\_config\_command' table respectively with the values of the parameters in those commands.
-\begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
-\hline
- {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
-\textbf{time} & long & time the command was sent in floor(gps seconds)\\ \hline
-\textbf{command} & string & command sent, one of: `take\_data', `stop\_taking\_data',  `phase\_switching\_on',  `phase\_switching\_off',  `noise\_diode\_on',  `noise\_diode\_off',  `update\_config'.  \\ \hline
-\end{tabular}
-\end{center}
-
-\subsubsection{correlator\_take\_data\_arguments}
-Records the arguments passed to the correlator `take\_data` command.
-\begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
-\hline
- {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
-\textbf{\textit{time}} & long & time the command was sent in floor(gps seconds), foreign key into correlator\_control\_command table\\ \hline
-\textbf{\textit{command}} & string & command sent, always `take\_data', foreign key into correlator\_control\_command table.  \\ \hline
-starttime*\_sec & long & time to start taking data in floor(gps seconds) \\\hline
-starttime\_ms* & integer & milliseconds to add to starttime\_sec to set correlator start time\\\hline
-duration* & float & duration to take data for in seconds. After this time, the correlator will stop recording\\\hline
-acclen\_spectra* & integer & accumulation length in spectra\\\hline
-integration\_time* & float & accumulation length in seconds, converted from acclen\_spectra (the conversion is non-trivial and depends on the correlator settings)\\\hline
-tag* & string & tag which will end up in data files as a header entry, one of: `engineering', `science'.\\\hline
-\end{tabular}
-\end{center}
-
-\subsubsection{correlator\_config\_command}
-Records the config passed to the correlator `update\_config` command.
-\begin{center}
- \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
-\hline
- {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
-\textbf{\textit{time}} & long & time the command was sent in floor(gps seconds), foreign key into correlator\_control\_command table\\ \hline
-\textbf{\textit{command}} & string & command sent, always `update\_config', foreign key into correlator\_control\_command table.  \\ \hline
-\textit{config\_hash}* & string & hash for the config to use, foreign key into correlator\_config\_file table.\\ \hline
 \end{tabular}
 \end{center}
 
