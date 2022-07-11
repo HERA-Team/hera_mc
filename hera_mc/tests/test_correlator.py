@@ -307,6 +307,10 @@ def test_add_array_signal_source(mcsession):
 
     assert source_result[1].isclose(source_expected2)
 
+    # this tests different column types not matching:
+    source_expected2 = corr.ArraySignalSource(time=t2.gps, source="digital_same_seed")
+    assert not source_result[1].isclose(source_expected2)
+
 
 @pytest.mark.parametrize(
     "snap_source,snap_seed,snap_time,fem_switch,fem_time,source,time",
