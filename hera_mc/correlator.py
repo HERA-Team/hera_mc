@@ -314,7 +314,10 @@ def _get_f_engine_sync_time_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
     return Time(sync_time_unix, format="unix")
 
 
-def _get_catcher_start_stop_time_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+def _get_catcher_start_stop_time_from_redis(
+    redishost=DEFAULT_REDIS_ADDRESS,
+    taking_data_dict=None,
+):
     """
     Get the most recent catcher start time from redis.
 
@@ -322,6 +325,9 @@ def _get_catcher_start_stop_time_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
     ----------
     redishost : str
         Address of redis database
+    taking_data_dict: A dict spoofing the dict returned by the redis call
+        `hgetall("corr:is_taking_data")` for testing purposes.
+        Example: {b'state': b'True', b'time': b'1654884281'} or empty dict
 
     Returns
     -------
@@ -332,10 +338,11 @@ def _get_catcher_start_stop_time_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
         Time when the data taking last started or stopped.
 
     """
-    redis_pool = redis.ConnectionPool(host=redishost)
-    rsession = redis.Redis(connection_pool=redis_pool)
+    if taking_data_dict is None:
+        redis_pool = redis.ConnectionPool(host=redishost)
+        rsession = redis.Redis(connection_pool=redis_pool)
+        taking_data_dict = rsession.hgetall("corr:is_taking_data")
 
-    taking_data_dict = rsession.hgetall("corr:is_taking_data")
     if len(taking_data_dict) > 0:
         if taking_data_dict[b"state"].decode("utf-8") == "True":
             event = "catcher_start"
@@ -348,7 +355,10 @@ def _get_catcher_start_stop_time_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
         return None, None
 
 
-def _get_correlator_component_event_times_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+def _get_correlator_component_event_times_from_redis(
+    redishost=DEFAULT_REDIS_ADDRESS,
+    taking_data_dict=None,
+):
     """
     Get the correlator component event times from redis.
 
@@ -360,6 +370,9 @@ def _get_correlator_component_event_times_from_redis(redishost=DEFAULT_REDIS_ADD
     ----------
     redishost : str
         Address of redis database (only used if corr_cm is None)
+    taking_data_dict: A dict spoofing the dict returned by the redis call
+        `hgetall("corr:is_taking_data")` for testing purposes.
+        Example: {b'state': b'True', b'time': b'1654884281'} or empty dict
 
     Returns
     -------
@@ -372,7 +385,7 @@ def _get_correlator_component_event_times_from_redis(redishost=DEFAULT_REDIS_ADD
     outdict["f_engine_sync"] = _get_f_engine_sync_time_from_redis(redishost=redishost)
 
     catcher_event, catcher_time = _get_catcher_start_stop_time_from_redis(
-        redishost=redishost
+        redishost=redishost, taking_data_dict=taking_data_dict
     )
     if catcher_event is not None:
         outdict[catcher_event] = catcher_time
