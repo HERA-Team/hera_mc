@@ -26,7 +26,8 @@ hostname = socket.gethostname()
 
 # List of commands (methods) to run on each iteration
 commands_to_run = [
-    "add_correlator_control_state_from_corrcm",
+    "add_array_signal_source_from_redis",
+    "add_correlator_component_event_time_from_redis",
     "add_correlator_config_from_corrcm",
     "add_snap_status_from_corrcm",
     "add_corr_snap_versions_from_corrcm",
@@ -80,20 +81,21 @@ while True:
     except Exception:
         # Try to log an error with a new session
         traceback.print_exc(file=sys.stderr)
+        traceback_str = traceback.format_exc()
         with db.sessionmaker() as new_session:
             try:
                 # try to update the daemon_status table and add an
                 # error message to the subsystem_error table
-                session.add_daemon_status(
+                new_session.add_daemon_status(
                     "mc_monitor_correlator", hostname, Time.now(), "errored"
                 )
-                session.add_subsystem_error(
+                new_session.add_subsystem_error(
                     Time.now(), "mc_correlator_monitor", 2, traceback_str
                 )
             except Exception as e:
                 # if we can't log error messages to the new session we're in real trouble
                 raise RuntimeError(
-                    "error logging to subsystem_error with a " "new session"
+                    "error logging to subsystem_error with a new session"
                 ) from e
         # logging with a new session worked, so restart to get a new session
         continue
