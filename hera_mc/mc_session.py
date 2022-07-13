@@ -260,11 +260,14 @@ class MCSession(Session):
                 query = first_query
             else:
                 first_time = getattr(first_result[0], time_column)
-                # then get all results at that time
-                query = query.filter(time_attr == first_time)
-                if filter_value is not None:
-                    for attr in filter_attr:
-                        query = query.order_by(asc(attr))
+                if isinstance(first_time, float):
+                    query = first_query
+                else:
+                    # then get all results at that time (for integer times)
+                    query = query.filter(time_attr == first_time)
+                    if filter_value is not None:
+                        for attr in filter_attr:
+                            query = query.order_by(asc(attr))
 
         else:
             query = query.filter(time_attr.between(starttime.gps, stoptime.gps))
@@ -3291,75 +3294,33 @@ class MCSession(Session):
             filename=filename,
         )
 
-    def add_correlator_component_event_time(self, component_event, time):
+    def add_correlator_component_event_time(self, component, event, time):
         """
         Add new correlator component event time to the M&C database.
 
         Parameters
         ----------
-        component_event : str
-            Correlator component event, one of "f_engine_sync", "x_engine_integration",
-            "catcher_start", "catcher_stop" (listed in corr.corr_component_events).
+        component : str
+            Correlator component, one of "f_engine", "x_engine", "catcher"
+            (key in corr.corr_component_events).
+        event : str
+            Correlator component event, one of "sync" (f-engine),
+            "integration_start" (x-engine), "start", "stop", "stop_timeout" (catcher).
+            Component and event must be paired in corr.corr_component_events.
         time : astropy Time object
             Astropy time object based on a timestamp reported by the correlator.
 
 
         """
-        self.add(corr.CorrelatorComponentEventTime.create(component_event, time))
-
-    def add_correlator_component_event_time_from_redis(
-        self,
-        testing=False,
-        redishost=corr.DEFAULT_REDIS_ADDRESS,
-    ):
-        """
-        Get and add correlator component event times from redis.
-
-        Uses the `correlator._get_correlator_component_event_times_from_redis` function
-
-        If the current database is PostgreSQL, this function will use a
-        special insertion method that will ignore records that are redundant
-        with ones already in the database. This makes it convenient to sample
-        the correlator component event times densely on qmaster.
-
-        Parameters
-        ----------
-        testing : bool
-            If true, return the CorrelatorComponentEventTime object and don't add it to
-            the database.
-        redishost : str
-            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
-
-        Returns
-        -------
-        list of CorrelatorComponentEventTime
-            If testing is True, returns the list of CorrelatorComponentEventTime objects
-            rather than adding them to the database.
-
-        """
-        event_dict = corr._get_correlator_component_event_times_from_redis(
-            redishost=redishost
-        )
-
-        comp_event_list = []
-        for component_event, time in event_dict.items():
-            comp_event_list.append(
-                corr.CorrelatorComponentEventTime.create(component_event, time)
-            )
-
-        if testing:
-            return comp_event_list
-
-        self._insert_ignoring_duplicates(
-            corr.CorrelatorComponentEventTime, comp_event_list
-        )
+        self.add(corr.CorrelatorComponentEventTime.create(component, event, time))
 
     def get_correlator_component_event_time(
         self,
         most_recent=None,
         starttime=None,
         stoptime=None,
-        component_event=None,
+        component=None,
+        event=None,
         write_to_file=False,
         filename=None,
     ):
@@ -3386,9 +3347,9 @@ class MCSession(Session):
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
-        component_event : str
-            One of "f_engine_sync", "x_engine_integration", "catcher_start",
-            "catcher_stop" (listed in corr.corr_component_events)
+        component : str
+            Correlator component, one of "f_engine", "x_engine", "catcher"
+            (key in corr_component_events).
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -3407,10 +3368,120 @@ class MCSession(Session):
             most_recent=most_recent,
             starttime=starttime,
             stoptime=stoptime,
-            filter_column="component_event",
-            filter_value=component_event,
+            filter_column=["component", "event"],
+            filter_value=[component, event],
             write_to_file=write_to_file,
             filename=filename,
+        )
+
+    def add_correlator_component_event_time_from_redis(
+        self,
+        redishost=corr.DEFAULT_REDIS_ADDRESS,
+        taking_data_dict=None,
+        testing=False,
+    ):
+        """
+        Get and add correlator component event times from redis.
+
+        Uses the `correlator._get_correlator_component_event_times_from_redis` function
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the correlator component event times densely on qmaster.
+
+        Parameters
+        ----------
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
+        testing : bool
+            If true, return the CorrelatorComponentEventTime object and don't add it to
+            the database.
+        taking_data_dict: A dict spoofing the dict returned by the redis call
+            `hgetall("corr:is_taking_data")` for testing purposes.
+            Example: {b'state': b'True', b'time': b'1654884281'} or empty dict
+
+        Returns
+        -------
+        list of CorrelatorComponentEventTime
+            If testing is True, returns the list of CorrelatorComponentEventTime objects
+            rather than adding them to the database.
+
+        """
+        component_event_dict = corr._get_correlator_component_event_times_from_redis(
+            redishost=redishost,
+            taking_data_dict=taking_data_dict,
+        )
+
+        comp_event_list = []
+        catcher_event = None
+        catcher_time = None
+        for component, event_dict in component_event_dict.items():
+            comp_event_list.append(
+                corr.CorrelatorComponentEventTime.create(
+                    component, event_dict["event"], event_dict["time"]
+                )
+            )
+            if component == "catcher":
+                catcher_event = event_dict["event"]
+                catcher_time = event_dict["time"]
+
+        # If the redis key times out (catcher_event is None) before it registers that
+        # it stopped taking data, add a row with catcher_stop with the most recent time.
+        # If the key comes back as taking data with the old start time, then remove the
+        # row that was added about it stopping (this should not happen, but is not an
+        # interesting error case to raise up to the correlator team.)
+        last_catcher_event = self.get_correlator_component_event_time(
+            most_recent=True, component="catcher"
+        )
+        if len(last_catcher_event) > 0:
+            if catcher_event is None:
+                if last_catcher_event[0].event == "start":
+                    # A timeout occurred before the catcher stopped "naturally"
+                    # Add a record that the catcher has stopped (detected via a timeout)
+                    comp_event_list.append(
+                        corr.CorrelatorComponentEventTime.create(
+                            "catcher", "stop_timeout", Time.now()
+                        )
+                    )
+            elif (
+                catcher_event == "start"
+                and last_catcher_event[0].event == "stop_timeout"
+                and catcher_time.gps < last_catcher_event[0].time
+            ):
+                # Uh oh. We are now getting a catcher start time that comes before the most
+                # recent status and that status was caused by a redis key timeout.
+                # Either this is the previous start time and the time out was a fluke or
+                # This is a later start time than before and the timeout wasn't
+                # detected as early as it occurred.
+                # Get the most recent catcher start event to see which case we're in.
+                # There is guaranteed to be a catcher start entry in the table because a
+                # "stop_timeout" event is only recorded if there was a preceeding "start".
+                last_catcher_start = self.get_correlator_component_event_time(
+                    most_recent=True,
+                    component="catcher",
+                    event="start",
+                )
+                if catcher_time.gps == last_catcher_start[0].time:
+                    # The timeout recorded before was a fluke, remove the record in the
+                    # DB associated with it.
+                    self.query(corr.CorrelatorComponentEventTime).filter(
+                        corr.CorrelatorComponentEventTime.event == "stop_timeout"
+                        and corr.CorrelatorComponentEventTime.time > catcher_time.gps
+                    ).delete()
+                elif catcher_time.gps > last_catcher_start[0].time:
+                    # The timeout time should be moved earlier, to before the start
+                    # we're now detecting. Set it to 1 second earlier.
+                    self.query(corr.CorrelatorComponentEventTime).filter(
+                        corr.CorrelatorComponentEventTime.event == "stop_timeout"
+                        and corr.CorrelatorComponentEventTime.time > catcher_time.gps
+                    ).update({"time": last_catcher_start[0].time - 1})
+
+        if testing:
+            return comp_event_list
+
+        self._insert_ignoring_duplicates(
+            corr.CorrelatorComponentEventTime, comp_event_list
         )
 
     def add_correlator_config_file(self, config_hash, config_file):

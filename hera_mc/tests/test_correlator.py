@@ -420,10 +420,10 @@ def test_add_correlator_component_event_time(mcsession):
     t1 = TEST_TIME1.copy()
     t2 = TEST_TIME2.copy()
 
-    mcsession.add_correlator_component_event_time("f_engine_sync", t1)
+    mcsession.add_correlator_component_event_time("f_engine", "sync", t1)
 
     comp_event_expected = corr.CorrelatorComponentEventTime(
-        component_event="f_engine_sync", time=t1.gps
+        component="f_engine", event="sync", time=t1.gps
     )
     comp_event_result = mcsession.get_correlator_component_event_time(
         starttime=t1 - TimeDelta(3.0, format="sec")
@@ -432,13 +432,13 @@ def test_add_correlator_component_event_time(mcsession):
     comp_event_result = comp_event_result[0]
     assert comp_event_result.isclose(comp_event_expected)
 
-    mcsession.add_correlator_component_event_time("catcher_start", t2)
+    mcsession.add_correlator_component_event_time("catcher", "start", t2)
     comp_event_expected2 = corr.CorrelatorComponentEventTime(
-        component_event="catcher_start", time=t2.gps
+        component="catcher", event="start", time=t2.gps
     )
 
     comp_event_result = mcsession.get_correlator_component_event_time(
-        component_event="f_engine_sync"
+        component="f_engine"
     )
     assert len(comp_event_result) == 1
     comp_event_result = comp_event_result[0]
@@ -466,12 +466,12 @@ def test_add_correlator_component_event_time(mcsession):
     [
         (
             {b"state": b"True", b"time": str(int(TEST_TIME1.unix)).encode("utf-8")},
-            "catcher_start",
+            "start",
             TEST_TIME1,
         ),
         (
             {b"state": b"False", b"time": str(int(TEST_TIME1.unix)).encode("utf-8")},
-            "catcher_stop",
+            "stop",
             TEST_TIME1,
         ),
         ({}, None, None),
@@ -487,15 +487,91 @@ def test_get_catcher_start_stop_time_from_redis(input_dict, event, time):
     assert out_time == time
 
     expdict = {}
-    expdict["f_engine_sync"] = corr._get_f_engine_sync_time_from_redis()
+    expdict["f_engine"] = {
+        "event": "sync",
+        "time": corr._get_f_engine_sync_time_from_redis(),
+    }
     if event is not None:
-        expdict[event] = time
+        expdict["catcher"] = {"event": event, "time": time}
 
     outdict = corr._get_correlator_component_event_times_from_redis(
         taking_data_dict=input_dict
     )
 
     assert outdict == expdict
+
+
+@pytest.mark.parametrize("catcher_same", (True, False))
+def test_get_catcher_start_stop_time_from_redis_with_timeouts(mcsession, catcher_same):
+    # add a start time of 5 seconds ago
+    starttime_unix = int(Time.now().unix - 5)
+    mcsession.add_correlator_component_event_time_from_redis(
+        taking_data_dict={
+            b"state": b"True",
+            b"time": str(starttime_unix).encode("utf-8"),
+        }
+    )
+    comp_event_expected = corr.CorrelatorComponentEventTime(
+        component="catcher", event="start", time=Time(starttime_unix, format="unix").gps
+    )
+    comp_event_result = mcsession.get_correlator_component_event_time(
+        component="catcher"
+    )[0]
+    assert comp_event_result.isclose(comp_event_expected)
+
+    # simulate a timeout to add a stop_timeout event
+    mcsession.add_correlator_component_event_time_from_redis(taking_data_dict={})
+    mcsession.commit()
+
+    comp_event_result2 = mcsession.get_correlator_component_event_time(
+        component="catcher"
+    )[0]
+    assert comp_event_result2.event == "stop_timeout"
+    assert comp_event_result2.time > Time(starttime_unix, format="unix").gps
+    # make this be a copy so it's not changed with the later update
+    comp_event_result2 = copy.deepcopy(comp_event_result2)
+
+    if catcher_same:
+        # Pass in the same catcher start time as before, causing the timeout entry to be
+        # deleted.
+        mcsession.add_correlator_component_event_time_from_redis(
+            taking_data_dict={
+                b"state": b"True",
+                b"time": str(starttime_unix).encode("utf-8"),
+            }
+        )
+        comp_event_result = mcsession.get_correlator_component_event_time(
+            component="catcher"
+        )[0]
+        assert comp_event_result.event == "start"
+        assert comp_event_result.isclose(comp_event_expected)
+    else:
+        # Pass in a later catcher start time than before, causing the timeout entry to be
+        # updated and a new catcher start time to be entered.
+        mcsession.add_correlator_component_event_time_from_redis(
+            taking_data_dict={
+                b"state": b"True",
+                b"time": str(starttime_unix + 3).encode("utf-8"),
+            }
+        )
+        comp_event_expected = corr.CorrelatorComponentEventTime(
+            component="catcher",
+            event="start",
+            time=Time(starttime_unix + 3, format="unix").gps,
+        )
+        comp_event_result = mcsession.get_correlator_component_event_time(
+            component="catcher"
+        )[0]
+        assert comp_event_result.isclose(comp_event_expected)
+
+        comp_event_result3 = mcsession.get_correlator_component_event_time(
+            component="catcher", event="stop_timeout"
+        )[0]
+
+        assert not comp_event_result3.isclose(comp_event_result2)
+        assert comp_event_result3.component == comp_event_result2.component
+        assert comp_event_result3.event == comp_event_result2.event
+        assert comp_event_result3.time < comp_event_result2.time
 
 
 @requires_redis
@@ -506,13 +582,15 @@ def test_add_correlator_component_event_time_from_redis(mcsession):
     assert len(comp_event_list) >= 1
     assert len(comp_event_list) <= 2
 
-    event_types = []
+    components = []
+    events = []
     for comp_event_obj in comp_event_list:
-        event_types.append(comp_event_obj.component_event)
+        components.append(comp_event_obj.component)
+        events.append(comp_event_obj.event)
 
-    assert "f_engine_sync" in event_types
+    assert "f_engine" in components
     if len(comp_event_list) == 2:
-        assert "catcher_start" in event_types or "catcher_stop" in event_types
+        assert "catcher" in components
 
     mcsession.add_correlator_component_event_time_from_redis(
         redishost=TEST_DEFAULT_REDIS_HOST
@@ -520,23 +598,18 @@ def test_add_correlator_component_event_time_from_redis(mcsession):
 
     # get most recent
     comp_event_result = mcsession.get_correlator_component_event_time(
-        component_event="f_engine_sync"
+        component="f_engine"
     )
     assert len(comp_event_result) == 1
 
-    f_engine_index = event_types.index("f_engine_sync")
+    f_engine_index = components.index("f_engine")
     assert comp_event_result[0].isclose(comp_event_list[f_engine_index])
 
     if len(comp_event_list) == 2:
-        if "catcher_start" in event_types:
-            catcher_index = event_types.index("catcher_start")
-            catcher_event = "catcher_start"
-        else:
-            catcher_index = event_types.index("catcher_stop")
-            catcher_event = "catcher_stop"
+        catcher_index = components.index("catcher")
 
         comp_event_result = mcsession.get_correlator_component_event_time(
-            component_event=catcher_event
+            component="catcher"
         )
         assert len(comp_event_result) == 1
         assert comp_event_result[0].isclose(comp_event_list[catcher_index])
@@ -544,16 +617,25 @@ def test_add_correlator_component_event_time_from_redis(mcsession):
 
 def test_add_correlator_component_event_time_errors(mcsession):
     with pytest.raises(ValueError, match="time must be an astropy Time object"):
-        mcsession.add_correlator_component_event_time("f_engine_sync", "foo")
+        mcsession.add_correlator_component_event_time("f_engine", "sync", "foo")
 
     with pytest.raises(
         ValueError,
         match=re.escape(
-            "invalid component event value was passed. Passed value was "
-            f"foo, must be one of: {corr.corr_component_events}"
+            "invalid component value was passed. Passed component was "
+            f"foo, must be one of: {corr.corr_component_events.keys()}"
         ),
     ):
-        mcsession.add_correlator_component_event_time("foo", TEST_TIME1)
+        mcsession.add_correlator_component_event_time("foo", "start", TEST_TIME1)
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "invalid event value for catcher was passed. Passed value was "
+            f"sync, must be one of: {corr.corr_component_events['catcher']}"
+        ),
+    ):
+        mcsession.add_correlator_component_event_time("catcher", "sync", TEST_TIME1)
 
 
 def test_add_corr_config(mcsession, corr_config):

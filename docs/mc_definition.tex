@@ -543,19 +543,24 @@ Array-wide information about the commanded signal source.
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{time} & long & time of the config status in floor(gps seconds)\\ \hline
-source* & string & Commanded data source, one of: ``antenna", ``load", ``noise", ``digital\_same\_seed", ``digital\_different\_seed".
+source* & string & commanded data source, one of: ``antenna", ``load", ``noise", ``digital\_same\_seed", ``digital\_different\_seed".
 \\ \hline
 \end{tabular}
 \end{center}
 
 \subsubsection{correlator\_component\_event\_time}
-When correlator components had an event (related to normal observing).
+When correlator components had an event (related to normal observing). The currently allowed combinations of component and event are:
+\begin{itemize}
+  \item ``f\_engine": ``sync"
+  \item ``x\_engine": ``integration\_start" (this is calculated from the Mcount)
+  \item ``catcher": ``start", ``stop" or ``stop\_timeout" (This last one is a stop determined because the redis key timed out, indicating that the catcher died or was killed)
+ \end{itemize}
 \begin{center}
  \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
 \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
-\textbf{component\_event} & string & Correlator event, one of :``f\_engine\_sync", ``x\_engine\_integration" (in this case it is calculated from the Mcount) ``catcher\_start", ``catcher\_stop".
-\\ \hline
+\textbf{component} & string & correlator component, one of :``f\_engine", ``x\_engine" or ``catcher".\\ \hline
+\textbf{event} & string & event, one of: ``sync" ``integration\_start", ``start", ``stop" or ``stop\_timeout".\\ \hline
 \textbf{time} & float & time of the event in gps seconds (not floored)\\ \hline
 \end{tabular}
 \end{center}

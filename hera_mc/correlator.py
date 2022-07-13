@@ -40,12 +40,11 @@ signal_source_list = [
     "digital_different_seed",
 ]
 tag_list = ["science", "engineering"]
-corr_component_events = [
-    "f_engine_sync",
-    "x_engine_integration",
-    "catcher_start",
-    "catcher_stop",
-]
+corr_component_events = {
+    "f_engine": ["sync"],
+    "x_engine": ["integration_start"],
+    "catcher": ["start", "stop", "stop_timeout"],
+}
 
 
 class ArraySignalSource(MCDeclarativeBase):
@@ -245,9 +244,13 @@ class CorrelatorComponentEventTime(MCDeclarativeBase):
 
     Attributes
     ----------
-    component_event : String Column
-        Correlator component event, one of "f_engine_sync", "x_engine_integration",
-        "catcher_start", "catcher_stop" (listed in corr_component_events).
+    component : String Column
+        Correlator component, one of "f_engine", "x_engine",
+        "catcher" (key in corr_component_events). Part of the primary key.
+    event : String Column
+        Correlator component event, one of "sync" (f-engine),
+        "integration_start" (x-engine), "start", "stop", "stop_timeout" (catcher).
+        Component and event must be paired in corr_component_events.
         Part of the primary key.
     time : BigInteger Column
         GPS time that the component started (note that unlike other tables this is not
@@ -256,19 +259,28 @@ class CorrelatorComponentEventTime(MCDeclarativeBase):
     """
 
     __tablename__ = "correlator_component_event_time"
-    component_event = Column(String, primary_key=True)
+    component = Column(String, primary_key=True)
+    event = Column(String, primary_key=True)
     time = Column(Float, primary_key=True)
 
+    tols = {
+        "time": {"atol": 1e-3, "rtol": 0},
+    }
+
     @classmethod
-    def create(cls, component_event, time):
+    def create(cls, component, event, time):
         """
         Create a new correlator component time object.
 
         Parameters
         ----------
-        component_event : str
-            Correlator component event, one of "f_engine_sync", "x_engine_integration",
-            "catcher_start", "catcher_stop" (listed in corr_component_events).
+        component : str
+            Correlator component, one of "f_engine", "x_engine", "catcher"
+            (key in corr_component_events).
+        event : str
+            Correlator component event, one of "sync" (f-engine),
+            "integration_start" (x-engine), "start", "stop", "stop_timeout" (catcher).
+            Component and event must be paired in corr_component_events.
         time : astropy Time object
             Astropy time object based on a timestamp reported by the correlator.
 
@@ -277,13 +289,19 @@ class CorrelatorComponentEventTime(MCDeclarativeBase):
             raise ValueError("time must be an astropy Time object")
         corr_time = time.gps
 
-        if component_event not in corr_component_events:
+        if component not in corr_component_events.keys():
             raise ValueError(
-                "invalid component event value was passed. Passed value was "
-                f"{component_event}, must be one of: {corr_component_events}"
+                "invalid component value was passed. Passed component was "
+                f"{component}, must be one of: {corr_component_events.keys()}"
             )
 
-        return cls(component_event=component_event, time=corr_time)
+        if event not in corr_component_events[component]:
+            raise ValueError(
+                f"invalid event value for {component} was passed. Passed value was "
+                f"{event}, must be one of: {corr_component_events[component]}"
+            )
+
+        return cls(component=component, event=event, time=corr_time)
 
 
 def _get_f_engine_sync_time_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
@@ -331,11 +349,12 @@ def _get_catcher_start_stop_time_from_redis(
 
     Returns
     -------
-    event : str
-        Either "catcher_start" if the catcher is currently taking data or "catcher_stop"
-        if it is not.
-    time : astropy Time object
-        Time when the data taking last started or stopped.
+    event : str or None
+        Either "start" if the catcher is currently taking data or "stop"
+        if it is not. Returns None if the redis key has timed out.
+    time : astropy Time object or None
+        Time when the data taking last started or stopped. . Returns None if the redis
+        key has timed out.
 
     """
     if taking_data_dict is None:
@@ -345,9 +364,9 @@ def _get_catcher_start_stop_time_from_redis(
 
     if len(taking_data_dict) > 0:
         if taking_data_dict[b"state"].decode("utf-8") == "True":
-            event = "catcher_start"
+            event = "start"
         else:
-            event = "catcher_stop"
+            event = "stop"
         time = Time(taking_data_dict[b"time"], format="unix")
 
         return event, time
@@ -377,18 +396,23 @@ def _get_correlator_component_event_times_from_redis(
     Returns
     -------
     dict
-        Keys are correlator component events, values are times as astropy Time objects.
+        Keys are correlator components, values are sub-dict with "event" (str) and
+        "time" (astropy Time objects).
 
     """
     outdict = {}
 
-    outdict["f_engine_sync"] = _get_f_engine_sync_time_from_redis(redishost=redishost)
+    outdict["f_engine"] = {
+        "event": "sync",
+        "time": _get_f_engine_sync_time_from_redis(redishost=redishost),
+    }
 
     catcher_event, catcher_time = _get_catcher_start_stop_time_from_redis(
         redishost=redishost, taking_data_dict=taking_data_dict
     )
+
     if catcher_event is not None:
-        outdict[catcher_event] = catcher_time
+        outdict["catcher"] = {"event": catcher_event, "time": catcher_time}
 
     return outdict
 
