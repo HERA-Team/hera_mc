@@ -89,8 +89,8 @@ valid_tables = {
     },
     "correlator_component_event_time": {
         "method": "get_correlator_component_event_time",
-        "filter_column": "component_event",
-        "arg_name": "component_event",
+        "filter_column": "component",
+        "arg_name": "component",
     },
     "correlator_config_status": {
         "method": "get_correlator_config_status",

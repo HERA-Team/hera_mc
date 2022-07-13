@@ -1,8 +1,8 @@
-"""redo_correlator_interface
+"""redo correlator interface
 
-Revision ID: ad1f2d2704c2
+Revision ID: 1bf3ac824a22
 Revises: c66b6b222bde
-Create Date: 2022-07-08 23:08:02.199668+00:00
+Create Date: 2022-07-13 23:40:03.485505+00:00
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "ad1f2d2704c2"
+revision = "1bf3ac824a22"
 down_revision = "c66b6b222bde"
 branch_labels = None
 depends_on = None
@@ -25,9 +25,10 @@ def upgrade():
     )
     op.create_table(
         "correlator_component_event_time",
-        sa.Column("component_event", sa.String(), nullable=False),
+        sa.Column("component", sa.String(), nullable=False),
+        sa.Column("event", sa.String(), nullable=False),
         sa.Column("time", sa.Float(), nullable=False),
-        sa.PrimaryKeyConstraint("component_event", "time"),
+        sa.PrimaryKeyConstraint("component", "event", "time"),
     )
 
 
