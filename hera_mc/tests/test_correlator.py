@@ -501,6 +501,7 @@ def test_get_catcher_start_stop_time_from_redis(input_dict, event, time):
     assert outdict == expdict
 
 
+@requires_redis
 @pytest.mark.parametrize("catcher_same", (True, False))
 def test_get_catcher_start_stop_time_from_redis_with_timeouts(mcsession, catcher_same):
     # add a start time of 5 seconds ago
