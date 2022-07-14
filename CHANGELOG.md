@@ -3,6 +3,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- A new `array_signal_source` table that contains array-wide information about the
+commanded signal source (one of "antenna", "load", "noise", "digital_same_seed", or
+"digital_different_seed").
+- A new `correlator_component_event_time` table that records when correlator components
+had an event related to normal observing (f-engine sync, x-engine integration start,
+catcher start, stop or stop identified via a timeout).
+
+### Removed
+- The following table bindings were removed (but the tables will not be deleted on site):
+`correlator_control_state`, `correlator_control_command`,`correlator_take_data_arguments`,
+`correlator_config_command`
+
 ## [3.0.0] - 2022-05-25
 
 ### Added
