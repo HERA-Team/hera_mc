@@ -252,7 +252,7 @@ class CorrelatorComponentEventTime(MCDeclarativeBase):
         "integration_start" (x-engine), "start", "stop", "stop_timeout" (catcher).
         Component and event must be paired in corr_component_events.
         Part of the primary key.
-    time : BigInteger Column
+    time : Float Column
         GPS time that the component started (note that unlike other tables this is not
         floored, it is a float). Part of the primary key.
 

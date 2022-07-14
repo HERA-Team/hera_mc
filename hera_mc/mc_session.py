@@ -3427,10 +3427,10 @@ class MCSession(Session):
                 catcher_time = event_dict["time"]
 
         # If the redis key times out (catcher_event is None) before it registers that
-        # it stopped taking data, add a row with catcher_stop with the most recent time.
-        # If the key comes back as taking data with the old start time, then remove the
-        # row that was added about it stopping (this should not happen, but is not an
-        # interesting error case to raise up to the correlator team.)
+        # it stopped taking data, add a row with catcher stop_timeout with the most
+        # recent time. If the key comes back as taking data with the old start time,
+        # then remove the row that was added about it stopping (this should not happen,
+        # but is not an interesting error case to raise up to the correlator team.)
         last_catcher_event = self.get_correlator_component_event_time(
             most_recent=True, component="catcher"
         )
