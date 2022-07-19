@@ -4623,7 +4623,7 @@ class MCSession(Session):
         is_initialized : bool
             True if host is initialized
         dest_is_configured : bool
-            True if dest_is_configured
+            True if the ethernet destination is configured.
         version : str
             Version of firmware installed
         sample_rate : float
