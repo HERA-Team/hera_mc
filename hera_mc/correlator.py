@@ -1076,9 +1076,7 @@ class SNAPStatus(MCDeclarativeBase):
 
         if last_programmed_time is not None:
             if not isinstance(last_programmed_time, Time):
-                raise ValueError(
-                    "last_programmed_time must be an astropy " "Time object"
-                )
+                raise ValueError("last_programmed_time must be an astropy Time object")
             last_programmed_time_gps = floor(last_programmed_time.gps)
         else:
             last_programmed_time_gps = None
@@ -1177,7 +1175,7 @@ class SNAPInput(MCDeclarativeBase):
         snap_time = floor(time.gps)
 
         if antenna_feed_pol is not None and antenna_feed_pol not in ["e", "n"]:
-            raise ValueError('antenna_feed_pol must be "e" or "n".')
+            raise ValueError("antenna_feed_pol must be 'e' or 'n'.")
 
         return cls(
             time=snap_time,
