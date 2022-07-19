@@ -319,11 +319,11 @@ class HookupEntry(object):
         else:
             if entry_key is None:
                 raise ValueError(
-                    "Must initialize HookupEntry with an " "entry_key and sysdef"
+                    "Must initialize HookupEntry with an entry_key and sysdef"
                 )
             if sysdef is None:
                 raise ValueError(
-                    "Must initialize HookupEntry with an " "entry_key and sysdef"
+                    "Must initialize HookupEntry with an entry_key and sysdef"
                 )
             self.entry_key = entry_key
             self.hookup = {}  # actual hookup connection information
