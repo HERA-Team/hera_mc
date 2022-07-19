@@ -1115,11 +1115,12 @@ class SNAPInput(MCDeclarativeBase):
     hostname : String Column
         SNAP hostname. Part of primary_key, Foreign key into snap_status.
     snap_channel_number : Integer Column
-        The SNAP ADC channel number (0-5) to which this antenna is connected.
+        The SNAP ADC channel number (0-5), Part of primary_key.
     antenna_number : Integer Column
-        Antenna number. Part of primary_key.
+         Antenna number that is connected to this snap channel number.
     antenna_feed_pol : String Column
-        Feed polarization, either 'e' or 'n'. Part of primary_key.
+        Feed polarization, either 'e' or 'n', that is connected to this snap
+        channel number.
     snap_input : String Column
         Either "adc" or "noise-%d" where %d is the noise seed.
 
