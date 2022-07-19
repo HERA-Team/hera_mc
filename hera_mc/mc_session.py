@@ -923,7 +923,6 @@ class MCSession(Session):
         most_recent=None,
         starttime=None,
         stoptime=None,
-        hostname=None,
         write_to_file=False,
         filename=None,
     ):
@@ -950,9 +949,6 @@ class MCSession(Session):
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
-        hostname : str
-            Hostname to get records for. If none, all hostnames will be
-            included.
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
