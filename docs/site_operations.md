@@ -18,10 +18,16 @@ required for other code changes.
     - `HERA` conda environment
   Note: other machines share the home drive of qmaster, so no need to install on those.
 
+- Update the database schema with `alembic upgrade head`. This can be done anytime after
+the `HERA` conda environment is updated on qmaster. After this step, the unit tests
+should be run in that environment to ensure everything works as expected
+
 - Restart the following daemons across the hera correletor computer cluster.
 This is generally done with `systemctl restart <daemon_name>.service`. Some
 machines use upstart instead of systemd, as marked below. In those cases, use
-`sudo initctl restart <daemon_name>`.
+`sudo initctl restart <daemon_name>`. If on any of the upstart machines you get an error
+with "Unknown instance", try re-running but with `start` instead of `restart` in case
+the service wasn't running for some reason.
 
   - qmaster machine (note: to avoid having to type the password repeatedly you can run
   `sudo su root` before restarting all of these)
@@ -37,6 +43,8 @@ machines use upstart instead of systemd, as marked below. In those cases, use
   - pot7 machine (upstart)
     - `hera-server-status` daemon
   - pot8 machine (upstart)
+    - `hera-server-status` daemon
+  - pot9 machine (upstart)
     - `hera-server-status` daemon
   - still[1-4] machines (upstart)
     - `hera-server-status` daemon
