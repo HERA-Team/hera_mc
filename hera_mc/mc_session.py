@@ -8,9 +8,9 @@ See INSTALL.md in the Git repository for instructions on how to initialize
 your database and configure M&C to find it.
 """
 
+from math import floor
 import os
 import warnings
-from math import floor
 
 import yaml
 import numpy as np
@@ -37,6 +37,7 @@ from .qm import AntMetrics, ArrayMetrics, MetricList
 from .autocorrelations import HeraAuto, _get_autos_from_redis, measurement_func_dict
 from . import geo_handling
 from .cm_active import ActiveData
+from .cm_hookup import Hookup
 from . import cm_utils
 
 
@@ -3688,6 +3689,7 @@ class MCSession(Session):
         for hpn, part_rosetta in active.rosetta.items():
             if part_rosetta.syspn == hostname:
                 serial_number = hpn
+                break
 
         return serial_number
 
@@ -4585,6 +4587,12 @@ class MCSession(Session):
         fpga_temp,
         uptime_cycles,
         last_programmed_time,
+        is_programmed,
+        adc_is_configured,
+        is_initialized,
+        dest_is_configured,
+        version,
+        sample_rate,
     ):
         """
         Add new snap status data to the M&C database.
@@ -4608,6 +4616,18 @@ class MCSession(Session):
             Multiples of 500e6 ADC clocks since last programming cycle.
         last_programmed_time : astropy Time object
             Astropy time object based on the last time this FPGA was programmed.
+        is_programmed : bool
+            True if the host is programmed.
+        adc_is_configured : bool
+            True if the host adc is configured
+        is_initialized : bool
+            True if host is initialized
+        dest_is_configured : bool
+            True if dest_is_configured
+        version : str
+            Version of firmware installed
+        sample_rate : float
+            Sample rate in MHz
 
         """
         # get node & snap location number from config management
@@ -4625,6 +4645,12 @@ class MCSession(Session):
                 fpga_temp,
                 uptime_cycles,
                 last_programmed_time,
+                is_programmed,
+                adc_is_configured,
+                is_initialized,
+                dest_is_configured,
+                version,
+                sample_rate,
             )
         )
 
@@ -4633,6 +4659,7 @@ class MCSession(Session):
         most_recent=None,
         starttime=None,
         stoptime=None,
+        hostname=None,
         nodeID=None,
         write_to_file=False,
         filename=None,
@@ -4660,6 +4687,8 @@ class MCSession(Session):
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
+        hostname : str
+            SNAP hostname.
         nodeID : int
             node number (integer running from 0 to 30)
         write_to_file : bool
@@ -4680,8 +4709,172 @@ class MCSession(Session):
             most_recent=most_recent,
             starttime=starttime,
             stoptime=stoptime,
-            filter_column="node",
-            filter_value=nodeID,
+            filter_column=["hostname", "node"],
+            filter_value=[hostname, nodeID],
+            write_to_file=write_to_file,
+            filename=filename,
+        )
+
+    def _get_antennas_for_snap(
+        self, snap_hostname, snap_channel_number=None, session=None, at_date="now"
+    ):
+        """
+        Get antenna number and pol connected to SNAP hostname and input from cm.
+
+        Parameters
+        ----------
+        snap_hostname : str
+            SNAP hostname.
+        snap_channel_number : list of int or None
+            List of channel numbers to get antennas for. If None, get all inputs (0-5).
+        session : Session object
+            Session to pass to cm_handling.Handling. Defaults to self.
+        at_date : "now", Time or gps second
+            Date at which to initialize.
+
+        Returns
+        -------
+        dict
+            keyed on snap_channel_number, values are dicts with keys of "antenna"
+            (integer antenna number) and "pol" string, either "e" or "n".
+
+        """
+        if session is None:
+            session = self
+
+        snap_input_name_dict = {0: "n0", 1: "e2", 2: "n4", 3: "e6", 4: "n8", 5: "e10"}
+
+        if snap_channel_number is None:
+            snap_channel_number = snap_input_name_dict.keys()
+        elif not isinstance(snap_channel_number, list):
+            snap_channel_number = [snap_channel_number]
+
+        snap_serial = self.get_snap_serial_from_hostname(snap_hostname, at_date=at_date)
+
+        if snap_serial is None:
+            output_dict = {}
+            for input_id in snap_channel_number:
+                output_dict[input_id] = {}
+                output_dict[input_id]["antenna"] = None
+                output_dict[input_id]["pol"] = None
+
+            return output_dict
+
+        hookup = Hookup(session)
+        hd = hookup.get_hookup(snap_serial, at_date="now", exact_match=True)
+        snapr = f"{snap_serial.upper()}:A"
+
+        output_dict = {}
+        for input_id in snap_channel_number:
+            output_dict[input_id] = {}
+            this_input_name = snap_input_name_dict[input_id]
+
+            polport = None
+            for key in hd[snapr].hookup.keys():
+                if this_input_name in key:
+                    polport = key
+                    break
+            if polport is not None and hd[snapr].fully_connected[polport]:
+                output_dict[input_id]["antenna"] = int(
+                    hd[snapr].hookup[polport][0].upstream_part[2:]
+                )
+                output_dict[input_id]["pol"] = polport[0].lower()
+            else:
+                output_dict[input_id]["antenna"] = None
+                output_dict[input_id]["pol"] = None
+
+        return output_dict
+
+    def add_snap_input(
+        self,
+        time,
+        hostname,
+        snap_channel_number,
+        snap_input,
+    ):
+        """
+        Add new snap status data to the M&C database.
+
+        Parameters
+        ----------
+        time : astropy Time object
+            Astropy time object based on a timestamp reported by the correlator.
+        hostname : str
+            SNAP hostname.
+        snap_channel_number : int
+            The SNAP ADC channel number (0-5).
+        snap_input : str
+            Either "adc" or "noise-%d" where %d is the noise seed.
+
+        """
+        # get attached antpols from config management
+        antpol_dict = self._get_antennas_for_snap(hostname, snap_channel_number)
+
+        self.add(
+            corr.SNAPInput.create(
+                time,
+                hostname,
+                snap_channel_number,
+                antpol_dict[snap_channel_number]["antenna"],
+                antpol_dict[snap_channel_number]["pol"],
+                snap_input,
+            )
+        )
+
+    def get_snap_input(
+        self,
+        most_recent=None,
+        starttime=None,
+        stoptime=None,
+        hostname=None,
+        write_to_file=False,
+        filename=None,
+    ):
+        """
+        Get snap input record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        hostname : str
+            SNAP hostname
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        list of SNAPInput objects
+
+        """
+        return self._time_filter(
+            corr.SNAPInput,
+            "time",
+            most_recent=most_recent,
+            starttime=starttime,
+            stoptime=stoptime,
+            filter_column="hostname",
+            filter_value=hostname,
             write_to_file=write_to_file,
             filename=filename,
         )
@@ -4722,7 +4915,8 @@ class MCSession(Session):
 
         Returns
         -------
-        Optionally returns the list of SNAPStatus objects (if testing is True)
+        Optionally returns the list of SNAPStatus and SNAPInput objects (if testing is
+        True)
 
         """
         if snap_status_dict is None:
@@ -4731,6 +4925,7 @@ class MCSession(Session):
                 corr_cm=self.corr_obj, redishost=redishost
             )
         snap_status_list = []
+        snap_input_list = []
         for hostname, snap_dict in snap_status_dict.items():
             # first check if the timestamp is the string 'None'
             # if it is, skip this snap
@@ -4751,7 +4946,41 @@ class MCSession(Session):
             pps_count = snap_dict["pps_count"]
             fpga_temp = snap_dict["temp"]
             uptime_cycles = snap_dict["uptime"]
+            is_programmed = snap_dict["is_programmed"]
+            adc_is_configured = snap_dict["adc_is_configured"]
+            is_initialized = snap_dict["is_initialized"]
+            dest_is_configured = snap_dict["dest_is_configured"]
+            version = snap_dict["version"]
+            sample_rate = snap_dict["sample_rate"]
 
+            # get attached antpols from config management
+            antpol_dict = self._get_antennas_for_snap(hostname)
+            if snap_dict["input"] is None:
+                for snap_channel_number in range(6):
+                    snap_input_list.append(
+                        corr.SNAPInput.create(
+                            time,
+                            hostname,
+                            snap_channel_number,
+                            antpol_dict[snap_channel_number]["antenna"],
+                            antpol_dict[snap_channel_number]["pol"],
+                            None,
+                        )
+                    )
+            else:
+                for snap_channel_number, snap_input in enumerate(
+                    snap_dict["input"].split(",")
+                ):
+                    snap_input_list.append(
+                        corr.SNAPInput.create(
+                            time,
+                            hostname,
+                            snap_channel_number,
+                            antpol_dict[snap_channel_number]["antenna"],
+                            antpol_dict[snap_channel_number]["pol"],
+                            snap_input,
+                        )
+                    )
             last_programmed_datetime = snap_dict["last_programmed"]
             if last_programmed_datetime is not None:
                 last_programmed_time = Time(last_programmed_datetime, format="datetime")
@@ -4779,13 +5008,20 @@ class MCSession(Session):
                     fpga_temp,
                     uptime_cycles,
                     last_programmed_time,
+                    is_programmed,
+                    adc_is_configured,
+                    is_initialized,
+                    dest_is_configured,
+                    version,
+                    sample_rate,
                 )
             )
 
         if testing:
-            return snap_status_list
+            return snap_status_list + snap_input_list
         else:
             self._insert_ignoring_duplicates(corr.SNAPStatus, snap_status_list)
+            self._insert_ignoring_duplicates(corr.SNAPInput, snap_input_list)
 
     def add_antenna_status(
         self,

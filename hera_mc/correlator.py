@@ -23,6 +23,7 @@ from sqlalchemy import (
     Boolean,
     String,
     ForeignKey,
+    ForeignKeyConstraint,
 )
 
 from . import MCDeclarativeBase
@@ -976,6 +977,18 @@ class SNAPStatus(MCDeclarativeBase):
         Multiples of 500e6 ADC clocks since last programming cycle.
     last_programmed_time :  BigInteger Column
         Last time this FPGA was programmed in floored gps seconds.
+    is_programmed : Boolean Column
+        True if the host is programmed.
+    adc_is_configured : Boolean Column
+        True if the host adc is configured
+    is_initialized : Boolean Column
+        True if host is initialized
+    dest_is_configured : Boolean Column
+        True if dest_is_configured
+    version : String Column
+        Version of firmware installed
+    sample_rate : Float Column
+        Sample rate in MHz
 
     """
 
@@ -990,6 +1003,12 @@ class SNAPStatus(MCDeclarativeBase):
     fpga_temp = Column(Float)
     uptime_cycles = Column(BigInteger)
     last_programmed_time = Column(BigInteger)
+    is_programmed = Column(Boolean)
+    adc_is_configured = Column(Boolean)
+    is_initialized = Column(Boolean)
+    dest_is_configured = Column(Boolean)
+    version = Column(String)
+    sample_rate = Column(Float)
 
     @classmethod
     def create(
@@ -1004,6 +1023,12 @@ class SNAPStatus(MCDeclarativeBase):
         fpga_temp,
         uptime_cycles,
         last_programmed_time,
+        is_programmed,
+        adc_is_configured,
+        is_initialized,
+        dest_is_configured,
+        version,
+        sample_rate,
     ):
         """
         Create a new SNAP status object.
@@ -1031,6 +1056,18 @@ class SNAPStatus(MCDeclarativeBase):
             Multiples of 500e6 ADC clocks since last programming cycle.
         last_programmed_time : astropy Time object
             Astropy time object based on the last time this FPGA was programmed.
+        is_programmed : bool
+            True if the host is programmed.
+        adc_is_configured : bool
+            True if the host adc is configured
+        is_initialized : bool
+            True if host is initialized
+        dest_is_configured : bool
+            True if dest_is_configured
+        version : str
+            Version of firmware installed
+        sample_rate : float
+            Sample rate in MHz
 
         """
         if not isinstance(time, Time):
@@ -1057,6 +1094,97 @@ class SNAPStatus(MCDeclarativeBase):
             fpga_temp=fpga_temp,
             uptime_cycles=uptime_cycles,
             last_programmed_time=last_programmed_time_gps,
+            is_programmed=is_programmed,
+            adc_is_configured=adc_is_configured,
+            is_initialized=is_initialized,
+            dest_is_configured=dest_is_configured,
+            version=version,
+            sample_rate=sample_rate,
+        )
+
+
+class SNAPInput(MCDeclarativeBase):
+    """
+    Definition of SNAP input table.
+
+    Attributes
+    ----------
+    time : BigInteger Column
+        GPS time of the snap input data, floored. Part of primary_key, Foreign key into
+        snap_status.
+    hostname : String Column
+        SNAP hostname. Part of primary_key, Foreign key into snap_status.
+    snap_channel_number : Integer Column
+        The SNAP ADC channel number (0-5) to which this antenna is connected.
+    antenna_number : Integer Column
+        Antenna number. Part of primary_key.
+    antenna_feed_pol : String Column
+        Feed polarization, either 'e' or 'n'. Part of primary_key.
+    snap_input : String Column
+        Either "adc" or "noise-%d" where %d is the noise seed.
+
+    """
+
+    __tablename__ = "snap_input"
+    time = Column(BigInteger, primary_key=True)
+    hostname = Column(String, primary_key=True)
+    snap_channel_number = Column(Integer, primary_key=True)
+    antenna_number = Column(Integer)
+    antenna_feed_pol = Column(String)
+    snap_input = Column(String)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["time", "hostname"],
+            ["snap_status.time", "snap_status.hostname"],
+        ),
+        {},
+    )
+
+    @classmethod
+    def create(
+        cls,
+        time,
+        hostname,
+        snap_channel_number,
+        antenna_number,
+        antenna_feed_pol,
+        snap_input,
+    ):
+        """
+        Create a new SNAP input object.
+
+        Parameters
+        ----------
+        time : astropy Time object
+            Astropy time object based on a timestamp reported by node.
+        hostname : str
+            SNAP hostname.
+        snap_channel_number : int
+            The SNAP ADC channel number (0-5).
+        antenna_number : int
+            Antenna number that is connected to this snap channel number.
+        antenna_feed_pol : String Column
+            Feed polarization, either 'e' or 'n', that is connected to this snap
+            channel number.
+        snap_input : str
+            Either "adc" or "noise-%d" where %d is the noise seed.
+
+        """
+        if not isinstance(time, Time):
+            raise ValueError("time must be an astropy Time object")
+        snap_time = floor(time.gps)
+
+        if antenna_feed_pol is not None and antenna_feed_pol not in ["e", "n"]:
+            raise ValueError('antenna_feed_pol must be "e" or "n".')
+
+        return cls(
+            time=snap_time,
+            hostname=hostname,
+            snap_channel_number=snap_channel_number,
+            antenna_number=antenna_number,
+            antenna_feed_pol=antenna_feed_pol,
+            snap_input=snap_input,
         )
 
 
@@ -1080,6 +1208,16 @@ def _get_snap_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
             status key/val pairs.
 
             These keys are:
+                is_programmed (bool): True if the host is programmed
+                adc_is_configured (bool): True if the host adc is configured
+                is_initialized (bool): True if host is initialized
+                dest_is_configured (bool): True if dest_is_configured
+                version (str)      : Version of firmware installed
+                sample_rate (float): Sample rate in MHz
+                input (str)        : comma-delimited list of 6 stream inputs either:
+                    adc = adc,adc,adc,adc,adc,adc
+                    digital noise = noise-%d,noise-%d,noise-%d,noise-%d,noise-%d,noise-%d
+                    where %d is the noise seed.
                 pmb_alert (bool) : True if SNAP PSU controllers have issued an
                                    alert. False otherwise.
                 pps_count (int)  : Number of PPS pulses received since last
@@ -1118,7 +1256,7 @@ class AntennaStatus(MCDeclarativeBase):
     snap_hostname : String Column
         SNAP hostname.
     snap_channel_number : Integer Column
-        The SNAP ADC channel number (0-7) to which this antenna is connected.
+        The SNAP ADC channel number (0-5) to which this antenna is connected.
     adc_mean : Float Column
         Mean ADC value, in ADC units.
     adc_rms : Float Column
@@ -1229,7 +1367,7 @@ class AntennaStatus(MCDeclarativeBase):
         snap_hostname : str
             Hostname of snap the antenna is connected to.
         snap_channel_number : int
-            The SNAP ADC channel number (0-7) that this antenna is connected
+            The SNAP ADC channel number (0-5) that this antenna is connected
             to.
         adc_mean : float
             Mean ADC value, in ADC units, meaning raw ADC values interpreted as
@@ -1353,7 +1491,7 @@ def _get_ant_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
             adc_power (float) : Mean ADC power (in ADC units squared)
             f_host (str)      : The hostname of the SNAP board to which
                                 this antenna is connected
-            host_ant_id (int) : The SNAP ADC channel number (0-7) to which
+            host_ant_id (int) : The SNAP ADC channel number (0-5) to which
                                 this antenna is connected
             pam_atten (int)   : PAM attenuation setting for this antenna (dB)
             pam_power (float) : PAM power sensor reading for this antenna (dBm)

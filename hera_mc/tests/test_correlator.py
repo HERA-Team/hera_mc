@@ -105,12 +105,19 @@ def snapstatus():
     return {
         "heraNode700Snap0": {
             "last_programmed": datetime.datetime(2016, 1, 10, 23, 16, 3),
-            "pmb_alert": False,
+            "pmb_alert": True,
             "pps_count": 595687,
             "serial": "SNPA000700",
             "temp": 57.984954833984375,
             "timestamp": datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
             "uptime": 595686,
+            "is_programmed": True,
+            "adc_is_configured": True,
+            "is_initialized": True,
+            "dest_is_configured": True,
+            "version": "7.1",
+            "sample_rate": 500.0,
+            "input": "adc,adc,adc,adc,adc,adc",
         },
         "heraNode701Snap3": {
             "last_programmed": datetime.datetime(2016, 1, 10, 23, 16, 3),
@@ -120,6 +127,13 @@ def snapstatus():
             "temp": 59.323028564453125,
             "timestamp": datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
             "uptime": 595699,
+            "is_programmed": False,
+            "adc_is_configured": False,
+            "is_initialized": False,
+            "dest_is_configured": False,
+            "version": "7.1",
+            "sample_rate": 500.0,
+            "input": "noise-1,noise-2,noise-3,noise-4,noise-5,noise-6",
         },
     }
 
@@ -128,13 +142,20 @@ def snapstatus():
 def snapstatus_none():
     return {
         "heraNode700Snap0": {
-            "last_programmed": "None",
-            "pmb_alert": "None",
-            "pps_count": "None",
-            "serial": "None",
-            "temp": "None",
+            "last_programmed": None,
+            "pmb_alert": None,
+            "pps_count": None,
+            "serial": None,
+            "temp": None,
             "timestamp": datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
-            "uptime": "None",
+            "uptime": None,
+            "is_programmed": None,
+            "adc_is_configured": None,
+            "is_initialized": None,
+            "dest_is_configured": None,
+            "version": None,
+            "sample_rate": None,
+            "input": None,
         },
         "heraNode701Snap3": {
             "last_programmed": datetime.datetime(2016, 1, 5, 20, 44, 52, 741137),
@@ -142,8 +163,15 @@ def snapstatus_none():
             "pps_count": 595699,
             "serial": "SNPD000703",
             "temp": 59.323028564453125,
-            "timestamp": "None",
+            "timestamp": None,
             "uptime": 595699,
+            "is_programmed": None,
+            "adc_is_configured": None,
+            "is_initialized": None,
+            "dest_is_configured": None,
+            "version": None,
+            "sample_rate": None,
+            "input": None,
         },
     }
 
@@ -207,51 +235,51 @@ def antstatus_none():
     return {
         "4:e": {
             "timestamp": datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
-            "f_host": "None",
-            "host_ant_id": "None",
-            "adc_mean": "None",
-            "adc_rms": "None",
-            "adc_power": "None",
-            "pam_atten": "None",
-            "pam_power": "None",
-            "pam_voltage": "None",
-            "pam_current": "None",
-            "pam_id": "None",
-            "fem_voltage": "None",
-            "fem_current": "None",
-            "fem_id": "None",
-            "fem_switch": "None",
-            "fem_lna_power": "None",
-            "fem_imu_theta": "None",
-            "fem_imu_phi": "None",
-            "fem_temp": "None",
-            "fft_of": "None",
-            "eq_coeffs": "None",
-            "histogram": "None",
+            "f_host": None,
+            "host_ant_id": None,
+            "adc_mean": None,
+            "adc_rms": None,
+            "adc_power": None,
+            "pam_atten": None,
+            "pam_power": None,
+            "pam_voltage": None,
+            "pam_current": None,
+            "pam_id": None,
+            "fem_voltage": None,
+            "fem_current": None,
+            "fem_id": None,
+            "fem_switch": None,
+            "fem_lna_power": None,
+            "fem_imu_theta": None,
+            "fem_imu_phi": None,
+            "fem_temp": None,
+            "fft_of": None,
+            "eq_coeffs": None,
+            "histogram": None,
         },
         "31:n": {
             "timestamp": datetime.datetime(2016, 1, 5, 20, 44, 52, 739322),
-            "f_host": "None",
-            "host_ant_id": "None",
-            "adc_mean": "None",
-            "adc_rms": "None",
-            "adc_power": "None",
-            "pam_atten": "None",
-            "pam_power": "None",
-            "pam_voltage": "None",
-            "pam_current": "None",
-            "pam_id": "None",
+            "f_host": None,
+            "host_ant_id": None,
+            "adc_mean": None,
+            "adc_rms": None,
+            "adc_power": None,
+            "pam_atten": None,
+            "pam_power": None,
+            "pam_voltage": None,
+            "pam_current": None,
+            "pam_id": None,
             "fem_voltage": float("nan"),
             "fem_current": float("nan"),
-            "fem_id": "None",
+            "fem_id": None,
             "fem_switch": "Unknown mode",
-            "fem_lna_power": "None",
-            "fem_imu_theta": "None",
-            "fem_imu_phi": "None",
-            "fem_temp": "None",
-            "fft_of": "None",
-            "eq_coeffs": "None",
-            "histogram": "None",
+            "fem_lna_power": None,
+            "fem_imu_theta": None,
+            "fem_imu_phi": None,
+            "fem_temp": None,
+            "fft_of": None,
+            "eq_coeffs": None,
+            "histogram": None,
         },
     }
 
@@ -1490,6 +1518,12 @@ def test_add_snap_status(mcsession):
         57.984954833984375,
         595686,
         t_prog,
+        True,
+        True,
+        True,
+        True,
+        "7.1",
+        500.0,
     )
 
     expected = corr.SNAPStatus(
@@ -1503,11 +1537,43 @@ def test_add_snap_status(mcsession):
         fpga_temp=57.984954833984375,
         uptime_cycles=595686,
         last_programmed_time=int(floor(t_prog.gps)),
+        is_programmed=True,
+        adc_is_configured=True,
+        is_initialized=True,
+        dest_is_configured=True,
+        version="7.1",
+        sample_rate=500.0,
     )
     result = test_session.get_snap_status(starttime=t1 - TimeDelta(3.0, format="sec"))
     assert len(result) == 1
     result = result[0]
     assert result.isclose(expected)
+
+    for channel_number in range(6):
+        test_session.add_snap_input(t1, "heraNode700Snap0", channel_number, "adc")
+
+    result = test_session.get_snap_input(starttime=t1 - TimeDelta(3.0, format="sec"))
+    assert len(result) == 6
+
+    snap_input_antpol = {
+        0: {"antenna": 701, "pol": "n"},
+        1: {"antenna": 701, "pol": "e"},
+        2: {"antenna": 702, "pol": "n"},
+        3: {"antenna": 702, "pol": "e"},
+        4: {"antenna": None, "pol": None},
+        5: {"antenna": None, "pol": None},
+    }
+    for snap_input_obj in result:
+        channel_number = snap_input_obj.snap_channel_number
+        expected_input = corr.SNAPInput(
+            time=int(floor(t1.gps)),
+            hostname="heraNode700Snap0",
+            snap_channel_number=channel_number,
+            antenna_number=snap_input_antpol[channel_number]["antenna"],
+            antenna_feed_pol=snap_input_antpol[channel_number]["pol"],
+            snap_input="adc",
+        )
+        assert snap_input_obj.isclose(expected_input)
 
     test_session.add_snap_status(
         t1,
@@ -1518,6 +1584,12 @@ def test_add_snap_status(mcsession):
         59.323028564453125,
         595699,
         t_prog,
+        False,
+        False,
+        False,
+        False,
+        "7.1",
+        500.0,
     )
 
     result = test_session.get_snap_status(
@@ -1527,7 +1599,7 @@ def test_add_snap_status(mcsession):
     result = result[0]
     assert result.isclose(expected)
 
-    result_most_recent = test_session.get_snap_status(nodeID=700)
+    result_most_recent = test_session.get_snap_status(hostname="heraNode700Snap0")
     assert len(result_most_recent) == 1
     result_most_recent = result_most_recent[0]
     assert result_most_recent.isclose(expected)
@@ -1543,6 +1615,12 @@ def test_add_snap_status(mcsession):
         fpga_temp=59.323028564453125,
         uptime_cycles=595699,
         last_programmed_time=int(floor(t_prog.gps)),
+        is_programmed=False,
+        adc_is_configured=False,
+        is_initialized=False,
+        dest_is_configured=False,
+        version="7.1",
+        sample_rate=500.0,
     )
 
     result = test_session.get_snap_status(
@@ -1557,6 +1635,28 @@ def test_add_snap_status(mcsession):
     result_most_recent = result_most_recent[0]
     assert result_most_recent.isclose(expected)
 
+    for channel_number in range(6):
+        test_session.add_snap_input(
+            t1, "heraNode701Snap3", channel_number, f"noise-{channel_number}"
+        )
+
+    result = test_session.get_snap_input(
+        starttime=t1 - TimeDelta(3.0, format="sec"), hostname="heraNode701Snap3"
+    )
+    assert len(result) == 6
+
+    for snap_input_obj in result:
+        channel_number = snap_input_obj.snap_channel_number
+        expected_input = corr.SNAPInput(
+            time=int(floor(t1.gps)),
+            hostname="heraNode701Snap3",
+            snap_channel_number=channel_number,
+            antenna_number=None,
+            antenna_feed_pol=None,
+            snap_input=f"noise-{channel_number}",
+        )
+        assert snap_input_obj.isclose(expected_input)
+
     result = test_session.get_snap_status(
         starttime=t1 - TimeDelta(3.0, format="sec"), stoptime=t1
     )
@@ -1564,6 +1664,9 @@ def test_add_snap_status(mcsession):
 
     result_most_recent = test_session.get_snap_status()
     assert len(result) == 2
+
+    result = test_session.get_snap_input()
+    assert len(result) == 12
 
     result = test_session.get_snap_status(starttime=t1 + TimeDelta(200.0, format="sec"))
     assert result == []
@@ -1576,7 +1679,7 @@ def test_add_snap_status_from_corrcm(mcsession, snapstatus):
     t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format="datetime")
     t_prog = Time(datetime.datetime(2016, 1, 10, 23, 16, 3), format="datetime")
     result = test_session.get_snap_status(
-        starttime=t1 - TimeDelta(3.0, format="sec"), nodeID=700
+        starttime=t1 - TimeDelta(3.0, format="sec"), hostname="heraNode700Snap0"
     )
 
     expected = corr.SNAPStatus(
@@ -1585,11 +1688,17 @@ def test_add_snap_status_from_corrcm(mcsession, snapstatus):
         serial_number="SNPA000700",
         node=700,
         snap_loc_num=0,
-        psu_alert=False,
+        psu_alert=True,
         pps_count=595687,
         fpga_temp=57.984954833984375,
         uptime_cycles=595686,
         last_programmed_time=int(floor(t_prog.gps)),
+        is_programmed=True,
+        adc_is_configured=True,
+        is_initialized=True,
+        dest_is_configured=True,
+        version="7.1",
+        sample_rate=500.0,
     )
     assert len(result) == 1
     result = result[0]
@@ -1599,6 +1708,30 @@ def test_add_snap_status_from_corrcm(mcsession, snapstatus):
     assert len(result_most_recent) == 1
     result_most_recent = result_most_recent[0]
     assert result_most_recent.isclose(expected)
+
+    result_input = test_session.get_snap_input(
+        starttime=t1 - TimeDelta(3.0, format="sec"), hostname="heraNode700Snap0"
+    )
+
+    snap_input_antpol = {
+        0: {"antenna": 701, "pol": "n"},
+        1: {"antenna": 701, "pol": "e"},
+        2: {"antenna": 702, "pol": "n"},
+        3: {"antenna": 702, "pol": "e"},
+        4: {"antenna": None, "pol": None},
+        5: {"antenna": None, "pol": None},
+    }
+    for snap_input_obj in result_input:
+        channel_number = snap_input_obj.snap_channel_number
+        expected_input = corr.SNAPInput(
+            time=int(floor(t1.gps)),
+            hostname="heraNode700Snap0",
+            snap_channel_number=channel_number,
+            antenna_number=snap_input_antpol[channel_number]["antenna"],
+            antenna_feed_pol=snap_input_antpol[channel_number]["pol"],
+            snap_input="adc",
+        )
+        assert snap_input_obj.isclose(expected_input)
 
     result = test_session.get_snap_status(
         starttime=t1 - TimeDelta(3.0, format="sec"), nodeID=701
@@ -1615,13 +1748,39 @@ def test_add_snap_status_from_corrcm(mcsession, snapstatus):
         fpga_temp=59.323028564453125,
         uptime_cycles=595699,
         last_programmed_time=int(floor(t_prog.gps)),
+        is_programmed=False,
+        adc_is_configured=False,
+        is_initialized=False,
+        dest_is_configured=False,
+        version="7.1",
+        sample_rate=500.0,
     )
     assert len(result) == 1
     result = result[0]
     assert result.isclose(expected)
 
+    result_input = test_session.get_snap_input(
+        starttime=t1 - TimeDelta(3.0, format="sec"), hostname="heraNode701Snap3"
+    )
+    assert len(result_input) == 6
+
+    for snap_input_obj in result_input:
+        channel_number = snap_input_obj.snap_channel_number
+        expected_input = corr.SNAPInput(
+            time=int(floor(t1.gps)),
+            hostname="heraNode701Snap3",
+            snap_channel_number=channel_number,
+            antenna_number=None,
+            antenna_feed_pol=None,
+            snap_input=f"noise-{channel_number+1}",
+        )
+        assert snap_input_obj.isclose(expected_input)
+
     result_most_recent = test_session.get_snap_status()
     assert len(result_most_recent) == 2
+
+    result_input = test_session.get_snap_input()
+    assert len(result_input) == 12
 
 
 def test_add_snap_status_from_corrcm_with_nones(mcsession, snapstatus_none):
@@ -1629,9 +1788,9 @@ def test_add_snap_status_from_corrcm_with_nones(mcsession, snapstatus_none):
     snap_status_obj_list = test_session.add_snap_status_from_corrcm(
         snap_status_dict=snapstatus_none, testing=True
     )
-
     for obj in snap_status_obj_list:
         test_session.add(obj)
+        test_session.commit()
 
     t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format="datetime")
     result = test_session.get_snap_status(starttime=t1 - TimeDelta(3.0, format="sec"))
@@ -1647,6 +1806,12 @@ def test_add_snap_status_from_corrcm_with_nones(mcsession, snapstatus_none):
         fpga_temp=None,
         uptime_cycles=None,
         last_programmed_time=None,
+        is_programmed=None,
+        adc_is_configured=None,
+        is_initialized=None,
+        dest_is_configured=None,
+        version=None,
+        sample_rate=None,
     )
     assert len(result) == 1
     result = result[0]
@@ -1668,6 +1833,12 @@ def test_snap_status_errors(mcsession):
         57.984954833984375,
         595686,
         t1,
+        True,
+        True,
+        True,
+        True,
+        "7.1",
+        500.0,
     )
 
     pytest.raises(
@@ -1681,6 +1852,12 @@ def test_snap_status_errors(mcsession):
         57.984954833984375,
         595686,
         "foo",
+        True,
+        True,
+        True,
+        True,
+        "7.1",
+        500.0,
     )
 
 
@@ -1793,7 +1970,15 @@ def test_redis_add_snap_status_from_corrcm(mcsession):
     result_test2 = test_session.add_snap_status_from_corrcm(
         testing=True, redishost=TEST_DEFAULT_REDIS_HOST
     )
-    assert n_good_statuses == len(result_test2)
+    snap_status_list = []
+    snap_input_list = []
+    for obj in result_test2:
+        if isinstance(obj, corr.SNAPStatus):
+            snap_status_list.append(obj)
+        else:
+            snap_input_list.append(obj)
+    assert n_good_statuses == len(snap_status_list)
+    assert len(snap_input_list) == 6 * len(snap_status_list)
 
     # use the real (not test) database to get the node & snap location number
     # check the length is the same
@@ -1835,7 +2020,15 @@ def test_site_add_snap_status_from_corrcm_default_redishost(mcsession):
 
     # get result using just the test db, check it matches snap_status_dict
     result_test2 = test_session.add_snap_status_from_corrcm(testing=True)
-    assert n_good_statuses == len(result_test2)
+    snap_status_list = []
+    snap_input_list = []
+    for obj in result_test2:
+        if isinstance(obj, corr.SNAPStatus):
+            snap_status_list.append(obj)
+        else:
+            snap_input_list.append(obj)
+    assert n_good_statuses == len(snap_status_list)
+    assert len(snap_input_list) == 6 * len(snap_status_list)
 
     # use the real (not test) database to get the node & snap location number
     # check the length is the same
