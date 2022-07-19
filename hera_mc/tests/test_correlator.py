@@ -1822,17 +1822,59 @@ def test_snap_status_errors(mcsession):
     test_session = mcsession
     t1 = TEST_TIME1.copy()
 
-    pytest.raises(
-        ValueError,
-        test_session.add_snap_status,
-        "foo",
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        test_session.add_snap_status(
+            "foo",
+            "heraNode700Snap0",
+            "SNPA000700",
+            False,
+            595687,
+            57.984954833984375,
+            595686,
+            t1,
+            True,
+            True,
+            True,
+            True,
+            "7.1",
+            500.0,
+        )
+
+    with pytest.raises(
+        ValueError, match="last_programmed_time must be an astropy Time object"
+    ):
+        test_session.add_snap_status(
+            t1,
+            "heraNode700Snap0",
+            "SNPA000700",
+            False,
+            595687,
+            57.984954833984375,
+            595686,
+            "foo",
+            True,
+            True,
+            True,
+            True,
+            "7.1",
+            500.0,
+        )
+
+
+def test_snap_input_errors(mcsession):
+    test_session = mcsession
+    t1 = TEST_TIME1.copy()
+
+    t_prog = Time("2016-01-05 20:00:00", scale="utc")
+    test_session.add_snap_status(
+        t1,
         "heraNode700Snap0",
         "SNPA000700",
         False,
         595687,
         57.984954833984375,
         595686,
-        t1,
+        t_prog,
         True,
         True,
         True,
@@ -1841,24 +1883,11 @@ def test_snap_status_errors(mcsession):
         500.0,
     )
 
-    pytest.raises(
-        ValueError,
-        test_session.add_snap_status,
-        t1,
-        "heraNode700Snap0",
-        "SNPA000700",
-        False,
-        595687,
-        57.984954833984375,
-        595686,
-        "foo",
-        True,
-        True,
-        True,
-        True,
-        "7.1",
-        500.0,
-    )
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        test_session.add_snap_input("foo", "heraNode700Snap0", 0, "adc")
+
+    with pytest.raises(ValueError, match="antenna_feed_pol must be 'e' or 'n'."):
+        corr.SNAPInput.create(t1, "heraNode700Snap0", 0, 11, "foo", "adc")
 
 
 def test_get_node_snap_from_serial_nodossier(mcsession):

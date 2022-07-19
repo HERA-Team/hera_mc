@@ -4935,12 +4935,6 @@ class MCSession(Session):
             else:
                 time = Time(timestamp, format="datetime")
 
-            # any entry other than timestamp can be the string 'None'
-            # need to convert those to a None type
-            for key, val in snap_dict.items():
-                if val == "None":
-                    snap_dict[key] = None
-
             serial_number = snap_dict["serial"]
             psu_alert = snap_dict["pmb_alert"]
             pps_count = snap_dict["pps_count"]
