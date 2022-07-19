@@ -14,7 +14,6 @@ import numpy as np
 from pyuvdata import UVData
 from pyuvdata import utils as uvutils
 
-# from astropy import units
 from astropy.time import Time, TimeDelta
 
 from hera_corr_cm import HeraCorrCM
@@ -121,7 +120,6 @@ while True:
                 # we don't necessarily know how many freqs we'll have.
                 # it is most likely 1024 but this will guard against X-Engine changes.
                 data_array = None
-                # Nblts
                 time_array = []
                 ant_array = []
 
@@ -130,7 +128,6 @@ while True:
 
                 while downtime < args.max_downtime and file_len < args.max_file_len:
                     time.sleep(0.01)
-                    # do the thing
                     # get integrations from HeraCorrCM.get_snaprf_status()
                     # compare to the last time for each snap
 
