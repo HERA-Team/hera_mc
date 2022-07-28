@@ -694,15 +694,12 @@ SNAP input information, either ADC or digital noise with seeding information (re
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
 \textbf{\textit{time}} & long & status time in floor(gps seconds), foreign key into snap\_status. \\ \hline
 \textbf{\textit{hostname}} & string & SNAP hostname, foreign key into snap\_status. \\ \hline
-\textbf{snap\_channel\_number} & int & SNAP ADC channel number (0-5). \\ \hline
+\textbf{snap\_channel\_number} & int & SNAP ADC channel number (0-5 which correspond to the n0, e2, n4, e6, n8, e10 ports on the SNAP). \\ \hline
 antenna\_number & int & antenna number that is connected to this snap channel number (from config management, can be null if not hooked up). \\ \hline
 antenna\_feed\_pol & string & antenna feed polarization, either `e' or `n', that is connected to this snap channel number (from config management, can be null if not hooked up). \\ \hline
 snap\_input & string & Either ``adc" or ``noise-\{d\}" where \{d\} is the noise seed. \\ \hline
 \end{tabular}
 \end{center}
-
-
-
 
 \subsubsection{antenna\_status}
 Antenna status information from the SNAP (reported via the correlator redis DB).
@@ -714,7 +711,7 @@ Antenna status information from the SNAP (reported via the correlator redis DB).
 \textbf{antenna\_number} & int & antenna number \\ \hline
 \textbf{antenna\_feed\_pol} & string & antenna feed polarization, either `e' or `n'. \\ \hline
 snap\_hostname & string & SNAP hostname \\ \hline
-snap\_channel\_number & int & SNAP ADC channel number (0-5) to which this antenna is connected. \\ \hline
+snap\_channel\_number & int & SNAP ADC channel number (0-5 which correspond to the n0, e2, n4, e6, n8, e10 ports on the SNAP) to which this antenna is connected. \\ \hline
 adc\_mean & float & mean ADC value, in ADC units (raw ADC integer values between -128 and +127). Typically $\sim$ -0.5. \\ \hline
 adc\_rms & float & RMS ADC value, in ADC units (raw ADC integer values between -128 and +127).  Should be $\sim$ 10-20. \\ \hline
 adc\_power & float & mean ADC power, in ADC units squared (raw ADC integer values between -128 and +127, squared). Since mean should be close to zero, this should just be $\text{adc\_rms}^2$. \\ \hline
