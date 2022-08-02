@@ -14,6 +14,7 @@ import pytest
 import yaml
 import numpy as np
 from astropy.time import Time, TimeDelta
+import pyuvdata.tests as uvtest
 
 from hera_mc import mc, cm_partconnect
 import hera_mc.correlator as corr
@@ -173,6 +174,22 @@ def snapstatus_none():
             "sample_rate": None,
             "input": None,
         },
+    }
+
+
+@pytest.fixture(scope="module")
+def snap_feng_init_status():
+    return {
+        b"log_time_start": b"2022-08-01T17:20:37.025000",
+        b"maxout": b"heraNode9Snap3",
+        b"unconfig": (
+            b"heraNode19Snap3,heraNode13Snap3,heraNode18Snap1,heraNode18Snap2"
+        ),
+        b"timestamp": b"2022-08-02T15:53:17",
+        b"working": (
+            b"heraNode12Snap2,heraNode12Snap3,heraNode12Snap0,heraNode12Snap1"
+        ),
+        b"log_time_stop": b"2022-08-01T17:20:37.941000",
     }
 
 
@@ -1888,6 +1905,104 @@ def test_snap_input_errors(mcsession):
 
     with pytest.raises(ValueError, match="antenna_feed_pol must be 'e' or 'n'."):
         corr.SNAPInput.create(t1, "heraNode700Snap0", 0, 11, "foo", "adc")
+
+
+def test_add_snap_feng_init_status(mcsession):
+    test_session = mcsession
+    t1 = TEST_TIME1.copy()
+    t2 = TEST_TIME2.copy()
+
+    test_session.add_snap_feng_init_status(t1, "heraNode700Snap0", "working")
+
+    expected = corr.SNAPFengInitStatus(
+        time=int(floor(t1.gps)), hostname="heraNode700Snap0", status="working"
+    )
+    result = test_session.get_snap_feng_init_status(
+        starttime=t1 - TimeDelta(3.0, format="sec")
+    )
+    assert len(result) == 1
+    result = result[0]
+    assert result.isclose(expected)
+
+    test_session.add_snap_feng_init_status(t2, "heraNode701Snap3", "unconfig")
+
+    expected2 = corr.SNAPFengInitStatus(
+        time=int(floor(t2.gps)), hostname="heraNode701Snap3", status="unconfig"
+    )
+
+    result = test_session.get_snap_feng_init_status(
+        starttime=t1 - TimeDelta(3.0, format="sec"), hostname="heraNode701Snap3"
+    )
+    assert len(result) == 1
+    result = result[0]
+    assert result.isclose(expected2)
+
+    result = test_session.get_snap_feng_init_status()
+    assert len(result) == 1
+    result = result[0]
+    assert result.isclose(expected2)
+
+
+@pytest.mark.parametrize(
+    "key,value",
+    [
+        (None, None),
+        (b"maxout", b""),
+        (b"special", b"heraNode9Snap3"),
+        (b"foo", b"bar"),
+        (b"log_time_stop", b"Not found"),
+    ],
+)
+def test_get_snap_feng_init_status_from_redis(snap_feng_init_status, key, value):
+    input_dict = snap_feng_init_status.copy()
+
+    expected_snap_state = {
+        "heraNode9Snap3": "maxout",
+        "heraNode19Snap3": "unconfig",
+        "heraNode13Snap3": "unconfig",
+        "heraNode18Snap1": "unconfig",
+        "heraNode18Snap2": "unconfig",
+        "heraNode12Snap2": "working",
+        "heraNode12Snap3": "working",
+        "heraNode12Snap0": "working",
+        "heraNode12Snap1": "working",
+    }
+    expected_time = Time(input_dict[b"log_time_stop"].decode("utf-8"))
+
+    if key is not None:
+        input_dict[key] = value
+        if key == b"maxout" and value == b"":
+            expected_snap_state.pop("heraNode9Snap3")
+        elif key == b"special":
+            expected_snap_state[value.decode("utf-8")] = key.decode("utf-8")
+        elif key == b"log_time_stop" and value == b"Not found":
+            expected_snap_state = {}
+            expected_time = None
+
+    if key == b"foo":
+        exp_warning = UserWarning
+        warn_msg = (
+            f"Unexpected key in redis `snap_log` key: {key}, some info may be lost"
+        )
+    else:
+        exp_warning = None
+        warn_msg = ""
+
+    with uvtest.check_warnings(exp_warning, match=warn_msg):
+        log_time, snap_state = corr._get_snap_feng_init_status_from_redis(
+            snap_config_dict=input_dict
+        )
+    assert log_time == expected_time
+    assert expected_snap_state == snap_state
+
+
+@requires_redis
+def test_add_snap_feng_init_status_from_redis(mcsession):
+    test_session = mcsession
+
+    snap_objs = test_session.add_snap_feng_init_status_from_redis(testing=True)
+
+    assert len(snap_objs) > 0
 
 
 def test_get_node_snap_from_serial_nodossier(mcsession):
