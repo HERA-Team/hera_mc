@@ -5017,6 +5017,128 @@ class MCSession(Session):
             self._insert_ignoring_duplicates(corr.SNAPStatus, snap_status_list)
             self._insert_ignoring_duplicates(corr.SNAPInput, snap_input_list)
 
+    def add_snap_feng_init_status(self, time, hostname, status):
+        """
+        Add new snap feng init status to the M&C database.
+
+        Parameters
+        ----------
+        time : astropy Time object
+            Astropy time object based on a timestamp reported by the correlator.
+        hostname : str
+            SNAP hostname.
+        status : str
+            Feng init status of the SNAP. Should be one of "working" (hera_corr_f
+            thinks it works), "unconfig" (snap made it to arming, but weren't
+            configured, so don't work), "maxout" (snap made it all the way through
+            arming and configuring but was ignored because there were too many snaps).
+
+        """
+        self.add(corr.SNAPFengInitStatus.create(time, hostname, status))
+
+    def get_snap_feng_init_status(
+        self,
+        most_recent=None,
+        starttime=None,
+        stoptime=None,
+        hostname=None,
+        write_to_file=False,
+        filename=None,
+    ):
+        """
+        Get snap feng init status record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        hostname : str
+            SNAP hostname
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        list of SNAPFengInitStatus objects
+
+        """
+        return self._time_filter(
+            corr.SNAPFengInitStatus,
+            "time",
+            most_recent=most_recent,
+            starttime=starttime,
+            stoptime=stoptime,
+            filter_column="hostname",
+            filter_value=hostname,
+            write_to_file=write_to_file,
+            filename=filename,
+        )
+
+    def add_snap_feng_init_status_from_redis(
+        self,
+        testing=False,
+        redishost=corr.DEFAULT_REDIS_ADDRESS,
+    ):
+        """
+        Get and add the current feng_init status values from redis.
+
+        Uses the `correlator._get_snap_feng_init_status_from_redis` function
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the feng_init status data densely on qmaster.
+
+        Parameters
+        ----------
+        testing : bool
+            If true, return the list of SNAPFengInitStatus objects and don't add then
+            to the database.
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
+
+        Returns
+        -------
+        list of SNAPFengInitStatus, optional
+            If testing is True, returns the SNAPFengInitStatus objects rather than adding
+            it to the database.
+
+        """
+        log_time, snap_feng_status = corr._get_snap_feng_init_status_from_redis(
+            redishost=redishost
+        )
+
+        snap_configure_objs = []
+        for hostname, state in snap_feng_status.items():
+            snap_configure_objs.append(
+                corr.SNAPFengInitStatus.create(log_time, hostname, state)
+            )
+
+        if testing:
+            return snap_configure_objs
+
+        self._insert_ignoring_duplicates(corr.SNAPFengInitStatus, snap_configure_objs)
+
     def add_antenna_status(
         self,
         time,

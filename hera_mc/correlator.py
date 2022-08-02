@@ -104,15 +104,23 @@ def _get_snap_input_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
 
     Returns
     -------
-    dict
-        keys are b'source' (either b'adc' or b'noise'), b'seed' (either b'same' or
-        b'diff') and b'time' (a unix time stamp).
+    snap_source : str
+        Should be one of "adc" or "noise" (others are errors).
+    snap_seed_type : str
+        Should be one of "same" or "diff" (others are errors)..
+    snap_time : astropy Time object
+        Time that source was last set.
 
     """
     redis_pool = redis.ConnectionPool(host=redishost)
     rsession = redis.Redis(connection_pool=redis_pool)
 
     snap_input_dict = rsession.hgetall("corr:status:input")
+    # keys are:
+    # - b'source' (either b'adc' or b'noise')
+    # - b'seed' (either b'same' or b'diff')
+    # - b'time' (a unix time stamp).
+
     snap_source = snap_input_dict[b"source"].decode("utf-8")
     snap_seed_type = snap_input_dict[b"seed"].decode("utf-8")
     snap_time = Time(snap_input_dict[b"time"], format="unix")
@@ -131,14 +139,20 @@ def _get_fem_switch_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
 
     Returns
     -------
-    dict
-        keys are b'state' (b'antenna' or b'load' or b'noise') and b'time' (a unix time stamp).
+    fem_switch : str
+        Should be one of "antenna", "load" or "noise" (others are errors).
+    fem_time : astropy Time object
+        Time that the fem_switch was last set.
 
     """
     redis_pool = redis.ConnectionPool(host=redishost)
     rsession = redis.Redis(connection_pool=redis_pool)
 
     fem_switch_dict = rsession.hgetall("corr:fem_switch_state")
+    # keys are:
+    #  - b'state' (b'antenna' or b'load' or b'noise')
+    #  - b'time' (a unix time stamp).
+
     fem_switch = fem_switch_dict[b"state"].decode("utf-8")
     fem_time = Time(fem_switch_dict[b"time"], format="unix")
 
@@ -1238,6 +1252,122 @@ def _get_snap_status(corr_cm=None, redishost=DEFAULT_REDIS_ADDRESS):
         corr_cm = hera_corr_cm.HeraCorrCM(redishost=redishost)
 
     return corr_cm.get_f_status()
+
+
+class SNAPFengInitStatus(MCDeclarativeBase):
+    """
+    Definition of snap_feng_init_status table.
+
+    Attributes
+    ----------
+    time : BigInteger Column
+        GPS time that the when the snap state was logged, floored. Part of the primary
+        key.
+    hostname : String Column
+        SNAP hostname. Part of primary_key.
+    status : String Column
+        Feng init status of the SNAP. Should be one of "working" (hera_corr_f thinks it
+        works), "unconfig" (snap made it to arming, but weren't configured, so don't
+        work), "maxout" (snap made it all the way through arming and configuring but
+        was ignored because there were too many snaps).
+
+    """
+
+    __tablename__ = "snap_feng_init_status"
+    time = Column(BigInteger, primary_key=True)
+    hostname = Column(String, primary_key=True)
+    status = Column(String, nullable=False)
+
+    @classmethod
+    def create(cls, time, hostname, status):
+        """
+        Create a new correlator config status object.
+
+        Parameters
+        ----------
+        time : astropy Time object
+            Astropy time object based on a timestamp reported by the correlator.
+        hostname : str
+            SNAP hostname.
+        status : str
+            Feng init status of the SNAP. Should be one of "working" (hera_corr_f
+            thinks it works), "unconfig" (snap made it to arming, but weren't
+            configured, so don't work), "maxout" (snap made it all the way through
+            arming and configuring but was ignored because there were too many snaps).
+
+        """
+        if not isinstance(time, Time):
+            raise ValueError("time must be an astropy Time object")
+        log_time = floor(time.gps)
+
+        return cls(time=log_time, hostname=hostname, status=status)
+
+
+def _get_snap_feng_init_status_from_redis(
+    redishost=DEFAULT_REDIS_ADDRESS, snap_config_dict=None
+):
+    """
+    Get the SNAP feng init status from redis.
+
+    Parameters
+    ----------
+    redishost : str
+        Address of redis database
+    snap_config_dict : dict
+        Dict matching what comes out of redis for testing.
+
+    Returns
+    -------
+    log_time : astropy Time object
+        Time of log (log_time_stop).
+    snap_feng_status : dict
+        keys are snap hostnames, values are status. Status should be one of "working"
+        (hera_corr_f thinks it works), "unconfig" (snap made it to arming, but weren't
+        configured, so don't work), "maxout" (snap made it all the way through
+        arming and configuring but was ignored because there were too many snaps).
+
+    """
+    if snap_config_dict is None:
+        redis_pool = redis.ConnectionPool(host=redishost)
+        rsession = redis.Redis(connection_pool=redis_pool)
+
+        snap_config_dict = rsession.hgetall("snap_log")
+        # These keys are:
+        #  - b'log_time_start' (timestamp) time of log start
+        #  - b'log_time_stop' (timestamp) time of log stop
+        #  - b'timestamp' (timestamp) time when this info was written to redis
+        #  - b'working' (str) csv list of the snap hostnames that hera_corr_f thinks work
+        #  - b'unconfig' (str) csv list of the snap hostnames that made it to arming,
+        #      but weren't configured (so don't work)
+        #  - b'maxout' (str)  csv list of the snap hostnames that made it all the way, but
+        #      were ignored because we had too many snaps
+        # other statuses may be added, will similarly have csv lists of snap hostnames
+
+    log_time_str = snap_config_dict[b"log_time_stop"].decode("utf-8")
+    if log_time_str == "Not found":
+        return None, {}
+    try:
+        log_time = Time(log_time_str, scale="utc")
+    except ValueError:
+        return None, {}
+
+    snap_feng_status = {}
+    for key in snap_config_dict:
+        key_str = key.decode("utf-8")
+        if "time" in key_str:
+            continue
+        host_list_str = snap_config_dict[key].decode("utf-8")
+        if host_list_str == "":
+            continue
+        if "heraNode" not in host_list_str:
+            warnings.warn(
+                f"Unexpected key in redis `snap_log` key: {key}, some info may be lost"
+            )
+            continue
+        for hostname in host_list_str.split(","):
+            snap_feng_status[hostname] = key_str
+
+    return log_time, snap_feng_status
 
 
 class AntennaStatus(MCDeclarativeBase):

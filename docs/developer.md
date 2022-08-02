@@ -64,31 +64,59 @@ have multiple options for hosting.
 
 ## Updating the redis dump
 
-A redis backup can be initiated by calling `redis-cli bgsave`.
+A redis backup can be initiated by calling `redis-cli bgsave` on the `hera-corr-head`
+machine (reminder, `hera` is the user not `obs`, non-standard password).
 The default dump location is `/var/lib/redis/dump.rdb`.
-For safety, move this dump off of the production server and perform any remaining manipulations in a controlled environment.
-With the growing size of redis, it is sometimes necessary to prune large keys to keep the git repo reasonably sized.
-If multiple FPGA bit files (`fpg:*` keys in redis) are present, it is recommended to remove some or most of these first since they can be a few MB worth of data.
+For safety, move this dump off of the production server and perform any remaining
+manipulations in a controlled environment. If you have site access set up via an ssh
+tunnel, you may first have to copy the file to another location on qmaster (which you
+have an ssh alias to), then you can use rsync like this:
+`rsync --rsh='ssh -p<port_number>' -vPaz <ssh_alias>:</path/to/file>/dump.rdb <path/on/local/machine>`
+
+Next you need to load your new dump into a redis server.
 
 When loading a dump into a redis server:
 - stop the server from running.
 - replace the `dump.rdb` for the running server with your new dump.
 - restart the redis server.
 
+With the growing size of redis, it is sometimes necessary to prune large keys to keep
+the git repo reasonably sized.
+If multiple FPGA bit files (`fpg:*` keys in redis) are present, it is recommended to
+remove some or most of these first since they can be a few MB worth of data.
 
-Additionally, some keys in redis are set to expire after a certain amount of time is passed. To remove the time to live (TTL) on all keys, a few lines in python can be used to loop over the keys.
+Additionally, some keys in redis are set to expire after a certain amount of time is
+passed.
 
+To remove the time to live (TTL) on all keys and to delete all but the latest fpg, the
+following few lines in python can be used:
 
 ```python
 import redis
+import re
+from astropy.time import Time
 
-r = redis.Redis("uri_to_redis")
+r = redis.Redis("redishost")
 
+fpg_keys = []
+fpg_times = []
 for key in r.keys():
     r.persist(key)
+    if "fpg" in key.decode("utf-8"):
+        match = re.search(r'\d{4}-\d{2}-\d{2}', key.decode("utf-8"))
+        if match is not None:
+            fpg_keys.append(key)
+            fpg_times.append(Time(match.group(0)))
+
+fpg_key_keep = fpg_keys[fpg_times.index(max(fpg_times))]
+
+for key in fpg_keys:
+    if key != fpg_key_keep:
+        r.delete(key)
 
 r.save()
 ```
+
 Once the save is complete, re-run hera_mc tests to ensure compatibility.
 If all the tests pass and this dump is read to be committed, copy this dump back to overwrite `hera_mc/hera_mc/data/test_data/dump.rdb`.
 Add and commit the file through git to finilize the update on your branch.
