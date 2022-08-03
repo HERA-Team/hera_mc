@@ -701,6 +701,18 @@ snap\_input & string & Either ``adc" or ``noise-\{d\}" where \{d\} is the noise 
 \end{tabular}
 \end{center}
 
+\subsubsection{snap\_feng\_init\_status}
+F-engine initialization status of the SNAP, status can be ``working", ``unconfig" (configuration did not work, so SNAP does not work), or ``maxout" (snap configured properly but was excluded because there were too many SNAPs).
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{time} & long & status time in floor(gps seconds). \\ \hline
+\textbf{hostname} & string & SNAP hostname. \\ \hline
+status & string & One of ``working"  ``unconfig" or ``maxout". \\ \hline
+\end{tabular}
+\end{center}
+
 \subsubsection{antenna\_status}
 Antenna status information from the SNAP (reported via the correlator redis DB).
 \begin{center}
