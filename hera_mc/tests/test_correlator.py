@@ -180,16 +180,12 @@ def snapstatus_none():
 @pytest.fixture(scope="module")
 def snap_feng_init_status():
     return {
-        b"log_time_start": b"2022-08-01T17:20:37.025000",
-        b"maxout": b"heraNode9Snap3",
-        b"unconfig": (
-            b"heraNode19Snap3,heraNode13Snap3,heraNode18Snap1,heraNode18Snap2"
-        ),
-        b"timestamp": b"2022-08-02T15:53:17",
-        b"working": (
-            b"heraNode12Snap2,heraNode12Snap3,heraNode12Snap0,heraNode12Snap1"
-        ),
-        b"log_time_stop": b"2022-08-01T17:20:37.941000",
+        "log_time_start": "2022-08-01T17:20:37.025000",
+        "maxout": "heraNode9Snap3",
+        "unconfig": ("heraNode19Snap3,heraNode13Snap3,heraNode18Snap1,heraNode18Snap2"),
+        "timestamp": "2022-08-02T15:53:17",
+        "working": ("heraNode12Snap2,heraNode12Snap3,heraNode12Snap0,heraNode12Snap1"),
+        "log_time_stop": "2022-08-01T17:20:37.941000",
     }
 
 
@@ -510,12 +506,12 @@ def test_add_correlator_component_event_time(mcsession):
     "input_dict,event,time",
     [
         (
-            {b"state": b"True", b"time": str(int(TEST_TIME1.unix)).encode("utf-8")},
+            {"state": "True", "time": str(int(TEST_TIME1.unix))},
             "start",
             TEST_TIME1,
         ),
         (
-            {b"state": b"False", b"time": str(int(TEST_TIME1.unix)).encode("utf-8")},
+            {"state": "False", "time": str(int(TEST_TIME1.unix))},
             "stop",
             TEST_TIME1,
         ),
@@ -553,8 +549,8 @@ def test_get_catcher_start_stop_time_from_redis_with_timeouts(mcsession, catcher
     starttime_unix = int(Time.now().unix - 5)
     mcsession.add_correlator_component_event_time_from_redis(
         taking_data_dict={
-            b"state": b"True",
-            b"time": str(starttime_unix).encode("utf-8"),
+            "state": "True",
+            "time": str(starttime_unix),
         }
     )
     comp_event_expected = corr.CorrelatorComponentEventTime(
@@ -582,8 +578,8 @@ def test_get_catcher_start_stop_time_from_redis_with_timeouts(mcsession, catcher
         # deleted.
         mcsession.add_correlator_component_event_time_from_redis(
             taking_data_dict={
-                b"state": b"True",
-                b"time": str(starttime_unix).encode("utf-8"),
+                "state": "True",
+                "time": str(starttime_unix),
             }
         )
         comp_event_result = mcsession.get_correlator_component_event_time(
@@ -596,8 +592,8 @@ def test_get_catcher_start_stop_time_from_redis_with_timeouts(mcsession, catcher
         # updated and a new catcher start time to be entered.
         mcsession.add_correlator_component_event_time_from_redis(
             taking_data_dict={
-                b"state": b"True",
-                b"time": str(starttime_unix + 3).encode("utf-8"),
+                "state": "True",
+                "time": str(starttime_unix + 3),
             }
         )
         comp_event_expected = corr.CorrelatorComponentEventTime(
@@ -1947,10 +1943,10 @@ def test_add_snap_feng_init_status(mcsession):
     "key,value",
     [
         (None, None),
-        (b"maxout", b""),
-        (b"special", b"heraNode9Snap3"),
-        (b"foo", b"bar"),
-        (b"log_time_stop", b"Not found"),
+        ("maxout", ""),
+        ("special", "heraNode9Snap3"),
+        ("foo", "bar"),
+        ("log_time_stop", "Not found"),
     ],
 )
 def test_get_snap_feng_init_status_from_redis(snap_feng_init_status, key, value):
@@ -1967,19 +1963,19 @@ def test_get_snap_feng_init_status_from_redis(snap_feng_init_status, key, value)
         "heraNode12Snap0": "working",
         "heraNode12Snap1": "working",
     }
-    expected_time = Time(input_dict[b"log_time_stop"].decode("utf-8"))
+    expected_time = Time(input_dict["log_time_stop"])
 
     if key is not None:
         input_dict[key] = value
-        if key == b"maxout" and value == b"":
+        if key == "maxout" and value == "":
             expected_snap_state.pop("heraNode9Snap3")
-        elif key == b"special":
-            expected_snap_state[value.decode("utf-8")] = key.decode("utf-8")
-        elif key == b"log_time_stop" and value == b"Not found":
+        elif key == "special":
+            expected_snap_state[value] = key
+        elif key == "log_time_stop" and value == "Not found":
             expected_snap_state = {}
             expected_time = None
 
-    if key == b"foo":
+    if key == "foo":
         exp_warning = UserWarning
         warn_msg = (
             f"Unexpected key in redis `snap_log` key: {key}, some info may be lost"
