@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- A new `snap_feng_init_status` table to track whether SNAPs worked properly, errored,
+or were exluded because there were too many SNAPs during F-engine initialization.
 - New columns `is_programmed`, `adc_is_configured`, `is_initialized`, `dest_is_configured`,
 `version`, and `sample_rate`, to the `snap_status` table and added a new `snap_input`
 table that breaks out the snap inputs (either "adc" or "noise-%d" where %d is the seed)
