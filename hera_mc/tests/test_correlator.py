@@ -1939,6 +1939,13 @@ def test_add_snap_feng_init_status(mcsession):
     assert result.isclose(expected2)
 
 
+def test_add_snap_feng_init_status_errors(mcsession):
+    test_session = mcsession
+
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        test_session.add_snap_feng_init_status("foo", "heraNode700Snap0", "working")
+
+
 @pytest.mark.parametrize(
     "key,value",
     [
@@ -1947,6 +1954,7 @@ def test_add_snap_feng_init_status(mcsession):
         ("special", "heraNode9Snap3"),
         ("foo", "bar"),
         ("log_time_stop", "Not found"),
+        ("log_time_stop", None),
     ],
 )
 def test_get_snap_feng_init_status_from_redis(snap_feng_init_status, key, value):
@@ -1971,7 +1979,7 @@ def test_get_snap_feng_init_status_from_redis(snap_feng_init_status, key, value)
             expected_snap_state.pop("heraNode9Snap3")
         elif key == "special":
             expected_snap_state[value] = key
-        elif key == "log_time_stop" and value == "Not found":
+        elif key == "log_time_stop":
             expected_snap_state = {}
             expected_time = None
 
@@ -1996,9 +2004,27 @@ def test_get_snap_feng_init_status_from_redis(snap_feng_init_status, key, value)
 def test_add_snap_feng_init_status_from_redis(mcsession):
     test_session = mcsession
 
-    snap_objs = test_session.add_snap_feng_init_status_from_redis(testing=True)
+    # get the dict from redis
+    log_time, snap_feng_status = corr._get_snap_feng_init_status_from_redis()
+    assert len(snap_feng_status) > 1
 
-    assert len(snap_objs) > 0
+    # get the objects, check same number as dict
+    snap_objs = test_session.add_snap_feng_init_status_from_redis(testing=True)
+    assert len(snap_objs) == len(snap_feng_status)
+    assert snap_objs[0].time == int(floor(log_time.gps))
+    input_hostnames = [obj.hostname for obj in snap_objs]
+
+    # actually put them in the db, get them back and check they're as expected
+    test_session.add_snap_feng_init_status_from_redis()
+    db_snap_objs = test_session.get_snap_feng_init_status(most_recent=True)
+
+    assert len(db_snap_objs) == len(snap_objs)
+    db_hostnames = [obj.hostname for obj in db_snap_objs]
+    assert sorted(input_hostnames) == sorted(db_hostnames)
+
+    for obj in db_snap_objs:
+        input_ind = input_hostnames.index(obj.hostname)
+        assert obj.isclose(snap_objs[input_ind])
 
 
 def test_get_node_snap_from_serial_nodossier(mcsession):
