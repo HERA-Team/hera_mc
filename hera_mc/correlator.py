@@ -112,18 +112,18 @@ def _get_snap_input_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
         Time that source was last set.
 
     """
-    redis_pool = redis.ConnectionPool(host=redishost)
-    rsession = redis.Redis(connection_pool=redis_pool)
+    redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
+    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
 
     snap_input_dict = rsession.hgetall("corr:status:input")
     # keys are:
-    # - b'source' (either b'adc' or b'noise')
-    # - b'seed' (either b'same' or b'diff')
-    # - b'time' (a unix time stamp).
+    # - source (either "adc" or "noise")
+    # - seed (either "same" or "diff")
+    # - time (a unix time stamp).
 
-    snap_source = snap_input_dict[b"source"].decode("utf-8")
-    snap_seed_type = snap_input_dict[b"seed"].decode("utf-8")
-    snap_time = Time(snap_input_dict[b"time"], format="unix")
+    snap_source = snap_input_dict["source"]
+    snap_seed_type = snap_input_dict["seed"]
+    snap_time = Time(snap_input_dict["time"], format="unix")
 
     return snap_source, snap_seed_type, snap_time
 
@@ -145,16 +145,16 @@ def _get_fem_switch_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
         Time that the fem_switch was last set.
 
     """
-    redis_pool = redis.ConnectionPool(host=redishost)
-    rsession = redis.Redis(connection_pool=redis_pool)
+    redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
+    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
 
     fem_switch_dict = rsession.hgetall("corr:fem_switch_state")
     # keys are:
-    #  - b'state' (b'antenna' or b'load' or b'noise')
-    #  - b'time' (a unix time stamp).
+    #  - state ("antenna" or "load" or "noise")
+    #  - time (a unix time stamp).
 
-    fem_switch = fem_switch_dict[b"state"].decode("utf-8")
-    fem_time = Time(fem_switch_dict[b"time"], format="unix")
+    fem_switch = fem_switch_dict["state"]
+    fem_time = Time(fem_switch_dict["time"], format="unix")
 
     return fem_switch, fem_time
 
@@ -334,15 +334,15 @@ def _get_f_engine_sync_time_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
         Time of the most recent f-engine sync
 
     """
-    redis_pool = redis.ConnectionPool(host=redishost)
-    rsession = redis.Redis(connection_pool=redis_pool)
+    redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
+    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
 
     # The redis key that is currently being used for this is in unix ms.
     # In the future, this key will change in redis to "feng:sync_time".
     # Unclear if that will be in Unix seconds or ms.
     sync_time_unix_ms = rsession.get("corr:feng_sync_time")
 
-    sync_time_unix = float(sync_time_unix_ms.decode("utf-8")) * 1e-3
+    sync_time_unix = float(sync_time_unix_ms) * 1e-3
 
     return Time(sync_time_unix, format="unix")
 
@@ -373,16 +373,16 @@ def _get_catcher_start_stop_time_from_redis(
 
     """
     if taking_data_dict is None:
-        redis_pool = redis.ConnectionPool(host=redishost)
-        rsession = redis.Redis(connection_pool=redis_pool)
+        redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
+        rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
         taking_data_dict = rsession.hgetall("corr:is_taking_data")
 
     if len(taking_data_dict) > 0:
-        if taking_data_dict[b"state"].decode("utf-8") == "True":
+        if taking_data_dict["state"] == "True":
             event = "start"
         else:
             event = "stop"
-        time = Time(taking_data_dict[b"time"], format="unix")
+        time = Time(taking_data_dict["time"], format="unix")
 
         return event, time
     else:
@@ -1328,22 +1328,22 @@ def _get_snap_feng_init_status_from_redis(
 
     """
     if snap_config_dict is None:
-        redis_pool = redis.ConnectionPool(host=redishost)
-        rsession = redis.Redis(connection_pool=redis_pool)
+        redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
+        rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
 
         snap_config_dict = rsession.hgetall("snap_log")
         # These keys are:
-        #  - b'log_time_start' (timestamp) time of log start
-        #  - b'log_time_stop' (timestamp) time of log stop
-        #  - b'timestamp' (timestamp) time when this info was written to redis
-        #  - b'working' (str) csv list of the snap hostnames that hera_corr_f thinks work
-        #  - b'unconfig' (str) csv list of the snap hostnames that made it to arming,
+        #  - log_time_start (timestamp) time of log start
+        #  - log_time_stop (timestamp) time of log stop
+        #  - timestamp (timestamp) time when this info was written to redis
+        #  - working (str) csv list of the snap hostnames that hera_corr_f thinks work
+        #  - unconfig (str) csv list of the snap hostnames that made it to arming,
         #      but weren't configured (so don't work)
-        #  - b'maxout' (str)  csv list of the snap hostnames that made it all the way, but
+        #  - maxout (str)  csv list of the snap hostnames that made it all the way, but
         #      were ignored because we had too many snaps
         # other statuses may be added, will similarly have csv lists of snap hostnames
 
-    log_time_str = snap_config_dict[b"log_time_stop"].decode("utf-8")
+    log_time_str = snap_config_dict["log_time_stop"]
     if log_time_str == "Not found":
         return None, {}
     try:
@@ -1353,18 +1353,17 @@ def _get_snap_feng_init_status_from_redis(
 
     snap_feng_status = {}
     for key in snap_config_dict:
-        key_str = key.decode("utf-8")
+        key_str = key
         if "time" in key_str:
             continue
-        host_list_str = snap_config_dict[key].decode("utf-8")
-        if host_list_str == "":
+        if snap_config_dict[key] == "":
             continue
-        if "heraNode" not in host_list_str:
+        if "heraNode" not in snap_config_dict[key]:
             warnings.warn(
                 f"Unexpected key in redis `snap_log` key: {key}, some info may be lost"
             )
             continue
-        for hostname in host_list_str.split(","):
+        for hostname in snap_config_dict[key].split(","):
             snap_feng_status[hostname] = key_str
 
     return log_time, snap_feng_status
