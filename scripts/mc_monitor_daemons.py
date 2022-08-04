@@ -5,13 +5,13 @@
 
 """Gather correlator status info for correlator daemons and log them into M&C."""
 
-import sys
 import os
-import time
-import redis
-import traceback
 import socket
+import sys
+import time
+import traceback
 
+import redis
 from astropy.time import Time
 
 from hera_mc import mc

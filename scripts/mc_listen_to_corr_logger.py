@@ -5,17 +5,16 @@
 
 """Gather correlator log outputs and log them into M&C."""
 
-import sys
 import json
-import redis
-import socket
 import logging
+import socket
+import sys
 
+import redis
 from astropy.time import Time
 
 from hera_mc import mc
 from hera_mc.correlator import DEFAULT_REDIS_ADDRESS
-
 
 allowed_levels = ["DEBUG", "INFO", "NOTIFY", "WARNING", "ERROR", "CRITICAL"]
 logging.addLevelName(logging.INFO + 1, "NOTIFY")

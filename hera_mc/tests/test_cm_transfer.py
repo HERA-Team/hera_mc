@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from .. import cm_transfer, mc, cm_gen_sqlite
+from .. import cm_gen_sqlite, cm_transfer, mc
 
 
 def test_classTime():

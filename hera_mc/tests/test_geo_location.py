@@ -4,9 +4,9 @@
 
 """Testing for `hera_mc.geo_location and geo_handling`."""
 import pytest
-
-from .. import geo_location, geo_handling, cm_partconnect, geo_sysdef, cm_active
 from astropy.time import Time
+
+from .. import cm_active, cm_partconnect, geo_handling, geo_location, geo_sysdef
 
 
 @pytest.fixture(scope="function")

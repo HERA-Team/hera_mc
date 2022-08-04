@@ -5,10 +5,9 @@
 """Node M&C info from the node's Redis database."""
 
 import numpy as np
-from sqlalchemy import Column, BigInteger, Integer, Float, Boolean, String
+from sqlalchemy import BigInteger, Boolean, Column, Float, Integer, String
 
-from . import MCDeclarativeBase
-from . import cm_utils
+from . import MCDeclarativeBase, cm_utils
 
 # the address of a redis database being used as a clearing house for meta-data
 # and message passing which the node server has access to and watches

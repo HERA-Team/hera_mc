@@ -5,10 +5,9 @@
 """Keep track of geo-located stations."""
 
 from astropy.time import Time
-from sqlalchemy import Column, Float, String, BigInteger, ForeignKey, func
+from sqlalchemy import BigInteger, Column, Float, ForeignKey, String, func
 
-from . import MCDeclarativeBase, NotNull
-from . import mc, cm_utils
+from . import MCDeclarativeBase, NotNull, cm_utils, mc
 
 
 class StationType(MCDeclarativeBase):

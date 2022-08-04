@@ -6,9 +6,9 @@
 import os
 from math import floor
 
-from astropy.time import Time, TimeDelta
 import numpy as np
 import pytest
+from astropy.time import Time, TimeDelta
 
 from .. import node
 from ..tests import TEST_DEFAULT_REDIS_HOST, requires_redis

@@ -7,7 +7,7 @@
 import pytest
 from astropy.time import Time
 
-from .. import cm_partconnect, cm_handling
+from .. import cm_handling, cm_partconnect
 
 
 @pytest.fixture(scope="function")

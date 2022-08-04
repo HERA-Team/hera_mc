@@ -5,7 +5,6 @@
 
 import numpy as np
 from astropy.time import Time
-
 from pyuvdata import UVData
 
 from hera_mc import mc

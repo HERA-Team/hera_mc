@@ -4,18 +4,19 @@
 
 """Testing for `hera_mc.connections`."""
 
-import pytest
-import numpy as np
-from astropy.time import Time
 from collections import OrderedDict
 
+import numpy as np
+import pytest
+from astropy.time import Time
+
 from hera_mc import (
-    cm_partconnect,
-    cm_utils,
-    cm_handling,
-    cm_revisions,
-    cm_dossier,
     cm_active,
+    cm_dossier,
+    cm_handling,
+    cm_partconnect,
+    cm_revisions,
+    cm_utils,
 )
 
 

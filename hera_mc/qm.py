@@ -4,12 +4,13 @@
 
 """Handling quality metrics of HERA data."""
 
-from astropy.time import Time
 from math import floor
-from sqlalchemy import Column, Integer, BigInteger, Float, ForeignKey, String
+
+from astropy.time import Time
+from sqlalchemy import BigInteger, Column, Float, ForeignKey, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from . import MCDeclarativeBase, DEFAULT_GPS_TOL
+from . import DEFAULT_GPS_TOL, MCDeclarativeBase
 
 
 class AntMetrics(MCDeclarativeBase):

@@ -11,7 +11,6 @@ from astropy.time import Time
 import hera_mc.mc as mc
 import hera_mc.utils as mcutils
 
-
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
     parser.add_argument(

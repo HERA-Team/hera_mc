@@ -7,7 +7,7 @@
 If not on qmaster, it just writes the html file.
 
 """
-from hera_mc import mc, cm_utils, cm_sysutils
+from hera_mc import cm_sysutils, cm_utils, mc
 
 if __name__ == "__main__":
     default_hookup_cols = [

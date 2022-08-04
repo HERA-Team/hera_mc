@@ -9,7 +9,7 @@
 
 from astropy.time import Time, TimeDelta
 
-from hera_mc import mc, cm_utils
+from hera_mc import cm_utils, mc
 
 valid_tables = {
     "hera_obs": {"method": "get_obs_by_time"},

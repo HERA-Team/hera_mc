@@ -13,17 +13,19 @@ to the corresponding M&C task resource record tables.
 
 """
 
-import numpy as np
 from subprocess import check_output
+
+import numpy as np
 from astropy.time import Time
+
 from hera_mc import mc
 from hera_mc.rtp import (
     RTPTaskJobID,
-    RTPTaskResourceRecord,
     RTPTaskMultipleJobID,
+    RTPTaskMultipleProcessEvent,
     RTPTaskMultipleResourceRecord,
     RTPTaskProcessEvent,
-    RTPTaskMultipleProcessEvent,
+    RTPTaskResourceRecord,
 )
 
 

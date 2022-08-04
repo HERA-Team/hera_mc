@@ -8,6 +8,7 @@
 import glob
 import io
 import sys
+
 from setuptools import setup
 
 # add hera_mc to our path in order to use the branch_scheme function

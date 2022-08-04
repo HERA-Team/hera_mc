@@ -7,7 +7,7 @@
 Script to handle adding data to the part_rosetta table.
 """
 
-from hera_mc import mc, cm_utils, cm_partconnect
+from hera_mc import cm_partconnect, cm_utils, mc
 
 
 def query_args(args):

@@ -3,28 +3,29 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.correlator`."""
-import os
 import copy
 import datetime
 import hashlib
-from math import floor
+import os
 import re
+from math import floor
 
+import numpy as np
 import pytest
 import yaml
-import numpy as np
 from astropy.time import Time, TimeDelta
 import pyuvdata.tests as uvtest
 
-from hera_mc import mc, cm_partconnect
 import hera_mc.correlator as corr
+from hera_mc import cm_partconnect, mc
 from hera_mc.data import DATA_PATH
+
 from ..tests import (
-    onsite,
-    checkWarnings,
-    requires_redis,
-    requires_default_redis,
     TEST_DEFAULT_REDIS_HOST,
+    checkWarnings,
+    onsite,
+    requires_default_redis,
+    requires_redis,
 )
 
 TEST_TIME1 = Time("2016-01-10 01:15:23", scale="utc")

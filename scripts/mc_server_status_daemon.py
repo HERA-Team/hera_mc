@@ -15,12 +15,12 @@ import socket
 import sys
 import time
 from builtins import int
-from astropy.time import Time
+
 import numpy as np
 import psutil
+from astropy.time import Time
 
 from hera_mc import mc
-
 
 # Preliminaries. We have a small validity check since the M&C design specifies
 # the memory, network, and system load are to be 5-minute averages.

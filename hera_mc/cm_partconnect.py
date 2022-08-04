@@ -6,8 +6,8 @@
 
 from astropy.time import Time
 from sqlalchemy import BigInteger, Column, ForeignKeyConstraint, String, Text, func
-from . import MCDeclarativeBase, NotNull
-from . import mc, cm_utils
+
+from . import MCDeclarativeBase, NotNull, cm_utils, mc
 
 no_connection_designator = "-X-"
 

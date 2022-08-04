@@ -92,7 +92,7 @@ def node_temperature(
         If None, it will start a new session on the database
 
     """
-    from . import mc, node, cm_utils, cm_active
+    from . import cm_active, cm_utils, mc, node
 
     if at_date is None:
         use_last = True

@@ -7,7 +7,7 @@
 Script to handle adding a comment to the part_info table.
 """
 
-from hera_mc import mc, cm_utils, cm_partconnect, cm_revisions
+from hera_mc import cm_partconnect, cm_revisions, cm_utils, mc
 
 
 def query_args(args):

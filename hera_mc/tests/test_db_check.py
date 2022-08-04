@@ -2,16 +2,14 @@
 # Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-from sqlalchemy import Column, Integer, String
 import sqlalchemy
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship, sessionmaker
 
-from ..db_check import is_valid_database
-from ..db_check import check_connection
 from .. import mc
+from ..db_check import check_connection, is_valid_database
 
 
 def gen_test_model():

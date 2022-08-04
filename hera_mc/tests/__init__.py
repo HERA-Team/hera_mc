@@ -6,14 +6,14 @@
 
 """
 
-import warnings
-import sys
 import socket
+import sys
+import warnings
 
 import pytest
 
-from hera_mc.utils import get_iterable
 from hera_mc.correlator import DEFAULT_REDIS_ADDRESS
+from hera_mc.utils import get_iterable
 
 TEST_DEFAULT_REDIS_HOST = "redishost"
 

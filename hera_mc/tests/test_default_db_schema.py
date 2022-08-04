@@ -7,7 +7,7 @@ Test that default database matches code schema.
 """
 from sqlalchemy.orm import sessionmaker
 
-from .. import mc, MCDeclarativeBase
+from .. import MCDeclarativeBase, mc
 from ..db_check import is_valid_database
 
 

@@ -7,7 +7,7 @@
 Script to handle installing a new station into system.
 """
 
-from hera_mc import mc, geo_location, cm_utils, cm_partconnect, geo_handling, geo_sysdef
+from hera_mc import cm_partconnect, cm_utils, geo_handling, geo_location, geo_sysdef, mc
 
 
 def query_geo_information(args):

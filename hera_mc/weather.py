@@ -5,9 +5,9 @@
 """Handle weather data sourced from meerkat's katportalclient."""
 from math import floor, isnan
 
-from astropy.time import Time
 import numpy as np
-from sqlalchemy import Column, BigInteger, Float, String
+from astropy.time import Time
+from sqlalchemy import BigInteger, Column, Float, String
 
 from . import MCDeclarativeBase
 

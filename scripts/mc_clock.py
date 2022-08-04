@@ -7,9 +7,9 @@
 Prints Time info for given date/time with flexible format
 """
 
-from hera_mc import cm_utils
 import argparse
 
+from hera_mc import cm_utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

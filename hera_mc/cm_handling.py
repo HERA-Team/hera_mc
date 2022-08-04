@@ -6,11 +6,13 @@
 """Holds helpful modules for parts and connections scripts."""
 
 import copy
-from astropy.time import Time
-from sqlalchemy import func, desc
 
-from . import cm_utils, cm_dossier
+from astropy.time import Time
+from sqlalchemy import desc, func
+
+from . import cm_dossier
 from . import cm_partconnect as partconn
+from . import cm_utils
 
 
 class Handling:

@@ -11,7 +11,7 @@ set of columns, which may be overridden by instead using the args.columns parame
 (--list-all-columns)
 
 """
-from hera_mc import mc, cm_handling, cm_utils
+from hera_mc import cm_handling, cm_utils, mc
 
 all_views = {
     "p": "parts",

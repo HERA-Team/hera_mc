@@ -11,8 +11,7 @@ FULL revisions are called directly (get_full_revision)
 
 from argparse import Namespace
 
-from . import mc, cm_utils, cm_partconnect
-
+from . import cm_partconnect, cm_utils, mc
 
 revision_categories = ["last", "active", "all", "full", "none"]
 

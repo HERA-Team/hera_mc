@@ -3,21 +3,19 @@
 # Copyright 2022 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 """Accumulate SNAP spectra from redis and write to a UVH5 file."""
-import time
+import argparse
 import json
 import logging
-import argparse
+import time
 import traceback
 from pathlib import Path
 
 import numpy as np
+from astropy.time import Time, TimeDelta
+from hera_corr_cm import HeraCorrCM
+from hera_corr_cm.redis_cm import read_cminfo_from_redis, read_maps_from_redis
 from pyuvdata import UVData
 from pyuvdata import utils as uvutils
-
-from astropy.time import Time, TimeDelta
-
-from hera_corr_cm import HeraCorrCM
-from hera_corr_cm.redis_cm import read_maps_from_redis, read_cminfo_from_redis
 
 formatter = "%(asctime)s.%(msecs)03d %(levelname)s - %(module)s: %(message)s"
 logging.basicConfig(

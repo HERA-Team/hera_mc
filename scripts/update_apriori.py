@@ -7,8 +7,7 @@
 Script to update the apriori antenna status.
 """
 
-from hera_mc import mc, cm_utils, cm_partconnect
-
+from hera_mc import cm_partconnect, cm_utils, mc
 
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()

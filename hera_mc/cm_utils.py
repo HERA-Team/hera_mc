@@ -4,10 +4,10 @@
 
 """Some low-level configuration management utility functions."""
 
-import subprocess
-from astropy.time import Time
-from astropy.time import TimeDelta
 import datetime
+import subprocess
+
+from astropy.time import Time, TimeDelta
 
 from . import mc
 

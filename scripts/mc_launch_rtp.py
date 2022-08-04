@@ -13,10 +13,10 @@ included in a launched workflow, the corresponding RTPLaunchRecord is updated.
 """
 
 import os
-import sys
 import shutil
-import warnings
 import subprocess
+import sys
+import warnings
 
 import numpy as np
 from astropy.time import Time

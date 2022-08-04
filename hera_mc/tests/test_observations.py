@@ -6,12 +6,11 @@
 from math import floor
 
 import pytest
-from astropy.time import Time, TimeDelta
 from astropy.coordinates import EarthLocation
+from astropy.time import Time, TimeDelta
 
-from .. import geo_handling
+from .. import geo_handling, utils
 from ..observations import Observation
-from .. import utils
 
 
 def test_new_obs(mcsession):

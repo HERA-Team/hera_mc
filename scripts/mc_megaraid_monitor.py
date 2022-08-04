@@ -13,17 +13,16 @@ client requires.
 
 """
 import datetime
-import dateutil.tz
 import errno
 import json
 import socket
-from subprocess import Popen, PIPE
 import sys
+from subprocess import PIPE, Popen
 
+import dateutil.tz
 from astropy.time import Time, TimeDelta
 
 from hera_mc import mc
-
 
 # Preliminaries
 #

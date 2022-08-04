@@ -8,10 +8,9 @@ import os
 import pytest
 from astropy.time import Time, TimeDelta
 
-from .. import mc
-from .. import utils
-from ..tests import checkWarnings
+from .. import mc, utils
 from ..qm import AntMetrics, ArrayMetrics
+from ..tests import checkWarnings
 
 pytest.importorskip("hera_qm")
 from hera_qm.firstcal_metrics import get_firstcal_metrics_dict  # noqa

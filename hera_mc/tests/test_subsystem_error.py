@@ -4,8 +4,8 @@
 
 """Testing for `hera_mc.subsystem_error`."""
 from math import floor
-import pytest
 
+import pytest
 from astropy.time import Time, TimeDelta
 
 from ..subsystem_error import SubsystemError

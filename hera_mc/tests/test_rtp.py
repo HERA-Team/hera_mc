@@ -7,23 +7,23 @@ import os
 from copy import deepcopy
 from math import floor
 
-import pytest
 import numpy as np
+import pytest
 from astropy.time import Time, TimeDelta
 
+from .. import utils
 from ..rtp import (
-    RTPProcessEvent,
-    RTPTaskProcessEvent,
-    RTPTaskMultipleProcessEvent,
-    RTPProcessRecord,
-    RTPTaskResourceRecord,
     RTPLaunchRecord,
+    RTPProcessEvent,
+    RTPProcessRecord,
     RTPTaskJobID,
     RTPTaskMultipleJobID,
+    RTPTaskMultipleProcessEvent,
     RTPTaskMultipleResourceRecord,
     RTPTaskMultipleTrack,
+    RTPTaskProcessEvent,
+    RTPTaskResourceRecord,
 )
-from .. import utils
 
 
 @pytest.fixture(scope="module")

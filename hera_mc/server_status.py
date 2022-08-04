@@ -9,10 +9,11 @@ The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
 """
 from math import floor
-from astropy.time import Time
-from sqlalchemy import Column, Integer, String, Float, BigInteger
 
-from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL
+from astropy.time import Time
+from sqlalchemy import BigInteger, Column, Float, Integer, String
+
+from . import DEFAULT_DAY_TOL, DEFAULT_GPS_TOL, MCDeclarativeBase
 
 
 class ServerStatus(MCDeclarativeBase):

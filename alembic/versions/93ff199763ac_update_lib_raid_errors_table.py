@@ -5,10 +5,9 @@ Revises: b1063869f198
 Create Date: 2017-07-27 00:13:29.765073+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.schema import Sequence, CreateSequence
-
+from alembic import op
+from sqlalchemy.schema import CreateSequence, Sequence
 
 # revision identifiers, used by Alembic.
 revision = "93ff199763ac"
