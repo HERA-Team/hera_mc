@@ -4,11 +4,10 @@
 
 """Methods for handling locating correlator and various system aspects."""
 
-from sqlalchemy import func, and_, or_
 import numpy as np
+from sqlalchemy import and_, func, or_
 
-from . import mc, cm_partconnect, cm_utils, cm_sysdef, cm_hookup
-from . import geo_handling
+from . import cm_hookup, cm_partconnect, cm_sysdef, cm_utils, geo_handling, mc
 
 
 class SystemInfo:
@@ -228,6 +227,7 @@ class Handling:
                 'cofa_alt': altitude of center-of-array in meters
         """
         from pyuvdata import utils as uvutils
+
         from . import cm_handling
 
         cm_h = cm_handling.Handling(session=self.session)

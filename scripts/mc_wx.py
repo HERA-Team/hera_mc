@@ -7,6 +7,7 @@
 
 """
 import sys
+
 from astropy.time import Time
 
 from hera_mc import cm_utils, mc

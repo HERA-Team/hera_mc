@@ -7,7 +7,7 @@
 Script to handle adding a part.
 """
 
-from hera_mc import mc, cm_utils, cm_partconnect
+from hera_mc import cm_partconnect, cm_utils, mc
 
 
 def query_args(args):

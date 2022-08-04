@@ -10,11 +10,11 @@ the documentation needs to be kept up to date with any changes.
 """
 
 from math import floor
+
 from astropy.time import Time
-from sqlalchemy import Column, String, BigInteger
+from sqlalchemy import BigInteger, Column, String
 
 from . import MCDeclarativeBase
-
 
 status_list = ["good", "errored"]
 

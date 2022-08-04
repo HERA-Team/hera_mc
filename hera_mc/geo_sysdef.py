@@ -4,8 +4,8 @@
 
 """Contains geographic location information and methods."""
 import os.path
-from . import cm_utils
 
+from . import cm_utils
 from .data import DATA_PATH
 
 # fmt: off

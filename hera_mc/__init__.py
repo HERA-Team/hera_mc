@@ -2,12 +2,17 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Define package structure."""
+"""
+Define package structure.
+
+isort:skip_file
+"""
+
+from pathlib import Path
 
 import numpy as np
+from pkg_resources import DistributionNotFound, get_distribution
 from setuptools_scm import get_version
-from pathlib import Path
-from pkg_resources import get_distribution, DistributionNotFound
 
 from .branch_scheme import branch_scheme
 
@@ -29,7 +34,6 @@ except (LookupError, ImportError):
 # variables.
 
 from sqlalchemy.ext.declarative import declarative_base
-
 
 # define some default tolerances for various units
 DEFAULT_DAY_TOL = {"atol": 1e-3 / (3600.0 * 24.0), "rtol": 0}  # ms
@@ -121,22 +125,22 @@ def NotNull(kind, **kwargs):
 
 
 from . import autocorrelations  # noqa
-from . import cm_transfer  # noqa
-from . import cm_dossier  # noqa
+from . import cm_transfer  # noqa this needs to come before several others
 from . import cm_active  # noqa
-from . import cm_sysdef  # noqa
-from . import cm_utils  # noqa
-from . import cm_sysutils  # noqa
+from . import cm_dossier  # noqa
 from . import cm_partconnect  # noqa
+from . import cm_sysdef  # noqa
+from . import cm_sysutils  # noqa
+from . import cm_utils  # noqa
 from . import correlator  # noqa
 from . import daemon_status  # noqa
 from . import geo_location  # noqa
-from . import observations  # noqa
-from . import subsystem_error  # noqa
-from . import server_status  # noqa
 from . import librarian  # noqa
 from . import node  # noqa
-from . import rtp  # noqa
+from . import observations  # noqa
 from . import qm  # noqa
+from . import rtp  # noqa
+from . import subsystem_error  # noqa
+from . import server_status  # noqa
 from . import weather  # noqa
 from . import mc  # noqa keep this last.

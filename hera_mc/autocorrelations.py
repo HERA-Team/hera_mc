@@ -9,16 +9,16 @@ These are key data for tracking antenna performance and failures.
 
 """
 
-from math import floor
-from astropy.time import Time
-import numpy as np
-from sqlalchemy import BigInteger, Column, Float, Integer, String
 import re
+from math import floor
+
+import numpy as np
 import redis
+from astropy.time import Time
+from sqlalchemy import BigInteger, Column, Float, Integer, String
 
 from . import MCDeclarativeBase
 from .correlator import DEFAULT_REDIS_ADDRESS
-
 
 allowed_measurement_types = ["median"]
 measurement_func_dict = {"median": np.median}

@@ -13,7 +13,7 @@ use 'now' (e.g. in a script), you can specify --date Now;  or just
 use the date.
 """
 
-from hera_mc import mc, cm_utils, cm_partconnect
+from hera_mc import cm_partconnect, cm_utils, mc
 
 
 def query_args(args):

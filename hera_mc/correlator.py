@@ -8,22 +8,22 @@ Correlator M&C interface.
 Anything tracked in the correlator redis database and accessed via hera_corr_cm.
 Includes many SNAP-related things.
 """
-from math import floor
-import warnings
 import json
+import warnings
+from math import floor
 
 import numpy as np
 import redis
 from astropy.time import Time
 from sqlalchemy import (
-    Column,
     BigInteger,
-    Integer,
-    Float,
     Boolean,
-    String,
+    Column,
+    Float,
     ForeignKey,
     ForeignKeyConstraint,
+    Integer,
+    String,
 )
 
 from . import MCDeclarativeBase

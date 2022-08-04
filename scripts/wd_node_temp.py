@@ -7,8 +7,8 @@
 Checks for node over-temperature conditions.
 """
 import argparse
-from hera_mc import watch_dog
 
+from hera_mc import watch_dog
 
 parser = argparse.ArgumentParser("Script for cronjob monitoring node temperatures.")
 parser.add_argument(

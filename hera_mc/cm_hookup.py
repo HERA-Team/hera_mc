@@ -5,13 +5,14 @@
 
 """Find and display part hookups."""
 
-import os
 import copy
 import json
+import os
 from argparse import Namespace
+
 from astropy.time import Time
 
-from . import mc, cm_utils, cm_transfer, cm_sysdef, cm_dossier, cm_active
+from . import cm_active, cm_dossier, cm_sysdef, cm_transfer, cm_utils, mc
 
 
 def get_hookup(

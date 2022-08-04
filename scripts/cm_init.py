@@ -7,7 +7,7 @@
 Script to read configuration management csv files and initialize tables.
 """
 
-from hera_mc import mc, cm_transfer
+from hera_mc import cm_transfer, mc
 
 parser = mc.get_mc_argument_parser()
 parser.add_argument(

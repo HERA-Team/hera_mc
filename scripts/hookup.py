@@ -8,7 +8,7 @@ Allows various views on the antenna hookup, as well as handle the hookup cache f
 
 """
 
-from hera_mc import mc, cm_hookup, cm_utils
+from hera_mc import cm_hookup, cm_utils, mc
 
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()

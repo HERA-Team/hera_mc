@@ -3,14 +3,13 @@
 # Licensed under the 2-clause BSD license.
 """Common utility fuctions."""
 
-from math import floor
 from collections.abc import Iterable
+from math import floor
 
-from astropy.time import Time
-from astropy.time import TimeDelta
+import numpy as np
 from astropy import coordinates as coord
 from astropy import units as u
-import numpy as np
+from astropy.time import Time, TimeDelta
 
 
 def LSTScheduler(starttime, LSTbin_size, longitude=21.25):

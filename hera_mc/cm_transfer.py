@@ -9,14 +9,15 @@ Definitions to generate table initialization files.
 Used in scripts cm_init.py, cm_pack.py
 """
 
-import os.path
-from math import floor
-import subprocess
-from astropy.time import Time
 import csv
-from sqlalchemy import Column, BigInteger, String
+import os.path
+import subprocess
+from math import floor
 
-from . import MCDeclarativeBase, mc, cm_table_info, cm_utils
+from astropy.time import Time
+from sqlalchemy import BigInteger, Column, String
+
+from . import MCDeclarativeBase, cm_table_info, cm_utils, mc
 
 
 class CMVersion(MCDeclarativeBase):
@@ -216,8 +217,8 @@ def check_if_main(
 
     """
     # the 'hostname' call on qmaster returns the following value:
-    import socket
     import json
+    import socket
 
     if isinstance(session, str) and session == "testing_not_main":
         return False

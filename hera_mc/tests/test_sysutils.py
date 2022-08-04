@@ -8,25 +8,24 @@ import os.path
 import subprocess
 from argparse import Namespace
 
-import pytest
 import numpy as np
+import pytest
+import redis
 
 from .. import (
-    cm_sysutils,
-    cm_partconnect,
-    cm_revisions,
-    cm_hookup,
-    cm_utils,
-    cm_sysdef,
-    cm_dossier,
     cm_active,
+    cm_dossier,
+    cm_hookup,
+    cm_partconnect,
     cm_redis_corr,
-    watch_dog,
+    cm_revisions,
+    cm_sysdef,
+    cm_sysutils,
+    cm_utils,
     node,
+    watch_dog,
 )
-from ..tests import requires_redis, onsite
-from ..tests import TEST_DEFAULT_REDIS_HOST
-import redis
+from ..tests import TEST_DEFAULT_REDIS_HOST, onsite, requires_redis
 
 
 @pytest.fixture(scope="function")

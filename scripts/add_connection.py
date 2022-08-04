@@ -7,7 +7,7 @@
 Script to add a general connection to the database.
 """
 
-from hera_mc import mc, cm_utils, cm_partconnect, cm_handling
+from hera_mc import cm_handling, cm_partconnect, cm_utils, mc
 
 
 def query_args(args):

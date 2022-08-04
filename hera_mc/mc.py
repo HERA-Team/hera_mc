@@ -11,13 +11,14 @@ your database and configure M&C to find it.
 
 import os.path as op
 from abc import ABCMeta
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import sessionmaker
 
 from . import MCDeclarativeBase
-from .mc_session import MCSession
 from .data import DATA_PATH
+from .mc_session import MCSession
 
 test_data_path = op.join(DATA_PATH, "test_data")
 default_config_file = op.expanduser("~/.hera_mc/mc_config.json")

@@ -4,12 +4,12 @@
 
 """Observation table."""
 
-from astropy.time import Time
 from astropy.coordinates import EarthLocation
-from sqlalchemy import Column, BigInteger, Float
+from astropy.time import Time
+from sqlalchemy import BigInteger, Column, Float
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from . import MCDeclarativeBase, DEFAULT_GPS_TOL, DEFAULT_DAY_TOL, DEFAULT_HOUR_TOL
+from . import DEFAULT_DAY_TOL, DEFAULT_GPS_TOL, DEFAULT_HOUR_TOL, MCDeclarativeBase
 
 
 class Observation(MCDeclarativeBase):

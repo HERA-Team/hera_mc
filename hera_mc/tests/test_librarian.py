@@ -9,14 +9,14 @@ from math import floor
 import pytest
 from astropy.time import Time, TimeDelta
 
-from ..librarian import (
-    LibStatus,
-    LibRAIDStatus,
-    LibRAIDErrors,
-    LibRemoteStatus,
-    LibFiles,
-)
 from .. import utils
+from ..librarian import (
+    LibFiles,
+    LibRAIDErrors,
+    LibRAIDStatus,
+    LibRemoteStatus,
+    LibStatus,
+)
 
 
 @pytest.fixture(scope="module")

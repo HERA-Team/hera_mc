@@ -15,7 +15,6 @@ import os
 
 from hera_mc import mc
 
-
 ap = mc.get_mc_argument_parser()
 ap.description = """Check that listed files are safely in librarian."""
 ap.add_argument("files", type=str, default=None, nargs="*", help="list of files")

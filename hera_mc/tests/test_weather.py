@@ -8,8 +8,8 @@
 import os
 from math import floor
 
-import pytest
 import numpy as np
+import pytest
 from astropy.time import Time, TimeDelta
 
 from .. import weather

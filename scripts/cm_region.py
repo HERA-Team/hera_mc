@@ -8,6 +8,7 @@ Script to check region(s) of a list of antenna(s).
 """
 
 import argparse
+
 from hera_mc import geo_sysdef
 
 parser = argparse.ArgumentParser()

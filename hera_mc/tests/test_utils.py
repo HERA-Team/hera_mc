@@ -5,7 +5,6 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
-
 from astropy.time import Time
 from astropy.units import Quantity
 

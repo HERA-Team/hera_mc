@@ -7,8 +7,8 @@
 Finds node for antenna numbers.
 """
 import argparse
-from hera_mc import cm_sysutils
 
+from hera_mc import cm_sysutils
 
 parser = argparse.ArgumentParser()
 parser.add_argument("ants", help="Antennas (csv-list).")

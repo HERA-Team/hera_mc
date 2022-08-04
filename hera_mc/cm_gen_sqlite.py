@@ -1,7 +1,8 @@
 """Methods to check and update the database files for sqlite."""
-from . import mc, cm_table_info
-import os.path
 import json
+import os.path
+
+from . import cm_table_info, mc
 
 
 class SqliteHandling:

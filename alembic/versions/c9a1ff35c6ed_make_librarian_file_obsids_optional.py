@@ -5,9 +5,8 @@ Revises: f29adafca107
 Create Date: 2017-12-15 18:50:37.889271+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 revision = "c9a1ff35c6ed"
 down_revision = "f29adafca107"

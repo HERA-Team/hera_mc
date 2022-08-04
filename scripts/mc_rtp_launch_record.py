@@ -14,10 +14,11 @@ and then updated when RTP launches a job containing them.
 
 import os
 import socket
+
 import numpy as np
 from astropy.time import Time
-
 from pyuvdata import UVData
+
 from hera_mc import mc
 
 ap = mc.get_mc_argument_parser()

@@ -5,9 +5,11 @@
 """Methods for handling locating correlator and various system aspects."""
 
 import json
-import redis
 import time
 import warnings
+
+import redis
+
 from . import cm_sysutils, correlator, mc
 
 REDIS_CMINFO_HASH = "cminfo"

@@ -8,8 +8,8 @@
 from argparse import Namespace
 from itertools import zip_longest
 
-from . import cm_sysdef, cm_utils
 from . import cm_partconnect as partconn
+from . import cm_sysdef, cm_utils
 
 
 class PartEntry:

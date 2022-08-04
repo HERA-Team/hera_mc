@@ -7,7 +7,7 @@
 
 """
 
-from hera_mc import mc, geo_handling, cm_utils
+from hera_mc import cm_utils, geo_handling, mc
 
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()

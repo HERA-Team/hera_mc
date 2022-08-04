@@ -6,8 +6,8 @@
 """Methods to load all active data for a given date."""
 from copy import copy
 
-from . import mc, cm_utils
 from . import cm_partconnect as partconn
+from . import cm_utils, mc
 
 
 def get_active(

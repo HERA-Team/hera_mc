@@ -9,16 +9,9 @@ The columns in this module are documented in docs/mc_definition.tex,
 the documentation needs to be kept up to date with any changes.
 """
 from math import floor
+
 from astropy.time import Time
-from sqlalchemy import (
-    Column,
-    ForeignKey,
-    BigInteger,
-    String,
-    Text,
-    Float,
-    Enum,
-)
+from sqlalchemy import BigInteger, Column, Enum, Float, ForeignKey, String, Text
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from . import MCDeclarativeBase

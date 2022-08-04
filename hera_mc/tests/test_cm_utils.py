@@ -5,9 +5,9 @@
 """Testing for `hera_mc.cm_transfer`."""
 
 import argparse
-import sys
-import subprocess
 import os
+import subprocess
+import sys
 
 import pytest
 

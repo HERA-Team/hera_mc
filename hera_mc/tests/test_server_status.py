@@ -10,8 +10,8 @@ from math import floor
 import pytest
 from astropy.time import Time, TimeDelta
 
-from ..rtp import RTPServerStatus
 from ..librarian import LibServerStatus
+from ..rtp import RTPServerStatus
 
 
 @pytest.fixture(scope="module")

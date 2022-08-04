@@ -10,10 +10,11 @@ the documentation needs to be kept up to date with any changes.
 """
 
 from math import floor
-from astropy.time import Time
-from sqlalchemy import Column, ForeignKey, Integer, BigInteger, String, Text, Float
 
-from . import MCDeclarativeBase, DEFAULT_MIN_TOL
+from astropy.time import Time
+from sqlalchemy import BigInteger, Column, Float, ForeignKey, Integer, String, Text
+
+from . import DEFAULT_MIN_TOL, MCDeclarativeBase
 from .server_status import ServerStatus
 
 

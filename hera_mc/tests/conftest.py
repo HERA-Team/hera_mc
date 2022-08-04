@@ -3,12 +3,13 @@
 # Licensed under the 2-clause BSD License
 
 """Testing environment setup and teardown for pytest."""
-import pytest
 import urllib
-from astropy.utils import iers
-from astropy.time import Time
 
-from hera_mc import mc, cm_transfer
+import pytest
+from astropy.time import Time
+from astropy.utils import iers
+
+from hera_mc import cm_transfer, mc
 
 test_db = None
 

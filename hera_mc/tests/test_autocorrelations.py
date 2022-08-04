@@ -4,13 +4,15 @@
 
 """Testing for `hera_mc.autocorrelations`."""
 
-import pytest
 import datetime
 from math import floor
+
+import pytest
 from astropy.time import Time, TimeDelta
+
 from hera_mc import autocorrelations
 
-from ..tests import requires_redis, requires_default_redis, TEST_DEFAULT_REDIS_HOST
+from ..tests import TEST_DEFAULT_REDIS_HOST, requires_default_redis, requires_redis
 
 standard_query_time = Time(
     datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format="datetime"

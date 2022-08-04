@@ -5,16 +5,15 @@
 
 """Add individual processing record to M&C database from RTP."""
 
-import warnings
 import importlib
-from pkg_resources import parse_version
+import warnings
 
 import numpy as np
+import pyuvdata
 from astropy.time import Time
+from pkg_resources import parse_version
 
 import hera_mc.mc as mc
-import pyuvdata
-
 
 if __name__ == "__main__":
     parser = mc.get_mc_argument_parser()
