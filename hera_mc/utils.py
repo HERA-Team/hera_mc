@@ -125,12 +125,12 @@ def get_obsid_from_file(filename):
     """
     try:
         import h5py
-    except ImportError:  # pragma: no cover
+    except ImportError as err:  # pragma: no cover
         msg = (
             "h5py is needed for `get_obsid_from_file`. Please install it "
             "explicitly or run `pip install .[all]` from the top-level of hera_mc."
         )
-        raise ImportError(msg)
+        raise ImportError(msg) from err
     with h5py.File(filename, "r") as h5f:
         time_array = h5f["Header/time_array"][()]
     t0 = np.unique(time_array)[0]

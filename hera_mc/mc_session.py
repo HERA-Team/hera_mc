@@ -5703,11 +5703,11 @@ class MCSession(Session):
 
         try:
             obsid = self.get_lib_files(filename=os.path.basename(filename))[0].obsid
-        except IndexError:
+        except IndexError as err:
             raise ValueError(
                 f"File {filename} has not been logged in "
                 "Librarian, so we cannot add to M&C."
-            )
+            ) from err
         d = metrics2mc(filename, ftype)
         for metric, dd in d["ant_metrics"].items():
             self.check_metric_desc(metric)

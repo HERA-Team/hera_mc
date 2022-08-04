@@ -595,12 +595,12 @@ def get_astropytime(adate, atime=None, float_format=None):
         adate = adate.replace("/", "-")
         try:
             return_date = Time(adate, scale="utc")
-        except ValueError:
+        except ValueError as err:
             raise ValueError(
                 "Invalid format:  date should be YYYY/M/D or YYYY-M-D, not {}".format(
                     adate
                 )
-            )
+            ) from err
         if atime is None:
             return return_date
         try:

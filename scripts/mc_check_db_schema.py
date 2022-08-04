@@ -12,7 +12,7 @@ args = parser.parse_args()
 try:
     db = mc.connect_to_mc_db(args)
 except RuntimeError as e:
-    raise SystemExit(str(e))
+    raise SystemExit(str(e)) from e
 
 # If the specified database is in "testing" mode, we won't have actually
 # checked anything yet. It doesn't hurt to double-check if the DB is
