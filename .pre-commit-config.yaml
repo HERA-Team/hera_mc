@@ -31,8 +31,21 @@ repos:
     hooks:
         - id: black
 
+  # Should add bandit, lots of work to address all the issues it finds!
+  # - repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
+  #   rev: v1.0.5
+  #   hooks:
+  #     - id: python-bandit-vulnerability-check
+  #       args: [--skip, "B101", --recursive, hera_mc]
+
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
       - id: isort
         name: isort (python)
+
+  # Should add darglint, lots of work to address all the issues it finds!
+  # - repo: https://github.com/terrencepreilly/darglint
+  #   rev: master
+  #   hooks:
+  #   - id: darglint
