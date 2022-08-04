@@ -102,8 +102,8 @@ class AntMetrics(MCDeclarativeBase):
         mc_time = floor(db_time.gps)
         try:
             val = float(val)
-        except ValueError:
-            raise ValueError("val must be castable as float.")
+        except ValueError as err:
+            raise ValueError("val must be castable as float.") from err
 
         return cls(
             obsid=obsid, ant=ant, pol=pol, metric=metric, mc_time=mc_time, val=val
@@ -168,8 +168,8 @@ class ArrayMetrics(MCDeclarativeBase):
         mc_time = floor(db_time.gps)
         try:
             val = float(val)
-        except ValueError:
-            raise ValueError("val must be castable as float.")
+        except ValueError as err:
+            raise ValueError("val must be castable as float.") from err
 
         return cls(obsid=obsid, metric=metric, mc_time=mc_time, val=val)
 

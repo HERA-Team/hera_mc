@@ -4,7 +4,7 @@
 
 """Testing for `hera_mc.connections`."""
 
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 import numpy as np
 import pytest
@@ -40,16 +40,17 @@ def parts(mcsession):
     test_session.add(part)
     test_session.commit()
 
-    class DataHolder(object):
-        def __init__(
-            self, test_session, test_part, test_rev, test_hptype, start_time, cm_handle
-        ):
-            self.test_session = test_session
-            self.test_part = test_part
-            self.test_rev = test_rev
-            self.test_hptype = test_hptype
-            self.start_time = start_time
-            self.cm_handle = cm_handle
+    DataHolder = namedtuple(
+        "DataHolder",
+        [
+            "test_session",
+            "test_part",
+            "test_rev",
+            "test_hptype",
+            "start_time",
+            "cm_handle",
+        ],
+    )
 
     parts = DataHolder(
         test_session, test_part, test_rev, test_hptype, start_time, cm_handle

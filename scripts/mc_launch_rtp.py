@@ -54,8 +54,8 @@ def _get_obsids(filelist):
         try:
             with h5py.File(filename, "r") as h5f:
                 time_array = h5f["Header/time_array"][()]
-        except KeyError:
-            raise ValueError(f"error reading file {filename}")
+        except KeyError as err:
+            raise ValueError(f"error reading file {filename}") from err
         starttime = Time(np.unique(time_array)[0], scale="utc", format="jd")
         obsids.append(int(np.floor(starttime.gps)))
 

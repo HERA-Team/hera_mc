@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.connections`."""
+from collections import namedtuple
 
 import pytest
 from astropy.time import Time
@@ -45,26 +46,19 @@ def conns(mcsession):
 
     cm_handle = cm_handling.Handling(test_session)
 
-    class DataHolder(object):
-        def __init__(
-            self,
-            test_session,
-            test_hpn,
-            test_rev,
-            test_hptype,
-            test_mfg,
-            test_time,
-            query_time,
-            cm_handle,
-        ):
-            self.test_session = test_session
-            self.test_hpn = test_hpn
-            self.test_rev = test_rev
-            self.test_hptype = test_hptype
-            self.test_mfg = test_mfg
-            self.test_time = test_time
-            self.query_time = query_time
-            self.cm_handle = cm_handle
+    DataHolder = namedtuple(
+        "DataHolder",
+        [
+            "test_session",
+            "test_hpn",
+            "test_rev",
+            "test_hptype",
+            "test_mfg",
+            "test_time",
+            "query_time",
+            "cm_handle",
+        ],
+    )
 
     conns = DataHolder(
         test_session,
