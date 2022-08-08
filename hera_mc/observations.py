@@ -6,7 +6,7 @@
 
 from astropy.coordinates import EarthLocation
 from astropy.time import Time
-from sqlalchemy import BigInteger, Column, Float
+from sqlalchemy import BigInteger, Column, Float, String
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from . import DEFAULT_DAY_TOL, DEFAULT_GPS_TOL, DEFAULT_HOUR_TOL, MCDeclarativeBase
@@ -43,6 +43,7 @@ class Observation(MCDeclarativeBase):
     stoptime = Column(Float, nullable=False)
     jd_start = Column(Float, nullable=False)
     lst_start_hr = Column(Float, nullable=False)
+    tag = Column(String, nullable=True)
 
     # tolerances set to 1ms
     tols = {
@@ -58,7 +59,7 @@ class Observation(MCDeclarativeBase):
         return self.stoptime - self.starttime
 
     @classmethod
-    def create(cls, starttime, stoptime, obsid, hera_cofa):
+    def create(cls, starttime, stoptime, obsid, hera_cofa, tag):
         """
         Create a new observation object using Astropy to compute the LST.
 
@@ -70,12 +71,21 @@ class Observation(MCDeclarativeBase):
             Observation stoptime.
         obsid : long integer
             Observation identification number.
+        hera_cofa : geo_location.GeoLocation object (row of geo_location table)
+            Location of the Center OF the Array.
+        tag : string
+            String tag labelling the type of data. One of ["science", "maintainence",
+            "engineering", "junk"]. The "science" label should be used for data that are
+            expected to be good for science at the time of observation. The
+            "mantainence" label should be used for regular FEM load/noise observations,
+            "junk" should be used for data that should not be kept, "engineering"
+            should be used for any other kind of non-science data.
 
         """
         if not isinstance(starttime, Time):
             raise ValueError("starttime must be an astropy Time object")
         if not isinstance(stoptime, Time):
-            raise ValueError("starttime must be an astropy Time object")
+            raise ValueError("stoptime must be an astropy Time object")
         if not isinstance(obsid, int):
             raise ValueError("obsid must be an integer")
         if abs(float(obsid) - starttime.gps) > 1.5:
@@ -92,4 +102,5 @@ class Observation(MCDeclarativeBase):
             stoptime=stoptime.gps,
             jd_start=starttime.jd,
             lst_start_hr=starttime.sidereal_time("apparent").hour,
+            tag=tag,
         )

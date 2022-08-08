@@ -12,7 +12,11 @@ from astropy.time import Time, TimeDelta
 from hera_mc import cm_utils, mc
 
 valid_tables = {
-    "hera_obs": {"method": "get_obs_by_time"},
+    "hera_obs": {
+        "method": "get_obs_by_time",
+        "filter_column": ["tag"],
+        "arg_name": ["tag"],
+    },
     "rtp_server_status": {
         "method": "get_rtp_server_status",
         "filter_column": ["hostname"],

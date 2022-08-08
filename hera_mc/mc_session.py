@@ -345,7 +345,7 @@ class MCSession(Session):
             for obj in obj_list:
                 self.add(obj)
 
-    def add_obs(self, starttime, stoptime, obsid):
+    def add_obs(self, starttime, stoptime, obsid, tag):
         """
         Add a new observation to the M&C database.
 
@@ -358,14 +358,21 @@ class MCSession(Session):
         obsid : long integer
             Observation identification number, the gps second of the starttime,
             floored.
+        tag : string
+            String tag labelling the type of data. One of ["science", "maintainence",
+            "engineering", "junk"]. The "science" label should be used for data that are
+            expected to be good for science at the time of observation. The
+            "mantainence" label should be used for regular FEM load/noise observations,
+            "junk" should be used for data that should not be kept, "engineering"
+            should be used for any other kind of non-science data.
 
         """
         h = geo_handling.Handling(session=self)
         hera_cofa = h.cofa()[0]
 
-        self.add(Observation.create(starttime, stoptime, obsid, hera_cofa))
+        self.add(Observation.create(starttime, stoptime, obsid, hera_cofa, tag))
 
-    def get_obs(self, obsid=None):
+    def get_obs(self, obsid=None, tag=None):
         """
         Get observation(s) from the M&C database.
 
@@ -375,16 +382,23 @@ class MCSession(Session):
             Observation identification number, generally the gps second
             corresponding to the observation start time. If obsid is None,
             all obsids will be returned.
+        tag : string
+            Observing tag, one of ["science", "maintainence", "engineering", "junk"].
+            If tag is none, no filtering by tag is applied. Note that older obsids have
+            a null tag, so tag should not be used for data from before the 2022-2023
+            season.
 
         Returns
         -------
         list of Observation objects
 
         """
-        if obsid is None:
-            obs_list = self.query(Observation).all()
-        else:
-            obs_list = self.query(Observation).filter(Observation.obsid == obsid).all()
+        query = self.query(Observation)
+        if obsid is not None:
+            query = query.filter(Observation.obsid == obsid)
+        if tag is not None:
+            query = query.filter(Observation.tag == tag)
+        obs_list = query.all()
 
         return obs_list
 
@@ -393,6 +407,7 @@ class MCSession(Session):
         most_recent=None,
         starttime=None,
         stoptime=None,
+        tag=None,
         write_to_file=False,
         filename=None,
     ):
@@ -417,6 +432,11 @@ class MCSession(Session):
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
             Ignored if most_recent is True.
+        tag : string
+            Observing tag, one of ["science", "maintainence", "engineering", "junk"].
+            If tag is none, no filtering by tag is applied. Note that older obsids have
+            a null tag, so tag should not be used for data from before the 2022-2023
+            season.
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -435,6 +455,8 @@ class MCSession(Session):
             most_recent=most_recent,
             starttime=starttime,
             stoptime=stoptime,
+            filter_column=["tag"],
+            filter_value=tag,
             write_to_file=write_to_file,
             filename=filename,
         )
