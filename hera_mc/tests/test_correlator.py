@@ -12,9 +12,9 @@ from math import floor
 
 import numpy as np
 import pytest
+import pyuvdata.tests as uvtest
 import yaml
 from astropy.time import Time, TimeDelta
-import pyuvdata.tests as uvtest
 
 import hera_mc.correlator as corr
 from hera_mc import cm_partconnect, mc
