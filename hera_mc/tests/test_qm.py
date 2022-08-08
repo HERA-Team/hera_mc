@@ -22,17 +22,34 @@ def metrics_dict():
     return get_metrics_dict()
 
 
-@pytest.mark.parametrize("pol_x,pol_y", [("x", "y"), ("n", "e")])
-def test_AntMetrics(mcsession, tmpdir, pol_x, pol_y):
-    test_session = mcsession
-    # Initialize
+@pytest.fixture(scope="module")
+def times():
     t1 = Time("2016-01-10 01:15:23", scale="utc")
     t2 = t1 + TimeDelta(120.0, format="sec")
+
+    return t1, t2
+
+
+@pytest.fixture(scope="function")
+def initialize_obs(mcsession, times):
+    test_session = mcsession
+
+    # Initialize
+    t1, t2 = times
     obsid = utils.calculate_obsid(t1)
     # Create obs to satifsy foreign key constraints
-    test_session.add_obs(t1, t2, obsid)
-    test_session.add_obs(t1 - TimeDelta(10.0, format="sec"), t2, obsid - 10)
-    test_session.add_obs(t1 + TimeDelta(10.0, format="sec"), t2, obsid + 10)
+    test_session.add_obs(t1, t2, obsid, "science")
+    test_session.add_obs(t1 - TimeDelta(10.0, format="sec"), t2, obsid - 10, "science")
+    test_session.add_obs(t1 + TimeDelta(10.0, format="sec"), t2, obsid + 10, "science")
+
+    return obsid
+
+
+@pytest.mark.parametrize("pol_x,pol_y", [("x", "y"), ("n", "e")])
+def test_AntMetrics(mcsession, initialize_obs, tmpdir, pol_x, pol_y):
+    test_session = mcsession
+    obsid = initialize_obs
+
     # Same for metric description
     test_session.add_metric_desc("test", "Test metric")
     test_session.commit()
@@ -107,17 +124,12 @@ def test_AntMetrics(mcsession, tmpdir, pol_x, pol_y):
         (0, "x", "test", "value", "val must be castable as float"),
     ],
 )
-def test_add_AntMetrics_errors(mcsession, ant, pol, metric, val, err_msg):
+def test_add_AntMetrics_errors(
+    mcsession, initialize_obs, ant, pol, metric, val, err_msg
+):
     test_session = mcsession
-    # Initialize
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
-    t2 = t1 + TimeDelta(120.0, format="sec")
-    obsid = utils.calculate_obsid(t1)
-    # Create obs to satifsy foreign key constraints
-    test_session.add_obs(t1, t2, obsid)
-    test_session.add_obs(t1 - TimeDelta(10.0, format="sec"), t2, obsid - 10)
-    test_session.add_obs(t1 + TimeDelta(10.0, format="sec"), t2, obsid + 10)
-    # Same for metric description
+    obsid = initialize_obs
+
     test_session.add_metric_desc("test", "Test metric")
     test_session.commit()
 
@@ -126,16 +138,11 @@ def test_add_AntMetrics_errors(mcsession, ant, pol, metric, val, err_msg):
         test_session.add_ant_metric(obsid, ant, pol, metric, val)
 
 
-def test_add_AntMetrics_bad_obsid(mcsession):
+def test_add_AntMetrics_bad_obsid(mcsession, initialize_obs):
     test_session = mcsession
-    # Initialize
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
-    t2 = t1 + TimeDelta(120.0, format="sec")
-    obsid = utils.calculate_obsid(t1)
-    # Create obs to satifsy foreign key constraints
-    test_session.add_obs(t1, t2, obsid)
-    test_session.add_obs(t1 - TimeDelta(10.0, format="sec"), t2, obsid - 10)
-    test_session.add_obs(t1 + TimeDelta(10.0, format="sec"), t2, obsid + 10)
+    obsid = initialize_obs
+    assert isinstance(obsid, int)
+
     # Same for metric description
     test_session.add_metric_desc("test", "Test metric")
     test_session.commit()
@@ -143,7 +150,7 @@ def test_add_AntMetrics_bad_obsid(mcsession):
         test_session.add_ant_metric("obs", 0, "x", "test", 4.5)
 
 
-def test_create_AntMetrics_bad_mc_time(mcsession):
+def test_create_AntMetrics_bad_mc_time():
     # # Initialize a time
     t1 = Time("2016-01-10 01:15:23", scale="utc")
     obsid = utils.calculate_obsid(t1)
@@ -151,18 +158,12 @@ def test_create_AntMetrics_bad_mc_time(mcsession):
         AntMetrics.create(obsid, 0, "x", "test", obsid, 4.5)
 
 
-def test_ArrayMetrics(mcsession, tmpdir):
+def test_ArrayMetrics(mcsession, initialize_obs, tmpdir):
     test_session = mcsession
-    # Initialize
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
-    t2 = t1 + TimeDelta(120.0, format="sec")
-    obsid = utils.calculate_obsid(t1)
-    # Create obs to satifsy foreign key constraints
-    test_session.add_obs(t1, t2, obsid)
+    obsid = initialize_obs
     obsid0 = obsid - 10
     obsid2 = obsid + 10
-    test_session.add_obs(t1 - TimeDelta(10.0, format="sec"), t2, obsid0)
-    test_session.add_obs(t1 + TimeDelta(10.0, format="sec"), t2, obsid2)
+
     # Same for metric description
     test_session.add_metric_desc("test", "Test metric")
     test_session.commit()
@@ -219,16 +220,10 @@ def test_ArrayMetrics(mcsession, tmpdir):
         ArrayMetrics.create(obsid, "test", obsid, 4.5)
 
 
-def test_MetricList(mcsession, tmpdir):
+def test_MetricList(mcsession, initialize_obs, tmpdir):
     test_session = mcsession
-    # Initialize
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
-    t2 = t1 + TimeDelta(120.0, format="sec")
-    obsid = utils.calculate_obsid(t1)
-    # Create obs to satifsy foreign key constraints
-    test_session.add_obs(t1, t2, obsid)
-    test_session.add_obs(t1 - TimeDelta(10.0, format="sec"), t2, obsid - 10)
-    test_session.add_obs(t1 + TimeDelta(10.0, format="sec"), t2, obsid + 10)
+    obsid = initialize_obs
+    assert isinstance(obsid, int)
 
     # now the tests
     test_session.add_metric_desc("test", "test desc")
@@ -288,14 +283,11 @@ def test_update_qm_list(mcsession, metrics_dict):
     assert r[0].desc == metrics_dict[metric]
 
 
-def test_ingest_metrics_file(mcsession):
+def test_ingest_metrics_file(mcsession, times, initialize_obs):
     test_session = mcsession
-    # Initialize
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
-    t2 = t1 + TimeDelta(120.0, format="sec")
-    obsid = utils.calculate_obsid(t1)
-    # Create obs to satifsy foreign key constraints
-    test_session.add_obs(t1, t2, obsid)
+    t1, t2 = times
+    obsid = initialize_obs
+
     test_session.commit()
     filename = os.path.join(mc.test_data_path, "example_firstcal_metrics.hdf5")
     filebase = os.path.basename(filename)
