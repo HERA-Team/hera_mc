@@ -300,9 +300,7 @@ def connect_to_mc_db(args, forced_db_name=None, check_connect=True):
             from . import db_check
 
             if not db_check.check_connection(session):
-                raise RuntimeError(
-                    "Could not establish valid connection to " "database."
-                )
+                raise RuntimeError("Could not establish valid connection to database.")
 
     return db
 

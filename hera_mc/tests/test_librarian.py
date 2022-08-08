@@ -126,7 +126,12 @@ def file():
         time = t0 - TimeDelta(6 * 60, format="sec")
         obsid = utils.calculate_obsid(time)
         observation_names = ["starttime", "stoptime", "obsid"]
-        observation_values = [time, time + TimeDelta(10 * 60, format="sec"), obsid]
+        observation_values = [
+            time,
+            time + TimeDelta(10 * 60, format="sec"),
+            obsid,
+            "science",
+        ]
         observation_columns = dict(zip(observation_names, observation_values))
 
         file_names = ["filename", "obsid", "time", "size_gb"]

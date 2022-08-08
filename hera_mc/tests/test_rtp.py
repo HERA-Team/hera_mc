@@ -34,7 +34,12 @@ def observation():
         time = t0 - TimeDelta(30 * 60, format="sec")
         obsid = utils.calculate_obsid(time)
         observation_names = ["starttime", "stoptime", "obsid"]
-        observation_values = [time, time + TimeDelta(10 * 60, format="sec"), obsid]
+        observation_values = [
+            time,
+            time + TimeDelta(10 * 60, format="sec"),
+            obsid,
+            "science",
+        ]
         observation_columns = dict(zip(observation_names, observation_values))
 
     data = DataHolder()
@@ -274,7 +279,7 @@ def task_multiple(observation):
 def multiple_track(observation):
     class DataHolder(object):
         track_names = ["obsid_start", "task_name", "obsid"]
-        observation_names = ["starttime", "stoptime", "obsid"]
+        observation_names = ["starttime", "stoptime", "obsid", "tag"]
 
         # make more obsids
         starttimes = [observation.observation_columns["starttime"]] + [
@@ -300,7 +305,7 @@ def multiple_track(observation):
             this_track_values = [observation.obsid, "OMNICAL", obsid]
             track_values.append(this_track_values)
             track_columns.append(dict(zip(track_names, this_track_values)))
-            this_obs_values = [starttimes[ind], stoptimes[ind], obsid]
+            this_obs_values = [starttimes[ind], stoptimes[ind], obsid, "science"]
             observation_values.append(this_obs_values)
             observation_columns.append(dict(zip(observation_names, this_obs_values)))
 
@@ -347,6 +352,7 @@ def test_add_rtp_process_event(mcsession, observation, event):
         Time(new_obsid_time),
         Time(new_obsid_time + TimeDelta(10 * 60, format="sec")),
         new_obsid,
+        "science",
     )
     obs_result = test_session.get_obs(obsid=new_obsid)
     assert obs_result[0].obsid == new_obsid
@@ -472,6 +478,7 @@ def test_add_rtp_task_process_event(
         Time(new_obsid_time),
         Time(new_obsid_time + TimeDelta(10 * 60, format="sec")),
         new_obsid,
+        "science",
     )
     obs_result = test_session.get_obs(obsid=new_obsid)
     assert obs_result[0].obsid == new_obsid
@@ -637,6 +644,7 @@ def test_add_rtp_process_record(mcsession, observation, record):
         Time(new_obsid_time),
         Time(new_obsid_time + TimeDelta(10 * 60, format="sec")),
         new_obsid,
+        "science",
     )
     obs_result = test_session.get_obs(obsid=new_obsid)
     assert obs_result[0].obsid == new_obsid
@@ -824,6 +832,7 @@ def test_rtp_task_jobid(
         Time(new_obsid_time),
         Time(new_obsid_time + TimeDelta(10 * 60, format="sec")),
         new_obsid,
+        "science",
     )
     obs_result = test_session.get_obs(obsid=new_obsid)
     assert obs_result[0].obsid == new_obsid
@@ -1031,6 +1040,7 @@ def test_add_rtp_task_resource_record(
         Time(new_obsid_time),
         Time(new_obsid_time + TimeDelta(10 * 60, format="sec")),
         new_obsid,
+        "science",
     )
     obs_result = test_session.get_obs(obsid=new_obsid)
     assert obs_result[0].obsid == new_obsid
