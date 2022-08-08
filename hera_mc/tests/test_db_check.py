@@ -1,7 +1,10 @@
 # -*- mode: python; coding: utf-8 -*-
 # Copyright 2019 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
+import json
+from collections import namedtuple
 
+import pytest
 import sqlalchemy
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
@@ -193,9 +196,39 @@ def test_validity_pass_declarative():
         Base.metadata.drop_all(engine)
 
 
-def test_check_connection():
+def test_check_connection(tmpdir):
     """Check that a missing database raises appropriate exception."""
     # Create database connection with fake url
     db = mc.DeclarativeDB("postgresql://hera@localhost/foo")
     with db.sessionmaker() as s:
         assert check_connection(s) is False
+
+    test_config = {
+        "default_db_name": "hera_mc",
+        "databases": {
+            "hera_mc": {
+                "url": "postgresql://hera:hera@localhost/hera_mc",
+                "mode": "testing",
+            },
+            "testing": {
+                "url": "postgresql://hera:hera@localhost/hera_mc_test",
+                "mode": "testing",
+            },
+            "foo": {
+                "url": "postgresql://hera:hera@localhost/foo",
+                "mode": "testing",
+            },
+        },
+    }
+
+    test_config_file = tmpdir + "test_config.json"
+    with open(test_config_file, "w") as outfile:
+        json.dump(test_config, outfile, indent=4)
+
+    Args = namedtuple("Args", "mc_config_path mc_db_name")
+    this_args = Args(test_config_file, "foo")
+
+    with pytest.raises(
+        RuntimeError, match="Could not establish valid connection to database."
+    ):
+        mc.connect_to_mc_db(this_args)
