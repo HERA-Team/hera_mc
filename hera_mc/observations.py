@@ -32,6 +32,13 @@ class Observation(MCDeclarativeBase):
     lststart : Float Column
         Observation start time in lst, calculated from starttime and HERA array
         location.
+    tag : String Column
+        String tag labelling the type of data. One of ["science", "maintainence",
+        "engineering", "junk"]. The "science" label should be used for data that are
+        expected to be good for science at the time of observation. The
+        "mantainence" label should be used for regular FEM load/noise observations,
+        "junk" should be used for data that should not be kept, "engineering"
+        should be used for any other kind of non-science data.
 
     """
 

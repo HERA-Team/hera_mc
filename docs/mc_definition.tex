@@ -228,10 +228,11 @@ This is the primary observation definition table. It is written to by the correl
  \hline
  {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
  \textbf{obsid} & long integer & start time in floor(GPS) seconds. GPS start adjusted to be within 1 second of LST to lock observations to LST for the night \\ \hline
- starttime & double & start time in gps seconds. The start time to full accuracy of the beginning of integration of first visibility \\\hline
- stoptime & double & stop time in gps seconds. The stop time to full accuracy of the end of integration of last visibility \\\hline
- jd\_start & double & start time in JD. Calculated from starttime, provides a quick way to filter on JD times. \\\hline
- lst\_start\_hr & double & decimal hours from start of sidereal day. Calculated from starttime, provides a quick search for matching LSTs \\\hline
+ starttime* & double & start time in gps seconds. The start time to full accuracy of the beginning of integration of first visibility \\\hline
+ stoptime* & double & stop time in gps seconds. The stop time to full accuracy of the end of integration of last visibility \\\hline
+ jd\_start* & double & start time in JD. Calculated from starttime, provides a quick way to filter on JD times. \\\hline
+ lst\_start\_hr* & double & decimal hours from start of sidereal day. Calculated from starttime, provides a quick search for matching LSTs \\\hline
+ tag & string & String tag labelling the type of data. One of [``science", ``maintainence", ``engineering", ``junk"]. Added before the 2022-2023 observing season, so null in prior seasons. \\\hline
  \end{tabular}
 \end{center}
 
