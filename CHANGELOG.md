@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- A `tag` column to the `hera_obs` table.
 - A new `snap_feng_init_status` table to track whether SNAPs worked properly, errored,
 or were exluded because there were too many SNAPs during F-engine initialization.
 - New columns `is_programmed`, `adc_is_configured`, `is_initialized`, `dest_is_configured`,
