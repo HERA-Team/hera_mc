@@ -11,6 +11,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from . import DEFAULT_DAY_TOL, DEFAULT_GPS_TOL, DEFAULT_HOUR_TOL, MCDeclarativeBase
 
+allowed_tags = ["science", "maintainence", "engineering", "junk"]
+
 
 class Observation(MCDeclarativeBase):
     """
@@ -97,6 +99,9 @@ class Observation(MCDeclarativeBase):
             raise ValueError("obsid must be an integer")
         if abs(float(obsid) - starttime.gps) > 1.5:
             raise ValueError("obsid should be close to the starttime in gps seconds")
+
+        if tag not in allowed_tags:
+            raise ValueError(f"Tag is {tag}, should be one of: {allowed_tags}")
 
         # for jd need to ensure that we're in utc
         starttime = starttime.utc
