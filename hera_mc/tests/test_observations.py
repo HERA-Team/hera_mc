@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.observations`."""
+import re
 from math import floor
 
 import pytest
@@ -10,7 +11,7 @@ from astropy.coordinates import EarthLocation
 from astropy.time import Time, TimeDelta
 
 from .. import geo_handling, utils
-from ..observations import Observation
+from ..observations import Observation, allowed_tags
 
 
 def test_new_obs(mcsession):
@@ -60,7 +61,6 @@ def test_add_obs(mcsession):
 
     t3 = t1 + TimeDelta(10 * 60.0, format="sec")
     t4 = t2 + TimeDelta(10 * 60.0, format="sec")
-    print(utils.calculate_obsid(t3))
     test_session.add_obs(t3, t4, utils.calculate_obsid(t3), "engineering")
 
     result_mult = test_session.get_obs_by_time(starttime=t1, stoptime=t4)
@@ -69,7 +69,6 @@ def test_add_obs(mcsession):
     result_most_recent = test_session.get_obs_by_time(most_recent=True)
     assert result_most_recent[0] == result_mult[1]
 
-    print(obsid)
     result_orig = test_session.get_obs(obsid=obsid)
     assert len(result_orig) == 1
     result_orig = result_orig[0]
@@ -99,3 +98,7 @@ def test_error_obs(mcsession):
         test_session.add_obs(t1, t2, utils.calculate_obsid(t1) + 2, "science")
     with pytest.raises(TypeError, match="most_recent must be None or a boolean"):
         test_session.get_obs_by_time(most_recent=t1)
+    with pytest.raises(
+        ValueError, match=re.escape(f"Tag is foo, should be one of: {allowed_tags}")
+    ):
+        test_session.add_obs(t1, t2, utils.calculate_obsid(t1), "foo")
