@@ -9,12 +9,12 @@ from pyuvdata import UVData
 
 from hera_mc import mc
 
-a = mc.get_mc_argument_parser()
-a.description = """Read the obsid from a file and create a record in M&C."""
-a.add_argument(
+ap = mc.get_mc_argument_parser()
+ap.description = """Read the obsid from a file and create a record in M&C."""
+ap.add_argument(
     "files", metavar="file", type=str, nargs="*", default=[], help="*.uvh5 files to add"
 )
-args = a.parse_args()
+args = ap.parse_args()
 db = mc.connect_to_mc_db(args)
 
 
@@ -26,6 +26,7 @@ for uvfile in args.files:
     starttime = Time(times[0], scale="utc", format="jd")
     stoptime = Time(times[-1], scale="utc", format="jd")
     obsid = int(np.floor(starttime.gps))
+    tag = uv.extra_keywords["tag"]
 
     with db.sessionmaker() as session:
         obs = session.get_obs(obsid)
@@ -34,5 +35,5 @@ for uvfile in args.files:
             continue
         print("Inserting obsid into M&C:" + str(obsid))
 
-        session.add_obs(starttime, stoptime, obsid)
+        session.add_obs(starttime, stoptime, obsid, tag)
         session.commit()
