@@ -204,13 +204,15 @@ while True:
                     # and when we started this inner loop
 
                     downtime = (
-                        Time.now()
-                        - min(
-                            inner_loop_restart,
-                            last_time,
-                            last_loop_completion,
+                        (
+                            Time.now()
+                            - np.asarray(
+                                [inner_loop_restart, last_time, last_loop_completion]
+                            )
                         )
-                    ).to_value("s")
+                        .min()
+                        .to_value("s")
+                    )
                     if len(time_array) > 0:
                         file_len = TimeDelta(
                             time_array[-1] - time_array[0], format="jd"
