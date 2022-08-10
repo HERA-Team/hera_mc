@@ -299,7 +299,7 @@ while True:
 
                 folder_name = f"{int(np.floor(date)):d}"
 
-                # make the fold for the JD if it does not exist
+                # make the folder for the JD if it does not exist
                 folder = Path(args.outdir) / folder_name
                 folder.mkdir(exist_ok=True)
 
