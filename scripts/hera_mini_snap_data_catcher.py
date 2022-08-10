@@ -128,7 +128,7 @@ while True:
 
                 inner_loop_restart = Time.now()
 
-                while downtime < args.max_downtime and file_len < args.max_file_len:
+                while (downtime < args.max_downtime) and (file_len < args.max_file_len):
                     time.sleep(0.01)
                     # get integrations from HeraCorrCM.get_snaprf_status()
                     # compare to the last time for each snap
