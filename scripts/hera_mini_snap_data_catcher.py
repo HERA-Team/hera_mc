@@ -126,6 +126,8 @@ while True:
                 downtime = 0
                 file_len = 0
 
+                inner_loop_restart = Time.now()
+
                 while downtime < args.max_downtime and file_len < args.max_file_len:
                     time.sleep(0.01)
                     # get integrations from HeraCorrCM.get_snaprf_status()
@@ -157,12 +159,18 @@ while True:
 
                         if snap_hostname not in last_time_mapping:
                             last_time_mapping[snap_hostname] = timestamp
+
+                            # Data has changed, restart the inner loop timer
+                            inner_loop_restart = Time.now()
                         else:
                             if timestamp <= last_time_mapping[snap_hostname]:
                                 # Time has not progressed yet.
                                 # Just sit tight
                                 continue
                             last_time_mapping[snap_hostname] = timestamp
+
+                            # Data has changed, restart the inner loop timer
+                            inner_loop_restart = Time.now()
 
                         auto_corr = status["autocorrelation"]
 
@@ -193,10 +201,16 @@ while True:
                     last_time = Time(max(last_time_mapping.values()), format="jd")
                     # Take the least time between the last snap update
                     # and the last time a file was written
-                    downtime = min(
-                        (Time.now() - last_time).to_value("s"),
-                        (Time.now() - last_loop_completion).to_value("s"),
-                    )
+                    # and when we started this inner loop
+
+                    downtime = (
+                        Time.now()
+                        - min(
+                            inner_loop_restart,
+                            last_time,
+                            last_loop_completion,
+                        )
+                    ).to_value("s")
                     if len(time_array) > 0:
                         file_len = TimeDelta(
                             time_array[-1] - time_array[0], format="jd"
