@@ -278,9 +278,18 @@ while True:
                 uvd.extra_keywords["snap_to_ant_mapping"] = json.dumps(
                     snap_to_ant_mapping
                 )
-                fname = f"zen.{Time.now().jd:.6f}.snap_autos.uvh5"
+
+                date = Time.now().jd
+
+                folder_name = f"{int(date.floor()):d}"
+
+                # make the fold for the JD if it does not exist
+                folder = Path(args.outdir) / folder_name
+                folder.mkdir(exists_ok=True)
+
+                fname = folder / f"zen.{date:.6f}.snap_autos.uvh5"
                 logger.info(f"Writing output file {fname}.")
-                uvd.write_uvh5(Path(args.outdir) / fname)
+                uvd.write_uvh5(fname)
 
                 last_loop_completion = Time.now()
 
