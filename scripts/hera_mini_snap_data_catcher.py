@@ -299,7 +299,7 @@ while True:
 
                 # make the fold for the JD if it does not exist
                 folder = Path(args.outdir) / folder_name
-                folder.mkdir(exists_ok=True)
+                folder.mkdir(exist_ok=True)
 
                 fname = folder / f"zen.{date:.6f}.snap_autos.uvh5"
                 logger.info(f"Writing output file {fname}.")
