@@ -295,7 +295,7 @@ while True:
 
                 date = Time.now().jd
 
-                folder_name = f"{int(date.floor()):d}"
+                folder_name = f"{int(np.floor(date)):d}"
 
                 # make the fold for the JD if it does not exist
                 folder = Path(args.outdir) / folder_name
