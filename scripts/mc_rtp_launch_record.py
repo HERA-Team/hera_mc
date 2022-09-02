@@ -46,9 +46,10 @@ for uvfile in args.files:
     # get appropriate filename and prefix information
     filename = os.path.basename(uvfile)
     hostname = socket.gethostname()
-    if "hera-sn1" in hostname:
+    cwd = os.getcwd()
+    if "hera-sn1" in hostname or cwd.startswith("/mnt/sn1"):
         prefix = os.path.join("/mnt/sn1", f"{int_jd:d}")
-    elif "hera-sn2" in hostname:
+    elif "hera-sn2" in hostname or cwd.startswith("/mnt/sn2"):
         prefix = os.path.join("/mnt/sn2", f"{int_jd:d}")
     else:
         # default
