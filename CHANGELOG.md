@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- A new `correlator_catcher_file` table to track the files written by the catcher.
 - A `tag` column to the `hera_obs` table.
 - A new `snap_feng_init_status` table to track whether SNAPs worked properly, errored,
 or were exluded because there were too many SNAPs during F-engine initialization.
