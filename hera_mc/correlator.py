@@ -449,7 +449,7 @@ class CorrelatorCatcherFile(MCDeclarativeBase):
 
     __tablename__ = "correlator_catcher_file"
     time = Column(BigInteger, primary_key=True)
-    filename = Column(String, nullable=False)
+    filename = Column(String)
 
     @classmethod
     def create(cls, time, filename):
@@ -471,7 +471,7 @@ class CorrelatorCatcherFile(MCDeclarativeBase):
         return cls(time=corr_time, filename=filename)
 
 
-def _get_catcher_file_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+def _get_catcher_file_from_redis(redishost=DEFAULT_REDIS_ADDRESS, test_dict=None):
     """
     Get the current catcher file from redis.
 
@@ -479,6 +479,10 @@ def _get_catcher_file_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
     ----------
     redishost : str
         Address of redis database
+    test_dict : dict
+        dict mocking what is returned by the rsession.hgetall("corr:current_file") call
+        for testing purposes, e.g. {'filename': '2459830/zen.2459830.33627.sum.dat',
+        'time': '1662581064'} or {'filename': 'NONE', 'time': '1662581064'}
 
     Returns
     -------
@@ -488,15 +492,23 @@ def _get_catcher_file_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
         Name of the current file being written by the catcher.
 
     """
-    redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
-    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+    if test_dict:
+        catcher_file_dict = test_dict
+    else:
+        redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
+        rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
 
-    catcher_file_dict = rsession.hgetall("corr:current_file")
+        catcher_file_dict = rsession.hgetall("corr:current_file")
+
     # keys are:
     #  - filename
     #  - time (a unix time stamp).
+
     time = Time(catcher_file_dict["time"], format="unix")
     filename = catcher_file_dict["filename"]
+
+    if filename.upper() == "NONE":
+        filename = None
 
     return time, filename
 

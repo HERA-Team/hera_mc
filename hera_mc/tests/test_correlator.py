@@ -746,6 +746,17 @@ def test_add_correlator_catcher_file_errors(mcsession):
         mcsession.add_correlator_catcher_file("foo", filename1)
 
 
+def test_get_catcher_file_from_redis():
+    t1 = TEST_TIME1.copy()
+
+    unix_second = int(np.floor(t1.unix))
+    input_dict = {"time": unix_second, "filename": "NONE"}
+    time, filename = corr._get_catcher_file_from_redis(test_dict=input_dict)
+
+    assert time == Time(unix_second, format="unix")
+    assert filename is None
+
+
 @requires_redis
 def test_add_correlator_catcher_file_from_redis(mcsession):
     current_file = mcsession.add_correlator_catcher_file_from_redis(
