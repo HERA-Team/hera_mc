@@ -443,7 +443,8 @@ class CorrelatorCatcherFile(MCDeclarativeBase):
     time : BigInteger Column
         GPS time that the file started being written, floored. The primary key.
     filename : String Column
-        Name of the current file being written by the catcher.
+        Name of the current file being written by the catcher. Can be null when the
+        catcher first starts.
 
     """
 
@@ -461,7 +462,8 @@ class CorrelatorCatcherFile(MCDeclarativeBase):
         time : astropy Time object
             Astropy time object based on a timestamp reported by the correlator.
         filename : str
-            Name of the current file being written by the catcher.
+            Name of the current file being written by the catcher. Can be null when the
+            catcher first starts.
 
         """
         if not isinstance(time, Time):
