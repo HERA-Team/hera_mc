@@ -71,7 +71,7 @@ For safety, move this dump off of the production server and perform any remainin
 manipulations in a controlled environment. If you have site access set up via an ssh
 tunnel, you may first have to copy the file to another location on qmaster (which you
 have an ssh alias to), then you can use rsync like this:
-`rsync --rsh='ssh -p<port_number>' -vPaz <ssh_alias>:</path/to/file>/dump.rdb <path/on/local/machine>`
+`rsync --rsh='ssh -p <port_number>' -vPaz <ssh_alias>:</path/to/file>/dump.rdb <path/on/local/machine>`
 
 Next you need to load your new dump into a redis server.
 

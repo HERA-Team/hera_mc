@@ -566,6 +566,18 @@ When correlator components had an event (related to normal observing). The curre
 \end{tabular}
 \end{center}
 
+\subsubsection{correlator\_catcher\_file}
+Filenames written by the catcher with time that file was started.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{time} & long & time the catcher started writing the file in floor(gps seconds)\\ \hline
+filename* & string & name of the file written by the catcher.
+\\ \hline
+\end{tabular}
+\end{center}
+
 \subsubsection{correlator\_config\_file}
 List of correlator config files, which specify detailed correlator settings. All files in this table are in the Librarian.
 \begin{center}
