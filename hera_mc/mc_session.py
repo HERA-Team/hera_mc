@@ -3510,7 +3510,8 @@ class MCSession(Session):
         time : astropy Time object
             Astropy time object based on a timestamp reported by the correlator.
         filename : str
-            Name of the current file being written by the catcher.
+            Name of the current file being written by the catcher. Can be null when the
+            catcher first starts.
 
         """
         self.add(corr.CorrelatorCatcherFile.create(time, filename))
@@ -3533,15 +3534,16 @@ class MCSession(Session):
         Parameters
         ----------
         testing : bool
-            If true, return the CorrelatorCatcherFile object and don't add it to the database.
+            If true, return the CorrelatorCatcherFile object and don't add it to the
+            database.
         redishost : str
             redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
 
         Returns
         -------
         CorrelatorCatcherFile
-            If testing is True, returns the CorrelatorCatcherFile object rather than adding
-            it to the database.
+            If testing is True, returns the CorrelatorCatcherFile object rather than
+            adding it to the database.
 
         """
         time, filename = corr._get_catcher_file_from_redis(redishost=redishost)
