@@ -3501,6 +3501,111 @@ class MCSession(Session):
             corr.CorrelatorComponentEventTime, comp_event_list
         )
 
+    def add_correlator_catcher_file(self, time, filename):
+        """
+        Add new correlator catcher file records to the M&C database.
+
+        Parameters
+        ----------
+        time : astropy Time object
+            Astropy time object based on a timestamp reported by the correlator.
+        filename : str
+            Name of the current file being written by the catcher.
+
+        """
+        self.add(corr.CorrelatorCatcherFile.create(time, filename))
+
+    def add_correlator_catcher_file_from_redis(
+        self,
+        testing=False,
+        redishost=corr.DEFAULT_REDIS_ADDRESS,
+    ):
+        """
+        Get and current catcher file from redis.
+
+        Uses the `correlator._get_catcher_file_from_redis` function
+
+        If the current database is PostgreSQL, this function will use a
+        special insertion method that will ignore records that are redundant
+        with ones already in the database. This makes it convenient to sample
+        the array signal source data densely on qmaster.
+
+        Parameters
+        ----------
+        testing : bool
+            If true, return the CorrelatorCatcherFile object and don't add it to the database.
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
+
+        Returns
+        -------
+        CorrelatorCatcherFile
+            If testing is True, returns the CorrelatorCatcherFile object rather than adding
+            it to the database.
+
+        """
+        time, filename = corr._get_catcher_file_from_redis(redishost=redishost)
+
+        catcher_file_obj = corr.CorrelatorCatcherFile.create(time, filename)
+
+        if testing:
+            return catcher_file_obj
+
+        self._insert_ignoring_duplicates(corr.CorrelatorCatcherFile, [catcher_file_obj])
+
+    def get_correlator_catcher_file(
+        self,
+        most_recent=None,
+        starttime=None,
+        stoptime=None,
+        write_to_file=False,
+        filename=None,
+    ):
+        """
+        Get correlator_catcher_file record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time. If
+        starttime is set but stoptime is not, this method will return the first
+        record(s) after the starttime -- again there can be more than one if
+        there are multiple records at the same time. If you want a range of
+        times you need to set both startime and stoptime. If most_recent is set,
+        startime and stoptime are ignored.
+
+        Parameters
+        ----------
+        most_recent : bool
+            If True, get most recent record. Defaults to True if starttime is
+            None.
+        starttime : astropy Time object
+            Time to look for records after. Ignored if most_recent is True,
+            required if most_recent is False.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        if write_to_file is False: list of CorrelatorCatcherFile objects
+
+        """
+        return self._time_filter(
+            corr.CorrelatorCatcherFile,
+            "time",
+            most_recent=most_recent,
+            starttime=starttime,
+            stoptime=stoptime,
+            write_to_file=write_to_file,
+            filename=filename,
+        )
+
     def add_correlator_config_file(self, config_hash, config_file):
         """
         Add new correlator config file to the M&C database.

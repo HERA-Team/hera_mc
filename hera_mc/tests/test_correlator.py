@@ -681,6 +681,85 @@ def test_add_correlator_component_event_time_errors(mcsession):
         mcsession.add_correlator_component_event_time("catcher", "sync", TEST_TIME1)
 
 
+def test_add_correlator_catcher_file(mcsession):
+    t1 = TEST_TIME1.copy()
+    t2 = TEST_TIME2.copy()
+
+    filename1 = (
+        str(int(np.fix(t1.jd)))
+        + "/zen."
+        + np.format_float_positional(t1.jd, precision=5)
+        + ".sum.dat"
+    )
+
+    filename2 = (
+        str(int(np.fix(t2.jd)))
+        + "/zen."
+        + np.format_float_positional(t2.jd, precision=5)
+        + ".sum.dat"
+    )
+
+    mcsession.add_correlator_catcher_file(t1, filename1)
+
+    catcher_file_expected = corr.CorrelatorCatcherFile(
+        time=int(floor(t1.gps)), filename=filename1
+    )
+    catcher_file_result = mcsession.get_correlator_catcher_file(
+        starttime=t1 - TimeDelta(3.0, format="sec")
+    )
+    assert len(catcher_file_result) == 1
+    catcher_file_result = catcher_file_result[0]
+    assert catcher_file_result.isclose(catcher_file_expected)
+
+    mcsession.add_correlator_catcher_file(t2, filename2)
+    catcher_file_expected2 = corr.CorrelatorCatcherFile(
+        time=int(floor(t2.gps)), filename=filename2
+    )
+
+    # get most recent
+    catcher_file_result = mcsession.get_correlator_catcher_file()
+    assert len(catcher_file_result) == 1
+    catcher_file_result = catcher_file_result[0]
+    assert catcher_file_result.isclose(catcher_file_expected2)
+
+    catcher_file_result = mcsession.get_correlator_catcher_file(
+        starttime=t1 - TimeDelta(3.0, format="sec"),
+        stoptime=t2 + TimeDelta(3.0, format="sec"),
+    )
+    assert len(catcher_file_result) == 2
+    assert catcher_file_result[0].isclose(catcher_file_expected)
+
+    assert catcher_file_result[1].isclose(catcher_file_expected2)
+
+
+def test_add_correlator_catcher_file_errors(mcsession):
+    t1 = TEST_TIME1.copy()
+
+    filename1 = (
+        str(int(np.fix(t1.jd)))
+        + "/zen."
+        + np.format_float_positional(t1.jd, precision=5)
+        + ".sum.dat"
+    )
+
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        mcsession.add_correlator_catcher_file("foo", filename1)
+
+
+@requires_redis
+def test_add_correlator_catcher_file_from_redis(mcsession):
+    current_file = mcsession.add_correlator_catcher_file_from_redis(
+        redishost=TEST_DEFAULT_REDIS_HOST, testing=True
+    )
+    mcsession.add_correlator_catcher_file_from_redis(redishost=TEST_DEFAULT_REDIS_HOST)
+
+    # get most recent
+    catcher_file_result = mcsession.get_correlator_catcher_file()
+    assert len(catcher_file_result) == 1
+
+    assert catcher_file_result[0].isclose(current_file)
+
+
 def test_add_corr_config(mcsession, corr_config):
     test_session = mcsession
     t1 = TEST_TIME1.copy()

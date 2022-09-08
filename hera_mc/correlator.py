@@ -255,7 +255,7 @@ class CorrelatorComponentEventTime(MCDeclarativeBase):
     Definition of correlator_component_event_time table.
 
     Specifies when various correlator components had an event related to normal
-    observing (expected to be order one entry per component per day).
+    observing (expected to be order one entry per component-event per day).
 
     Attributes
     ----------
@@ -430,6 +430,75 @@ def _get_correlator_component_event_times_from_redis(
         outdict["catcher"] = {"event": catcher_event, "time": catcher_time}
 
     return outdict
+
+
+class CorrelatorCatcherFile(MCDeclarativeBase):
+    """
+    Definition of correlator_catcher_file table.
+
+    Track the files written by the catcher.
+
+    Attributes
+    ----------
+    time : BigInteger Column
+        GPS time that the file started being written, floored. The primary key.
+    filename : String Column
+        Name of the current file being written by the catcher.
+
+    """
+
+    __tablename__ = "correlator_catcher_file"
+    time = Column(BigInteger, primary_key=True)
+    filename = Column(String, nullable=False)
+
+    @classmethod
+    def create(cls, time, filename):
+        """
+        Create a new correlator component time object.
+
+        Parameters
+        ----------
+        time : astropy Time object
+            Astropy time object based on a timestamp reported by the correlator.
+        filename : str
+            Name of the current file being written by the catcher.
+
+        """
+        if not isinstance(time, Time):
+            raise ValueError("time must be an astropy Time object")
+        corr_time = floor(time.gps)
+
+        return cls(time=corr_time, filename=filename)
+
+
+def _get_catcher_file_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+    """
+    Get the current catcher file from redis.
+
+    Parameters
+    ----------
+    redishost : str
+        Address of redis database
+
+    Returns
+    -------
+    time : astropy Time object
+        Time the current file started being written
+    filename : str
+        Name of the current file being written by the catcher.
+
+    """
+    redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
+    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+
+    catcher_file_dict = rsession.hgetall("corr:current_file")
+    # keys are:
+    #  - filename
+    #  - time (a unix time stamp).
+    time = Time(catcher_file_dict["time"], format="unix")
+    filename = catcher_file_dict["filename"]
+
+    return time, filename
 
 
 class CorrelatorConfigFile(MCDeclarativeBase):
