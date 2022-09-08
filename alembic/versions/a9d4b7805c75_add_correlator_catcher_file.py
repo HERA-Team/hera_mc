@@ -20,7 +20,7 @@ def upgrade():
     op.create_table(
         "correlator_catcher_file",
         sa.Column("time", sa.BigInteger(), nullable=False),
-        sa.Column("filename", sa.String(), nullable=False),
+        sa.Column("filename", sa.String()),
         sa.PrimaryKeyConstraint("time"),
     )
 
