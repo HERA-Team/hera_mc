@@ -40,6 +40,16 @@ get back to where you meant to be.)
 of your new table to the documentation in docs/mc_definition.tex.
 10. Create a pull request on github to ask for a code review and to get your
 changes integrated into main.
+11. Testing onsite (required for PRs): First clear it with the observing team. Then
+checkout your branch onsite and run `alembic upgrade head`. Install the new branch with
+`pip install --no-deps .`. Run the tests with `pytest`. Then put things back as they were
+by first downgrading alembic with `alembic downgrade -1` (or whatever number of alembic
+versions your branch differs from what was installed by). The downgrade **must be done**
+while you are still on your branch so you have the alembic revision files. **Be careful
+with alembic downgrades** -- if you downgrade too far you could drop tables or columns
+with essential data in them. Then checkout the main branch and install it with
+`pip install --no-deps .`. It's a good idea to re-run tests at this point to make sure
+you didn't break anything.
 11. Once the changes have been incorporated into main, you can log onto site,
 pull the main branch and run `alembic upgrade head` to update the onsite
 database to the new schema.
