@@ -36,6 +36,7 @@ Schema change:
 - [ ] I have added or updated the docstrings associated with my feature using the [numpy docstring format](https://numpydoc.readthedocs.io/en/latest/format.html).
 - [ ] I have created an alembic version file to produce the schema change.
 - [ ] I have tested looping upgrading and downgrading the alembic version and tests pass consistently.
+- [ ] I have updated or created monitoring scripts to any new tables are automatically populated if appropriate.
 - [ ] I understand the updates required onsite (detailed in the readme) and I will make those
 changes when this is merged.
 - [ ] I have updated the schema documentation document with my changes (under docs/mc_definition.tex)
