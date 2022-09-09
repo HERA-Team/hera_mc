@@ -16,7 +16,7 @@ Restart=always
 RestartSec=60
 User=obs
 Group=obs
-ExecStart=/home/obs/anaconda/envs/HERA/bin/mc_server_status_daemon.py UNDEF
+ExecStart=/home/obs/mambaforge/envs/HERA/bin/mc_server_status_daemon.py UNDEF
 
 [Install]
 WantedBy=multi-user.target

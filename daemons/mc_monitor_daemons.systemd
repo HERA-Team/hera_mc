@@ -1,7 +1,7 @@
 # Configuration file for systemd that keeps the correlator status monitoring
 # daemon running.
 #
-# Copy this file to /etc/systemd/system/ mc-monitor-daemons.service . Then run
+# Copy this file to /etc/systemd/system/mc-monitor-daemons.service . Then run
 # `systemctl enable mc-monitor-daemons` and `systemctl start  mc-monitor-daemons`.
 #
 # This service is meant to be run on qmaster.
@@ -15,7 +15,7 @@ Restart=always
 RestartSec=60
 User=obs
 Group=obs
-ExecStart=/home/obs/anaconda/envs/HERA/bin/mc_monitor_daemons.py
+ExecStart=/home/obs/mambaforge/envs/HERA/bin/mc_monitor_daemons.py
 
 [Install]
 WantedBy=multi-user.target
