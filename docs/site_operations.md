@@ -7,7 +7,7 @@ Site operations
 required for other code changes.
 
 - Pull and reinstall in **all** of the following machines & environments
-(this is a critical step!):
+(this is a critical step!) Use `pip install --no-deps .` to ensure enviroment stability:
 
   - qmaster machine
     - `HERA` conda environment
