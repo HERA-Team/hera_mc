@@ -15,7 +15,7 @@ Restart=always
 RestartSec=60
 User=obs
 Group=obs
-ExecStart=/home/obs/anaconda/envs/HERA/bin/mc_monitor_correlator.py
+ExecStart=/home/obs/mambaforge/envs/HERA/bin/mc_monitor_correlator.py
 
 [Install]
 WantedBy=multi-user.target

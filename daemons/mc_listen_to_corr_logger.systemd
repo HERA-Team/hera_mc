@@ -1,7 +1,7 @@
 # Configuration file for systemd that keeps the correlator status monitoring
 # daemon running.
 #
-# Copy this file to /etc/systemd/system/mc_listen_to_corr_logger.service . Then run
+# Copy this file to /etc/systemd/system/mc-listen-to-corr-logger.service . Then run
 # `systemctl enable mc-listen-to-corr-logger` and `systemctl start mc-listen-to-corr-logger`.
 #
 # This service is meant to be run on qmaster.
@@ -15,7 +15,7 @@ Restart=always
 RestartSec=60
 User=obs
 Group=obs
-ExecStart=/home/obs/anaconda/envs/HERA/bin/mc_listen_to_corr_logger.py
+ExecStart=/home/obs/mambaforge/envs/HERA/bin/mc_listen_to_corr_logger.py
 
 [Install]
 WantedBy=multi-user.target
