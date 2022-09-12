@@ -292,6 +292,7 @@ while True:
                 uvd.extra_keywords["snap_to_ant_mapping"] = json.dumps(
                     snap_to_ant_mapping
                 )
+                uvd.extra_keywords["tag"] = "engineering"
 
                 date = Time.now().jd
 
