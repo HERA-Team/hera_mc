@@ -4443,7 +4443,11 @@ class MCSession(Session):
                 )
 
                 if not testing:  # pragma: no cover
-                    self.add(config_status_obj)
+                    # use the `ignoring_duplicates` so there's no error if this
+                    # already exists (this happened on site at one point)
+                    self._insert_ignoring_duplicates(
+                        corr.CorrelatorConfigStatus, [config_status_obj]
+                    )
                     self.commit()
                 else:
                     config_obj_list.append(config_status_obj)
