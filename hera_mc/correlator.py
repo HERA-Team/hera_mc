@@ -25,8 +25,9 @@ from sqlalchemy import (
     Integer,
     String,
 )
+from sqlalchemy.dialects import postgresql
 
-from . import MCDeclarativeBase
+from . import MCDeclarativeBase, utils
 
 # default acclen -- corresponds to a bit under 10 seconds (~9.66 seconds)
 DEFAULT_ACCLEN_SPECTRA = 147456
@@ -1507,6 +1508,8 @@ class AntennaStatus(MCDeclarativeBase):
         string.
     histogram : String Column
         ADC histogram counts, list of ints stored as a string.
+    autocorr : Array column
+        Autocorrelations
 
     """
 
@@ -1535,6 +1538,10 @@ class AntennaStatus(MCDeclarativeBase):
     fft_overflow = Column(Boolean)
     eq_coeffs = Column(String)
     histogram = Column(String)
+    if utils.sqltype() == "postgresql":
+        autocorr = Column(postgresql.ARRAY(Float))
+    else:
+        autocorr = Column(String)
 
     @classmethod
     def create(
@@ -1563,6 +1570,7 @@ class AntennaStatus(MCDeclarativeBase):
         fft_overflow,
         eq_coeffs,
         histogram,
+        autocorr,
     ):
         """
         Create a new antenna status object.
@@ -1625,6 +1633,8 @@ class AntennaStatus(MCDeclarativeBase):
             are not divided out anywhere in the DSP chain (!).
         histogram : list of int
             ADC histogram counts.
+        autocorr : list of float
+            Autocorrelations
 
         """
         if not isinstance(time, Time):
@@ -1674,6 +1684,7 @@ class AntennaStatus(MCDeclarativeBase):
             fft_overflow=fft_overflow,
             eq_coeffs=eq_coeffs_string,
             histogram=histogram_string,
+            autocorr=autocorr,
         )
 
 
