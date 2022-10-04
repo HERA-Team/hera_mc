@@ -5292,6 +5292,7 @@ class MCSession(Session):
         fft_overflow,
         eq_coeffs,
         histogram,
+        autocorr,
     ):
         """
         Add new antenna status data to the M&C database.
@@ -5355,6 +5356,8 @@ class MCSession(Session):
             are not divided out anywhere in the DSP chain (!).
         histogram : list of int
             ADC histogram counts.
+        autocorr : list of float
+            autocorrelations
 
         """
         self.add(
@@ -5383,6 +5386,7 @@ class MCSession(Session):
                 fft_overflow,
                 eq_coeffs,
                 histogram,
+                autocorr,
             )
         )
 

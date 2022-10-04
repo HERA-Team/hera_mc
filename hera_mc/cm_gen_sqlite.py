@@ -125,7 +125,11 @@ class SqliteHandling:
         creating_table = False
         with open(schema_file, "r") as f:
             for line in f:
-                modline = line.replace("public.", "")
+                interline = line + ""
+                if "double precision[]" in line:
+                    interline = line.replace("double precision[]", "character varying")
+                modline = interline.replace("public.", "")
+
                 if "CREATE TABLE" in modline:
                     creating_table = True
                     schema += modline
