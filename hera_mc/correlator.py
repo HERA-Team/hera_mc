@@ -1853,6 +1853,7 @@ def create_antenna_status(
         fft_overflow = ant_dict["fft_of"]
         eq_coeffs = ant_dict["eq_coeffs"]
         histogram = ant_dict["histogram"]
+        autocorr = ant_dict["autocorr"]
 
         ant_status_list.append(
             AntennaStatus.create(
@@ -1880,6 +1881,7 @@ def create_antenna_status(
                 fft_overflow,
                 eq_coeffs,
                 histogram,
+                autocorr,
             )
         )
 
