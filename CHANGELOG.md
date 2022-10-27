@@ -19,6 +19,12 @@ commanded signal source (one of "antenna", "load", "noise", "digital_same_seed",
 had an event related to normal observing (f-engine sync, x-engine integration start,
 catcher start, stop or stop identified via a timeout).
 
+
+### Changed
+- The logic for time filtering in real time getter methods in mc_session to support
+getting the most recent table entries at some point in the past (the last value before
+the time of interest)
+
 ### Removed
 - The following table bindings were removed (but the tables will not be deleted on site):
 `correlator_control_state`, `correlator_control_command`,`correlator_take_data_arguments`,
