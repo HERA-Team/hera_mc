@@ -137,7 +137,7 @@ class HeraAuto(MCDeclarativeBase):
 
 class HeraAutoSpectrum(MCDeclarativeBase):
     """
-    Definition of antenna autocorrelation spectrum table of hera antennas.
+    Definition of hera_auto_spectrum table.
 
     Attributes
     ----------
