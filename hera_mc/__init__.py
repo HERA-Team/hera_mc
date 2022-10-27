@@ -98,12 +98,20 @@ class MCDeclarativeBase(object):
                     # use numpy defaults
                     atol = 1e-08
                     rtol = 1e-05
-                if not np.isclose(self_col, other_col, atol=atol, rtol=rtol):
-                    print(
-                        f"column {col} is float-like or a float-like array, "
-                        "values are not equal"
-                    )
-                    return False
+                if isinstance(self_col, (np.ndarray, list)):
+                    if not np.allclose(self_col, other_col, atol=atol, rtol=rtol):
+                        print(
+                            f"column {col} is float-like or a float-like array, "
+                            "values are not equal"
+                        )
+                        return False
+                else:
+                    if not np.isclose(self_col, other_col, atol=atol, rtol=rtol):
+                        print(
+                            f"column {col} is float-like or a float-like array, "
+                            "values are not equal"
+                        )
+                        return False
         return True
 
 

@@ -7,6 +7,7 @@
 import datetime
 from math import floor
 
+import numpy as np
 import pytest
 from astropy.time import Time, TimeDelta
 
@@ -89,11 +90,52 @@ def test_autos_added(mcsession, autocorrs, antnum):
     assert result.isclose(expected)
 
 
+@pytest.mark.parametrize("antnum", [4, 31])
+@pytest.mark.parametrize("spec_type", ["list", "tuple", "ndarray"])
+def test_auto_spectrum_added(mcsession, autocorrs, antnum, spec_type):
+    test_session = mcsession
+
+    for ant in autocorrs:
+        corr = autocorrs[ant]
+
+        spectrum = [level - corr["value"] for level in range(-8, 9)]
+        if spec_type == "ndarray":
+            spectrum = np.asarray(spectrum)
+        elif spec_type == tuple:
+            spectrum = tuple(spectrum)
+
+        test_session.add_autocorrelation_spectrum(
+            time=corr["time"],
+            antenna_number=corr["antenna_number"],
+            antenna_feed_pol=corr["antenna_feed_pol"],
+            spectrum=spectrum,
+        )
+
+    t1 = standard_query_time
+    result = test_session.get_autocorrelation_spectrum(
+        starttime=t1 - TimeDelta(3.0, format="sec")
+    )
+    assert len(result) == 2
+
+    ant_key = "{:d}".format(antnum)
+    spectrum = [level - autocorrs[ant_key]["value"] for level in range(-8, 9)]
+    expected = autocorrelations.HeraAutoSpectrum(
+        time=int(floor(t1.gps)),
+        antenna_number=antnum,
+        antenna_feed_pol=autocorrs[ant_key]["antenna_feed_pol"],
+        spectrum=spectrum,
+    )
+    result = test_session.get_autocorrelation_spectrum(antenna_number=antnum)
+    assert len(result) == 1
+    result = result[0]
+    assert result.isclose(expected)
+
+
 @pytest.mark.parametrize(
     "args,err_type,err_msg",
     [
         (
-            [Time(2458843, format="jd").gps, 4, "median", 0, 12.1],
+            [Time(2458843, format="jd").gps, 4, "e", "median", 12.1],
             ValueError,
             "time must be an astropy Time object.",
         ),
@@ -116,16 +158,51 @@ def test_autos_added(mcsession, autocorrs, antnum):
 )
 def test_add_autocorrelations_errors(mcsession, args, err_type, err_msg):
     test_session = mcsession
-    with pytest.raises(err_type) as cm:
+    with pytest.raises(err_type, match=err_msg):
         test_session.add_autocorrelation(*args)
-    assert str(cm.value).startswith(err_msg)
+
+
+@pytest.mark.parametrize(
+    "args,err_type,err_msg",
+    [
+        (
+            [
+                Time(2458843, format="jd").gps,
+                4,
+                "e",
+                [level - 12.3687 for level in range(-8, 9)],
+            ],
+            ValueError,
+            "time must be an astropy Time object.",
+        ),
+        (
+            [
+                Time(2458843, format="jd"),
+                4,
+                "x",
+                [level - 12.3687 for level in range(-8, 9)],
+            ],
+            ValueError,
+            "antenna_feed_pol must be 'e' or 'n'.",
+        ),
+        (
+            [Time(2458843, format="jd"), 4, "e", 12.1],
+            ValueError,
+            "spectrum must be a list, ndarray or tuple",
+        ),
+    ],
+)
+def test_add_autocorrelation_spectrum_errors(mcsession, args, err_type, err_msg):
+    test_session = mcsession
+    with pytest.raises(err_type, match=err_msg):
+        test_session.add_autocorrelation_spectrum(*args)
 
 
 # check all four HeraAuto objects which should be created
 # also check each one with a starttime defined and with the "most_recent"
 # setting in the get_autocorrelation function
 @pytest.mark.parametrize(
-    "antnum,antpol,expected",
+    ("antnum", "antpol", "median_expected", "spectrum_expected"),
     [
         (
             400,
@@ -136,6 +213,12 @@ def test_add_autocorrelations_errors(mcsession, args, err_type, err_msg):
                 antenna_feed_pol="e",
                 measurement_type="median",
                 value=-12.3687,
+            ),
+            autocorrelations.HeraAutoSpectrum(
+                time=floor(standard_query_time.gps),
+                antenna_number=400,
+                antenna_feed_pol="e",
+                spectrum=[level - 12.3687 for level in range(-8, 9)],
             ),
         ),
         (
@@ -148,6 +231,12 @@ def test_add_autocorrelations_errors(mcsession, args, err_type, err_msg):
                 measurement_type="median",
                 value=-15.5739,
             ),
+            autocorrelations.HeraAutoSpectrum(
+                time=floor(standard_query_time.gps),
+                antenna_number=400,
+                antenna_feed_pol="n",
+                spectrum=[level - 15.5739 for level in range(-8, 9)],
+            ),
         ),
         (
             710,
@@ -158,6 +247,12 @@ def test_add_autocorrelations_errors(mcsession, args, err_type, err_msg):
                 antenna_feed_pol="e",
                 measurement_type="median",
                 value=-44.5873,
+            ),
+            autocorrelations.HeraAutoSpectrum(
+                time=floor(standard_query_time.gps),
+                antenna_number=710,
+                antenna_feed_pol="e",
+                spectrum=[level - 44.5873 for level in range(-8, 9)],
             ),
         ),
         (
@@ -170,6 +265,12 @@ def test_add_autocorrelations_errors(mcsession, args, err_type, err_msg):
                 measurement_type="median",
                 value=-66.4509,
             ),
+            autocorrelations.HeraAutoSpectrum(
+                time=floor(standard_query_time.gps),
+                antenna_number=710,
+                antenna_feed_pol="n",
+                spectrum=[level - 66.4509 for level in range(-8, 9)],
+            ),
         ),
     ],
 )
@@ -178,34 +279,42 @@ def test_add_autocorrelations_errors(mcsession, args, err_type, err_msg):
     [standard_query_time - TimeDelta(3.0, format="sec"), None],
 )
 def test_add_autos_from_redis(
-    mcsession, starttime, auto_dict, antnum, antpol, expected
+    mcsession, starttime, auto_dict, antnum, antpol, median_expected, spectrum_expected
 ):
     test_session = mcsession
     hera_auto_list = test_session.add_autocorrelations_from_redis(
         hera_autos_dict=auto_dict,
         testing=True,
     )
+    assert len(hera_auto_list) == 8
     for obj in hera_auto_list:
         test_session.add(obj)
-    result = test_session.get_autocorrelation(
+    median_result = test_session.get_autocorrelation(
         starttime=starttime, antenna_number=antnum
     )
-    assert len(result) == 2
+    assert len(median_result) == 2
 
-    result = [res for res in result if res.antenna_feed_pol == antpol][0]
+    median_result = test_session.get_autocorrelation(
+        starttime=starttime, antenna_number=antnum, feed_pol=antpol
+    )[0]
 
-    assert result.isclose(expected)
+    assert median_result.isclose(median_expected)
+
+    spectrum_result = test_session.get_autocorrelation_spectrum(
+        starttime=starttime, antenna_number=antnum, feed_pol=antpol
+    )[0]
+
+    assert spectrum_result.isclose(spectrum_expected)
 
 
 def test_add_autos_from_redis_errors(mcsession, auto_dict):
     test_session = mcsession
     auto_dict.pop("timestamp")
-    with pytest.raises(ValueError) as cm:
+    with pytest.raises(ValueError, match="No timestamp found in hera_autos_dict. "):
         test_session.add_autocorrelations_from_redis(
             hera_autos_dict=auto_dict,
             testing=True,
         )
-    assert str(cm.value).startswith("No timestamp found in hera_autos_dict. ")
 
 
 @requires_redis
@@ -213,8 +322,11 @@ def test_with_redis_add_autos_from_redis_errors(mcsession):
     test_session = mcsession
 
     test_session.add_autocorrelations_from_redis(redishost=TEST_DEFAULT_REDIS_HOST)
-    result = test_session.get_autocorrelation(most_recent=True)
-    assert len(result) >= 1
+    median_result = test_session.get_autocorrelation(most_recent=True)
+    assert len(median_result) >= 1
+
+    spectrum_result = test_session.get_autocorrelation_spectrum(most_recent=True)
+    assert len(spectrum_result) >= 1
 
 
 @requires_redis
@@ -223,5 +335,8 @@ def test_add_autos_from_redis_default_redishost(mcsession):
     test_session = mcsession
 
     test_session.add_autocorrelations_from_redis()
-    result = test_session.get_autocorrelation(most_recent=True)
-    assert len(result) >= 1
+    median_result = test_session.get_autocorrelation(most_recent=True)
+    assert len(median_result) >= 1
+
+    spectrum_result = test_session.get_autocorrelation_spectrum(most_recent=True)
+    assert len(spectrum_result) >= 1
