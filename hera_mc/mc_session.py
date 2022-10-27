@@ -146,12 +146,14 @@ class MCSession(Session):
         Fiter entries by time, used by most get methods on this object.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
@@ -160,11 +162,12 @@ class MCSession(Session):
         time_column : str
             column name holding the time to filter on.
         most_recent : bool
-            Option to get the most recent record(s). Defaults to True if
-            starttime is None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record(s) after starttime will be returned
@@ -198,18 +201,18 @@ class MCSession(Session):
         if not most_recent:
             if starttime is None:
                 raise ValueError("starttime must be specified if most_recent is False")
-            if not isinstance(starttime, Time):
-                raise ValueError(
-                    "starttime must be an astropy time object. "
-                    "value was: {t}".format(t=starttime)
-                )
 
-        if stoptime is not None:
-            if not isinstance(stoptime, Time):
-                raise ValueError(
-                    "stoptime must be an astropy time object. "
-                    "value was: {t}".format(t=stoptime)
-                )
+        if starttime is not None and not isinstance(starttime, Time):
+            raise ValueError(
+                "starttime must be an astropy time object. "
+                "value was: {t}".format(t=starttime)
+            )
+
+        if stoptime is not None and not isinstance(stoptime, Time):
+            raise ValueError(
+                "stoptime must be an astropy time object. "
+                "value was: {t}".format(t=stoptime)
+            )
 
         time_attr = getattr(table_class, time_column)
 
@@ -237,11 +240,18 @@ class MCSession(Session):
                     query = query.filter(filter_attr[index] == val)
 
         if most_recent or stoptime is None:
-            if most_recent:
+            if most_recent and starttime is None:
                 current_time = Time.now()
                 # get most recent row
                 first_query = (
                     query.filter(time_attr <= current_time.gps)
+                    .order_by(desc(time_attr))
+                    .limit(1)
+                )
+            elif most_recent:
+                # get last row before starttime
+                first_query = (
+                    query.filter(time_attr <= starttime.gps)
                     .order_by(desc(time_attr))
                     .limit(1)
                 )
@@ -414,20 +424,25 @@ class MCSession(Session):
         """
         Get observation(s) from the M&C database.
 
-        Default behavior is to return the most recent record. If starttime
-        is set but stoptime is not, this method will return the first record
-        after the starttime. If you want a range of times you need
-        to set both startime and stoptime. If most_recent is set, startime and
-        stoptime are ignored.
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -548,23 +563,26 @@ class MCSession(Session):
         Get subsystem server_status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         subsystem : str
             Name of subsystem. Must be one of ['rtp', 'lib'].
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -616,21 +634,24 @@ class MCSession(Session):
         Get rtp_server_status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -673,21 +694,24 @@ class MCSession(Session):
         Get librarian_server_status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -757,21 +781,24 @@ class MCSession(Session):
         Get subsystem server_status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -846,21 +873,24 @@ class MCSession(Session):
         Get daemon_status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -951,21 +981,24 @@ class MCSession(Session):
         Get lib_status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -1023,21 +1056,24 @@ class MCSession(Session):
         Get lib_raid_status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -1100,21 +1136,24 @@ class MCSession(Session):
         Get lib_raid_error record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -1185,21 +1224,24 @@ class MCSession(Session):
         Get lib_remote_status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -1265,12 +1307,14 @@ class MCSession(Session):
         If filename is provided, all other optional keywords are ignored.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
@@ -1280,9 +1324,12 @@ class MCSession(Session):
             Obsid to get records for. If starttime and most_recent are both
             None, all files for this obsid will be returned.
         most_recent : bool
-            If True, get most recent record.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -1354,21 +1401,24 @@ class MCSession(Session):
         Get rtp_process_event record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -1431,21 +1481,24 @@ class MCSession(Session):
         Get rtp_task_process_event record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both starttime and stoptime. If most_recent is
-        set, starttime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None. If
             None, only the first record after starttime will be
@@ -1535,21 +1588,24 @@ class MCSession(Session):
         Get rtp_task_multiple_process_event record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both starttime and stoptime. If most_recent is
-        set, starttime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get the most recent record. Defaults to True if starttime
-            is None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None. If
             None, only the first record after starttime will be
@@ -1683,21 +1739,24 @@ class MCSession(Session):
         Get rtp_process_record record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -1760,12 +1819,14 @@ class MCSession(Session):
         Get rtp_task_jobid record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         If either or both of obsid & task_name are set, then all records that match
         those are returned unless most_recent or starttime is set.
@@ -1773,12 +1834,12 @@ class MCSession(Session):
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime,
-            obsid and task_name are all None.
+            Option to get the most recent record(s). Defaults to True if starttime,
+            obsid and task_name are all None. If both most_recent and starttime are set,
+            get the most recent record before the starttime.
         starttime : astropy Time object
-            Time to look for records after; applies to start_time column.
-            Ignored if both obsid and task_name are set or if most_recent is
-            True.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for. Ignored if both obsid and task_name are set.
         stoptime : astropy Time object
             last time to get records for, only used if starttime is used.
             If none, only the first record after starttime will be returned.
@@ -1885,12 +1946,14 @@ class MCSession(Session):
         Get rtp_task_resource_record from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         If either or both of obsid & task_name are set, then all records that match
         those are returned unless most_recent or starttime is set.
@@ -1898,12 +1961,12 @@ class MCSession(Session):
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime,
-            obsid and task_name are all None.
+            Option to get the most recent record(s). Defaults to True if starttime,
+            obsid and task_name are all None. If both most_recent and starttime are set,
+            get the most recent record before the starttime.
         starttime : astropy Time object
-            Time to look for records after; applies to start_time column.
-            Ignored if both obsid and task_name are set or if most_recent is
-            True.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for. Ignored if both obsid and task_name are set.
         stoptime : astropy Time object
             last time to get records for, only used if starttime is used.
             If none, only the first record after starttime will be returned.
@@ -2070,12 +2133,14 @@ class MCSession(Session):
         Get rtp_task_multiple_jobid record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         If either or both of obsid & task_name are set, then all records that match
         those are returned unless most_recent or starttime is set.
@@ -2083,12 +2148,12 @@ class MCSession(Session):
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime,
-            obsid and task_name are all None.
+            Option to get the most recent record(s). Defaults to True if starttime,
+            obsid and task_name are all None. If both most_recent and starttime are set,
+            get the most recent record before the starttime.
         starttime : astropy Time object
-            Time to look for records after; applies to start_time column.
-            Ignored if both obsid and task_name are set or if most_recent is
-            True.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for. Ignored if both obsid and task_name are set.
         stoptime : astropy Time object
             last time to get records for, only used if starttime is used.
             If none, only the first record after starttime will be returned.
@@ -2199,12 +2264,14 @@ class MCSession(Session):
         Get rtp_task_multiple_resource_record from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         If either or both of obsid & task_name are set, then all records that match
         those are returned unless most_recent or starttime is set.
@@ -2212,12 +2279,12 @@ class MCSession(Session):
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime,
-            obsid and task_name are all None.
+            Option to get the most recent record(s). Defaults to True if starttime,
+            obsid and task_name are all None. If both most_recent and starttime are set,
+            get the most recent record before the starttime.
         starttime : astropy Time object
-            Time to look for records after; applies to start_time column.
-            Ignored if both obsid and task_name are set or if most_recent is
-            True.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for. Ignored if both obsid and task_name are set.
         stoptime : astropy Time object
             last time to get records for, only used if starttime is used.
             If none, only the first record after starttime will be returned.
@@ -2354,15 +2421,25 @@ class MCSession(Session):
         """
         Fetch rtp_launch_record entries based on their submitted_time.
 
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
+
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime,
-            obsid and task_name are all None.
+            Option to get the most recent record(s). Defaults to True if starttime,
+            obsid and task_name are all None. If both most_recent and starttime are set,
+            get the most recent record before the starttime.
         starttime : astropy Time object
-            Time to look for records after; applies to start_time column.
-            Ignored if both obsid and task_name are set or if most_recent is
-            True.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for. Ignored if both obsid and task_name are set.
         stoptime : astropy Time object
             last time to get records for, only used if starttime is used.
             If none, only the first record after starttime will be returned.
@@ -2551,21 +2628,24 @@ class MCSession(Session):
         Get weather_data record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -2685,21 +2765,25 @@ class MCSession(Session):
         Get node_sensor record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
+
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -2819,21 +2903,24 @@ class MCSession(Session):
         Get node power status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -2921,21 +3008,24 @@ class MCSession(Session):
         Get node power command record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -3154,21 +3244,24 @@ class MCSession(Session):
         Get node_white_rabbit_status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -3265,21 +3358,24 @@ class MCSession(Session):
         Get array_signal_source record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -3345,21 +3441,24 @@ class MCSession(Session):
         Get correlator_component_event_time record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -3567,21 +3666,24 @@ class MCSession(Session):
         Get correlator_catcher_file record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -3631,23 +3733,26 @@ class MCSession(Session):
         If a config_hash is provided, the time-related optional keywords are ignored.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         config_hash : str
             Unique hash for config file.
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -3697,12 +3802,14 @@ class MCSession(Session):
         If a config_hash is provided, the time-related optional keywords are ignored.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
@@ -3711,11 +3818,12 @@ class MCSession(Session):
         parameter : str, optional
             Parameter to get record for. If None, get all parameters for this hash.
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -3948,23 +4056,26 @@ class MCSession(Session):
         effect (regardless of when the config hash was last used).
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         config_hash : str
             Unique MD5 hash of the config to get records for.
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -4043,12 +4154,14 @@ class MCSession(Session):
         effect (regardless of when the config hash was last used).
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
@@ -4058,11 +4171,12 @@ class MCSession(Session):
             Correlator index to get records for. If None, get all correlator index
             records for this hash or time.
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -4146,23 +4260,26 @@ class MCSession(Session):
         effect (regardless of when the config hash was last used).
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         config_hash : str
             Unique MD5 hash of the config to get records for.
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -4250,21 +4367,24 @@ class MCSession(Session):
         Get correlator config status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -4486,21 +4606,24 @@ class MCSession(Session):
         Get correlator software versions record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -4565,21 +4688,24 @@ class MCSession(Session):
         Get SNAP configuration and version record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -4795,21 +4921,24 @@ class MCSession(Session):
         Get snap status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -4961,21 +5090,24 @@ class MCSession(Session):
         Get snap input record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -5176,21 +5308,24 @@ class MCSession(Session):
         Get snap feng init status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -5399,21 +5534,24 @@ class MCSession(Session):
         Get antenna status record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -5530,12 +5668,14 @@ class MCSession(Session):
         Get antenna metric(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         If any of obsid, ant, pol, metric are set, then all records that match
         those are returned unless most_recent or starttime is set.
@@ -5543,11 +5683,12 @@ class MCSession(Session):
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -5650,21 +5791,24 @@ class MCSession(Session):
         Get array metric(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.
@@ -5944,21 +6088,24 @@ class MCSession(Session):
         Get  autocorrelation record(s) from the M&C database.
 
         Default behavior is to return the most recent record(s) -- there can be
-        more than one if there are multiple records at the same time. If
-        starttime is set but stoptime is not, this method will return the first
-        record(s) after the starttime -- again there can be more than one if
-        there are multiple records at the same time. If you want a range of
-        times you need to set both startime and stoptime. If most_recent is set,
-        startime and stoptime are ignored.
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
 
         Parameters
         ----------
         most_recent : bool
-            If True, get most recent record. Defaults to True if starttime is
-            None.
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
         starttime : astropy Time object
-            Time to look for records after. Ignored if most_recent is True,
-            required if most_recent is False.
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
         stoptime : astropy Time object
             Last time to get records for, only used if starttime is not None.
             If none, only the first record after starttime will be returned.

@@ -349,6 +349,20 @@ def test_add_array_signal_source(mcsession):
 
     assert source_result[1].isclose(source_expected2)
 
+    source_result_mr_start = mcsession.get_array_signal_source(
+        most_recent=True, starttime=t1 + TimeDelta(3.0, format="sec")
+    )
+    source_result_start = mcsession.get_array_signal_source(
+        starttime=t1 + TimeDelta(3.0, format="sec")
+    )
+
+    assert len(source_result_mr_start) == 1
+    assert len(source_result_start) == 1
+    assert not source_result_mr_start[0].isclose(source_result_start[0])
+
+    assert source_result_mr_start[0].isclose(source_expected)
+    assert source_result_start[0].isclose(source_expected2)
+
     # this tests different column types not matching:
     source_expected2 = corr.ArraySignalSource(time=t2.gps, source="digital_same_seed")
     assert not source_result[1].isclose(source_expected2)
