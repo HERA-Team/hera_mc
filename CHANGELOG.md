@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- A new `hera_auto_spectrum` table to hold the full autocorrelation spectra, rather than
+just the median values that are currently recorded in `hera_autos` table.
 - A new `correlator_catcher_file` table to track the files written by the catcher.
 - A `tag` column to the `hera_obs` table.
 - A new `snap_feng_init_status` table to track whether SNAPs worked properly, errored,
