@@ -22,7 +22,12 @@ from sqlalchemy.sql.expression import func
 from . import cm_utils
 from . import correlator as corr
 from . import geo_handling, node, rtp
-from .autocorrelations import HeraAuto, _get_autos_from_redis, measurement_func_dict
+from .autocorrelations import (
+    HeraAuto,
+    HeraAutoSpectrum,
+    _get_autos_from_redis,
+    measurement_func_dict,
+)
 from .cm_active import ActiveData
 from .cm_hookup import Hookup
 from .daemon_status import DaemonStatus
@@ -6020,6 +6025,28 @@ class MCSession(Session):
             )
         )
 
+    def add_autocorrelation_spectrum(
+        self, time, antenna_number, antenna_feed_pol, spectrum
+    ):
+        """
+        Add new autocorrelation spectrum column to the M&C database.
+
+        Parameters
+        ----------
+        time : astropy time object
+            Astropy time object based on timestamp of autocorrelation.
+        antenna_number : int
+            Antenna Number
+        antenna_feed_pol : str
+            Feed polarization, either 'e' or 'n'.
+        spectrum : array-like of float
+            The autocorrelation spectrum.
+
+        """
+        self.add(
+            HeraAutoSpectrum.create(time, antenna_number, antenna_feed_pol, spectrum)
+        )
+
     def add_autocorrelations_from_redis(
         self,
         hera_autos_dict=None,
@@ -6027,14 +6054,18 @@ class MCSession(Session):
         redishost=corr.DEFAULT_REDIS_ADDRESS,
         measurement_type=None,
     ):
-        """Get current autocorrelations from redis and insert into M&C.
+        """
+        Get current autocorrelations from redis and insert into M&C.
 
+        Parameters
+        ----------
         hera_autos_dict : dict, optional
             A dict containing info as in the return dict from
             `_get_autos_from_redis()` for testing purposes. If None,
             `_get_autos_from_redis()` is called.
         testing : bool
-            If true, do not add records to database, instead return list of HeraAuto objects.
+            If true, do not add records to database, instead return list of HeraAuto
+            and HeraAutoSpectrum objects.
         redishost : str, optional
             The hostname of the redis server to connect to if hera_autos_dict is None.
             Defaults to correlator.DEFAULT_REDIS_ADDRESS.
@@ -6042,6 +6073,13 @@ class MCSession(Session):
             The type of measurement to take from the autos.
             Available choices are: ['median']
             If None, defaults to median.
+
+        Returns
+        -------
+        list of HeraAuto and HeraAutoSpectrum objects, optional
+            If testing is True, returns the list of objects rather than adding
+            them to the database.
+
         """
         if hera_autos_dict is None:
             hera_autos_dict = _get_autos_from_redis(redishost=redishost)
@@ -6049,6 +6087,7 @@ class MCSession(Session):
             measurement_type = "median"
 
         hera_auto_list = []
+        hera_auto_spectrum_list = []
 
         timestamp_jd = hera_autos_dict.pop("timestamp", None)
 
@@ -6062,18 +6101,23 @@ class MCSession(Session):
         for antpol, auto in hera_autos_dict.items():
             ant, pol = antpol.split(":")
             ant = int(ant)
-            auto = np.asarray(auto)
+            auto_spectrum = np.asarray(auto)
 
-            auto = measurement_func_dict[measurement_type](auto).item()
+            auto_val = measurement_func_dict[measurement_type](auto_spectrum).item()
 
             hera_auto_list.append(
-                HeraAuto.create(time, ant, pol, measurement_type, auto)
+                HeraAuto.create(time, ant, pol, measurement_type, auto_val)
+            )
+
+            hera_auto_spectrum_list.append(
+                HeraAutoSpectrum.create(time, ant, pol, auto_spectrum)
             )
 
         if testing:
-            return hera_auto_list
+            return hera_auto_list + hera_auto_spectrum_list
         else:
             self._insert_ignoring_duplicates(HeraAuto, hera_auto_list)
+            self._insert_ignoring_duplicates(HeraAutoSpectrum, hera_auto_spectrum_list)
 
     def get_autocorrelation(
         self,
@@ -6081,6 +6125,7 @@ class MCSession(Session):
         starttime=None,
         stoptime=None,
         antenna_number=None,
+        feed_pol=None,
         write_to_file=False,
         filename=None,
     ):
@@ -6112,6 +6157,8 @@ class MCSession(Session):
             Ignored if most_recent is True.
         antenna_number : int
             antenna number
+        feed_pol : string
+            Feed polarization, either 'e' or 'n'.
         write_to_file : bool
             Option to write records to a CSV file.
         filename : str
@@ -6121,7 +6168,7 @@ class MCSession(Session):
 
         Returns
         -------
-        list of Autocorrelation objects
+        list of HeraAuto objects
 
         """
         return self._time_filter(
@@ -6130,8 +6177,72 @@ class MCSession(Session):
             most_recent=most_recent,
             starttime=starttime,
             stoptime=stoptime,
-            filter_column="antenna_number",
-            filter_value=antenna_number,
+            filter_column=["antenna_number", "antenna_feed_pol"],
+            filter_value=[antenna_number, feed_pol],
+            write_to_file=write_to_file,
+            filename=filename,
+        )
+
+    def get_autocorrelation_spectrum(
+        self,
+        most_recent=None,
+        starttime=None,
+        stoptime=None,
+        antenna_number=None,
+        feed_pol=None,
+        write_to_file=False,
+        filename=None,
+    ):
+        """
+        Get autocorrelation spectrum record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
+
+        Parameters
+        ----------
+        most_recent : bool
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
+        starttime : astropy Time object
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        antenna_number : int
+            antenna number
+        feed_pol : string
+            Feed polarization, either 'e' or 'n'.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        list of HeraAutoSpectrum objects
+
+        """
+        return self._time_filter(
+            HeraAutoSpectrum,
+            "time",
+            most_recent=most_recent,
+            starttime=starttime,
+            stoptime=stoptime,
+            filter_column=["antenna_number", "antenna_feed_pol"],
+            filter_value=[antenna_number, feed_pol],
             write_to_file=write_to_file,
             filename=filename,
         )

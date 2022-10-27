@@ -16,8 +16,9 @@ import numpy as np
 import redis
 from astropy.time import Time
 from sqlalchemy import BigInteger, Column, Float, Integer, String
+from sqlalchemy.dialects import postgresql
 
-from . import MCDeclarativeBase
+from . import MCDeclarativeBase, utils
 from .correlator import DEFAULT_REDIS_ADDRESS
 
 allowed_measurement_types = ["median"]
@@ -131,4 +132,71 @@ class HeraAuto(MCDeclarativeBase):
             antenna_feed_pol=antenna_feed_pol,
             measurement_type=measurement_type,
             value=value,
+        )
+
+
+class HeraAutoSpectrum(MCDeclarativeBase):
+    """
+    Definition of antenna autocorrelation spectrum table of hera antennas.
+
+    Attributes
+    ----------
+    time : BigInteger Column
+        The time in GPS seconds of the observation, floored as an int. Part of primary_key
+    antenna_number : Integer Column
+        Antenna number. Part of primary_key.
+    antenna_feed_pol : String Column
+        Feed polarization, either 'e' or 'n'. Part of primary_key.
+    spectrum : Float Columnn
+        Auto spectrum (array in postgres). Cannot be None.
+
+    """
+
+    __tablename__ = "hera_auto_spectrum"
+
+    time = Column(BigInteger, primary_key=True)
+    antenna_number = Column(Integer, primary_key=True)
+    antenna_feed_pol = Column(String, primary_key=True)
+    if utils.sqltype() == "postgresql":
+        spectrum = Column(postgresql.ARRAY(Float))
+    else:
+        spectrum = Column(String)
+
+    @classmethod
+    def create(cls, time, antenna_number, antenna_feed_pol, spectrum):
+        """
+        Create a new HeraAutoSpectrum object.
+
+        Parameters
+        ----------
+        time : astropy time object
+            Astropy time object based on timestamp of autocorrelation.
+        antenna_number : int
+            Antenna Number
+        antenna_feed_pol : str
+            Feed polarization, either 'e' or 'n'.
+        measurement_type : str
+            The measurment type of the autocorrelation.
+            Currently supports: 'median'.
+        spectrum : array-like of float
+            The autocorrelation spectrum.
+
+        """
+        if not isinstance(time, Time):
+            raise ValueError("time must be an astropy Time object.")
+        auto_time = floor(time.gps)
+
+        if antenna_feed_pol not in ["e", "n"]:
+            raise ValueError("antenna_feed_pol must be 'e' or 'n'.")
+
+        if isinstance(spectrum, np.ndarray):
+            spectrum = spectrum.tolist()
+        elif not isinstance(spectrum, (list, tuple)):
+            raise ValueError("spectrum must be a list, ndarray or tuple")
+
+        return cls(
+            time=auto_time,
+            antenna_number=antenna_number,
+            antenna_feed_pol=antenna_feed_pol,
+            spectrum=spectrum,
         )

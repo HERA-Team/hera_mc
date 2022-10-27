@@ -12,6 +12,34 @@ from astropy import units as u
 from astropy.time import Time, TimeDelta
 
 
+def sqltype(db_name=None):
+    """
+    Provide the database type for the supplied db_name, or default if None.
+
+    Parameter
+    ---------
+    db_name : str or None
+        Name of db to use, or None for default.
+
+    Returns
+    -------
+    str
+        type of sql database.
+
+    """
+    import json
+    import os.path
+
+    config_path = os.path.expanduser("~/.hera_mc/mc_config.json")
+    with open(config_path) as f:
+        config_data = json.load(f)
+    if db_name is None:
+        db_name = config_data.get("default_db_name")
+    db_data = config_data.get("databases")
+    db_data = db_data.get(db_name)
+    return db_data.get("url").split(":")[0]
+
+
 def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
     """
     Round a time to the nearest LST bin for a given longitude on the globe.
