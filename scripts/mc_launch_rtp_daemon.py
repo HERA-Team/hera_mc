@@ -26,6 +26,7 @@ from hera_mc import mc
 
 REDISHOST = "redishost"
 JD_KEY = "corr:files:jds"
+UPLOADED_KEY = "corr:files:uploaded"
 JD_READY = 2
 JD_FAIL = -1
 
@@ -89,7 +90,18 @@ if __name__ == "__main__":
         r.hset(JD_KEY, jd_redis, JD_FAIL)
         jd = int(jd_redis)
         print("Processing JD", jd)
-
+        # clear out this jd from uploaded queue
+        uploaded = []
+        for cnt in range(r.llen(UPLOADED_KEY)):
+            f = r.rpop(UPLOADED_KEY)
+            if f.startswith(str(jd_redis)):
+                # grab files for this jd
+                uploaded.append(f)
+            else:
+                # otherwise return key to queue
+                r.lpush(UPLOADED_KEY, f)
+            uploaded.append(r.rpop(UPLOADED_KEY))
+        print(f'Found {len(uploaded)} files for JD {jd} in redis')
         filelist = []
         with db.sessionmaker() as session:
             results = session.get_rtp_launch_record_by_jd(jd)
@@ -104,7 +116,7 @@ if __name__ == "__main__":
                 filename = os.path.join(result.prefix, result.filename)
                 filelist.append(filename)
         filelist = sorted(filelist)
-        print(f"Found {len(filelist)} files for JD {jd}")
+        print(f"Found {len(filelist)} files for JD {jd} in M&C")
         existing_files = [f for f in filelist if os.path.exists(f)]
         if len(existing_files) == 0:
             warnings.warn("None of these files are on disk. Flagging as failed.")
