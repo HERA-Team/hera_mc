@@ -101,7 +101,7 @@ if __name__ == "__main__":
                 # otherwise return key to queue
                 r.lpush(UPLOADED_KEY, f)
             uploaded.append(r.rpop(UPLOADED_KEY))
-        print(f'Found {len(uploaded)} files for JD {jd} in redis')
+        print(f"Found {len(uploaded)} files for JD {jd} in redis")
         filelist = []
         with db.sessionmaker() as session:
             results = session.get_rtp_launch_record_by_jd(jd)
