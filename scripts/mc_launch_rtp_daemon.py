@@ -10,22 +10,25 @@ which to launch an RTP workflow.  For each observation
 included in a launched workflow, the corresponding RTPLaunchRecord is updated.
 """
 
-import re
 import os
+import re
 import shutil
 import subprocess
 import sys
 import warnings
-import numpy as np
-from hera_mc import mc
+
 import h5py
 import hera_opm.mf_tools as mt
+import numpy as np
 from astropy.time import Time
 
-REDISHOST = 'redishost'
-JD_KEY = 'corr:files:jds'
+from hera_mc import mc
+
+REDISHOST = "redishost"
+JD_KEY = "corr:files:jds"
 JD_READY = 2
 JD_FAIL = -1
+
 
 def _get_obsids(filelist):
     """
@@ -55,16 +58,19 @@ def _get_obsids(filelist):
     return obsids
 
 
-if __name__ == '__main__':
-    import redis
+if __name__ == "__main__":
     import time
+
+    import redis
 
     SCAN_FILES = True
     RENAME_BAD_FILES = True
-    BAD_SUFFIX = '.METADATA_ERROR'
-    CONDA_ENV = 'RTP'
+    BAD_SUFFIX = ".METADATA_ERROR"
+    CONDA_ENV = "RTP"
     WORKING_DIRECTORY = "/home/obs/rtp_makeflow"
-    WORKFLOW_CONFIG = "/home/obs/src/hera_pipelines/pipelines/h6c/rtp/v2/h6c_rtp_stage_1.toml"
+    WORKFLOW_CONFIG = (
+        "/home/obs/src/hera_pipelines/pipelines/h6c/rtp/v2/h6c_rtp_stage_1.toml"
+    )
 
     db = mc.connect_to_mc_db(None)
     r = redis.Redis(REDISHOST, decode_responses=True)
@@ -89,14 +95,16 @@ if __name__ == '__main__':
             results = session.get_rtp_launch_record_by_jd(jd)
             if len(results) == 0:
                 # this shouldn't happen if processing works correctly
-                warnings.warn(f"No RTP launch records found for JD {jd}. Flagging as failed.")
+                warnings.warn(
+                    f"No RTP launch records found for JD {jd}. Flagging as failed."
+                )
                 continue
             for result in results:
                 # build full filename
                 filename = os.path.join(result.prefix, result.filename)
                 filelist.append(filename)
         filelist = sorted(filelist)
-        print(f'Found {len(filelist)} files for JD {jd}')
+        print(f"Found {len(filelist)} files for JD {jd}")
         existing_files = [f for f in filelist if os.path.exists(f)]
         if len(existing_files) == 0:
             warnings.warn("None of these files are on disk. Flagging as failed.")
@@ -105,7 +113,7 @@ if __name__ == '__main__':
         # scan files if desired
         obsids = []
         if SCAN_FILES:
-            print('Scanning files')
+            print("Scanning files")
             from pyuvdata import UVData
 
             bad_metadata_files = []
@@ -120,7 +128,9 @@ if __name__ == '__main__':
                         os.rename(filename, filename + BAD_SUFFIX)
                 else:
                     # if file is valid, add obsid to running list
-                    starttime = Time(np.unique(uvd.time_array)[0], scale="utc", format="jd")
+                    starttime = Time(
+                        np.unique(uvd.time_array)[0], scale="utc", format="jd"
+                    )
                     obsids.append(int(np.floor(starttime.gps)))
 
         # go to working directory
@@ -137,11 +147,9 @@ if __name__ == '__main__':
         mf_filename = os.path.basename(WORKFLOW_CONFIG).rstrip(".toml") + ".mf"
         mf_filename = os.path.join(jd_folder, mf_filename)
 
-        print('Building Makeflow')
+        print("Building Makeflow")
         # make a workflow
-        mt.build_makeflow_from_config(
-            filelist, WORKFLOW_CONFIG, mf_filename, jd_folder
-        )
+        mt.build_makeflow_from_config(filelist, WORKFLOW_CONFIG, mf_filename, jd_folder)
 
         # launch workflow inside of tmux
         cmd = (
@@ -153,7 +161,7 @@ if __name__ == '__main__':
         session_name = f"rtp_{jd}"
         tmux_cmd = ["tmux", "new-session", "-d", "-s", session_name, cmd]
         try:
-            print('Launching:', tmux_cmd)
+            print("Launching:", tmux_cmd)
             subprocess.check_call(tmux_cmd)
         except subprocess.CalledProcessError as e:
             warnings.warn(
@@ -165,11 +173,11 @@ if __name__ == '__main__':
 
         # if we get to here, assume launch was successful and delete jd from
         # list of unprocessed
-        print(f'Removing redis key JD={jd}')
+        print(f"Removing redis key JD={jd}")
         r.hdel(JD_KEY, jd_redis)
 
         # update RTP launch records
-        print('Updating RTP launch records')
+        print("Updating RTP launch records")
         if len(obsids) == 0:
             obsids = _get_obsids(filelist)
         t0 = Time.now()
@@ -177,4 +185,4 @@ if __name__ == '__main__':
             for filename, obsid in zip(filelist, obsids):
                 session.update_rtp_launch_record(obsid, t0)
             session.commit()
-        print(f'Finished JD={jd}')
+        print(f"Finished JD={jd}")
