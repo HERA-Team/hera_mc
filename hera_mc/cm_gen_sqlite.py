@@ -1,6 +1,7 @@
 """Methods to check and update the database files for sqlite."""
 import json
 import os.path
+import re
 
 from . import cm_table_info, mc
 
@@ -114,10 +115,12 @@ class SqliteHandling:
         testtag = ""
         if self.testing:
             testtag = "tst"
+            schema_file += testtag
+            inserts_file += testtag
 
-        subprocess.call(f"pg_dump -s hera_mc > {schema_file}{testtag}", shell=True)
-        dump = "pg_dump --inserts --data-only hera_mc -t {} > {}{}".format(
-            " -t ".join(self.cm_table_list), inserts_file, testtag
+        subprocess.call(f"pg_dump -s hera_mc > {schema_file}", shell=True)
+        dump = "pg_dump --inserts --data-only hera_mc -t {} > {}".format(
+            " -t ".join(self.cm_table_list), inserts_file
         )
         subprocess.call(dump, shell=True)
 
@@ -126,8 +129,18 @@ class SqliteHandling:
         with open(schema_file, "r") as f:
             for line in f:
                 interline = line + ""
-                if "double precision[]" in line:
-                    interline = line.replace("double precision[]", "character varying")
+                if "[]" in line:
+                    # want to convert any array column to a character varying column.
+                    # first find the column name (must be a single word)
+                    name_match = re.search(r"[\w]+", line)
+                    column_name = name_match.group(0)
+                    # then search after the column name for the type, which can be
+                    # multiple words and ends in "[]"
+                    type_match = re.search(
+                        r"([a-zA-Z ]+)\[\]", line.split(column_name)[-1]
+                    )
+                    column_type = type_match.group(0).strip(" ")
+                    interline = line.replace(column_type, "character varying")
                 modline = interline.replace("public.", "")
 
                 if "CREATE TABLE" in modline:
@@ -156,8 +169,8 @@ class SqliteHandling:
             f.write(inserts)
             f.write(".save {}\n".format(dbfile_full))
         subprocess.call("sqlite3 < {}".format(sqlfile), shell=True)
-        subprocess.call(f"rm -f {schema_file}{testtag}", shell=True)
-        subprocess.call(f"rm -f {inserts_file}{testtag}", shell=True)
+        subprocess.call(f"rm -f {schema_file}", shell=True)
+        subprocess.call(f"rm -f {inserts_file}", shell=True)
         subprocess.call(f"rm -f {sqlfile}", shell=True)
 
 
