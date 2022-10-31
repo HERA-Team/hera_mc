@@ -17,6 +17,7 @@ import redis
 from astropy.time import Time
 from sqlalchemy import BigInteger, Column, Float, Integer, String
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.types import REAL
 
 from . import MCDeclarativeBase, utils
 from .correlator import DEFAULT_REDIS_ADDRESS
@@ -139,6 +140,10 @@ class HeraAutoSpectrum(MCDeclarativeBase):
     """
     Definition of hera_auto_spectrum table.
 
+    Note that there is a fixed bandwidth running from 0 -> 250 MHz. The number of
+    channels in the spectrum can change but the bandwidth is fixed so can be used to
+    calculate the frequencies associated with the spectrum.
+
     Attributes
     ----------
     time : BigInteger Column
@@ -147,7 +152,7 @@ class HeraAutoSpectrum(MCDeclarativeBase):
         Antenna number. Part of primary_key.
     antenna_feed_pol : String Column
         Feed polarization, either 'e' or 'n'. Part of primary_key.
-    spectrum : Float Columnn
+    spectrum : Real Columnn
         Auto spectrum (array in postgres). Cannot be None.
 
     """
@@ -158,9 +163,9 @@ class HeraAutoSpectrum(MCDeclarativeBase):
     antenna_number = Column(Integer, primary_key=True)
     antenna_feed_pol = Column(String, primary_key=True)
     if utils.sqltype() == "postgresql":
-        spectrum = Column(postgresql.ARRAY(Float))
+        spectrum = Column(postgresql.ARRAY(REAL, dimensions=1), nullable=False)
     else:
-        spectrum = Column(String)
+        spectrum = Column(String, nullable=False)
 
     @classmethod
     def create(cls, time, antenna_number, antenna_feed_pol, spectrum):
