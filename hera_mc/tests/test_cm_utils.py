@@ -5,13 +5,13 @@
 """Testing for `hera_mc.cm_transfer`."""
 
 import argparse
+import json
 import os
 import subprocess
 import sys
 
 import pytest
 
-import hera_mc
 from hera_mc import cm_utils, mc
 
 
@@ -206,7 +206,7 @@ def test_put_keys_in_order():
     assert x[0] == "HH0:A"
 
 
-def test_get_cm_repo_git_hash():
+def test_get_cm_repo_git_hash(tmpdir):
     cm_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=mc.test_data_path)
 
     git_hash = subprocess.check_output(
@@ -215,9 +215,23 @@ def test_get_cm_repo_git_hash():
 
     assert cm_hash, git_hash
 
-    example_config_path = os.path.join(
-        os.path.dirname(hera_mc.__path__[0]), "ci", "example_config.json"
-    )
-    pytest.raises(
-        ValueError, cm_utils.get_cm_repo_git_hash, mc_config_path=example_config_path
-    )
+    config_file = os.path.join(tmpdir, "example_config.json")
+    config_dict = {
+        "default_db_name": "hera_mc",
+        "databases": {
+            "hera_mc": {
+                "url": "postgresql://hera:hera@localhost/hera_mc",
+                "mode": "testing",
+            },
+            "testing": {
+                "url": "postgresql://hera:hera@localhost/hera_mc_test",
+                "mode": "testing",
+            },
+        },
+    }
+    with open(config_file, "w") as outfile:
+        json.dump(config_dict, outfile)
+
+    example_config_path = os.path.join(config_file)
+    with pytest.raises(ValueError, match="No cm_csv_path defined in mc_config file."):
+        cm_utils.get_cm_repo_git_hash(mc_config_path=example_config_path)

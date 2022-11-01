@@ -95,13 +95,10 @@ Installing postgresql has three primary steps:  (1) install postgreSQL itself, (
 project databases.  Below are directions for the recommended method to install on macosx.
 
 1. postgres:
-Follow directions on https://www.postgresql.org/download/macosx/.  Just install postgres and command line tools (i.e. not pgadmin)
+Follow directions on https://postgresapp.com.  Be sure to install the command line tools
+(step 3) which are marked as optional.
 
-2. interface:
-The recommended program and simple directions are found here:  https://postgresapp.com/.
-(Note that step 3 below may differ if you install a different interface than used here.)
-
-3. databases:
+2. databases:
 The app will initialize three databases `postgres`, `template1`, and `<username>`, where username
 is your username on your system. Use the
 command `psql` in the terminal to get a psql prompt. From there create the hera user:
