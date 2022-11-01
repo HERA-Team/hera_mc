@@ -12,6 +12,7 @@ from astropy.time import Time
 from astropy.utils import iers
 
 from hera_mc import cm_transfer, mc
+from hera_mc.data import DATA_PATH
 
 test_db = None
 
@@ -42,6 +43,14 @@ def setup_and_teardown_package():
         config_data = json.load(f)
 
     if "sqlite_testing" in config_data["databases"]:
+        sqlite_filename = config_data["databases"]["sqlite_testing"]["url"].split(
+            "sqlite:///"
+        )[-1]
+        sqlite_dir = os.path.dirname(sqlite_filename)
+        print(sqlite_dir)
+        print(DATA_PATH)
+        assert os.path.exists(sqlite_dir)
+
         test_sqlite_db = mc.connect_to_mc_testing_db(forced_db_name="sqlite_testing")
         test_sqlite_db.create_tables()
         sqlite_session = test_sqlite_db.sessionmaker()
