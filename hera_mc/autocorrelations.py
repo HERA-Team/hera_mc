@@ -19,11 +19,17 @@ from sqlalchemy import BigInteger, Column, Float, Integer, String
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.types import REAL
 
-from . import MCDeclarativeBase, utils
+from . import MCDeclarativeBase
 from .correlator import DEFAULT_REDIS_ADDRESS
 
 allowed_measurement_types = ["median"]
 measurement_func_dict = {"median": np.median}
+
+# define a hybrid array type to handle postgres vs sqlite backend for array columns
+HybridArrayType = String()
+HybridArrayType = HybridArrayType.with_variant(
+    postgresql.ARRAY(REAL, dimensions=1), "postgresql"
+)
 
 
 def _get_autos_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
@@ -162,10 +168,7 @@ class HeraAutoSpectrum(MCDeclarativeBase):
     time = Column(BigInteger, primary_key=True)
     antenna_number = Column(Integer, primary_key=True)
     antenna_feed_pol = Column(String, primary_key=True)
-    if utils.sqltype() == "postgresql":
-        spectrum = Column(postgresql.ARRAY(REAL, dimensions=1), nullable=False)
-    else:
-        spectrum = Column(String, nullable=False)
+    spectrum = Column(HybridArrayType, nullable=False)
 
     @classmethod
     def create(cls, time, antenna_number, antenna_feed_pol, spectrum):

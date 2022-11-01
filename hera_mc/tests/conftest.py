@@ -3,6 +3,8 @@
 # Licensed under the 2-clause BSD License
 
 """Testing environment setup and teardown for pytest."""
+import json
+import os
 import urllib
 
 import pytest
@@ -36,15 +38,30 @@ def setup_and_teardown_package():
     session = test_db.sessionmaker()
     cm_transfer._initialization(session=session, cm_csv_path=mc.test_data_path)
 
-    yield test_db
+    with open(os.path.expanduser("~/.hera_mc/mc_config.json")) as f:
+        config_data = json.load(f)
+
+    if "sqlite_testing" in config_data["databases"]:
+        test_sqlite_db = mc.connect_to_mc_testing_db(forced_db_name="sqlite_testing")
+        test_sqlite_db.create_tables()
+        sqlite_session = test_sqlite_db.sessionmaker()
+        cm_transfer._initialization(
+            session=sqlite_session, cm_csv_path=mc.test_data_path
+        )
+    else:
+        test_sqlite_db = None
+
+    yield test_db, test_sqlite_db
 
     iers.conf.auto_max_age = 30
     test_db.drop_tables()
+    if test_sqlite_db is not None:
+        test_sqlite_db.drop_tables()
 
 
 @pytest.fixture(scope="function")
 def mcsession(setup_and_teardown_package):
-    test_db = setup_and_teardown_package
+    test_db, _ = setup_and_teardown_package
     test_conn = test_db.engine.connect()
     test_trans = test_conn.begin()
     test_session = mc.MCSession(bind=test_conn)
@@ -65,3 +82,26 @@ def mcsession(setup_and_teardown_package):
 
     hookup = cm_hookup.Hookup(None)
     hookup.delete_cache_file()
+
+
+@pytest.fixture(scope="session")
+def mc_sqlite_session(setup_and_teardown_package):
+    _, test_sqlite_db = setup_and_teardown_package
+
+    if test_sqlite_db is None:
+        pytest.skip()
+
+    test_conn = test_sqlite_db.engine.connect()
+    test_trans = test_conn.begin()
+    test_sqlite_session = mc.MCSession(bind=test_conn)
+
+    yield test_sqlite_session
+
+    test_sqlite_session.close()
+    # rollback - everything that happened with the
+    # Session above (including calls to commit())
+    # is rolled back.
+    test_trans.rollback()
+
+    # return connection to the Engine
+    test_conn.close()

@@ -87,3 +87,5 @@ target/
 
 hera_mc/GIT_INFO
 .pytest_cache
+
+hera_mc/data/test_data/hera_mc_test.db
