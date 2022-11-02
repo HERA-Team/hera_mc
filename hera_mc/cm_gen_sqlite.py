@@ -121,9 +121,6 @@ class SqliteHandling:
         postgres_port = 5432
         if "POSTGRES_PORT" in os.environ:
             postgres_port = os.environ["POSTGRES_PORT"]
-            print(
-                f"environmental variable POSTGRES_PORT found, value is {postgres_port}"
-            )
 
         with open(os.path.expanduser("~/.hera_mc/mc_config.json")) as f:
             config_data = json.load(f)
