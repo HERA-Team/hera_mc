@@ -118,18 +118,20 @@ class SqliteHandling:
             schema_file += testtag
             inserts_file += testtag
 
+        postgres_port = 5432
         if "POSTGRES_PORT" in os.environ:
             postgres_port = os.environ["POSTGRES_PORT"]
             print(
                 f"environmental variable POSTGRES_PORT found, value is {postgres_port}"
             )
-        else:
-            postgres_port = 5432
 
         with open(os.path.expanduser("~/.hera_mc/mc_config.json")) as f:
             config_data = json.load(f)
-            db_name = config_data["default_db_name"]
-            db_url = config_data["databases"][db_name]["url"]
+            if self.testing:
+                db_url = config_data["databases"]["testing"]["url"]
+            else:
+                db_name = config_data["default_db_name"]
+                db_url = config_data["databases"][db_name]["url"]
 
         subprocess.call(
             f"pg_dump -s -p {postgres_port} -d {db_url} > {schema_file}", shell=True
