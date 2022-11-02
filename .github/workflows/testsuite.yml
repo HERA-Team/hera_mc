@@ -200,6 +200,7 @@ jobs:
           python -m pytest -s --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+          POSTGRES_URL: postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
 
       - uses: codecov/codecov-action@v1.5.2
         if: success()
