@@ -126,17 +126,16 @@ class SqliteHandling:
         else:
             postgres_port = 5432
 
-        if "POSTGRES_URL" in os.environ:
-            db_name = os.environ["POSTGRES_URL"]
-            print(f"environmental variable POSTGRES_URL found, value is {db_name}")
-        else:
-            db_name = "hera_mc"
+        with open(os.path.expanduser("~/.hera_mc/mc_config.json")) as f:
+            config_data = json.load(f)
+            db_name = config_data["default_db_name"]
+            db_url = config_data["databases"][db_name]["url"]
 
         subprocess.call(
-            f"pg_dump -s -p {postgres_port} -d {db_name} > {schema_file}", shell=True
+            f"pg_dump -s -p {postgres_port} -d {db_url} > {schema_file}", shell=True
         )
         dump = (
-            f"pg_dump --inserts --data-only  -p {postgres_port} -d {db_name} -t "
+            f"pg_dump --inserts --data-only  -p {postgres_port} -d {db_url} -t "
             "{} > {}".format(" -t ".join(self.cm_table_list), inserts_file)
         )
         subprocess.call(dump, shell=True)
