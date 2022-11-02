@@ -156,6 +156,7 @@ class SqliteHandling:
                         schema += modline
                     if ");" in modline:
                         creating_table = False
+            assert False
         inserts = ""
         with open(inserts_file, "r") as f:
             for line in f:
