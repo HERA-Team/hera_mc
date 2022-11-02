@@ -120,6 +120,9 @@ class SqliteHandling:
 
         if "POSTGRES_PORT" in os.environ:
             postgres_port = os.environ["POSTGRES_PORT"]
+            print(
+                f"environmental variable POSTGRES_PORT found, value is {postgres_port}"
+            )
         else:
             postgres_port = 5432
 
@@ -135,9 +138,8 @@ class SqliteHandling:
         creating_table = False
         with open(schema_file, "r") as f:
             lines = f.readlines()
-            assert (
-                len(lines) > 0
-            ), f"Schema dump failed, schema file {schema_file} is empty. "
+            msg = f"Schema dump failed, schema file {schema_file} is empty. "
+            assert len(lines) > 0, msg
             for line in lines:
                 interline = line + ""
                 if "[]" in line:
@@ -169,7 +171,10 @@ class SqliteHandling:
 
         inserts = ""
         with open(inserts_file, "r") as f:
-            for line in f:
+            lines = f.readlines()
+            msg = f"Inserts dump failed, inserts file {inserts_file} is empty. "
+            assert len(lines) > 0, msg
+            for line in lines:
                 modline = line.replace("public.", "")
                 if "INSERT" in modline:
                     inserts += modline
