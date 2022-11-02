@@ -128,7 +128,9 @@ class SqliteHandling:
         creating_table = False
         with open(schema_file, "r") as f:
             lines = f.readlines()
-            assert len(lines) > 0
+            assert (
+                len(lines) > 0
+            ), f"Schema dump failed, schema file {schema_file} is empty. "
             for line in lines:
                 interline = line + ""
                 if "[]" in line:
