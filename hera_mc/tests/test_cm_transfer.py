@@ -84,6 +84,8 @@ def test_update_sqlite(mcsession):
 
     assert psql_pams == sqlite_pams
 
+    os.remove(new_sqlite_file)
+
 
 def test_db_to_csv():
     pytest.importorskip("pandas")
