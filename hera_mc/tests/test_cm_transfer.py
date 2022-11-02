@@ -4,12 +4,13 @@
 
 """Testing for `hera_mc.cm_transfer`."""
 
-import json
 import os
 
 import pytest
 
 from .. import cm_gen_sqlite, cm_hookup, cm_transfer, mc
+from ..cm_partconnect import Connections
+from ..mc import AutomappedDB
 
 
 def test_classTime():
@@ -41,25 +42,24 @@ def test_gen_sqlite():
     os.remove(os.path.join(testsqlite.cm_csv_path, test_hash_file))
 
 
-def test_update_sqlite(mc_sqlite_session, mcsession):
+def test_update_sqlite(mcsession):
     testsqlite = cm_gen_sqlite.SqliteHandling(testing=True)
 
     testsqlite.update_sqlite("test_hera_mc.db")
-    with open(os.path.expanduser("~/.hera_mc/mc_config.json")) as f:
-        config_data = json.load(f)
 
-    sqlite_testing_file = config_data["databases"]["sqlite_testing"]["url"].split(
-        "sqlite:///"
-    )[-1]
-
-    # Move this into the location of the test sqlite db to see if it works
-    os.rename(
-        os.path.join(testsqlite.cm_csv_path, "test_hera_mc.db"), sqlite_testing_file
-    )
-    mc_sqlite_session
+    # connect to this file as a new database, check if it has the same stuff
+    new_sqlite_file = os.path.join(testsqlite.cm_csv_path, "test_hera_mc.db")
+    new_sqlite_db = AutomappedDB("sqlite:///" + new_sqlite_file)
+    new_sqlite_session = new_sqlite_db.sessionmaker()
 
     # get something out of the sqlite db and out of the postgres db and check they
     # are the same
+    psql_connections = mcsession.query(Connections).all()
+    assert len(psql_connections) == 139
+
+    sqlite_connections = new_sqlite_session.query(Connections).all()
+    assert len(sqlite_connections) == 139
+
     psql_hookup = cm_hookup.Hookup(mcsession)
     psql_hud = psql_hookup.get_hookup(
         ["HH701"],
@@ -71,7 +71,7 @@ def test_update_sqlite(mc_sqlite_session, mcsession):
         "post-amp", include_ports=True, include_revs=True
     )
 
-    sqlite_hookup = cm_hookup.Hookup(mc_sqlite_session)
+    sqlite_hookup = cm_hookup.Hookup(new_sqlite_session)
     sqlite_hud = sqlite_hookup.get_hookup(
         ["HH701"],
         at_date="2019-07-03",
