@@ -39,8 +39,8 @@ def setup_and_teardown_package():
     session = test_db.sessionmaker()
     cm_transfer._initialization(session=session, cm_csv_path=mc.test_data_path)
 
-    config_path = "~/.hera_mc/mc_config.json"
-    with open(os.path.expanduser(config_path)) as f:
+    config_path = os.path.expanduser("~/.hera_mc/mc_config.json")
+    with open(config_path) as f:
         config_data = json.load(f)
 
     if "sqlite_testing" in config_data["databases"]:
