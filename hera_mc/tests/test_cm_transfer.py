@@ -44,6 +44,7 @@ def test_gen_sqlite():
 def test_update_sqlite(mc_sqlite_session, mcsession):
     testsqlite = cm_gen_sqlite.SqliteHandling(testing=True)
 
+    assert False
     testsqlite.update_sqlite("test_hera_mc.db")
     with open(os.path.expanduser("~/.hera_mc/mc_config.json")) as f:
         config_data = json.load(f)
