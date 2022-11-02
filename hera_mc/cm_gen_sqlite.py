@@ -174,9 +174,9 @@ class SqliteHandling:
             f.write(inserts)
             f.write(".save {}\n".format(dbfile_full))
         subprocess.call("sqlite3 < {}".format(sqlfile), shell=True)
-        subprocess.call(f"rm -f {schema_file}", shell=True)
-        subprocess.call(f"rm -f {inserts_file}", shell=True)
-        subprocess.call(f"rm -f {sqlfile}", shell=True)
+        os.remove(schema_file)
+        os.remove(inserts_file)
+        os.remove(sqlfile)
 
 
 def hash_file(filename):
