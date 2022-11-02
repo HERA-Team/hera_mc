@@ -124,11 +124,10 @@ class SqliteHandling:
 
         with open(os.path.expanduser("~/.hera_mc/mc_config.json")) as f:
             config_data = json.load(f)
+            db_name = config_data["default_db_name"]
+            db_url = config_data["databases"][db_name]["url"]
             if self.testing:
                 db_url = config_data["databases"]["testing"]["url"]
-            else:
-                db_name = config_data["default_db_name"]
-                db_url = config_data["databases"][db_name]["url"]
 
         subprocess.call(
             f"pg_dump -s -p {postgres_port} -d {db_url} > {schema_file}", shell=True
@@ -166,7 +165,11 @@ class SqliteHandling:
                     schema += modline
                     continue
                 if creating_table:
-                    if "DEFAULT" in modline:
+                    # The DEFAULT clause is apparently sometimes written this way and
+                    # sometimes written differently (by defining the sequence and then
+                    # assigning it to the column). Using a pragma because I cannot
+                    # guarantee that this will be triggered.
+                    if "DEFAULT" in modline:  # pragma: no cover
                         dat = modline.split()
                         schema += dat[0] + " " + dat[1] + "\n"
                     else:
