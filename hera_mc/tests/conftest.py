@@ -39,17 +39,21 @@ def setup_and_teardown_package():
     session = test_db.sessionmaker()
     cm_transfer._initialization(session=session, cm_csv_path=mc.test_data_path)
 
-    with open(os.path.expanduser("~/.hera_mc/mc_config.json")) as f:
+    config_path = "~/.hera_mc/mc_config.json"
+    with open(os.path.expanduser(config_path)) as f:
         config_data = json.load(f)
 
     if "sqlite_testing" in config_data["databases"]:
         sqlite_filename = config_data["databases"]["sqlite_testing"]["url"].split(
             "sqlite:///"
         )[-1]
-        sqlite_dir = os.path.dirname(sqlite_filename)
-        print(sqlite_dir)
-        print(DATA_PATH)
-        assert os.path.exists(sqlite_dir)
+        sqlite_dir, sqlite_basename = os.path.split(sqlite_filename)
+        if not os.path.exists(sqlite_dir):
+            config_data["databases"]["sqlite_testing"]["url"] = os.path.join(
+                DATA_PATH, "test_data", "sqlite:///" + sqlite_basename
+            )
+        with open(config_path, "w") as fp:
+            json.dump(config_data, fp)
 
         test_sqlite_db = mc.connect_to_mc_testing_db(forced_db_name="sqlite_testing")
         test_sqlite_db.create_tables()
