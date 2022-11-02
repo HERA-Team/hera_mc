@@ -118,7 +118,14 @@ class SqliteHandling:
             schema_file += testtag
             inserts_file += testtag
 
-        subprocess.call(f"pg_dump -s hera_mc > {schema_file}", shell=True)
+        if "POSTGRES_PORT" in os.environ:
+            postgres_port = os.environ["POSTGRES_PORT"]
+        else:
+            postgres_port = 5432
+
+        subprocess.call(
+            f"pg_dump -s -p {postgres_port} hera_mc > {schema_file}", shell=True
+        )
         dump = "pg_dump --inserts --data-only hera_mc -t {} > {}".format(
             " -t ".join(self.cm_table_list), inserts_file
         )
