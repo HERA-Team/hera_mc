@@ -50,7 +50,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Miniconda
+      - name: Setup Minimamba
         uses: conda-incubator/setup-miniconda@v2.0.0
         with:
           miniforge-variant: Mambaforge

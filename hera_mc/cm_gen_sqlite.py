@@ -128,6 +128,7 @@ class SqliteHandling:
         creating_table = False
         with open(schema_file, "r") as f:
             for line in f:
+                assert False
                 interline = line + ""
                 if "[]" in line:
                     # want to convert any array column to a character varying column.
