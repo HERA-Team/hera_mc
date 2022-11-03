@@ -770,10 +770,22 @@ Antenna autocorrelation statistics (currently just the median over the frequency
 \textbf{antenna\_number} & int & antenna number \\ \hline
 \textbf{antenna\_feed\_pol} & string & antenna feed polarization, either `e' or `n'. \\ \hline
 measurement\_type* & string & Currently can only be `median'. \\ \hline
-value* & float & Measured value. \\ \hline
+value* & float & calculated value (median across frequencies). \\ \hline
 \end{tabular}
 \end{center}
 
+\subsubsection{hera\_auto\_spectrum}
+Antenna autocorrelation spectra.
+\begin{center}
+\begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{time} & long & status time in floor(gps seconds)\\ \hline
+\textbf{antenna\_number} & int & antenna number \\ \hline
+\textbf{antenna\_feed\_pol} & string & antenna feed polarization, either `e' or `n'. \\ \hline
+spectrum* & array of float & autocorrelation spectrum. \\ \hline
+\end{tabular}
+\end{center}
 
 \subsubsection{node\_sensor}
 Node temperature and humidity sensor readings

@@ -158,7 +158,7 @@ class HeraAutoSpectrum(MCDeclarativeBase):
         Antenna number. Part of primary_key.
     antenna_feed_pol : String Column
         Feed polarization, either 'e' or 'n'. Part of primary_key.
-    spectrum : Real Columnn
+    spectrum : Array of Reals Columnn
         Auto spectrum (array in postgres). Cannot be None.
 
     """
