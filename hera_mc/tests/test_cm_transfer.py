@@ -87,6 +87,40 @@ def test_update_sqlite(mcsession):
     os.remove(new_sqlite_file)
 
 
+def test_sqlite_postgres_match(mcsession, mc_sqlite_session):
+    # get something out of the sqlite db and out of the postgres db and check they
+    # are the same
+    psql_connections = mcsession.query(Connections).all()
+    assert len(psql_connections) == 139
+
+    sqlite_connections = mc_sqlite_session.query(Connections).all()
+    assert len(sqlite_connections) == 139
+
+    psql_hookup = cm_hookup.Hookup(mcsession)
+    psql_hud = psql_hookup.get_hookup(
+        ["HH701"],
+        at_date="2019-07-03",
+        exact_match=True,
+        hookup_type="parts_hera",
+    )
+    psql_pams = psql_hud[list(psql_hud.keys())[0]].get_part_from_type(
+        "post-amp", include_ports=True, include_revs=True
+    )
+
+    sqlite_hookup = cm_hookup.Hookup(mc_sqlite_session)
+    sqlite_hud = sqlite_hookup.get_hookup(
+        ["HH701"],
+        at_date="2019-07-03",
+        exact_match=True,
+        hookup_type="parts_hera",
+    )
+    sqlite_pams = sqlite_hud[list(sqlite_hud.keys())[0]].get_part_from_type(
+        "post-amp", include_ports=True, include_revs=True
+    )
+
+    assert psql_pams == sqlite_pams
+
+
 def test_db_to_csv():
     pytest.importorskip("pandas")
     files_written = cm_transfer.package_db_to_csv(tables="parts")
