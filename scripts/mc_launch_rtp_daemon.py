@@ -94,7 +94,9 @@ if __name__ == "__main__":
         uploaded = []
         for cnt in range(r.llen(UPLOADED_KEY)):
             f = r.rpop(UPLOADED_KEY)
-            if f.startswith(str(jd_redis)):
+            if f is None:
+                break
+            elif f.startswith(str(jd_redis)):
                 # grab files for this jd
                 uploaded.append(f)
             else:
