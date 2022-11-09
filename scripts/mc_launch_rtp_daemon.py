@@ -29,6 +29,25 @@ JD_READY = 2
 JD_FAIL = -1
 
 
+def _obsid_from_time_array(time_array):
+    """
+    Compute the obsids given an array of jd times.
+
+    Parameters
+    ----------
+    time_array : array_like of float
+        Array of jd times, e.g. from an uvh5 file or UVData object.
+
+    Returns
+    -------
+    obsid : int
+        The corresponding obside
+
+    """
+    starttime = Time(np.unique(time_array)[0], scale="utc", format="jd")
+    return int(np.floor(starttime.gps))
+
+
 def _get_obsids(filelist):
     """
     Compute the obsids for a list of files.
@@ -51,8 +70,7 @@ def _get_obsids(filelist):
                 time_array = h5f["Header/time_array"][()]
         except KeyError as err:
             raise ValueError(f"error reading file {filename}") from err
-        starttime = Time(np.unique(time_array)[0], scale="utc", format="jd")
-        obsids.append(int(np.floor(starttime.gps)))
+        obsids.append(_obsid_from_time_array(time_array))
 
     return obsids
 
@@ -140,10 +158,8 @@ if __name__ == "__main__":
                         os.rename(filename, filename + BAD_SUFFIX)
                 else:
                     # if file is valid, add obsid to running list
-                    starttime = Time(
-                        np.unique(uvd.time_array)[0], scale="utc", format="jd"
-                    )
-                    obsids.append(int(np.floor(starttime.gps)))
+                    obsid = _obsid_from_time_array(uvd.time_array)
+                    obsids.append(obsid)
 
         # go to working directory
         os.chdir(WORKING_DIRECTORY)
@@ -194,7 +210,7 @@ if __name__ == "__main__":
             obsids = _get_obsids(filelist)
         t0 = Time.now()
         with db.sessionmaker() as session:
-            for filename, obsid in zip(filelist, obsids):
+            for obsid in obsids:
                 session.update_rtp_launch_record(obsid, t0)
             session.commit()
         print(f"Finished JD={jd}")
