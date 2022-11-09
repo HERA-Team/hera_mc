@@ -11,10 +11,8 @@ included in a launched workflow, the corresponding RTPLaunchRecord is updated.
 """
 
 import os
-import re
 import shutil
 import subprocess
-import sys
 import warnings
 
 import h5py
