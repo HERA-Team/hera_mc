@@ -70,7 +70,8 @@ the `test_data` folder.
 Developers interested in running redis on their own development machines
 have multiple options for hosting.
  - Using native platform redis-server programs. These can be installed from any package manager.
- - Docker can be used to run a redis server as well. But this requires mounting a volume on the docker container so the new dumps can be loaded into the server.
+ - Docker can be used to run a redis server as well. But this requires mounting a volume
+   on the docker container so the new dumps can be loaded into the server.
 
 ## Updating the redis dump
 
@@ -128,7 +129,8 @@ r.save()
 ```
 
 Once the save is complete, re-run hera_mc tests to ensure compatibility.
-If all the tests pass and this dump is read to be committed, copy this dump back to overwrite `hera_mc/hera_mc/data/test_data/dump.rdb`.
+If all the tests pass and this dump is ready to be committed, copy this dump back to
+overwrite `hera_mc/hera_mc/data/test_data/dump.rdb`.
 Add and commit the file through git to finilize the update on your branch.
 
 

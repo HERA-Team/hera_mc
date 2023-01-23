@@ -785,6 +785,211 @@ def test_add_correlator_catcher_file_from_redis(mcsession):
     assert catcher_file_result[0].isclose(current_file)
 
 
+def test_add_corr_file_queues(mcsession):
+    test_session = mcsession
+    t1 = TEST_TIME1.copy()
+    t2 = TEST_TIME2.copy()
+
+    int_jd1 = int(np.fix(t1.jd))
+    filename1 = f"{int_jd1}/zen.{t1.jd}.sum.uvh5"
+    t1a = t1 - TimeDelta(10.0 * 12, format="sec")
+    filename1a = f"{int_jd1}/zen.{t1a.jd}.sum.uvh5"
+
+    test_session.add_correlator_file_queues(t1, "raw", 13, filename1a, filename1)
+    t0 = t1 - TimeDelta(60.0, format="sec")
+    int_jd0 = int(np.fix(t0.jd))
+    filename0 = f"{int_jd0}/zen.{t0.jd}.sum.uvh5"
+    t0a = t0 - TimeDelta(10.0, format="sec")
+    filename0a = f"{int_jd0}/zen.{t0a.jd}.sum.uvh5"
+
+    test_session.add_correlator_file_queues(t1, "converted", 2, filename0a, filename0)
+
+    queue_expected1 = corr.CorrelatorFileQueues(
+        time=int(floor(t1.gps)),
+        queue="raw",
+        length=13,
+        oldest_entry=filename1a,
+        newest_entry=filename1,
+    )
+
+    queue_result = test_session.get_correlator_file_queues(
+        starttime=t1 - TimeDelta(3.0, format="sec"), queue="raw"
+    )
+    assert len(queue_result) == 1
+    queue_result = queue_result[0]
+    assert queue_result.isclose(queue_expected1)
+
+    queue_expected0 = corr.CorrelatorFileQueues(
+        time=int(floor(t1.gps)),
+        queue="converted",
+        length=2,
+        oldest_entry=filename0a,
+        newest_entry=filename0,
+    )
+    queue_result = test_session.get_correlator_file_queues(
+        starttime=t1 - TimeDelta(3.0, format="sec")
+    )
+    assert len(queue_result) == 2
+    for obj in queue_result:
+        if obj.queue == "raw":
+            assert obj.isclose(queue_expected1)
+        else:
+            assert obj.isclose(queue_expected0)
+
+    result_most_recent = test_session.get_correlator_file_queues(queue="raw")
+    assert len(result_most_recent) == 1
+    result_most_recent = result_most_recent[0]
+    assert result_most_recent.isclose(queue_expected1)
+
+    int_jd2 = int(np.fix(t2.jd))
+    filename2 = f"{int_jd2}/zen.{t2.jd}.sum.uvh5"
+    t2a = t2 - TimeDelta(10.0 * 4, format="sec")
+    filename2a = f"{int_jd2}/zen.{t2a.jd}.sum.uvh5"
+    test_session.add_correlator_file_queues(t2, "raw", 5, filename2a, filename2)
+    test_session.add_correlator_file_queues(t2, "lib_upload_purgatory", 0, None, None)
+
+    queue_expected2 = corr.CorrelatorFileQueues(
+        time=int(floor(t2.gps)),
+        queue="raw",
+        length=5,
+        oldest_entry=filename2a,
+        newest_entry=filename2,
+    )
+
+    result = test_session.get_correlator_file_queues(queue="raw")
+    assert len(result) == 1
+    result = result[0]
+    assert result.isclose(queue_expected2)
+
+    queue_expected3 = corr.CorrelatorFileQueues(
+        time=int(floor(t2.gps)),
+        queue="lib_upload_purgatory",
+        length=0,
+        newest_entry=None,
+        oldest_entry=None,
+    )
+    result = test_session.get_correlator_file_queues(queue="lib_upload_purgatory")
+    assert len(result) == 1
+    result = result[0]
+
+    assert result.isclose(queue_expected3)
+
+    result = test_session.get_correlator_file_queues(
+        starttime=t1 + TimeDelta(200.0, format="sec")
+    )
+    assert result == []
+
+
+def test_add_corr_file_queues_errors(mcsession):
+    test_session = mcsession
+    t1 = TEST_TIME1.copy()
+
+    int_jd1 = int(np.fix(t1.jd))
+    filename1 = f"{int_jd1}/zen.{t1.jd}.sum.uvh5"
+    t1a = t1 - TimeDelta(10.0 * 12, format="sec")
+    filename1a = f"{int_jd1}/zen.{t1a.jd}.sum.uvh5"
+
+    with pytest.raises(ValueError, match="time must be an astropy Time object"):
+        test_session.add_correlator_file_queues("foo", "raw", 13, filename1, filename1a)
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Unknown queue name: foo. Should be one of: "
+            f"{list(corr.file_queue_names.keys())}"
+        ),
+    ):
+        test_session.add_correlator_file_queues(t1, "foo", 13, filename1, filename1a)
+
+
+def test_add_corr_file_queues_redis(mcsession):
+    queue_list = mcsession.add_correlator_file_queues_from_redis(
+        redishost=TEST_DEFAULT_REDIS_HOST, testing=True
+    )
+    assert len(queue_list) == 7
+
+    mcsession.add_correlator_file_queues_from_redis(redishost=TEST_DEFAULT_REDIS_HOST)
+    # get most recent
+    queue_result = mcsession.get_correlator_file_queues()
+
+    assert len(queue_result) == len(queue_list)
+
+    queue_lengths = [obj.length for obj in queue_result]
+
+    assert max(queue_lengths) > 0
+
+
+def test_update_correlator_file_eod(mcsession):
+    test_session = mcsession
+    t0 = TEST_TIME1.copy()
+    t1 = t0 + TimeDelta(30 * 60.0, format="sec")
+    t2 = t1 + TimeDelta(30 * 60.0, format="sec")
+    tfail = t2 + TimeDelta(2 * 3600.0, format="sec")
+
+    jd = int(t0.jd)
+
+    test_session.update_correlator_file_eod(t0, jd, 0)
+    expected_eod = corr.CorrelatorFileEOD.create(jd, t0, None, None, None)
+    result = test_session.get_correlator_file_eod(jd)
+    assert len(result) == 1
+    assert expected_eod.isclose(result[0])
+
+    # check that nothing happens if this status is already in the db
+    test_session.update_correlator_file_eod(t1, jd, 0)
+    result = test_session.get_correlator_file_eod(jd)
+    assert len(result) == 1
+    assert expected_eod.isclose(result[0])
+
+    test_session.update_correlator_file_eod(t1, jd, 1)
+    expected_eod = corr.CorrelatorFileEOD.create(jd, t0, t1, None, None)
+    result = test_session.get_correlator_file_eod(jd)
+    assert len(result) == 1
+    assert expected_eod.isclose(result[0])
+
+    test_session.update_correlator_file_eod(t2, jd, 2)
+    expected_eod = corr.CorrelatorFileEOD.create(jd, t0, t1, t2, None)
+    result = test_session.get_correlator_file_eod(jd)
+    assert len(result) == 1
+    assert expected_eod.isclose(result[0])
+
+    test_session.update_correlator_file_eod(tfail, jd, -1)
+    expected_eod = corr.CorrelatorFileEOD.create(jd, t0, t1, t2, tfail)
+    result = test_session.get_correlator_file_eod(jd)
+    assert len(result) == 1
+    assert expected_eod.isclose(result[0])
+
+
+def test_update_correlator_file_eod_errors(mcsession):
+    test_session = mcsession
+    t0 = TEST_TIME1.copy()
+    t1 = t0 + TimeDelta(30 * 60.0, format="sec")
+    t2 = t1 + TimeDelta(30 * 60.0, format="sec")
+    tfail = t2 + TimeDelta(2 * 3600.0, format="sec")
+
+    jd = int(t0.jd)
+
+    with pytest.raises(ValueError, match="time must an astropy Time object"):
+        test_session.update_correlator_file_eod(t0.gps, jd, 0)
+
+    with pytest.raises(
+        ValueError, match="time_start must be None or an astropy Time object"
+    ):
+        corr.CorrelatorFileEOD.create(jd, t0.jd, t1, t2, tfail)
+
+
+def test_update_correlator_file_eod_redis(mcsession):
+    jd_eod_dict = corr._get_correlator_file_eod_status_from_redis(
+        redishost=TEST_DEFAULT_REDIS_HOST
+    )
+    mcsession.update_correlator_file_eod_from_redis(redishost=TEST_DEFAULT_REDIS_HOST)
+
+    assert len(jd_eod_dict) > 0
+
+    for jd in jd_eod_dict.keys():
+        eod_result = mcsession.get_correlator_file_eod(jd)
+        assert len(eod_result) == 1
+
+
 def test_add_corr_config(mcsession, corr_config):
     test_session = mcsession
     t1 = TEST_TIME1.copy()
@@ -2780,8 +2985,8 @@ def test_antenna_status_errors(mcsession):
 
 
 @requires_redis
-@pytest.mark.filterwarnings("ignore:fem_switch value is UNKNOWN")
-@pytest.mark.filterwarnings("ignore:fem_switch value is Unknown")
+@pytest.mark.filterwarnings("ignore:fem_switch value is null")
+@pytest.mark.filterwarnings("ignore:fem_switch value is failed")
 def test_redis_add_antenna_status_from_corrcm(mcsession):
     pytest.importorskip("hera_corr_cm")
     test_session = mcsession
