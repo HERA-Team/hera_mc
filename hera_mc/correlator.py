@@ -668,7 +668,7 @@ class CorrelatorFileEOD(MCDeclarativeBase):
     time_uploaded : BigInteger Column
         GPS time (floored) that the end of day tag was first detected with a value of 2
         (done uploading).
-    time_uploaded : BigInteger Column
+    time_launch_failed : BigInteger Column
         GPS time (floored) that the end of day tag was first detected with a value of -1
         (RTP launch failed).
 

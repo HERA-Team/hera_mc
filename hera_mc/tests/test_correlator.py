@@ -902,6 +902,7 @@ def test_add_corr_file_queues_errors(mcsession):
         test_session.add_correlator_file_queues(t1, "foo", 13, filename1, filename1a)
 
 
+@requires_redis
 def test_add_corr_file_queues_redis(mcsession):
     queue_list = mcsession.add_correlator_file_queues_from_redis(
         redishost=TEST_DEFAULT_REDIS_HOST, testing=True
@@ -977,6 +978,7 @@ def test_update_correlator_file_eod_errors(mcsession):
         corr.CorrelatorFileEOD.create(jd, t0.jd, t1, t2, tfail)
 
 
+@requires_redis
 def test_update_correlator_file_eod_redis(mcsession):
     jd_eod_dict = corr._get_correlator_file_eod_status_from_redis(
         redishost=TEST_DEFAULT_REDIS_HOST
