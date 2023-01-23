@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- The new `correlator_file_queues` and `correlator_file_eod` tables to track the
+internal file handling in the correlator and the handoff to RTP.
 - A new `hera_auto_spectrum` table to hold the full autocorrelation spectra, rather than
 just the median values that are currently recorded in `hera_autos` table.
 - A new `correlator_catcher_file` table to track the files written by the catcher.

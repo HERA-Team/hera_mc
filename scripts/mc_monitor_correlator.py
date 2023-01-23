@@ -29,6 +29,8 @@ commands_to_run = [
     "add_array_signal_source_from_redis",
     "add_correlator_component_event_time_from_redis",
     "add_correlator_catcher_file_from_redis",
+    "add_correlator_file_queues_from_redis",
+    "update_correlator_file_eod_from_redis",
     "add_correlator_config_from_corrcm",
     "add_snap_status_from_corrcm",
     "add_snap_feng_init_status_from_redis",

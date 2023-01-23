@@ -3626,7 +3626,7 @@ class MCSession(Session):
         redishost=corr.DEFAULT_REDIS_ADDRESS,
     ):
         """
-        Get and current catcher file from redis.
+        Get the current catcher file from redis and add it to the database.
 
         Uses the `correlator._get_catcher_file_from_redis` function
 
@@ -3714,6 +3714,228 @@ class MCSession(Session):
             write_to_file=write_to_file,
             filename=filename,
         )
+
+    def add_correlator_file_queues(
+        self, time, queue, length, oldest_entry, newest_entry
+    ):
+        """
+        Add new correlator file queue records to the M&C database.
+
+        Parameters
+        ----------
+        time : astropy Time object
+            Astropy time object based on when the queue was queried.
+        queue : str
+            Name of queue, one of: "raw", "conversion_purgatory", "conversion_failed",
+            "converted", "lib_upload_purgatory", "lib_upload_failed", "lib_uploaded".
+        length : int
+            Length of the queue.
+        latest_entry : str
+            File most recently added to the queue.
+
+        """
+        self.add(
+            corr.CorrelatorFileQueues.create(
+                time, queue, length, oldest_entry, newest_entry
+            )
+        )
+
+    def add_correlator_file_queues_from_redis(
+        self,
+        testing=False,
+        redishost=corr.DEFAULT_REDIS_ADDRESS,
+    ):
+        """
+        Get the current file queue info from redis and add it to the database.
+
+        Uses the `correlator._get_correlator_file_queues_from_redis` function
+
+        Parameters
+        ----------
+        testing : bool
+            If true, return the list of CorrelatorFileQueues objects and don't add them
+            to the database.
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
+
+        Returns
+        -------
+        list of CorrelatorFileQueues objects
+            If testing is True, returns the list of CorrelatorFileQueues objects rather
+            than adding them to the database.
+
+        """
+        file_queue_list = corr._get_correlator_file_queues_from_redis(
+            redishost=redishost
+        )
+
+        if testing:
+            return file_queue_list
+
+        self._insert_ignoring_duplicates(corr.CorrelatorFileQueues, file_queue_list)
+
+    def get_correlator_file_queues(
+        self,
+        queue=None,
+        most_recent=None,
+        starttime=None,
+        stoptime=None,
+        write_to_file=False,
+        filename=None,
+    ):
+        """
+        Get correlator_file_queues record(s) from the M&C database.
+
+        Default behavior is to return the most recent record(s) -- there can be
+        more than one if there are multiple records at the same time.
+        If only starttime is set, this method will return the first record(s) after the
+        starttime -- again there can be more than one if there are multiple records at
+        the same time.  If both most_recent and starttime are set, this method will
+        return the most recent record(s) at the starttime, meaning the record with the
+        largest time <= starttime -- again there can be more than one if there are
+        multiple records at the same time.  If you want a range of times you need to
+        set both startime and stoptime.
+
+        Parameters
+        ----------
+        most_recent : bool
+            Option to get the most recent record(s). Defaults to True if starttime is
+            None. If both most_recent and starttime are set, get the most recent record
+            before the starttime.
+        queue : str
+            Name of queue, one of: "raw", "conversion_purgatory", "conversion_failed",
+            "converted", "lib_upload_purgatory", "lib_upload_failed", "lib_uploaded".
+            Default is to include all queue names.
+        starttime : astropy Time object
+            Time to look for records after or, if most_recent is True, time to get the
+            get the most recent value for.
+        stoptime : astropy Time object
+            Last time to get records for, only used if starttime is not None.
+            If none, only the first record after starttime will be returned.
+            Ignored if most_recent is True.
+        write_to_file : bool
+            Option to write records to a CSV file.
+        filename : str
+            Name of file to write to. If not provided, defaults to a file in the
+            current directory named based on the table name.
+            Ignored if write_to_file is False.
+
+        Returns
+        -------
+        if write_to_file is False: list of CorrelatorFileQueues objects
+
+        """
+        return self._time_filter(
+            corr.CorrelatorFileQueues,
+            "time",
+            most_recent=most_recent,
+            starttime=starttime,
+            stoptime=stoptime,
+            filter_column="queue",
+            filter_value=queue,
+            write_to_file=write_to_file,
+            filename=filename,
+        )
+
+    def get_correlator_file_eod(self, jd):
+        """
+        Get correlator file EOD status record(s) from the M&C database.
+
+        Parameter
+        ---------
+        jd : int
+            Julian day to get the EOD status for.
+
+        Returns
+        -------
+        list
+            CorrelatorFileEOD for the specified jd, or None if no rows exist for the jd.
+
+        """
+        query = self.query(corr.CorrelatorFileEOD).filter(
+            corr.CorrelatorFileEOD.jd == jd
+        )
+
+        return query.all()
+
+    def update_correlator_file_eod(self, time, jd, status):
+        """
+        Update the correlator_file_eod table.
+
+        This only records the time associated with a status when it is first observed.
+        If the jd and status already exist in the database, the database will not be
+        updated, making it convenient to sample the eod information densely on qmaster.
+
+        Parameters
+        ----------
+        time : astropy Time object
+            Astropy time object based on when the correlator file end of day status was
+            queried.
+        jd : int
+            Julian day that the status is for.
+        status : int
+            Status value, one of: 0 (meaning conversion is ongoing), 1 (meaning
+            conversion is done, librarian uploading is ongoing), 2 (meaning librarian
+            uploading is done), or -1 (meaning that RTP launch failed on that jd).
+
+        """
+        file_eod_status_columns = {
+            0: "time_start",
+            1: "time_converted",
+            2: "time_uploaded",
+            -1: "time_launch_failed",
+        }
+        if not isinstance(time, Time):
+            raise ValueError("time must an astropy Time object")
+
+        # Check to see if this jd and status is in the db already. If so, do nothing
+        jd_result = self.get_correlator_file_eod(jd)
+        if len(jd_result) == 0:
+            # This jd isn't in the table. Add it with this status at this time
+            eod_kwarg = {}
+            for eod_status, name in file_eod_status_columns.items():
+                if eod_status == status:
+                    eod_kwarg[name] = int(time.gps)
+                else:
+                    eod_kwarg[name] = None
+
+            self.add(corr.CorrelatorFileEOD(jd=jd, **eod_kwarg))
+        else:
+            existing_obj = jd_result[0]
+            # This jd is in the table. Check to see if this status column has been set.
+            status_column = file_eod_status_columns[status]
+            existing_time = getattr(existing_obj, status_column)
+            if existing_time is None:
+                setattr(existing_obj, status_column, int(time.gps))
+
+    def update_correlator_file_eod_from_redis(
+        self,
+        redishost=corr.DEFAULT_REDIS_ADDRESS,
+    ):
+        """
+        Get the current file EOD info from redis and add it to the database.
+
+        Uses the `correlator._get_correlator_file_eod_status_from_redis` function
+
+        Parameters
+        ----------
+        redishost : str
+            redis address to use. Defaults to correlator.DEFAULT_REDIS_ADDRESS.
+
+        Returns
+        -------
+        list of CorrelatorFileEOD objects
+            If testing is True, returns the list of CorrelatorFileEOD objects rather
+            than adding them to the database.
+
+        """
+        jd_eod_dict = corr._get_correlator_file_eod_status_from_redis(
+            redishost=redishost
+        )
+
+        time = Time.now()
+        for jd, status in jd_eod_dict.items():
+            self.update_correlator_file_eod(time, jd, status)
 
     def add_correlator_config_file(self, config_hash, config_file):
         """

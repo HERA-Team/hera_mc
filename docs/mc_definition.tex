@@ -577,6 +577,40 @@ filename & string & name of the file written by the catcher. Can be null when th
 \end{tabular}
 \end{center}
 
+\subsubsection{correlator\_file\_queues}
+Track the internal correlator file queues.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{time} & long & Time that the queue status was checked in floor(gps seconds)\\ \hline
+\textbf{queue} & string & Name of queue, one of: ``raw", ``conversion\_purgatory",  ``conversion\_failed",
+``converted", ``lib\_upload\_purgatory", ``lib\_upload\_failed", ``lib\_uploaded". \\ \hline
+length* & integer & Length of the queue. \\ \hline
+oldest\_entry & string & Oldest file in the queue. \\ \hline
+newest\_entry & string & Newest file in the queue. \\ \hline
+\end{tabular}
+\end{center}
+
+\subsubsection{correlator\_file\_eod}
+Track the correlator file end of day (EOD) status.
+\begin{center}
+ \begin{tabular}{| p{4cm} | p{2cm} | p{10cm} |}
+\hline
+ {\bf Column} & {\bf Type}  & {\bf Description} \\ [0.5ex]  \hline\hline
+\textbf{jd} & long & Julian day\\ \hline
+time\_start & long & Time that the jd EOD status was first detected as 0,
+meaning that the conversion is ongoing in floor(gps seconds)\\ \hline
+time\_converted & long & Time that the jd EOD status was first detected as 1,
+meaning that conversion is complete and librarian uploading is ongoing in floor(gps seconds)\\ \hline
+time\_uploaded & long & Time that the jd EOD status was first detected as 2,
+meaning that librarian uploading is complete in floor(gps seconds)\\ \hline
+time\_launch\_failed & long & Time that the jd EOD status was first detected as -1,
+meaning that RTP launch failed in floor(gps seconds).\\ \hline
+\end{tabular}
+\end{center}
+
+
 \subsubsection{correlator\_config\_file}
 List of correlator config files, which specify detailed correlator settings. All files in this table are in the Librarian.
 \begin{center}

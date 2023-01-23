@@ -47,6 +47,20 @@ corr_component_events = {
     "catcher": ["start", "stop", "stop_timeout"],
 }
 
+# key is the queue name in the M&C table, value gives the redis key and type
+file_queue_names = {
+    "raw": {"redis_key": "corr:files:raw", "type": "queue"},
+    "conversion_purgatory": {"redis_key": "corr:files:purgatory", "type": "hashmap"},
+    "conversion_failed": {"redis_key": "corr:files:failed", "type": "queue"},
+    "converted": {"redis_key": "corr:files:converted", "type": "queue"},
+    "lib_upload_purgatory": {
+        "redis_key": "corr:files:lib_purgatory",
+        "type": "hashmap",
+    },
+    "lib_upload_failed": {"redis_key": "corr:files:lib_failed", "type": "queue"},
+    "lib_uploaded": {"redis_key": "corr:files:uploaded", "type": "queue"},
+}
+
 
 class ArraySignalSource(MCDeclarativeBase):
     """
@@ -513,6 +527,243 @@ def _get_catcher_file_from_redis(redishost=DEFAULT_REDIS_ADDRESS, test_dict=None
         filename = None
 
     return time, filename
+
+
+class CorrelatorFileQueues(MCDeclarativeBase):
+    """
+    Definition of correlator_file_queues table.
+
+    Track the internal correlator file queues.
+
+    Attributes
+    ----------
+    time : BigInteger Column
+        GPS time that the queue status was checked, floored. One of the primary keys.
+    queue : String Column
+        Name of queue, one of the primary keys. One of: "raw", "conversion_purgatory",
+        "conversion_failed", "converted", "lib_upload_purgatory", "lib_upload_failed",
+        "lib_uploaded".
+    length : Integer Column
+        Length of the queue.
+    oldest_entry : String Column
+        Oldest file in the queue.
+    newest_entry : String Column
+        Newest file in the queue.
+
+    """
+
+    __tablename__ = "correlator_file_queues"
+    time = Column(BigInteger, primary_key=True)
+    queue = Column(String, primary_key=True)
+    length = Column(Integer)
+    oldest_entry = Column(String, nullable=True)
+    newest_entry = Column(String, nullable=True)
+
+    @classmethod
+    def create(cls, time, queue, length, oldest_entry, newest_entry):
+        """
+        Create a new correlator file queue object.
+
+        Parameters
+        ----------
+        time : astropy Time object
+            Astropy time object based on when the queue was queried.
+        queue : str
+            Name of queue, one of: "raw", "conversion_purgatory", "conversion_failed",
+            "converted", "lib_upload_purgatory", "lib_upload_failed", "lib_uploaded".
+        length : int
+            Length of the queue.
+        oldest_entry : str
+            Oldest file in the queue.
+        newest_entry : str
+            Newest file in the queue.
+
+        """
+        if not isinstance(time, Time):
+            raise ValueError("time must be an astropy Time object")
+        time_use = floor(time.gps)
+
+        if queue not in file_queue_names.keys():
+            raise ValueError(
+                f"Unknown queue name: {queue}. Should be one of: "
+                f"{list(file_queue_names.keys())}"
+            )
+
+        return cls(
+            time=time_use,
+            queue=queue,
+            length=length,
+            oldest_entry=oldest_entry,
+            newest_entry=newest_entry,
+        )
+
+
+def _get_correlator_file_queues_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
+    """
+    Get the current catcher file from redis.
+
+    Parameters
+    ----------
+    redishost : str
+        Address of redis database
+
+    Returns
+    -------
+    list of CorrelatorFileQueues objects
+        List of CorrelatorFileQueues objects constructed from the redis file queues.
+
+    """
+    redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
+    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+
+    time = Time.now()
+    obj_list = []
+    for queue, queue_info in file_queue_names.items():
+        newest = None
+        oldest = None
+        if queue_info["type"] == "queue":
+            length = rsession.llen(queue_info["redis_key"])
+            if length > 0:
+                newest = rsession.lrange(queue_info["redis_key"], -1, -1)
+                oldest = rsession.lrange(queue_info["redis_key"], 0, 0)
+        else:
+            rdict = rsession.hgetall(queue_info["redis_key"])
+            length = len(rdict)
+            if length > 0:
+                # with a little bit of poking, it *seems* like the keys are ordered
+                # oldest to newest. But online searching makes it seem like the keys
+                # are unordered. So I'm going to sort them for now.
+                files = list(rdict.keys())
+                oldest = sorted(files)[0]
+                newest = sorted(files)[-1]
+        obj_list.append(
+            CorrelatorFileQueues.create(
+                time=time,
+                queue=queue,
+                length=length,
+                oldest_entry=oldest,
+                newest_entry=newest,
+            )
+        )
+
+    return obj_list
+
+
+class CorrelatorFileEOD(MCDeclarativeBase):
+    """
+    Definition of correlator_file_eod table.
+
+    Track the correlator file end of day (EOD) status.
+
+    Attributes
+    ----------
+    jd : BigInteger Column
+        Julian day. The primary key.
+    time_start : BigInteger Column
+        GPS time (floored) that the end of day tag was first detected with a value of 0
+        (still converting).
+    time_converted : BigInteger Column
+        GPS time (floored) that the end of day tag was first detected with a value of 1
+        (finished converting, still uploading).
+    time_uploaded : BigInteger Column
+        GPS time (floored) that the end of day tag was first detected with a value of 2
+        (done uploading).
+    time_uploaded : BigInteger Column
+        GPS time (floored) that the end of day tag was first detected with a value of -1
+        (RTP launch failed).
+
+    """
+
+    __tablename__ = "correlator_file_eod"
+    jd = Column(BigInteger, primary_key=True)
+    time_start = Column(BigInteger, nullable=True)
+    time_converted = Column(BigInteger, nullable=True)
+    time_uploaded = Column(BigInteger, nullable=True)
+    time_launch_failed = Column(BigInteger, nullable=True)
+
+    @classmethod
+    def create(cls, jd, time_start, time_converted, time_uploaded, time_launch_failed):
+        """
+        Create a new correlator file EOD object.
+
+        Parameters
+        ----------
+        jd : int
+            Julian day.
+        time_start : astropy Time object
+            Astropy time object based on when the jd EOD status was first detected as 0,
+            meaning that the conversion is ongoing.
+        time_converted : astropy Time object
+            Astropy time object based on when the jd EOD status was first detected as 1,
+            meaning that conversion is complete and librarian uploading is ongoing.
+        time_uploaded : astropy Time object
+            Astropy time object based on when the jd EOD status was first detected as 2,
+            meaning that librarian uploading is complete.
+        time_launch_failed : astropy Time object
+            Astropy time object based on when the jd EOD status was first detected as
+            -1, meaning that RTP launch failed.
+
+        """
+        time_dict = {
+            "time_start": {"val": time_start},
+            "time_converted": {"val": time_converted},
+            "time_uploaded": {"val": time_uploaded},
+            "time_launch_failed": {"val": time_launch_failed},
+        }
+        for name, t_dict in time_dict.items():
+            val = t_dict["val"]
+            if val is not None:
+                if not isinstance(val, Time):
+                    raise ValueError(f"{name} must be None or an astropy Time object")
+                time_dict[name]["use"] = int(val.gps)
+            else:
+                time_dict[name]["use"] = None
+
+        return cls(
+            jd=jd,
+            time_start=time_dict["time_start"]["use"],
+            time_converted=time_dict["time_converted"]["use"],
+            time_uploaded=time_dict["time_uploaded"]["use"],
+            time_launch_failed=time_dict["time_launch_failed"]["use"],
+        )
+
+
+def _get_correlator_file_eod_status_from_redis(
+    redishost=DEFAULT_REDIS_ADDRESS, test_dict=None
+):
+    """
+    Get the current catcher file from redis.
+
+    Parameters
+    ----------
+    redishost : str
+        Address of redis database
+    test_dict : dict
+        dict mocking what is returned by the rsession.hgetall("corr:files:jds") call
+        for testing purposes, e.g. {'2459929': '-1', '2459949': '-1', '2459951': '0'}
+
+    Returns
+    -------
+    dict
+        Dictionary with status values per jd. Status values can be: 0 (meaning
+        conversion is ongoing), 1 (meaning conversion is done, librarian uploading is
+        ongoing) or 2 (meaning librarian uploading is done). Occasionally it can be -1
+        (meaning that RTP launch failed on that jd). The jd keys are usually removed
+        when the RTP job was launched.
+
+    """
+    if test_dict:
+        file_eod_dict = test_dict
+    else:
+        redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
+        rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+
+        file_eod_dict = rsession.hgetall("corr:files:jds")
+
+    # keys are:
+    #  - jd
+    #  - status value
+    return file_eod_dict
 
 
 class CorrelatorConfigFile(MCDeclarativeBase):
