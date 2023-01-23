@@ -728,9 +728,7 @@ class CorrelatorFileEOD(MCDeclarativeBase):
         )
 
 
-def _get_correlator_file_eod_status_from_redis(
-    redishost=DEFAULT_REDIS_ADDRESS, test_dict=None
-):
+def _get_correlator_file_eod_status_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
     """
     Get the current catcher file from redis.
 
@@ -752,13 +750,10 @@ def _get_correlator_file_eod_status_from_redis(
         when the RTP job was launched.
 
     """
-    if test_dict:
-        file_eod_dict = test_dict
-    else:
-        redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
-        rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+    redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
+    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
 
-        file_eod_dict = rsession.hgetall("corr:files:jds")
+    file_eod_dict = rsession.hgetall("corr:files:jds")
 
     # keys are:
     #  - jd
