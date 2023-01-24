@@ -983,13 +983,30 @@ def test_update_correlator_file_eod_redis(mcsession):
     jd_eod_dict = corr._get_correlator_file_eod_status_from_redis(
         redishost=TEST_DEFAULT_REDIS_HOST
     )
+    time = Time.now()
     mcsession.update_correlator_file_eod_from_redis(redishost=TEST_DEFAULT_REDIS_HOST)
 
     assert len(jd_eod_dict) > 0
 
-    for jd in jd_eod_dict.keys():
+    for jd, status in jd_eod_dict.items():
         eod_result = mcsession.get_correlator_file_eod(jd)
         assert len(eod_result) == 1
+
+        file_eod_status_columns = {
+            0: "time_start",
+            1: "time_converted",
+            2: "time_uploaded",
+            -1: "time_launch_failed",
+        }
+        assert status in file_eod_status_columns.keys()
+        eod_kwarg = {}
+        for eod_status, name in file_eod_status_columns.items():
+            if eod_status == status:
+                eod_kwarg[name] = int(time.gps)
+            else:
+                eod_kwarg[name] = None
+        expected_obj = corr.CorrelatorFileEOD(jd=jd, **eod_kwarg)
+        assert eod_result[0].isclose(expected_obj)
 
 
 def test_add_corr_config(mcsession, corr_config):

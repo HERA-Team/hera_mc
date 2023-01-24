@@ -754,11 +754,13 @@ def _get_correlator_file_eod_status_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
     rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
 
     file_eod_dict = rsession.hgetall("corr:files:jds")
-
+    new_dict = {}
+    for key, val in file_eod_dict.items():
+        new_dict[int(key)] = int(val)
     # keys are:
     #  - jd
     #  - status value
-    return file_eod_dict
+    return new_dict
 
 
 class CorrelatorConfigFile(MCDeclarativeBase):
