@@ -35,7 +35,6 @@ if __name__ == "__main__":
 
     version_info = {}
     for repo_name in ["pyuvdata", "hera_qm", "hera_cal", "hera_opm"]:
-
         version_info[repo_name] = {}
 
         # we're importing things at an odd place here

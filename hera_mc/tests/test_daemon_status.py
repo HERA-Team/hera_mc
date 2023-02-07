@@ -13,7 +13,6 @@ from ..daemon_status import DaemonStatus
 
 @pytest.fixture(scope="function")
 def daemon_data():
-
     column_names = ["name", "hostname", "time", "status"]
     column_values = ["test_daemon", "test_host", Time.now(), "good"]
     columns = dict(zip(column_names, column_values))

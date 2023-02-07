@@ -112,7 +112,6 @@ while True:
         logger.info("Beginning data catching.")
         while True:
             try:
-
                 # use future_array_shapes
                 # Nblts, Nfreqs, Npols
                 # we don't necessarily know how many freqs we'll have.
@@ -135,7 +134,6 @@ while True:
                         snap_hostname,
                         status,
                     ) in corr_cm.get_snaprf_status().items():
-
                         if status["timestamp"] is None or status["timestamp"] == "None":
                             continue
 

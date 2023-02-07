@@ -13,7 +13,6 @@ from .. import cm_handling, cm_partconnect
 
 @pytest.fixture(scope="function")
 def conns(mcsession):
-
     test_hpn = ["test_part1", "test_part2"]
     test_rev = "Q"
     test_mfg = "XYZ"

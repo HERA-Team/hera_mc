@@ -79,7 +79,6 @@ def is_valid_database(base, session):
     # Go through all SQLAlchemy models
 
     for table, klass in base.metadata.tables.items():
-
         if table in tables:
             # Check all columns are found
             # Looks like [{'default':
