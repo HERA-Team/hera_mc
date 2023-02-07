@@ -15,7 +15,6 @@ from ..db_check import check_connection, is_valid_database
 
 
 def gen_test_model():
-
     Base = declarative_base()
 
     class ValidTestModel(Base):
@@ -30,7 +29,6 @@ def gen_test_model():
 
 
 def gen_relation_models():
-
     Base = declarative_base()
 
     class RelationTestModel(Base):
@@ -50,7 +48,6 @@ def gen_relation_models():
 
 
 def gen_declarative():
-
     Base = declarative_base()
 
     class DeclarativeTestModel(Base):
