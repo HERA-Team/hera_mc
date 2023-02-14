@@ -29,4 +29,13 @@ def upgrade():
 
 def downgrade():
     op.drop_table("cm_version")
+    op.create_table(
+        "host_status",
+        sa.Column("id", sa.BigInteger(), nullable=False),
+        sa.Column("time", sa.DateTime(), nullable=False),
+        sa.Column("hostname", sa.String(length=64), nullable=True),
+        sa.Column("load_average", sa.Float(), nullable=False),
+        sa.Column("uptime", sa.Float(), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+    )
     # ### end Alembic commands ###

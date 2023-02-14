@@ -37,3 +37,6 @@ def upgrade():
 
 def downgrade():
     op.drop_table("rtp_task_process_event")
+    sa.Enum("started", "finished", "error", name="rtp_task_process_enum").drop(
+        op.get_bind()
+    )

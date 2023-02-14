@@ -33,7 +33,7 @@ except (LookupError, ImportError):
 # Before we can do anything else, we need to initialize some core, shared
 # variables.
 
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 # define some default tolerances for various units
 DEFAULT_DAY_TOL = {"atol": 1e-3 / (3600.0 * 24.0), "rtol": 0}  # ms

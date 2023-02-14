@@ -3,7 +3,7 @@
 # Licensed under the 2-clause BSD license.
 """Database consistency checking functions."""
 
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 from sqlalchemy.exc import OperationalError
 
 from . import logger
@@ -25,7 +25,7 @@ def check_connection(session):
     """
     result = True
     try:
-        session.execute("SELECT 1")
+        session.execute(text("SELECT 1"))
     except OperationalError:
         result = False
     return result

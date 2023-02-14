@@ -111,7 +111,8 @@ def package_db_to_csv(session=None, tables="all"):
         files_written = []
         for table in tables_to_write:
             data_filename = data_prefix + table + ".csv"
-            table_data = pandas.read_sql_table(table, session.get_bind())
+            with session.get_bind().connect() as conn:
+                table_data = pandas.read_sql_table(table, conn)
             print("\tPackaging:  " + data_filename)
             table_data.to_csv(data_filename, index=False)
             files_written.append(data_filename)
