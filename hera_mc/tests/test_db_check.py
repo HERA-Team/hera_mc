@@ -6,10 +6,9 @@ from collections import namedtuple
 
 import pytest
 import sqlalchemy
-from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy import Column, ForeignKey, Integer, String, text
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import declarative_base, declared_attr, relationship, sessionmaker
 
 from .. import mc
 from ..db_check import check_connection, is_valid_database
@@ -122,22 +121,26 @@ def test_validity_table_missing():
 def test_validity_column_missing():
     """See check fails when there is a missing table"""
     engine = mc.connect_to_mc_testing_db().engine
-    conn = engine.connect()
-    conn.begin()
+    with engine.begin() as conn:
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        Base, ValidTestModel = gen_test_model()
+        try:
+            Base.metadata.drop_all(engine, tables=[ValidTestModel.__table__])
+        except sqlalchemy.exc.NoSuchTableError:
+            pass
+        Base.metadata.create_all(engine, tables=[ValidTestModel.__table__])
+        session.close()
 
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    Base, ValidTestModel = gen_test_model()
-    try:
-        Base.metadata.drop_all(engine, tables=[ValidTestModel.__table__])
-    except sqlalchemy.exc.NoSuchTableError:
-        pass
-    Base.metadata.create_all(engine, tables=[ValidTestModel.__table__])
+        # Delete one of the columns
+        conn.execute(text("ALTER TABLE validity_check_test DROP COLUMN id_"))
 
-    # Delete one of the columns
-    engine.execute("ALTER TABLE validity_check_test DROP COLUMN id_")
-
-    assert is_valid_database(Base, session) is False
+    # use a new context manager to make sure there are no open transactions
+    # without this it hangs
+    with engine.begin() as conn:
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        assert is_valid_database(Base, session) is False
 
 
 def test_validity_pass_relationship():

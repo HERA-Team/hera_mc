@@ -7,6 +7,7 @@ Create Date: 2017-07-27 22:51:11.172610+00:00
 """
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy import text
 from sqlalchemy.schema import CreateSequence, Sequence
 
 # revision identifiers, used by Alembic.
@@ -18,13 +19,13 @@ depends_on = None
 
 def upgrade():
     conn = op.get_bind()
-    conn.execute("ALTER TABLE hera_obs ALTER COLUMN obsid DROP DEFAULT;")
-    conn.execute("ALTER TABLE lib_status ALTER COLUMN time DROP DEFAULT;")
-    conn.execute("ALTER TABLE rtp_status ALTER COLUMN time DROP DEFAULT;")
+    conn.execute(text("ALTER TABLE hera_obs ALTER COLUMN obsid DROP DEFAULT;"))
+    conn.execute(text("ALTER TABLE lib_status ALTER COLUMN time DROP DEFAULT;"))
+    conn.execute(text("ALTER TABLE rtp_status ALTER COLUMN time DROP DEFAULT;"))
 
-    conn.execute("DROP SEQUENCE hera_obs_obsid_seq")
-    conn.execute("DROP SEQUENCE lib_status_time_seq")
-    conn.execute("DROP SEQUENCE rtp_status_time_seq")
+    conn.execute(text("DROP SEQUENCE hera_obs_obsid_seq"))
+    conn.execute(text("DROP SEQUENCE lib_status_time_seq"))
+    conn.execute(text("DROP SEQUENCE rtp_status_time_seq"))
 
 
 def downgrade():

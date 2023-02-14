@@ -308,6 +308,9 @@ def downgrade():
     op.drop_column("connections", "start_gpstime")
     op.drop_table("rtp_process_record")
     op.drop_table("rtp_process_event")
+    sa.Enum("queued", "started", "finished", "error", name="rtp_process_enum").drop(
+        op.get_bind()
+    )
     op.drop_table("lib_files")
     op.drop_table("rtp_status")
     op.drop_table("rtp_server_status")
