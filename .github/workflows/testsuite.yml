@@ -1,6 +1,10 @@
 name: Run Tests
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     env:
@@ -156,11 +160,12 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Miniconda
+      - name: Setup Minimamba
         uses: conda-incubator/setup-miniconda@v2.0.0
         with:
-          auto-update-conda: true
-          miniconda-version: "latest"
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          use-mamba: true
           python-version: ${{ env.PYTHON }}
           environment-file: ci/${{ env.ENV_NAME }}.yaml
           activate-environment: ${{ env.ENV_NAME }}
@@ -206,3 +211,110 @@ jobs:
         with:
           token: ${{secrets.CODECOV_TOKEN}} #required
           file: ./coverage.xml #optional
+
+  warning_tests:
+    env:
+      ENV_NAME: tests
+      PYTHON: ${{ matrix.python-version }}
+      WITH_SUDO: yes
+      OS: ${{ matrix.os }}
+      # use localhost for the host here because we are running the job on the VM.
+      POSTGRES_HOST: localhost
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    name: Testing
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        # Adding -l {0} helps ensure conda can be found properly.
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.9]
+    services:
+      postgres:
+        image: postgres:10.8
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+        # will assign a random free host port
+        - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis
+        env:
+          REDIS_HOST: redishost
+        ports:
+        - 6379:6379
+        options: --entrypoint redis-server --network-alias $REDIS_HOST -v /data:/data --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+
+      - name: Setup Minimamba
+        uses: conda-incubator/setup-miniconda@v2.0.0
+        with:
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          use-mamba: true
+          python-version: ${{ env.PYTHON }}
+          environment-file: ci/${{ env.ENV_NAME }}.yaml
+          activate-environment: ${{ env.ENV_NAME }}
+
+      - name: Conda Info
+        run: |
+          conda info -a
+          conda list
+          PYVER=`python -c "import sys; print('{:d}.{:d}'.format(sys.version_info.major, sys.version_info.minor))"`
+          if [[ $PYVER != ${{ env.PYTHON }} ]]; then
+            exit 1;
+          fi
+
+      - name: Install
+        run: |
+          pip install --no-deps .
+
+      - name: Setup postgres
+        run: |
+          export POSTGRES_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
+          psql $POSTGRES_URL -c 'create database hera_mc_test;'
+          psql $POSTGRES_URL -c 'create database hera_mc;'
+          psql $POSTGRES_URL -c "create user hera with password 'hera';"
+        env:
+          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+
+      - name: Upgrade Database Schema
+        run: |
+          mkdir ~/.hera_mc
+          cp ci/example_config.json ~/.hera_mc/mc_config.json
+          alembic upgrade head
+        env:
+          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+
+      - name: Initialize Redis
+        # Grab the name of the redis container with bash magic
+        # stop the container, replace the dump file with our save file
+        # add the IP to the hosts file to preserve some hardcoded defaults
+        run: |
+          DOCKER_NAME=`/usr/bin/docker ps -a --filter="ancestor=redis" --format='{{.Names}}'`
+          /usr/bin/docker stop $DOCKER_NAME
+          sudo rm /data/dump.rdb
+          sudo cp hera_mc/data/test_data/dump.rdb /data
+          /usr/bin/docker start $DOCKER_NAME
+          DOCKER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $DOCKER_NAME`
+          echo "$DOCKER_IP redishost" | sudo tee -a /etc/hosts
+
+      - name: Run Tests
+        run: |
+          python -m pytest -W error
+        env:
+          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port

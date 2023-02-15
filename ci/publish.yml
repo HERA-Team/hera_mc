@@ -15,4 +15,4 @@ dependencies:
   - sqlalchemy
   - pip
   - pip:
-     - pep517
+     - build
