@@ -6,6 +6,7 @@
 import json
 import os
 import urllib
+import warnings
 
 import pytest
 from astropy.time import Time
@@ -85,7 +86,13 @@ def mcsession(setup_and_teardown_package):
     # rollback - everything that happened with the
     # Session above (including calls to commit())
     # is rolled back.
-    test_trans.rollback()
+    with warnings.catch_warnings():
+        # If an error was raised, rollback may have already been called. If so, this
+        # will give a warning which we filter out here.
+        warnings.filterwarnings(
+            "ignore", "transaction already deassociated from connection"
+        )
+        test_trans.rollback()
 
     # return connection to the Engine
     test_conn.close()
