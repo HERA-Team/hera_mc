@@ -11,7 +11,7 @@ isort:skip_file
 from pathlib import Path
 
 import numpy as np
-from pkg_resources import DistributionNotFound, get_distribution
+from importlib.metadata import version, PackageNotFoundError
 from setuptools_scm import get_version
 
 from .branch_scheme import branch_scheme
@@ -25,8 +25,8 @@ try:  # pragma: nocover
 except (LookupError, ImportError):
     try:
         # Set the version automatically from the package details.
-        __version__ = get_distribution(__name__).version
-    except DistributionNotFound:  # pragma: nocover
+        __version__ = version("hera_mc")
+    except PackageNotFoundError:  # pragma: nocover
         # package is not installed
         pass
 
