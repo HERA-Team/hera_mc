@@ -13,7 +13,14 @@ import copy
 import warnings
 
 from numpy import radians
-from pyuvdata import utils as uvutils
+
+with warnings.catch_warnings():
+    # This filter can be removed when pyuvdata (and maybe other imported packages?)
+    # are updated to use importlib.metadata rather than pkg_resources
+    warnings.filterwarnings(
+        "ignore", "Deprecated call to `pkg_resources.declare_namespace"
+    )
+    from pyuvdata import utils as uvutils
 from sqlalchemy import func
 
 from . import cm_partconnect, cm_sysdef, cm_utils, geo_location, mc
