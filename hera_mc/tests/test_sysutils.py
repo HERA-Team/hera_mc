@@ -4,13 +4,13 @@
 
 """Testing for hera_mc.cm_sysutils and hookup."""
 
-import os.path
-import subprocess
 from argparse import Namespace
 
 import numpy as np
 import pytest
 import redis
+
+import hera_mc
 
 from .. import (
     cm_active,
@@ -481,17 +481,9 @@ def test_correlator_info(sys_handle):
 
     assert corr_dict["cm_version"] is not None
 
-    # cm_version should be the same as the git hash of m&c for the test data
-    mc_dir = os.path.dirname(os.path.realpath(__file__))
-    mc_git_hash = subprocess.check_output(
-        ["git", "-C", mc_dir, "rev-parse", "HEAD"], stderr=subprocess.STDOUT
-    ).strip()
+    # cm_version should be the same as the hera_mc version
 
-    # In Python 3, we sometimes get Unicode, sometimes bytes
-    if isinstance(mc_git_hash, bytes):
-        mc_git_hash = mc_git_hash.decode("utf8")
-
-    assert corr_dict["cm_version"] == mc_git_hash
+    assert corr_dict["cm_version"] == hera_mc.__version__
 
     expected_keys = [
         "antenna_numbers",
