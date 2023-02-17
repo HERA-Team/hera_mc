@@ -8,11 +8,17 @@ import datetime
 import hashlib
 import os
 import re
+import warnings
 from math import floor
 
 import numpy as np
 import pytest
-import pyuvdata.tests as uvtest
+
+with warnings.catch_warnings():
+    # This filter can be removed when pyuvdata (and maybe other imported packages?)
+    # are updated to use importlib.metadata rather than pkg_resources
+    warnings.filterwarnings("ignore", "Implementing implicit namespace packages")
+    import pyuvdata.tests as uvtest
 import yaml
 from astropy.time import Time, TimeDelta
 

@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Methods for handling locating correlator and various system aspects."""
+import warnings
 
 import numpy as np
 from sqlalchemy import and_, func, or_
@@ -226,7 +227,13 @@ class Handling:
                 'cofa_lon': longitude of the center-of-array in degrees
                 'cofa_alt': altitude of center-of-array in meters
         """
-        from pyuvdata import utils as uvutils
+        with warnings.catch_warnings():
+            # This filter can be removed when pyuvdata (and maybe other imported packages?)
+            # are updated to use importlib.metadata rather than pkg_resources
+            warnings.filterwarnings(
+                "ignore", "Deprecated call to `pkg_resources.declare_namespace"
+            )
+            from pyuvdata import utils as uvutils
 
         from . import cm_handling
 

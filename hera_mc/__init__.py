@@ -9,12 +9,14 @@ isort:skip_file
 """
 
 from pathlib import Path
+import warnings
 
 import numpy as np
 from importlib.metadata import version, PackageNotFoundError
 from setuptools_scm import get_version
 
 from .branch_scheme import branch_scheme
+
 
 try:  # pragma: nocover
     # get accurate version for developer installs
@@ -132,23 +134,27 @@ def NotNull(kind, **kwargs):
     return Column(kind, nullable=False, **kwargs)
 
 
-from . import autocorrelations  # noqa
-from . import cm_transfer  # noqa this needs to come before several others
-from . import cm_active  # noqa
-from . import cm_dossier  # noqa
-from . import cm_partconnect  # noqa
-from . import cm_sysdef  # noqa
-from . import cm_sysutils  # noqa
-from . import cm_utils  # noqa
-from . import correlator  # noqa
-from . import daemon_status  # noqa
-from . import geo_location  # noqa
-from . import librarian  # noqa
-from . import node  # noqa
-from . import observations  # noqa
-from . import qm  # noqa
-from . import rtp  # noqa
-from . import subsystem_error  # noqa
-from . import server_status  # noqa
-from . import weather  # noqa
-from . import mc  # noqa keep this last.
+with warnings.catch_warnings():
+    # This filter can be removed when pyuvdata (and maybe other imported packages?)
+    # are updated to use importlib.metadata rather than pkg_resources
+    warnings.filterwarnings("ignore", "Implementing implicit namespace packages")
+    from . import autocorrelations  # noqa
+    from . import cm_transfer  # noqa this needs to come before several others
+    from . import cm_active  # noqa
+    from . import cm_dossier  # noqa
+    from . import cm_partconnect  # noqa
+    from . import cm_sysdef  # noqa
+    from . import cm_sysutils  # noqa
+    from . import cm_utils  # noqa
+    from . import correlator  # noqa
+    from . import daemon_status  # noqa
+    from . import geo_location  # noqa
+    from . import librarian  # noqa
+    from . import node  # noqa
+    from . import observations  # noqa
+    from . import qm  # noqa
+    from . import rtp  # noqa
+    from . import subsystem_error  # noqa
+    from . import server_status  # noqa
+    from . import weather  # noqa
+    from . import mc  # noqa keep this last.
