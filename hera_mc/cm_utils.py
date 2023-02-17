@@ -9,6 +9,8 @@ import subprocess
 
 from astropy.time import Time, TimeDelta
 
+import hera_mc
+
 from . import mc
 
 PAST_DATE = "2000-01-01"
@@ -34,15 +36,17 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
         git hash of cm repository
 
     """
-    if cm_csv_path is None or testing:
+    if testing:
+        return hera_mc.__version__
+
+    if cm_csv_path is None:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_path)
         if cm_csv_path is None:
             raise ValueError("No cm_csv_path defined in mc_config file.")
 
-    git_hash = subprocess.check_output(
+    return subprocess.check_output(
         ["git", "-C", cm_csv_path, "rev-parse", "HEAD"], stderr=subprocess.STDOUT
     ).strip()
-    return git_hash
 
 
 def log(msg, **kwargs):

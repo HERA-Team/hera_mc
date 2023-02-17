@@ -198,7 +198,10 @@ jobs:
 
       - name: Run Tests
         run: |
-          python -m pytest --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
+          mkdir -p empty
+          cd empty
+          pytest --pyargs hera_mc --cov=hera_mc --cov-config=../.coveragerc --cov-report xml:../coverage.xml --junitxml=../test-reports/xunit.xml
+          cd ..
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
 

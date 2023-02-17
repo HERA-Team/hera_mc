@@ -206,14 +206,19 @@ def test_put_keys_in_order():
     assert x[0] == "HH0:A"
 
 
+@pytest.mark.skipif(
+    not os.system("git -C " + mc.test_data_path + " rev-parse 2> /dev/null > /dev/null")
+    == 0,
+    reason="hera_mc test data is not in a git repo.",
+)
 def test_get_cm_repo_git_hash(tmpdir):
     cm_hash = cm_utils.get_cm_repo_git_hash(cm_csv_path=mc.test_data_path)
 
     git_hash = subprocess.check_output(
-        ["git", "-C", ".", "rev-parse", "HEAD"], stderr=subprocess.STDOUT
+        ["git", "-C", mc.test_data_path, "rev-parse", "HEAD"], stderr=subprocess.STDOUT
     ).strip()
 
-    assert cm_hash, git_hash
+    assert cm_hash == git_hash
 
     config_file = os.path.join(tmpdir, "example_config.json")
     config_dict = {
