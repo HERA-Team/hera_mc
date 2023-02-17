@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.7, 3.8, 3.9, "3.10"]
+        python-version: [3.8, 3.9, "3.10"]
     services:
       postgres:
         image: postgres:10.8
@@ -122,25 +122,21 @@ jobs:
   min_deps:
     env:
       ENV_NAME: min_deps
-      PYTHON: ${{ matrix.python-version }}
+      PYTHON: 3.9
       WITH_SUDO: yes
-      OS: ${{ matrix.os }}
       # use localhost for the host here because we are running the job on the VM.
       POSTGRES_HOST: localhost
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     name: min_deps testing
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     defaults:
       run:
         # Adding -l {0} helps ensure conda can be found properly.
         shell: bash -l {0}
     strategy:
       fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        python-version: [3.9]
     services:
       postgres:
         image: postgres:10.8
@@ -215,25 +211,21 @@ jobs:
   warning_tests:
     env:
       ENV_NAME: tests
-      PYTHON: ${{ matrix.python-version }}
+      PYTHON: 3.9
       WITH_SUDO: yes
-      OS: ${{ matrix.os }}
       # use localhost for the host here because we are running the job on the VM.
       POSTGRES_HOST: localhost
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
-    name: Testing
-    runs-on: ${{ matrix.os }}
+    name: Warnings Test
+    runs-on: ubuntu-latest
     defaults:
       run:
         # Adding -l {0} helps ensure conda can be found properly.
         shell: bash -l {0}
     strategy:
       fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        python-version: [3.9]
     services:
       postgres:
         image: postgres:10.8
