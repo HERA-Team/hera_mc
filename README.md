@@ -47,24 +47,24 @@ instructions in [database_setup.md](https://github.com/HERA-Team/hera_mc/blob/ma
 
 ## Dependencies
 The required dependencies are:
-- alembic
-- astropy
-- numpy
-- psycopg2
-- pyyaml
-- redis-py
-- setuptools_scm
-- sqlalchemy
+- alembic >= 1.8
+- astropy >= 5.0.4
+- cartopy >=0.20
+- numpy >= 1.19
+- psycopg2 >= 2.9
+- pyuvdata >= 2.2.9
+- pyyaml >= 5.1
+- redis-py >= 4.3.4 (Note that this is called "redis" on pypi and "redis-py" on conda)
+- setuptools_scm <7.0|>=7.0.3
+- sqlalchemy >= 1.4
 
 the optional dependencies are:
-- cartopy
-- h5py
-- pandas
-- psutil
-- python-dateutil
-- pyuvdata
-- tabulate
-- tornado
+- h5py >= 3.1
+- pandas >= 1.4
+- psutil >= 5.9
+- python-dateutil >= 2.8.2
+- tabulate >= 0.8.10
+- tornado >= 6.2
 
 We suggest using conda to install all the dependencies.
 
