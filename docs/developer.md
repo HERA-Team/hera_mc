@@ -41,7 +41,8 @@ of your new table to the documentation in docs/mc_definition.tex.
 10. Create a pull request on github to ask for a code review and to get your
 changes integrated into main.
 11. Testing onsite (required for PRs): First clear it with the observing team. Then
-checkout your branch onsite and run `alembic upgrade head`. Install the new branch with
+run `git fetch` (not pull!) to get the info about your branch onto the machine and
+checkout your branch onsite. Next run `alembic upgrade head`. Install the new branch with
 `pip install --no-deps .`. Run the tests with `pytest`. Then put things back as they were
 by first downgrading alembic with `alembic downgrade -1` (or whatever number of alembic
 versions your branch differs from what was installed by). The downgrade **must be done**
@@ -64,6 +65,13 @@ features which require data being read from redis, or through any hera correlato
 a new redis.rdb file must be created on `redishost` on site which contains an example
 of the new data and added to the repository by overwriting the existing redis.rdb in
 the `test_data` folder.
+
+## Testing onsite without a schema change
+This is required for PRs. First clear it with the observing team. Then
+run `git fetch` (not pull!) to get the info about your branch onto the machine. Then
+checkout your branch onsite and install the new branch with `pip install --no-deps .`.
+Run the tests with `pytest`. Then put things back as they were by checking out the main
+branch and installing it with `pip install --no-deps .`.
 
 ## Hosting a redis server for testing
 
