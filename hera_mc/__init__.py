@@ -18,7 +18,7 @@ from setuptools_scm import get_version
 from .branch_scheme import branch_scheme
 
 
-try:  # pragma: nocover
+try:
     # get accurate version for developer installs
     version_str = get_version(Path(__file__).parent.parent, local_scheme=branch_scheme)
 
