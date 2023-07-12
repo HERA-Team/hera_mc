@@ -359,9 +359,14 @@ class Handling:
             ):
                 a.gps2Time()
                 a.desc = self.station_types[a.station_type_name]["Description"]
-                a.lon, a.lat = latlon_p.transform_point(
-                    a.easting, a.northing - lat_corr, utm_p
-                )
+                # TODO: remove this when cartopy has been updated (needed for v0.21.1)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                        "ignore", "Conversion of an array with ndim > 0 to a scalar"
+                    )
+                    a.lon, a.lat = latlon_p.transform_point(
+                        a.easting, a.northing - lat_corr, utm_p
+                    )
                 a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(
                     radians(a.lat), radians(a.lon), a.elevation
                 )
@@ -513,9 +518,14 @@ class Handling:
             if a.station_type_name.lower() in station_types_to_check:
                 a.gps2Time()
                 a.desc = self.station_types[a.station_type_name]["Description"]
-                a.lon, a.lat = latlon_p.transform_point(
-                    a.easting, a.northing - lat_corr, utm_p
-                )
+                # TODO: remove this when cartopy has been updated (needed for v0.21.1)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                        "ignore", "Conversion of an array with ndim > 0 to a scalar"
+                    )
+                    a.lon, a.lat = latlon_p.transform_point(
+                        a.easting, a.northing - lat_corr, utm_p
+                    )
                 a.X, a.Y, a.Z = uvutils.XYZ_from_LatLonAlt(
                     radians(a.lat), radians(a.lon), a.elevation
                 )
