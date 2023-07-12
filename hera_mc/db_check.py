@@ -100,7 +100,7 @@ def is_valid_database(base, session):
             # TODO: Add validity checks for relations
         else:
             logger.error(
-                "Model %s declares table %s which does not exist " "in database %s",
+                "Model %s declares table %s which does not exist in database %s",
                 klass,
                 table,
                 engine,
