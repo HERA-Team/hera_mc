@@ -86,7 +86,7 @@ if __name__ == "__main__":
     CONDA_ENV = "RTP"
     WORKING_DIRECTORY = "/home/obs/rtp_makeflow"
     WORKFLOW_CONFIG = (
-        "/home/obs/src/hera_pipelines/pipelines/h6c/rtp/v2/h6c_rtp_stage_1.toml"
+        "/home/obs/src/hera_pipelines/pipelines/h7c/rtp/v1/h7c_rtp.toml"
     )
 
     db = mc.connect_to_mc_db(None)
