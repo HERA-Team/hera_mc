@@ -10,8 +10,8 @@ which to launch an RTP workflow.  For each observation
 included in a launched workflow, the corresponding RTPLaunchRecord is updated.
 """
 
-import os
 import glob
+import os
 import shutil
 import subprocess
 import warnings
@@ -20,9 +20,9 @@ import h5py
 import hera_opm.mf_tools as mt
 import numpy as np
 from astropy.time import Time
+from paper_gpu.file_conversion import make_uvh5_file
 
 from hera_mc import mc
-from paper_gpu.file_conversion import make_uvh5_file
 
 REDISHOST = "redishost"
 JD_KEY = "corr:files:jds"
@@ -142,19 +142,29 @@ if __name__ == "__main__":
 
         # convert datfiles missing from M&C
         dirnames = set(os.path.dirname(f) for f in filelist)
-        datfiles = sorted([datfile for dirname in dirnames for datfile in glob.glob(os.path.join(dirname, '*.dat'))])
+        datfiles = sorted(
+            [
+                datfile
+                for dirname in dirnames
+                for datfile in glob.glob(os.path.join(dirname, "*.dat"))
+            ]
+        )
         for datfile in datfiles:
-            uvh5_file = datfile.replace('.dat', '.uvh5')
+            uvh5_file = datfile.replace(".dat", ".uvh5")
             if not os.path.exists(uvh5_file):
                 try:
-                    metadata_file = datfile.replace('.sum.dat', '.meta.hdf5').replace('.diff.dat', '.meta.hdf5')
-                    print(f'Trying to convert {datfile} to {uvh5_file} using {metadata_file}...')
+                    metadata_file = datfile.replace(".sum.dat", ".meta.hdf5").replace(
+                        ".diff.dat", ".meta.hdf5"
+                    )
+                    print(
+                        f"Trying to convert {datfile} to {uvh5_file} using {metadata_file}..."
+                    )
                     make_uvh5_file(uvh5_file, metadata_file, datfile)
-                    print('    Succeeded.\n')
+                    print("    Succeeded.\n")
                     filelist.append()
                 except Exception as exc:
                     print(exc)
-                    print(f'Failed to convert {datfile} to {uvh5_file}. Moving on...\n')
+                    print(f"Failed to convert {datfile} to {uvh5_file}. Moving on...\n")
         filelist = sorted(filelist)
 
         # scan files if desired
@@ -181,8 +191,8 @@ if __name__ == "__main__":
         # remove converted datfiles if desired. This saves space on /mnt/sn1
         if REMOVE_CONVERTED_DATFILES:
             for file in filelist:
-                if os.path.exists(file.replace('.uvh5', '.dat')):
-                    os.remove(file.replace('.uvh5', '.dat'))
+                if os.path.exists(file.replace(".uvh5", ".dat")):
+                    os.remove(file.replace(".uvh5", ".dat"))
 
         # go to working directory
         os.chdir(WORKING_DIRECTORY)
