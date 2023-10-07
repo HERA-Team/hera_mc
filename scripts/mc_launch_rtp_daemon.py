@@ -141,8 +141,16 @@ if __name__ == "__main__":
             continue
 
         # convert datfiles missing from M&C
-        dirnames = {os.path.dirname(f) for f in filelist}  # should be only one, but this is more robust
-        datfiles = sorted([datfile for dirname in dirnames for datfile in glob.glob(os.path.join(dirname, '*.dat'))])
+        dirnames = {
+            os.path.dirname(f) for f in filelist
+        }  # should be only one, but this is more robust
+        datfiles = sorted(
+            [
+                datfile
+                for dirname in dirnames
+                for datfile in glob.glob(os.path.join(dirname, "*.dat"))
+            ]
+        )
         for datfile in datfiles:
             uvh5_file = datfile.replace(".dat", ".uvh5")
             if not os.path.exists(uvh5_file):
@@ -154,7 +162,7 @@ if __name__ == "__main__":
                         f"Trying to convert {datfile} to {uvh5_file} using {metadata_file}..."
                     )
                     make_uvh5_file(uvh5_file, metadata_file, datfile)
-                    print('    Succeeded.\n')
+                    print("    Succeeded.\n")
                     filelist.append(uvh5_file)
                 except Exception as exc:
                     print(exc)
