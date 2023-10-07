@@ -141,14 +141,8 @@ if __name__ == "__main__":
             continue
 
         # convert datfiles missing from M&C
-        dirnames = set(os.path.dirname(f) for f in filelist)
-        datfiles = sorted(
-            [
-                datfile
-                for dirname in dirnames
-                for datfile in glob.glob(os.path.join(dirname, "*.dat"))
-            ]
-        )
+        dirnames = {os.path.dirname(f) for f in filelist}  # should be only one, but this is more robust
+        datfiles = sorted([datfile for dirname in dirnames for datfile in glob.glob(os.path.join(dirname, '*.dat'))])
         for datfile in datfiles:
             uvh5_file = datfile.replace(".dat", ".uvh5")
             if not os.path.exists(uvh5_file):
@@ -160,8 +154,8 @@ if __name__ == "__main__":
                         f"Trying to convert {datfile} to {uvh5_file} using {metadata_file}..."
                     )
                     make_uvh5_file(uvh5_file, metadata_file, datfile)
-                    print("    Succeeded.\n")
-                    filelist.append()
+                    print('    Succeeded.\n')
+                    filelist.append(uvh5_file)
                 except Exception as exc:
                     print(exc)
                     print(f"Failed to convert {datfile} to {uvh5_file}. Moving on...\n")
@@ -188,7 +182,7 @@ if __name__ == "__main__":
                     obsid = _obsid_from_time_array(uvd.time_array)
                     obsids.append(obsid)
 
-        # remove converted datfiles if desired. This saves space on /mnt/sn1
+        # remove converted .dat files if desired. This saves space on /mnt/sn1 if RTP gets backed up
         if REMOVE_CONVERTED_DATFILES:
             for file in filelist:
                 if os.path.exists(file.replace(".uvh5", ".dat")):
