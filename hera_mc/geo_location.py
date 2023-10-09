@@ -196,7 +196,7 @@ def format_check_update_request(request):
     if request is None:
         return None
     data = {}
-    if type(request) == str:
+    if isinstance(request, str):
         tmp = request.split(",")
         data_to_proc = []
         for d in tmp:

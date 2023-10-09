@@ -401,7 +401,7 @@ def format_and_check_update_part_request(request):
 
     # Split out and get first
     data = {}
-    if type(request) == str:
+    if isinstance(request, str):
         tmp = request.split(",")
         data_to_proc = []
         for d in tmp:
@@ -1161,7 +1161,7 @@ def format_check_update_connection_request(request):
         return None
     # Split out and get first
     data = {}
-    if type(request) == str:
+    if isinstance(request, str):
         tmp = request.split(",")
         data_to_proc = []
         for d in tmp:

@@ -175,7 +175,7 @@ def test_datetime():
     import datetime
 
     tout = cm_utils.get_astropytime(datetime.datetime.now())
-    assert type(tout) == Time
+    assert isinstance(tout, Time)
     with pytest.warns(
         UserWarning,
         match="No time format given -- assuming jd based on value 2460500.5",
@@ -188,10 +188,10 @@ def test_datetime():
     tout = cm_utils.get_astropytime("none")
     assert tout is None
     tout = cm_utils.get_astropytime("2018/1/1", "0.0")
-    assert type(tout) == Time
+    assert isinstance(tout, Time)
     pytest.raises(ValueError, cm_utils.get_astropytime, "18/1/1")
     tout = cm_utils.get_astropytime("2018/1/1", "12:30:00")
-    assert type(tout) == Time
+    assert isinstance(tout, Time)
     pytest.raises(ValueError, cm_utils.get_astropytime, "2018/1/1", "0:0:0:0")
     pytest.raises(ValueError, cm_utils.get_astropytime, "2018/1/1", "x")
     with pytest.warns(UserWarning, match="10 out of nominal range for gps"):
