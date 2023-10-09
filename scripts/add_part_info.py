@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     # Pre-process some args
     at_date = cm_utils.get_astropytime(args.date, args.time, args.format)
-    if type(args.reference) == str and args.reference.lower() == "none":
+    if isinstance(args.reference, str) and args.reference.lower() == "none":
         args.reference = None
 
     db = mc.connect_to_mc_db(args)
