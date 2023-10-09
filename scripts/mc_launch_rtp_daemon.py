@@ -163,7 +163,8 @@ if __name__ == "__main__":
                     )
                     make_uvh5_file(uvh5_file, metadata_file, datfile)
                     print("    Succeeded.\n")
-                    filelist.append(uvh5_file)
+                    if ".sum.uvh5" in uvh5_file:
+                        filelist.append(uvh5_file)
                 except Exception as exc:
                     print(exc)
                     print(f"Failed to convert {datfile} to {uvh5_file}. Moving on...\n")
