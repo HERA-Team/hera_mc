@@ -194,10 +194,11 @@ if __name__ == "__main__":
         # remove converted .dat files if desired. This saves space on /mnt/sn1 if RTP gets backed up
         if REMOVE_CONVERTED_DATFILES:
             for file in filelist:
-                if os.path.exists(file.replace(".sum.uvh5", ".sum.dat")):
-                    os.remove(file.replace(".sum.uvh5", ".sum.dat"))
-                if os.path.exists(file.replace(".diff.uvh5", ".diff.dat")):
-                    os.remove(file.replace(".diff.uvh5", ".diff.dat"))
+                if ".sum.uvh5" in file:
+                    if os.path.exists(file.replace(".sum.uvh5", ".sum.dat")):
+                        os.remove(file.replace(".sum.uvh5", ".sum.dat"))
+                    if os.path.exists(file.replace(".sum.uvh5", ".diff.dat")):
+                        os.remove(file.replace(".sum.uvh5", ".diff.dat"))
 
         # go to working directory
         os.chdir(WORKING_DIRECTORY)
