@@ -185,7 +185,8 @@ if __name__ == "__main__":
                     bad_metadata_files.append(filename)
                     filelist.remove(filename)
                     if RENAME_BAD_FILES:
-                        os.rename(filename, filename + BAD_SUFFIX)
+                        if os.path.exists(filename):
+                            os.rename(filename, filename + BAD_SUFFIX)
                 else:
                     # if file is valid, add obsid to running list
                     obsid = _obsid_from_time_array(uvd.time_array)
