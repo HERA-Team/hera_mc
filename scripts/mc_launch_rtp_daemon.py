@@ -183,7 +183,6 @@ if __name__ == "__main__":
                     uvd.read(filename, read_data=False)
                 except (KeyError, OSError, ValueError):
                     bad_metadata_files.append(filename)
-                    filelist.remove(filename)
                     if RENAME_BAD_FILES:
                         if os.path.exists(filename):
                             os.rename(filename, filename + BAD_SUFFIX)
@@ -191,6 +190,8 @@ if __name__ == "__main__":
                     # if file is valid, add obsid to running list
                     obsid = _obsid_from_time_array(uvd.time_array)
                     obsids.append(obsid)
+            for filename in bad_metadata_files:
+                filelist.remove(filename)
 
         # remove converted .dat files if desired. This saves space on /mnt/sn1 if RTP gets backed up
         if REMOVE_CONVERTED_DATFILES:
