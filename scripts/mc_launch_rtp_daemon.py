@@ -225,7 +225,7 @@ if __name__ == "__main__":
             "source /home/obs/.bashrc; "
             "conda deactivate; "
             f"conda activate {CONDA_ENV}; "
-            f"makeflow -T slurm {mf_filename} -J 100; /bin/bash -l"
+            f"makeflow -T slurm {mf_filename} -J 200; /bin/bash -l"
         )
         session_name = f"rtp_{jd}"
         tmux_cmd = ["tmux", "new-session", "-d", "-s", session_name, cmd]
