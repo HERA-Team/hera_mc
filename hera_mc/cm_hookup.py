@@ -415,9 +415,9 @@ class Hookup(object):
                                 "ref": entry.reference,
                             }
                         else:
-                            hu_notes[hkey][ikey][
-                                entry.posting_gpstime
-                            ] = entry.comment.replace("\\n", "\n")
+                            hu_notes[hkey][ikey][entry.posting_gpstime] = (
+                                entry.comment.replace("\\n", "\n")
+                            )
         return hu_notes
 
     def show_notes(self, hookup_dict, state="all"):

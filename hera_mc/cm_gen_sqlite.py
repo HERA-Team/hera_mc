@@ -1,4 +1,5 @@
 """Methods to check and update the database files for sqlite."""
+
 import json
 import os.path
 import re

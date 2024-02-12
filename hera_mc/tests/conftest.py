@@ -52,9 +52,9 @@ def setup_and_teardown_package():
         )[-1]
         sqlite_dir, sqlite_basename = os.path.split(sqlite_filename)
         if not os.path.exists(sqlite_dir):
-            config_data["databases"]["sqlite_testing"][
-                "url"
-            ] = "sqlite:///" + os.path.join(DATA_PATH, "test_data", sqlite_basename)
+            config_data["databases"]["sqlite_testing"]["url"] = (
+                "sqlite:///" + os.path.join(DATA_PATH, "test_data", sqlite_basename)
+            )
         with open(config_path, "w") as fp:
             json.dump(config_data, fp)
 
