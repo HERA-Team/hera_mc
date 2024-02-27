@@ -165,13 +165,15 @@ for jd in jd_list:
                 uvd.read(filename, read_data=False)
             except (KeyError, OSError, ValueError):
                 bad_metadata_files.append(filename)
-                filelist.remove(filename)
                 if args.rename_bad_files:
                     os.rename(filename, filename + args.bad_suffix)
             else:
                 # if file is valid, add obsid to running list
                 starttime = Time(np.unique(uvd.time_array)[0], scale="utc", format="jd")
                 obsids.append(int(np.floor(starttime.gps)))
+
+    for filename in bad_metadata_files:
+        filelist.remove(filename)
 
     # go to working directory
     os.chdir(args.working_directory)

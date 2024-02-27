@@ -2120,7 +2120,7 @@ def test_add_snap_status_from_corrcm(mcsession, snapstatus):
             snap_channel_number=channel_number,
             antenna_number=None,
             antenna_feed_pol=None,
-            snap_input=f"noise-{channel_number+1}",
+            snap_input=f"noise-{channel_number + 1}",
         )
         assert snap_input_obj.isclose(expected_input)
 
