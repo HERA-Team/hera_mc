@@ -14,7 +14,6 @@ import os
 import socket
 import sys
 import time
-from builtins import int
 
 import numpy as np
 import psutil
