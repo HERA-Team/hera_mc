@@ -280,17 +280,18 @@ while True:
                     cat_name="unprojected", cat_type="unprojected"
                 )
                 uvd.phase_center_id_array = np.full(uvd.Nblts, cat_id, dtype=int)
+
+                uvd._set_future_array_shapes()
+                uvd.set_lsts_from_time_array()
                 uvd._set_app_coords_helper()
 
                 uvd.set_uvws_from_antenna_positions()
-                uvd.set_lsts_from_time_array()
 
                 uvd.telescope_name = "HERA"
                 uvd.instrument = "HERA"
                 uvd.history = f"Created by {__file__}."
 
                 # lets us not have to spectral windows
-                uvd._set_future_array_shapes()
 
                 uvd.reorder_blts("time", "baseline")
                 uvd.extra_keywords["snap_to_ant_mapping"] = json.dumps(
