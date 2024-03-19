@@ -162,7 +162,7 @@ if __name__ == "__main__":
                         f"Trying to convert {datfile} to {uvh5_file} using {metadata_file}..."
                     )
                     make_uvh5_file(uvh5_file, metadata_file, datfile)
-                    os.system(f'mc_add_observation.py {uvh5_file}')
+                    os.system(f"mc_add_observation.py {uvh5_file}")
                     print("    Succeeded.\n")
                     if ".sum.uvh5" in uvh5_file:
                         filelist.append(uvh5_file)
