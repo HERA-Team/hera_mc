@@ -12,6 +12,7 @@ import traceback
 from pathlib import Path
 
 import numpy as np
+from astropy import units
 from astropy.time import Time, TimeDelta
 from hera_corr_cm import HeraCorrCM
 from hera_corr_cm.redis_cm import read_cminfo_from_redis, read_maps_from_redis
@@ -212,7 +213,7 @@ while True:
                     )
                     if len(time_array) > 0:
                         file_len = TimeDelta(
-                            time_array[-1] - time_array[0], format="jd"
+                            (time_array[-1] - time_array[0]) * units.day, format="jd"
                         ).to_value("s")
 
                 time_array = np.asarray(time_array)
