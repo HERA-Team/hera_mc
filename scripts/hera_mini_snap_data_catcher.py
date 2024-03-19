@@ -3,6 +3,7 @@
 # Copyright 2022 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 """Accumulate SNAP spectra from redis and write to a UVH5 file."""
+
 import argparse
 import json
 import logging
@@ -273,15 +274,20 @@ while True:
                     cminfo["cofa_alt"],
                 )
                 uvd.telescope_location_lat_lon_alt_degrees = (lat, lon, alt)
+
+                # create the phase information
+                cat_id = uvd._add_phase_center(
+                    cat_name="unprojected", cat_type="unprojected"
+                )
+                uvd.phase_center_id_array = np.full(uvd.Nblts, cat_id, dtype=int)
+                uvd._set_app_coords_helper()
+
                 uvd.set_uvws_from_antenna_positions()
                 uvd.set_lsts_from_time_array()
 
-                uvd.object_name = ""
-                uvd.multi_phase_center = False
                 uvd.telescope_name = "HERA"
                 uvd.instrument = "HERA"
                 uvd.history = f"Created by {__file__}."
-                uvd.phase_type = "drift"
 
                 # lets us not have to spectral windows
                 uvd._set_future_array_shapes()
