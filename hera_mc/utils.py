@@ -42,7 +42,7 @@ def LSTScheduler(starttime, LSTbin_size, longitude=21.25):
     locate = coord.EarthLocation(lon=longitude * u.deg, lat=-30 * u.deg)
     if not isinstance(starttime, Time):
         raise TypeError("starttime is not a valid Astropy Time object")
-    starttime.location = locate
+    starttime = Time(starttime, location=locate)
     numChunks = (24 * 60 * 60) / LSTbin_size  # seconds in a day
     lstGrid = (
         np.linspace(0, int(numChunks), int(numChunks) + 1, dtype=int) * LSTbin_size
