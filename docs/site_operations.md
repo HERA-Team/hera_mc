@@ -27,7 +27,7 @@ This is generally done with `systemctl restart <daemon_name>.service`. Some
 machines use upstart instead of systemd, as marked below. In those cases, use
 `sudo initctl restart <daemon_name>`. If on any of the upstart machines you get an error
 with "Unknown instance", try re-running but with `start` instead of `restart` in case
-the service wasn't running for some reason.
+the service wasn't running for some reason. You can list all upstart services with `initctl list`.
 
   - qmaster machine (note: to avoid having to type the password repeatedly you can run
   `sudo su root` before restarting all of these)
@@ -51,6 +51,8 @@ the service wasn't running for some reason.
   - gpu[1-8] machines (upstart)
     - `hera-server-status` daemon
   - bigmem[1-2] machines (upstart)
+    - `hera-server-status` daemon
+  - cask[1-2] machines (upstart)
     - `hera-server-status` daemon
 
 - Update heranow M&C installation.
