@@ -31,7 +31,11 @@ def test_new_obs(mcsession):
 
 def test_add_obs(mcsession):
     test_session = mcsession
-    t1 = Time("2016-01-10 01:15:23", scale="utc")
+    t1 = Time(
+        "2016-01-10 01:15:23",
+        scale="utc",
+        location=EarthLocation.from_geodetic(21.4283038269, -30.7215261207),
+    )
     t2 = t1 + TimeDelta(120.0, format="sec")
 
     # generated test hera_lat, hera_lon using the output of geo.py -c
@@ -41,7 +45,6 @@ def test_add_obs(mcsession):
     obsid_calc = int(floor(t1.gps))
     obsid = utils.calculate_obsid(t1)
     assert obsid_calc == obsid
-    t1.location = EarthLocation.from_geodetic(21.4283038269, -30.7215261207)
 
     expected = Observation(
         obsid=obsid,

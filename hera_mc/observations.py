@@ -104,9 +104,10 @@ class Observation(MCDeclarativeBase):
             raise ValueError(f"Tag is {tag}, should be one of: {allowed_tags}")
 
         # for jd need to ensure that we're in utc
-        starttime = starttime.utc
-
-        starttime.location = EarthLocation.from_geodetic(hera_cofa.lon, hera_cofa.lat)
+        starttime = Time(
+            starttime,
+            location=EarthLocation.from_geodetic(hera_cofa.lon, hera_cofa.lat),
+        ).utc
 
         return cls(
             obsid=obsid,
