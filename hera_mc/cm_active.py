@@ -9,6 +9,7 @@ from copy import copy
 from . import cm_partconnect as partconn
 from . import cm_utils, mc
 
+IGNORE_DUPLICATE_ACTIVE_PART = False
 
 def get_active(
     at_date="now", at_time=None, float_format=None, loading=["apriori"], testing=False
@@ -196,13 +197,21 @@ class ActiveData:
             if self.pytest_param:
                 check_keys[self.pytest_param].append(chk)
             if chk in check_keys["up"]:
-                raise ValueError("Duplicate active port {}".format(chk))
+                if IGNORE_DUPLICATE_ACTIVE_PART:
+                    print("Duplicate active port {}".format(chk))
+                    continue
+                else:
+                    raise ValueError("Duplicate active port {}".format(chk))
             check_keys["up"].append(chk)
             chk = cm_utils.make_part_key(
                 cnn.downstream_part, cnn.down_part_rev, cnn.downstream_input_port
             )
             if chk in check_keys["down"]:
-                raise ValueError("Duplicate active port {}".format(chk))
+                if IGNORE_DUPLICATE_ACTIVE_PART:
+                    print("Duplicate active port {}".format(chk))
+                    continue
+                else:
+                    raise ValueError("Duplicate active port {}".format(chk))
             check_keys["down"].append(chk)
             key = cm_utils.make_part_key(cnn.upstream_part, cnn.up_part_rev)
             self.connections["up"].setdefault(key, {})
