@@ -88,7 +88,7 @@ if __name__ == "__main__":
     BAD_SUFFIX = ".METADATA_ERROR"
     CONDA_ENV = "RTP"
     WORKING_DIRECTORY = "/home/obs/rtp_makeflow"
-    WORKFLOW_CONFIG = "/home/obs/src/hera_pipelines/pipelines/h7c/rtp/v1/h7c_rtp.toml"
+    WORKFLOW_CONFIG = "/home/obs/src/hera_pipelines/pipelines/h8c/rtp/v1/h8c_rtp.toml"
 
     db = mc.connect_to_mc_db(None)
     r = redis.Redis(REDISHOST, decode_responses=True)
