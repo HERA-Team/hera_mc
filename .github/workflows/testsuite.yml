@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.8, 3.9, "3.10"]
+        python-version: ["3.10", "3.11", "3.12"]
     services:
       postgres:
         image: postgres:10.8
@@ -54,12 +54,10 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Minimamba
-        uses: conda-incubator/setup-miniconda@v2.0.0
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          miniforge-variant: Mambaforge
           miniforge-version: latest
-          use-mamba: true
           python-version: ${{ env.PYTHON }}
           environment-file: ci/${{ env.ENV_NAME }}.yaml
           activate-environment: ${{ env.ENV_NAME }}
@@ -122,7 +120,7 @@ jobs:
   min_deps:
     env:
       ENV_NAME: min_deps
-      PYTHON: 3.9
+      PYTHON: "3.11"
       WITH_SUDO: yes
       # use localhost for the host here because we are running the job on the VM.
       POSTGRES_HOST: localhost
@@ -156,12 +154,10 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Minimamba
-        uses: conda-incubator/setup-miniconda@v2.0.0
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          miniforge-variant: Mambaforge
           miniforge-version: latest
-          use-mamba: true
           python-version: ${{ env.PYTHON }}
           environment-file: ci/${{ env.ENV_NAME }}.yaml
           activate-environment: ${{ env.ENV_NAME }}
@@ -214,7 +210,7 @@ jobs:
   min_versions:
     env:
       ENV_NAME: min_versions
-      PYTHON: 3.8
+      PYTHON: "3.10"
       WITH_SUDO: yes
       # use localhost for the host here because we are running the job on the VM.
       POSTGRES_HOST: localhost
@@ -248,12 +244,10 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Minimamba
-        uses: conda-incubator/setup-miniconda@v2.0.0
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          miniforge-variant: Mambaforge
           miniforge-version: latest
-          use-mamba: true
           python-version: ${{ env.PYTHON }}
           environment-file: ci/${{ env.ENV_NAME }}.yaml
           activate-environment: ${{ env.ENV_NAME }}
@@ -306,7 +300,7 @@ jobs:
   warning_tests:
     env:
       ENV_NAME: tests
-      PYTHON: 3.9
+      PYTHON: "3.11"
       WITH_SUDO: yes
       # use localhost for the host here because we are running the job on the VM.
       POSTGRES_HOST: localhost
@@ -347,12 +341,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Minimamba
-        uses: conda-incubator/setup-miniconda@v2.0.0
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          miniforge-variant: Mambaforge
           miniforge-version: latest
-          use-mamba: true
           python-version: ${{ env.PYTHON }}
           environment-file: ci/${{ env.ENV_NAME }}.yaml
           activate-environment: ${{ env.ENV_NAME }}
