@@ -51,7 +51,7 @@ The required dependencies are:
 - astropy >= 5.0.4
 - cartopy >=0.20
 - numpy >= 1.19
-- psycopg2 >= 2.9
+- psycopg>=3.2.2
 - pyuvdata >= 2.2.9
 - pyyaml >= 5.1
 - redis-py >= 4.3.4 (Note that this is called "redis" on pypi and "redis-py" on conda)

@@ -40,6 +40,8 @@ class DB(object, metaclass=ABCMeta):
     sqlalchemy_base = None
 
     def __init__(self, sqlalchemy_base, db_url):  # noqa
+        if "postgresql" in db_url and "postgresql+psycopg" not in db_url:
+            db_url = db_url.replace("postgresql", "postgresql+psycopg")
         self.sqlalchemy_base = MCDeclarativeBase
         self.engine = create_engine(db_url)
         self.sessionmaker.configure(bind=self.engine)
