@@ -8,11 +8,11 @@ dependencies:
   - coverage
   - h5py>=3.1.*
   - matplotlib>=3.6.*
-  - numpy>=1.19.*,<2.0
+  - numpy>=1.19.*
   - pandas>=1.4.0
   - pip
   - psutil>=5.9.0
-  - psycopg2>=2.9
+  - psycopg>=3.2.2
   - pytest>=6.2.0
   - pytest-cov
   - python-dateutil>=2.8.2

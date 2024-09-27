@@ -6,8 +6,8 @@ dependencies:
   - astropy>=5.0.4
   - cartopy>=0.20.0
   - coverage
-  - numpy>=1.19.*,<2.0
-  - psycopg2>=2.9
+  - numpy>=1.19.*
+  - psycopg>=3.2.2
   - pytest>=6.2.0
   - pytest-cov
   - pyuvdata>=2.2.9
