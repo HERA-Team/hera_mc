@@ -18,6 +18,8 @@ db_name = config_data.get("default_db_name")
 db_data = config_data.get("databases")
 db_data = db_data.get(db_name)
 db_url = db_data.get("url")
+if "postgresql" in db_url and "postgresql+psycopg" not in db_url:
+    db_url = db_url.replace("postgresql", "postgresql+psycopg")
 config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.

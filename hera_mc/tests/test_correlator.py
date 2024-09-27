@@ -8,17 +8,17 @@ import datetime
 import hashlib
 import os
 import re
-import warnings
 from math import floor
 
 import numpy as np
 import pytest
 
-with warnings.catch_warnings():
-    # This filter can be removed when pyuvdata (and maybe other imported packages?)
-    # are updated to use importlib.metadata rather than pkg_resources
-    warnings.filterwarnings("ignore", "Implementing implicit namespace packages")
-    import pyuvdata.tests as uvtest
+try:
+    from pyuvdata.testing import check_warnings
+except ImportError:
+    # this can be removed once we require pyuvdata >= v3.0
+    from pyuvdata.tests import check_warnings
+
 import yaml
 from astropy.time import Time, TimeDelta
 
@@ -2327,7 +2327,7 @@ def test_get_snap_feng_init_status_from_redis(snap_feng_init_status, key, value)
         exp_warning = None
         warn_msg = ""
 
-    with uvtest.check_warnings(exp_warning, match=warn_msg):
+    with check_warnings(exp_warning, match=warn_msg):
         log_time, snap_state = corr._get_snap_feng_init_status_from_redis(
             snap_config_dict=input_dict
         )
