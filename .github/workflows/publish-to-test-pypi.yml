@@ -13,7 +13,7 @@ jobs:
     env:
       ENV_NAME: publish
 
-      PYTHON: 3.9
+      PYTHON: 3.11
     steps:
       - uses: actions/checkout@main
         with:
