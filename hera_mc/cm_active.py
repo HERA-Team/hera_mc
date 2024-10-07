@@ -11,6 +11,7 @@ from . import cm_utils, mc
 
 IGNORE_DUPLICATE_ACTIVE_PART = False
 
+
 def get_active(
     at_date="now", at_time=None, float_format=None, loading=["apriori"], testing=False
 ):
