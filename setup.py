@@ -41,7 +41,7 @@ setup_args = {
         "pyyaml>=5.4.1",
         "redis>=4.3.4",  # Note that this gets redis-py, which is named "redis" on pypi
         "setuptools_scm!=7.0.0,!=7.0.1,!=7.0.2",
-        "sqlalchemy>=1.4",
+        "sqlalchemy>=2.0",
     ],
     "extras_require": {
         "sqlite": ["tabulate"],

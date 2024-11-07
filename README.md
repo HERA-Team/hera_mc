@@ -56,7 +56,7 @@ The required dependencies are:
 - pyyaml >= 5.4.1
 - redis-py >= 4.3.4 (Note that this is called "redis" on pypi and "redis-py" on conda)
 - setuptools_scm <7.0|>=7.0.3
-- sqlalchemy >= 1.4
+- sqlalchemy >= 2.0
 
 the optional dependencies are:
 - h5py >= 3.4.0
