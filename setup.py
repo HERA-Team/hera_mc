@@ -34,11 +34,11 @@ setup_args = {
     "install_requires": [
         "alembic>=1.8",
         "astropy>=5.0.4",
-        "cartopy>=0.20",
-        "numpy>=1.19",
+        "cartopy>=0.21.0",
+        "numpy>=1.23",
         "psycopg>=3.2.2",
-        "pyuvdata>=2.2.9",
-        "pyyaml>=5.1",
+        "pyuvdata>=2.2.10",
+        "pyyaml>=5.4.1",
         "redis>=4.3.4",  # Note that this gets redis-py, which is named "redis" on pypi
         "setuptools_scm!=7.0.0,!=7.0.1,!=7.0.2",
         "sqlalchemy>=1.4",
@@ -56,7 +56,7 @@ setup_args = {
             "tornado>=6.2",
         ],
         "dev": [
-            "h5py>=3.1",
+            "h5py>=3.4.0",
             "pandas>=1.4",
             "psutil>=5.9",
             "python-dateutil>=2.8.2",

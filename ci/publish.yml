@@ -4,11 +4,11 @@ channels:
 dependencies:
   - alembic>=1.8
   - astropy>=5.0.4
-  - cartopy>=0.20.0
-  - numpy>=1.19.*
+  - cartopy>=0.21.0
+  - numpy>=1.23.*
   - psycopg>=3.2.2
   - pyuvdata>=2.2.9
-  - pyyaml>=5.1
+  - pyyaml>=5.4.1
   - redis-py>=4.3.4
   - setuptools_scm<7.0|>=7.0.3
   - sqlalchemy>=1.4.0
