@@ -20,7 +20,7 @@ dependencies:
   - pyyaml==5.4.1
   - redis-py==4.3.4
   - setuptools_scm<7.0
-  - sqlalchemy==1.4.0
+  - sqlalchemy==1.4.*
   - tabulate==0.8.10
   - pip:
       - hera_qm==2.0.*
