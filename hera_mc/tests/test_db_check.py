@@ -13,6 +13,11 @@ from sqlalchemy.orm import declarative_base, declared_attr, relationship, sessio
 from .. import mc
 from ..db_check import check_connection, is_valid_database
 
+# Sometimes a connection is closed, which is handled and doesn't produce an error
+# or even a warning under normal testing. But for the warnings test where we
+# pass `-W error`, the warning causes an error so we filter it out here.
+pytestmark = pytest.mark.filterwarnings("ignore:connection:ResourceWarning:psycopg")
+
 
 def gen_test_model():
     Base = declarative_base()
@@ -95,6 +100,8 @@ def test_validity_pass():
         assert is_valid_database(Base, session) is True
     finally:
         Base.metadata.drop_all(engine)
+        session.close()
+        conn.close()
 
 
 def test_validity_table_missing():
@@ -113,6 +120,8 @@ def test_validity_table_missing():
         pass
 
     assert is_valid_database(Base, session) is False
+    session.close()
+    conn.close()
 
 
 def test_validity_column_missing():
@@ -138,6 +147,7 @@ def test_validity_column_missing():
         Session = sessionmaker(bind=engine)
         session = Session()
         assert is_valid_database(Base, session) is False
+        session.close()
 
 
 def test_validity_pass_relationship():
@@ -168,6 +178,8 @@ def test_validity_pass_relationship():
         assert is_valid_database(Base, session) is True
     finally:
         Base.metadata.drop_all(engine)
+        session.close()
+        conn.close()
 
 
 def test_validity_pass_declarative():
@@ -194,6 +206,8 @@ def test_validity_pass_declarative():
         assert is_valid_database(Base, session) is True
     finally:
         Base.metadata.drop_all(engine)
+        session.close()
+        conn.close()
 
 
 def test_check_connection(tmpdir):

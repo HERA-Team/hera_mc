@@ -61,20 +61,20 @@ def is_valid_database(base, session):
 
     engine = session.get_bind()
     try:  # This tries thrice with 5sec sleeps in between
-        iengine = inspect(engine)
+        insp = inspect(engine)
     except OperationalError:  # pragma: no cover
         import time
 
         time.sleep(5)
         try:
-            iengine = inspect(engine)
+            insp = inspect(engine)
         except OperationalError:
             time.sleep(5)
-            iengine = inspect(engine)
+            insp = inspect(engine)
 
     errors = False
 
-    tables = iengine.get_table_names()
+    tables = insp.get_table_names()
 
     # Go through all SQLAlchemy models
 
@@ -86,15 +86,15 @@ def is_valid_database(base, session):
             #              'autoincrement': True, 'nullable': False,
             #              'type': INTEGER(), 'name': 'id'}]
 
-            columns = [c["name"] for c in iengine.get_columns(table)]
+            columns = [c["name"] for c in insp.get_columns(table)]
             mapper = inspect(klass)
 
             for column in mapper.columns:
                 # Assume normal flat column
                 if column.key not in columns:
                     logger.error(
-                        f"Model {klass} declares column {column.key} which does not "
-                        "exist in database {engine}"
+                        f"Model {klass} declares column {column.key} which does "
+                        f"not exist in database {engine}"
                     )
                     errors = True
             # TODO: Add validity checks for relations

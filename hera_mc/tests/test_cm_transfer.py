@@ -12,6 +12,11 @@ from .. import cm_gen_sqlite, cm_hookup, cm_transfer, mc
 from ..cm_partconnect import Connections
 from ..mc import AutomappedDB
 
+# Sometimes a connection is closed, which is handled and doesn't produce an error
+# or even a warning under normal testing. But for the warnings test where we
+# pass `-W error`, the warning causes an error so we filter it out here.
+pytestmark = pytest.mark.filterwarnings("ignore:connection:ResourceWarning:psycopg")
+
 
 def test_classTime():
     pytest.raises(ValueError, cm_transfer.CMVersion.create, None, None)
