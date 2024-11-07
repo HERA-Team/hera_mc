@@ -13,6 +13,11 @@ from astropy.time import Time, TimeDelta
 from ..librarian import LibServerStatus
 from ..rtp import RTPServerStatus
 
+# Sometimes a connection is closed, which is handled and doesn't produce an error
+# or even a warning under normal testing. But for the warnings test where we
+# pass `-W error`, the warning causes an error so we filter it out here.
+pytestmark = pytest.mark.filterwarnings("ignore:connection:ResourceWarning:psycopg")
+
 
 @pytest.fixture(scope="module")
 def status():

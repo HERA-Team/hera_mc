@@ -13,6 +13,11 @@ from astropy.time import Time, TimeDelta
 from .. import geo_handling, utils
 from ..observations import Observation, allowed_tags
 
+# Sometimes a connection is closed, which is handled and doesn't produce an error
+# or even a warning under normal testing. But for the warnings test where we
+# pass `-W error`, the warning causes an error so we filter it out here.
+pytestmark = pytest.mark.filterwarnings("ignore:connection:ResourceWarning:psycopg")
+
 
 def test_new_obs(mcsession):
     t1 = Time("2016-01-10 01:15:23", scale="utc")
