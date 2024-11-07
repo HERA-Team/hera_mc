@@ -49,17 +49,17 @@ instructions in [database_setup.md](https://github.com/HERA-Team/hera_mc/blob/ma
 The required dependencies are:
 - alembic >= 1.8
 - astropy >= 5.0.4
-- cartopy >=0.20
-- numpy >= 1.19
+- cartopy >=0.21
+- numpy >= 1.23
 - psycopg>=3.2.2
 - pyuvdata >= 2.2.9
-- pyyaml >= 5.1
+- pyyaml >= 5.4.1
 - redis-py >= 4.3.4 (Note that this is called "redis" on pypi and "redis-py" on conda)
 - setuptools_scm <7.0|>=7.0.3
 - sqlalchemy >= 1.4
 
 the optional dependencies are:
-- h5py >= 3.1
+- h5py >= 3.4.0
 - pandas >= 1.4
 - psutil >= 5.9
 - python-dateutil >= 2.8.2
@@ -92,7 +92,7 @@ To install without dependencies, run `pip install --no-deps .`
 If you want to do development on hera_mc, in addition to the other dependencies
 you will need the following packages:
 
-* pytest
+* pytest >= 6.2.5
 * pytest-cov
 * coverage
 * pre-commit
