@@ -11,7 +11,7 @@ dependencies:
   - pyyaml>=5.4.1
   - redis-py>=4.3.4
   - setuptools_scm<7.0|>=7.0.3
-  - sqlalchemy>=1.4.0
+  - sqlalchemy>=2.0
   - pip
   - pip:
      - build

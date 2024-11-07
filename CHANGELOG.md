@@ -26,9 +26,9 @@ catcher start, stop or stop identified via a timeout).
 ### Changed
 - Add compatibility with numpy 2.0
 - Use psycopg3 (on pypi as `psycopg`) rather than psycopg2 to enable numpy 2.0
-compatibility
+compatibility.
 - Updated minimum dependency versions: cartopy>=0.21, numpy>=1.23, pyyaml>=5.4.1
-python>=3.10
+sqlalchemy>=2.0, python>=3.10
 - Updated minimum optional dependency versions: h5py>=3.4, pytest>=6.2.5
 - Add compatibility with pyuvdata>=3.0
 - Dropped support for python 3.7.
