@@ -238,6 +238,9 @@ def check_if_main(
         config_data = json.load(f)
 
     testing_db_url = config_data.get("databases").get(test_db_name).get("url")
+    if "postgresql" in testing_db_url and "postgresql+psycopg" not in testing_db_url:
+        testing_db_url = testing_db_url.replace("postgresql", "postgresql+psycopg")
+
     is_test_db = session_db_url == testing_db_url
 
     if is_main_host:  # pragma: no cover

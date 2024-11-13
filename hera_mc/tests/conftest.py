@@ -78,26 +78,21 @@ def setup_and_teardown_package():
 @pytest.fixture(scope="function")
 def mcsession(setup_and_teardown_package):
     test_db, _ = setup_and_teardown_package
-    test_conn = test_db.engine.connect()
-    test_trans = test_conn.begin()
-    test_session = mc.MCSession(bind=test_conn)
+    with test_db.engine.connect() as test_conn:
+        with test_conn.begin() as test_trans:
+            with mc.MCSession(bind=test_conn) as test_session:
+                yield test_session
 
-    yield test_session
-
-    test_session.close()
-    # rollback - everything that happened with the
-    # Session above (including calls to commit())
-    # is rolled back.
-    with warnings.catch_warnings():
-        # If an error was raised, rollback may have already been called. If so, this
-        # will give a warning which we filter out here.
-        warnings.filterwarnings(
-            "ignore", "transaction already deassociated from connection"
-        )
-        test_trans.rollback()
-
-    # return connection to the Engine
-    test_conn.close()
+            # rollback - everything that happened with the
+            # Session above (including calls to commit())
+            # is rolled back.
+            with warnings.catch_warnings():
+                # If an error was raised, rollback may have already been called. If so, this
+                # will give a warning which we filter out here.
+                warnings.filterwarnings(
+                    "ignore", "transaction already deassociated from connection"
+                )
+                test_trans.rollback()
 
     # delete the hookup cache file
     from .. import cm_hookup

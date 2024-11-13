@@ -19,6 +19,11 @@ from hera_mc import (
     cm_utils,
 )
 
+# Sometimes a connection is closed, which is handled and doesn't produce an error
+# or even a warning under normal testing. But for the warnings test where we
+# pass `-W error`, the warning causes an error so we filter it out here.
+pytestmark = pytest.mark.filterwarnings("ignore:connection:ResourceWarning:psycopg")
+
 
 @pytest.fixture(scope="function")
 def parts(mcsession):
@@ -106,12 +111,18 @@ def test_apriori(mcsession):
     assert active.apriori["HH700:A"].status == "not_connected"
 
 
-def test_duplicate(mcsession):
+@pytest.mark.parametrize(
+    ("val", "msg"),
+    [
+        ("up", "Duplicate active port HH700:A:GROUND"),
+        ("down", "Duplicate active port NBP700:A:E1"),
+    ],
+)
+def test_duplicate_errors(mcsession, val, msg):
     active = cm_active.ActiveData(mcsession)
-    active.pytest_param = "up"
-    pytest.raises(ValueError, active.load_connections)
-    active.pytest_param = "down"
-    pytest.raises(ValueError, active.load_connections)
+    active.pytest_param = val
+    with pytest.raises(ValueError, match=msg):
+        active.load_connections()
 
 
 def test_rosetta(mcsession, capsys):
@@ -139,8 +150,11 @@ def test_rosetta(mcsession, capsys):
     )
     active.load_rosetta(at_date)
     assert int(active.rosetta["SNPC000709"].stop_gpstime) == 1280278818
-    # Add a test part to fail on update part
 
+
+def test_rosetta_update_error(mcsession):
+    # Add a test part to fail on update part
+    stop_at = Time("2020-08-01 01:00:00", scale="utc")
     rose = cm_partconnect.PartRosetta()
     rose.hpn = "SNPC000701"
     rose.syspn = "heraNode0Snap701"
@@ -149,12 +163,16 @@ def test_rosetta(mcsession, capsys):
     mcsession.commit()
     with pytest.raises(
         ValueError,
-        match="Multiple rosetta relationships active" " for heraNode0Snap701",
+        match="Multiple rosetta relationships active for heraNode0Snap701",
     ):
         cm_partconnect.update_part_rosetta(
             "SNPC000701", "heraNode0Snap701", stop_at, None, session=mcsession
         )
+
+
+def test_rosetta_load_error(mcsession):
     # Add a test part to fail on load active
+    active = cm_active.ActiveData(mcsession)
     rose = cm_partconnect.PartRosetta()
     rose.hpn = "SNPC000701"
     rose.syspn = "heraNode700Snap700"
