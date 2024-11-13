@@ -5,7 +5,7 @@ dependencies:
   - alembic>=1.8
   - astropy>=5.0.4
   - cartopy>=0.20.0
-  - numpy>=1.19.*
+  - numpy>=1.19.*,<2.0
   - psycopg2>=2.9
   - pyuvdata>=2.2.9
   - pyyaml>=5.1
