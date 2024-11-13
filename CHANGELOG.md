@@ -24,6 +24,7 @@ had an event related to normal observing (f-engine sync, x-engine integration st
 catcher start, stop or stop identified via a timeout).
 
 ### Changed
+- Add compatibility with pyuvdata>=3.0
 - Dropped support for python 3.7.
 - The logic for time filtering in real time getter methods in mc_session to support
 getting the most recent table entries at some point in the past (the last value before
