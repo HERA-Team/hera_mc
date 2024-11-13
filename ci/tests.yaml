@@ -8,7 +8,7 @@ dependencies:
   - coverage
   - h5py>=3.1.*
   - matplotlib>=3.6.*
-  - numpy>=1.19.*
+  - numpy>=1.19.*,<2.0
   - pandas>=1.4.0
   - pip
   - psutil>=5.9.0
