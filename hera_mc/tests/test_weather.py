@@ -2,9 +2,7 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Testing for `hera_mc.weather`.
-
-"""
+"""Testing for `hera_mc.weather`."""
 import os
 from math import floor
 
