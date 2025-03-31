@@ -3,9 +3,7 @@
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Gather correlator status info and log them into M&C
-
-"""
+"""Gather correlator status info and log them into M&C"""
 
 import socket
 import sys

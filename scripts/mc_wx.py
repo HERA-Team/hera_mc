@@ -3,9 +3,7 @@
 # Copyright 2017 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""This is meant to hold utility scripts for weather
-
-"""
+"""This is meant to hold utility scripts for weather"""
 import sys
 
 from astropy.time import Time

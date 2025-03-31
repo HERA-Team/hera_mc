@@ -3,9 +3,7 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""This is meant to hold utility scripts for geo_location (via geo_handling)
-
-"""
+"""This is meant to hold utility scripts for geo_location (via geo_handling)"""
 
 from hera_mc import cm_utils, geo_handling, mc
 

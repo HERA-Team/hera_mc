@@ -3,9 +3,7 @@
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""script to write M&C records to a CSV file
-
-"""
+"""script to write M&C records to a CSV file"""
 
 from astropy.time import Time, TimeDelta
 

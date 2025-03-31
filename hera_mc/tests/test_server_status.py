@@ -2,9 +2,7 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Testing for `hera_mc.server_status`.
-
-"""
+"""Testing for `hera_mc.server_status`."""
 from math import floor
 
 import pytest

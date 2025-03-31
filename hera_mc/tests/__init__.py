@@ -2,9 +2,7 @@
 # Copyright 2016 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 
-"""Setup testing environment.
-
-"""
+"""Setup testing environment."""
 
 import socket
 import sys
