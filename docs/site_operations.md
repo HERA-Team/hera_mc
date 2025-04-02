@@ -46,6 +46,8 @@ the service wasn't running for some reason. You can list all upstart services wi
     - `hera-server-status` daemon
   - pot9 machine (upstart)
     - `hera-server-status` daemon
+  - pot10 machine (upstart)
+    - `hera-server-status` daemon
   - still[1-4] machines (upstart)
     - `hera-server-status` daemon
   - gpu[1-8] machines (upstart)
