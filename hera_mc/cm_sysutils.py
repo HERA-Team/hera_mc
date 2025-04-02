@@ -580,7 +580,10 @@ def node_antennas(source="file", session=None):
                 cm_sysdef.hera_zone_prefixes, hookup_type="parts_hera"
             )
             for this_ant, vna in hu_dict.items():
-                if isinstance(vna.hookup["E<ground"], list) and len(vna.hookup["E<ground"]) > 0:
+                if (
+                    isinstance(vna.hookup["E<ground"], list)
+                    and len(vna.hookup["E<ground"]) > 0
+                ):
                     key = vna.hookup["E<ground"][-1].downstream_part
                     if key[0] != "N":
                         continue
