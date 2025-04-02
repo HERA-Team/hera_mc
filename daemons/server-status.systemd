@@ -9,6 +9,8 @@
 
 [Unit]
 Description=HERA Server Status Daemon
+StartLimitInterval=600
+StartLimitBurst=5
 
 [Service]
 Type=simple
