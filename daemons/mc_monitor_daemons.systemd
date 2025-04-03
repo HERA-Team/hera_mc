@@ -8,6 +8,8 @@
 
 [Unit]
 Description=HERA M&C Correlator daemon monitor
+StartLimitInterval=600
+StartLimitBurst=5
 
 [Service]
 Type=simple
