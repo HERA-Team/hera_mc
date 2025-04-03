@@ -50,9 +50,10 @@ connection_pool = redis.ConnectionPool(host=args.redishost)
 while True:
     # Use a single session unless there's an error that isn't fixed by a rollback.
     try:
-        with db.sessionmaker() as session, redis.Redis(
-            connection_pool=connection_pool
-        ) as r:
+        with (
+            db.sessionmaker() as session,
+            redis.Redis(connection_pool=connection_pool) as r,
+        ):
             while True:
                 r.set(script_redis_key, "alive", ex=MONITORING_INTERVAL * 2)
                 for daemon in daemons:

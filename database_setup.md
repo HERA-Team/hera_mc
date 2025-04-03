@@ -36,11 +36,11 @@ Except for `<<<path-to-repo>>>` (see below), it should look like this:
   "default_db_name": "hera_mc",
   "databases": {
     "hera_mc": {
-      "url": "postgresql://hera@localhost/hera_mc",
+      "url": "postgresql+psycopg://hera@localhost/hera_mc",
       "mode": "production"
     },
     "testing": {
-      "url": "postgresql://hera@localhost/hera_mc_test",
+      "url": "postgresql+psycopg://hera@localhost/hera_mc_test",
       "mode": "testing"
     },
     "hera_mc_sqlite": {

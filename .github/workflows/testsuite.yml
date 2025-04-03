@@ -77,7 +77,7 @@ jobs:
 
       - name: Setup postgres
         run: |
-          export POSTGRES_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
+          export POSTGRES_URL=postgresql+psycopg://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
           psql $POSTGRES_URL -c 'create database hera_mc_test;'
           psql $POSTGRES_URL -c 'create database hera_mc;'
           psql $POSTGRES_URL -c "create user hera with password 'hera';"
@@ -100,7 +100,7 @@ jobs:
           DOCKER_NAME=`/usr/bin/docker ps -a --filter="ancestor=redis" --format='{{.Names}}'`
           /usr/bin/docker stop $DOCKER_NAME
           sudo rm /data/dump.rdb
-          sudo cp hera_mc/data/test_data/dump.rdb /data
+          sudo cp src/hera_mc/data/test_data/dump.rdb /data
           /usr/bin/docker start $DOCKER_NAME
           DOCKER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $DOCKER_NAME`
           echo "$DOCKER_IP redishost" | sudo tee -a /etc/hosts
@@ -177,7 +177,7 @@ jobs:
 
       - name: Setup postgres
         run: |
-          export POSTGRES_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
+          export POSTGRES_URL=postgresql+psycopg://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
           psql $POSTGRES_URL -c 'create database hera_mc_test;'
           psql $POSTGRES_URL -c 'create database hera_mc;'
           psql $POSTGRES_URL -c "create user hera with password 'hera';"
@@ -267,7 +267,7 @@ jobs:
 
       - name: Setup postgres
         run: |
-          export POSTGRES_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
+          export POSTGRES_URL=postgresql+psycopg://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
           psql $POSTGRES_URL -c 'create database hera_mc_test;'
           psql $POSTGRES_URL -c 'create database hera_mc;'
           psql $POSTGRES_URL -c "create user hera with password 'hera';"
@@ -364,7 +364,7 @@ jobs:
 
       - name: Setup postgres
         run: |
-          export POSTGRES_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
+          export POSTGRES_URL=postgresql+psycopg://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
           psql $POSTGRES_URL -c 'create database hera_mc_test;'
           psql $POSTGRES_URL -c 'create database hera_mc;'
           psql $POSTGRES_URL -c "create user hera with password 'hera';"
@@ -387,7 +387,7 @@ jobs:
           DOCKER_NAME=`/usr/bin/docker ps -a --filter="ancestor=redis" --format='{{.Names}}'`
           /usr/bin/docker stop $DOCKER_NAME
           sudo rm /data/dump.rdb
-          sudo cp hera_mc/data/test_data/dump.rdb /data
+          sudo cp src/hera_mc/data/test_data/dump.rdb /data
           /usr/bin/docker start $DOCKER_NAME
           DOCKER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $DOCKER_NAME`
           echo "$DOCKER_IP redishost" | sudo tee -a /etc/hosts

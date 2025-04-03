@@ -8,9 +8,9 @@ import os
 
 import pytest
 
-from .. import cm_gen_sqlite, cm_hookup, cm_transfer, mc
-from ..cm_partconnect import Connections
-from ..mc import AutomappedDB
+from hera_mc import cm_gen_sqlite, cm_hookup, cm_transfer, mc
+from hera_mc.cm_partconnect import Connections
+from hera_mc.mc import AutomappedDB
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we

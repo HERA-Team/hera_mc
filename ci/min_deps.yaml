@@ -13,5 +13,5 @@ dependencies:
   - pyuvdata>=2.2.9
   - pyyaml>=5.4.1
   - redis-py>=4.3.4
-  - setuptools_scm<7.0|>=7.0.3
+  - setuptools_scm>=8.1
   - sqlalchemy>=2.0

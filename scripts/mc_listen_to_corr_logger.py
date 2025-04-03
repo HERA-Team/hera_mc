@@ -58,9 +58,10 @@ level = logging.getLevelName(args.level)
 
 while True:
     try:
-        with db.sessionmaker() as session, redis.Redis(
-            connection_pool=redis_pool
-        ) as redis_db:
+        with (
+            db.sessionmaker() as session,
+            redis.Redis(connection_pool=redis_pool) as redis_db,
+        ):
             pubsub = redis_db.pubsub()
             pubsub.ignore_subscribe_messages = True
 

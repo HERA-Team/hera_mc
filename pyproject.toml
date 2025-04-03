@@ -1,6 +1,131 @@
 [build-system]
-requires = ["setuptools>=30.3.0", "wheel", "setuptools_scm"]
+requires = ["setuptools>=30.3.0", "wheel", "setuptools_scm>=8.1"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "hera_mc"
+authors = [
+    {name = "Bryna Hazelton", email = "brynah@phys.washington.edu"},
+    {name = "David DeBoer", email = "ddeboer@berkeley.edu"},
+    {name = "Matthew Kolopanis", email = "matthew.kolopanis@gmail.com"},
+    {name = "Paul La Plante", email = "paul.laplante@unlv.edu"},
+    {name = "Daniel Jacobs", email = "daniel.c.jacobs@gmail.com"},
+    {name = "Peter Williams", email = "peter@newton.cx"},
+]
+maintainers = [
+    {name = "Bryna Hazelton", email = "brynah@phys.washington.edu"},
+    {name = "David DeBoer", email = "ddeboer@berkeley.edu"},
+    {name = "Matthew Kolopanis", email = "matthew.kolopanis@gmail.com"},
+]
+description = "HERA monitor and control"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+    "alembic>=1.8",
+    "astropy>=5.0.4",
+    "cartopy>=0.21.0",
+    "numpy>=1.23",
+    "psycopg>=3.2.2",
+    "pyuvdata>=2.2.10",
+    "pyyaml>=5.4.1",
+    "redis>=4.3.4",  # Note that this gets redis-py, which is named "redis" on pypi
+    "setuptools_scm>=8.1",
+    "sqlalchemy>=2.0",
+]
+requires-python = ">=3.10"
+keywords = ["radio astronomy", "interferometry"]
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+
+[project.optional-dependencies]
+sqlite = ["tabulate>=0.8.10"]
+all = [
+    "h5py>=3.4.0",
+    "katportalclient",
+    "matplotlib>=3.6",
+    "pandas>=1.4",
+    "psutil>=5.9",
+    "python-dateutil>=2.8.2",
+    "tabulate>=0.8.10",
+    "tornado>=6.2",
+]
+test = [
+    "pytest>=8.2.0",
+    "pytest-cov",
+    "coverage",
+    "pre-commit",
+]
+doc = ["pypandoc", "sphinx"]
+dev = ["hera_mc[all,test,doc]"]
+
+
+[project.urls]
+Repository = "https://github.com/HERA-Team/hera_mc"
+
+
+# Note that this approach is "discouraged" in favor of [project.scripts], but
+# that requires entry-point functions, which would require some refactoring.
+[tool.setuptools]
+script-files = [
+    "scripts/update_cminfo_in_redis.py",
+    "scripts/write_records_to_file.py",
+    "scripts/mc_server_status_daemon.py",
+    "scripts/geo.py",
+    "scripts/mc_launch_rtp.py",
+    "scripts/cm_init.py",
+    "scripts/mc_megaraid_monitor.py",
+    "scripts/add_rtp_task_resource_records.py",
+    "scripts/update_part_rosetta.py",
+    "scripts/wd_node_temp.py",
+    "scripts/hera_mini_snap_data_catcher.py",
+    "scripts/add_qm_metrics.py",
+    "scripts/mc_listen_to_corr_logger.py",
+    "scripts/add_rtp_process_event.py",
+    "scripts/cm_region.py",
+    "scripts/add_station.py",
+    "scripts/mc_publish_summary.py",
+    "scripts/which_node.py",
+    "scripts/mc_rtp_launch_record.py",
+    "scripts/mc_add_observation.py",
+    "scripts/add_connection.py",
+    "scripts/write_sqlite.py",
+    "scripts/add_part_info.py",
+    "scripts/dossier.py",
+    "scripts/mc_setup_home.py",
+    "scripts/stop_part.py",
+    "scripts/mc_check_db_schema.py",
+    "scripts/add_part.py",
+    "scripts/hookup.py",
+    "scripts/update_qm_list.py",
+    "scripts/add_rtp_task_jobid.py",
+    "scripts/mc_clock.py",
+    "scripts/mc_monitor_nodes.py",
+    "scripts/mc_monitor_correlator.py",
+    "scripts/update_apriori.py",
+    "scripts/mc_launch_rtp_daemon.py",
+    "scripts/stop_connection.py",
+    "scripts/cm_pack.py",
+    "scripts/mc_check_lib_file.py",
+    "scripts/mc_monitor_daemons.py",
+    "scripts/add_rtp_process_record.py",
+    "scripts/mc_wx.py"
+]
+
+[tool.setuptools_scm]
+
+
+[tool.pytest.ini_options]
+addopts = "--ignore=scripts"
+
 
 [tool.isort]
 profile = "black"

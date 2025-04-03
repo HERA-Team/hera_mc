@@ -10,7 +10,8 @@ import numpy as np
 import pytest
 from astropy.time import Time, TimeDelta
 
-from .. import weather
+from hera_mc import weather
+
 from . import onsite
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error

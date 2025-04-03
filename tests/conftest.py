@@ -56,7 +56,7 @@ def setup_and_teardown_package():
                 "sqlite:///" + os.path.join(DATA_PATH, "test_data", sqlite_basename)
             )
         with open(config_path, "w") as fp:
-            json.dump(config_data, fp)
+            json.dump(config_data, fp, indent=2, separators=(",", ": "))
 
         test_sqlite_db = mc.connect_to_mc_testing_db(forced_db_name="sqlite_testing")
         test_sqlite_db.create_tables()
@@ -95,7 +95,7 @@ def mcsession(setup_and_teardown_package):
                 test_trans.rollback()
 
     # delete the hookup cache file
-    from .. import cm_hookup
+    from hera_mc import cm_hookup
 
     hookup = cm_hookup.Hookup(None)
     hookup.delete_cache_file()

@@ -2,11 +2,11 @@
   "default_db_name": "hera_mc",
   "databases": {
     "hera_mc": {
-      "url": "postgresql://hera:hera@localhost/hera_mc",
+      "url": "postgresql+psycopg://hera:hera@localhost/hera_mc",
       "mode": "testing"
     },
     "testing": {
-      "url": "postgresql://hera:hera@localhost/hera_mc_test",
+      "url": "postgresql+psycopg://hera:hera@localhost/hera_mc_test",
       "mode": "testing"
     },
     "hera_mc_sqlite": {
@@ -14,7 +14,7 @@
       "mode": "testing"
     },
     "sqlite_testing":{
-      "url": "sqlite:///~/hera_mc/data/test_data/hera_mc_test.db",
+      "url": "sqlite:///~/src/hera_mc/data/test_data/hera_mc_test.db",
       "mode": "testing"
     }
   }
