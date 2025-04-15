@@ -172,18 +172,22 @@ class Handling:
             for ppkey, hu in current_hookup.items():
                 pol = ppkey[0].lower()
                 hutype[pol] = hud[key].hookup_type[ppkey]
-                cind = self.sysdef.corr_index[hutype[pol]] - 1
-                try:
-                    snap_port = hu[cind].downstream_input_port
-                    node = int(hu[cind + 1].downstream_part[1:])
-                    loc = int(hu[cind + 1].downstream_input_port[3:])
-                    feng = f"heraNode{node}Snap{loc}"
-                    corr[pol] = "{}>{}".format(snap_port, feng)
-                    snap_serial_number[pol] = hu[cind].downstream_part
-                except (IndexError, ValueError):  # pragma: no cover
+                fully_connected = hud[key].fully_connected[f"{pol.upper()}<ground"]
+                if fully_connected:
+                    cind = self.sysdef.corr_index[hutype[pol]] - 1
+                    try:
+                        snap_port = hu[cind].downstream_input_port
+                        node = int(hu[cind + 1].downstream_part[1:])
+                        loc = int(hu[cind + 1].downstream_input_port[3:])
+                        feng = f"heraNode{node}Snap{loc}"
+                        corr[pol] = "{}>{}".format(snap_port, feng)
+                        snap_serial_number[pol] = hu[cind].downstream_part
+                    except (IndexError, ValueError):  # pragma: no cover
+                        corr[pol] = "None"
+                        snap_serial_number[pol] = "None"
+                    station_info.timing[pol] = hud[key].timing[ppkey]
+                else:
                     corr[pol] = "None"
-                    snap_serial_number[pol] = "None"
-                station_info.timing[pol] = hud[key].timing[ppkey]
             if corr["e"] == "None" and corr["n"] == "None":
                 continue
             station_info.correlator_input = (corr["e"], corr["n"])
