@@ -1839,6 +1839,19 @@ def test_onsite_add_corr_snap_versions_from_corrcm(mcsession):
     test_results = test_session.add_corr_snap_versions_from_corrcm(
         redishost=TEST_DEFAULT_REDIS_HOST, testing=True
     )
+    corr_pk_list = []
+    corr_obj_list = []
+    for item in test_results:
+        if isinstance(item, corr.CorrelatorConfigInputIndex):
+            corr_obj_list.append(item)
+            corr_pk_list.append((item.config_hash, item.correlator_index))
+    dup_inds = [ind for ind, pk in enumerate(corr_pk_list) if corr_pk_list.count(pk) > 1]
+    if len(dup_inds) > 1:
+        print("duplicate correlator indices found!")
+    for ind in dup_inds:
+        print(corr_pk_list[ind])
+        print(corr_obj_list[ind])
+
     assert len(corr_versions_dict) >= 1
 
     assert len(test_results) >= len(corr_versions_dict)
