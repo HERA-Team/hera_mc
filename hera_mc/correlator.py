@@ -127,7 +127,7 @@ def _get_snap_input_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
 
     """
     redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
-    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+    rsession = redis.Redis(connection_pool=redis_pool)
 
     snap_input_dict = rsession.hgetall("corr:status:input")
     # keys are:
@@ -160,7 +160,7 @@ def _get_fem_switch_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
 
     """
     redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
-    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+    rsession = redis.Redis(connection_pool=redis_pool)
 
     fem_switch_dict = rsession.hgetall("corr:fem_switch_state")
     # keys are:
@@ -349,7 +349,7 @@ def _get_f_engine_sync_time_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
 
     """
     redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
-    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+    rsession = redis.Redis(connection_pool=redis_pool)
 
     # The redis key that is currently being used for this is in unix ms.
     # In the future, this key will change in redis to "feng:sync_time".
@@ -388,7 +388,7 @@ def _get_catcher_start_stop_time_from_redis(
     """
     if taking_data_dict is None:
         redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
-        rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+        rsession = redis.Redis(connection_pool=redis_pool)
         taking_data_dict = rsession.hgetall("corr:is_taking_data")
 
     if len(taking_data_dict) > 0:
@@ -512,7 +512,7 @@ def _get_catcher_file_from_redis(redishost=DEFAULT_REDIS_ADDRESS, test_dict=None
         catcher_file_dict = test_dict
     else:
         redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
-        rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+        rsession = redis.Redis(connection_pool=redis_pool)
 
         catcher_file_dict = rsession.hgetall("corr:current_file")
 
@@ -614,7 +614,7 @@ def _get_correlator_file_queues_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
 
     """
     redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
-    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+    rsession = redis.Redis(connection_pool=redis_pool)
 
     time = Time.now()
     obj_list = []
@@ -751,7 +751,7 @@ def _get_correlator_file_eod_status_from_redis(redishost=DEFAULT_REDIS_ADDRESS):
 
     """
     redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
-    rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+    rsession = redis.Redis(connection_pool=redis_pool)
 
     file_eod_dict = rsession.hgetall("corr:files:jds")
     new_dict = {}
@@ -1660,7 +1660,7 @@ def _get_snap_feng_init_status_from_redis(
     """
     if snap_config_dict is None:
         redis_pool = redis.ConnectionPool(host=redishost, decode_responses=True)
-        rsession = redis.Redis(connection_pool=redis_pool, charset="utf-8")
+        rsession = redis.Redis(connection_pool=redis_pool)
 
         snap_config_dict = rsession.hgetall("snap_log")
         # These keys are:
