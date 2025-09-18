@@ -784,8 +784,6 @@ def node_info(node_num="active", session=None):
             except KeyError:
                 info[snp] = []
         notes = hu.get_notes(wr, state="all", return_dict=True)
-        if not isinstance(info[node], dict):
-            continue
         wpk = cm_utils.make_part_key(info[node]["wr"], "A")
         try:
             wrnt = notes[npk][wpk]
