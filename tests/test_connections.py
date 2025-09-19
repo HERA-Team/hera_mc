@@ -8,7 +8,7 @@ from collections import namedtuple
 import pytest
 from astropy.time import Time
 
-from .. import cm_handling, cm_partconnect
+from hera_mc import cm_handling, cm_partconnect
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we

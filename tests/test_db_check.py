@@ -10,8 +10,8 @@ from sqlalchemy import Column, ForeignKey, Integer, String, text
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, declared_attr, relationship, sessionmaker
 
-from .. import mc
-from ..db_check import check_connection, is_valid_database
+from hera_mc import mc
+from hera_mc.db_check import check_connection, is_valid_database
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we
@@ -213,7 +213,7 @@ def test_validity_pass_declarative():
 def test_check_connection(tmpdir):
     """Check that a missing database raises appropriate exception."""
     # Create database connection with fake url
-    db = mc.DeclarativeDB("postgresql://hera@localhost/foo")
+    db = mc.DeclarativeDB("postgresql+psycopg://hera@localhost/foo")
     with db.sessionmaker() as s:
         assert check_connection(s) is False
 
@@ -221,15 +221,15 @@ def test_check_connection(tmpdir):
         "default_db_name": "hera_mc",
         "databases": {
             "hera_mc": {
-                "url": "postgresql://hera:hera@localhost/hera_mc",
+                "url": "postgresql+psycopg://hera:hera@localhost/hera_mc",
                 "mode": "testing",
             },
             "testing": {
-                "url": "postgresql://hera:hera@localhost/hera_mc_test",
+                "url": "postgresql+psycopg://hera:hera@localhost/hera_mc_test",
                 "mode": "testing",
             },
             "foo": {
-                "url": "postgresql://hera:hera@localhost/foo",
+                "url": "postgresql+psycopg://hera:hera@localhost/foo",
                 "mode": "testing",
             },
         },

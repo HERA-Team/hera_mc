@@ -8,7 +8,7 @@ from math import floor
 import pytest
 from astropy.time import Time, TimeDelta
 
-from ..daemon_status import DaemonStatus
+from hera_mc.daemon_status import DaemonStatus
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we

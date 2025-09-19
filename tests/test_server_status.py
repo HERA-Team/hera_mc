@@ -8,8 +8,8 @@ from math import floor
 import pytest
 from astropy.time import Time, TimeDelta
 
-from ..librarian import LibServerStatus
-from ..rtp import RTPServerStatus
+from hera_mc.librarian import LibServerStatus
+from hera_mc.rtp import RTPServerStatus
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we
@@ -106,7 +106,7 @@ def test_add_server_status(mcsession, status):
             sub,
             status.column_values[0],
             *status.column_values[2:11],
-            network_bandwidth_mbs=status.column_values[11]
+            network_bandwidth_mbs=status.column_values[11],
         )
         result = test_session.get_server_status(
             sub, starttime=(status.columns["system_time"] - TimeDelta(2, format="sec"))
@@ -149,7 +149,7 @@ def test_add_server_status(mcsession, status):
             sub,
             "test_host2",
             *status.column_values[2:11],
-            network_bandwidth_mbs=status.column_values[11]
+            network_bandwidth_mbs=status.column_values[11],
         )
         result_host = test_session.get_server_status(
             sub,
@@ -191,14 +191,14 @@ def test_errors_server_statuss(mcsession, status):
             status.column_values[2],
             "foo",
             *status.column_values[4:11],
-            network_bandwidth_mbs=status.column_values[11]
+            network_bandwidth_mbs=status.column_values[11],
         )
 
         test_session.add_server_status(
             sub,
             status.column_values[0],
             *status.column_values[2:11],
-            network_bandwidth_mbs=status.column_values[11]
+            network_bandwidth_mbs=status.column_values[11],
         )
         pytest.raises(
             ValueError, test_session.get_server_status, sub, starttime="test_host"
@@ -218,7 +218,7 @@ def test_errors_server_statuss(mcsession, status):
                 "foo",
                 status.column_values[0],
                 *status.column_values[2:11],
-                network_bandwidth_mbs=status.column_values[11]
+                network_bandwidth_mbs=status.column_values[11],
             )
         elif sub == "lib":
             pytest.raises(
@@ -227,7 +227,7 @@ def test_errors_server_statuss(mcsession, status):
                 "foo",
                 status.column_values[0],
                 *status.column_values[2:11],
-                network_bandwidth_mbs=status.column_values[11]
+                network_bandwidth_mbs=status.column_values[11],
             )
 
     pytest.raises(
@@ -236,7 +236,7 @@ def test_errors_server_statuss(mcsession, status):
         "foo",
         status.column_values[0],
         *status.column_values[2:11],
-        network_bandwidth_mbs=status.column_values[11]
+        network_bandwidth_mbs=status.column_values[11],
     )
     pytest.raises(
         ValueError,

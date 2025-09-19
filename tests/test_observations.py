@@ -10,8 +10,8 @@ import pytest
 from astropy.coordinates import EarthLocation
 from astropy.time import Time, TimeDelta
 
-from .. import geo_handling, utils
-from ..observations import Observation, allowed_tags
+from hera_mc import geo_handling, utils
+from hera_mc.observations import Observation, allowed_tags
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we

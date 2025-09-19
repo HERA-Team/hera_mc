@@ -230,11 +230,11 @@ def test_get_cm_repo_git_hash(tmpdir):
         "default_db_name": "hera_mc",
         "databases": {
             "hera_mc": {
-                "url": "postgresql://hera:hera@localhost/hera_mc",
+                "url": "postgresql+psycopg://hera:hera@localhost/hera_mc",
                 "mode": "testing",
             },
             "testing": {
-                "url": "postgresql://hera:hera@localhost/hera_mc_test",
+                "url": "postgresql+psycopg://hera:hera@localhost/hera_mc_test",
                 "mode": "testing",
             },
         },

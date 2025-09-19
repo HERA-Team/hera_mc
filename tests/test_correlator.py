@@ -26,7 +26,7 @@ import hera_mc.correlator as corr
 from hera_mc import cm_partconnect, mc
 from hera_mc.data import DATA_PATH
 
-from ..tests import (
+from . import (
     TEST_DEFAULT_REDIS_HOST,
     checkWarnings,
     onsite,

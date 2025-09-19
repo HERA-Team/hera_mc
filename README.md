@@ -1,8 +1,8 @@
 hera_mc
 =======
 
-![](https://github.com/HERA-Team/hera_mc/workflows/Run%20Tests/badge.svg?branch=master)
-[![codecov](https://codecov.io/gh/HERA-Team/hera_mc/branch/master/graph/badge.svg)](https://codecov.io/gh/HERA-Team/hera_mc)
+![](https://github.com/HERA-Team/hera_mc/actions/workflows/testsuite.yml/badge.svg?branch=main)
+[![codecov](https://codecov.io/gh/HERA-Team/hera_mc/branch/main/graph/badge.svg)](https://codecov.io/gh/HERA-Team/hera_mc)
 
 This is the main repository for HERA's monitor and control subsystems.
 
@@ -55,7 +55,7 @@ The required dependencies are:
 - pyuvdata >= 2.2.9
 - pyyaml >= 5.4.1
 - redis-py >= 4.3.4 (Note that this is called "redis" on pypi and "redis-py" on conda)
-- setuptools_scm <7.0|>=7.0.3
+- setuptools_scm >= 8.1
 - sqlalchemy >= 2.0
 
 the optional dependencies are:

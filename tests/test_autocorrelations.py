@@ -13,7 +13,7 @@ from astropy.time import Time, TimeDelta
 
 from hera_mc import autocorrelations
 
-from ..tests import TEST_DEFAULT_REDIS_HOST, requires_default_redis, requires_redis
+from . import TEST_DEFAULT_REDIS_HOST, requires_default_redis, requires_redis
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we

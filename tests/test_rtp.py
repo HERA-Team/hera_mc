@@ -11,8 +11,8 @@ import numpy as np
 import pytest
 from astropy.time import Time, TimeDelta
 
-from .. import utils
-from ..rtp import (
+from hera_mc import utils
+from hera_mc.rtp import (
     RTPLaunchRecord,
     RTPProcessEvent,
     RTPProcessRecord,

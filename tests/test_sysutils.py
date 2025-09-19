@@ -11,8 +11,7 @@ import pytest
 import redis
 
 import hera_mc
-
-from .. import (
+from hera_mc import (
     cm_active,
     cm_dossier,
     cm_hookup,
@@ -25,7 +24,8 @@ from .. import (
     node,
     watch_dog,
 )
-from ..tests import TEST_DEFAULT_REDIS_HOST, onsite, requires_redis
+
+from . import TEST_DEFAULT_REDIS_HOST, onsite, requires_redis
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we
@@ -327,7 +327,8 @@ def test_which_node(capsys, mcsession):
     captured = capsys.readouterr()
     assert "Warning:  Antenna 701" in captured.out.strip()
     na_dict = {"N700": ["HH700"], "N701": ["HH700"]}
-    pytest.raises(ValueError, cm_sysutils._find_ant_node, 700, na_dict)
+    with pytest.raises(ValueError, match="Antenna 700 already listed in node N700"):
+        cm_sysutils._find_ant_node(700, na_dict)
 
 
 def test_sysdef(sys_handle, mcsession):

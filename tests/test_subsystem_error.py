@@ -8,7 +8,7 @@ from math import floor
 import pytest
 from astropy.time import Time, TimeDelta
 
-from ..subsystem_error import SubsystemError
+from hera_mc.subsystem_error import SubsystemError
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we
@@ -56,7 +56,7 @@ def test_add_subsystem_error(mcsession, subsys):
         subsys.subsystem_error_values[1],
         subsys.subsystem_error_values[2],
         *subsys.subsystem_error_values[4:],
-        testing=True
+        testing=True,
     )
 
     # error_obj.id isn't set because that's autoincremented by the database
@@ -70,7 +70,7 @@ def test_add_subsystem_error(mcsession, subsys):
     test_session.add_subsystem_error(
         subsys.subsystem_error_values[1],
         subsys.subsystem_error_values[2],
-        *subsys.subsystem_error_values[4:]
+        *subsys.subsystem_error_values[4:],
     )
     # now actually add it
     result = test_session.get_subsystem_error(
@@ -122,13 +122,13 @@ def test_errors_subsystem_error(mcsession, subsys):
         test_session.add_subsystem_error,
         "foo",
         subsys.subsystem_error_values[2],
-        *subsys.subsystem_error_values[4:]
+        *subsys.subsystem_error_values[4:],
     )
 
     test_session.add_subsystem_error(
         subsys.subsystem_error_values[1],
         subsys.subsystem_error_values[2],
-        *subsys.subsystem_error_values[4:]
+        *subsys.subsystem_error_values[4:],
     )
     pytest.raises(ValueError, test_session.get_subsystem_error, starttime="foo")
     pytest.raises(

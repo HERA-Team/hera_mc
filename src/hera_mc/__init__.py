@@ -8,34 +8,48 @@ Define package structure.
 isort:skip_file
 """
 
-from pathlib import Path
+import contextlib
 import warnings
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
 import numpy as np
-from importlib.metadata import version, PackageNotFoundError
 from setuptools_scm import get_version
+from sqlalchemy.orm import declarative_base
 
-from .branch_scheme import branch_scheme
+
+# copy this function here from setup.py.
+# Copying code is terrible, but it's better than altering the python path in setup.py.
+def branch_scheme(version):  # pragma: nocover
+    """
+    Local version scheme that adds the branch name for absolute reproducibility.
+
+    If and when this is added to setuptools_scm this function can be removed.
+    """
+    if version.exact or version.node is None:
+        return version.format_choice("", "+d{time:{time_format}}", time_format="%Y%m%d")
+    else:
+        if version.branch == "main":
+            return version.format_choice("+{node}", "+{node}.dirty")
+        else:
+            return version.format_choice("+{node}.{branch}", "+{node}.{branch}.dirty")
 
 
 try:
     # get accurate version for developer installs
-    version_str = get_version(Path(__file__).parent.parent, local_scheme=branch_scheme)
+    version_str = get_version(
+        Path(__file__).parent.parent.parent, local_scheme=branch_scheme
+    )
 
     __version__ = version_str
 
 except (LookupError, ImportError):
-    try:
+    with contextlib.suppress(PackageNotFoundError):
         # Set the version automatically from the package details.
-        __version__ = version("hera_mc")
-    except PackageNotFoundError:  # pragma: nocover
-        # package is not installed
-        pass
+        __version__ = version("pyradiosky")
 
 # Before we can do anything else, we need to initialize some core, shared
 # variables.
-
-from sqlalchemy.orm import declarative_base
 
 # define some default tolerances for various units
 DEFAULT_DAY_TOL = {"atol": 1e-3 / (3600.0 * 24.0), "rtol": 0}  # ms

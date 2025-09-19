@@ -34,11 +34,11 @@ mc_config = """{{
     "default_db_name": "hera_mc_sqlite",
     "databases": {{
         "hera_mc": {{
-            "url": "postgresql://{}@localhost/hera_mc",
+            "url": "postgresql+psycopg://{}@localhost/hera_mc",
             "mode": "production"
             }},
         "testing": {{
-            "url": "postgresql://{}@localhost/hera_mc_test",
+            "url": "postgresql+psycopg://{}@localhost/hera_mc_test",
             "mode": "testing"
             }},
         "hera_mc_sqlite": {{

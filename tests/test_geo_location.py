@@ -6,7 +6,7 @@
 import pytest
 from astropy.time import Time
 
-from .. import cm_active, cm_partconnect, geo_handling, geo_location, geo_sysdef
+from hera_mc import cm_active, cm_partconnect, geo_handling, geo_location, geo_sysdef
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we

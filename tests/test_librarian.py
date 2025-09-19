@@ -9,8 +9,8 @@ from math import floor
 import pytest
 from astropy.time import Time, TimeDelta
 
-from .. import utils
-from ..librarian import (
+from hera_mc import utils
+from hera_mc.librarian import (
     LibFiles,
     LibRAIDErrors,
     LibRAIDStatus,
@@ -284,7 +284,7 @@ def test_errors_lib_raid_status(mcsession, raidstatus):
         ValueError,
         test_session.add_lib_raid_status,
         "foo",
-        *raidstatus.raid_status_values[1:]
+        *raidstatus.raid_status_values[1:],
     )
 
     test_session.add_lib_raid_status(*raidstatus.raid_status_values)
@@ -354,7 +354,7 @@ def test_errors_lib_raid_error(mcsession, raiderror):
         ValueError,
         test_session.add_lib_raid_error,
         "foo",
-        *raiderror.raid_error_values[2:]
+        *raiderror.raid_error_values[2:],
     )
 
     test_session.add_lib_raid_error(*raiderror.raid_error_values[1:])
@@ -422,7 +422,7 @@ def test_errors_lib_remote_status(mcsession, remote):
         ValueError,
         test_session.add_lib_remote_status,
         "foo",
-        *remote.remote_status_values[1:]
+        *remote.remote_status_values[1:],
     )
 
     test_session.add_lib_remote_status(*remote.remote_status_values)
