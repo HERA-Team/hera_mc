@@ -40,6 +40,7 @@ class DB(object, metaclass=ABCMeta):
     sqlalchemy_base = None
 
     def __init__(self, sqlalchemy_base, db_url):  # noqa
+        # Add "+psycopg" to the url to ensure sqlalchemy uses the right psycopg package
         if "postgresql" in db_url and "postgresql+psycopg" not in db_url:
             db_url = db_url.replace("postgresql", "postgresql+psycopg")
         self.sqlalchemy_base = MCDeclarativeBase

@@ -147,6 +147,7 @@ def test_validity_column_missing():
         Session = sessionmaker(bind=engine)
         session = Session()
         assert is_valid_database(Base, session) is False
+        Base.metadata.drop_all(engine)
         session.close()
 
 
@@ -213,6 +214,8 @@ def test_validity_pass_declarative():
 def test_check_connection(tmpdir):
     """Check that a missing database raises appropriate exception."""
     # Create database connection with fake url
+
+    # Add "+psycopg" to the url to make sure everything works if it's in there.
     db = mc.DeclarativeDB("postgresql+psycopg://hera@localhost/foo")
     with db.sessionmaker() as s:
         assert check_connection(s) is False

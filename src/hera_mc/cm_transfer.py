@@ -238,6 +238,7 @@ def check_if_main(
         config_data = json.load(f)
 
     testing_db_url = config_data.get("databases").get(test_db_name).get("url")
+    # Add "+psycopg" to the url to ensure sqlalchemy uses the right psycopg package
     if "postgresql" in testing_db_url and "postgresql+psycopg" not in testing_db_url:
         testing_db_url = testing_db_url.replace("postgresql", "postgresql+psycopg")
 
