@@ -9,9 +9,7 @@ import subprocess
 
 from astropy.time import Time, TimeDelta
 
-import hera_mc
-
-from . import mc
+from . import __version__, mc
 
 PAST_DATE = "2000-01-01"
 VALID_FLOAT_FORMAT_FOR_TIME = ["unix", "gps", "jd"]
@@ -37,7 +35,7 @@ def get_cm_repo_git_hash(mc_config_path=None, cm_csv_path=None, testing=False):
 
     """
     if testing:
-        return hera_mc.__version__
+        return __version__
 
     if cm_csv_path is None:
         cm_csv_path = mc.get_cm_csv_path(mc_config_file=mc_config_path)

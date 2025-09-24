@@ -32,11 +32,16 @@ def branch_scheme(version):  # pragma: nocover
         if version.branch == "main":
             return version.format_choice("+{node}", "+{node}.dirty")
         else:
-            return version.format_choice("+{node}.{branch}", "+{node}.{branch}.dirty")
+            version_str = version.format_choice(
+                "+{node}.{branch}", "+{node}.{branch}.dirty"
+            )
+            version_str = version_str.replace("/", ".")
+            return version_str
 
 
 try:
     # get accurate version for developer installs
+    # must point to folder that contains the .git file!
     version_str = get_version(
         Path(__file__).parent.parent.parent, local_scheme=branch_scheme
     )
@@ -46,7 +51,7 @@ try:
 except (LookupError, ImportError):
     with contextlib.suppress(PackageNotFoundError):
         # Set the version automatically from the package details.
-        __version__ = version("pyradiosky")
+        __version__ = version("hera_mc")
 
 # Before we can do anything else, we need to initialize some core, shared
 # variables.
