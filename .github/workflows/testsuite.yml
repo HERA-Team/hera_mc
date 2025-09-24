@@ -111,7 +111,7 @@ jobs:
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
 
-      - uses: codecov/codecov-action@v1.5.2
+      - uses: codecov/codecov-action@v5
         if: matrix.os == 'ubuntu-latest' && success()
         with:
           token: ${{secrets.CODECOV_TOKEN}} #required
@@ -194,14 +194,11 @@ jobs:
 
       - name: Run Tests
         run: |
-          mkdir -p empty
-          cd empty
-          pytest --pyargs hera_mc --cov=hera_mc --cov-config=../.coveragerc --cov-report xml:../coverage.xml --junitxml=../test-reports/xunit.xml
-          cd ..
+          python -m pytest --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
 
-      - uses: codecov/codecov-action@v1.5.2
+      - uses: codecov/codecov-action@v5
         if: success()
         with:
           token: ${{secrets.CODECOV_TOKEN}} #required
@@ -263,7 +260,7 @@ jobs:
 
       - name: Install
         run: |
-          pip install --no-deps .
+          pip install --no-deps -e .
 
       - name: Setup postgres
         run: |
@@ -284,14 +281,11 @@ jobs:
 
       - name: Run Tests
         run: |
-          mkdir -p empty
-          cd empty
-          pytest --pyargs hera_mc --cov=hera_mc --cov-config=../.coveragerc --cov-report xml:../coverage.xml --junitxml=../test-reports/xunit.xml
-          cd ..
+          python -m pytest --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
 
-      - uses: codecov/codecov-action@v1.5.2
+      - uses: codecov/codecov-action@v5
         if: success()
         with:
           token: ${{secrets.CODECOV_TOKEN}} #required
@@ -360,7 +354,7 @@ jobs:
 
       - name: Install
         run: |
-          pip install --no-deps .
+          pip install --no-deps -e .
 
       - name: Setup postgres
         run: |
@@ -394,6 +388,12 @@ jobs:
 
       - name: Run Tests
         run: |
-          python -m pytest -W error
+          python -m pytest -W error --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+
+      - uses: codecov/codecov-action@v5
+        if: success()
+        with:
+          token: ${{secrets.CODECOV_TOKEN}} #required
+          file: ./coverage.xml #optional
