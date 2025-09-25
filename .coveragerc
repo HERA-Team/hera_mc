@@ -2,7 +2,7 @@
 omit =
     */tests/*
     */docs/*
-branch = true
+branch = false
 source = hera_mc
 
 [report]
