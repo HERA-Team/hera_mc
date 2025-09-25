@@ -385,7 +385,7 @@ jobs:
           /usr/bin/docker start $DOCKER_NAME
           DOCKER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $DOCKER_NAME`
           echo "$DOCKER_IP redishost" | sudo tee -a /etc/hosts
-          REDISONLINE=`python -c "import redis; r=redis.Redis("redishost"); print(any(k for k in r.keys() if "hera" in k.decode()) > 0)"`
+          REDISONLINE=`python -c "import redis; r=redis.Redis("redishost"); any(k for k in r.keys() if "hera" in k.decode()) > 0"`
           echo $REDISONLINE
 
       - name: Run Tests
