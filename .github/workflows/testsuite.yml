@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     services:
       postgres:
         image: postgres:10.8
@@ -120,7 +120,7 @@ jobs:
   min_deps:
     env:
       ENV_NAME: min_deps
-      PYTHON: "3.11"
+      PYTHON: "3.12"
       WITH_SUDO: yes
       # use localhost for the host here because we are running the job on the VM.
       POSTGRES_HOST: localhost
@@ -294,7 +294,7 @@ jobs:
   warning_tests:
     env:
       ENV_NAME: tests
-      PYTHON: "3.11"
+      PYTHON: "3.12"
       WITH_SUDO: yes
       # use localhost for the host here because we are running the job on the VM.
       POSTGRES_HOST: localhost
