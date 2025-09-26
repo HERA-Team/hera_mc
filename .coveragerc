@@ -2,13 +2,15 @@
 omit =
     */tests/*
     */docs/*
-branch = false
-source = hera_mc
+    setup.py
+source =
+    hera_mc
 
 [report]
 omit =
     */tests/*
     */docs/*
+    setup.py
 
 show_missing = true
 
