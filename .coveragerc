@@ -17,7 +17,7 @@ show_missing = true
 [paths]
 source =
     src
-    */site-packages"
+    */site-packages
 tests =
     tests
     */tests
