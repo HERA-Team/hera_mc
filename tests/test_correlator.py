@@ -28,7 +28,6 @@ from hera_mc.data import DATA_PATH
 
 from . import (
     TEST_DEFAULT_REDIS_HOST,
-    checkWarnings,
     onsite,
     requires_default_redis,
     requires_redis,
@@ -2441,9 +2440,8 @@ def test_get_node_snap_from_serial_multiple_times_diffloc(mcsession):
     connection.start_gpstime = 1230375718
     mcsession.add(connection)
     mcsession.commit()
-    node, snap_loc_num = checkWarnings(
-        mcsession._get_node_snap_from_serial, ["SNPD000703"], nwarnings=0
-    )
+    with check_warnings(None, match=""):
+        node, snap_loc_num = mcsession._get_node_snap_from_serial("SNPD000703")
     assert node == 701
     assert snap_loc_num == 2
 
@@ -2857,11 +2855,8 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
 
 def test_add_antenna_status_from_corrcm_with_nones(mcsession, antstatus_none):
     test_session = mcsession
-    checkWarnings(
-        test_session.add_antenna_status_from_corrcm,
-        func_kwargs={"ant_status_dict": antstatus_none},
-        message="fem_switch value is Unknown mode",
-    )
+    with check_warnings(UserWarning, match="fem_switch value is Unknown mode"):
+        test_session.add_antenna_status_from_corrcm(ant_status_dict=antstatus_none)
 
     t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format="datetime")
     result = test_session.get_antenna_status(

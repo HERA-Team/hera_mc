@@ -28,7 +28,6 @@ def setup_and_teardown_package():
     # If there's not a current IERS table and it can't be downloaded, turn off
     # auto downloading for the tests and turn it back on once all tests are
     # completed (done by extending auto_max_age).
-    # Also, the checkWarnings function will ignore IERS-related warnings.
     try:
         t1 = Time.now()
         t1.ut1

@@ -8,10 +8,14 @@ import os
 import pytest
 from astropy.time import Time, TimeDelta
 
+try:
+    from pyuvdata.testing import check_warnings
+except ImportError:
+    # this can be removed once we require pyuvdata >= v3.0
+    from pyuvdata.tests import check_warnings
+
 from hera_mc import mc, utils
 from hera_mc.qm import AntMetrics, ArrayMetrics
-
-from . import checkWarnings
 
 pytest.importorskip("hera_qm")
 from hera_qm.firstcal_metrics import get_firstcal_metrics_dict  # noqa
@@ -261,11 +265,8 @@ def test_MetricList(mcsession, initialize_obs, tmpdir):
     test_session.check_metric_desc("test")
     r = test_session.get_metric_desc(metric="test")
     assert r[0].desc == "new desc"
-    checkWarnings(
-        test_session.check_metric_desc,
-        ["test2"],
-        message="Metric test2 not found in db",
-    )
+    with check_warnings(UserWarning, match="Metric test2 not found in db"):
+        test_session.check_metric_desc("test2"),
     r = test_session.get_metric_desc(metric="test2")
     assert "Auto-generated description." in r[0].desc
 
