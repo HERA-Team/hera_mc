@@ -111,6 +111,9 @@ jobs:
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
 
+      - name: Look Around
+        run: ls -lthra
+
       - uses: codecov/codecov-action@v5
         if: matrix.os == 'ubuntu-latest' && success()
         with:
