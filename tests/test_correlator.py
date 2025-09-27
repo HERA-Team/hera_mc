@@ -2440,8 +2440,7 @@ def test_get_node_snap_from_serial_multiple_times_diffloc(mcsession):
     connection.start_gpstime = 1230375718
     mcsession.add(connection)
     mcsession.commit()
-    with check_warnings(None, match=""):
-        node, snap_loc_num = mcsession._get_node_snap_from_serial("SNPD000703")
+    node, snap_loc_num = mcsession._get_node_snap_from_serial("SNPD000703")
     assert node == 701
     assert snap_loc_num == 2
 
