@@ -73,7 +73,7 @@ jobs:
 
       - name: Install
         run: |
-          pip install --no-deps .
+          pip install --no-deps -e .
 
       - name: Setup postgres
         run: |
@@ -277,7 +277,7 @@ jobs:
 
       - name: Install
         run: |
-          pip install --no-deps -e .
+          pip install --no-deps .
 
       - name: Setup postgres
         run: |
