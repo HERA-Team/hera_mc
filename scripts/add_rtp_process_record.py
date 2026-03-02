@@ -11,7 +11,7 @@ import warnings
 import numpy as np
 import pyuvdata
 from astropy.time import Time
-from pkg_resources import parse_version
+from packaging.version import Version
 
 import hera_mc.mc as mc
 
@@ -41,9 +41,9 @@ if __name__ == "__main__":
         # but this lets us script up the version info
         local_version_info = importlib.import_module(repo_name).__version__
 
-        parsed_version = parse_version(local_version_info)
-        version_info[repo_name]["tag"] = parsed_version.base_version
-        local = parsed_version.local
+        version_obj = Version(local_version_info)
+        version_info[repo_name]["tag"] = version_obj.release
+        local = version_obj.local
 
         if repo_name == "pyuvdata":
             url = "RadioAstronomySoftwareGroup"
