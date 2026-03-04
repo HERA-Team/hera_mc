@@ -36,10 +36,10 @@ def setup_and_teardown_package():
 
     test_db = mc.connect_to_mc_testing_db()
     test_db.create_tables()
-    session = test_db.sessionmaker()
-    cm_transfer._initialization(
-        session=session, cm_csv_path=mc.test_data_path, testing=True
-    )
+    with test_db.sessionmaker() as session:
+        cm_transfer._initialization(
+            session=session, cm_csv_path=mc.test_data_path, testing=True
+        )
 
     config_path = os.path.expanduser("~/.hera_mc/mc_config.json")
     with open(config_path) as f:
@@ -59,10 +59,10 @@ def setup_and_teardown_package():
 
         test_sqlite_db = mc.connect_to_mc_testing_db(forced_db_name="sqlite_testing")
         test_sqlite_db.create_tables()
-        sqlite_session = test_sqlite_db.sessionmaker()
-        cm_transfer._initialization(
-            session=sqlite_session, cm_csv_path=mc.test_data_path, testing=True
-        )
+        with test_sqlite_db.sessionmaker() as sqlite_session:
+            cm_transfer._initialization(
+                session=sqlite_session, cm_csv_path=mc.test_data_path, testing=True
+            )
     else:
         test_sqlite_db = None
 
