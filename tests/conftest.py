@@ -107,17 +107,12 @@ def mc_sqlite_session(setup_and_teardown_package):
     if test_sqlite_db is None:
         pytest.skip()
 
-    test_conn = test_sqlite_db.engine.connect()
-    test_trans = test_conn.begin()
-    test_sqlite_session = mc.MCSession(bind=test_conn)
+    with test_db.engine.connect() as test_conn:
+        with test_conn.begin() as test_trans:
+            with mc.MCSession(bind=test_conn) as test_sqlite_session:
+                yield test_sqlite_session
 
-    yield test_sqlite_session
-
-    test_sqlite_session.close()
-    # rollback - everything that happened with the
-    # Session above (including calls to commit())
-    # is rolled back.
-    test_trans.rollback()
-
-    # return connection to the Engine
-    test_conn.close()
+                # rollback - everything that happened with the
+                # Session above (including calls to commit())
+                # is rolled back.
+                test_trans.rollback()
