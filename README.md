@@ -52,7 +52,7 @@ The required dependencies are:
 - cartopy >=0.21
 - numpy >= 1.23
 - psycopg>=3.2.2
-- pyuvdata >= 2.2.9
+- pyuvdata >= 2.3.0
 - pyyaml >= 5.4.1
 - redis-py >= 4.3.4 (Note that this is called "redis" on pypi and "redis-py" on conda)
 - setuptools_scm >= 8.1

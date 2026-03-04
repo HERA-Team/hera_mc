@@ -16,7 +16,7 @@ dependencies:
   - pytest>=6.2.5
   - pytest-cov
   - python-dateutil>=2.8.2
-  - pyuvdata>=2.2.9
+  - pyuvdata>=2.3.0
   - pyyaml>=5.4.1
   - redis-py>=4.3.4
   - setuptools_scm>=8.1
