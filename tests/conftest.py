@@ -18,11 +18,6 @@ from hera_mc.data import DATA_PATH
 test_db = None
 
 
-@pytest.fixture(scope="session", autouse=True)
-def set_env():
-    os.environ["PYTHONTRACEMALLOC"] = "20"
-
-
 @pytest.fixture(autouse=True, scope="session")
 def setup_and_teardown_package():
     global test_db
