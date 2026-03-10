@@ -71,6 +71,16 @@ jobs:
             exit 1;
           fi
 
+      # this should be done in the conda env setup step because it's listed
+      # as a pip dependency there but it seems to not be working, so do it by hand
+      - name: Install node control
+        run: |
+          cd ../
+          git clone https://github.com/HERA-Team/hera_node_mc.git@main
+          cd hera_node_mc
+          pip install --no-deps .
+          cd ../hera_mc
+
       - name: Install
         run: |
           pip install --no-deps -e .
