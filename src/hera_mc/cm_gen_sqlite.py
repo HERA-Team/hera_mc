@@ -130,6 +130,10 @@ class SqliteHandling:
             if self.testing:
                 db_url = config_data["databases"]["testing"]["url"]
 
+        # get rid of any "+psycopg" in the url (it's added for sqlalchemy,
+        # doesn't work for actual postgres calls.)
+        db_url = db_url.replace("+psycopg", "")
+
         subprocess.call(
             f"pg_dump -s -p {postgres_port} -d {db_url} > {schema_file}", shell=True
         )
@@ -193,8 +197,8 @@ class SqliteHandling:
         with open(sqlfile, "w") as f:
             f.write(schema)
             f.write(inserts)
-            f.write(".save {}\n".format(dbfile_full))
-        subprocess.call("sqlite3 < {}".format(sqlfile), shell=True)
+            f.write(f".save {dbfile_full}\n")
+        subprocess.call(f"sqlite3 < {sqlfile}", shell=True)
         os.remove(schema_file)
         os.remove(inserts_file)
         os.remove(sqlfile)

@@ -704,7 +704,7 @@ class Handling:
         query_date,
         query_time=None,
         float_format=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Plot the various sub-array types.

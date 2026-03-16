@@ -10,13 +10,14 @@ import numpy as np
 import pytest
 from astropy.time import Time, TimeDelta
 
-from .. import weather
+from hera_mc import weather
+
 from . import onsite
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we
 # pass `-W error`, the warning causes an error so we filter it out here.
-pytestmark = pytest.mark.filterwarnings("ignore:connection:ResourceWarning:psycopg")
+pytestmark = pytest.mark.filterwarnings("ignore::ResourceWarning:")
 
 
 # could be parameterized

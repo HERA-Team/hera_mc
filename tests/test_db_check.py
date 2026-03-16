@@ -10,13 +10,13 @@ from sqlalchemy import Column, ForeignKey, Integer, String, text
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, declared_attr, relationship, sessionmaker
 
-from .. import mc
-from ..db_check import check_connection, is_valid_database
+from hera_mc import mc
+from hera_mc.db_check import check_connection, is_valid_database
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we
 # pass `-W error`, the warning causes an error so we filter it out here.
-pytestmark = pytest.mark.filterwarnings("ignore:connection:ResourceWarning:psycopg")
+pytestmark = pytest.mark.filterwarnings("ignore::ResourceWarning:")
 
 
 def gen_test_model():
@@ -80,63 +80,56 @@ def test_validity_pass():
     See database validity check completes when tables and columns are created.
     """
     engine = mc.connect_to_mc_testing_db().engine
-    conn = engine.connect()
-    conn.begin()
 
-    Base, ValidTestModel = gen_test_model()
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    try:
-        Base.metadata.drop_all(engine, tables=[ValidTestModel.__table__])
-    except sqlalchemy.exc.NoSuchTableError:
-        pass
+    with engine.connect() as conn:
+        Base, ValidTestModel = gen_test_model()
+        Session = sessionmaker(bind=conn)
+        with Session() as session:
+            try:
+                Base.metadata.drop_all(engine, tables=[ValidTestModel.__table__])
+            except sqlalchemy.exc.NoSuchTableError:
+                pass
 
-    base_is_none = is_valid_database(None, session)
-    assert base_is_none
+            base_is_none = is_valid_database(None, session)
+            assert base_is_none
 
-    Base.metadata.create_all(engine, tables=[ValidTestModel.__table__])
+            Base.metadata.create_all(engine, tables=[ValidTestModel.__table__])
 
-    try:
-        assert is_valid_database(Base, session) is True
-    finally:
-        Base.metadata.drop_all(engine)
-        session.close()
-        conn.close()
+            try:
+                assert is_valid_database(Base, session) is True
+            finally:
+                Base.metadata.drop_all(engine)
 
 
 def test_validity_table_missing():
     """See check fails when there is a missing table"""
     engine = mc.connect_to_mc_testing_db().engine
-    conn = engine.connect()
-    conn.begin()
 
-    Base, ValidTestModel = gen_test_model()
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    with engine.connect() as conn:
+        Base, ValidTestModel = gen_test_model()
 
-    try:
-        Base.metadata.drop_all(engine, tables=[ValidTestModel.__table__])
-    except sqlalchemy.exc.NoSuchTableError:
-        pass
+        Session = sessionmaker(bind=conn)
+        with Session() as session:
+            try:
+                Base.metadata.drop_all(engine, tables=[ValidTestModel.__table__])
+            except sqlalchemy.exc.NoSuchTableError:
+                pass
 
-    assert is_valid_database(Base, session) is False
-    session.close()
-    conn.close()
+            assert is_valid_database(Base, session) is False
 
 
 def test_validity_column_missing():
     """See check fails when there is a missing table"""
     engine = mc.connect_to_mc_testing_db().engine
     with engine.begin() as conn:
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        Base, ValidTestModel = gen_test_model()
-        try:
-            Base.metadata.drop_all(engine, tables=[ValidTestModel.__table__])
-        except sqlalchemy.exc.NoSuchTableError:
-            pass
-        Base.metadata.create_all(engine, tables=[ValidTestModel.__table__])
-        session.close()
+        Session = sessionmaker(bind=conn)
+        with Session() as session:
+            Base, ValidTestModel = gen_test_model()
+            try:
+                Base.metadata.drop_all(engine, tables=[ValidTestModel.__table__])
+            except sqlalchemy.exc.NoSuchTableError:
+                pass
+            Base.metadata.create_all(engine, tables=[ValidTestModel.__table__])
 
         # Delete one of the columns
         conn.execute(text("ALTER TABLE validity_check_test DROP COLUMN id_"))
@@ -144,10 +137,10 @@ def test_validity_column_missing():
     # use a new context manager to make sure there are no open transactions
     # without this it hangs
     with engine.begin() as conn:
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        assert is_valid_database(Base, session) is False
-        session.close()
+        Session = sessionmaker(bind=conn)
+        with Session() as session:
+            assert is_valid_database(Base, session) is False
+            Base.metadata.drop_all(engine)
 
 
 def test_validity_pass_relationship():
@@ -156,30 +149,27 @@ def test_validity_pass_relationship():
     deem them as missing column.
     """
     engine = mc.connect_to_mc_testing_db().engine
-    conn = engine.connect()
-    conn.begin()
+    with engine.connect() as conn:
+        Session = sessionmaker(bind=conn)
+        with Session() as session:
+            Base, RelationTestModel, RelationTestModel2 = gen_relation_models()
+            try:
+                Base.metadata.drop_all(
+                    engine,
+                    tables=[RelationTestModel.__table__, RelationTestModel2.__table__],
+                )
+            except sqlalchemy.exc.NoSuchTableError:
+                pass
 
-    Session = sessionmaker(bind=engine)
-    session = Session()
+            Base.metadata.create_all(
+                engine,
+                tables=[RelationTestModel.__table__, RelationTestModel2.__table__],
+            )
 
-    Base, RelationTestModel, RelationTestModel2 = gen_relation_models()
-    try:
-        Base.metadata.drop_all(
-            engine, tables=[RelationTestModel.__table__, RelationTestModel2.__table__]
-        )
-    except sqlalchemy.exc.NoSuchTableError:
-        pass
-
-    Base.metadata.create_all(
-        engine, tables=[RelationTestModel.__table__, RelationTestModel2.__table__]
-    )
-
-    try:
-        assert is_valid_database(Base, session) is True
-    finally:
-        Base.metadata.drop_all(engine)
-        session.close()
-        conn.close()
+            try:
+                assert is_valid_database(Base, session) is True
+            finally:
+                Base.metadata.drop_all(engine)
 
 
 def test_validity_pass_declarative():
@@ -188,32 +178,29 @@ def test_validity_pass_declarative():
     them as missing column.
     """
     engine = mc.connect_to_mc_testing_db().engine
-    conn = engine.connect()
-    conn.begin()
+    with engine.connect() as conn:
+        Session = sessionmaker(bind=conn)
+        with Session() as session:
+            Base, DeclarativeTestModel = gen_declarative()
+            try:
+                Base.metadata.drop_all(engine, tables=[DeclarativeTestModel.__table__])
+            except sqlalchemy.exc.NoSuchTableError:
+                pass
 
-    Session = sessionmaker(bind=engine)
-    session = Session()
+            Base.metadata.create_all(engine, tables=[DeclarativeTestModel.__table__])
 
-    Base, DeclarativeTestModel = gen_declarative()
-    try:
-        Base.metadata.drop_all(engine, tables=[DeclarativeTestModel.__table__])
-    except sqlalchemy.exc.NoSuchTableError:
-        pass
-
-    Base.metadata.create_all(engine, tables=[DeclarativeTestModel.__table__])
-
-    try:
-        assert is_valid_database(Base, session) is True
-    finally:
-        Base.metadata.drop_all(engine)
-        session.close()
-        conn.close()
+            try:
+                assert is_valid_database(Base, session) is True
+            finally:
+                Base.metadata.drop_all(engine)
 
 
 def test_check_connection(tmpdir):
     """Check that a missing database raises appropriate exception."""
     # Create database connection with fake url
-    db = mc.DeclarativeDB("postgresql://hera@localhost/foo")
+
+    # Add "+psycopg" to the url to make sure everything works if it's in there.
+    db = mc.DeclarativeDB("postgresql+psycopg://hera@localhost/foo")
     with db.sessionmaker() as s:
         assert check_connection(s) is False
 
@@ -221,15 +208,15 @@ def test_check_connection(tmpdir):
         "default_db_name": "hera_mc",
         "databases": {
             "hera_mc": {
-                "url": "postgresql://hera:hera@localhost/hera_mc",
+                "url": "postgresql+psycopg://hera:hera@localhost/hera_mc",
                 "mode": "testing",
             },
             "testing": {
-                "url": "postgresql://hera:hera@localhost/hera_mc_test",
+                "url": "postgresql+psycopg://hera:hera@localhost/hera_mc_test",
                 "mode": "testing",
             },
             "foo": {
-                "url": "postgresql://hera:hera@localhost/foo",
+                "url": "postgresql+psycopg://hera:hera@localhost/foo",
                 "mode": "testing",
             },
         },

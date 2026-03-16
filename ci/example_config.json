@@ -14,7 +14,7 @@
       "mode": "testing"
     },
     "sqlite_testing":{
-      "url": "sqlite:///~/hera_mc/data/test_data/hera_mc_test.db",
+      "url": "sqlite:///~/src/hera_mc/data/test_data/hera_mc_test.db",
       "mode": "testing"
     }
   }

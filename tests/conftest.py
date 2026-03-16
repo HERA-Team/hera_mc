@@ -28,7 +28,6 @@ def setup_and_teardown_package():
     # If there's not a current IERS table and it can't be downloaded, turn off
     # auto downloading for the tests and turn it back on once all tests are
     # completed (done by extending auto_max_age).
-    # Also, the checkWarnings function will ignore IERS-related warnings.
     try:
         t1 = Time.now()
         t1.ut1
@@ -37,10 +36,10 @@ def setup_and_teardown_package():
 
     test_db = mc.connect_to_mc_testing_db()
     test_db.create_tables()
-    session = test_db.sessionmaker()
-    cm_transfer._initialization(
-        session=session, cm_csv_path=mc.test_data_path, testing=True
-    )
+    with test_db.sessionmaker() as session:
+        cm_transfer._initialization(
+            session=session, cm_csv_path=mc.test_data_path, testing=True
+        )
 
     config_path = os.path.expanduser("~/.hera_mc/mc_config.json")
     with open(config_path) as f:
@@ -56,14 +55,14 @@ def setup_and_teardown_package():
                 "sqlite:///" + os.path.join(DATA_PATH, "test_data", sqlite_basename)
             )
         with open(config_path, "w") as fp:
-            json.dump(config_data, fp)
+            json.dump(config_data, fp, indent=2, separators=(",", ": "))
 
         test_sqlite_db = mc.connect_to_mc_testing_db(forced_db_name="sqlite_testing")
         test_sqlite_db.create_tables()
-        sqlite_session = test_sqlite_db.sessionmaker()
-        cm_transfer._initialization(
-            session=sqlite_session, cm_csv_path=mc.test_data_path, testing=True
-        )
+        with test_sqlite_db.sessionmaker() as sqlite_session:
+            cm_transfer._initialization(
+                session=sqlite_session, cm_csv_path=mc.test_data_path, testing=True
+            )
     else:
         test_sqlite_db = None
 
@@ -95,7 +94,7 @@ def mcsession(setup_and_teardown_package):
                 test_trans.rollback()
 
     # delete the hookup cache file
-    from .. import cm_hookup
+    from hera_mc import cm_hookup
 
     hookup = cm_hookup.Hookup(None)
     hookup.delete_cache_file()
@@ -108,17 +107,12 @@ def mc_sqlite_session(setup_and_teardown_package):
     if test_sqlite_db is None:
         pytest.skip()
 
-    test_conn = test_sqlite_db.engine.connect()
-    test_trans = test_conn.begin()
-    test_sqlite_session = mc.MCSession(bind=test_conn)
+    with test_db.engine.connect() as test_conn:
+        with test_conn.begin() as test_trans:
+            with mc.MCSession(bind=test_conn) as test_sqlite_session:
+                yield test_sqlite_session
 
-    yield test_sqlite_session
-
-    test_sqlite_session.close()
-    # rollback - everything that happened with the
-    # Session above (including calls to commit())
-    # is rolled back.
-    test_trans.rollback()
-
-    # return connection to the Engine
-    test_conn.close()
+                # rollback - everything that happened with the
+                # Session above (including calls to commit())
+                # is rolled back.
+                test_trans.rollback()

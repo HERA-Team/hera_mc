@@ -1,5 +1,23 @@
 [run]
-omit = */tests/*
+omit =
+    */tests/*
+    */docs/*
+    setup.py
+source =
+    hera_mc
 
 [report]
-omit = */tests/*
+omit =
+    */tests/*
+    */docs/*
+    setup.py
+
+show_missing = true
+
+[paths]
+source =
+    src
+    */site-packages
+tests =
+    tests
+    */tests

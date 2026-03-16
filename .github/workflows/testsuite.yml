@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     services:
       postgres:
         image: postgres:10.8
@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Setup Miniforge
         uses: conda-incubator/setup-miniconda@v3
@@ -71,9 +71,19 @@ jobs:
             exit 1;
           fi
 
+      # this should be done in the conda env setup step because it's listed
+      # as a pip dependency there but it seems to not be working, so do it by hand
+      - name: Install node control
+        run: |
+          cd ../
+          git clone https://github.com/HERA-Team/hera_node_mc.git
+          cd hera_node_mc
+          pip install --no-deps .
+          cd ../hera_mc
+
       - name: Install
         run: |
-          pip install --no-deps .
+          pip install --no-deps -e .
 
       - name: Setup postgres
         run: |
@@ -100,7 +110,7 @@ jobs:
           DOCKER_NAME=`/usr/bin/docker ps -a --filter="ancestor=redis" --format='{{.Names}}'`
           /usr/bin/docker stop $DOCKER_NAME
           sudo rm /data/dump.rdb
-          sudo cp hera_mc/data/test_data/dump.rdb /data
+          sudo cp src/hera_mc/data/test_data/dump.rdb /data
           /usr/bin/docker start $DOCKER_NAME
           DOCKER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $DOCKER_NAME`
           echo "$DOCKER_IP redishost" | sudo tee -a /etc/hosts
@@ -111,16 +121,21 @@ jobs:
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
 
-      - uses: codecov/codecov-action@v1.5.2
-        if: matrix.os == 'ubuntu-latest' && success()
+      - name: check coverage report
+        run: |
+          ls
+          cat coverage.xml
+
+      - uses: codecov/codecov-action@v5
+        if: success()
         with:
           token: ${{secrets.CODECOV_TOKEN}} #required
-          file: ./coverage.xml #optional
+          files: ./coverage.xml #optional
 
   min_deps:
     env:
       ENV_NAME: min_deps
-      PYTHON: "3.11"
+      PYTHON: "3.12"
       WITH_SUDO: yes
       # use localhost for the host here because we are running the job on the VM.
       POSTGRES_HOST: localhost
@@ -152,7 +167,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Setup Miniforge
         uses: conda-incubator/setup-miniconda@v3
@@ -194,18 +209,20 @@ jobs:
 
       - name: Run Tests
         run: |
-          mkdir -p empty
-          cd empty
-          pytest --pyargs hera_mc --cov=hera_mc --cov-config=../.coveragerc --cov-report xml:../coverage.xml --junitxml=../test-reports/xunit.xml
-          cd ..
+          python -m pytest --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
 
-      - uses: codecov/codecov-action@v1.5.2
+      - name: check coverage report
+        run: |
+          ls
+          cat coverage.xml
+
+      - uses: codecov/codecov-action@v5
         if: success()
         with:
           token: ${{secrets.CODECOV_TOKEN}} #required
-          file: ./coverage.xml #optional
+          files: ./coverage.xml #optional
 
   min_versions:
     env:
@@ -218,96 +235,6 @@ jobs:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     name: min_versions testing
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        # Adding -l {0} helps ensure conda can be found properly.
-        shell: bash -l {0}
-    strategy:
-      fail-fast: false
-    services:
-      postgres:
-        image: postgres:10.8
-        env:
-          POSTGRES_HOST: localhost
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-        # will assign a random free host port
-        - 5432:5432
-        # needed because the postgres container does not provide a healthcheck
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-
-    steps:
-      - uses: actions/checkout@master
-        with:
-          fetch-depth: 1
-
-      - name: Setup Miniforge
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniforge-version: latest
-          python-version: ${{ env.PYTHON }}
-          environment-file: ci/${{ env.ENV_NAME }}.yaml
-          activate-environment: ${{ env.ENV_NAME }}
-
-      - name: Conda Info
-        run: |
-          conda info -a
-          conda list
-          PYVER=`python -c "import sys; print('{:d}.{:d}'.format(sys.version_info.major, sys.version_info.minor))"`
-          if [[ $PYVER != ${{ env.PYTHON }} ]]; then
-            exit 1;
-          fi
-
-      - name: Install
-        run: |
-          pip install --no-deps .
-
-      - name: Setup postgres
-        run: |
-          export POSTGRES_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
-          psql $POSTGRES_URL -c 'create database hera_mc_test;'
-          psql $POSTGRES_URL -c 'create database hera_mc;'
-          psql $POSTGRES_URL -c "create user hera with password 'hera';"
-        env:
-          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
-
-      - name: Upgrade Database Schema
-        run: |
-          mkdir ~/.hera_mc
-          cp ci/example_config.json ~/.hera_mc/mc_config.json
-          alembic upgrade head
-        env:
-          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
-
-      - name: Run Tests
-        run: |
-          mkdir -p empty
-          cd empty
-          pytest --pyargs hera_mc --cov=hera_mc --cov-config=../.coveragerc --cov-report xml:../coverage.xml --junitxml=../test-reports/xunit.xml
-          cd ..
-        env:
-          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
-
-      - uses: codecov/codecov-action@v1.5.2
-        if: success()
-        with:
-          token: ${{secrets.CODECOV_TOKEN}} #required
-          file: ./coverage.xml #optional
-
-  warning_tests:
-    env:
-      ENV_NAME: tests
-      PYTHON: "3.11"
-      WITH_SUDO: yes
-      # use localhost for the host here because we are running the job on the VM.
-      POSTGRES_HOST: localhost
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-    name: Warnings Test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -387,13 +314,136 @@ jobs:
           DOCKER_NAME=`/usr/bin/docker ps -a --filter="ancestor=redis" --format='{{.Names}}'`
           /usr/bin/docker stop $DOCKER_NAME
           sudo rm /data/dump.rdb
-          sudo cp hera_mc/data/test_data/dump.rdb /data
+          sudo cp src/hera_mc/data/test_data/dump.rdb /data
           /usr/bin/docker start $DOCKER_NAME
           DOCKER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $DOCKER_NAME`
           echo "$DOCKER_IP redishost" | sudo tee -a /etc/hosts
 
       - name: Run Tests
         run: |
-          python -m pytest -W error
+          python -m pytest --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+
+      - name: check coverage report
+        run: |
+          ls
+          cat coverage.xml
+
+      - uses: codecov/codecov-action@v5
+        if: success()
+        with:
+          token: ${{secrets.CODECOV_TOKEN}} #required
+          files: ./coverage.xml #optional
+
+  warning_tests:
+    env:
+      ENV_NAME: tests
+      PYTHON: "3.11"
+      WITH_SUDO: yes
+      # use localhost for the host here because we are running the job on the VM.
+      POSTGRES_HOST: localhost
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    name: Warnings Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # Adding -l {0} helps ensure conda can be found properly.
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+    services:
+      postgres:
+        image: postgres:10.8
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+        # will assign a random free host port
+        - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis
+        env:
+          REDIS_HOST: redishost
+        ports:
+        - 6379:6379
+        options: --entrypoint redis-server --network-alias $REDIS_HOST -v /data:/data --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          python-version: ${{ env.PYTHON }}
+          environment-file: ci/${{ env.ENV_NAME }}.yaml
+          activate-environment: ${{ env.ENV_NAME }}
+
+      - name: Conda Info
+        run: |
+          conda info -a
+          conda list
+          PYVER=`python -c "import sys; print('{:d}.{:d}'.format(sys.version_info.major, sys.version_info.minor))"`
+          if [[ $PYVER != ${{ env.PYTHON }} ]]; then
+            exit 1;
+          fi
+
+      - name: Install
+        run: |
+          pip install --no-deps -e .
+
+      - name: Setup postgres
+        run: |
+          export POSTGRES_URL=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB
+          psql $POSTGRES_URL -c 'create database hera_mc_test;'
+          psql $POSTGRES_URL -c 'create database hera_mc;'
+          psql $POSTGRES_URL -c "create user hera with password 'hera';"
+        env:
+          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+
+      - name: Upgrade Database Schema
+        run: |
+          mkdir ~/.hera_mc
+          cp ci/example_config.json ~/.hera_mc/mc_config.json
+          alembic upgrade head
+        env:
+          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+
+      - name: Initialize Redis
+        # Grab the name of the redis container with bash magic
+        # stop the container, replace the dump file with our save file
+        # add the IP to the hosts file to preserve some hardcoded defaults
+        run: |
+          DOCKER_NAME=`/usr/bin/docker ps -a --filter="ancestor=redis" --format='{{.Names}}'`
+          /usr/bin/docker stop $DOCKER_NAME
+          sudo rm /data/dump.rdb
+          sudo cp src/hera_mc/data/test_data/dump.rdb /data
+          /usr/bin/docker start $DOCKER_NAME
+          DOCKER_IP=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $DOCKER_NAME`
+          echo "$DOCKER_IP redishost" | sudo tee -a /etc/hosts
+
+      - name: Run Tests
+        run: |
+          python -m pytest -W error --cov=hera_mc --cov-config=.coveragerc --cov-report xml:./coverage.xml --junitxml=test-reports/xunit.xml
+        env:
+          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+
+      - name: check coverage report
+        run: |
+          ls
+          cat coverage.xml
+
+      - uses: codecov/codecov-action@v5
+        if: success()
+        with:
+          token: ${{secrets.CODECOV_TOKEN}} #required
+          files: ./coverage.xml #optional

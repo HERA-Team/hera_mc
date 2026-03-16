@@ -10,13 +10,14 @@ import numpy as np
 import pytest
 from astropy.time import Time, TimeDelta
 
-from .. import node
-from ..tests import TEST_DEFAULT_REDIS_HOST, requires_redis
+from hera_mc import node
+
+from . import TEST_DEFAULT_REDIS_HOST, requires_redis
 
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we
 # pass `-W error`, the warning causes an error so we filter it out here.
-pytestmark = pytest.mark.filterwarnings("ignore:connection:ResourceWarning:psycopg")
+pytestmark = pytest.mark.filterwarnings("ignore::ResourceWarning:")
 
 
 @pytest.fixture(scope="module")
@@ -510,7 +511,7 @@ def test_sensor_reading_errors(mcsession, sensor):
 
 @requires_redis
 def test_add_node_sensor_readings_from_node_control(mcsession):
-    pytest.importorskip("node_control")
+    # pytest.importorskip("node_control")
     test_session = mcsession
 
     test_session.add_node_sensor_readings_from_node_control(

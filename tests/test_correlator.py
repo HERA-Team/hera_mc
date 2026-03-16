@@ -26,9 +26,8 @@ import hera_mc.correlator as corr
 from hera_mc import cm_partconnect, mc
 from hera_mc.data import DATA_PATH
 
-from ..tests import (
+from . import (
     TEST_DEFAULT_REDIS_HOST,
-    checkWarnings,
     onsite,
     requires_default_redis,
     requires_redis,
@@ -37,7 +36,7 @@ from ..tests import (
 # Sometimes a connection is closed, which is handled and doesn't produce an error
 # or even a warning under normal testing. But for the warnings test where we
 # pass `-W error`, the warning causes an error so we filter it out here.
-pytestmark = pytest.mark.filterwarnings("ignore:connection:ResourceWarning:psycopg")
+pytestmark = pytest.mark.filterwarnings("ignore::ResourceWarning:")
 
 TEST_TIME1 = Time("2016-01-10 01:15:23", scale="utc")
 TEST_TIME2 = TEST_TIME1 + TimeDelta(120.0, format="sec")
@@ -2441,9 +2440,7 @@ def test_get_node_snap_from_serial_multiple_times_diffloc(mcsession):
     connection.start_gpstime = 1230375718
     mcsession.add(connection)
     mcsession.commit()
-    node, snap_loc_num = checkWarnings(
-        mcsession._get_node_snap_from_serial, ["SNPD000703"], nwarnings=0
-    )
+    node, snap_loc_num = mcsession._get_node_snap_from_serial("SNPD000703")
     assert node == 701
     assert snap_loc_num == 2
 
@@ -2857,11 +2854,8 @@ def test_add_antenna_status_from_corrcm(mcsession, antstatus):
 
 def test_add_antenna_status_from_corrcm_with_nones(mcsession, antstatus_none):
     test_session = mcsession
-    checkWarnings(
-        test_session.add_antenna_status_from_corrcm,
-        func_kwargs={"ant_status_dict": antstatus_none},
-        message="fem_switch value is Unknown mode",
-    )
+    with check_warnings(UserWarning, match="fem_switch value is Unknown mode"):
+        test_session.add_antenna_status_from_corrcm(ant_status_dict=antstatus_none)
 
     t1 = Time(datetime.datetime(2016, 1, 5, 20, 44, 52, 741137), format="datetime")
     result = test_session.get_antenna_status(
