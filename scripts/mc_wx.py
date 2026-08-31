@@ -4,6 +4,7 @@
 # Licensed under the 2-clause BSD license.
 
 """This is meant to hold utility scripts for weather"""
+
 import sys
 
 from astropy.time import Time
