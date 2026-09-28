@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.subsystem_error`."""
+
 from math import floor
 
 import pytest

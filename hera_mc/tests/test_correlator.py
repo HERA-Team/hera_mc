@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.correlator`."""
+
 import copy
 import datetime
 import hashlib

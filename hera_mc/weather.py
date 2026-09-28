@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Handle weather data sourced from meerkat's katportalclient."""
+
 from math import floor, isnan
 
 import numpy as np
