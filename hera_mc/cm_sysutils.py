@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Methods for handling locating correlator and various system aspects."""
+
 import warnings
 
 import numpy as np
