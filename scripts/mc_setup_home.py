@@ -6,6 +6,7 @@
 """
 Script to setup the mc_config file.
 """
+
 import os
 import sys
 

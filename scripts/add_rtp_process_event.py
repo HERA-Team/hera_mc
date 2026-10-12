@@ -6,6 +6,7 @@
 """
 Script to add an RTP process event record to M&C.
 """
+
 from astropy.time import Time
 
 import hera_mc.mc as mc

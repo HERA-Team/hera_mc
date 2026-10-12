@@ -4,6 +4,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Methods to load all active data for a given date."""
+
 from copy import copy
 
 from . import cm_partconnect as partconn
