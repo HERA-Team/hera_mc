@@ -7,6 +7,7 @@
 If not on qmaster, it just writes the html file.
 
 """
+
 from hera_mc import cm_sysutils, cm_utils, mc
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@
 """
 Checks for node over-temperature conditions.
 """
+
 import argparse
 
 from hera_mc import watch_dog

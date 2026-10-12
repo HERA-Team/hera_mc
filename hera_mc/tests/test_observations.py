@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.observations`."""
+
 import re
 from math import floor
 
