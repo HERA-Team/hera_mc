@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.server_status`."""
+
 from math import floor
 
 import pytest
