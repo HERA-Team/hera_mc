@@ -3,6 +3,7 @@
 # Copyright 2018 the HERA Collaboration
 # Licensed under the 2-clause BSD license.
 """Update the sqlite db from the psql database."""
+
 import argparse
 
 from hera_mc import cm_gen_sqlite
