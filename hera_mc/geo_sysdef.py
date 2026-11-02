@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Contains geographic location information and methods."""
+
 import os.path
 
 from . import cm_utils

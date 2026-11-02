@@ -11,6 +11,7 @@ set of columns, which may be overridden by instead using the args.columns parame
 (--list-all-columns)
 
 """
+
 from hera_mc import cm_handling, cm_utils, mc
 
 all_views = {
@@ -26,9 +27,7 @@ parser.add_argument(
     "view",
     nargs="?",
     help="Views are:  {}.  Need first letter only.\
-                    ".format(
-        ", ".join(all_views.values())
-    ),
+                    ".format(", ".join(all_views.values())),
     default="parts",
 )
 # set values for 'action' to use
