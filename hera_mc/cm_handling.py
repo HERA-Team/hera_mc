@@ -10,9 +10,8 @@ import copy
 from astropy.time import Time
 from sqlalchemy import desc, func
 
-from . import cm_dossier
+from . import cm_dossier, cm_utils
 from . import cm_partconnect as partconn
-from . import cm_utils
 
 
 class Handling:

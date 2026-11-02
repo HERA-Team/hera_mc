@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.rtp`."""
+
 import os
 from copy import deepcopy
 from math import floor
