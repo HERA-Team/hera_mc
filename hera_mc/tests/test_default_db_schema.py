@@ -5,6 +5,7 @@
 """
 Test that default database matches code schema.
 """
+
 import pytest
 from sqlalchemy.orm import sessionmaker
 

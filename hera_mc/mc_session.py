@@ -19,9 +19,8 @@ from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 
-from . import cm_utils
+from . import cm_utils, geo_handling, node, rtp
 from . import correlator as corr
-from . import geo_handling, node, rtp
 from .autocorrelations import (
     HeraAuto,
     HeraAutoSpectrum,

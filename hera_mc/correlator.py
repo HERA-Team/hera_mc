@@ -8,6 +8,7 @@ Correlator M&C interface.
 Anything tracked in the correlator redis database and accessed via hera_corr_cm.
 Includes many SNAP-related things.
 """
+
 import json
 import warnings
 from math import floor
