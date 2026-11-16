@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Testing for `hera_mc.geo_location and geo_handling`."""
+
 import pytest
 from astropy.time import Time
 

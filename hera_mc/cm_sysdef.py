@@ -3,6 +3,7 @@
 # Licensed under the 2-clause BSD license.
 
 """Defines the system architecture for the telescope array."""
+
 import json
 import os.path
 
